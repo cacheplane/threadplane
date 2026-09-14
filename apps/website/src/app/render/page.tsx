@@ -44,7 +44,7 @@ export default async function RenderPage() {
             </p>
             <div className="render-page-hero-buttons">
               <Button variant="primary" size="lg" href="/docs/render/getting-started/introduction">Get started</Button>
-              <Button variant="secondary" size="lg" href="https://github.com/cacheplane/angular-agent-framework" target="_blank" rel="noopener noreferrer">View source</Button>
+              <Button variant="secondary" size="lg" href="https://github.com/cacheplane/threadplane" target="_blank" rel="noopener noreferrer">View source</Button>
             </div>
             <div className="render-page-hero-pills">
               <Pill variant="accent">MIT</Pill>

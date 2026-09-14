@@ -5,7 +5,7 @@ Threadplane is MIT-licensed and developed in the open. Contributions are welcome
 ## How to contribute
 
 1. **Found a bug or have a feature idea?** Open an issue at
-   <https://github.com/cacheplane/angular-agent-framework/issues> describing the
+   <https://github.com/cacheplane/threadplane/issues> describing the
    problem or proposal. Please search existing issues first.
 2. **Code changes:** fork the repository (or create a topic branch if you have
    access), make your change on a branch, and open a pull request against `main`.
@@ -148,11 +148,11 @@ Compare what was actually posted on the head SHA against what protection
 requires:
 
 ```bash
-gh api repos/cacheplane/angular-agent-framework/commits/<head-sha>/status --jq '[.statuses[].context]'
+gh api repos/cacheplane/threadplane/commits/<head-sha>/status --jq '[.statuses[].context]'
 ```
 
 ```bash
-gh api repos/cacheplane/angular-agent-framework/branches/main/protection --jq '.required_status_checks.checks'
+gh api repos/cacheplane/threadplane/branches/main/protection --jq '.required_status_checks.checks'
 ```
 
 Any required context missing from the posted list is the cause. Fix branch
@@ -162,7 +162,7 @@ the next one.
 Note that check *runs* (GitHub Actions) and commit *statuses* (external apps
 like Vercel) are different APIs. `CI — required` is a check run, so it appears
 in `gh pr checks` but not in the `/status` output above; use
-`gh api repos/cacheplane/angular-agent-framework/commits/<head-sha>/check-runs`
+`gh api repos/cacheplane/threadplane/commits/<head-sha>/check-runs`
 for those.
 
 ### Rollback reference

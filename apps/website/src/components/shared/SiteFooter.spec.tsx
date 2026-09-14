@@ -77,7 +77,7 @@ describe('SiteFooter', () => {
         .every(
           (link) =>
             link.getAttribute('href') ===
-            'https://github.com/cacheplane/angular-agent-framework',
+            'https://github.com/cacheplane/threadplane',
         ),
     ).toBe(true);
   });

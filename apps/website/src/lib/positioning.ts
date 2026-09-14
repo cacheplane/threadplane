@@ -68,7 +68,7 @@ export const HERO_TRUST_LINE = `MIT · ${formatAngularRange(WEBSITE_SUPPORTED_AN
  * the browser bundle and the page 500s. positioning.ts is client-safe — the
  * hero already imports it.
  */
-export const GITHUB_REPO_URL = 'https://github.com/cacheplane/angular-agent-framework';
+export const GITHUB_REPO_URL = 'https://github.com/cacheplane/threadplane';
 
 // ── The open-source band (the dark full stop after the stage). An eyebrow,
 // two words, the licence and the repo. It used to be the quietest band on the

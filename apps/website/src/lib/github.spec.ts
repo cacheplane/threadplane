@@ -14,10 +14,10 @@ describe('getGitHubStars', () => {
       ok: true,
       json: async () => ({ stargazers_count: 1234 }),
     });
-    const stars = await getGitHubStars('cacheplane/angular-agent-framework');
+    const stars = await getGitHubStars('cacheplane/threadplane');
     expect(stars).toBe(1234);
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://api.github.com/repos/cacheplane/angular-agent-framework',
+      'https://api.github.com/repos/cacheplane/threadplane',
       expect.objectContaining({
         next: { revalidate: 86400 },
       }),

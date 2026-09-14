@@ -1,7 +1,7 @@
 # @threadplane/telemetry
 
 Explicit capture helpers and automatic development runtime collection for
-applications built with [Threadplane](https://github.com/cacheplane/angular-agent-framework),
+applications built with [Threadplane](https://github.com/cacheplane/threadplane),
 the open-source thread-plane for agents. The automatic path starts only when a
 supported development integration is used, as described below.
 

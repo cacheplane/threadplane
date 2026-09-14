@@ -7,9 +7,9 @@
   "type": "module",
   "sideEffects": false,
   "publishConfig": { "access": "public" },
-  "repository": { "type": "git", "url": "https://github.com/cacheplane/angular-agent-framework.git", "directory": "libs/middleware" },
-  "homepage": "https://github.com/cacheplane/angular-agent-framework#readme",
-  "bugs": { "url": "https://github.com/cacheplane/angular-agent-framework/issues" },
+  "repository": { "type": "git", "url": "https://github.com/cacheplane/threadplane.git", "directory": "libs/middleware" },
+  "homepage": "https://github.com/cacheplane/threadplane#readme",
+  "bugs": { "url": "https://github.com/cacheplane/threadplane/issues" },
   "exports": {
     "./langgraph": { "types": "./src/langgraph/index.d.ts", "default": "./src/langgraph/index.js" },
     "./README.md": "./README.md"

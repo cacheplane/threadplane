@@ -1,6 +1,6 @@
 # @threadplane/middleware
 
-The backend half of client tools in [Threadplane](https://github.com/cacheplane/angular-agent-framework),
+The backend half of client tools in [Threadplane](https://github.com/cacheplane/threadplane),
 the open-source thread-plane for agents. Client tools are declared in the browser: the model
 calls them, and the browser executes them.
 

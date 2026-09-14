@@ -16,7 +16,7 @@ import type { DocHeading } from '../../lib/extract-headings';
 import { SITE_ORIGIN } from '../../lib/site-origin';
 
 const GITHUB_EDIT_BASE =
-  'https://github.com/cacheplane/angular-agent-framework/edit/main/apps/website/content/docs';
+  'https://github.com/cacheplane/threadplane/edit/main/apps/website/content/docs';
 
 interface Props {
   library: string;

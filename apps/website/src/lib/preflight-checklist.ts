@@ -33,7 +33,7 @@ export interface ChecklistRow {
  */
 export const AIRWORTHINESS: readonly ChecklistRow[] = [
   { challenge: 'Framework rank', response: '#11', unit: 'OF 122', href: 'https://hvtracker.net/categories/agent-frameworks/' },
-  { challenge: 'OpenSSF Scorecard', response: '8.3', unit: '/ 10', href: 'https://scorecard.dev/viewer/?uri=github.com/cacheplane/angular-agent-framework' },
+  { challenge: 'OpenSSF Scorecard', response: '8.3', unit: '/ 10', href: 'https://scorecard.dev/viewer/?uri=github.com/cacheplane/threadplane' },
   {
     challenge: 'Supply-chain grade',
     // Deliberately empty: the badge is the response. It sits near an A-band

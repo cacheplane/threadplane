@@ -45,7 +45,7 @@ export default async function AgUiPage() {
             </p>
             <div className="ag-ui-page-hero-buttons">
               <Button variant="primary" size="lg" href="/docs/ag-ui/getting-started/quickstart">Get started</Button>
-              <Button variant="secondary" size="lg" href="https://github.com/cacheplane/angular-agent-framework" target="_blank" rel="noopener noreferrer">View source</Button>
+              <Button variant="secondary" size="lg" href="https://github.com/cacheplane/threadplane" target="_blank" rel="noopener noreferrer">View source</Button>
             </div>
             <p className="ag-ui-page-adapter-note">
               Talking to LangGraph Platform directly? See <a href="/docs/choosing-an-adapter" className="ag-ui-page-adapter-link">Choosing an adapter</a>.

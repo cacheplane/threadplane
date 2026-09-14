@@ -21,12 +21,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/cacheplane/angular-agent-framework.git",
+    "url": "https://github.com/cacheplane/threadplane.git",
     "directory": "libs/langgraph"
   },
-  "homepage": "https://github.com/cacheplane/angular-agent-framework#readme",
+  "homepage": "https://github.com/cacheplane/threadplane#readme",
   "bugs": {
-    "url": "https://github.com/cacheplane/angular-agent-framework/issues"
+    "url": "https://github.com/cacheplane/threadplane/issues"
   },
   "sideEffects": false,
   "exports": {

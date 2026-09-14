@@ -17,8 +17,8 @@ This example serves two audiences:
 
 ```bash
 # 1. Clone & install workspace deps
-git clone https://github.com/cacheplane/angular-agent-framework.git
-cd angular-agent-framework
+git clone https://github.com/cacheplane/threadplane.git
+cd threadplane
 npm ci
 
 # 2. Configure the backend

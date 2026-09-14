@@ -11,7 +11,7 @@ const SCHEMA_CONTEXT = 'https://schema.org';
  * The canonical repository. Verified public; the npm *organization* page is
  * member-gated, so `sameAs` links the public package page instead.
  */
-export const REPOSITORY_URL = 'https://github.com/cacheplane/angular-agent-framework';
+export const REPOSITORY_URL = 'https://github.com/cacheplane/threadplane';
 
 /**
  * Stable identity for the publisher node. Every other node refers to the

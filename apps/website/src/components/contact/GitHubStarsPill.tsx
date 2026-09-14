@@ -2,7 +2,7 @@ import React from 'react';
 import { Pill } from '../ui/Pill';
 import { getGitHubStars } from '../../lib/github';
 
-const REPO = 'cacheplane/angular-agent-framework';
+const REPO = 'cacheplane/threadplane';
 const REPO_URL = `https://github.com/${REPO}`;
 
 export async function GitHubStarsPill() {

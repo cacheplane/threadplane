@@ -377,11 +377,14 @@ jobs:
         with:
           python-version: '3.12'
       - run: npm ci
+      # The venv bakes in the absolute workspace path (/home/runner/work/<repo>/<repo>),
+      # so the key carries github.repository: a repository rename must not restore a
+      # venv whose launcher shebangs point at the old path.
       - name: Cache examples-chat python venv
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: examples/chat/python/.venv
-          key: uv-venv-${{ runner.os }}-py3.12-${{ hashFiles('examples/chat/python/uv.lock') }}
+          key: uv-venv-${{ github.repository }}-${{ runner.os }}-py3.12-${{ hashFiles('examples/chat/python/uv.lock') }}
       - working-directory: examples/chat/python
         run: uv sync
       - run: npx nx run examples-chat-python:smoke --skip-nx-cache
@@ -411,7 +414,7 @@ jobs:
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: examples/chat/python/.venv
-          key: uv-venv-${{ runner.os }}-py3.12-${{ hashFiles('examples/chat/python/uv.lock') }}
+          key: uv-venv-${{ github.repository }}-${{ runner.os }}-py3.12-${{ hashFiles('examples/chat/python/uv.lock') }}
       - working-directory: examples/chat/python
         run: uv sync
       - name: Cache Playwright browsers
@@ -468,7 +471,7 @@ jobs:
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: examples/ag-ui/python/.venv
-          key: uv-venv-${{ runner.os }}-py3.12-${{ hashFiles('examples/ag-ui/python/uv.lock') }}
+          key: uv-venv-${{ github.repository }}-${{ runner.os }}-py3.12-${{ hashFiles('examples/ag-ui/python/uv.lock') }}
       - working-directory: examples/ag-ui/python
         run: uv sync
       - name: Check requirements.txt matches uv.lock
@@ -578,7 +581,7 @@ jobs:
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ${{ matrix.cap.python }}/.venv
-          key: uv-venv-${{ runner.os }}-py3.12-${{ matrix.cap.python }}-${{ hashFiles(format('{0}/uv.lock', matrix.cap.python)) }}
+          key: uv-venv-${{ github.repository }}-${{ runner.os }}-py3.12-${{ matrix.cap.python }}-${{ hashFiles(format('{0}/uv.lock', matrix.cap.python)) }}
       - name: uv sync per-cap python
         if: matrix.cap.python != ''
         working-directory: ${{ matrix.cap.python }}

@@ -205,7 +205,7 @@ describe('Docs mobile navigation', () => {
       within(screen.getByRole('navigation'))
         .getByRole('link', { name: 'GitHub repository' })
         .getAttribute('href'),
-    ).toBe('https://github.com/cacheplane/angular-agent-framework');
+    ).toBe('https://github.com/cacheplane/threadplane');
   });
 
   it('opens pre-pushed to the docs tree on a docs route, with no tab strip', () => {

@@ -145,16 +145,16 @@ Each demo backend ships its emitter in tree, roughly 200 to 430 lines per runtim
 Each runtime got a real server, started against the upstream AG-UI integration and driven with live model calls.
 The raw Server-Sent Events were captured off the wire, then replayed event-for-event through the pinned `@ag-ui/client` — schema parse plus `verifyEvents` — and through the adapter reducer itself.
 
-The captures for messages, tool calls, state, and interrupts are committed at [`libs/ag-ui/fixtures/runtime-transcripts/`](https://github.com/cacheplane/angular-agent-framework/tree/main/libs/ag-ui/fixtures/runtime-transcripts), verbatim from the wire, and the adapter test suite replays them on every run.
+The captures for messages, tool calls, state, and interrupts are committed at [`libs/ag-ui/fixtures/runtime-transcripts/`](https://github.com/cacheplane/threadplane/tree/main/libs/ag-ui/fixtures/runtime-transcripts), verbatim from the wire, and the adapter test suite replays them on every run.
 The subagent captures are committed as a `wire-capture-subagents.md` document alongside each backend under `cockpit/runtimes/<runtime>/`; the subagent transcript the suite replays is synthetic, built to the event shape those captures record.
 
 ### Runnable examples
 
 Each runtime has a standalone Angular example bound through `@threadplane/ag-ui`, with its own backend:
 
-- [`cockpit/runtimes/aws-strands`](https://github.com/cacheplane/angular-agent-framework/tree/main/cockpit/runtimes/aws-strands) — Python, hosted in the shared FastAPI deployment.
-- [`cockpit/runtimes/microsoft-agent-framework`](https://github.com/cacheplane/angular-agent-framework/tree/main/cockpit/runtimes/microsoft-agent-framework) — Python, hosted in that same FastAPI deployment, running beside the Strands and LangGraph topics in one process.
-- [`cockpit/runtimes/mastra`](https://github.com/cacheplane/angular-agent-framework/tree/main/cockpit/runtimes/mastra) — TypeScript, hosted by a Node AG-UI service, because the upstream Mastra integration ships an in-process bridge rather than an HTTP endpoint.
+- [`cockpit/runtimes/aws-strands`](https://github.com/cacheplane/threadplane/tree/main/cockpit/runtimes/aws-strands) — Python, hosted in the shared FastAPI deployment.
+- [`cockpit/runtimes/microsoft-agent-framework`](https://github.com/cacheplane/threadplane/tree/main/cockpit/runtimes/microsoft-agent-framework) — Python, hosted in that same FastAPI deployment, running beside the Strands and LangGraph topics in one process.
+- [`cockpit/runtimes/mastra`](https://github.com/cacheplane/threadplane/tree/main/cockpit/runtimes/mastra) — TypeScript, hosted by a Node AG-UI service, because the upstream Mastra integration ships an in-process bridge rather than an HTTP endpoint.
 
 In all three, the component binds the agent through `injectAgent()` and renders `<chat [agent]="agent" />`; the shared-state panels and approval cards around it are demo-specific, and each example wraps `provideAgent()` in a factory only because it resolves its endpoint at runtime.
 

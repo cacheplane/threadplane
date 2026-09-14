@@ -44,7 +44,7 @@ export default async function LangGraphPage() {
             </p>
             <div className="langgraph-page-hero-buttons">
               <Button variant="primary" size="lg" href="/docs/langgraph/getting-started/introduction">Get started</Button>
-              <Button variant="secondary" size="lg" href="https://github.com/cacheplane/angular-agent-framework" target="_blank" rel="noopener noreferrer">View source</Button>
+              <Button variant="secondary" size="lg" href="https://github.com/cacheplane/threadplane" target="_blank" rel="noopener noreferrer">View source</Button>
             </div>
             <p className="langgraph-page-adapter-note">
               Not sure if LangGraph is right for your backend? See <a href="/docs/choosing-an-adapter" className="langgraph-page-adapter-link">Choosing an adapter</a>.
