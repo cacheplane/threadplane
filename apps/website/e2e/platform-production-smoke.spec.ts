@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page, type Response } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { validateRuntimeParentOrigins } from '@threadplane/cockpit-runtime-bridge';
@@ -13,7 +13,10 @@ import {
  *
  * Requires:
  *   EXAMPLES_URL - e.g. https://examples.threadplane.ai
- *   OPENAI_API_KEY - optional; enables the single live-provider canary
+ *   OPENAI_API_KEY - optional; enables the canonical LangGraph telemetry canary
+ *
+ * AG-UI canaries always exercise the deployed services' own provider keys.
+ * They must not skip when the test runner has no local provider key.
  *
  * Run:
  *   PRODUCTION_SMOKE=true \
@@ -25,6 +28,8 @@ const EXAMPLES_URL =
   process.env['EXAMPLES_URL'] ?? 'https://examples.threadplane.ai';
 const DEMO_URL = process.env['DEMO_URL'] ?? 'https://demo.threadplane.ai';
 const WEBSITE_URL = process.env['WEBSITE_URL'] ?? 'https://threadplane.ai';
+const AG_UI_DEMO_URL =
+  process.env['AG_UI_DEMO_URL'] ?? 'https://ag-ui.threadplane.ai';
 // Playwright transpiles specs to CJS, so `import.meta.url` here compiles to a
 // `require` the ESM-loaded output cannot resolve and the whole file fails to
 // load. `__dirname` is what the emitted module actually has. Don't "modernise"
@@ -393,8 +398,141 @@ test.describe('examples langgraph proxy hardening', () => {
   });
 });
 
+// A provider authentication error can close an HTTP-200 stream before an
+// interrupt or reply arrives. Require protocol completion, not just transport
+// success, so this fails promptly with a useful diagnostic in that case.
+async function completedAgentEvents(response: Response) {
+  expect(response.status(), response.url()).toBe(200);
+  const events = (await response.text())
+    .split(/\r?\n/)
+    .filter((line) => line.startsWith('data:'))
+    .map((line) => JSON.parse(line.slice(5).trim()) as Record<string, unknown>);
+  const types = events.map((event) => event['type']);
+  expect(types, 'Agent returned RUN_ERROR').not.toContain('RUN_ERROR');
+  expect(
+    types,
+    'Agent stream ended without RUN_FINISHED; check deployed provider credentials and runtime logs'
+  ).toContain('RUN_FINISHED');
+  return events;
+}
+
+function nextAgentResponse(page: Page) {
+  return page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      new URL(response.url()).pathname.endsWith('/agent'),
+    { timeout: 60_000 }
+  );
+}
+
+test.describe('Production: live AG-UI provider canaries', () => {
+  // These are synthetic demo operations. Run sequentially and bound retries
+  // separately from dev-server startup retries to limit live provider usage.
+  test.describe.configure({ mode: 'default', timeout: 120_000, retries: 1 });
+
+  for (const runtime of ['refund', 'mastra'] as const) {
+    for (const approved of [true, false]) {
+      const action = approved ? 'Approve' : 'Cancel';
+      test(`${runtime}: ${action} completes the live approval flow`, async ({
+        page,
+      }) => {
+        const mastra = runtime === 'mastra';
+        await page.goto(
+          `${EXAMPLES_URL}/${mastra ? 'runtimes/mastra' : 'ag-ui/interrupts'}/`
+        );
+        const initialResponse = nextAgentResponse(page);
+        await page
+          .getByText(
+            mastra ? 'Reserve the campsite' : 'Refund a duplicate charge',
+            { exact: true }
+          )
+          .click();
+        const initialEvents = await completedAgentEvents(await initialResponse);
+        expect(initialEvents).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({ type: 'CUSTOM', name: 'on_interrupt' }),
+          ])
+        );
+        const dialog = page.locator('dialog.chat-approval-card');
+        await expect(dialog).toBeVisible();
+        await expect(dialog).toContainText(
+          mastra ? 'Reservation approval required' : 'Refund approval required'
+        );
+        await expect(dialog).toContainText(
+          mastra ? 'North Pines' : 'cus_a8x2k'
+        );
+        await expect(dialog).toContainText(mastra ? '$90.00' : '$47.50');
+
+        const resumedResponse = nextAgentResponse(page);
+        await dialog.getByRole('button', { name: action, exact: true }).click();
+        const response = await resumedResponse;
+        const command = response.request().postDataJSON()
+          .forwardedProps.command;
+        expect(command.resume.approved).toBe(approved);
+        const events = await completedAgentEvents(response);
+        await expect(dialog).not.toBeVisible();
+        const reply = page
+          .locator('chat-message[data-role="assistant"]')
+          .last();
+
+        if (mastra) {
+          expect(command.interruptEvent.toolCallId).toEqual(expect.any(String));
+          expect(command.interruptEvent.runId).toEqual(expect.any(String));
+          expect(events).toEqual(
+            expect.arrayContaining([
+              expect.objectContaining({
+                type: 'TOOL_CALL_RESULT',
+                toolCallId: command.interruptEvent.toolCallId,
+                content: expect.stringContaining(
+                  approved ? 'Reserved North Pines' : 'Nothing was booked.'
+                ),
+              }),
+            ])
+          );
+          const cancellation =
+            /declined|cancelled|canceled|not.{0,20}(booked|completed|confirmed|reserved)|nothing.{0,20}booked/i;
+          await expect(reply).toContainText(
+            approved ? /reserved|confirmed|booked/i : cancellation
+          );
+          if (approved) await expect(reply).not.toContainText(cancellation);
+          else await expect(reply).not.toContainText('TP-0288');
+        } else {
+          await expect(reply).toContainText(
+            approved
+              ? 'Refund of $47.50 issued to'
+              : 'Refund cancelled by operator. No charge issued.'
+          );
+          if (approved) await expect(reply).toContainText('cus_a8x2k');
+          else await expect(reply).not.toContainText('Refund ID:');
+        }
+      });
+    }
+  }
+
+  test('AG-UI demo completes a live reply', async ({ page }) => {
+    await page.goto(`${AG_UI_DEMO_URL}/embed`);
+    await page
+      .locator('textarea[name="messageText"]')
+      .fill('Say hello in one sentence.');
+    const response = nextAgentResponse(page);
+    await page.getByRole('button', { name: /send message/i }).click();
+    const events = await completedAgentEvents(await response);
+    expect(events).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: 'TEXT_MESSAGE_CONTENT',
+          delta: expect.stringMatching(/\S/),
+        }),
+      ])
+    );
+    await expect(
+      page.locator('chat-message[data-role="assistant"]').last()
+    ).toContainText(/\S/);
+  });
+});
+
 test.describe('AG-UI demo (ag-ui.threadplane.ai)', () => {
-  const DEMO = process.env['AG_UI_DEMO_URL'] ?? 'https://ag-ui.threadplane.ai';
+  const DEMO = AG_UI_DEMO_URL;
 
   test('demo SPA is reachable', async ({ page }) => {
     const res = await page.goto(`${DEMO}/`);
