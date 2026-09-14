@@ -182,6 +182,6 @@ describe('PageActions', () => {
     expect(chatgpt.getAttribute('href')).toContain('https://chatgpt.com/?hints=search&q=');
     expect(chatgpt.getAttribute('href')).toContain(encodeURIComponent('https://threadplane.ai/docs/langgraph/guides/streaming'));
     const github = screen.getByRole('menuitem', { name: /edit on github/i }) as HTMLAnchorElement;
-    expect(github.getAttribute('href')).toBe('https://github.com/cacheplane/angular-agent-framework/edit/main/apps/website/content/docs/langgraph/guides/streaming.mdx');
+    expect(github.getAttribute('href')).toBe('https://github.com/cacheplane/threadplane/edit/main/apps/website/content/docs/langgraph/guides/streaming.mdx');
   });
 });

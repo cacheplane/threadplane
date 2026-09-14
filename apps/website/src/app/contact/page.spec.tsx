@@ -25,7 +25,7 @@ describe('ContactPage', () => {
     const email = screen.getByRole('link', { name: 'brian@threadplane.ai' });
     expect(email.getAttribute('href')).toBe('mailto:brian@threadplane.ai');
     const github = screen.getByRole('link', { name: 'GitHub issues' });
-    expect(github.getAttribute('href')).toBe('https://github.com/cacheplane/angular-agent-framework/issues');
+    expect(github.getAttribute('href')).toBe('https://github.com/cacheplane/threadplane/issues');
     const discord = screen.getByRole('link', { name: 'Discord' });
     expect(discord.getAttribute('href')).toBe('https://discord.gg/cacheplane');
     expect(screen.getByTestId('stars')).toBeTruthy();

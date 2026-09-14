@@ -8,7 +8,7 @@
 #   1. Log into PyPI under the **cacheplane** organization.
 #   2. Navigate to threadplane-middleware → Settings → "Trusted Publishers".
 #   3. Add a **Pending Publisher** with:
-#        Repository:   cacheplane/angular-agent-framework
+#        Repository:   cacheplane/threadplane
 #        Workflow:     publish-middleware-python.yml
 #        Environment:  (leave blank, or set to "pypi" if you create one)
 #   4. The FIRST-EVER publish must be bootstrapped locally by a maintainer

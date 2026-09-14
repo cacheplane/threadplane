@@ -6,7 +6,7 @@
   "types": "./src/index.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/cacheplane/angular-agent-framework.git",
+    "url": "https://github.com/cacheplane/threadplane.git",
     "directory": "marketing/assets"
   },
   "sideEffects": false,

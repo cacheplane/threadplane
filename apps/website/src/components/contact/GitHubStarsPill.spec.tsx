@@ -20,7 +20,7 @@ describe('GitHubStarsPill', () => {
     const { container } = render(el);
     expect(container.textContent).toMatch(/1,234/);
     expect(container.querySelector('a')?.getAttribute('href'))
-      .toBe('https://github.com/cacheplane/angular-agent-framework');
+      .toBe('https://github.com/cacheplane/threadplane');
   });
 
   it('renders fallback when fetch returns null', async () => {

@@ -5,7 +5,7 @@ description: Run the AWS Strands runtime example locally, backend and Angular ap
 
 # AWS Strands Quickstart
 
-This runs the example from a clone of the [monorepo](https://github.com/cacheplane/angular-agent-framework). The backend is a uvicorn process on port 5331; the Angular dev server is on port 4331 and proxies `/agent` to it.
+This runs the example from a clone of the [monorepo](https://github.com/cacheplane/threadplane). The backend is a uvicorn process on port 5331; the Angular dev server is on port 4331 and proxies `/agent` to it.
 
 <Callout type="info" title="Prerequisites">
 Node.js 20 or newer, Python 3.12 or newer, [`uv`](https://docs.astral.sh/uv/), and an OpenAI API key. No AWS account and no AWS credentials are required.
@@ -15,8 +15,8 @@ Node.js 20 or newer, Python 3.12 or newer, [`uv`](https://docs.astral.sh/uv/), a
 <Step title="Install workspace dependencies">
 
 ```bash
-git clone https://github.com/cacheplane/angular-agent-framework.git
-cd angular-agent-framework
+git clone https://github.com/cacheplane/threadplane.git
+cd threadplane
 npm ci
 ```
 

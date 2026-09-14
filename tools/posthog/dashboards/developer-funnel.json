@@ -2,7 +2,7 @@
   "slug": "developer-funnel",
   "posthog_id": 1582272,
   "name": "Growth \u00b7 Acquisition and demo engagement",
-  "description": "Website intent, client-observed form acceptance and independent demo milestones. Not a sequential install-to-email funnel. Actual install/runtime activation, enrichment and outreach outcomes are in Neon; use growth:report. https://github.com/cacheplane/angular-agent-framework/blob/main/docs/growth/README.md",
+  "description": "Website intent, client-observed form acceptance and independent demo milestones. Not a sequential install-to-email funnel. Actual install/runtime activation, enrichment and outreach outcomes are in Neon; use growth:report. https://github.com/cacheplane/threadplane/blob/main/docs/growth/README.md",
   "tags": [
     "gtm",
     "growth",

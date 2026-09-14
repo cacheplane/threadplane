@@ -1,7 +1,7 @@
 # AG-UI Itinerary example (Angular)
 
 A trip-planner demo where the agent edits a live itinerary UI over the
-[AG-UI](https://github.com/cacheplane/angular-agent-framework) transport. It has a
+[AG-UI](https://github.com/cacheplane/threadplane) transport. It has a
 chat/panel layout and an **App mode** that swaps the panel for a full-bleed
 Google Map cockpit.
 

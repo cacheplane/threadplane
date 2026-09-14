@@ -1,6 +1,6 @@
 # @threadplane/render
 
-The generative-UI render engine of [Threadplane](https://github.com/cacheplane/angular-agent-framework), the open-source thread-plane for agents. `@json-render/core`-backed: it maps a JSON spec to Angular components through a registry you define, so agent-generated UI can only render the design-system components you registered. `@threadplane/chat` uses it for generative UI.
+The generative-UI render engine of [Threadplane](https://github.com/cacheplane/threadplane), the open-source thread-plane for agents. `@json-render/core`-backed: it maps a JSON spec to Angular components through a registry you define, so agent-generated UI can only render the design-system components you registered. `@threadplane/chat` uses it for generative UI.
 
 <p>
   <a href="https://www.npmjs.com/package/@threadplane/render">
@@ -152,5 +152,5 @@ plain-text console announcements. No click or registration is required. It has b
 queues/retries and a three-second request deadline; collection failures do not affect
 application use. A linked eligible install email can receive the generic founder hello;
 runtime evidence alone does not approve a contact. See the
-[telemetry controls and collection details](https://github.com/cacheplane/angular-agent-framework/tree/main/libs/telemetry#automatic-development-runtime-collection)
+[telemetry controls and collection details](https://github.com/cacheplane/threadplane/tree/main/libs/telemetry#automatic-development-runtime-collection)
 and [Privacy](https://threadplane.ai/privacy).

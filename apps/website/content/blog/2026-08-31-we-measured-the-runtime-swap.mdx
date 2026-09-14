@@ -84,7 +84,7 @@ It finalized as a success, with a tool call sitting there waiting for an approva
 The adapter's `interrupt` signal stayed undefined.
 It failed silently, which only means it took longer to notice.
 
-The fix was small once the cause was clear, and it landed in [#888](https://github.com/cacheplane/angular-agent-framework/pull/888).
+The fix was small once the cause was clear, and it landed in [#888](https://github.com/cacheplane/threadplane/pull/888).
 Both conventions are now recognized.
 Updated September 9, 2026: the adapter retains both forms in one session. Native batches take precedence in `auto` mode regardless of arrival order; the Mastra integration explicitly selects `mastra-command` so the resume includes its decision and suspended-tool correlation.
 
@@ -112,8 +112,8 @@ Send it nothing addressable and it raises an error.
 Four runtimes, three answers to the question of how a resume identifies itself.
 
 The adapter now derives the outgoing shape from how the interrupt arrived, which is the only signal available that is not a hardcoded runtime name.
-That work is in [#889](https://github.com/cacheplane/angular-agent-framework/pull/889).
-The protocol-package upgrade in [#891](https://github.com/cacheplane/angular-agent-framework/pull/891) is what made the standard top-level array sendable at all.
+That work is in [#889](https://github.com/cacheplane/threadplane/pull/889).
+The protocol-package upgrade in [#891](https://github.com/cacheplane/threadplane/pull/891) is what made the standard top-level array sendable at all.
 The application-facing call did not change.
 You still write `submit({ resume })` and the adapter decides what goes on the wire.
 
@@ -158,7 +158,7 @@ The platform kept serving the last image that booted.
 Nothing was red anywhere.
 The route had been returning a not-found for months.
 
-The fix in [#899](https://github.com/cacheplane/angular-agent-framework/pull/899) was two import statements.
+The fix in [#899](https://github.com/cacheplane/threadplane/pull/899) was two import statements.
 The deploy workflow now installs the exact dependency set, imports the server, and fails the job if it cannot boot.
 
 Verify the route, not the exit code.

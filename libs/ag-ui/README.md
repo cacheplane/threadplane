@@ -1,6 +1,6 @@
 # @threadplane/ag-ui
 
-The AG-UI adapter for [Threadplane](https://github.com/cacheplane/angular-agent-framework), the open-source thread-plane for agents. Wraps an [AG-UI](https://github.com/ag-ui-protocol/ag-ui) `AbstractAgent` into the runtime-neutral `Agent` contract that `@threadplane/chat` consumes, so any AG-UI-compatible backend drives the same chat surface.
+The AG-UI adapter for [Threadplane](https://github.com/cacheplane/threadplane), the open-source thread-plane for agents. Wraps an [AG-UI](https://github.com/ag-ui-protocol/ag-ui) `AbstractAgent` into the runtime-neutral `Agent` contract that `@threadplane/chat` consumes, so any AG-UI-compatible backend drives the same chat surface.
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@threadplane/ag-ui">
@@ -14,7 +14,7 @@ The AG-UI adapter for [Threadplane](https://github.com/cacheplane/angular-agent-
   </a>
 </p>
 
-Part of [Threadplane](https://github.com/cacheplane/angular-agent-framework).
+Part of [Threadplane](https://github.com/cacheplane/threadplane).
 
 > Talking to LangGraph Platform directly? See [`@threadplane/langgraph`](https://www.npmjs.com/package/@threadplane/langgraph) — same API shape, LangGraph SDK underneath.
 
@@ -258,5 +258,5 @@ plain-text console announcements. No click or registration is required. It has b
 queues/retries and a three-second request deadline; collection failures do not affect
 application use. A linked eligible install email can receive the generic founder hello;
 runtime evidence alone does not approve a contact. See the
-[telemetry controls and collection details](https://github.com/cacheplane/angular-agent-framework/tree/main/libs/telemetry#automatic-development-runtime-collection)
+[telemetry controls and collection details](https://github.com/cacheplane/threadplane/tree/main/libs/telemetry#automatic-development-runtime-collection)
 and [Privacy](https://threadplane.ai/privacy).

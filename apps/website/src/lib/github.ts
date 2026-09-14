@@ -1,5 +1,5 @@
 export async function getGitHubStars(
-  repo = 'cacheplane/angular-agent-framework',
+  repo = 'cacheplane/threadplane',
 ): Promise<number | null> {
   try {
     const res = await fetch(`https://api.github.com/repos/${repo}`, {

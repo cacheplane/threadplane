@@ -75,7 +75,7 @@ export default function AboutPage() {
             <p className="about-body about-body-last">
               The source is public at{' '}
               <a href={REPOSITORY_URL} target="_blank" rel="noopener noreferrer" className="about-link">
-                github.com/cacheplane/angular-agent-framework
+                github.com/cacheplane/threadplane
               </a>
               .
             </p>

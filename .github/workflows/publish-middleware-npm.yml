@@ -13,7 +13,7 @@
 #      That initial upload creates the @threadplane/middleware package on npm.
 #   2. On npmjs.com → @threadplane/middleware → Settings → "Trusted Publisher",
 #      add this repo + workflow:
-#        Repository:  cacheplane/angular-agent-framework
+#        Repository:  cacheplane/threadplane
 #        Workflow:    publish-middleware-npm.yml
 #   3. After that, all releases use OIDC from this workflow — no secret needed.
 #

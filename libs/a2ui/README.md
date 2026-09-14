@@ -1,6 +1,6 @@
 # @threadplane/a2ui
 
-The A2UI (Agent-to-UI) protocol layer behind generative UI in [Threadplane](https://github.com/cacheplane/angular-agent-framework), the open-source thread-plane for agents, targeting the **A2UI v0.9.1 stable release**. It defines the wire format an agent uses to drive a UI surface, plus the parser and resolver that read it — framework-agnostic, pure TypeScript, no Angular dependency, usable in any TypeScript environment.
+The A2UI (Agent-to-UI) protocol layer behind generative UI in [Threadplane](https://github.com/cacheplane/threadplane), the open-source thread-plane for agents, targeting the **A2UI v0.9.1 stable release**. It defines the wire format an agent uses to drive a UI surface, plus the parser and resolver that read it — framework-agnostic, pure TypeScript, no Angular dependency, usable in any TypeScript environment.
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@threadplane/a2ui">

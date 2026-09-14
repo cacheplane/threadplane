@@ -127,7 +127,7 @@ Strands wraps every value an async-generator tool yields as a `tool_stream_event
 
 The handler registered on `research_availability` closes that gap. `subagent_emitter.py` translates the specialist's stream into `SUBAGENT_STARTED`, attributed `TEXT_MESSAGE_*` deltas carrying `subagentRunId`, and `SUBAGENT_FINISHED`, deriving every identifier from the tool call identifier the bridge already put on the wire. The adapter routes those attributed events into a subagent entry instead of the parent transcript, which is why the card streams the specialist's tokens live.
 
-The wire capture behind that matrix cell is committed beside the backend at [`docs/wire-capture-subagents.md`](https://github.com/cacheplane/angular-agent-framework/blob/main/cockpit/runtimes/aws-strands/python/docs/wire-capture-subagents.md), before and after the emitter. Multi-agent routes crash the stale published wheel, which is one reason the example pins the bridge to a git reference instead.
+The wire capture behind that matrix cell is committed beside the backend at [`docs/wire-capture-subagents.md`](https://github.com/cacheplane/threadplane/blob/main/cockpit/runtimes/aws-strands/python/docs/wire-capture-subagents.md), before and after the emitter. Multi-agent routes crash the stale published wheel, which is one reason the example pins the bridge to a git reference instead.
 
 ## Model access
 

@@ -56,7 +56,7 @@ export default async function ContactPage({
               <Eyebrow tone="muted">Prefer not to use a form</Eyebrow>
               <div className="contact-chips">
                 <a className="contact-chip" href="mailto:brian@threadplane.ai">brian@threadplane.ai</a>
-                <a className="contact-chip" href="https://github.com/cacheplane/angular-agent-framework/issues">GitHub issues</a>
+                <a className="contact-chip" href="https://github.com/cacheplane/threadplane/issues">GitHub issues</a>
                 <a className="contact-chip" href="https://discord.gg/cacheplane">Discord</a>
               </div>
               <Suspense fallback={null}>

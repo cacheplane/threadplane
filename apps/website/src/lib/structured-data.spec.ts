@@ -54,7 +54,7 @@ describe('organizationJsonLd', () => {
 
   it('links only to absolute https profile urls', () => {
     const sameAs = organizationJsonLd()['sameAs'];
-    expect(sameAs).toContain('https://github.com/cacheplane/angular-agent-framework');
+    expect(sameAs).toContain('https://github.com/cacheplane/threadplane');
     for (const url of sameAs) expect(url).toMatch(/^https:\/\//);
   });
 
@@ -193,7 +193,7 @@ describe('softwareSourceCodeJsonLd', () => {
 
   it('points at the real repository', () => {
     expect(softwareSourceCodeJsonLd()['codeRepository']).toBe(
-      'https://github.com/cacheplane/angular-agent-framework',
+      'https://github.com/cacheplane/threadplane',
     );
   });
 
