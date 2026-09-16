@@ -47,7 +47,7 @@ export class FetchStreamTransport implements AgentTransport {
     // createLangGraphClient handles the absolute-URL normalization
     // required by the SDK when `apiUrl` is a relative `/api`-style
     // path proxied by middleware in production.
-    this.protectErrors = typeof clientOptions?.apiKey === 'string' || reportOperationFailure !== undefined;
+    this.protectErrors = clientOptions?.defaultHeaders !== undefined || reportOperationFailure !== undefined;
     this.protectsOperationErrors = this.protectErrors;
     this.reportOperationFailure = reportOperationFailure;
     this.client = this.protectErrors

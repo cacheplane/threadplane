@@ -48,8 +48,13 @@ function constructLangGraphClient(
 ): Client {
   return new Client({
     apiUrl: toAbsoluteApiUrl(apiUrl),
-    ...(clientOptions?.apiKey !== undefined
-      ? { apiKey: clientOptions.apiKey }
+    // Never attach a deployment key from the browser adapter, and never let
+    // the SDK read one from the environment. Credentials belong on the
+    // endpoint the app owns; `defaultHeaders` carries a per-user session
+    // token for LangGraph custom auth.
+    apiKey: null,
+    ...(clientOptions?.defaultHeaders !== undefined
+      ? { defaultHeaders: clientOptions.defaultHeaders }
       : {}),
     ...(clientOptions?.maxRetries !== undefined || runtimeFetch !== undefined
       ? {

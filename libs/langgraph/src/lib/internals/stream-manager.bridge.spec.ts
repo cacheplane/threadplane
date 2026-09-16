@@ -247,7 +247,7 @@ describe('createStreamManagerBridge', () => {
     }
   });
 
-  it('does not retain a custom transport error merely because a key is configured', async () => {
+  it('does not retain a custom transport error merely because defaultHeaders are configured', async () => {
     const transport = new MockAgentTransport();
     const subjects = makeSubjects();
     const bridge = createStreamManagerBridge({
@@ -255,7 +255,7 @@ describe('createStreamManagerBridge', () => {
         apiUrl: '',
         assistantId: 'test',
         transport,
-        clientOptions: { apiKey: 'test-key-redact-me' },
+        clientOptions: { defaultHeaders: { 'x-api-key': 'test-key-redact-me' } },
       },
       subjects,
       threadId$: of('thread-1'),
@@ -304,7 +304,7 @@ describe('createStreamManagerBridge', () => {
     const transport = new FetchStreamTransport(
       'https://runtime.example/api',
       undefined,
-      { apiKey: 'test-key-redact-me', maxRetries: 0 },
+      { defaultHeaders: { 'x-api-key': 'test-key-redact-me' }, maxRetries: 0 },
     );
     Object.defineProperty(transport, 'client', {
       value: {
@@ -323,7 +323,7 @@ describe('createStreamManagerBridge', () => {
         apiUrl: 'https://runtime.example/api',
         assistantId: 'test',
         transport,
-        clientOptions: { apiKey: 'test-key-redact-me' },
+        clientOptions: { defaultHeaders: { 'x-api-key': 'test-key-redact-me' } },
       },
       subjects,
       threadId$: of('thread-1'),

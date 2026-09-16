@@ -450,11 +450,13 @@ describe('website docs bindings', () => {
         'utf8'
       )
     ) as Array<{ name: string; properties?: Array<{ name: string }> }>;
-    expect(
-      langGraphDocs
-        .find((entry) => entry.name === 'LangGraphClientOptions')
-        ?.properties?.map((property) => property.name)
-    ).toContain('apiKey');
+    const clientOptionMembers = langGraphDocs
+      .find((entry) => entry.name === 'LangGraphClientOptions')
+      ?.properties?.map((property) => property.name);
+    // A deployment key passed from Angular ships in the bundle, so the
+    // adapter offers no field for one; a session token rides in headers.
+    expect(clientOptionMembers).toContain('defaultHeaders');
+    expect(clientOptionMembers).not.toContain('apiKey');
   });
 
   it('auto-rendered API pages resolve generated entries', () => {

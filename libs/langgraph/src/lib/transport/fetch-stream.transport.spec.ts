@@ -57,7 +57,7 @@ describe('FetchStreamTransport', () => {
     const transport = new FetchStreamTransport(
       'https://runtime.example/api',
       undefined,
-      { apiKey: 'test-key-redact-me', maxRetries: 0 },
+      { defaultHeaders: { 'x-api-key': 'test-key-redact-me' }, maxRetries: 0 },
       reportOperationFailure,
     );
 
@@ -79,7 +79,7 @@ describe('FetchStreamTransport', () => {
     const transport = new FetchStreamTransport(
       'https://runtime.example/api',
       undefined,
-      { apiKey: 'test-key-redact-me', maxRetries: 0 },
+      { defaultHeaders: { 'x-api-key': 'test-key-redact-me' }, maxRetries: 0 },
       reportOperationFailure,
     );
     const config = mocks.clientCtor.mock.calls.at(-1)?.[0] as {
@@ -108,7 +108,7 @@ describe('FetchStreamTransport', () => {
     new FetchStreamTransport(
       'https://runtime.example/api',
       undefined,
-      { apiKey: 'test-key-redact-me', maxRetries: 0 },
+      { defaultHeaders: { 'x-api-key': 'test-key-redact-me' }, maxRetries: 0 },
       reportOperationFailure,
     );
     const config = mocks.clientCtor.mock.calls.at(-1)?.[0] as {
@@ -135,7 +135,7 @@ describe('FetchStreamTransport', () => {
     new FetchStreamTransport(
       'https://runtime.example/api',
       undefined,
-      { apiKey: 'test-key-redact-me', maxRetries: 0 },
+      { defaultHeaders: { 'x-api-key': 'test-key-redact-me' }, maxRetries: 0 },
       reportOperationFailure,
     );
     const config = mocks.clientCtor.mock.calls.at(-1)?.[0] as {
@@ -163,7 +163,7 @@ describe('FetchStreamTransport', () => {
     new FetchStreamTransport(
       'https://runtime.example/api',
       undefined,
-      { apiKey: 'test-key-redact-me', maxRetries: 0 },
+      { defaultHeaders: { 'x-api-key': 'test-key-redact-me' }, maxRetries: 0 },
       reportOperationFailure,
     );
     const config = mocks.clientCtor.mock.calls.at(-1)?.[0] as {
@@ -185,7 +185,7 @@ describe('FetchStreamTransport', () => {
     new FetchStreamTransport(
       'https://runtime.example/api',
       undefined,
-      { apiKey: 'test-key-redact-me', maxRetries: 0 },
+      { defaultHeaders: { 'x-api-key': 'test-key-redact-me' }, maxRetries: 0 },
     );
     const config = mocks.clientCtor.mock.calls.at(-1)?.[0] as {
       callerOptions?: { fetch?: typeof fetch };
@@ -216,7 +216,7 @@ describe('FetchStreamTransport', () => {
     const transport = new FetchStreamTransport(
       'https://runtime.example/api',
       undefined,
-      { apiKey: 'test-key-redact-me', maxRetries: 0 },
+      { defaultHeaders: { 'x-api-key': 'test-key-redact-me' }, maxRetries: 0 },
       reportOperationFailure,
     );
 
@@ -228,7 +228,7 @@ describe('FetchStreamTransport', () => {
     expect(JSON.stringify(error)).not.toContain('test-key-redact-me');
   });
 
-  it('sanitizes every non-stream default SDK operation when a key is configured', async () => {
+  it('sanitizes every non-stream default SDK operation when defaultHeaders are configured', async () => {
     const sentinel = new Error('test-key-redact-me');
     mocks.runsCreate.mockRejectedValue(sentinel);
     mocks.runsCancel.mockRejectedValue(sentinel);
@@ -237,7 +237,7 @@ describe('FetchStreamTransport', () => {
     const transport = new FetchStreamTransport(
       'https://runtime.example/api',
       undefined,
-      { apiKey: 'test-key-redact-me', maxRetries: 0 },
+      { defaultHeaders: { 'x-api-key': 'test-key-redact-me' }, maxRetries: 0 },
     );
     const signal = new AbortController().signal;
     const operations = [
@@ -263,7 +263,7 @@ describe('FetchStreamTransport', () => {
     const transport = new FetchStreamTransport(
       'https://runtime.example/api',
       () => { throw callbackError; },
-      { apiKey: 'test-key-redact-me', maxRetries: 0 },
+      { defaultHeaders: { 'x-api-key': 'test-key-redact-me' }, maxRetries: 0 },
       reportOperationFailure,
     );
 
@@ -288,7 +288,7 @@ describe('FetchStreamTransport', () => {
     const transport = new FetchStreamTransport(
       'https://runtime.example/api',
       undefined,
-      { apiKey: 'test-key-redact-me', maxRetries: 0 },
+      { defaultHeaders: { 'x-api-key': 'test-key-redact-me' }, maxRetries: 0 },
       reportOperationFailure,
     );
 
@@ -320,7 +320,7 @@ describe('FetchStreamTransport', () => {
     const transport = new FetchStreamTransport(
       'https://runtime.example/api',
       undefined,
-      { apiKey: 'test-key-redact-me', maxRetries: 0 },
+      { defaultHeaders: { 'x-api-key': 'test-key-redact-me' }, maxRetries: 0 },
       reportOperationFailure,
     );
 
@@ -351,7 +351,7 @@ describe('FetchStreamTransport', () => {
     const transport = new FetchStreamTransport(
       'https://runtime.example/api',
       undefined,
-      { apiKey: 'test-key-redact-me', maxRetries: 0 },
+      { defaultHeaders: { 'x-api-key': 'test-key-redact-me' }, maxRetries: 0 },
       reportOperationFailure,
     );
 
@@ -369,7 +369,7 @@ describe('FetchStreamTransport', () => {
     const transport = new FetchStreamTransport(
       'https://runtime.example/api',
       undefined,
-      { apiKey: 'test-key-redact-me', maxRetries: 0 },
+      { defaultHeaders: { 'x-api-key': 'test-key-redact-me' }, maxRetries: 0 },
       reportOperationFailure,
     );
     const signal = new AbortController().signal;

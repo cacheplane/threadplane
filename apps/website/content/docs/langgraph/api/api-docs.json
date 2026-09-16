@@ -1693,9 +1693,9 @@
     "description": "Tuning options for the underlying LangGraph SDK `Client` constructed by the\ndefault FetchStreamTransport. Ignored when a custom `transport` is\nsupplied (the transport owns its own client).",
     "properties": [
       {
-        "name": "apiKey",
-        "type": "string | null",
-        "description": "API key passed directly to the LangGraph SDK client. `null` preserves the\nSDK's explicit no-key behavior; omission leaves the SDK default unchanged.",
+        "name": "defaultHeaders",
+        "type": "Record<string, string>",
+        "description": "Headers attached to every request the SDK client makes, including the run\nstream. Use this for a per-user session token that your LangGraph\ndeployment's custom `authenticate` handler validates.\n\nThere is deliberately no `apiKey` option: a deployment credential passed\nfrom Angular is bundled into the browser build like any other constant.\nKeep deployment keys on a same-origin proxy or gateway you own, and point\n`apiUrl` at it. The client is constructed with `apiKey: null`, so the SDK\nnever attaches a key from the environment either.",
         "optional": true
       },
       {

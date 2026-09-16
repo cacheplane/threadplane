@@ -185,7 +185,7 @@ describe('LangGraphThreadsAdapter client options', () => {
             },
             {
               provide: LANGGRAPH_CLIENT_OPTIONS,
-              useValue: { apiKey: 'test-key-redact-me', maxRetries: 0 },
+              useValue: { defaultHeaders: { 'x-api-key': 'test-key-redact-me' }, maxRetries: 0 },
             },
             {
               provide: ɵLANGGRAPH_RUNTIME_OPERATION_REPORTER,
@@ -226,7 +226,7 @@ describe('LangGraphThreadsAdapter client options', () => {
         },
         {
           provide: LANGGRAPH_CLIENT_OPTIONS,
-          useValue: { apiKey: 'test-key-redact-me', maxRetries: 1 },
+          useValue: { defaultHeaders: { 'x-api-key': 'test-key-redact-me' }, maxRetries: 1 },
         },
         {
           provide: ɵLANGGRAPH_RUNTIME_OPERATION_REPORTER,
@@ -290,7 +290,7 @@ describe('LangGraphThreadsAdapter client options', () => {
     expect(createLangGraphClient).toHaveBeenCalledWith('http://x', { maxRetries: 0 });
   });
 
-  it('passes an explicit api key to the threads SDK client', () => {
+  it('passes defaultHeaders to the protected threads SDK client', () => {
     TestBed.configureTestingModule({
       providers: [
         {
@@ -299,14 +299,14 @@ describe('LangGraphThreadsAdapter client options', () => {
         },
         {
           provide: LANGGRAPH_CLIENT_OPTIONS,
-          useValue: { apiKey: 'test-key-redact-me', maxRetries: 0 },
+          useValue: { defaultHeaders: { 'x-api-key': 'test-key-redact-me' }, maxRetries: 0 },
         },
       ],
     });
     TestBed.inject(LangGraphThreadsAdapter);
     expect(ɵcreateProtectedLangGraphClient).toHaveBeenCalledWith(
       'https://runtime.example/api',
-      { apiKey: 'test-key-redact-me', maxRetries: 0 },
+      { defaultHeaders: { 'x-api-key': 'test-key-redact-me' }, maxRetries: 0 },
       expect.any(Function)
     );
   });
@@ -334,7 +334,7 @@ describe('LangGraphThreadsAdapter client options', () => {
     expect(createLangGraphClient).not.toHaveBeenCalled();
   });
 
-  it('does not retain or log remote error text when an explicit key is configured', async () => {
+  it('does not retain or log remote error text when defaultHeaders are configured', async () => {
     const remoteError = new Error('remote echoed test-key-redact-me');
     const client = {
       threads: { search: vi.fn().mockRejectedValue(remoteError) },
@@ -348,7 +348,7 @@ describe('LangGraphThreadsAdapter client options', () => {
         },
         {
           provide: LANGGRAPH_CLIENT_OPTIONS,
-          useValue: { apiKey: 'test-key-redact-me' },
+          useValue: { defaultHeaders: { 'x-api-key': 'test-key-redact-me' } },
         },
         { provide: LANGGRAPH_CLIENT, useValue: client },
       ],
@@ -364,7 +364,7 @@ describe('LangGraphThreadsAdapter client options', () => {
     errorSpy.mockRestore();
   });
 
-  it('rethrows a sanitized threads error when an explicit key is configured', async () => {
+  it('rethrows a sanitized threads error when defaultHeaders are configured', async () => {
     const client = {
       threads: {
         get: vi.fn().mockRejectedValue(new Error('remote echoed test-key-redact-me')),
@@ -378,7 +378,7 @@ describe('LangGraphThreadsAdapter client options', () => {
         },
         {
           provide: LANGGRAPH_CLIENT_OPTIONS,
-          useValue: { apiKey: 'test-key-redact-me' },
+          useValue: { defaultHeaders: { 'x-api-key': 'test-key-redact-me' } },
         },
         { provide: LANGGRAPH_CLIENT, useValue: client },
       ],
@@ -395,7 +395,7 @@ describe('LangGraphThreadsAdapter client options', () => {
     expect(JSON.stringify(error)).not.toContain('test-key-redact-me');
   });
 
-  it('fails closed when getThread receives hostile status/response getters with a key', async () => {
+  it('fails closed when getThread receives hostile status/response getters with defaultHeaders', async () => {
     const hostile = new Proxy({}, {
       get() { throw new Error('test-key-redact-me'); },
       getOwnPropertyDescriptor() { throw new Error('test-key-redact-me'); },
@@ -406,7 +406,7 @@ describe('LangGraphThreadsAdapter client options', () => {
     TestBed.configureTestingModule({
       providers: [
         { provide: LANGGRAPH_THREADS_CONFIG, useValue: { apiUrl: 'https://runtime.example/api' } },
-        { provide: LANGGRAPH_CLIENT_OPTIONS, useValue: { apiKey: 'test-key-redact-me' } },
+        { provide: LANGGRAPH_CLIENT_OPTIONS, useValue: { defaultHeaders: { 'x-api-key': 'test-key-redact-me' } } },
         { provide: LANGGRAPH_CLIENT, useValue: client },
       ],
     });
