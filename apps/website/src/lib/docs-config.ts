@@ -474,6 +474,7 @@ export const docsConfig: DocsLibrary[] = [
           { title: 'Generative UI', slug: 'json-render', section: 'guides' },
           { title: 'Subagents', slug: 'subagents', section: 'guides' },
           { title: 'Testing', slug: 'testing', section: 'guides' },
+          { title: 'Deployment', slug: 'deployment', section: 'guides' },
           {
             title: 'Troubleshooting',
             slug: 'troubleshooting',
