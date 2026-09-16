@@ -60,19 +60,23 @@ Pass a plain `AgentConfig` object when the URL is known up front. Pass a `() => 
 ```ts
 import { inject } from '@angular/core';
 import { provideAgent } from '@threadplane/ag-ui';
-import { APP_ENV } from './app-env';
+import { SessionService } from './session.service';
 
-// Factory form — reads an environment token at runtime
+// Factory form — reads the signed-in user's session token at runtime
 provideAgent(() => {
-  const env = inject(APP_ENV);
+  const session = inject(SessionService);
   return {
-    url: env.agentUrl,
-    headers: { Authorization: `Bearer ${env.apiKey}` },
+    url: '/api/agent',
+    headers: { Authorization: `Bearer ${session.accessToken()}` },
   };
 });
 ```
 
 Both overloads accept either shape, so the factory form works with an `AgentRef` too.
+
+<Callout type="warning" title="headers is for a session token, not an API key">
+Every value in `headers` ships in the browser bundle and travels with every request. A per-user session token belongs there. An API key or any other server credential does not, because the bundle is public. Keep those on a same-origin endpoint that you own and that adds them on the way to the agent server. The [Deployment guide](/docs/ag-ui/guides/deployment) shows that endpoint.
+</Callout>
 
 ## Typed state with AgentRef
 

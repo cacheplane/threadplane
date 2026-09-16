@@ -1,0 +1,516 @@
+---
+description: Point provideAgent() at a deployed AG-UI server through an endpoint you own, pass user identity through it, configure CORS, handle errors, and ship with CI
+---
+
+# Deployment
+
+Deploy an AG-UI agent behind an endpoint you own, and point your Angular app at it without a single credential in the bundle.
+
+## Goals
+
+- Put an endpoint you own and control in front of the agent server.
+- Pass the signed-in user through that endpoint to the agent.
+- Handle failures the same way the `<chat>` composition does.
+- Ship the agent server and the Angular app with confidence.
+
+<Callout type="tip" title="Prerequisites">
+Make sure you have completed the Installation guide first.
+</Callout>
+
+## What you are deploying
+
+A deployed AG-UI agent is two independent artifacts.
+One is an agent server that speaks the AG-UI protocol.
+The other is an Angular application that connects to it.
+Nothing of ours sits between them.
+
+The protocol is one HTTP request.
+The adapter sends a `POST` with a `RunAgentInput` body to the URL you pass to `provideAgent()`, and the agent server answers with a Server-Sent Events stream.
+That is the whole contract.
+
+It has a consequence worth stating plainly.
+The agent server *is* the endpoint.
+The model provider key, the tool credentials, and the checkpoint store already live on that server, because that is where the agent runs.
+The browser never needs any of them.
+
+What the browser needs is a URL it may call, and a way to prove which user is calling it.
+The rest of this guide is about that second part.
+
+## Pointing the app at a deployment
+
+`provideAgent()` registers the agent once for the whole application, which is where every deployment-specific value belongs.
+Angular replaces environment files at build time, so keep the URL there rather than in the component.
+
+<Tabs>
+<Tab label="Development">
+
+```ts
+export const environment = {
+  production: false,
+  agentUrl: 'http://localhost:8000/agent',
+};
+```
+
+</Tab>
+<Tab label="Production">
+
+```ts
+export const environment = {
+  production: true,
+  agentUrl: '/api/agent',
+};
+```
+
+</Tab>
+</Tabs>
+
+```ts
+import { ApplicationConfig } from '@angular/core';
+import { provideAgent } from '@threadplane/ag-ui';
+import { environment } from '../environments/environment';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideAgent({ url: environment.agentUrl }),
+  ],
+};
+```
+
+The production value is a relative path, not the agent server's public address.
+The next section explains why.
+
+## Authentication
+
+### Where do the credentials live?
+
+Not in the browser.
+
+`provideAgent()` accepts a `headers` map, and every value in it is sent with every request.
+It is the right place for a per-user session token.
+It is the wrong place for an API key.
+An Angular bundle is public, so a key read from an environment file and placed in `headers` ships to every browser that loads the app, and a view-source is all it takes to read it back out.
+
+The adapter also does not go through Angular `HttpClient`.
+The AG-UI client issues the request with `fetch` directly.
+An HTTP interceptor that attaches an `Authorization` header to your other API calls never sees this one.
+
+<Callout type="warning" title="Environment files are public">
+Anything that reaches `provideAgent()` from an environment file is in the bundle. Keep agent server credentials in your server-side endpoint, your hosting provider's secret store, or your CI environment. **Never in `environment.prod.ts`.**
+</Callout>
+
+### What sits between the browser and the agent?
+
+An endpoint you own.
+
+For production, the browser should call a same-origin endpoint that you control, and that endpoint should forward the request to the agent server.
+Three things happen at that hop, and none of them can happen in the browser.
+
+- **The credential is added.** The endpoint holds the token the agent server expects and attaches it on the way through.
+- **The user is identified.** The endpoint verifies the app session and tells the agent server who is asking, in a form the browser cannot forge.
+- **The traffic is shaped.** Rate limits, origin checks, and request logging live here, on infrastructure you already run.
+
+This is how we run the live AG-UI examples.
+The endpoint in front of them checks the request origin against an allowlist, applies a per-IP rate limit, and injects an internal token that the agent server's middleware verifies before any agent route runs.
+The Angular app on the other side knows a relative path and nothing else.
+
+For me, this hop is worth the extra round trip.
+You give up the simplicity of pointing Angular straight at the agent server, and you take on one more thing to deploy.
+In return the agent server stops being reachable by anyone who finds its address, HTTP-only cookies work without any client code, and the token that unlocks the agent is never in a bundle.
+
+This is a route on your own backend, a serverless function, or a rule in the gateway you already have.
+It is not a hosted runtime, and it is not ours.
+The following handler uses the standard `Request` and `Response` types, so it runs unchanged on any host that supports them.
+
+```ts
+// api/agent.ts — the endpoint the browser calls
+const AGENT_URL = process.env['AGENT_URL']!;          // https://agent.internal.example.com/agent
+const AGENT_TOKEN = process.env['AGENT_TOKEN']!;      // shared with the agent server only
+
+export default async function handler(request: Request): Promise<Response> {
+  const user = await verifySession(request);           // your app's session check
+  if (!user) return new Response('Unauthorized', { status: 401 });
+
+  const upstream = await fetch(AGENT_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'text/event-stream',
+      'X-Internal-Token': AGENT_TOKEN,
+      'X-User-Id': user.id,
+    },
+    body: request.body,
+    duplex: 'half', // Node streams a request body only with duplex set
+  } as RequestInit & { duplex: 'half' });
+
+  return new Response(upstream.body, {
+    status: upstream.status,
+    headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' },
+  });
+}
+```
+
+Two details keep the stream intact.
+The response body is passed through as a stream rather than read into a string, so tokens reach the browser as the agent produces them.
+And the handler sets `Cache-Control: no-cache`, which stops a CDN in front of your host from holding the response until it completes (a whole answer landing in one lump after a long pause is the tell, and it is never the agent's fault).
+
+### How does the user reach the agent?
+
+Through the endpoint, and usually with no client code at all.
+
+The AG-UI client calls `fetch` with its default credentials mode, which sends your app's cookies on same-origin requests.
+The session cookie arrives at the endpoint with no configuration.
+The endpoint verifies it and forwards the user as a header the agent server trusts, as the handler above does.
+
+When your app authenticates with a bearer token instead of a cookie, `headers` is where it goes.
+Use the factory form of `provideAgent()` so the value is read from your session service at runtime rather than baked in at build time.
+
+```ts
+import { inject } from '@angular/core';
+import { provideAgent } from '@threadplane/ag-ui';
+import { SessionService } from './session.service';
+
+provideAgent(() => {
+  const session = inject(SessionService);
+  return {
+    url: '/api/agent',
+    headers: { Authorization: `Bearer ${session.accessToken()}` },
+  };
+});
+```
+
+The token in that header identifies a user, expires, and unlocks nothing on its own.
+That is the difference between it and an API key.
+It is the whole reason the example carries one and not the other.
+
+<Callout type="tip" title="The factory runs once">
+The factory runs when the agent is first built, not on every request. A token that rotates during a session needs the endpoint to accept the cookie or refresh path your app already uses, rather than a value captured once here.
+</Callout>
+
+### What does the agent server check?
+
+Two headers, before it runs anything.
+
+The internal token proves the request came through your endpoint.
+The user header tells the agent who to act for.
+A FastAPI middleware makes both checks in one place.
+
+```python
+import os
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+
+INTERNAL_TOKEN = os.environ["AGENT_TOKEN"]
+app = FastAPI()
+
+@app.middleware("http")
+async def require_internal_token(request: Request, call_next):
+    if request.url.path.startswith("/agent"):
+        if request.headers.get("x-internal-token") != INTERNAL_TOKEN:
+            return JSONResponse({"detail": "forbidden"}, status_code=403)
+        request.state.user_id = request.headers.get("x-user-id")
+    return await call_next(request)
+```
+
+Return the response directly from the middleware rather than raising, so the rejection reaches the client as the status you chose.
+The adapter classifies a `401` or `403` as an `auth` error, which is the signal your UI branches on below.
+
+## CORS configuration
+
+A same-origin endpoint removes CORS from the picture.
+The browser calls its own origin, and the endpoint's call to the agent server is server-to-server.
+I think that is a second good reason to prefer it.
+
+When the browser does call the agent server directly, as it does in development against `localhost`, the agent server has to allow the app's origin.
+The preflight has to permit `POST`, the `Content-Type` header the adapter sends, and any header you add through `headers`.
+
+```python
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:4200", "https://app.example.com"],
+    allow_methods=["POST", "OPTIONS"],
+    allow_headers=["Content-Type", "Accept", "Authorization"],
+    allow_credentials=True,
+)
+```
+
+Every server framework has the equivalent.
+The values are what matter: an explicit origin list, never `*` alongside credentials, and the exact headers the adapter and your `headers` map send.
+
+<Callout type="tip" title="Streaming through a proxy">
+Whatever sits between the browser and the agent server has to pass the SSE body through unbuffered. On nginx that is `proxy_buffering off` on the location; on a CDN it is a cache rule that bypasses the agent path. A buffered stream is the usual cause of an answer that arrives all at once after a long pause.
+</Callout>
+
+## Error handling
+
+The `<chat>` composition renders failures for you.
+A hand-built UI reads the same two signals the composition does.
+`status()` flips to `'error'`, and `error()` holds an `AgentError` with a classified `kind`, a `retryable` flag, an optional HTTP `status`, and the original failure on `cause`.
+
+```ts
+import { ChangeDetectionStrategy, Component, computed } from '@angular/core';
+import { injectAgent } from '@threadplane/ag-ui';
+
+@Component({
+  selector: 'app-chat',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    @if (hasError()) {
+      <div class="error-banner">
+        <p>{{ errorMessage() }}</p>
+        @if (canRetry()) {
+          <button (click)="retry()">Try again</button>
+        }
+      </div>
+    }
+  `,
+})
+export class ChatComponent {
+  protected readonly agent = injectAgent();
+
+  protected readonly hasError = computed(() => this.agent.status() === 'error');
+  protected readonly canRetry = computed(
+    () => this.agent.error()?.retryable === true,
+  );
+
+  protected readonly errorMessage = computed(() => {
+    const failure = this.agent.error();
+    if (!failure) return '';
+    switch (failure.kind) {
+      case 'auth':
+        return 'Your session was rejected. Sign in again and retry.';
+      case 'connection':
+        return 'The agent is unreachable. Check your connection and try again.';
+      case 'interrupted':
+        return 'The response was cut off. Try again.';
+      default:
+        return failure.message;
+    }
+  });
+
+  protected retry(): void {
+    void this.agent.retry();
+  }
+}
+```
+
+Branching on `kind` covers the cases that need different copy without reading HTTP status codes.
+`failure.status` is there when you want the exact code, and `failure.cause` carries the original error for your logs.
+
+| `kind` | When | `retryable` |
+|--------|------|-------------|
+| `connection` | Offline, DNS failure, the endpoint refused the connection | Yes |
+| `auth` | The endpoint or agent server answered `401` or `403` | No |
+| `server` | A `5xx` from the agent server, or a `4xx` other than auth | `5xx` only |
+| `interrupted` | The SSE stream closed before the run finished | Yes |
+| `aborted` | The user pressed stop | Not surfaced as an error |
+
+### Retry with exponential backoff
+
+`submit()` resolves whether the run succeeded or failed.
+A failure lands on `error()` rather than rejecting the promise.
+An automated retry therefore reads the signal between attempts and calls `retry()`, which clears the error and re-runs the last input.
+
+```ts
+import type { AgUiAgent } from '@threadplane/ag-ui';
+import type { AgentSubmitInput } from '@threadplane/chat';
+
+export async function submitWithBackoff(
+  agent: AgUiAgent,
+  input: AgentSubmitInput,
+  maxAttempts = 3,
+): Promise<void> {
+  await agent.submit(input);
+
+  for (let attempt = 1; attempt < maxAttempts; attempt++) {
+    const failure = agent.error();
+    if (!failure) return;
+    if (!failure.retryable) throw failure;
+    await new Promise((resolve) => setTimeout(resolve, 1000 * 2 ** (attempt - 1)));
+    await agent.retry();
+  }
+
+  const failure = agent.error();
+  if (failure) throw failure;
+}
+```
+
+The `retryable` check is what keeps a rejected session from being retried three times.
+
+## Recovering after a dropped stream
+
+AG-UI has no server-side run to rejoin.
+The stream is the run.
+When it closes early, the adapter surfaces an `interrupted` error, and `retry()` sends the same input again as a fresh request.
+
+Your agent server decides what that means.
+A server that persists its thread by `threadId` resumes from its last checkpoint.
+A stateless one starts the turn over.
+
+Pending interrupts are the one piece of client state worth restoring across a reload, and the adapter supports that through the `persistence` option on `provideAgent()`.
+The store is yours to implement, and `agent.ready` resolves once the restored record has been applied.
+The [Interrupts guide](/docs/ag-ui/guides/interrupts#failures-retry-and-restoration) covers the store contract and the reconciliation step.
+
+## Hosting the Angular app
+
+A built Angular app is static files, so any static host will serve it.
+Two rules apply.
+Rewrite unknown paths to `index.html` so client-side routing works, and route the agent path to the endpoint from the Authentication section.
+On Vercel both are one file.
+
+```json
+{
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
+```
+
+The handler at `api/agent.ts` is a serverless function, and Vercel matches functions and static files before it applies rewrites, so the fallback never captures the agent path.
+The agent server's own address and token are environment variables on that project, not values in the repository.
+The production environment file only ever knows `/api/agent`.
+
+## CI/CD pipeline
+
+The agent server and the Angular app are independent artifacts, so a pipeline can build them in parallel.
+
+```yaml
+name: Deploy
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy-agent:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and push the agent image
+        run: |
+          docker build -t ghcr.io/${{ github.repository }}/agent:${{ github.sha }} ./agent
+          docker push ghcr.io/${{ github.repository }}/agent:${{ github.sha }}
+      - name: Roll the image out
+        run: |
+          # Replace with your platform's CLI
+          echo "Deploy ghcr.io/${{ github.repository }}/agent:${{ github.sha }}"
+        env:
+          AGENT_TOKEN: ${{ secrets.AGENT_TOKEN }}
+
+  deploy-angular:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npx ng build --configuration production
+      - name: Deploy to hosting
+        run: |
+          # Replace with your hosting provider's CLI
+          # e.g., npx vercel deploy --prod dist/my-app/browser
+          echo "Deploy dist/ to your hosting platform"
+```
+
+The Angular job needs no secrets.
+Its production URL is a relative path checked into the environment file, and everything sensitive is an environment variable on the endpoint's host.
+
+<Callout type="tip" title="Order the jobs when a release spans both">
+Parallel is right when the two artifacts do not depend on each other. When a release changes the agent's events and the UI that renders them together, add `needs: deploy-agent` to the frontend job so the new server is live before any traffic reaches it.
+</Callout>
+
+## Monitoring
+
+### On the agent server
+
+The agent server is yours, so its observability is whatever your stack already does.
+The metrics that matter for an AG-UI endpoint are the ones a user feels.
+
+| Metric | Where to measure it | Why it matters |
+|--------|---------------------|----------------|
+| Time to first event | Endpoint logs, from request start to the first SSE byte | Stream startup latency visible to users |
+| Run duration | Agent server, from `RUN_STARTED` to `RUN_FINISHED` | End-to-end responsiveness |
+| Error rate | Endpoint logs, filtered by status | Spike detection for broken tools or provider outages |
+| Rejected requests | Endpoint logs, `401` and `403` counts | Expired sessions, or an attempt to bypass the endpoint |
+| Model usage | Agent server, per run | Cost control and budget alerting |
+
+### In the Angular app
+
+Track stream health from the client with the same signals the UI reads.
+
+```ts
+effect(() => {
+  const failure = this.agent.error();
+  if (failure) {
+    this.analytics.trackError('agent_error', failure.kind, failure.status);
+  }
+});
+```
+
+For the stream lifecycle itself, pass an app-owned sink as the `telemetry` option of `provideAgent()`.
+The adapter then calls your function when a stream starts, ends, or errors, with the duration and error class on the payload.
+Those events go to your code and nowhere else.
+
+## Deployment checklist
+
+<Steps>
+<Step title="Set the production url">
+Point `provideAgent({ url })` at your same-origin endpoint. Use the agent server's public address directly only when that server is intentionally public.
+</Step>
+<Step title="Put your endpoint in front of the agent server">
+Verify the app session, attach the internal token, forward the user, and stream the body through. The agent server should reject any request without the token.
+</Step>
+<Step title="Carry identity in headers, never a key">
+If `headers` is set at all, it carries a session token read at runtime through the factory form. No environment file holds a credential.
+</Step>
+<Step title="Set up CORS for direct calls">
+Add the app's origin to the agent server's allow list for local development, and keep credentials paired with an explicit origin list.
+</Step>
+<Step title="Keep the stream unbuffered">
+Confirm every proxy, CDN, and load balancer on the path passes SSE through as it arrives.
+</Step>
+<Step title="Handle errors gracefully">
+Branch on `error().kind` for legible copy, and show a retry button only when `error().retryable` is true.
+</Step>
+<Step title="Persist thread IDs">
+Pass a stable `threadId` so a server that checkpoints by thread can resume a conversation, and wire `persistence` if pending interrupts must survive a reload.
+</Step>
+<Step title="Set up CI/CD">
+Automate the agent image and the Angular build on push to your main branch, and order them when a release changes both.
+</Step>
+<Step title="Verify monitoring">
+Confirm endpoint logs record time to first event and rejected requests, and alert on error rate and latency regressions.
+</Step>
+</Steps>
+
+## Conclusion
+
+Deploying an AG-UI agent comes down to one decision: what the browser is allowed to know.
+My recommendation is that it knows a relative path and, at most, a session token.
+Everything else lives on an endpoint you own, and the agent server behind it trusts that endpoint and nothing else.
+The Angular app ships without a secret in it, and the agent server is reachable only on your terms.
+That is the part that matters.
+
+## What's Next
+
+<CardGroup cols={2}>
+  <Card title="Testing" href="/docs/ag-ui/guides/testing">
+    Test agent interactions deterministically before deploying to production.
+  </Card>
+  <Card title="Interrupts" href="/docs/ag-ui/guides/interrupts">
+    Application-owned persistence and recovery for pending approvals.
+  </Card>
+  <Card title="Troubleshooting" href="/docs/ag-ui/guides/troubleshooting">
+    Diagnose a stream that never starts, never stops, or hides its errors.
+  </Card>
+  <Card title="Architecture" href="/docs/ag-ui/concepts/architecture">
+    How the adapter maps AG-UI events onto the Agent contract.
+  </Card>
+  <Card title="API Reference" href="/docs/ag-ui/api/provide-agent">
+    Full reference for provideAgent configuration options.
+  </Card>
+  <Card title="Event Mapping" href="/docs/ag-ui/reference/event-mapping">
+    Every AG-UI event and the signal it updates.
+  </Card>
+</CardGroup>
