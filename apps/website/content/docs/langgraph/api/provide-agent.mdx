@@ -43,7 +43,7 @@ Every field on the config object is optional at the type level, but `assistantId
 | `throttle` | `number \| false` | Throttle signal updates in milliseconds. `false` to disable. (default 16) |
 | `toMessage` | `(msg: unknown) => BaseMessage` | Custom message deserializer for non-standard message formats. |
 | `transport` | `AgentTransport` | Optional transport instance. Defaults to `FetchStreamTransport` when omitted. |
-| `clientOptions` | `LangGraphClientOptions` | LangGraph SDK client tuning (e.g. `maxRetries`). See [Client tuning](#client-tuning-retry-budget) below. |
+| `clientOptions` | `LangGraphClientOptions` | LangGraph SDK client tuning: `maxRetries` and `defaultHeaders`. There is no `apiKey` option; see [Client tuning](#client-tuning-retry-budget) below. |
 | `telemetry` | `AgentRuntimeTelemetrySink \| false` | Omit to enable automatic development-only collection. Set `false` to disable it. An app-owned sink replaces the automatic destination and receives the same runtime lifecycle events. |
 | `subagentToolNames` | `string[]` | Tool names that indicate a subagent invocation. |
 | `transcriptNodeNames` | `string[]` | LangGraph node names whose `messages-tuple` chunks should stream into the main chat transcript. Omit to accept all top-level chunks. |
@@ -180,6 +180,20 @@ bootstrapApplication(AppComponent, {
 1. The per-agent `provideAgent({ clientOptions })`
 2. The app-wide `LANGGRAPH_CLIENT_OPTIONS` token
 3. The SDK default
+
+### Headers, and why there is no apiKey
+
+`clientOptions.defaultHeaders` is attached to every request the SDK client makes, including the run stream. Its intended use is a per-user session token that a custom `authenticate` handler on your deployment validates:
+
+```ts
+provideAgent({
+  apiUrl: '/api/langgraph',
+  assistantId: 'support-agent',
+  clientOptions: { defaultHeaders: { Authorization: `Bearer ${session.token()}` } },
+});
+```
+
+`LangGraphClientOptions` deliberately has no `apiKey` member. A deployment credential passed from Angular is bundled into the browser build like any other constant, so the adapter offers no field for one, and it constructs the SDK client with an explicit null key so nothing is read from the environment either. Keep deployment keys on a same-origin proxy or gateway you own and point `apiUrl` at it; the [deployment guide](/docs/langgraph/guides/deployment#authentication) shows the shape.
 
 <Callout type="info" title="Diagnosing slow error surfacing">
   If a dropped connection takes ~15s to show an error, the SDK is exhausting its

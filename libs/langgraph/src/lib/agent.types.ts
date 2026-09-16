@@ -247,10 +247,17 @@ export interface AgentTransport {
  */
 export interface LangGraphClientOptions {
   /**
-   * API key passed directly to the LangGraph SDK client. `null` preserves the
-   * SDK's explicit no-key behavior; omission leaves the SDK default unchanged.
+   * Headers attached to every request the SDK client makes, including the run
+   * stream. Use this for a per-user session token that your LangGraph
+   * deployment's custom `authenticate` handler validates.
+   *
+   * There is deliberately no `apiKey` option: a deployment credential passed
+   * from Angular is bundled into the browser build like any other constant.
+   * Keep deployment keys on a same-origin proxy or gateway you own, and point
+   * `apiUrl` at it. The client is constructed with `apiKey: null`, so the SDK
+   * never attaches a key from the environment either.
    */
-  apiKey?: string | null;
+  defaultHeaders?: Record<string, string>;
   /**
    * How many times a failed request — including the initial stream connect —
    * is retried with exponential backoff before the error surfaces. Maps to the

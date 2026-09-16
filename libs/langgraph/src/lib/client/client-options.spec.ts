@@ -19,9 +19,9 @@ describe('resolveClientOptions', () => {
     expect(resolveClientOptions({}, { maxRetries: 4 })).toEqual({});
   });
 
-  it('preserves whole-object precedence for apiKey instead of merging layers', () => {
-    const callSite = { apiKey: 'test-key-redact-me' };
-    const provider = { apiKey: 'provider-key', maxRetries: 4 };
+  it('preserves whole-object precedence for defaultHeaders instead of merging layers', () => {
+    const callSite = { defaultHeaders: { Authorization: 'Bearer call-site' } };
+    const provider = { defaultHeaders: { Authorization: 'Bearer provider' }, maxRetries: 4 };
 
     expect(resolveClientOptions(callSite, provider)).toBe(callSite);
     expect(resolveClientOptions({}, provider)).toEqual({});

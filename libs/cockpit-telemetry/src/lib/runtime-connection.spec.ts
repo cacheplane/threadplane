@@ -102,7 +102,7 @@ describe('Cockpit runtime connection DI seam', () => {
       adapter: 'langgraph',
       apiUrl: 'https://runtime.example/api',
       assistantId: 'streaming',
-      clientOptions: { apiKey: 'test-key-redact-me' },
+      clientOptions: { defaultHeaders: { 'x-api-key': 'test-key-redact-me' } },
     } as const;
     TestBed.configureTestingModule({
       imports: [ScopedLangGraphComponent],

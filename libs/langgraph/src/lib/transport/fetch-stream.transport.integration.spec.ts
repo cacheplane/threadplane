@@ -18,7 +18,7 @@ describe('FetchStreamTransport real SDK retry boundary', () => {
     const transport = new FetchStreamTransport(
       'https://runtime.example/api',
       undefined,
-      { apiKey: 'test-key-redact-me', maxRetries: 1 },
+      { defaultHeaders: { 'x-api-key': 'test-key-redact-me' }, maxRetries: 1 },
       reportOperationFailure,
     );
 
@@ -36,7 +36,7 @@ describe('FetchStreamTransport real SDK retry boundary', () => {
     const transport = new FetchStreamTransport(
       'https://runtime.example/api',
       undefined,
-      { apiKey: 'test-key-redact-me', maxRetries: 1 },
+      { defaultHeaders: { 'x-api-key': 'test-key-redact-me' }, maxRetries: 1 },
       reportOperationFailure,
     );
 
@@ -72,7 +72,7 @@ describe('FetchStreamTransport real SDK retry boundary', () => {
     const transport = new FetchStreamTransport(
       'https://runtime.example/api',
       undefined,
-      { apiKey: 'test-key-redact-me', maxRetries: 0 },
+      { defaultHeaders: { 'x-api-key': 'test-key-redact-me' }, maxRetries: 0 },
       reportOperationFailure,
     );
 

@@ -43,7 +43,7 @@ provideAgent({
 }),
 ```
 
-`clientOptions` is the third value the example forwards. It tunes the LangGraph SDK client behind the default transport, and it accepts two keys: `apiKey`, and `maxRetries` for how many times a failed request is retried with exponential backoff before the error reaches your UI.
+`clientOptions` is the third value the example forwards. It tunes the LangGraph SDK client behind the default transport, and it accepts two keys: `defaultHeaders`, sent with every request so a per-user session token can reach your deployment's custom auth handler, and `maxRetries` for how many times a failed request is retried with exponential backoff before the error reaches your UI. There is no `apiKey` option, on purpose: a deployment credential passed from Angular would ship in the bundle.
 
 <Callout type="warning" title="assistantId must match the graph key">
 The `assistantId` you pass to `provideAgent()` must exactly match a key in the `graphs` map of `langgraph.json`. A mismatch is not a build error: the application starts normally and the first message fails against the deployment.
@@ -168,7 +168,7 @@ Angular CLI replaces `environment.ts` with `environment.prod.ts` during `ng buil
 
 ### Keep LangGraph credentials server-side
 
-Do not ship LangSmith or LangGraph API keys in an Angular bundle. The default `FetchStreamTransport` uses the LangGraph SDK client directly, not Angular `HttpClient`, so Angular HTTP interceptors do not attach headers to `injectAgent()` requests. `clientOptions.apiKey` does reach the SDK client, but a value passed there is bundled into the browser build like any other constant.
+Do not ship LangSmith or LangGraph API keys in an Angular bundle. The adapter gives you no field to put one in: `LangGraphClientOptions` has no `apiKey` member, and the SDK client is constructed with an explicit null key so it never picks one up from the environment either. The default `FetchStreamTransport` uses the LangGraph SDK client directly, not Angular `HttpClient`, so Angular HTTP interceptors do not attach headers to `injectAgent()` requests. To send a header the deployment should see, such as a per-user session token for LangGraph custom auth, use `clientOptions.defaultHeaders`.
 
 For production, put a same-origin backend route, edge function, or API gateway in front of LangGraph. The browser calls your relative URL, and that server-side layer adds the deployment credentials. Set `apiUrl` to that relative path, as the production environment file above does.
 
@@ -181,6 +181,20 @@ Environment files that are bundled into Angular are public. Store LangGraph depl
 ### User-level authentication
 
 If your app has its own user authentication, authenticate the same-origin proxy with cookies or your usual app session. The proxy can forward user identity to LangGraph through safe, server-controlled metadata or headers.
+
+If your deployment runs a custom `authenticate` handler instead, the browser can send the user's own short-lived token directly. That token is per user and expires, which is what makes it safe to hold in the page where a deployment key is not:
+
+```typescript
+provideAgent({
+  apiUrl: environment.langgraphUrl,
+  assistantId: 'deployment-runtime',
+  clientOptions: {
+    defaultHeaders: { Authorization: `Bearer ${session.accessToken()}` },
+  },
+}),
+```
+
+The handler on the LangGraph side validates the token and scopes threads and runs to that user.
 
 ## CORS configuration
 
