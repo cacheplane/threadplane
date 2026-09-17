@@ -199,28 +199,25 @@ export function normalizeInstallRuntimeEmail(email: string): string | null {
   return normalized;
 }
 
-/** Called only after the server resolves eligible, non-conflicting install/runtime evidence. */
-export async function approveContactFromInstallRuntimeInTransaction(
+/**
+ * Locks an identity email, then finds (or inserts with `source`) its contact
+ * row. Shared by every approval path that starts from an observed email.
+ */
+async function findOrInsertIdentityContactInTransaction(
   transaction: SqlTransaction,
-  input: ApproveContactFromInstallRuntimeInput
-): Promise<string | null> {
-  const email = normalizeInstallRuntimeEmail(input.email);
-  if (!email) return null;
-  const now = validDate('now', input.now);
-  const observationId =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
-  if (
-    !observationId.test(input.installObservationId) ||
-    !observationId.test(input.runtimeObservationId)
-  ) {
-    throw new Error('Install/runtime approval requires observation UUIDs');
+  input: {
+    email: string;
+    keyring: EmailHmacKeyring;
+    source: string;
+    lockLabel: string;
   }
-  const candidates = createEmailLookupCandidates(email, input.keyring);
+): Promise<IdentityContactRow> {
+  const candidates = createEmailLookupCandidates(input.email, input.keyring);
   const active = candidates[0];
   await privacyLock(transaction);
   await transaction.execute(
     `/* growth:lock-email */ select pg_advisory_xact_lock(hashtextextended($1, 0))`,
-    [email]
+    [input.email]
   );
   // Missing rotation keys must not turn a deleted contact into a new eligible identity.
   const storedVersions = await transaction.execute<{
@@ -238,7 +235,7 @@ export async function approveContactFromInstallRuntimeInTransaction(
     )
   ) {
     throw new Error(
-      'Email HMAC rotation coverage error for install/runtime approval'
+      `Email HMAC rotation coverage error for ${input.lockLabel}`
     );
   }
   const found = await transaction.execute<IdentityContactRow>(
@@ -266,36 +263,61 @@ export async function approveContactFromInstallRuntimeInTransaction(
           digest: candidate.digest,
         }))
       ),
-      email,
+      input.email,
     ]
   );
   if (found.rows.length > 1)
     throw new Error('Email HMAC lookup matched multiple growth contacts');
-  let contact = found.rows[0];
+  const contact = found.rows[0];
   if (contact) {
     const matching = candidates.find(
-      (candidate) => candidate.keyVersion === contact?.email_hmac_key_version
+      (candidate) => candidate.keyVersion === contact.email_hmac_key_version
     );
     if (
       !matching ||
       !compareEmailLookupHmac(matching.digest, contact.email_lookup_hmac)
     ) {
       throw new Error(
-        'Email HMAC secret material is inconsistent for install/runtime approval'
+        `Email HMAC secret material is inconsistent for ${input.lockLabel}`
       );
     }
-  } else {
-    const inserted = await transaction.execute<IdentityContactRow>(
-      `/* growth:insert-install-runtime-contact */
-       insert into growth_contacts (email_normalized, email_lookup_hmac, email_hmac_key_version, source)
-       values ($1, $2, $3, 'install_runtime')
-       returning id, email_lookup_hmac, email_hmac_key_version,
-                 outreach_approved_at, deleted_at, updated_at`,
-      [email, active.digest, active.keyVersion]
-    );
-    contact = inserted.rows[0];
-    if (!contact) throw new Error('Failed to insert growth contact');
+    return contact;
   }
+  const inserted = await transaction.execute<IdentityContactRow>(
+    `/* growth:insert-install-runtime-contact */
+     insert into growth_contacts (email_normalized, email_lookup_hmac, email_hmac_key_version, source)
+     values ($1, $2, $3, $4)
+     returning id, email_lookup_hmac, email_hmac_key_version,
+               outreach_approved_at, deleted_at, updated_at`,
+    [input.email, active.digest, active.keyVersion, input.source]
+  );
+  const created = inserted.rows[0];
+  if (!created) throw new Error('Failed to insert growth contact');
+  return created;
+}
+
+/** Called only after the server resolves eligible, non-conflicting install/runtime evidence. */
+export async function approveContactFromInstallRuntimeInTransaction(
+  transaction: SqlTransaction,
+  input: ApproveContactFromInstallRuntimeInput
+): Promise<string | null> {
+  const email = normalizeInstallRuntimeEmail(input.email);
+  if (!email) return null;
+  const now = validDate('now', input.now);
+  const observationId =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
+  if (
+    !observationId.test(input.installObservationId) ||
+    !observationId.test(input.runtimeObservationId)
+  ) {
+    throw new Error('Install/runtime approval requires observation UUIDs');
+  }
+  const contact = await findOrInsertIdentityContactInTransaction(transaction, {
+    email,
+    keyring: input.keyring,
+    source: 'install_runtime',
+    lockLabel: 'install/runtime approval',
+  });
   const stops = await findHardStops(transaction, contact.id);
   const state = toControlState({
     ...contact,
@@ -945,7 +967,8 @@ async function approvePreparedContactFromForm(
     latestHardStopAt !== null &&
     (approvedAt === null || latestHardStopAt.getTime() >= approvedAt.getTime());
   const currentlyAuthorized = currentlyApproved && !stoppedAfterApproval;
-  const approvalAllowed = !formBlocked && (currentlyAuthorized || latestHardStop == null);
+  const approvalAllowed =
+    !formBlocked && (currentlyAuthorized || latestHardStop == null);
   const activityInserted = await insertActivityOnce(transaction, {
     eventKey,
     contactId: contact.id,
@@ -1058,6 +1081,17 @@ export async function reauthorizeContact(
   executor: SqlExecutor,
   input: ReauthorizeContactInput
 ): Promise<ReauthorizeContactResult> {
+  return executor.transaction((transaction) =>
+    reauthorizeContactInTransaction(transaction, input)
+  );
+}
+
+async function reauthorizeContactInTransaction(
+  transaction: SqlTransaction,
+  input: ReauthorizeContactInput & {
+    extraActivityData?: Record<string, unknown>;
+  }
+): Promise<ReauthorizeContactResult> {
   const contactId = requiredText('contactId', input.contactId, 100);
   const eventKey = requiredText('eventKey', input.eventKey, LIMITS.eventKey);
   const occurredAt = validDate('occurredAt', input.occurredAt);
@@ -1071,85 +1105,171 @@ export async function reauthorizeContact(
   );
   const allowed = new Set<ContactHardStopReason>(input.allowedPriorStops);
 
-  return executor.transaction(async (transaction) => {
-    const locked = await transaction.execute<ContactRow>(
-      `/* growth:lock-contact */
+  const locked = await transaction.execute<ContactRow>(
+    `/* growth:lock-contact */
        select id, outreach_approved_at, deleted_at, updated_at
        from growth_contacts
        where id = $1
        for update`,
-      [contactId]
-    );
-    const contact = locked.rows[0];
-    if (!contact) throw new Error(`Growth contact not found: ${contactId}`);
+    [contactId]
+  );
+  const contact = locked.rows[0];
+  if (!contact) throw new Error(`Growth contact not found: ${contactId}`);
 
-    const hardStops = await findHardStops(transaction, contactId);
-    const blockedBy = [
-      ...new Set(
-        hardStops
-          .map(({ kind }) => kind)
-          .filter((kind) => kind === 'deletion' || !allowed.has(kind))
-      ),
-    ];
-    if (contact.deleted_at !== null && !blockedBy.includes('deletion')) {
-      blockedBy.push('deletion');
+  const hardStops = await findHardStops(transaction, contactId);
+  const blockedBy = [
+    ...new Set(
+      hardStops
+        .map(({ kind }) => kind)
+        .filter((kind) => kind === 'deletion' || !allowed.has(kind))
+    ),
+  ];
+  if (contact.deleted_at !== null && !blockedBy.includes('deletion')) {
+    blockedBy.push('deletion');
+  }
+
+  if (blockedBy.length > 0) {
+    return {
+      reauthorized: false,
+      blockedBy,
+      state: await readControlState(transaction, contactId),
+    };
+  }
+
+  const latestStopAt = hardStops.reduce<number | null>((latest, stop) => {
+    const stopAt = asDate(stop.occurred_at)?.getTime();
+    if (stopAt == null || Number.isNaN(stopAt)) {
+      throw new Error(`Growth contact has an invalid hard-stop timestamp`);
     }
+    return latest == null || stopAt > latest ? stopAt : latest;
+  }, null);
+  if (latestStopAt !== null && occurredAt.getTime() <= latestStopAt) {
+    return {
+      reauthorized: false,
+      blockedBy: [...new Set(hardStops.map(({ kind }) => kind))],
+      state: await readControlState(transaction, contactId),
+    };
+  }
 
-    if (blockedBy.length > 0) {
-      return {
-        reauthorized: false,
-        blockedBy,
-        state: await readControlState(transaction, contactId),
-      };
-    }
-
-    const latestStopAt = hardStops.reduce<number | null>((latest, stop) => {
-      const stopAt = asDate(stop.occurred_at)?.getTime();
-      if (stopAt == null || Number.isNaN(stopAt)) {
-        throw new Error(`Growth contact has an invalid hard-stop timestamp`);
-      }
-      return latest == null || stopAt > latest ? stopAt : latest;
-    }, null);
-    if (latestStopAt !== null && occurredAt.getTime() <= latestStopAt) {
-      return {
-        reauthorized: false,
-        blockedBy: [...new Set(hardStops.map(({ kind }) => kind))],
-        state: await readControlState(transaction, contactId),
-      };
-    }
-
-    const inserted = await insertActivityOnce(transaction, {
-      eventKey,
-      contactId,
-      occurredAt,
-      kind: 'contact.reauthorized',
-      data: {
-        actor,
-        policy_version: policyVersion,
-        prior_stops: [...new Set(hardStops.map(({ kind }) => kind))],
-        provenance: 'founder_action',
-        reason,
-        source,
-      },
-    });
-    if (inserted) {
-      await transaction.execute<ContactRow>(
-        `/* growth:set-reauthorized */
+  const inserted = await insertActivityOnce(transaction, {
+    eventKey,
+    contactId,
+    occurredAt,
+    kind: 'contact.reauthorized',
+    data: {
+      actor,
+      policy_version: policyVersion,
+      prior_stops: [...new Set(hardStops.map(({ kind }) => kind))],
+      provenance: 'founder_action',
+      reason,
+      source,
+      ...(input.extraActivityData ?? {}),
+    },
+  });
+  if (inserted) {
+    await transaction.execute<ContactRow>(
+      `/* growth:set-reauthorized */
          update growth_contacts
          set outreach_approved_at = $2,
              source = $3
          where id = $1
            and deleted_at is null
          returning id, outreach_approved_at, deleted_at, updated_at`,
-        [contactId, occurredAt, source]
-      );
-    }
+      [contactId, occurredAt, source]
+    );
+  }
 
-    return {
-      reauthorized: inserted,
-      blockedBy: [],
-      state: await readControlState(transaction, contactId),
-    };
+  return {
+    reauthorized: inserted,
+    blockedBy: [],
+    state: await readControlState(transaction, contactId),
+  };
+}
+
+export interface ApproveContactFromInstallDigestInput {
+  installObservationId: string;
+  occurredAt: Date;
+  eventKey: string;
+  keyring: EmailHmacKeyring;
+}
+
+export type ApproveContactFromInstallDigestResult =
+  | { approved: true; contactId: string; changed: boolean }
+  | { approved: false; reason: 'identity_unavailable' | 'stopped' | 'deleted' };
+
+/**
+ * Founder-approved outreach for an installer who never produced a runtime
+ * observation. Creates the contact when absent, then records the same
+ * founder reauthorization the operator CLI records, so campaign enrollment
+ * picks it up through the existing `contact.reauthorized` path.
+ */
+export async function approveContactFromInstallDigest(
+  executor: SqlExecutor,
+  input: ApproveContactFromInstallDigestInput
+): Promise<ApproveContactFromInstallDigestResult> {
+  const observationId = requiredText(
+    'installObservationId',
+    input.installObservationId,
+    36
+  );
+  if (
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu.test(
+      observationId
+    )
+  ) {
+    throw new Error('Install digest approval requires an observation UUID');
+  }
+  const occurredAt = validDate('occurredAt', input.occurredAt);
+  return executor.transaction(async (transaction) => {
+    const identity = await transaction.execute<{
+      email_normalized: string | null;
+    }>(
+      `/* growth:read-install-digest-identity */
+       select i.email_normalized
+       from growth_observations o
+       join growth_observation_identities i on i.observation_id = o.id
+       where o.id = $1 and o.source = 'install' and o.redacted_at is null`,
+      [observationId]
+    );
+    const raw = identity.rows[0]?.email_normalized;
+    const email = raw ? normalizeInstallRuntimeEmail(raw) : null;
+    if (!email) return { approved: false, reason: 'identity_unavailable' };
+
+    const contact = await findOrInsertIdentityContactInTransaction(
+      transaction,
+      {
+        email,
+        keyring: input.keyring,
+        source: 'signed_founder_approve_install',
+        lockLabel: 'install digest approval',
+      }
+    );
+    const stops = await findHardStops(transaction, contact.id);
+    const state = toControlState({
+      ...contact,
+      latest_hard_stop_kind: stops[0]?.kind ?? null,
+      latest_hard_stop_at: stops[0]?.occurred_at ?? null,
+    });
+    if (state.authorization === 'deleted')
+      return { approved: false, reason: 'deleted' };
+    if (state.authorization === 'stopped')
+      return { approved: false, reason: 'stopped' };
+    if (state.authorization === 'approved') {
+      return { approved: true, contactId: contact.id, changed: false };
+    }
+    const result = await reauthorizeContactInTransaction(transaction, {
+      contactId: contact.id,
+      eventKey: input.eventKey,
+      occurredAt,
+      actor: 'founder',
+      reason: 'founder_install_digest_approval',
+      source: 'signed_founder_approve_install',
+      policyVersion: 'growth-v1',
+      allowedPriorStops: [],
+      extraActivityData: { install_observation_id: observationId },
+    });
+    if (!result.reauthorized) return { approved: false, reason: 'stopped' };
+    return { approved: true, contactId: contact.id, changed: true };
   });
 }
 

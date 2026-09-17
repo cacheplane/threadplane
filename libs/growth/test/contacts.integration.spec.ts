@@ -1,13 +1,21 @@
 import { randomUUID } from 'node:crypto';
-import { cleanContactObservationFences } from './observability-fixtures.ts';
+import {
+  cleanContactObservationFences,
+  cleanEvidence,
+  evidenceFixture,
+  evidenceKeys,
+} from './observability-fixtures.ts';
 import { resolve } from 'node:path';
 
 import {
+  acceptObservationBatch,
   approveContactFromForm,
+  approveContactFromInstallDigest,
   createDatabaseExecutor,
   createEmailLookupHmac,
   deleteContact,
   readContactControlState,
+  stopContact,
   type EmailHmacKeyring,
   type SqlExecutor,
 } from '../src/index.ts';
@@ -688,6 +696,146 @@ describeDatabase(
           contactId,
         ]);
       }
+    });
+
+    describe('approveContactFromInstallDigest', () => {
+      const cleanupEmails: string[] = [];
+      const cleanupSubjects: string[] = [];
+
+      afterAll(async () => {
+        const contacts = (
+          await executor.execute<{ id: string }>(
+            'select id from growth_contacts where email_normalized=any($1::text[])',
+            [cleanupEmails]
+          )
+        ).rows.map((c) => c.id);
+        for (const contactId of contacts) await removeContact(contactId);
+        await cleanEvidence(executor, cleanupSubjects);
+      });
+
+      async function installObservation(
+        email: string,
+        now: Date
+      ): Promise<string> {
+        const batch = evidenceFixture(now);
+        const event = batch.events[0]!;
+        event.properties = {
+          ...event.properties,
+          environment: 'unknown',
+          environmentEvidence: 'unknown',
+        };
+        event.identity = {
+          gitEmail: email,
+          gitDisplayName: 'Digest Developer',
+          gitConfigOrigin: 'global',
+        };
+        cleanupSubjects.push(event.subject.id);
+        cleanupEmails.push(email);
+        await acceptObservationBatch(executor, 'install', batch, {
+          now,
+          keyring: evidenceKeys,
+        });
+        const row = await executor.execute<{ observation_id: string }>(
+          'select observation_id from growth_observation_identities where email_normalized=$1 order by observation_id limit 1',
+          [email]
+        );
+        return row.rows[0]!.observation_id;
+      }
+
+      it('creates and approves a new contact from an install observation and records a founder reauthorization', async () => {
+        const now = new Date('2026-09-16T16:00:00.000Z');
+        const email = `${randomUUID()}@approve-corp.example`;
+        const observationId = await installObservation(email, now);
+
+        const result = await approveContactFromInstallDigest(executor, {
+          installObservationId: observationId,
+          occurredAt: now,
+          eventKey: `token:founder_approve_install:${observationId}:${now.getTime()}:job-1`,
+          keyring: evidenceKeys,
+        });
+        expect(result).toMatchObject({ approved: true, changed: true });
+        if (!result.approved) throw new Error('expected approval');
+
+        const contact = await executor.execute<{
+          source: string;
+          outreach_approved_at: Date;
+        }>(
+          'select source, outreach_approved_at from growth_contacts where id=$1',
+          [result.contactId]
+        );
+        expect(contact.rows[0]!.source).toBe('signed_founder_approve_install');
+        expect(new Date(contact.rows[0]!.outreach_approved_at).getTime()).toBe(
+          now.getTime()
+        );
+        const activity = await executor.execute<{
+          kind: string;
+          data: Record<string, unknown>;
+        }>(
+          "select kind, data from growth_activity where contact_id=$1 and kind='contact.reauthorized'",
+          [result.contactId]
+        );
+        expect(activity.rows).toHaveLength(1);
+        expect(activity.rows[0]!.data).toMatchObject({
+          provenance: 'founder_action',
+          source: 'signed_founder_approve_install',
+          install_observation_id: observationId,
+        });
+
+        const again = await approveContactFromInstallDigest(executor, {
+          installObservationId: observationId,
+          occurredAt: new Date(now.getTime() + 1000),
+          eventKey: `token:founder_approve_install:${observationId}:${now.getTime()}:job-2`,
+          keyring: evidenceKeys,
+        });
+        expect(again).toMatchObject({
+          approved: true,
+          changed: false,
+          contactId: result.contactId,
+        });
+      });
+
+      it('refuses a stopped contact and an unknown or redacted observation', async () => {
+        const now = new Date('2026-09-16T16:10:00.000Z');
+        const email = `${randomUUID()}@stopped-corp.example`;
+        const observationId = await installObservation(email, now);
+        const first = await approveContactFromInstallDigest(executor, {
+          installObservationId: observationId,
+          occurredAt: now,
+          eventKey: `token:founder_approve_install:${observationId}:${now.getTime()}:job-3`,
+          keyring: evidenceKeys,
+        });
+        if (!first.approved) throw new Error('expected approval');
+        await stopContact(executor, {
+          contactId: first.contactId,
+          reason: 'manual_suppression',
+          eventKey: `stop:${first.contactId}`,
+          occurredAt: new Date(now.getTime() + 1000),
+          source: 'founder_cli',
+          provenance: {
+            actor: 'founder',
+            kind: 'founder_action',
+            policyVersion: 'growth-v1',
+          },
+        });
+        const afterStop = await approveContactFromInstallDigest(executor, {
+          installObservationId: observationId,
+          occurredAt: new Date(now.getTime() + 2000),
+          eventKey: `token:founder_approve_install:${observationId}:${now.getTime()}:job-4`,
+          keyring: evidenceKeys,
+        });
+        expect(afterStop).toMatchObject({ approved: false, reason: 'stopped' });
+
+        const unknown = await approveContactFromInstallDigest(executor, {
+          installObservationId: randomUUID(),
+          occurredAt: now,
+          eventKey: `token:founder_approve_install:unknown:${now.getTime()}`,
+          keyring: evidenceKeys,
+        });
+        expect(unknown).toMatchObject({
+          approved: false,
+          reason: 'identity_unavailable',
+        });
+      });
     });
   }
 );
