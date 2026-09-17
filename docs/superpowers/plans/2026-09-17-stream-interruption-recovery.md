@@ -1714,6 +1714,8 @@ Expected: PASS. A `@ts-expect-error` in a vitest spec is inert; only `*.type-spe
 
 Start the canonical demo and induce a truncated stream. Using Chrome MCP, confirm on both the AG-UI and LangGraph demos that after a mid-stream close the error appears, the correct control renders, and partial assistant text stays on screen. Confirm an ordinary completed turn still shows no error, and an approval pause still shows the interrupt panel and no error.
 
+Also check the error banner layout, which jsdom cannot verify. Task 3 added `flex-wrap: wrap` to the `.chat-error` container, which previously could not wrap. Narrow the viewport and confirm that a long error message alongside a Retry button still looks right, and that the detail sentence takes its own row aligned under the message rather than under the icon. A Retry button wrapping onto its own line at narrow width is acceptable; overlapping or misaligned text is not.
+
 - [ ] **Step 5: Run the live production smoke canaries**
 
 ```bash

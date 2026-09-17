@@ -65,7 +65,13 @@ export class AgentError extends Error {
    * errors; always `undefined` for every other {@link AgentErrorKind}.
    */
   readonly recovery?: AgentRecovery;
-  /** A short sentence explaining uncertainty. Set only when `recovery` is `check` or `none`. */
+  /**
+   * A short sentence explaining the uncertainty. Adapters set this whenever
+   * `recovery` is `check` or `none`, and leave it undefined otherwise. It is
+   * the only thing a caller can show when `recovery` is `check` but the agent
+   * exposes no `checkStatus`, so omitting it there leaves the reader with a
+   * bare error and no path forward.
+   */
   readonly detail?: string;
 
   constructor(init: {
