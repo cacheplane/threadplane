@@ -25,8 +25,10 @@ See https://threadplane.ai/privacy.
 
 
 Supported runtime/browser collection is automatic only in Angular development mode.
-Production builds, SSR, imports, unused construction, and automated browsers
-reporting `navigator.webdriver` are inert. It sends closed
+Production builds, SSR, imports, and automated browsers reporting
+`navigator.webdriver` are inert. Creating an agent (or a render element) in a
+development-mode browser reports one session start per integration per session;
+milestones are reported only when the runtime is actually used. It sends closed
 progress milestones with package/version and random browser-origin/session IDs, never
 conversation content or private URLs. Adapter `telemetry: false` disables it; a custom
 sink replaces the automatic destination, including nested chat JSON rendering. Use

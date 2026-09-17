@@ -110,7 +110,7 @@ describe('development generative UI mount evidence', () => {
     expect(mounted).not.toHaveBeenCalled();
     expect(touched).not.toHaveBeenCalled();
   });
-  it('reports a session when the element is constructed, before any mount', () => {
+  it('reports a session when the element is constructed, even when nothing mounts', () => {
     const fx = fixture(spec({ type: 'Unknown' }));
     fx.detectChanges();
     expect(touched).toHaveBeenCalledTimes(1);
