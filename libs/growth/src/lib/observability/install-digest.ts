@@ -1,4 +1,8 @@
-import type { SqlExecutor } from '../database.ts';
+import type { SqlTransaction } from '../database.ts';
+import {
+  createEmailLookupCandidates,
+  type EmailHmacKeyring,
+} from '../crypto.ts';
 import {
   isPersonalEmailDomain,
   PERSONAL_EMAIL_DOMAINS,
@@ -62,8 +66,8 @@ function positiveLimit(limit: number): number {
  * Personal mailbox domains are excluded in SQL so `limit` counts only eligible rows.
  */
 export async function readInstallDigestCandidates(
-  executor: SqlExecutor,
-  input: { limit: number }
+  executor: SqlTransaction,
+  input: { limit: number; keyring?: EmailHmacKeyring }
 ): Promise<InstallDigestCandidate[]> {
   const limit = positiveLimit(input.limit);
   const result = await executor.execute<CandidateRow>(
@@ -91,11 +95,20 @@ export async function readInstallDigestCandidates(
          and coalesce(o.properties->>'environment', 'unknown') <> 'ci'
          and not exists (
            select 1 from growth_contacts c
-           where c.email_normalized = i.email_normalized
+           where c.email_normalized = i.email_normalized::citext
+         )
+         -- Redaction deletes identity rows, so the transitive email match below
+         -- can lose its anchor after a key rotation; the direct pair match and
+         -- the post-query keyring check close that gap.
+         and not exists (
+           select 1 from growth_install_digest_reports r
+           where r.email_key_version = i.email_key_version
+             and r.email_lookup_hmac = i.email_lookup_hmac
          )
          and not exists (
            select 1
            from growth_install_digest_reports r
+           -- identity rows are deleted on redaction, never nulled
            join growth_observation_identities ri
              on ri.email_key_version = r.email_key_version
             and ri.email_lookup_hmac = r.email_lookup_hmac
@@ -152,12 +165,47 @@ export async function readInstallDigestCandidates(
       emailKeyVersion: Number(row.email_key_version),
     });
   }
-  return candidates;
+  if (!input.keyring || candidates.length === 0) return candidates;
+  // Rotated-and-redacted edge: a report recorded under a previous key whose
+  // identity rows were since redacted matches neither exclusion above. The SQL
+  // already excluded every other reported identity, so this rarely drops rows
+  // and does not disturb `limit` in normal operation.
+  const pairs = candidates.flatMap((candidate) =>
+    createEmailLookupCandidates(candidate.email, input.keyring!).map((c) => ({
+      email_key_version: c.keyVersion,
+      email_lookup_hmac: c.digest,
+    }))
+  );
+  const reported = await executor.execute<{
+    email_key_version: number | string;
+    email_lookup_hmac: string;
+  }>(
+    `/* growth:read-install-digest-reported-pairs */
+     select r.email_key_version, r.email_lookup_hmac
+     from growth_install_digest_reports r
+     where (r.email_key_version, r.email_lookup_hmac) in (
+       select c.email_key_version, c.email_lookup_hmac
+       from jsonb_to_recordset($1::jsonb)
+         as c(email_key_version smallint, email_lookup_hmac text)
+     )`,
+    [JSON.stringify(pairs)]
+  );
+  const hits = new Set(
+    reported.rows.map(
+      (r) => `${Number(r.email_key_version)}:${r.email_lookup_hmac}`
+    )
+  );
+  if (hits.size === 0) return candidates;
+  return candidates.filter((candidate) =>
+    createEmailLookupCandidates(candidate.email, input.keyring!).every(
+      (c) => !hits.has(`${c.keyVersion}:${c.digest}`)
+    )
+  );
 }
 
 /** Install subjects since `since` that carried no identity, and CI install subjects. */
 export async function readInstallDigestContext(
-  executor: SqlExecutor,
+  executor: SqlTransaction,
   input: { since: Date }
 ): Promise<InstallDigestContext> {
   if (!Number.isFinite(input.since.getTime())) {
@@ -193,8 +241,13 @@ export async function readInstallDigestContext(
  * exists. Returns the new job id, or null when nothing was enqueued.
  */
 export async function enqueueInstallDigestJob(
-  executor: SqlExecutor,
-  input: { now: Date; idempotencyKey: string; businessDate: string }
+  executor: SqlTransaction,
+  input: {
+    now: Date;
+    idempotencyKey: string;
+    businessDate: string;
+    keyring?: EmailHmacKeyring;
+  }
 ): Promise<string | null> {
   if (!/^\d{4}-\d{2}-\d{2}$/u.test(input.businessDate)) {
     throw new Error('Install digest business date must be YYYY-MM-DD');
@@ -204,7 +257,10 @@ export async function enqueueInstallDigestJob(
       'Install digest idempotency key must start with install_digest:'
     );
   }
-  const candidates = await readInstallDigestCandidates(executor, { limit: 1 });
+  const candidates = await readInstallDigestCandidates(executor, {
+    limit: 1,
+    keyring: input.keyring,
+  });
   if (candidates.length === 0) return null;
   const result = await executor.execute<{ id: string }>(
     `/* growth:enqueue-install-digest */
@@ -220,7 +276,7 @@ export async function enqueueInstallDigestJob(
 
 /** Record reported identities; repeats are no-ops so a retried job never double-reports. */
 export async function markInstallDigestReported(
-  executor: SqlExecutor,
+  executor: SqlTransaction,
   input: {
     digestJobId: string;
     reportedAt: Date;

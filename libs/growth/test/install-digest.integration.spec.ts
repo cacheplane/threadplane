@@ -89,7 +89,10 @@ describe('install digest candidates', () => {
     return batch;
   }
   const accept = (batch: ReturnType<typeof install>, now: Date) =>
-    acceptObservationBatch(db, 'install', batch, { now, keyring: evidenceKeys });
+    acceptObservationBatch(db, 'install', batch, {
+      now,
+      keyring: evidenceKeys,
+    });
 
   it('groups one line per work email, excluding personal, CI, contacts and reported identities', async () => {
     const now = new Date('2026-09-16T15:00:00.000Z');
@@ -136,9 +139,7 @@ describe('install digest candidates', () => {
       installCount: 2,
     });
     expect(
-      line!.packages
-        .map((p) => `${p.packageName}@${p.packageVersion}`)
-        .sort()
+      line!.packages.map((p) => `${p.packageName}@${p.packageVersion}`).sort()
     ).toEqual(['@threadplane/chat@0.2.0', '@threadplane/langgraph@0.2.0']);
     expect(line!.firstSeenAt.getTime()).toBe(now.getTime());
     expect(line!.lastSeenAt.getTime()).toBe(later.getTime());
@@ -178,6 +179,26 @@ describe('install digest candidates', () => {
       )
     ).not.toContain(work);
 
+    // Direct pair match: a report row for the identity's own
+    // (email_key_version, email_lookup_hmac) excludes it without any
+    // transitive email join.
+    const direct = `${randomUUID()}@direct-corp.example`;
+    await accept(install(now, { email: direct }), now);
+    await db.execute(
+      `insert into growth_install_digest_reports
+         (email_lookup_hmac, email_key_version, first_install_observation_id, digest_job_id, reported_at)
+       select i.email_lookup_hmac, i.email_key_version, i.observation_id, $2::uuid, $3
+       from growth_observation_identities i
+       where i.email_normalized = $1
+       limit 1`,
+      [direct, jobId, now]
+    );
+    expect(
+      (await readInstallDigestCandidates(db, { limit: 200 })).map(
+        (c) => c.email
+      )
+    ).not.toContain(direct);
+
     const context = await readInstallDigestContext(db, { since: now });
     expect(context.anonymousInstallSubjects).toBeGreaterThanOrEqual(1);
     expect(context.ciInstallSubjects).toBeGreaterThanOrEqual(1);
@@ -186,15 +207,44 @@ describe('install digest candidates', () => {
   it('does not enqueue when there are no candidates', async () => {
     const now = new Date('2026-09-17T15:00:00.000Z');
     const jobKey = `install_digest:test:${randomUUID()}`;
-    jobKeys.push(jobKey);
-    // The shared disposable database may hold candidates from other runs.
-    const before = await readInstallDigestCandidates(db, { limit: 200 });
-    const enqueued = await enqueueInstallDigestJob(db, {
-      now,
-      idempotencyKey: jobKey,
-      businessDate: '2026-09-17',
-    });
-    if (before.length === 0) expect(enqueued).toBeNull();
-    else expect(enqueued).not.toBeNull();
+    const sentinel = new Error('rollback');
+    await expect(
+      db.transaction(async (tx) => {
+        // Report every current candidate under a throwaway job so the
+        // candidate set is empty inside this transaction, then verify no
+        // digest job is enqueued. Rolling back leaves the shared database as it was.
+        const throwaway = await tx.execute<{ id: string }>(
+          `insert into growth_jobs (kind, status, available_at, idempotency_key, payload)
+           values ('digest', 'cancelled', $1, $2, '{}'::jsonb) returning id`,
+          [now, `install_digest:test:throwaway:${randomUUID()}`]
+        );
+        const candidates = await readInstallDigestCandidates(tx, {
+          limit: 1000,
+        });
+        await markInstallDigestReported(tx, {
+          digestJobId: throwaway.rows[0]!.id,
+          reportedAt: now,
+          candidates,
+        });
+        expect(await readInstallDigestCandidates(tx, { limit: 1000 })).toEqual(
+          []
+        );
+        expect(
+          await enqueueInstallDigestJob(tx, {
+            now,
+            idempotencyKey: jobKey,
+            businessDate: '2026-09-17',
+          })
+        ).toBeNull();
+        throw sentinel;
+      })
+    ).rejects.toBe(sentinel);
+    expect(
+      (
+        await db.execute('select 1 from growth_jobs where idempotency_key=$1', [
+          jobKey,
+        ])
+      ).rows
+    ).toHaveLength(0);
   });
 });
