@@ -36,7 +36,14 @@ export function extractErrorMessage(error: unknown): string | null {
           <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
         </svg>
         <span class="chat-error__msg">{{ err.message }}</span>
-        @if (err.retryable) {
+        @if (err.detail) {
+          <span class="chat-error__detail">{{ err.detail }}</span>
+        }
+        @if (err.recovery === 'check') {
+          @if (agent().checkStatus; as check) {
+            <button type="button" class="chat-error__check" (click)="check()">Check status</button>
+          }
+        } @else if (err.retryable) {
           <button type="button" class="chat-error__retry" (click)="agent().retry()">Retry</button>
         }
       </div>
