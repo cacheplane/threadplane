@@ -155,9 +155,16 @@ describe('ChatErrorComponent — interruption recovery', () => {
   });
 
   it('renders no button when recovery is check, retryable is true, but the agent cannot verify', () => {
-    const err = new AgentError({ kind: 'interrupted', message: 'interrupted-check', retryable: true, recovery: 'check' });
+    const err = new AgentError({
+      kind: 'interrupted',
+      message: 'interrupted-check',
+      retryable: true,
+      recovery: 'check',
+      detail: 'We could not confirm the booking.',
+    });
     const { el } = render(err);
     expect(el.querySelector('.chat-error__check')).toBeNull();
     expect(el.querySelector('.chat-error__retry')).toBeNull();
+    expect(el.querySelector('.chat-error__detail')?.textContent).toContain('We could not confirm the booking.');
   });
 });

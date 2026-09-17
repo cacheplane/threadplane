@@ -17,7 +17,7 @@ export const CHAT_ERROR_STYLES = `
   .chat-error__msg { flex: 1; min-width: 0; word-break: break-word; }
   .chat-error__detail {
     flex-basis: 100%;
-    margin-left: 24px;
+    margin-left: calc(16px + 0.5rem);
     font-size: var(--tplane-chat-font-size-sm);
     opacity: 0.85;
   }

@@ -40,8 +40,8 @@ export function extractErrorMessage(error: unknown): string | null {
           <span class="chat-error__detail">{{ err.detail }}</span>
         }
         @if (err.recovery === 'check') {
-          @if (agent().checkStatus; as check) {
-            <button type="button" class="chat-error__check" (click)="check()">Check status</button>
+          @if (agent().checkStatus) {
+            <button type="button" class="chat-error__check" (click)="agent().checkStatus!()">Check status</button>
           }
         } @else if (err.retryable) {
           <button type="button" class="chat-error__retry" (click)="agent().retry()">Retry</button>
