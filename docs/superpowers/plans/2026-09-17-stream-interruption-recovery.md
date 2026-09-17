@@ -206,29 +206,36 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 Append to `libs/chat/src/lib/agent/agent.spec.ts`:
 
+`agent.spec.ts` builds agents as bare object literals typed as `Agent`, and imports only `signal` from Angular and the `Agent` type. Follow that existing pattern rather than introducing the mock helper:
+
 ```ts
 describe('Agent.checkStatus', () => {
+  const base = (): Agent => ({
+    messages: signal([]),
+    status: signal('idle'),
+    isLoading: signal(false),
+    error: signal(undefined),
+    toolCalls: signal([]),
+    state: signal({}),
+    submit: async () => Promise.resolve(),
+    stop: async () => Promise.resolve(),
+    retry: async () => Promise.resolve(),
+  });
+
   it('is optional — an agent without it still satisfies the contract', () => {
-    const agent = mockAgent();
-    expect(agent.checkStatus).toBeUndefined();
+    expect(base().checkStatus).toBeUndefined();
   });
 
   it('is callable when a runtime provides one', async () => {
-    const checkStatus = vi.fn(async () => undefined);
-    const agent: Agent = { ...mockAgent(), checkStatus };
+    let calls = 0;
+    const agent: Agent = { ...base(), checkStatus: async () => { calls++; } };
     await agent.checkStatus?.();
-    expect(checkStatus).toHaveBeenCalledOnce();
+    expect(calls).toBe(1);
   });
 });
 ```
 
-If `agent.spec.ts` does not already import them, add at the top of the file:
-
-```ts
-import { vi } from 'vitest';
-import { mockAgent } from '../testing/mock-agent';
-import type { Agent } from './agent';
-```
+The existing file may already declare a helper equivalent to `base()`; reuse it if so rather than adding a second one.
 
 - [ ] **Step 2: Run the test and verify it fails**
 
@@ -255,7 +262,7 @@ In `libs/chat/src/lib/agent/agent.ts`, add directly after the `clientTools` memb
 
 - [ ] **Step 4: Confirm the mock does not need a stub**
 
-Read `libs/chat/src/lib/testing/mock-agent.ts`. Because `checkStatus` is optional, `mockAgent()` needs no change and must NOT define one — the first test asserts it is absent by default. If `mockAgent` builds its return value with an explicit `Agent` type annotation, no edit is required; leave the file untouched.
+`libs/chat/src/lib/testing/mock-agent.ts` declares `MockAgent extends Agent`, so an optional member needs no stub there. Leave that file untouched: `mockAgent()` must NOT define a `checkStatus`, because later component tests attach one only for the branch that requires it.
 
 - [ ] **Step 5: Run the test and verify it passes**
 
