@@ -1,4 +1,5 @@
-const PERSONAL_EMAIL_DOMAINS = new Set([
+/** Lower-case consumer mailbox domains that never identify a company. */
+export const PERSONAL_EMAIL_DOMAINS: readonly string[] = [
   'aol.com',
   'gmail.com',
   'googlemail.com',
@@ -12,10 +13,11 @@ const PERSONAL_EMAIL_DOMAINS = new Set([
   'protonmail.com',
   'yahoo.com',
   'ymail.com',
-]);
+];
+const PERSONAL_EMAIL_DOMAIN_SET = new Set(PERSONAL_EMAIL_DOMAINS);
 
 export function isPersonalEmailDomain(domain: string): boolean {
-  return PERSONAL_EMAIL_DOMAINS.has(domain.toLowerCase());
+  return PERSONAL_EMAIL_DOMAIN_SET.has(domain.toLowerCase());
 }
 
 /** An email-derived research candidate, never proof of employment or ownership. */
