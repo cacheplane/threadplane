@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { AgentError, AGENT_RECOVERY_MESSAGES, type AgentRecovery } from './agent-error';
+import { AgentError, AGENT_RECOVERY_MESSAGES, AGENT_RECOVERY_DETAILS, type AgentRecovery } from './agent-error';
 import { toAgentError, isAbortError } from './to-agent-error';
 
 describe('toAgentError', () => {
@@ -95,5 +95,20 @@ describe('AgentError recovery', () => {
   it('leaves toAgentError classification untouched', () => {
     expect(toAgentError(new Error('HTTP 500')).recovery).toBeUndefined();
     expect(toAgentError(new Error('HTTP 401')).recovery).toBeUndefined();
+  });
+});
+
+describe('recovery copy tables', () => {
+  it('keeps the message and detail tables in step', () => {
+    // The two entries for a recovery value render as one banner, the detail
+    // continuing the message. A value present in one table and missing from the
+    // other would ship a half-written sentence.
+    expect(Object.keys(AGENT_RECOVERY_DETAILS).sort()).toEqual(Object.keys(AGENT_RECOVERY_MESSAGES).sort());
+  });
+
+  it('gives every recovery value a non-empty detail', () => {
+    for (const value of Object.keys(AGENT_RECOVERY_MESSAGES) as AgentRecovery[]) {
+      expect(AGENT_RECOVERY_DETAILS[value].trim().length).toBeGreaterThan(0);
+    }
   });
 });
