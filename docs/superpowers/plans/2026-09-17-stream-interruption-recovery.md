@@ -397,17 +397,34 @@ Note the ordering: the `check` branch is tested first so an interrupted error wi
 
 - [ ] **Step 4: Add the two new style rules**
 
-In `libs/chat/src/lib/styles/chat-error.styles.ts`, find the `.chat-error__retry` rule. Add `.chat-error__check` to the same selector list so both buttons share the existing appearance, and add a detail rule beside the message rule:
+In `libs/chat/src/lib/styles/chat-error.styles.ts`, make three edits.
+
+First, the `.chat-error` container is a `display: flex` row with no wrapping, so a full-width detail line would be squeezed onto the same row. Add wrapping to it:
 
 ```css
-.chat-error__detail {
-  flex-basis: 100%;
-  font-size: 0.875em;
-  opacity: 0.85;
-}
+    flex-wrap: wrap;
 ```
 
-If `.chat-error__retry` is declared alone, change its selector to `.chat-error__retry, .chat-error__check`. Do not duplicate the declarations.
+Second, the three button rules are declared as `.chat-error__retry`, `.chat-error__retry:hover` and `.chat-error__retry:focus-visible`. Add the check button to each selector so both buttons share one appearance, without duplicating any declarations:
+
+```css
+  .chat-error__retry, .chat-error__check { /* existing declarations unchanged */ }
+  .chat-error__retry:hover, .chat-error__check:hover { /* unchanged */ }
+  .chat-error__retry:focus-visible, .chat-error__check:focus-visible { /* unchanged */ }
+```
+
+Third, add a detail rule after `.chat-error__msg`:
+
+```css
+  .chat-error__detail {
+    flex-basis: 100%;
+    margin-left: 24px;
+    font-size: var(--tplane-chat-font-size-sm);
+    opacity: 0.85;
+  }
+```
+
+The `margin-left` aligns the detail under the message text rather than under the 16px icon plus its 0.5rem gap.
 
 - [ ] **Step 5: Run the test and verify it passes**
 
