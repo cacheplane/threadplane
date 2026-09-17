@@ -258,7 +258,7 @@ export async function enqueueInstallDigestJob(
     );
   }
   const candidates = await readInstallDigestCandidates(executor, {
-    limit: 1,
+    limit: 50,
     keyring: input.keyring,
   });
   if (candidates.length === 0) return null;

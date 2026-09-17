@@ -116,7 +116,7 @@ Rows are written in the same transaction that completes the digest job. A retrie
 - New token purpose `founder_approve_install` in `libs/growth/src/lib/tokens.ts`. The payload's `contactId` field carries the first install observation id for this purpose, because no contact exists yet. Verification checks purpose before interpreting the field.
 - Max age 7 days. Digest mail is read later than a stop link, which has 24 hours.
 - New route `apps/website/src/app/api/growth/approve-install/route.ts`, mirroring the stop route: GET verifies and renders a confirm form, POST verifies and acts. Same failure and success responses, same body cap.
-- POST resolves the observation to its identity email, then calls a new `approveContactFromInstallInTransaction` in `libs/growth/src/lib/contacts.ts`, factored from `approveContactFromInstallRuntimeInTransaction` so both share the contact create-or-reactivate logic. It records activity kind `install_digest.outreach_approved` with the observation id and token nonce, then enrolls the contact exactly as the install-runtime path does.
+- POST resolves the observation to its identity email, then calls `approveContactFromInstallDigest` in `libs/growth/src/lib/contacts.ts`, which shares the contact find-or-insert logic with the install-runtime approval and then records the same founder reauthorization the operator CLI records: activity kind `contact.reauthorized` with `provenance: 'founder_action'`, source `signed_founder_approve_install`, and the install observation id in the activity data. Campaign enrollment already accepts that activity, so no enrollment SQL changes.
 - Clicking twice, or clicking after the person already became a contact by another path, returns the success page and changes nothing. A stopped or deleted contact is never reactivated by this link; the response is the failure page.
 - Links are built with `GROWTH_PUBLIC_ACTION_ORIGIN` and the action token keyring, as the stop link is.
 
@@ -126,7 +126,7 @@ Rows are written in the same transaction that completes the digest job. A retrie
 - Template spec for the digest text, including the empty context lines and link presence.
 - Dispatcher spec: `digest` is leased; two ticks on one Pacific business day produce one job; a job that fails after send but before commit reports the same candidates on retry rather than dropping them.
 - Route spec mirroring `stop/route.spec.ts`: bad token, expired token, wrong purpose, happy path, double click, stopped contact.
-- Contacts spec: `approveContactFromInstallInTransaction` creates and approves a new contact, reuses an existing unapproved one, and refuses stopped or deleted ones.
+- Contacts spec: `approveContactFromInstallDigest` creates and approves a new contact, returns unchanged for an already-approved one, and refuses stopped, deleted, or unknown/redacted observations.
 
 ## Operations
 

@@ -1089,7 +1089,7 @@ export async function reauthorizeContact(
 async function reauthorizeContactInTransaction(
   transaction: SqlTransaction,
   input: ReauthorizeContactInput & {
-    extraActivityData?: Record<string, unknown>;
+    extraActivityData?: { install_observation_id: string };
   }
 ): Promise<ReauthorizeContactResult> {
   const contactId = requiredText('contactId', input.contactId, 100);
@@ -1228,7 +1228,7 @@ export async function approveContactFromInstallDigest(
        select i.email_normalized
        from growth_observations o
        join growth_observation_identities i on i.observation_id = o.id
-       where o.id = $1 and o.source = 'install' and o.redacted_at is null`,
+       where o.id = $1 and o.source = 'install' and o.kind = 'package.installed' and o.redacted_at is null`,
       [observationId]
     );
     const raw = identity.rows[0]?.email_normalized;
