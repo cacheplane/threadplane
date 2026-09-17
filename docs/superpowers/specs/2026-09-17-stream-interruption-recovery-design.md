@@ -83,12 +83,16 @@ So the recovery value depends on both what was dispatched and whether a reconcil
 | Close happened | Reconciler configured | Recovery |
 | --- | --- | --- |
 | Before any event, on an ordinary submit | either | `retry` |
-| After `RUN_STARTED`, on an ordinary submit | yes | `check` |
-| After `RUN_STARTED`, on an ordinary submit | no | `none` |
-| On a resume attempt or client-tool continuation | yes | `check` |
-| On a resume attempt or client-tool continuation | no | `none` |
+| After `RUN_STARTED`, on an ordinary submit | either | `none` |
+| On a client-tool continuation | either | `none` |
+| On a resume attempt carrying an interrupt decision | yes | `check` |
+| On a resume attempt carrying an interrupt decision | no | `none` |
 
 `retry` is safe in the first row only. The request never reached the server, and the existing `retry()` already restores the pre-run snapshot and re-runs without appending a duplicate user message. Every other row may have executed server-side work.
+
+A client-tool continuation gets `none` for the same reason as an ordinary submit: it carries no interrupt decision, so the reconciler has nothing correlated to report on.
+
+`check` is offered for resume attempts only, and this is narrower than it first appears. The reconciler's whole vocabulary is the interrupt session: its statuses are `pending`, `acknowledged`, `completed` and `unknown`, and the validation in `InterruptPersistence` ties each of them to a session phase and a correlated resume attempt. It has nothing authoritative to say about an ordinary turn that carried no interrupt. `InterruptPersistence.reconcile()` also returns `null` outright, without calling the backend at all, when no record has been persisted for the thread. Offering a status check on an ordinary submit would therefore either ask a question the backend cannot answer or make no call whatsoever, and in both cases the button would be a lie. An ordinary submit that was dispatched and then truncated gets `none`, with a `detail` sentence saying the outcome could not be confirmed.
 
 When a reconciler exists, the automatic check calls `InterruptPersistence.reconcile()` once. That wrapper takes no arguments, validates the authoritative answer, writes it, and returns the updated thread record; it **throws** when the backend answers `unknown` or when the answer fails validation. The raw four-value status is therefore not visible to the caller, so the outcome is read from the session phase of the returned record:
 

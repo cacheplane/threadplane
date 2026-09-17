@@ -649,6 +649,16 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 Recovery is `retry` only when nothing was dispatched: an ordinary submit whose stream produced no event at all. Anything after `RUN_STARTED`, and every resume attempt or client-tool continuation, may already have run server-side.
 
+`check` is narrower than it first looks, so read `libs/ag-ui/src/lib/interrupt-persistence.ts` before writing the classifier. The reconciler's entire vocabulary is the interrupt session: its statuses are `pending`, `acknowledged`, `completed` and `unknown`, each tied by validation to a session phase and a correlated resume attempt. It has nothing authoritative to say about an ordinary turn, and `InterruptPersistence.reconcile()` returns `null` without calling the backend at all when no record has been persisted for the thread. So `check` requires BOTH a configured reconciler AND a resume attempt on the run. Everything else that was dispatched gets `none`.
+
+| Close happened | Reconciler | Recovery |
+| --- | --- | --- |
+| No event at all, ordinary submit | either | `retry` |
+| After `RUN_STARTED`, ordinary submit | either | `none` |
+| Client-tool continuation | either | `none` |
+| Resume attempt | yes | `check` |
+| Resume attempt | no | `none` |
+
 - [ ] **Step 1: Write the failing test**
 
 Append to `libs/ag-ui/src/lib/to-agent.interruption-recovery.spec.ts`:
@@ -665,6 +675,25 @@ describe('AG-UI recovery classification', () => {
     expect(agent.error()?.recovery).toBe('retry');
     expect(agent.error()?.retryable).toBe(true);
     expect(agent.error()?.message).toBe(AGENT_RECOVERY_MESSAGES.retry);
+  });
+
+  it('offers no check for an ordinary submit, even with a reconciler configured', async () => {
+    const stub = new StubAgent();
+    const reconcile = vi.fn(async () => ({ status: 'unknown' as const }));
+    const agent = toAgent(stub as unknown as AbstractAgent, {
+      persistence: memoryPersistence(reconcile) as never,
+    });
+    stub.runAgent.mockImplementationOnce(async () => {
+      stub.emit({ type: 'RUN_STARTED', runId: 'r1' } as BaseEvent);
+      return { result: undefined, newMessages: [] };
+    });
+
+    await agent.submit({ content: 'hello' });
+
+    // The reconciler describes interrupt sessions. An ordinary turn carries no
+    // correlated attempt, so there is nothing for it to answer.
+    expect(agent.error()?.recovery).toBe('none');
+    expect(reconcile).not.toHaveBeenCalled();
   });
 
   it('does not offer retry once RUN_STARTED arrived without a reconciler', async () => {
