@@ -32,13 +32,20 @@ describe('automatic development evidence', () => {
     return { transport, subjects, destroy$, bridge };
   }
 
+  it('reports a session on construction before any request', () => {
+    const { destroy$ } = setup();
+    expect(developmentEvidence.touches).toBe(1);
+    expect(developmentEvidence.events).toEqual([]);
+    destroy$.next();
+    expect(developmentEvidence.disposed).toBe(1);
+  });
+
   it('requires root terminal evidence and disposes with the bridge', async () => {
     const { transport, bridge, destroy$ } = setup();
-    expect(developmentEvidence.touches).toBe(0);
     const run = bridge.submit({});
     transport.emit([{ type: 'values', data: { done: true } }]); transport.close();
     await run;
-    expect(developmentEvidence.touches).toBeGreaterThan(0);
+    expect(developmentEvidence.touches).toBeGreaterThan(1);
     expect(developmentEvidence.events).toContain('transport.connected');
     expect(developmentEvidence.events).toContain('runtime.first_stream_completed');
     destroy$.next();
