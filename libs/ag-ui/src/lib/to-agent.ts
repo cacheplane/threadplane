@@ -405,6 +405,10 @@ function createAgentAdapter(
    */
   function interruptionError(run: AdapterRun): AgentError {
     const neverDispatched = !run.sawAnyEvent
+      // Redundant by construction today: every run carrying a resume attempt is
+      // dispatched as `resume`, which the request-type check already excludes.
+      // Kept as defence against a future entry point that hands an attempt to a
+      // replayable request type. No test can reach it, so do not go looking.
       && !run.resumeAttempt
       && REPLAYABLE_REQUEST_TYPES.has(run.requestType);
     if (neverDispatched) {
@@ -426,9 +430,11 @@ function createAgentAdapter(
       message: AGENT_RECOVERY_MESSAGES[recovery],
       retryable: false,
       recovery,
+      // Rendered directly beneath `message`, so each reads as its continuation:
+      // the `check` copy adds only the action, the `none` copy only the cost.
       detail: canVerify
-        ? 'Check the status to find out whether it completed.'
-        : 'This backend cannot confirm the outcome. Review the result before trying again.',
+        ? 'Checking will tell you whether it did.'
+        : 'There is no way to confirm whether it did. Trying again could repeat it.',
     });
   }
 
@@ -585,6 +591,11 @@ function createAgentAdapter(
         else if (event.type === 'RUN_ERROR') finalizeDeliveryRun(store, run, 'error');
         return { stopPropagation: true };
       }
+      // Before the outcome guards on purpose: every event the adapter attributes
+      // to this run counts as proof something reached the server, including ones
+      // a guard below suppresses. Events arriving after the run settles also set
+      // it, which is harmless — by then `outcome` is defined, so the classifier
+      // this feeds is already unreachable for that run.
       run.sawAnyEvent = true;
       if (run.outcome === 'aborted' || run.outcome === 'error' || run.outcome === 'interrupted') return { stopPropagation: true };
       if (run.terminalReceived && (run.outcome !== 'paused' || (event.type !== 'CUSTOM' && event.type !== 'RUN_FINISHED'))) return { stopPropagation: true };
