@@ -99,6 +99,7 @@ describe('development generative UI mount evidence', () => {
     fx.componentRef.setInput('telemetry', false);
     fx.detectChanges();
     expect(mounted).not.toHaveBeenCalled();
+    expect(touched).not.toHaveBeenCalled();
   });
   it('honors provideRender telemetry false', () => {
     TestBed.configureTestingModule({
@@ -107,14 +108,16 @@ describe('development generative UI mount evidence', () => {
     const fx = fixture(spec());
     fx.detectChanges();
     expect(mounted).not.toHaveBeenCalled();
+    expect(touched).not.toHaveBeenCalled();
   });
   it('reports a session when the element is constructed, before any mount', () => {
-    const fx = fixture(spec());
+    const fx = fixture(spec({ type: 'Unknown' }));
+    fx.detectChanges();
+    expect(touched).toHaveBeenCalledTimes(1);
     expect(mounted).not.toHaveBeenCalled();
     fx.detectChanges();
     expect(touched).toHaveBeenCalledTimes(1);
-    fx.detectChanges();
-    expect(touched).toHaveBeenCalledTimes(1);
+    expect(mounted).not.toHaveBeenCalled();
   });
   it('does not report a session when the collection policy is disabled', () => {
     const fx = fixture(spec(), false);

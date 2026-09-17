@@ -76,7 +76,7 @@ function browserAllowed(): boolean {
     typeof fetch === 'function'
   );
 }
-/** Inert until a supported integration is actually used; never initialize this at module import. */
+/** Inert at module import and until an integration calls touch() or reports a milestone; never initialize this at module import. */
 export function createDevelopmentRuntime(
   options: DevelopmentRuntimeOptions
 ): DevelopmentRuntime {

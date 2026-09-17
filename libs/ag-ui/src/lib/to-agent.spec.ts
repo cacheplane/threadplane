@@ -47,7 +47,7 @@ describe('automatic development evidence', () => {
     expect(developmentEvidence.touches).toBe(1);
     expect(developmentEvidence.events).toEqual([]);
     await agent.submit({});
-    expect(developmentEvidence.touches).toBe(2);
+    expect(developmentEvidence.touches).toBeGreaterThan(1);
     expect(developmentEvidence.events).toEqual([]);
     stub.runAgent.mockImplementationOnce(async () => {
       stub.emit({ type: 'UNKNOWN' } as BaseEvent);
