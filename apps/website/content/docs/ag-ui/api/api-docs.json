@@ -426,6 +426,12 @@
     "description": "The neutral Agent contract, widened with the AG-UI adapter's\n`customEvents` signal (the chat composition feature-detects it to enable\nlive a2ui streaming), the browser client-tools capability, and concrete\nACTIVITY-backed `subagents`.\nMirrors langgraph's LangGraphAgent extension where the protocol surfaces\noverlap.",
     "properties": [
       {
+        "name": "checkStatus",
+        "type": "() => Promise<void>",
+        "description": "Optional read-only reconciliation of an uncertain run outcome, offered when\n`error().recovery === 'check'`. Asks the backend what happened.\n\nThe answer arrives on the signals, not in the return value: a run the\nbackend reports as finished clears `error` and returns `status` to idle,\nand any messages it committed appear on `messages`. An outcome that stays\nunknown leaves the existing error in place, so the caller can offer the\ncheck again later.\n\nAdapters implementing this must not resubmit the operation and must not\nappend a message; a dropped stream is not proof that the server did\nnothing. They should reject while a request is in flight, and must discard\na result that resolves after a newer request has started.",
+        "optional": true
+      },
+      {
         "name": "clientTools",
         "type": "ClientToolsCapability",
         "description": "Optional: client-declared, client-executed tools (see ClientToolsCapability).",

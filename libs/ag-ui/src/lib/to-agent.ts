@@ -14,6 +14,7 @@ import {
   isAbortError,
   AgentError,
   AGENT_ERROR_MESSAGES,
+  AGENT_RECOVERY_MESSAGES,
 } from '@threadplane/chat';
 import type {
   Agent, Message, AgentStatus, ToolCall, AgentEvent,
@@ -386,19 +387,44 @@ function createAgentAdapter(
     failRunTelemetry(options.protectOperationErrors ? undefined : error, run);
   }
 
+  // Placeholder recovery classification for an unexpectedly closed stream.
+  // Task 5 replaces this body with the real classifier; until then every
+  // interruption reports the most conservative option.
+  function interruptionError(_run: AdapterRun): AgentError {
+    return new AgentError({
+      kind: 'interrupted',
+      message: AGENT_RECOVERY_MESSAGES.none,
+      retryable: false,
+      recovery: 'none',
+    });
+  }
+
   function settleTransportClose(run: AdapterRun): void {
     if (run.outcome === undefined) {
+      if (run.terminalReceived) {
+        // A terminal event arrived but the reducer declined to attribute it to
+        // this run. The protocol settled; preserve the previous behavior.
+        finalizeDeliveryRun(store, run, 'success');
+        if (activeRun === run) {
+          store.status.set('idle');
+          store.isLoading.set(false);
+          store.error.set(undefined);
+        }
+        finishRunTelemetry(run);
+        return;
+      }
+      // No terminal evidence and no user stop: the stream closed unexpectedly.
       if (run.resumeAttempt) {
         rollbackState();
         interrupts.fail(run.resumeAttempt.id, false);
         publishInterrupt();
         void persistCurrent().catch(() => undefined);
       }
-      finalizeDeliveryRun(store, run, run.ownedMessageIds.size > 0 ? 'interrupted' : 'success');
+      finalizeDeliveryRun(store, run, 'interrupted');
       if (activeRun === run) {
-        store.status.set('idle');
+        store.status.set('error');
         store.isLoading.set(false);
-        store.error.set(undefined);
+        store.error.set(interruptionError(run));
       }
     }
     finishRunTelemetry(run);

@@ -39,11 +39,12 @@ export {
   createAgentRef,
   AgentError,
   AGENT_ERROR_MESSAGES,
+  AGENT_RECOVERY_MESSAGES,
   toAgentError,
   isAbortError,
 } from './lib/agent';
 export type { AgentRef } from './lib/agent';
-export type { AgentErrorKind } from './lib/agent';
+export type { AgentErrorKind, AgentRecovery } from './lib/agent';
 
 // Primitives
 export { ChatMessageListComponent, getMessageType } from './lib/primitives/chat-message-list/chat-message-list.component';
