@@ -70,6 +70,15 @@ export interface Agent<TState = unknown> {
   /** Optional: client-declared, client-executed tools (see ClientToolsCapability). */
   clientTools?: ClientToolsCapability;
 
+  /**
+   * Optional read-only reconciliation of an uncertain run outcome, offered when
+   * `error().recovery === 'check'`. Asks the backend what happened; never
+   * resubmits the operation and never appends a message. Rejects while a
+   * request is in flight. A result that arrives after a newer request has
+   * started is discarded.
+   */
+  checkStatus?: () => Promise<void>;
+
   // Events stream (required; emit EMPTY if runtime produces no events)
   events$: Observable<AgentEvent>;
 }
