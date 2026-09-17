@@ -1,10 +1,12 @@
 import {
   createDatabaseExecutor,
   dispatchGrowthLeasedJob,
+  enqueueInstallDigestJob,
   failLeasedJob,
   isGoogleMailboxRecoveryPaused,
   leaseDueJobs,
   materializeCampaignEnrollment,
+  pacificCalendarDate,
   processInstallRuntimeActivations,
   reconcilePendingResendMessageIds,
   renewJobLease,
@@ -31,6 +33,7 @@ const LEASED_KINDS = [
   'send_step',
   'reply_reconcile',
   'research_cleanup',
+  'digest',
 ] as const;
 
 export interface LifecycleDispatcherInput {
@@ -38,6 +41,7 @@ export interface LifecycleDispatcherInput {
   campaignEnabled: boolean;
   campaignEnrollmentEnabled?: boolean;
   installRuntimeHelloEnabled?: boolean;
+  installDigestEnabled?: boolean;
   campaignEnrollmentStartAt?: Date;
   signal: AbortSignal;
 }
@@ -60,6 +64,7 @@ export interface LifecycleDispatcherDependencies {
   isRecoveryPaused: typeof isGoogleMailboxRecoveryPaused;
   leaseDueJobs: typeof leaseDueJobs;
   materializeCampaignEnrollment: typeof materializeCampaignEnrollment;
+  enqueueInstallDigestJob: typeof enqueueInstallDigestJob;
   processInstallRuntimeActivations: typeof processInstallRuntimeActivations;
   reconcileMessageIds?: typeof reconcilePendingResendMessageIds;
   loadEmailKeyring: typeof loadEmailHmacKeyring;
@@ -77,6 +82,7 @@ const defaultDependencies: LifecycleDispatcherDependencies = {
   isRecoveryPaused: isGoogleMailboxRecoveryPaused,
   leaseDueJobs,
   materializeCampaignEnrollment,
+  enqueueInstallDigestJob,
   processInstallRuntimeActivations,
   reconcileMessageIds: reconcilePendingResendMessageIds,
   loadEmailKeyring: loadEmailHmacKeyring,
@@ -189,6 +195,19 @@ export async function dispatchLifecycleJobs(
         now: dependencies.now(),
         batchSize,
       });
+    }
+    if (input.installDigestEnabled === true) {
+      const now = dependencies.now();
+      const calendar = pacificCalendarDate(now);
+      if (calendar.weekday) {
+        await dependencies.enqueueInstallDigestJob(executor, {
+          now,
+          idempotencyKey: `install_digest:${calendar.date}`,
+          businessDate: calendar.date,
+          keyring: dependencies.loadEmailKeyring(),
+        });
+        input.signal.throwIfAborted();
+      }
     }
     const recoveryWasPaused = await dependencies.isRecoveryPaused(executor);
     input.signal.throwIfAborted();

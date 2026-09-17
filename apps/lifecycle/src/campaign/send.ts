@@ -11,10 +11,14 @@ import {
   failLeasedJob,
   loadGrowthTokenKeyring,
   markProviderAcceptanceUnknown,
+  markInstallDigestReported,
   markInternalNotificationUnknown,
   markProviderRejection,
   normalizeGrowthPublicActionOrigin,
   normalizeRecipientEmail,
+  parseEmailHmacKeyring,
+  readInstallDigestCandidates,
+  readInstallDigestContext,
   readLifecycleJobContext,
   recordProviderAcceptance,
   RECIPIENT_EMAIL_SENDER,
@@ -25,11 +29,14 @@ import {
   type GrowthDispatchResult,
   type GrowthJob,
   type GrowthTokenKey,
+  type InstallDigestCandidate,
+  type InstallDigestContext,
   type RecipientDeliveryPolicy,
   type RecipientAttachment,
   type RecipientEmailInput,
   type RecipientSendResult,
   type SqlExecutor,
+  type SqlTransaction,
   type CampaignTemplateId,
   type UnsubscribeActionUrl,
 } from '../growth.js';
@@ -44,7 +51,9 @@ import {
   type EnrichmentArtifact,
 } from '../enrichment/schema.js';
 import { renderFulfillmentTemplate } from '../fulfillment/templates.js';
+import { renderInstallDigest } from '../notifications/install-digest.js';
 import { renderInternalNotificationSummary } from '../notifications/templates.js';
+import { loadEmailHmacKeyring } from '../email-keyring.js';
 import { DeterministicLifecycleJobError } from '../job-errors.js';
 export { LIFECYCLE_SCORE_CONTENT_REGISTRY_V1 } from '../score-policy.js';
 import {
@@ -84,6 +93,9 @@ interface DeferLeasedJobInput extends LeasedTransitionInput {
   availableAt: Date;
 }
 
+type EmailHmacKeyring = ReturnType<typeof parseEmailHmacKeyring>;
+type InternalNotificationKind = 'notify' | 'digest';
+
 export interface LifecycleJobDependencies {
   now: () => Date;
   readJobContext: (
@@ -104,7 +116,7 @@ export interface LifecycleJobDependencies {
     input: DeferLeasedJobInput
   ) => Promise<GrowthJob>;
   completeJob: (
-    executor: SqlExecutor,
+    executor: SqlTransaction,
     input: LeasedTransitionInput
   ) => Promise<GrowthJob>;
   cancelJob: (
@@ -113,7 +125,12 @@ export interface LifecycleJobDependencies {
   ) => Promise<GrowthJob>;
   claimInternalNotification: (
     executor: SqlExecutor,
-    input: { jobId: string; leaseToken: string; now: Date }
+    input: {
+      jobId: string;
+      leaseToken: string;
+      now: Date;
+      kind?: InternalNotificationKind;
+    }
   ) => Promise<boolean>;
   markInternalNotificationUnknown: (
     executor: SqlExecutor,
@@ -122,6 +139,7 @@ export interface LifecycleJobDependencies {
       leaseToken: string;
       occurredAt: Date;
       errorCode: string;
+      kind?: InternalNotificationKind;
     }
   ) => Promise<GrowthJob>;
   failJob: (
@@ -133,7 +151,26 @@ export interface LifecycleJobDependencies {
     subject: string;
     text: string;
     idempotencyKey: string;
+    kind?: InternalNotificationKind;
   }) => Promise<{ outcome: 'accepted' | 'rejected' | 'unknown' }>;
+  readInstallDigestCandidates: (
+    executor: SqlExecutor,
+    input: { limit: number; keyring?: EmailHmacKeyring }
+  ) => Promise<InstallDigestCandidate[]>;
+  readInstallDigestContext: (
+    executor: SqlExecutor,
+    input: { since: Date }
+  ) => Promise<InstallDigestContext>;
+  markInstallDigestReported: (
+    executor: SqlTransaction,
+    input: {
+      digestJobId: string;
+      reportedAt: Date;
+      candidates: readonly InstallDigestCandidate[];
+    }
+  ) => Promise<void>;
+  readonly publicActionOrigin: string;
+  readonly emailKeyring: EmailHmacKeyring;
   founderNotificationEmail: string;
   recipientPolicy: RecipientDeliveryPolicy;
   tokenKey: GrowthTokenKey;
@@ -142,6 +179,7 @@ export interface LifecycleJobDependencies {
 export interface LifecycleRuntimeConfiguration {
   campaignEnrollmentEnabled: boolean;
   installRuntimeHelloEnabled: boolean;
+  installDigestEnabled: boolean;
   campaignEnrollmentStartAt?: Date;
   campaignEnabled: boolean;
   deliveryEnabled: boolean;
@@ -442,6 +480,15 @@ export async function dispatchLifecycleAppOwnedJob(
   const leaseToken = requireLease(job);
   const signal = dispatchContext.signal ?? new AbortController().signal;
   signal.throwIfAborted();
+  if (job.kind === 'digest') {
+    return dispatchInstallDigestJob(
+      executor,
+      job,
+      leaseToken,
+      signal,
+      dependencies
+    );
+  }
   const now = dependencies.now();
   const context = await dependencies.readJobContext(executor, {
     jobId: job.id,
@@ -598,6 +645,145 @@ export async function dispatchLifecycleAppOwnedJob(
   );
 }
 
+const INSTALL_DIGEST_CANDIDATE_LIMIT = 200;
+const INSTALL_DIGEST_CONTEXT_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Founder-only install digest. The job has no contact, so it never reads the
+ * lifecycle contact context; the identities are recorded as reported only
+ * after the provider accepted the message, in the same transaction that
+ * completes the job.
+ *
+ * Crash after acceptance: the retry finds the internal-notification claim
+ * already consumed and fails the job with `install_digest_outcome_unknown`
+ * for manual review. An empty `growth_install_digest_reports where
+ * digest_job_id = <job>` then tells the operator the identities were never
+ * recorded, so the next digest reports them again.
+ */
+async function dispatchInstallDigestJob(
+  executor: SqlExecutor,
+  job: GrowthJob,
+  leaseToken: string,
+  signal: AbortSignal,
+  dependencies: LifecycleJobDependencies
+): Promise<GrowthDispatchResult> {
+  if (!dependencies.recipientPolicy.deliveryEnabled) {
+    const retryAt = dependencies.now();
+    await dependencies.deferJob(executor, {
+      jobId: job.id,
+      leaseToken,
+      now: retryAt,
+      availableAt: new Date(retryAt.getTime() + RETRY_DELAY_MS),
+      errorCode: 'delivery_disabled',
+    });
+    return 'deferred';
+  }
+  const businessDate =
+    typeof job.payload['business_date'] === 'string'
+      ? job.payload['business_date']
+      : null;
+  if (!businessDate || !/^\d{4}-\d{2}-\d{2}$/u.test(businessDate)) {
+    throw new DeterministicLifecycleJobError(
+      'Digest job is missing its business date'
+    );
+  }
+  const candidates = await dependencies.readInstallDigestCandidates(executor, {
+    limit: INSTALL_DIGEST_CANDIDATE_LIMIT,
+    keyring: dependencies.emailKeyring,
+  });
+  signal.throwIfAborted();
+  if (candidates.length === 0) {
+    await dependencies.completeJob(executor, {
+      jobId: job.id,
+      leaseToken,
+      now: dependencies.now(),
+    });
+    return 'completed';
+  }
+  const issuedAt = dependencies.now();
+  const context = await dependencies.readInstallDigestContext(executor, {
+    since: new Date(issuedAt.getTime() - INSTALL_DIGEST_CONTEXT_WINDOW_MS),
+  });
+  const text = renderInstallDigest({
+    businessDate,
+    publicActionOrigin: dependencies.publicActionOrigin,
+    candidates: candidates.map((candidate) => ({
+      ...candidate,
+      approveUrl: `${
+        dependencies.publicActionOrigin
+      }/api/growth/approve-install?token=${createGrowthActionToken(
+        {
+          contactId: candidate.firstInstallObservationId,
+          purpose: 'founder_approve_install',
+          issuedAt,
+          eventNonce: job.id,
+        },
+        dependencies.tokenKey
+      )}`,
+    })),
+    context,
+  });
+  signal.throwIfAborted();
+  const claimed = await dependencies.claimInternalNotification(executor, {
+    jobId: job.id,
+    leaseToken,
+    now: issuedAt,
+    kind: 'digest',
+  });
+  if (!claimed) {
+    await dependencies.markInternalNotificationUnknown(executor, {
+      jobId: job.id,
+      leaseToken,
+      occurredAt: dependencies.now(),
+      errorCode: 'install_digest_outcome_unknown',
+      kind: 'digest',
+    });
+    return 'failed';
+  }
+  signal.throwIfAborted();
+  const sent = await dependencies.sendInternalNotification({
+    to: dependencies.founderNotificationEmail,
+    subject: `Threadplane install digest for ${businessDate}: ${
+      candidates.length
+    } new ${candidates.length === 1 ? 'identity' : 'identities'}`,
+    text,
+    idempotencyKey: job.idempotencyKey,
+    kind: 'digest',
+  });
+  if (sent.outcome === 'unknown') {
+    await dependencies.markInternalNotificationUnknown(executor, {
+      jobId: job.id,
+      leaseToken,
+      occurredAt: dependencies.now(),
+      errorCode: 'install_digest_outcome_unknown',
+      kind: 'digest',
+    });
+    return 'failed';
+  }
+  if (sent.outcome === 'rejected') {
+    await dependencies.failJob(executor, {
+      jobId: job.id,
+      leaseToken,
+      now: dependencies.now(),
+      errorCode: 'install_digest_rejected',
+    });
+    return 'failed';
+  }
+  await executor.transaction(async (transaction) => {
+    await dependencies.markInstallDigestReported(transaction, {
+      digestJobId: job.id,
+      reportedAt: dependencies.now(),
+      candidates,
+    });
+    await dependencies.completeJob(transaction, {
+      jobId: job.id,
+      leaseToken,
+      now: dependencies.now(),
+    });
+  });
+  return 'completed';
+}
+
 function exactBoolean(
   environment: Record<string, string | undefined>,
   name: string
@@ -620,6 +806,10 @@ export function loadLifecycleRuntimeConfiguration(
     environment,
     'GROWTH_INSTALL_RUNTIME_HELLO_ENABLED'
   );
+  const installDigestEnabled = exactBoolean(
+    environment,
+    'GROWTH_INSTALL_DIGEST_ENABLED'
+  );
   const deliveryEnabled = exactBoolean(environment, 'DELIVERY_ENABLED');
   let campaignEnrollmentStartAt: Date | undefined;
   if (campaignEnrollmentEnabled) {
@@ -641,6 +831,7 @@ export function loadLifecycleRuntimeConfiguration(
   return {
     campaignEnrollmentEnabled,
     installRuntimeHelloEnabled,
+    installDigestEnabled,
     ...(campaignEnrollmentStartAt ? { campaignEnrollmentStartAt } : {}),
     campaignEnabled,
     deliveryEnabled,
@@ -723,6 +914,8 @@ export function createDefaultLifecycleJobDependencies(
         tokenKey: GrowthTokenKey;
       }
     | undefined;
+  // Lazy so a disabled digest never requires identity credentials.
+  let cachedEmailKeyring: EmailHmacKeyring | undefined;
   const mailRuntime = () => {
     if (cachedMailRuntime) return cachedMailRuntime;
     const apiKey = requiredEnvironmentText(environment, 'RESEND_API_KEY');
@@ -797,7 +990,7 @@ export function createDefaultLifecycleJobDependencies(
             text: input.text,
             tags: [
               { name: 'environment', value: recipientPolicy.environment },
-              { name: 'job_kind', value: 'notify' },
+              { name: 'job_kind', value: input.kind ?? 'notify' },
             ],
           },
           { idempotencyKey: `internal:${input.idempotencyKey}` }
@@ -815,6 +1008,16 @@ export function createDefaultLifecycleJobDependencies(
       } catch {
         return { outcome: 'unknown' as const };
       }
+    },
+    readInstallDigestCandidates,
+    readInstallDigestContext,
+    markInstallDigestReported,
+    get publicActionOrigin() {
+      return mailRuntime().publicActionOrigin;
+    },
+    get emailKeyring() {
+      cachedEmailKeyring ??= loadEmailHmacKeyring(environment);
+      return cachedEmailKeyring;
     },
     get founderNotificationEmail() {
       return mailRuntime().founderNotificationEmail;
@@ -872,6 +1075,7 @@ export function createLifecycleAppJobHandlers(
     },
     research_cleanup: dawn.research_cleanup,
     notify: handler,
+    digest: handler,
     send_step: handler,
   };
 }

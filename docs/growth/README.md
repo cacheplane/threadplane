@@ -68,6 +68,7 @@ configuration, and deployed apps receive secrets through their hosting platforms
 | `npm run growth:control -- status --email <address>` | Read contact controls; `approve`, `stop` and `delete` are separate explicit mutations |
 | `npm run growth:research -- synthetic --output <absolute-directory>` | Write a local synthetic evaluation corpus; `acquire` and `run` can call providers |
 | `npm run growth:analytics:plan` | Read-only PostHog configuration comparison |
+| Founder install digest (lifecycle tick, `GROWTH_INSTALL_DIGEST_ENABLED`) | Daily plain-text list of install-only work-email identities with one-click approve links; read-only unless a link is clicked |
 | `npm run growth:analytics:report` | Fetch dashboard results and write a local report for review |
 | `npm run growth:analytics:quality -- --days 7` | Read recent event samples and validate the analytics contract |
 | `npm run growth:search:pull` / `growth:search:report` | Pull Search Console data, then render local snapshots |

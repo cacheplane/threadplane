@@ -26,6 +26,7 @@ export async function workflow(
     campaignEnabled: configuration.campaignEnabled,
     campaignEnrollmentEnabled: configuration.campaignEnrollmentEnabled,
     installRuntimeHelloEnabled: configuration.installRuntimeHelloEnabled,
+    installDigestEnabled: configuration.installDigestEnabled,
     campaignEnrollmentStartAt: configuration.campaignEnrollmentStartAt,
     signal: context.signal,
   });

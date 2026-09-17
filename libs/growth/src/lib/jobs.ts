@@ -1167,11 +1167,17 @@ export async function renewJobLease(
 
 export async function claimInternalNotificationSubmission(
   executor: SqlExecutor,
-  input: { jobId: string; leaseToken: string; now: Date }
+  input: {
+    jobId: string;
+    leaseToken: string;
+    now: Date;
+    kind?: 'notify' | 'digest';
+  }
 ): Promise<boolean> {
   const jobId = requiredText('jobId', input.jobId);
   const leaseToken = requiredText('leaseToken', input.leaseToken);
   const now = validDate('now', input.now);
+  const kind = input.kind ?? 'notify';
   const result = await executor.execute<{ event_key: string }>(
     `/* growth:claim-internal-notification-submission */
      insert into growth_activity (
@@ -1185,14 +1191,14 @@ export async function claimInternalNotificationSubmission(
             jsonb_build_object('at_most_once', true)
      from growth_jobs j
      where j.id = $1
-       and j.kind = 'notify'
+       and j.kind = $4
        and j.status = 'leased'
        and j.lease_token = $2::uuid
        and j.lease_until > $3
        and not ${blockedFormJob('j')}
      on conflict (event_key) do nothing
      returning event_key`,
-    [jobId, leaseToken, now]
+    [jobId, leaseToken, now, kind]
   );
   return result.rows.length === 1;
 }
@@ -1204,12 +1210,14 @@ export async function markInternalNotificationUnknown(
     leaseToken: string;
     occurredAt: Date;
     errorCode: string;
+    kind?: 'notify' | 'digest';
   }
 ): Promise<GrowthJob> {
   const jobId = requiredText('jobId', input.jobId);
   const leaseToken = requiredText('leaseToken', input.leaseToken);
   const occurredAt = validDate('occurredAt', input.occurredAt);
   const errorCode = requiredText('errorCode', input.errorCode);
+  const kind = input.kind ?? 'notify';
   return executor.transaction(async (transaction) => {
     const result = await transaction.execute<JobRow>(
       `/* growth:mark-internal-notification-unknown */
@@ -1220,13 +1228,13 @@ export async function markInternalNotificationUnknown(
            delivery_status = 'unknown',
            last_error_code = $4
        where id = $1
-         and kind = 'notify'
+         and kind = $5
          and lease_token = $2::uuid
          and status = 'leased'
          and lease_until > $3
          and delivery_status = 'not_submitted'
        returning *`,
-      [jobId, leaseToken, occurredAt, errorCode]
+      [jobId, leaseToken, occurredAt, errorCode, kind]
     );
     const row = result.rows[0];
     if (!row) throw new JobLeaseConflictError(jobId);
@@ -1247,8 +1255,9 @@ export async function markInternalNotificationUnknown(
   });
 }
 
+// Single statement, so it also runs inside an existing transaction.
 async function transitionLeasedJob(
-  executor: SqlExecutor,
+  executor: SqlTransaction,
   marker: string,
   status: 'completed' | 'failed' | 'cancelled',
   input: {
@@ -1280,7 +1289,7 @@ async function transitionLeasedJob(
 }
 
 export function completeLeasedJob(
-  executor: SqlExecutor,
+  executor: SqlTransaction,
   input: {
     jobId: string;
     leaseToken: string;
