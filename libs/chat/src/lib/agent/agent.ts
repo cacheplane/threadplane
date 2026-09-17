@@ -72,10 +72,18 @@ export interface Agent<TState = unknown> {
 
   /**
    * Optional read-only reconciliation of an uncertain run outcome, offered when
-   * `error().recovery === 'check'`. Asks the backend what happened; never
-   * resubmits the operation and never appends a message. Rejects while a
-   * request is in flight. A result that arrives after a newer request has
-   * started is discarded.
+   * `error().recovery === 'check'`. Asks the backend what happened.
+   *
+   * The answer arrives on the signals, not in the return value: a run the
+   * backend reports as finished clears `error` and returns `status` to idle,
+   * and any messages it committed appear on `messages`. An outcome that stays
+   * unknown leaves the existing error in place, so the caller can offer the
+   * check again later.
+   *
+   * Adapters implementing this must not resubmit the operation and must not
+   * append a message; a dropped stream is not proof that the server did
+   * nothing. They should reject while a request is in flight, and must discard
+   * a result that resolves after a newer request has started.
    */
   checkStatus?: () => Promise<void>;
 

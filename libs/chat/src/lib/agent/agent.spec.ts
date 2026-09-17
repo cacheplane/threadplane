@@ -35,6 +35,10 @@ describe('Agent interface', () => {
   });
 });
 
+// These two cases document how an optional capability is used; they cannot
+// catch its removal, because vitest does not type-check. The regression guard
+// for the contract itself is `_checkStatus` in agent-error.type-spec.ts, which
+// the `type-tests` target compiles.
 describe('Agent.checkStatus', () => {
   const base = (): Agent => ({
     messages: signal([]),
