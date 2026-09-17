@@ -50,6 +50,8 @@ Terminal evidence is `RUN_FINISHED` carrying a valid outcome, or `RUN_ERROR`. Th
 
 Unchanged: a close after a valid `RUN_FINISHED` (including an `interrupt` outcome) settles normally; `abortRun` still settles a user Stop as `aborted` with the error cleared; explicitly thrown failures still flow through `failRun` and keep their existing `auth` / `server` / `connection` classification. Run ownership, generation tracking, and stale-event suppression are untouched.
 
+**A consequence worth stating.** The adapter sends its own run id when resuming an interrupt, and `resolveCallbackRun` refuses to attribute an event whose run id does not match one it already registered. A backend that ignores the id it was given and mints a fresh one on resume therefore has its terminal event dropped before the adapter ever sees it. Under the old lenient settlement that run fell through to `success`; now it is reported as an interruption. This is the intended sharpening of the contract, because the adapter genuinely has no evidence that run finished, but it is a real behavioural change against a backend that does not echo the id. It surfaced while implementing this change, through a test harness that had been modelling exactly that non-conforming server.
+
 ### 3.2 LangGraph
 
 Terminal evidence is the root completion event for the current step (`currentStepHasTerminalEvidence` / `rootTerminalEvidence`).

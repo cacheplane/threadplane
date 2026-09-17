@@ -735,19 +735,28 @@ npx nx test ag-ui --testFile=libs/ag-ui/src/lib/to-agent.interruption-recovery.s
 
 Expected: the first case FAILS with `recovery` `'none'` instead of `'retry'`; the second FAILS on the missing `detail`.
 
-- [ ] **Step 3: Track whether anything was received**
+- [ ] **Step 3: Track what the run was and whether anything was received**
 
-Add a field to the `AdapterRun` interface at `libs/ag-ui/src/lib/to-agent.ts:268`:
+Add two fields to the `AdapterRun` interface at `libs/ag-ui/src/lib/to-agent.ts:268`:
 
 ```ts
+    requestType: string;
     sawAnyEvent?: boolean;
 ```
 
-Set it in the `onEvent` subscriber, immediately after the `if (run !== activeRun)` block and before the outcome guards:
+`beginRun(requestType, ...)` already receives the request type but discards it. Store it on the run it builds, alongside `startedAt`:
+
+```ts
+      requestType,
+```
+
+Set `sawAnyEvent` in the `onEvent` subscriber, immediately after the `if (run !== activeRun)` block and before the outcome guards:
 
 ```ts
       run.sawAnyEvent = true;
 ```
+
+The request type matters because `executeRun` is called with six different ones. `submit`, `retry` and `regenerate` are ordinary turns whose input `retry()` can safely re-send. `resume` carries an interrupt decision and `client-tool-continuation` carries tool results, and neither may be replayed on a guess.
 
 - [ ] **Step 4: Replace the classifier**
 
@@ -760,8 +769,12 @@ Replace `interruptionError` with:
    * no event at all. A resume attempt or a client-tool continuation may have
    * committed server-side work, so it is never retryable here.
    */
+  const REPLAYABLE_REQUEST_TYPES = new Set(['submit', 'retry', 'regenerate']);
+
   function interruptionError(run: AdapterRun): AgentError {
-    const neverDispatched = !run.sawAnyEvent && !run.resumeAttempt && !run.resumedInterrupt;
+    const neverDispatched = !run.sawAnyEvent
+      && !run.resumeAttempt
+      && REPLAYABLE_REQUEST_TYPES.has(run.requestType);
     if (neverDispatched) {
       return new AgentError({
         kind: 'interrupted',
@@ -770,7 +783,9 @@ Replace `interruptionError` with:
         recovery: 'retry',
       });
     }
-    const canVerify = persistence !== undefined;
+    // The reconciler speaks only about interrupt sessions, so it can answer for
+    // a resume attempt and for nothing else.
+    const canVerify = persistence !== undefined && run.resumeAttempt !== undefined;
     const recovery = canVerify ? 'check' : 'none';
     return new AgentError({
       kind: 'interrupted',
