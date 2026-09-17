@@ -30,6 +30,13 @@ export interface InstallDigestCandidate {
   emailKeyVersion: number;
 }
 
+/**
+ * Upper bound on distinct package@version pairs carried per candidate. The
+ * reader enforces it in SQL (newest pairs win) so the renderer's schema can
+ * never reject a row the reader produced. `installCount` stays exact.
+ */
+export const INSTALL_DIGEST_MAX_PACKAGES = 20;
+
 export interface InstallDigestContext {
   since: Date;
   anonymousInstallSubjects: number;
@@ -93,9 +100,15 @@ export async function readInstallDigestCandidates(
          and split_part(i.email_normalized, '@', 2) <> ''
          and lower(split_part(i.email_normalized, '@', 2)) <> all($2::text[])
          and coalesce(o.properties->>'environment', 'unknown') <> 'ci'
+         -- Contacts in ANY state are excluded. Deleted contacts keep only their
+         -- HMAC pair (scrub nulls email_normalized), so the pair match is what
+         -- catches them; the post-query keyring check covers a pair recorded
+         -- under a previous key version.
          and not exists (
            select 1 from growth_contacts c
            where c.email_normalized = i.email_normalized::citext
+              or (c.email_hmac_key_version = i.email_key_version
+                  and c.email_lookup_hmac = i.email_lookup_hmac)
          )
          -- Redaction deletes identity rows, so the transitive email match below
          -- can lose its anchor after a key rotation; the direct pair match and
@@ -114,25 +127,42 @@ export async function readInstallDigestCandidates(
             and ri.email_lookup_hmac = r.email_lookup_hmac
            where ri.email_normalized = i.email_normalized
          )
+     ),
+     -- One row per (email, package@version), keyed by its most recent install,
+     -- so the per-email aggregate can keep the newest distinct pairs only.
+     distinct_packages as (
+       select email,
+              package_name || '@' || package_version as package,
+              max(received_at) as last_received_at
+       from identified
+       group by email, package_name, package_version
+     ),
+     bounded_packages as (
+       select email,
+              (array_agg(package order by last_received_at desc, package))
+                [1:${INSTALL_DIGEST_MAX_PACKAGES}] as packages
+       from distinct_packages
+       group by email
      )
-     select email,
-            max(git_display_name) as git_display_name,
-            max(repository_provider) as repository_provider,
-            max(repository_owner) as repository_owner,
-            bool_or(local_origin) as local_origin,
-            array_agg(distinct package_name || '@' || package_version) as packages,
+     select i.email,
+            max(i.git_display_name) as git_display_name,
+            max(i.repository_provider) as repository_provider,
+            max(i.repository_owner) as repository_owner,
+            bool_or(i.local_origin) as local_origin,
+            p.packages,
             count(*)::integer as install_count,
-            min(received_at) as first_seen_at,
-            max(received_at) as last_seen_at,
-            (array_agg(observation_id order by received_at, observation_id))[1]
+            min(i.received_at) as first_seen_at,
+            max(i.received_at) as last_seen_at,
+            (array_agg(i.observation_id order by i.received_at, i.observation_id))[1]
               as first_install_observation_id,
-            (array_agg(email_lookup_hmac order by received_at, observation_id))[1]
+            (array_agg(i.email_lookup_hmac order by i.received_at, i.observation_id))[1]
               as email_lookup_hmac,
-            (array_agg(email_key_version order by received_at, observation_id))[1]
+            (array_agg(i.email_key_version order by i.received_at, i.observation_id))[1]
               as email_key_version
-     from identified
-     group by email
-     order by min(received_at), email
+     from identified i
+     join bounded_packages p on p.email = i.email
+     group by i.email, p.packages
+     order by min(i.received_at), i.email
      limit $1`,
     [limit, [...PERSONAL_EMAIL_DOMAINS]]
   );
@@ -167,9 +197,12 @@ export async function readInstallDigestCandidates(
   }
   if (!input.keyring || candidates.length === 0) return candidates;
   // Rotated-and-redacted edge: a report recorded under a previous key whose
-  // identity rows were since redacted matches neither exclusion above. The SQL
-  // already excluded every other reported identity, so this rarely drops rows
-  // and does not disturb `limit` in normal operation.
+  // identity rows were since redacted matches neither exclusion above. The
+  // same applies to contacts: a deleted contact keeps only its HMAC pair, and
+  // after a key rotation a fresh identity row carries the new key version, so
+  // the pair no longer matches in SQL. The SQL already excluded every other
+  // reported identity and contact, so this rarely drops rows and does not
+  // disturb `limit` in normal operation.
   const pairs = candidates.flatMap((candidate) =>
     createEmailLookupCandidates(candidate.email, input.keyring!).map((c) => ({
       email_key_version: c.keyVersion,
@@ -181,13 +214,19 @@ export async function readInstallDigestCandidates(
     email_lookup_hmac: string;
   }>(
     `/* growth:read-install-digest-reported-pairs */
-     select r.email_key_version, r.email_lookup_hmac
-     from growth_install_digest_reports r
-     where (r.email_key_version, r.email_lookup_hmac) in (
+     with pairs as (
        select c.email_key_version, c.email_lookup_hmac
        from jsonb_to_recordset($1::jsonb)
          as c(email_key_version smallint, email_lookup_hmac text)
-     )`,
+     )
+     select r.email_key_version, r.email_lookup_hmac
+     from growth_install_digest_reports r
+     where (r.email_key_version, r.email_lookup_hmac) in (select * from pairs)
+     union all
+     select gc.email_hmac_key_version as email_key_version,
+            gc.email_lookup_hmac
+     from growth_contacts gc
+     where (gc.email_hmac_key_version, gc.email_lookup_hmac) in (select * from pairs)`,
     [JSON.stringify(pairs)]
   );
   const hits = new Set(

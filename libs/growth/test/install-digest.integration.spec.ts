@@ -2,10 +2,12 @@ import { randomUUID } from 'node:crypto';
 import { acceptObservationBatch } from '../src/lib/observability/ingest.ts';
 import {
   enqueueInstallDigestJob,
+  INSTALL_DIGEST_MAX_PACKAGES,
   markInstallDigestReported,
   readInstallDigestCandidates,
   readInstallDigestContext,
 } from '../src/lib/observability/install-digest.ts';
+import { stopContact } from '../src/lib/stops.ts';
 import {
   evidenceDatabase,
   evidenceFixture,
@@ -39,10 +41,11 @@ describe('install digest candidates', () => {
       'delete from growth_observation_subjects where external_id=any($1::uuid[])',
       [subjects]
     );
+    // Deleted contacts have a null email; find every contact by HMAC pair.
     const contacts = (
       await db.execute<{ id: string }>(
-        'select id from growth_contacts where email_normalized=any($1::text[])',
-        [emails]
+        'select id from growth_contacts where email_lookup_hmac=any($1::text[])',
+        [digests]
       )
     ).rows.map((c) => c.id);
     await db.execute(
@@ -146,6 +149,92 @@ describe('install digest candidates', () => {
     expect(candidates.map((c) => c.email)).not.toContain(personal);
     expect(candidates.map((c) => c.email)).not.toContain(ci);
     expect(candidates.map((c) => c.email)).not.toContain(existing);
+
+    // Contacts in any state are excluded. A deleted contact keeps only its
+    // HMAC pair (growth:scrub-contact nulls email_normalized), and a stopped
+    // contact keeps its email but carries a manual_suppression activity.
+    const deleted = `${randomUUID()}@deleted-corp.example`;
+    const stopped = `${randomUUID()}@stopped-corp.example`;
+    await db.execute(
+      `insert into growth_contacts (email_normalized, email_lookup_hmac, email_hmac_key_version, source)
+       values ($1, $2, $3, 'website')`,
+      [
+        deleted,
+        createEmailLookupHmac(deleted, evidenceKeys.active).digest,
+        evidenceKeys.active.version,
+      ]
+    );
+    await db.execute(
+      `update growth_contacts
+       set email_normalized = null,
+           display_name = null,
+           company_name = null,
+           company_domain = null,
+           outreach_approved_at = null,
+           source = 'deleted:integration',
+           deleted_at = $2
+       where email_lookup_hmac = $1`,
+      [createEmailLookupHmac(deleted, evidenceKeys.active).digest, now]
+    );
+    const stoppedContact = await db.execute<{ id: string }>(
+      `insert into growth_contacts (email_normalized, email_lookup_hmac, email_hmac_key_version, source)
+       values ($1, $2, $3, 'website') returning id`,
+      [
+        stopped,
+        createEmailLookupHmac(stopped, evidenceKeys.active).digest,
+        evidenceKeys.active.version,
+      ]
+    );
+    await stopContact(db, {
+      contactId: stoppedContact.rows[0]!.id,
+      reason: 'manual_suppression',
+      eventKey: `digest-stop:${stoppedContact.rows[0]!.id}`,
+      occurredAt: now,
+      source: 'integration',
+      provenance: {
+        actor: 'founder',
+        kind: 'founder_action',
+        policyVersion: 'growth-v1',
+      },
+    });
+    await accept(install(now, { email: deleted }), now);
+    await accept(install(now, { email: stopped }), now);
+    const afterContacts = (
+      await readInstallDigestCandidates(db, { limit: 200 })
+    ).map((c) => c.email);
+    expect(afterContacts).not.toContain(deleted);
+    expect(afterContacts).not.toContain(stopped);
+    expect(
+      (
+        await readInstallDigestCandidates(db, {
+          limit: 200,
+          keyring: evidenceKeys,
+        })
+      ).map((c) => c.email)
+    ).not.toContain(deleted);
+
+    // The reader owns the package bound: installCount stays exact while
+    // packages keeps only the newest distinct package@version pairs.
+    const prolific = `${randomUUID()}@prolific-corp.example`;
+    for (let index = 0; index < 22; index += 1) {
+      const at = new Date(now.getTime() + index * 1_000);
+      await accept(
+        install(at, { email: prolific, packageVersion: `0.2.${index}` }),
+        at
+      );
+    }
+    const prolificLine = (
+      await readInstallDigestCandidates(db, { limit: 200 })
+    ).find((c) => c.email === prolific);
+    expect(prolificLine).toBeDefined();
+    expect(prolificLine!.installCount).toBe(22);
+    expect(prolificLine!.packages).toHaveLength(INSTALL_DIGEST_MAX_PACKAGES);
+    expect(prolificLine!.packages.map((p) => p.packageVersion)).not.toContain(
+      '0.2.0'
+    );
+    expect(prolificLine!.packages.map((p) => p.packageVersion)).toContain(
+      '0.2.21'
+    );
 
     const jobKey = `install_digest:test:${randomUUID()}`;
     jobKeys.push(jobKey);

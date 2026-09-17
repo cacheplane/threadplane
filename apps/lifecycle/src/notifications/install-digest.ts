@@ -1,6 +1,9 @@
 import { z } from 'zod';
 
-import { normalizeGrowthPublicActionOrigin } from '../growth.js';
+import {
+  INSTALL_DIGEST_MAX_PACKAGES,
+  normalizeGrowthPublicActionOrigin,
+} from '../growth.js';
 
 const APPROVE_INSTALL_PATH = '/api/growth/approve-install';
 const APPROVE_TOKEN_PATTERN = /^[A-Za-z0-9._-]+$/u;
@@ -31,7 +34,7 @@ const CandidateSchema = z.object({
   gitConfigOrigin: z.enum(['local', 'global']),
   packages: z
     .array(z.object({ packageName: safeText(214), packageVersion: safeText(64) }))
-    .max(20),
+    .max(INSTALL_DIGEST_MAX_PACKAGES),
   installCount: z.number().int().min(1),
   firstSeenAt: z.date(),
   lastSeenAt: z.date(),

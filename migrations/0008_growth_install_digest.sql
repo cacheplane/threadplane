@@ -1,8 +1,9 @@
+-- The report ledger is the digest's idempotency memory; deleting a digest job must not erase it.
 create table growth_install_digest_reports (
   email_lookup_hmac text not null,
   email_key_version smallint not null check (email_key_version > 0),
   first_install_observation_id uuid not null references growth_observations(id) on delete cascade,
-  digest_job_id uuid not null references growth_jobs(id) on delete cascade,
+  digest_job_id uuid not null references growth_jobs(id),
   reported_at timestamptz not null,
   primary key (email_key_version, email_lookup_hmac)
 );

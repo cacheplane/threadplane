@@ -56,6 +56,7 @@ export { assessFormAbuse, FORM_ABUSE_THRESHOLD, FORM_ABUSE_VERSION, type FormAbu
 export { bindProviderMessageId } from './lib/replies.ts';
 export { reconcilePendingResendMessageIds } from './lib/resend.ts';
 export {
+  INSTALL_DIGEST_MAX_PACKAGES,
   readInstallDigestCandidates,
   readInstallDigestContext,
   enqueueInstallDigestJob,
