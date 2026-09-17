@@ -264,7 +264,25 @@ In `libs/chat/src/lib/agent/agent.ts`, add directly after the `clientTools` memb
 
 `libs/chat/src/lib/testing/mock-agent.ts` declares `MockAgent extends Agent`, so an optional member needs no stub there. Leave that file untouched: `mockAgent()` must NOT define a `checkStatus`, because later component tests attach one only for the branch that requires it.
 
-- [ ] **Step 5: Run the test and verify it passes**
+- [ ] **Step 5: Guard the contract in the type-tests target**
+
+Vitest runs through esbuild and does not type-check, so neither runtime test above can fail if `checkStatus` is removed from the interface. The real guard is the `type-tests` target, which runs `tsc --noEmit` over the `*.type-spec.ts` files.
+
+`libs/chat/src/lib/agent/agent-error.type-spec.ts` is already the de-facto Agent contract type-spec: it asserts `Agent['error']` and `Agent['retry']` despite its name. Add one line there in the same style:
+
+```ts
+type _checkStatus = Expect<Equal<Agent['checkStatus'], (() => Promise<void>) | undefined>>;
+```
+
+Do not create a new file. Run:
+
+```bash
+npx nx type-tests chat --skip-nx-cache
+```
+
+Expected: PASS. Then prove it is load-bearing: temporarily delete the `checkStatus` member from `agent.ts`, re-run, confirm it FAILS, and restore. Use the Nx target or `node ./node_modules/typescript/bin/tsc`; bare `npx tsc` resolves to a different, older compiler in this repo.
+
+- [ ] **Step 6: Run the test and verify it passes**
 
 ```bash
 npx nx test chat --testFile=libs/chat/src/lib/agent/agent.spec.ts --skip-nx-cache
@@ -272,10 +290,10 @@ npx nx test chat --testFile=libs/chat/src/lib/agent/agent.spec.ts --skip-nx-cach
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
-git add libs/chat/src/lib/agent/agent.ts libs/chat/src/lib/agent/agent.spec.ts
+git add libs/chat/src/lib/agent/agent.ts libs/chat/src/lib/agent/agent.spec.ts libs/chat/src/lib/agent/agent-error.type-spec.ts
 git commit -m "feat(chat): add an optional checkStatus action to the Agent contract
 
 Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
