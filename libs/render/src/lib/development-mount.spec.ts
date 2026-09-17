@@ -20,11 +20,15 @@ class FallbackComponent {}
 
 describe('development generative UI mount evidence', () => {
   let mounted: ReturnType<typeof vi.fn>;
+  let touched: ReturnType<typeof vi.fn>;
   beforeEach(() => {
     mounted = vi.fn();
+    touched = vi.fn();
     vi.spyOn(telemetry, 'createDevelopmentRuntime').mockImplementation(
       (options) => ({
-        touch: vi.fn(),
+        touch: () => {
+          if (options.enabled?.() !== false) touched();
+        },
         dispose: vi.fn(),
         milestone: (kind) => {
           if (options.enabled?.() !== false) mounted(kind);
@@ -103,5 +107,18 @@ describe('development generative UI mount evidence', () => {
     const fx = fixture(spec());
     fx.detectChanges();
     expect(mounted).not.toHaveBeenCalled();
+  });
+  it('reports a session when the element is constructed, before any mount', () => {
+    const fx = fixture(spec());
+    expect(mounted).not.toHaveBeenCalled();
+    fx.detectChanges();
+    expect(touched).toHaveBeenCalledTimes(1);
+    fx.detectChanges();
+    expect(touched).toHaveBeenCalledTimes(1);
+  });
+  it('does not report a session when the collection policy is disabled', () => {
+    const fx = fixture(spec(), false);
+    fx.detectChanges();
+    expect(touched).not.toHaveBeenCalled();
   });
 });

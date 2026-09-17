@@ -162,6 +162,8 @@ export class RenderElementComponent implements OnInit {
   private destroyed = false;
 
   constructor() {
+    // One session observation per boot; guards and dedupe live inside touch().
+    this.development.touch();
     this.destroyRef.onDestroy(() => this.development.dispose());
     afterEveryRender(() => {
       // Evidence is the mounted outlet itself: an element that is hidden,
