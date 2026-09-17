@@ -1,6 +1,7 @@
 import { createHmac } from 'node:crypto';
 
 import {
+  FOUNDER_APPROVE_INSTALL_TOKEN_MAX_AGE_SECONDS,
   FOUNDER_STOP_TOKEN_MAX_AGE_SECONDS,
   compareTokenHmac,
   createGrowthActionToken,
@@ -326,5 +327,42 @@ describe('growth action tokens', () => {
       `token:founder_stop:${contactId}:${issuedAt.getTime()}:founder-message-3`
     );
     expect(growthStopEventKey(payload)).not.toContain(token);
+  });
+});
+
+describe('founder_approve_install tokens', () => {
+  const key = { version: 3, secret: 'approve-install-token-secret-material!' };
+  const observationId = '0f1e2d3c-4b5a-4c7d-8e9f-a0b1c2d3e4f5';
+  const issuedAt = new Date('2026-09-16T15:00:00.000Z');
+
+  it('signs and verifies an install observation id under the approve purpose for seven days', () => {
+    const token = createGrowthActionToken(
+      { contactId: observationId, purpose: 'founder_approve_install', issuedAt, eventNonce: 'digest-job-1' },
+      key
+    );
+    expect(FOUNDER_APPROVE_INSTALL_TOKEN_MAX_AGE_SECONDS).toBe(7 * 24 * 60 * 60);
+    expect(
+      verifyGrowthActionToken(token, {
+        expectedPurpose: 'founder_approve_install',
+        keyring: { active: key },
+        now: new Date(issuedAt.getTime() + 6 * 24 * 60 * 60 * 1000),
+        maxAgeSeconds: FOUNDER_APPROVE_INSTALL_TOKEN_MAX_AGE_SECONDS,
+      })
+    ).toMatchObject({ contactId: observationId, purpose: 'founder_approve_install', eventNonce: 'digest-job-1' });
+    expect(
+      verifyGrowthActionToken(token, {
+        expectedPurpose: 'founder_approve_install',
+        keyring: { active: key },
+        now: new Date(issuedAt.getTime() + 8 * 24 * 60 * 60 * 1000),
+        maxAgeSeconds: FOUNDER_APPROVE_INSTALL_TOKEN_MAX_AGE_SECONDS,
+      })
+    ).toBeNull();
+    expect(
+      verifyGrowthActionToken(token, {
+        expectedPurpose: 'founder_stop',
+        keyring: { active: key },
+        now: issuedAt,
+      })
+    ).toBeNull();
   });
 });

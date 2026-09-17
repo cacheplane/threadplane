@@ -22,8 +22,12 @@ const unsubscribeActionUrlValues = new WeakMap<
 declare const unsubscribeActionUrlBrand: unique symbol;
 
 export const FOUNDER_STOP_TOKEN_MAX_AGE_SECONDS = 24 * 60 * 60;
+export const FOUNDER_APPROVE_INSTALL_TOKEN_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
 
-export type GrowthTokenPurpose = 'unsubscribe' | 'founder_stop';
+export type GrowthTokenPurpose =
+  | 'unsubscribe'
+  | 'founder_stop'
+  | 'founder_approve_install';
 
 export interface GrowthTokenKey {
   version: number;
@@ -36,6 +40,7 @@ export interface GrowthTokenKeyring {
 }
 
 export interface CreateGrowthActionTokenInput {
+  /** Contact id for unsubscribe/founder_stop; the first install observation id for founder_approve_install. */
   contactId: string;
   purpose: GrowthTokenPurpose;
   issuedAt: Date;
@@ -153,7 +158,11 @@ function assertContactId(contactId: string): string {
 }
 
 function assertPurpose(purpose: unknown): GrowthTokenPurpose {
-  if (purpose !== 'unsubscribe' && purpose !== 'founder_stop') {
+  if (
+    purpose !== 'unsubscribe' &&
+    purpose !== 'founder_stop' &&
+    purpose !== 'founder_approve_install'
+  ) {
     throw new Error('Unsupported growth action token purpose');
   }
   return purpose;
@@ -331,7 +340,9 @@ function parseWirePayload(encodedPayload: string): WirePayload | null {
       !Number.isSafeInteger(record['k']) ||
       (record['k'] as number) <= 0 ||
       (record['k'] as number) > 32_767 ||
-      (record['p'] !== 'unsubscribe' && record['p'] !== 'founder_stop') ||
+      (record['p'] !== 'unsubscribe' &&
+        record['p'] !== 'founder_stop' &&
+        record['p'] !== 'founder_approve_install') ||
       (record['n'] !== undefined &&
         (typeof record['n'] !== 'string' ||
           record['n'].length === 0 ||
