@@ -77,6 +77,7 @@ function dependencies(
       enrolledContactIds: [],
       createdJobs: 0,
     }),
+    enqueueInstallDigestJob: vi.fn().mockResolvedValue(null),
     now: vi.fn(() => NOW),
     renewJobLease: vi
       .fn()
@@ -290,6 +291,7 @@ describe('dispatchLifecycleJobs', () => {
         'send_step',
         'reply_reconcile',
         'research_cleanup',
+        'digest',
       ],
       leaseDurationMs: 60_000,
       now: NOW,
@@ -383,6 +385,57 @@ describe('dispatchLifecycleJobs', () => {
       expect(deps.processInstallRuntimeActivations).not.toHaveBeenCalled();
     }
   );
+
+  it('enqueues the install digest once per Pacific business day when enabled', async () => {
+    const enqueueInstallDigestJob = vi
+      .fn()
+      .mockResolvedValue('00000000-0000-4000-8000-00000000d1e5');
+    // 2026-09-16T15:00Z is Wednesday 08:00 Pacific.
+    const now = new Date('2026-09-16T15:00:00.000Z');
+    const deps = dependencies({
+      enqueueInstallDigestJob,
+      now: vi.fn(() => now),
+    });
+    await dispatchLifecycleJobs(
+      {
+        batchSize: 25,
+        campaignEnabled: false,
+        installDigestEnabled: true,
+        signal: new AbortController().signal,
+      },
+      deps
+    );
+    expect(enqueueInstallDigestJob).toHaveBeenCalledWith(expect.anything(), {
+      now,
+      idempotencyKey: 'install_digest:2026-09-16',
+      businessDate: '2026-09-16',
+      keyring: EMAIL_KEYRING,
+    });
+  });
+
+  it('does not enqueue the install digest on weekends or when disabled', async () => {
+    const enqueueInstallDigestJob = vi.fn();
+    // 2026-09-19T15:00Z is Saturday 08:00 Pacific.
+    const saturday = new Date('2026-09-19T15:00:00.000Z');
+    await dispatchLifecycleJobs(
+      {
+        batchSize: 25,
+        campaignEnabled: false,
+        installDigestEnabled: true,
+        signal: new AbortController().signal,
+      },
+      dependencies({ enqueueInstallDigestJob, now: vi.fn(() => saturday) })
+    );
+    await dispatchLifecycleJobs(
+      {
+        batchSize: 25,
+        campaignEnabled: false,
+        signal: new AbortController().signal,
+      },
+      dependencies({ enqueueInstallDigestJob, now: vi.fn(() => NOW) })
+    );
+    expect(enqueueInstallDigestJob).not.toHaveBeenCalled();
+  });
 
   it('does no enrollment work when enrollment is disabled', async () => {
     const deps = dependencies();

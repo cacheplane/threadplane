@@ -44,6 +44,23 @@ const UNSUBSCRIBE = createUnsubscribeActionUrl(
   TOKEN_KEY,
   'https://website.test'
 );
+const DIGEST_CANDIDATE = {
+  email: 'dev@corp.example',
+  companyDomain: 'corp.example',
+  gitDisplayName: 'Dev Person',
+  repositoryProvider: 'github',
+  repositoryOwner: 'corp',
+  gitConfigOrigin: 'global' as const,
+  packages: [
+    { packageName: '@threadplane/langgraph', packageVersion: '0.2.0' },
+  ],
+  installCount: 1,
+  firstSeenAt: new Date('2026-09-15T15:00:00.000Z'),
+  lastSeenAt: new Date('2026-09-15T15:00:00.000Z'),
+  firstInstallObservationId: '0f1e2d3c-4b5a-4c7d-8e9f-a0b1c2d3e4f5',
+  emailLookupHmac: 'a'.repeat(64),
+  emailKeyVersion: 1,
+};
 
 function job(
   kind = 'send_step',
@@ -435,6 +452,14 @@ function dependencies(
       nonProductionRedirectTo: 'recipient-test@threadplane.ai',
     },
     tokenKey: TOKEN_KEY,
+    publicActionOrigin: 'https://threadplane.ai',
+    readInstallDigestCandidates: vi.fn().mockResolvedValue([DIGEST_CANDIDATE]),
+    readInstallDigestContext: vi.fn().mockResolvedValue({
+      since: new Date('2026-09-15T14:00:00.000Z'),
+      anonymousInstallSubjects: 2,
+      ciInstallSubjects: 5,
+    }),
+    markInstallDigestReported: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   };
 }
@@ -894,7 +919,19 @@ describe('loadLifecycleRuntimeConfiguration', () => {
       campaignEnabled: false,
       deliveryEnabled: false,
       installRuntimeHelloEnabled: false,
+      installDigestEnabled: false,
     });
+  });
+
+  it('enables the install digest only with the exact configured boolean', () => {
+    expect(
+      loadLifecycleRuntimeConfiguration({
+        GROWTH_INSTALL_DIGEST_ENABLED: 'true',
+      })
+    ).toMatchObject({ installDigestEnabled: true });
+    expect(() =>
+      loadLifecycleRuntimeConfiguration({ GROWTH_INSTALL_DIGEST_ENABLED: '1' })
+    ).toThrow('GROWTH_INSTALL_DIGEST_ENABLED must be exactly true or false');
   });
 
   it('enables install-runtime hello only with the exact configured boolean', () => {
@@ -1084,5 +1121,103 @@ describe('loadLifecycleRuntimeConfiguration', () => {
         idempotencyKey: 'notify:test:accepted',
       })
     ).resolves.toEqual({ outcome: 'accepted' });
+  });
+});
+
+describe('install digest jobs', () => {
+  const digest = () =>
+    ({
+      ...job('digest', {
+        business_date: '2026-09-16',
+        digest_kind: 'install_identities',
+      }),
+      contactId: null,
+    } as GrowthJob);
+
+  it('renders, claims, sends to the founder, records the identities and completes', async () => {
+    const deps = dependencies();
+    await expect(
+      dispatchLifecycleAppOwnedJob({} as SqlExecutor, digest(), {}, deps)
+    ).resolves.toBe('completed');
+    expect(deps.claimInternalNotification).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ kind: 'digest' })
+    );
+    expect(deps.sendInternalNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: 'founder@threadplane.ai',
+        subject: 'Threadplane install digest for 2026-09-16: 1 new identity',
+        text: expect.stringContaining(
+          'dev@corp.example (Dev Person) — corp.example'
+        ),
+        idempotencyKey: digest().idempotencyKey,
+        kind: 'digest',
+      })
+    );
+    const text = (deps.sendInternalNotification as ReturnType<typeof vi.fn>)
+      .mock.calls[0][0].text as string;
+    expect(text).toMatch(
+      /https:\/\/threadplane\.ai\/api\/growth\/approve-install\?token=g1\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/u
+    );
+    expect(deps.markInstallDigestReported).toHaveBeenCalledWith(
+      expect.anything(),
+      {
+        digestJobId: digest().id,
+        reportedAt: NOW,
+        candidates: [DIGEST_CANDIDATE],
+      }
+    );
+    expect(deps.completeJob).toHaveBeenCalledOnce();
+    expect(deps.sendRecipient).not.toHaveBeenCalled();
+    expect(deps.readJobContext).not.toHaveBeenCalled();
+  });
+
+  it('completes without sending when no candidates remain', async () => {
+    const deps = dependencies({
+      readInstallDigestCandidates: vi.fn().mockResolvedValue([]),
+    });
+    await expect(
+      dispatchLifecycleAppOwnedJob({} as SqlExecutor, digest(), {}, deps)
+    ).resolves.toBe('completed');
+    expect(deps.sendInternalNotification).not.toHaveBeenCalled();
+    expect(deps.markInstallDigestReported).not.toHaveBeenCalled();
+  });
+
+  it('defers while delivery is disabled', async () => {
+    const deps = dependencies();
+    deps.recipientPolicy = { ...deps.recipientPolicy, deliveryEnabled: false };
+    await expect(
+      dispatchLifecycleAppOwnedJob({} as SqlExecutor, digest(), {}, deps)
+    ).resolves.toBe('deferred');
+    expect(deps.deferJob).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ errorCode: 'delivery_disabled' })
+    );
+    expect(deps.sendInternalNotification).not.toHaveBeenCalled();
+  });
+
+  it('fails for manual review and does not record identities when the claim is lost or the outcome is unknown', async () => {
+    const lost = dependencies({
+      claimInternalNotification: vi.fn().mockResolvedValue(false),
+    });
+    await expect(
+      dispatchLifecycleAppOwnedJob({} as SqlExecutor, digest(), {}, lost)
+    ).resolves.toBe('failed');
+    expect(lost.sendInternalNotification).not.toHaveBeenCalled();
+    expect(lost.markInstallDigestReported).not.toHaveBeenCalled();
+
+    const unknown = dependencies({
+      sendInternalNotification: vi
+        .fn()
+        .mockResolvedValue({ outcome: 'unknown' }),
+    });
+    await expect(
+      dispatchLifecycleAppOwnedJob({} as SqlExecutor, digest(), {}, unknown)
+    ).resolves.toBe('failed');
+    expect(unknown.markInternalNotificationUnknown).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ kind: 'digest' })
+    );
+    expect(unknown.markInstallDigestReported).not.toHaveBeenCalled();
   });
 });
