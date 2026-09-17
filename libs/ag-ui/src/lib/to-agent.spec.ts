@@ -40,13 +40,14 @@ describe('automatic development evidence', () => {
       expect(isDevelopmentRuntimeEnabled(agent)).toBe(telemetry === undefined);
     }
   });
-  it('requires a current RUN_FINISHED success, and ignores construction and empty close', async () => {
+  it('reports a session on construction and requires a current RUN_FINISHED success', async () => {
     developmentEvidence.events = []; developmentEvidence.touches = 0;
     const stub = new StubAgent();
     const agent = toAgent(stub as unknown as AbstractAgent);
-    expect(developmentEvidence.touches).toBe(0);
-    await agent.submit({});
     expect(developmentEvidence.touches).toBe(1);
+    expect(developmentEvidence.events).toEqual([]);
+    await agent.submit({});
+    expect(developmentEvidence.touches).toBe(2);
     expect(developmentEvidence.events).toEqual([]);
     stub.runAgent.mockImplementationOnce(async () => {
       stub.emit({ type: 'UNKNOWN' } as BaseEvent);
