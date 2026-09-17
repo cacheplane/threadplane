@@ -793,8 +793,8 @@ Replace `interruptionError` with:
       retryable: false,
       recovery,
       detail: canVerify
-        ? 'Check the status to find out whether it completed.'
-        : 'This backend cannot confirm the outcome. Review the result before trying again.',
+        ? 'Checking will tell you whether it did.'
+        : 'There is no way to confirm whether it did. Trying again could repeat it.',
     });
   }
 ```
@@ -1389,7 +1389,7 @@ Replace `finalizeClosedAttempt`:
         message: AGENT_RECOVERY_MESSAGES.check,
         retryable: false,
         recovery: 'check',
-        detail: 'Check the status to find out whether it completed.',
+        detail: 'Checking will tell you whether it did.',
       }));
       subjects.status$.next(ResourceStatus.Error);
     }
