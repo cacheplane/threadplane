@@ -268,6 +268,11 @@ function createAgentAdapter(
   });
   interface AdapterRun extends ReducerDeliveryRun {
     startedAt: number;
+    /** Which entry point opened this run; only some are safely replayable. */
+    requestType: string;
+    /** Set for every event the adapter attributes to this run, including ones
+     *  a later guard suppresses. Proof that something reached the server. */
+    sawAnyEvent?: boolean;
     telemetrySettled: boolean;
     resumedInterrupt: boolean;
     resumeAttempt?: ResumeAttempt;
@@ -339,6 +344,7 @@ function createAgentAdapter(
         ? getTailAssistantMessageId(store.messages())
         : undefined,
       startedAt: Date.now(),
+      requestType,
       telemetrySettled: false,
       resumedInterrupt,
     };
@@ -389,15 +395,40 @@ function createAgentAdapter(
     failRunTelemetry(options.protectOperationErrors ? undefined : error, run);
   }
 
-  // Placeholder recovery classification for an unexpectedly closed stream.
-  // Task 5 replaces this body with the real classifier; until then every
-  // interruption reports the most conservative option.
-  function interruptionError(_run: AdapterRun): AgentError {
+  const REPLAYABLE_REQUEST_TYPES = new Set(['submit', 'retry', 'regenerate']);
+
+  /**
+   * Classify what recovery is safe after an unexpected close. `retry` requires
+   * proof that nothing was dispatched: an ordinary turn whose stream produced
+   * no event at all. A resume attempt or a client-tool continuation may have
+   * committed server-side work, so neither is ever retryable here.
+   */
+  function interruptionError(run: AdapterRun): AgentError {
+    const neverDispatched = !run.sawAnyEvent
+      && !run.resumeAttempt
+      && REPLAYABLE_REQUEST_TYPES.has(run.requestType);
+    if (neverDispatched) {
+      return new AgentError({
+        kind: 'interrupted',
+        message: AGENT_RECOVERY_MESSAGES.retry,
+        retryable: true,
+        recovery: 'retry',
+      });
+    }
+    // The reconciler speaks only about interrupt sessions, so it can answer for
+    // a resume attempt and for nothing else. Without one configured, a store
+    // has no authoritative outcome to report: InterruptPersistence.reconcile()
+    // throws outright when `reconcile` is absent.
+    const canVerify = options.persistence?.reconcile !== undefined && run.resumeAttempt !== undefined;
+    const recovery = canVerify ? 'check' : 'none';
     return new AgentError({
       kind: 'interrupted',
-      message: AGENT_RECOVERY_MESSAGES.none,
+      message: AGENT_RECOVERY_MESSAGES[recovery],
       retryable: false,
-      recovery: 'none',
+      recovery,
+      detail: canVerify
+        ? 'Check the status to find out whether it completed.'
+        : 'This backend cannot confirm the outcome. Review the result before trying again.',
     });
   }
 
@@ -554,6 +585,7 @@ function createAgentAdapter(
         else if (event.type === 'RUN_ERROR') finalizeDeliveryRun(store, run, 'error');
         return { stopPropagation: true };
       }
+      run.sawAnyEvent = true;
       if (run.outcome === 'aborted' || run.outcome === 'error' || run.outcome === 'interrupted') return { stopPropagation: true };
       if (run.terminalReceived && (run.outcome !== 'paused' || (event.type !== 'CUSTOM' && event.type !== 'RUN_FINISHED'))) return { stopPropagation: true };
       const hasDevelopmentEvidence = event.type !== 'RUN_FINISHED' || hasValidFinishedOutcome(event);

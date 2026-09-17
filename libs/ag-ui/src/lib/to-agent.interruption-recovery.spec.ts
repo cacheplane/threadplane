@@ -1,7 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { AbstractAgent, BaseEvent } from '@ag-ui/client';
-import { AgentError, type AgentRuntimeTelemetryPayload } from '@threadplane/chat';
+import { AgentError, AGENT_RECOVERY_MESSAGES, type AgentRuntimeTelemetryPayload } from '@threadplane/chat';
 import { toAgent } from './to-agent';
+import type { AgUiInterruptPersistence } from './interrupt-persistence';
 
 vi.mock('@threadplane/telemetry/browser', async (importOriginal) => ({
   ...await importOriginal<object>(),
@@ -15,6 +16,7 @@ vi.mock('@threadplane/telemetry/browser', async (importOriginal) => ({
 /** Minimal AbstractAgent stand-in; mirrors the stub in to-agent.spec.ts,
  *  trimmed to the members toAgent() actually calls. */
 class StubAgent {
+  threadId = 't1';
   state: Record<string, unknown> = {};
   private readonly _subscribers: Array<{
     onRunInitialized?: (p: { input: { runId?: string } }) => void;
@@ -204,5 +206,206 @@ describe('AG-UI unexpected close', () => {
     expect(agent.error()?.kind).toBe('interrupted');
     expect(agent.status()).toBe('error');
     expect(agent.isLoading()).toBe(false);
+  });
+});
+
+/** In-memory persistence, optionally with an authoritative reconciler. */
+function memoryPersistence(reconcile?: () => Promise<unknown>): AgUiInterruptPersistence {
+  const saved = new Map<string, unknown>();
+  return {
+    namespace: 'test',
+    store: {
+      load: async (key: string) => (saved.get(key) ?? null) as never,
+      compareAndSwap: async (key: string, _rev: number | null, next: unknown) => {
+        saved.set(key, next);
+        return true;
+      },
+    },
+    ...(reconcile ? { reconcile: reconcile as never } : {}),
+  };
+}
+
+describe('AG-UI unexpected close — recovery classification', () => {
+  /** Drive a real approval pause, so a following submit({ resume }) is a
+   *  genuine resume attempt rather than a hand-built one. */
+  async function pausedAgent(persistence?: AgUiInterruptPersistence) {
+    const stub = new StubAgent();
+    const agent = toAgent(stub as unknown as AbstractAgent, {
+      telemetry: false,
+      ...(persistence ? { persistence } : {}),
+    });
+    await agent.ready;
+    stub.runAgent.mockImplementationOnce(async () => {
+      stub.emit({ type: 'RUN_STARTED', runId: 'r1' } as BaseEvent);
+      stub.emit({
+        type: 'RUN_FINISHED',
+        runId: 'r1',
+        outcome: { type: 'interrupt', interrupts: [{ id: 'i1', value: { question: 'ok?' } }] },
+      } as unknown as BaseEvent);
+      return { result: undefined, newMessages: [] };
+    });
+    await agent.submit({ content: 'book it' });
+    // Guards the rest of the case: without a real pause there is nothing to resume.
+    expect(agent.interrupt()).toBeDefined();
+    return { stub, agent };
+  }
+
+  it('offers a retry when an ordinary turn produced no event at all', async () => {
+    const stub = new StubAgent();
+    const agent = toAgent(stub as unknown as AbstractAgent, { telemetry: false });
+    stub.runAgent.mockImplementationOnce(async () => ({ result: undefined, newMessages: [] }));
+
+    await agent.submit({ content: 'hello' });
+
+    const err = agent.error();
+    expect(err?.kind).toBe('interrupted');
+    expect(err?.recovery).toBe('retry');
+    expect(err?.retryable).toBe(true);
+    expect(err?.message).toBe(AGENT_RECOVERY_MESSAGES.retry);
+  });
+
+  it('offers no action when an ordinary turn was truncated after RUN_STARTED', async () => {
+    const stub = new StubAgent();
+    const agent = toAgent(stub as unknown as AbstractAgent, { telemetry: false });
+    stub.runAgent.mockImplementationOnce(async () => {
+      stub.emit({ type: 'RUN_STARTED', runId: 'r1' } as BaseEvent);
+      return { result: undefined, newMessages: [] };
+    });
+
+    await agent.submit({ content: 'hello' });
+
+    const err = agent.error();
+    expect(err?.recovery).toBe('none');
+    expect(err?.retryable).toBe(false);
+    expect(err?.message).toBe(AGENT_RECOVERY_MESSAGES.none);
+    expect(typeof err?.detail).toBe('string');
+    expect(err?.detail?.length).toBeGreaterThan(0);
+  });
+
+  it('does not offer a status check for an ordinary turn, even with a reconciler', async () => {
+    const reconcile = vi.fn(async () => ({ status: 'unknown' as const }));
+    const stub = new StubAgent();
+    const agent = toAgent(stub as unknown as AbstractAgent, {
+      telemetry: false,
+      persistence: memoryPersistence(reconcile),
+    });
+    await agent.ready;
+    stub.runAgent.mockImplementationOnce(async () => {
+      stub.emit({ type: 'RUN_STARTED', runId: 'r1' } as BaseEvent);
+      return { result: undefined, newMessages: [] };
+    });
+
+    await agent.submit({ content: 'hello' });
+
+    // The reconciler's vocabulary is the interrupt session. An ordinary turn has
+    // no correlated attempt for it to answer about, so offering a check would
+    // either ask an unanswerable question or make no call at all.
+    expect(agent.error()?.recovery).toBe('none');
+    expect(reconcile).not.toHaveBeenCalled();
+  });
+
+  it('does not offer a retry once a tool call has started', async () => {
+    const stub = new StubAgent();
+    const agent = toAgent(stub as unknown as AbstractAgent, { telemetry: false });
+    stub.runAgent.mockImplementationOnce(async () => {
+      stub.emit({ type: 'RUN_STARTED', runId: 'r1' } as BaseEvent);
+      stub.emit({
+        type: 'TOOL_CALL_START',
+        toolCallId: 'call-1',
+        toolCallName: 'book_flight',
+        parentMessageId: 'tool-parent',
+      } as unknown as BaseEvent);
+      stub.emit({ type: 'TOOL_CALL_ARGS', toolCallId: 'call-1', delta: '{}' } as unknown as BaseEvent);
+      return { result: undefined, newMessages: [] };
+    });
+
+    await agent.submit({ content: 'book it' });
+
+    // Guards against a vacuous pass: the tool call really did reach the store.
+    expect(agent.toolCalls().map(call => call.id)).toContain('call-1');
+    expect(agent.error()?.kind).toBe('interrupted');
+    expect(agent.error()?.recovery).not.toBe('retry');
+    expect(agent.error()?.retryable).toBe(false);
+  });
+
+  it('offers no action for a truncated resume when nothing is persisted', async () => {
+    const { stub, agent } = await pausedAgent();
+    stub.runAgent.mockImplementationOnce(async () => ({ result: undefined, newMessages: [] }));
+
+    await agent.submit({ resume: { approved: true } });
+
+    const err = agent.error();
+    expect(err?.kind).toBe('interrupted');
+    expect(err?.recovery).toBe('none');
+    expect(err?.retryable).toBe(false);
+  });
+
+  it('offers no action for a truncated resume when persistence has no reconciler', async () => {
+    const { stub, agent } = await pausedAgent(memoryPersistence());
+    stub.runAgent.mockImplementationOnce(async () => ({ result: undefined, newMessages: [] }));
+
+    await agent.submit({ resume: { approved: true } });
+
+    const err = agent.error();
+    expect(err?.kind).toBe('interrupted');
+    // A store without a reconciler has no authoritative answer to give:
+    // InterruptPersistence.reconcile() throws outright when it is absent.
+    expect(err?.recovery).toBe('none');
+    expect(err?.retryable).toBe(false);
+  });
+
+  it('offers a status check for a truncated resume when a reconciler is configured', async () => {
+    const reconcile = vi.fn(async () => ({ status: 'unknown' as const }));
+    const { stub, agent } = await pausedAgent(memoryPersistence(reconcile));
+    stub.runAgent.mockImplementationOnce(async () => ({ result: undefined, newMessages: [] }));
+
+    await agent.submit({ resume: { approved: true } });
+
+    const err = agent.error();
+    expect(err?.kind).toBe('interrupted');
+    expect(err?.recovery).toBe('check');
+    expect(err?.retryable).toBe(false);
+    expect(err?.message).toBe(AGENT_RECOVERY_MESSAGES.check);
+    expect(typeof err?.detail).toBe('string');
+  });
+
+  it('does not offer a retry for a truncated client-tool continuation', async () => {
+    const stub = new StubAgent();
+    const agent = toAgent(stub as unknown as AbstractAgent, { telemetry: false });
+    agent.clientTools.setCatalog([{
+      name: 'confirm_action',
+      description: 'Confirm an action.',
+      parameters: { type: 'object', properties: {} },
+    }]);
+    stub.runAgent.mockImplementationOnce(async () => {
+      stub.emit({ type: 'RUN_STARTED', runId: 'r1' } as BaseEvent);
+      stub.emit({
+        type: 'TOOL_CALL_START',
+        toolCallId: 'confirmation-1',
+        toolCallName: 'confirm_action',
+        parentMessageId: 'tool-parent',
+      } as unknown as BaseEvent);
+      stub.emit({ type: 'TOOL_CALL_ARGS', toolCallId: 'confirmation-1', delta: '{}' } as unknown as BaseEvent);
+      stub.emit({ type: 'TOOL_CALL_END', toolCallId: 'confirmation-1' } as unknown as BaseEvent);
+      stub.emit({ type: 'RUN_FINISHED', runId: 'r1' } as BaseEvent);
+      return { result: undefined, newMessages: [] };
+    });
+
+    await agent.submit({ content: 'confirm?' });
+    // Guards the rest of the case: without a pending client tool there is no
+    // continuation run to truncate.
+    expect(agent.clientTools.pending().map(call => call.id)).toEqual(['confirmation-1']);
+    expect(agent.error()).toBeUndefined();
+
+    // The continuation run carries the tool result, so it emits no event of its
+    // own before closing — the same shape as case one, but NOT replayable.
+    stub.runAgent.mockImplementationOnce(async () => ({ result: undefined, newMessages: [] }));
+    agent.clientTools.resolve('confirmation-1', { ok: true, value: { confirmed: true } });
+    await vi.waitFor(() => expect(agent.error()).toBeDefined());
+
+    const err = agent.error();
+    expect(err?.kind).toBe('interrupted');
+    expect(err?.recovery).toBe('none');
+    expect(err?.retryable).toBe(false);
   });
 });
