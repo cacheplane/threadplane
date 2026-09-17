@@ -257,6 +257,14 @@ export async function enqueueInstallDigestJob(
       'Install digest idempotency key must start with install_digest:'
     );
   }
+  // The activation tick calls this every minute; skip the candidate scan once
+  // the day's job exists.
+  const existing = await executor.execute(
+    `/* growth:install-digest-job-exists */
+     select 1 from growth_jobs where idempotency_key = $1`,
+    [input.idempotencyKey]
+  );
+  if (existing.rows.length > 0) return null;
   const candidates = await readInstallDigestCandidates(executor, {
     limit: 50,
     keyring: input.keyring,

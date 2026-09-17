@@ -23,6 +23,7 @@ describe('renderInstallDigest', () => {
   it('renders one block per identity with the approve link and context lines', () => {
     const text = renderInstallDigest({
       businessDate: '2026-09-16',
+      publicActionOrigin: 'https://threadplane.ai',
       candidates: [candidate],
       context: {
         since: new Date('2026-09-15T14:00:00.000Z'),
@@ -46,6 +47,7 @@ describe('renderInstallDigest', () => {
   it('pluralizes and omits absent fields', () => {
     const text = renderInstallDigest({
       businessDate: '2026-09-16',
+      publicActionOrigin: 'https://threadplane.ai',
       candidates: [
         { ...candidate, gitDisplayName: null, repositoryProvider: null, repositoryOwner: null, gitConfigOrigin: 'local' },
         { ...candidate, email: 'two@corp.example', companyDomain: 'corp.example' },
@@ -62,6 +64,7 @@ describe('renderInstallDigest', () => {
     expect(() =>
       renderInstallDigest({
         businessDate: '2026-09-16',
+      publicActionOrigin: 'https://threadplane.ai',
         candidates: [{ ...candidate, gitDisplayName: 'Bad\r\nBcc: x' }],
         context: { since: new Date('2026-09-15T14:00:00.000Z'), anonymousInstallSubjects: 0, ciInstallSubjects: 0 },
       })
@@ -69,8 +72,46 @@ describe('renderInstallDigest', () => {
     expect(() =>
       renderInstallDigest({
         businessDate: '2026-09-16',
+      publicActionOrigin: 'https://threadplane.ai',
         candidates: [{ ...candidate, approveUrl: 'http://evil.example/x' }],
         context: { since: new Date('2026-09-15T14:00:00.000Z'), anonymousInstallSubjects: 0, ciInstallSubjects: 0 },
+      })
+    ).toThrow();
+  });
+
+  it('validates the approve link against the configured origin', () => {
+    const context = { since: new Date('2026-09-15T14:00:00.000Z'), anonymousInstallSubjects: 0, ciInstallSubjects: 0 };
+    const previewUrl = 'https://preview.example/api/growth/approve-install?token=g1.abc.def';
+    expect(
+      renderInstallDigest({
+        businessDate: '2026-09-16',
+        publicActionOrigin: 'https://preview.example',
+        candidates: [{ ...candidate, approveUrl: previewUrl }],
+        context,
+      })
+    ).toContain(previewUrl);
+    expect(() =>
+      renderInstallDigest({
+        businessDate: '2026-09-16',
+        publicActionOrigin: 'https://preview.example',
+        candidates: [candidate],
+        context,
+      })
+    ).toThrow();
+    expect(() =>
+      renderInstallDigest({
+        businessDate: '2026-09-16',
+        publicActionOrigin: 'https://threadplane.ai/',
+        candidates: [candidate],
+        context,
+      })
+    ).toThrow();
+    expect(() =>
+      renderInstallDigest({
+        businessDate: '2026-09-16',
+        publicActionOrigin: 'https://threadplane.ai',
+        candidates: [{ ...candidate, approveUrl: `${candidate.approveUrl}&x=1` }],
+        context,
       })
     ).toThrow();
   });

@@ -36,6 +36,7 @@ import {
   type RecipientEmailInput,
   type RecipientSendResult,
   type SqlExecutor,
+  type SqlTransaction,
   type CampaignTemplateId,
   type UnsubscribeActionUrl,
 } from '../growth.js';
@@ -52,6 +53,7 @@ import {
 import { renderFulfillmentTemplate } from '../fulfillment/templates.js';
 import { renderInstallDigest } from '../notifications/install-digest.js';
 import { renderInternalNotificationSummary } from '../notifications/templates.js';
+import { loadEmailHmacKeyring } from '../email-keyring.js';
 import { DeterministicLifecycleJobError } from '../job-errors.js';
 export { LIFECYCLE_SCORE_CONTENT_REGISTRY_V1 } from '../score-policy.js';
 import {
@@ -114,7 +116,7 @@ export interface LifecycleJobDependencies {
     input: DeferLeasedJobInput
   ) => Promise<GrowthJob>;
   completeJob: (
-    executor: SqlExecutor,
+    executor: SqlTransaction,
     input: LeasedTransitionInput
   ) => Promise<GrowthJob>;
   cancelJob: (
@@ -160,7 +162,7 @@ export interface LifecycleJobDependencies {
     input: { since: Date }
   ) => Promise<InstallDigestContext>;
   markInstallDigestReported: (
-    executor: SqlExecutor,
+    executor: SqlTransaction,
     input: {
       digestJobId: string;
       reportedAt: Date;
@@ -168,6 +170,7 @@ export interface LifecycleJobDependencies {
     }
   ) => Promise<void>;
   readonly publicActionOrigin: string;
+  readonly emailKeyring: EmailHmacKeyring;
   founderNotificationEmail: string;
   recipientPolicy: RecipientDeliveryPolicy;
   tokenKey: GrowthTokenKey;
@@ -648,7 +651,14 @@ const INSTALL_DIGEST_CONTEXT_WINDOW_MS = 24 * 60 * 60 * 1000;
 /**
  * Founder-only install digest. The job has no contact, so it never reads the
  * lifecycle contact context; the identities are recorded as reported only
- * after the provider accepted the message.
+ * after the provider accepted the message, in the same transaction that
+ * completes the job.
+ *
+ * Crash after acceptance: the retry finds the internal-notification claim
+ * already consumed and fails the job with `install_digest_outcome_unknown`
+ * for manual review. An empty `growth_install_digest_reports where
+ * digest_job_id = <job>` then tells the operator the identities were never
+ * recorded, so the next digest reports them again.
  */
 async function dispatchInstallDigestJob(
   executor: SqlExecutor,
@@ -679,6 +689,7 @@ async function dispatchInstallDigestJob(
   }
   const candidates = await dependencies.readInstallDigestCandidates(executor, {
     limit: INSTALL_DIGEST_CANDIDATE_LIMIT,
+    keyring: dependencies.emailKeyring,
   });
   signal.throwIfAborted();
   if (candidates.length === 0) {
@@ -695,6 +706,7 @@ async function dispatchInstallDigestJob(
   });
   const text = renderInstallDigest({
     businessDate,
+    publicActionOrigin: dependencies.publicActionOrigin,
     candidates: candidates.map((candidate) => ({
       ...candidate,
       approveUrl: `${
@@ -757,15 +769,17 @@ async function dispatchInstallDigestJob(
     });
     return 'failed';
   }
-  await dependencies.markInstallDigestReported(executor, {
-    digestJobId: job.id,
-    reportedAt: dependencies.now(),
-    candidates,
-  });
-  await dependencies.completeJob(executor, {
-    jobId: job.id,
-    leaseToken,
-    now: dependencies.now(),
+  await executor.transaction(async (transaction) => {
+    await dependencies.markInstallDigestReported(transaction, {
+      digestJobId: job.id,
+      reportedAt: dependencies.now(),
+      candidates,
+    });
+    await dependencies.completeJob(transaction, {
+      jobId: job.id,
+      leaseToken,
+      now: dependencies.now(),
+    });
   });
   return 'completed';
 }
@@ -900,6 +914,8 @@ export function createDefaultLifecycleJobDependencies(
         tokenKey: GrowthTokenKey;
       }
     | undefined;
+  // Lazy so a disabled digest never requires identity credentials.
+  let cachedEmailKeyring: EmailHmacKeyring | undefined;
   const mailRuntime = () => {
     if (cachedMailRuntime) return cachedMailRuntime;
     const apiKey = requiredEnvironmentText(environment, 'RESEND_API_KEY');
@@ -998,6 +1014,10 @@ export function createDefaultLifecycleJobDependencies(
     markInstallDigestReported,
     get publicActionOrigin() {
       return mailRuntime().publicActionOrigin;
+    },
+    get emailKeyring() {
+      cachedEmailKeyring ??= loadEmailHmacKeyring(environment);
+      return cachedEmailKeyring;
     },
     get founderNotificationEmail() {
       return mailRuntime().founderNotificationEmail;

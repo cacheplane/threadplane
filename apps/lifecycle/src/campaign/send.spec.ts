@@ -453,6 +453,9 @@ function dependencies(
     },
     tokenKey: TOKEN_KEY,
     publicActionOrigin: 'https://threadplane.ai',
+    emailKeyring: {
+      active: { version: 1, secret: 'send-spec-email-keyring-secret-material' },
+    },
     readInstallDigestCandidates: vi.fn().mockResolvedValue([DIGEST_CANDIDATE]),
     readInstallDigestContext: vi.fn().mockResolvedValue({
       since: new Date('2026-09-15T14:00:00.000Z'),
@@ -1133,12 +1136,26 @@ describe('install digest jobs', () => {
       }),
       contactId: null,
     } as GrowthJob);
+  const transactionalExecutor = () => {
+    const stub = {
+      execute: vi.fn(),
+      transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) =>
+        fn(stub)
+      ),
+    };
+    return stub as unknown as SqlExecutor;
+  };
 
   it('renders, claims, sends to the founder, records the identities and completes', async () => {
     const deps = dependencies();
+    const executor = transactionalExecutor();
     await expect(
-      dispatchLifecycleAppOwnedJob({} as SqlExecutor, digest(), {}, deps)
+      dispatchLifecycleAppOwnedJob(executor, digest(), {}, deps)
     ).resolves.toBe('completed');
+    expect(deps.readInstallDigestCandidates).toHaveBeenCalledWith(
+      executor,
+      expect.objectContaining({ keyring: expect.anything() })
+    );
     expect(deps.claimInternalNotification).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({ kind: 'digest' })
@@ -1159,17 +1176,38 @@ describe('install digest jobs', () => {
     expect(text).toMatch(
       /https:\/\/threadplane\.ai\/api\/growth\/approve-install\?token=g1\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/u
     );
-    expect(deps.markInstallDigestReported).toHaveBeenCalledWith(
-      expect.anything(),
-      {
-        digestJobId: digest().id,
-        reportedAt: NOW,
-        candidates: [DIGEST_CANDIDATE],
-      }
-    );
+    expect(executor.transaction).toHaveBeenCalledOnce();
+    expect(deps.markInstallDigestReported).toHaveBeenCalledWith(executor, {
+      digestJobId: digest().id,
+      reportedAt: NOW,
+      candidates: [DIGEST_CANDIDATE],
+    });
     expect(deps.completeJob).toHaveBeenCalledOnce();
+    expect(deps.completeJob).toHaveBeenCalledWith(
+      executor,
+      expect.objectContaining({ jobId: digest().id, leaseToken: LEASE_TOKEN })
+    );
     expect(deps.sendRecipient).not.toHaveBeenCalled();
     expect(deps.readJobContext).not.toHaveBeenCalled();
+  });
+
+  it('builds approve links on the configured public action origin', async () => {
+    const deps = dependencies({
+      publicActionOrigin: 'https://preview.example',
+    });
+    await expect(
+      dispatchLifecycleAppOwnedJob(
+        transactionalExecutor(),
+        digest(),
+        {},
+        deps
+      )
+    ).resolves.toBe('completed');
+    const text = (deps.sendInternalNotification as ReturnType<typeof vi.fn>)
+      .mock.calls[0][0].text as string;
+    expect(text).toContain(
+      'https://preview.example/api/growth/approve-install?token='
+    );
   });
 
   it('completes without sending when no candidates remain', async () => {
@@ -1205,6 +1243,13 @@ describe('install digest jobs', () => {
     ).resolves.toBe('failed');
     expect(lost.sendInternalNotification).not.toHaveBeenCalled();
     expect(lost.markInstallDigestReported).not.toHaveBeenCalled();
+    expect(lost.markInternalNotificationUnknown).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        kind: 'digest',
+        errorCode: 'install_digest_outcome_unknown',
+      })
+    );
 
     const unknown = dependencies({
       sendInternalNotification: vi

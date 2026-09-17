@@ -1255,8 +1255,9 @@ export async function markInternalNotificationUnknown(
   });
 }
 
+// Single statement, so it also runs inside an existing transaction.
 async function transitionLeasedJob(
-  executor: SqlExecutor,
+  executor: SqlTransaction,
   marker: string,
   status: 'completed' | 'failed' | 'cancelled',
   input: {
@@ -1288,7 +1289,7 @@ async function transitionLeasedJob(
 }
 
 export function completeLeasedJob(
-  executor: SqlExecutor,
+  executor: SqlTransaction,
   input: {
     jobId: string;
     leaseToken: string;
