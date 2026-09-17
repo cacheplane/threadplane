@@ -272,6 +272,8 @@ function createAgentAdapter(
     resumedInterrupt: boolean;
     resumeAttempt?: ResumeAttempt;
     terminalReceived?: boolean;
+    /** Narrower than `terminalReceived`, which a RUN_ERROR also sets. */
+    finishedReceived?: boolean;
   }
   let activeRun: AdapterRun | null = null;
   const runsByProtocolId = new Map<string, AdapterRun>();
@@ -401,30 +403,42 @@ function createAgentAdapter(
 
   function settleTransportClose(run: AdapterRun): void {
     if (run.outcome === undefined) {
-      if (run.terminalReceived) {
-        // A terminal event arrived but the reducer declined to attribute it to
-        // this run. The protocol settled; preserve the previous behavior.
+      if (run.finishedReceived) {
+        // The server sent RUN_FINISHED and `onEvent` attributed it to this run,
+        // but the reducer declined it — the two disagree when the event body
+        // carries a different runId than the SDK callback envelope. The run did
+        // finish, so settle it as a success rather than reporting a close the
+        // server never made. Deliberately narrower than `terminalReceived`,
+        // which a RUN_ERROR also sets: a declined RUN_ERROR must NOT land here
+        // and be reported as a clean success.
         finalizeDeliveryRun(store, run, 'success');
         if (activeRun === run) {
           store.status.set('idle');
           store.isLoading.set(false);
           store.error.set(undefined);
         }
-        finishRunTelemetry(run);
-        return;
-      }
-      // No terminal evidence and no user stop: the stream closed unexpectedly.
-      if (run.resumeAttempt) {
-        rollbackState();
-        interrupts.fail(run.resumeAttempt.id, false);
-        publishInterrupt();
+      } else {
+        // No attributed terminal evidence and no user stop: the stream closed
+        // unexpectedly, so report an honest uncertain outcome.
+        if (run.resumeAttempt) {
+          rollbackState();
+          interrupts.fail(run.resumeAttempt.id, false);
+          publishInterrupt();
+        }
+        finalizeDeliveryRun(store, run, 'interrupted');
+        if (activeRun === run) {
+          store.status.set('error');
+          store.isLoading.set(false);
+          store.error.set(interruptionError(run));
+        }
+        // The partial message and its `interrupted` delivery are the evidence
+        // the error points at, so they have to survive a reload.
         void persistCurrent().catch(() => undefined);
-      }
-      finalizeDeliveryRun(store, run, 'interrupted');
-      if (activeRun === run) {
-        store.status.set('error');
-        store.isLoading.set(false);
-        store.error.set(interruptionError(run));
+        // An unexpected close is an errored stream, not a clean end. This marks
+        // the run settled, so the tail call below is a no-op for this path.
+        const interruption = new Error('Stream closed without a terminal event');
+        interruption.name = 'InterruptedError';
+        failRunTelemetry(interruption, run);
       }
     }
     finishRunTelemetry(run);
@@ -576,6 +590,7 @@ function createAgentAdapter(
       }
       if (event.type === 'RUN_FINISHED') {
         run.terminalReceived = true;
+        run.finishedReceived = true;
         if (interrupts.snapshot.phase === 'collecting') interrupts.ready();
         else if (run.resumeAttempt && run.outcome === 'success') interrupts.complete(run.resumeAttempt.id);
         publishInterrupt();

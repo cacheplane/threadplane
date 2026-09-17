@@ -312,6 +312,13 @@ describe('toAgent', () => {
     const a = toAgent(stub as unknown as AbstractAgent, {
       telemetry: (payload) => seen.push(payload),
     });
+    // A completed run emits its terminal event; without one the close is an
+    // interruption and reports tplane:stream_errored instead.
+    stub.runAgent.mockImplementationOnce(async () => {
+      stub.emit({ type: 'RUN_STARTED' } as BaseEvent);
+      stub.emit({ type: 'RUN_FINISHED' } as BaseEvent);
+      return { result: undefined, newMessages: [] };
+    });
 
     await a.submit({ message: 'hi' });
 

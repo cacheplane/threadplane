@@ -1,8 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { Observable, Subject } from 'rxjs';
 import type { AbstractAgent, BaseEvent } from '@ag-ui/client';
-import type { RunAgentInput } from '@ag-ui/core';
-import { AgentError } from '@threadplane/chat';
+import { AgentError, type AgentRuntimeTelemetryPayload } from '@threadplane/chat';
 import { toAgent } from './to-agent';
 
 vi.mock('@threadplane/telemetry/browser', async (importOriginal) => ({
@@ -14,9 +12,9 @@ vi.mock('@threadplane/telemetry/browser', async (importOriginal) => ({
   }),
 }));
 
-/** Minimal AbstractAgent stand-in; mirrors the stub in to-agent.spec.ts. */
+/** Minimal AbstractAgent stand-in; mirrors the stub in to-agent.spec.ts,
+ *  trimmed to the members toAgent() actually calls. */
 class StubAgent {
-  private readonly _events = new Subject<BaseEvent>();
   state: Record<string, unknown> = {};
   private readonly _subscribers: Array<{
     onRunInitialized?: (p: { input: { runId?: string } }) => void;
@@ -40,17 +38,14 @@ class StubAgent {
   runAgent = vi.fn(async () => ({ result: undefined, newMessages: [] }));
   abortRun = vi.fn();
   addMessage = vi.fn();
-  setMessages = vi.fn();
-
-  run(_input: RunAgentInput): Observable<BaseEvent> {
-    return this._events.asObservable();
-  }
 }
 
 describe('AG-UI unexpected close', () => {
   it('reports a stream that closed with no events as an interruption', async () => {
     const stub = new StubAgent();
-    const agent = toAgent(stub as unknown as AbstractAgent);
+    const seen: AgentRuntimeTelemetryPayload[] = [];
+    const agent = toAgent(stub as unknown as AbstractAgent, { telemetry: payload => { seen.push(payload); } });
+    // Emitting nothing is the point: the run resolves having sent no events.
     stub.runAgent.mockImplementationOnce(async () => ({ result: undefined, newMessages: [] }));
 
     await agent.submit({ content: 'hello' });
@@ -60,6 +55,16 @@ describe('AG-UI unexpected close', () => {
     expect(err?.kind).toBe('interrupted');
     expect(agent.status()).toBe('error');
     expect(agent.isLoading()).toBe(false);
+    // An operator counting truncated streams must see exactly one errored
+    // stream, and no clean end for the same run.
+    expect(seen.filter(payload =>
+      payload.event === 'tplane:stream_ended' || payload.event === 'tplane:stream_errored',
+    )).toEqual([
+      expect.objectContaining({
+        event: 'tplane:stream_errored',
+        properties: expect.objectContaining({ errorClass: 'Error' }),
+      }),
+    ]);
   });
 
   it('reports a stream truncated after RUN_STARTED as an interruption and keeps partial text', async () => {
@@ -157,7 +162,7 @@ describe('AG-UI unexpected close', () => {
   // adapter attributes RUN_FINISHED to the active run and sets terminalReceived,
   // but the reducer declines it, so `outcome` stays undefined. The protocol did
   // settle, so this must not be reported as an interruption.
-  it('settles a terminal event the reducer declined to attribute as success', async () => {
+  it('settles as success a terminal event the reducer declined to attribute', async () => {
     const stub = new StubAgent();
     const agent = toAgent(stub as unknown as AbstractAgent);
     stub.runAgent.mockImplementationOnce(async () => {
@@ -174,6 +179,30 @@ describe('AG-UI unexpected close', () => {
     expect(agent.messages().find(m => m.id === 'm1')?.delivery.outcome).toBe('success');
     expect(agent.error()).toBeUndefined();
     expect(agent.status()).toBe('idle');
+    expect(agent.isLoading()).toBe(false);
+  });
+
+  // The same body/envelope runId mismatch, but for RUN_ERROR. The reducer
+  // declines it identically and sets no error of its own, so the escape hatch
+  // must not catch this: the server said the run failed, and reporting a clean
+  // success here would be worse than the bug this task fixes.
+  it('does not settle as success an error the reducer declined to attribute', async () => {
+    const stub = new StubAgent();
+    const agent = toAgent(stub as unknown as AbstractAgent);
+    stub.runAgent.mockImplementationOnce(async () => {
+      stub.emit({ type: 'RUN_STARTED', runId: 'envelope' } as BaseEvent, 'envelope');
+      stub.emit({ type: 'TEXT_MESSAGE_START', messageId: 'm1', role: 'assistant' } as unknown as BaseEvent, 'envelope');
+      stub.emit({ type: 'TEXT_MESSAGE_CONTENT', messageId: 'm1', delta: 'partial' } as unknown as BaseEvent, 'envelope');
+      // Same envelope runId, different runId in the event body.
+      stub.emit({ type: 'RUN_ERROR', runId: 'body', message: 'HTTP 500' } as unknown as BaseEvent, 'envelope');
+      return { result: undefined, newMessages: [] };
+    });
+
+    await agent.submit({ content: 'hello' });
+
+    expect(agent.messages().find(m => m.id === 'm1')?.delivery.outcome).toBe('interrupted');
+    expect(agent.error()?.kind).toBe('interrupted');
+    expect(agent.status()).toBe('error');
     expect(agent.isLoading()).toBe(false);
   });
 });
