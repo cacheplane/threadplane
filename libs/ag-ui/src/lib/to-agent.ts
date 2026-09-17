@@ -15,6 +15,7 @@ import {
   AgentError,
   AGENT_ERROR_MESSAGES,
   AGENT_RECOVERY_MESSAGES,
+  AGENT_RECOVERY_DETAILS,
 } from '@threadplane/chat';
 import type {
   Agent, Message, AgentStatus, ToolCall, AgentEvent,
@@ -269,10 +270,10 @@ function createAgentAdapter(
   interface AdapterRun extends ReducerDeliveryRun {
     startedAt: number;
     /** Which entry point opened this run; only some are safely replayable. */
-    requestType: string;
+    requestType: AdapterRequestType;
     /** Set for every event the adapter attributes to this run, including ones
      *  a later guard suppresses. Proof that something reached the server. */
-    sawAnyEvent?: boolean;
+    sawAnyEvent: boolean;
     telemetrySettled: boolean;
     resumedInterrupt: boolean;
     resumeAttempt?: ResumeAttempt;
@@ -326,7 +327,7 @@ function createAgentAdapter(
     telemetryProperties,
   );
 
-  function beginRun(requestType: string, allowBaselineTail = false, resumedInterrupt = false): AdapterRun {
+  function beginRun(requestType: AdapterRequestType, allowBaselineTail = false, resumedInterrupt = false): AdapterRun {
     developmentRuntime.touch();
     if (activeRun && activeRun.outcome === undefined) {
       const supersededRun = activeRun;
@@ -345,6 +346,7 @@ function createAgentAdapter(
         : undefined,
       startedAt: Date.now(),
       requestType,
+      sawAnyEvent: false,
       telemetrySettled: false,
       resumedInterrupt,
     };
@@ -395,23 +397,23 @@ function createAgentAdapter(
     failRunTelemetry(options.protectOperationErrors ? undefined : error, run);
   }
 
-  const REPLAYABLE_REQUEST_TYPES = new Set(['submit', 'retry', 'regenerate']);
-
   /**
-   * Classify what recovery is safe after an unexpected close. `retry` requires
-   * proof that nothing was dispatched: an ordinary turn whose stream produced
-   * no event at all. A resume attempt or a client-tool continuation may have
-   * committed server-side work, so neither is ever retryable here.
+   * Classify what recovery is safe after an unexpected close. `retry` needs an
+   * ordinary turn whose stream produced no event at all. A resume attempt or a
+   * client-tool continuation may have committed server-side work, so neither is
+   * ever retryable here.
    */
   function interruptionError(run: AdapterRun): AgentError {
-    const neverDispatched = !run.sawAnyEvent
-      // Redundant by construction today: every run carrying a resume attempt is
-      // dispatched as `resume`, which the request-type check already excludes.
-      // Kept as defence against a future entry point that hands an attempt to a
-      // replayable request type. No test can reach it, so do not go looking.
+    // Weaker than this file's `requestNotDispatched`, which is the transport
+    // saying so: a run that reached the server and lost its stream before the
+    // first byte looks identical from here. Safe only because a replayable
+    // request type re-sends captured input and appends no duplicate message.
+    const noEventObserved = !run.sawAnyEvent
+      // Redundant today — a resume attempt always arrives as `resume` — but kept
+      // against a future entry point that pairs one with a replayable type.
       && !run.resumeAttempt
       && REPLAYABLE_REQUEST_TYPES.has(run.requestType);
-    if (neverDispatched) {
+    if (noEventObserved) {
       return new AgentError({
         kind: 'interrupted',
         message: AGENT_RECOVERY_MESSAGES.retry,
@@ -423,18 +425,14 @@ function createAgentAdapter(
     // a resume attempt and for nothing else. Without one configured, a store
     // has no authoritative outcome to report: InterruptPersistence.reconcile()
     // throws outright when `reconcile` is absent.
-    const canVerify = options.persistence?.reconcile !== undefined && run.resumeAttempt !== undefined;
-    const recovery = canVerify ? 'check' : 'none';
+    const canReconcile = options.persistence?.reconcile !== undefined && run.resumeAttempt !== undefined;
+    const recovery = canReconcile ? 'check' : 'none';
     return new AgentError({
       kind: 'interrupted',
       message: AGENT_RECOVERY_MESSAGES[recovery],
       retryable: false,
       recovery,
-      // Rendered directly beneath `message`, so each reads as its continuation:
-      // the `check` copy adds only the action, the `none` copy only the cost.
-      detail: canVerify
-        ? 'Checking will tell you whether it did.'
-        : 'There is no way to confirm whether it did. Trying again could repeat it.',
+      detail: AGENT_RECOVERY_DETAILS[recovery],
     });
   }
 
@@ -499,7 +497,7 @@ function createAgentAdapter(
   type RunParameters = Parameters<AbstractAgent['runAgent']>[0];
 
   async function executeRun(
-    requestType: string,
+    requestType: AdapterRequestType,
     parameters?: RunParameters,
     allowBaselineTail = false,
     resumedInterrupt = false,
@@ -901,6 +899,16 @@ function createAgentAdapter(
     },
   }, () => options.telemetry === undefined);
 }
+
+/** The closed set of entry points that can open a run. Keeping it a union
+ *  rather than `string` means a typo at a call site is a build error instead of
+ *  a silent downgrade from Retry to no action. It widens to `string` freely at
+ *  the telemetry boundary. */
+type AdapterRequestType = 'submit' | 'resume' | 'retry' | 'regenerate' | 'client-tool-continuation';
+
+/** Entry points whose captured input `retry()` can safely re-send: it restores
+ *  the pre-run snapshot and appends no duplicate user message. */
+const REPLAYABLE_REQUEST_TYPES = new Set<AdapterRequestType>(['submit', 'retry', 'regenerate']);
 
 const supportedDevelopmentEventTypes = new Set([
   'RUN_STARTED', 'RUN_FINISHED', 'RUN_ERROR', 'TEXT_MESSAGE_START', 'TEXT_MESSAGE_CONTENT',

@@ -8613,6 +8613,13 @@
     "examples": []
   },
   {
+    "name": "AGENT_RECOVERY_DETAILS",
+    "kind": "const",
+    "description": "The second line of the `interrupted` banner, per AgentRecovery. Each\nentry is written to be read as a continuation of the matching\nAGENT_RECOVERY_MESSAGES sentence, never on its own: the `check` entry\nsupplies only the action that follows, and the `none` entry only its cost.\nAdapters set `AgentError.detail` from here so every transport says the same\nthing. Keep the pairs in sync when editing either table.",
+    "signature": "Record<AgentRecovery, string>",
+    "examples": []
+  },
+  {
     "name": "AGENT_RECOVERY_MESSAGES",
     "kind": "const",
     "description": "Human-facing copy per AgentRecovery, used for `interrupted` errors.",

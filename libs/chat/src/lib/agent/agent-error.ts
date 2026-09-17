@@ -30,6 +30,20 @@ export const AGENT_RECOVERY_MESSAGES: Record<AgentRecovery, string> = {
 };
 
 /**
+ * The second line of the `interrupted` banner, per {@link AgentRecovery}. Each
+ * entry is written to be read as a continuation of the matching
+ * {@link AGENT_RECOVERY_MESSAGES} sentence, never on its own: the `check` entry
+ * supplies only the action that follows, and the `none` entry only its cost.
+ * Adapters set `AgentError.detail` from here so every transport says the same
+ * thing. Keep the pairs in sync when editing either table.
+ */
+export const AGENT_RECOVERY_DETAILS: Record<AgentRecovery, string> = {
+  retry: 'Nothing reached the server, so nothing was duplicated.',
+  check: 'Checking will tell you whether it did.',
+  none: 'Trying again could repeat it.',
+};
+
+/**
  * Structured, classified failure surfaced on `Agent.error`. Extends `Error`, so
  * existing `.message` / `instanceof Error` reads keep working — but adds a
  * machine-readable {@link AgentErrorKind}, a `retryable` flag, an optional HTTP

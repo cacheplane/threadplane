@@ -1,5 +1,5 @@
 export type { Agent } from './agent';
-export { AgentError, AGENT_ERROR_MESSAGES, AGENT_RECOVERY_MESSAGES } from './agent-error';
+export { AgentError, AGENT_ERROR_MESSAGES, AGENT_RECOVERY_MESSAGES, AGENT_RECOVERY_DETAILS } from './agent-error';
 export type { AgentErrorKind, AgentRecovery } from './agent-error';
 export { toAgentError, isAbortError } from './to-agent-error';
 export type { Citation } from './citation';

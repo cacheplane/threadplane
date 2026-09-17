@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import type { AbstractAgent, BaseEvent } from '@ag-ui/client';
 import { AgentError, AGENT_RECOVERY_MESSAGES, type AgentRuntimeTelemetryPayload } from '@threadplane/chat';
 import { toAgent } from './to-agent';
-import type { AgUiInterruptPersistence } from './interrupt-persistence';
+import type { AgUiInterruptPersistence, AgUiThreadRecord } from './interrupt-persistence';
 
 vi.mock('@threadplane/telemetry/browser', async (importOriginal) => ({
   ...await importOriginal<object>(),
@@ -209,19 +209,22 @@ describe('AG-UI unexpected close', () => {
   });
 });
 
-/** In-memory persistence, optionally with an authoritative reconciler. */
-function memoryPersistence(reconcile?: () => Promise<unknown>): AgUiInterruptPersistence {
-  const saved = new Map<string, unknown>();
+/** In-memory persistence, optionally with an authoritative reconciler. Typed
+ *  against the real contract so a bogus reconcile shape is a build error. */
+function memoryPersistence(
+  reconcile?: AgUiInterruptPersistence['reconcile'],
+): AgUiInterruptPersistence {
+  const saved = new Map<string, AgUiThreadRecord>();
   return {
     namespace: 'test',
     store: {
-      load: async (key: string) => (saved.get(key) ?? null) as never,
-      compareAndSwap: async (key: string, _rev: number | null, next: unknown) => {
+      load: async (key: string) => saved.get(key) ?? null,
+      compareAndSwap: async (key: string, _rev: number | null, next: AgUiThreadRecord) => {
         saved.set(key, next);
         return true;
       },
     },
-    ...(reconcile ? { reconcile: reconcile as never } : {}),
+    ...(reconcile ? { reconcile } : {}),
   };
 }
 
@@ -324,7 +327,7 @@ describe('AG-UI unexpected close — recovery classification', () => {
     // Guards against a vacuous pass: the tool call really did reach the store.
     expect(agent.toolCalls().map(call => call.id)).toContain('call-1');
     expect(agent.error()?.kind).toBe('interrupted');
-    expect(agent.error()?.recovery).not.toBe('retry');
+    expect(agent.error()?.recovery).toBe('none');
     expect(agent.error()?.retryable).toBe(false);
   });
 

@@ -40,6 +40,7 @@ export {
   AgentError,
   AGENT_ERROR_MESSAGES,
   AGENT_RECOVERY_MESSAGES,
+  AGENT_RECOVERY_DETAILS,
   toAgentError,
   isAbortError,
 } from './lib/agent';
