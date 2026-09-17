@@ -52,3 +52,18 @@ export function isCampaignSendWindow(now: Date): boolean {
   ).getUTCDay();
   return weekday !== 0 && weekday !== 6 && local.hour === 7;
 }
+
+/** The Pacific calendar date for `now`, and whether it is Monday to Friday. */
+export function pacificCalendarDate(now: Date): {
+  date: string;
+  weekday: boolean;
+} {
+  const local = parts(now);
+  const day = new Date(Date.UTC(local.year, local.month - 1, local.day));
+  const weekday = day.getUTCDay() !== 0 && day.getUTCDay() !== 6;
+  const pad = (value: number) => String(value).padStart(2, '0');
+  return {
+    date: `${local.year}-${pad(local.month)}-${pad(local.day)}`,
+    weekday,
+  };
+}
