@@ -101,6 +101,7 @@ describeDatabase(
         { checksum_length: 64, name: '0005_growth_observability_views.sql' },
         { checksum_length: 64, name: '0006_growth_form_observations.sql' },
         { checksum_length: 64, name: '0007_growth_install_runtime.sql' },
+        { checksum_length: 64, name: '0008_growth_install_digest.sql' },
       ]);
     });
 
