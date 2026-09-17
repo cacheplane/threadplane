@@ -90,6 +90,8 @@ So the recovery value depends on both what was dispatched and whether a reconcil
 | On a resume attempt carrying an interrupt decision | yes | `check` |
 | On a resume attempt carrying an interrupt decision | no | `none` |
 
+"Reconciler configured" means `options.persistence?.reconcile` is present, not merely that persistence is. The `reconcile` callback is optional on `AgUiInterruptPersistence`: a caller may configure a store for durability without supplying an authoritative reconciler. Keying `check` off persistence alone would offer a status check that then throws `Interrupt recovery requires authoritative reconciliation` the moment it ran.
+
 `retry` is safe in the first row only. The request never reached the server, and the existing `retry()` already restores the pre-run snapshot and re-runs without appending a duplicate user message. Every other row may have executed server-side work.
 
 A client-tool continuation gets `none` for the same reason as an ordinary submit: it carries no interrupt decision, so the reconciler has nothing correlated to report on.
