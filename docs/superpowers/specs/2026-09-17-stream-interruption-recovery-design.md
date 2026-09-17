@@ -90,18 +90,18 @@ So the recovery value depends on both what was dispatched and whether a reconcil
 
 `retry` is safe in the first row only. The request never reached the server, and the existing `retry()` already restores the pre-run snapshot and re-runs without appending a duplicate user message. Every other row may have executed server-side work.
 
-When a reconciler exists, the automatic check calls it once and maps the four documented statuses:
+When a reconciler exists, the automatic check calls `InterruptPersistence.reconcile()` once. That wrapper takes no arguments, validates the authoritative answer, writes it, and returns the updated thread record; it **throws** when the backend answers `unknown` or when the answer fails validation. The raw four-value status is therefore not visible to the caller, so the outcome is read from the session phase of the returned record:
 
-| Reconciler status | Outcome |
+| Session phase after reconcile | Outcome |
 | --- | --- |
-| `completed` | `success`, hydrating the returned committed snapshot through the existing path |
+| `none` | `success` — the run finished and nothing is pending |
+| `pending` | paused — a pending interrupt batch, rendered by the existing interrupt panel |
 | `acknowledged` | `interrupted`, `recovery: 'check'` |
-| `pending` | `interrupted`, `recovery: 'check'` |
-| `unknown` | `interrupted`, `recovery: 'check'` |
+| any other phase, or the call threw | `interrupted`, `recovery: 'check'` |
 
-`acknowledged` means the server received the resume and started it, not that it finished, so it is uncertain rather than settled. All three uncertain statuses keep `recovery: 'check'` so the user can ask again later; they differ only in the `detail` text.
+`acknowledged` means the server received the resume and started it, not that it finished, so it stays uncertain. The uncertain rows keep `recovery: 'check'` so the user can ask again later.
 
-Because `reconcileInterrupt` refuses to run during an active request, the automatic call happens after the run has settled, guarded by the staleness rule below.
+The automatic call happens after the run has settled, because `reconcileInterrupt` refuses to run during an active request, and it is guarded by the staleness rule below. It reuses the existing `reconciling` gate so a manual and an automatic check cannot overlap.
 
 ### 4.3 Staleness
 
