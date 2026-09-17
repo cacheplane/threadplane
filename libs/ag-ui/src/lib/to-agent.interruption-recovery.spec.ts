@@ -144,7 +144,36 @@ describe('AG-UI unexpected close', () => {
 
     await agent.submit({ content: 'hello' });
 
+    // Guards against a vacuous pass: idle with no error is also the initial state.
+    expect(stub.runAgent).toHaveBeenCalled();
     expect(agent.error()).toBeUndefined();
     expect(agent.status()).toBe('idle');
+  });
+
+  // Exercises the `terminalReceived` escape hatch in settleTransportClose.
+  // `resolveCallbackRun` keys off the SDK callback envelope's runId, while the
+  // reducer's `bindRunId` keys off the runId in the event body. A server whose
+  // body carries a different runId than the envelope makes them disagree: the
+  // adapter attributes RUN_FINISHED to the active run and sets terminalReceived,
+  // but the reducer declines it, so `outcome` stays undefined. The protocol did
+  // settle, so this must not be reported as an interruption.
+  it('settles a terminal event the reducer declined to attribute as success', async () => {
+    const stub = new StubAgent();
+    const agent = toAgent(stub as unknown as AbstractAgent);
+    stub.runAgent.mockImplementationOnce(async () => {
+      stub.emit({ type: 'RUN_STARTED', runId: 'envelope' } as BaseEvent, 'envelope');
+      stub.emit({ type: 'TEXT_MESSAGE_START', messageId: 'm1', role: 'assistant' } as unknown as BaseEvent, 'envelope');
+      stub.emit({ type: 'TEXT_MESSAGE_CONTENT', messageId: 'm1', delta: 'answered' } as unknown as BaseEvent, 'envelope');
+      // Same envelope runId, different runId in the event body.
+      stub.emit({ type: 'RUN_FINISHED', runId: 'body' } as BaseEvent, 'envelope');
+      return { result: undefined, newMessages: [] };
+    });
+
+    await agent.submit({ content: 'hello' });
+
+    expect(agent.messages().find(m => m.id === 'm1')?.delivery.outcome).toBe('success');
+    expect(agent.error()).toBeUndefined();
+    expect(agent.status()).toBe('idle');
+    expect(agent.isLoading()).toBe(false);
   });
 });
