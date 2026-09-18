@@ -1,4 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 510" width="1080" height="510" role="img" aria-labelledby="a-title a-desc">
+  <!--
+    Architecture diagram for the README and the website.
+
+    Fonts are generic stacks, not the site's webfonts: this file is served as a
+    bare image to GitHub, where no stylesheet of ours ever loads.
+
+    The sibling diagrams under public/blog/diagrams close with a prose caption
+    and carry no legend. This one keeps a legend because its two edge styles
+    are load-bearing: a call travels right and is answered further down by a
+    signal update, not by a return value, and without a key the dashed edges
+    read as decoration rather than as the other half of the loop.
+
+    The three return edges drop to 240, 290 and 340 — a flat 50px step, so the
+    horizontals never overlap and the labels clear the line above.
+  -->
   <title id="a-title">How a call travels from an Angular component to LangGraph and back as signals</title>
   <desc id="a-desc">An Angular component calls agent(), which calls the StreamManager bridge, which calls the LangGraph Platform. Each call is a solid arrow left to right. Below them, three dashed arrows run back the other way: the platform returns SSE stream events to the bridge, the bridge returns signal updates to agent(), and agent() returns Angular signals to the component. The bridge talks to the platform through FetchStreamTransport or MockAgentTransport.</desc>
   <defs>
@@ -19,58 +34,45 @@
   <rect x="0.5" y="0.5" width="1079" height="509" rx="12" fill="#ffffff" stroke="#e5e5e5"/>
   <text class="t-eyebrow" x="40" y="38">ARCHITECTURE</text>
 
-  <!-- Box 1: Angular Component -->
   <rect x="40" y="90" width="214" height="104" rx="8" fill="#ffffff" stroke="#d4d4d4"/>
   <text class="t-title" x="60" y="122">Angular Component</text>
   <text class="t-meta" x="60" y="146">template / signals</text>
   <text class="t-meta" x="60" y="168">submit() / stop()</text>
 
-  <!-- Call 1 → 2 -->
   <path class="edge" d="M260,142 H298"/>
 
-  <!-- Box 2: agent() — the emphasized node -->
   <rect x="302" y="90" width="214" height="104" rx="8" fill="#f2f5f9" stroke="#c3d1e2"/>
   <text class="t-title" x="322" y="122">agent()</text>
   <text class="t-meta" x="322" y="146">Agent UI state</text>
   <text class="t-meta" x="322" y="168">@threadplane/langgraph</text>
 
-  <!-- Call 2 → 3 -->
   <path class="edge" d="M522,142 H560"/>
 
-  <!-- Box 3: StreamManager Bridge -->
   <rect x="564" y="90" width="214" height="104" rx="8" fill="#ffffff" stroke="#d4d4d4"/>
   <text class="t-title" x="584" y="120">StreamManager</text>
   <text class="t-title" x="584" y="142">Bridge</text>
   <text class="t-meta" x="584" y="168">stream-manager.bridge.ts</text>
 
-  <!-- Call 3 → 4 -->
   <path class="edge" d="M784,142 H822"/>
 
-  <!-- Box 4: LangGraph Platform -->
   <rect x="826" y="90" width="214" height="104" rx="8" fill="#ffffff" stroke="#d4d4d4"/>
   <text class="t-title" x="846" y="122">LangGraph Platform</text>
   <text class="t-meta" x="846" y="146">LangGraph Cloud /</text>
   <text class="t-meta" x="846" y="168">Self-hosted Server</text>
 
-  <!-- Reactive return: LangGraph Platform → Bridge -->
   <path class="edge-reactive" d="M933,194 V240 H685 V198"/>
   <text class="t-edge" x="809" y="232" text-anchor="middle">SSE / stream events</text>
 
-  <!-- Reactive return: Bridge → agent() -->
   <path class="edge-reactive" d="M657,194 V290 H437 V198"/>
   <text class="t-edge" x="547" y="282" text-anchor="middle">Signal updates</text>
 
-  <!-- Reactive return: agent() → Angular Component -->
   <path class="edge-reactive" d="M409,194 V340 H175 V198"/>
   <text class="t-edge" x="292" y="332" text-anchor="middle">Angular Signals</text>
 
-  <!-- Transport -->
   <text class="t-meta" x="671" y="392" text-anchor="middle">FetchStreamTransport | MockAgentTransport</text>
 
-  <!-- Rule -->
   <path d="M40,428 H1040" stroke="#e5e5e5" stroke-width="1" fill="none"/>
 
-  <!-- Legend -->
   <path class="edge" d="M350,466 H386" marker-end="none"/>
   <text class="t-meta" x="400" y="470">call / dispatch</text>
   <path class="edge-reactive" d="M580,466 H616" marker-end="none"/>
