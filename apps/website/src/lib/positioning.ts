@@ -2,15 +2,28 @@
 import { WEBSITE_SUPPORTED_ANGULAR_MAJORS } from '../components/pricing/angular-support.mjs';
 import type { StageBeat } from './stage-beats';
 
-export const HERO_EYEBROW = 'Angular · LangGraph & AG-UI';
-export const HERO_H1 = 'The open-source thread-plane for agents.';
+export const HERO_EYEBROW = 'LangGraph & AG-UI';
+export const HERO_H1 = 'The open-source thread-plane for Angular agents.';
 /**
  * The H1 broken where it is meant to break: three lines, one thought each.
  * HERO_H1 stays the single source of truth — positioning.spec.ts asserts the
  * lines join back to it with single spaces, so the rendered heading, the
  * <title> and the social card cannot drift apart.
+ *
+ * The split is load-bearing for two generated images: opengraph-image.tsx and
+ * github-card/route.tsx stack these as fixed lines at 60px and 62px. Measured
+ * in Archivo Black at 60px with -0.02em tracking: 538 / 513 / 507px against a
+ * ~536px column. "The open-source" is the widest and already shipped before
+ * "Angular" was added, so the worst case did not move. Below 767px Task 2
+ * flows the spans inline (landing.css) so the browser breaks the sentence to
+ * the column instead; until it lands, this commit makes the phone H1
+ * temporarily taller.
  */
-export const HERO_H1_LINES: readonly string[] = ['The open-source', 'thread-plane', 'for agents.'];
+export const HERO_H1_LINES: readonly string[] = [
+  'The open-source',
+  'thread-plane for',
+  'Angular agents.',
+];
 export const HERO_SUBHEAD =
   'Make agent work persistent, durable, visible, reviewable, and resumable.';
 
@@ -43,7 +56,7 @@ export const HERO_SECONDARY_LABEL = 'See it running in the docs →';
 export const HERO_SECONDARY_HREF = '/docs/chat/guides/generative-ui?mode=run';
 
 /** Kept for layout.tsx default title and the OG image alt. */
-export const PRIMARY_TAGLINE = 'Threadplane — The open-source thread-plane for agents';
+export const PRIMARY_TAGLINE = 'Threadplane — The open-source thread-plane for Angular agents';
 export const HOME_TITLE = PRIMARY_TAGLINE;
 export const HOME_DESCRIPTION =
   'The open-source thread-plane for agents: chat, durable threads, persistence, human approvals, and generative UI for Angular, on LangGraph and AG-UI.';
