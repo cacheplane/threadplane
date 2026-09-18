@@ -262,19 +262,24 @@ PostHog decides a bounce with
 Until 2026-09-18 only the duration branch worked, so the figures below mean
 "share of sessions that ended within 10 seconds". Entry pathname `/`:
 
-| Month | Sessions | Bounce | ±95% CI | Zero-duration | Median duration |
-| --- | --- | --- | --- | --- | --- |
-| 2026-05 | 186 | 82.5% | ±5.5pp | 43.0% | 1.0s |
-| 2026-06 | 160 | 79.1% | ±6.3pp | 37.5% | 2.0s |
-| 2026-07 | 176 | 86.9% | ±5.0pp | 44.9% | 2.0s |
-| 2026-08 | 180 | 65.4% | ±7.0pp | 25.6% | 3.0s |
-| 2026-09 | 159 | 50.7% | ±7.8pp | 18.2% | 6.0s |
+| Month | Sessions | Sessions scored | Bounce | ±95% CI | Zero-duration | Median duration |
+| --- | --- | --- | --- | --- | --- | --- |
+| 2026-05 | 186 | 171 | 82.5% | ±5.7pp | 43.0% | 1.0s |
+| 2026-06 | 160 | 158 | 79.1% | ±6.34pp | 37.5% | 2.0s |
+| 2026-07 | 176 | 168 | 86.9% | ±5.1pp | 44.9% | 2.0s |
+| 2026-08 | 180 | 153 | 65.4% | ±7.54pp | 25.6% | 3.0s |
+| 2026-09 | 161 | 144 | 50.0% | ±8.17pp | 18.0% | 6.0s |
+
+`$is_bounce` is NULL for a session with no pageview and PostHog excludes those
+from its denominator, which is why Sessions and Sessions scored differ. The
+bounce percentage and its interval both use Sessions scored.
+Window pinned 2026-05-01 to 2026-09-18; September is a partial month.
 
 **The series breaks after 2026-09-18.** Restoring the other two branches lowers
 the rate on unchanged traffic. Do not compare across that date.
 
 **The volume does not support fine comparisons.** At ~160 homepage sessions per
-month a ±7.8pp interval cannot separate 50.7% from 59%. Judging a homepage
+month a ±8.17pp interval cannot separate 50.0% from 59%. Judging a homepage
 change on this metric needs a much longer accumulation window, or more traffic.
 
 Two limits this baseline exposed. `$pageleave` is missing from 17–20% of

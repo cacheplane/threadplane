@@ -58,8 +58,8 @@ had a key event or two pageviews; ours cannot. The GA4-comparable figure is
 lower still.
 
 Measurement then confirmed it: the homepage bounce rate has fallen from 82.5% in
-May to **50.7% in September**, already below the median, on a sample too small to
-distinguish 50.7% from 59% with any confidence. See
+May to **50.0% in September**, already below the median, on a sample too small to
+distinguish 50.0% from 59% with any confidence. See
 [Baseline and cutover](#5-baseline-and-cutover). The premise behind this work —
 that 59% indicates a homepage problem — did not survive contact with the data.
 The instrumentation defects below are real and worth fixing on their own merits,
@@ -111,7 +111,7 @@ export const POSTHOG_INIT_OPTIONS = {
   autocapture: true,
   capture_performance: { web_vitals: true },
   person_profiles: 'always',
-} as const satisfies Partial<PostHogConfig>;
+} satisfies Partial<PostHogConfig>;
 ```
 
 Changes from today's behaviour:
