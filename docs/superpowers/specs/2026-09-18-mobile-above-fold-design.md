@@ -110,14 +110,33 @@ Copy is single-sourced here and changed nowhere else.
 | Constant | To |
 | --- | --- |
 | `HERO_H1` | `The open-source thread-plane for Angular agents.` |
-| `HERO_H1_LINES` | `['The open-source thread-plane', 'for Angular agents.']` |
+| `HERO_H1_LINES` | `['The open-source', 'thread-plane for', 'Angular agents.']` |
 | `HERO_EYEBROW` | `LangGraph & AG-UI` |
 | `PRIMARY_TAGLINE` | `Threadplane — The open-source thread-plane for Angular agents` |
 
-`HERO_H1_LINES` drops from three spans to two: at 36px the first two thoughts
-share a line, and a three-span break would force an unwanted early wrap. The
-existing invariant — the spans join back to `HERO_H1` with single spaces — is
-preserved; only the length assertion moves from 3 to 2.
+`HERO_H1_LINES` **stays three spans**, re-split to absorb the new word. This was
+measured rather than assumed, because the array is also the line-breaking for
+two generated card images. Canvas-measured widths in Archivo Black at the OG
+card's 60px, with its -0.02em tracking:
+
+| Line | Width @60px | Width @62px (GitHub card) |
+| --- | --- | --- |
+| `The open-source` | 538px | 556px |
+| `thread-plane for` | 513px | 530px |
+| `Angular agents.` | 507px | 524px |
+
+The OG card's H1 column is ~536px wide and the GitHub card's ~588px. The widest
+new line, `The open-source`, is a line that **already ships today** — so the
+worst case is unchanged, the line count is unchanged, and neither card's
+vertical rhythm moves.
+
+A two-span split was considered first and rejected on this measurement:
+`The open-source thread-plane` is 964px at 60px, nearly double the OG card's
+column, and the cards are centred at fixed height, so overflow collides with the
+pills below rather than pushing them down.
+
+The invariant that the spans join back to `HERO_H1` with single spaces is
+preserved, and `toHaveLength(3)` in `positioning.spec.ts` stays 3.
 
 `HERO_EYEBROW` loses "Angular ·" because the H1 now carries it; repeating it
 immediately above the H1 wastes the one line above the fold that is cheapest to
@@ -145,10 +164,32 @@ Tailwind utilities win — see the file header):
 ```css
 @media (max-width: 767px) {
   .hero-heading { font-size: 36px; line-height: 1.08; }
+  /* Let the H1 wrap to the column instead of breaking where the desktop
+     composition wants. The spans are the desktop and card line-breaking; at
+     phone width they would force "The open-source" onto a line of its own,
+     which then wraps again — the four-line H1. */
+  .hero-heading-line { display: inline; }
 }
 ```
 
 Desktop is untouched. This is the load-bearing change: 207px → 117px.
+
+Two coupled parts, and both are needed:
+
+- **36px.** `--text-h1` is `clamp(48px, 6vw, 72px)` in
+  `libs/design-tokens/src/lib/theme.css`. At 375px, 6vw is 22.5px, so the
+  **clamp floor** of 48px is what actually renders. The token is shared by many
+  pages, so the override belongs on `.hero-heading` in the website's
+  `landing.css`, not in the token.
+- **`display: inline`.** `.hero-heading-line { display: block }` is what forces
+  the four lines: span 1 is given its own line and then wraps. Flowing the
+  spans at phone width lets the browser break the sentence to fit, which is
+  what produces three lines at 36px.
+
+Checked across the clamp's range so the desktop composition cannot regress: the
+widest line scales as ~8.97 x font-size, which fits the container at 768px
+(430px needed / ~728px available), at 1000px (538 / ~960) and at 1200px+
+(646 / 1200).
 
 ### 5.3 Demo autoplay — `apps/website/src/components/landing/HeroDemo.tsx`
 
@@ -239,9 +280,10 @@ silently — that is defect 2. The new top-edge guard is what converts a silent
 drift into a failing capture.
 
 **The H1 is consumed by two generated images.** `opengraph-image.tsx` and
-`github-card/route.tsx` both lay out `HERO_H1_LINES`; a two-span array changes
-their composition and both are checked visually, with the GitHub card
-re-uploaded by hand.
+`github-card/route.tsx` both lay out `HERO_H1_LINES`. The re-split in 5.1 was
+measured to keep three lines with an unchanged worst-case width, so this risk is
+retired by construction rather than by inspection — but both cards are still
+checked visually, and the GitHub card is re-uploaded by hand.
 
 ## 9. Out of scope
 
