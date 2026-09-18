@@ -19,12 +19,23 @@ const POSTER_H = 720;
 const POSTER_MOBILE_W = 585;
 const POSTER_MOBILE_H = 975;
 const READY_TIMEOUT_MS = 8000;
-const MIN_AUTOPLAY_WIDTH = 768;
+/**
+ * 0, not 768: phones autoplay too. The poster is a capture displayed at ~0.86
+ * scale, but a live iframe lays out at the stage's real width, so its type
+ * renders at its designed size — mobile autoplay improves legibility by
+ * construction, not just motion. Kept as a named constant so the floor can be
+ * restored if the iframe ever costs too much on a phone.
+ */
+const MIN_AUTOPLAY_WIDTH = 0;
 /**
  * Kept in lockstep with the `@media (max-width: 767px)` block in landing.css
- * that gives `.hero-demo-stage` its 3:5 portrait ratio, and with
- * MIN_AUTOPLAY_WIDTH above: the phone poster is served exactly where the stage
- * is portrait and exactly where the iframe does not autoplay.
+ * that gives `.hero-demo-stage` its 3:5 portrait ratio. This pair is coupled to
+ * the PHONE POSTER'S GEOMETRY (390x650, shipped 585x975) — the poster is served
+ * exactly where the stage is portrait, so `object-fit: cover` crops nothing.
+ *
+ * It used to be a triple including MIN_AUTOPLAY_WIDTH, which is no longer part
+ * of it: autoplay is now width-independent and this breakpoint no longer has
+ * anything to do with whether the iframe mounts.
  */
 export const HERO_POSTER_MOBILE_MEDIA = '(max-width: 767px)';
 const MESSAGE_TYPE = 'tplane-hero';
@@ -39,7 +50,7 @@ function autoplayAllowed(): boolean {
 
 /**
  * Hero demo: server-rendered poster (the LCP), iframe mounted after hydration
- * when the hero is visible on a wide, motion-tolerant viewport, crossfaded in
+ * when the hero is visible on a motion-tolerant viewport, crossfaded in
  * when the frame reports ready.
  */
 export function HeroDemo() {
