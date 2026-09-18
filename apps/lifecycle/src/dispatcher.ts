@@ -8,6 +8,8 @@ import {
   materializeCampaignEnrollment,
   pacificCalendarDate,
   processInstallRuntimeActivations,
+  processObservations,
+  projectFormObservations,
   reconcilePendingResendMessageIds,
   renewJobLease,
   type GrowthAppJobHandlers,
@@ -24,6 +26,7 @@ import { loadEmailHmacKeyring } from './email-keyring.js';
 export { DeterministicLifecycleJobError } from './job-errors.js';
 
 const MAX_BATCH_SIZE = 25;
+const OBSERVATION_PROJECTION_MAX_LIMIT = 100;
 const LEASE_DURATION_MS = 60_000;
 const LEASE_RENEWAL_INTERVAL_MS = 20_000;
 const LEASED_KINDS = [
@@ -42,15 +45,20 @@ export interface LifecycleDispatcherInput {
   campaignEnrollmentEnabled?: boolean;
   installRuntimeHelloEnabled?: boolean;
   installDigestEnabled?: boolean;
+  observationProcessingEnabled?: boolean;
   campaignEnrollmentStartAt?: Date;
   signal: AbortSignal;
 }
+
+export type LifecycleOperatorAlert =
+  | 'mailbox_recovery_required'
+  | 'observation_projection_failed';
 
 export interface LifecycleDispatcherResult {
   leased: number;
   dispatched: number;
   recoveryPaused: boolean;
-  operatorAlerts: 'mailbox_recovery_required'[];
+  operatorAlerts: LifecycleOperatorAlert[];
 }
 
 export interface LifecycleDispatcherDependencies {
@@ -66,6 +74,8 @@ export interface LifecycleDispatcherDependencies {
   materializeCampaignEnrollment: typeof materializeCampaignEnrollment;
   enqueueInstallDigestJob: typeof enqueueInstallDigestJob;
   processInstallRuntimeActivations: typeof processInstallRuntimeActivations;
+  processObservations: typeof processObservations;
+  projectFormObservations: typeof projectFormObservations;
   reconcileMessageIds?: typeof reconcilePendingResendMessageIds;
   loadEmailKeyring: typeof loadEmailHmacKeyring;
   now: () => Date;
@@ -84,6 +94,8 @@ const defaultDependencies: LifecycleDispatcherDependencies = {
   materializeCampaignEnrollment,
   enqueueInstallDigestJob,
   processInstallRuntimeActivations,
+  processObservations,
+  projectFormObservations,
   reconcileMessageIds: reconcilePendingResendMessageIds,
   loadEmailKeyring: loadEmailHmacKeyring,
   now: () => new Date(),
@@ -171,6 +183,35 @@ export async function dispatchLifecycleJobs(
       signal: input.signal,
     });
     input.signal.throwIfAborted();
+    const operatorAlerts: LifecycleOperatorAlert[] = [];
+    if (input.observationProcessingEnabled === true) {
+      // The projection cap is 100; the dispatcher batch is already <= 25.
+      const limit = Math.min(batchSize, OBSERVATION_PROJECTION_MAX_LIMIT);
+      let projectionFailed = false;
+      try {
+        await dependencies.processObservations(executor, {
+          enabled: true,
+          limit,
+          now: dependencies.now,
+        });
+      } catch {
+        projectionFailed = true;
+      }
+      input.signal.throwIfAborted();
+      try {
+        await dependencies.projectFormObservations(executor, {
+          enabled: true,
+          limit,
+          now: dependencies.now,
+        });
+      } catch {
+        projectionFailed = true;
+      }
+      input.signal.throwIfAborted();
+      if (projectionFailed) {
+        operatorAlerts.push('observation_projection_failed');
+      }
+    }
     if (input.campaignEnrollmentEnabled) {
       if (
         !(input.campaignEnrollmentStartAt instanceof Date) ||
@@ -275,7 +316,9 @@ export async function dispatchLifecycleJobs(
       leased: jobs.length,
       dispatched,
       recoveryPaused,
-      operatorAlerts: recoveryPaused ? ['mailbox_recovery_required'] : [],
+      operatorAlerts: recoveryPaused
+        ? [...operatorAlerts, 'mailbox_recovery_required']
+        : operatorAlerts,
     };
   } finally {
     await executor.close?.();

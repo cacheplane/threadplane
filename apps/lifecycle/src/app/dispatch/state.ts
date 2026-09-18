@@ -12,7 +12,9 @@ export default z
         leased: z.number().int().nonnegative(),
         dispatched: z.number().int().nonnegative(),
         recoveryPaused: z.boolean(),
-        operatorAlerts: z.array(z.literal('mailbox_recovery_required')),
+        operatorAlerts: z.array(
+          z.enum(['mailbox_recovery_required', 'observation_projection_failed'])
+        ),
       })
       .strict()
       .optional(),

@@ -180,6 +180,7 @@ export interface LifecycleRuntimeConfiguration {
   campaignEnrollmentEnabled: boolean;
   installRuntimeHelloEnabled: boolean;
   installDigestEnabled: boolean;
+  observationProcessingEnabled: boolean;
   campaignEnrollmentStartAt?: Date;
   campaignEnabled: boolean;
   deliveryEnabled: boolean;
@@ -813,6 +814,10 @@ export function loadLifecycleRuntimeConfiguration(
     environment,
     'GROWTH_INSTALL_DIGEST_ENABLED'
   );
+  const observationProcessingEnabled = exactBoolean(
+    environment,
+    'GROWTH_OBSERVATION_PROCESSING_ENABLED'
+  );
   const deliveryEnabled = exactBoolean(environment, 'DELIVERY_ENABLED');
   let campaignEnrollmentStartAt: Date | undefined;
   if (campaignEnrollmentEnabled) {
@@ -835,6 +840,7 @@ export function loadLifecycleRuntimeConfiguration(
     campaignEnrollmentEnabled,
     installRuntimeHelloEnabled,
     installDigestEnabled,
+    observationProcessingEnabled,
     ...(campaignEnrollmentStartAt ? { campaignEnrollmentStartAt } : {}),
     campaignEnabled,
     deliveryEnabled,
