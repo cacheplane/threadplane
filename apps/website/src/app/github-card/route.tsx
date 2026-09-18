@@ -52,10 +52,13 @@ export async function GET() {
           overflow: 'hidden',
         }}
       >
-        {/* 1280x640 is 2.0:1, where the feed card is 1.905:1. Some clients
-            crop a 2:1 preview back toward 1.91:1, which takes roughly 12px
-            off the top and bottom. The vertical padding absorbs that: the
-            extra height over the feed card goes to margin, not to content. */}
+        {/* 1280x640 is 2.0:1, where the feed card is 1.905:1. A client that
+            crops a 2:1 preview back toward 1.91:1 trims WIDTH, not height:
+            640 x 1.905 keeps 1219px, so about 30px comes off each side. (The
+            vertical axis cannot be the one cut — 1.91:1 at this width would
+            need 672px of height, which is more than the card has.) Both
+            margins clear that: the left column's padding is 72px, and the
+            browser frame ends about 65px short of the right edge. */}
         <div
           style={{
             display: 'flex',
@@ -87,7 +90,7 @@ export async function GET() {
           {/* The column is centred in a fixed-height card, so copy that runs
               one line long collides with the pills below rather than pushing
               them down. 560 is the widest the 660px column's 72px left
-              padding allows and holds the subhead to three lines. */}
+              padding allows and holds the subhead to two lines. */}
           <div style={{ display: 'flex', marginTop: 20, fontSize: 21, lineHeight: 1.45, color: CARD.inkSecondary, maxWidth: 560 }}>
             {HERO_SUBHEAD}
           </div>
