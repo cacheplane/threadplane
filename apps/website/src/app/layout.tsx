@@ -15,6 +15,8 @@ import {
   PRIMARY_TAGLINE,
   SITE_NAME,
   SITE_ORIGIN,
+  SITE_X_CREATOR,
+  SITE_X_SITE,
 } from '../lib/site-metadata';
 import { getFormPolicy } from '../lib/growth/form-policy';
 import { WebsiteSignals } from '../components/shared/WebsiteSignals';
@@ -66,6 +68,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
+    site: SITE_X_SITE,
+    creator: SITE_X_CREATOR,
     title: 'Threadplane',
     description: LONG_SUBHEAD,
     images: [DEFAULT_SOCIAL_IMAGE_META],

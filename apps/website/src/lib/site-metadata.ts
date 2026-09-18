@@ -6,6 +6,14 @@ import { SITE_ORIGIN } from './site-origin';
 
 export { SITE_ORIGIN };
 export const SITE_NAME = 'Threadplane';
+
+/**
+ * X attribution. `site` is the account that owns the card, `creator` the
+ * human byline. Both are needed: with neither set, X renders the card with no
+ * attribution row, which is what every threadplane.ai link did until now.
+ */
+export const SITE_X_SITE = '@threadplane';
+export const SITE_X_CREATOR = '@blovedev';
 export const DEFAULT_SOCIAL_IMAGE = '/opengraph-image';
 
 /**
@@ -161,6 +169,8 @@ export function createPageMetadata({
     },
     twitter: {
       card: 'summary_large_image',
+      site: SITE_X_SITE,
+      creator: SITE_X_CREATOR,
       title,
       description,
       images: [image ?? DEFAULT_SOCIAL_IMAGE_META],

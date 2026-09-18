@@ -12,6 +12,8 @@ import {
   PRIMARY_TAGLINE,
   SHORT_POSITIONING_DESCRIPTION,
   SITE_NAME,
+  SITE_X_SITE,
+  SITE_X_CREATOR,
   createPageMetadata,
 } from './site-metadata';
 import { resolveWebsiteDir } from './website-dir';
@@ -247,5 +249,32 @@ describe('blog frontmatter description budget', () => {
       }
     }
     expect(offenders).toEqual([]);
+  });
+});
+
+describe('X attribution', () => {
+  /**
+   * Without these, X renders the card with no attribution byline at all —
+   * the link reads as unowned. They live in site-metadata rather than being
+   * typed into layout.tsx so the root layout and every createPageMetadata
+   * page cannot disagree about who publishes the card.
+   */
+  it('names the brand account and the author', () => {
+    expect(SITE_X_SITE).toBe('@threadplane');
+    expect(SITE_X_CREATOR).toBe('@blovedev');
+  });
+
+  it('puts both on every page built by createPageMetadata', () => {
+    const meta = createPageMetadata({
+      title: 'Test',
+      description: 'Test description.',
+      pathname: '/test',
+    });
+
+    expect(meta.twitter).toMatchObject({
+      card: 'summary_large_image',
+      site: SITE_X_SITE,
+      creator: SITE_X_CREATOR,
+    });
   });
 });
