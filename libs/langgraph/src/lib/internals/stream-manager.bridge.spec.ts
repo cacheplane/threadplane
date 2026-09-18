@@ -5,7 +5,7 @@ import { MockAgentTransport } from '../transport/mock-stream.transport';
 import { FetchStreamTransport } from '../transport/fetch-stream.transport';
 import { ResourceStatus, AgentTransport, StreamSubjects, CustomStreamEvent, StreamEvent } from '../agent.types';
 import type { AgentRuntimeTelemetryPayload } from '@threadplane/chat';
-import { AgentError } from '@threadplane/chat';
+import { AgentError, AGENT_RECOVERY_MESSAGES, AGENT_RECOVERY_DETAILS } from '@threadplane/chat';
 import type { ThreadState } from '@langchain/langgraph-sdk';
 import { of } from 'rxjs';
 import { readFileSync } from 'node:fs';
@@ -4418,6 +4418,56 @@ describe('settling a closed stream from the refreshed history', () => {
 
     expect((subjects.error$.value as AgentError | undefined)?.recovery).toBe('check');
     expect(subjects.status$.value).toBe(ResourceStatus.Error);
+    destroy$.next();
+  });
+
+  it('cannot offer Retry after a dispatched request lost its stream', async () => {
+    const { transport, subjects, destroy$, bridge } = setup();
+    await settled();
+    // A non-user abort AFTER the server began answering. The request reached
+    // the server and may already have run a tool, so a Retry button here
+    // invites the duplicate this whole feature exists to prevent.
+    transport.stream = async function* () {
+      yield {
+        type: 'messages',
+        messages: [{ id: 'ai-1', type: 'ai', content: 'partial' }],
+        messageMetadata: { langgraph_node: 'model' },
+      } as StreamEvent;
+      const abort = new Error('connection reset');
+      abort.name = 'AbortError';
+      throw abort;
+    };
+
+    await bridge.submit({});
+
+    const error = subjects.error$.value as AgentError | undefined;
+    expect(error?.kind).toBe('interrupted');
+    expect(error?.retryable).toBe(false);
+    expect(error?.recovery).toBe('check');
+    expect(error?.message).toBe(AGENT_RECOVERY_MESSAGES.check);
+    expect(error?.detail).toBe(AGENT_RECOVERY_DETAILS.check);
+    destroy$.next();
+  });
+
+  it('still offers Retry when the abort happened before anything was dispatched', async () => {
+    const { transport, subjects, destroy$, bridge } = setup();
+    await settled();
+    // Nothing streamed, so nothing reached the server to be duplicated.
+    transport.stream = async function* () {
+      if (transport) {
+        const abort = new Error('connection reset');
+        abort.name = 'AbortError';
+        throw abort;
+      }
+      yield* [];
+    };
+
+    await bridge.submit({});
+
+    const error = subjects.error$.value as AgentError | undefined;
+    expect(error?.kind).toBe('connection');
+    expect(error?.retryable).toBe(true);
+    expect(error?.recovery).toBeUndefined();
     destroy$.next();
   });
 

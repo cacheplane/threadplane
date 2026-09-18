@@ -415,15 +415,28 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
   function publishInterruptionError(): void {
     if (subjects.error$.value) return;
     if (subjects.interrupt$.value || subjects.interrupts$.value.length > 0) return;
+    subjects.error$.next(interruptionError());
+    subjects.status$.next(ResourceStatus.Error);
+  }
+
+  /**
+   * The one shape every `interrupted` error in this adapter takes. Every route
+   * here means the same thing — the request WAS dispatched and the server had
+   * begun answering when the stream died — so none of them may be `retryable`.
+   * A Retry button on a dispatched request invites the user to re-run work the
+   * server may already have committed; `recovery` is what they get instead, and
+   * it is honest about whether anything can actually check.
+   */
+  function interruptionError(cause?: unknown): AgentError {
     const recovery = canCheckStatus ? 'check' : 'none';
-    subjects.error$.next(new AgentError({
+    return new AgentError({
       kind: 'interrupted',
       message: AGENT_RECOVERY_MESSAGES[recovery],
       retryable: false,
       recovery,
       detail: AGENT_RECOVERY_DETAILS[recovery],
-    }));
-    subjects.status$.next(ResourceStatus.Error);
+      ...(cause !== undefined && !redactOperationErrors ? { cause } : {}),
+    });
   }
 
   function trackAssistantMessages(messages: BaseMessage[]): void {
@@ -561,6 +574,11 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
    * refresh produced rather than re-reading subjects that a stale or failed
    * refresh would have left untouched. Returns `undefined` whenever nothing was
    * applied: no transport, no thread, a stale answer, or a failed read.
+   *
+   * Ignoring the return value is correct and expected. Only a caller that has
+   * to DECIDE something from the refresh needs it; a caller that just wants the
+   * projection to happen — thread adoption, a thread switch — should discard it,
+   * and the several sites that do so are not overlooking a failure.
    */
   async function refreshHistory(
     force = false,
@@ -911,13 +929,14 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
         finalizeAttempt(attempt, attempt.sawAssistantChunk ? 'interrupted' : 'error');
         // A non-user-requested abort: interrupted if a stream had started, else a
         // connect-phase failure. Never "aborted" (that's reserved for user stop).
+        //
+        // The two halves differ on exactly one question — was the request
+        // dispatched? `streamingStarted` means the server had begun answering,
+        // so that half gets the same non-retryable, recovery-carrying error a
+        // closed stream gets. The connection half genuinely reached nobody, so
+        // re-sending it cannot duplicate anything and stays retryable.
         const e = streamingStarted
-          ? new AgentError({
-              kind: 'interrupted',
-              message: AGENT_ERROR_MESSAGES.interrupted,
-              retryable: true,
-              ...(!redactOperationErrors ? { cause: err } : {}),
-            })
+          ? interruptionError(err)
           : new AgentError({
               kind: 'connection',
               message: AGENT_ERROR_MESSAGES.connection,
