@@ -1,7 +1,8 @@
 # PostHog instrumentation fix — restoring a trustworthy bounce rate
 
 > Makes the homepage bounce rate comparable to an industry benchmark, restores
-> path analysis, and turns on Core Web Vitals. Written after a diagnosis of a
+> path analysis, and turns on Core Web Vitals. Nothing here takes effect until
+> the code ships AND the project setting flips; see §4. Written after a diagnosis of a
 > reported 59% homepage bounce rate found that two of PostHog's three
 > bounce-escape branches were dead.
 
@@ -68,6 +69,8 @@ urgent.
 
 This spec does not try to lower the number. It makes the number mean something
 stable, so that a future homepage change can be judged against it.
+
+**Plan:** `docs/superpowers/plans/2026-09-18-posthog-instrumentation-fix.md`
 
 ## Goals
 
@@ -165,10 +168,18 @@ curl -s "https://threadplane.ai/ingest/array/<NEXT_PUBLIC_POSTHOG_TOKEN>/config.
 
 ### 4. The project setting
 
-`autocapture_opt_out` must be set to `false`. Two routes:
+`autocapture_opt_out` must be set to `false`, and `autocapture_web_vitals_opt_in`
+to `true`. The second is easy to miss: by the "client wins" precedence above, the
+client's explicit `capture_performance: { web_vitals: true }` is enough to make
+web vitals *collect*, but the remote config keeps reporting `web_vitals: false`
+until the project field flips — and Verification step 1 below reads the remote
+config. Flip both or that check fails against working instrumentation.
+
+Two routes:
 
 1. **Preferred — API**, so the change is scripted and repeatable:
-   `PATCH /api/projects/406826/` with `{"autocapture_opt_out": false}`, using a
+   `PATCH /api/projects/406826/` with
+   `{"autocapture_opt_out": false, "autocapture_web_vitals_opt_in": true}`, using a
    personal API key with **project write** scope. The exact scope name is
    confirmed against the API response rather than assumed; PostHog's published
    docs page truncates before its scope table.
@@ -198,9 +209,9 @@ different populations. Dividing the bounce count by **Sessions** instead of
 
 | Month | Sessions | Sessions scored | Bounce | ±95% CI | Zero-duration | Median duration |
 | --- | --- | --- | --- | --- | --- | --- |
-| 2026-05 | 186 | 171 | 82.5% | ±5.7pp | 43.0% | 1.0s |
+| 2026-05 | 186 | 171 | 82.5% | ±5.70pp | 43.0% | 1.0s |
 | 2026-06 | 160 | 158 | 79.1% | ±6.34pp | 37.5% | 2.0s |
-| 2026-07 | 176 | 168 | 86.9% | ±5.1pp | 44.9% | 2.0s |
+| 2026-07 | 176 | 168 | 86.9% | ±5.10pp | 44.9% | 2.0s |
 | 2026-08 | 180 | 153 | 65.4% | ±7.54pp | 25.6% | 3.0s |
 | 2026-09 | 161 | 144 | 50.0% | ±8.17pp | 18.0% | 6.0s |
 
@@ -226,7 +237,8 @@ it.
 **`$pageleave` is missing from 17–20% of sessions in the four browsers with
 samples large enough to read:** Chrome Desktop (17.2%), Safari Desktop
 (19.6%), Mobile Safari (20.0%), and Chrome Mobile (3 of 16 sessions, 18.8% —
-one session moves this figure 3.5pp). Other browsers in the same result set,
+a single extra session would move this to 25.0%). Other browsers in the same
+result set,
 such as Firefox Desktop (3 of 3 missing) and Edge Desktop (0 of 3 missing),
 have samples too small to read. Those missing sessions collapse to zero
 duration and become automatic bounces. The zero-duration share tracks the
@@ -234,8 +246,9 @@ bounce rate almost exactly month over month, which makes this leak a material
 contributor rather than a rounding detail. Cause not yet established; out of
 scope here, worth its own investigation.
 
-**Channel composition, homepage entries:** 89% Direct (142 of 159 in September,
-bouncing at 55%) against 14 Organic Search sessions bouncing at 14%. Browser and
+**Channel composition, homepage entries:** 89% Direct (143 of the 161 September
+sessions, bouncing at 54.3%) against 15 Organic Search sessions bouncing at
+13.3%. Browser and
 OS distribution is consistent with ordinary human traffic, not bots. Median
 session duration splits hard by device — Chrome Desktop 6s, Safari Desktop 275s,
 Mobile Safari 3s, Chrome Mobile 2s.
@@ -279,4 +292,4 @@ close it.
 | `apps/website/instrumentation-client.ts` | Export `POSTHOG_INIT_OPTIONS`; change `capture_pageview`; add `capture_performance` |
 | `apps/website/instrumentation-client.spec.ts` | New — the regression guard |
 | `docs/growth/README.md` | UI/code split table; baseline and cutover log |
-| PostHog project 406826 | `autocapture_opt_out` → `false` (not a repository change) |
+| PostHog project 406826 | `autocapture_opt_out` → `false` and `autocapture_web_vitals_opt_in` → `true` (not a repository change) |

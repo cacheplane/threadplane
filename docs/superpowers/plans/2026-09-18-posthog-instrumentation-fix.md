@@ -37,6 +37,15 @@
 - Create: `apps/website/instrumentation-client.spec.ts`
 - Modify: `apps/website/instrumentation-client.ts`
 
+> **AS BUILT — this block is superseded.** Task 1 shipped as `f8f146007`. Code review
+> replaced the six per-property assertions below with four tests: one exhaustive `toEqual`
+> over the whole options object (which also catches an *added* key, as six per-property
+> assertions could not), the dedicated `capture_pageview` literal test, and two tests
+> proving `posthog.init` actually receives the exported object — one on the local path,
+> one on the production path. Read the committed file, not this block. The "6 tests"
+> expectations in Steps 4-6 are therefore 4, and Step 5's mutation list is extended in
+> the commit message.
+
 - [ ] **Step 1: Write the failing test**
 
 Create `apps/website/instrumentation-client.spec.ts` with exactly this content:
@@ -259,14 +268,14 @@ exists to prevent.
 
 PostHog decides a bounce with
 `NOT (page_screen_count >= 2 OR has_autocapture OR session_duration >= 10s)`.
-Until 2026-09-18 only the duration branch worked, so the figures below mean
+Only the duration branch works today, so the figures below mean
 "share of sessions that ended within 10 seconds". Entry pathname `/`:
 
 | Month | Sessions | Sessions scored | Bounce | ±95% CI | Zero-duration | Median duration |
 | --- | --- | --- | --- | --- | --- | --- |
-| 2026-05 | 186 | 171 | 82.5% | ±5.7pp | 43.0% | 1.0s |
+| 2026-05 | 186 | 171 | 82.5% | ±5.70pp | 43.0% | 1.0s |
 | 2026-06 | 160 | 158 | 79.1% | ±6.34pp | 37.5% | 2.0s |
-| 2026-07 | 176 | 168 | 86.9% | ±5.1pp | 44.9% | 2.0s |
+| 2026-07 | 176 | 168 | 86.9% | ±5.10pp | 44.9% | 2.0s |
 | 2026-08 | 180 | 153 | 65.4% | ±7.54pp | 25.6% | 3.0s |
 | 2026-09 | 161 | 144 | 50.0% | ±8.17pp | 18.0% | 6.0s |
 
@@ -275,20 +284,25 @@ from its denominator, which is why Sessions and Sessions scored differ. The
 bounce percentage and its interval both use Sessions scored.
 Window pinned 2026-05-01 to 2026-09-18; September is a partial month.
 
-**The series breaks after 2026-09-18.** Restoring the other two branches lowers
-the rate on unchanged traffic. Do not compare across that date.
+**The series will break once both the pageview fix ships and the project
+setting flips — it has not yet.** Restoring the other two `$is_bounce` branches
+lowers the rate on unchanged traffic. The break date is whichever of the two
+ships second. Do not compare across that date once it happens.
 
 **The volume does not support fine comparisons.** At ~160 homepage sessions per
 month a ±8.17pp interval cannot separate 50.0% from 59%. Judging a homepage
 change on this metric needs a much longer accumulation window, or more traffic.
 
 Two limits this baseline exposed. `$pageleave` is missing from 17–20% of
-sessions across every browser measured — Chrome Desktop 17.2%, Safari Desktop
-19.6%, Mobile Safari 20.0%, Chrome Mobile 18.8% — so those sessions collapse to
-zero duration and become automatic bounces; the zero-duration share tracks the
-bounce rate month over month. And 89% of homepage entries are Direct (142 of 159
-in September, 55% bounce) against 14 Organic Search sessions at 14% bounce, so
-the headline figure is mostly a statement about untagged traffic.
+sessions in the four browsers with samples large enough to read: Chrome Desktop
+(17.2%), Safari Desktop (19.6%), Mobile Safari (20.0%), and Chrome Mobile (3 of
+16 sessions, 18.8% — a single extra session would move this to 25.0%). Firefox
+Desktop (3 of 3 missing) and Edge Desktop (0 of 3) have samples too small to
+read. Those missing sessions collapse to zero duration and become automatic
+bounces; the zero-duration share tracks the bounce rate month over month. And
+89% of homepage entries are Direct (143 of the 161 September sessions, 54.3%
+bounce) against 15 Organic Search sessions at 13.3% bounce, so the headline
+figure is mostly a statement about untagged traffic.
 ```
 
 - [ ] **Step 2: Verify the markdown renders and links resolve**
@@ -394,7 +408,7 @@ Expected: `url` is `/pricing` while `documentLoadedFor` is still `https://thread
 
 - [ ] **Step 7: Record the cutover date**
 
-Task 2 wrote 2026-09-18 as the cutover date, which is correct only if Step 3 ran that day. If it ran later, correct both sentences in the baseline section of `docs/growth/README.md` to the date Step 3 actually succeeded: "Until 2026-09-18 only the duration branch worked" and "**The series breaks after 2026-09-18.**"
+The baseline section of `docs/growth/README.md` currently states the cutover as a prediction: "**The series will break once both the pageview fix ships and the project setting flips — it has not yet.**" Now that both have happened, rewrite that paragraph to name the actual date Step 3 succeeded, and change "Do not compare across that date once it happens" to the past tense. Make the same edit to the matching paragraph in `docs/superpowers/specs/2026-09-18-posthog-instrumentation-fix-design.md`.
 
 ```bash
 git add docs/growth/README.md
