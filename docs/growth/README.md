@@ -110,7 +110,7 @@ them. They have opposite precedence against `apps/website/instrumentation-client
 | Setting | Precedence | posthog-js resolution |
 | --- | --- | --- |
 | `autocapture_opt_out` | **Project wins.** Client config cannot re-enable autocapture. | `!!config.autocapture && !remoteOptOut` |
-| `capture_performance.web_vitals` | **Client wins** when it sets an explicit boolean. | `isBoolean(clientValue) ? clientValue : remoteValue` |
+| `capture_performance.web_vitals` | **Client wins** when it sets an explicit boolean. Today the deployed client sets no `capture_performance` key at all, so it falls through to the remote value (`false`). | `isBoolean(clientValue) ? clientValue : remoteValue` |
 
 Read the live values rather than trusting either source:
 
@@ -128,30 +128,45 @@ exists to prevent.
 PostHog decides a bounce with
 `NOT (page_screen_count >= 2 OR has_autocapture OR session_duration >= 10s)`.
 Until 2026-09-18 only the duration branch worked, so the figures below mean
-"share of sessions that ended within 10 seconds". Entry pathname `/`:
+"share of sessions that ended within 10 seconds". Entry pathname `/`.
+`$is_bounce` is NULL for sessions with no pageview, and PostHog excludes those
+from the bounce denominator — so **Sessions** and **Sessions scored** count
+different populations. Dividing the bounce count by **Sessions** instead of
+**Sessions scored** understates the rate: 55.6% instead of 65.4% for 2026-08.
 
-| Month | Sessions | Bounce | ±95% CI | Zero-duration | Median duration |
-| --- | --- | --- | --- | --- | --- |
-| 2026-05 | 186 | 82.5% | ±5.5pp | 43.0% | 1.0s |
-| 2026-06 | 160 | 79.1% | ±6.3pp | 37.5% | 2.0s |
-| 2026-07 | 176 | 86.9% | ±5.0pp | 44.9% | 2.0s |
-| 2026-08 | 180 | 65.4% | ±7.0pp | 25.6% | 3.0s |
-| 2026-09 | 159 | 50.7% | ±7.8pp | 18.2% | 6.0s |
+| Month | Sessions | Sessions scored | Bounce | ±95% CI | Zero-duration | Median duration |
+| --- | --- | --- | --- | --- | --- | --- |
+| 2026-05 | 186 | 171 | 82.5% | ±5.7pp | 43.0% | 1.0s |
+| 2026-06 | 160 | 158 | 79.1% | ±6.34pp | 37.5% | 2.0s |
+| 2026-07 | 176 | 168 | 86.9% | ±5.1pp | 44.9% | 2.0s |
+| 2026-08 | 180 | 153 | 65.4% | ±7.54pp | 25.6% | 3.0s |
+| 2026-09 | 161 | 144 | 50.0% | ±8.17pp | 18.0% | 6.0s |
 
-**The series breaks after 2026-09-18.** Restoring the other two branches lowers
-the rate on unchanged traffic. Do not compare across that date.
+Window pinned 2026-05-01 to 2026-09-18; September is a partial month.
+
+**The series will break once both the pageview fix ships and the project
+setting flips — it has not yet.** Restoring the other two `$is_bounce`
+branches lowers the rate on unchanged traffic, but today neither precondition
+holds: the deployed bundle still ships `capture_pageview: !0` (truthy, not
+`'history_change'`), and the remote config still returns
+`"autocapture_opt_out": true`. The break date is whichever of the two ships
+second, not 2026-09-18. Do not compare across that date once it happens.
 
 **The volume does not support fine comparisons.** At ~160 homepage sessions per
-month a ±7.8pp interval cannot separate 50.7% from 59%. Judging a homepage
+month a ±8.17pp interval cannot separate 50.0% from 59%. Judging a homepage
 change on this metric needs a much longer accumulation window, or more traffic.
 
 Two limits this baseline exposed. `$pageleave` is missing from 17–20% of
-sessions across every browser measured — Chrome Desktop 17.2%, Safari Desktop
-19.6%, Mobile Safari 20.0%, Chrome Mobile 18.8% — so those sessions collapse to
-zero duration and become automatic bounces; the zero-duration share tracks the
-bounce rate month over month. And 89% of homepage entries are Direct (142 of 159
-in September, 55% bounce) against 14 Organic Search sessions at 14% bounce, so
-the headline figure is mostly a statement about untagged traffic.
+sessions in the four browsers with samples large enough to read: Chrome
+Desktop (17.2%), Safari Desktop (19.6%), Mobile Safari (20.0%), and Chrome
+Mobile (3 of 16 sessions, 18.8% — one session moves this figure 3.5pp). Other
+browsers in the same result set, such as Firefox Desktop (3 of 3 missing) and
+Edge Desktop (0 of 3 missing), have samples too small to read. Those missing
+sessions collapse to zero duration and become automatic bounces; the
+zero-duration share tracks the bounce rate month over month. And 89% of
+homepage entries are Direct (142 of 159 in September, 55% bounce) against 14
+Organic Search sessions at 14% bounce, so the headline figure is mostly a
+statement about untagged traffic.
 
 ## Contributor checks
 

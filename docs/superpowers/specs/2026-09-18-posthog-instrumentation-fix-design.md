@@ -154,7 +154,7 @@ settings contradict that today, with *different* override semantics:
 | Setting | Lives in | Semantics | posthog-js resolution |
 | --- | --- | --- | --- |
 | `autocapture_opt_out` | Project UI only | **Project wins.** Client config cannot re-enable it. | `return !!config.autocapture && !s` — ANDed against the remote flag |
-| `capture_performance.web_vitals` | Project UI, overridable | **Client wins** when the client sets it explicitly. | `var t = isObject(oo) ? oo.web_vitals : …; return isBoolean(t) ? t : $s` — remote is the fallback |
+| `capture_performance.web_vitals` | Project UI, overridable | **Client wins** when the client sets it explicitly. Today the deployed client sets no `capture_performance` key at all, so it falls through to the remote value (`false`). | `var t = isObject(oo) ? oo.web_vitals : …; return isBoolean(t) ? t : $s` — remote is the fallback |
 
 A section in `docs/growth/README.md` records both, plus the command that reveals
 the live truth:
@@ -180,41 +180,56 @@ exit code of the call that made the change.
 
 ### 5. Baseline and cutover
 
-Both fixes make dead branches of `$is_bounce` reachable, so bounce rate drops on
-unchanged traffic. Pre- and post-cutover numbers are not comparable.
+Both fixes make dead branches of `$is_bounce` reachable, so bounce rate will
+drop on unchanged traffic once both land. Today neither precondition holds:
+the deployed bundle still ships `capture_pageview: !0` (truthy, not
+`'history_change'`), and the remote config still returns
+`"autocapture_opt_out": true`. The break happens whichever of the two ships
+second — pre- and post-cutover numbers will not be comparable once it does.
 
 Measured 2026-09-18 via the Query API against project 406826, entry pathname
-`/`. This is the series the cutover breaks.
+`/`, window pinned 2026-05-01 to 2026-09-18 (September is a partial month).
+This is the series that cutover will eventually break.
 
-| Month | Sessions | Bounce | ±95% CI | Zero-duration | Median duration |
-| --- | --- | --- | --- | --- | --- |
-| 2026-05 | 186 | 82.5% | ±5.5pp | 43.0% | 1.0s |
-| 2026-06 | 160 | 79.1% | ±6.3pp | 37.5% | 2.0s |
-| 2026-07 | 176 | 86.9% | ±5.0pp | 44.9% | 2.0s |
-| 2026-08 | 180 | 65.4% | ±7.0pp | 25.6% | 3.0s |
-| 2026-09 | 159 | 50.7% | ±7.8pp | 18.2% | 6.0s |
+`$is_bounce` is NULL for sessions with no pageview, and PostHog excludes those
+from the bounce denominator — so **Sessions** and **Sessions scored** count
+different populations. Dividing the bounce count by **Sessions** instead of
+**Sessions scored** understates the rate: 55.6% instead of 65.4% for 2026-08.
+
+| Month | Sessions | Sessions scored | Bounce | ±95% CI | Zero-duration | Median duration |
+| --- | --- | --- | --- | --- | --- | --- |
+| 2026-05 | 186 | 171 | 82.5% | ±5.7pp | 43.0% | 1.0s |
+| 2026-06 | 160 | 158 | 79.1% | ±6.34pp | 37.5% | 2.0s |
+| 2026-07 | 176 | 168 | 86.9% | ±5.1pp | 44.9% | 2.0s |
+| 2026-08 | 180 | 153 | 65.4% | ±7.54pp | 25.6% | 3.0s |
+| 2026-09 | 161 | 144 | 50.0% | ±8.17pp | 18.0% | 6.0s |
 
 Window-dependent snapshots on the same data: homepage 30-day 55.5%, homepage
 90-day 70.3%, sitewide 30-day 61.9%, sitewide 90-day 62.6%. The reported "59%"
 is not reproducible as a single figure; quote the scope and window with it.
 
 **The volume does not support the question.** At ~160 homepage sessions per
-month, September's ±7.8pp interval puts the true value in [43%, 58%]. The gap
+month, September's ±8.17pp interval puts the true value in [42%, 58%]. The gap
 between 59% and the 56% Technology-sector median is inside the noise. Any
 homepage change judged against this metric needs either a much longer
 accumulation window or far more traffic before the comparison means anything.
 
 Record in `docs/growth/README.md`, following the running-log pattern
 `docs/gtm/ai-search-measurement.md` already established: the table above, the
-cutover date, and an explicit note that the series breaks at that date. Whoever
-reads the number next needs to know the definition changed underneath it.
+pinned window, and an explicit note that the series will break once both the
+pageview fix ships and the project setting flips — whichever lands second.
+Whoever reads the number next needs to know the definition changed underneath
+it.
 
 ### Two findings this baseline surfaced
 
-**`$pageleave` is missing from 17–20% of sessions**, roughly uniformly across
-Chrome Desktop (17.2%), Safari Desktop (19.6%), Mobile Safari (20.0%) and Chrome
-Mobile (18.8%) — so it is not a Safari or bfcache quirk. Those sessions collapse
-to zero duration and become automatic bounces. The zero-duration share tracks the
+**`$pageleave` is missing from 17–20% of sessions in the four browsers with
+samples large enough to read:** Chrome Desktop (17.2%), Safari Desktop
+(19.6%), Mobile Safari (20.0%), and Chrome Mobile (3 of 16 sessions, 18.8% —
+one session moves this figure 3.5pp). Other browsers in the same result set,
+such as Firefox Desktop (3 of 3 missing) and Edge Desktop (0 of 3 missing),
+have samples too small to read. Those missing sessions collapse to zero
+duration and become automatic bounces. The zero-duration share tracks the
 bounce rate almost exactly month over month, which makes this leak a material
 contributor rather than a rounding detail. Cause not yet established; out of
 scope here, worth its own investigation.
