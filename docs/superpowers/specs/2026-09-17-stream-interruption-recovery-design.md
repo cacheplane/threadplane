@@ -65,7 +65,7 @@ The four cases resolve cleanly:
 | Stream | Flags | Outcome |
 | --- | --- | --- |
 | Emits nothing, then closes | neither | `interrupted` |
-| Chunks, then closes with no terminal event | neither, the chunk having cleared the root flag | `interrupted` |
+| Chunks, then closes with no terminal event | neither, no terminal event having arrived to set either | `interrupted` |
 | Chunks, then a terminal event | `currentStepHasTerminalEvidence` | `success` |
 | A terminal event alone, no chunk | `rootTerminalEvidence` | `success` |
 
