@@ -183,11 +183,6 @@ export class MockAgentTransport implements AgentTransport {
     void lastEventId;
     void signal;
     this.joinedRuns.push({ threadId, runId });
-    // A real join replays the run's own events, so a run that finished while
-    // we were away arrives as its assistant turn followed by the terminal
-    // state snapshot. A bare snapshot with nothing ahead of it is what an
-    // interrupted join looks like, not a completed one.
-    yield { type: 'messages', messages: [{ id: 'ai-joined', type: 'ai', content: 'joined' }] };
     yield { type: 'values', values: { queued: true } };
   }
 

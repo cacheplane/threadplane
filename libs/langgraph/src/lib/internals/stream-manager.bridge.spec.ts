@@ -36,10 +36,7 @@ describe('automatic development evidence', () => {
     const { transport, bridge, destroy$ } = setup();
     expect(developmentEvidence.touches).toBe(0);
     const run = bridge.submit({});
-    transport.emit([
-      { type: 'messages', messages: [{ id: 'ai-1', type: 'ai', content: 'done' }] },
-      { type: 'values', data: { done: true } },
-    ] as StreamEvent[]); transport.close();
+    transport.emit([{ type: 'values', data: { done: true } }]); transport.close();
     await run;
     expect(developmentEvidence.touches).toBeGreaterThan(0);
     expect(developmentEvidence.events).toContain('transport.connected');
@@ -107,12 +104,9 @@ describe('automatic development evidence', () => {
     const { transport, bridge, destroy$ } = setup();
     let invocation = 0;
     transport.stream = async function* () {
-      if (++invocation === 1) {
-        yield { type: 'values', data: { __interrupt__: [{ value: {} }] } };
-        return;
-      }
-      yield { type: 'messages', messages: [{ id: 'ai-resumed', type: 'ai', content: 'done' }] };
-      yield { type: 'values', data: { done: true } };
+      yield ++invocation === 1
+        ? { type: 'values', data: { __interrupt__: [{ value: {} }] } }
+        : { type: 'values', data: { done: true } };
     };
     await bridge.submit({});
     expect(developmentEvidence.events).not.toContain('runtime.first_stream_completed');
@@ -1585,7 +1579,6 @@ describe('createStreamManagerBridge', () => {
         async *stream(_assistantId, _threadId, payload, signal, options) {
           requests.push({ payload, command: structuredClone(options?.command), aborted: signal?.aborted ?? false });
           if (requests.length === 1) throw new Error('connection failed');
-          yield { type: 'messages', messages: [{ id: 'ai-retry', type: 'ai', content: 'done' }] };
           yield { type: 'values', values: { done: true } };
         },
       };
@@ -1649,7 +1642,6 @@ describe('createStreamManagerBridge', () => {
       const transport: AgentTransport = {
         async *stream(_assistantId, _threadId, payload) {
           streamPayloads.push(payload);
-          yield { type: 'messages', messages: [{ id: `ai-${streamPayloads.length}`, type: 'ai', content: `done ${streamPayloads.length}` }] };
           yield { type: 'values', values: { completed: streamPayloads.length } };
         },
       };
@@ -1718,7 +1710,6 @@ describe('createStreamManagerBridge', () => {
             await Promise.race([activeGate, aborted]);
             return;
           }
-          yield { type: 'messages', messages: [{ id: 'ai-retried', type: 'ai', content: 'done' }] };
           yield { type: 'values', values: { retried: true } };
         },
         async createQueuedRun(_assistantId, threadId, values, _signal, options) {
@@ -1770,7 +1761,6 @@ describe('createStreamManagerBridge', () => {
             await Promise.race([activeGate, aborted]);
             return;
           }
-          yield { type: 'messages', messages: [{ id: 'ai-retried', type: 'ai', content: 'done' }] };
           yield { type: 'values', values: { retried: true } };
         },
         async createQueuedRun() {
@@ -1816,7 +1806,6 @@ describe('createStreamManagerBridge', () => {
       const transport: AgentTransport = {
         async *stream() {
           streamCalls += 1;
-          yield { type: 'messages', messages: [{ id: 'ai-thread-1', type: 'ai', content: 'done' }] };
           yield { type: 'values', values: { completed: true } };
         },
       };
@@ -3574,10 +3563,7 @@ describe('createStreamManagerBridge', () => {
     } satisfies StreamEvent]);
     expect(subjects.subagents$.value.get('research:abc123')?.status()).toBe('running');
 
-    transport.emit([
-      { type: 'messages', messages: [{ id: 'parent-ai', type: 'ai', content: 'summary' }] },
-      { type: 'values', data: { done: true } },
-    ] as StreamEvent[]);
+    transport.emit([{ type: 'values', data: { done: true } } as StreamEvent]);
     transport.close();
     await done;
 
@@ -4163,6 +4149,18 @@ describe('a close with no terminal evidence', () => {
       phase: 'complete',
       outcome: 'interrupted',
     });
+    destroy$.next();
+  });
+
+  it('reports a state-only turn that never spoke as success', async () => {
+    const { transport, destroy$, bridge } = setup();
+    const submitted = bridge.submit({});
+    // A graph turn may carry the whole of its work in state and never emit an
+    // assistant message. The terminal snapshot is its completion signal, and
+    // there is no chunk after it to invalidate that.
+    transport.emit([{ type: 'values', data: { itinerary: { updated: true } } }] as StreamEvent[]);
+    transport.close();
+    expect(await submitted).toBe('success');
     destroy$.next();
   });
 
