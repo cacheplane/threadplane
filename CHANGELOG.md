@@ -1,3 +1,39 @@
+## 0.2.0 (2026-09-18)
+
+### 🚀 Features
+
+- detect unexpectedly closed streams and offer only safe recovery ([#1103](https://github.com/cacheplane/threadplane/pull/1103))
+- **ag-ui:** add interrupt durability and align adapter resume retry ([a38669280](https://github.com/cacheplane/threadplane/commit/a38669280))
+- **growth:** founder install digest with one-click approve links ([#1102](https://github.com/cacheplane/threadplane/pull/1102))
+- **lifecycle:** attach the whitepaper PDF to the fulfillment email ([#1092](https://github.com/cacheplane/threadplane/pull/1092))
+- **sdk:** report a development session when an integration is created ([#1101](https://github.com/cacheplane/threadplane/pull/1101))
+- **website:** the reliability band becomes a preflight checklist ([#1067](https://github.com/cacheplane/threadplane/pull/1067), [#1058](https://github.com/cacheplane/threadplane/issues/1058), [#181818](https://github.com/cacheplane/threadplane/issues/181818), [#0](https://github.com/cacheplane/threadplane/issues/0), [#15253](https://github.com/cacheplane/threadplane/issues/15253))
+- **website:** the open-source strip becomes the Fork us band ([#1073](https://github.com/cacheplane/threadplane/pull/1073))
+- **website:** five-beat interactive homepage stage ([#1075](https://github.com/cacheplane/threadplane/pull/1075))
+- **website:** the compatibility band becomes an airport diagram ([#1080](https://github.com/cacheplane/threadplane/pull/1080))
+- **website:** link hero workflow capabilities to docs ([#1082](https://github.com/cacheplane/threadplane/pull/1082))
+- **website:** For teams becomes the briefing block ([#1081](https://github.com/cacheplane/threadplane/pull/1081))
+- **website:** rebuild the navbar as four triggers with hover panels, a transparent hero surface, and a mobile drill-in stack ([#1083](https://github.com/cacheplane/threadplane/pull/1083), [#1084](https://github.com/cacheplane/threadplane/issues/1084))
+- **website:** homepage sequencing, plate trim, and diagram scaling ([#1089](https://github.com/cacheplane/threadplane/pull/1089), [#1067](https://github.com/cacheplane/threadplane/issues/1067))
+- **website:** the trust band keeps only third-party proof, and a No-runtime band lands after the architecture diagram ([#1096](https://github.com/cacheplane/threadplane/pull/1096), [#8](https://github.com/cacheplane/threadplane/issues/8), [#11](https://github.com/cacheplane/threadplane/issues/11))
+
+### 🩹 Fixes
+
+- **chat:** reclassify replaced content during stage playback ([#1077](https://github.com/cacheplane/threadplane/pull/1077))
+- **cockpit-chat-debug:** give the devtools State tab real state to show ([#1070](https://github.com/cacheplane/threadplane/pull/1070))
+- **examples:** align stylesheet and telemetry loading with CSP ([#1095](https://github.com/cacheplane/threadplane/pull/1095))
+- **growth:** suppress abusive forms and remove recipient BCC ([#1094](https://github.com/cacheplane/threadplane/pull/1094))
+- **libs:** pin the type-tests compiler; document the tsconfig baseUrl blocker ([#1066](https://github.com/cacheplane/threadplane/pull/1066), [#1064](https://github.com/cacheplane/threadplane/issues/1064))
+- **mastra:** verify cancellation outcomes with aimock ([03b579645](https://github.com/cacheplane/threadplane/commit/03b579645))
+- **stage:** make chat scroll exploration explicit ([#1090](https://github.com/cacheplane/threadplane/pull/1090))
+- **tsconfig:** stop four library tsconfigs from shadowing the workspace baseUrl ([#1071](https://github.com/cacheplane/threadplane/pull/1071))
+- **website:** keep the heading fragment on a hard-loaded docs deep link ([#1079](https://github.com/cacheplane/threadplane/pull/1079))
+- **website:** bridge the dead zone between a nav trigger and its panel ([#1087](https://github.com/cacheplane/threadplane/pull/1087))
+
+### 🔥 Performance
+
+- **chat:** parse cumulative A2UI arguments incrementally ([#1078](https://github.com/cacheplane/threadplane/pull/1078))
+
 ## Unreleased
 
 ### Features

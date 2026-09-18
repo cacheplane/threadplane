@@ -1,6 +1,6 @@
 {
   "name": "@threadplane/chat",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "The Angular AI agent chat UI: <chat>, headless primitives, interrupts, subagents, and generative UI on Signals.",
   "exports": {
     "./chat.css": "./chat.css",
@@ -18,14 +18,14 @@
     "@cacheplane/partial-markdown": "0.5.8"
   },
   "peerDependencies": {
-    "@threadplane/telemetry": "^0.1.0",
+    "@threadplane/telemetry": "^0.2.0",
     "zod": "^3.25.0",
     "@angular/core": "^20.0.0 || ^21.0.0 || ^22.0.0",
     "@angular/common": "^20.0.0 || ^21.0.0 || ^22.0.0",
     "@angular/platform-browser": "^20.0.0 || ^21.0.0 || ^22.0.0",
     "@angular/router": "^20.0.0 || ^21.0.0 || ^22.0.0",
-    "@threadplane/render": "0.1.0",
-    "@threadplane/a2ui": "0.1.0",
+    "@threadplane/render": "0.2.0",
+    "@threadplane/a2ui": "0.2.0",
     "@json-render/core": "^0.16.0",
     "rxjs": "~7.8.0",
     "marked": "^15.0.0 || ^16.0.0",
