@@ -319,9 +319,15 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
     }
   }
 
+  /**
+   * The outcome for a stream that ended. A recorded terminal outcome always
+   * wins. Otherwise only root terminal evidence proves completion — a close
+   * with no evidence is an interruption whether or not a chunk arrived, because
+   * a stream that dies before its first chunk has not completed anything.
+   */
   function finishOutcome(attempt: DeliveryAttempt): CompleteOutcome {
     return attempt.terminalOutcome
-      ?? (attempt.currentStepHasTerminalEvidence || !attempt.sawAssistantChunk ? 'success' : 'interrupted');
+      ?? (attempt.currentStepHasTerminalEvidence ? 'success' : 'interrupted');
   }
 
   async function finalizeClosedAttempt(

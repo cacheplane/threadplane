@@ -1503,8 +1503,17 @@ describe('agent — client tool staging', () => {
     }
   }
 
+  /**
+   * A run that completes: the assistant answers, then the terminal state
+   * snapshot lands. Both halves matter — a snapshot with no assistant turn
+   * ahead of it is not a completed run, it is a stream that died early.
+   */
   function successfulStream(): StreamScript {
     return () => (async function* () {
+      yield {
+        type: 'messages',
+        messages: [{ id: 'ai-complete', type: 'ai', content: 'done' }],
+      };
       yield { type: 'values', values: { done: true } };
     })();
   }
@@ -1540,6 +1549,10 @@ describe('agent — client tool staging', () => {
     return () => (async function* () {
       onStarted();
       await release;
+      yield {
+        type: 'messages',
+        messages: [{ id: 'ai-complete', type: 'ai', content: 'done' }],
+      };
       yield { type: 'values', values: { done: true } };
       onCompleted();
     })();

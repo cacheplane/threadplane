@@ -36,7 +36,10 @@ describe('automatic development evidence', () => {
     const { transport, bridge, destroy$ } = setup();
     expect(developmentEvidence.touches).toBe(0);
     const run = bridge.submit({});
-    transport.emit([{ type: 'values', data: { done: true } }]); transport.close();
+    transport.emit([
+      { type: 'messages', messages: [{ id: 'ai-1', type: 'ai', content: 'done' }] },
+      { type: 'values', data: { done: true } },
+    ] as StreamEvent[]); transport.close();
     await run;
     expect(developmentEvidence.touches).toBeGreaterThan(0);
     expect(developmentEvidence.events).toContain('transport.connected');
@@ -104,9 +107,12 @@ describe('automatic development evidence', () => {
     const { transport, bridge, destroy$ } = setup();
     let invocation = 0;
     transport.stream = async function* () {
-      yield ++invocation === 1
-        ? { type: 'values', data: { __interrupt__: [{ value: {} }] } }
-        : { type: 'values', data: { done: true } };
+      if (++invocation === 1) {
+        yield { type: 'values', data: { __interrupt__: [{ value: {} }] } };
+        return;
+      }
+      yield { type: 'messages', messages: [{ id: 'ai-resumed', type: 'ai', content: 'done' }] };
+      yield { type: 'values', data: { done: true } };
     };
     await bridge.submit({});
     expect(developmentEvidence.events).not.toContain('runtime.first_stream_completed');
@@ -1579,6 +1585,7 @@ describe('createStreamManagerBridge', () => {
         async *stream(_assistantId, _threadId, payload, signal, options) {
           requests.push({ payload, command: structuredClone(options?.command), aborted: signal?.aborted ?? false });
           if (requests.length === 1) throw new Error('connection failed');
+          yield { type: 'messages', messages: [{ id: 'ai-retry', type: 'ai', content: 'done' }] };
           yield { type: 'values', values: { done: true } };
         },
       };
@@ -1642,6 +1649,7 @@ describe('createStreamManagerBridge', () => {
       const transport: AgentTransport = {
         async *stream(_assistantId, _threadId, payload) {
           streamPayloads.push(payload);
+          yield { type: 'messages', messages: [{ id: `ai-${streamPayloads.length}`, type: 'ai', content: `done ${streamPayloads.length}` }] };
           yield { type: 'values', values: { completed: streamPayloads.length } };
         },
       };
@@ -1710,6 +1718,7 @@ describe('createStreamManagerBridge', () => {
             await Promise.race([activeGate, aborted]);
             return;
           }
+          yield { type: 'messages', messages: [{ id: 'ai-retried', type: 'ai', content: 'done' }] };
           yield { type: 'values', values: { retried: true } };
         },
         async createQueuedRun(_assistantId, threadId, values, _signal, options) {
@@ -1761,6 +1770,7 @@ describe('createStreamManagerBridge', () => {
             await Promise.race([activeGate, aborted]);
             return;
           }
+          yield { type: 'messages', messages: [{ id: 'ai-retried', type: 'ai', content: 'done' }] };
           yield { type: 'values', values: { retried: true } };
         },
         async createQueuedRun() {
@@ -1806,6 +1816,7 @@ describe('createStreamManagerBridge', () => {
       const transport: AgentTransport = {
         async *stream() {
           streamCalls += 1;
+          yield { type: 'messages', messages: [{ id: 'ai-thread-1', type: 'ai', content: 'done' }] };
           yield { type: 'values', values: { completed: true } };
         },
       };
@@ -3563,7 +3574,10 @@ describe('createStreamManagerBridge', () => {
     } satisfies StreamEvent]);
     expect(subjects.subagents$.value.get('research:abc123')?.status()).toBe('running');
 
-    transport.emit([{ type: 'values', data: { done: true } } as StreamEvent]);
+    transport.emit([
+      { type: 'messages', messages: [{ id: 'parent-ai', type: 'ai', content: 'summary' }] },
+      { type: 'values', data: { done: true } },
+    ] as StreamEvent[]);
     transport.close();
     await done;
 
@@ -4109,6 +4123,64 @@ describe('identity-based delta merge (messages-tuple)', () => {
     transport.close();
     await new Promise(r => setTimeout(r, 10));
     expect(lastAiContent(subjects)).toBe('| a | b | | c |');
+    destroy$.next();
+  });
+});
+
+describe('a close with no terminal evidence', () => {
+  function setup() {
+    const transport = new MockAgentTransport();
+    const subjects = makeSubjects();
+    const destroy$ = new Subject<void>();
+    const bridge = createStreamManagerBridge({
+      options: { apiUrl: '', assistantId: 'test', transport },
+      subjects,
+      threadId$: of(null),
+      destroy$: destroy$.asObservable(),
+    });
+    return { transport, subjects, destroy$, bridge };
+  }
+
+  it('reports a stream that emitted nothing at all as interrupted', async () => {
+    const { transport, destroy$, bridge } = setup();
+    const submitted = bridge.submit({});
+    transport.close();
+    expect(await submitted).toBe('interrupted');
+    destroy$.next();
+  });
+
+  it('reports a stream that emitted a partial chunk and closed as interrupted', async () => {
+    const { transport, destroy$, bridge } = setup();
+    const submitted = bridge.submit({});
+    transport.emit([{
+      type: 'messages',
+      messages: [{ id: 'ai-partial-close', type: 'ai', content: 'partial' }],
+      messageMetadata: { langgraph_node: 'model' },
+    }]);
+    transport.close();
+    expect(await submitted).toBe('interrupted');
+    expect(bridge.getMessageDelivery('ai-partial-close')).toMatchObject({
+      phase: 'complete',
+      outcome: 'interrupted',
+    });
+    destroy$.next();
+  });
+
+  it('still reports root terminal evidence before the close as success', async () => {
+    const { transport, destroy$, bridge } = setup();
+    const submitted = bridge.submit({});
+    transport.emit([{
+      type: 'messages',
+      messages: [{ id: 'ai-complete-close', type: 'ai', content: 'done' }],
+      messageMetadata: { langgraph_node: 'model' },
+    }]);
+    transport.emit([{ type: 'values', values: { answer: 'done' } }]);
+    transport.close();
+    expect(await submitted).toBe('success');
+    expect(bridge.getMessageDelivery('ai-complete-close')).toMatchObject({
+      phase: 'complete',
+      outcome: 'success',
+    });
     destroy$.next();
   });
 });
