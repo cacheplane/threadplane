@@ -2,11 +2,12 @@ export type TemplateId = 'x-card' | 'og-card';
 
 export interface CardInput {
   template: TemplateId;
-  /** Headline. Required. Garamond serif, large. */
+  /** Headline. Required. Archivo Black, large. */
   title: string;
   /** Supporting line under the headline. Optional. */
   subtitle?: string;
-  /** Kicker above the headline. Optional. Defaults to brand.defaultEyebrow. */
+  /** Kicker above the headline, under the rail. Optional, uppercased, mono.
+   * Defaults to brand.defaultEyebrow. */
   eyebrow?: string;
   /** Bottom-left attribution. When present, replaces the trust pills. */
   author?: { name: string; role?: string };

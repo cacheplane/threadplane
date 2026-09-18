@@ -13,8 +13,7 @@
         "main": "marketing/assets/src/index.ts",
         "tsConfig": "marketing/assets/tsconfig.lib.json",
         "assets": [
-          { "input": "marketing/assets/fonts", "glob": "**/*", "output": "fonts" },
-          { "input": "marketing/assets/brand", "glob": "**/*", "output": "brand" }
+          { "input": "marketing/assets/fonts", "glob": "**/*", "output": "fonts" }
         ]
       }
     },

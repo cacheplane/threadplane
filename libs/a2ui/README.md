@@ -4,10 +4,10 @@ The A2UI (Agent-to-UI) protocol layer behind generative UI in [Threadplane](http
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@threadplane/a2ui">
-    <img alt="npm version" src="https://img.shields.io/npm/v/@threadplane%2Fa2ui?color=6C8EFF&labelColor=080B14&style=flat-square" />
+    <img alt="npm version" src="https://img.shields.io/npm/v/@threadplane%2Fa2ui?color=15253E&labelColor=0A0A0A&style=flat-square" />
   </a>
   <a href="https://opensource.org/licenses/MIT">
-    <img alt="MIT" src="https://img.shields.io/badge/License-MIT-6C8EFF?labelColor=080B14&style=flat-square" />
+    <img alt="MIT" src="https://img.shields.io/badge/License-MIT-15253E?labelColor=0A0A0A&style=flat-square" />
   </a>
 </p>
 

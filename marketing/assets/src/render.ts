@@ -1,7 +1,6 @@
 import satori from 'satori';
 import { Resvg } from '@resvg/resvg-js';
 import { loadFonts } from './fonts';
-import { loadPlaneDataUri } from './logo';
 import { TEMPLATES } from './templates/registry';
 import type { CardInput, RenderedCard } from './types';
 
@@ -12,8 +11,8 @@ export async function renderCard(input: CardInput): Promise<RenderedCard> {
       `Unknown template "${input.template}". Known: ${Object.keys(TEMPLATES).join(', ')}.`,
     );
   }
-  const [fonts, planeDataUri] = await Promise.all([loadFonts(), loadPlaneDataUri()]);
-  const svg = await satori(entry.component(input, { planeDataUri }), {
+  const fonts = await loadFonts();
+  const svg = await satori(entry.component(input), {
     width: entry.width,
     height: entry.height,
     fonts: fonts.map((f) => ({

@@ -3,7 +3,7 @@
   <desc id="d-desc">chat-sidenav lists every thread from LangGraphThreadsAdapter, while chat renders one conversation from the @threadplane/langgraph agent. Selecting a row sets the ACTIVE_THREAD signal, the agent adapter watches that signal and switches conversations, and onThreadId writes a newly created thread id back into it.</desc>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M0,0.5 L9.5,5 L0,9.5 z" fill="#004090"/>
+      <path d="M0,0.5 L9.5,5 L0,9.5 z" fill="#15253E"/>
     </marker>
   </defs>
   <style>
@@ -12,10 +12,10 @@
     .t-head { font-size: 17px; font-weight: 600; fill: #1c1c1c; }
     .t-title { font-size: 15px; font-weight: 600; fill: #1c1c1c; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
     .t-meta { font-size: 13px; fill: #464646; }
-    .t-edge { font-size: 12.5px; font-weight: 600; fill: #004090; }
+    .t-edge { font-size: 12.5px; font-weight: 600; fill: #15253E; }
     .t-caption { font-size: 13px; fill: #737373; }
-    .edge { stroke: #004090; stroke-width: 1.7; fill: none; marker-end: url(#arrow); }
-    .edge-both { stroke: #004090; stroke-width: 1.7; fill: none; marker-end: url(#arrow); marker-start: url(#arrow); }
+    .edge { stroke: #15253E; stroke-width: 1.7; fill: none; marker-end: url(#arrow); }
+    .edge-both { stroke: #15253E; stroke-width: 1.7; fill: none; marker-end: url(#arrow); marker-start: url(#arrow); }
   </style>
 
   <rect x="0.5" y="0.5" width="699" height="559" rx="12" fill="#ffffff" stroke="#e5e5e5"/>

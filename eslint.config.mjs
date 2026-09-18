@@ -108,9 +108,13 @@ export default [
       'apps/website/src/app/opengraph-image.tsx',
       // NOTE: [slug] would be a glob character class, so match by wildcard.
       'apps/website/src/app/blog/*/opengraph-image.tsx',
-      // The shared card kit both routes render through. Same reason: Satori
-      // has no stylesheet, so every value is an inline style.
+      // The shared card kit every card route renders through. Same reason:
+      // Satori has no stylesheet, so every value is an inline style.
       'apps/website/src/app/card/**/*.tsx',
+      // The GitHub Social Preview card, rendered by Satori through that same
+      // kit. A Route Handler rather than a file-convention image, so it does
+      // not match either opengraph-image pattern above.
+      'apps/website/src/app/github-card/route.tsx',
       'apps/website/src/**/*.spec.tsx',
     ],
     rules: {

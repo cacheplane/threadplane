@@ -9,7 +9,7 @@
     stands in for Garamond and is present on every mainstream platform.
   -->
   <rect width="1200" height="300" fill="#fbfbfb"/>
-  <rect x="0" y="0" width="1200" height="4" fill="#004090"/>
+  <rect x="0" y="0" width="1200" height="4" fill="#15253E"/>
 
   <!-- Rail rule, as on the card and every section header. -->
   <rect x="72" y="86" width="92" height="3" fill="#1c1c1c"/>
@@ -21,7 +21,7 @@
     font-size="15"
     font-weight="700"
     letter-spacing="1.8"
-    fill="#004090"
+    fill="#15253E"
   >OPEN SOURCE · ANGULAR</text>
 
   <!-- Wordmark: the paper plane at the same optical weight as the card's. -->

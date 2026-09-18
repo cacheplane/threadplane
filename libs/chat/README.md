@@ -4,10 +4,10 @@ The chat surface of [Threadplane](https://github.com/cacheplane/threadplane), th
 
 <p>
   <a href="https://www.npmjs.com/package/@threadplane/chat">
-    <img alt="npm version" src="https://img.shields.io/npm/v/@threadplane%2Fchat?color=6C8EFF&labelColor=080B14&style=flat-square" />
+    <img alt="npm version" src="https://img.shields.io/npm/v/@threadplane%2Fchat?color=15253E&labelColor=0A0A0A&style=flat-square" />
   </a>
-  <img alt="Angular 20 | 21 | 22" src="https://img.shields.io/badge/Angular-20%20%7C%2021%20%7C%2022-6C8EFF?labelColor=080B14&style=flat-square" />
-  <img alt="License" src="https://img.shields.io/badge/License-MIT-6C8EFF?labelColor=080B14&style=flat-square" />
+  <img alt="Angular 20 | 21 | 22" src="https://img.shields.io/badge/Angular-20%20%7C%2021%20%7C%2022-15253E?labelColor=0A0A0A&style=flat-square" />
+  <img alt="License" src="https://img.shields.io/badge/License-MIT-15253E?labelColor=0A0A0A&style=flat-square" />
 </p>
 
 **MIT-licensed.** Use it in commercial products, internal tools, agency work, and open-source projects without registration or runtime checks.

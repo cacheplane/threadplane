@@ -1,109 +1,80 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 480" width="1200" height="480">
-  <rect width="1200" height="480" fill="#080B14"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 510" width="1080" height="510" role="img" aria-labelledby="a-title a-desc">
+  <!--
+    Architecture diagram for the README and the website.
 
-  <!-- Title -->
-  <text x="600" y="48" text-anchor="middle"
-    font-family="Georgia, 'Times New Roman', serif"
-    font-size="20" font-style="italic" fill="#8B96C8" opacity="0.9">
-    Architecture
-  </text>
+    Fonts are generic stacks, not the site's webfonts: this file is served as a
+    bare image to GitHub, where no stylesheet of ours ever loads.
 
-  <!-- Box 1: Angular Component (x=60) -->
-  <rect x="60" y="100" width="210" height="90" rx="6"
-    fill="rgba(108,142,255,0.06)" stroke="rgba(108,142,255,0.25)" stroke-width="1"/>
-  <text x="165" y="138" text-anchor="middle"
-    font-family="Georgia, 'Times New Roman', serif"
-    font-size="15" font-weight="700" fill="#EEF1FF">Angular Component</text>
-  <text x="165" y="158" text-anchor="middle"
-    font-family="'Courier New', monospace"
-    font-size="11" fill="#4A527A">template / signals</text>
-  <text x="165" y="175" text-anchor="middle"
-    font-family="'Courier New', monospace"
-    font-size="11" fill="#4A527A">submit() / stop()</text>
+    The sibling diagrams under public/blog/diagrams close with a prose caption
+    and carry no legend. This one keeps a legend because its two edge styles
+    are load-bearing: a call travels right and is answered further down by a
+    signal update, not by a return value, and without a key the dashed edges
+    read as decoration rather than as the other half of the loop.
 
-  <!-- Arrow 1 → 2 -->
-  <line x1="270" y1="145" x2="330" y2="145" stroke="#6C8EFF" stroke-width="1.5" stroke-opacity="0.7"/>
-  <polygon points="330,140 342,145 330,150" fill="#6C8EFF" opacity="0.7"/>
+    The three return edges drop to 240, 290 and 340 — a flat 50px step, so the
+    horizontals never overlap and the labels clear the line above.
+  -->
+  <title id="a-title">How a call travels from an Angular component to LangGraph and back as signals</title>
+  <desc id="a-desc">An Angular component calls agent(), which calls the StreamManager bridge, which calls the LangGraph Platform. Each call is a solid arrow left to right. Below them, three dashed arrows run back the other way: the platform returns SSE stream events to the bridge, the bridge returns signal updates to agent(), and agent() returns Angular signals to the component. The bridge talks to the platform through FetchStreamTransport or MockAgentTransport.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0.5 L9.5,5 L0,9.5 z" fill="#15253E"/>
+    </marker>
+  </defs>
+  <style>
+    text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    .t-eyebrow { font-size: 11.5px; font-weight: 700; fill: #737373; letter-spacing: 0.09em; }
+    .t-title { font-size: 15px; font-weight: 600; fill: #1c1c1c; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .t-meta { font-size: 13px; fill: #464646; }
+    .t-edge { font-size: 12.5px; font-weight: 600; fill: #15253E; }
+    .edge { stroke: #15253E; stroke-width: 1.7; fill: none; marker-end: url(#arrow); }
+    .edge-reactive { stroke: #15253E; stroke-width: 1.4; stroke-dasharray: 6 5; fill: none; marker-end: url(#arrow); }
+  </style>
 
-  <!-- Box 2: agent() (x=342) -->
-  <rect x="342" y="100" width="210" height="90" rx="6"
-    fill="rgba(108,142,255,0.08)" stroke="rgba(108,142,255,0.45)" stroke-width="1.5"/>
-  <text x="447" y="138" text-anchor="middle"
-    font-family="'Courier New', monospace"
-    font-size="15" font-weight="700" fill="#6C8EFF">agent()</text>
-  <text x="447" y="158" text-anchor="middle"
-    font-family="'Courier New', monospace"
-    font-size="11" fill="#4A527A">Agent UI state</text>
-  <text x="447" y="175" text-anchor="middle"
-    font-family="'Courier New', monospace"
-    font-size="11" fill="#4A527A">@threadplane/langgraph</text>
+  <rect x="0.5" y="0.5" width="1079" height="509" rx="12" fill="#ffffff" stroke="#e5e5e5"/>
+  <text class="t-eyebrow" x="40" y="38">ARCHITECTURE</text>
 
-  <!-- Arrow 2 → 3 -->
-  <line x1="552" y1="145" x2="612" y2="145" stroke="#6C8EFF" stroke-width="1.5" stroke-opacity="0.7"/>
-  <polygon points="612,140 624,145 612,150" fill="#6C8EFF" opacity="0.7"/>
+  <rect x="40" y="90" width="214" height="104" rx="8" fill="#ffffff" stroke="#d4d4d4"/>
+  <text class="t-title" x="60" y="122">Angular Component</text>
+  <text class="t-meta" x="60" y="146">template / signals</text>
+  <text class="t-meta" x="60" y="168">submit() / stop()</text>
 
-  <!-- Box 3: StreamManager Bridge (x=624) -->
-  <rect x="624" y="100" width="210" height="90" rx="6"
-    fill="rgba(108,142,255,0.06)" stroke="rgba(108,142,255,0.25)" stroke-width="1"/>
-  <text x="729" y="133" text-anchor="middle"
-    font-family="Georgia, 'Times New Roman', serif"
-    font-size="14" font-weight="700" fill="#EEF1FF">StreamManager</text>
-  <text x="729" y="153" text-anchor="middle"
-    font-family="Georgia, 'Times New Roman', serif"
-    font-size="14" font-weight="700" fill="#EEF1FF">Bridge</text>
-  <text x="729" y="175" text-anchor="middle"
-    font-family="'Courier New', monospace"
-    font-size="11" fill="#4A527A">stream-manager.bridge.ts</text>
+  <path class="edge" d="M260,142 H298"/>
 
-  <!-- Arrow 3 → 4 -->
-  <line x1="834" y1="145" x2="894" y2="145" stroke="#6C8EFF" stroke-width="1.5" stroke-opacity="0.7"/>
-  <polygon points="894,140 906,145 894,150" fill="#6C8EFF" opacity="0.7"/>
+  <rect x="302" y="90" width="214" height="104" rx="8" fill="#f2f5f9" stroke="#c3d1e2"/>
+  <text class="t-title" x="322" y="122">agent()</text>
+  <text class="t-meta" x="322" y="146">Agent UI state</text>
+  <text class="t-meta" x="322" y="168">@threadplane/langgraph</text>
 
-  <!-- Box 4: LangGraph Platform (x=906) -->
-  <rect x="906" y="100" width="234" height="90" rx="6"
-    fill="rgba(108,142,255,0.06)" stroke="rgba(108,142,255,0.25)" stroke-width="1"/>
-  <text x="1023" y="138" text-anchor="middle"
-    font-family="Georgia, 'Times New Roman', serif"
-    font-size="15" font-weight="700" fill="#EEF1FF">LangGraph Platform</text>
-  <text x="1023" y="158" text-anchor="middle"
-    font-family="'Courier New', monospace"
-    font-size="11" fill="#4A527A">LangGraph Cloud /</text>
-  <text x="1023" y="175" text-anchor="middle"
-    font-family="'Courier New', monospace"
-    font-size="11" fill="#4A527A">Self-hosted Server</text>
+  <path class="edge" d="M522,142 H560"/>
 
-  <!-- Return arrow: LangGraph → Bridge (below, reversed) -->
-  <line x1="906" y1="218" x2="652" y2="218" stroke="#6C8EFF" stroke-width="1" stroke-opacity="0.4" stroke-dasharray="5,4"/>
-  <polygon points="652,213 640,218 652,223" fill="#6C8EFF" opacity="0.4"/>
-  <text x="779" y="236" text-anchor="middle"
-    font-family="'Courier New', monospace"
-    font-size="11" fill="#4A527A" opacity="0.8">SSE / stream events</text>
+  <rect x="564" y="90" width="214" height="104" rx="8" fill="#ffffff" stroke="#d4d4d4"/>
+  <text class="t-title" x="584" y="120">StreamManager</text>
+  <text class="t-title" x="584" y="142">Bridge</text>
+  <text class="t-meta" x="584" y="168">stream-manager.bridge.ts</text>
 
-  <!-- Return arrow: Bridge → agent() (below) -->
-  <line x1="624" y1="256" x2="470" y2="256" stroke="#6C8EFF" stroke-width="1" stroke-opacity="0.4" stroke-dasharray="5,4"/>
-  <polygon points="470,251 458,256 470,261" fill="#6C8EFF" opacity="0.4"/>
-  <text x="547" y="274" text-anchor="middle"
-    font-family="'Courier New', monospace"
-    font-size="11" fill="#4A527A" opacity="0.8">Signal updates</text>
+  <path class="edge" d="M784,142 H822"/>
 
-  <!-- Return arrow: agent() → Component (below) -->
-  <line x1="342" y1="294" x2="188" y2="294" stroke="#6C8EFF" stroke-width="1" stroke-opacity="0.4" stroke-dasharray="5,4"/>
-  <polygon points="188,289 176,294 188,299" fill="#6C8EFF" opacity="0.4"/>
-  <text x="265" y="312" text-anchor="middle"
-    font-family="'Courier New', monospace"
-    font-size="11" fill="#4A527A" opacity="0.8">Angular Signals</text>
+  <rect x="826" y="90" width="214" height="104" rx="8" fill="#ffffff" stroke="#d4d4d4"/>
+  <text class="t-title" x="846" y="122">LangGraph Platform</text>
+  <text class="t-meta" x="846" y="146">LangGraph Cloud /</text>
+  <text class="t-meta" x="846" y="168">Self-hosted Server</text>
 
-  <!-- Transport label (below bridge) -->
-  <text x="729" y="340" text-anchor="middle"
-    font-family="'Courier New', monospace"
-    font-size="11" fill="#4A527A" opacity="0.7">FetchStreamTransport | MockAgentTransport</text>
+  <path class="edge-reactive" d="M933,194 V240 H685 V198"/>
+  <text class="t-edge" x="809" y="232" text-anchor="middle">SSE / stream events</text>
 
-  <!-- Bottom rule -->
-  <line x1="60" y1="380" x2="1140" y2="380" stroke="#6C8EFF" stroke-width="1" stroke-opacity="0.12"/>
+  <path class="edge-reactive" d="M657,194 V290 H437 V198"/>
+  <text class="t-edge" x="547" y="282" text-anchor="middle">Signal updates</text>
 
-  <!-- Legend -->
-  <line x1="360" y1="410" x2="400" y2="410" stroke="#6C8EFF" stroke-width="1.5" stroke-opacity="0.7"/>
-  <text x="410" y="415" font-family="'Courier New', monospace" font-size="11" fill="#4A527A">call / dispatch</text>
-  <line x1="560" y1="410" x2="600" y2="410" stroke="#6C8EFF" stroke-width="1" stroke-opacity="0.4" stroke-dasharray="5,4"/>
-  <text x="610" y="415" font-family="'Courier New', monospace" font-size="11" fill="#4A527A">reactive update</text>
+  <path class="edge-reactive" d="M409,194 V340 H175 V198"/>
+  <text class="t-edge" x="292" y="332" text-anchor="middle">Angular Signals</text>
+
+  <text class="t-meta" x="671" y="392" text-anchor="middle">FetchStreamTransport | MockAgentTransport</text>
+
+  <path d="M40,428 H1040" stroke="#e5e5e5" stroke-width="1" fill="none"/>
+
+  <path class="edge" d="M350,466 H386" marker-end="none"/>
+  <text class="t-meta" x="400" y="470">call / dispatch</text>
+  <path class="edge-reactive" d="M580,466 H616" marker-end="none"/>
+  <text class="t-meta" x="630" y="470">reactive update</text>
 </svg>
