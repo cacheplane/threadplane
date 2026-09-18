@@ -85,11 +85,13 @@ Signals are the stable read model.
 | `messages()` | Runtime-neutral message history. |
 | `status()` | `'idle'`, `'running'`, or `'error'`. |
 | `isLoading()` | Convenience boolean for active generation. |
-| `error()` | Classified `AgentError` (`kind`, `retryable`, `status`, `cause`), or `undefined`. |
+| `error()` | Classified `AgentError` (`kind`, `retryable`, `status`, `cause`, and `recovery` / `detail` on an `interrupted` error), or `undefined`. |
 | `toolCalls()` | Tool calls normalized for chat display. |
 | `state()` | Backend-defined state snapshot as a plain object. |
 | `interrupt?.()` | Current human-in-the-loop pause, if supported. |
 | `subagents?.()` | Delegated work keyed by tool-call id, if supported. |
+
+`checkStatus?()` sits alongside them as an optional action: a read-only reconciliation of an uncertain run outcome, offered when `error().recovery` is `check`. It never resubmits the request and never appends a message, and adapters expose it only when their transport can answer.
 
 The optional signals matter. A simple echo adapter should not fake interrupts or subagents. Components that need those concepts feature-detect the signal and render a neutral fallback when it is absent.
 

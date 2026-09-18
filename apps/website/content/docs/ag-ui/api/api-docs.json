@@ -544,7 +544,7 @@
       {
         "name": "reconcileInterrupt",
         "signature": "reconcileInterrupt(): Promise<void>",
-        "description": "Recover an uncertain attempt using the configured authoritative reconciler.",
+        "description": "Recover an uncertain attempt using the configured authoritative reconciler,\nadopting whatever it reports — including an `acknowledged` answer that only\nproves the resume was started. The imperative escape hatch; prefer the base\ncontract's `checkStatus` for the control offered to a user when\n`error().recovery === 'check'`, which settles only on a conclusive answer.",
         "params": []
       },
       {

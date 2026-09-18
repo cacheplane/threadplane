@@ -247,6 +247,7 @@ Whatever sits between the browser and the agent server has to pass the SSE body 
 The `<chat>` composition renders failures for you.
 A hand-built UI reads the same two signals the composition does.
 `status()` flips to `'error'`, and `error()` holds an `AgentError` with a classified `kind`, a `retryable` flag, an optional HTTP `status`, and the original failure on `cause`.
+An `interrupted` error adds `recovery` and `detail`, which name the one action the adapter can prove is safe.
 
 ```ts
 import { ChangeDetectionStrategy, Component, computed } from '@angular/core';
@@ -259,7 +260,12 @@ import { injectAgent } from '@threadplane/ag-ui';
     @if (hasError()) {
       <div class="error-banner">
         <p>{{ errorMessage() }}</p>
-        @if (canRetry()) {
+        @if (agent.error()?.detail; as detail) {
+          <p>{{ detail }}</p>
+        }
+        @if (canCheck()) {
+          <button (click)="checkStatus()">Check status</button>
+        } @else if (canRetry()) {
           <button (click)="retry()">Try again</button>
         }
       </div>
@@ -270,6 +276,9 @@ export class ChatComponent {
   protected readonly agent = injectAgent();
 
   protected readonly hasError = computed(() => this.agent.status() === 'error');
+  protected readonly canCheck = computed(
+    () => this.agent.error()?.recovery === 'check' && this.agent.checkStatus !== undefined,
+  );
   protected readonly canRetry = computed(
     () => this.agent.error()?.retryable === true,
   );
@@ -282,9 +291,9 @@ export class ChatComponent {
         return 'Your session was rejected. Sign in again and retry.';
       case 'connection':
         return 'The agent is unreachable. Check your connection and try again.';
-      case 'interrupted':
-        return 'The response was cut off. Try again.';
       default:
+        // 'interrupted' included: the adapter already set the message that
+        // matches the recovery it chose, and `detail` continues that sentence.
         return failure.message;
     }
   });
@@ -292,18 +301,24 @@ export class ChatComponent {
   protected retry(): void {
     void this.agent.retry();
   }
+
+  protected checkStatus(): void {
+    void this.agent.checkStatus?.();
+  }
 }
 ```
 
 Branching on `kind` covers the cases that need different copy without reading HTTP status codes.
 `failure.status` is there when you want the exact code, and `failure.cause` carries the original error for your logs.
+Do not hard-code copy for `interrupted`.
+Three different outcomes share that kind, and the adapter's own message is the one that matches the recovery it settled on.
 
 | `kind` | When | `retryable` |
 |--------|------|-------------|
 | `connection` | Offline, DNS failure, the endpoint refused the connection | Yes |
 | `auth` | The endpoint or agent server answered `401` or `403` | No |
 | `server` | A `5xx` from the agent server, or a `4xx` other than auth | `5xx` only |
-| `interrupted` | The SSE stream closed before the run finished | Yes |
+| `interrupted` | The SSE stream closed before the run finished | Only when `recovery` is `retry` |
 | `aborted` | The user pressed stop | Not surfaced as an error |
 
 ### Retry with exponential backoff
@@ -342,11 +357,21 @@ The `retryable` check is what keeps a rejected session from being retried three 
 
 AG-UI has no server-side run to rejoin.
 The stream is the run.
-When it closes early, the adapter surfaces an `interrupted` error, and `retry()` sends the same input again as a fresh request.
+When it closes without terminal evidence, the adapter surfaces an `interrupted` error rather than reporting a completed turn, and keeps whatever content and approval state had arrived.
 
-Your agent server decides what that means.
+What it offers next depends on what it can prove.
+`retry()` is offered only for an ordinary turn whose stream produced no event at all: nothing reached the server, so re-sending the same input as a fresh request cannot duplicate work.
+A resume attempt may already have committed server-side work, so it is never retried here.
+When one is truncated and `persistence.reconcile` is configured, the adapter reports `recovery: 'check'` instead, makes a single read-only reconciliation of its own, and exposes `checkStatus()` so the user can ask again.
+The reconciler speaks only about interrupt sessions, which is why it is not offered for an ordinary turn.
+With nothing able to verify the outcome, the recovery is `none` and the error explains that the result could not be confirmed.
+
+A retry that does go out is a fresh request, and your agent server decides what that means.
 A server that persists its thread by `threadId` resumes from its last checkpoint.
 A stateless one starts the turn over.
+
+A connection that stays open but stops producing events is a different problem.
+The adapter does not classify it; a timeout of your own is what catches that.
 
 Pending interrupts are the one piece of client state worth restoring across a reload, and the adapter supports that through the `persistence` option on `provideAgent()`.
 The store is yours to implement, and `agent.ready` resolves once the restored record has been applied.
@@ -471,7 +496,7 @@ Add the app's origin to the agent server's allow list for local development, and
 Confirm every proxy, CDN, and load balancer on the path passes SSE through as it arrives.
 </Step>
 <Step title="Handle errors gracefully">
-Branch on `error().kind` for legible copy, and show a retry button only when `error().retryable` is true.
+Branch on `error().kind` for legible copy, show a retry button only when `error().retryable` is true, and offer a status check when `error().recovery` is `check` and the agent exposes `checkStatus`.
 </Step>
 <Step title="Persist thread IDs">
 Pass a stable `threadId` so a server that checkpoints by thread can resume a conversation, and wire `persistence` if pending interrupts must survive a reload.

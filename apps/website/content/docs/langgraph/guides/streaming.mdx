@@ -182,9 +182,19 @@ export class ChatComponent {
 
   readonly hasError = computed(() => this.chat.status() === 'error');
 
+  // An interrupted run is retryable only when nothing reached the server.
+  readonly canCheck = computed(
+    () => this.chat.error()?.recovery === 'check' && this.chat.checkStatus !== undefined,
+  );
+
   retry() {
     // Clears the error and re-submits the last input on the same thread
     this.chat.retry();
+  }
+
+  checkStatus() {
+    // Read-only: asks the backend what happened, resubmits nothing
+    this.chat.checkStatus?.();
   }
 }
 ```
@@ -196,7 +206,12 @@ export class ChatComponent {
 @if (hasError()) {
   <div class="error-banner">
     <p>{{ chat.error()?.message }}</p>
-    @if (chat.error()?.retryable) {
+    @if (chat.error()?.detail; as detail) {
+      <p>{{ detail }}</p>
+    }
+    @if (canCheck()) {
+      <button (click)="checkStatus()">Check status</button>
+    } @else if (chat.error()?.retryable) {
       <button (click)="retry()">Retry</button>
     }
   </div>
@@ -209,7 +224,7 @@ export class ChatComponent {
 `retry()` clears the error, then re-runs the last submission on the same thread; it is a no-op while a run is already in flight or when there is nothing to retry. `reload()` re-runs the last submission the same way but leaves the error signal alone, which is useful when you want to keep showing the failure state while the retry attempt is in progress. `submit(null)` opens a stream against the current thread state without a new user message and resumes only pending work, such as an interrupted run or a failed run that left tasks pending; otherwise it is a no-op. Pass `submit({ message })` only when you have new input to send.
 
 <Callout type="warning" title="Network errors vs agent errors">
-`error()` returns an `AgentError` whose `kind` distinguishes the failure class — `'connection'`, `'auth'`, `'server'`, `'interrupted'`, or `'aborted'` — whose `status` carries the HTTP status code when the failure came from an HTTP response, whose `retryable` says whether attempting the request again could plausibly succeed, and whose `cause` preserves the original raw error for debugging or telemetry.
+`error()` returns an `AgentError` whose `kind` distinguishes the failure class — `'connection'`, `'auth'`, `'server'`, `'interrupted'`, or `'aborted'` — whose `status` carries the HTTP status code when the failure came from an HTTP response, whose `retryable` says whether attempting the request again could plausibly succeed, and whose `cause` preserves the original raw error for debugging or telemetry. An `interrupted` error carries `recovery` and `detail` as well. A stream that closed without a terminal event may have left a run that carried on and committed work on the server, so this adapter never marks one retryable. `recovery` is `check` when the transport can read thread history, and `checkStatus()` then re-reads it to settle the turn without resubmitting anything; otherwise it is `none`, and `detail` says the outcome could not be confirmed.
 </Callout>
 
 ## Throttle configuration
