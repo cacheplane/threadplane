@@ -108,7 +108,13 @@ export interface AgUiAgent<TState = Record<string, unknown>> extends Agent<TStat
   submit(input: AgentSubmitInput, opts?: AgUiSubmitOptions): Promise<void>;
   /** Resolves after persisted thread state is hydrated; actions wait for it. */
   ready: Promise<void>;
-  /** Recover an uncertain attempt using the configured authoritative reconciler. */
+  /**
+   * Recover an uncertain attempt using the configured authoritative reconciler,
+   * adopting whatever it reports — including an `acknowledged` answer that only
+   * proves the resume was started. The imperative escape hatch; prefer the base
+   * contract's `checkStatus` for the control offered to a user when
+   * `error().recovery === 'check'`, which settles only on a conclusive answer.
+   */
   reconcileInterrupt(): Promise<void>;
   /** Full interrupt batch and its request ownership phase. */
   interruptSession: Signal<InterruptSessionSnapshot>;
@@ -437,37 +443,84 @@ function createAgentAdapter(
   }
 
   /**
-   * One read-only reconciliation after an unexpected close. Never resubmits and
-   * never repeats. Applies its result only while `run` is still the active run,
-   * so a late answer cannot overwrite a newer request. A throw or a null record
-   * leaves the error in place with `recovery: 'check'`, so the user can ask again.
+   * The reconciliation both recovery actions share: hold the mutex for the
+   * duration, drain pending writes so the reload sees them, and ask the backend
+   * what happened. Read-only against the backend — it never resubmits.
+   *
+   * Callers own the policy around it, and the two differ deliberately:
+   * `reconcileInterrupt` throws when a check is already in flight, adopts every
+   * answer including `acknowledged`, and needs no run to be present;
+   * `reconcileClosedRun` returns silently instead of throwing, adopts only a
+   * settled or re-paused answer, and applies it only to the run it was opened
+   * for. Nothing here decides any of that.
+   */
+  async function reconcileOnce(): Promise<AgUiThreadRecord | null> {
+    if (!persistence) throw new Error('Interrupt recovery requires a persistence reconciler');
+    reconciling.set(true);
+    try {
+      // Swallowed rather than propagated: a failed write is the very thing that
+      // makes local state untrustworthy, so it must not stop us asking the
+      // backend what it actually recorded.
+      await persistenceWrites.catch(() => undefined);
+      return await persistence.reconcile();
+    } finally {
+      reconciling.set(false);
+    }
+  }
+
+  /**
+   * Adopt an authoritative answer as the new local truth: it supersedes both the
+   * snapshot and the storage fault the failed attempt left behind. A null answer
+   * still clears the fault — the backend was reached and simply had nothing
+   * persisted to report.
+   */
+  function adoptRecord(record: AgUiThreadRecord | null): void {
+    if (record) hydrate(record);
+    persistenceFault = undefined;
+    persistenceWrites = Promise.resolve();
+  }
+
+  /**
+   * One reconciliation after an unexpected close, read-only against the backend.
+   * Never resubmits and never repeats. Applies its result only while `run` is
+   * still the active run, so a late answer cannot overwrite a newer request. A
+   * throw or a null record leaves the error in place with `recovery: 'check'`,
+   * so the user can ask again.
    *
    * The raw four-value status is not visible here: `InterruptPersistence`
    * validates the answer and hands back the written record, so the outcome is
    * read off `session.phase`. `acknowledged` means the server received and
-   * started the resume, not that it finished, so it stays uncertain.
+   * started the resume, not that it finished, so it stays uncertain — which is
+   * where this deliberately differs from `reconcileInterrupt`.
    */
-  async function verifyClosedRun(run: AdapterRun): Promise<void> {
+  async function reconcileClosedRun(run: AdapterRun): Promise<void> {
+    // `persistence` alone is enough: both call sites already require a
+    // configured `reconcile`. The classifier only says `check` when
+    // `options.persistence?.reconcile !== undefined`, and `checkStatus` is
+    // exposed on that same condition.
     if (!persistence || disposed || reconciling()) return;
-    reconciling.set(true);
-    let record: AgUiThreadRecord | null = null;
+    let record: AgUiThreadRecord | null;
     try {
-      await persistenceWrites.catch(() => undefined);
-      record = await persistence.reconcile();
-    } catch {
+      record = await reconcileOnce();
+    } catch (error) {
+      // Suppressed because the caller is a floating `void`, where an unhandled
+      // rejection would be worse. But this covers far more than the wire: the
+      // consumer's own reconcile callback, `validateSession`, and the
+      // phase-consistency checks all land here, and a malformed answer would
+      // otherwise be indistinguishable from an unreachable backend — the check
+      // silently doing nothing, every time. Deliberately does not touch
+      // `store.error`, so protected surfaces still leak nothing.
+      warnReconciliationFailed(error);
       return;
-    } finally {
-      reconciling.set(false);
     }
     if (disposed || activeRun !== run || !record) return;
 
     const phase = record.session.phase;
     if (phase !== 'none' && phase !== 'pending') return;
 
-    hydrate(record);
-    persistenceFault = undefined;
-    persistenceWrites = Promise.resolve();
+    adoptRecord(record);
     store.status.set('idle');
+    // Already false on both entry paths; set for symmetry with the pair around it.
     store.isLoading.set(false);
     store.error.set(undefined);
   }
@@ -515,7 +568,7 @@ function createAgentAdapter(
         // `none` and then calling anyway would make a call we told the user we
         // could not make, and the reconciler can only answer about an interrupt
         // session in the first place.
-        if (error.recovery === 'check') void verifyClosedRun(run);
+        if (error.recovery === 'check') void reconcileClosedRun(run);
       }
     }
     finishRunTelemetry(run);
@@ -764,36 +817,45 @@ function createAgentAdapter(
 
   return registerDevelopmentRuntimePolicy<AgUiAgent>({
     ready,
+    /**
+     * The imperative escape hatch: adopts whatever the backend says, including an
+     * `acknowledged` answer that only proves the resume was started. Unlike
+     * `checkStatus` it throws rather than returning quietly when it cannot run,
+     * and it needs no run to have been opened.
+     */
     reconcileInterrupt: async () => {
       if (disposed) throw new Error('Agent has been disposed');
       if (reconciling()) throw new Error('Interrupt reconciliation is in progress');
       if (activeRun && activeRun.outcome === undefined) throw new Error('Stop the active request before reconciliation');
       if (!persistence) throw new Error('Interrupt recovery requires a persistence reconciler');
-      reconciling.set(true);
-      try {
-        await persistenceWrites.catch(() => undefined);
-        const record = await persistence.reconcile();
-        if (disposed) return;
-        if (record) hydrate(record);
-        persistenceFault = undefined; persistenceWrites = Promise.resolve();
-        hydrated.set(true); store.error.set(undefined); store.status.set('idle');
-      } finally {
-        reconciling.set(false);
-      }
+      const record = await reconcileOnce();
+      if (disposed) return;
+      adoptRecord(record);
+      hydrated.set(true); store.error.set(undefined); store.status.set('idle');
     },
     // Only a configured reconciler can answer authoritatively; without one
     // InterruptPersistence.reconcile() throws outright, so offering the control
     // would promise an answer the adapter cannot get.
     ...(options.persistence?.reconcile !== undefined
       ? {
+          /**
+           * The user-facing control, offered when `error().recovery === 'check'`.
+           * Asks the backend what happened to the closed run and settles it only
+           * on a conclusive answer; anything less leaves the error in place so
+           * the control can be offered again. Use `reconcileInterrupt` instead to
+           * adopt whatever the backend reports, conclusive or not.
+           */
           checkStatus: async (): Promise<void> => {
             if (disposed) throw new Error('Agent has been disposed');
             if (activeRun && activeRun.outcome === undefined) {
               throw new Error('Stop the active request before checking status');
             }
             const run = activeRun;
+            // Nothing to be stale against: after a reload no adapter run exists,
+            // and the hydrated error cannot be one offering this check either,
+            // since only a run this adapter opened publishes `recovery: 'check'`.
             if (!run) return;
-            await verifyClosedRun(run);
+            await reconcileClosedRun(run);
           },
         }
       : {}),
@@ -985,6 +1047,19 @@ function hasValidFinishedOutcome(event: object): boolean {
   const value = outcome as Record<string, unknown>;
   if (value['type'] === 'success') return true;
   return value['type'] === 'interrupt' && Array.isArray(value['interrupts']);
+}
+
+/** Development-only notice that a status check produced nothing, and why. The
+ *  failure is otherwise invisible: the caller is a floating `void` and the
+ *  adapter deliberately leaves `store.error` untouched. */
+function warnReconciliationFailed(error: unknown): void {
+  if (!isDevMode()) return;
+  console.warn(
+    `[@threadplane/ag-ui] Interrupt reconciliation failed, so the status check reported nothing ` +
+      `and the run stays uncertain. This covers the reconcile callback itself and the validation ` +
+      `of its answer, not just the network.`,
+    error,
+  );
 }
 
 function protectedAgentError(): AgentError {

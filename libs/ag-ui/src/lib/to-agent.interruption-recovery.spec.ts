@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import type { AbstractAgent, BaseEvent } from '@ag-ui/client';
 import { AgentError, AGENT_RECOVERY_MESSAGES, type AgentRuntimeTelemetryPayload } from '@threadplane/chat';
 import { toAgent } from './to-agent';
@@ -413,69 +413,81 @@ describe('AG-UI unexpected close — recovery classification', () => {
   });
 });
 
-/** Authoritative answers the wrapper's validation actually accepts. Each is
- *  derived from the live record, so a generation or attempt correlation cannot
- *  drift out of sync with what the adapter persisted. */
-function completedAnswer(record: AgUiThreadRecord) {
-  return {
-    status: 'completed' as const,
-    committed: {
-      state: record.committed.state,
-      messages: [
-        ...record.committed.messages,
-        { id: 'server-1', role: 'assistant' as const, content: 'booked on the server' },
-      ],
-    },
-    // A finished resume leaves no batch and no attempt behind.
-    session: { phase: 'none' as const, generation: record.session.generation, interrupts: [] },
-  };
-}
-
-function pausedAnswer(record: AgUiThreadRecord) {
-  return {
-    status: 'pending' as const,
-    committed: record.committed,
-    // The batch is awaiting a decision again, with no attempt in flight.
-    session: {
-      phase: 'pending' as const,
-      generation: record.session.generation,
-      interrupts: record.session.interrupts,
-      ...(record.session.runId ? { runId: record.session.runId } : {}),
-    },
-  };
-}
-
-function acknowledgedAnswer(record: AgUiThreadRecord) {
-  // The server received and started the resume. That is not proof it finished,
-  // so the attempt stays correlated and the outcome stays uncertain.
-  return {
-    status: 'acknowledged' as const,
-    committed: record.committed,
-    session: { ...record.session, phase: 'acknowledged' as const },
-  };
-}
-
-/** The automatic check is fire-and-forget, so `submit()` resolving does not mean
- *  it has landed. Yield long enough for the whole call to settle. */
-function settled(): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, 20));
-}
-
-/** Whatever the configured reconciler is allowed to answer. */
-type ReconcileAnswer = Awaited<ReturnType<NonNullable<AgUiInterruptPersistence['reconcile']>>>;
-
-function deferred<T>() {
-  let resolve!: (value: T) => void;
-  let reject!: (reason: unknown) => void;
-  const promise = new Promise<T>((res, rej) => { resolve = res; reject = rej; });
-  return { promise, resolve, reject };
-}
-
 describe('AG-UI unexpected close — automatic status check', () => {
+  /** Authoritative answers the wrapper's validation actually accepts. Each is
+   *  derived from the live record, so a generation or attempt correlation cannot
+   *  drift out of sync with what the adapter persisted. */
+  function completedAnswer(record: AgUiThreadRecord) {
+    return {
+      status: 'completed' as const,
+      committed: {
+        state: record.committed.state,
+        messages: [
+          ...record.committed.messages,
+          { id: 'server-1', role: 'assistant' as const, content: 'booked on the server' },
+        ],
+      },
+      // A finished resume leaves no batch and no attempt behind.
+      session: { phase: 'none' as const, generation: record.session.generation, interrupts: [] },
+    };
+  }
+
+  function pausedAnswer(record: AgUiThreadRecord) {
+    return {
+      status: 'pending' as const,
+      committed: record.committed,
+      // The batch is awaiting a decision again, with no attempt in flight.
+      session: {
+        phase: 'pending' as const,
+        generation: record.session.generation,
+        interrupts: record.session.interrupts,
+        ...(record.session.runId ? { runId: record.session.runId } : {}),
+      },
+    };
+  }
+
+  function acknowledgedAnswer(record: AgUiThreadRecord) {
+    // The server received and started the resume. That is not proof it finished,
+    // so the attempt stays correlated and the outcome stays uncertain.
+    return {
+      status: 'acknowledged' as const,
+      committed: record.committed,
+      session: { ...record.session, phase: 'acknowledged' as const },
+    };
+  }
+
+  /** The automatic check is fire-and-forget, so `submit()` resolving does not mean
+   *  it has landed. Yield long enough for the whole call to settle. */
+  function settled(): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, 20));
+  }
+
+  /** Whatever the configured reconciler is allowed to answer. */
+  type ReconcileAnswer = Awaited<ReturnType<NonNullable<AgUiInterruptPersistence['reconcile']>>>;
+
+  function deferred<T>() {
+    let resolve!: (value: T) => void;
+    let reject!: (reason: unknown) => void;
+    const promise = new Promise<T>((res, rej) => { resolve = res; reject = rej; });
+    return { promise, resolve, reject };
+  }
+
+  /** Every agent this suite creates, torn down even when an assertion throws:
+   *  a leaked adapter keeps a live subscription for the rest of the run. */
+  const live: Array<{ dispose(): void }> = [];
+  afterEach(() => {
+    while (live.length) live.pop()?.dispose();
+  });
+  function track<T extends { dispose(): void }>(agent: T): T {
+    live.push(agent);
+    return agent;
+  }
+
   /** Pause, then truncate the resume stream. That is the only shape the
    *  classifier reports as `check`. */
   async function truncatedResume(reconcile: AgUiInterruptPersistence['reconcile']) {
     const { stub, agent } = await pausedAgent(memoryPersistence(reconcile));
+    track(agent);
     stub.runAgent.mockImplementationOnce(async () => ({ result: undefined, newMessages: [] }));
     await agent.submit({ resume: { approved: true } });
     return { stub, agent };
@@ -487,9 +499,8 @@ describe('AG-UI unexpected close — automatic status check', () => {
 
     await vi.waitFor(() => expect(reconcile).toHaveBeenCalledTimes(1));
     // Nothing polls or retries: the count stays at one after everything settles.
-    await new Promise(resolve => setTimeout(resolve, 10));
+    await settled();
     expect(reconcile).toHaveBeenCalledTimes(1);
-    agent.dispose();
   });
 
   it('settles the run when the reconciler reports the batch finished', async () => {
@@ -502,7 +513,6 @@ describe('AG-UI unexpected close — automatic status check', () => {
     expect(agent.interrupt()).toBeUndefined();
     // Guards against a vacuous pass: the authoritative messages really landed.
     expect(agent.messages().some(m => String(m.content).includes('booked on the server'))).toBe(true);
-    agent.dispose();
   });
 
   it('clears the error and re-renders the batch when the reconciler reports it paused', async () => {
@@ -513,7 +523,6 @@ describe('AG-UI unexpected close — automatic status check', () => {
     expect(agent.status()).toBe('idle');
     expect(agent.interrupt()).toBeDefined();
     expect(agent.interruptSession().phase).toBe('pending');
-    agent.dispose();
   });
 
   it('keeps the check offered when the reconciler only acknowledges the resume', async () => {
@@ -530,15 +539,22 @@ describe('AG-UI unexpected close — automatic status check', () => {
     // Acknowledged means the server started the resume, not that it finished,
     // so the attempt stays correlated rather than being cleared.
     expect(agent.interruptSession().phase).toBe('uncertain');
-    agent.dispose();
   });
 
-  it('keeps the check offered when the reconciler throws', async () => {
+  it('keeps the check offered when the reconciler throws, and says so in dev', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const reconcile = vi.fn(async () => { throw new Error('backend unreachable'); });
     const { agent } = await truncatedResume(reconcile);
 
     await vi.waitFor(() => expect(reconcile).toHaveBeenCalledTimes(1));
     await settled();
+    // The signals deliberately say nothing, so the console is the only way a
+    // consumer whose own reconciler is broken can tell it apart from downtime.
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('Interrupt reconciliation failed'),
+      expect.objectContaining({ message: 'backend unreachable' }),
+    );
+    warn.mockRestore();
     expect(agent.error()?.kind).toBe('interrupted');
     expect(agent.error()?.recovery).toBe('check');
     expect(agent.status()).toBe('error');
@@ -546,7 +562,6 @@ describe('AG-UI unexpected close — automatic status check', () => {
     expect(agent.isInputBlocked?.()).toBe(true);
     await agent.checkStatus?.();
     expect(reconcile).toHaveBeenCalledTimes(2);
-    agent.dispose();
   });
 
   it('leaves the check offered when nothing is persisted to reconcile against', async () => {
@@ -559,6 +574,7 @@ describe('AG-UI unexpected close — automatic status check', () => {
       store: { load: async () => null, compareAndSwap: async () => true },
       reconcile,
     });
+    track(agent);
     stub.runAgent.mockImplementationOnce(async () => ({ result: undefined, newMessages: [] }));
 
     await agent.submit({ resume: { approved: true } });
@@ -568,28 +584,26 @@ describe('AG-UI unexpected close — automatic status check', () => {
     expect(agent.error()?.kind).toBe('interrupted');
     expect(agent.error()?.recovery).toBe('check');
     expect(agent.status()).toBe('error');
-    agent.dispose();
   });
 
   it('exposes checkStatus only when a reconciler is configured', async () => {
-    const plain = toAgent(new StubAgent() as unknown as AbstractAgent, { telemetry: false });
+    const plain = track(toAgent(new StubAgent() as unknown as AbstractAgent, { telemetry: false }));
     expect(plain.checkStatus).toBeUndefined();
 
-    const withoutReconciler = toAgent(new StubAgent() as unknown as AbstractAgent, {
+    const withoutReconciler = track(toAgent(new StubAgent() as unknown as AbstractAgent, {
       telemetry: false, persistence: memoryPersistence(),
-    });
+    }));
     await withoutReconciler.ready;
     // A store with no reconciler has no authoritative answer to give:
     // InterruptPersistence.reconcile() throws outright when it is absent.
     expect(withoutReconciler.checkStatus).toBeUndefined();
 
-    const withReconciler = toAgent(new StubAgent() as unknown as AbstractAgent, {
+    const withReconciler = track(toAgent(new StubAgent() as unknown as AbstractAgent, {
       telemetry: false, persistence: memoryPersistence(vi.fn(acknowledgedAnswer)),
-    });
+    }));
     await withReconciler.ready;
     expect(typeof withReconciler.checkStatus).toBe('function');
 
-    plain.dispose(); withoutReconciler.dispose(); withReconciler.dispose();
   });
 
   it('refuses to start a newer request while a check is still open', async () => {
@@ -610,7 +624,6 @@ describe('AG-UI unexpected close — automatic status check', () => {
     gate.resolve(completedAnswer(captured!));
     await vi.waitFor(() => expect(agent.error()).toBeUndefined());
     expect(agent.status()).toBe('idle');
-    agent.dispose();
   });
 
   it('does not open a second check while one is already in flight', async () => {
@@ -636,7 +649,39 @@ describe('AG-UI unexpected close — automatic status check', () => {
       await agent.checkStatus?.();
       expect(reconcile).toHaveBeenCalledTimes(2);
     });
-    agent.dispose();
+  });
+
+  // Pins the seam between the shared `reconcileOnce` and `adoptRecord`: the
+  // storage fault is cleared by adopting an answer, not by obtaining one. Fold
+  // the clearing into the call and an acknowledgement — which settles nothing —
+  // would quietly re-open the agent for requests.
+  it('leaves a storage fault unresolved when the answer is only an acknowledgement', async () => {
+    const reconcile = vi.fn(acknowledgedAnswer);
+    const saved = new Map<string, AgUiThreadRecord>();
+    const { stub, agent } = await pausedAgent({
+      namespace: 'test',
+      store: {
+        load: async key => saved.get(key) ?? null,
+        // The failed resume's last write loses the thread to another writer.
+        compareAndSwap: async (key, _rev, next) => {
+          if (next.session.phase === 'uncertain') return false;
+          saved.set(key, next);
+          return true;
+        },
+      },
+      reconcile,
+    });
+    track(agent);
+    stub.runAgent.mockImplementationOnce(async () => ({ result: undefined, newMessages: [] }));
+
+    await agent.submit({ resume: { approved: true } });
+    await settled();
+
+    // Reached the backend despite the rejected write — the fault is the reason
+    // to ask, not a reason to skip asking.
+    expect(reconcile).toHaveBeenCalledTimes(1);
+    await expect(agent.submit({ content: 'carry on' }))
+      .rejects.toThrow(/storage recovery requires reconciliation/i);
   });
 
   it('discards an answer that arrives after the agent is disposed', async () => {
@@ -663,9 +708,9 @@ describe('AG-UI unexpected close — automatic status check', () => {
   it('never calls the reconciler for a truncated ordinary submit', async () => {
     const reconcile = vi.fn(acknowledgedAnswer);
     const stub = new StubAgent();
-    const agent = toAgent(stub as unknown as AbstractAgent, {
+    const agent = track(toAgent(stub as unknown as AbstractAgent, {
       telemetry: false, persistence: memoryPersistence(reconcile),
-    });
+    }));
     await agent.ready;
     stub.runAgent.mockImplementationOnce(async () => {
       stub.emit({ type: 'RUN_STARTED', runId: 'r1' } as BaseEvent);
@@ -675,8 +720,7 @@ describe('AG-UI unexpected close — automatic status check', () => {
     await agent.submit({ content: 'hello' });
 
     expect(agent.error()?.recovery).toBe('none');
-    await new Promise(resolve => setTimeout(resolve, 10));
+    await settled();
     expect(reconcile).not.toHaveBeenCalled();
-    agent.dispose();
   });
 });
