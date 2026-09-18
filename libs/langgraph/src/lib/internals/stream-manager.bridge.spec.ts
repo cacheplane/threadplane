@@ -2370,6 +2370,9 @@ describe('createStreamManagerBridge', () => {
     // Close the transport first so the async generator terminates,
     // then await a tick for the status update to propagate.
     bridge.submit({ messages: [] });
+    // The scripted snapshot is what makes this a completion rather than an
+    // interruption — a close that emitted nothing proves nothing finished.
+    transport.emit(transport.nextBatch());
     transport.close();
     await new Promise(r => setTimeout(r, 10));
     expect(subjects.status$.value).toBe(ResourceStatus.Resolved);
@@ -4196,6 +4199,242 @@ describe('what counts as evidence a turn completed', () => {
       phase: 'complete',
       outcome: 'success',
     });
+    destroy$.next();
+  });
+});
+
+describe('settling a closed stream from the refreshed history', () => {
+  function setup() {
+    const transport = new MockAgentTransport();
+    const subjects = makeSubjects();
+    const destroy$ = new Subject<void>();
+    const bridge = createStreamManagerBridge({
+      options: { apiUrl: '', assistantId: 'test', transport },
+      subjects,
+      threadId$: of('thread-1'),
+      destroy$: destroy$.asObservable(),
+    });
+    return { transport, subjects, destroy$, bridge };
+  }
+
+  /** Let the constructor-time (unforced) history refresh land before a test acts. */
+  function settled(): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, 0));
+  }
+
+  function stateWithMessages(messages: unknown[]): ThreadState<Record<string, unknown>> {
+    return { ...makeThreadState('cp-after'), values: { messages } as never };
+  }
+
+  function stateWithInterrupt(): ThreadState<Record<string, unknown>> {
+    return {
+      ...makeThreadState('cp-paused'),
+      tasks: [{ id: 't1', name: 'ask', path: [], error: null, interrupts: [{ value: { question: 'ok?' } }], checkpoint: null, state: null, result: null }] as never,
+    };
+  }
+
+  it('stays interrupted, and says so, when the refresh shows nothing new', async () => {
+    const { transport, subjects, destroy$, bridge } = setup();
+    await settled();
+
+    const submitted = bridge.submit({});
+    await transport.close();
+
+    expect(await submitted).toBe('interrupted');
+    const error = subjects.error$.value as AgentError | undefined;
+    expect(error).toBeInstanceOf(AgentError);
+    expect(error?.kind).toBe('interrupted');
+    expect(error?.recovery).toBe('check');
+    expect(error?.retryable).toBe(false);
+    expect(error?.detail).toBeTruthy();
+    expect(subjects.status$.value).toBe(ResourceStatus.Error);
+    destroy$.next();
+  });
+
+  it('settles as a success when the refresh shows the turn committed server-side', async () => {
+    const { transport, subjects, destroy$, bridge } = setup();
+    await settled();
+    transport.history = [stateWithMessages([{ id: 'ai-late', type: 'ai', content: 'finished anyway' }])];
+
+    const submitted = bridge.submit({});
+    await transport.close();
+
+    expect(await submitted).toBe('success');
+    expect(subjects.error$.value).toBeUndefined();
+    expect(subjects.status$.value).toBe(ResourceStatus.Resolved);
+    destroy$.next();
+  });
+
+  it('settles as paused when the refresh carries a pending interrupt', async () => {
+    const { transport, subjects, destroy$, bridge } = setup();
+    await settled();
+    transport.history = [stateWithInterrupt()];
+
+    const submitted = bridge.submit({});
+    await transport.close();
+
+    expect(await submitted).toBe('success');
+    expect(subjects.interrupt$.value).toBeDefined();
+    expect(subjects.error$.value).toBeUndefined();
+    destroy$.next();
+  });
+
+  it('stays interrupted, without crashing, when the refresh itself fails', async () => {
+    const { transport, subjects, destroy$, bridge } = setup();
+    await settled();
+    transport.getHistory = async () => { throw new Error('history unreachable'); };
+
+    const submitted = bridge.submit({});
+    await transport.close();
+
+    expect(await submitted).toBe('interrupted');
+    const error = subjects.error$.value as AgentError | undefined;
+    expect(error?.kind).toBe('interrupted');
+    expect(error?.recovery).toBe('check');
+    expect(subjects.status$.value).toBe(ResourceStatus.Error);
+    destroy$.next();
+  });
+
+  it('applies the same rule to a directly joined run', async () => {
+    const { transport, subjects, destroy$, bridge } = setup();
+    await settled();
+    transport.joinStream = async function* () { yield* []; };
+
+    await bridge.joinStream('run-1');
+
+    expect((subjects.error$.value as AgentError | undefined)?.recovery).toBe('check');
+    expect(subjects.status$.value).toBe(ResourceStatus.Error);
+    destroy$.next();
+  });
+
+  it('applies the same rule to a queue-drained run', async () => {
+    const { transport, subjects, destroy$, bridge } = setup();
+    await settled();
+    transport.joinStream = async function* () { yield* []; };
+
+    const active = bridge.submit({ active: true });
+    await bridge.submit({ queued: true }, { multitaskStrategy: 'enqueue' });
+    transport.emit([{ type: 'values', data: { active: true } } as StreamEvent]);
+    await transport.close();
+    await active;
+
+    expect((subjects.error$.value as AgentError | undefined)?.recovery).toBe('check');
+    expect(subjects.status$.value).toBe(ResourceStatus.Error);
+    destroy$.next();
+  });
+
+  it('discards a history answer that arrives after a newer request started', async () => {
+    const { transport, subjects, destroy$, bridge } = setup();
+    await settled();
+
+    let release!: (history: ThreadState[]) => void;
+    transport.getHistory = () => new Promise<ThreadState[]>(resolve => { release = resolve; });
+
+    // A first, interrupted run leaves an error offering the check. Its own
+    // close-time refresh is the held one; answer it with "nothing new".
+    const first = bridge.submit({});
+    await transport.close();
+    await settled();
+    release([]);
+    await first;
+    expect((subjects.error$.value as AgentError | undefined)?.recovery).toBe('check');
+
+    // Now hold the check's refresh open. Only the check's own read is held —
+    // the newer run must be free to finish and do its own refresh.
+    const held = new Promise<ThreadState[]>(resolve => { release = resolve; });
+    let served = false;
+    transport.getHistory = async () => {
+      if (served) return [];
+      served = true;
+      return held;
+    };
+    const checking = bridge.checkStatus?.();
+
+    // A newer run starts and the stale answer lands while it is still
+    // streaming. (A gated generator, because MockAgentTransport's own stream
+    // stays closed once closed.)
+    let finishSecond!: () => void;
+    const gate = new Promise<void>(resolve => { finishSecond = resolve; });
+    // The snapshot goes first so the newer run has already cleared interrupt$
+    // by the time the stale answer lands: nothing but the staleness guard can
+    // then account for the interrupt's absence at the end.
+    transport.stream = async function* () {
+      yield { type: 'values', data: { done: true } } as StreamEvent;
+      await gate;
+    };
+    const second = bridge.submit({});
+    await settled();
+    expect(subjects.interrupt$.value).toBeUndefined();
+    release([stateWithInterrupt()]);
+    await checking;
+
+    finishSecond();
+    expect(await second).toBe('success');
+
+    // The stale checkpoint's interrupt must not have been hydrated: interrupt
+    // hydration is additive, so nothing else would have undone it.
+    expect(subjects.interrupt$.value).toBeUndefined();
+    destroy$.next();
+  });
+
+  it('refuses a status check while a request is in flight', async () => {
+    const { transport, destroy$, bridge } = setup();
+    await settled();
+    const run = bridge.submit({});
+    await expect(bridge.checkStatus?.()).rejects.toThrow();
+    await transport.close();
+    await run;
+    destroy$.next();
+  });
+
+  it('clears the interrupted error when a later check finds the run finished', async () => {
+    const { transport, subjects, destroy$, bridge } = setup();
+    await settled();
+
+    const submitted = bridge.submit({});
+    await transport.close();
+    expect(await submitted).toBe('interrupted');
+    expect(subjects.error$.value).toBeDefined();
+
+    transport.history = [stateWithMessages([{ id: 'ai-late', type: 'ai', content: 'finished anyway' }])];
+    await bridge.checkStatus?.();
+
+    expect(subjects.error$.value).toBeUndefined();
+    expect(subjects.status$.value).toBe(ResourceStatus.Idle);
+    destroy$.next();
+  });
+
+  it('leaves the error in place when a check comes back inconclusive', async () => {
+    const { transport, subjects, destroy$, bridge } = setup();
+    await settled();
+
+    const submitted = bridge.submit({});
+    await transport.close();
+    expect(await submitted).toBe('interrupted');
+
+    // The server still reports nothing beyond what was already here, so the
+    // outcome is no more certain than before. The check must be offerable again.
+    await bridge.checkStatus?.();
+
+    expect((subjects.error$.value as AgentError | undefined)?.recovery).toBe('check');
+    expect(subjects.status$.value).toBe(ResourceStatus.Error);
+    destroy$.next();
+  });
+
+  it('offers no check, and no check control, without a history-reading transport', async () => {
+    const transport: AgentTransport = { async *stream() { yield* []; } };
+    const subjects = makeSubjects();
+    const destroy$ = new Subject<void>();
+    const bridge = createStreamManagerBridge({
+      options: { apiUrl: '', assistantId: 'test', transport },
+      subjects,
+      threadId$: of('thread-1'),
+      destroy$: destroy$.asObservable(),
+    });
+
+    expect(await bridge.submit({})).toBe('interrupted');
+    expect((subjects.error$.value as AgentError | undefined)?.recovery).toBe('none');
+    expect(bridge.checkStatus).toBeUndefined();
     destroy$.next();
   });
 });

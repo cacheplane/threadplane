@@ -27,6 +27,8 @@ import type {
 import {
   AgentError,
   AGENT_ERROR_MESSAGES,
+  AGENT_RECOVERY_MESSAGES,
+  AGENT_RECOVERY_DETAILS,
   completeDelivery,
   isAbortError,
   staticDelivery,
@@ -138,6 +140,12 @@ export interface StreamManagerBridge {
   deliveryRevision:      Signal<number>;
   /** Update server-side thread state (e.g. RemoveMessage for regenerate rollback). */
   updateState:           (values: Record<string, unknown>, opts?: { asNode?: string }) => Promise<void>;
+  /**
+   * Read-only reconciliation of an uncertain outcome, offered only when the
+   * transport can answer — `transport.getHistory` is the check, so without one
+   * the member is absent and `interrupted` errors report `recovery: 'none'`.
+   */
+  checkStatus?: () => Promise<void>;
   /** The current thread ID tracked by the bridge (null if not yet known). */
   readonly currentThreadId: string | null;
 }
@@ -170,6 +178,12 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
       options.clientOptions,
       reportOperationFailure,
     );
+
+  // The only read-only status check this adapter has. Fixed for the bridge's
+  // lifetime because `transport` is: both the `recovery` a closed stream
+  // reports and whether `checkStatus` is exposed at all hang off it, so the
+  // control is never offered when nothing could perform the check.
+  const canCheckStatus = typeof transport.getHistory === 'function';
 
   let currentThreadId: string | null = null;
   // A resume command legitimately has a null payload. Absence of a request
@@ -343,19 +357,45 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
   ): Promise<CompleteOutcome | null> {
     if (attempt.terminalOutcome) return attempt.terminalOutcome;
 
-    const outcome = finishOutcome(attempt);
+    const evidenceOutcome = finishOutcome(attempt);
+    // The comparison that lets the refresh rescue an interruption: a run whose
+    // stream died can still have committed its turn server-side, and the only
+    // way to see that is that the refresh brought back more messages than were
+    // here before it.
+    const messageCountBeforeRefresh = subjects.messages$.value.length;
     attempt.awaitingFinalSync = true;
+    let refreshed: ThreadState<T>[] | undefined;
     try {
-      await refreshHistory(
+      refreshed = await refreshHistory(
         true,
         () => isCurrentExecution(controller, attempt) && !attempt.terminalOutcome,
+        // On an already-interrupted close the refresh is a diagnostic read, not
+        // the operation the user asked for. A failure of the diagnostic must not
+        // be reported as the cause — the interruption is the story, and the
+        // `interrupted` error published below says so with an honest recovery.
+        evidenceOutcome === 'interrupted',
       );
     } finally {
       attempt.awaitingFinalSync = false;
     }
 
     if (!isCurrentExecution(controller, attempt)) return null;
+
+    let outcome = evidenceOutcome;
+    if (evidenceOutcome === 'interrupted' && refreshed) {
+      if (collectHistoryInterrupts(refreshed).length > 0) {
+        // The run paused rather than died. `refreshHistory` has already
+        // hydrated the interrupt onto interrupt$ — the same mechanism a thread
+        // reloaded mid-pause uses — so settling it like any other paused run
+        // (a plain resolve, no error) is all that is left to do.
+        outcome = 'success';
+      } else if (subjects.messages$.value.length > messageCountBeforeRefresh) {
+        outcome = 'success';
+      }
+    }
+
     if (!attempt.terminalOutcome) finalizeAttempt(attempt, outcome);
+    if (outcome === 'interrupted') publishInterruptionError();
     if (attempt.terminalOutcome === 'success' && attempt.rootTerminalEvidence
       && !controller.signal.aborted && !attempt.externalSignal?.aborted
       && !subjects.error$.value && !subjects.interrupt$.value && subjects.interrupts$.value.length === 0) {
@@ -363,6 +403,27 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
       if (attempt.resumedInterrupt) developmentRuntime.milestone('interrupt.handled');
     }
     return attempt.terminalOutcome ?? outcome;
+  }
+
+  /**
+   * Report an interruption the refresh could not rescue. Silent when an error
+   * already describes the close (an explicit `error` event, say — the transport
+   * saying what went wrong beats this generic account), and when the thread is
+   * paused, where the interrupt panel is the honest surface and an error banner
+   * beside it would be a contradiction.
+   */
+  function publishInterruptionError(): void {
+    if (subjects.error$.value) return;
+    if (subjects.interrupt$.value || subjects.interrupts$.value.length > 0) return;
+    const recovery = canCheckStatus ? 'check' : 'none';
+    subjects.error$.next(new AgentError({
+      kind: 'interrupted',
+      message: AGENT_RECOVERY_MESSAGES[recovery],
+      retryable: false,
+      recovery,
+      detail: AGENT_RECOVERY_DETAILS[recovery],
+    }));
+    subjects.status$.next(ResourceStatus.Error);
   }
 
   function trackAssistantMessages(messages: BaseMessage[]): void {
@@ -493,9 +554,21 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
     notifyDeliveryChange();
   });
 
-  async function refreshHistory(force = false, isRelevant: () => boolean = () => true): Promise<void> {
+  /**
+   * Re-read the thread from the server and project it.
+   *
+   * Returns the history it actually applied, so a caller can settle on what the
+   * refresh produced rather than re-reading subjects that a stale or failed
+   * refresh would have left untouched. Returns `undefined` whenever nothing was
+   * applied: no transport, no thread, a stale answer, or a failed read.
+   */
+  async function refreshHistory(
+    force = false,
+    isRelevant: () => boolean = () => true,
+    suppressError = false,
+  ): Promise<ThreadState<T>[] | undefined> {
     const getHistory = transport.getHistory?.bind(transport);
-    if (!currentThreadId || !getHistory) return;
+    if (!currentThreadId || !getHistory) return undefined;
     developmentRuntime.touch();
 
     historyAbortController?.abort();
@@ -504,9 +577,11 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
     const threadId = currentThreadId;
     subjects.isThreadLoading$.next(true);
 
+    let applied: ThreadState<T>[] | undefined;
     try {
       const history = await waitForHistory(getHistory(threadId, controller.signal), controller.signal);
       if (!controller.signal.aborted && currentThreadId === threadId && isRelevant()) {
+        applied = history as ThreadState<T>[];
         subjects.history$.next(history as ThreadState<T>[]);
 
         // Project the latest checkpoint into messages$ + values$:
@@ -548,7 +623,7 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
         hydrateInterruptsFromHistory(history as ThreadState<T>[], subjects);
       }
     } catch (err) {
-      if (!controller.signal.aborted && isRelevant() && !safeIsAbortError(err)) {
+      if (!suppressError && !controller.signal.aborted && isRelevant() && !safeIsAbortError(err)) {
         subjects.error$.next(toSafeAgentError(err));
       }
     } finally {
@@ -557,6 +632,7 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
         subjects.isThreadLoading$.next(false);
       }
     }
+    return applied;
   }
 
   function waitForHistory<R>(history: Promise<R>, signal: AbortSignal): Promise<R> {
@@ -699,7 +775,9 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
       const outcome = await finalizeClosedAttempt(controller, attempt);
       if (outcome === null) return;
       if (!controller.signal.aborted) {
-        if (outcome !== 'error') {
+        // An interruption has already published its own error and status;
+        // resolving here would tell the user nothing went wrong.
+        if (outcome !== 'error' && outcome !== 'interrupted') {
           subjects.status$.next(ResourceStatus.Resolved);
         }
         captureAgentRuntimeTelemetry(options.telemetry, 'tplane:stream_ended', {
@@ -809,7 +887,9 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
       if (outcome === null) return finishOutcome(attempt);
 
       if (!controller.signal.aborted) {
-        if (outcome !== 'error') {
+        // An interruption has already published its own error and status;
+        // resolving here would tell the user nothing went wrong.
+        if (outcome !== 'error' && outcome !== 'interrupted') {
           subjects.status$.next(ResourceStatus.Resolved);
         }
         await drainQueue();
@@ -1291,7 +1371,9 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
         const outcome = await finalizeClosedAttempt(controller, attempt);
         if (outcome === null) return;
         if (!controller.signal.aborted) {
-          if (outcome !== 'error') {
+          // An interruption has already published its own error and status;
+          // resolving here would tell the user nothing went wrong.
+          if (outcome !== 'error' && outcome !== 'interrupted') {
             subjects.status$.next(ResourceStatus.Resolved);
           }
           captureAgentRuntimeTelemetry(options.telemetry, 'tplane:stream_ended', {
@@ -1325,6 +1407,39 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
       if (!lastRequest || disposed) return 'not-started';
       return runStream(lastRequest.payload, lastRequest.options, 'resubmit');
     },
+
+    // Present only when the transport can answer. `interrupted` errors report
+    // `recovery: 'check'` on exactly this condition, so the control and the
+    // recovery it is offered for can never disagree.
+    ...(canCheckStatus
+      ? {
+          /**
+           * The user-facing control for `error().recovery === 'check'`. Asks the
+           * server what happened by re-reading the thread — never resubmits,
+           * never appends a message — and settles the error only on a conclusive
+           * answer, leaving it in place otherwise so the check can be offered
+           * again.
+           */
+          checkStatus: async (): Promise<void> => {
+            if (disposed) throw new Error('Agent has been disposed');
+            if (abortController || (activeAttempt && !activeAttempt.terminalOutcome)) {
+              throw new Error('Stop the active request before checking status');
+            }
+            // The only staleness guard available here: unlike a run, a check
+            // holds no AbortController a newer request would clear, so the
+            // attempt it was asked about is what identifies its answer.
+            const attempt = activeAttempt;
+            const messageCountBeforeRefresh = subjects.messages$.value.length;
+            const refreshed = await refreshHistory(true, () => activeAttempt === attempt, true);
+            if (activeAttempt !== attempt || !refreshed) return;
+            const finished = collectHistoryInterrupts(refreshed).length > 0
+              || subjects.messages$.value.length > messageCountBeforeRefresh;
+            if (!finished) return;
+            subjects.error$.next(undefined);
+            subjects.status$.next(ResourceStatus.Idle);
+          },
+        }
+      : {}),
 
     getReasoningDurationMs: (id: string): number | undefined => {
       const entry = reasoningTimingMap.get(id);
@@ -1418,6 +1533,25 @@ function hasInterrupts(payload: unknown): boolean {
 }
 
 /**
+ * The pending interrupts on the latest checkpoint. Shared by the hydration
+ * below and by the close-time settle, which asks the same question of a
+ * refresh it is holding: "did this run pause rather than die?".
+ */
+function collectHistoryInterrupts<T>(history: ThreadState<T>[]): Interrupt[] {
+  const latest = history[0];
+  if (!latest || !Array.isArray(latest.tasks)) return [];
+  const collected: Interrupt[] = [];
+  for (const task of latest.tasks) {
+    if (task && Array.isArray(task.interrupts) && task.interrupts.length > 0) {
+      for (const ix of task.interrupts as Interrupt[]) {
+        collected.push(ix);
+      }
+    }
+  }
+  return collected;
+}
+
+/**
  * Projects pending interrupts from the latest history checkpoint onto the
  * interrupt$ / interrupts$ subjects. ThreadState exposes interrupts under
  * `tasks[i].interrupts` (per the LangGraph SDK schema). When the latest
@@ -1432,16 +1566,7 @@ function hydrateInterruptsFromHistory<T, B extends BagTemplate>(
   history: ThreadState<T>[],
   subjects: StreamSubjects<T, B>,
 ): void {
-  const latest = history[0];
-  if (!latest || !Array.isArray(latest.tasks)) return;
-  const collected: Interrupt[] = [];
-  for (const task of latest.tasks) {
-    if (task && Array.isArray(task.interrupts) && task.interrupts.length > 0) {
-      for (const ix of task.interrupts as Interrupt[]) {
-        collected.push(ix);
-      }
-    }
-  }
+  const collected = collectHistoryInterrupts(history);
   if (collected.length > 0) {
     subjects.interrupts$.next(
       collected as unknown as Parameters<typeof subjects.interrupts$.next>[0],
