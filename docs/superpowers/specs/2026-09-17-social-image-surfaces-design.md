@@ -65,9 +65,12 @@ this is a second composition of it, not a second design. Copy comes from
 
 It is not a resized clone of the feed card. Two differences drive the layout:
 
-- **2.0:1, not 1.905:1.** Some clients crop a 2:1 image toward 1.91:1, so
-  nothing load-bearing sits within roughly 12px of the top or bottom edge. The
-  extra height over the feed card's ratio goes to padding, not to content.
+- **2.0:1, not 1.905:1.** A client that crops a 2:1 image toward 1.905:1 trims
+  WIDTH, about 30px off each side — a 2:1 image is wider than 1.905:1, so the
+  vertical axis cannot be the one cut. (This bullet originally said 12px off
+  the top and bottom, which is geometrically impossible; corrected during
+  implementation.) Both margins clear the trim: the left column's padding is
+  72px and the browser frame ends about 65px short of the right edge.
 - **Different reading distance.** The feed card is tuned for X's ~500px
   render. The GitHub preview is also unfurled near full width by LinkedIn and
   Slack. `MIN_READABLE_PX` remains the floor for anything a human must read.
@@ -94,8 +97,9 @@ render — the attribution link is simply dead.
 
 ### 4. Colour drift
 
-The affected files are exactly those carrying a retired hex, enumerated rather
-than assumed:
+The affected files, enumerated rather than assumed. Note the scope of the
+search that produced this list: it covered `.md` and `.svg` only. That was too
+narrow — see "Known gap" below.
 
 - Badges, `#6C8EFF` -> `#15253E` (`--color-scope`) and `#080B14` -> `#0A0A0A`
   (`--color-ink`): `README.md` and the READMEs of `a2ui`, `ag-ui`, `chat`,
@@ -147,6 +151,31 @@ Plus the retired-colour guard in `brand-assets.spec.ts`.
 A card spec that passes while the image looks wrong is the failure mode here,
 so the rendered PNG is reviewed by a human before this is called done. Tests
 constrain the card; they do not certify it.
+
+## Known gap: `marketing/assets`
+
+Found by the final review, after the work was complete, and recorded here
+rather than quietly fixed.
+
+`marketing/assets/src/brand.ts` carries the full pre-ATC palette — `#004090`
+accent, `#1a1a2e` ink, an `#eaf3ff` gradient, EB Garamond and Inter — and its
+header comment claims the palette was "lifted verbatim from
+`apps/website/src/app/opengraph-image.tsx`", which stopped being true at the
+ATC re-theme.
+
+It is not dead code. `renderCard()` produces the PNGs the X channel adapter
+embeds directly in `Draft.media`, so the exact failure this spec set out to
+fix — a stale palette on a public social surface — is still live on a surface
+this spec did not look at.
+
+The audit missed it because the colour census was run with `--include="*.md"
+--include="*.svg"`, so no TypeScript file was ever scanned. The lesson is the
+one this document already argues elsewhere: a guard, or an audit, only covers
+what it was pointed at.
+
+Re-theming it is a job the size of the `arch-diagram.svg` re-theme, not a
+substitution — it has its own satori/resvg render pipeline, fonts and layout.
+It is left as follow-up work rather than folded in here.
 
 ## Out of scope
 

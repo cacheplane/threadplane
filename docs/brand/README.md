@@ -26,6 +26,11 @@ npm run card:github -- --origin http://localhost:3000  # from a local serve
 The script refuses to write anything that is not a 1280x640 PNG, so a 404 or
 an error page cannot be committed as a card.
 
+**Look at the PNG before you commit it.** If a bundled font fails to load, the
+card still renders — `next/og` falls back to its own Noto Sans — so it is
+still a valid 1280x640 PNG and passes every automated check here. Your eye is
+the only thing that catches an off-brand card.
+
 ### Uploading
 
 1. Open <https://github.com/cacheplane/threadplane/settings>
