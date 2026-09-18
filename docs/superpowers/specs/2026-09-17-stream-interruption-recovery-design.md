@@ -115,6 +115,10 @@ The automatic call happens after the run has settled, because `reconcileInterrup
 
 A check result is applied only when the run it belongs to is still the active run and no newer submit has started. A resolved-too-late check must not write to the store, must not clear a newer error, and must not overwrite a newer thread. The `checkStatus` action refuses while a request is in flight, matching the existing `reconcileInterrupt` guard.
 
+**In AG-UI the guarantee is delivered by a stronger mechanism than that rule describes**, which implementation surfaced. The automatic check sets the existing `reconciling` signal for its duration, and every entry point that could start a newer run goes through `assertAvailable()`, which throws while `reconciling()` is true. A newer request is therefore refused outright rather than racing the check, and `activeRun` cannot change across the check's lifetime. The `activeRun !== run` comparison is kept as defence against a future entry point that bypasses `assertAvailable`, but no test can reach it today, and a test that claims to is not testing what it says. The behaviour worth asserting instead is the refusal itself.
+
+Two consequences follow. The composer is gated for the duration of the automatic check, which is invisible in practice because the check only runs for a resume interruption, where the interrupt session phase already blocks input. And the check is fire-and-forget from `settleTransportClose`, so an awaited `submit()` can resolve while the reconciliation is still open; callers cannot await it.
+
 ## 5. Section 3: error shape and UI
 
 ### 5.1 AgentError

@@ -1501,7 +1501,9 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 - Test: `libs/ag-ui/src/lib/to-agent.interruption-recovery.spec.ts`
 - Test: `libs/langgraph/src/lib/internals/stream-manager.bridge.spec.ts`
 
-The AG-UI stale case is already covered by Task 6's last test. This task adds the LangGraph twin and proves both guards are load-bearing.
+The AG-UI half is already settled by Task 6 and does NOT need redoing here. Implementation established that AG-UI delivers the guarantee through a stronger mechanism than a staleness comparison: the automatic check holds the `reconciling` signal, and every entry point that could start a newer run goes through `assertAvailable()`, which throws while it is set. A newer request is refused rather than racing, so `activeRun` cannot change across the check. Task 6 asserts that refusal. The `activeRun !== run` comparison survives mutation because it is unreachable defence, which Task 6 records honestly rather than papering over.
+
+This task therefore covers the LangGraph twin only, where no such gate exists and the staleness comparison really is the guard.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1557,23 +1559,17 @@ Expected: PASS if `isCurrentExecution` already guards this path; FAIL if the lat
 
 If the test failed, the late write came through `refreshHistory`'s own `isRelevant()` callback. Tighten the callback passed from `finalizeClosedAttempt` so it also requires `currentThreadId` to be unchanged, and re-run. If it passed, make no production change and move to Step 4.
 
-- [ ] **Step 4: Mutation-check both staleness guards**
+- [ ] **Step 4: Mutation-check the LangGraph staleness guard**
 
-Prove the two tests are not vacuous. In `libs/langgraph/src/lib/internals/stream-manager.bridge.ts`, temporarily change the `isCurrentExecution` guard in `finalizeClosedAttempt` to `if (false) return null;` and run:
+Prove the test is not vacuous. In `libs/langgraph/src/lib/internals/stream-manager.bridge.ts`, temporarily change the `isCurrentExecution` guard in `finalizeClosedAttempt` to `if (false) return null;` and run:
 
 ```bash
 npx nx test langgraph --testFile=libs/langgraph/src/lib/internals/stream-manager.bridge.spec.ts --skip-nx-cache
 ```
 
-Expected: the staleness test FAILS. Revert the mutation. Then do the same for AG-UI: change `if (disposed || activeRun !== run) return;` in `verifyClosedRun` to `if (disposed) return;` and run:
+Expected: the staleness test FAILS. Revert the mutation.
 
-```bash
-npx nx test ag-ui --testFile=libs/ag-ui/src/lib/to-agent.interruption-recovery.spec.ts --skip-nx-cache
-```
-
-Expected: the stale-check test FAILS. Revert the mutation.
-
-If either mutation leaves the suite green, the test is not exercising the guard. Fix the test before continuing — a guard with no failing mutation is untested.
+If it leaves the suite green, the test is not exercising the guard. Fix the test before continuing — a guard with no failing mutation is untested. Do NOT run the AG-UI equivalent: Task 6 established that `activeRun !== run` there is unreachable defence behind the `reconciling` gate, and it correctly survives mutation.
 
 - [ ] **Step 5: Verify the working tree is clean of mutations**
 
@@ -1586,8 +1582,8 @@ Expected: only the two spec files changed. No production file appears.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add libs/langgraph/src/lib/internals/stream-manager.bridge.spec.ts libs/ag-ui/src/lib/to-agent.interruption-recovery.spec.ts
-git commit -m "test: prove the interruption staleness guards are load-bearing
+git add libs/langgraph/src/lib/internals/stream-manager.bridge.spec.ts
+git commit -m "test: prove the LangGraph interruption staleness guard is load-bearing
 
 Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 ```
