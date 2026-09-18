@@ -55,7 +55,16 @@ No. Databox's aggregated GA4 data puts the **Technology sector median at 56.0%**
 with a 44%–70% interquartile range on the nearest segment that discloses one.
 Our configuration is *stricter* than GA4 — GA4 un-bounces a sub-10s session that
 had a key event or two pageviews; ours cannot. The GA4-comparable figure is
-likely at or below the median.
+lower still.
+
+Measurement then confirmed it: the homepage bounce rate has fallen from 82.5% in
+May to **50.7% in September**, already below the median, on a sample too small to
+distinguish 50.7% from 59% with any confidence. See
+[Baseline and cutover](#5-baseline-and-cutover). The premise behind this work —
+that 59% indicates a homepage problem — did not survive contact with the data.
+The instrumentation defects below are real and worth fixing on their own merits,
+because they make the metric trustworthy going forward. They are no longer
+urgent.
 
 This spec does not try to lower the number. It makes the number mean something
 stable, so that a future homepage change can be judged against it.
@@ -174,14 +183,47 @@ exit code of the call that made the change.
 Both fixes make dead branches of `$is_bounce` reachable, so bounce rate drops on
 unchanged traffic. Pre- and post-cutover numbers are not comparable.
 
+Measured 2026-09-18 via the Query API against project 406826, entry pathname
+`/`. This is the series the cutover breaks.
+
+| Month | Sessions | Bounce | ±95% CI | Zero-duration | Median duration |
+| --- | --- | --- | --- | --- | --- |
+| 2026-05 | 186 | 82.5% | ±5.5pp | 43.0% | 1.0s |
+| 2026-06 | 160 | 79.1% | ±6.3pp | 37.5% | 2.0s |
+| 2026-07 | 176 | 86.9% | ±5.0pp | 44.9% | 2.0s |
+| 2026-08 | 180 | 65.4% | ±7.0pp | 25.6% | 3.0s |
+| 2026-09 | 159 | 50.7% | ±7.8pp | 18.2% | 6.0s |
+
+Window-dependent snapshots on the same data: homepage 30-day 55.5%, homepage
+90-day 70.3%, sitewide 30-day 61.9%, sitewide 90-day 62.6%. The reported "59%"
+is not reproducible as a single figure; quote the scope and window with it.
+
+**The volume does not support the question.** At ~160 homepage sessions per
+month, September's ±7.8pp interval puts the true value in [43%, 58%]. The gap
+between 59% and the 56% Technology-sector median is inside the noise. Any
+homepage change judged against this metric needs either a much longer
+accumulation window or far more traffic before the comparison means anything.
+
 Record in `docs/growth/README.md`, following the running-log pattern
-`docs/gtm/ai-search-measurement.md` already established:
+`docs/gtm/ai-search-measurement.md` already established: the table above, the
+cutover date, and an explicit note that the series breaks at that date. Whoever
+reads the number next needs to know the definition changed underneath it.
 
-- the 59% baseline and the window it covers
-- the cutover date
-- an explicit note that the series breaks at that date
+### Two findings this baseline surfaced
 
-Whoever reads the number next needs to know the definition changed underneath it.
+**`$pageleave` is missing from 17–20% of sessions**, roughly uniformly across
+Chrome Desktop (17.2%), Safari Desktop (19.6%), Mobile Safari (20.0%) and Chrome
+Mobile (18.8%) — so it is not a Safari or bfcache quirk. Those sessions collapse
+to zero duration and become automatic bounces. The zero-duration share tracks the
+bounce rate almost exactly month over month, which makes this leak a material
+contributor rather than a rounding detail. Cause not yet established; out of
+scope here, worth its own investigation.
+
+**Channel composition, homepage entries:** 89% Direct (142 of 159 in September,
+bouncing at 55%) against 14 Organic Search sessions bouncing at 14%. Browser and
+OS distribution is consistent with ordinary human traffic, not bots. Median
+session duration splits hard by device — Chrome Desktop 6s, Safari Desktop 275s,
+Mobile Safari 3s, Chrome Mobile 2s.
 
 ## Verification
 
