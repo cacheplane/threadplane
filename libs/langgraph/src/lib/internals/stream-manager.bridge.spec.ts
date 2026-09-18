@@ -4113,7 +4113,7 @@ describe('identity-based delta merge (messages-tuple)', () => {
   });
 });
 
-describe('a close with no terminal evidence', () => {
+describe('what counts as evidence a turn completed', () => {
   function setup() {
     const transport = new MockAgentTransport();
     const subjects = makeSubjects();
@@ -4127,6 +4127,18 @@ describe('a close with no terminal evidence', () => {
     return { transport, subjects, destroy$, bridge };
   }
 
+  function assistantMessages(subjects: StreamSubjects<Record<string, unknown>>) {
+    return subjects.messages$.value.filter(
+      message => (message as unknown as Record<string, unknown>)['type'] === 'ai',
+    );
+  }
+
+  const chunk = {
+    type: 'messages',
+    messages: [{ id: 'ai-1', type: 'ai', content: 'partial' }],
+    messageMetadata: { langgraph_node: 'model' },
+  } as StreamEvent;
+
   it('reports a stream that emitted nothing at all as interrupted', async () => {
     const { transport, destroy$, bridge } = setup();
     const submitted = bridge.submit({});
@@ -4138,44 +4150,49 @@ describe('a close with no terminal evidence', () => {
   it('reports a stream that emitted a partial chunk and closed as interrupted', async () => {
     const { transport, destroy$, bridge } = setup();
     const submitted = bridge.submit({});
-    transport.emit([{
-      type: 'messages',
-      messages: [{ id: 'ai-partial-close', type: 'ai', content: 'partial' }],
-      messageMetadata: { langgraph_node: 'model' },
-    }]);
+    transport.emit([chunk]);
     transport.close();
     expect(await submitted).toBe('interrupted');
-    expect(bridge.getMessageDelivery('ai-partial-close')).toMatchObject({
+    expect(bridge.getMessageDelivery('ai-1')).toMatchObject({
       phase: 'complete',
       outcome: 'interrupted',
     });
     destroy$.next();
   });
 
-  it('reports a state-only turn that never spoke as success', async () => {
+  it('accepts a payloadless root terminal event after a chunk as a success', async () => {
     const { transport, destroy$, bridge } = setup();
     const submitted = bridge.submit({});
-    // A graph turn may carry the whole of its work in state and never emit an
-    // assistant message. The terminal snapshot is its completion signal, and
-    // there is no chunk after it to invalidate that.
-    transport.emit([{ type: 'values', data: { itinerary: { updated: true } } }] as StreamEvent[]);
+    // Once the step has spoken, any root terminal marker settles it — the
+    // marker need carry no payload. This is the sole domain of
+    // currentStepHasTerminalEvidence: a null-payload event never sets
+    // rootTerminalEvidence, so the other clause cannot cover this case.
+    transport.emit([chunk, { type: 'values', data: null } as StreamEvent]);
     transport.close();
     expect(await submitted).toBe('success');
     destroy$.next();
   });
 
-  it('still reports root terminal evidence before the close as success', async () => {
-    const { transport, destroy$, bridge } = setup();
+  it('reports a state-only turn that never spoke as success', async () => {
+    const { transport, subjects, destroy$, bridge } = setup();
     const submitted = bridge.submit({});
-    transport.emit([{
-      type: 'messages',
-      messages: [{ id: 'ai-complete-close', type: 'ai', content: 'done' }],
-      messageMetadata: { langgraph_node: 'model' },
-    }]);
-    transport.emit([{ type: 'values', values: { answer: 'done' } }]);
+    // A graph turn may carry the whole of its work in state and never emit an
+    // assistant message. The payload-bearing snapshot is its completion
+    // signal, and no later chunk arrives to invalidate it.
+    transport.emit([{ type: 'values', data: { itinerary: { updated: true } } } as StreamEvent]);
     transport.close();
     expect(await submitted).toBe('success');
-    expect(bridge.getMessageDelivery('ai-complete-close')).toMatchObject({
+    expect(assistantMessages(subjects)).toEqual([]);
+    destroy$.next();
+  });
+
+  it('reports a turn that spoke and then snapshotted as a success', async () => {
+    const { transport, destroy$, bridge } = setup();
+    const submitted = bridge.submit({});
+    transport.emit([chunk, { type: 'values', data: { answer: 'done' } } as StreamEvent]);
+    transport.close();
+    expect(await submitted).toBe('success');
+    expect(bridge.getMessageDelivery('ai-1')).toMatchObject({
       phase: 'complete',
       outcome: 'success',
     });

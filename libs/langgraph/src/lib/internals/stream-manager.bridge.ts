@@ -321,13 +321,16 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
 
   /**
    * The outcome for a stream that ended. A recorded terminal outcome always
-   * wins. Otherwise a terminal event is what proves completion — either
-   * following the turn's assistant chunks, or arriving alone on a turn that
-   * only changed state and never spoke. A close with no terminal event at all
-   * is an interruption. Chunklessness is not itself evidence of anything: the
-   * previous predicate read it as success, which had a stream that died before
-   * its first chunk — the weakest possible evidence — reported as a completed
-   * turn.
+   * wins. Otherwise either flag proves the turn completed, and they divide as:
+   *
+   * - `currentStepHasTerminalEvidence`: a root terminal marker arrived after
+   *   this step had already produced a chunk. The marker need carry no
+   *   payload — having spoken, the step is settled by the marker alone.
+   * - `rootTerminalEvidence`: a payload-bearing root terminal event that no
+   *   later chunk has invalidated. This is what a state-only turn produces —
+   *   one that does its work in graph state and never speaks.
+   *
+   * A close with neither is an interruption.
    */
   function finishOutcome(attempt: DeliveryAttempt): CompleteOutcome {
     return attempt.terminalOutcome
