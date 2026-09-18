@@ -29,7 +29,13 @@ const EXPECTED = { width: 1280, height: 640 };
 
 function parseOrigin(argv) {
   const at = argv.indexOf('--origin');
-  return at === -1 ? DEFAULT_ORIGIN : argv[at + 1];
+  if (at === -1) return DEFAULT_ORIGIN;
+  const value = argv[at + 1];
+  if (value === undefined || value.startsWith('--')) {
+    console.error('--origin needs a value, e.g. --origin http://localhost:3000');
+    process.exit(1);
+  }
+  return value;
 }
 
 /**

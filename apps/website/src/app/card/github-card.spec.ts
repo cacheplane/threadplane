@@ -6,6 +6,8 @@ import { GITHUB_CARD_SIZE } from '../github-card/route';
 import { HERO_SUBHEAD } from '../../lib/positioning';
 
 const ROUTE = join(__dirname, '..', 'github-card', 'route.tsx');
+const REPO_ROOT = join(__dirname, '..', '..', '..', '..', '..');
+const EXPORT_SCRIPT = join(REPO_ROOT, 'scripts', 'export-github-card.mjs');
 
 describe('github card', () => {
   /**
@@ -49,5 +51,30 @@ describe('github card', () => {
   it('renders at build time, not per request', () => {
     const source = readFileSync(ROUTE, 'utf8');
     expect(source).toContain("export const dynamic = 'force-static'");
+  });
+
+  /**
+   * scripts/export-github-card.mjs cannot import GITHUB_CARD_SIZE — it is a
+   * plain .mjs outside the Next app's TypeScript module graph, and the
+   * repo-root scripts/ directory runs under no lint or test target of its
+   * own. A comment there says the two are kept in sync BY HAND; this test is
+   * the thing that actually checks it, by reading the script's EXPECTED
+   * literal back out and comparing it to the route's real size.
+   */
+  it('keeps the export script EXPECTED size in sync with GITHUB_CARD_SIZE', () => {
+    const source = readFileSync(EXPORT_SCRIPT, 'utf8');
+    const match = source.match(/EXPECTED\s*=\s*\{\s*width:\s*(\d+),\s*height:\s*(\d+)\s*\}/u);
+
+    // A guard that silently stops matching is worse than no guard: fail loudly
+    // rather than let an empty/failed match pass this test vacuously.
+    if (!match) {
+      throw new Error(
+        `Could not find an EXPECTED = { width, height } literal in ${EXPORT_SCRIPT}. ` +
+          'Update this regex if the script changed shape.',
+      );
+    }
+
+    const scriptSize = { width: Number(match[1]), height: Number(match[2]) };
+    expect(scriptSize).toEqual(GITHUB_CARD_SIZE);
   });
 });
