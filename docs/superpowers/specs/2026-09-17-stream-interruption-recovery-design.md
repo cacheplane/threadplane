@@ -87,6 +87,10 @@ The check runs **inside the adapter**, exactly once, before the interrupted erro
 | Pending interrupt present | paused, via the existing interrupt path |
 | Neither, or the refresh threw | `interrupted`, `recovery: 'check'` |
 
+`recovery: 'check'` rather than `'none'` even on a failed refresh, because the transport *does* support the read: the user can ask again when connectivity returns. When the transport implements no `getHistory` at all, the recovery is `'none'` and `checkStatus` is not exposed, both from one value so the control and the copy advertising it cannot disagree.
+
+**LangGraph never emits `recovery: 'retry'`, and that is correct rather than a gap.** AG-UI needs that value because its transport does not distinguish a request that never left from one the server began answering; the adapter infers it from having observed no event. LangGraph separates the two at a different seam: a connection that fails to open throws, and is classified as kind `connection`, which is retryable and carries no recovery field. By the time an outcome is `interrupted` here, the stream had opened, so the request reached the server and replaying it could duplicate work. The two adapters therefore cover the same three situations through different kinds, and the documentation states the rule per adapter rather than implying LangGraph offers a Retry it never will.
+
 `recovery: 'check'` rather than `'none'` even on a failed refresh, because the transport *does* support the read: the user can ask again when connectivity returns.
 
 ### 4.2 AG-UI

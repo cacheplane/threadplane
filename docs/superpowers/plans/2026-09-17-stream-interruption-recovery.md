@@ -1497,6 +1497,8 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 ### Task 9: Staleness guards on both adapters
 
+> **Absorbed during execution.** The AG-UI half was settled by Task 6, which established that a staleness comparison is not the guard there: the automatic check holds the `reconciling` signal and every entry point that could start a newer run throws while it is set, so a newer request is refused rather than racing. The LangGraph half was written and mutation-proved inside Task 8, including a second case for the window between the refresh writing and the check settling, which the first test did not reach. Nothing remains here.
+
 **Files:**
 - Test: `libs/ag-ui/src/lib/to-agent.interruption-recovery.spec.ts`
 - Test: `libs/langgraph/src/lib/internals/stream-manager.bridge.spec.ts`
@@ -1591,6 +1593,8 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 ---
 
 ### Task 10: Mutation-check the new assertions
+
+> **Absorbed during execution.** Every task mutation-checked its own branches as it landed, with a grep proving the mutation was applied and the original gone, after three separate silent no-op mutations produced meaningless results early on. Surviving mutants were each resolved rather than noted: two AG-UI guards were kept as documented unreachable defence, and three LangGraph survivors turned out to be test defects that were fixed. Nothing remains here beyond the consolidated run in Task 12.
 
 **Files:** no production changes; this task validates Tasks 4 through 8.
 
