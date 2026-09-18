@@ -4,7 +4,7 @@ import { XCard } from './x-card';
 import { OgCard } from './og-card';
 
 interface TemplateEntry {
-  component: (input: CardInput, assets: { planeDataUri: string }) => ReactElement;
+  component: (input: CardInput) => ReactElement;
   width: number;
   height: number;
 }
