@@ -56,7 +56,20 @@ Unchanged: a close after a valid `RUN_FINISHED` (including an `interrupt` outcom
 
 Terminal evidence is the root completion event for the current step (`currentStepHasTerminalEvidence` / `rootTerminalEvidence`).
 
-`finishOutcome` drops the `|| !attempt.sawAssistantChunk` clause. A close with no terminal evidence is `interrupted` whether or not a chunk arrived. The recorded `terminalOutcome` still wins when one exists, so a thread interrupt in state still settles as paused and a user abort still settles as `aborted`.
+`finishOutcome` drops the `|| !attempt.sawAssistantChunk` clause and accepts `rootTerminalEvidence` in its place. A close with no terminal event at all is `interrupted` whether or not a chunk arrived. The recorded `terminalOutcome` still wins when one exists, so a thread interrupt in state still settles as paused and a user abort still settles as `aborted`.
+
+**The chunk clause was covering a second case, which implementation surfaced.** Deleting it outright would have reclassified a legitimate state-only turn as an interruption. A LangGraph graph may complete a turn that mutates state and never speaks, and this repository's own graphs carry application state in the graph, so this is ordinary rather than exotic. The bridge already separates the two signals. `markNormalTerminal` sets `rootTerminalEvidence` on any root-namespace terminal event carrying a payload, and sets `currentStepHasTerminalEvidence` only when a chunk preceded it; the chunk handler clears `rootTerminalEvidence` whenever a new chunk arrives. So the flag means "a terminal event arrived and nothing has spoken since", which is precisely the state-only completion signal.
+
+The four cases resolve cleanly:
+
+| Stream | Flags | Outcome |
+| --- | --- | --- |
+| Emits nothing, then closes | neither | `interrupted` |
+| Chunks, then closes with no terminal event | neither, the chunk having cleared the root flag | `interrupted` |
+| Chunks, then a terminal event | `currentStepHasTerminalEvidence` | `success` |
+| A terminal event alone, no chunk | `rootTerminalEvidence` | `success` |
+
+The previous code got this backwards by treating the *absence* of chunks as evidence of success, which happened to cover the fourth row while also covering the first.
 
 The explicit-error paths that already read `attempt.sawAssistantChunk ? 'interrupted' : 'error'` keep that distinction. Those cases have a real error object to classify; the inference problem is specific to a silent close.
 
