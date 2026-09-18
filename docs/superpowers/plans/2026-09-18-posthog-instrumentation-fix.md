@@ -29,8 +29,8 @@
 
 > **On the test command:** `nx test website -- instrumentation-client` silently ignores the
 > filter and runs the whole website suite (1,525 tests), which is green but makes the "6 tests"
-> expectation below unrecognisable. The `vitest` form used in the steps below runs the 6
-> assertions in isolation. Use `npx nx build website` from the repo root for the typecheck, and
+> expectation below unrecognisable. The `vitest` form used in the steps below runs the
+> assertions in isolation (four tests as built — see the AS BUILT note under Task 1). Use `npx nx build website` from the repo root for the typecheck, and
 > return to the repo root before any `git` step.
 
 **Files:**
@@ -417,7 +417,7 @@ git commit -m "docs(growth): record the actual PostHog cutover date
 Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 ```
 
-If the date is already correct, skip the commit and say so rather than creating an empty one.
+If the README and spec already read in the past tense with the right date, skip the commit and say so rather than creating an empty one.
 
 ---
 
