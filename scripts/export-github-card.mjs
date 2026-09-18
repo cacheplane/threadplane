@@ -47,7 +47,19 @@ function readPngSize(buffer) {
 const origin = parseOrigin(process.argv.slice(2));
 const url = new URL('/github-card', origin).toString();
 
-const response = await fetch(url);
+// fetch resolves with a response object for HTTP-level failures (404, 500)
+// but rejects outright when the connection itself never happens — no server
+// listening, DNS failure, refused TLS. For a person running this by hand
+// from a runbook, that is the single most likely failure (the dev server
+// was never started, or the route is not deployed yet), so it gets the same
+// one-line treatment as a non-ok response instead of a raw stack trace.
+let response;
+try {
+  response = await fetch(url);
+} catch (cause) {
+  console.error(`Could not reach ${url}: ${cause.message}`);
+  process.exit(1);
+}
 if (!response.ok) {
   console.error(`Failed to fetch ${url}: ${response.status} ${response.statusText}`);
   process.exit(1);
