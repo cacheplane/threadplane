@@ -225,7 +225,7 @@ During local development with `langgraph dev`, CORS is permissive by default. Yo
 
 ## Error handling
 
-The demo leans on `<chat>`, which renders failures for you. A hand-built UI reads the same two signals the composition does: `status()` flips to `'error'`, and `error()` holds an `AgentError` with a classified `kind`, a `retryable` flag, an optional HTTP `status`, and the original failure on `cause`.
+The demo leans on `<chat>`, which renders failures for you. A hand-built UI reads the same two signals the composition does: `status()` flips to `'error'`, and `error()` holds an `AgentError` with a classified `kind`, a `retryable` flag, an optional HTTP `status`, and the original failure on `cause`. An `interrupted` error adds `recovery` and `detail`, which name the one action the adapter can prove is safe.
 
 ```typescript
 import { ChangeDetectionStrategy, Component, computed } from '@angular/core';
@@ -238,7 +238,12 @@ import { injectAgent } from '@threadplane/langgraph';
     @if (hasError()) {
       <div class="error-banner">
         <p>{{ errorMessage() }}</p>
-        @if (canRetry()) {
+        @if (agent.error()?.detail; as detail) {
+          <p>{{ detail }}</p>
+        }
+        @if (canCheck()) {
+          <button (click)="checkStatus()">Check status</button>
+        } @else if (canRetry()) {
           <button (click)="retry()">Try again</button>
         }
       </div>
@@ -249,6 +254,9 @@ export class ChatComponent {
   protected readonly agent = injectAgent();
 
   protected readonly hasError = computed(() => this.agent.status() === 'error');
+  protected readonly canCheck = computed(
+    () => this.agent.error()?.recovery === 'check' && this.agent.checkStatus !== undefined,
+  );
   protected readonly canRetry = computed(
     () => this.agent.error()?.retryable === true,
   );
@@ -261,9 +269,9 @@ export class ChatComponent {
         return 'The deployment rejected the request. Check the credentials on your proxy.';
       case 'connection':
         return 'The deployment is unreachable. Check your connection and try again.';
-      case 'interrupted':
-        return 'The response was interrupted. Try again.';
       default:
+        // 'interrupted' included: the adapter already set the message that
+        // matches the recovery it chose, and `detail` continues that sentence.
         return failure.message;
     }
   });
@@ -271,10 +279,14 @@ export class ChatComponent {
   protected retry(): void {
     void this.agent.retry();
   }
+
+  protected checkStatus(): void {
+    void this.agent.checkStatus?.();
+  }
 }
 ```
 
-Branching on `kind` covers the cases that need different copy without reading HTTP status codes; `failure.status` is there when you want the exact code.
+Branching on `kind` covers the cases that need different copy without reading HTTP status codes; `failure.status` is there when you want the exact code. Do not hard-code copy for `interrupted`: three different outcomes share that kind, and the adapter's own message is the one that matches the recovery it settled on.
 
 ### Retry with exponential backoff
 
@@ -303,9 +315,11 @@ export async function submitWithBackoff(
 }
 ```
 
-The `retryable` check is what keeps a wrong API key from being retried three times.
+The `retryable` check is what keeps a wrong API key from being retried three times. It matters more than that in an automated loop: an `interrupted` error is never retryable, because the server may already have begun answering, so the guard is also what stops a backoff loop from sending the same tool call or booking three times.
 
 ## Stream recovery
+
+A stream that closes without a terminal event is reported as an `interrupted` error rather than as a completed turn, and the partial content and any approval state stay on the signals. Because the server may already have begun answering, that error is not retryable. Where the transport can read thread history the adapter reports `recovery: 'check'` and exposes `checkStatus()`, a read-only reconciliation that re-reads the thread and settles the turn — clearing the error when the run completed server-side after the stream died, and leaving it in place when the outcome stays unknown. Where it cannot, the recovery is `none` and the error says the outcome could not be confirmed. Every route into an interruption here means the request was dispatched, so none of them offers Retry.
 
 Use `joinStream()` to reconnect to a running agent execution after a network interruption, page refresh, or navigation event.
 
@@ -452,7 +466,7 @@ Route browser traffic through a server-side proxy or gateway that adds LangGraph
 Add your Angular app's origin to the `allow_origins` list in `langgraph.json`.
 </Step>
 <Step title="Handle errors gracefully">
-Branch on `error().kind` for legible copy, and show a retry button only when `error().retryable` is true.
+Branch on `error().kind` for legible copy, show a retry button only when `error().retryable` is true, and offer a status check when `error().recovery` is `check` and the agent exposes `checkStatus`.
 </Step>
 <Step title="Implement stream recovery">
 Store `runId` and use `joinStream()` to reconnect after network interruptions.

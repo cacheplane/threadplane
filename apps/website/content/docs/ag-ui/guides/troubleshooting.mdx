@@ -143,6 +143,10 @@ Pass the index of the assistant message you want to replace, not the user messag
 
 `retry()` re-runs the last submitted input. It is a silent no-op in two cases: a run is already in flight, or nothing has been submitted on this agent yet. Neither case throws and neither sets `error`, so a retry button that appears to do nothing usually means one of the two. Check `isLoading()` before calling it, and note that a fresh agent has nothing to retry until the first `submit()`.
 
+## No Retry button after a dropped stream
+
+This is deliberate. A stream that closed without terminal evidence settles as an `interrupted` error, and the adapter offers Retry only when it can prove the request was never dispatched — anything the server may already have begun answering would be duplicated by a replay. Read `error().recovery`: `check` means a read-only status check is available through `checkStatus()`, and `none` means the outcome cannot be verified, in which case `error().detail` is the sentence to show. Partial content and approval state are preserved in every case.
+
 ## History or time-travel does not work
 
 History and time-travel are not implemented by the AG-UI adapter today.

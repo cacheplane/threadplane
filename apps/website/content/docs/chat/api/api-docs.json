@@ -1497,6 +1497,12 @@
         "optional": false
       },
       {
+        "name": "detail",
+        "type": "string",
+        "description": "A short sentence explaining the uncertainty. Adapters set this whenever\n`recovery` is `check` or `none`, and leave it undefined otherwise. It is\nthe only thing a caller can show when `recovery` is `check` but the agent\nexposes no `checkStatus`, so omitting it there leaves the reader with a\nbare error and no path forward.",
+        "optional": true
+      },
+      {
         "name": "kind",
         "type": "AgentErrorKind",
         "description": "The classified failure type. See AgentErrorKind.",
@@ -1515,9 +1521,15 @@
         "optional": false
       },
       {
+        "name": "recovery",
+        "type": "AgentRecovery",
+        "description": "The recovery action the adapter can justify. Only set on `interrupted`\nerrors; always `undefined` for every other AgentErrorKind.",
+        "optional": true
+      },
+      {
         "name": "retryable",
         "type": "boolean",
-        "description": "Whether retrying the same request could plausibly succeed:\n `connection` | `server` (5xx) | `interrupted` → true; `auth` | `aborted` | non-auth `4xx` → false.",
+        "description": "Whether retrying the same request could plausibly succeed:\n `connection` | `server` (5xx) → true; `auth` | `aborted` | non-auth `4xx` → false.\n For `interrupted`, this tracks AgentRecovery: true only when `recovery`\n is `retry`, because a dispatched request may already have run on the server.",
         "optional": false
       },
       {
@@ -4867,7 +4879,7 @@
       },
       {
         "name": "grouping",
-        "type": "InputSignal<\"auto\" | \"none\">",
+        "type": "InputSignal<\"none\" | \"auto\">",
         "description": "",
         "optional": false
       },
@@ -5973,6 +5985,12 @@
     "description": "Runtime-neutral contract chat primitives consume.\n\nImplementations are produced by runtime adapters (e.g. a LangGraph or\nAG-UI adapter) or by user code for custom backends.\n\n`interrupt` and `subagents` are optional: runtimes that do not support these\nconcepts should leave them undefined, and primitives that need them check\npresence and render a neutral fallback when absent.\n\nInvariant: state lives on signals; `events$` carries only things that are\nnot derivable from signals.",
     "properties": [
       {
+        "name": "checkStatus",
+        "type": "() => Promise<void>",
+        "description": "Optional read-only reconciliation of an uncertain run outcome, offered when\n`error().recovery === 'check'`. Asks the backend what happened.\n\nThe answer arrives on the signals, not in the return value: a run the\nbackend reports as finished clears `error` and returns `status` to idle,\nand any messages it committed appear on `messages`. An outcome that stays\nunknown leaves the existing error in place, so the caller can offer the\ncheck again later.\n\nAdapters implementing this must not resubmit the operation and must not\nappend a message; a dropped stream is not proof that the server did\nnothing. They should reject while a request is in flight, and must discard\na result that resolves after a newer request has started.",
+        "optional": true
+      },
+      {
         "name": "clientTools",
         "type": "ClientToolsCapability",
         "description": "Optional: client-declared, client-executed tools (see ClientToolsCapability).",
@@ -6292,6 +6310,12 @@
     "kind": "interface",
     "description": "Extension of Agent that exposes checkpoint history for time-travel UIs.\n\nConcrete adapters that record per-node checkpoints (e.g. LangGraph) should\nimplement this. Pure request/response runtimes that don't have checkpoints\nshould implement plain Agent.",
     "properties": [
+      {
+        "name": "checkStatus",
+        "type": "() => Promise<void>",
+        "description": "Optional read-only reconciliation of an uncertain run outcome, offered when\n`error().recovery === 'check'`. Asks the backend what happened.\n\nThe answer arrives on the signals, not in the return value: a run the\nbackend reports as finished clears `error` and returns `status` to idle,\nand any messages it committed appear on `messages`. An outcome that stays\nunknown leaves the existing error in place, so the caller can offer the\ncheck again later.\n\nAdapters implementing this must not resubmit the operation and must not\nappend a message; a dropped stream is not proof that the server did\nnothing. They should reject while a request is in flight, and must discard\na result that resolves after a newer request has started.",
+        "optional": true
+      },
       {
         "name": "clientTools",
         "type": "ClientToolsCapability",
@@ -7479,6 +7503,12 @@
         "optional": false
       },
       {
+        "name": "checkStatus",
+        "type": "() => Promise<void>",
+        "description": "Optional read-only reconciliation of an uncertain run outcome, offered when\n`error().recovery === 'check'`. Asks the backend what happened.\n\nThe answer arrives on the signals, not in the return value: a run the\nbackend reports as finished clears `error` and returns `status` to idle,\nand any messages it committed appear on `messages`. An outcome that stays\nunknown leaves the existing error in place, so the caller can offer the\ncheck again later.\n\nAdapters implementing this must not resubmit the operation and must not\nappend a message; a dropped stream is not proof that the server did\nnothing. They should reject while a request is in flight, and must discard\na result that resolves after a newer request has started.",
+        "optional": true
+      },
+      {
         "name": "clientTools",
         "type": "ClientToolsCapability",
         "description": "Optional: client-declared, client-executed tools (see ClientToolsCapability).",
@@ -8326,7 +8356,7 @@
   {
     "name": "AgentErrorKind",
     "kind": "type",
-    "description": "The failure class of an AgentError, used to drive UI and retry logic:\n\n- `connection` — offline / DNS / connection refused / `fetch` failed. Retryable.\n- `auth` — `401` / `403`; credentials or API key are wrong. Not retryable.\n- `server` — a `5xx` (retryable) or a non-auth `4xx` like `400`/`404`/`429` (not retryable).\n- `interrupted` — the stream closed mid-response after a run had started. Retryable.\n- `aborted` — the user pressed stop; treated as a graceful idle, not surfaced as an error.",
+    "description": "The failure class of an AgentError, used to drive UI and retry logic:\n\n- `connection` — offline / DNS / connection refused / `fetch` failed. Retryable.\n- `auth` — `401` / `403`; credentials or API key are wrong. Not retryable.\n- `server` — a `5xx` (retryable) or a non-auth `4xx` like `400`/`404`/`429` (not retryable).\n- `interrupted` — the stream closed mid-response after a run had started. Retryable only\n  when `recovery` is `retry`; see AgentRecovery.\n- `aborted` — the user pressed stop; treated as a graceful idle, not surfaced as an error.",
     "signature": "\"connection\" | \"auth\" | \"server\" | \"interrupted\" | \"aborted\"",
     "examples": []
   },
@@ -8335,6 +8365,13 @@
     "kind": "type",
     "description": "Discriminated union of events flowing on `Agent.events$`.\n\nInvariant: state lives on signals (`messages`, `status`, `toolCalls`,\n`state`, `interrupt`, `subagents`, `history`); events on `events$`\ncarry only things that are not derivable from signals. New variants\nare added purely additively when patterns prove necessary.",
     "signature": "AgentStateUpdateEvent | AgentCustomEvent",
+    "examples": []
+  },
+  {
+    "name": "AgentRecovery",
+    "kind": "type",
+    "description": "What the adapter can safely offer after an unexpectedly closed stream:\n\n- `retry` — the request is known not to have been dispatched. Re-running it\n  cannot duplicate server-side work.\n- `check` — the outcome is uncertain and the backend supports a read-only\n  status check, so a caller may offer one.\n- `none` — the outcome is uncertain and nothing can verify it. Explain, and\n  offer no action.",
+    "signature": "\"retry\" | \"check\" | \"none\"",
     "examples": []
   },
   {
@@ -8571,8 +8608,22 @@
   {
     "name": "AGENT_ERROR_MESSAGES",
     "kind": "const",
-    "description": "Default, human-facing copy per AgentErrorKind. Used as the message when\na classified error has no better text. Override by mapping `error.kind` to your\nown strings in a custom error component.",
+    "description": "Default, human-facing copy per AgentErrorKind. Used as the message when\na classified error has no better text. Override by mapping `error.kind` to your\nown strings in a custom error component.\n\nFor `interrupted` errors, prefer `AGENT_RECOVERY_MESSAGES[recovery]` once\n`recovery` is known — it carries the correct per-case copy. The `interrupted`\nentry here is only the fallback for errors constructed without a recovery value.",
     "signature": "Record<AgentErrorKind, string>",
+    "examples": []
+  },
+  {
+    "name": "AGENT_RECOVERY_DETAILS",
+    "kind": "const",
+    "description": "The second line of the `interrupted` banner, per AgentRecovery. Each\nentry is written to be read as a continuation of the matching\nAGENT_RECOVERY_MESSAGES sentence, never on its own: the `check` entry\nsupplies only the action that follows, and the `none` entry only its cost.\nAdapters set `AgentError.detail` from here so every transport says the same\nthing. Keep the pairs in sync when editing either table.",
+    "signature": "Record<AgentRecovery, string>",
+    "examples": []
+  },
+  {
+    "name": "AGENT_RECOVERY_MESSAGES",
+    "kind": "const",
+    "description": "Human-facing copy per AgentRecovery, used for `interrupted` errors.",
+    "signature": "Record<AgentRecovery, string>",
     "examples": []
   },
   {

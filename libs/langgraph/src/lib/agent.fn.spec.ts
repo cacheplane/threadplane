@@ -69,6 +69,22 @@ describe('agent', () => {
     }
   });
 
+  it('exposes checkStatus only when the transport can actually perform the check', () => {
+    // The public surface must mirror the bridge's conditional exposure: the
+    // control is offered exactly when `interrupted` errors say `recovery:
+    // 'check'`, so a user is never handed a button that cannot answer.
+    const reading = withInjectionContext(() =>
+      agent({ apiUrl: '', assistantId: 'a', transport: new MockAgentTransport() })
+    );
+    expect(typeof reading.checkStatus).toBe('function');
+
+    const blind: AgentTransport = { async *stream() { yield* []; } };
+    const unreadable = withInjectionContext(() =>
+      agent({ apiUrl: '', assistantId: 'a', transport: blind })
+    );
+    expect(unreadable.checkStatus).toBeUndefined();
+  });
+
   it('returns a ref with initial idle status', () => {
     const transport = new MockAgentTransport();
     const ref = withInjectionContext(() =>

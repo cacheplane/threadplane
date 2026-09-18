@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { AgentError } from './agent-error';
+import { AgentError, AGENT_RECOVERY_MESSAGES, AGENT_RECOVERY_DETAILS, type AgentRecovery } from './agent-error';
 import { toAgentError, isAbortError } from './to-agent-error';
 
 describe('toAgentError', () => {
@@ -62,5 +62,53 @@ describe('toAgentError', () => {
     expect(e.kind).toBe('auth');
     expect(e.status).toBe(403);
     expect(e.retryable).toBe(false);
+  });
+});
+
+describe('AgentError recovery', () => {
+  it('defaults recovery and detail to undefined', () => {
+    const err = new AgentError({ kind: 'server', message: 'boom', retryable: true });
+    expect(err.recovery).toBeUndefined();
+    expect(err.detail).toBeUndefined();
+  });
+
+  it('carries an explicit recovery and detail', () => {
+    const err = new AgentError({
+      kind: 'interrupted',
+      message: AGENT_RECOVERY_MESSAGES.check,
+      retryable: false,
+      recovery: 'check',
+      detail: 'The reservation may already exist.',
+    });
+    expect(err.recovery).toBe('check');
+    expect(err.detail).toBe('The reservation may already exist.');
+    expect(err.retryable).toBe(false);
+  });
+
+  it('has distinct copy for each recovery value', () => {
+    const values: AgentRecovery[] = ['retry', 'check', 'none'];
+    const copy = values.map(value => AGENT_RECOVERY_MESSAGES[value]);
+    expect(new Set(copy).size).toBe(3);
+    for (const line of copy) expect(line.length).toBeGreaterThan(0);
+  });
+
+  it('leaves toAgentError classification untouched', () => {
+    expect(toAgentError(new Error('HTTP 500')).recovery).toBeUndefined();
+    expect(toAgentError(new Error('HTTP 401')).recovery).toBeUndefined();
+  });
+});
+
+describe('recovery copy tables', () => {
+  it('keeps the message and detail tables in step', () => {
+    // The two entries for a recovery value render as one banner, the detail
+    // continuing the message. A value present in one table and missing from the
+    // other would ship a half-written sentence.
+    expect(Object.keys(AGENT_RECOVERY_DETAILS).sort()).toEqual(Object.keys(AGENT_RECOVERY_MESSAGES).sort());
+  });
+
+  it('gives every recovery value a non-empty detail', () => {
+    for (const value of Object.keys(AGENT_RECOVERY_MESSAGES) as AgentRecovery[]) {
+      expect(AGENT_RECOVERY_DETAILS[value].trim().length).toBeGreaterThan(0);
+    }
   });
 });

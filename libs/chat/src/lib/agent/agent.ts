@@ -70,6 +70,23 @@ export interface Agent<TState = unknown> {
   /** Optional: client-declared, client-executed tools (see ClientToolsCapability). */
   clientTools?: ClientToolsCapability;
 
+  /**
+   * Optional read-only reconciliation of an uncertain run outcome, offered when
+   * `error().recovery === 'check'`. Asks the backend what happened.
+   *
+   * The answer arrives on the signals, not in the return value: a run the
+   * backend reports as finished clears `error` and returns `status` to idle,
+   * and any messages it committed appear on `messages`. An outcome that stays
+   * unknown leaves the existing error in place, so the caller can offer the
+   * check again later.
+   *
+   * Adapters implementing this must not resubmit the operation and must not
+   * append a message; a dropped stream is not proof that the server did
+   * nothing. They should reject while a request is in flight, and must discard
+   * a result that resolves after a newer request has started.
+   */
+  checkStatus?: () => Promise<void>;
+
   // Events stream (required; emit EMPTY if runtime produces no events)
   events$: Observable<AgentEvent>;
 }
