@@ -128,6 +128,29 @@ export interface StreamManagerBridgeOptions<T, ResolvedBag extends BagTemplate =
 
 type ResubmitOutcome = CompleteOutcome | 'not-started';
 
+/** Options for the bridge's internal `refreshHistory`. */
+interface HistoryRefreshOptions {
+  /**
+   * Project the refreshed checkpoint even when `messages$` already has content.
+   * Off for a first connect, where optimistic local state must not be clobbered;
+   * on at run completion, where the server is authoritative.
+   */
+  force?: boolean;
+  /**
+   * Answers "does this refresh still speak for the request that asked for it?".
+   * False once a newer request owns the signals, and the answer is then dropped
+   * rather than written.
+   */
+  isRelevant?: () => boolean;
+  /**
+   * What a failed read does. `publish` puts it on `error$` (the default, for a
+   * refresh the user implicitly asked for); `throw` rejects so an awaiting
+   * caller can surface it without disturbing an error already on screen;
+   * `ignore` does neither, for a refresh that is only a diagnostic.
+   */
+  onFailure?: 'publish' | 'throw' | 'ignore';
+}
+
 export interface StreamManagerBridge {
   submit:                (values: unknown, opts?: LangGraphSubmitOptions) => Promise<CompleteOutcome>;
   stop:                  () => Promise<void>;
@@ -366,43 +389,63 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
     attempt.awaitingFinalSync = true;
     let refreshed: ThreadState<T>[] | undefined;
     try {
-      refreshed = await refreshHistory(
-        true,
-        () => isCurrentExecution(controller, attempt) && !attempt.terminalOutcome,
+      refreshed = await refreshHistory({
+        force: true,
+        isRelevant: () => isCurrentExecution(controller, attempt) && !attempt.terminalOutcome,
         // On an already-interrupted close the refresh is a diagnostic read, not
-        // the operation the user asked for. A failure of the diagnostic must not
-        // be reported as the cause — the interruption is the story, and the
+        // the operation the user asked for, so its own failure must not be
+        // reported as the cause — the interruption is the story, and the
         // `interrupted` error published below says so with an honest recovery.
-        evidenceOutcome === 'interrupted',
-      );
+        // Any other close keeps the default, so a real sync failure still shows.
+        onFailure: evidenceOutcome === 'interrupted' ? 'ignore' : 'publish',
+      });
     } finally {
       attempt.awaitingFinalSync = false;
     }
 
     if (!isCurrentExecution(controller, attempt)) return null;
 
+    // The two ways a refresh rescues an interruption. Read as one decision:
+    // either the run is not over (it paused), or it finished without us.
     let outcome = evidenceOutcome;
     if (evidenceOutcome === 'interrupted' && refreshed) {
-      if (collectHistoryInterrupts(refreshed).length > 0) {
-        // The run paused rather than died. `refreshHistory` has already
-        // hydrated the interrupt onto interrupt$ — the same mechanism a thread
-        // reloaded mid-pause uses — so settling it like any other paused run
-        // (a plain resolve, no error) is all that is left to do.
-        outcome = 'success';
-      } else if (subjects.messages$.value.length > messageCountBeforeRefresh) {
-        outcome = 'success';
-      }
+      // Paused, not dead. `refreshHistory` has already hydrated the interrupt
+      // onto interrupt$ — the same mechanism a thread reloaded mid-pause uses —
+      // so settling it like any other paused run is all that is left to do.
+      const paused = collectHistoryInterrupts(refreshed).length > 0;
+      // Committed server-side after the stream died. More messages than were
+      // here before the refresh is the only available evidence of that, and it
+      // is sound in both directions: an optimistically injected user message is
+      // already counted BEFORE the refresh, so it cannot move the comparison,
+      // and only a server-side addition can.
+      const committed = subjects.messages$.value.length > messageCountBeforeRefresh;
+      if (paused || committed) outcome = 'success';
     }
 
     if (!attempt.terminalOutcome) finalizeAttempt(attempt, outcome);
-    if (outcome === 'interrupted') publishInterruptionError();
+    // From here the attempt's OWN settled outcome wins over the local evidence.
+    // A stop() landing while the refresh was in flight has already settled this
+    // attempt as `aborted` and put the status back to Idle — it aborts
+    // `historyAbortController` for exactly this window — and `outcome` is then
+    // stale evidence from before the user made that decision. Publishing from it
+    // would tell someone who deliberately stopped a run that their connection
+    // dropped.
+    //
+    // This one condition is the whole guard, deliberately: every route that
+    // aborts `controller` either settles the attempt first (stop() as
+    // `aborted`; a newer submit, a thread switch or dispose as `interrupted`)
+    // or detaches it, and a detached attempt has already returned null above.
+    // So there is no abort this does not already cover, and a second
+    // `!controller.signal.aborted` clause would be an untestable duplicate.
+    const settledOutcome = attempt.terminalOutcome ?? outcome;
+    if (settledOutcome === 'interrupted') publishInterruptionError();
     if (attempt.terminalOutcome === 'success' && attempt.rootTerminalEvidence
       && !controller.signal.aborted && !attempt.externalSignal?.aborted
       && !subjects.error$.value && !subjects.interrupt$.value && subjects.interrupts$.value.length === 0) {
       developmentRuntime.milestone('runtime.first_stream_completed', Date.now() - attempt.startedAt);
       if (attempt.resumedInterrupt) developmentRuntime.milestone('interrupt.handled');
     }
-    return attempt.terminalOutcome ?? outcome;
+    return settledOutcome;
   }
 
   /**
@@ -411,6 +454,11 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
    * saying what went wrong beats this generic account), and when the thread is
    * paused, where the interrupt panel is the honest surface and an error banner
    * beside it would be a contradiction.
+   *
+   * This owns only "is this error honest given what is on screen". Whether the
+   * attempt asking is still the one entitled to speak — it settled as something
+   * else, or was aborted — belongs to the caller, which is the only place those
+   * facts are in scope.
    */
   function publishInterruptionError(): void {
     if (subjects.error$.value) return;
@@ -581,9 +629,7 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
    * and the several sites that do so are not overlooking a failure.
    */
   async function refreshHistory(
-    force = false,
-    isRelevant: () => boolean = () => true,
-    suppressError = false,
+    { force = false, isRelevant = () => true, onFailure = 'publish' }: HistoryRefreshOptions = {},
   ): Promise<ThreadState<T>[] | undefined> {
     const getHistory = transport.getHistory?.bind(transport);
     if (!currentThreadId || !getHistory) return undefined;
@@ -596,6 +642,7 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
     subjects.isThreadLoading$.next(true);
 
     let applied: ThreadState<T>[] | undefined;
+    let failure: AgentError | undefined;
     try {
       const history = await waitForHistory(getHistory(threadId, controller.signal), controller.signal);
       if (!controller.signal.aborted && currentThreadId === threadId && isRelevant()) {
@@ -641,8 +688,9 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
         hydrateInterruptsFromHistory(history as ThreadState<T>[], subjects);
       }
     } catch (err) {
-      if (!suppressError && !controller.signal.aborted && isRelevant() && !safeIsAbortError(err)) {
-        subjects.error$.next(toSafeAgentError(err));
+      if (onFailure !== 'ignore' && !controller.signal.aborted && isRelevant() && !safeIsAbortError(err)) {
+        if (onFailure === 'throw') failure = toSafeAgentError(err);
+        else subjects.error$.next(toSafeAgentError(err));
       }
     } finally {
       if (historyAbortController === controller) {
@@ -650,6 +698,7 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
         subjects.isThreadLoading$.next(false);
       }
     }
+    if (failure) throw failure;
     return applied;
   }
 
@@ -1448,9 +1497,22 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
             // holds no AbortController a newer request would clear, so the
             // attempt it was asked about is what identifies its answer.
             const attempt = activeAttempt;
+            const isSameAttempt = () => activeAttempt === attempt;
             const messageCountBeforeRefresh = subjects.messages$.value.length;
-            const refreshed = await refreshHistory(true, () => activeAttempt === attempt, true);
-            if (activeAttempt !== attempt || !refreshed) return;
+            // `throw`, not `publish`: an unreachable server must not overwrite
+            // the `interrupted` error that offered this check, or the user loses
+            // both the explanation and the control. Rejecting hands the caller
+            // something to say while leaving the offer standing.
+            const refreshed = await refreshHistory({
+              force: true,
+              isRelevant: isSameAttempt,
+              onFailure: 'throw',
+            });
+            // Asked again after the await, which is a different instant from
+            // `isRelevant`: a consumer reacting to the projection can start a
+            // newer request in between, and clearing a live run's error and
+            // forcing its status to Idle is not this check's to do.
+            if (!isSameAttempt() || !refreshed) return;
             const finished = collectHistoryInterrupts(refreshed).length > 0
               || subjects.messages$.value.length > messageCountBeforeRefresh;
             if (!finished) return;

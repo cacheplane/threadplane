@@ -4217,6 +4217,17 @@ describe('settling a closed stream from the refreshed history', () => {
     return { transport, subjects, destroy$, bridge };
   }
 
+  /**
+   * Calls the check, asserting the member exists first. Without that assertion a
+   * spec written as `bridge.checkStatus?.()` would keep passing if the member
+   * were removed entirely — it would simply stop testing anything.
+   */
+  function checkStatus(bridge: ReturnType<typeof createStreamManagerBridge>): Promise<void> {
+    expect(bridge.checkStatus).toBeDefined();
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- asserted on the line above
+    return bridge.checkStatus!();
+  }
+
   /** Let the constructor-time (unforced) history refresh land before a test acts. */
   function settled(): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, 0));
@@ -4348,7 +4359,7 @@ describe('settling a closed stream from the refreshed history', () => {
       served = true;
       return held;
     };
-    const checking = bridge.checkStatus?.();
+    const checking = checkStatus(bridge);
 
     // A newer run starts and the stale answer lands while it is still
     // streaming. (A gated generator, because MockAgentTransport's own stream
@@ -4374,6 +4385,9 @@ describe('settling a closed stream from the refreshed history', () => {
     // The stale checkpoint's interrupt must not have been hydrated: interrupt
     // hydration is additive, so nothing else would have undone it.
     expect(subjects.interrupt$.value).toBeUndefined();
+    // And the newer run's own settlement stands, unclouded by the stale answer.
+    expect(subjects.error$.value).toBeUndefined();
+    expect(subjects.status$.value).toBe(ResourceStatus.Resolved);
     destroy$.next();
   });
 
@@ -4381,7 +4395,7 @@ describe('settling a closed stream from the refreshed history', () => {
     const { transport, destroy$, bridge } = setup();
     await settled();
     const run = bridge.submit({});
-    await expect(bridge.checkStatus?.()).rejects.toThrow();
+    await expect(checkStatus(bridge)).rejects.toThrow();
     await transport.close();
     await run;
     destroy$.next();
@@ -4397,7 +4411,7 @@ describe('settling a closed stream from the refreshed history', () => {
     expect(subjects.error$.value).toBeDefined();
 
     transport.history = [stateWithMessages([{ id: 'ai-late', type: 'ai', content: 'finished anyway' }])];
-    await bridge.checkStatus?.();
+    await checkStatus(bridge);
 
     expect(subjects.error$.value).toBeUndefined();
     expect(subjects.status$.value).toBe(ResourceStatus.Idle);
@@ -4414,7 +4428,7 @@ describe('settling a closed stream from the refreshed history', () => {
 
     // The server still reports nothing beyond what was already here, so the
     // outcome is no more certain than before. The check must be offerable again.
-    await bridge.checkStatus?.();
+    await checkStatus(bridge);
 
     expect((subjects.error$.value as AgentError | undefined)?.recovery).toBe('check');
     expect(subjects.status$.value).toBe(ResourceStatus.Error);
@@ -4454,6 +4468,8 @@ describe('settling a closed stream from the refreshed history', () => {
     await settled();
     // Nothing streamed, so nothing reached the server to be duplicated.
     transport.stream = async function* () {
+      // Not a real check: an always-true condition, so TypeScript still sees
+      // the unreachable `yield` and types this as a generator.
       if (transport) {
         const abort = new Error('connection reset');
         abort.name = 'AbortError';
@@ -4468,6 +4484,112 @@ describe('settling a closed stream from the refreshed history', () => {
     expect(error?.kind).toBe('connection');
     expect(error?.retryable).toBe(true);
     expect(error?.recovery).toBeUndefined();
+    destroy$.next();
+  });
+
+  it('does not settle a check that a newer request overtook after the refresh applied', async () => {
+    const { transport, subjects, destroy$, bridge } = setup();
+    await settled();
+
+    const submitted = bridge.submit({});
+    await transport.close();
+    expect(await submitted).toBe('interrupted');
+
+    // A conclusive answer, so ONLY the post-await staleness guard can stop it
+    // from clearing the error and forcing Idle.
+    transport.getHistory = async () =>
+      [stateWithMessages([{ id: 'ai-late', type: 'ai', content: 'finished anyway' }])];
+
+    // The window the post-await guard covers, and the reason it is not merely a
+    // second copy of `isRelevant`: a consumer reacting to the projection starts
+    // a newer request between the refresh writing and the check settling.
+    let finishNext!: () => void;
+    const gate = new Promise<void>(resolve => { finishNext = resolve; });
+    transport.stream = async function* () {
+      await gate;
+      yield { type: 'values', data: { done: true } } as StreamEvent;
+    };
+    const subscription = subjects.history$.subscribe(history => {
+      if (history.length > 0) void bridge.submit({});
+    });
+
+    await checkStatus(bridge);
+
+    // A newer run owns the signals now: it is loading, and the check must not
+    // have reached past it to clear its error or idle its status.
+    expect(subjects.status$.value).toBe(ResourceStatus.Loading);
+    subscription.unsubscribe();
+    finishNext();
+    await settled();
+    destroy$.next();
+  });
+
+  it('rejects a status check the server could not answer, leaving the offer standing', async () => {
+    const { transport, subjects, destroy$, bridge } = setup();
+    await settled();
+
+    const submitted = bridge.submit({});
+    await transport.close();
+    expect(await submitted).toBe('interrupted');
+    const before = subjects.error$.value;
+
+    transport.getHistory = async () => { throw new Error('history unreachable'); };
+
+    // Silence would be indistinguishable from "the server has nothing new".
+    await expect(checkStatus(bridge)).rejects.toThrow();
+    // And the interrupted error still stands, so the check can be offered again.
+    expect(subjects.error$.value).toBe(before);
+    expect((subjects.error$.value as AgentError | undefined)?.recovery).toBe('check');
+    destroy$.next();
+  });
+
+  it('says nothing when the user stops the run during the close-time refresh', async () => {
+    const { transport, subjects, destroy$, bridge } = setup();
+    await settled();
+
+    // Hold the close-time refresh open so Stop lands inside its window — the
+    // window stop() explicitly aborts `historyAbortController` for.
+    let release!: (history: ThreadState[]) => void;
+    transport.getHistory = () => new Promise<ThreadState[]>(resolve => { release = resolve; });
+
+    const submitted = bridge.submit({});
+    await transport.close();
+    await settled();
+
+    await bridge.stop();
+    release([]);
+    await submitted;
+
+    // The user asked for this. Telling them their connection dropped, beside an
+    // idle status, would be a lie about their own decision.
+    expect(subjects.error$.value).toBeUndefined();
+    expect(subjects.status$.value).toBe(ResourceStatus.Idle);
+    destroy$.next();
+  });
+
+  it('stays silent when a pause from an earlier turn is still on screen', async () => {
+    const { transport, subjects, destroy$, bridge } = setup();
+    await settled();
+
+    // Turn one pauses on the wire. A wire pause settles its own attempt as
+    // `paused`, so the lingering interrupt — not that attempt — is what reaches
+    // the interruption publisher on the NEXT turn.
+    transport.stream = async function* () {
+      yield { type: 'interrupt', interrupt: { value: { question: 'ok?' } } } as unknown as StreamEvent;
+    };
+    await bridge.submit({});
+    expect(subjects.interrupt$.value).toBeDefined();
+
+    // Turn two dies with no events, and its diagnostic refresh fails too, so
+    // nothing clears or re-confirms the pause.
+    transport.stream = async function* () { yield* []; };
+    transport.getHistory = async () => { throw new Error('history unreachable'); };
+    await bridge.submit(null, { command: { resume: true } });
+
+    // The interrupt panel is on screen. An error banner beside it would
+    // contradict it.
+    expect(subjects.interrupt$.value).toBeDefined();
+    expect(subjects.error$.value).toBeUndefined();
     destroy$.next();
   });
 
