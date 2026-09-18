@@ -27,6 +27,41 @@
 .hero-heading-line {
   display: block;
 }
+/* Phone width. Two coupled parts, both required:
+ *
+ * 1. font-size. --text-h1 is `clamp(48px, 6vw, 72px)` in the shared
+ *    design-tokens theme. At 375px, 6vw is 22.5px, so the clamp FLOOR of 48px
+ *    is what renders — at which "thread-plane" alone nearly fills the 335px
+ *    column. The token is shared by many pages, so the override lives here on
+ *    .hero-heading rather than in the token.
+ * 2. display: inline. The spans are the desktop and social-card line-breaking.
+ *    Left as blocks at phone width each one is given a line and then wraps
+ *    again. Flowed, the browser breaks the sentence to the column instead.
+ *
+ * Measured at 375x812, against two different baselines — both are real, so be
+ * precise about which one you mean:
+ *   - What production shipped, with the shorter pre-Angular H1 and blocks:
+ *     4 lines, 207px.
+ *   - What the current H1 would be with blocks and no font-size override:
+ *     6 lines, 311px — all three spans wrap, not just the first.
+ *   - What this rule produces: 3 lines, 117px.
+ * So this reclaims ~194px (~24% of an 812px fold) against the copy that now
+ * ships. e2e/home-hero.spec.ts budgets it absolutely once Task 4 lands.
+ *
+ * line-height is pinned rather than inherited on purpose: font-size no longer
+ * comes from --text-h1 here, so leaving the ratio on --text-h1--line-height
+ * would couple this block to a token it otherwise ignores. It resolves to the
+ * same 1.08 today.
+ */
+@media (max-width: 767px) {
+  .hero-heading {
+    font-size: 36px;
+    line-height: 1.08;
+  }
+  .hero-heading-line {
+    display: inline;
+  }
+}
 .hero-subhead {
   font-family: var(--font-sans);
   font-size: var(--text-body-lg);
