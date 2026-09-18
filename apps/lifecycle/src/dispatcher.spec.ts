@@ -78,6 +78,16 @@ function dependencies(
       createdJobs: 0,
     }),
     enqueueInstallDigestJob: vi.fn().mockResolvedValue(null),
+    processObservations: vi.fn().mockResolvedValue({
+      completed: 0,
+      leaseLost: 0,
+      retryScheduled: 0,
+      failed: 0,
+      disabled: false,
+    }),
+    projectFormObservations: vi
+      .fn()
+      .mockResolvedValue({ projected: 0, disabled: false }),
     now: vi.fn(() => NOW),
     renewJobLease: vi
       .fn()
@@ -825,6 +835,106 @@ describe('dispatchLifecycleJobs', () => {
     expect(paused.recoveryPaused).toBe(true);
     expect(resumed.recoveryPaused).toBe(false);
     expect(dispatchLeasedJob).toHaveBeenCalledTimes(2);
+  });
+
+  it('projects observations and form links before enrollment when the switch is on', async () => {
+    const deps = dependencies();
+    await dispatchLifecycleJobs(
+      {
+        batchSize: 10,
+        campaignEnabled: true,
+        campaignEnrollmentEnabled: true,
+        campaignEnrollmentStartAt: NOW,
+        observationProcessingEnabled: true,
+        signal: new AbortController().signal,
+      },
+      deps
+    );
+    expect(deps.processObservations).toHaveBeenCalledOnce();
+    expect(deps.processObservations).toHaveBeenCalledWith(expect.anything(), {
+      enabled: true,
+      limit: 10,
+      now: deps.now,
+    });
+    expect(deps.projectFormObservations).toHaveBeenCalledOnce();
+    expect(deps.projectFormObservations).toHaveBeenCalledWith(
+      expect.anything(),
+      { enabled: true, limit: 10, now: deps.now }
+    );
+    const order = (fn: unknown): number =>
+      (fn as { mock: { invocationCallOrder: number[] } }).mock
+        .invocationCallOrder[0];
+    expect(order(deps.processObservations)).toBeLessThan(
+      order(deps.materializeCampaignEnrollment)
+    );
+    expect(order(deps.projectFormObservations)).toBeLessThan(
+      order(deps.materializeCampaignEnrollment)
+    );
+  });
+
+  it.each([undefined, false])(
+    'projects no observations when the switch is %s',
+    async (observationProcessingEnabled) => {
+      const deps = dependencies();
+      await dispatchLifecycleJobs(
+        {
+          batchSize: 10,
+          campaignEnabled: true,
+          observationProcessingEnabled,
+          signal: new AbortController().signal,
+        },
+        deps
+      );
+      expect(deps.processObservations).not.toHaveBeenCalled();
+      expect(deps.projectFormObservations).not.toHaveBeenCalled();
+    }
+  );
+
+  it('clamps the observation batch to the dispatcher maximum, well under the projection cap of 100', async () => {
+    const deps = dependencies();
+    await dispatchLifecycleJobs(
+      {
+        batchSize: 25,
+        campaignEnabled: false,
+        observationProcessingEnabled: true,
+        signal: new AbortController().signal,
+      },
+      deps
+    );
+    for (const fn of [deps.processObservations, deps.projectFormObservations]) {
+      const limit = (
+        fn as unknown as { mock: { calls: [unknown, { limit: number }][] } }
+      ).mock.calls[0][1].limit;
+      expect(limit).toBe(25);
+      expect(limit).toBeLessThanOrEqual(100);
+    }
+  });
+
+  it('still leases and dispatches jobs when observation projection fails, and reports it to operators', async () => {
+    const job = leasedJob('00000000-0000-4000-8000-0000000000ab');
+    const deps = dependencies({
+      processObservations: vi
+        .fn()
+        .mockRejectedValue(new Error('projection exploded')),
+      leaseDueJobs: vi.fn().mockResolvedValue([job]),
+    });
+    const result = await dispatchLifecycleJobs(
+      {
+        batchSize: 10,
+        campaignEnabled: true,
+        observationProcessingEnabled: true,
+        signal: new AbortController().signal,
+      },
+      deps
+    );
+    expect(deps.leaseDueJobs).toHaveBeenCalledOnce();
+    expect(deps.dispatchLeasedJob).toHaveBeenCalledOnce();
+    expect(deps.projectFormObservations).toHaveBeenCalledOnce();
+    expect(result).toMatchObject({
+      leased: 1,
+      dispatched: 1,
+      operatorAlerts: ['observation_projection_failed'],
+    });
   });
 });
 

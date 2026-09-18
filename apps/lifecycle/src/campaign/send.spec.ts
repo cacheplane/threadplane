@@ -931,6 +931,29 @@ describe('loadLifecycleRuntimeConfiguration', () => {
     ).toThrow('GROWTH_INSTALL_DIGEST_ENABLED must be exactly true or false');
   });
 
+  it('enables observation projection only with the exact configured boolean', () => {
+    expect(loadLifecycleRuntimeConfiguration({})).toMatchObject({
+      observationProcessingEnabled: false,
+    });
+    expect(
+      loadLifecycleRuntimeConfiguration({
+        GROWTH_OBSERVATION_PROCESSING_ENABLED: 'true',
+      })
+    ).toMatchObject({ observationProcessingEnabled: true });
+    expect(
+      loadLifecycleRuntimeConfiguration({
+        GROWTH_OBSERVATION_PROCESSING_ENABLED: 'false',
+      })
+    ).toMatchObject({ observationProcessingEnabled: false });
+    expect(() =>
+      loadLifecycleRuntimeConfiguration({
+        GROWTH_OBSERVATION_PROCESSING_ENABLED: '1',
+      })
+    ).toThrow(
+      'GROWTH_OBSERVATION_PROCESSING_ENABLED must be exactly true or false'
+    );
+  });
+
   it('enables install-runtime hello only with the exact configured boolean', () => {
     expect(
       loadLifecycleRuntimeConfiguration({
