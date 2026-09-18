@@ -101,6 +101,74 @@ counts, breakdowns and missing results `Unavailable`. An analytics contract
 failure does not itself prove a lifecycle delivery failure. See the
 [dashboard inventory and measurement limits](../../tools/posthog/README.md#current-growth-dashboards).
 
+## Website analytics configuration
+
+Two PostHog settings that change what the website measures live only in the
+project UI. Neither is in this repository, and `tools/posthog/` does not sync
+them. They have opposite precedence against `apps/website/instrumentation-client.ts`:
+
+| Setting | Precedence | posthog-js resolution |
+| --- | --- | --- |
+| `autocapture_opt_out` | **Project wins.** Client config cannot re-enable autocapture. | `!!config.autocapture && !remoteOptOut` |
+| `capture_performance.web_vitals` | **Client wins** when it sets an explicit boolean. Today the deployed client sets no `capture_performance` key at all, so it falls through to the remote value (`false`). | `isBoolean(clientValue) ? clientValue : remoteValue` |
+
+Read the live values rather than trusting either source:
+
+```bash
+curl -s "https://threadplane.ai/ingest/array/<NEXT_PUBLIC_POSTHOG_TOKEN>/config.js"
+```
+
+The client half is pinned by `apps/website/instrumentation-client.spec.ts`,
+which asserts literal values — `capture_pageview` must equal the string
+`'history_change'`, because `true` is truthy and is exactly the bug that spec
+exists to prevent.
+
+### Bounce rate baseline, pre-cutover
+
+PostHog decides a bounce with
+`NOT (page_screen_count >= 2 OR has_autocapture OR session_duration >= 10s)`.
+Only the duration branch works today, so the figures below mean
+"share of sessions that ended within 10 seconds". Entry pathname `/`.
+`$is_bounce` is NULL for sessions with no pageview, and PostHog excludes those
+from the bounce denominator — so **Sessions** and **Sessions scored** count
+different populations. Dividing the bounce count by **Sessions** instead of
+**Sessions scored** understates the rate: 55.6% instead of 65.4% for 2026-08.
+
+| Month | Sessions | Sessions scored | Bounce | ±95% CI | Zero-duration | Median duration |
+| --- | --- | --- | --- | --- | --- | --- |
+| 2026-05 | 186 | 171 | 82.5% | ±5.70pp | 43.0% | 1.0s |
+| 2026-06 | 160 | 158 | 79.1% | ±6.34pp | 37.5% | 2.0s |
+| 2026-07 | 176 | 168 | 86.9% | ±5.10pp | 44.9% | 2.0s |
+| 2026-08 | 180 | 153 | 65.4% | ±7.54pp | 25.6% | 3.0s |
+| 2026-09 | 161 | 144 | 50.0% | ±8.17pp | 18.0% | 6.0s |
+
+Window pinned 2026-05-01 to 2026-09-18; September is a partial month.
+
+**The series will break once both the pageview fix ships and the project
+setting flips — it has not yet.** Restoring the other two `$is_bounce`
+branches lowers the rate on unchanged traffic, but today neither precondition
+holds: the deployed bundle still ships `capture_pageview: !0` (truthy, not
+`'history_change'`), and the remote config still returns
+`"autocapture_opt_out": true`. The break date is whichever of the two ships
+second, not 2026-09-18. Do not compare across that date once it happens.
+
+**The volume does not support fine comparisons.** At ~160 homepage sessions per
+month a ±8.17pp interval cannot separate 50.0% from 59%. Judging a homepage
+change on this metric needs a much longer accumulation window, or more traffic.
+
+Two limits this baseline exposed. `$pageleave` is missing from 17–20% of
+sessions in the four browsers with samples large enough to read: Chrome
+Desktop (17.2%), Safari Desktop (19.6%), Mobile Safari (20.0%), and Chrome
+Mobile (3 of 16 sessions, 18.8% — a single extra session would move this to
+25.0%). Other
+browsers in the same result set, such as Firefox Desktop (3 of 3 missing) and
+Edge Desktop (0 of 3 missing), have samples too small to read. Those missing
+sessions collapse to zero duration and become automatic bounces; the
+zero-duration share tracks the bounce rate month over month. And 89% of
+homepage entries are Direct (143 of the 161 September sessions, 54.3% bounce)
+against 15 Organic Search sessions at 13.3% bounce, so the headline figure is
+mostly a statement about untagged traffic.
+
 ## Contributor checks
 
 Use project-scoped Nx tests, lint and builds. Changes to company primitives must
