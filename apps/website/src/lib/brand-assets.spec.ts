@@ -74,6 +74,11 @@ const COLOUR_SCANNED_ASSETS = [
   'apps/website/public/blog/diagrams/agent-contract-boundary.svg',
   'apps/website/public/blog/diagrams/langgraph-threads-and-runs.svg',
   'apps/website/public/assets/arch-diagram.svg',
+  // Not a README or an SVG, and so invisible to the census that produced this
+  // list: it was run with --include="*.md" --include="*.svg". This module is
+  // the palette for the cards the X channel adapter embeds in `Draft.media`,
+  // so a retired hex here ships in live public post media.
+  'marketing/assets/src/brand.ts',
 ];
 
 describe('brand assets carry current colours', () => {
