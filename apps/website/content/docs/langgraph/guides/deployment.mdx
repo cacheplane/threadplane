@@ -315,7 +315,7 @@ export async function submitWithBackoff(
 }
 ```
 
-The `retryable` check is what keeps a wrong API key from being retried three times.
+The `retryable` check is what keeps a wrong API key from being retried three times. It matters more than that in an automated loop: an `interrupted` error is never retryable, because the server may already have begun answering, so the guard is also what stops a backoff loop from sending the same tool call or booking three times.
 
 ## Stream recovery
 
