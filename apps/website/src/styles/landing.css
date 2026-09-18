@@ -1998,11 +1998,17 @@
  * the poster promised rather than a 16:9 letterbox.
  *
  * The breakpoint is shared two ways and must move as one: this ratio and the
- * <source media> in HeroDemo.tsx. MIN_AUTOPLAY_WIDTH is no longer part of it —
+ * <source media> in HeroDemo.tsx. The RATIO is shared three ways — here,
+ * POSTER_MOBILE_W/H in HeroDemo.tsx, and the recorder's capture viewport.
+ * MIN_AUTOPLAY_WIDTH is no longer part of it —
  * the iframe autoplays at every width now. */
 @media (max-width: 767px) {
   .hero-demo-stage {
-    aspect-ratio: 3 / 5;
+    /* 195/263 is 390x526, the phone poster's capture geometry — not a round
+       number and not meant to be. It was 3:5 until the recorded walkthrough
+       started streaming a backup table taller than the frame; see
+       record-hero-poster-mobile.record.ts for how the height is derived. */
+    aspect-ratio: 195 / 263;
   }
   /* The phone poster shows the demo's whole frame, right down to its own
      "Take control ↗" button — which lands 20-29px above the stage floor and
