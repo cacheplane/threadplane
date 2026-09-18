@@ -190,7 +190,7 @@ describe('prepareCampaignMessage', () => {
       });
       if (prepared.status !== 'ready') throw new Error('expected ready');
       expect(prepared.text).toContain(unsubscribeActionUrlValue(UNSUBSCRIBE));
-      expect(prepared.text).toContain('\n\n—\nBrian\n');
+      expect(prepared.text).toContain('\n\nBrian\n\n--\n');
       if (step === 3)
         expect(prepared.text).toContain('This is my last automated follow-up.');
     }
@@ -267,49 +267,44 @@ describe('prepareCampaignMessage', () => {
     }
   });
 
-  it.each([1, 2, 3] as const)(
+  it('always opens with the fixed introduction, even when research is available', () => {
+    const prepared = prepareCampaignMessage({
+      context: context(),
+      job: job('send_step', { campaign_version: 'v1', step: 1 }),
+      unsubscribeUrl: UNSUBSCRIBE,
+    });
+
+    expect(prepared).toMatchObject({
+      status: 'ready',
+      subject: 'Engineer to engineer',
+      template: 'immediate',
+    });
+    if (prepared.status !== 'ready') throw new Error('expected ready');
+    expect(prepared.text).toContain('Saw you were checking out threadplane');
+    expect(prepared.text).not.toContain(FOUNDER_BOOKING_URL);
+  });
+
+  it.each([
+    [2, 'Three checks when the UI stalls', 'debugging_layers'],
+    [3, 'One boundary that makes agent UIs testable', 'event_state_boundary'],
+  ] as const)(
     'maps the validated research angle at index %i to only that fixed step',
-    (step) => {
+    (step, subject, template) => {
       const prepared = prepareCampaignMessage({
         context: context(),
         job: job('send_step', { campaign_version: 'v1', step }),
         unsubscribeUrl: UNSUBSCRIBE,
       });
 
-      expect(prepared).toMatchObject({
-        status: 'ready',
-        subject: [
-          'Streaming first, then the rest',
-          'Three checks when the UI stalls',
-          'One boundary that makes agent UIs testable',
-        ][step - 1],
-        template: [
-          'streaming_foundation',
-          'debugging_layers',
-          'event_state_boundary',
-        ][step - 1],
-      });
+      expect(prepared).toMatchObject({ status: 'ready', subject, template });
       if (prepared.status !== 'ready') throw new Error('expected ready');
       expect(prepared.text).toContain(
-        '\n\n—\nBrian\n\nIs this email not relevant to you? Stop here: '
+        '\n\nBrian\n\n--\n\nYou can unsub here: '
       );
       expect(prepared.text).toContain(unsubscribeActionUrlValue(UNSUBSCRIBE));
       expect(prepared.text).not.toContain('ada@example.com');
     }
   );
-
-  it('sends the streaming-flavored offer as step one when research is cited', () => {
-    expect(
-      prepareCampaignMessage({
-        context: context(),
-        job: job('send_step', { campaign_version: 'v1', step: 1 }),
-        unsubscribeUrl: UNSUBSCRIBE,
-      })
-    ).toMatchObject({
-      status: 'ready',
-      subject: 'Streaming first, then the rest',
-    });
-  });
 
   it('sends step one immediately without waiting for a research artifact', () => {
     expect(
@@ -329,13 +324,14 @@ describe('prepareCampaignMessage', () => {
     });
     const unsubscribeUrl = unsubscribeActionUrlValue(UNSUBSCRIBE);
 
-    expect(prepared.html).toContain(
-      `here:<br><a href="${FOUNDER_BOOKING_URL}">${FOUNDER_BOOKING_URL}</a></p>`
-    );
-    expect(prepared.html).toContain('<p>—<br>Brian</p>');
+    // Step one carries no booking link, so the unsubscribe anchor is the only
+    // anchor in the message.
+    expect(prepared.html).not.toContain(FOUNDER_BOOKING_URL);
+    expect(prepared.html.match(/<a\b/gu) ?? []).toHaveLength(1);
+    expect(prepared.html).toContain('<p>Brian</p>\n<p>--</p>');
     expect(
       prepared.html.endsWith(
-        `<p>Is this email not relevant to you? Click <a href="${unsubscribeUrl}">here</a>.</p>`
+        `<p>You can unsub <a href="${unsubscribeUrl}">here</a>.</p>`
       )
     ).toBe(true);
     expect(prepared.html.split(unsubscribeUrl)).toHaveLength(2);
@@ -343,9 +339,7 @@ describe('prepareCampaignMessage', () => {
       /<(?:img|script|style|div|span|table)\b/iu
     );
     expect(prepared.html).toContain(`href="${unsubscribeUrl}">here</a>`);
-    expect(prepared.text).toContain(
-      `Is this email not relevant to you? Stop here: ${unsubscribeUrl}`
-    );
+    expect(prepared.text).toContain(`You can unsub here: ${unsubscribeUrl}`);
   });
 
   it('escapes body text and keeps only bare links as anchors in the HTML part', () => {
@@ -487,8 +481,8 @@ describe('dispatchLifecycleAppOwnedJob', () => {
         jobId: send.id,
         leaseToken: LEASE_TOKEN,
         subject: 'Engineer to engineer',
-        text: expect.stringContaining('Stop here: '),
-        html: expect.stringContaining('Click <a href="'),
+        text: expect.stringContaining('You can unsub here: '),
+        html: expect.stringContaining('You can unsub <a href="'),
         unsubscribeUrl: UNSUBSCRIBE,
         campaignTemplate: 'immediate',
       }),
@@ -1196,12 +1190,7 @@ describe('install digest jobs', () => {
       publicActionOrigin: 'https://preview.example',
     });
     await expect(
-      dispatchLifecycleAppOwnedJob(
-        transactionalExecutor(),
-        digest(),
-        {},
-        deps
-      )
+      dispatchLifecycleAppOwnedJob(transactionalExecutor(), digest(), {}, deps)
     ).resolves.toBe('completed');
     const text = (deps.sendInternalNotification as ReturnType<typeof vi.fn>)
       .mock.calls[0][0].text as string;

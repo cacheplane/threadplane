@@ -180,7 +180,11 @@ export function normalizeCampaignDraft(candidate: unknown): CampaignDraft {
 const CAMPAIGN_TEMPLATES: Record<CampaignStep, CampaignDraft> = {
   immediate: {
     subject: 'Engineer to engineer',
-    body: `A lot of teams hit the same point.\nThe idea is clear.\nGetting it working cleanly in production is where things get messy.\n\nI am the founding engineer, and I am offering short engineer-to-engineer sessions to think through implementation, unblock technical questions, and avoid the common mistakes.\n\nNo sales pitch.\nJust a practical conversation about your use case and what it would take to get it working.\n\nYou can grab a time here:\n${FOUNDER_BOOKING_URL}`,
+    // Step one carries no link at all. A booking URL in a first cold message is
+    // a deliverability risk, so the call to action is a reply. This step also
+    // says why the recipient is hearing from us; the later steps do not repeat
+    // it. Unlike them it uses the founder's conversational register.
+    body: `Saw you were checking out threadplane and wanted to drop a quick note.\n\nI'm the founding engineer and I am offering short engineer-to-engineer sessions to think through implementation, unblock technical questions, and avoid the common mistakes. No sales, just getting you going.\n\nLet me know if you're interested.`,
   },
   'day-3': {
     subject: 'Get your agent UI into production',

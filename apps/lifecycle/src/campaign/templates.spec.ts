@@ -14,7 +14,7 @@ function wordCount(value: string): number {
 
 describe('renderCampaignTemplate', () => {
   it.each([
-    ['immediate', 'Engineer to engineer', 0, 1],
+    ['immediate', 'Engineer to engineer', 0, 0],
     ['day-3', 'Get your agent UI into production', 0, 1],
     ['day-8', 'Free engineering session with the Threadplane founder', 0, 1],
   ] as const)(
@@ -33,15 +33,22 @@ describe('renderCampaignTemplate', () => {
     }
   );
 
-  it('opens with a founder session offer that links only to the booking page', () => {
+  it('opens with a founder session offer that carries no link and asks for a reply', () => {
     const message = renderCampaignTemplate('immediate');
 
     expect(
-      message.body.endsWith(`You can grab a time here:\n${FOUNDER_BOOKING_URL}`)
+      message.body.startsWith('Saw you were checking out threadplane')
     ).toBe(true);
-    expect(message.body).toContain('No sales pitch.');
-    expect(message.body).not.toMatch(/\b(?:I saw you|checked out)\b/iu);
-    expect(message.body).not.toMatch(/\b\w+'\w+\b/u);
+    expect(message.body.endsWith("Let me know if you're interested.")).toBe(
+      true
+    );
+    expect(message.body).toContain('No sales, just getting you going.');
+    // A booking URL in a first cold message is a deliverability risk, so the
+    // call to action is a reply and the step carries no link at all.
+    expect(message.body).not.toMatch(/https?:\/\//u);
+    expect(message.body).not.toMatch(/\bI saw you\b/iu);
+    // Steps two and three stay contraction-free; step one is deliberately the
+    // founder's own conversational register.
   });
 
   it('follows up with a hands-on session offer that links only to the booking page', () => {
