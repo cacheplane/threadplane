@@ -436,6 +436,42 @@ function createAgentAdapter(
     });
   }
 
+  /**
+   * One read-only reconciliation after an unexpected close. Never resubmits and
+   * never repeats. Applies its result only while `run` is still the active run,
+   * so a late answer cannot overwrite a newer request. A throw or a null record
+   * leaves the error in place with `recovery: 'check'`, so the user can ask again.
+   *
+   * The raw four-value status is not visible here: `InterruptPersistence`
+   * validates the answer and hands back the written record, so the outcome is
+   * read off `session.phase`. `acknowledged` means the server received and
+   * started the resume, not that it finished, so it stays uncertain.
+   */
+  async function verifyClosedRun(run: AdapterRun): Promise<void> {
+    if (!persistence || disposed || reconciling()) return;
+    reconciling.set(true);
+    let record: AgUiThreadRecord | null = null;
+    try {
+      await persistenceWrites.catch(() => undefined);
+      record = await persistence.reconcile();
+    } catch {
+      return;
+    } finally {
+      reconciling.set(false);
+    }
+    if (disposed || activeRun !== run || !record) return;
+
+    const phase = record.session.phase;
+    if (phase !== 'none' && phase !== 'pending') return;
+
+    hydrate(record);
+    persistenceFault = undefined;
+    persistenceWrites = Promise.resolve();
+    store.status.set('idle');
+    store.isLoading.set(false);
+    store.error.set(undefined);
+  }
+
   function settleTransportClose(run: AdapterRun): void {
     if (run.outcome === undefined) {
       if (run.finishedReceived) {
@@ -460,11 +496,12 @@ function createAgentAdapter(
           interrupts.fail(run.resumeAttempt.id, false);
           publishInterrupt();
         }
+        const error = interruptionError(run);
         finalizeDeliveryRun(store, run, 'interrupted');
         if (activeRun === run) {
           store.status.set('error');
           store.isLoading.set(false);
-          store.error.set(interruptionError(run));
+          store.error.set(error);
         }
         // The partial message and its `interrupted` delivery are the evidence
         // the error points at, so they have to survive a reload.
@@ -474,6 +511,11 @@ function createAgentAdapter(
         const interruption = new Error('Stream closed without a terminal event');
         interruption.name = 'InterruptedError';
         failRunTelemetry(interruption, run);
+        // Only the error we just published decides this. Offering `retry` or
+        // `none` and then calling anyway would make a call we told the user we
+        // could not make, and the reconciler can only answer about an interrupt
+        // session in the first place.
+        if (error.recovery === 'check') void verifyClosedRun(run);
       }
     }
     finishRunTelemetry(run);
@@ -739,6 +781,22 @@ function createAgentAdapter(
         reconciling.set(false);
       }
     },
+    // Only a configured reconciler can answer authoritatively; without one
+    // InterruptPersistence.reconcile() throws outright, so offering the control
+    // would promise an answer the adapter cannot get.
+    ...(options.persistence?.reconcile !== undefined
+      ? {
+          checkStatus: async (): Promise<void> => {
+            if (disposed) throw new Error('Agent has been disposed');
+            if (activeRun && activeRun.outcome === undefined) {
+              throw new Error('Stop the active request before checking status');
+            }
+            const run = activeRun;
+            if (!run) return;
+            await verifyClosedRun(run);
+          },
+        }
+      : {}),
     interruptSession: interruptSession.asReadonly(),
     isInputBlocked: computed(() => !hydrated() || reconciling() || interruptSession().phase !== 'none'),
     dispose: () => {
