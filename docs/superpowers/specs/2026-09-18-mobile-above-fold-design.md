@@ -80,8 +80,13 @@ wrapping, sweeping `font-size` against candidate wordings:
 | `Angular's open-source thread-plane for agents.` | 4L | 4L | 3L / 117px |
 
 At 36px every candidate is three lines. The H1 can therefore gain a word and
-still reclaim 90px of fold — 11% of a 812px viewport. **The type size, not the
-wording, is the binding constraint.** No wording change fixes defect 1 at 48px.
+still shrink. **The type size, not the wording, is the binding constraint.** No
+wording change fixes defect 1 at 48px.
+
+The table's 48px column is measured against the shipped 3-span block layout, in
+which each span gets its own line before wrapping. §5.2 also flows the spans
+inline below 767px, so the real post-change figure is the 36px column: three
+lines, 117px. See §5.2 for the two baselines this is measured against.
 
 ## 4. Resolving the messaging drift
 
@@ -172,7 +177,17 @@ Tailwind utilities win — see the file header):
 }
 ```
 
-Desktop is untouched. This is the load-bearing change: 207px → 117px.
+Desktop is untouched. This is the load-bearing change.
+
+Be precise about the baseline, because there are two and both are real. The
+4-line / 207px figure in §2 and §3 is what **production shipped**, measured
+against the shorter pre-Angular H1. Once §5.1 lengthens the H1, the same
+block-span layout at the 48px clamp floor is **6 lines / 311px** — all three
+spans wrap, not just the first. Against the copy that now ships, this rule
+therefore reclaims ~194px (~24% of an 812px fold), not 90px.
+
+(Confirmed in-browser after §5.1 landed: 116.63px, three lines, with
+`[data-hero-demo]` at y=501.42.)
 
 Two coupled parts, and both are needed:
 
@@ -235,8 +250,10 @@ Recording command is in the recorder's header.
   budgets, not comparisons against whatever currently renders:
   - `.hero-heading` height **≤ 130px** (three lines at 36px/1.08 measure 117px;
     13px of headroom absorbs font-loading and metric variance).
-  - `.hero-demo-stage` top offset **≤ 560px** (projected ~502px after the 90px
-    reclaim, against an 812px fold).
+  - `[data-hero-demo]` top offset **≤ 560px**. Measured at 501.42px after §5.2
+    landed, against an 812px fold. Measure `[data-hero-demo]`, not
+    `.hero-demo-stage` — the stage sits ~48px lower inside the BrowserFrame
+    chrome, so budgeting it at 560 would be a far tighter guard than intended.
 
   Budgeting absolutely rather than relatively is deliberate, per
   `feedback_guard_coupled_to_moving_artifact`: a guard that compares against the
