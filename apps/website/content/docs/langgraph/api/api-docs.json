@@ -1457,6 +1457,12 @@
         "optional": false
       },
       {
+        "name": "checkStatus",
+        "type": "() => Promise<void>",
+        "description": "Optional read-only reconciliation of an uncertain run outcome, offered when\n`error().recovery === 'check'`. Asks the backend what happened.\n\nThe answer arrives on the signals, not in the return value: a run the\nbackend reports as finished clears `error` and returns `status` to idle,\nand any messages it committed appear on `messages`. An outcome that stays\nunknown leaves the existing error in place, so the caller can offer the\ncheck again later.\n\nAdapters implementing this must not resubmit the operation and must not\nappend a message; a dropped stream is not proof that the server did\nnothing. They should reject while a request is in flight, and must discard\na result that resolves after a newer request has started.",
+        "optional": true
+      },
+      {
         "name": "clientTools",
         "type": "ClientToolsCapability",
         "description": "Client-declared, client-executed tools. Call setCatalog() to register\ntool specs; the catalog is automatically shipped with every run via\n`input.client_tools`. Pending tool calls appear in pending() after\nthe run ends; resolve() returns a result and continues the run.",
@@ -1895,6 +1901,12 @@
         "type": "WritableSignal<string>",
         "description": "Current branch identifier for time-travel navigation.",
         "optional": false
+      },
+      {
+        "name": "checkStatus",
+        "type": "() => Promise<void>",
+        "description": "Optional read-only reconciliation of an uncertain run outcome, offered when\n`error().recovery === 'check'`. Asks the backend what happened.\n\nThe answer arrives on the signals, not in the return value: a run the\nbackend reports as finished clears `error` and returns `status` to idle,\nand any messages it committed appear on `messages`. An outcome that stays\nunknown leaves the existing error in place, so the caller can offer the\ncheck again later.\n\nAdapters implementing this must not resubmit the operation and must not\nappend a message; a dropped stream is not proof that the server did\nnothing. They should reject while a request is in flight, and must discard\na result that resolves after a newer request has started.",
+        "optional": true
       },
       {
         "name": "clientTools",

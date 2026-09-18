@@ -103,7 +103,7 @@ These fields are stable across runtime adapters and are what chat components con
 | `messages()` | `Message[]` | Runtime-neutral chat messages with `role`, `content`, optional `toolCallId`, citations, reasoning, and raw extras. |
 | `status()` | `'idle' \| 'running' \| 'error'` | UI lifecycle status. LangGraph loading and reloading both map to `running`. |
 | `isLoading()` | `boolean` | Convenience signal for active streaming. |
-| `error()` | `AgentError \| undefined` | Structured, classified failure — carries `kind`, `retryable`, `status`, and `cause`. |
+| `error()` | `AgentError \| undefined` | Structured, classified failure — carries `kind`, `retryable`, `status`, and `cause`, plus `recovery` and `detail` on an `interrupted` error. |
 | `toolCalls()` | `ToolCall[]` | Tool calls projected into the chat contract. |
 | `state()` | `Record<string, unknown>` | Latest state values projected as a plain object. |
 | `submit(input, opts?)` | `Promise<void>` | Submit a user message, resume payload, and/or state patch. |
@@ -115,6 +115,7 @@ These fields are stable across runtime adapters and are what chat components con
 | `history()` | `AgentCheckpoint[]` | Checkpoint history for the active thread, from the `AgentWithHistory` sub-contract. |
 | `events$` | `Observable<AgentEvent>` | Events that are not derivable from the signals above. |
 | `clientTools` | `ClientToolsCapability \| undefined` | Optional client-declared, client-executed tool registry. |
+| `checkStatus?()` | `Promise<void>` | Read-only reconciliation of an uncertain run outcome, present only when the transport can read thread history. Offered when `error().recovery` is `check`; resubmits nothing and appends no message. |
 
 ## LangGraph-specific surface
 

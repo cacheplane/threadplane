@@ -72,7 +72,7 @@ runInterruptConformance('toAgent (AG-UI adapter)', () => {
     },
     addMessage(message: { content: string }) { this.messages.push(message); },
     abortRun() { /* Local transport abort does not cancel a backend checkpoint. */ },
-    async runAgent(parameters?: { resume?: Array<{ payload: unknown }>; forwardedProps?: { command?: { resume?: unknown } } }) {
+    async runAgent(parameters?: { runId?: string; resume?: Array<{ payload: unknown }>; forwardedProps?: { command?: { resume?: unknown } } }) {
       requests.push({
         resume: parameters?.resume ?? parameters?.forwardedProps?.command?.resume,
         state: { ...this.state },
@@ -82,7 +82,9 @@ runInterruptConformance('toAgent (AG-UI adapter)', () => {
         fail = false;
         throw Object.assign(new Error('Known failure before dispatch'), { requestNotDispatched: true });
       }
-      const runId = `run-${++runNumber}`;
+      // A real AG-UI server echoes the runId it was handed (resume carries one),
+      // so the adapter can attribute the run's terminal event back to it.
+      const runId = parameters?.runId ?? `run-${++runNumber}`;
       for (const sub of subscribers) sub.onRunInitialized?.({ input: { runId } });
       // Capture callbacks before unsubscribe to model queued SDK delivery.
       const runSubscribers = [...subscribers];

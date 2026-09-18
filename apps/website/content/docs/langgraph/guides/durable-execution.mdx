@@ -97,11 +97,13 @@ The `views` and `store` inputs register a generative-UI catalog with the chat co
 
 Splitting one answer across three nodes is what makes the run durable. Each node's return is committed before the next one starts, so a failure in `generate` does not throw away the analysis and the outline, and the thread you retry against is not empty.
 
-What it does not cover is the request in the browser. A dropped connection, a restarted server, or an error from the model ends the run in the client with an error, and something has to start a new one. That is the UI's job, and it is one call.
+What it does not cover is the request in the browser. A dropped connection, a restarted server, or an error from the model ends the run in the client with an error, and something has to start a new one. That is the UI's job, and it is one call — but only when starting a new one is safe.
 
 ### Retrying a failed run
 
-The `<chat>` composition already renders the retry. Its error banner shows a Retry button whenever the error it received is marked retryable — dropped streams and connection failures are — and the button calls `agent.retry()`.
+The `<chat>` composition already renders the retry. Its error banner shows a Retry button whenever the error it received is marked retryable — a connection failure is — and the button calls `agent.retry()`.
+
+A dropped stream is the case that does not qualify. When the stream closes without a terminal event the adapter reports an `interrupted` error, and the run may well have carried on and committed its next node on the server. Retrying it would run that work twice, so the banner does not offer Retry. Instead it offers Check status where the transport can read thread history — a read-only re-read that resubmits nothing and clears the error if the run turns out to have finished — and otherwise says plainly that the outcome could not be confirmed. Every route into an interruption here means the request was dispatched, so none of them offers Retry. The partial answer and any pending approval stay on the signals either way.
 
 `retry()` clears the error and re-submits the last payload the agent sent, with the same options, against the same thread. Two guards matter when you call it yourself:
 

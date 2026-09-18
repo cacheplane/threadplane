@@ -1,13 +1,13 @@
 ---
-description: The structured AgentError on the agent error signal — its failure kinds, the retryable flag, the built-in chat-error UI, and classifying failures.
+description: The structured AgentError on the agent error signal — its failure kinds, the retryable and recovery fields, the chat-error UI, and classifying failures.
 ---
 
 # Error Handling
 
-When a run fails, `@threadplane/chat` surfaces a structured `AgentError` on the agent's `error` signal instead of a bare `Error`. It carries a machine-readable failure `kind`, a `retryable` flag, an optional HTTP `status`, and the original `cause` — so you can render cause-specific copy, decide whether to offer a retry, and keep the raw error for telemetry.
+When a run fails, `@threadplane/chat` surfaces a structured `AgentError` on the agent's `error` signal instead of a bare `Error`. It carries a machine-readable failure `kind`, a `retryable` flag, an optional HTTP `status`, and the original `cause` — so you can render cause-specific copy, decide whether to offer a retry, and keep the raw error for telemetry. An `interrupted` error carries two more fields, `recovery` and `detail`, which say which action the adapter can justify offering.
 
 <Callout type="info" title="Zero-config by default">
-  `<chat>` already renders the built-in `<chat-error>` primitive, which shows legible per-kind copy and a **Retry** button for retryable failures. You only need this guide when you want custom error UI.
+  `<chat>` already renders the built-in `<chat-error>` primitive, which shows legible per-kind copy and the one action the error supports — a **Retry** button, a **Check status** button, or neither. You only need this guide when you want custom error UI.
 </Callout>
 
 ## The `AgentError` shape
@@ -15,13 +15,15 @@ When a run fails, `@threadplane/chat` surfaces a structured `AgentError` on the 
 `agent.error()` returns an `AgentError | undefined`. `AgentError extends Error`, so existing `.message` / `instanceof Error` reads keep working:
 
 ```typescript
-import { AgentError, type AgentErrorKind } from '@threadplane/chat';
+import { AgentError, type AgentErrorKind, type AgentRecovery } from '@threadplane/chat';
 
 class AgentError extends Error {
   readonly kind: AgentErrorKind;   // 'connection' | 'auth' | 'server' | 'interrupted' | 'aborted'
   readonly retryable: boolean;     // could retrying the same request plausibly succeed?
   readonly status?: number;        // HTTP status, when the failure came from a response
   readonly cause: unknown;         // the original raw error, preserved for debugging and diagnostics
+  readonly recovery?: AgentRecovery; // 'retry' | 'check' | 'none' — set on 'interrupted' only
+  readonly detail?: string;        // the sentence to show when recovery is 'check' or 'none'
 }
 ```
 
@@ -32,10 +34,26 @@ class AgentError extends Error {
 | `connection` | Offline / DNS / connection refused / `fetch` failed | `true` |
 | `auth` | `401` / `403` — credentials or API key are wrong | `false` |
 | `server` | `5xx` (retryable) or a non-auth `4xx` like `400`/`404`/`429` (not retryable) | varies |
-| `interrupted` | The stream closed mid-response after a run had started | `true` |
+| `interrupted` | The stream closed mid-response after a run had started | only when `recovery` is `retry` |
 | `aborted` | The user pressed stop — treated as a graceful idle, **not** surfaced as an error | `false` |
 
-The `retryable` flag is the value to branch on for UI: `connection`, `server` (5xx), and `interrupted` are retryable; `auth`, `aborted`, and non-auth `4xx` are not.
+The `retryable` flag is the value to branch on for UI: `connection` and `server` (5xx) are retryable; `auth`, `aborted`, and non-auth `4xx` are not. An `interrupted` error is retryable only when its `recovery` is `retry`, because replaying a request the server may already have received could duplicate a tool call or a booking.
+
+## Recovering from an interruption
+
+A stream that closes without terminal evidence settles as `interrupted` rather than as a completed turn. Partial content and approval state are preserved in every case; what differs is the action the adapter can prove is safe, which it reports on `recovery`.
+
+| `recovery` | The adapter knows | `retryable` | What to render |
+|---|---|---|---|
+| `retry` | The request was never dispatched, so re-running it cannot duplicate server-side work | `true` | A **Retry** button calling `agent.retry()` |
+| `check` | The outcome is uncertain, and the backend supports a read-only status check | `false` | A **Check status** button calling `agent.checkStatus?.()` |
+| `none` | The outcome is uncertain and nothing can verify it | `false` | The `detail` sentence, and no action |
+
+`detail` is set whenever `recovery` is `check` or `none`, and reads as a continuation of `message`. Show both: it is the only thing left to say when the outcome cannot be confirmed, or when the agent exposes no `checkStatus` to offer.
+
+`checkStatus()` is the optional read-only reconciliation on the `Agent` contract. It asks the backend what happened; it never resubmits the request and never appends a message. Its answer arrives on the signals rather than in the return value — a run the backend reports as finished clears `error` and returns `status` to idle, and any messages it committed appear on `messages`. An outcome that stays unknown leaves the error in place, so the control can be offered again. Adapters expose the member only when their transport can answer, so feature-detect it before rendering the button.
+
+Connections that stay open but stop producing events are a different problem. They need timeout rules of your own; nothing here classifies them.
 
 ## Reading the error
 
@@ -44,7 +62,8 @@ const err = agent.error();          // AgentError | undefined
 if (err) {
   console.warn(err.message);        // legible, per-kind copy
   if (err.kind === 'auth') showApiKeyHelp();
-  if (err.retryable) showRetryButton();   // → agent.retry()
+  if (err.recovery === 'check' && agent.checkStatus) showCheckStatusButton();
+  else if (err.retryable) showRetryButton();   // → agent.retry()
 }
 ```
 
@@ -52,14 +71,14 @@ if (err) {
 
 ## The built-in error UI
 
-`<chat>` auto-renders `<chat-error>`, which reads the agent's error and shows the message plus a **Retry** button when `error.retryable` is true:
+`<chat>` auto-renders `<chat-error>`, which reads the agent's error and shows the message plus at most one action:
 
 ```html
 <!-- Rendered automatically inside <chat>; use it standalone to place your own -->
 <chat-error [agent]="chatRef" />
 ```
 
-The Retry button calls the bound Agent's `retry()` method for you. For non-retryable failures (e.g. `auth`), no button is shown — retrying the same bad credential would just fail again.
+It renders a **Check status** button when `recovery` is `check` and the bound agent exposes `checkStatus`, a **Retry** button when the error is retryable, and otherwise the message alone. Both buttons call the bound Agent's method for you, and `detail` is rendered under the message whenever it is set. For non-retryable failures (e.g. `auth`), no button is shown — retrying the same bad credential would just fail again.
 
 ## Custom error UI
 
@@ -80,8 +99,13 @@ const COPY: Record<AgentErrorKind, string> = {
   template: `
     @if (agent.error(); as err) {
       <div role="alert" class="my-error">
-        <span>{{ COPY[err.kind] }}</span>
-        @if (err.retryable) {
+        <span>{{ err.kind === 'interrupted' ? err.message : COPY[err.kind] }}</span>
+        @if (err.detail) {
+          <span>{{ err.detail }}</span>
+        }
+        @if (err.recovery === 'check' && agent.checkStatus) {
+          <button (click)="agent.checkStatus!()">Check status</button>
+        } @else if (err.retryable) {
           <button (click)="agent.retry()">Try again</button>
         }
       </div>
@@ -93,6 +117,8 @@ export class AppChatComponent {
   protected readonly COPY = COPY;
 }
 ```
+
+The `interrupted` entry in `AGENT_ERROR_MESSAGES` is only the fallback for an error built without a recovery value, so the example above prefers `err.message` for that kind: the adapter has already set it to the copy that matches the recovery it chose. `AGENT_RECOVERY_MESSAGES` and `AGENT_RECOVERY_DETAILS` hold those two tables if you would rather read them by recovery yourself.
 
 `extractErrorMessage(value)` is also exported for coercing any unknown error value into a readable string when you render an error outside `<chat-error>`.
 
@@ -120,7 +146,10 @@ try {
 import {
   AgentError,
   type AgentErrorKind,
+  type AgentRecovery,
   AGENT_ERROR_MESSAGES,
+  AGENT_RECOVERY_MESSAGES,
+  AGENT_RECOVERY_DETAILS,
   toAgentError,
   isAbortError,
   ChatErrorComponent,
@@ -130,12 +159,15 @@ import {
 
 | Export | Purpose |
 |---|---|
-| `AgentError` | Structured error class on `agent.error()` (`kind`, `retryable`, `status?`, `cause`) |
+| `AgentError` | Structured error class on `agent.error()` (`kind`, `retryable`, `status?`, `cause`, `recovery?`, `detail?`) |
 | `AgentErrorKind` | Union of the five failure classes |
+| `AgentRecovery` | Union of the three recovery actions: `retry`, `check`, `none` |
 | `AGENT_ERROR_MESSAGES` | Default human-facing copy per kind |
+| `AGENT_RECOVERY_MESSAGES` | Human-facing copy per recovery action, for `interrupted` errors |
+| `AGENT_RECOVERY_DETAILS` | The second line of the `interrupted` banner, per recovery action |
 | `toAgentError(raw)` | Classify any raw value into an `AgentError` (idempotent) |
 | `isAbortError(raw)` | Predicate: is this a user-requested stop? |
-| `ChatErrorComponent` | The `<chat-error>` primitive (message + conditional Retry) |
+| `ChatErrorComponent` | The `<chat-error>` primitive (message, optional detail, and at most one action) |
 | `extractErrorMessage(value)` | Coerce any error value into a readable string |
 
 ## What's next

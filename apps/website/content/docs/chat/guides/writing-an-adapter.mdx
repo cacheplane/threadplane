@@ -43,9 +43,10 @@ An `Agent` is a set of Angular **signals** (reactive state) plus an RxJS **obser
 | `interrupt?` | `Signal<AgentInterrupt \| undefined>` | (optional) Current pause-for-input |
 | `subagents?` | `Signal<Map<string, Subagent>>` | (optional) Spawned subagents |
 | `clientTools?` | `ClientToolsCapability` | (optional) Client-declared, client-executed tools — see [Client Tools](#client-tools-optional) below |
+| `checkStatus?` | `() => Promise<void>` | (optional) Read-only reconciliation of an uncertain run outcome — see [Interruption Recovery](#interruption-recovery-optional) below |
 
 <Callout type="info" title="Optional fields">
-`interrupt`, `subagents`, and `clientTools` are optional. Runtimes that do not support these concepts can leave them undefined. Components that need them gracefully fall back when they are absent.
+`interrupt`, `subagents`, `clientTools`, and `checkStatus` are optional. Runtimes that do not support these concepts can leave them undefined. Components that need them gracefully fall back when they are absent.
 </Callout>
 
 <Callout type="tip" title="events$ and signals">
@@ -320,6 +321,20 @@ Four rules keep settlement, persistence, and recovery aligned:
 4. **Discard staged results and retry associations on a thread switch.** Advance the staging generation as part of the reset so acknowledgments from old in-flight work become no-ops on the new thread.
 
 Adapters without a durable write path can fall back to attaching staged results to the next outbound run. The results stay buffered and an ordinary next message can still carry them, but a browser page reload first loses that in-memory fallback and leaves the server thread with an unanswered tool call.
+
+## Interruption Recovery (Optional)
+
+A stream that closes without terminal evidence is an interruption, not a completed turn. Settle it as an `interrupted` `AgentError`, keep whatever content and approval state arrived, and say on `recovery` which action you can justify.
+
+| `recovery` | Set it when | `retryable` | `detail` |
+|---|---|---|---|
+| `retry` | You can prove the request was never dispatched, so replaying it cannot duplicate server-side work | `true` | omit |
+| `check` | The outcome is uncertain and your backend can be asked, read-only, what happened | `false` | required |
+| `none` | The outcome is uncertain and nothing can verify it | `false` | required |
+
+`retry` is the narrow case. Anything the server may already have begun answering is not retryable, because a replay could duplicate a tool call or a booking. `AGENT_RECOVERY_MESSAGES` and `AGENT_RECOVERY_DETAILS` hold the copy for all three, so every transport says the same thing.
+
+Implement `checkStatus` on exactly the condition under which you report `recovery: 'check'`, so the control and the recovery it is offered for can never disagree. It must not resubmit the operation and must not append a message; a dropped stream is not proof that the server did nothing. Report the answer on the signals — clear `error` and return `status` to idle for a run the backend reports as finished, and leave the error in place when the outcome stays unknown, so the caller can ask again. Reject while a request is in flight, and discard a result that resolves after a newer request has started.
 
 ## Publishing Your Adapter
 

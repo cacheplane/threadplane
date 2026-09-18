@@ -314,6 +314,13 @@ describe('toAgent', () => {
     const a = toAgent(stub as unknown as AbstractAgent, {
       telemetry: (payload) => seen.push(payload),
     });
+    // A completed run emits its terminal event; without one the close is an
+    // interruption and reports tplane:stream_errored instead.
+    stub.runAgent.mockImplementationOnce(async () => {
+      stub.emit({ type: 'RUN_STARTED' } as BaseEvent);
+      stub.emit({ type: 'RUN_FINISHED' } as BaseEvent);
+      return { result: undefined, newMessages: [] };
+    });
 
     await a.submit({ message: 'hi' });
 
@@ -649,13 +656,14 @@ describe('toAgent', () => {
 
         expect(agent.messages().find(message => message.id === messageId)?.delivery)
           .toEqual(completeDelivery(generation, 'interrupted'));
-        expect(agent.status()).toBe('idle');
+        // A close with no terminal evidence is an interruption, not a finish.
+        expect(agent.status()).toBe('error');
         expect(agent.isLoading()).toBe(false);
-        expect(agent.error()).toBeUndefined();
+        expect(agent.error()?.kind).toBe('interrupted');
       },
     );
 
-    it('settles a terminal-event-free run with no assistant chunks as successful and idle', async () => {
+    it('reports a terminal-event-free run with no assistant chunks as an interruption', async () => {
       const source = new StubAgent();
       const deferred = deferNextRun(source);
       const agent = toAgent(source as never);
@@ -665,9 +673,9 @@ describe('toAgent', () => {
       deferred.resolve();
       await pending;
 
-      expect(agent.status()).toBe('idle');
+      expect(agent.status()).toBe('error');
       expect(agent.isLoading()).toBe(false);
-      expect(agent.error()).toBeUndefined();
+      expect(agent.error()?.kind).toBe('interrupted');
       expect(agent.messages().filter(message => message.role === 'assistant')).toEqual([]);
     });
 
@@ -1232,6 +1240,12 @@ describe('toAgent', () => {
       expect(a.error()).toBeInstanceOf(AgentError);
 
       // Retry: should clear error and call runAgent again, no new user message.
+      // The retried run models a run that completes, so it emits its terminal event.
+      stub.runAgent.mockImplementationOnce(async () => {
+        stub.emit({ type: 'RUN_STARTED' } as BaseEvent);
+        stub.emit({ type: 'RUN_FINISHED' } as BaseEvent);
+        return { result: undefined, newMessages: [] };
+      });
       await a.retry();
       expect(a.error()).toBeUndefined();
       expect(stub.runAgent).toHaveBeenCalledTimes(2);

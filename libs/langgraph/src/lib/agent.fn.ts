@@ -547,6 +547,11 @@ export function agent<
     },
     stop: () => manager.stop(),
 
+    // Mirrors the bridge exactly, including its absence: a transport that
+    // cannot read history reports `recovery: 'none'`, and offering a control
+    // for it would promise an answer the adapter cannot get.
+    ...(manager.checkStatus ? { checkStatus: manager.checkStatus } : {}),
+
     retry: async () => {
       if (isLoading()) return;          // no-op while a run is in flight
       error$.next(undefined);           // clear the error before re-running

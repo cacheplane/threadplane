@@ -58,7 +58,7 @@ These fields are stable across runtime adapters and are what chat components con
 | `messages()` | `Message[]` | Chat messages with `role`, `content`, optional `toolCallIds`, citations, and reasoning. |
 | `status()` | `'idle' \| 'running' \| 'error'` | UI lifecycle status. |
 | `isLoading()` | `boolean` | Convenience signal for active streaming. |
-| `error()` | `AgentError \| undefined` | Latest runtime error, when present. |
+| `error()` | `AgentError \| undefined` | Latest runtime error, when present. An `interrupted` error also carries `recovery` and `detail`. |
 | `toolCalls()` | `ToolCall[]` | Tool calls projected into the chat contract. |
 | `state()` | `Record<string, unknown>` | Latest agent state projected as a plain object. |
 | `interrupt()` | `AgentInterrupt \| undefined` | Current interrupt, when the backend pauses for human input. |
@@ -67,6 +67,7 @@ These fields are stable across runtime adapters and are what chat components con
 | `stop()` | `Promise<void>` | Abort the active run. |
 | `retry()` | `Promise<void>` | Re-run the last submitted input after a failure. No-op while a run is in flight or when there is nothing to retry. |
 | `regenerate(index)` | `Promise<void>` | Remove the assistant message at `index` and rerun from the preceding user message. |
+| `checkStatus?()` | `Promise<void>` | Read-only reconciliation of an uncertain run outcome, present only when `persistence.reconcile` is configured. Offered when `error().recovery` is `check`; resubmits nothing and appends no message. |
 
 ## AG-UI-specific surface
 
