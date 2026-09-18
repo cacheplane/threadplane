@@ -273,6 +273,8 @@ function createAgentAdapter(
     installationToken: (typeof ngDevMode === 'undefined' || ngDevMode) && isDevMode() ? installationToken : null,
     enabled: () => options.telemetry === undefined,
   });
+  // One session observation per boot; guards and dedupe live inside touch().
+  developmentRuntime.touch();
   interface AdapterRun extends ReducerDeliveryRun {
     startedAt: number;
     /** Which entry point opened this run; only some are safely replayable. */

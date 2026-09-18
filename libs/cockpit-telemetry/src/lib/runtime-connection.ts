@@ -9,7 +9,7 @@ export type CockpitLangGraphRuntimeConnection = Readonly<{
   adapter: 'langgraph';
   apiUrl: string;
   assistantId: string;
-  clientOptions?: Readonly<{ apiKey: string }>;
+  clientOptions?: Readonly<{ defaultHeaders: Readonly<Record<string, string>> }>;
 }>;
 
 export type CockpitRuntimeConnection =

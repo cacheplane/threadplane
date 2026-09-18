@@ -32,13 +32,20 @@ describe('automatic development evidence', () => {
     return { transport, subjects, destroy$, bridge };
   }
 
+  it('reports a session on construction before any request', () => {
+    const { destroy$ } = setup();
+    expect(developmentEvidence.touches).toBe(1);
+    expect(developmentEvidence.events).toEqual([]);
+    destroy$.next();
+    expect(developmentEvidence.disposed).toBe(1);
+  });
+
   it('requires root terminal evidence and disposes with the bridge', async () => {
     const { transport, bridge, destroy$ } = setup();
-    expect(developmentEvidence.touches).toBe(0);
     const run = bridge.submit({});
     transport.emit([{ type: 'values', data: { done: true } }]); transport.close();
     await run;
-    expect(developmentEvidence.touches).toBeGreaterThan(0);
+    expect(developmentEvidence.touches).toBeGreaterThan(1);
     expect(developmentEvidence.events).toContain('transport.connected');
     expect(developmentEvidence.events).toContain('runtime.first_stream_completed');
     destroy$.next();
@@ -247,7 +254,7 @@ describe('createStreamManagerBridge', () => {
     }
   });
 
-  it('does not retain a custom transport error merely because a key is configured', async () => {
+  it('does not retain a custom transport error merely because defaultHeaders are configured', async () => {
     const transport = new MockAgentTransport();
     const subjects = makeSubjects();
     const bridge = createStreamManagerBridge({
@@ -255,7 +262,7 @@ describe('createStreamManagerBridge', () => {
         apiUrl: '',
         assistantId: 'test',
         transport,
-        clientOptions: { apiKey: 'test-key-redact-me' },
+        clientOptions: { defaultHeaders: { 'x-api-key': 'test-key-redact-me' } },
       },
       subjects,
       threadId$: of('thread-1'),
@@ -304,7 +311,7 @@ describe('createStreamManagerBridge', () => {
     const transport = new FetchStreamTransport(
       'https://runtime.example/api',
       undefined,
-      { apiKey: 'test-key-redact-me', maxRetries: 0 },
+      { defaultHeaders: { 'x-api-key': 'test-key-redact-me' }, maxRetries: 0 },
     );
     Object.defineProperty(transport, 'client', {
       value: {
@@ -323,7 +330,7 @@ describe('createStreamManagerBridge', () => {
         apiUrl: 'https://runtime.example/api',
         assistantId: 'test',
         transport,
-        clientOptions: { apiKey: 'test-key-redact-me' },
+        clientOptions: { defaultHeaders: { 'x-api-key': 'test-key-redact-me' } },
       },
       subjects,
       threadId$: of('thread-1'),

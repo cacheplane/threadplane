@@ -1,6 +1,7 @@
 import {
   businessMorningAfter,
   isCampaignSendWindow,
+  pacificCalendarDate,
 } from './campaign-schedule.ts';
 
 describe('Pacific campaign calendar', () => {
@@ -35,5 +36,29 @@ describe('Pacific campaign calendar', () => {
     for (const offset of [0, -1, 1.5, Infinity])
       expect(() => businessMorningAfter(new Date(), offset)).toThrow();
     expect(() => isCampaignSendWindow(new Date('invalid'))).toThrow();
+  });
+});
+
+describe('pacificCalendarDate', () => {
+  it('returns the Pacific calendar date and whether it is a weekday', () => {
+    // 2026-09-16T23:30Z is Wednesday 16:30 Pacific (PDT).
+    expect(pacificCalendarDate(new Date('2026-09-16T23:30:00.000Z'))).toEqual({
+      date: '2026-09-16',
+      weekday: true,
+    });
+    // 2026-09-19T06:59Z is Friday 23:59 Pacific.
+    expect(pacificCalendarDate(new Date('2026-09-19T06:59:00.000Z'))).toEqual({
+      date: '2026-09-18',
+      weekday: true,
+    });
+    // 2026-09-19T07:00Z is Saturday 00:00 Pacific.
+    expect(pacificCalendarDate(new Date('2026-09-19T07:00:00.000Z'))).toEqual({
+      date: '2026-09-19',
+      weekday: false,
+    });
+  });
+
+  it('rejects an invalid date', () => {
+    expect(() => pacificCalendarDate(new Date('nope'))).toThrow('Invalid campaign date');
   });
 });

@@ -201,6 +201,7 @@ describe('install/runtime contact approval', () => {
       'person@example.com',
       createEmailLookupHmac(input.email, keyring.active).digest,
       2,
+      'install_runtime',
     ]);
     const activity = harness.calls.find(
       (call) => call.marker === 'insert-activity'
@@ -351,18 +352,41 @@ describe('approveContactFromForm', () => {
   it('records blocked facts without changing a legitimate existing contact or consent', async () => {
     const approved = contactRow({ outreach_approved_at: occurredAt });
     const harness = executorWith({
-      'lock-email': () => ({ rows: [] }), 'find-contact': () => ({ rows: [approved] }),
+      'lock-email': () => ({ rows: [] }),
+      'find-contact': () => ({ rows: [approved] }),
       'find-hard-stops': () => ({ rows: [] }),
       'insert-activity': (parameters) => {
-        expect(JSON.parse(String(parameters[4]))).toMatchObject({ approval_granted: false, form_abuse_blocked: true });
+        expect(JSON.parse(String(parameters[4]))).toMatchObject({
+          approval_granted: false,
+          form_abuse_blocked: true,
+        });
         return { rows: [{ event_key: baseApproval.eventKey }] };
       },
-      'read-control-state': () => ({ rows: [{ ...approved, latest_hard_stop_kind: null, latest_hard_stop_at: null }] }),
+      'read-control-state': () => ({
+        rows: [
+          {
+            ...approved,
+            latest_hard_stop_kind: null,
+            latest_hard_stop_at: null,
+          },
+        ],
+      }),
     });
-    const result = await approveContactFromForm(harness.executor, { ...baseApproval, serverFormBlocked: true });
+    const result = await approveContactFromForm(harness.executor, {
+      ...baseApproval,
+      serverFormBlocked: true,
+    });
     expect(result.formApprovalGranted).toBe(false);
     expect(result.canSend).toBe(true);
-    expect(harness.calls.some(c => ['update-contact-facts', 'set-form-approval', 'insert-form-outreach-approved'].includes(c.marker))).toBe(false);
+    expect(
+      harness.calls.some((c) =>
+        [
+          'update-contact-facts',
+          'set-form-approval',
+          'insert-form-outreach-approved',
+        ].includes(c.marker)
+      )
+    ).toBe(false);
   });
 
   it('normalizes direct facts, preserves a private lookup, and records exact approval provenance', async () => {

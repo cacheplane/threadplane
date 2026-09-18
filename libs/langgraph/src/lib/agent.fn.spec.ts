@@ -1302,12 +1302,12 @@ describe('agent — LANGGRAPH_CLIENT_OPTIONS resolution (no mock transport)', ()
     );
   });
 
-  it('passes an explicit api key through the Agent streaming client options', () => {
+  it('passes defaultHeaders through the protected Agent streaming client', () => {
     TestBed.configureTestingModule({
       providers: [
         {
           provide: LANGGRAPH_CLIENT_OPTIONS,
-          useValue: { apiKey: 'test-key-redact-me', maxRetries: 0 },
+          useValue: { defaultHeaders: { 'x-api-key': 'test-key-redact-me' }, maxRetries: 0 },
         },
       ],
     });
@@ -1318,7 +1318,7 @@ describe('agent — LANGGRAPH_CLIENT_OPTIONS resolution (no mock transport)', ()
 
     expect(createProtectedLangGraphClientMock).toHaveBeenCalledWith(
       'https://runtime.example/api',
-      { apiKey: 'test-key-redact-me', maxRetries: 0 },
+      { defaultHeaders: { 'x-api-key': 'test-key-redact-me' }, maxRetries: 0 },
       expect.any(Function),
     );
   });

@@ -22,6 +22,7 @@ impressions:
 - **Declarative fragments carry emphasis.** *"That is the part that matters." "Memory is becoming policy."*
 - **Flag opinions often**, and early: "For me, …", "My recommendation is simple:", "I think …".
 - **Close on a declarative beat**, not a sign-off: *"That is what makes this interesting."*
+- **No stagey fragments or scene-setting quips.** Nothing like *"Five libraries, twelve rows."*, *"This is the row the title is about."*, *"Now the honest part."*, or *"I will be brief."* Brian does not narrate the post's structure or wind up for a point. Declarative fragments carry *emphasis* on a claim already made; they never announce what is coming. (Brian, 2026-09-15: "I would never say something like that.")
 
 **Keep from the tutorial corpus (structure, not sentences):** `## Goals` blocks,
 H2-as-question, series cross-links, an explicit `## Conclusion`, and a closing

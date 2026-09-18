@@ -78,7 +78,7 @@ export class LangGraphThreadsAdapter {
     const injectedClient = inject(LANGGRAPH_CLIENT, { optional: true });
     const ownsProtectedClient =
       injectedClient === null &&
-      (typeof clientOptions?.apiKey === 'string' ||
+      (clientOptions?.defaultHeaders !== undefined ||
         reportOperationFailure !== undefined);
     return {
       client:
@@ -91,7 +91,7 @@ export class LangGraphThreadsAdapter {
             )
           : createLangGraphClient(this.config.apiUrl, clientOptions)),
       protectErrors:
-        typeof clientOptions?.apiKey === 'string' || ownsProtectedClient,
+        clientOptions?.defaultHeaders !== undefined || ownsProtectedClient,
       reportOperationFailure: ownsProtectedClient
         ? reportOperationFailure
         : undefined,

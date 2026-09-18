@@ -181,6 +181,9 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
     installationToken: (typeof ngDevMode === 'undefined' || ngDevMode) && isDevMode() ? installationToken : null,
     enabled: () => options.telemetry === undefined,
   });
+  // One session observation per boot. touch() carries every guard and the
+  // per-session dedupe, so this is inert in production, automation and SSR.
+  developmentRuntime.touch();
   // Intercept onThreadId so currentThreadId tracks a thread the DEFAULT
   // transport auto-creates. Without this, each submit() would create a new
   // thread because currentThreadId stays null. This wrapper only reaches the

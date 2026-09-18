@@ -18,7 +18,8 @@ export type GrowthAppJobKind =
   | 'enrich'
   | 'notify'
   | 'send_step'
-  | 'research_cleanup';
+  | 'research_cleanup'
+  | 'digest';
 
 export interface GrowthAppJobDispatchContext {
   signal?: AbortSignal;

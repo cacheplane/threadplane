@@ -86,7 +86,11 @@ function resolveConnection(
       adapter: 'langgraph',
       apiUrl: configuration.target.apiUrl,
       assistantId: runtime.assistantId,
-      clientOptions: Object.freeze({ apiKey: configuration.target.apiKey }),
+      // The developer-supplied deployment key rides as the SDK's own header
+      // for this session; the adapter no longer accepts a key by name.
+      clientOptions: Object.freeze({
+        defaultHeaders: Object.freeze({ 'x-api-key': configuration.target.apiKey }),
+      }),
     });
   }
   throw new RuntimeConfigurationError();

@@ -11,6 +11,8 @@
 
 ### Breaking changes
 
+- **langgraph:** `LangGraphClientOptions.apiKey` is removed and `defaultHeaders` is added. The SDK client is always constructed with `apiKey: null`, so the adapter never attaches a deployment key and never reads one from the environment. Send a per-user session token with `clientOptions.defaultHeaders` for LangGraph custom auth, and keep deployment credentials on an endpoint you own.
+- **cockpit-telemetry:** the LangSmith runtime target forwards its key as `clientOptions.defaultHeaders['x-api-key']` instead of `clientOptions.apiKey`.
 - **ag-ui:** native batches take precedence over compatibility events in `auto` mode. Select `legacy-command` or `mastra-command` explicitly for backends requiring command transport.
 - **ag-ui:** resume requires a pending batch and each native ID exactly once; scalar responses apply only to single-entry batches. New messages, regeneration, and client-tool continuation cannot abandon an unresolved interrupt.
 - **ag-ui:** uncertain resumes require authoritative reconciliation before retry. Durable client claims require an application-provided atomic store; backend duplicate-effect protection requires server idempotency.

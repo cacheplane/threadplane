@@ -55,3 +55,16 @@ export { FormRateLimitError } from './lib/form-admission.ts';
 export { assessFormAbuse, FORM_ABUSE_THRESHOLD, FORM_ABUSE_VERSION, type FormAbuseAssessment } from './lib/form-abuse.ts';
 export { bindProviderMessageId } from './lib/replies.ts';
 export { reconcilePendingResendMessageIds } from './lib/resend.ts';
+export {
+  INSTALL_DIGEST_MAX_PACKAGES,
+  readInstallDigestCandidates,
+  readInstallDigestContext,
+  enqueueInstallDigestJob,
+  markInstallDigestReported,
+} from './lib/observability/install-digest.ts';
+export type {
+  InstallDigestCandidate,
+  InstallDigestContext,
+  InstallDigestPackage,
+} from './lib/observability/install-digest.ts';
+export { pacificCalendarDate } from './lib/campaign-schedule.ts';

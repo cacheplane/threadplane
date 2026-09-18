@@ -359,8 +359,13 @@ describe('job leasing', () => {
   it('claims an internal notification provider attempt at most once for a live lease', async () => {
     const harness = executorWith({
       'claim-internal-notification-submission': (parameters, sql) => {
-        expect(parameters).toEqual([jobRow().id, leaseToken, now]);
-        expect(sql).toMatch(/j\.kind = 'notify'/u);
+        expect(parameters).toEqual([
+          jobRow().id,
+          leaseToken,
+          now,
+          'notify',
+        ]);
+        expect(sql).toMatch(/j\.kind = \$4/u);
         expect(sql).toMatch(/j\.status = 'leased'/u);
         expect(sql).toMatch(/j\.lease_until > \$3/u);
         expect(sql).toMatch(/on conflict \(event_key\) do nothing/u);
@@ -387,8 +392,9 @@ describe('job leasing', () => {
           leaseToken,
           now,
           'internal_notification_outcome_unknown',
+          'notify',
         ]);
-        expect(sql).toMatch(/kind = 'notify'/u);
+        expect(sql).toMatch(/kind = \$5/u);
         expect(sql).toMatch(/delivery_status = 'unknown'/u);
         return {
           rows: [

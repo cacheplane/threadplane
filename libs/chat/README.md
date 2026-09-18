@@ -380,9 +380,11 @@ MIT. See [LICENSE.md](./LICENSE.md).
 ## Development browser collection
 
 Supported LangGraph/AG-UI runtime use and real JSON-render component mounts automatically
-report development progress to Threadplane. Angular development mode and browser APIs
-are required. Production builds, SSR, imports, unused adapter construction, and
-automated browsers reporting `navigator.webdriver` are inert.
+report development progress to Threadplane. Angular development mode and browser APIs are
+required. Production builds, SSR, imports, and automated browsers reporting
+`navigator.webdriver` are inert. Creating an agent (or a render element) in a
+development-mode browser reports one session start per integration per session; milestones
+are reported only when the runtime is actually used.
 Reports contain package/version, integration, closed milestones, timestamps, a random
 browser-origin ID, and a session with a 30-minute inactivity boundary. They exclude
 prompts, messages, application state, private URLs, thread/run IDs, and credentials.

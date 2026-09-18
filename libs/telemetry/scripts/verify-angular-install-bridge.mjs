@@ -253,6 +253,7 @@ async function exerciseBundle(
     TransformStream,
     DOMException,
     queueMicrotask,
+    structuredClone,
     crypto: globalThis.crypto,
     console: {
       info: () => undefined,
