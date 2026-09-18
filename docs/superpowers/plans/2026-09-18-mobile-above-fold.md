@@ -377,11 +377,15 @@ walkthrough…` tests with:
     await expect(demo.locator('iframe')).toHaveAttribute('src', 'https://demo.threadplane.ai/hero');
   });
 
-  test('the frame mounts on a phone too', async ({ page }) => {
+  test('the frame mounts on a phone without scrolling', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
+    // No scrollIntoViewIfNeeded, deliberately. Shortening the H1 lifted the demo
+    // to y=501 of an 812px fold, so 51% of the stage is visible on load and the
+    // 25% IntersectionObserver threshold is met without any scroll. Asserting
+    // the mount from a standing start is what proves that; scrolling first
+    // would hide a regression that pushed the stage back below the fold.
     const demo = page.locator('[data-hero-demo]');
-    await demo.scrollIntoViewIfNeeded();
     await expect(demo.locator('iframe')).toHaveAttribute('src', 'https://demo.threadplane.ai/hero');
   });
 
