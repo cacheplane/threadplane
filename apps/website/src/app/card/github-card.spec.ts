@@ -2,8 +2,8 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { MIN_READABLE_PX } from './tokens';
-import { GITHUB_CARD_SIZE, alt } from '../github-card/route';
-import { HERO_SUBHEAD, PRIMARY_TAGLINE } from '../../lib/positioning';
+import { GITHUB_CARD_SIZE } from '../github-card/route';
+import { HERO_SUBHEAD } from '../../lib/positioning';
 
 const ROUTE = join(__dirname, '..', 'github-card', 'route.tsx');
 
@@ -39,12 +39,6 @@ describe('github card', () => {
 
     expect(sizes.length).toBeGreaterThan(0);
     expect(Math.min(...sizes)).toBeGreaterThanOrEqual(MIN_READABLE_PX);
-  });
-
-  /** A card with no alt text is a card no screen reader can announce. */
-  it('describes what the card shows', () => {
-    expect(alt).toContain(PRIMARY_TAGLINE);
-    expect(alt.length).toBeGreaterThan(80);
   });
 
   /**

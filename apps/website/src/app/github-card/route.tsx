@@ -16,7 +16,7 @@
  * of it — see the ratio and type notes below.
  */
 import { ImageResponse } from 'next/og';
-import { HERO_H1_LINES, HERO_SUBHEAD, POSITIONING_PROOF_POINTS, PRIMARY_TAGLINE } from '../../lib/positioning';
+import { HERO_H1_LINES, HERO_SUBHEAD, POSITIONING_PROOF_POINTS } from '../../lib/positioning';
 import { loadCardFonts } from '../og-font';
 import { CARD } from '../card/tokens';
 import { Conversation, Frame, Pills, Rail, Wordmark } from '../card/chrome';
@@ -33,8 +33,6 @@ export const GITHUB_CARD_SIZE = { width: 1280, height: 640 } as const;
 
 const RUNTIMES = POSITIONING_PROOF_POINTS[0].label;
 const EYEBROW = 'OPEN SOURCE · ANGULAR';
-
-export const alt = `${PRIMARY_TAGLINE}. ${HERO_SUBHEAD} Beside the copy, a browser frame shows the product pausing for a human: an agent proposes deleting three backups, with Approve and Decline. Works with ${RUNTIMES}.`;
 
 export async function GET() {
   const fonts = await loadCardFonts({ mono: true });
