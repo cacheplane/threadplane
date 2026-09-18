@@ -1,6 +1,6 @@
 {
   "name": "@threadplane/telemetry",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Explicit Node and browser capture helpers for Angular AI agent applications that choose to send events.",
   "license": "MIT",
   "publishConfig": {

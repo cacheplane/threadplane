@@ -1,6 +1,6 @@
 {
   "name": "@threadplane/a2ui",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A2UI protocol types, streaming parser, and dynamic-value resolver for agent-generated UI. Pure TypeScript.",
   "license": "MIT",
   "repository": {

@@ -1,9 +1,9 @@
 {
   "name": "@threadplane/render",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Angular render engine for agent-generated UI: maps JSON specs onto your own design-system components.",
   "peerDependencies": {
-    "@threadplane/telemetry": "^0.1.0",
+    "@threadplane/telemetry": "^0.2.0",
     "@angular/core": "^20.0.0 || ^21.0.0 || ^22.0.0",
     "@angular/common": "^20.0.0 || ^21.0.0 || ^22.0.0",
     "@json-render/core": "^0.16.0"
