@@ -4,13 +4,13 @@ The LangGraph adapter for [Threadplane](https://github.com/cacheplane/threadplan
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@threadplane/langgraph">
-    <img alt="npm version" src="https://img.shields.io/npm/v/@threadplane%2Flanggraph?color=6C8EFF&labelColor=080B14&style=flat-square" />
+    <img alt="npm version" src="https://img.shields.io/npm/v/@threadplane%2Flanggraph?color=15253E&labelColor=0A0A0A&style=flat-square" />
   </a>
   <a href="https://angular.dev">
-    <img alt="Angular 20 | 21 | 22" src="https://img.shields.io/badge/Angular-20%20%7C%2021%20%7C%2022-6C8EFF?labelColor=080B14&style=flat-square" />
+    <img alt="Angular 20 | 21 | 22" src="https://img.shields.io/badge/Angular-20%20%7C%2021%20%7C%2022-15253E?labelColor=0A0A0A&style=flat-square" />
   </a>
   <a href="https://opensource.org/licenses/MIT">
-    <img alt="MIT" src="https://img.shields.io/badge/License-MIT-6C8EFF?labelColor=080B14&style=flat-square" />
+    <img alt="MIT" src="https://img.shields.io/badge/License-MIT-15253E?labelColor=0A0A0A&style=flat-square" />
   </a>
 </p>
 

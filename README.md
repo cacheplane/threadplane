@@ -12,13 +12,13 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@threadplane/chat">
-    <img alt="npm version" src="https://img.shields.io/npm/v/@threadplane%2Fchat?color=6C8EFF&labelColor=080B14&style=flat-square" />
+    <img alt="npm version" src="https://img.shields.io/npm/v/@threadplane%2Fchat?color=15253E&labelColor=0A0A0A&style=flat-square" />
   </a>
   <a href="https://angular.dev">
-    <img alt="Angular 20 | 21 | 22" src="https://img.shields.io/badge/Angular-20%20%7C%2021%20%7C%2022-6C8EFF?labelColor=080B14&style=flat-square" />
+    <img alt="Angular 20 | 21 | 22" src="https://img.shields.io/badge/Angular-20%20%7C%2021%20%7C%2022-15253E?labelColor=0A0A0A&style=flat-square" />
   </a>
   <a href="https://langchain-ai.github.io/langgraph/">
-    <img alt="LangGraph" src="https://img.shields.io/badge/LangGraph-SDK-6C8EFF?labelColor=080B14&style=flat-square" />
+    <img alt="LangGraph" src="https://img.shields.io/badge/LangGraph-SDK-15253E?labelColor=0A0A0A&style=flat-square" />
   </a>
   <a href="https://scorecard.dev/viewer/?uri=github.com/cacheplane/threadplane">
     <img alt="OpenSSF Scorecard" src="https://api.scorecard.dev/projects/github.com/cacheplane/threadplane/badge" />
