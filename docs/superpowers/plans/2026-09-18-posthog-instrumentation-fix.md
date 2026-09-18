@@ -27,6 +27,12 @@
 
 ### Task 1: Export and guard the PostHog config
 
+> **On the test command:** `nx test website -- instrumentation-client` silently ignores the
+> filter and runs the whole website suite (1,525 tests), which is green but makes the "6 tests"
+> expectation below unrecognisable. The `vitest` form used in the steps below runs the 6
+> assertions in isolation. Use `npx nx build website` from the repo root for the typecheck, and
+> return to the repo root before any `git` step.
+
 **Files:**
 - Create: `apps/website/instrumentation-client.spec.ts`
 - Modify: `apps/website/instrumentation-client.ts`
@@ -94,7 +100,7 @@ describe('website posthog init options', () => {
 - [ ] **Step 2: Run the test to verify it fails**
 
 ```bash
-npx nx test website -- instrumentation-client
+cd apps/website && npx vitest run --config vite.config.mts instrumentation-client
 ```
 
 Expected: FAIL. The error names the missing export, e.g. `No "POSTHOG_INIT_OPTIONS" export is defined on the "./instrumentation-client" mock` or a TypeScript/resolution error on the import.
@@ -148,7 +154,7 @@ if (shouldCaptureAnalytics({ token, captureLocal, host: browserHost })) {
 - [ ] **Step 4: Run the test to verify it passes**
 
 ```bash
-npx nx test website -- instrumentation-client
+cd apps/website && npx vitest run --config vite.config.mts instrumentation-client
 ```
 
 Expected: PASS, 6 tests.
@@ -160,7 +166,7 @@ A guard that passes against the broken value is worse than no guard. Prove each 
 In `apps/website/instrumentation-client.ts`, temporarily change `capture_pageview: 'history_change'` to `capture_pageview: true`, then run:
 
 ```bash
-npx nx test website -- instrumentation-client
+cd apps/website && npx vitest run --config vite.config.mts instrumentation-client
 ```
 
 Expected: FAIL, exactly one test — "captures a pageview on every history change, not just on document load" — reporting `expected true to be 'history_change'`.
@@ -172,7 +178,7 @@ Expected: FAIL, exactly one test — "turns on Core Web Vitals, which the client
 Restore the `capture_performance` line and re-run:
 
 ```bash
-npx nx test website -- instrumentation-client
+cd apps/website && npx vitest run --config vite.config.mts instrumentation-client
 ```
 
 Expected: PASS, 6 tests.
