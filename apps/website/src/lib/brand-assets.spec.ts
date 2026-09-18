@@ -73,6 +73,7 @@ const COLOUR_SCANNED_ASSETS = [
   'apps/website/public/blog/diagrams/ag-ui-event-flow.svg',
   'apps/website/public/blog/diagrams/agent-contract-boundary.svg',
   'apps/website/public/blog/diagrams/langgraph-threads-and-runs.svg',
+  'apps/website/public/assets/arch-diagram.svg',
 ];
 
 describe('brand assets carry current colours', () => {
