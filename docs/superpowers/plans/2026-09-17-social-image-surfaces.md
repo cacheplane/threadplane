@@ -382,12 +382,22 @@ git commit -m "fix(brand): move the banner and blog diagrams onto token navy"
 
 ---
 
-## Task 4: The architecture diagram
+## Task 4: Re-theme the architecture diagram
 
-Kept separate from Task 3 because it is a different job: 16 occurrences of
-`6C8EFF` plus 1 of `080B14`, across a diagram embedded in the root README and
-rendered on the site. This is a restyle, not a find-and-replace, and it needs
-looking at.
+**Revised mid-execution.** The plan originally specified a colour substitution
+here, the same as Task 3. Rendering the file first proved that wrong, and the
+revision is recorded rather than quietly swapped in.
+
+`arch-diagram.svg` is the only dark asset in the repository: a full-bleed
+`#080B14` ground carrying `#6C8EFF` accents (9 strokes, 7 text fills),
+`#4A527A` muted text and `#EEF1FF` headings. A flat `6C8EFF` -> `15253E`
+would have painted every accent dark navy **on a near-black ground** and left
+the diagram unreadable — and the colour guard would have passed, because it
+only asserts that retired hex is absent.
+
+It is also the odd one out. The three diagrams swept in Task 3 are light, so
+is `hero.svg` directly above it in the README, so is the card kit, so is the
+site. This task re-themes it onto that same light ground.
 
 **Files:**
 - Modify: `apps/website/public/assets/arch-diagram.svg`
@@ -409,35 +419,48 @@ cd apps/website && npx vitest run --config vite.config.mts src/lib/brand-assets.
 
 Expected: FAIL, one new case: `still uses: 6C8EFF, 080B14`.
 
-- [ ] **Step 3: Inspect before replacing**
+- [ ] **Step 3: Adopt the sibling diagrams' design system**
 
-```bash
-grep -n "6C8EFF\|080B14" apps/website/public/assets/arch-diagram.svg
-```
+`apps/website/public/blog/diagrams/agent-contract-boundary.svg` is the
+reference. Read it first. It establishes the whole vocabulary, and this task
+is to bring `arch-diagram.svg` into it rather than to invent anything:
 
-Read what each occurrence *is* — `fill` on a box, `stroke` on a connector,
-`fill` on text. Note which ones carry text on top of them, because those are
-the ones a flat substitution can break.
+| Role | Value |
+|------|-------|
+| Card ground / box fill | `#ffffff` |
+| Outer border | `#e5e5e5`, `rx="12"` |
+| Box border | `#d4d4d4`, `rx="8"` |
+| Highlighted box fill | `#f2f5f9` with `#c3d1e2` border |
+| Eyebrow text | `#737373`, 11.5px, weight 700, `letter-spacing: 0.09em` |
+| Heading text | `#1c1c1c`, 17px, weight 600 |
+| Box title (mono) | `#1c1c1c`, 15px, weight 600 |
+| Meta text | `#464646`, 13px |
+| Edge label | `#15253E`, 12.5px, weight 600 |
+| Connector stroke | `#15253E`, `stroke-width: 1.7` |
+| Caption | `#737373`, 13px |
+| De-emphasized rail | `#a3a3a3` |
 
-- [ ] **Step 4: Replace, then check contrast**
+Those files define these once in a `<style>` block as classes (`.t-eyebrow`,
+`.t-head`, `.t-title`, `.t-meta`, `.t-edge`, `.t-caption`, `.edge`) rather
+than repeating literals per element. Do the same — the current file repeats
+`fill="#4A527A"` thirteen times, which is how it drifted.
 
-```bash
-sed -i '' 's/6C8EFF/15253E/g; s/080B14/0A0A0A/g' apps/website/public/assets/arch-diagram.svg
-```
+Fonts are generic stacks (`system-ui`, `ui-mono`), never the site's webfonts:
+GitHub serves this as a bare image and no stylesheet of ours ever loads.
 
-Open the file and check every place the previous step flagged. `#6C8EFF` is a
-mid blue at roughly 3.1:1 on white; `#15253E` is near-black at roughly 14:1.
-Two consequences to look for specifically:
+**Preserve the diagram's meaning exactly.** Every box, label, arrow, dashed
+reactive-update edge and the legend must survive with the same text and the
+same topology. This is a re-theme, not a redraw — if you find yourself
+changing what the diagram *says*, stop and report.
 
-- **Dark text on a now-dark fill.** If a box was filled `#6C8EFF` with dark
-  text on it, that text is now near-invisible. Change that text to
-  `#FFFFFF`.
-- **A flattened hierarchy.** If the diagram used blue to distinguish one
-  element class from black text, both are now near-black and the distinction
-  is gone. Where that happened, use `--color-signal` `#FFAF00` as a *fill*
-  behind dark text, never as text or a hairline stroke.
+Two specifics carried over from the dark version:
+- The solid-vs-dashed distinction (`call / dispatch` vs `reactive update`)
+  is semantic and must remain legible as two distinct edge styles.
+- `agent()` is the emphasized node. On the light ground use the `#f2f5f9` /
+  `#c3d1e2` highlighted-box treatment the sibling diagrams use for their
+  emphasized node, not a colour the others do not use.
 
-- [ ] **Step 5: Run the guard to verify it passes**
+- [ ] **Step 4: Run the guard to verify it passes**
 
 ```bash
 cd apps/website && npx vitest run --config vite.config.mts src/lib/brand-assets.spec.ts
@@ -445,11 +468,18 @@ cd apps/website && npx vitest run --config vite.config.mts src/lib/brand-assets.
 
 Expected: PASS, all cases green.
 
+- [ ] **Step 5: Report for visual review**
+
+You cannot see this render and the controller will check it. Report: the
+final colour census (`grep -ohE '#[0-9a-fA-F]{6}' <file> | sort | uniq -c`),
+confirmation that every value in it appears in the table above, and a list of
+anything you changed beyond colour and the `<style>` refactor.
+
 - [ ] **Step 6: Commit**
 
 ```bash
 git add apps/website/src/lib/brand-assets.spec.ts apps/website/public/assets/arch-diagram.svg
-git commit -m "fix(brand): restyle the architecture diagram onto the current palette"
+git commit -m "fix(brand): re-theme the architecture diagram onto the light ground"
 ```
 
 ---
