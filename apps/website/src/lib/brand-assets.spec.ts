@@ -43,7 +43,9 @@ describe('brand assets carry current positioning', () => {
  * Brand colours that have been replaced.
  *
  * `#6C8EFF` and `#080B14` are the pre-ATC blue and near-black; `#004090` is a
- * navy that was never a design token at all. The sibling scan above catches
+ * navy that was never a design token at all. `#1a1a2e`, `#555770` and
+ * `#eaf3ff` are the ink, soft ink and gradient ground that went with that
+ * navy on the marketing social cards. The sibling scan above catches
  * retired *copy* in these same files. Retired *colour* got through for one
  * reason: nothing looked. Badges carrying it render on public npm package
  * pages, where a stale palette is the first thing a reader sees.
@@ -52,7 +54,7 @@ describe('brand assets carry current positioning', () => {
  * under docs/superpowers/ are historical records and keep their original
  * values.
  */
-const RETIRED_BRAND_COLORS = ['6C8EFF', '080B14', '004090'];
+const RETIRED_BRAND_COLORS = ['6C8EFF', '080B14', '004090', '1a1a2e', '555770', 'eaf3ff'];
 
 /**
  * Its own list, not BRAND_ASSETS. That list exists for the copy scan and is a

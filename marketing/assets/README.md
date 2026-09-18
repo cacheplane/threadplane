@@ -41,8 +41,9 @@ trust pills (or an author byline) opposite the plane + "Threadplane" wordmark.
 
 - Fonts: bundled static TTFs in `fonts/` — Archivo Black (display, single weight),
   Archivo 400/600 (body), JetBrains Mono 700 (eyebrow + pills). No runtime fetch.
-  Same files as `apps/website/src/app/card/fonts/`: instanced to one weight and
-  stripped of the variable tables satori cannot parse.
+  Byte-identical to `apps/website/src/app/card/fonts/`, which `src/fonts.spec.ts`
+  asserts: those are instanced to one weight and stripped of the variable tables
+  satori cannot parse, so matching them exactly inherits both properties.
 - Logo: an inline `<svg>` (the `Plane` component in `src/templates/card-shell.tsx`,
   kept identical to `apps/website/public/brand/mark.svg`). Satori renders inline SVG,
   so there is no bundled PNG any more and no `brand/` directory.
@@ -57,6 +58,12 @@ alone was the mechanism once, and the file went through an entire re-theme still
 claiming to match a palette that had changed underneath it, shipping retired colour
 into the media of live X posts. `marketing/assets/src/brand.ts` is also in the
 retired-hex scan in `apps/website/src/lib/brand-assets.spec.ts`.
+
+The same spec sweeps `brand`'s own keys, so a colour added here has to be either
+compared against a `CARD` token or exempted by name with a reason — a guard that
+only checks a hand-written list stops covering whatever the list forgot. The
+inlined plane is pinned the same way: its path data is asserted to match
+`apps/website/public/brand/mark.svg`, rather than a comment claiming they agree.
 
 ## Adding a template
 
