@@ -1931,10 +1931,13 @@
 }
 /* The control had chrome already — `background: #111` with a black drop
  * shadow — but the poster it sits on is a near-black chat surface, so on a
- * phone (the only viewport that shows it: autoplay is off below 768px) it read
- * as bare white text floating over the screenshot. A light pill with a dark
- * ring is legible on this poster and on any lighter one that replaces it, and
- * the row is sized to a 44px touch target. */
+ * phone it read as bare white text floating over the screenshot. A light pill
+ * with a dark ring is legible on this poster and on any lighter one that
+ * replaces it, and
+ * the row is sized to a 44px touch target.
+ *
+ * This control is no longer the phone's default. Autoplay is width-independent
+ * now, so it renders only on the reduced-motion path — at any width. */
 .hero-demo-play,
 .hero-demo-fallback {
   /* Centred by auto margins between two zero insets, not by
@@ -1994,8 +1997,9 @@
  * iframe too, so a phone that taps Play gets the same portrait chat viewport
  * the poster promised rather than a 16:9 letterbox.
  *
- * The breakpoint is shared three ways and must move as one: this ratio, the
- * <source media> in HeroDemo.tsx, and MIN_AUTOPLAY_WIDTH. */
+ * The breakpoint is shared two ways and must move as one: this ratio and the
+ * <source media> in HeroDemo.tsx. MIN_AUTOPLAY_WIDTH is no longer part of it —
+ * the iframe autoplays at every width now. */
 @media (max-width: 767px) {
   .hero-demo-stage {
     aspect-ratio: 3 / 5;

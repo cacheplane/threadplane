@@ -245,7 +245,7 @@ const CONTRACTS: StyleContract[] = [
   {
     file: 'landing.css',
     selector: '.hero-demo-play',
-    why: 'The play control only ever renders on phones (autoplay is off below 768px) and sits on a near-black poster. It previously had `background: #111` and a black shadow, which read as bare white text with no button chrome. The light fill and dark ring are what make it look clickable. The fill is also fully opaque: at 97% the phone poster\'s own "Take control ↗" text read straight through it.',
+    why: 'The play control renders on the reduced-motion path, at any width — autoplay is no longer width-gated — and sits on a near-black poster. It previously had `background: #111` and a black shadow, which read as bare white text with no button chrome. The light fill and dark ring are what make it look clickable. The fill is also fully opaque: at 97% the phone poster\'s own "Take control ↗" text read straight through it.',
     requires: {
       background: /background:\s*rgb\(248 248 248\)/,
       border: /border:\s*1px solid/,
