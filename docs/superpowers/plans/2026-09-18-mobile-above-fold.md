@@ -26,7 +26,11 @@
 | `apps/website/e2e/home-hero.spec.ts` | Modify | Inverts the mobile gate test; adds the fold guard |
 | `examples/chat/angular/e2e/record-hero-poster-mobile.record.ts` | Modify | Adds the top-edge guard, then re-records |
 | `apps/website/public/screenshots/hero-walkthrough-poster-mobile.webp` | Regenerate | The mobile LCP still |
-| `docs/gtm/messaging.md` | Modify | Records the shipped hero, resolving the drift |
+| `apps/website/e2e/website.spec.ts` | Modify | Hard-codes the H1 and guards "Angular" on the eyebrow |
+| `apps/website/src/lib/site-metadata.ts` | Modify | Hand-duplicated tagline in the site-wide OG alt |
+| `apps/website/src/app/opengraph-image.tsx` | Modify | Card eyebrow, now duplicating the H1 |
+| `apps/website/src/app/github-card/route.tsx` | Modify | Card eyebrow, now duplicating the H1 |
+| `docs/gtm/messaging.md`, `gtm.md`, `README.md` | Modify | Record the shipped hero, resolving the drift |
 
 Tasks 1–7 are ordered so the suite is green at every commit.
 
@@ -532,6 +536,24 @@ Expected on both: the H1 renders as three lines, and neither the subhead nor the
 pills below it are overlapped. The measurement in the spec predicts no change to
 the vertical rhythm — confirm that is what you see.
 
+- [ ] **Step 1b: Drop the now-duplicated eyebrow from both cards**
+
+Both renderers hard-code `const EYEBROW = 'OPEN SOURCE · ANGULAR'` —
+`opengraph-image.tsx:31` and `github-card/route.tsx:35` — rendered immediately
+above an H1 that now reads "…for **Angular** agents." This is exactly the
+redundancy that justified stripping "Angular ·" from `HERO_EYEBROW` in Task 1
+(spec §5.1), and the rationale carries over verbatim.
+
+Change both to:
+
+```tsx
+const EYEBROW = 'OPEN SOURCE';
+```
+
+Re-render both cards afterwards and confirm the rail still reads well at its
+reduced length. (Found by the Task 1 code-quality review; not in the original
+spec.)
+
 - [ ] **Step 2: Regenerate the GitHub social preview**
 
 Run: `npm run card:github`
@@ -597,10 +619,26 @@ generated from the supported majors, not typed).
 > category claim and add the stack to it.
 ```
 
+- [ ] **Step 1b: Update the other two places that state the tagline**
+
+The Task 1 code-quality review found the plan had under-scoped this. Two more
+tracked files assert the old tagline as fact:
+
+- `gtm.md:15` — `- **Tagline (2026-09-06):** "The open-source thread-plane for agents."`
+  This file presents itself as the authority on the tagline, so leaving it is
+  worse than leaving `messaging.md` was. Update the tagline to
+  `"The open-source thread-plane for Angular agents."` and change the date
+  marker to `(2026-09-18)`. Leave the description sentence that follows it
+  alone — it matches `HOME_DESCRIPTION`, which this work deliberately did not
+  change.
+- `README.md:4` (the logo `alt`), `:10` (the `<em>` tagline) and `:36` (the bold
+  opening claim) — update all three to "for Angular agents", preserving each
+  one's existing capitalisation and punctuation.
+
 - [ ] **Step 2: Commit**
 
 ```bash
-git add docs/gtm/messaging.md
+git add docs/gtm/messaging.md gtm.md README.md
 git commit -m "docs(gtm): record the shipped hero and retire the drifted one"
 ```
 
@@ -613,9 +651,15 @@ git commit -m "docs(gtm): record the shipped hero and retire the drifted one"
 `nx test` and `nx lint` do **not** typecheck this app. Only the build catches a
 broken production build.
 
-Run: `npx nx build website`
+Run: `GROWTH_FORM_POLICY=growth_v1 npx nx build website`
 
 Expected: succeeds.
+
+**The env var is required.** Without it the build fails during export with
+`Error: GROWTH_FORM_POLICY must be growth_v1` from
+`apps/website/src/lib/growth/form-policy.ts`. This is a pre-existing environment
+gate, unrelated to this work — but a bare `npx nx build website` in a fresh
+worktree looks like this change broke the build when it did not.
 
 Per `feedback_next_dev_dir_breaks_prod_build`, if this fails with a Turbopack
 root panic, remove the stale dev directory and retry:
@@ -636,7 +680,7 @@ warnings are acceptable; errors are not.
 The public-copy contract gate runs in production mode only:
 
 ```bash
-npx nx build website
+GROWTH_FORM_POLICY=growth_v1 npx nx build website
 WEBSITE_E2E_MODE=production npx nx e2e website
 ```
 
@@ -648,7 +692,7 @@ absolute claim and name no retired route, so this should be clean.
 Against the production build, not `next dev`:
 
 ```bash
-npx nx build website && npx nx serve website --configuration=production
+GROWTH_FORM_POLICY=growth_v1 npx nx build website && npx nx serve website --configuration=production
 ```
 
 At exactly 375x812 on `/`, capture evidence:
