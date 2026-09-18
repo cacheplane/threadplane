@@ -3,7 +3,7 @@
   <desc id="d-desc">The Angular chat component declares its action, view and ask client tools; the catalog travels to the FastAPI /agent endpoint, where bind_client_tools binds it to the model per run. The graph ends its turn and streams AG-UI events over SSE; the @threadplane/ag-ui adapter turns them into Angular signals, the browser executes the call, and the tool result starts the next run.</desc>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M0,0.5 L9.5,5 L0,9.5 z" fill="#004090"/>
+      <path d="M0,0.5 L9.5,5 L0,9.5 z" fill="#15253E"/>
     </marker>
   </defs>
   <style>
@@ -12,8 +12,8 @@
     .t-head { font-size: 17px; font-weight: 600; fill: #1c1c1c; }
     .t-title { font-size: 15px; font-weight: 600; fill: #1c1c1c; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
     .t-meta { font-size: 13px; fill: #464646; }
-    .t-edge { font-size: 12.5px; font-weight: 600; fill: #004090; }
-    .edge { stroke: #004090; stroke-width: 1.7; fill: none; marker-end: url(#arrow); }
+    .t-edge { font-size: 12.5px; font-weight: 600; fill: #15253E; }
+    .edge { stroke: #15253E; stroke-width: 1.7; fill: none; marker-end: url(#arrow); }
   </style>
 
   <rect x="0.5" y="0.5" width="699" height="689" rx="12" fill="#ffffff" stroke="#e5e5e5"/>
@@ -22,7 +22,7 @@
 
   <g>
     <rect x="40" y="104" width="620" height="62" rx="8" fill="#f2f5f9" stroke="#c3d1e2"/>
-    <rect x="40" y="104" width="4" height="62" fill="#004090"/>
+    <rect x="40" y="104" width="4" height="62" fill="#15253E"/>
     <text class="t-eyebrow" x="640" y="126" text-anchor="end">BROWSER</text>
     <text class="t-title" x="62" y="131">&lt;chat [clientTools]&gt;</text>
     <text class="t-meta" x="62" y="152">declares action() · view() · ask() and ships them as a catalog</text>
@@ -43,7 +43,7 @@
 
   <g>
     <rect x="40" y="288" width="620" height="62" rx="8" fill="#f2f5f9" stroke="#c3d1e2"/>
-    <rect x="40" y="288" width="4" height="62" fill="#004090"/>
+    <rect x="40" y="288" width="4" height="62" fill="#15253E"/>
     <text class="t-eyebrow" x="640" y="310" text-anchor="end">SERVER</text>
     <text class="t-title" x="62" y="315">bind_client_tools(llm, [], state)</text>
     <text class="t-meta" x="62" y="336">binds the browser's catalog to the model, per run</text>
@@ -64,7 +64,7 @@
 
   <g>
     <rect x="40" y="472" width="620" height="62" rx="8" fill="#ffffff" stroke="#d4d4d4"/>
-    <rect x="40" y="472" width="4" height="62" fill="#004090"/>
+    <rect x="40" y="472" width="4" height="62" fill="#15253E"/>
     <text class="t-eyebrow" x="640" y="494" text-anchor="end">BROWSER</text>
     <text class="t-title" x="62" y="499">@threadplane/ag-ui</text>
     <text class="t-meta" x="62" y="520">reduces the events into Angular signals</text>
@@ -74,7 +74,7 @@
 
   <g>
     <rect x="40" y="564" width="620" height="62" rx="8" fill="#ffffff" stroke="#d4d4d4"/>
-    <rect x="40" y="564" width="4" height="62" fill="#004090"/>
+    <rect x="40" y="564" width="4" height="62" fill="#15253E"/>
     <text class="t-eyebrow" x="640" y="586" text-anchor="end">BROWSER</text>
     <text class="t-title" x="62" y="591">the browser runs it</text>
     <text class="t-meta" x="62" y="612">a handler returns, a component mounts, or the user answers</text>

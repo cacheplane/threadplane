@@ -69,6 +69,10 @@ const COLOUR_SCANNED_ASSETS = [
   'libs/langgraph/README.md',
   'libs/render/README.md',
   'libs/telemetry/README.md',
+  'apps/website/public/assets/hero.svg',
+  'apps/website/public/blog/diagrams/ag-ui-event-flow.svg',
+  'apps/website/public/blog/diagrams/agent-contract-boundary.svg',
+  'apps/website/public/blog/diagrams/langgraph-threads-and-runs.svg',
 ];
 
 describe('brand assets carry current colours', () => {
