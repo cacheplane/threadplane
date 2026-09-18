@@ -5,13 +5,10 @@
  *
  * Beat: the FIRST STREAMED REPLY, the same beat as the desktop poster, so
  * crossing the 768px breakpoint swaps the source without changing the story.
- * 650 CSS px is the shortest height at which the whole answer fits from its
- * first line — "Approved. Here is the cleanup I would run:" through the
- * three-step plan, the message actions and the composer — with nothing sliced
- * at the top edge. The approval-interrupt beat was the other candidate and was
- * rejected twice over: at phone height the panel slices the user's prompt
- * bubble behind it, and a still of a live Accept / Edit / Respond dialog
- * invites taps that do nothing.
+ * The approval-interrupt beat was the other candidate and was rejected twice
+ * over: at phone height the panel slices the user's prompt bubble behind it,
+ * and a still of a live Accept / Edit / Respond dialog invites taps that do
+ * nothing.
  *
  * The wait is about the scripted cursor, not the text. Until the resumed answer
  * finishes and HOLD_AFTER_ANSWER_MS elapses the cursor stays parked where it
@@ -29,17 +26,40 @@
  * its own value because its Accept spot is empty space. Re-measure whenever
  * `public/hero-replay.json` changes.
  *
- * The height budget is just as coupled, and to the REPLAY: the opening line
- * of the recorded post-approval answer in `public/hero-replay.json` has to fit
- * on ONE line at 390px (about 44 characters) or the whole block shifts up and
- * the first line is sliced off the top edge. Re-check it on every re-record.
+ * THE HEIGHT BUDGET IS DERIVED FROM THE REPLAY, not chosen. The timeline is
+ * pinned to the bottom, so the frame's top edge — the top of the chat's own
+ * scroll container, NOT y=0 — falls wherever (capture height) puts it, and it
+ * must land in a GAP between blocks or the poster opens mid-block. Measured
+ * against the 2026-09-18 `public/hero-replay.json`, with the edge at
+ * `62 + (650 - height)` in the content coordinates of a 650px capture:
  *
- * Geometry: 390x650 is the phone design width the reviews already use, and it
- * is exactly 3:5 — the ratio `.hero-demo-stage` holds below 768px — so
- * `object-fit: cover` crops nothing. The frame is captured at
- * deviceScaleFactor 2 for crisp glyph rasterisation and shipped resized to
- * 585x975 (1.5x): the poster is displayed ~348 CSS px wide on a phone, and 2x
- * would cost ~51KB against the desktop poster's 37KB.
+ *   list_backups result table   ends at 173   (669px tall — TALLER than the
+ *                                              whole frame, so it can never be
+ *                                              shown whole at phone width)
+ *   delete_backups tool chip    197 .. 240
+ *   "Deleted 3 backups (...)"   starts at 263
+ *
+ * That leaves two gaps: height 516..538 puts the edge above the tool chip, and
+ * height 450..472 puts it above the answer. 526 is the middle of the first,
+ * which keeps the `delete_backups` chip in frame — the approval beat the whole
+ * walkthrough is about — and it halves to an integer at the 1.5x ship scale.
+ *
+ * 650 was the budget until the approval tools became executable (#1011). That
+ * commit replaced a short prose answer with a run that streams a backup TABLE,
+ * and 650 has straddled that table's bottom edge ever since — the poster
+ * shipped opening on a table cut through horizontally, with its path column
+ * wrapped to four lines. The old rule of thumb ("the answer's opening line has
+ * to fit on ONE line at 390px") no longer decides anything on its own; re-derive
+ * the gaps from the DOM whenever the replay changes. The guard in the test body
+ * fails loudly with the measured numbers when it drifts again.
+ *
+ * Geometry: 390 is the phone design width the reviews already use. The ratio is
+ * therefore 390:526 (195:263), NOT the old 3:5 — `.hero-demo-stage` below 768px
+ * and POSTER_MOBILE_W/H in HeroDemo.tsx carry the same pair so `object-fit:
+ * cover` still crops nothing, and all three must move together. The frame is
+ * captured at deviceScaleFactor 2 for crisp glyph rasterisation and shipped
+ * resized to 585x789 (1.5x): the poster is displayed ~348 CSS px wide on a
+ * phone, and 2x would cost ~51KB against the desktop poster's 37KB.
  *
  *   npx playwright test --config examples/chat/angular/e2e/record-hero.config.ts record-hero-poster-mobile
  */
@@ -53,7 +73,7 @@ const OUT = resolve(
 );
 const SHIP_WIDTH = 585;
 
-test.use({ viewport: { width: 390, height: 650 }, deviceScaleFactor: 2 });
+test.use({ viewport: { width: 390, height: 526 }, deviceScaleFactor: 2 });
 
 test('capture mobile hero poster', async ({ page }) => {
   await page.goto('/hero');
@@ -70,6 +90,48 @@ test('capture mobile hero poster', async ({ page }) => {
   await expect(page.locator('.hero__take')).toBeVisible();
   await expect(page.locator('[data-hero-surface] textarea')).toHaveValue('');
   await expect(page.locator('a2ui-surface')).toHaveCount(0);
+  // Guards the TOP EDGE, which none of the checks above can see. The clipping
+  // edge is NOT the viewport's y=0: the timeline lives in its own scroll
+  // container (`.chat-scroll` in libs/chat's chat composition), whose top sits
+  // below the `.hero__bar` at about y=62. A block scrolled off the top is
+  // clipped there, so a message with a positive y can still be sliced.
+  // A message that is wholly above that edge (the user's prompt, which may
+  // legitimately scroll out of frame) is fine; a message that STRADDLES it is
+  // the defect — the poster then opens mid-table or mid-sentence.
+  // `chat-message` is the element selector exported by libs/chat
+  // (primitives/chat-message/chat-message.component.ts).
+  await expect(page.locator('[data-hero-surface] chat-message').last()).toBeVisible();
+  const straddling = await page.evaluate(() => {
+    const surface = document.querySelector('[data-hero-surface]');
+    if (!surface) throw new Error('no [data-hero-surface]');
+    const scrollableTop = (el: Element): number => {
+      for (let n: Element | null = el.parentElement; n; n = n.parentElement) {
+        const oy = getComputedStyle(n).overflowY;
+        if (oy === 'auto' || oy === 'scroll') return n.getBoundingClientRect().top;
+      }
+      return 0;
+    };
+    return [...surface.querySelectorAll('chat-message')]
+      .map((m) => {
+        const r = m.getBoundingClientRect();
+        const edge = scrollableTop(m);
+        return { top: Math.round(r.top), bottom: Math.round(r.bottom), edge: Math.round(edge),
+          text: (m.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 60) };
+      })
+      // 1px of tolerance for sub-pixel layout; anything more is a real slice.
+      .filter((m) => m.top < m.edge - 1 && m.bottom > m.edge + 1);
+  });
+  if (straddling.length > 0) {
+    throw new Error(
+      `a message is sliced by the frame's top edge: ${JSON.stringify(straddling)} ` +
+        `(top/bottom/edge in CSS px). The capture height no longer lands in a gap ` +
+        `between blocks. Re-derive the gaps from these numbers and move the ` +
+        `viewport height here, POSTER_MOBILE_W/H in ` +
+        `apps/website/src/components/landing/HeroDemo.tsx and the ` +
+        `.hero-demo-stage aspect-ratio in apps/website/src/styles/landing.css ` +
+        `TOGETHER — see this file's header.`,
+    );
+  }
   const png = await page.screenshot({ type: 'png', fullPage: false });
   await sharp(png).resize({ width: SHIP_WIDTH }).webp({ quality: 55, effort: 6 }).toFile(OUT);
   console.log(`wrote ${OUT}`);
