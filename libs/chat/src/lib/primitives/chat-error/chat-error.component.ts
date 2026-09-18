@@ -36,15 +36,19 @@ export function extractErrorMessage(error: unknown): string | null {
           <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
         </svg>
         <span class="chat-error__msg">{{ err.message }}</span>
-        @if (err.detail) {
-          <span class="chat-error__detail">{{ err.detail }}</span>
-        }
+        <!-- The action comes before the detail in source order so it shares the
+             first row with the message, the way Retry always has. The detail
+             claims a full row of its own, so a button after it would be pushed
+             to a third row and the two actions would sit differently. -->
         @if (err.recovery === 'check') {
           @if (agent().checkStatus) {
             <button type="button" class="chat-error__check" (click)="agent().checkStatus!()">Check status</button>
           }
         } @else if (err.retryable) {
           <button type="button" class="chat-error__retry" (click)="agent().retry()">Retry</button>
+        }
+        @if (err.detail) {
+          <span class="chat-error__detail">{{ err.detail }}</span>
         }
       </div>
     }
