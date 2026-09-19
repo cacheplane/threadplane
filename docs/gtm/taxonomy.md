@@ -55,6 +55,7 @@ The standard PostHog `$pageview` event is used as-is across all three surfaces.
 | `docs:workspace_runtime_action` | Explicit runtime action; `capability`, `action`, `state_before`, `outcome`, `surface`. |
 | `docs:workspace_runtime_status_changed` | Runtime status transition; `capability`, `from_state`, `to_state`, optional `elapsed_ms`/`reason_code`, `surface`. |
 | `marketing:stage_progress` | Recorded homepage stage progress; `surface`, `stage_event`, optional `beat`. Not a live developer runtime. |
+| `marketing:engaged_time` | Cumulative **visible** seconds on a page; `engaged_seconds` (10 or 30), `source_page`. Fires on every viewport. Hidden background time is excluded by construction, so it reads as attention rather than a tab left open. |
 
 Current dashboards distinguish website intent, client-observed form acceptance,
 and independent demo milestones. `hero_install` is a copy attempt recorded before

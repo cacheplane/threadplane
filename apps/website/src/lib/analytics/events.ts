@@ -29,6 +29,7 @@ export const analyticsEvents = {
   marketingAiCrawlerVisit: 'marketing:ai_crawler_visit',
   marketingAiReferralVisit: 'marketing:ai_referral_visit',
   marketingStageProgress: 'marketing:stage_progress',
+  marketingEngagedTime: 'marketing:engaged_time',
 } as const;
 
 export type AnalyticsEventName = (typeof analyticsEvents)[keyof typeof analyticsEvents];
@@ -142,6 +143,12 @@ export type AnalyticsProperties = {
   ai_crawler?: string;
   ai_source?: string;
   user_agent?: string;
+  /**
+   * Cumulative *visible* seconds on a page (`marketing:engaged_time`).
+   * Hidden background time is excluded by construction — see
+   * `analytics/engaged-time.ts`.
+   */
+  engaged_seconds?: number;
   /** Homepage stage milestones (`marketing:stage_progress`). */
   stage_event?: StageMilestone;
   beat?: StageBeat;

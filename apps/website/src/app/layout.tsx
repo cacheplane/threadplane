@@ -20,6 +20,7 @@ import {
 } from '../lib/site-metadata';
 import { getFormPolicy } from '../lib/growth/form-policy';
 import { WebsiteSignals } from '../components/shared/WebsiteSignals';
+import { EngagedTimeSignal } from '../components/shared/EngagedTimeSignal';
 import { websiteContentCatalog } from '../lib/growth/website-content';
 
 const display = Archivo_Black({
@@ -97,6 +98,7 @@ export default function RootLayout({
         */}
         <JsonLd data={rootJsonLd()} />
         <WebsiteSignals catalog={websiteContentCatalog()} />
+        <EngagedTimeSignal />
         <Nav />
         <div id="site-content">
           <main>
