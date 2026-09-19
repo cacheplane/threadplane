@@ -42,7 +42,7 @@ describe('BackupTableComponent', () => {
   // be to drop the Location column from the template, which this forbids.
   it('keeps all four values on every row for the phone layout to re-flow', () => {
     const el = mount({ older_than_days: 90, status: 'complete', backups: ROWS, total: 8 });
-    for (const [i, row] of [...el.querySelectorAll('tbody tr')].entries()) {
+    for (const [i, row] of Array.from(el.querySelectorAll('tbody tr')).entries()) {
       expect(row.querySelector('.bt__id')?.textContent).toContain(ROWS[i].id);
       expect(row.querySelector('.bt__loc')?.textContent).toContain(ROWS[i].location);
       expect(row.querySelector('.bt__num')?.textContent).toContain(String(ROWS[i].size_gb));
