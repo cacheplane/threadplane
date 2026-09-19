@@ -32,7 +32,7 @@ export const runtime = 'nodejs';
 export const GITHUB_CARD_SIZE = { width: 1280, height: 640 } as const;
 
 const RUNTIMES = POSITIONING_PROOF_POINTS[0].label;
-const EYEBROW = 'OPEN SOURCE · ANGULAR';
+const EYEBROW = 'OPEN SOURCE';
 
 export async function GET() {
   const fonts = await loadCardFonts({ mono: true });
