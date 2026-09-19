@@ -131,6 +131,55 @@ function expectOk<T>(r: { data?: T; error?: unknown }, op: string): T {
 
 interface ReportClient {
   GET(path: string, options?: any): Promise<{ data?: unknown; error?: unknown }>;
+  POST?(path: string, options?: any): Promise<{ data?: unknown; error?: unknown }>;
+}
+
+/**
+ * Breakdown insights carry a `breakdown_limit`, so PostHog returns only the top N
+ * values and summing the returned series would undercount. We re-run the same
+ * trends query with the breakdown removed and label the row accordingly.
+ */
+export const BREAKDOWN_TOTAL_SUFFIX = ' — total across all breakdown values';
+
+/** `blocking` recomputes a stale cache and returns only when the query is done. */
+const REFRESH = 'blocking' as const;
+const POLL_ATTEMPTS = 10;
+const POLL_INTERVAL_MS = 3_000;
+
+function trendsSource(insight: FetchedInsight): any {
+  return insight.query?.kind === 'TrendsQuery' ? insight.query : insight.query?.source;
+}
+
+function stillComputing(insight: FetchedInsight | undefined): boolean {
+  const status = (insight as any)?.query_status;
+  return !Array.isArray(insight?.result) && !!status && status.complete !== true;
+}
+
+/**
+ * `blocking` normally returns a computed result, but PostHog may hand back a
+ * query_status instead. Poll the cache a bounded number of times rather than
+ * hanging — an insight that never completes stays Unavailable, never zero.
+ */
+async function fetchInsight(c: ReportClient, id: number, sleep: (ms: number) => Promise<void>): Promise<FetchedInsight> {
+  const get = async (refresh: string) =>
+    expectOk(await c.GET('/insights/{id}/' as any, { params: { path: { id }, query: { refresh } } } as any) as any, `get insight ${id}`) as FetchedInsight;
+  let insight = await get(REFRESH);
+  for (let attempt = 0; attempt < POLL_ATTEMPTS && stillComputing(insight); attempt += 1) {
+    await sleep(POLL_INTERVAL_MS);
+    insight = await get('force_cache');
+  }
+  return insight;
+}
+
+/** Re-runs the insight's own trends query with the breakdown stripped. */
+async function breakdownTotalRows(c: ReportClient, insight: FetchedInsight, source: any, asOf: Date): Promise<ReportRow[]> {
+  if (typeof c.POST !== 'function') return insightReportRows(insight, asOf);
+  const flat = { ...source };
+  delete flat.breakdownFilter;
+  const response = await c.POST('/query/' as any, { body: { query: flat, refresh: REFRESH } } as any);
+  const payload = expectOk(response as any, `query insight ${insight.id} without breakdown`) as any;
+  const result = Array.isArray(payload?.results) ? payload.results : payload?.result;
+  return insightReportRows({ ...insight, name: `${insight.name}${BREAKDOWN_TOTAL_SUFFIX}`, query: flat, result }, asOf);
 }
 
 async function managedDashboardIds(): Promise<number[]> {
@@ -145,10 +194,11 @@ async function managedDashboardIds(): Promise<number[]> {
   return ids;
 }
 
-export async function generateReport(options: { client?: ReportClient; asOf?: Date; dashboardIds?: readonly number[] } = {}): Promise<{ markdown: string; date: string }> {
+export async function generateReport(options: { client?: ReportClient; asOf?: Date; dashboardIds?: readonly number[]; sleep?: (ms: number) => Promise<void> } = {}): Promise<{ markdown: string; date: string }> {
   const asOf = options.asOf ?? new Date();
   const c = options.client ?? ph();
   const ids = options.dashboardIds ?? await managedDashboardIds();
+  const sleep = options.sleep ?? ((ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms)));
   const dashboards = await fetchAllPages<FetchedDashboard>(async (offset, limit) => {
     const response = await c.GET('/dashboards/' as any, { params: { query: { limit, offset } } } as any);
     return expectOk(response, 'list dashboards') as { results: FetchedDashboard[]; next?: string | null };
@@ -164,10 +214,12 @@ export async function generateReport(options: { client?: ReportClient; asOf?: Da
     for (const tile of d.tiles) {
       const tileId = typeof tile.insight === 'number' ? tile.insight : tile.insight?.id;
       if (typeof tileId !== 'number') continue;
-      const insightRes = await c.GET(`/insights/{id}/` as any, {
-        params: { path: { id: tileId }, query: { refresh: 'force_cache' } },
-      } as any);
-      const insight = expectOk(insightRes as any, `get insight ${tileId}`) as FetchedInsight;
+      const insight = await fetchInsight(c, tileId, sleep);
+      const source = trendsSource(insight);
+      if (source?.kind === 'TrendsQuery' && source.breakdownFilter?.breakdown) {
+        rows.push(...await breakdownTotalRows(c, insight, source, asOf));
+        continue;
+      }
       rows.push(...insightReportRows(insight, asOf));
     }
     if (!rows.length) rows.push({ metric: d.name, thisWeek: null, lastWeek: null, weeks: [], unavailable: 'no insight tiles on this dashboard' });
