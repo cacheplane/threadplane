@@ -144,30 +144,54 @@ different populations. Dividing the bounce count by **Sessions** instead of
 
 Window pinned 2026-05-01 to 2026-09-18; September is a partial month.
 
-**The series will break once both the pageview fix ships and the project
-setting flips — it has not yet.** Restoring the other two `$is_bounce`
-branches lowers the rate on unchanged traffic, but today neither precondition
-holds: the deployed bundle still ships `capture_pageview: !0` (truthy, not
-`'history_change'`), and the remote config still returns
-`"autocapture_opt_out": true`. The break date is whichever of the two ships
-second, not 2026-09-18. Do not compare across that date once it happens.
+**The series broke at 2026-09-19T02:05Z.** Both preconditions landed together:
+the pageview fix deployed (PR #1110) and `autocapture_opt_out` was set to
+`false` via the Projects API. All three `$is_bounce` branches are now
+reachable, which lowers the rate on unchanged traffic. Verified at the time:
+`$autocapture` events arriving, and a soft navigation producing a `$pageview`
+for the new path. **Do not compare across that instant.** Note the table above
+is pinned to 2026-09-19T00:00Z, so sessions in the ~2 hours before the cutover
+fall outside it.
+
+**A second break follows** when `marketing:engaged_time` reaches production.
+It emits a passive event at 10s and 30s of visible time, which raises recorded
+session duration for readers who click nothing — see below.
 
 **The volume does not support fine comparisons.** At ~160 homepage sessions per
 month a ±8.17pp interval cannot separate 50.0% from 59%. Judging a homepage
 change on this metric needs a much longer accumulation window, or more traffic.
 
-Two limits this baseline exposed. `$pageleave` is missing from 17–20% of
-sessions in the four browsers with samples large enough to read: Chrome
-Desktop (17.2%), Safari Desktop (19.6%), Mobile Safari (20.0%), and Chrome
-Mobile (3 of 16 sessions, 18.8% — a single extra session would move this to
-25.0%). Other
-browsers in the same result set, such as Firefox Desktop (3 of 3 missing) and
-Edge Desktop (0 of 3 missing), have samples too small to read. Those missing
-sessions collapse to zero duration and become automatic bounces; the
-zero-duration share tracks the bounce rate month over month. And 89% of
-homepage entries are Direct (143 of the 161 September sessions, 54.3% bounce)
-against 15 Organic Search sessions at 13.3% bounce, so the headline figure is
-mostly a statement about untagged traffic.
+Two limits this baseline exposed, one of which now has an established cause.
+
+**Zero-duration sessions were a missing engagement signal, not a delivery
+failure.** posthog-js fires `$pageleave` only from its `pagehide`/`unload`
+handler — never on `visibilitychange`. PostHog derives `session_duration` from
+`max(timestamp) - min(timestamp)` across a session's events. So a visitor who
+lands, reads, clicks nothing and leaves the tab open emits exactly one
+`$pageview`, records zero seconds, and is scored as a bounce. When the tab is
+finally closed hours later the session id has long since rotated, so the
+`$pageleave` lands in a *new* session: 67 such orphan sessions in 30 days, all
+with a prior session from the same person, median gap 221 minutes and p75 1486
+minutes. That long-gap signature is what rules out an ad blocker or a browser
+quirk, and it is why the rate looked uniform across browsers.
+
+The distortion concentrated where no passive event could fire:
+
+| Device | Sessions | Zero-duration | Had `stage_progress` | Had any `marketing:*` | Median duration |
+| --- | --- | --- | --- | --- | --- |
+| Desktop | 176 | 13.6% | 11.9% | 44.3% | 11.0s |
+| Mobile | 45 | 17.8% | 0.0% | 8.9% | 3.0s |
+
+`marketing:stage_progress` is gated to viewports of at least 1024x720, so it
+fired on **0.0%** of mobile sessions and 91% of mobile sessions emitted nothing
+but the pageview. `marketing:engaged_time` is the fix and deliberately has no
+viewport gate. Until it shipped, mobile engagement was not measurable at all —
+which also means mobile changes made before it are not measurable retroactively.
+
+**Channel composition remains the larger caveat.** 89% of homepage entries are
+Direct (143 of the 161 September sessions, 54.3% bounce) against 15 Organic
+Search sessions at 13.3% bounce, so the headline figure is mostly a statement
+about untagged traffic.
 
 ## Contributor checks
 
