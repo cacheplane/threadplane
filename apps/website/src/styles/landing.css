@@ -27,6 +27,41 @@
 .hero-heading-line {
   display: block;
 }
+/* Phone width. Two coupled parts, both required:
+ *
+ * 1. font-size. --text-h1 is `clamp(48px, 6vw, 72px)` in the shared
+ *    design-tokens theme. At 375px, 6vw is 22.5px, so the clamp FLOOR of 48px
+ *    is what renders — at which "thread-plane" alone nearly fills the 335px
+ *    column. The token is shared by many pages, so the override lives here on
+ *    .hero-heading rather than in the token.
+ * 2. display: inline. The spans are the desktop and social-card line-breaking.
+ *    Left as blocks at phone width each one is given a line and then wraps
+ *    again. Flowed, the browser breaks the sentence to the column instead.
+ *
+ * Measured at 375x812, against two different baselines — both are real, so be
+ * precise about which one you mean:
+ *   - What production shipped, with the shorter pre-Angular H1 and blocks:
+ *     4 lines, 207px.
+ *   - What the current H1 would be with blocks and no font-size override:
+ *     6 lines, 311px — all three spans wrap, not just the first.
+ *   - What this rule produces: 3 lines, 117px.
+ * So this reclaims ~194px (~24% of an 812px fold) against the copy that now
+ * ships. e2e/home-hero.spec.ts budgets it absolutely once Task 4 lands.
+ *
+ * line-height is pinned rather than inherited on purpose: font-size no longer
+ * comes from --text-h1 here, so leaving the ratio on --text-h1--line-height
+ * would couple this block to a token it otherwise ignores. It resolves to the
+ * same 1.08 today.
+ */
+@media (max-width: 767px) {
+  .hero-heading {
+    font-size: 36px;
+    line-height: 1.08;
+  }
+  .hero-heading-line {
+    display: inline;
+  }
+}
 .hero-subhead {
   font-family: var(--font-sans);
   font-size: var(--text-body-lg);
@@ -1896,10 +1931,12 @@
 }
 /* The control had chrome already — `background: #111` with a black drop
  * shadow — but the poster it sits on is a near-black chat surface, so on a
- * phone (the only viewport that shows it: autoplay is off below 768px) it read
- * as bare white text floating over the screenshot. A light pill with a dark
- * ring is legible on this poster and on any lighter one that replaces it, and
- * the row is sized to a 44px touch target. */
+ * phone it read as bare white text floating over the screenshot. A light pill
+ * with a dark ring is legible on this poster and on any lighter one that
+ * replaces it, and the row is sized to a 44px touch target.
+ *
+ * This control is no longer the phone's default. Autoplay is width-independent
+ * now, so it renders only on the reduced-motion path — at any width. */
 .hero-demo-play,
 .hero-demo-fallback {
   /* Centred by auto margins between two zero insets, not by
@@ -1952,18 +1989,26 @@
   }
 }
 /* Below the breakpoint the stage shows the phone-width poster, which is a
- * 390x650 capture — exactly 3:5. Matching that ratio here is what makes
- * `object-fit: cover` a no-op: the frame is shown whole, at 390/348 ≈ 1.12
- * scale, so every line of the chat is read at its designed size instead of
- * being shrunk to 0.29 or cropped at the right edge. The stage governs the
- * iframe too, so a phone that taps Play gets the same portrait chat viewport
- * the poster promised rather than a 16:9 letterbox.
+ * 390x906 capture — exactly 65:151. Matching that ratio here is what makes
+ * `object-fit: cover` a no-op: the frame is shown whole, so every line of the
+ * chat is read at its designed size instead of being shrunk or cropped at the
+ * right edge. The stage governs the iframe too, so a phone gets the same
+ * portrait chat viewport the poster promised rather than a 16:9 letterbox.
  *
- * The breakpoint is shared three ways and must move as one: this ratio, the
- * <source media> in HeroDemo.tsx, and MIN_AUTOPLAY_WIDTH. */
+ * The breakpoint is shared two ways and must move as one: this ratio and the
+ * <source media> in HeroDemo.tsx. The RATIO is shared three ways — here,
+ * POSTER_MOBILE_W/H in HeroDemo.tsx, and the recorder's capture viewport.
+ * MIN_AUTOPLAY_WIDTH is no longer part of it —
+ * the iframe autoplays at every width now. */
 @media (max-width: 767px) {
   .hero-demo-stage {
-    aspect-ratio: 3 / 5;
+    /* 65/151 is 390x906, the phone poster's capture geometry — not a round
+       number and not meant to be. It was 3:5, then 195:263, as the recorded
+       walkthrough's streamed backup table changed height; 906 is the first
+       budget that frames that table whole, and it also sizes the LIVE iframe
+       here, so the phone demo gets more room than either predecessor gave it.
+       See record-hero-poster-mobile.record.ts for how the height is measured. */
+    aspect-ratio: 65 / 151;
   }
   /* The phone poster shows the demo's whole frame, right down to its own
      "Take control ↗" button — which lands 20-29px above the stage floor and

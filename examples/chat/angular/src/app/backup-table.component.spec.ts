@@ -34,6 +34,22 @@ describe('BackupTableComponent', () => {
     expect(el.textContent).toMatch(/2 of 8 backups are older than 90 days/);
   });
 
+  // The phone layout is a `@media (max-width: 479px)` block that re-flows the
+  // SAME four cells into a two-line grid, so there is nothing structural for a
+  // unit test to see — jsdom does no layout and applies no media query. What IS
+  // testable, and what the phone layout must not quietly break, is that every
+  // row still carries all four values: the cheap way to shorten the table would
+  // be to drop the Location column from the template, which this forbids.
+  it('keeps all four values on every row for the phone layout to re-flow', () => {
+    const el = mount({ older_than_days: 90, status: 'complete', backups: ROWS, total: 8 });
+    for (const [i, row] of Array.from(el.querySelectorAll('tbody tr')).entries()) {
+      expect(row.querySelector('.bt__id')?.textContent).toContain(ROWS[i].id);
+      expect(row.querySelector('.bt__loc')?.textContent).toContain(ROWS[i].location);
+      expect(row.querySelector('.bt__num')?.textContent).toContain(String(ROWS[i].size_gb));
+      expect(row.textContent).toContain(ROWS[i].created_at);
+    }
+  });
+
   it('says so when nothing matches', () => {
     const el = mount({ older_than_days: 400, status: 'complete', backups: [], total: 8 });
     expect(el.querySelector('[data-state]')?.getAttribute('data-state')).toBe('empty');

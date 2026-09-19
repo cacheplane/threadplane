@@ -28,7 +28,7 @@ export const contentType = 'image/png';
 
 /** "LangGraph + AG-UI" — the first proof point is the runtime claim. */
 const RUNTIMES = POSITIONING_PROOF_POINTS[0].label;
-const EYEBROW = 'OPEN SOURCE · ANGULAR';
+const EYEBROW = 'OPEN SOURCE';
 
 /** Describes what the card actually shows, not just the page it links to. */
 export const alt = `${PRIMARY_TAGLINE}. ${HERO_SUBHEAD} Beside the copy, a browser frame shows the product pausing for a human: an agent proposes deleting three backups, with Approve and Decline. Works with ${RUNTIMES}.`;

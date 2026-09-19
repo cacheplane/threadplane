@@ -245,7 +245,7 @@ const CONTRACTS: StyleContract[] = [
   {
     file: 'landing.css',
     selector: '.hero-demo-play',
-    why: 'The play control only ever renders on phones (autoplay is off below 768px) and sits on a near-black poster. It previously had `background: #111` and a black shadow, which read as bare white text with no button chrome. The light fill and dark ring are what make it look clickable. The fill is also fully opaque: at 97% the phone poster\'s own "Take control ↗" text read straight through it.',
+    why: 'The play control renders on the reduced-motion path, at any width — autoplay is no longer width-gated — and sits on a near-black poster. It previously had `background: #111` and a black shadow, which read as bare white text with no button chrome. The light fill and dark ring are what make it look clickable. The fill is also fully opaque: at 97% the phone poster\'s own "Take control ↗" text read straight through it.',
     requires: {
       background: /background:\s*rgb\(248 248 248\)/,
       border: /border:\s*1px solid/,
@@ -436,15 +436,24 @@ describe('style contracts', () => {
 
     /**
      * The stage box, not the image, is what `object-fit: cover` crops against.
-     * The phone poster is a 390x650 capture, so the stage has to hold 3:5 below
-     * the breakpoint; at the desktop 1200/720 it would letterbox the portrait
-     * frame down to a two-line sliver. This replaces a `4 / 5` +
+     * The phone poster is a 390x906 capture, so the stage has to hold 65:151
+     * below the breakpoint; at the desktop 1200/720 it would letterbox the
+     * portrait frame down to a two-line sliver. This replaces a `4 / 5` +
      * `object-position: 40% top` pair that existed only to crop the DESKTOP
      * capture into something readable, which sliced the right edge off every
      * line of prose.
+     *
+     * The ratio has moved twice as the recorded walkthrough's streamed backup
+     * table changed height — 3:5 (390x650), then 195:263 (390x526), now 65:151
+     * (390x906). It is NOT a free parameter: below 768px this ratio also sizes
+     * the LIVE autoplaying iframe, and the height is measured from the replay's
+     * own block boundaries so the poster's top edge lands in a gap between
+     * messages. Change it only together with the recorder's viewport and
+     * POSTER_MOBILE_W/H in HeroDemo.tsx; see
+     * examples/chat/angular/e2e/record-hero-poster-mobile.record.ts.
      */
     it('holds the phone poster ratio below the breakpoint', () => {
-      expect(declarationsFor(phone, '.hero-demo-stage')).toMatch(/aspect-ratio:\s*3\s*\/\s*5/);
+      expect(declarationsFor(phone, '.hero-demo-stage')).toMatch(/aspect-ratio:\s*65\s*\/\s*151/);
     });
 
     it('keeps the desktop stage at the desktop capture ratio', () => {
