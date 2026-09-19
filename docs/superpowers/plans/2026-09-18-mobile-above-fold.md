@@ -408,33 +408,57 @@ walkthrough…` tests with:
     // from. .hero-demo-stage sits ~44px lower inside the BrowserFrame chrome,
     // so budgeting it at 560 would be a much tighter guard than intended.
     const demo = page.locator('[data-hero-demo]');
+    await expect(demo).toBeVisible();
     const demoTop = (await demo.boundingBox())!.y;
-    expect(demoTop).toBeLessThanOrEqual(560);
+    expect(demoTop).toBeLessThanOrEqual(530);
   });
 ```
 
 - [ ] **Step 2: Run the hero e2e suite**
 
-Run: `npx nx e2e website -- home-hero`
+Run: `npx nx e2e website --grep "homepage hero"`
 
 Expected: all four tests PASS.
 
-Per `feedback_examples_chat_e2e_orphan_servers`, if the run behaves as though it
-is serving old code, kill orphaned dev servers first:
+**Do not use `-- home-hero`.** This target is `@nx/playwright:playwright` with
+only a `config` option, so a positional does not pass through and the run dies
+with `error: unknown option '--_=home-hero'`. Use `--grep` as above.
+
+Per `feedback_examples_chat_e2e_orphan_servers`, an orphaned dev server from an
+earlier task will break the run — but not in the way you would expect. The
+failure is `Unable to acquire lock at .../apps/website/.next/dev/lock`, and the
+lock is on `.next/dev` regardless of which port the orphan is serving, so a
+port-matched pkill misses it. Kill by worktree instead:
 
 ```bash
-pkill -f "next.*4308" || true
+pkill -f "clever-sammet-6ce520.*next dev" || true
 ```
+
+Check `preview_list` first if you have browser tools — do not kill a managed
+preview server out from under the session.
 
 - [ ] **Step 3: Prove the fold guard is not vacuous**
 
 A guard that passes before the fix is worthless. Temporarily revert Task 2 by
 commenting out the `font-size: 36px` line in `landing.css`, then run:
 
-Run: `npx nx e2e website -- home-hero`
+Run: `npx nx e2e website --grep "homepage hero"`
 
 Expected: `the hero fits the fold at 375x812` FAILS with `headingHeight` about
-207, exceeding 130. Restore the line and re-run to confirm PASS.
+**259**, exceeding the 130 budget.
+
+Note 259, not the 311 quoted in `landing.css`. Both are real and they are
+different mutations: 311px is blocks AND no font-size override (three spans each
+wrapping at 48px); commenting out only `font-size` leaves `display: inline`, so
+the sentence reflows to 5 lines at the 48px clamp floor — 5 x 48 x 1.08 = 259.2.
+The guard bites either way.
+
+The heading assertion aborts the test before `demoTop` is reached, so to prove
+that budget too, measure it in a throwaway spec during the same mutated run
+(then delete it). Under this mutation it reads **643.94** against the 560
+budget. Both budgets are non-vacuous.
+
+Restore the line and re-run to confirm PASS.
 
 - [ ] **Step 4: Commit**
 
@@ -560,7 +584,14 @@ spec.)
 
 - [ ] **Step 2: Regenerate the GitHub social preview**
 
-Run: `npm run card:github`
+```bash
+node scripts/export-github-card.mjs --origin http://localhost:3000
+```
+
+**Not the bare `npm run card:github`.** That script defaults to fetching
+`https://threadplane.ai` — production, which still serves the OLD copy — so
+running it before deploy regenerates the card from the very copy this work
+replaces, and it looks like it worked. Point it at the local dev server.
 
 - [ ] **Step 3: Flag the manual upload**
 
@@ -574,7 +605,7 @@ otherwise be forgotten.
 
 ```bash
 git status --short
-git add -A apps/website/public
+git add docs/brand/github-social-preview.png
 git commit -m "chore(website): regenerate social cards for the new H1"
 ```
 
@@ -622,6 +653,23 @@ generated from the supported majors, not typed).
 > `docs/superpowers/specs/2026-09-18-mobile-above-fold-design.md` §4: keep the
 > category claim and add the stack to it.
 ```
+
+- [ ] **Step 1a: Fix the README banner, which mirrors the social cards**
+
+`apps/website/public/assets/hero.svg:25` hard-codes `OPEN SOURCE · ANGULAR` and
+its header comment says it is "Kept in step with the social card." Task 6 changed
+both cards to `OPEN SOURCE`, so it is now stale against the thing it claims to
+mirror. Change the SVG's text to `OPEN SOURCE`.
+
+It also carries the tagline, so check the whole file for the pre-Angular wording
+while you are in it.
+
+Note why nothing caught this: `brand-assets.spec.ts` checks brand assets against
+`RETIRED_POSITIONING` in `public-copy-contract.ts`, and that list holds only six
+retired *positioning* phrases — the eyebrow and the tagline are not in it. The
+guard passes happily over this drift. Do not add the old strings to
+`RETIRED_POSITIONING` as a fix: that list is for phrases barred from public copy,
+and "OPEN SOURCE · ANGULAR" is not barred, it is merely superseded here.
 
 - [ ] **Step 1b: Update the other two places that state the tagline**
 
@@ -671,6 +719,20 @@ root panic, remove the stale dev directory and retry:
 ```bash
 rm -rf apps/website/.next/dev && npx nx build website
 ```
+
+- [ ] **Step 1b: Build the example app too**
+
+Run: `npx nx build examples-chat-angular`
+
+Expected: succeeds.
+
+This is not optional and it is not covered by anything else. `examples/chat/angular`'s
+`tsconfig.app.json` includes `src/**/*.ts`, which pulls in `.spec.ts` files, and its
+lib set is `["es2022", "dom"]` with no `dom.iterable`. So a spec that spreads a
+`NodeListOf` (`[...el.querySelectorAll(...)]`) fails with TS2488 and breaks the
+app build while `nx test examples-chat-angular` stays green — `nx test` does not
+typecheck. That exact break shipped during this plan's Task 5b and was only found
+when a later task could not start the dev server.
 
 - [ ] **Step 2: Unit and lint**
 
