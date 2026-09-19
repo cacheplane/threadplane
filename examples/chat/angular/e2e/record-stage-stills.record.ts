@@ -13,8 +13,10 @@
  * Geometry: the desktop frame is the 1200x720 the stage is authored for, with
  * the devtools docked right. Below 768px the stage renders NO devtools (see
  * `readStageDock` — the phone path is chat only, a docked panel would eat the
- * transcript), so the phone still is the chat at 390x650 (3:5, the phone
- * ratio the hero poster uses). `deviceScaleFactor: 2` applies to BOTH sizes:
+ * transcript), so the phone still is the chat at 390x650 (3:5). This is the
+ * stage stills' OWN ratio and is no longer shared with the hero poster, which
+ * moved to 390x906 (65:151) so its capture frames the streamed backup table
+ * whole; the two assets are independent now. `deviceScaleFactor: 2` applies to BOTH sizes:
  * the desktop still is a 2400-wide raster downscaled to 1200, and the phone
  * still a 780-wide raster downscaled to 585 — crisp downscales rather than a
  * 1x raster shipped as-is or a 1.5x upscale of a 390px one.

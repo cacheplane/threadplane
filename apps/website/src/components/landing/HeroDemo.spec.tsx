@@ -85,7 +85,7 @@ describe('HeroDemo', () => {
    * matching source, and an <img> that came first would win every time), and
    * the media query has to stay on the same 768px boundary as the stage's
    * portrait ratio in landing.css. Those two are the whole coupling, and both
-   * are tied to the phone poster's 390x650 geometry: the poster is served
+   * are tied to the phone poster's 390x906 geometry: the poster is served
    * exactly where the stage is portrait, so `object-fit: cover` crops nothing.
    * MIN_AUTOPLAY_WIDTH used to be a third leg and is not one any more —
    * autoplay is width-independent and this boundary says nothing about it.
@@ -295,7 +295,8 @@ describe('HeroDemo', () => {
 
   /**
    * Reduced motion is the ONLY thing that still holds the iframe back, and a
-   * phone is where it matters most — the stage is 3:5 and the replay fills it.
+   * phone is where it matters most — the stage is portrait and the replay
+   * fills it.
    * The suite's other reduced-motion test runs at the default 1280, so without
    * this one nothing covers reduce at phone width.
    */

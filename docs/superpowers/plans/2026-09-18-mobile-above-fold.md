@@ -42,7 +42,7 @@ Tasks 1–7 are ordered so the suite is green at every commit.
 - Modify: `apps/website/src/lib/positioning.ts:5-7`, `:46`
 - Test: `apps/website/src/lib/positioning.spec.ts:49-65`
 
-- [ ] **Step 1: Update the failing test first**
+- [x] **Step 1: Update the failing test first**
 
 In `apps/website/src/lib/positioning.spec.ts`, replace the first two `it` blocks
 of `describe('positioning: hero copy')` with:
@@ -85,13 +85,13 @@ of `describe('positioning: hero copy')` with:
 `HOME_DESCRIPTION` is deliberately unchanged: it already contains "Angular" and
 sits within its 160-character budget.
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `npx nx test website -- positioning.spec`
 
 Expected: FAIL, with `expected 'Angular · LangGraph & AG-UI' to be 'LangGraph & AG-UI'`.
 
-- [ ] **Step 3: Change the copy**
+- [x] **Step 3: Change the copy**
 
 In `apps/website/src/lib/positioning.ts`, replace lines 5–12 (`HERO_EYEBROW`
 through the `HERO_H1_LINES` declaration) with:
@@ -125,13 +125,13 @@ Then change line 46 (`PRIMARY_TAGLINE`) to:
 export const PRIMARY_TAGLINE = 'Threadplane — The open-source thread-plane for Angular agents';
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `npx nx test website -- positioning.spec`
 
 Expected: PASS.
 
-- [ ] **Step 5: Fix the site-metadata spec**
+- [x] **Step 5: Fix the site-metadata spec**
 
 `site-metadata.spec.ts:23` and `:70` hard-code the old tagline. Change both
 occurrences of:
@@ -149,7 +149,7 @@ to:
 Leave `expect(LONG_SUBHEAD).toContain('open-source thread-plane for agents')`
 alone — `LONG_SUBHEAD` is unchanged and still contains that phrase.
 
-- [ ] **Step 6: Run the full website unit suite**
+- [x] **Step 6: Run the full website unit suite**
 
 Run: `npx nx test website`
 
@@ -157,7 +157,7 @@ Expected: PASS. `Hero.spec.tsx` and `card/card.spec.ts` read their strings from
 `positioning`, so they should pass untouched. If either fails, it hard-coded a
 string — fix the hard-coding, do not revert the copy.
 
-- [ ] **Step 7: Check for the generated-file rewrite, then commit**
+- [x] **Step 7: Check for the generated-file rewrite, then commit**
 
 `nx test` rewrites a generated package-version file. Check before staging:
 
@@ -185,7 +185,7 @@ git commit -m "copy(website): name Angular in the hero H1 and the title"
 **Files:**
 - Modify: `apps/website/src/styles/landing.css` (after the `.hero-heading-line` rule, ~line 29)
 
-- [ ] **Step 1: Add the media query**
+- [x] **Step 1: Add the media query**
 
 Insert immediately after the existing `.hero-heading-line { display: block; }`
 rule:
@@ -220,7 +220,7 @@ rule:
 These rules must stay **unlayered** like the rest of the file — see the file
 header. Do not wrap them in `@layer`.
 
-- [ ] **Step 2: Verify in a real browser at 375x812**
+- [x] **Step 2: Verify in a real browser at 375x812**
 
 Start the dev server and measure. Do not judge by eye alone, and per
 `feedback_cold_next_dev_drops_fragment_scroll`, load the route once to warm it
@@ -241,14 +241,14 @@ JSON.stringify({
 ```
 
 Expected: `fontSize: "36px"`, `h1Height` about 117 (must be <= 130),
-`demoTop` about 502 (must be <= 560).
+`demoTop` about 501 (must be <= 530).
 
-- [ ] **Step 3: Verify desktop did not regress**
+- [x] **Step 3: Verify desktop did not regress**
 
 At 1280x800 on `/`, confirm the H1 still renders as three forced lines and no
 line wraps a second time. Expected computed `font-size`: `72px`.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/website/src/styles/landing.css
@@ -263,7 +263,7 @@ git commit -m "fix(website): fit the hero H1 to three lines on a phone"
 - Modify: `apps/website/src/components/landing/HeroDemo.tsx:22-30`
 - Modify: `apps/website/src/styles/landing.css` (the `@media (max-width: 767px)` block near the `.hero-demo-stage` rules, ~line 1964)
 
-- [ ] **Step 1: Change the constant and its comment**
+- [x] **Step 1: Change the constant and its comment**
 
 In `HeroDemo.tsx`, replace the `MIN_AUTOPLAY_WIDTH` line and the
 `HERO_POSTER_MOBILE_MEDIA` comment block (lines 22–30) with:
@@ -295,7 +295,7 @@ check is inert, and the `prefers-reduced-motion` check still governs. Leave
 `needsClick`, the `playRequested` state and `.hero-demo-play` in place: they are
 now the reduced-motion path at any width.
 
-- [ ] **Step 2: Update the matching CSS comment**
+- [x] **Step 2: Update the matching CSS comment**
 
 In `landing.css`, the comment above the `@media (max-width: 767px)` block near
 `.hero-demo-stage` ends with:
@@ -317,7 +317,7 @@ In the same block, the `.hero-demo-play` comment says the control is shown on
 "the only viewport that shows it: autoplay is off below 768px", which is now
 false. Change that parenthetical to "(now the reduced-motion path only)".
 
-- [ ] **Step 3: Verify the iframe mounts at 375x812**
+- [x] **Step 3: Verify the iframe mounts at 375x812**
 
 With `npx nx serve website` running, at 375x812 on `/`, scroll the demo into
 view, wait 3 seconds, then evaluate:
@@ -331,7 +331,7 @@ Expected: `iframes: 1` and `state` reaching `"ready"`. The frame needs the
 visibility handshake to start replaying, so confirm visually that the chat
 animates rather than sitting on "How can I help?".
 
-- [ ] **Step 4: Measure LCP before shipping it**
+- [x] **Step 4: Measure LCP before shipping it**
 
 This is the spec's named risk. At 375x812, with the network throttled to Fast
 3G, load `/` and record LCP:
@@ -347,7 +347,7 @@ not regressed against the same measurement taken with `MIN_AUTOPLAY_WIDTH = 768`
 If it has regressed materially, **stop and report it** — restoring the 768 floor
 is the documented fallback. Do not ship a regression quietly.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/website/src/components/landing/HeroDemo.tsx apps/website/src/styles/landing.css
@@ -361,7 +361,7 @@ git commit -m "feat(website): autoplay the hero demo on phones"
 **Files:**
 - Modify: `apps/website/e2e/home-hero.spec.ts:24-44`
 
-- [ ] **Step 1: Replace the two demo tests**
+- [x] **Step 1: Replace the two demo tests**
 
 Replace the `poster renders before the frame…` and `mobile shows Play
 walkthrough…` tests with:
@@ -398,15 +398,15 @@ walkthrough…` tests with:
     //
     // Three lines at 36px/1.08 measure 117px; 130 leaves headroom for font
     // loading and metric variance. The demo stage lands at ~502px against an
-    // 812px fold; 560 is the ceiling at which it still clearly breaks the fold.
+    // 812px fold; 530 trips on a single extra H1 line, which 560 would not.
     const heading = page.locator('.hero-heading');
     await expect(heading).toBeVisible();
     const headingHeight = (await heading.boundingBox())!.height;
     expect(headingHeight).toBeLessThanOrEqual(130);
 
     // Measure [data-hero-demo], the same element the 502px projection was taken
-    // from. .hero-demo-stage sits ~44px lower inside the BrowserFrame chrome,
-    // so budgeting it at 560 would be a much tighter guard than intended.
+    // from. .hero-demo-stage sits ~48px lower inside the BrowserFrame chrome,
+    // so budgeting the stage at this number would be a far tighter guard.
     const demo = page.locator('[data-hero-demo]');
     await expect(demo).toBeVisible();
     const demoTop = (await demo.boundingBox())!.y;
@@ -414,7 +414,7 @@ walkthrough…` tests with:
   });
 ```
 
-- [ ] **Step 2: Run the hero e2e suite**
+- [x] **Step 2: Run the hero e2e suite**
 
 Run: `npx nx e2e website --grep "homepage hero"`
 
@@ -437,7 +437,7 @@ pkill -f "clever-sammet-6ce520.*next dev" || true
 Check `preview_list` first if you have browser tools — do not kill a managed
 preview server out from under the session.
 
-- [ ] **Step 3: Prove the fold guard is not vacuous**
+- [x] **Step 3: Prove the fold guard is not vacuous**
 
 A guard that passes before the fix is worthless. Temporarily revert Task 2 by
 commenting out the `font-size: 36px` line in `landing.css`, then run:
@@ -455,12 +455,12 @@ The guard bites either way.
 
 The heading assertion aborts the test before `demoTop` is reached, so to prove
 that budget too, measure it in a throwaway spec during the same mutated run
-(then delete it). Under this mutation it reads **643.94** against the 560
+(then delete it). Under this mutation it reads **643.94** against the 530
 budget. Both budgets are non-vacuous.
 
 Restore the line and re-run to confirm PASS.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/website/e2e/home-hero.spec.ts
@@ -480,7 +480,7 @@ must fit one line at 390px "or the whole block shifts up and the first line is
 sliced off the top edge." Nothing enforces it. That is why the shipped poster
 slices a tool-result table across its top edge.
 
-- [ ] **Step 1: Add the top-edge assertion**
+- [x] **Step 1: Add the top-edge assertion**
 
 In the test body, immediately after the existing
 `await expect(page.locator('a2ui-surface')).toHaveCount(0);` line, add:
@@ -512,7 +512,7 @@ last `chat-message` is the answer the header describes, not a later element. If
 the selector is wrong, fix the selector — do not weaken the assertion to make it
 pass.
 
-- [ ] **Step 2: Run the recorder**
+- [x] **Step 2: Run the recorder**
 
 Run:
 
@@ -529,13 +529,13 @@ the `aspect-ratio` in `landing.css` together, preserving the 3:5 ratio that
 makes `object-fit: cover` a no-op. Per the header, runs drift by up to a second,
 so re-run once before retuning any timing.
 
-- [ ] **Step 3: Inspect the regenerated poster**
+- [x] **Step 3: Inspect the regenerated poster**
 
 Open `apps/website/public/screenshots/hero-walkthrough-poster-mobile.webp` and
 confirm by eye: nothing is sliced at the top edge, and no line of prose wraps to
 four lines. This is a judgement the assertion cannot make.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add examples/chat/angular/e2e/record-hero-poster-mobile.record.ts apps/website/public/screenshots/hero-walkthrough-poster-mobile.webp
@@ -553,7 +553,7 @@ git commit -m "fix(website): re-record the mobile hero poster and guard its top 
 Neither file needs a code change — both map `HERO_H1_LINES`, which stays
 length-3. This task is verification plus the manual upload.
 
-- [ ] **Step 1: Render both cards and check for overflow**
+- [x] **Step 1: Render both cards and check for overflow**
 
 With `npx nx serve website` running, open in a browser:
 
@@ -564,7 +564,7 @@ Expected on both: the H1 renders as three lines, and neither the subhead nor the
 pills below it are overlapped. The measurement in the spec predicts no change to
 the vertical rhythm — confirm that is what you see.
 
-- [ ] **Step 1b: Drop the now-duplicated eyebrow from both cards**
+- [x] **Step 1b: Drop the now-duplicated eyebrow from both cards**
 
 Both renderers hard-code `const EYEBROW = 'OPEN SOURCE · ANGULAR'` —
 `opengraph-image.tsx:31` and `github-card/route.tsx:35` — rendered immediately
@@ -582,7 +582,7 @@ Re-render both cards afterwards and confirm the rail still reads well at its
 reduced length. (Found by the Task 1 code-quality review; not in the original
 spec.)
 
-- [ ] **Step 2: Regenerate the GitHub social preview**
+- [x] **Step 2: Regenerate the GitHub social preview**
 
 ```bash
 node scripts/export-github-card.mjs --origin http://localhost:3000
@@ -593,7 +593,7 @@ node scripts/export-github-card.mjs --origin http://localhost:3000
 running it before deploy regenerates the card from the very copy this work
 replaces, and it looks like it worked. Point it at the local dev server.
 
-- [ ] **Step 3: Flag the manual upload**
+- [x] **Step 3: Flag the manual upload**
 
 GitHub's social preview has no API (`project_github_social_preview_pipeline`).
 The generated card must be uploaded by hand at
@@ -601,7 +601,7 @@ The generated card must be uploaded by hand at
 the PR description as a required manual step — it cannot be automated and will
 otherwise be forgotten.
 
-- [ ] **Step 4: Commit any regenerated asset**
+- [x] **Step 4: Commit any regenerated asset**
 
 ```bash
 git status --short
@@ -619,7 +619,7 @@ demand and there may be no checked-in artifact.
 **Files:**
 - Modify: `docs/gtm/messaging.md:9-21`
 
-- [ ] **Step 1: Replace the stale hero section**
+- [x] **Step 1: Replace the stale hero section**
 
 Replace the `## Hero (locked for Spec 2 to implement)` section, through the
 "Subline under proof row" line, with:
@@ -654,7 +654,7 @@ generated from the supported majors, not typed).
 > category claim and add the stack to it.
 ```
 
-- [ ] **Step 1a: Fix the README banner, which mirrors the social cards**
+- [x] **Step 1a: Fix the README banner, which mirrors the social cards**
 
 `apps/website/public/assets/hero.svg:25` hard-codes `OPEN SOURCE · ANGULAR` and
 its header comment says it is "Kept in step with the social card." Task 6 changed
@@ -671,7 +671,7 @@ guard passes happily over this drift. Do not add the old strings to
 `RETIRED_POSITIONING` as a fix: that list is for phrases barred from public copy,
 and "OPEN SOURCE · ANGULAR" is not barred, it is merely superseded here.
 
-- [ ] **Step 1b: Update the other two places that state the tagline**
+- [x] **Step 1b: Update the other two places that state the tagline**
 
 The Task 1 code-quality review found the plan had under-scoped this. Two more
 tracked files assert the old tagline as fact:
@@ -687,7 +687,7 @@ tracked files assert the old tagline as fact:
   opening claim) — update all three to "for Angular agents", preserving each
   one's existing capitalisation and punctuation.
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add docs/gtm/messaging.md gtm.md README.md
@@ -698,7 +698,7 @@ git commit -m "docs(gtm): record the shipped hero and retire the drifted one"
 
 ### Task 8: Full verification
 
-- [ ] **Step 1: Build — the only typecheck**
+- [x] **Step 1: Build — the only typecheck**
 
 `nx test` and `nx lint` do **not** typecheck this app. Only the build catches a
 broken production build.
@@ -720,7 +720,7 @@ root panic, remove the stale dev directory and retry:
 rm -rf apps/website/.next/dev && npx nx build website
 ```
 
-- [ ] **Step 1b: Build the example app too**
+- [x] **Step 1b: Build the example app too**
 
 Run: `npx nx build examples-chat-angular`
 
@@ -734,14 +734,14 @@ app build while `nx test examples-chat-angular` stays green — `nx test` does n
 typecheck. That exact break shipped during this plan's Task 5b and was only found
 when a later task could not start the dev server.
 
-- [ ] **Step 2: Unit and lint**
+- [x] **Step 2: Unit and lint**
 
 Run: `npx nx test website && npx nx lint website`
 
 Expected: both PASS. Per `feedback_ci_lint_errors_vs_warnings_apidocs`, lint
 warnings are acceptable; errors are not.
 
-- [ ] **Step 3: Full website e2e, including the public-copy gate**
+- [x] **Step 3: Full website e2e, including the public-copy gate**
 
 The public-copy contract gate runs in production mode only:
 
@@ -753,7 +753,7 @@ WEBSITE_E2E_MODE=production npx nx e2e website
 Expected: PASS, including `public-copy.spec.ts`. The new H1 and tagline make no
 absolute claim and name no retired route, so this should be clean.
 
-- [ ] **Step 4: Final browser verification at 375x812**
+- [x] **Step 4: Final browser verification at 375x812**
 
 Against the production build, not `next dev`:
 
@@ -776,10 +776,10 @@ JSON.stringify({
 });
 ```
 
-Expected: `h1Lines: 3`, `h1Height <= 130`, `demoTop <= 560`, `demoState` reaching
+Expected: `h1Lines: 3`, `h1Height <= 130`, `demoTop <= 530`, `demoState` reaching
 `"ready"`, and `title` containing "Angular". Take a screenshot as evidence.
 
-- [ ] **Step 5: Check for generated-file drift and push**
+- [x] **Step 5: Check for generated-file drift and push**
 
 ```bash
 git status --short

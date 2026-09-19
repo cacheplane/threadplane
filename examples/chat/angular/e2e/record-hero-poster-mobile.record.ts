@@ -61,11 +61,23 @@
  * 906 is the middle of the third window: Δ=40 puts the prompt's bottom at 50,
  * wholly above the edge and so cleanly scrolled out, and the table's top at 74,
  * clear below it. It frames the WHOLE backup table — the result the approval
- * beat is about — and, because this height also governs the live autoplaying
- * iframe below 768px, it gives the phone demo more viewport than it has ever
- * had. (526, the middle of the second window, framed the story but shrank the
- * live stage; that trade was rejected.) 906 is even, so it halves to an integer
- * at the 1.5x ship scale.
+ * beat is about. 906 is even, so it halves to an integer at the 1.5x ship
+ * scale.
+ *
+ * Be honest about what this height buys, because it is ONE number serving two
+ * goals that do not actually agree. The poster needs its top edge in a gap, so
+ * the capture height is forced. The same ratio then sizes the live autoplaying
+ * iframe below 768px, and there a taller box is not straightforwardly better:
+ * at 375px the stage is ~773px starting at y=550, so it runs ~511px past an
+ * 812px fold and only ~34% of it is ever on screen unscrolled. The honest
+ * justification for 906 is POSTER FRAMING. The live stage is along for the
+ * ride, because `object-fit: cover` is only a no-op while the two ratios match.
+ *
+ * (526, the middle of the second window, also framed cleanly and kept the live
+ * stage nearer the fold; it was rejected for shrinking the live viewport 19%.
+ * If the fold ever matters more than framing the whole table, that is the trade
+ * to revisit — and decoupling the poster's capture ratio from the stage's would
+ * dissolve the conflict entirely, at the cost of a real `cover` crop.)
  *
  * 650 was the budget until the approval tools became executable (#1011). That
  * commit replaced a short prose answer with a run that streams a backup TABLE,
@@ -82,7 +94,7 @@
  * captured at deviceScaleFactor 2 for crisp glyph rasterisation and shipped
  * resized to 585x1359 (1.5x, and 585:1359 is the same 65:151): the poster is
  * displayed ~348 CSS px wide on a phone, and 2x would cost far more against the
- * desktop poster's ~37KB.
+ * desktop poster's ~32KB.
  *
  *   npx playwright test --config examples/chat/angular/e2e/record-hero.config.ts record-hero-poster-mobile
  */

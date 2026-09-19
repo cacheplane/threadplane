@@ -34,14 +34,16 @@ test.describe('homepage hero', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
     // No scrollIntoViewIfNeeded, deliberately. Shortening the H1 lifted the demo
-    // to y=469 of this 844px fold, so ~60% of the stage is visible on load and
-    // the 25% IntersectionObserver threshold is met without any scroll.
-    // Asserting the mount from a standing start is what proves that.
+    // to y=469 of this 844px fold, leaving ~44% of it visible on load — the 25%
+    // IntersectionObserver threshold is met without any scroll, and asserting
+    // the mount from a standing start is what proves it.
     //
-    // This test does NOT defend the fold — the 25% threshold is a weak proxy
-    // for it. Measured under a deliberately broken H1, the demo sits at y=644
-    // of an 812px viewport and is still 27.8% visible, so it still mounts. The
-    // fold budget below is what carries that; this one asserts the mount.
+    // This test still does NOT defend the fold; the budget below does. The 25%
+    // threshold is a proxy that only bites once the demo is pushed a long way
+    // down, and it moves whenever the stage's aspect ratio changes, so it is
+    // not a stable thing to reason about a fold with. Keep the two separate:
+    // this asserts that a phone autoplays, the budget asserts where the demo
+    // sits.
     const demo = page.locator('[data-hero-demo]');
     await expect(demo.locator('iframe')).toHaveAttribute('src', 'https://demo.threadplane.ai/hero');
   });

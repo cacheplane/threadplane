@@ -14,10 +14,11 @@ export const HERO_H1 = 'The open-source thread-plane for Angular agents.';
  * github-card/route.tsx stack these as fixed lines at 60px and 62px. Measured
  * in Archivo Black at 60px with -0.02em tracking: 538 / 513 / 507px against a
  * ~536px column. "The open-source" is the widest and already shipped before
- * "Angular" was added, so the worst case did not move. Below 767px Task 2
- * flows the spans inline (landing.css) so the browser breaks the sentence to
- * the column instead; until it lands, this commit makes the phone H1
- * temporarily taller.
+ * "Angular" was added, so the worst case did not move. Below 767px landing.css
+ * flows the spans inline and drops the H1 to 36px, so the browser breaks the
+ * sentence to the column instead — three lines, 116.63px. Both halves are
+ * required: left as blocks at the shared token's 48px clamp floor, each span
+ * takes a line and then wraps again.
  */
 export const HERO_H1_LINES: readonly string[] = [
   'The open-source',
