@@ -1,6 +1,8 @@
 # Mobile above-the-fold rework — homepage hero
 
-> Design spec. Status: approved, not yet implemented.
+> Design spec. Status: IMPLEMENTED on branch blove/sharp-shaw-c45f8c.
+> Two things stayed open and are named in §8: a CI check on the committed
+> poster, and an equality guard across the card eyebrow surfaces.
 > Scope: `apps/website` hero at phone widths. Desktop rendering is unchanged.
 
 ## 1. Why
@@ -293,8 +295,20 @@ reported rather than shipped quietly, and the fallback is to restore a
 `MIN_AUTOPLAY_WIDTH` floor.
 
 **`hero-replay.json` is load-bearing for the poster's framing.** It already was,
-silently — that is defect 2. The new top-edge guard is what converts a silent
-drift into a failing capture.
+silently — that is defect 2.
+
+The top-edge guard narrows this but does not close it, and the distinction
+matters: it converts a silent drift into a failing **re-record**, not a failing
+CI run. It lives inside the recorder, which only executes when someone
+deliberately re-records. So a change to `hero-replay.json` or to the backup
+table's phone layout can still land with the committed poster going stale and
+nothing red. Closing it properly would mean asserting the committed poster in
+CI, which is OPEN.
+
+The guard is also deliberately narrow in a second way: it rejects a message
+*straddling* the scroll edge, and allows one wholly above it. If the geometry
+ever drifts far enough that the backup table scrolls entirely out of frame, the
+capture passes while no longer showing the thing the beat is about.
 
 **The H1 is consumed by two generated images.** `opengraph-image.tsx` and
 `github-card/route.tsx` both lay out `HERO_H1_LINES`. The re-split in 5.1 was

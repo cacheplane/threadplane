@@ -1933,8 +1933,7 @@
  * shadow — but the poster it sits on is a near-black chat surface, so on a
  * phone it read as bare white text floating over the screenshot. A light pill
  * with a dark ring is legible on this poster and on any lighter one that
- * replaces it, and
- * the row is sized to a 44px touch target.
+ * replaces it, and the row is sized to a 44px touch target.
  *
  * This control is no longer the phone's default. Autoplay is width-independent
  * now, so it renders only on the reduced-motion path — at any width. */
@@ -1990,12 +1989,11 @@
   }
 }
 /* Below the breakpoint the stage shows the phone-width poster, which is a
- * 390x650 capture — exactly 3:5. Matching that ratio here is what makes
- * `object-fit: cover` a no-op: the frame is shown whole, at 390/348 ≈ 1.12
- * scale, so every line of the chat is read at its designed size instead of
- * being shrunk to 0.29 or cropped at the right edge. The stage governs the
- * iframe too, so a phone that taps Play gets the same portrait chat viewport
- * the poster promised rather than a 16:9 letterbox.
+ * 390x906 capture — exactly 65:151. Matching that ratio here is what makes
+ * `object-fit: cover` a no-op: the frame is shown whole, so every line of the
+ * chat is read at its designed size instead of being shrunk or cropped at the
+ * right edge. The stage governs the iframe too, so a phone gets the same
+ * portrait chat viewport the poster promised rather than a 16:9 letterbox.
  *
  * The breakpoint is shared two ways and must move as one: this ratio and the
  * <source media> in HeroDemo.tsx. The RATIO is shared three ways — here,
