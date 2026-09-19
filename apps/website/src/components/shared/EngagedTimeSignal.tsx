@@ -45,7 +45,13 @@ export function EngagedTimeSignal() {
     };
 
     document.addEventListener('visibilitychange', onVisibilityChange);
-    const intervalId = window.setInterval(() => tracker.tick(), TICK_MS);
+    // Stop waking up once both thresholds have fired. Without this the
+    // interval runs at 1Hz for the life of every page on the site, doing
+    // nothing.
+    const intervalId = window.setInterval(() => {
+      tracker.tick();
+      if (tracker.isComplete()) window.clearInterval(intervalId);
+    }, TICK_MS);
 
     return () => {
       document.removeEventListener('visibilitychange', onVisibilityChange);

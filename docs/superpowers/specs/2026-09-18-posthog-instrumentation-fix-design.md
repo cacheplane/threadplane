@@ -239,14 +239,15 @@ sessions recording zero duration were not a delivery failure. posthog-js fires
 `$pageleave` only from its `pagehide`/`unload` handler, never on
 `visibilitychange`, so a visitor who lands, reads, clicks nothing and leaves
 the tab open emits one `$pageview` and records zero seconds. The eventual
-close lands in a rotated session: 67 orphan `$pageleave`-only sessions in 30
-days, every one preceded by a session from the same person, median gap 221
-minutes, p75 1486 minutes. The long gaps are what rule out an ad blocker or a
-browser quirk.
+close lands in a rotated session: 67 orphan sessions — at least one
+`$pageleave` and zero `$pageview` — every one preceded by a session from the
+same person, median gap 221 minutes, p75 1486 minutes, measured over
+`now() - INTERVAL 30 DAY` as at 2026-09-18. The long gaps are what rule out an
+ad blocker or a browser quirk.
 
 The distortion concentrated where no passive event could fire — desktop 13.6%
 zero-duration against mobile 17.8%, with `marketing:stage_progress` (gated to
-1024x720) firing on 0.0% of mobile sessions and 91% of mobile sessions
+1024x720 and to non-reduced-motion) firing on 0.0% of mobile sessions and 91% of mobile sessions
 emitting nothing but the pageview. Fixed by `marketing:engaged_time`, which
 reports visible-only time at 10s and 30s on every viewport. Note that an
 earlier draft of this document described the gap as uniform "across every

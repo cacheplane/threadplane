@@ -6,8 +6,9 @@ vi.mock('../../lib/analytics/client', () => ({
   trackEngagedTime: vi.fn(),
 }));
 
+let pathname = '/';
 vi.mock('next/navigation', () => ({
-  usePathname: () => '/',
+  usePathname: () => pathname,
 }));
 
 import { trackEngagedTime } from '../../lib/analytics/client';
@@ -32,6 +33,7 @@ describe('EngagedTimeSignal', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     tracked.mockClear();
+    pathname = '/';
     setVisibility('visible');
   });
 
@@ -73,6 +75,53 @@ describe('EngagedTimeSignal', () => {
       vi.advanceTimersByTime(120_000);
     });
     expect(tracked).not.toHaveBeenCalled();
+  });
+
+  it('reports nothing for a tab that was never visible at mount', () => {
+    // THE honesty property, asserted where it is load-bearing. The production
+    // implementation of "a never-seen tab reports nothing" is the single
+    // `startVisible: document.visibilityState === 'visible'` argument; a
+    // regression to `true` would let a background tab's throttled interval
+    // fire both thresholds for a page nobody ever looked at.
+    setVisibility('hidden');
+    render(<EngagedTimeSignal />);
+    act(() => {
+      vi.advanceTimersByTime(120_000);
+    });
+    expect(tracked).not.toHaveBeenCalled();
+  });
+
+  it('ignores visibility changes after unmount', () => {
+    // A leaked listener would let one tab-away emit engaged_time for every
+    // page visited earlier in the session, each stamped with the CURRENT
+    // source_page, breaking the two-events-per-pageview bound.
+    const { unmount } = render(<EngagedTimeSignal />);
+    act(() => {
+      vi.advanceTimersByTime(30_000);
+    });
+    tracked.mockClear();
+    unmount();
+    act(() => {
+      setVisibility('hidden');
+      setVisibility('visible');
+      vi.advanceTimersByTime(60_000);
+    });
+    expect(tracked).not.toHaveBeenCalled();
+  });
+
+  it('starts a fresh budget on each pathname, not once per document', () => {
+    const { rerender } = render(<EngagedTimeSignal />);
+    act(() => {
+      vi.advanceTimersByTime(30_000);
+    });
+    expect(tracked).toHaveBeenCalledTimes(2);
+    tracked.mockClear();
+    pathname = '/pricing';
+    rerender(<EngagedTimeSignal />);
+    act(() => {
+      vi.advanceTimersByTime(10_000);
+    });
+    expect(tracked).toHaveBeenCalledExactlyOnceWith(10);
   });
 
   it('stops reporting once unmounted', () => {

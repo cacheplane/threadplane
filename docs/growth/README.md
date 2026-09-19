@@ -170,9 +170,11 @@ handler — never on `visibilitychange`. PostHog derives `session_duration` from
 lands, reads, clicks nothing and leaves the tab open emits exactly one
 `$pageview`, records zero seconds, and is scored as a bounce. When the tab is
 finally closed hours later the session id has long since rotated, so the
-`$pageleave` lands in a *new* session: 67 such orphan sessions in 30 days, all
-with a prior session from the same person, median gap 221 minutes and p75 1486
-minutes. That long-gap signature is what rules out an ad blocker or a browser
+`$pageleave` lands in a *new* session: 67 such orphan sessions, all with a
+prior session from the same person, median gap 221 minutes and p75 1486
+minutes. (Orphan = a session with at least one `$pageleave` and zero
+`$pageview`, over `now() - INTERVAL 30 DAY` as at 2026-09-18; a sliding window
+will not reproduce the count exactly.) That long-gap signature is what rules out an ad blocker or a browser
 quirk, and it is why the rate looked uniform across browsers.
 
 The distortion concentrated where no passive event could fire:
@@ -182,8 +184,9 @@ The distortion concentrated where no passive event could fire:
 | Desktop | 176 | 13.6% | 11.9% | 44.3% | 11.0s |
 | Mobile | 45 | 17.8% | 0.0% | 8.9% | 3.0s |
 
-`marketing:stage_progress` is gated to viewports of at least 1024x720, so it
-fired on **0.0%** of mobile sessions and 91% of mobile sessions emitted nothing
+`marketing:stage_progress` is gated to viewports of at least 1024x720 *and*
+suppressed under `prefers-reduced-motion: reduce`, so it fired on **0.0%** of
+mobile sessions and 91% of mobile sessions emitted nothing
 but the pageview. `marketing:engaged_time` is the fix and deliberately has no
 viewport gate. Until it shipped, mobile engagement was not measurable at all —
 which also means mobile changes made before it are not measurable retroactively.

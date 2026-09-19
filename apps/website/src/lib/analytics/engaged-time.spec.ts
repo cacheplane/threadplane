@@ -97,6 +97,31 @@ describe('engaged time thresholds', () => {
     expect(tracker.visibleMs()).toBe(10_000);
   });
 
+  it('keeps time from earlier visible runs across repeated hide/show cycles', () => {
+    // One cycle cannot distinguish `accumulatedMs +=` from `accumulatedMs =`,
+    // because the accumulator is still zero. Two can.
+    const { advance, tracker, onThreshold } = setup();
+    advance(4_000);
+    tracker.setVisible(false);
+    advance(60_000);
+    tracker.setVisible(true);
+    advance(4_000);
+    tracker.setVisible(false);
+    advance(60_000);
+    tracker.setVisible(true);
+    advance(2_000);
+    expect(tracker.visibleMs()).toBe(10_000);
+    expect(onThreshold).toHaveBeenCalledExactlyOnceWith(10_000);
+  });
+
+  it('reports completion only once every threshold has fired', () => {
+    const { advance, tracker } = setup();
+    advance(10_000);
+    expect(tracker.isComplete()).toBe(false);
+    advance(20_000);
+    expect(tracker.isComplete()).toBe(true);
+  });
+
   it('never fires for a page that starts hidden and is never seen', () => {
     // A prerendered or background-opened tab must not report engagement.
     const { advance, onThreshold, tracker } = setup(false);

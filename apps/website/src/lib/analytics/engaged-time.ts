@@ -35,6 +35,8 @@ export type EngagedTimeTracker = {
   tick(): void;
   /** Milliseconds the page has been visible so far. */
   visibleMs(): number;
+  /** True once every threshold has fired and ticking is pointless. */
+  isComplete(): boolean;
 };
 
 export type EngagedTimeOptions = {
@@ -89,5 +91,9 @@ export function createEngagedTimeTracker({
     },
 
     visibleMs: currentVisibleMs,
+
+    isComplete() {
+      return fired.size === thresholdsMs.length;
+    },
   };
 }
