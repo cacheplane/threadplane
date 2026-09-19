@@ -2004,11 +2004,13 @@
  * the iframe autoplays at every width now. */
 @media (max-width: 767px) {
   .hero-demo-stage {
-    /* 195/263 is 390x526, the phone poster's capture geometry — not a round
-       number and not meant to be. It was 3:5 until the recorded walkthrough
-       started streaming a backup table taller than the frame; see
-       record-hero-poster-mobile.record.ts for how the height is derived. */
-    aspect-ratio: 195 / 263;
+    /* 65/151 is 390x906, the phone poster's capture geometry — not a round
+       number and not meant to be. It was 3:5, then 195:263, as the recorded
+       walkthrough's streamed backup table changed height; 906 is the first
+       budget that frames that table whole, and it also sizes the LIVE iframe
+       here, so the phone demo gets more room than either predecessor gave it.
+       See record-hero-poster-mobile.record.ts for how the height is measured. */
+    aspect-ratio: 65 / 151;
   }
   /* The phone poster shows the demo's whole frame, right down to its own
      "Take control ↗" button — which lands 20-29px above the stage floor and

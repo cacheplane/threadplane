@@ -7,7 +7,7 @@ export const HERO_DEMO_ORIGIN = 'https://demo.threadplane.ai';
 export const HERO_DEMO_URL = `${HERO_DEMO_ORIGIN}/hero`;
 export const HERO_POSTER = '/screenshots/hero-walkthrough-poster.webp';
 /**
- * The phone-width capture of the same walkthrough beat (585x789, 195:263). It is
+ * The phone-width capture of the same walkthrough beat (585x1359, 65:151). It is
  * a separate render, not a crop: the desktop poster shrunk to a ~348px phone
  * stage is an unreadable smudge, and cropping it slices the right edge off
  * every line of prose. Recorded by
@@ -17,7 +17,7 @@ export const HERO_POSTER_MOBILE = '/screenshots/hero-walkthrough-poster-mobile.w
 const POSTER_W = 1200;
 const POSTER_H = 720;
 const POSTER_MOBILE_W = 585;
-const POSTER_MOBILE_H = 789;
+const POSTER_MOBILE_H = 1359;
 const READY_TIMEOUT_MS = 8000;
 /**
  * 0, not 768: phones autoplay too. The poster is a capture displayed at ~0.86
@@ -29,11 +29,13 @@ const READY_TIMEOUT_MS = 8000;
 const MIN_AUTOPLAY_WIDTH = 0;
 /**
  * Kept in lockstep with the `@media (max-width: 767px)` block in landing.css
- * that gives `.hero-demo-stage` its 195:263 portrait ratio. This pair is coupled
- * to the PHONE POSTER'S GEOMETRY (390x526, shipped 585x789) — the poster is
+ * that gives `.hero-demo-stage` its 65:151 portrait ratio. This pair is coupled
+ * to the PHONE POSTER'S GEOMETRY (390x906, shipped 585x1359) — the poster is
  * served exactly where the stage is portrait, so `object-fit: cover` crops
- * nothing. The ratio was 3:5 until the recorder's height budget had to move off
- * 650 to stop the poster opening mid-table; see that recorder's header.
+ * nothing. The height is MEASURED from the replay's own block boundaries, not
+ * chosen: 906 frames the whole streamed backup table, and because this ratio
+ * also sizes the LIVE iframe below 768px it gives the phone demo more viewport
+ * than the earlier 3:5 and 195:263 budgets did. See that recorder's header.
  *
  * It used to be a triple including MIN_AUTOPLAY_WIDTH, which is no longer part
  * of it: autoplay is now width-independent and this breakpoint no longer has

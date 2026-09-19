@@ -27,39 +27,62 @@
  * `public/hero-replay.json` changes.
  *
  * THE HEIGHT BUDGET IS DERIVED FROM THE REPLAY, not chosen. The timeline is
- * pinned to the bottom, so the frame's top edge — the top of the chat's own
+ * pinned to the BOTTOM, so the frame's top edge — the top of the chat's own
  * scroll container, NOT y=0 — falls wherever (capture height) puts it, and it
- * must land in a GAP between blocks or the poster opens mid-block. Measured
- * against the 2026-09-18 `public/hero-replay.json`, with the edge at
- * `62 + (650 - height)` in the content coordinates of a 650px capture:
+ * must land in a GAP between blocks or the poster opens mid-block. Growing the
+ * capture height therefore reveals more ABOVE; the bottom of the story (answer,
+ * composer, "Take control ↗") stays put at every height.
  *
- *   list_backups result table   ends at 173   (669px tall — TALLER than the
- *                                              whole frame, so it can never be
- *                                              shown whole at phone width)
- *   delete_backups tool chip    197 .. 240
- *   "Deleted 3 backups (...)"   starts at 263
+ * The windows below were MEASURED from the DOM at h=866, AFTER the responsive
+ * backup table landed (the `@media (max-width: 479px)` block in
+ * `examples/chat/angular/src/app/backup-table.component.ts`, which stacks each
+ * backup into a two-line block instead of a four-line-wrapped row and took the
+ * table from 583px to 268px tall). They are NOT projections, and they must be
+ * re-measured if EITHER that table layout OR `public/hero-replay.json` changes.
  *
- * That leaves two gaps: height 516..538 puts the edge above the tool chip, and
- * height 450..472 puts it above the answer. 526 is the middle of the first,
- * which keeps the `delete_backups` chip in frame — the approval beat the whole
- * walkthrough is about — and it halves to an integer at the 1.5x ship scale.
+ * The four `chat-message` boxes, in viewport coordinates at h=866 (the edge
+ * sits at y=62 and does NOT move with the height):
+ *
+ *   user prompt                 -54 ..  10
+ *   list_backups result table    34 .. 388
+ *   `delete_backups` chip       412 .. 455
+ *   "Deleted 3 backups (...)"   479 .. 705
+ *
+ * Because the timeline is bottom-pinned, raising h by Δ shifts every box down
+ * by Δ while the edge stays at 62, so a candidate height h clears the edge iff
+ * 62 falls in a gap once shifted — i.e. h = 928 - e for an edge position e in
+ * the h=866 coordinates above. That gives:
+ *
+ *   h ∈ (449, 473)   edge in the gap below the `delete_backups` chip
+ *   h ∈ (516, 540)   edge in the gap below the table
+ *   h ∈ (894, 918)   edge in the gap ABOVE the table  ← this one
+ *   h ≥ 983         edge above the user's prompt too (whole conversation)
+ *
+ * 906 is the middle of the third window: Δ=40 puts the prompt's bottom at 50,
+ * wholly above the edge and so cleanly scrolled out, and the table's top at 74,
+ * clear below it. It frames the WHOLE backup table — the result the approval
+ * beat is about — and, because this height also governs the live autoplaying
+ * iframe below 768px, it gives the phone demo more viewport than it has ever
+ * had. (526, the middle of the second window, framed the story but shrank the
+ * live stage; that trade was rejected.) 906 is even, so it halves to an integer
+ * at the 1.5x ship scale.
  *
  * 650 was the budget until the approval tools became executable (#1011). That
  * commit replaced a short prose answer with a run that streams a backup TABLE,
- * and 650 has straddled that table's bottom edge ever since — the poster
- * shipped opening on a table cut through horizontally, with its path column
- * wrapped to four lines. The old rule of thumb ("the answer's opening line has
- * to fit on ONE line at 390px") no longer decides anything on its own; re-derive
- * the gaps from the DOM whenever the replay changes. The guard in the test body
+ * and 650 straddled that table's bottom edge — the poster shipped opening on a
+ * table cut through horizontally, with its path column wrapped to four lines.
+ * The old rule of thumb ("the answer's opening line has to fit on ONE line at
+ * 390px") no longer decides anything on its own. The guard in the test body
  * fails loudly with the measured numbers when it drifts again.
  *
  * Geometry: 390 is the phone design width the reviews already use. The ratio is
- * therefore 390:526 (195:263), NOT the old 3:5 — `.hero-demo-stage` below 768px
+ * therefore 390:906, which reduces to 65:151 — `.hero-demo-stage` below 768px
  * and POSTER_MOBILE_W/H in HeroDemo.tsx carry the same pair so `object-fit:
  * cover` still crops nothing, and all three must move together. The frame is
  * captured at deviceScaleFactor 2 for crisp glyph rasterisation and shipped
- * resized to 585x789 (1.5x): the poster is displayed ~348 CSS px wide on a
- * phone, and 2x would cost ~51KB against the desktop poster's 37KB.
+ * resized to 585x1359 (1.5x, and 585:1359 is the same 65:151): the poster is
+ * displayed ~348 CSS px wide on a phone, and 2x would cost far more against the
+ * desktop poster's ~37KB.
  *
  *   npx playwright test --config examples/chat/angular/e2e/record-hero.config.ts record-hero-poster-mobile
  */
@@ -73,7 +96,7 @@ const OUT = resolve(
 );
 const SHIP_WIDTH = 585;
 
-test.use({ viewport: { width: 390, height: 526 }, deviceScaleFactor: 2 });
+test.use({ viewport: { width: 390, height: 906 }, deviceScaleFactor: 2 });
 
 test('capture mobile hero poster', async ({ page }) => {
   await page.goto('/hero');
@@ -133,6 +156,16 @@ test('capture mobile hero poster', async ({ page }) => {
     );
   }
   const png = await page.screenshot({ type: 'png', fullPage: false });
-  await sharp(png).resize({ width: SHIP_WIDTH }).webp({ quality: 55, effort: 6 }).toFile(OUT);
+  // quality 40, not the 55 this used to ship at. Going from a 526-tall capture
+  // to 906 added ~72% more pixels and pushed q55 to 39,016 bytes, over the
+  // 36,000-byte assertion in apps/website/src/components/landing/HeroDemo.spec.tsx.
+  // Measured from one capture, single-encode: q55 39,050 / q50 37,880 /
+  // q45 36,394 / q40 34,094 / q35 32,264. q45 still misses the budget by ~400
+  // bytes; q40 clears it with ~1.9KB of headroom and is indistinguishable from
+  // q55 at 1:1 in the densest text (the table's monospace ids and s3 paths),
+  // let alone at the ~348 CSS px the poster is actually displayed at. Lower the
+  // quality before raising that budget: this poster is the LCP element on
+  // phones, and mobile autoplay was justified partly on LCP not regressing.
+  await sharp(png).resize({ width: SHIP_WIDTH }).webp({ quality: 40, effort: 6 }).toFile(OUT);
   console.log(`wrote ${OUT}`);
 });
