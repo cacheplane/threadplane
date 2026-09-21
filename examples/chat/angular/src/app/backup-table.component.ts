@@ -78,6 +78,44 @@ type ViewState = 'pending' | 'rows' | 'empty';
     .bt__loc { color: var(--tplane-chat-text-muted); font-family: ui-monospace, Menlo, Consolas, monospace; font-size: var(--tplane-chat-font-size-xs); word-break: break-all; }
     .bt__retain { margin-left: 6px; padding: 1px 6px; border-radius: 999px; background: color-mix(in srgb, var(--tplane-chat-warning-text) 14%, var(--tplane-chat-surface-alt)); color: var(--tplane-chat-warning-text); font-size: var(--tplane-chat-font-size-xs); font-weight: 600; }
     .bt__row--retain td { color: var(--tplane-chat-text-muted); }
+
+    /* Phone layout. The four-column grid needs ~520px before the S3 path stops
+       wrapping; below that word-break: break-all turns every row into five or
+       six lines and the table outgrows the chat viewport. Below 480px each
+       backup becomes a two-line block instead — id + size on the first line,
+       path + date on the second — which keeps all four values and drops the
+       table from ~583px to roughly a third of that. CSS only, so there is one
+       template and no resize listener, and the desktop rendering is untouched.
+       Cell order in the template is id, location, created, size. */
+    @media (max-width: 479px) {
+      .bt__table, .bt__table tbody, .bt__table tr, .bt__table td { display: block; }
+      .bt__table thead { display: none; }
+      .bt__table tr {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: baseline;
+        gap: 0 10px;
+        padding: 5px 0;
+        border-top: 1px solid var(--tplane-chat-separator);
+      }
+      .bt__table td { min-width: 0; padding: 0; border-top: 0; }
+      .bt__table td:first-child { grid-area: 1 / 1; }
+      .bt__table td:nth-child(3) {
+        grid-area: 2 / 2;
+        color: var(--tplane-chat-text-muted);
+        font-size: var(--tplane-chat-font-size-xs);
+        text-align: right;
+        white-space: nowrap;
+      }
+      .bt__loc {
+        grid-area: 2 / 1;
+        word-break: normal;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .bt__num { grid-area: 1 / 2; }
+    }
   `],
 })
 export class BackupTableComponent {
