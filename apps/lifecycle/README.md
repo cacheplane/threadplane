@@ -46,11 +46,25 @@ acceptance of the first; the third is due five business days after acceptance of
 the second. Weekends are skipped; public holidays are not excluded in V1.
 Each target date resolves its own Pacific offset, preserving 07:00 across DST.
 
-Due times are persisted in Growth jobs. The existing cron leases campaign sends
-only Monday–Friday during 07:00–08:00 Pacific; final authorization and provider
+Due times are persisted in Growth jobs. The website's fallback cron invokes
+lifecycle every 15 minutes (UTC minutes 00, 15, 30 and 45), rather than opening
+Dawn and Growth on every idle minute. Requested form fulfillment still nudges
+lifecycle immediately after the submission commits. Background retries and
+research cleanup/reconciliation wait for a subsequent tick, potentially adding
+up to 15 minutes plus execution time; execution deadlines and lease durations
+are unchanged. Other traffic can keep a compute active, so fewer invocations
+do not guarantee a proportional reduction in Neon CU-hours.
+
+The cron leases campaign sends only Monday–Friday during 07:00–08:00 Pacific;
+final authorization and provider
 submission recheck the window. Normal sends begin on the first successful cron
-tick after 07:00. Retries can run within that hour; missed windows wait until the
-next weekday morning. Stops, mailbox recovery and ambiguous provider acceptance
+tick at or after 07:00. The schedule includes 07:00, 07:15, 07:30 and 07:45
+Pacific under either daylight-saving offset. The default batch size of 20 means
+the four scheduled ticks can lease at most 80 jobs in that hour, shared across
+all job kinds; nudges may add runs but are not guaranteed capacity. Review due
+queue size before expanding the campaign cohort. Retries can run within that
+hour; missed windows wait until the next weekday morning. Stops, mailbox
+recovery and ambiguous provider acceptance
 remain authoritative. Requested fulfillment and internal notifications do not
 use this campaign window. Replayed acceptance cannot move later jobs earlier.
 
