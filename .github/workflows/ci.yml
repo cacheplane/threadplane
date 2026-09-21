@@ -4,7 +4,6 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
   # A merge queue runs each candidate on a gh-readonly-queue/* ref. Every
   # verification job already falls through to the ci-scope outputs when the
   # event is not `push`, so they scope themselves here exactly as they do on a
@@ -138,9 +137,16 @@ jobs:
           node scripts/react-parity/verify-boundaries.mjs
       - name: Build and validate private React foundations
         run: npx nx run-many -t lint test type-tests build --projects=$FOUNDATIONS --parallel=2
+      - name: Verify isolated LangGraph runtime and types
+        run: |
+          npx nx run langgraph:runtime-quality
+          npx nx run langgraph:runtime-type-tests
+          npx nx run langgraph:type-tests
       - run: npx nx test langgraph --coverage --maxWorkers=2 --reporter=default
       - run: npx nx run-many -t test --projects=chat,ag-ui,render,a2ui,telemetry --coverage --parallel=1 --maxWorkers=2
       - run: npx nx run-many -t build --projects=$LIBS --configuration=production
+      - name: Install Chromium for packed runtime consumers
+        run: npx playwright install --with-deps chromium
       - name: Verify emitted boundaries and isolated packages
         run: |
           node scripts/react-parity/verify-boundaries.mjs --built

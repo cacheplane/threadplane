@@ -14,6 +14,8 @@ export const finalPackageDependencies = {
 export const privateScaffoldProjects = ['core', 'content', 'angular', 'react'];
 export const angularTransitionProjects = ['chat', 'langgraph', 'ag-ui', 'render'];
 export const scanProjects = [...new Set([...privateScaffoldProjects, ...angularTransitionProjects, 'a2ui', 'telemetry'])];
+// Source-only staging boundary; this does not declare a published entry point.
+export const neutralLangGraphRoots = ['src/lib/transport/fetch-stream.transport.ts', 'src/lib/client/create-langgraph-client.ts'];
 const retiredProjects = ['chat', 'langgraph-core', 'ag-ui-core', 'react-render'];
 
 export function packageOf(specifier) {
@@ -24,9 +26,14 @@ export function sourceEntry(project, angularTransitions = angularTransitionProje
   return project === 'angular' || angularTransitions.includes(project) ? 'src/public-api.ts' : 'src/index.ts';
 }
 
-export function forbiddenDependency(project, specifier, { angularTransitions = [], browserTransition = false } = {}) {
+export function forbiddenDependency(project, specifier, { angularTransitions = [], browserTransition = false, neutralRuntime = false } = {}) {
   const pkg = packageOf(specifier);
   const internal = pkg.startsWith('@threadplane/') ? pkg.slice('@threadplane/'.length) : undefined;
+  if (neutralRuntime) {
+    if (internal) return !['langgraph', 'core'].includes(internal);
+    if (specifier.startsWith('.')) return false;
+    return specifier !== '@langchain/langgraph-sdk';
+  }
   const angular = pkg.startsWith('@angular/');
   const react = ['react', 'react-dom', '@types/react', '@types/react-dom'].includes(pkg) || ['react', 'react-render', 'ui-react', 'workspace-react'].includes(internal);
   // These are intentionally the only whole-project exceptions. Their current

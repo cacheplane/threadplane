@@ -2,9 +2,10 @@
   "name": "@threadplane/core",
   "version": "0.0.0",
   "private": true,
-  "description": "Private core foundation scaffolding. No supported runtime API yet.",
+  "description": "Private dependency-free agent contracts, plain snapshots, and authored function-tool types.",
   "license": "MIT",
   "type": "module",
+  "types": "./src/index.d.ts",
   "sideEffects": false,
   "files": [
     "src/**/*.js",

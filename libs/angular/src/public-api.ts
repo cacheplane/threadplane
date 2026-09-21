@@ -1,1 +1,1 @@
-export {};
+export { observeAgent } from './observe-agent';

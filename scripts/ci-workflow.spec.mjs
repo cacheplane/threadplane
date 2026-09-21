@@ -79,6 +79,32 @@ function readNamedStep(job, name) {
 }
 
 describe('CI workflow', () => {
+  it('verifies pull requests against any base while push and deployment stay main-only', async () => {
+    const workflow = withoutYamlCommentLines(await readFile('.github/workflows/ci.yml', 'utf8'));
+    const triggers = workflow.slice(workflow.indexOf('on:'), workflow.indexOf('\nconcurrency:'));
+    assert.match(triggers, /push:\s*\n {4}branches: \[main\]/);
+    const pullRequest = triggers.match(/^ {2}pull_request:[\s\S]*?(?=^ {2}\w|$(?![\s\S]))/m)?.[0];
+    assert.ok(pullRequest, 'pull_request trigger must exist');
+    assert.doesNotMatch(pullRequest, /branches(?:-ignore)?:/);
+    for (const name of ['deploy', 'demo-deploy', 'ag-ui-demo-deploy', 'production-smoke']) {
+      const guard = readJobFieldBlock(readJobBlock(workflow, name), 'if');
+      assert.match(guard, /github\.ref == 'refs\/heads\/main'/);
+      assert.match(guard, /github\.event_name == 'push'/);
+    }
+  });
+
+  it('runs the isolated Node runtime gates and installs Chromium before packed browser checks', async () => {
+    const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'library');
+    assert.match(job, /npx nx run langgraph:runtime-quality/);
+    assert.match(job, /npx nx run langgraph:runtime-type-tests/);
+    assert.match(job, /npx nx run langgraph:type-tests/);
+    const install = job.indexOf('npx playwright install --with-deps chromium');
+    assert.ok(install >= 0, 'library browser checks need Chromium and OS dependencies');
+    for (const script of ['verify-packages.mjs', 'verify-angular-package.mjs']) {
+      assert.ok(install < job.indexOf(`node scripts/react-parity/${script}`));
+    }
+  });
+
   it('enforces React migration source, build, and packaged-consumer gates', async () => {
     const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'library');
     const source = readNamedStep(job, 'React migration baseline and boundaries');

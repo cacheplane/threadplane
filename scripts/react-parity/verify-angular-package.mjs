@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { assertParserFreeInputs, consumerSpecifiers, installConsumer, packLocalArtifacts, runConsumer } from './verify-packages.mjs';
+import { prepareInstalledTypes, prepareRuntimeConsumer, runRuntimeScenarios } from './runtime-consumer.mjs';
 
 export function lockedAngularManifest(template, lock) {
   const dependencies = ['@angular/core', '@angular/common', '@angular/compiler', '@angular/platform-browser', 'rxjs', 'tslib'];
@@ -25,13 +26,7 @@ export function angularBuildCommand(consumer) {
   return [join(consumer, 'node_modules/@angular/cli/bin/ng.js'), 'build', '--configuration=production', '--stats-json'];
 }
 
-export function angularConsumerSource(template, specifiers) {
-  const extra = specifiers.filter((specifier) => specifier !== '@threadplane/angular');
-  return template.replace('/* PACKAGE_IMPORTS */', extra.map((specifier, index) => `import * as entry${index} from ${JSON.stringify(specifier)};`).join('\n'))
-    .replace('/* PACKAGE_EXPORT_COUNT */', extra.map((_, index) => `+ Object.keys(entry${index}).length`).join(' '));
-}
-
-export function verifyAngularPackage(root = process.cwd()) {
+export async function verifyAngularPackage(root = process.cwd()) {
   root = resolve(root);
   const temporary = mkdtempSync(join(tmpdir(), 'threadplane-angular-consumer-'));
   try {
@@ -44,15 +39,19 @@ export function verifyAngularPackage(root = process.cwd()) {
     installConsumer(consumer, manifest, tarballs, 'angular');
     const installed = JSON.parse(readFileSync(join(consumer, 'node_modules/@threadplane/angular/package.json'), 'utf8'));
     const specifiers = consumerSpecifiers(installed);
-    const main = join(consumer, 'src/main.ts');
-    writeFileSync(main, angularConsumerSource(readFileSync(main, 'utf8'), specifiers));
+    prepareInstalledTypes(root, consumer, 'angular');
+    const contracts = join(consumer, 'installed-types.ts');
+    writeFileSync(contracts, readFileSync(contracts, 'utf8') + '\n' + specifiers.map((specifier, index) => `import type * as entry${index} from ${JSON.stringify(specifier)};\nexport type Entry${index} = typeof entry${index};`).join('\n'));
+    runConsumer(process.execPath, [join(consumer, 'node_modules/typescript/bin/tsc'), '-p', 'tsconfig.contracts.json'], consumer);
+    await prepareRuntimeConsumer(root, consumer, 'angular');
     console.log(runConsumer(process.execPath, angularBuildCommand(consumer), consumer));
     const stats = JSON.parse(readFileSync(join(consumer, 'dist/consumer/stats.json'), 'utf8'));
     assertParserFreeInputs(stats.inputs);
     if (!Object.keys(stats.inputs).some((path) => path.includes('node_modules/@threadplane/angular/'))) throw new Error('Angular stats did not include the installed APF artifact');
-    console.log(`Angular root bundle: ${Object.keys(stats.inputs).length} inputs, no content parsers. Threadplane inputs: ${Object.keys(stats.inputs).filter((path) => path.includes('node_modules/@threadplane/')).join(', ')}.`);
-    console.log(`Verified ${specifiers.length} Angular APF exports through CLI compilation/linking with skipLibCheck:false. Empty scaffold only; no runtime behavior is claimed.`);
+    console.log(`Angular runtime consumer bundle (app, binding and staged SDK): ${Object.keys(stats.inputs).length} inputs, no content parsers. Threadplane inputs: ${Object.keys(stats.inputs).filter((path) => path.includes('node_modules/@threadplane/')).join(', ')}.`);
+    await runRuntimeScenarios(join(consumer, 'dist/consumer/browser'), 'Angular');
+    console.log(`Verified ${specifiers.length} Angular APF exports through CLI compilation/linking with skipLibCheck:false, precise heterogeneous tool contracts, and a production-built installed Angular consumer.`);
   } finally { rmSync(temporary, { recursive: true, force: true }); }
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) verifyAngularPackage();
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await verifyAngularPackage();

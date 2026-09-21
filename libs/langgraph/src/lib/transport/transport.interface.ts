@@ -1,1 +1,1 @@
-export { AgentTransport, StreamEvent } from '../agent.types';
+export type { AgentTransport, StreamEvent } from '../../runtime/transport.types';

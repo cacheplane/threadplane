@@ -6,6 +6,13 @@ import test from 'node:test';
 import * as packageVerifier from './verify-packages.mjs';
 const { validatePackage } = packageVerifier;
 
+test('installed native contracts reject the former empty scaffold exports', () => {
+  assert.equal(typeof packageVerifier.assertSupportedExports, 'function');
+  assert.throws(() => packageVerifier.assertSupportedExports('core', {}), /completeDelivery/);
+  assert.throws(() => packageVerifier.assertSupportedExports('react', {}), /useAgent/);
+  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react', { useAgent: () => undefined }));
+});
+
 function fixture(t, change = {}) {
   const directory = mkdtempSync(join(tmpdir(), 'threadplane-package-'));
   t.after(() => rmSync(directory, { recursive: true, force: true }));

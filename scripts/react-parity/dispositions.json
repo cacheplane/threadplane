@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "purpose": "Planning ownership for T01. Status is planned until task-specific implementation and verification are recorded; inventory validation is not React parity.",
+  "purpose": "Planning ownership for the reviewed migration scope. Existing task assignments are preserved; in-progress records identify bounded runtime/configuration subsets, not whole-task completion. Inventory validation is not React parity.",
   "rows": [
     {
       "id": "asset:libs/a2ui/LICENSE.md",
@@ -847,7 +847,8 @@
         "T37"
       ],
       "treatment": "infrastructure",
-      "status": "planned"
+      "status": "in-progress",
+      "note": "Bounded runtime verification/configuration subset updated; broader assigned migration and release work remain open."
     },
     {
       "id": "asset:libs/langgraph/test/fixtures/streaming-reasoning-puzzle.json",
@@ -876,7 +877,8 @@
         "T37"
       ],
       "treatment": "infrastructure",
-      "status": "planned"
+      "status": "in-progress",
+      "note": "Bounded runtime verification/configuration subset updated; broader assigned migration and release work remain open."
     },
     {
       "id": "asset:libs/langgraph/tsconfig.lib.prod.json",
@@ -886,7 +888,17 @@
         "T37"
       ],
       "treatment": "infrastructure",
-      "status": "planned"
+      "status": "in-progress",
+      "note": "Bounded runtime verification/configuration subset updated; broader assigned migration and release work remain open."
+    },
+    {
+      "id": "asset:libs/langgraph/tsconfig.runtime-tests.json",
+      "taskIds": [
+        "T36"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "note": "Isolated Node runtime verification only; the wider CI/release migration remains open."
     },
     {
       "id": "asset:libs/langgraph/tsconfig.type-tests.json",
@@ -2273,7 +2285,8 @@
         "T36"
       ],
       "treatment": "infrastructure",
-      "status": "planned"
+      "status": "in-progress",
+      "note": "Bounded runtime verification/configuration subset updated; broader assigned migration and release work remain open."
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -2351,7 +2364,8 @@
         "T37"
       ],
       "treatment": "infrastructure",
-      "status": "planned"
+      "status": "in-progress",
+      "note": "Bounded runtime verification/configuration subset updated; broader assigned migration and release work remain open."
     },
     {
       "id": "config:package.json",
@@ -7125,7 +7139,8 @@
         "T08"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "planned",
+      "note": "Reviewed declaration/import text drift from private runtime extraction; legacy export name and Angular root remain unchanged. This is not completion of the assigned migration task."
     },
     {
       "id": "export:libs/langgraph/src/public-api.ts#AgentQueueEntry",
@@ -7133,7 +7148,8 @@
         "T08"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "planned",
+      "note": "Reviewed declaration/import text drift from private runtime extraction; legacy export name and Angular root remain unchanged. This is not completion of the assigned migration task."
     },
     {
       "id": "export:libs/langgraph/src/public-api.ts#AgentTransport",
@@ -7141,7 +7157,8 @@
         "T08"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "planned",
+      "note": "Reviewed declaration/import text drift from private runtime extraction; legacy export name and Angular root remain unchanged. This is not completion of the assigned migration task."
     },
     {
       "id": "export:libs/langgraph/src/public-api.ts#BagTemplate",
@@ -7149,7 +7166,8 @@
         "T08"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "planned",
+      "note": "Reviewed declaration/import text drift from private runtime extraction; legacy export name and Angular root remain unchanged. This is not completion of the assigned migration task."
     },
     {
       "id": "export:libs/langgraph/src/public-api.ts#CustomStreamEvent",
@@ -7173,7 +7191,8 @@
         "T08"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "planned",
+      "note": "Reviewed declaration/import text drift from private runtime extraction; legacy export name and Angular root remain unchanged. This is not completion of the assigned migration task."
     },
     {
       "id": "export:libs/langgraph/src/public-api.ts#InferBag",
@@ -7181,7 +7200,8 @@
         "T08"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "planned",
+      "note": "Reviewed declaration/import text drift from private runtime extraction; legacy export name and Angular root remain unchanged. This is not completion of the assigned migration task."
     },
     {
       "id": "export:libs/langgraph/src/public-api.ts#Interrupt",
@@ -7189,7 +7209,8 @@
         "T08"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "planned",
+      "note": "Reviewed declaration/import text drift from private runtime extraction; legacy export name and Angular root remain unchanged. This is not completion of the assigned migration task."
     },
     {
       "id": "export:libs/langgraph/src/public-api.ts#LANGGRAPH_CLIENT",
@@ -7229,7 +7250,8 @@
         "T08"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "planned",
+      "note": "Reviewed declaration/import text drift from private runtime extraction; legacy export name and Angular root remain unchanged. This is not completion of the assigned migration task."
     },
     {
       "id": "export:libs/langgraph/src/public-api.ts#LangGraphMultitaskStrategy",
@@ -7237,7 +7259,8 @@
         "T08"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "planned",
+      "note": "Reviewed declaration/import text drift from private runtime extraction; legacy export name and Angular root remain unchanged. This is not completion of the assigned migration task."
     },
     {
       "id": "export:libs/langgraph/src/public-api.ts#LangGraphSubmitOptions",
@@ -7245,7 +7268,8 @@
         "T08"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "planned",
+      "note": "Reviewed declaration/import text drift from private runtime extraction; legacy export name and Angular root remain unchanged. This is not completion of the assigned migration task."
     },
     {
       "id": "export:libs/langgraph/src/public-api.ts#LangGraphThreadsAdapter",
@@ -7293,7 +7317,8 @@
         "T08"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "planned",
+      "note": "Reviewed declaration/import text drift from private runtime extraction; legacy export name and Angular root remain unchanged. This is not completion of the assigned migration task."
     },
     {
       "id": "export:libs/langgraph/src/public-api.ts#SubagentStreamRef",
@@ -7317,7 +7342,8 @@
         "T08"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "planned",
+      "note": "Reviewed declaration/import text drift from private runtime extraction; legacy export name and Angular root remain unchanged. This is not completion of the assigned migration task."
     },
     {
       "id": "export:libs/langgraph/src/public-api.ts#createLangGraphClient",
@@ -7391,7 +7417,8 @@
         "T08"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "planned",
+      "note": "Reviewed declaration/import text drift from private runtime extraction; legacy export name and Angular root remain unchanged. This is not completion of the assigned migration task."
     },
     {
       "id": "export:libs/langgraph/src/public-api.ts#\u0275LANGGRAPH_RUNTIME_OPERATION_REPORTER",
@@ -7409,7 +7436,8 @@
       ],
       "treatment": "internal",
       "status": "planned",
-      "reason": "Existing \u0275-prefixed implementation seam; retain required behavior without promising a new public React API."
+      "reason": "Existing \u0275-prefixed implementation seam; retain required behavior without promising a new public React API.",
+      "note": "Reviewed declaration/import text drift from private runtime extraction; legacy export name and Angular root remain unchanged. This is not completion of the assigned migration task."
     },
     {
       "id": "export:libs/middleware/src/langgraph/index.ts#BaseMessage",
@@ -11136,7 +11164,8 @@
         "T37"
       ],
       "treatment": "infrastructure",
-      "status": "planned"
+      "status": "in-progress",
+      "note": "Bounded runtime verification/configuration subset updated; broader assigned migration and release work remain open."
     },
     {
       "id": "source:libs/langgraph/install/postinstall.cjs",
@@ -11178,7 +11207,8 @@
         "T08"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "note": "Only framework-free transport/error dependencies were extracted for the private runtime proof; existing Angular behavior and the remaining assigned migration work are retained."
     },
     {
       "id": "source:libs/langgraph/src/lib/client-tools.ts",
@@ -11202,7 +11232,8 @@
         "T08"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "note": "Only framework-free transport/error dependencies were extracted for the private runtime proof; existing Angular behavior and the remaining assigned migration work are retained."
     },
     {
       "id": "source:libs/langgraph/src/lib/inject-agent.ts",
@@ -11273,7 +11304,8 @@
         "T08"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "note": "Only framework-free transport/error dependencies were extracted for the private runtime proof; existing Angular behavior and the remaining assigned migration work are retained."
     },
     {
       "id": "source:libs/langgraph/src/lib/testing/fake-stream.transport.ts",
@@ -11322,7 +11354,8 @@
         "T08"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "note": "Only framework-free transport/error dependencies were extracted for the private runtime proof; existing Angular behavior and the remaining assigned migration work are retained."
     },
     {
       "id": "source:libs/langgraph/src/lib/transport/mock-stream.transport.ts",
@@ -11338,7 +11371,8 @@
         "T08"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "note": "Only framework-free transport/error dependencies were extracted for the private runtime proof; existing Angular behavior and the remaining assigned migration work are retained."
     },
     {
       "id": "source:libs/langgraph/src/public-api.ts",
@@ -11347,6 +11381,125 @@
       ],
       "treatment": "shared",
       "status": "planned"
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/create-session.ts",
+      "taskIds": [
+        "T04",
+        "T08",
+        "T10",
+        "T15",
+        "T16"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private staged LangGraph runtime subset; fixture-only and not a neutral public LangGraph root or tarball.",
+      "note": "Bounded runtime proof only; broader task capabilities and final public package cutover remain open."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/function-tools.ts",
+      "taskIds": [
+        "T15",
+        "T16"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private staged LangGraph runtime subset; fixture-only and not a neutral public LangGraph root or tarball.",
+      "note": "Bounded runtime proof only; broader task capabilities and final public package cutover remain open."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/message-reducer.ts",
+      "taskIds": [
+        "T09"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private staged LangGraph runtime subset; fixture-only and not a neutral public LangGraph root or tarball.",
+      "note": "Bounded runtime proof only; broader task capabilities and final public package cutover remain open."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/operation-errors.ts",
+      "taskIds": [
+        "T08",
+        "T10"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private staged LangGraph runtime subset; fixture-only and not a neutral public LangGraph root or tarball.",
+      "note": "Bounded runtime proof only; broader task capabilities and final public package cutover remain open."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/ownership.ts",
+      "taskIds": [
+        "T04"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private staged LangGraph runtime subset; fixture-only and not a neutral public LangGraph root or tarball.",
+      "note": "Bounded runtime proof only; broader task capabilities and final public package cutover remain open."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/publication.ts",
+      "taskIds": [
+        "T04"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private staged LangGraph runtime subset; fixture-only and not a neutral public LangGraph root or tarball.",
+      "note": "Bounded runtime proof only; broader task capabilities and final public package cutover remain open."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/stream-projection.ts",
+      "taskIds": [
+        "T09"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private staged LangGraph runtime subset; fixture-only and not a neutral public LangGraph root or tarball.",
+      "note": "Bounded runtime proof only; broader task capabilities and final public package cutover remain open."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/testing/binding-fixture.ts",
+      "taskIds": [
+        "T05",
+        "T06"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private controlled runtime/binding test helper; excluded from public exports and production packages.",
+      "note": "Bounded runtime proof only; broader task capabilities and final public package cutover remain open."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/testing/controlled-transport.ts",
+      "taskIds": [
+        "T05",
+        "T06"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private controlled runtime/binding test helper; excluded from public exports and production packages.",
+      "note": "Bounded runtime proof only; broader task capabilities and final public package cutover remain open."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/testing/deferred.ts",
+      "taskIds": [
+        "T05",
+        "T06"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private controlled runtime/binding test helper; excluded from public exports and production packages.",
+      "note": "Bounded runtime proof only; broader task capabilities and final public package cutover remain open."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/transport.types.ts",
+      "taskIds": [
+        "T08"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private staged LangGraph runtime subset; fixture-only and not a neutral public LangGraph root or tarball.",
+      "note": "Bounded runtime proof only; broader task capabilities and final public package cutover remain open."
     },
     {
       "id": "source:libs/langgraph/src/test-setup.ts",
@@ -11382,7 +11535,17 @@
         "T37"
       ],
       "treatment": "infrastructure",
-      "status": "planned"
+      "status": "in-progress",
+      "note": "Bounded runtime verification/configuration subset updated; broader assigned migration and release work remain open."
+    },
+    {
+      "id": "source:libs/langgraph/vite.runtime.config.mts",
+      "taskIds": [
+        "T36"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "note": "Isolated Node runtime verification only; the wider CI/release migration remains open."
     },
     {
       "id": "source:libs/middleware/eslint.config.mjs",

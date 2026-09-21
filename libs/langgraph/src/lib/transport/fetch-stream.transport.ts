@@ -1,5 +1,5 @@
 import type { Client, StreamMode, ThreadState } from '@langchain/langgraph-sdk';
-import type { AgentQueueEntry, AgentTransport, LangGraphClientOptions, LangGraphSubmitOptions, StreamEvent } from '../agent.types';
+import type { AgentQueueEntry, AgentTransport, LangGraphClientOptions, LangGraphSubmitOptions, StreamEvent } from '../../runtime/transport.types';
 import {
   createLangGraphClient,
   ɵcreateProtectedLangGraphClient,
@@ -8,7 +8,7 @@ import {
   createLangGraphRuntimeFetch,
   projectLangGraphOperationFailure,
   type RuntimeOperationFailureReporter,
-} from '../runtime-operation-reporter';
+} from '../../runtime/operation-errors';
 
 /**
  * Production transport that connects to a LangGraph Platform API via HTTP and SSE.
@@ -214,18 +214,37 @@ export class FetchStreamTransport implements AgentTransport {
     } catch (error) {
       return this.rethrowOperationError(error, signal);
     }
-    while (true) {
-      let next: IteratorResult<{ event: string; data: unknown }>;
-      try {
-        next = await iterator.next();
-      } catch (error) {
-        return this.rethrowOperationError(error, signal);
+    let completed = false;
+    let failed = false;
+    try {
+      while (true) {
+        let next: IteratorResult<{ event: string; data: unknown }>;
+        try {
+          next = await iterator.next();
+        } catch (error) {
+          return this.rethrowOperationError(error, signal);
+        }
+        if (next.done) {
+          completed = true;
+          return;
+        }
+        try {
+          yield normalizeSdkEvent(next.value.event as StreamEvent['type'], next.value.data);
+        } catch (error) {
+          return this.rethrowLocalError(error, signal);
+        }
       }
-      if (next.done) return;
-      try {
-        yield normalizeSdkEvent(next.value.event as StreamEvent['type'], next.value.data);
-      } catch (error) {
-        return this.rethrowLocalError(error, signal);
+    } catch (error) {
+      failed = true;
+      throw error;
+    } finally {
+      if (!completed) {
+        try {
+          await iterator.return?.();
+        } catch (error) {
+          // Closing the SDK iterator must not replace an already projected failure.
+          if (!failed) this.rethrowOperationError(error, signal);
+        }
       }
     }
   }
