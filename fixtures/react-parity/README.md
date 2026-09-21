@@ -1,19 +1,23 @@
 # React parity foundations
 
 This directory supports the first migration increment: a reviewed Angular baseline
-and six private, empty package scaffolds. It does not provide React components,
-state management, backend adapters, or an approved shared-runtime architecture.
+and four private, empty package scaffolds. It does not provide React components,
+state management, or extracted backend runtimes.
 The existing Angular packages and release group remain the production path.
 
 ## Reviewed baseline
 
-The source baseline is main commit `a93977ff1e75796336ddd93a882eab2e40f0ca7b`
-(21 September 2026 integration). It includes the v0.2.0 release and the upstream
-package-version alignment fix. It contains **1,438 records**: 550 public export
+The current facts were generated from the uncommitted foundation working tree at
+base HEAD `7e80cebd607f5c605ef1ec81f11e5ebe3324f81b`. The baseline records the four
+reviewed configuration changes: CI foundation projects and Angular consumer gate,
+the direct semver tooling dependency, workspace lockfile links, and package aliases.
+No inventoried API or implementation changed. This follows the main integration
+at `a93977ff1e75796336ddd93a882eab2e40f0ca7b`, including v0.2.0 and its package-version
+alignment fix. The inventory contains **1,438 records**: 550 public export
 occurrences (514 distinct local definitions), 102 decorated components in 100
 files, 461 non-test source files, 128 package assets, 16 distribution/configuration
 files, 12 entry points, 41 cockpit topics, and 128 documentation pages. These
-counts cover the 16 existing libraries selected for migration; the six new empty
+counts cover the 16 existing libraries selected for migration; the four new empty
 packages are checked separately by the boundary and packaging gates.
 
 The earlier research snapshot at `b1685838069c6b1ec56d5e97a1a01170b26aa125`
@@ -57,33 +61,66 @@ an Angular fix or dependency update changes the migration baseline.
 
 ## Private package boundaries
 
-| Package | Intended responsibility |
+| Current private scaffold | Intended responsibility |
 | --- | --- |
-| `@threadplane/core` | Framework-free contracts, immutable publication, execution ownership, tool contracts |
+| `@threadplane/core` | Framework-free data, observation, execution and tool contracts |
 | `@threadplane/content` | Shared Markdown, JSON, A2UI and rendering data processing |
-| `@threadplane/langgraph-core` | LangGraph transport, reduction and lifecycle |
-| `@threadplane/ag-ui-core` | AG-UI transport, reduction and durable recovery |
-| `@threadplane/react-render` | React rendering registry and lifecycle |
-| `@threadplane/react` | React subscriptions, chat components and compositions |
+| `@threadplane/angular` | Native Angular binding and presentation |
+| `@threadplane/react` | Native React binding, rendering and presentation |
 
-All six are private version `0.0.0`, with empty ESM entry points. Their intended
-responsibilities are not implemented. The source/declaration verifier follows
+All four are private version `0.0.0`, with empty entry points. Core, content and
+React use plain ESM packaging; Angular uses Angular Package Format (APF). Their
+intended responsibilities are not implemented. The source/declaration verifier follows
 module edges, including type-only imports, aliases and re-exports. It blocks
 framework dependencies in neutral layers, UI dependencies in backend layers,
-backend SDKs in React layers, Angular/React crossover, and optional/testing paths
-reachable from package roots. Nx lint constraints provide an additional source gate.
+backend SDKs in framework layers, Angular/React crossover, and optional/testing
+paths reachable from package roots. The populated chat, LangGraph, AG-UI and render
+packages retain explicit Angular transition allowances, as does telemetry/browser.
+Nx lint constraints provide an additional source gate. The final release gate
+remains blocked until those transition allowances and retired packages are removed.
+
+The final package map is a separate destination, not the implemented topology:
+
+| Final package | Responsibility |
+| --- | --- |
+| `@threadplane/core` | Dependency-free data, observation, execution and tool contracts |
+| `@threadplane/langgraph` | Neutral LangGraph transport and lifecycle |
+| `@threadplane/ag-ui` | Neutral AG-UI transport and recovery |
+| `@threadplane/render` | Neutral render data and registry contracts |
+| `@threadplane/a2ui` | A2UI protocol data and processing |
+| `@threadplane/content` | Optional Markdown, JSON and A2UI processing |
+| `@threadplane/angular` | Angular binding, render components and UI |
+| `@threadplane/react` | React binding, render components and UI |
+| `@threadplane/telemetry` | Neutral collector; native Angular providers belong to `@threadplane/angular` |
+
+There are no suffixed backend packages or separate React renderer in that map.
+The first runtime proof keeps the execution owner and publisher private to the
+backend; these foundations do not introduce a general shared store.
+The new tool contract deliberately omits a schema DSL, automatic argument
+validation/transformation and validator-to-JSON-Schema conversion. Callers may
+supply optional JSON Schema metadata and own any validation in their handlers.
+The ledger retains these legacy capabilities as explicit migration omissions;
+current Angular behavior is unchanged. Protocol schema assets, form validation and
+transport decoding remain in scope.
 
 ```sh
-NX_DAEMON=false CI=true npx nx run-many -t lint test type-tests build --projects=core,content,langgraph-core,ag-ui-core,react-render,react --parallel=2 --skip-nx-cache
+NX_DAEMON=false CI=true npx nx run-many -t lint test type-tests build --projects=core,content,angular,react --parallel=2 --skip-nx-cache
+NX_DAEMON=false CI=true npx nx run-many -t build --projects=chat,langgraph,ag-ui,render,a2ui,telemetry --configuration=production --parallel=1 --skip-nx-cache
 node scripts/react-parity/verify-boundaries.mjs --built
 node scripts/react-parity/verify-packages.mjs
+node scripts/react-parity/verify-angular-package.mjs
 ```
 
-The packaging check packs all six builds, validates all 24 export targets,
-README/license inclusion, production exclusions and `use client` directives, then
-imports and type-checks the tarballs outside workspace aliases. Its first consumer
-installs only core and rejects any additional dependency. This proves empty-package
-isolation; it does not establish React SSR or shared-runtime correctness.
+The plain packaging check packs core, content and React, validates their nine export
+paths, README/license inclusion and production exclusions, then imports and
+type-checks the tarballs outside workspace aliases with `skipLibCheck: false`.
+Its core-only consumer checks all three core exports and rejects extra dependencies.
+The separate Angular check packs the one Angular APF entry and proves CLI
+compilation/linking with `skipLibCheck: false`. Both inspect consumer module inputs
+for unwanted parsers. Installation footprints include actual installed files;
+lockfile locations also include optional platform packages. The Angular footprint
+includes CLI/compiler/build tooling. These measurements prove scaffold packaging
+and isolation, not runtime performance, React SSR or shared-runtime correctness.
 
 ## Existing Angular regression checks
 
@@ -138,17 +175,20 @@ is unchanged, and none of the scaffolds is publishable.
 
 The following task index makes the ownership ledger readable independently of local
 research documents. It is a scope map, not evidence that the tasks are complete.
-T01/T02 are this foundation increment; G1 still needs actual runtime extraction,
-unchanged Angular consumer behavior, React lifecycle/SSR tests and renderer proof.
+T01/T02 are this foundation increment. The next G1 proof is deliberately limited
+to shared LangGraph text streaming and fixed function-tool execution with borrowed native
+Angular and React bindings: the runtime owns execution while each binding observes
+it. Renderer reuse and SSR are deferred gates, alongside the broader T01–T39 map.
+No runtime proof or parity is claimed by these foundations.
 
 | Task | Scope |
 | --- | --- |
 | T01 | Establish the parity baseline and finding ledger |
 | T02 | Create package scaffolding and dependency boundaries |
-| T03 | Extract data contracts, schemas, and error identity |
+| T03 | Extract data contracts and error identity; omit tool schema ownership |
 | T04 | Implement immutable publication and execution scope |
 | T05 | Build behavioral replay and unchanged Angular consumer fixtures |
-| T06 | Prove React binding, ownership, and packed SSR import |
+| T06 | Prove native binding and execution ownership; full SSR is deferred to T21 |
 | T07 | Prove renderer reuse before writing the catalog |
 | T08 | Extract LangGraph transport and request normalization |
 | T09 | Extract LangGraph event reduction and delivery projection |
@@ -157,7 +197,7 @@ unchanged Angular consumer behavior, React lifecycle/SSR tests and renderer proo
 | T12 | Extract AG-UI event processing and transaction state |
 | T13 | Extract AG-UI interrupts and durable recovery |
 | T14 | Extract AG-UI lifecycle and rebind Angular |
-| T15 | Extract client-tool declarations, guards and execution service |
+| T15 | Extract client-tool declarations and execution; callers own argument validation |
 | T16 | Unify tool coordination and correlate presentation results |
 | T17 | Separate neutral telemetry from framework integration |
 | T18 | Extract Markdown documents and citation projections |

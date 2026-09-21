@@ -2,10 +2,11 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
+import { angularTransitionProjects, assertFinalRelease, emittedEntries, forbiddenDependency, manifestViolations, packageOf, privateScaffoldProjects, scanProjects, sourceEntry } from './package-policy.mjs';
 
-export const foundationProjects = ['core', 'content', 'langgraph-core', 'ag-ui-core', 'react-render', 'react'];
-const angularProjects = ['chat', 'langgraph', 'ag-ui', 'render'];
+export const foundationProjects = privateScaffoldProjects;
 const optional = /(?:^|\/)(?:testing|zod|math)(?:\/|$)/;
+const reactFeature = /^(?:chat|markdown|a2ui|debug|tools|testing|render)(?:\/|$)/;
 const sourceFile = /\.(?:[cm]?[jt]sx?)$/;
 const testFile = /(?:\.(?:spec|test|type-test)\.[cm]?[jt]sx?$|\/test-setup\.)/;
 const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'));
@@ -39,28 +40,12 @@ function importsIn(path) {
   return imports;
 }
 
-function packageOf(specifier) {
-  return specifier.startsWith('@') ? specifier.split('/').slice(0, 2).join('/') : specifier.split('/')[0];
-}
 function projectOf(path) {
   return path.replaceAll('\\', '/').match(/(?:^|\/)(?:dist\/)?libs\/([^/]+)\//)?.[1];
 }
-function forbidden(project, specifier, rootRuntime) {
-  const pkg = packageOf(specifier);
-  const angular = pkg.startsWith('@angular/') || angularProjects.some((name) => pkg === `@threadplane/${name}`);
-  const react = ['react', 'react-dom', '@types/react', '@types/react-dom'].includes(pkg) || ['react', 'react-render', 'ui-react', 'workspace-react'].some((name) => pkg === `@threadplane/${name}`);
-  const backend = pkg.startsWith('@langchain/') || pkg.startsWith('@ag-ui/') || ['langgraph-core', 'ag-ui-core'].some((name) => pkg === `@threadplane/${name}`);
-  const parser = ['@cacheplane/partial-json', '@cacheplane/partial-markdown', 'marked', 'remark-gfm', 'katex', 'shiki', '@threadplane/content'].includes(pkg);
-  if (project === 'core') return angular || react || backend || parser || pkg === 'rxjs' || (rootRuntime && pkg === 'zod');
-  if (project === 'content') return angular || react || backend || pkg === 'rxjs';
-  if (['langgraph-core', 'ag-ui-core'].includes(project)) return angular || react;
-  if (project.startsWith('react')) return angular || backend;
-  return angularProjects.includes(project) && react;
-}
-
-export function verifyBoundaries({ root = process.cwd(), mode = 'source', projects = [...foundationProjects, ...angularProjects] } = {}) {
+export function verifyBoundaries({ root = process.cwd(), mode = 'source', projects = scanProjects, angularTransitions = angularTransitionProjects, telemetryBrowserTransition = true, finalRelease = false } = {}) {
   root = resolve(root);
-  const errors = new Set();
+  const errors = new Set(finalRelease ? assertFinalRelease({ projects, angularTransitions, telemetryBrowserTransition }) : []);
   const configPath = join(root, 'tsconfig.base.json');
   const config = existsSync(configPath) ? ts.readConfigFile(configPath, ts.sys.readFile).config : {};
   const options = ts.convertCompilerOptionsFromJson(config.compilerOptions ?? {}, root).options;
@@ -83,12 +68,8 @@ export function verifyBoundaries({ root = process.cwd(), mode = 'source', projec
     const match = specifier.match(/^@threadplane\/([^/]+)(?:\/(.*))?$/);
     if (!match) return undefined;
     const manifest = manifestFor(match[1]);
-    const entry = manifest?.exports?.[match[2] ? `./${match[2]}` : '.'];
     const declaration = from.endsWith('.d.ts');
-    let target = typeof entry === 'string' ? entry : entry?.[declaration ? 'types' : 'import'] ?? entry?.default;
-    // Existing @nx/js packages such as a2ui expose legacy main/module/types.
-    // Do not bypass an explicit exports map or invent undeclared subpaths.
-    if (!manifest?.exports && !match[2]) target = declaration ? manifest?.types ?? manifest?.typings : manifest?.module ?? manifest?.main;
+    const target = emittedEntries(manifest, match[2] ? `./${match[2]}` : '.').find((entry) => declaration ? /\.d\.[cm]?ts$/.test(entry) : /\.[cm]?js$/.test(entry));
     return target ? join(root, prefix, match[1], target) : undefined;
   }
   for (const project of projects) {
@@ -97,20 +78,18 @@ export function verifyBoundaries({ root = process.cwd(), mode = 'source', projec
     const manifestPath = join(directory, 'package.json');
     if (existsSync(manifestPath)) {
       const manifest = readJson(manifestPath);
-      for (const field of ['dependencies', 'peerDependencies', 'optionalDependencies']) {
-        for (const dependency of Object.keys(manifest[field] ?? {})) {
-          if (forbidden(project, dependency, false)) errors.add(`${project}: forbidden ${field} entry ${dependency}`);
-        }
-      }
+      for (const error of manifestViolations(project, manifest, { angularTransitions, telemetryBrowserTransition })) errors.add(error);
     }
     const allFiles = filesIn(mode === 'source' ? join(directory, 'src') : directory);
     // Existing Angular secondary entry points live alongside src.
-    if (mode === 'source' && angularProjects.includes(project)) allFiles.push(...filesIn(directory).filter((path) => !path.includes('/src/')));
-    const manifestExports = manifestFor(project)?.exports;
-    const roots = mode === 'source' ? [join(directory, 'src/index.ts')] : Object.values(manifestExports?.['.'] ?? {}).filter((value) => typeof value === 'string').map((value) => join(directory, value));
+    if (mode === 'source' && (project === 'angular' || angularTransitions.includes(project))) allFiles.push(...filesIn(directory).filter((path) => !path.includes('/src/')));
+    const manifest = manifestFor(project);
+    const roots = mode === 'source' ? [join(directory, sourceEntry(project, angularTransitions))] : emittedEntries(manifest).filter((value) => sourceFile.test(value)).map((value) => join(directory, value));
+    const browserEntries = mode === 'built' ? emittedEntries(manifest, './browser').map((value) => join(directory, value)) : [];
+    const browserPath = (path) => project === 'telemetry' && telemetryBrowserTransition && (path.startsWith(join(directory, mode === 'source' ? 'src/browser' : 'browser') + '/') || browserEntries.includes(path));
     const visited = new Set();
-    function visit(path, rootRuntime, ancestry = []) {
-      const key = `${path}:${rootRuntime}`;
+    function visit(path, rootRuntime, ancestry = [], browserTransition = false) {
+      const key = `${path}:${rootRuntime}:${browserTransition}`;
       if (visited.has(key)) return;
       visited.add(key);
       if (!existsSync(path)) { errors.add(`${project}: unresolved ${relative(root, path)}`); return; }
@@ -121,18 +100,20 @@ export function verifyBoundaries({ root = process.cwd(), mode = 'source', projec
         const targetProject = target && projectOf(target);
         const normalized = targetProject ? `@threadplane/${targetProject}` : specifier;
         const trail = [...ancestry, relative(root, path), specifier].join(' -> ');
-        if (forbidden(project, specifier, rootRuntime) || forbidden(project, normalized, rootRuntime)) errors.add(`${project}: forbidden dependency ${trail}`);
-        // Core's root is dependency-free except for compiler helpers. Explicitly
+        const policy = { angularTransitions, rootRuntime, browserTransition: browserTransition && browserPath(path) };
+        if (forbiddenDependency(project, specifier, policy) || forbiddenDependency(project, normalized, policy)) errors.add(`${project}: forbidden dependency ${trail}`);
+        // Every core entry is dependency-free. Explicitly
         // review any future external dependency instead of allowing a wrapper
         // package to hide a framework/parser dependency behind its own imports.
-        if (project === 'core' && rootRuntime && (!target || target.includes('/node_modules/')) && !specifier.startsWith('.') && packageOf(specifier) !== 'tslib') errors.add(`${project}: unreviewed root dependency ${trail}`);
+        if (project === 'core' && (!target || target.includes('/node_modules/')) && !specifier.startsWith('.')) errors.add(`${project}: unreviewed dependency ${trail}`);
         if (rootRuntime && (optional.test(specifier) || ['zod', 'katex'].includes(packageOf(specifier)) || (target && optional.test(relative(directory, target))))) errors.add(`${project}: optional/testing dependency reachable from root: ${trail}`);
-        if (target && !target.includes('/node_modules/')) visit(target, rootRuntime, [...ancestry, relative(root, path)]);
+        if (project === 'react' && rootRuntime && ((specifier.startsWith('@threadplane/react/') && reactFeature.test(specifier.slice('@threadplane/react/'.length))) || (targetProject === 'react' && reactFeature.test(relative(join(directory, 'src'), target))))) errors.add(`${project}: feature dependency reachable from root: ${trail}`);
+        if (target && !target.includes('/node_modules/')) visit(target, rootRuntime, [...ancestry, relative(root, path)], browserTransition && browserPath(target));
         else if (!target && (specifier.startsWith('.') || specifier.startsWith('@threadplane/'))) errors.add(`${project}: unresolved dependency ${trail}`);
       }
     }
-    for (const path of allFiles) visit(path, false);
-    if (foundationProjects.includes(project)) {
+    for (const path of allFiles) visit(path, false, [], browserPath(path));
+    if (!angularTransitions.includes(project)) {
       if (!roots.length) errors.add(`${project}: missing root exports`);
       for (const path of roots) visit(path, true);
     }
@@ -142,7 +123,7 @@ export function verifyBoundaries({ root = process.cwd(), mode = 'source', projec
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const mode = process.argv.includes('--built') ? 'built' : 'source';
-  const errors = verifyBoundaries({ mode });
+  const errors = verifyBoundaries({ mode, finalRelease: process.argv.includes('--final-release') });
   if (errors.length) { console.error(errors.join('\n')); process.exitCode = 1; }
   else console.log(`React parity ${mode} boundaries verified.`);
 }

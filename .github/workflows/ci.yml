@@ -122,7 +122,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       LIBS: chat,langgraph,ag-ui,render,a2ui,telemetry
-      FOUNDATIONS: core,content,langgraph-core,ag-ui-core,react-render,react
+      FOUNDATIONS: core,content,angular,react
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
@@ -145,6 +145,7 @@ jobs:
         run: |
           node scripts/react-parity/verify-boundaries.mjs --built
           node scripts/react-parity/verify-packages.mjs
+          node scripts/react-parity/verify-angular-package.mjs
       - run: node scripts/verify-release-versions.mjs
       - name: DX-coverage — public dev-facing functions must have a JSDoc summary
         run: node scripts/check-dx-coverage.mjs

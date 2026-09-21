@@ -1,8 +1,9 @@
 {
   "schemaVersion": 1,
   "observedOn": "2026-09-21",
-  "sourceHead": "a93977ff1e75796336ddd93a882eab2e40f0ca7b",
-  "scope": "T01/T02 private foundations at integrated main; not G1 approval or React parity",
+  "sourceHead": "7e80cebd607f5c605ef1ec81f11e5ebe3324f81b",
+  "sourceState": "Uncommitted foundation working tree based on sourceHead; no eventual commit SHA is asserted.",
+  "scope": "Four private empty scaffolds and regression/boundary/packaging gates; no G1 runtime proof or React parity.",
   "environment": {
     "os": "Darwin",
     "architecture": "arm64",
@@ -16,129 +17,140 @@
     "nxVitestExecutor": "22.6.0",
     "ciNodeNotUsed": "22.22.3"
   },
-  "rootLockfileSha256": "6fb6188f01cd7c973a0b2cd93e42b7c9cf209c278dea7c11978b8922f6c4c3f7",
+  "rootLockfileSha256": "b16eed343e4be6e7d677ffccd7ed004191682eaf248287b1ed4e0fd3bd9f4b5e",
   "checks": [
     {
-      "id": "dependency-install",
-      "command": "NX_DAEMON=false PUPPETEER_SKIP_DOWNLOAD=true PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm ci --no-audit --no-fund",
+      "id": "foundation-node-suites",
       "exitCode": 0,
-      "logSha256": "7ef7b9e06fcbf529ecfecc5abc2656a734894c318ba2641b69f2e6ed243d4751",
-      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence."
+      "logSha256": "bd7b2a542f1321ce4b4d3214e61d374e5ebdc948d6391d34f1cdb361c5d5fa8b",
+      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence.",
+      "reproductionCommand": "node --test scripts/ci-scope.spec.mjs scripts/ci-workflow.spec.mjs scripts/react-parity/*.spec.mjs fixtures/react-parity/traces.spec.mjs",
+      "note": "384 tests passed; independent rerun below also passed 384."
     },
     {
-      "id": "library-tests",
-      "command": "NX_DAEMON=false NX_TUI=false CI=true npx nx run-many -t test --projects=chat,langgraph,ag-ui,render,a2ui,telemetry --parallel=1 --maxWorkers=2 --skip-nx-cache --outputStyle=static",
+      "id": "independent-node-suites",
       "exitCode": 0,
-      "logSha256": "bc706356f511ca18cf6015fccddd66e33ef247e99631336a8ba05c83f690a1a0",
-      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence."
-    },
-    {
-      "id": "type-tests",
-      "command": "NX_DAEMON=false NX_TUI=false CI=true npx nx run-many -t type-tests --projects=chat,langgraph,ag-ui --parallel=1 --skip-nx-cache --outputStyle=static",
-      "exitCode": 0,
-      "logSha256": "e6cd13c8a6492171f33578e6c6f6644b067722013006a2cabc4f50f403ecf26b",
-      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence."
-    },
-    {
-      "id": "production-builds",
-      "command": "NX_DAEMON=false NX_TUI=false CI=true npx nx run-many -t build --projects=chat,langgraph,ag-ui,render,a2ui,telemetry --configuration=production --parallel=1 --skip-nx-cache --outputStyle=static",
-      "exitCode": 0,
-      "logSha256": "5c73115691fb9f8cedb232203b4c3e499ba66ecc36653ff3ab81d80359cf8fb0",
-      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence."
-    },
-    {
-      "id": "consumer-harness-tests",
-      "command": "node --test scripts/react-parity/inventory.spec.mjs fixtures/react-parity/traces.spec.mjs examples/chat/smoke/*.spec.mjs scripts/verify-angular-support.spec.mjs",
-      "exitCode": 0,
-      "logSha256": "f3ea2486f65c27e0b1192a2b1ac4107118cec6a552edfc01c9a010b21e6bae64",
-      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence."
-    },
-    {
-      "id": "packed-install-gate",
-      "command": "NX_DAEMON=false NX_TUI=false CI=true npx nx run telemetry:test-install-pack --skip-nx-cache --outputStyle=static",
-      "exitCode": 0,
-      "logSha256": "5bc93fe919a70501b8078b870508efc78469245082ffca184c63a5a2596801ca",
-      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence."
-    },
-    {
-      "id": "angular-21-consumer",
-      "command": "NX_DAEMON=false NX_TUI=false CI=true PUPPETEER_SKIP_DOWNLOAD=true PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 node examples/chat/smoke/cli.mjs --non-interactive --fresh --target tmp/react-parity/angular-21 --local-dist-root dist/libs --angular-major 21 --install --build --runtime",
-      "exitCode": 0,
-      "logSha256": "24f05121084862ecefe79a79711d5131e68a32c26515f253ef5b69bed1d0f86b",
-      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence."
-    },
-    {
-      "id": "parser-work-baseline",
-      "command": "NX_DAEMON=false NX_TUI=false CI=true npx nx test chat --testFiles=src/lib/a2ui/partial-args-bridge.performance.spec.ts --reporter=default --maxWorkers=2 --skip-nx-cache --outputStyle=static",
-      "exitCode": 0,
-      "logSha256": "68d1c5ccc0519b33b374916395d9d17a36483e6e3a438ac843f2b2013aaeb610",
-      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence."
-    },
-    {
-      "id": "tooling-lint",
-      "command": "npx eslint scripts/react-parity/*.mjs fixtures/react-parity/*.mjs scripts/ci-scope.mjs scripts/ci-scope.spec.mjs scripts/ci-workflow.spec.mjs",
-      "exitCode": 0,
-      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence."
+      "logSha256": "3018af731147c3e8292f9a63ce249915b4e6ec318ad2b078f729f8d5cf7fcb4d",
+      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence.",
+      "command": "node --test scripts/ci-scope.spec.mjs scripts/ci-workflow.spec.mjs scripts/react-parity/*.spec.mjs fixtures/react-parity/traces.spec.mjs"
     },
     {
       "id": "foundation-targets",
-      "command": "NX_DAEMON=false NX_TUI=false CI=true npx nx run-many -t lint test type-tests build --projects=core,content,langgraph-core,ag-ui-core,react-render,react --parallel=2 --skip-nx-cache --outputStyle=static",
       "exitCode": 0,
-      "logSha256": "64ec74872120c3cca7c5deed854678b16c10f1c8dc2555f47717da449dfcabcb",
-      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence."
-    },
-    {
-      "id": "foundation-tarballs",
-      "command": "node scripts/react-parity/verify-packages.mjs",
-      "exitCode": 0,
-      "logSha256": "10fda6516c0efdd827e805bc5267976c51dce0e91343e797fa58bfd67ba5a49a",
-      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence."
-    },
-    {
-      "id": "final-node-suites",
-      "command": "NX_DAEMON=false node --test scripts/react-parity/*.spec.mjs fixtures/react-parity/traces.spec.mjs scripts/ci-scope.spec.mjs scripts/ci-workflow.spec.mjs",
-      "exitCode": 0,
-      "logSha256": "64778c5190290ecde8f2ae05f298aebfc59e9eae14879a7afbe1cea85e781f62",
-      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence."
-    },
-    {
-      "id": "inventory-check",
-      "command": "node scripts/react-parity/inventory.mjs --check",
-      "exitCode": 0,
-      "logSha256": "f074835105020dcfd8dbbbd8fd594e164ee791e5df68413b52c8ec48eaa4e985",
-      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence."
+      "logSha256": "569c4cf93d399046a0974c24361d68897ba0f307d52ec7ae837b9149c03fa449",
+      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence.",
+      "reproductionCommand": "NX_DAEMON=false NX_TUI=false CI=true npx nx run-many -t lint test type-tests build --projects=core,content,angular,react --parallel=2 --skip-nx-cache --outputStyle=static",
+      "note": "16 target configurations across four empty scaffolds; no runtime behavior tests."
     },
     {
       "id": "source-boundaries",
-      "command": "node scripts/react-parity/verify-boundaries.mjs",
       "exitCode": 0,
       "logSha256": "995db896b38cf7de5ca9db6590dba47e082d26abdf69bab04b92eee484696063",
-      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence."
+      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence.",
+      "command": "node scripts/react-parity/verify-boundaries.mjs"
     },
     {
       "id": "built-boundaries",
-      "command": "node scripts/react-parity/verify-boundaries.mjs --built",
       "exitCode": 0,
       "logSha256": "c983a97d17ff7ced7aa9113afa031f464103f566f1bc94eec8160558ec2553f7",
-      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence."
+      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence.",
+      "command": "node scripts/react-parity/verify-boundaries.mjs --built"
+    },
+    {
+      "id": "plain-foundation-consumers",
+      "exitCode": 0,
+      "logSha256": "90a04e6f3e258aa716f2f59fdb9589bfbe30e30509bf414941f21be23762e1f3",
+      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence.",
+      "command": "node scripts/react-parity/verify-packages.mjs"
+    },
+    {
+      "id": "angular-foundation-consumer",
+      "exitCode": 0,
+      "logSha256": "c6b87b930c2611fde7d3428a974c81280810f99179aa208fb7e47c93d23f0a1b",
+      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence.",
+      "command": "node scripts/react-parity/verify-angular-package.mjs"
+    },
+    {
+      "id": "inventory-check",
+      "exitCode": 0,
+      "logSha256": "f074835105020dcfd8dbbbd8fd594e164ee791e5df68413b52c8ec48eaa4e985",
+      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence.",
+      "command": "node scripts/react-parity/inventory.mjs --check"
+    },
+    {
+      "id": "library-tests",
+      "exitCode": 0,
+      "logSha256": "a92f99b91e44eeee4ead10e54e1f6b1b230ba800c8413f4b642a3bd153028e85",
+      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence.",
+      "command": "NX_DAEMON=false NX_TUI=false CI=true npx nx run-many -t test --projects=chat,langgraph,ag-ui,render,a2ui,telemetry --parallel=1 --maxWorkers=2 --skip-nx-cache --outputStyle=static"
+    },
+    {
+      "id": "type-tests",
+      "exitCode": 0,
+      "logSha256": "e6cd13c8a6492171f33578e6c6f6644b067722013006a2cabc4f50f403ecf26b",
+      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence.",
+      "command": "NX_DAEMON=false NX_TUI=false CI=true npx nx run-many -t type-tests --projects=chat,langgraph,ag-ui --parallel=1 --skip-nx-cache --outputStyle=static"
     },
     {
       "id": "existing-library-lint",
-      "command": "NX_DAEMON=false NX_TUI=false CI=true npx nx run-many -t lint --projects=chat,langgraph,ag-ui,render,a2ui,telemetry --parallel=2 --skip-nx-cache --outputStyle=static",
       "exitCode": 0,
-      "logSha256": "b7218f182e766ba64fc664c816d03dd5ee2ee986f7c4b635f63fa265cde4e9bb",
-      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence."
+      "logSha256": "020d0db8c7d98adfd96994508ee837bf2ce6d6efc83c3e93836d5ce5ea208bd1",
+      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence.",
+      "command": "NX_DAEMON=false NX_TUI=false CI=true npx nx run-many -t lint --projects=chat,langgraph,ag-ui,render,a2ui,telemetry --parallel=2 --skip-nx-cache --outputStyle=static"
+    },
+    {
+      "id": "production-builds",
+      "exitCode": 0,
+      "logSha256": "726d7d105c725e6fd4f422bcbfc49107a3f6cbbffd6444c207c49d8d00450a41",
+      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence.",
+      "command": "NX_DAEMON=false NX_TUI=false CI=true npx nx run-many -t build --projects=chat,langgraph,ag-ui,render,a2ui,telemetry --configuration=production --parallel=1 --skip-nx-cache --outputStyle=static"
+    },
+    {
+      "id": "consumer-harness-tests",
+      "exitCode": 0,
+      "logSha256": "8c58dfb1cde1ef0688049f63b695350c8f9fcc3fa951aed0d03653028a7ebda9",
+      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence.",
+      "command": "node --test examples/chat/smoke/*.spec.mjs scripts/verify-angular-support.spec.mjs"
+    },
+    {
+      "id": "angular-21-legacy-consumer",
+      "exitCode": 0,
+      "logSha256": "b138985a27837cd0ed1e856ec86bd80ed2ae627620cf4e12672d37511d6ac1e6",
+      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence.",
+      "reproductionCommand": "NX_DAEMON=false NX_TUI=false CI=true PUPPETEER_SKIP_DOWNLOAD=true PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 node examples/chat/smoke/cli.mjs --non-interactive --fresh --target tmp/react-parity/angular-21 --local-dist-root dist/libs --angular-major 21 --install --build --runtime"
+    },
+    {
+      "id": "verification-script-lint",
+      "exitCode": 0,
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence.",
+      "command": "node node_modules/eslint/bin/eslint.js scripts/react-parity/package-policy.mjs scripts/react-parity/package-policy.spec.mjs scripts/react-parity/verify-boundaries.mjs scripts/react-parity/verify-boundaries.spec.mjs scripts/react-parity/verify-packages.mjs scripts/react-parity/verify-packages.spec.mjs scripts/react-parity/verify-angular-package.mjs scripts/react-parity/verify-angular-package.spec.mjs scripts/ci-scope.mjs scripts/ci-scope.spec.mjs scripts/ci-workflow.spec.mjs"
     }
   ],
+  "lockfileAudit": {
+    "method": "Compare registry package entries against base HEAD separately from reviewed workspace links and root metadata.",
+    "exitCode": 0,
+    "logSha256": "70e8222a915522423503273e6a0b9e68beef6609b0f00a3d74ffc2c2ca7856e3",
+    "changedRegistryPackageEntries": [],
+    "lockEntries": 3047,
+    "reviewedChanges": [
+      "Direct semver 7.7.4 tooling dependency, already resolved in the lockfile",
+      "Replace retired scaffold workspace links with the Angular scaffold and its peer metadata"
+    ]
+  },
   "scopeCounts": {
     "libraryTestTargetsPassed": 6,
     "typeTestTargetsPassed": 3,
+    "libraryLintTargetsPassed": 6,
     "productionBuildTargetsPassed": 6,
     "consumerHarnessTestsPassed": 44,
-    "packedInstallArtifactsPassed": 4,
-    "inventoryTestsPassed": 31,
-    "syntheticTraceTestsPassed": 2,
+    "foundationTargetConfigurationsPassed": 16,
+    "foundationLibraryBehaviorTests": 0,
+    "privateTarballs": 4,
+    "plainExportPaths": 9,
+    "angularExportPaths": 1,
+    "focusedNodeTestsPassed": 384,
+    "independentFocusedNodeTestsPassed": 384,
     "inventoryRows": 1438,
     "componentDeclarations": 102,
     "publicExportOccurrences": 550,
@@ -148,16 +160,46 @@
     "publicEntryPoints": 12,
     "cockpitTopics": 41,
     "docsPages": 128,
-    "uniqueExportDefinitions": 514,
-    "foundationTargetConfigurationsPassed": 24,
-    "foundationLibraryBehaviorTests": 0,
-    "privateTarballs": 6,
-    "privateExportPaths": 24,
-    "finalNodeTestsPassed": 231,
-    "boundaryTestsPassed": 49,
-    "packageTestsPassed": 10,
-    "ciScopeAndWorkflowTestsPassed": 139,
-    "libraryLintTargetsPassed": 6
+    "uniqueExportDefinitions": 514
+  },
+  "foundationConsumers": {
+    "core": {
+      "installedPackages": 1,
+      "installedFileBytes": 3639,
+      "lockLocations": 1,
+      "exportsChecked": 3
+    },
+    "plain": {
+      "installedPackages": 3,
+      "installedFileBytes": 10837,
+      "lockLocations": 3,
+      "exportsChecked": 9,
+      "packages": [
+        "core",
+        "content",
+        "react"
+      ]
+    },
+    "reactRootBundle": {
+      "inputModules": 2,
+      "bytes": 128,
+      "contentParserInputs": 0
+    },
+    "angular": {
+      "installedPackages": 410,
+      "installedFileBytes": 196886714,
+      "lockLocationsIncludingOptionalPlatforms": 515,
+      "includes": "Angular CLI, compiler and build development tooling",
+      "exportsChecked": 1,
+      "initialBundleRawReported": "92.07 kB",
+      "initialBundleEstimatedTransferReported": "27.62 kB",
+      "bundleInputModules": 252,
+      "threadplaneAPFInputModules": 1,
+      "contentParserInputs": 0,
+      "angularCore": "21.1.6",
+      "angularCli": "21.1.5"
+    },
+    "limits": "Installed files, lockfile locations and bundle inputs measure different surfaces. These empty-scaffold measurements are not runtime benchmarks. Both consumers use skipLibCheck:false."
   },
   "consumer": {
     "outputDirectory": "tmp/react-parity/angular-21",
@@ -171,77 +213,42 @@
       "node_modules/@cacheplane/partial-json": "0.2.2",
       "node_modules/@cacheplane/partial-markdown": "0.3.2",
       "node_modules/@langchain/core": "1.2.12",
-      "node_modules/@langchain/langgraph-sdk": "1.11.1",
+      "node_modules/@langchain/langgraph-sdk": "1.11.2",
       "node_modules/@threadplane/chat/node_modules/@cacheplane/partial-markdown": "0.5.8",
       "node_modules/typescript": "5.9.3"
     },
     "initialBundleRawReported": "1.91 MB",
-    "initialBundleEstimatedTransferReported": "389.69 kB",
+    "initialBundleEstimatedTransferReported": "390.10 kB",
     "budgetWarning": "500.00 kB initial budget exceeded by 1.41 MB"
   },
-  "parserBaseline": {
-    "test": "libs/chat/src/lib/a2ui/partial-args-bridge.performance.spec.ts",
-    "assertion": "Each streamed character parsed once despite duplicate cumulative argument updates",
-    "observedTestDurationMs": 16,
-    "timingIsCalibratedBudget": false
-  },
-  "sourcePreparation": {
-    "trackedValue": "0.2.0",
-    "valueDuringNativeBuildsAndTests": "0.2.0",
-    "actionAfterVerification": "No tracked Angular package-version changes; upstream version-alignment fix is integrated."
-  },
   "stableLane": {
-    "npmLatestObserved": "0.2.0",
     "tag": "v0.2.0",
-    "commit": "8daea78d35bfa27513474bd624d0e9495af3cfab",
-    "branch": "codex/angular-maintenance-v0.2",
+    "peeledCommit": "8daea78d35bfa27513474bd624d0e9495af3cfab",
+    "localBranch": "codex/angular-maintenance-v0.2",
     "lockfileSha256": "a8c25ef403eedaad064d5da45ec4f7dc2b66538597a29ee4796b5e52b2f42e26",
-    "pushed": false,
-    "published": false,
-    "namedReleaseOwner": "Assign before publication; existing repository maintainer policy remains in force"
+    "verification": "Local branch/tag commit and lockfile verified. Remote branch status, publication policy and operated maintenance workflow were not established."
   },
   "candidateLane": {
     "branch": "codex/react-support-baseline",
-    "baseCommit": "a93977ff1e75796336ddd93a882eab2e40f0ca7b",
-    "upstreamIntegration": "Includes released v0.2.0 and current main at the recorded base. Recovery APIs and behavior reviewed and assigned in dispositions.json.",
-    "newReleaseSurfaces": [
-      "Agent.checkStatus",
-      "AgentRecovery",
-      "AgentError.recovery/detail",
-      "AGENT_RECOVERY_MESSAGES",
-      "AGENT_RECOVERY_DETAILS",
-      "unexpected stream closure handling",
-      "development integration boot observation"
-    ]
+    "baseCommit": "7e80cebd607f5c605ef1ec81f11e5ebe3324f81b",
+    "workingTree": "Uncommitted P01\u2013P06 foundation changes; populated Angular implementations unchanged."
   },
   "warnings": [
-    "npm11.19 reported unapproved dependency lifecycle scripts; no allowlist settings changed",
-    "native builds report stale Browserslist data and intentional lifecycle-script packaging",
-    "consumer emits existing NG8107 optional-chain warning and p-queue CommonJS optimization warning",
-    "Existing Angular lint targets pass with pre-existing warnings; new foundation projects and verification scripts lint without errors."
+    "Existing Angular lint targets pass with existing warnings.",
+    "Native builds report stale Browserslist data and packaging lifecycle-script notices.",
+    "Legacy Angular consumer emits NG8107, initial bundle budget and p-queue CommonJS warnings."
   ],
   "notRun": [
-    "Angular20 consumer lane",
-    "Angular22 consumer lane",
+    "Angular20 and Angular22 consumer lanes",
     "CI Node22.22.3 environment",
-    "live backend/deployment smoke",
-    "full calibrated latency/heap/module-graph benchmark",
-    "React runtime/component/SSR tests (implementation does not exist yet)",
-    "release publication or backport rehearsal",
-    "Private library runtime tests: scaffolds intentionally contain no runtime implementations; empty native test targets only verify configuration."
+    "Live backend/deployment smoke",
+    "Calibrated latency, heap retention or stream-to-paint benchmarks",
+    "Shared runtime extraction or native binding behavior proof",
+    "React runtime/component/SSR tests and renderer reuse proof",
+    "Release publication or backport rehearsal"
   ],
-  "priorResearchBaseline": {
-    "sourceHead": "b1685838069c6b1ec56d5e97a1a01170b26aa125",
-    "inventoryRows": 1435,
-    "publicExportOccurrences": 547,
-    "integrationAdds": [
-      "AgentRecovery",
-      "AGENT_RECOVERY_MESSAGES",
-      "AGENT_RECOVERY_DETAILS"
-    ]
-  },
   "review": {
-    "specification": "Approved after adding emitted Angular crossover checks, JS/declaration direction fixtures, and CI build-order guard.",
-    "quality": "Approved after independent review and 231 passing focused tests; scope is empty private foundations and baseline gates."
+    "scope": "P01\u2013P06 foundation code, ledger and evidence received independent specification and quality approval. Review findings were addressed before commit.",
+    "implementationParity": false
   }
 }

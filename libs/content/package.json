@@ -19,11 +19,6 @@
       "import": "./src/index.js",
       "default": "./src/index.js"
     },
-    "./render": {
-      "types": "./src/render/index.d.ts",
-      "import": "./src/render/index.js",
-      "default": "./src/render/index.js"
-    },
     "./markdown": {
       "types": "./src/markdown/index.d.ts",
       "import": "./src/markdown/index.js",

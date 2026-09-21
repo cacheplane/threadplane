@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { appendFileSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { privateScaffoldProjects } from './react-parity/package-policy.mjs';
 
 export const SCOPE_KEYS = [
   'library',
@@ -99,7 +100,7 @@ const PARITY_PREFIXES = [
   'scripts/react-parity/',
   'fixtures/react-parity/',
   `${parityScope.docsRoot}/`,
-  ...[...parityScope.libraries, 'core', 'content', 'langgraph-core', 'ag-ui-core', 'react-render', 'react']
+  ...[...parityScope.libraries, ...privateScaffoldProjects]
     .map((name) => `libs/${name}/`),
 ];
 

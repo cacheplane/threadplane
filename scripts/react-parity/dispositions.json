@@ -2243,8 +2243,8 @@
       ],
       "treatment": "react",
       "status": "planned",
-      "target": "libs/react-render/src/components/default-fallback.tsx",
-      "reason": "Native component. Unknown/unready render fallback with safe metadata display."
+      "target": "libs/react/src/render/components/default-fallback.tsx",
+      "reason": "Native component. Unknown/unready render fallback with safe metadata display. Future React package ownership; not implemented by the empty scaffold."
     },
     {
       "id": "component:libs/render/src/lib/render-element.component.ts#RenderElementComponent",
@@ -2253,8 +2253,8 @@
       ],
       "treatment": "react",
       "status": "planned",
-      "target": "libs/react-render/src/components/render-element.tsx",
-      "reason": "Native component. Native registry dispatch, scoped bindings/repeats, readiness latch, actions and host events."
+      "target": "libs/react/src/render/components/render-element.tsx",
+      "reason": "Native component. Native registry dispatch, scoped bindings/repeats, readiness latch, actions and host events. Future React package ownership; not implemented by the empty scaffold."
     },
     {
       "id": "component:libs/render/src/lib/render-spec.component.ts#RenderSpecComponent",
@@ -2263,8 +2263,8 @@
       ],
       "treatment": "react",
       "status": "planned",
-      "target": "libs/react-render/src/components/render-spec.tsx",
-      "reason": "Native component. Root spec/state lifecycle, registry/context composition, events and cleanup."
+      "target": "libs/react/src/render/components/render-spec.tsx",
+      "reason": "Native component. Root spec/state lifecycle, registry/context composition, events and cleanup. Future React package ownership; not implemented by the empty scaffold."
     },
     {
       "id": "config:.github/workflows/ci.yml",
@@ -4968,7 +4968,8 @@
         "T15"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "planned",
+      "reason": "Retain tool declaration/coordination capability without a schema DSL, automatic argument validation/transformation or JSON Schema derivation. Optional JSON Schema metadata is caller-supplied; current Angular behavior is unchanged and future view/ask presentation remains deferred."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#AskToolDef",
@@ -4976,7 +4977,8 @@
         "T15"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "planned",
+      "reason": "Retain tool declaration/coordination capability without a schema DSL, automatic argument validation/transformation or JSON Schema derivation. Optional JSON Schema metadata is caller-supplied; current Angular behavior is unchanged and future view/ask presentation remains deferred."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#CHAT_LIFECYCLE",
@@ -5693,7 +5695,8 @@
         "T15"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "planned",
+      "reason": "Retain tool declaration/coordination capability without a schema DSL, automatic argument validation/transformation or JSON Schema derivation. Optional JSON Schema metadata is caller-supplied; current Angular behavior is unchanged and future view/ask presentation remains deferred."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ClientToolViewProps",
@@ -5701,7 +5704,8 @@
         "T15"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "planned",
+      "reason": "Retain tool declaration/coordination capability without a schema DSL, automatic argument validation/transformation or JSON Schema derivation. Optional JSON Schema metadata is caller-supplied; current Angular behavior is unchanged and future view/ask presentation remains deferred."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ClientToolsCapability",
@@ -5816,7 +5820,8 @@
         "T15"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "planned",
+      "reason": "Retain tool declaration/coordination capability without a schema DSL, automatic argument validation/transformation or JSON Schema derivation. Optional JSON Schema metadata is caller-supplied; current Angular behavior is unchanged and future view/ask presentation remains deferred."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#FunctionToolHandlerContext",
@@ -6247,8 +6252,9 @@
         "T07",
         "T20"
       ],
-      "treatment": "shared",
-      "status": "planned"
+      "treatment": "excluded",
+      "status": "planned",
+      "reason": "Do not migrate validator/inference contracts into a shared tool/schema layer. Argument validation belongs to callers; optional JSON Schema metadata is supplied directly. Current Angular behavior, protocol schema assets, form validation and transport decoding are unaffected."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#StandardSchemaInferOutput",
@@ -6256,8 +6262,9 @@
         "T07",
         "T20"
       ],
-      "treatment": "shared",
-      "status": "planned"
+      "treatment": "excluded",
+      "status": "planned",
+      "reason": "Do not migrate validator/inference contracts into a shared tool/schema layer. Argument validation belongs to callers; optional JSON Schema metadata is supplied directly. Current Angular behavior, protocol schema assets, form validation and transport decoding are unaffected."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#StandardSchemaV1",
@@ -6265,8 +6272,9 @@
         "T07",
         "T20"
       ],
-      "treatment": "shared",
-      "status": "planned"
+      "treatment": "excluded",
+      "status": "planned",
+      "reason": "Do not migrate validator/inference contracts into a shared tool/schema layer. Argument validation belongs to callers; optional JSON Schema metadata is supplied directly. Current Angular behavior, protocol schema assets, form validation and transport decoding are unaffected."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#StreamingMarkdownContractViolationPolicy",
@@ -6396,7 +6404,8 @@
         "T15"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "planned",
+      "reason": "Retain tool declaration/coordination capability without a schema DSL, automatic argument validation/transformation or JSON Schema derivation. Optional JSON Schema metadata is caller-supplied; current Angular behavior is unchanged and future view/ask presentation remains deferred."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#a2uiBasicCatalog",
@@ -6567,8 +6576,9 @@
       "taskIds": [
         "T15"
       ],
-      "treatment": "shared",
-      "status": "planned"
+      "treatment": "excluded",
+      "status": "planned",
+      "reason": "Omitted from the new tool contract: no validator-to-JSON-Schema conversion or schema DSL. Callers may supply optional JSON Schema metadata; current Angular conversion remains unchanged."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#deriveMonogram",
@@ -6603,7 +6613,8 @@
         "T15"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "planned",
+      "reason": "Retain handler execution, cancellation context and outcome normalization. Omit automatic validateArgs validation/transformation; pass arguments to caller-owned handlers. This is future work; current Angular execution remains unchanged."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#extractErrorMessage",
@@ -6891,8 +6902,9 @@
       "taskIds": [
         "T15"
       ],
-      "treatment": "shared",
-      "status": "planned"
+      "treatment": "excluded",
+      "status": "planned",
+      "reason": "Omitted from the new tool contract: handlers own argument validation and transformation. Existing Angular validation remains unchanged; this is a migration omission, not implemented parity."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#view",
@@ -7689,8 +7701,8 @@
       ],
       "treatment": "react",
       "status": "planned",
-      "target": "libs/react-render/src/components/default-fallback.tsx",
-      "reason": "Native component. Unknown/unready render fallback with safe metadata display."
+      "target": "libs/react/src/render/components/default-fallback.tsx",
+      "reason": "Native component. Unknown/unready render fallback with safe metadata display. Future React package ownership; not implemented by the empty scaffold."
     },
     {
       "id": "export:libs/render/src/public-api.ts#RENDER_CONFIG",
@@ -7760,8 +7772,8 @@
       ],
       "treatment": "react",
       "status": "planned",
-      "target": "libs/react-render/src/components/render-element.tsx",
-      "reason": "Native component. Native registry dispatch, scoped bindings/repeats, readiness latch, actions and host events."
+      "target": "libs/react/src/render/components/render-element.tsx",
+      "reason": "Native component. Native registry dispatch, scoped bindings/repeats, readiness latch, actions and host events. Future React package ownership; not implemented by the empty scaffold."
     },
     {
       "id": "export:libs/render/src/public-api.ts#RenderEvent",
@@ -7818,8 +7830,8 @@
       ],
       "treatment": "react",
       "status": "planned",
-      "target": "libs/react-render/src/components/render-spec.tsx",
-      "reason": "Native component. Root spec/state lifecycle, registry/context composition, events and cleanup."
+      "target": "libs/react/src/render/components/render-spec.tsx",
+      "reason": "Native component. Root spec/state lifecycle, registry/context composition, events and cleanup. Future React package ownership; not implemented by the empty scaffold."
     },
     {
       "id": "export:libs/render/src/public-api.ts#RenderStateChangeEvent",
@@ -7862,8 +7874,9 @@
         "T07",
         "T20"
       ],
-      "treatment": "shared",
-      "status": "planned"
+      "treatment": "excluded",
+      "status": "planned",
+      "reason": "Do not migrate validator/inference contracts into a shared tool/schema layer. Argument validation belongs to callers; optional JSON Schema metadata is supplied directly. Current Angular behavior, protocol schema assets, form validation and transport decoding are unaffected."
     },
     {
       "id": "export:libs/render/src/public-api.ts#StandardSchemaInferOutput",
@@ -7871,8 +7884,9 @@
         "T07",
         "T20"
       ],
-      "treatment": "shared",
-      "status": "planned"
+      "treatment": "excluded",
+      "status": "planned",
+      "reason": "Do not migrate validator/inference contracts into a shared tool/schema layer. Argument validation belongs to callers; optional JSON Schema metadata is supplied directly. Current Angular behavior, protocol schema assets, form validation and transport decoding are unaffected."
     },
     {
       "id": "export:libs/render/src/public-api.ts#StandardSchemaV1",
@@ -7880,8 +7894,9 @@
         "T07",
         "T20"
       ],
-      "treatment": "shared",
-      "status": "planned"
+      "treatment": "excluded",
+      "status": "planned",
+      "reason": "Do not migrate validator/inference contracts into a shared tool/schema layer. Argument validation belongs to callers; optional JSON Schema metadata is supplied directly. Current Angular behavior, protocol schema assets, form validation and transport decoding are unaffected."
     },
     {
       "id": "export:libs/render/src/public-api.ts#StateChangeRecord",
@@ -9306,7 +9321,8 @@
         "T16"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "planned",
+      "reason": "Retain tool declaration/coordination capability without a schema DSL, automatic argument validation/transformation or JSON Schema derivation. Optional JSON Schema metadata is caller-supplied; current Angular behavior is unchanged and future view/ask presentation remains deferred."
     },
     {
       "id": "source:libs/chat/src/lib/client-tools/component-inputs.ts",
@@ -9322,7 +9338,8 @@
         "T15"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "planned",
+      "reason": "Retain handler execution, cancellation context and outcome normalization. Omit automatic validateArgs validation/transformation; pass arguments to caller-owned handlers. This is future work; current Angular execution remains unchanged."
     },
     {
       "id": "source:libs/chat/src/lib/client-tools/index.ts",
@@ -9346,7 +9363,8 @@
         "T15"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "planned",
+      "reason": "Retain the tool metadata contract with optional caller-supplied JSON Schema. The deriveJsonSchema converter and its Zod ownership are deliberately omitted; the corresponding export is explicitly excluded. Existing Angular implementation remains unchanged."
     },
     {
       "id": "source:libs/chat/src/lib/client-tools/tool-def.ts",
@@ -9354,7 +9372,8 @@
         "T15"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "planned",
+      "reason": "Retain tool declaration/coordination capability without a schema DSL, automatic argument validation/transformation or JSON Schema derivation. Optional JSON Schema metadata is caller-supplied; current Angular behavior is unchanged and future view/ask presentation remains deferred."
     },
     {
       "id": "source:libs/chat/src/lib/client-tools/tools.ts",
@@ -11650,8 +11669,9 @@
         "T07",
         "T20"
       ],
-      "treatment": "shared",
-      "status": "planned"
+      "treatment": "excluded",
+      "status": "planned",
+      "reason": "Do not migrate validator/inference contracts into a shared tool/schema layer. Argument validation belongs to callers; optional JSON Schema metadata is supplied directly. Current Angular behavior, protocol schema assets, form validation and transport decoding are unaffected."
     },
     {
       "id": "source:libs/render/src/lib/views.ts",

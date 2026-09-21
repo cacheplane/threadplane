@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "a93977ff1e75796336ddd93a882eab2e40f0ca7b",
+  "baselineHead": "7e80cebd607f5c605ef1ec81f11e5ebe3324f81b",
   "sourceState": {
     "modified": [
       ".github/workflows/ci.yml",
-      "nx.json",
       "package-lock.json",
+      "package.json",
       "tsconfig.base.json"
     ],
     "untracked": []
@@ -1857,7 +1857,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "6b362c4624ed5ee33c435bc0257e173f831e1f35c3105ea23f7a41b1629f8e02"
+      "sha256": "7b4b5143058dc90229686fe8e541312ca6ea7276f428bd90fcd7c95e143fb9b6"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -1911,13 +1911,13 @@
       "id": "config:package-lock.json",
       "kind": "config",
       "path": "package-lock.json",
-      "sha256": "6fb6188f01cd7c973a0b2cd93e42b7c9cf209c278dea7c11978b8922f6c4c3f7"
+      "sha256": "b16eed343e4be6e7d677ffccd7ed004191682eaf248287b1ed4e0fd3bd9f4b5e"
     },
     {
       "id": "config:package.json",
       "kind": "config",
       "path": "package.json",
-      "sha256": "a3bf1df57ecaca4896db51b5a2ad5bf5ecc617185fe2ce0e2a09eff6e6dd3c08"
+      "sha256": "1454dd65be7cc56cf85c23eaf83c17953bb3d4b0dc98350cb1bdd392fbdade25"
     },
     {
       "id": "config:scripts/assemble-examples.ts",
@@ -1947,7 +1947,7 @@
       "id": "config:tsconfig.base.json",
       "kind": "config",
       "path": "tsconfig.base.json",
-      "sha256": "f3a9482535125baa18952174bed59a725c1fe664cbc01db1a6b9a14265bfa768"
+      "sha256": "0948b24b699da2cd2e4bc61f35a0340d25dd21300245b9c04aabadaa32c48fdd"
     },
     {
       "id": "doc:apps/website/content/docs/a2ui/getting-started/introduction.mdx",

@@ -50,6 +50,11 @@ export default [
               bannedExternalImports: ['@angular/*', 'react', 'react-dom'],
             },
             {
+              sourceTag: 'layer:angular',
+              onlyDependOnLibsWithTags: ['layer:core', 'layer:content', 'layer:render', 'layer:a2ui', 'layer:angular'],
+              bannedExternalImports: ['react', 'react/*', 'react-dom', 'react-dom/*', '@types/react', '@types/react-dom', '@langchain/*', '@ag-ui/*'],
+            },
+            {
               sourceTag: 'layer:react',
               onlyDependOnLibsWithTags: ['layer:core', 'layer:content', 'layer:react'],
               bannedExternalImports: ['@angular/*', '@langchain/*', '@ag-ui/*'],

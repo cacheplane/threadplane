@@ -24,16 +24,6 @@
       "import": "./src/tools/index.js",
       "default": "./src/tools/index.js"
     },
-    "./schema": {
-      "types": "./src/schema/index.d.ts",
-      "import": "./src/schema/index.js",
-      "default": "./src/schema/index.js"
-    },
-    "./schema/zod": {
-      "types": "./src/schema/zod/index.d.ts",
-      "import": "./src/schema/zod/index.js",
-      "default": "./src/schema/zod/index.js"
-    },
     "./testing": {
       "types": "./src/testing/index.d.ts",
       "import": "./src/testing/index.js",

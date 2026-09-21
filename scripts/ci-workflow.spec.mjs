@@ -1,6 +1,7 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { privateScaffoldProjects } from './react-parity/package-policy.mjs';
 import { spawnSync } from 'node:child_process';
 
 function escapeRegExp(value) {
@@ -85,11 +86,13 @@ describe('CI workflow', () => {
     assert.match(source, /inventory\.mjs --check/);
     assert.match(source, /node scripts\/react-parity\/verify-boundaries\.mjs/);
     const build = readNamedStep(job, 'Build and validate private React foundations');
-    assert.match(job, /FOUNDATIONS: core,content,langgraph-core,ag-ui-core,react-render,react/);
+    assert.ok(job.includes(`FOUNDATIONS: ${privateScaffoldProjects.join(',')}`));
+    assert.match(job, /LIBS: chat,langgraph,ag-ui,render,a2ui,telemetry/);
     assert.match(build, /run-many -t lint test type-tests build --projects=\$FOUNDATIONS/);
     const packages = readNamedStep(job, 'Verify emitted boundaries and isolated packages');
     assert.match(packages, /verify-boundaries\.mjs --built/);
     assert.match(packages, /verify-packages\.mjs/);
+    assert.match(packages, /verify-angular-package\.mjs/);
     assert.ok(job.indexOf(build) < job.indexOf(packages));
     assert.ok(job.indexOf('run-many -t build --projects=$LIBS') < job.indexOf(packages));
   });
