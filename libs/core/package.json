@@ -1,0 +1,43 @@
+{
+  "name": "@threadplane/core",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Private core foundation scaffolding. No supported runtime API yet.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "src/**/*.js",
+    "src/**/*.d.ts",
+    "src/**/*.d.ts.map",
+    "LICENSE.md",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./src/index.js",
+      "default": "./src/index.js"
+    },
+    "./tools": {
+      "types": "./src/tools/index.d.ts",
+      "import": "./src/tools/index.js",
+      "default": "./src/tools/index.js"
+    },
+    "./schema": {
+      "types": "./src/schema/index.d.ts",
+      "import": "./src/schema/index.js",
+      "default": "./src/schema/index.js"
+    },
+    "./schema/zod": {
+      "types": "./src/schema/zod/index.d.ts",
+      "import": "./src/schema/zod/index.js",
+      "default": "./src/schema/zod/index.js"
+    },
+    "./testing": {
+      "types": "./src/testing/index.d.ts",
+      "import": "./src/testing/index.js",
+      "default": "./src/testing/index.js"
+    }
+  }
+}

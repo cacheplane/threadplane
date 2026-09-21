@@ -78,6 +78,21 @@ function readNamedStep(job, name) {
 }
 
 describe('CI workflow', () => {
+  it('enforces React migration source, build, and packaged-consumer gates', async () => {
+    const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'library');
+    const source = readNamedStep(job, 'React migration baseline and boundaries');
+    assert.match(source, /node --test scripts\/react-parity\/\*\.spec\.mjs fixtures\/react-parity\/traces\.spec\.mjs/);
+    assert.match(source, /inventory\.mjs --check/);
+    assert.match(source, /node scripts\/react-parity\/verify-boundaries\.mjs/);
+    const build = readNamedStep(job, 'Build and validate private React foundations');
+    assert.match(job, /FOUNDATIONS: core,content,langgraph-core,ag-ui-core,react-render,react/);
+    assert.match(build, /run-many -t lint test type-tests build --projects=\$FOUNDATIONS/);
+    const packages = readNamedStep(job, 'Verify emitted boundaries and isolated packages');
+    assert.match(packages, /verify-boundaries\.mjs --built/);
+    assert.match(packages, /verify-packages\.mjs/);
+    assert.ok(job.indexOf(build) < job.indexOf(packages));
+    assert.ok(job.indexOf('run-many -t build --projects=$LIBS') < job.indexOf(packages));
+  });
   it('verifies stage scrolling and interaction against the matching local replay build', async () => {
     const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
     const step = readNamedStep(readJobBlock(workflow, 'website-e2e'), 'Stage scroll verification (scroll-craft harness)');
@@ -107,7 +122,7 @@ describe('CI workflow', () => {
 
     assert.match(
       workflow,
-      /^  merge_group:\s*$/m,
+      /^ {2}merge_group:\s*$/m,
       'ci.yml must trigger on merge_group or a merge queue blocks forever'
     );
 
@@ -167,14 +182,6 @@ describe('CI workflow', () => {
 
   async function readAngularCompatibilityJob() {
     return readJobBlock(await readWorkflow(), 'angular-compatibility');
-  }
-
-  async function readLibraryJob() {
-    const workflow = await readWorkflow();
-    return workflow.slice(
-      workflow.indexOf('\n  library:\n'),
-      workflow.indexOf('\n  website:\n')
-    );
   }
 
   async function readCanonicalDemoJob() {

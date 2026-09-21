@@ -5,6 +5,11 @@
     "production": [
       "default",
       "!{projectRoot}/**/*.spec.ts",
+      "!{projectRoot}/**/*.spec.tsx",
+      "!{projectRoot}/**/*.test.ts",
+      "!{projectRoot}/**/*.test.tsx",
+      "!{projectRoot}/**/*.type-test.ts",
+      "!{projectRoot}/**/*.type-test.tsx",
       "!{projectRoot}/src/test-setup.ts",
       "!{projectRoot}/jest.config.ts",
       "!{projectRoot}/.eslintrc.json",

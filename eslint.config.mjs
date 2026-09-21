@@ -35,6 +35,26 @@ export default [
           ],
           depConstraints: [
             {
+              sourceTag: 'layer:core',
+              onlyDependOnLibsWithTags: ['layer:core'],
+              bannedExternalImports: ['@angular/*', 'react', 'react-dom', 'rxjs', '@langchain/*', '@ag-ui/*'],
+            },
+            {
+              sourceTag: 'layer:content',
+              onlyDependOnLibsWithTags: ['layer:core', 'layer:content'],
+              bannedExternalImports: ['@angular/*', 'react', 'react-dom', 'rxjs', '@langchain/*', '@ag-ui/*'],
+            },
+            {
+              sourceTag: 'layer:backend',
+              onlyDependOnLibsWithTags: ['layer:core', 'layer:content', 'layer:backend'],
+              bannedExternalImports: ['@angular/*', 'react', 'react-dom'],
+            },
+            {
+              sourceTag: 'layer:react',
+              onlyDependOnLibsWithTags: ['layer:core', 'layer:content', 'layer:react'],
+              bannedExternalImports: ['@angular/*', '@langchain/*', '@ag-ui/*'],
+            },
+            {
               sourceTag: '*',
               onlyDependOnLibsWithTags: ['*'],
             },

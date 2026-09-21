@@ -39,6 +39,30 @@ const EXAMPLES_CHAT_TAGS = [
 const POSTHOG_TAGS = ['scope:posthog'];
 const GROWTH_LIFECYCLE_TAGS = ['scope:growth-lifecycle'];
 
+describe('React migration baseline scope', () => {
+  for (const file of [
+    'scripts/react-parity/inventory.mjs',
+    'fixtures/react-parity/traces/ag-ui-text-state.sse',
+    'libs/core/src/index.ts',
+    'libs/ui-react/src/button.tsx',
+    'apps/website/content/docs/chat/api/example.mdx',
+    'cockpit/chat/messages/angular/src/index.ts',
+    'cockpit/chat/new-topic/angular/project.json',
+    'scripts/verify-release-versions.mjs',
+  ]) {
+    it(`runs library gates for ${file} even without Nx ownership`, () => {
+      assert.equal(classifyFromAffected([file], []).library, true);
+    });
+  }
+
+  it('does not send unrelated marketing or backend changes to library gates', () => {
+    for (const file of [
+      'apps/website/content/blog/post.mdx',
+      'cockpit/chat/messages/python/src/graph.py',
+    ]) assert.equal(classifyFromAffected([file], []).library, false);
+  });
+});
+
 function nxAffectedFiles(file) {
   return JSON.parse(
     execFileSync(

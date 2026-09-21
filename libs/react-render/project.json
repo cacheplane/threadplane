@@ -1,0 +1,59 @@
+{
+  "name": "react-render",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/react-render/src",
+  "projectType": "library",
+  "tags": [
+    "scope:react-parity",
+    "type:lib",
+    "layer:react",
+    "scope:library"
+  ],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "cache": true,
+      "dependsOn": [
+        "^build"
+      ],
+      "inputs": [
+        "production",
+        "^production"
+      ],
+      "outputs": [
+        "{workspaceRoot}/dist/libs/react-render"
+      ],
+      "options": {
+        "outputPath": "dist/libs/react-render",
+        "main": "libs/react-render/src/index.ts",
+        "tsConfig": "libs/react-render/tsconfig.lib.json",
+        "generatePackageJson": false,
+        "assets": [
+          "libs/react-render/package.json",
+          "libs/react-render/LICENSE.md",
+          "libs/react-render/README.md"
+        ]
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "test": {
+      "executor": "@nx/vitest:test",
+      "options": {
+        "configFile": "libs/react-render/vite.config.mts"
+      }
+    },
+    "type-tests": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": [
+        "default",
+        "^production"
+      ],
+      "options": {
+        "command": "node node_modules/typescript/bin/tsc --project libs/react-render/tsconfig.spec.json --noEmit --emitDeclarationOnly false --composite false --incremental false"
+      }
+    }
+  }
+}

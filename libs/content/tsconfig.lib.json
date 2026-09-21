@@ -1,0 +1,24 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "../../dist/libs/content",
+    "declaration": true,
+    "emitDeclarationOnly": false,
+    "module": "ES2022",
+    "target": "ES2022"
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
+  "exclude": [
+    "src/**/*.spec.ts",
+    "src/**/*.spec.tsx",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/**/*.type-test.ts",
+    "src/**/*.type-test.tsx",
+    "src/test-setup.ts"
+  ]
+}

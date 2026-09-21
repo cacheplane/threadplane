@@ -1,0 +1,28 @@
+{
+  "name": "@threadplane/react-render",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Private react-render foundation scaffolding. No supported runtime API yet.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "src/**/*.js",
+    "src/**/*.d.ts",
+    "src/**/*.d.ts.map",
+    "LICENSE.md",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./src/index.js",
+      "default": "./src/index.js"
+    },
+    "./types": {
+      "types": "./src/types/index.d.ts",
+      "import": "./src/types/index.js",
+      "default": "./src/types/index.js"
+    }
+  }
+}

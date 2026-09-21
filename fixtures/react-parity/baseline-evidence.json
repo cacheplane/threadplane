@@ -1,0 +1,247 @@
+{
+  "schemaVersion": 1,
+  "observedOn": "2026-09-21",
+  "sourceHead": "a93977ff1e75796336ddd93a882eab2e40f0ca7b",
+  "scope": "T01/T02 private foundations at integrated main; not G1 approval or React parity",
+  "environment": {
+    "os": "Darwin",
+    "architecture": "arm64",
+    "cpu": "Apple M1 Max",
+    "memoryBytes": 34359738368,
+    "node": "v24.20.0",
+    "npm": "11.19.0",
+    "typescript": "5.9.3",
+    "vitest": "4.1.0",
+    "nx": "22.5.1",
+    "nxVitestExecutor": "22.6.0",
+    "ciNodeNotUsed": "22.22.3"
+  },
+  "rootLockfileSha256": "6fb6188f01cd7c973a0b2cd93e42b7c9cf209c278dea7c11978b8922f6c4c3f7",
+  "checks": [
+    {
+      "id": "dependency-install",
+      "command": "NX_DAEMON=false PUPPETEER_SKIP_DOWNLOAD=true PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm ci --no-audit --no-fund",
+      "exitCode": 0,
+      "logSha256": "7ef7b9e06fcbf529ecfecc5abc2656a734894c318ba2641b69f2e6ed243d4751",
+      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence."
+    },
+    {
+      "id": "library-tests",
+      "command": "NX_DAEMON=false NX_TUI=false CI=true npx nx run-many -t test --projects=chat,langgraph,ag-ui,render,a2ui,telemetry --parallel=1 --maxWorkers=2 --skip-nx-cache --outputStyle=static",
+      "exitCode": 0,
+      "logSha256": "bc706356f511ca18cf6015fccddd66e33ef247e99631336a8ba05c83f690a1a0",
+      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence."
+    },
+    {
+      "id": "type-tests",
+      "command": "NX_DAEMON=false NX_TUI=false CI=true npx nx run-many -t type-tests --projects=chat,langgraph,ag-ui --parallel=1 --skip-nx-cache --outputStyle=static",
+      "exitCode": 0,
+      "logSha256": "e6cd13c8a6492171f33578e6c6f6644b067722013006a2cabc4f50f403ecf26b",
+      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence."
+    },
+    {
+      "id": "production-builds",
+      "command": "NX_DAEMON=false NX_TUI=false CI=true npx nx run-many -t build --projects=chat,langgraph,ag-ui,render,a2ui,telemetry --configuration=production --parallel=1 --skip-nx-cache --outputStyle=static",
+      "exitCode": 0,
+      "logSha256": "5c73115691fb9f8cedb232203b4c3e499ba66ecc36653ff3ab81d80359cf8fb0",
+      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence."
+    },
+    {
+      "id": "consumer-harness-tests",
+      "command": "node --test scripts/react-parity/inventory.spec.mjs fixtures/react-parity/traces.spec.mjs examples/chat/smoke/*.spec.mjs scripts/verify-angular-support.spec.mjs",
+      "exitCode": 0,
+      "logSha256": "f3ea2486f65c27e0b1192a2b1ac4107118cec6a552edfc01c9a010b21e6bae64",
+      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence."
+    },
+    {
+      "id": "packed-install-gate",
+      "command": "NX_DAEMON=false NX_TUI=false CI=true npx nx run telemetry:test-install-pack --skip-nx-cache --outputStyle=static",
+      "exitCode": 0,
+      "logSha256": "5bc93fe919a70501b8078b870508efc78469245082ffca184c63a5a2596801ca",
+      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence."
+    },
+    {
+      "id": "angular-21-consumer",
+      "command": "NX_DAEMON=false NX_TUI=false CI=true PUPPETEER_SKIP_DOWNLOAD=true PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 node examples/chat/smoke/cli.mjs --non-interactive --fresh --target tmp/react-parity/angular-21 --local-dist-root dist/libs --angular-major 21 --install --build --runtime",
+      "exitCode": 0,
+      "logSha256": "24f05121084862ecefe79a79711d5131e68a32c26515f253ef5b69bed1d0f86b",
+      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence."
+    },
+    {
+      "id": "parser-work-baseline",
+      "command": "NX_DAEMON=false NX_TUI=false CI=true npx nx test chat --testFiles=src/lib/a2ui/partial-args-bridge.performance.spec.ts --reporter=default --maxWorkers=2 --skip-nx-cache --outputStyle=static",
+      "exitCode": 0,
+      "logSha256": "68d1c5ccc0519b33b374916395d9d17a36483e6e3a438ac843f2b2013aaeb610",
+      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence."
+    },
+    {
+      "id": "tooling-lint",
+      "command": "npx eslint scripts/react-parity/*.mjs fixtures/react-parity/*.mjs scripts/ci-scope.mjs scripts/ci-scope.spec.mjs scripts/ci-workflow.spec.mjs",
+      "exitCode": 0,
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence."
+    },
+    {
+      "id": "foundation-targets",
+      "command": "NX_DAEMON=false NX_TUI=false CI=true npx nx run-many -t lint test type-tests build --projects=core,content,langgraph-core,ag-ui-core,react-render,react --parallel=2 --skip-nx-cache --outputStyle=static",
+      "exitCode": 0,
+      "logSha256": "64ec74872120c3cca7c5deed854678b16c10f1c8dc2555f47717da449dfcabcb",
+      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence."
+    },
+    {
+      "id": "foundation-tarballs",
+      "command": "node scripts/react-parity/verify-packages.mjs",
+      "exitCode": 0,
+      "logSha256": "10fda6516c0efdd827e805bc5267976c51dce0e91343e797fa58bfd67ba5a49a",
+      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence."
+    },
+    {
+      "id": "final-node-suites",
+      "command": "NX_DAEMON=false node --test scripts/react-parity/*.spec.mjs fixtures/react-parity/traces.spec.mjs scripts/ci-scope.spec.mjs scripts/ci-workflow.spec.mjs",
+      "exitCode": 0,
+      "logSha256": "64778c5190290ecde8f2ae05f298aebfc59e9eae14879a7afbe1cea85e781f62",
+      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence."
+    },
+    {
+      "id": "inventory-check",
+      "command": "node scripts/react-parity/inventory.mjs --check",
+      "exitCode": 0,
+      "logSha256": "f074835105020dcfd8dbbbd8fd594e164ee791e5df68413b52c8ec48eaa4e985",
+      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence."
+    },
+    {
+      "id": "source-boundaries",
+      "command": "node scripts/react-parity/verify-boundaries.mjs",
+      "exitCode": 0,
+      "logSha256": "995db896b38cf7de5ca9db6590dba47e082d26abdf69bab04b92eee484696063",
+      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence."
+    },
+    {
+      "id": "built-boundaries",
+      "command": "node scripts/react-parity/verify-boundaries.mjs --built",
+      "exitCode": 0,
+      "logSha256": "c983a97d17ff7ced7aa9113afa031f464103f566f1bc94eec8160558ec2553f7",
+      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence."
+    },
+    {
+      "id": "existing-library-lint",
+      "command": "NX_DAEMON=false NX_TUI=false CI=true npx nx run-many -t lint --projects=chat,langgraph,ag-ui,render,a2ui,telemetry --parallel=2 --skip-nx-cache --outputStyle=static",
+      "exitCode": 0,
+      "logSha256": "b7218f182e766ba64fc664c816d03dd5ee2ee986f7c4b635f63fa265cde4e9bb",
+      "logRetention": "Local execution log is ephemeral; rerun the recorded command for fresh evidence."
+    }
+  ],
+  "scopeCounts": {
+    "libraryTestTargetsPassed": 6,
+    "typeTestTargetsPassed": 3,
+    "productionBuildTargetsPassed": 6,
+    "consumerHarnessTestsPassed": 44,
+    "packedInstallArtifactsPassed": 4,
+    "inventoryTestsPassed": 31,
+    "syntheticTraceTestsPassed": 2,
+    "inventoryRows": 1438,
+    "componentDeclarations": 102,
+    "publicExportOccurrences": 550,
+    "sourceFiles": 461,
+    "packageSupportAssets": 128,
+    "distributionConfigs": 16,
+    "publicEntryPoints": 12,
+    "cockpitTopics": 41,
+    "docsPages": 128,
+    "uniqueExportDefinitions": 514,
+    "foundationTargetConfigurationsPassed": 24,
+    "foundationLibraryBehaviorTests": 0,
+    "privateTarballs": 6,
+    "privateExportPaths": 24,
+    "finalNodeTestsPassed": 231,
+    "boundaryTestsPassed": 49,
+    "packageTestsPassed": 10,
+    "ciScopeAndWorkflowTestsPassed": 139,
+    "libraryLintTargetsPassed": 6
+  },
+  "consumer": {
+    "outputDirectory": "tmp/react-parity/angular-21",
+    "threadplaneVersion": "0.2.0",
+    "angularMajor": 21,
+    "install": "local tarballs for all six published libraries, independently resolved external dependency ranges",
+    "runtime": "backend-free Playwright Chromium compatibility smoke",
+    "resolvedExternalDependencies": {
+      "node_modules/@ag-ui/client": "0.0.59",
+      "node_modules/@angular/core": "21.2.22",
+      "node_modules/@cacheplane/partial-json": "0.2.2",
+      "node_modules/@cacheplane/partial-markdown": "0.3.2",
+      "node_modules/@langchain/core": "1.2.12",
+      "node_modules/@langchain/langgraph-sdk": "1.11.1",
+      "node_modules/@threadplane/chat/node_modules/@cacheplane/partial-markdown": "0.5.8",
+      "node_modules/typescript": "5.9.3"
+    },
+    "initialBundleRawReported": "1.91 MB",
+    "initialBundleEstimatedTransferReported": "389.69 kB",
+    "budgetWarning": "500.00 kB initial budget exceeded by 1.41 MB"
+  },
+  "parserBaseline": {
+    "test": "libs/chat/src/lib/a2ui/partial-args-bridge.performance.spec.ts",
+    "assertion": "Each streamed character parsed once despite duplicate cumulative argument updates",
+    "observedTestDurationMs": 16,
+    "timingIsCalibratedBudget": false
+  },
+  "sourcePreparation": {
+    "trackedValue": "0.2.0",
+    "valueDuringNativeBuildsAndTests": "0.2.0",
+    "actionAfterVerification": "No tracked Angular package-version changes; upstream version-alignment fix is integrated."
+  },
+  "stableLane": {
+    "npmLatestObserved": "0.2.0",
+    "tag": "v0.2.0",
+    "commit": "8daea78d35bfa27513474bd624d0e9495af3cfab",
+    "branch": "codex/angular-maintenance-v0.2",
+    "lockfileSha256": "a8c25ef403eedaad064d5da45ec4f7dc2b66538597a29ee4796b5e52b2f42e26",
+    "pushed": false,
+    "published": false,
+    "namedReleaseOwner": "Assign before publication; existing repository maintainer policy remains in force"
+  },
+  "candidateLane": {
+    "branch": "codex/react-support-baseline",
+    "baseCommit": "a93977ff1e75796336ddd93a882eab2e40f0ca7b",
+    "upstreamIntegration": "Includes released v0.2.0 and current main at the recorded base. Recovery APIs and behavior reviewed and assigned in dispositions.json.",
+    "newReleaseSurfaces": [
+      "Agent.checkStatus",
+      "AgentRecovery",
+      "AgentError.recovery/detail",
+      "AGENT_RECOVERY_MESSAGES",
+      "AGENT_RECOVERY_DETAILS",
+      "unexpected stream closure handling",
+      "development integration boot observation"
+    ]
+  },
+  "warnings": [
+    "npm11.19 reported unapproved dependency lifecycle scripts; no allowlist settings changed",
+    "native builds report stale Browserslist data and intentional lifecycle-script packaging",
+    "consumer emits existing NG8107 optional-chain warning and p-queue CommonJS optimization warning",
+    "Existing Angular lint targets pass with pre-existing warnings; new foundation projects and verification scripts lint without errors."
+  ],
+  "notRun": [
+    "Angular20 consumer lane",
+    "Angular22 consumer lane",
+    "CI Node22.22.3 environment",
+    "live backend/deployment smoke",
+    "full calibrated latency/heap/module-graph benchmark",
+    "React runtime/component/SSR tests (implementation does not exist yet)",
+    "release publication or backport rehearsal",
+    "Private library runtime tests: scaffolds intentionally contain no runtime implementations; empty native test targets only verify configuration."
+  ],
+  "priorResearchBaseline": {
+    "sourceHead": "b1685838069c6b1ec56d5e97a1a01170b26aa125",
+    "inventoryRows": 1435,
+    "publicExportOccurrences": 547,
+    "integrationAdds": [
+      "AgentRecovery",
+      "AGENT_RECOVERY_MESSAGES",
+      "AGENT_RECOVERY_DETAILS"
+    ]
+  },
+  "review": {
+    "specification": "Approved after adding emitted Angular crossover checks, JS/declaration direction fixtures, and CI build-order guard.",
+    "quality": "Approved after independent review and 231 passing focused tests; scope is empty private foundations and baseline gates."
+  }
+}
