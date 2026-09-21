@@ -1033,7 +1033,7 @@
   {
     "name": "AgentOptions",
     "kind": "interface",
-    "description": "",
+    "description": "Options for creating a LangGraph-backed agent via agent.",
     "properties": [
       {
         "name": "a2uiClientCapabilities",
