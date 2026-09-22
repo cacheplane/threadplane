@@ -94,6 +94,7 @@
     "puppeteer": "^22.0.0",
     "remark-gfm": "^4.0.1",
     "resend": "^6.10.0",
+    "semver": "7.7.4",
     "tailwindcss": "^4.3.0",
     "tslib": "^2.3.0",
     "tsx": "^4.21.0",

@@ -1,0 +1,43 @@
+{
+  "name": "@threadplane/content",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Private content foundation scaffolding. No supported runtime API yet.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "src/**/*.js",
+    "src/**/*.d.ts",
+    "src/**/*.d.ts.map",
+    "LICENSE.md",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./src/index.js",
+      "default": "./src/index.js"
+    },
+    "./markdown": {
+      "types": "./src/markdown/index.d.ts",
+      "import": "./src/markdown/index.js",
+      "default": "./src/markdown/index.js"
+    },
+    "./json": {
+      "types": "./src/json/index.d.ts",
+      "import": "./src/json/index.js",
+      "default": "./src/json/index.js"
+    },
+    "./a2ui": {
+      "types": "./src/a2ui/index.d.ts",
+      "import": "./src/a2ui/index.js",
+      "default": "./src/a2ui/index.js"
+    },
+    "./testing": {
+      "types": "./src/testing/index.d.ts",
+      "import": "./src/testing/index.js",
+      "default": "./src/testing/index.js"
+    }
+  }
+}

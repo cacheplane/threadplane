@@ -26,6 +26,16 @@
     // Removing this needs an Nx fix (or the Nx TS-solution setup) first.
     "baseUrl": ".",
     "paths": {
+      "@threadplane/angular": ["libs/angular/src/public-api.ts"],
+      "@threadplane/core": ["libs/core/src/index.ts"],
+      "@threadplane/core/tools": ["libs/core/src/tools/index.ts"],
+      "@threadplane/core/testing": ["libs/core/src/testing/index.ts"],
+      "@threadplane/content": ["libs/content/src/index.ts"],
+      "@threadplane/content/markdown": ["libs/content/src/markdown/index.ts"],
+      "@threadplane/content/json": ["libs/content/src/json/index.ts"],
+      "@threadplane/content/a2ui": ["libs/content/src/a2ui/index.ts"],
+      "@threadplane/content/testing": ["libs/content/src/testing/index.ts"],
+      "@threadplane/react": ["libs/react/src/index.ts"],
       "@threadplane/design-tokens": ["libs/design-tokens/src/index.ts"],
       "@threadplane/ag-ui": ["libs/ag-ui/src/public-api.ts"],
       "@threadplane/a2ui": ["libs/a2ui/src/index.ts"],

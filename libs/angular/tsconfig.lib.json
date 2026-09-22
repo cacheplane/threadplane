@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../dist/out-tsc/angular",
+    "declaration": true,
+    "declarationMap": true,
+    "inlineSources": true,
+    "lib": ["es2022", "dom"],
+    "types": []
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": [
+    "src/**/*.spec.ts",
+    "src/**/*.test.ts",
+    "src/**/*.type-test.ts",
+    "src/test-setup.ts"
+  ]
+}

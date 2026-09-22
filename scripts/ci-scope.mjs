@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 import { execFileSync } from 'node:child_process';
-import { appendFileSync } from 'node:fs';
+import { appendFileSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { privateScaffoldProjects } from './react-parity/package-policy.mjs';
 
 export const SCOPE_KEYS = [
   'library',
@@ -90,6 +91,27 @@ const LINT_SCOPE_KEYS = [
  *  this regex only decides which CI scope a change to them lights up. */
 const COCKPIT_ROOTLESS_SPEC = /^cockpit\/[^/]+\/[^/]+\.spec\.ts$/;
 
+// Keep migration CI ownership aligned with the inventory's reviewed scope.
+// Rootless fixtures and documentation can change it without affecting an Nx library.
+const parityScope = JSON.parse(
+  readFileSync(new URL('./react-parity/baseline.json', import.meta.url), 'utf8')
+).scope;
+const PARITY_PREFIXES = [
+  'scripts/react-parity/',
+  'fixtures/react-parity/',
+  `${parityScope.docsRoot}/`,
+  ...[...parityScope.libraries, ...privateScaffoldProjects]
+    .map((name) => `libs/${name}/`),
+];
+
+function isParityChange(file) {
+  const normalized = normalizePath(file);
+  return PARITY_PREFIXES.some((prefix) => normalized.startsWith(prefix)) ||
+    parityScope.configFiles.includes(normalized) ||
+    (normalized.startsWith(`${parityScope.topicsRoot}/`) &&
+      /\/angular\/(?:project\.json|src\/index\.ts)$/.test(normalized));
+}
+
 export function emptyScope() {
   return Object.fromEntries(SCOPE_KEYS.map((k) => [k, false]));
 }
@@ -151,6 +173,9 @@ export function classifyFromAffected(changedFiles, affectedProjects) {
   }
   if (isAngularCompatibilityChange(changedFiles)) {
     scope.angular_compatibility = true;
+  }
+  if (changedFiles.some(isParityChange)) {
+    scope.library = true;
   }
   return scope;
 }
