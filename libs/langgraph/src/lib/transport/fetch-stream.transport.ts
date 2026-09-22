@@ -302,7 +302,13 @@ function normalizeSdkEvent(type: StreamEvent['type'], data: unknown): StreamEven
   }
 
   if (isRecord(data)) {
-    return { type, ...(namespace ? { namespace } : {}), ...data, data };
+    // Application fields remain in data; they cannot change protocol routing.
+    return {
+      ...data,
+      type,
+      ...(namespace || Object.hasOwn(data, 'namespace') ? { namespace } : {}),
+      data,
+    };
   }
 
   return { type, ...(namespace ? { namespace } : {}), data };

@@ -27,13 +27,16 @@ or backend SDK; Angular installs no React or backend SDK. Framework/compiler
 versions come from the root lockfile. Contract probes compile the installed
 public entries with `strict` and `skipLibCheck:false`, standard DOM signals, and
 no workspace aliases. Negative probes check names, arguments, results and deep
-readonly types directly on each binding's inferred snapshot.
+readonly types directly on each binding's inferred snapshot, including broad
+backend values without application-schema inference.
 
 `runtime-entry.ts` is development-only composition around private `createSession`,
 the production `FetchStreamTransport`, and the real LangGraph SDK. A focused
 TypeScript check resolves its public core imports against the installed tarball
-declarations, then emits its narrow annotated `AgentSession<FixtureTools>` return
-type with an optional fixture `load` capability. Vite bundles the private backend
+declarations, then emits its narrow annotated fixture return type. It replaces
+the core getter with `Omit<AgentSession<FixtureTools>, 'getSnapshot'>` and a concrete
+snapshot getter, avoiding an intersected overload that would hide `values` from
+inference; `load` remains optional. Vite bundles the private backend
 and SDK into temporary ESM, externalizing
 `@threadplane/core` and `@threadplane/core/tools`. Only that JavaScript bundle and
 entry declaration are copied into each installed consumer. No private TypeScript,
@@ -47,6 +50,27 @@ failed request is not automatically sent again. A positive
 transport owns its retry policy. Canonical updates may replace or remove pending
 tool calls for the same assistant message while retaining other messages' calls
 and completed results.
+
+The private `LangGraphSnapshot.values` is a broad
+`Readonly<Record<string, PlainValue>> | undefined`. It is observed application data,
+not a validated application schema. `undefined` means no current values map is
+observed; `{}` means a root record was observed with no application fields. Root
+`values` and `checkpoints` records, explicit history, and conclusive recovery
+correlated to the attempted run replace the whole map, including deleted fields.
+`messages` and `__interrupt__` are excluded. Missing history values clear the map
+to `undefined`. Child streams, node updates, custom events and live interrupt
+envelopes do not replace it.
+
+Messages and values publish together as one owned immutable snapshot. Equal maps
+retain identity, changed maps share unchanged nested branches, and token-only
+updates reuse the owned map without traversing it. This adds no I/O. Narrow SDK
+normalization prevents raw data fields from overriding protocol type/namespace;
+`messageMetadata` selects delta text semantics only for actual message events.
+The application field remains observable as data. The native bindings infer
+the concrete snapshot through structural getter/subscription signatures while
+retaining typed tool results, method receivers and borrowed lifetime semantics.
+The factory and snapshot extension remain private; state writes, application
+schema inference, SSR and package-root cutover remain outside this slice.
 
 The private `LangGraphSession` offers `load({ signal })` only when its transport
 supports history reads. Loading is explicit: construction, mount and subscription
@@ -63,12 +87,12 @@ History is observation only: loading never executes pending tools. Execution
 deduplication survives a load, while locally authored result provenance is cleared.
 Persisted ToolMessage strings remain transcript text rather than becoming typed
 handler results, including on later stream replay. This is a fixed-thread history
-subset of T10, not thread switching, pagination, branching, full backend state,
+subset of T10, not thread switching, pagination, branching, state writes,
 interrupt resume, SSR, or a public LangGraph package cutover. Core public contracts
-and the native binding implementations are unchanged.
+are unchanged; the native signatures now retain the concrete snapshot extension.
 
 The native fixtures expose Load, Send, Tool, Error, Hold and Stop buttons plus text,
-transcript, load completion/error, status, tool result, delivery, submission and
+transcript, values, load completion/error, status, tool result, delivery, submission and
 handler count outputs. A single app-owned
 session is created outside component lifetime and outside React's StrictMode
 tree; owner buttons perform framework unmount and explicit session disposal.
@@ -89,6 +113,10 @@ and no run requests or handler calls. Every completed load must leave its visibl
 error output empty, so retained text cannot conceal a failed equal refresh. Both
 registered handlers increment the same counter if executed. Request bodies check
 the catalog and actual serialized ToolMessage payload.
+Values assertions distinguish unobserved from empty state, show loaded application
+fields, and verify replacement/deletion across root, tool, held and reused runs.
+Separate native component tests make four history reads to cover a values-only
+refresh with unchanged messages; installed browser scenarios still make three.
 
 A small in-process HTTP fixture serves only built artifacts and the expected
 LangGraph run/history routes on dynamic port 0. The held response writes an actual SSE

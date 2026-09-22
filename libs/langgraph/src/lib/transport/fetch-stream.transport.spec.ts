@@ -589,6 +589,25 @@ describe('FetchStreamTransport', () => {
     ]);
   });
 
+  it('keeps protocol routing authoritative over colliding application fields', async () => {
+    const root = { type: 'domain', namespace: ['application'], count: 1 };
+    const child = { type: 'values', namespace: [], count: 2 };
+    mocks.runsStream.mockReturnValue(
+      (async function* () {
+        yield { event: 'values', data: root };
+        yield { event: 'values|child', data: child };
+      })(),
+    );
+    const transport = new FetchStreamTransport('http://example.test');
+    const events = await collect(
+      transport.stream('a', 't', {}, new AbortController().signal),
+    );
+    expect(events).toEqual([
+      { ...root, type: 'values', namespace: undefined, data: root },
+      { ...child, type: 'values|child', namespace: ['child'], data: child },
+    ]);
+  });
+
   it('normalizes message tuple events without dropping metadata', async () => {
     const message = { id: 'ai-1', type: 'ai', content: 'pong' };
     const metadata = { langgraph_node: 'model', run_id: 'run-1' };

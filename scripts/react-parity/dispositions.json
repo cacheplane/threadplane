@@ -11355,7 +11355,7 @@
       ],
       "treatment": "shared",
       "status": "in-progress",
-      "note": "Only framework-free transport/error dependencies were extracted for the private runtime proof; existing Angular behavior and the remaining assigned migration work are retained."
+      "note": "SDK event normalization now protects protocol type and namespace from raw application fields. This narrow routing correction retains legacy transport ownership; broader T08 migration remains open."
     },
     {
       "id": "source:libs/langgraph/src/lib/transport/mock-stream.transport.ts",
@@ -11394,7 +11394,7 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private staged LangGraph runtime subset; fixture-only and not a neutral public LangGraph root or tarball.",
-      "note": "Adds explicit optional fixed-thread history loading with cancellation, stale-read and unresolved-work admission guards. This is partial T10 coverage; broader task capabilities and public package cutover remain open."
+      "note": "Explicit history and root live values now publish application data atomically with messages, including conclusive correlated recovery. Read-only fixed-thread T09/T10 subsets only; broader migration and public cutover remain open."
     },
     {
       "id": "source:libs/langgraph/src/runtime/function-tools.ts",
@@ -11416,6 +11416,17 @@
       "status": "in-progress",
       "reason": "Private staged LangGraph runtime subset; fixture-only and not a neutral public LangGraph root or tarball.",
       "note": "Authoritative latest-checkpoint transcript projection only: replacement, deletion, reordering, identity sharing and observed wire tools. No full history, branch, pagination, state or interrupt-resume migration claim."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/langgraph-snapshot.ts",
+      "taskIds": [
+        "T09",
+        "T10"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private staged LangGraph runtime subset; fixture-only and not a neutral public LangGraph root or tarball.",
+      "note": "Private broad readonly application-values snapshot extension; undefined distinguishes no current observation from an observed empty record. No application-schema inference or public root export."
     },
     {
       "id": "source:libs/langgraph/src/runtime/message-reducer.ts",
@@ -11446,7 +11457,7 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private staged LangGraph runtime subset; fixture-only and not a neutral public LangGraph root or tarball.",
-      "note": "Bounded runtime proof only; broader task capabilities and final public package cutover remain open."
+      "note": "Owns immutable plain application values and shares unchanged nested branches; token-only publication reuses owned graphs. Broader execution/publication migration remains open."
     },
     {
       "id": "source:libs/langgraph/src/runtime/publication.ts",
@@ -11456,7 +11467,7 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private staged LangGraph runtime subset; fixture-only and not a neutral public LangGraph root or tarball.",
-      "note": "Bounded runtime proof only; broader task capabilities and final public package cutover remain open."
+      "note": "Retains concrete backend snapshot extensions and publishes values/messages as one immutable aggregate with no-op identity. No public shared store or whole-task completion claim."
     },
     {
       "id": "source:libs/langgraph/src/runtime/stream-projection.ts",
@@ -11466,7 +11477,7 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private staged LangGraph runtime subset; fixture-only and not a neutral public LangGraph root or tarball.",
-      "note": "Shared wire decoding moved to a private helper for live and history projection. Existing T09 ownership is unchanged; broader event/reducer migration remains open."
+      "note": "Uses messageMetadata for delta text semantics only on actual message events while preserving a same-named application value. Broader T09 migration remains open."
     },
     {
       "id": "source:libs/langgraph/src/runtime/testing/binding-fixture.ts",
@@ -11477,7 +11488,7 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private controlled runtime/binding test helper; excluded from public exports and production packages.",
-      "note": "Controlled history fixtures now prove explicit load, equal refresh and empty replacement through both native bindings; broader behavioral and native migration coverage remains open."
+      "note": "Controlled native fixtures cover four history reads, including values-only replacement with unchanged messages, alongside equal/empty refresh. Broader T05/T06 coverage remains open."
     },
     {
       "id": "source:libs/langgraph/src/runtime/testing/controlled-transport.ts",
@@ -11510,6 +11521,17 @@
       "status": "in-progress",
       "reason": "Private staged LangGraph runtime subset; fixture-only and not a neutral public LangGraph root or tarball.",
       "note": "Bounded runtime proof only; broader task capabilities and final public package cutover remain open."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/values-projection.ts",
+      "taskIds": [
+        "T09",
+        "T10"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private staged LangGraph runtime subset; fixture-only and not a neutral public LangGraph root or tarball.",
+      "note": "Read-only root values/checkpoints and latest-history projection with replacement/deletion, identity sharing and namespace/control exclusions. State writes and broader T09/T10 migration remain open."
     },
     {
       "id": "source:libs/langgraph/src/runtime/wire-message.ts",

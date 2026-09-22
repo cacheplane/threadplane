@@ -17,6 +17,9 @@ import { FetchStreamTransport } from '../lib/transport/fetch-stream.transport';
 import { initialMessageState, reduceMessages } from './message-reducer';
 import { createPublication } from './publication';
 import { projectHistory } from './history-projection';
+import type { LangGraphSnapshot, LangGraphValues } from './langgraph-snapshot';
+import { projectHistoryValues, projectValues } from './values-projection';
+import { ownMessage } from './ownership';
 import { createSafeRequestError } from './operation-errors';
 import {
   failureProjection,
@@ -59,7 +62,8 @@ export type LangGraphSession<
     string,
     ToolContract
   >
-> = AgentSession<TTools> & {
+> = Omit<AgentSession<TTools>, 'getSnapshot'> & {
+  getSnapshot(): LangGraphSnapshot<TTools>;
   load?(options?: { readonly signal?: AbortSignal }): Promise<void>;
 };
 
@@ -133,8 +137,10 @@ export function createSession(
     status: 'idle',
     messages: [],
     toolCalls: [],
+    values: undefined,
   });
   let state = initialMessageState();
+  let values: LangGraphValues | undefined;
   let owner: Attempt | undefined;
   let recoveryAttempt: Attempt | undefined;
   let disposed = false;
@@ -148,6 +154,7 @@ export function createSession(
   function publish(status: 'idle' | 'running' | 'error', error?: AgentError) {
     publication.publish({
       status,
+      values,
       messages: state.messages,
       toolCalls: typedTools
         ? state.toolCalls.filter(
@@ -329,15 +336,14 @@ export function createSession(
     closeLoad(reading);
   }
 
-  function reconcile(
-    attempt: Attempt,
-    history: ThreadState[]
-  ): CompleteOutcome | undefined {
+  function reconcile(attempt: Attempt, history: ThreadState[]) {
+    const previousState = state;
+    const previousValues = values;
     const latest = history[0];
     if (!latest) return undefined;
-    const values = record(latest.values);
-    const messages = Array.isArray(values?.['messages'])
-      ? values['messages']
+    const checkpointValues = record(latest.values);
+    const messages = Array.isArray(checkpointValues?.['messages'])
+      ? checkpointValues['messages']
       : [];
     // Inert construction gives us no server baseline. Only our unique submitted
     // user ID can correlate this checkpoint to this request, including when the
@@ -363,7 +369,7 @@ export function createSession(
       : turn;
     const paused =
       nextUser < 0 &&
-      (hasPause(values) ||
+      (hasPause(checkpointValues) ||
         latest.tasks?.some((task) => (task.interrupts?.length ?? 0) > 0));
     const committed =
       (nextUser >= 0 || latest.next.length === 0) &&
@@ -378,13 +384,17 @@ export function createSession(
         );
       });
     if (!paused && !committed) return undefined;
-    const projected = projectStream(state, attempt.projection, {
+    const projected = projectStream(previousState, attempt.projection, {
       type: 'values',
-      data: { ...values, messages: [messages[anchor], ...turn] },
+      data: { ...checkpointValues, messages: [messages[anchor], ...turn] },
     });
-    attempt.projection = projected.projection;
-    state = finalizeProjection(projected.state, projected.projection);
-    return paused ? 'paused' : 'success';
+    const projectedValues = projectHistoryValues(previousValues, history);
+    return {
+      state: finalizeProjection(projected.state, projected.projection),
+      projection: projected.projection,
+      values: projectedValues,
+      outcome: paused ? ('paused' as const) : ('success' as const),
+    };
   }
 
   async function execute(attempt: Attempt): Promise<void> {
@@ -425,7 +435,12 @@ export function createSession(
             return;
           }
           const projected = projectStream(state, attempt.projection, event);
+          const projectedValues = projectValues(values, event);
+          // Both projections may invoke transport-owned getters. Commit neither
+          // candidate if projection failed or a getter changed the owner.
+          if (!owns(attempt)) return;
           state = projected.state;
+          values = projectedValues;
           attempt.projection = projected.projection;
           publish('running');
           // publish drains observer commands before returning. Never dispatch or
@@ -445,7 +460,14 @@ export function createSession(
               attempt.controller.signal
             );
             if (!owns(attempt)) return;
-            outcome = reconcile(attempt, history) ?? outcome;
+            const recovered = reconcile(attempt, history);
+            if (!owns(attempt)) return;
+            if (recovered) {
+              state = recovered.state;
+              values = recovered.values;
+              attempt.projection = recovered.projection;
+              outcome = recovered.outcome;
+            }
           } catch {
             if (!owns(attempt)) return;
           }
@@ -599,10 +621,12 @@ export function createSession(
             ? { registeredTools: new Set(definitions.keys()) }
             : undefined
         );
+        const projectedValues = projectHistoryValues(values, history);
         // Even a plain projection can invoke getters supplied by a transport.
         // Such a getter can submit/stop/dispose; never commit its stale result.
         if (!ownsLoad(read)) return;
         state = projected;
+        values = projectedValues;
         authoredTools.clear();
         loading = undefined;
         read.resolve();
@@ -695,26 +719,32 @@ export function createSession(
       );
       await publication.command(() => {
         if (disposed || captured.revision !== revision || !history) return;
-        const outcome = reconcile(captured.attempt, history);
-        if (!outcome) return;
-        recoveryAttempt = undefined;
-        checkController = undefined;
+        const recovered = reconcile(captured.attempt, history);
+        if (!recovered) return;
         // Interrupted deliveries are already complete: recovered canonical
         // history carries the conclusive success stamp in this aggregate.
-        state = {
-          ...state,
-          messages: state.messages.map((message) =>
+        const recoveredState = {
+          ...recovered.state,
+          messages: recovered.state.messages.map((message) =>
             message.delivery.generation === captured.attempt.generation
-              ? {
+              ? ownMessage({
                   ...message,
                   delivery: completeDelivery(
                     captured.attempt.generation,
-                    outcome
+                    recovered.outcome
                   ),
-                }
+                })
               : message
           ),
         };
+        // Projection and delivery ownership must finish before clearing this
+        // check: a raw getter can synchronously start a replacement operation.
+        if (disposed || captured.revision !== revision) return;
+        recoveryAttempt = undefined;
+        checkController = undefined;
+        state = recoveredState;
+        values = recovered.values;
+        captured.attempt.projection = recovered.projection;
         publish('idle');
       });
     } finally {

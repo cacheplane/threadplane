@@ -1,10 +1,11 @@
-import type { AgentSession, AgentSnapshot, ToolCall } from '@threadplane/core';
+import type { AgentSession, AgentSnapshot, PlainValue, ToolCall } from '@threadplane/core';
 import type { FunctionTool } from '@threadplane/core/tools';
 import type { FixtureTools } from './scenarios';
 
 /* BINDING_IMPORT */
 
 export function assertSnapshot(snapshot: AgentSnapshot<FixtureTools>) {
+  /* BACKEND_VALUES */
   for (const call of snapshot.toolCalls) {
     if (call.name === 'weather') {
       const city: string = call.args.city;

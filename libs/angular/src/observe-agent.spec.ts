@@ -31,6 +31,7 @@ const SESSION = new InjectionToken<
     <button (click)="stop()">Stop</button>
     <output data-testid="status">{{ snapshot().status }}</output>
     <div data-testid="messages">{{ messages }}</div>
+    <output data-testid="values">{{ values }}</output>
     <div data-testid="delivery">{{ delivery }}</div>
     <div data-testid="tools">{{ tools }}</div>
     <div role="alert">{{ snapshot().error?.message }}</div>
@@ -53,6 +54,9 @@ class Chat {
   }
   get delivery() {
     return JSON.stringify(this.snapshot().messages.at(-1)?.delivery);
+  }
+  get values() {
+    return JSON.stringify(this.snapshot().values) ?? 'unobserved';
   }
   get tools() {
     return JSON.stringify(this.snapshot().toolCalls);
@@ -93,29 +97,56 @@ describe('observeAgent borrowed session', () => {
     view.detectChanges();
     expect(f.session.load).toBeTypeOf('function');
     expect(f.history.reads).toBe(0);
+    expect(
+      view.nativeElement.querySelector('[data-testid="values"]').textContent
+    ).toBe('unobserved');
     let notifications = 0;
-    const release = f.session.subscribe(() => { notifications++; });
+    const release = f.session.subscribe(() => {
+      notifications++;
+    });
     await f.session.load();
     view.detectChanges();
-    expect(view.nativeElement.querySelector('[data-testid="messages"]').textContent).toBe('Saved question\nSaved answer');
+    expect(
+      view.nativeElement.querySelector('[data-testid="messages"]').textContent
+    ).toBe('Saved question\nSaved answer');
+    expect(
+      JSON.parse(
+        view.nativeElement.querySelector('[data-testid="values"]').textContent
+      )
+    ).toEqual({ counter: 1, stable: { items: ['saved'] } });
     const snapshot = view.componentInstance.snapshot();
     await f.session.load();
     expect(view.componentInstance.snapshot()).toBe(snapshot);
     expect(notifications).toBe(1);
     expect(f.history.reads).toBe(2);
+    const saved = f.history.value[0];
+    f.history.value = [{ ...saved, values: { ...saved.values, counter: 2 } }];
+    await f.session.load();
+    view.detectChanges();
+    const refreshed = view.componentInstance.snapshot();
+    expect(refreshed.values?.['stable']).toBe(snapshot.values?.['stable']);
+    expect(
+      JSON.parse(
+        view.nativeElement.querySelector('[data-testid="values"]').textContent
+      )
+    ).toEqual({ counter: 2, stable: { items: ['saved'] } });
+    expect(notifications).toBe(2);
     release();
     view.destroy();
     const reattached = observe(f.session);
-    expect(reattached.snapshot()).toBe(snapshot);
-    expect(f.history.reads).toBe(2);
+    expect(reattached.snapshot()).toBe(refreshed);
+    expect(f.history.reads).toBe(3);
     reattached.destroy();
     f.history.value = [];
     await f.session.load();
     expect(f.session.getSnapshot().messages).toEqual([]);
-    expect(f.history.reads).toBe(3);
+    expect(f.session.getSnapshot().values).toBeUndefined();
+    expect(f.history.reads).toBe(4);
     expect(f.handlerCalls).toBe(0);
     expect(f.streams).toHaveLength(0);
-    expect(f.session.submitCalls + f.session.stopCalls + f.session.disposeCalls).toBe(0);
+    expect(
+      f.session.submitCalls + f.session.stopCalls + f.session.disposeCalls
+    ).toBe(0);
   });
 
   it('renders streamed text, tool results, errors and stop outcomes through native controls', async () => {
@@ -150,6 +181,7 @@ describe('observeAgent borrowed session', () => {
     expect(await view.componentInstance.run).toBe('success');
     view.detectChanges();
     expect(text('[data-testid="messages"]')).toContain('Visible final');
+    expect(text('[data-testid="values"]')).toBe('{"stage":"complete"}');
     expect(text('[data-testid="status"]')).toBe('idle');
     expect(text('[data-testid="delivery"]')).toContain('success');
 

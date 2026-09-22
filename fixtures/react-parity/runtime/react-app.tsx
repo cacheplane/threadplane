@@ -32,6 +32,7 @@ function App() {
     <output aria-label="Status" data-testid="status">{snapshot.status}</output>
     <output aria-label="Text" data-testid="text">{view.text}</output>
     <output aria-label="Transcript" data-testid="transcript">{view.transcript}</output>
+    <output aria-label="Application values" data-testid="values">{view.values}</output>
     <output aria-label="Loads finished" data-testid="loads-finished">{loadsFinished}</output>
     <output aria-label="Load error" data-testid="load-error">{loadError}</output>
     <output aria-label="Error" data-testid="error">{view.error}</output>

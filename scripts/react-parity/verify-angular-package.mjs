@@ -42,8 +42,8 @@ export async function verifyAngularPackage(root = process.cwd()) {
     prepareInstalledTypes(root, consumer, 'angular');
     const contracts = join(consumer, 'installed-types.ts');
     writeFileSync(contracts, readFileSync(contracts, 'utf8') + '\n' + specifiers.map((specifier, index) => `import type * as entry${index} from ${JSON.stringify(specifier)};\nexport type Entry${index} = typeof entry${index};`).join('\n'));
-    runConsumer(process.execPath, [join(consumer, 'node_modules/typescript/bin/tsc'), '-p', 'tsconfig.contracts.json'], consumer);
     await prepareRuntimeConsumer(root, consumer, 'angular');
+    runConsumer(process.execPath, [join(consumer, 'node_modules/typescript/bin/tsc'), '-p', 'tsconfig.contracts.json'], consumer);
     console.log(runConsumer(process.execPath, angularBuildCommand(consumer), consumer));
     const stats = JSON.parse(readFileSync(join(consumer, 'dist/consumer/stats.json'), 'utf8'));
     assertParserFreeInputs(stats.inputs);

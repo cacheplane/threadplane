@@ -83,6 +83,8 @@ test('history uses the exact SDK body and counts reads separately from runs', as
     const first = await read();
     assert.equal(first.status, 200);
     const saved = await first.json();
+    assert.equal(saved[0].values.stage, 'saved');
+    assert.deepEqual(saved[0].values.profile, { name: 'Saved user' });
     assert.deepEqual(saved[0].values.messages.at(-1).content, [{ type: 'text', text: 'Saved final answer' }]);
     assert.deepEqual(await (await read()).json(), saved);
     assert.deepEqual(await (await read()).json(), []);
@@ -90,6 +92,16 @@ test('history uses the exact SDK body and counts reads separately from runs', as
     assert.equal(server.requests.length, 0);
     assert.deepEqual(server.errors, []);
   } finally { await server.close(); }
+});
+
+test('text fixture retains root application state while exercising ignored child and control data', () => {
+  const body = { ...heldBody, input: { ...heldBody.input, messages: [{ id: 'user', type: 'human', content: 'Send' }] } };
+  const trace = runtime.runtimeResponse(body);
+  assert.match(trace, /"stage":"complete"/);
+  assert.match(trace, /event: values\|child/);
+  assert.match(trace, /event: updates/);
+  assert.match(trace, /event: custom/);
+  assert.match(trace, /"__interrupt__":\[\]/);
 });
 
 for (const [label, route, method, body] of [
