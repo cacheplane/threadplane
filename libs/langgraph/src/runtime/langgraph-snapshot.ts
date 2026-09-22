@@ -6,7 +6,12 @@ import type {
   Message,
   ToolContract,
 } from '@threadplane/core';
-import type { Interrupt } from '@langchain/langgraph-sdk';
+import type { Interrupt, ThreadState } from '@langchain/langgraph-sdk';
+
+/** Compact metadata from an explicitly loaded page, without repeated state data. */
+export type LangGraphHistoryEntry = DeepReadonly<
+  Pick<ThreadState, 'checkpoint' | 'parent_checkpoint' | 'created_at' | 'next'>
+>;
 
 /** Backend wire metadata and a plain payload. DeepReadonly maps the SDK's
  * unknown payload to PlainValue without recursively re-mapping PlainValue. */
@@ -31,6 +36,8 @@ export type LangGraphSnapshot<
     ToolContract
   >
 > = AgentSnapshot<TTools> & {
+  /** Last explicit history page; undefined until loaded. Not a live branch tree. */
+  readonly history: readonly LangGraphHistoryEntry[] | undefined;
   readonly values: LangGraphValues | undefined;
   readonly reconnect?: { readonly runId: string };
   readonly interrupts: readonly LangGraphInterrupt[];

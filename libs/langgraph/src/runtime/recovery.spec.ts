@@ -121,6 +121,9 @@ describe('neutral session read-only recovery', () => {
     'rescues a closed stream from conclusive %s history atomically',
     async (mode) => {
       const f = setup();
+      f.history.mockResolvedValue([state()]);
+      await f.session.load?.();
+      const observedPage = f.session.getSnapshot().history;
       f.history.mockImplementation(async () => [
         f.turnState(mode === 'committed' ? [committed] : [], mode === 'paused'),
       ]);
@@ -141,6 +144,7 @@ describe('neutral session read-only recovery', () => {
         });
       expect(snapshots.filter((s) => s.status === 'idle')).toHaveLength(1);
       expect(f.stream).toHaveBeenCalledTimes(1);
+      expect(f.session.getSnapshot().history).toBe(observedPage);
       await f.session.dispose();
     }
   );

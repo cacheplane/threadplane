@@ -18,6 +18,7 @@ import { FetchStreamTransport } from '../lib/transport/fetch-stream.transport';
 import { initialMessageState, reduceMessages } from './message-reducer';
 import { createPublication } from './publication';
 import { projectHistory } from './history-projection';
+import { projectCheckpointHistory } from './checkpoint-history';
 import type {
   LangGraphInterrupt,
   LangGraphSnapshot,
@@ -201,7 +202,9 @@ export function createSession(
     values: undefined,
     interrupts: [],
     subgraphs: [],
+    history: undefined,
   });
+  let historyPage: LangGraphSnapshot['history'];
   let subgraphs = initialSubgraphs(publication.getSnapshot().subgraphs);
   let state = initialMessageState();
   let values: LangGraphValues | undefined;
@@ -221,6 +224,7 @@ export function createSession(
   function publish(status: 'idle' | 'running' | 'error', error?: AgentError) {
     publication.publish({
       status,
+      history: historyPage,
       values,
       interrupts,
       subgraphs: subgraphs.subgraphs,
@@ -1087,12 +1091,14 @@ export function createSession(
             : {}),
         });
         const projectedValues = projectHistoryValues(previousValues, history);
+        const projectedHistory = projectCheckpointHistory(historyPage, history);
         // Even a plain projection can invoke getters supplied by a transport.
         // Such a getter can submit/stop/dispose; never commit its stale result.
         if (!ownsLoad(read)) return;
         state = projected;
         values = projectedValues;
         interrupts = projectedInterrupts;
+        historyPage = projectedHistory;
         subgraphs = initialSubgraphs();
         authoredTools.clear();
         loading = undefined;

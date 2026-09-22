@@ -1,5 +1,26 @@
 # Installed native runtime consumers
 
+## Checkpoint history
+
+`snapshot.history` is the last explicitly loaded checkpoint page. It is undefined
+before Load and an empty array after an empty response. Entries retain only the
+SDK's `checkpoint`, `parent_checkpoint`, `created_at` and `next` fields, with deeply
+readonly references and map data. Order, duplicate ids and missing ids remain as
+received. Values, repeated transcripts, task subtrees and arbitrary metadata are
+not retained in this page. The latest entry still supplies the current root state.
+
+Successful Load replaces the page atomically with that state. Failed, cancelled
+or superseded loads preserve the prior aggregate. Equal refreshes share references;
+stream tokens reuse the owned page. Submit, resume, reconnect and recovery retain
+the last explicit page without claiming it is current or adding history requests.
+The locked SDK fetches ten entries by default. This is a bounded observation,
+not a complete history tree, checkpoint selection, pagination or fork command.
+
+Both review apps show "Last loaded checkpoint history". The first two Load clicks
+show latest, parent and sibling references; the third clears the page. Older
+checkpoint transcripts and task diagnostics never enter the displayed page or
+current transcript. The remaining twenty-action workflow is unchanged.
+
 ## Child observations
 
 The private LangGraph snapshot exposes readonly `subgraphs`. Each entry has its

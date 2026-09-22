@@ -90,6 +90,7 @@ button:focus-visible {
 }
 .review-grid > :first-child,
 .review-grid > :nth-child(2),
+.review-grid > [aria-label='Checkpoint history panel'],
 .review-grid > [aria-label='Subgraphs panel'],
 .review-grid > :last-child {
   grid-column: 1 / -1;

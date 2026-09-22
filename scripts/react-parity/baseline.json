@@ -1,15 +1,14 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "1779d7fa571f2ba15511f15188d271e7dc4a37ca",
+  "baselineHead": "c600429e1dcce656f59974851f80007120c3d5f7",
   "sourceState": {
     "modified": [
       "libs/langgraph/src/runtime/create-session.ts",
-      "libs/langgraph/src/runtime/interrupt-projection.ts",
       "libs/langgraph/src/runtime/langgraph-snapshot.ts",
       "libs/langgraph/src/runtime/ownership.ts"
     ],
     "untracked": [
-      "libs/langgraph/src/runtime/subgraph-projection.ts"
+      "libs/langgraph/src/runtime/checkpoint-history.ts"
     ]
   },
   "scope": {
@@ -12562,10 +12561,16 @@
       "sha256": "3effe8f90bcd9967bb99b9902b3bb6ffbe2769c8c5b46824d2742e2906f6536b"
     },
     {
+      "id": "source:libs/langgraph/src/runtime/checkpoint-history.ts",
+      "kind": "source",
+      "path": "libs/langgraph/src/runtime/checkpoint-history.ts",
+      "sha256": "59618157c20ec9da6bfe0e7080876b78de5e773991e68eaf92fe81c77e7d981d"
+    },
+    {
       "id": "source:libs/langgraph/src/runtime/create-session.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/create-session.ts",
-      "sha256": "ee10ad3275b2fea117471a76528a8d1515a2bd5b0f1d82a20e55fdf08d1edbbb"
+      "sha256": "d8f078aa149f7afb4f0117c4ba54cae6ce88459c1030499dbe44cf1c07b01c62"
     },
     {
       "id": "source:libs/langgraph/src/runtime/function-tools.ts",
@@ -12589,7 +12594,7 @@
       "id": "source:libs/langgraph/src/runtime/langgraph-snapshot.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/langgraph-snapshot.ts",
-      "sha256": "2e24f413aed975d59b66860b10ec2dea950db27f62d974daa9e415dc778f20ab"
+      "sha256": "63a85a0d0ead762ddf753ca6bf579054c3151451532100719d986d13c08d31d7"
     },
     {
       "id": "source:libs/langgraph/src/runtime/message-reducer.ts",
@@ -12607,7 +12612,7 @@
       "id": "source:libs/langgraph/src/runtime/ownership.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/ownership.ts",
-      "sha256": "c6d22902e85d608b402923ce725c31d78d4b780424951e7ac5b5a3bb8b4270ae"
+      "sha256": "404cfa73108674b6d1c5fc57c345652297d087c3bb17a39977fc6b7b710362b0"
     },
     {
       "id": "source:libs/langgraph/src/runtime/publication.ts",
