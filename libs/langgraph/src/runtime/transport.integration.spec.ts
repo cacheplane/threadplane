@@ -70,6 +70,129 @@ describe('neutral real SDK transport', () => {
     vi.unstubAllGlobals();
   });
 
+  it.each([false, true])(
+    'sends application state only on the initial SDK POST, with reconnect=%s',
+    async (reconnect) => {
+      const requests: {
+        method: string;
+        url: string;
+        body: Record<string, unknown> | undefined;
+      }[] = [];
+      let posts = 0;
+      let statusReads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn<typeof fetch>(async (url, init) => {
+          const method = init?.method ?? 'GET';
+          const body = init?.body ? JSON.parse(String(init.body)) : undefined;
+          requests.push({ method, url: String(url), body });
+          if (method === 'POST') {
+            posts += 1;
+            if (posts === 1 && reconnect)
+              return new Response(
+                'id: c1\nevent: messages\ndata: [{"type":"AIMessageChunk","id":"assistant-tool","content":""},{}]\n\n',
+                {
+                  headers: {
+                    'Content-Type': 'text/event-stream',
+                    'Content-Location': '/threads/t/runs/r',
+                  },
+                }
+              );
+            return fragmentedResponse(
+              posts === 1
+                ? `event: values\ndata: ${JSON.stringify({
+                    messages: [toolCall],
+                  })}\n\n`
+                : 'event: values\ndata: {"messages":[{"type":"ai","id":"final","content":"Done"}],"model":"server"}\n\n'
+            );
+          }
+          if (String(url).includes('/stream?'))
+            return fragmentedResponse(
+              `id: c2\nevent: values\ndata: ${JSON.stringify({
+                messages: [toolCall],
+              })}\n\n`
+            );
+          statusReads += 1;
+          return Response.json({
+            run_id: 'r',
+            thread_id: 't',
+            status: statusReads === 1 ? 'running' : 'success',
+          });
+        })
+      );
+      const session = createSession({
+        assistantId: 'a',
+        threadId: 't',
+        apiUrl: 'https://runtime.example',
+        tools: {
+          weather: {
+            description: 'Weather',
+            handler: (args: { city: string }) => ({ city: args.city }),
+          },
+        },
+      });
+      const state = {
+        model: 'client',
+        reasoning: 'low',
+        itinerary: [{ city: 'Paris', day: 1 }],
+        metadata: { domain: 'application' },
+      } as const;
+      expect(await session.submit({ message: 'Plan', state })).toBe(
+        reconnect ? 'interrupted' : 'success'
+      );
+      if (reconnect) expect(await session.reconnect()).toBe('success');
+      const bodies = requests
+        .filter((request) => request.method === 'POST')
+        .map((request) => request.body ?? {});
+      expect(bodies).toHaveLength(2);
+      expect(bodies[0]['input']).toEqual({
+        ...state,
+        messages: [{ type: 'human', id: expect.any(String), content: 'Plan' }],
+        client_tools: [{ name: 'weather', description: 'Weather' }],
+      });
+      expect(bodies[0]).toMatchObject({
+        assistant_id: 'a',
+        stream_mode: ['values', 'messages-tuple', 'updates', 'custom'],
+        stream_subgraphs: true,
+        stream_resumable: true,
+        on_disconnect: 'continue',
+      });
+      expect(bodies[0]['metadata']).toBeUndefined();
+      expect(Object.keys(bodies[1]['input'] as object).sort()).toEqual([
+        'client_tools',
+        'messages',
+      ]);
+      expect(bodies[1]['input']).toMatchObject({
+        messages: [
+          {
+            type: 'tool',
+            tool_call_id: 'call-weather',
+            content: '{"city":"Paris"}',
+          },
+        ],
+      });
+      expect(
+        requests.filter((request) => request.url.includes('/stream?'))
+      ).toEqual(
+        reconnect
+          ? [
+              {
+                method: 'GET',
+                url: 'https://runtime.example/threads/t/runs/r/stream?cancel_on_disconnect=0',
+                body: undefined,
+              },
+            ]
+          : []
+      );
+      expect(session.getSnapshot().values).toEqual({ model: 'server' });
+      await session.submit('Independent');
+      expect(
+        Object.keys(requests.at(-1)?.body?.['input'] as object).sort()
+      ).toEqual(['client_tools', 'messages']);
+      await session.dispose();
+    }
+  );
+
   it.each([undefined, 'wire-id'])(
     'preserves reserved SDK sseId %j over forged values payload metadata',
     async (id) => {
@@ -295,7 +418,12 @@ describe('neutral real SDK transport', () => {
         threadId: 't',
         apiUrl: 'https://runtime.example',
       });
-      expect(await session.submit('Question')).toBe('paused');
+      expect(
+        await session.submit({
+          message: 'Question',
+          state: { model: 'initial' },
+        })
+      ).toBe('paused');
       expect(await session.resume(value)).toBe('success');
       expect(bodies[1]['input']).toBeNull();
       expect(bodies[1]['command']).toEqual(

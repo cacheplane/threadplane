@@ -6,6 +6,7 @@ import test from 'node:test';
 import * as runtime from './runtime-consumer.mjs';
 
 const versions = { react: '19.2.4', 'react-dom': '19.2.4', '@types/react': '19.2.14', '@types/react-dom': '19.2.3', vite: '7.3.1', typescript: '5.9.3' };
+const applicationState = { model: 'gpt-5-mini', reasoning_effort: 'minimal', gen_ui_mode: 'a2ui', itinerary: [{ id: 'paris', day: 1, place: 'Paris', note: 'Check the weather' }] };
 test('React consumer pins framework and compiler tooling from the actual lock', () => {
   assert.equal(typeof runtime.lockedReactManifest, 'function');
   const lock = { packages: Object.fromEntries(Object.entries(versions).map(([name, version]) => [`node_modules/${name}`, { version }])) };
@@ -17,14 +18,14 @@ test('React consumer pins framework and compiler tooling from the actual lock', 
 test('tool trace requires a real serialized handler result before returning the final answer', () => {
   assert.equal(typeof runtime.runtimeResponse, 'function');
   const catalog = [{ name: 'weather', description: 'Current weather' }, { name: 'count', description: 'Count values' }];
-  const submit = { assistant_id: 'fixture-assistant', input: { messages: [{ id: 'user', type: 'human', content: 'Tool' }], client_tools: catalog }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom'], stream_subgraphs: true, stream_resumable: true, on_disconnect: 'continue' };
+  const submit = { assistant_id: 'fixture-assistant', input: { ...applicationState, messages: [{ id: 'user', type: 'human', content: 'Tool' }], client_tools: catalog }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom'], stream_subgraphs: true, stream_resumable: true, on_disconnect: 'continue' };
   assert.match(runtime.runtimeResponse(submit), /call-weather/);
-  const continuation = { ...submit, input: { ...submit.input, messages: [{ id: 'client-tool-result-call-weather', type: 'tool', role: 'tool', tool_call_id: 'call-weather', content: '{"city":"Paris","temperature":20}' }] } };
+  const continuation = { ...submit, input: { client_tools: catalog, messages: [{ id: 'client-tool-result-call-weather', type: 'tool', role: 'tool', tool_call_id: 'call-weather', content: '{"city":"Paris","temperature":20}' }] } };
   assert.match(runtime.runtimeResponse(continuation), /20 degrees/);
   assert.throws(() => runtime.runtimeResponse({ ...continuation, input: { ...continuation.input, messages: [{ ...continuation.input.messages[0], content: 'fake result' }] } }), /result/);
   assert.throws(() => runtime.runtimeResponse({ ...submit, input: { ...submit.input, client_tools: [] } }), /catalog/);
   assert.throws(() => runtime.runtimeResponse({ ...submit, command: { resume: 'unexpected' } }), /unexpected run fields/);
-  assert.throws(() => runtime.runtimeResponse({ ...submit, input: { ...submit.input, messages: [{ id: 'user', type: 'human', content: 'Unexpected' }] } }), /Unexpected/);
+  assert.throws(() => runtime.runtimeResponse({ ...submit, input: { client_tools: catalog, messages: [{ id: 'user', type: 'human', content: 'Unexpected' }] } }), /Unexpected/);
 });
 
 test('successive submitted turns receive distinct server message IDs', () => {
@@ -38,10 +39,44 @@ test('successive submitted turns receive distinct server message IDs', () => {
 
 const heldBody = { assistant_id: 'fixture-assistant', input: { messages: [{ id: 'held-user', type: 'human', content: 'Hold' }], client_tools: [{ name: 'weather', description: 'Current weather' }, { name: 'count', description: 'Count values' }] }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom'], stream_subgraphs: true, stream_resumable: true, on_disconnect: 'continue' };
 
+for (const label of ['Tool', 'Drop']) {
+  test(`${label} rejects an initial submission with no application state`, () => {
+    const body = { ...heldBody, input: { ...heldBody.input, messages: [{ id: 'state-user', type: 'human', content: label }] } };
+    assert.throws(() => runtime.runtimeResponse(body), /unexpected run fields/);
+  });
+  test(`${label} requires exact root application state only on its initial submission`, () => {
+    const input = { ...applicationState, messages: [{ id: 'state-user', type: 'human', content: label }], client_tools: heldBody.input.client_tools };
+    const body = { ...heldBody, input };
+    assert.doesNotThrow(() => runtime.runtimeResponse(body));
+    for (const key of Object.keys(applicationState)) {
+      const missing = { ...input };
+      delete missing[key];
+      assert.throws(() => runtime.runtimeResponse({ ...body, input: missing }), /unexpected run fields/, `missing ${key}`);
+      assert.throws(() => runtime.runtimeResponse({ ...body, input: { ...input, [key]: 'wrong' } }), /unexpected run fields/, `changed ${key}`);
+    }
+    assert.throws(() => runtime.runtimeResponse({ ...body, input: { ...input, extra: true } }), /unexpected run fields/);
+    assert.throws(() => runtime.runtimeResponse({ ...body, input: { messages: input.messages, client_tools: input.client_tools, state: applicationState } }), /unexpected run fields/, 'no nested state wrapper');
+    assert.throws(() => runtime.runtimeResponse({ ...body, state: applicationState }), /unexpected run fields/, 'no root state wrapper');
+  });
+}
+
+test('application state cannot replay on tool continuation, a later Send, or resume', () => {
+  const toolMessage = { id: 'client-tool-result-call-weather', type: 'tool', role: 'tool', tool_call_id: 'call-weather', content: '{"city":"Paris","temperature":20}' };
+  for (const message of [toolMessage, { id: 'later-user', type: 'human', content: 'Send' }]) {
+    const body = { ...heldBody, input: { client_tools: heldBody.input.client_tools, messages: [message] } };
+    assert.doesNotThrow(() => runtime.runtimeResponse(body));
+    assert.throws(() => runtime.runtimeResponse({ ...body, input: { ...applicationState, ...body.input } }), /unexpected run fields/);
+  }
+  const resume = { ...heldBody, input: null, command: { resume: { 'final-approval': true } } };
+  assert.doesNotThrow(() => runtime.runtimeResponse(resume));
+  assert.throws(() => runtime.runtimeResponse({ ...resume, state: applicationState }), /exact resume run fields/);
+  assert.throws(() => runtime.runtimeResponse({ ...resume, input: applicationState }));
+});
+
 test('Drop reconnect joins the exact run and cursor, then confirms status without another POST', async () => {
   const server = await runtime.serveRuntimeConsumer(tmpdir());
   try {
-    const body = { ...heldBody, stream_resumable: true, on_disconnect: 'continue', input: { ...heldBody.input, messages: [{ id: 'drop-user', type: 'human', content: 'Drop' }] } };
+    const body = { ...heldBody, stream_resumable: true, on_disconnect: 'continue', input: { ...applicationState, ...heldBody.input, messages: [{ id: 'drop-user', type: 'human', content: 'Drop' }] } };
     const created = await fetch(`${server.url}/api/threads/fixture-thread/runs/stream`, { method: 'POST', body: JSON.stringify(body) });
     assert.equal(created.status, 200);
     assert.equal(created.headers.get('content-location'), '/threads/fixture-thread/runs/drop-run');
@@ -70,7 +105,7 @@ test('reconnect fixture rejects a wrong cursor and cannot invent a known run bef
   try {
     const runUrl = `${server.url}/api/threads/fixture-thread/runs/drop-run`;
     assert.equal((await fetch(runUrl)).status, 500);
-    const body = { ...heldBody, stream_resumable: true, on_disconnect: 'continue', input: { ...heldBody.input, messages: [{ id: 'drop-user', type: 'human', content: 'Drop' }] } };
+    const body = { ...heldBody, stream_resumable: true, on_disconnect: 'continue', input: { ...applicationState, ...heldBody.input, messages: [{ id: 'drop-user', type: 'human', content: 'Drop' }] } };
     const created = await fetch(`${server.url}/api/threads/fixture-thread/runs/stream`, { method: 'POST', body: JSON.stringify(body) });
     assert.equal(created.status, 200);
     await created.text();

@@ -11503,6 +11503,16 @@
       "note": "Resume projection preserves unchanged baseline delivery, attributes current same-ID activity, and limits finalized tool eligibility to the resumed turn across stream batches and follow-ups. Live pause delivery still uses the shared root interrupt batch. Broader T09 migration remains open."
     },
     {
+      "id": "source:libs/langgraph/src/runtime/submit-input.ts",
+      "taskIds": [
+        "T08"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private staged LangGraph runtime subset; fixture-only and not a neutral public LangGraph root or tarball.",
+      "note": "Plain application-input capture and initial request assembly preserve session-owned message/catalog fields. State-only writes, run options, resume updates and broader adapter migration remain open."
+    },
+    {
       "id": "source:libs/langgraph/src/runtime/testing/binding-fixture.ts",
       "taskIds": [
         "T05",

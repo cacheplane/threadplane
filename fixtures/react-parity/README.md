@@ -8,54 +8,57 @@ The existing Angular packages and release group remain the production path.
 
 ## Bounded runtime slice
 
-The runtime owns immutable snapshots, request generations, stop/dispose, protected
-errors, read-only reconciliation after uncertain failures and fixed function-tool
-execution. The private session also supports explicit fixed-thread history loading
-when its transport can read history. The latest checkpoint replaces the transcript;
-equal reads preserve identity, failures preserve the prior snapshot, and loaded
-tools never execute. Private snapshots now include broad readonly application
-`values`, published atomically with messages. Full root state, history and conclusive
-correlated recovery replace the map; unchanged nested data retains identity, and
-token-only updates reuse it without traversal. `undefined` is unobserved state and
-`{}` an observed empty map. Child/update/custom/live-interrupt envelopes do not
-replace application values. A separate readonly interrupt batch now joins the same
-aggregate: root controls accumulate full payloads, and checkpoints/history replace
-them. An empty `__interrupt__` array represents a static breakpoint; explicit empty standalone
-batches clear interrupts. Observation offers no resume or target-selection API.
-Core contracts are unchanged; native structural signatures preserve the concrete
-snapshot extension and tool inference, with the same receiver and lifetime behavior.
-Angular and React borrow the app-owned session and observe it through their native
-lifecycles. The installed consumers run eleven scenarios each: inert mount, explicit
-history load, equal refresh, empty replacement, text, weather tool
-roundtrip, protected error, held partial text and Stop, full pause batch retained
-after Stop, reuse after Stop, and
-unmount followed by explicit disposal and an aborted post-disposal submission.
-Six live component submissions plus one tool continuation produce seven exact wire
-requests, with one handler invocation and zero page errors or unexpected requests.
-The three explicit loads make three history reads and no run requests or handler
-calls. This is partial T09/T10 coverage: thread switching, pagination, branching,
-state writes, application-schema inference and interrupt resume remain outside this
-proof. The factory and snapshot extension remain private.
+The private runtime owns immutable aggregate snapshots, command generations,
+stop/dispose, protected errors, uncertain-dispatch safeguards, and fixed
+function-tool execution. Both native bindings borrow the application-owned
+session: subscribing or mounting does not submit work, and unmounting does not
+implicitly dispose the owner.
 
-A local HTTP/SSE fixture serves production-built apps and writes real held response
-bytes. Browser assertions observe incremental DOM text and a native response-close
-handshake on Stop. This is not compositor paint or a latency measurement. Production
-React StrictMode does not replay development effects; separate native unit tests
-exercise that subscription replay. See [runtime/README.md](./runtime/README.md) for
-reproduction and [runtime/evidence.json](./runtime/evidence.json) for fresh commands,
-counts, source provenance, cleanup assertions and limitations.
+Explicit fixed-thread history loading replaces the transcript from the latest
+checkpoint. Equal reads preserve identity, failures preserve the previous
+snapshot, and loaded tools never execute. Readonly application `values` and full
+interrupt batches publish atomically with messages. `undefined` means unobserved
+values; `{}` means an observed empty map. Child, update and custom envelopes do
+not overwrite root application values.
 
-The current inventory has **1,456 records**: the historical 1,438 plus thirteen private
-runtime production sources, three testing helpers, a runtime Vitest config and its
-type-test config asset. Public export occurrences remain 550 with 514 distinct local
-definitions. The original runtime extraction changed fourteen existing export
-records' declaration/import text; history loading and values observation each add
-two private sources; interrupt observation adds one. These increments change no
-legacy public export records. There are no legacy export-name additions
-or removals. Existing task assignments
-are preserved; touched extraction/configuration subsets are in progress, not whole
-T03–T16 completion. Core and native package contracts remain outside this legacy
-inventory scope and are checked by their own tests and package gates.
+Backend-private submission accepts text or `{ message, state }`. Plain application
+state accompanies only that submission's initial POST; tool continuations and
+owned-run reconnect never replay it. Runtime messages and the fixed client-tool
+catalog retain ownership of their input fields. Submitted state does not
+optimistically change observed values. The input contract is broad plain data,
+not an inferred or validated application schema.
+
+Explicit `resume()` sends an authored response for observed interrupts without a
+synthetic human message. `reconnect()` joins the latest retained owned physical
+run only with safe cursor evidence. Captured run identity requires exact-run
+status confirmation before successful completion or tool execution; known-run
+uncertainty cannot fall back to thread history. Reconnection preserves anonymous
+message identity and does not replay submission or resume commands.
+
+The installed React and Angular consumers each verify fifteen scenarios through
+real SDK requests to a local HTTP/SSE fixture. The complete twenty-action review
+includes three history reads, ten run POSTs, one cursor join GET and two exact-run
+status GETs; one function-tool handler executes. Tool and Drop carry
+canonical-shaped application state; continuations and later text submissions
+must omit it. Held response bytes demonstrate incremental DOM updates and local
+cancellation, not compositor paint or a latency benchmark. React development
+effect replay is covered separately in native unit tests.
+
+These are bounded subsets of T08–T10 and related ownership/tool tasks. Thread
+switching, pagination, branching, state-only writes, resume state updates, broader
+run options, child-stream observation and complete public adapter migration remain
+future work. The factory is private; this proof does not establish an Angular-free
+published LangGraph package or full React component parity. See
+[runtime/README.md](./runtime/README.md) for precise semantics and reproduction,
+and [runtime/evidence.json](./runtime/evidence.json) for fresh verification,
+source/artifact identities and limitations.
+
+The current inventory has **1,458 records**: the historical 1,438 plus fifteen
+private runtime production sources, three testing helpers, a runtime Vitest
+config and its type-test config asset. Public export occurrences remain 550 with
+514 distinct local definitions. Existing task assignments are preserved;
+implementation subsets remain in progress, not whole-task completion. Core and
+native package contracts are checked separately by their tests and package gates.
 
 ## Reviewed baseline
 
@@ -231,7 +234,7 @@ burst streams and repeated agent/thread disposal.
 
 The foundation branch was `codex/react-support-baseline`; the runtime branch is
 `codex/shared-runtime-quality`, based on `bdcc22ed31aa94f420077e046e88e1481088d453`.
-The current interrupt increment is `codex/langgraph-interrupt-observation`; its verified
+The application-input increment is `codex/langgraph-application-input`; its verified
 base and working-source fingerprint are recorded in `runtime/evidence.json`.
 The local maintenance
 branch `codex/angular-maintenance-v0.2` points to released tag `v0.2.0`
@@ -249,8 +252,8 @@ research documents. It is a scope map, not evidence that the tasks are complete.
 T01/T02 describe the foundation increment. The current G1 proof is deliberately limited
 to shared LangGraph text streaming and fixed function-tool execution with borrowed native
 Angular and React bindings: the runtime owns execution while each binding observes
-it. Explicit history loading, application-values and interrupt observation cover further
-subsets of T09/T10.
+it. Explicit history loading, application values, interrupt observation/resume,
+owned-run reconnect and application input cover further subsets of T08–T10.
 Renderer reuse and SSR are deferred gates, alongside the broader T01–T39 map.
 This bounded runtime proof does not establish complete migration parity.
 
