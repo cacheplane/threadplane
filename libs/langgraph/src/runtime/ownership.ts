@@ -290,11 +290,26 @@ export function ownLangGraphSnapshot(
     input.interrupts,
     previous?.interrupts
   ) as readonly LangGraphInterrupt[];
+  const reconnect = ownValueWithSharing(
+    input.reconnect,
+    previous?.reconnect
+  ) as LangGraphSnapshot['reconnect'];
   if (
     core === previous &&
     values === previous?.values &&
-    interrupts === previous?.interrupts
+    interrupts === previous?.interrupts &&
+    reconnect === previous?.reconnect
   )
     return previous;
-  return freeze({ ...core, values, interrupts });
+  // core may be the previous backend aggregate when its core fields are equal.
+  // Copy only core fields so removal cannot carry an old optional capability.
+  return freeze({
+    status: core.status,
+    messages: core.messages,
+    toolCalls: core.toolCalls,
+    error: core.error,
+    values,
+    interrupts,
+    ...(reconnect ? { reconnect } : {}),
+  });
 }

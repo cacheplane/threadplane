@@ -1,4 +1,4 @@
-import type { Client, StreamMode, ThreadState } from '@langchain/langgraph-sdk';
+import type { Client, Run, StreamMode, ThreadState } from '@langchain/langgraph-sdk';
 import type { AgentQueueEntry, AgentTransport, LangGraphClientOptions, LangGraphSubmitOptions, StreamEvent } from '../../runtime/transport.types';
 import {
   createLangGraphClient,
@@ -122,6 +122,19 @@ export class FetchStreamTransport implements AgentTransport {
     yield* this.iterateSdkRun(run, signal);
   }
 
+  /** @internal Exact-run inspection for the private owned reconnect command. */
+  async getRunStatus(threadId: string, runId: string, signal: AbortSignal): Promise<Run['status']> {
+    try {
+      const run = await this.client.runs.get(threadId, runId, { signal });
+      if (run.run_id !== runId || run.thread_id !== threadId ||
+        !['pending', 'running', 'success', 'error', 'timeout', 'interrupted'].includes(run.status))
+        throw new Error('Invalid LangGraph run status response.');
+      return run.status;
+    } catch (error) {
+      return this.rethrowOperationError(error, signal);
+    }
+  }
+
   /** Create a pending server-side run using LangGraph's enqueue strategy. */
   async createQueuedRun(
     assistantId: string,
@@ -208,7 +221,7 @@ export class FetchStreamTransport implements AgentTransport {
     run: ReturnType<Client['runs']['stream']> | ReturnType<Client['runs']['joinStream']>,
     signal: AbortSignal,
   ): AsyncIterable<StreamEvent> {
-    let iterator: AsyncIterator<{ event: string; data: unknown }>;
+    let iterator: AsyncIterator<{ event: string; data: unknown; id?: unknown }>;
     try {
       iterator = run[Symbol.asyncIterator]();
     } catch (error) {
@@ -218,7 +231,7 @@ export class FetchStreamTransport implements AgentTransport {
     let failed = false;
     try {
       while (true) {
-        let next: IteratorResult<{ event: string; data: unknown }>;
+        let next: IteratorResult<{ event: string; data: unknown; id?: unknown }>;
         try {
           next = await iterator.next();
         } catch (error) {
@@ -229,7 +242,7 @@ export class FetchStreamTransport implements AgentTransport {
           return;
         }
         try {
-          yield normalizeSdkEvent(next.value.event as StreamEvent['type'], next.value.data);
+          yield { ...normalizeSdkEvent(next.value.event as StreamEvent['type'], next.value.data), sseId: typeof next.value.id === 'string' ? next.value.id : undefined };
         } catch (error) {
           return this.rethrowLocalError(error, signal);
         }

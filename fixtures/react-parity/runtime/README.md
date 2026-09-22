@@ -11,28 +11,79 @@ runtime owns a plain-data copy; it does not validate an application schema,
 select interrupt targets, or transform arguments.
 
 Resume requires an observed pause and no active run, history load, unresolved
-submission recovery, or unsettled tool results. It creates a null-input run on
-the same thread with the supplied resume command, without a new human message.
+submission recovery, retained reconnect ownership, or unsettled tool results.
+It creates a null-input run on the same thread with the supplied resume command,
+without a new human message.
 Function-tool follow-ups use ordinary result messages and never repeat that
 command. React and Angular borrow this application-owned session through their
 existing observers. Construction and observation do not resume a graph.
 
 Stop and disposal end local ownership; they do not cancel remote side effects.
-The owned SDK transport defaults to zero request retries. If a resume connection
-drops without conclusive completion, the outcome stays unconfirmed:
+The owned SDK transport defaults to zero creation-request retries. If a resume
+connection drops without conclusive completion, the outcome stays unconfirmed:
 `retryable: false`, `recovery: 'none'`. Submission's human-message correlation
 cannot prove a resume's outcome, so `checkStatus()` does not reconcile it.
-When no unsettled tool results remain, an explicit `load()` can inspect current
-history. This does not prove the earlier command completed or retry it. Loading
-a pause and choosing Resume again is a new command; it can repeat server work
+When neither retained reconnect ownership nor unsettled tool results remain,
+an explicit `load()` can inspect current history. This does not prove the earlier
+command completed or retry it. Loading a pause and choosing Resume again is a
+new command; it can repeat server work
 if the earlier run is still active. Failed tool follow-ups retain their buffered
 results and continue to block load/resume; an explicit normal submission can
 hand them off under the existing session contract.
 
-This is a backend-private runtime milestone. Run-ID recovery, joining an existing
-run, checkpoint selection, and public backend package cutover remain separate
+This is a backend-private runtime milestone. Arbitrary run attachment,
+checkpoint selection, and public backend package cutover remain separate
 work. The fixture's emitted declaration is a development consumer contract, not
 a new published LangGraph entry point.
+
+## Reconnect an owned run
+
+The private session exposes
+`reconnect(options?: { readonly signal?: AbortSignal }): Promise<CompleteOutcome>`.
+Its readonly snapshot descriptor, `reconnect?: { readonly runId: string }`,
+advertises the latest retained disconnected physical run. Reconnect accepts no
+run ID or input. It joins that owned run without replaying its submission or
+resume command, adding a human message, or repeating completed tool handlers.
+Only newly required tool continuations may create follow-up POSTs.
+
+Availability requires both cursor join and exact-run status capabilities, a
+verified run identity, and a safe observed SSE cursor. IDs are opaque. Distinct
+payloads with repeated or inherited IDs still project; IDs are not deduplication
+keys. A fresh nonempty ID becomes safe only after its projections commit.
+Meaningful idless or repeated-ID frames invalidate that cursor until a new
+boundary arrives. Header-only disconnects remain uncertain; beginning-of-log
+replay is deferred. A meaningful joined frame repeating the requested cursor is
+rejected before projection. The server or custom transport must return the
+exclusive suffix after `Last-Event-ID`; SDK acceptance of that header alone does
+not prove the guarantee. Deployment buffer expiry and replay semantics remain
+outside this local fixture proof.
+
+Normal EOF is not proof of success. Every physical stream with a captured run
+identity—including the original creation POST, resume, tool follow-up, and joined
+GET—requires inspection of that exact run after EOF. The default transport checks
+the returned run/thread identity and status. Pending/running or failed inspection
+stays uncertain; successful status also requires conclusive output or an observed
+current-run pause. An interrupted status confirms pause only with that run's
+observed interrupt. Terminal failures do not offer reconnect or execute tools.
+Known-run uncertainty never falls back to thread history: `checkStatus()` is
+inert, and the error has `recovery: 'none'` with the private reconnect descriptor
+when eligible. Streams without captured identity retain their existing fallback.
+
+Reconnect is explicit after the SDK iterator settles. It rejects active
+execution/history/checks, unrelated staged results, or unsettled tool work.
+Accepted reconnect removes availability while preserving partial text and the
+original human anchor under a new local delivery generation. Load and Resume
+reject while reconnect ownership is retained; a new normal submission supersedes
+it. Explicit Stop/dispose discards reconnect ownership and ends local observation,
+not remote side effects. Disposed or pre-aborted reconnect resolves `aborted`
+without mutation or I/O. Local cancellation settles even if transport I/O ignores
+its signal. Reconnect does not persist sessions or recover across processes.
+
+SDK body recovery is separate from fetch request retries: SDK 1.10.0 may
+automatically GET a `Location` endpoint after a broken response body even with
+`maxRetries: 0`. This session adds no automatic reconnect loop. Creation POST
+retries remain disabled by default; explicit positive retry configuration and
+custom transport policies retain their own behavior.
 
 ## Manual review
 
@@ -53,7 +104,7 @@ are missing. `node scripts/react-parity/review-runtime.mjs --help` prints the
 prerequisite and review sequence.
 
 The runner packs those artifacts, installs and strictly type-checks isolated
-React and Angular consumers, builds each app, and runs all thirteen browser
+React and Angular consumers, builds each app, and runs all fifteen browser
 scenarios on fresh fixture servers. Only after those checks pass does it print
 two new, untouched loopback URLs. Open each URL manually; no browser opens
 automatically. The review servers have made no SDK requests at that point.
@@ -66,7 +117,8 @@ built the preexisting package artifacts. Printed SHA-256 identifiers separately
 identify the actual packed bytes installed in each consumer. Rebuild the
 prerequisites when changing core or either native binding.
 
-Use this order once per fresh server, waiting for each expected state:
+Use this order once per fresh server, waiting for each expected state. Opening
+the page is inert; the following sequence contains twenty button actions:
 
 | Action | Expected visible state |
 | --- | --- |
@@ -83,16 +135,21 @@ Use this order once per fresh server, waiting for each expected state:
 | Stop again | Both interrupts and `complete:paused` remain; no extra request is made. |
 | Resume | Sends both authored approval responses; shows `One final approval`, one new interrupt, resume outcome `paused`, resumes finished `1`. Human messages remain `5`. |
 | Resume again | Shows `Approvals complete` in the same assistant message, interrupts `[]`, delivery `complete:success`, resume outcome `success`, resumes finished `2`. Human messages remain `5`. |
-| Send again | Another successful greeting, interrupts `[]`, delivery `complete:success`; submissions `6`, handler calls `1`. |
+| Drop | `Dropped partial`, status `error`, delivery `complete:interrupted`, values stage `disconnected`, reconnect run `drop-run`. Submissions and human messages are `6`; the exact run is still running. |
+| Reconnect | `Dropped partial recovered` appears once; idle, delivery `complete:success`, values stage `reconnected`, reconnect outcome `success`, reconnects finished `1`. Availability clears and Reconnect disables. Human messages and submissions remain `6`; handler calls remain `1`. |
+| Send again | Another successful greeting, interrupts `[]`, delivery `complete:success`; submissions and human messages `7`, handler calls `1`. |
 | Unmount | Component panels disappear; the separate owner controls report `unmounted`. |
 | Dispose | Owner reports `disposed`. |
 | Send after dispose | Owner reports `aborted`; no request is made. |
 | Resume after dispose | Owner reports `aborted`; no request is made. |
+| Reconnect after dispose | Owner reports `aborted`; no request is made. |
 
-This sequence makes three history reads with `{ limit: 10 }` and nine run
-requests: six submissions, one tool continuation, and two resumes. Each server permits only three Load
-requests. Restart the CLI for a fresh sequence; reloading the page does not reset
-server history. Unmount releases the framework observer, while the application
+This sequence makes three history POSTs with `{ limit: 10 }`, ten run POSTs
+(seven submissions, one tool continuation, two resumes), one cursor join GET,
+and two exact-run status GETs. There is one explicit reconnect and one tool
+handler call. Each server permits only three Load requests and one Drop.
+Restart the CLI for a fresh sequence; reloading the page does not reset
+server state. Unmount releases the framework observer, while the application
 owns the session and explicitly disposes it.
 
 Keep the CLI running during review. Ctrl+C or SIGTERM closes its servers and
@@ -151,8 +208,9 @@ transitive private declarations, workspace aliases, or core/framework source is
 copied. This is not a neutral LangGraph tarball or a new public entry; the existing
 LangGraph package root remains Angular during this migration.
 
-The session-owned SDK transport defaults `maxRetries` to `0`, so an ambiguous
-failed request is not automatically sent again. A positive
+The session-owned SDK transport defaults `maxRetries` to `0`, disabling SDK
+creation POST retries. This does not disable the SDK body-reconnect GET behavior
+described above. A positive
 `clientOptions.maxRetries` explicitly opts into SDK retries; a caller-supplied
 transport owns its retry policy. Canonical updates may replace or remove pending
 tool calls for the same assistant message while retaining other messages' calls
@@ -207,8 +265,9 @@ reads preserve snapshot identity; unchanged explicit message IDs retain shared
 immutable objects. Snapshots stay unchanged while loading and on read failure;
 failures reject with protected diagnostics. Cancellation, supersession, stop and
 disposal settle promptly even if a transport ignores abort, and stale reads cannot
-publish. Loading is refused while execution, uncertain recovery, staged tool
-results or asynchronous tool settlement/write work remains unresolved.
+publish. Loading is refused while execution, uncertain recovery, retained
+reconnect ownership, staged tool results or asynchronous tool settlement/write
+work remains unresolved.
 
 History is observation only: loading never executes pending tools. Execution
 deduplication survives a load, while locally authored result provenance is cleared.
@@ -219,26 +278,31 @@ SSR, or a public LangGraph package cutover. Explicit resume is the subsequent pr
 capability described above. Core public contracts
 are unchanged; the native signatures now retain the concrete snapshot extension.
 
-The native fixtures expose Load, Send, Tool, Error, Hold, Pause, Resume and Stop buttons plus text,
-transcript, values, interrupts, load completion/error, status, tool result, delivery, submission and
-handler count outputs. A single app-owned
+The native fixtures expose Load, Send, Tool, Error, Hold, Pause, Resume, Drop,
+Reconnect and Stop buttons plus text, transcript, values, interrupts, load
+completion/error, status, tool result, delivery, human/submission/handler counts,
+resume/reconnect completion and outcome outputs, and reconnect availability.
+A single app-owned
 session is created outside component lifetime and outside React's StrictMode
 tree; owner buttons perform framework unmount and explicit session disposal.
 React uses a Vite production build. Angular uses the existing consumer template's
 installed Angular CLI application builder and real APF linking, with output in
 `dist/consumer/browser` and input evidence from `dist/consumer/stats.json`.
 
-Both built apps run the same thirteen browser scenarios in installed Playwright
+Both built apps run the same fifteen browser scenarios in installed Playwright
 Chromium: inert mount, explicit history load, equal history refresh, empty history
 replacement, successful text, a real local tool handler and exact
 two-request result continuation, protected visible server error, held streaming
 DOM updates and Stop, the full pause batch retained after Stop, an explicit response
-map and second pause, same-message resume completion, reuse after Stop,
+map and second pause, same-message resume completion, known-run premature EOF,
+explicit cursor join with exact-run completion, reuse after Stop,
 then unmount/dispose/post-disposal commands.
-Six submissions and two resumes through the component controls make exactly nine
-run requests (including one tool continuation) and call the handler once. The separate
-post-disposal submit and resume attempts resolve aborted without making requests.
-Three explicit Load clicks make exactly three history reads with `{ limit: 10 }`
+Seven submissions and two resumes through the component controls make exactly ten
+run POSTs (including one tool continuation) and call the handler once. One explicit
+reconnect makes one join GET; the original Drop EOF and joined EOF each require
+one exact-run status GET. The separate post-disposal submit, resume and reconnect
+attempts resolve aborted without making requests.
+Three explicit Load clicks make exactly three history POSTs with `{ limit: 10 }`
 and no run requests or handler calls. Every completed load must leave its visible
 error output empty, so retained text cannot conceal a failed equal refresh. Both
 registered handlers increment the same counter if executed. Request bodies check
@@ -252,6 +316,15 @@ delivery. The Pause button sends two separate root controls and renders both
 payloads; Stop retains them without another request. Resume clears the old batch
 and observes a new pause, then a second explicit resume completes without adding
 human messages. Both null inputs and exact response maps are asserted server-side.
+Drop captures its run identity from `Content-Location` and ends with a committed
+cursor. Its assistant frames omit message IDs, proving that fallback message
+identity survives the fresh delivery generation used by reconnect. Its clean
+premature EOF first yields exact status `running`; the explicit
+join sends `Last-Event-ID: 2`, receives the exclusive suffix, and then verifies
+exact status `success`. No replacement POST, history fallback, duplicate partial
+text, or additional human message is allowed. This clean-EOF fixture has no
+`Location` header; separate real-SDK transport tests cover automatic body GET
+recovery after a broken response.
 Unrelated custom/child noise does not contain a root empty control, because an
 actual empty root `__interrupt__` is a static breakpoint rather than noise.
 

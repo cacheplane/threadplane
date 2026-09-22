@@ -23,7 +23,8 @@ export function lockedReactManifest(lock) {
 
 const catalog = [{ name: 'weather', description: 'Current weather' }, { name: 'count', description: 'Count values' }];
 const toolCall = { type: 'ai', id: 'assistant-tool', content: '', tool_calls: [{ id: 'call-weather', name: 'weather', args: { city: 'Paris' }, type: 'tool_call' }] };
-const sse = (event, data) => `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+const sse = (event, data, id) => `${id === undefined ? '' : `id: ${id}\n`}event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+const resumableRunFields = { stream_resumable: true, on_disconnect: 'continue' };
 const textTrace = readFileSync(new URL('../../fixtures/react-parity/traces/langgraph-text-state.sse', import.meta.url), 'utf8');
 const savedInterrupts = [
   { id: 'saved-approval', value: { question: 'Approve saved request?', choices: ['yes', 'no'] }, namespace: ['review', 'task-1'], when: 'during', resumable: true, ns: ['legacy-review'] },
@@ -58,7 +59,7 @@ export function runtimeResponse(body) {
   assert.equal(body.stream_subgraphs, true);
   if (body.input === null) {
     const response = body.command?.resume;
-    assert.deepEqual(body, { assistant_id: 'fixture-assistant', input: null, command: { resume: response }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom'], stream_subgraphs: true }, 'exact resume run fields');
+    assert.deepEqual(body, { assistant_id: 'fixture-assistant', input: null, command: { resume: response }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom'], stream_subgraphs: true, ...resumableRunFields }, 'exact resume run fields');
     if (Object.hasOwn(response ?? {}, 'live-approval')) {
       assert.deepEqual(response, { 'live-approval': 'yes', 'live-confirmation': false }, 'exact initial response map');
       return sse('values', { stage: 'final-approval', messages: [{ type: 'ai', id: 'resume-answer', content: 'One final approval' }] })
@@ -70,7 +71,7 @@ export function runtimeResponse(body) {
   assert.deepEqual(body.input?.client_tools, catalog, 'exact client tool catalog');
   assert.equal(body.input.messages.length, 1);
   const message = body.input.messages[0];
-  assert.deepEqual(body, { assistant_id: 'fixture-assistant', input: { messages: [message], client_tools: catalog }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom'], stream_subgraphs: true }, 'unexpected run fields');
+  assert.deepEqual(body, { assistant_id: 'fixture-assistant', input: { messages: [message], client_tools: catalog }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom'], stream_subgraphs: true, ...resumableRunFields }, 'unexpected run fields');
   if (message.type === 'tool') {
     assert.deepEqual(message, { id: 'client-tool-result-call-weather', type: 'tool', role: 'tool', tool_call_id: 'call-weather', content: '{"city":"Paris","temperature":20}' }, 'actual handler result continuation');
     return sse('values', { messages: [toolCall, message, { type: 'ai', id: 'answer', content: '20 degrees' }] });
@@ -88,6 +89,8 @@ export function runtimeResponse(body) {
     + sse('updates', { __interrupt__: [liveInterrupts[1]] });
   if (message.content === 'Tool') return sse('values', { messages: [message, toolCall] });
   if (message.content === 'Error') return sse('error', { error: 'FixtureFailure', message: 'PRIVATE backend diagnostic' });
+  if (message.content === 'Drop') return sse('messages', [{ type: 'AIMessageChunk', content: 'Dropped partial' }, { langgraph_node: 'assistant' }], '1')
+    + sse('values', { stage: 'disconnected', messages: [message, { type: 'ai', content: 'Dropped partial' }] }, '2');
   if (message.content === 'Hold') return null;
   throw new Error(`Unexpected input ${message.content}`);
 }
@@ -99,6 +102,20 @@ export function installedTypeSource(template, kind) {
   return template.replace('/* BINDING_IMPORT */', `import { ${binding} } from '@threadplane/${kind}';\nimport type { createFixtureSession } from '${entry}';`)
     .replace('export function assertSnapshot(snapshot: AgentSnapshot<FixtureTools>) {', `export function assertSnapshot(session: ReturnType<typeof createFixtureSession>) {\n  const snapshot = ${binding}(session)${kind === 'angular' ? '()' : ''};\n  const exact: AgentSnapshot<FixtureTools> = snapshot;\n  void exact;`)
     .replace('/* BACKEND_VALUES */', `void session.resume();
+  const reconnected: Promise<CompleteOutcome> = session.reconnect({ signal: new AbortController().signal });
+  void reconnected;
+  // @ts-expect-error Reconnect cannot attach an arbitrary run.
+  void session.reconnect({ runId: 'unowned' });
+  // @ts-expect-error Reconnect never accepts an interrupt response.
+  void session.reconnect(false);
+  const offeredRun: string | undefined = snapshot.reconnect?.runId;
+  void offeredRun;
+  // @ts-expect-error Availability belongs to the session.
+  snapshot.reconnect = { runId: 'changed' };
+  if (snapshot.reconnect) {
+    // @ts-expect-error Retained run identity is readonly.
+    snapshot.reconnect.runId = 'changed';
+  }
   void session.resume(false);
   void session.resume(null);
   void session.resume({ approval: { choice: 'yes' } } as const, { signal: new AbortController().signal });
@@ -213,7 +230,11 @@ export async function prepareRuntimeConsumer(root, consumer, kind) {
 export async function serveRuntimeConsumer(directory) {
   const requests = [];
   const historyRequests = [];
+  const joinRequests = [];
+  const statusRequests = [];
   const errors = [];
+  let dropped = false;
+  let joined = false;
   const held = new Set();
   let notifyHeld;
   let notifyAborted;
@@ -221,8 +242,31 @@ export async function serveRuntimeConsumer(directory) {
   const holdAborted = new Promise((resolve) => { notifyAborted = resolve; });
   const server = createServer(async (request, response) => {
     try {
-      const pathname = new URL(request.url, 'http://fixture').pathname;
+      const url = new URL(request.url, 'http://fixture');
+      const pathname = url.pathname;
       if (pathname.startsWith('/api/')) {
+        const runPath = '/api/threads/fixture-thread/runs/drop-run';
+        if (pathname === runPath || pathname === `${runPath}/stream`) {
+          assert.equal(request.method, 'GET', 'known-run recovery only performs GET');
+          assert.ok(dropped, 'Drop must establish the known run before recovery');
+          if (pathname === runPath) {
+            assert.equal(url.search, '', 'exact status endpoint');
+            const status = joined ? 'success' : 'running';
+            assert.deepEqual(statusRequests, joined ? ['running'] : [], 'one exact-run inspection per closure');
+            statusRequests.push(status);
+            response.writeHead(200, { 'content-type': 'application/json' });
+            return response.end(JSON.stringify({ run_id: 'drop-run', thread_id: 'fixture-thread', status }));
+          }
+          assert.equal(url.search, '?cancel_on_disconnect=0');
+          assert.equal(request.headers['last-event-id'], '2', 'exact committed cursor');
+          assert.deepEqual(statusRequests, ['running'], 'initial closure must inspect the running run');
+          assert.equal(joined, false, 'one explicit join, no replay');
+          joined = true;
+          joinRequests.push({ runId: 'drop-run', lastEventId: '2' });
+          response.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache' });
+          return response.end(sse('messages', [{ type: 'AIMessageChunk', content: ' recovered' }, { langgraph_node: 'assistant' }], '3')
+            + sse('values', { stage: 'reconnected', messages: [{ type: 'ai', content: 'Dropped partial recovered' }] }, '4'));
+        }
         assert.equal(request.method, 'POST');
         assert.ok(['/api/threads/fixture-thread/history', '/api/threads/fixture-thread/runs/stream'].includes(pathname), 'only expected history/run endpoint');
         const chunks = [];
@@ -237,7 +281,12 @@ export async function serveRuntimeConsumer(directory) {
         }
         requests.push(body);
         const trace = runtimeResponse(body);
-        response.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache' });
+        const drop = body.input?.messages?.[0]?.content === 'Drop';
+        if (drop) {
+          assert.equal(dropped, false, 'one dropped run per review');
+          dropped = true;
+        }
+        response.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache', ...(drop ? { 'content-location': '/threads/fixture-thread/runs/drop-run' } : {}) });
         if (trace !== null) return response.end(trace);
         held.add(response);
         response.once('close', () => { held.delete(response); notifyAborted(); });
@@ -262,7 +311,7 @@ export async function serveRuntimeConsumer(directory) {
   server.listen(0, '127.0.0.1');
   await once(server, 'listening');
   return {
-    url: `http://127.0.0.1:${server.address().port}`, requests, historyRequests, errors, holdStarted, holdAborted,
+    url: `http://127.0.0.1:${server.address().port}`, requests, historyRequests, joinRequests, statusRequests, errors, holdStarted, holdAborted,
     async close() {
       for (const response of held) response.destroy();
       const closed = once(server, 'close');
@@ -302,6 +351,10 @@ export async function runRuntimeScenarios(directory, kind) {
     await expect(page.getByTestId('submissions')).toHaveText('0');
     await expect(page.getByTestId('resumes-finished')).toHaveText('0');
     await expect(page.getByTestId('resume-outcome')).toHaveText('');
+    await expect(page.getByTestId('reconnect-run')).toHaveText('');
+    await expect(page.getByTestId('reconnects-finished')).toHaveText('0');
+    await expect(page.getByTestId('reconnect-outcome')).toHaveText('');
+    await expect(page.getByRole('button', { name: 'Reconnect', exact: true })).toBeDisabled();
     await expect(page.getByTestId('human-messages')).toHaveText('0');
     await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeDisabled();
     await expectValues(undefined);
@@ -437,15 +490,48 @@ export async function runRuntimeScenarios(directory, kind) {
     assert.equal(server.requests[7].input, null);
     completed.push('same-message resume completion without synthetic input');
 
+    await page.getByRole('button', { name: 'Drop', exact: true }).click();
+    await expect(page.getByTestId('status')).toHaveText('error');
+    await expect(page.getByTestId('delivery')).toHaveText('complete:interrupted');
+    await expect(page.getByTestId('text')).toContainText('Dropped partial');
+    await expect(page.getByTestId('reconnect-run')).toHaveText('drop-run');
+    await expect(page.getByTestId('human-messages')).toHaveText('6');
+    await expect(page.getByTestId('submissions')).toHaveText('6');
+    await expectValues({ stage: 'disconnected' });
+    assert.equal(server.requests.length, 9, 'Drop creates one identified run');
+    assert.deepEqual(server.statusRequests, ['running'], 'interim values and EOF do not prove success');
+    assert.deepEqual(server.joinRequests, [], 'no session automatic reconnect');
+    completed.push('known running run survives premature stream closure');
+
+    await page.getByRole('button', { name: 'Reconnect', exact: true }).click();
+    await expect(page.getByTestId('reconnects-finished')).toHaveText('1');
+    await expect(page.getByTestId('reconnect-outcome')).toHaveText('success');
+    await expect(page.getByTestId('status')).toHaveText('idle');
+    await expect(page.getByTestId('delivery')).toHaveText('complete:success');
+    await expect(page.getByTestId('text')).toContainText('Dropped partial recovered');
+    const recoveredText = await page.getByTestId('text').innerText();
+    assert.equal(recoveredText.split('Dropped partial').length - 1, 1, 'reconnect neither duplicates partial text nor creates a second assistant');
+    await expectValues({ stage: 'reconnected' });
+    await expect(page.getByTestId('reconnect-run')).toHaveText('');
+    await expect(page.getByRole('button', { name: 'Reconnect', exact: true })).toBeDisabled();
+    await expect(page.getByTestId('human-messages')).toHaveText('6');
+    await expect(page.getByTestId('submissions')).toHaveText('6');
+    await expect(page.getByTestId('handler-calls')).toHaveText('1');
+    assert.equal(server.requests.length, 9, 'reconnect creates no POST');
+    assert.deepEqual(server.joinRequests, [{ runId: 'drop-run', lastEventId: '2' }]);
+    assert.deepEqual(server.statusRequests, ['running', 'success']);
+    completed.push('explicit cursor join and exact-run completion without replay');
+
     await page.getByRole('button', { name: 'Send', exact: true }).click();
     await expect(page.getByTestId('delivery')).toHaveText('complete:success');
     await expect(page.getByTestId('status')).toHaveText('idle');
     await expect(page.getByTestId('text')).toContainText('Hello 🌍.');
     await expect(page.getByTestId('handler-calls')).toHaveText('1');
-    assert.equal(server.requests.length, 9);
+    assert.equal(server.requests.length, 10);
     await expectValues({ stage: 'complete' });
     await expectInterrupts([]);
-    await expect(page.getByTestId('submissions')).toHaveText('6');
+    await expect(page.getByTestId('submissions')).toHaveText('7');
+    await expect(page.getByTestId('human-messages')).toHaveText('7');
     completed.push('reuse after stop');
 
     await page.getByRole('button', { name: 'Unmount', exact: true }).click();
@@ -457,13 +543,17 @@ export async function runRuntimeScenarios(directory, kind) {
     await expect(page.getByTestId('owner')).toHaveText('aborted');
     await page.getByRole('button', { name: 'Resume after dispose', exact: true }).click();
     await expect(page.getByTestId('owner')).toHaveText('aborted');
-    assert.equal(server.requests.length, 9, 'cleanup/disposal/post-disposal commands create no extra runs');
+    await page.getByRole('button', { name: 'Reconnect after dispose', exact: true }).click();
+    await expect(page.getByTestId('owner')).toHaveText('aborted');
+    assert.equal(server.requests.length, 10, 'cleanup/disposal/post-disposal commands create no extra runs');
+    assert.equal(server.joinRequests.length, 1);
+    assert.equal(server.statusRequests.length, 2);
     assert.deepEqual(server.historyRequests, [{ limit: 10 }, { limit: 10 }, { limit: 10 }], 'only explicit loads read history');
     completed.push('unmount and explicit disposal');
     assert.deepEqual(server.errors.map(String), []);
     assert.deepEqual(pageErrors, []);
     assert.deepEqual(unexpected, []);
-    console.log(`${kind}: ${completed.length} browser scenarios passed (${completed.join('; ')}); 3 exact history reads, 9 exact run requests, one tool handler, 6 component submissions, 2 explicit resumes, no page errors/unexpected requests.`);
+    console.log(`${kind}: ${completed.length} browser scenarios passed (${completed.join('; ')}); 3 exact history reads, 10 exact run POSTs, 1 cursor join GET, 2 exact-run status GETs, one tool handler, 7 component submissions, 2 explicit resumes, 1 explicit reconnect, no page errors/unexpected requests.`);
     return completed;
   } finally {
     try { await context?.close(); }

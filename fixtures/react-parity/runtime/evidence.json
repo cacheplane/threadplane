@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "status": "verified-local",
-  "increment": "Explicit private LangGraph interrupt resume (R01/R02/R03)",
+  "increment": "Explicit private LangGraph owned-run reconnect (C01/C02/C03)",
   "observedOn": "2026-09-22",
-  "recordedAt": "2026-09-22T16:05:23.192Z",
+  "recordedAt": "2026-09-22T17:23:30.524Z",
   "source": {
-    "branch": "codex/langgraph-interrupt-resume",
-    "baseCommit": "c3b9ae6a09b869b2f4733007b7e39567c6e8bf04",
-    "verificationHead": "c3b9ae6a09b869b2f4733007b7e39567c6e8bf04",
-    "workingTree": "Verified working-tree runtime and fixture changes on merged #1120. Selected-byte fingerprint identifies actual source, not a future commit. Foundation and legacy artifacts were freshly built; tarball hashes separately identify installed artifacts.",
+    "branch": "codex/langgraph-run-reconnect",
+    "baseCommit": "7567d923aefa74774692c55969e6624c50aac91e",
+    "verificationHead": "7567d923aefa74774692c55969e6624c50aac91e",
+    "workingTree": "Verified working-tree changes on merged #1121. Selected-byte fingerprint identifies actual source, not a future commit. Foundation and legacy artifacts were freshly built; tarball hashes identify installed native/core artifacts and the runtime source was separately emitted/bundled for every consumer.",
     "fingerprint": {
       "algorithm": "SHA-256 of a UTF-8 manifest: one line per selected file, lowercase SHA-256(file bytes), two ASCII spaces, repo-relative path, LF; unique paths sorted by JavaScript default string ordering.",
       "pathspecs": [
@@ -33,27 +33,37 @@
         "nx.json",
         "tsconfig.json",
         "tsconfig.base.json",
-        "eslint.config.mjs"
+        "eslint.config.mjs",
+        "apps/website/scripts/generate-api-docs.ts",
+        "apps/website/scripts/generate-api-docs.spec.ts",
+        "apps/website/scripts/public-doc-projection.ts",
+        "apps/website/scripts/public-doc-projection.spec.ts"
       ],
       "excludedPaths": [
         "fixtures/react-parity/runtime/evidence.json"
       ],
-      "fileCount": 785,
-      "sha256": "1acf81a791fe0b0300220f01fe125462981689ac1a8e422c0835bc31628908a1",
+      "fileCount": 793,
+      "sha256": "b6d861adfa11205b27df0826a6239530f04cfe25fdae2278484d37d8eb9c56eb",
       "selection": "git ls-files -z --cached --others --exclude-standard -- <pathspecs>; existing files minus excludedPaths, including new tests. Local research/planning files are outside these paths. Evidence excludes itself to avoid self-reference.",
       "reproduce": "node --input-type=module <<'JS'\nimport {createHash} from 'node:crypto';\nimport {execFileSync} from 'node:child_process';\nimport {readFileSync,existsSync} from 'node:fs';\nconst {fingerprint:f}=JSON.parse(readFileSync('fixtures/react-parity/runtime/evidence.json')).source;\nconst sha=value=>createHash('sha256').update(value).digest('hex');\nconst paths=[...new Set(execFileSync('git',['ls-files','-z','--cached','--others','--exclude-standard','--',...f.pathspecs],{encoding:'utf8'}).split('\\0').filter(Boolean))].filter(path=>!f.excludedPaths.includes(path)&&existsSync(path)).sort();\nconst actual=sha(paths.map(path=>sha(readFileSync(path))+'  '+path+'\\n').join(''));\nif(paths.length!==f.fileCount||actual!==f.sha256) throw new Error('Source fingerprint mismatch');\nconsole.log(paths.length+' files: '+actual);\nJS"
     },
     "sourceState": {
       "modified": [
+        "apps/website/scripts/generate-api-docs.ts",
         "fixtures/react-parity/runtime/README.md",
         "fixtures/react-parity/runtime/angular-app.ts",
+        "fixtures/react-parity/runtime/installed-types.ts",
         "fixtures/react-parity/runtime/react-app.tsx",
         "fixtures/react-parity/runtime/runtime-entry.ts",
         "fixtures/react-parity/runtime/scenarios.ts",
+        "libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
         "libs/langgraph/src/runtime/create-session.ts",
-        "libs/langgraph/src/runtime/stream-projection.spec.ts",
+        "libs/langgraph/src/runtime/langgraph-snapshot.ts",
+        "libs/langgraph/src/runtime/ownership.ts",
+        "libs/langgraph/src/runtime/publication.spec.ts",
         "libs/langgraph/src/runtime/stream-projection.ts",
         "libs/langgraph/src/runtime/transport.integration.spec.ts",
+        "libs/langgraph/src/runtime/transport.types.ts",
         "scripts/react-parity/baseline.json",
         "scripts/react-parity/dispositions.json",
         "scripts/react-parity/review-runtime.mjs",
@@ -61,8 +71,11 @@
         "scripts/react-parity/runtime-consumer.spec.mjs"
       ],
       "untracked": [
-        "libs/langgraph/src/runtime/resume.spec.ts",
-        "libs/langgraph/src/runtime/resume.type-test.ts"
+        "apps/website/scripts/generate-api-docs.spec.ts",
+        "libs/langgraph/src/runtime/reconnect.spec.ts",
+        "libs/langgraph/src/runtime/reconnect.type-test.ts",
+        "libs/langgraph/src/runtime/run-recovery.spec.ts",
+        "libs/langgraph/src/runtime/run-recovery.ts"
       ]
     }
   },
@@ -97,98 +110,123 @@
     {
       "command": "NX_DAEMON=false npx nx run-many -t runtime-quality,runtime-type-tests -p langgraph --skip-nx-cache",
       "exitCode": 0,
-      "testsPassed": 417,
-      "testFiles": 16,
-      "provenance": "Fresh parent verification after implementer handoff; independently repeated by both reviewers.",
-      "log": "/tmp/ir03-parent-runtime.log",
-      "logSha256": "1a80a4fe0b7f9909b774b348005269a976fb45a67a83b49a0f54d3e0ede23bf2"
+      "testsPassed": 484,
+      "testFiles": 18,
+      "log": "/tmp/rr03-parent-runtime.log",
+      "logSha256": "2e008b0c9c820adf3f9b02aed73e31289d2fdf96938a4fd472c233e398aefefd"
     },
     {
       "command": "NX_DAEMON=false npx nx run-many -t runtime-quality,runtime-type-tests,lint -p langgraph --skip-nx-cache",
       "exitCode": 0,
-      "testsPassed": 417,
+      "testsPassed": 484,
       "lintErrors": 0,
       "lintWarnings": 68,
-      "provenance": "Implementer final run; parent inspected log and diff. Warnings are in existing legacy files.",
-      "log": "/tmp/r01-final-checks.log",
-      "logSha256": "86b8cffa6d96f815dae3892fc989de5701c40e35d769301fbe13932db25d8282"
+      "provenance": "Implementer final production change run, independently reviewed by parent and reviewers; subsequent test assertion cleanup passed 484 again.",
+      "log": "/tmp/rr01-anonymous-green.log",
+      "logSha256": "5ad64bd90845506a6d0e0c389fd0075c4255692c9a4d2f8b93ca69e4c8885d4e"
     },
     {
-      "command": "node --test scripts/ci-scope.spec.mjs scripts/ci-workflow.spec.mjs scripts/react-parity/*.spec.mjs fixtures/react-parity/traces.spec.mjs",
+      "command": "npx vitest run --config vite.config.mts src/lib/transport/fetch-stream.transport.spec.ts src/lib/transport/fetch-stream.transport.integration.spec.ts --reporter=default",
       "exitCode": 0,
-      "testsPassed": 430,
-      "testsFailed": 0,
-      "log": "/tmp/ir03-focused.log",
-      "logSha256": "b19b128cb1e5095c0d8b1efd95e6edb569b6a183155c74bf6fa2b9dffa22cb16"
+      "workingDirectory": "libs/langgraph",
+      "testsPassed": 34,
+      "log": "/tmp/rr03-shared-transport-direct.log",
+      "logSha256": "018f37bc38306a6d22930cd1ef650d96dc476c7310628a75d21a5864fe281378"
     },
     {
-      "command": "NX_DAEMON=false npx nx run-many -t lint test type-tests build -p core,content,angular,react --parallel=2 --skip-nx-cache",
+      "command": "node --test scripts/react-parity/*.spec.mjs fixtures/react-parity/traces.spec.mjs scripts/ci-scope.spec.mjs scripts/ci-workflow.spec.mjs",
       "exitCode": 0,
-      "log": "/tmp/r02-foundations.log",
-      "logSha256": "77dfe7974d098a27baa83a19cce61f4f628507b7d3b55ee7a1a6d273e9c9f39d"
+      "testsPassed": 432,
+      "log": "/tmp/rr03-infrastructure.log",
+      "logSha256": "93abd2239d0e486960ebc4d420ea42c904a4f899690e5e80636dcdd8f7beae40"
+    },
+    {
+      "command": "NX_DAEMON=false npx nx run-many -t lint,test,type-tests,build -p core,content,angular,react --skip-nx-cache",
+      "exitCode": 0,
+      "log": "/tmp/rr03-foundations.log",
+      "logSha256": "e4b93549372ba09ed2ec8fa926c86cbabe15cb0f77774ad0e994642394c49f3d"
     },
     {
       "command": "NX_DAEMON=false npx nx run-many -t build -p chat,langgraph,ag-ui,render,a2ui,telemetry --parallel=2 --skip-nx-cache",
       "exitCode": 0,
-      "log": "/tmp/ir03-legacy-builds.log",
-      "logSha256": "5abac2a6f4909a4953db837d0fbcc4377b2138de6091305e8ff4bfac12207782"
+      "log": "/tmp/rr03-legacy-builds.log",
+      "logSha256": "72920a3444ff03dad3a2dc7b0d2e60b01066533c594311d8c3dedff32dea6c88"
     },
     {
       "command": "node scripts/react-parity/verify-packages.mjs",
       "exitCode": 0,
-      "browserScenariosPassed": 13,
+      "browserScenariosPassed": 15,
       "framework": "React",
-      "log": "/tmp/ir03-packages.log",
-      "logSha256": "0e72f7e8ac72721b75b5375426ff1cf0f593b632398a395d5e02adf183997b4e"
+      "log": "/tmp/rr03-packages.log",
+      "logSha256": "4a2ea5622ad8b6396e79e7768488a6b89358be4a9a8cc0c78e23a3d95318b4f3"
     },
     {
       "command": "node scripts/react-parity/verify-angular-package.mjs",
       "exitCode": 0,
-      "browserScenariosPassed": 13,
+      "browserScenariosPassed": 15,
       "framework": "Angular",
-      "log": "/tmp/ir03-angular-package.log",
-      "logSha256": "da7bea3174d73c7aae21de9ac2cab2de67d12799249fc873e9f39e0039cd16e2"
+      "log": "/tmp/rr03-angular-package.log",
+      "logSha256": "7569da30d6408c5629208417b98b2f2d36b6a87a3e365724c613a1f0c92ce0d1"
     },
     {
       "command": "node scripts/react-parity/review-runtime.mjs",
       "exitCode": 0,
-      "browserScenariosPerFramework": 13,
+      "browserScenariosPerFramework": 15,
       "termination": "SIGTERM, exit0; untouched final servers created only after both scenarios passed.",
-      "log": "/tmp/ir03-cli.log",
-      "logSha256": "a0cdf6a38ca34960b63cc457c59f71ee570764551b5baf3c53adacd6dd3f79ed"
+      "log": "/tmp/rr03-cli.log",
+      "logSha256": "ef0d7a7cc12c2016da11da09066519cc1a83d32399e66ffa99a03e7a345bd3aa"
     },
     {
       "command": "node scripts/react-parity/verify-boundaries.mjs",
       "exitCode": 0,
-      "log": "/tmp/ir03-source-boundaries.log",
+      "log": "/tmp/rr03-source-boundaries.log",
       "logSha256": "995db896b38cf7de5ca9db6590dba47e082d26abdf69bab04b92eee484696063"
     },
     {
       "command": "node scripts/react-parity/verify-boundaries.mjs --built",
       "exitCode": 0,
-      "log": "/tmp/ir03-built-boundaries.log",
+      "log": "/tmp/rr03-built-boundaries.log",
       "logSha256": "c983a97d17ff7ced7aa9113afa031f464103f566f1bc94eec8160558ec2553f7"
     },
     {
       "command": "node scripts/react-parity/inventory.mjs --check",
       "exitCode": 0,
-      "log": "/tmp/ir03-inventory-check.log",
-      "logSha256": "d09feb53da89b1708c15d8212a3e9a429ddcb7bcce121917360327aa65bf7dae"
+      "log": "/tmp/rr03-inventory-check.log",
+      "logSha256": "61e55239a6c89e328a9474410b4a189a34a31bab06c7329d4828d750ba9990a5"
+    },
+    {
+      "command": "npx vitest run --config vite.config.mts scripts/generate-api-docs.spec.ts scripts/public-doc-projection.spec.ts",
+      "exitCode": 0,
+      "workingDirectory": "apps/website",
+      "testsPassed": 15,
+      "log": "/tmp/rr03-api-tests.log",
+      "logSha256": "0afcfe35f62440666d4ed7330d20f2de7e3b07d42d55582398156160910404cc"
+    },
+    {
+      "command": "npm run generate-api-docs",
+      "exitCode": 0,
+      "generatedOutputChanged": false,
+      "libraries": 6,
+      "log": "/tmp/threadplane-all-api-generation.log",
+      "logSha256": "356512e791a4d7c6db7285ce0496e87dfc1c238a81f9ebdf416f704b19fd078c"
     }
   ],
   "manualBrowserReview": {
-    "performedBy": "Parent using Chrome DevTools MCP and Codex in-app browser, independent fresh server per framework/surface; all interactions and DOM assertions recorded in task tool transcript.",
+    "performedBy": "Parent using Chrome DevTools MCP and Codex in-app browser; each framework/surface used a fresh server and all 20 button actions. DOM assertions and screenshots are recorded in the task tool transcript.",
     "runs": [
       {
         "surface": "chrome",
         "framework": "react",
-        "historyReads": 3,
-        "runRequests": 9,
-        "submissions": 6,
+        "historyPosts": 3,
+        "runPosts": 10,
+        "joinGets": 1,
+        "statusGets": 2,
+        "submissions": 7,
         "resumes": 2,
+        "reconnects": 1,
         "handlerCalls": 1,
-        "humanMessagesAfterBothResumes": 5,
-        "humanMessagesAfterFinalSubmit": 6,
+        "humanMessagesBeforeAndAfterReconnect": 6,
+        "humanMessagesAfterFinalSubmit": 7,
         "finalOwnerOutcome": "aborted",
         "consoleWarnings": 0,
         "consoleErrors": 0,
@@ -197,13 +235,16 @@
       {
         "surface": "chrome",
         "framework": "angular",
-        "historyReads": 3,
-        "runRequests": 9,
-        "submissions": 6,
+        "historyPosts": 3,
+        "runPosts": 10,
+        "joinGets": 1,
+        "statusGets": 2,
+        "submissions": 7,
         "resumes": 2,
+        "reconnects": 1,
         "handlerCalls": 1,
-        "humanMessagesAfterBothResumes": 5,
-        "humanMessagesAfterFinalSubmit": 6,
+        "humanMessagesBeforeAndAfterReconnect": 6,
+        "humanMessagesAfterFinalSubmit": 7,
         "finalOwnerOutcome": "aborted",
         "consoleWarnings": 0,
         "consoleErrors": 0,
@@ -212,13 +253,16 @@
       {
         "surface": "iab",
         "framework": "react",
-        "historyReads": 3,
-        "runRequests": 9,
-        "submissions": 6,
+        "historyPosts": 3,
+        "runPosts": 10,
+        "joinGets": 1,
+        "statusGets": 2,
+        "submissions": 7,
         "resumes": 2,
+        "reconnects": 1,
         "handlerCalls": 1,
-        "humanMessagesAfterBothResumes": 5,
-        "humanMessagesAfterFinalSubmit": 6,
+        "humanMessagesBeforeAndAfterReconnect": 6,
+        "humanMessagesAfterFinalSubmit": 7,
         "finalOwnerOutcome": "aborted",
         "consoleWarnings": 0,
         "consoleErrors": 0,
@@ -227,13 +271,16 @@
       {
         "surface": "iab",
         "framework": "angular",
-        "historyReads": 3,
-        "runRequests": 9,
-        "submissions": 6,
+        "historyPosts": 3,
+        "runPosts": 10,
+        "joinGets": 1,
+        "statusGets": 2,
+        "submissions": 7,
         "resumes": 2,
+        "reconnects": 1,
         "handlerCalls": 1,
-        "humanMessagesAfterBothResumes": 5,
-        "humanMessagesAfterFinalSubmit": 6,
+        "humanMessagesBeforeAndAfterReconnect": 6,
+        "humanMessagesAfterFinalSubmit": 7,
         "finalOwnerOutcome": "aborted",
         "consoleWarnings": 0,
         "consoleErrors": 0,
@@ -243,27 +290,28 @@
     "checks": [
       "inert mount",
       "three explicit history loads",
-      "normal send",
-      "actual tool result handoff",
+      "normal submit",
+      "one actual tool handler and result handoff",
       "protected error",
-      "held incremental text and local stop",
+      "held incremental DOM and local stop",
       "two observed pauses",
       "opaque response map then final response",
-      "same assistant message canonical replacement",
-      "no synthetic human messages",
-      "unmount then explicit disposal",
-      "both post-disposal commands inert"
+      "anonymous message identity and exact canonical replacement across reconnect",
+      "no duplicate partial text or synthetic human",
+      "exact Last-Event-ID: 2 join",
+      "unmount and explicit disposal",
+      "all three post-disposal commands inert"
     ],
-    "visual": "Chrome React and Angular inspected at desktop and 390px viewport; both narrow content widths were 390px without overflow. Both in-app framework views inspected at their default viewport.",
-    "toolingNote": "In-app selector regex encoding initially failed to match a JSON output. A direct DOM read confirmed the expected state; subsequent JSON assertions used exact DOM text. This was a verification selector issue, not an application failure.",
+    "visual": "React and Angular inspected in Chrome at 1280px and 390px; no horizontal overflow. Both in-app layouts inspected at their default viewport.",
+    "toolingNote": "An earlier manual verification expectation incorrectly treated empty history as observed empty values. Source and DOM confirmed unobserved is correct; final four complete sequences used the corrected assertion.",
     "logs": [
       {
-        "log": "/tmp/ir03-browser-verification.json",
-        "logSha256": "9da1443432f91f4ec78178262dc8f2c2d5bfbd91e81937a2d69d33cfb6aa53f5"
+        "log": "/tmp/rr03-browser-verification.json",
+        "logSha256": "9c7d312a84e6d3cf1a577daeac4077014a81ee1d1abb69fd8acff005a5745059"
       },
       {
-        "log": "/tmp/ir03-browser-requests.json",
-        "logSha256": "b94e55ee26f13e5f288e48c0c627f9bae3928c44d9cb4cb41c23136066e960c3"
+        "log": "/tmp/rr03-browser-requests.json",
+        "logSha256": "3696e146758f0e260480f2d3f26f2543bf9ef23c66e5ad5fd79c9e8875f39d86"
       }
     ]
   },
@@ -271,25 +319,25 @@
     {
       "framework": "react",
       "name": "@threadplane/react",
-      "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-runtime-review-8EspCG/react/packed/threadplane-react-0.0.0.tgz",
+      "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-runtime-review-WY6vPO/react/packed/threadplane-react-0.0.0.tgz",
       "sha256": "b71db72347e6ac0777304265d611968232b36e0dffe2171f7fb660f2e8958bc9"
     },
     {
       "framework": "react",
       "name": "@threadplane/core",
-      "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-runtime-review-8EspCG/react/packed/threadplane-core-0.0.0.tgz",
+      "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-runtime-review-WY6vPO/react/packed/threadplane-core-0.0.0.tgz",
       "sha256": "651fe687bf2909572eeb543b97b94361a91afbb93c8d74c92ab02cfe092b855c"
     },
     {
       "framework": "angular",
       "name": "@threadplane/angular",
-      "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-runtime-review-8EspCG/angular/packed/threadplane-angular-0.0.0.tgz",
+      "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-runtime-review-WY6vPO/angular/packed/threadplane-angular-0.0.0.tgz",
       "sha256": "632956c2279a700c9b8ba4b7762d58a6617b8e9b089776eec5fa8091397e15c5"
     },
     {
       "framework": "angular",
       "name": "@threadplane/core",
-      "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-runtime-review-8EspCG/angular/packed/threadplane-core-0.0.0.tgz",
+      "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-runtime-review-WY6vPO/angular/packed/threadplane-core-0.0.0.tgz",
       "sha256": "651fe687bf2909572eeb543b97b94361a91afbb93c8d74c92ab02cfe092b855c"
     }
   ],
@@ -297,28 +345,31 @@
     "reviewRunnerExitCode": 0,
     "temporaryConsumersRemoved": true,
     "allSixReviewAndVerificationPortsClosed": true,
-    "log": "/tmp/ir03-cleanup.log",
-    "logSha256": "7c2f052fe715f8b6922821f0de8508031a5dc08fc75af5ffc32145d152585dab"
+    "log": "/tmp/rr03-cleanup.log",
+    "logSha256": "fbd63cc922d6538bc1168760ff4f8f7457568d28ce5f568f970494e880cfdfe2"
   },
   "inventory": {
-    "rows": 1456,
-    "sourceRows": 478,
+    "rows": 1457,
+    "sourceRows": 479,
     "exports": 550,
     "uniqueExportDefinitions": 514,
     "assignmentsPreserved": true,
-    "changes": "Two private runtime source hashes and two scoped notes; no whole-task completion or new public exports."
+    "changes": "Existing dispositions remain byte-equivalent by row; one internal run-recovery source row added. Source and shared export signatures refreshed. No whole-task completion or public backend cutover."
   },
   "scope": [
-    "Backend-private explicit dynamic and static resume",
-    "Owned opaque PlainValue responses; no schema or target transformation",
+    "Backend-private owned-run reconnect with committed cursor and exact-run finality",
+    "Explicit interruption resume without command replay",
     "Single application-owned session shared by native observers",
-    "Operation-specific projection and tool ownership",
-    "Repeatable installed manual-review fixture"
+    "Pure run/cursor eligibility and physical-run message identity",
+    "Installed anonymous-message recovery and repeatable manual review",
+    "Public API generator respects signature-level internal methods"
   ],
   "runtimePolicy": {
-    "automaticResumeRetries": false,
-    "resumeHistoryCorrelation": false,
-    "implicitResumeOnMount": false,
+    "sessionAutomaticReconnect": false,
+    "creationPostRetriesByDefault": false,
+    "sdkBodyGetReconnectMayOccur": true,
+    "requiresSafeObservedCursor": true,
+    "knownRunHistoryFallback": false,
     "remoteCancellationOnStop": false,
     "coreApiChanged": false,
     "publicBackendCutover": false
@@ -327,20 +378,23 @@
     "status": "Not yet requested for this working tree; local evidence does not imply CI green."
   },
   "limits": [
-    "Ambiguous resume and its follow-ups report recovery:none; checkpoint queries do not prove command outcome.",
-    "Explicit load remains blocked by unsettled tool results; subsequent explicit submit can hand off buffered results.",
-    "Reloading a pause and resuming is a new command and can repeat remote work.",
-    "The fixture HTTP/SSE server is local deterministic protocol evidence, not a live deployed LangGraph integration.",
-    "Run-ID recovery/join, full adapter migration, public backend cutover and React UI parity remain later milestones."
+    "Only the latest retained session-owned physical run is eligible; no arbitrary joins, persisted sessions or cross-process recovery.",
+    "Header-only disconnects and beginning-of-log replay remain deferred.",
+    "Exclusive suffix replay and server buffer retention are transport/deployment prerequisites; local HTTP fixtures do not certify a live deployment.",
+    "Streams without captured identity retain their existing output/history fallback.",
+    "Full adapter migration, public backend cutover and React component parity remain later milestones."
   ],
   "warnings": [
-    "68 pre-existing legacy lint warnings; zero lint errors.",
+    "68 existing legacy lint warnings; zero lint errors.",
     "Existing Vite use-client bundling warnings in a client-only consumer; no SSR claim.",
     "Local Node24/macOS verification; Node22/Linux CI is reported separately after it runs."
   ],
   "documentation": {
-    "generatorsRun": [],
-    "reason": "Only private runtime/fixture contributor documentation changed. Published APIs, website narrative and agent context inputs are unchanged."
+    "generatorsRun": [
+      "npm run generate-api-docs -- --libraries=langgraph",
+      "npm run generate-api-docs"
+    ],
+    "reason": "Private transport additions remain hidden after fixing signature-level internal filtering. All six generated API JSON files match the previous commit; no narrative or agent-context inputs changed."
   },
-  "verificationProvenance": "All listed verification is fresh for this increment. Historical foundation evidence remains byte-identical; no old production runtime checks are presented as current."
+  "verificationProvenance": "All listed verification was freshly run in this milestone. Final packed/e2e and all four manual browser sequences include the anonymous-message regression fix. Historical foundation evidence remains unchanged."
 }

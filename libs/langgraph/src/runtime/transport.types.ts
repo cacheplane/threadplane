@@ -3,6 +3,7 @@ import type {
   Command,
   Config,
   Metadata,
+  Run,
   StreamMode,
   ThreadState,
 } from '@langchain/langgraph-sdk';
@@ -36,6 +37,8 @@ export interface StreamEvent {
     | `events|${string}`
     | 'interrupt'
     | 'interrupts';
+  /** @internal Reserved SDK SSE cursor; application payloads cannot supply it. */
+  sseId?: string;
   namespace?: string[];
   messages?: unknown[];
   messageMetadata?: Record<string, unknown>;
@@ -126,6 +129,9 @@ export interface AgentTransport {
     lastEventId: string | undefined,
     signal: AbortSignal
   ): AsyncIterable<StreamEvent>;
+
+  /** @internal Inspect the exact owned physical run, without thread-history inference. */
+  getRunStatus?(threadId: string, runId: string, signal: AbortSignal): Promise<Run['status']>;
 
   /** Optional: create a server-side queued run without joining it immediately. */
   createQueuedRun?(

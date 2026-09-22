@@ -1,12 +1,19 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "c3b9ae6a09b869b2f4733007b7e39567c6e8bf04",
+  "baselineHead": "7567d923aefa74774692c55969e6624c50aac91e",
   "sourceState": {
     "modified": [
+      "apps/website/scripts/generate-api-docs.ts",
+      "libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
       "libs/langgraph/src/runtime/create-session.ts",
-      "libs/langgraph/src/runtime/stream-projection.ts"
+      "libs/langgraph/src/runtime/langgraph-snapshot.ts",
+      "libs/langgraph/src/runtime/ownership.ts",
+      "libs/langgraph/src/runtime/stream-projection.ts",
+      "libs/langgraph/src/runtime/transport.types.ts"
     ],
-    "untracked": []
+    "untracked": [
+      "libs/langgraph/src/runtime/run-recovery.ts"
+    ]
   },
   "scope": {
     "libraries": [
@@ -1897,7 +1904,7 @@
       "id": "config:apps/website/scripts/generate-api-docs.ts",
       "kind": "config",
       "path": "apps/website/scripts/generate-api-docs.ts",
-      "sha256": "15e8b7ed03fac6950ab8d6e432374d335214026d07db5c4d4a2bcab8606b03f9"
+      "sha256": "a88a4106b8f8f61b6aa3fe62bd8cbb968048da0e9fd7c9df6ec417d9a0f22fb9"
     },
     {
       "id": "config:apps/website/scripts/generate-narrative-docs.ts",
@@ -8303,7 +8310,7 @@
           "path": "libs/langgraph/src/runtime/transport.types.ts",
           "symbol": "AgentTransport",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface AgentTransport {\n    stream(assistantId: string, threadId: string | null, payload: unknown, signal: AbortSignal, options?: LangGraphSubmitOptions): AsyncIterable<StreamEvent>;\n    joinStream?(threadId: string, runId: string, lastEventId: string | undefined, signal: AbortSignal): AsyncIterable<StreamEvent>;\n    createQueuedRun?(assistantId: string, threadId: string, payload: unknown, signal: AbortSignal, options?: LangGraphSubmitOptions): Promise<AgentQueueEntry>;\n    cancelRun?(threadId: string, runId: string, signal: AbortSignal): Promise<void>;\n    getHistory?(threadId: string, signal: AbortSignal): Promise<ThreadState[]>;\n    updateState?(threadId: string, values: Record<string, unknown>, signal: AbortSignal, options?: {\n        asNode?: string;\n    }): Promise<void>;\n}"
+          "signature": "export interface AgentTransport {\n    stream(assistantId: string, threadId: string | null, payload: unknown, signal: AbortSignal, options?: LangGraphSubmitOptions): AsyncIterable<StreamEvent>;\n    joinStream?(threadId: string, runId: string, lastEventId: string | undefined, signal: AbortSignal): AsyncIterable<StreamEvent>;\n    getRunStatus?(threadId: string, runId: string, signal: AbortSignal): Promise<Run['status']>;\n    createQueuedRun?(assistantId: string, threadId: string, payload: unknown, signal: AbortSignal, options?: LangGraphSubmitOptions): Promise<AgentQueueEntry>;\n    cancelRun?(threadId: string, runId: string, signal: AbortSignal): Promise<void>;\n    getHistory?(threadId: string, signal: AbortSignal): Promise<ThreadState[]>;\n    updateState?(threadId: string, values: Record<string, unknown>, signal: AbortSignal, options?: {\n        asNode?: string;\n    }): Promise<void>;\n}"
         }
       ]
     },
@@ -8359,7 +8366,7 @@
           "path": "libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
           "symbol": "FetchStreamTransport",
           "syntaxKind": "ClassDeclaration",
-          "signature": "export class FetchStreamTransport implements AgentTransport {\n    private client: Client;\n    private onThreadId?: (id: string) => void;\n    private readonly protectErrors: boolean;\n    private readonly reportOperationFailure?: RuntimeOperationFailureReporter;\n    readonly protectsOperationErrors: boolean;\n    constructor(apiUrl: string, onThreadId?: (id: string) => void, clientOptions?: LangGraphClientOptions, reportOperationFailure?: RuntimeOperationFailureReporter) {\n        this.protectErrors = clientOptions?.defaultHeaders !== undefined || reportOperationFailure !== undefined;\n        this.protectsOperationErrors = this.protectErrors;\n        this.reportOperationFailure = reportOperationFailure;\n        this.client = this.protectErrors\n            ? ɵcreateProtectedLangGraphClient(apiUrl, clientOptions, createLangGraphRuntimeFetch(reportOperationFailure))\n            : createLangGraphClient(apiUrl, clientOptions);\n        this.onThreadId = onThreadId;\n    }\n    async *stream(assistantId: string, threadId: string | null, payload: unknown, signal: AbortSignal, options?: LangGraphSubmitOptions): AsyncIterable<StreamEvent> {\n        let thread = threadId;\n        if (!thread) {\n            try {\n                const t = await this.client.threads.create();\n                thread = t.thread_id;\n            }\n            catch (error) {\n                this.rethrowOperationError(error, signal);\n            }\n            try {\n                this.onThreadId?.(thread);\n            }\n            catch (error) {\n                this.rethrowLocalError(error, signal);\n            }\n        }\n        let runPayload: ReturnType<typeof buildRunPayload>;\n        try {\n            runPayload = buildRunPayload(payload, signal, options);\n        }\n        catch (error) {\n            return this.rethrowLocalError(error, signal);\n        }\n        let run: ReturnType<Client['runs']['stream']>;\n        try {\n            run = this.client.runs.stream(thread, assistantId, runPayload);\n        }\n        catch (error) {\n            this.rethrowOperationError(error, signal);\n        }\n        yield* this.iterateSdkRun(run, signal);\n    }\n    async *joinStream(threadId: string, runId: string, lastEventId: string | undefined, signal: AbortSignal): AsyncIterable<StreamEvent> {\n        let run: ReturnType<Client['runs']['joinStream']>;\n        try {\n            run = this.client.runs.joinStream(threadId, runId, {\n                signal,\n                ...(lastEventId !== undefined ? { lastEventId } : {}),\n            });\n        }\n        catch (error) {\n            this.rethrowOperationError(error, signal);\n        }\n        yield* this.iterateSdkRun(run, signal);\n    }\n    async createQueuedRun(assistantId: string, threadId: string, payload: unknown, signal: AbortSignal, options?: LangGraphSubmitOptions): Promise<AgentQueueEntry> {\n        let runPayload: ReturnType<typeof buildRunPayload> & {\n            multitaskStrategy: 'enqueue';\n        };\n        try {\n            runPayload = {\n                ...buildRunPayload(payload, signal, options),\n                multitaskStrategy: 'enqueue',\n            };\n        }\n        catch (error) {\n            return this.rethrowLocalError(error, signal);\n        }\n        let run: Awaited<ReturnType<Client['runs']['create']>>;\n        try {\n            run = await this.client.runs.create(threadId, assistantId, runPayload);\n        }\n        catch (error) {\n            return this.rethrowOperationError(error, signal);\n        }\n        try {\n            return {\n                id: run.run_id,\n                threadId: run.thread_id ?? threadId,\n                values: payload,\n                options: { multitaskStrategy: 'enqueue', signal },\n                createdAt: run.created_at ? new Date(run.created_at) : new Date(),\n            };\n        }\n        catch (error) {\n            return this.rethrowLocalError(error, signal);\n        }\n    }\n    async cancelRun(threadId: string, runId: string, signal: AbortSignal): Promise<void> {\n        try {\n            await this.client.runs.cancel(threadId, runId, false, 'interrupt', { signal });\n        }\n        catch (error) {\n            this.rethrowOperationError(error, signal);\n        }\n    }\n    async getHistory(threadId: string, signal: AbortSignal): Promise<ThreadState[]> {\n        try {\n            return await this.client.threads.getHistory(threadId, { signal });\n        }\n        catch (error) {\n            return this.rethrowOperationError(error, signal);\n        }\n    }\n    async updateState(threadId: string, values: Record<string, unknown>, _signal: AbortSignal, options?: {\n        asNode?: string;\n    }): Promise<void> {\n        const body: {\n            values: Record<string, unknown>;\n            asNode?: string;\n        } = { values };\n        if (options?.asNode !== undefined) {\n            body.asNode = options.asNode;\n        }\n        try {\n            await this.client.threads.updateState(threadId, body);\n        }\n        catch (error) {\n            this.rethrowOperationError(error, _signal);\n        }\n    }\n    private rethrowOperationError(error: unknown, signal: AbortSignal): never {\n        if (!this.protectErrors)\n            throw error;\n        return projectLangGraphOperationFailure(error, signal, this.reportOperationFailure);\n    }\n    private rethrowLocalError(error: unknown, signal: AbortSignal): never {\n        if (!this.protectErrors)\n            throw error;\n        return projectLangGraphOperationFailure(error, signal, undefined);\n    }\n    private async *iterateSdkRun(run: ReturnType<Client['runs']['stream']> | ReturnType<Client['runs']['joinStream']>, signal: AbortSignal): AsyncIterable<StreamEvent> {\n        let iterator: AsyncIterator<{\n            event: string;\n            data: unknown;\n        }>;\n        try {\n            iterator = run[Symbol.asyncIterator]();\n        }\n        catch (error) {\n            return this.rethrowOperationError(error, signal);\n        }\n        let completed = false;\n        let failed = false;\n        try {\n            while (true) {\n                let next: IteratorResult<{\n                    event: string;\n                    data: unknown;\n                }>;\n                try {\n                    next = await iterator.next();\n                }\n                catch (error) {\n                    return this.rethrowOperationError(error, signal);\n                }\n                if (next.done) {\n                    completed = true;\n                    return;\n                }\n                try {\n                    yield normalizeSdkEvent(next.value.event as StreamEvent['type'], next.value.data);\n                }\n                catch (error) {\n                    return this.rethrowLocalError(error, signal);\n                }\n            }\n        }\n        catch (error) {\n            failed = true;\n            throw error;\n        }\n        finally {\n            if (!completed) {\n                try {\n                    await iterator.return?.();\n                }\n                catch (error) {\n                    if (!failed)\n                        this.rethrowOperationError(error, signal);\n                }\n            }\n        }\n    }\n}"
+          "signature": "export class FetchStreamTransport implements AgentTransport {\n    private client: Client;\n    private onThreadId?: (id: string) => void;\n    private readonly protectErrors: boolean;\n    private readonly reportOperationFailure?: RuntimeOperationFailureReporter;\n    readonly protectsOperationErrors: boolean;\n    constructor(apiUrl: string, onThreadId?: (id: string) => void, clientOptions?: LangGraphClientOptions, reportOperationFailure?: RuntimeOperationFailureReporter) {\n        this.protectErrors = clientOptions?.defaultHeaders !== undefined || reportOperationFailure !== undefined;\n        this.protectsOperationErrors = this.protectErrors;\n        this.reportOperationFailure = reportOperationFailure;\n        this.client = this.protectErrors\n            ? ɵcreateProtectedLangGraphClient(apiUrl, clientOptions, createLangGraphRuntimeFetch(reportOperationFailure))\n            : createLangGraphClient(apiUrl, clientOptions);\n        this.onThreadId = onThreadId;\n    }\n    async *stream(assistantId: string, threadId: string | null, payload: unknown, signal: AbortSignal, options?: LangGraphSubmitOptions): AsyncIterable<StreamEvent> {\n        let thread = threadId;\n        if (!thread) {\n            try {\n                const t = await this.client.threads.create();\n                thread = t.thread_id;\n            }\n            catch (error) {\n                this.rethrowOperationError(error, signal);\n            }\n            try {\n                this.onThreadId?.(thread);\n            }\n            catch (error) {\n                this.rethrowLocalError(error, signal);\n            }\n        }\n        let runPayload: ReturnType<typeof buildRunPayload>;\n        try {\n            runPayload = buildRunPayload(payload, signal, options);\n        }\n        catch (error) {\n            return this.rethrowLocalError(error, signal);\n        }\n        let run: ReturnType<Client['runs']['stream']>;\n        try {\n            run = this.client.runs.stream(thread, assistantId, runPayload);\n        }\n        catch (error) {\n            this.rethrowOperationError(error, signal);\n        }\n        yield* this.iterateSdkRun(run, signal);\n    }\n    async *joinStream(threadId: string, runId: string, lastEventId: string | undefined, signal: AbortSignal): AsyncIterable<StreamEvent> {\n        let run: ReturnType<Client['runs']['joinStream']>;\n        try {\n            run = this.client.runs.joinStream(threadId, runId, {\n                signal,\n                ...(lastEventId !== undefined ? { lastEventId } : {}),\n            });\n        }\n        catch (error) {\n            this.rethrowOperationError(error, signal);\n        }\n        yield* this.iterateSdkRun(run, signal);\n    }\n    async getRunStatus(threadId: string, runId: string, signal: AbortSignal): Promise<Run['status']> {\n        try {\n            const run = await this.client.runs.get(threadId, runId, { signal });\n            if (run.run_id !== runId || run.thread_id !== threadId ||\n                !['pending', 'running', 'success', 'error', 'timeout', 'interrupted'].includes(run.status))\n                throw new Error('Invalid LangGraph run status response.');\n            return run.status;\n        }\n        catch (error) {\n            return this.rethrowOperationError(error, signal);\n        }\n    }\n    async createQueuedRun(assistantId: string, threadId: string, payload: unknown, signal: AbortSignal, options?: LangGraphSubmitOptions): Promise<AgentQueueEntry> {\n        let runPayload: ReturnType<typeof buildRunPayload> & {\n            multitaskStrategy: 'enqueue';\n        };\n        try {\n            runPayload = {\n                ...buildRunPayload(payload, signal, options),\n                multitaskStrategy: 'enqueue',\n            };\n        }\n        catch (error) {\n            return this.rethrowLocalError(error, signal);\n        }\n        let run: Awaited<ReturnType<Client['runs']['create']>>;\n        try {\n            run = await this.client.runs.create(threadId, assistantId, runPayload);\n        }\n        catch (error) {\n            return this.rethrowOperationError(error, signal);\n        }\n        try {\n            return {\n                id: run.run_id,\n                threadId: run.thread_id ?? threadId,\n                values: payload,\n                options: { multitaskStrategy: 'enqueue', signal },\n                createdAt: run.created_at ? new Date(run.created_at) : new Date(),\n            };\n        }\n        catch (error) {\n            return this.rethrowLocalError(error, signal);\n        }\n    }\n    async cancelRun(threadId: string, runId: string, signal: AbortSignal): Promise<void> {\n        try {\n            await this.client.runs.cancel(threadId, runId, false, 'interrupt', { signal });\n        }\n        catch (error) {\n            this.rethrowOperationError(error, signal);\n        }\n    }\n    async getHistory(threadId: string, signal: AbortSignal): Promise<ThreadState[]> {\n        try {\n            return await this.client.threads.getHistory(threadId, { signal });\n        }\n        catch (error) {\n            return this.rethrowOperationError(error, signal);\n        }\n    }\n    async updateState(threadId: string, values: Record<string, unknown>, _signal: AbortSignal, options?: {\n        asNode?: string;\n    }): Promise<void> {\n        const body: {\n            values: Record<string, unknown>;\n            asNode?: string;\n        } = { values };\n        if (options?.asNode !== undefined) {\n            body.asNode = options.asNode;\n        }\n        try {\n            await this.client.threads.updateState(threadId, body);\n        }\n        catch (error) {\n            this.rethrowOperationError(error, _signal);\n        }\n    }\n    private rethrowOperationError(error: unknown, signal: AbortSignal): never {\n        if (!this.protectErrors)\n            throw error;\n        return projectLangGraphOperationFailure(error, signal, this.reportOperationFailure);\n    }\n    private rethrowLocalError(error: unknown, signal: AbortSignal): never {\n        if (!this.protectErrors)\n            throw error;\n        return projectLangGraphOperationFailure(error, signal, undefined);\n    }\n    private async *iterateSdkRun(run: ReturnType<Client['runs']['stream']> | ReturnType<Client['runs']['joinStream']>, signal: AbortSignal): AsyncIterable<StreamEvent> {\n        let iterator: AsyncIterator<{\n            event: string;\n            data: unknown;\n            id?: unknown;\n        }>;\n        try {\n            iterator = run[Symbol.asyncIterator]();\n        }\n        catch (error) {\n            return this.rethrowOperationError(error, signal);\n        }\n        let completed = false;\n        let failed = false;\n        try {\n            while (true) {\n                let next: IteratorResult<{\n                    event: string;\n                    data: unknown;\n                    id?: unknown;\n                }>;\n                try {\n                    next = await iterator.next();\n                }\n                catch (error) {\n                    return this.rethrowOperationError(error, signal);\n                }\n                if (next.done) {\n                    completed = true;\n                    return;\n                }\n                try {\n                    yield { ...normalizeSdkEvent(next.value.event as StreamEvent['type'], next.value.data), sseId: typeof next.value.id === 'string' ? next.value.id : undefined };\n                }\n                catch (error) {\n                    return this.rethrowLocalError(error, signal);\n                }\n            }\n        }\n        catch (error) {\n            failed = true;\n            throw error;\n        }\n        finally {\n            if (!completed) {\n                try {\n                    await iterator.return?.();\n                }\n                catch (error) {\n                    if (!failed)\n                        this.rethrowOperationError(error, signal);\n                }\n            }\n        }\n    }\n}"
         }
       ]
     },
@@ -8575,7 +8582,7 @@
           "path": "libs/langgraph/src/runtime/transport.types.ts",
           "symbol": "StreamEvent",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface StreamEvent {\n    type: 'values' | `values|${string}` | 'messages' | `messages|${string}` | `messages/${string}` | `messages/${string}|${string}` | 'updates' | `updates|${string}` | 'tools' | `tools|${string}` | 'custom' | `custom|${string}` | 'error' | `error|${string}` | 'metadata' | 'checkpoints' | `checkpoints|${string}` | 'tasks' | `tasks|${string}` | 'debug' | `debug|${string}` | 'events' | `events|${string}` | 'interrupt' | 'interrupts';\n    namespace?: string[];\n    messages?: unknown[];\n    messageMetadata?: Record<string, unknown>;\n    [key: string]: unknown;\n}"
+          "signature": "export interface StreamEvent {\n    type: 'values' | `values|${string}` | 'messages' | `messages|${string}` | `messages/${string}` | `messages/${string}|${string}` | 'updates' | `updates|${string}` | 'tools' | `tools|${string}` | 'custom' | `custom|${string}` | 'error' | `error|${string}` | 'metadata' | 'checkpoints' | `checkpoints|${string}` | 'tasks' | `tasks|${string}` | 'debug' | `debug|${string}` | 'events' | `events|${string}` | 'interrupt' | 'interrupts';\n    sseId?: string;\n    namespace?: string[];\n    messages?: unknown[];\n    messageMetadata?: Record<string, unknown>;\n    [key: string]: unknown;\n}"
         }
       ]
     },
@@ -12537,7 +12544,7 @@
       "id": "source:libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
       "kind": "source",
       "path": "libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
-      "sha256": "c32e0512ede7c3b1d1ae945af4ec3e4deed0a4d7207ffc256536105bb7ecfd39"
+      "sha256": "e3bca3ff3a3959c4d61cb41ddb5cf4087b3d55ceb55bdca4afda4d815e1ed44d"
     },
     {
       "id": "source:libs/langgraph/src/lib/transport/mock-stream.transport.ts",
@@ -12561,7 +12568,7 @@
       "id": "source:libs/langgraph/src/runtime/create-session.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/create-session.ts",
-      "sha256": "13a0c740cfc2b3a33fe6d9ffad2ee1d7fbdab53c57a1f50ad1c2a8f6ede4bba4"
+      "sha256": "372f070a8ef7ab1b4498e599f2606d425584e79b7b34bd8c82dd4ae308380850"
     },
     {
       "id": "source:libs/langgraph/src/runtime/function-tools.ts",
@@ -12585,7 +12592,7 @@
       "id": "source:libs/langgraph/src/runtime/langgraph-snapshot.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/langgraph-snapshot.ts",
-      "sha256": "7ec83cc0d4387fdb8443e543521e5bf955ff31a2817e420956db378534c68c5e"
+      "sha256": "13000f55022270def22868f1ebbd49b45c8b5ab85d1f4f2be46c3a6d89192421"
     },
     {
       "id": "source:libs/langgraph/src/runtime/message-reducer.ts",
@@ -12603,7 +12610,7 @@
       "id": "source:libs/langgraph/src/runtime/ownership.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/ownership.ts",
-      "sha256": "f9a2ad835478aaf8867a02cff49a366f590c9a37439b5fbb03e40af2164785bd"
+      "sha256": "bc757f0364ed36ff67dbb2bf28da444b9ba9323a1199f6735f55dca5df1549a9"
     },
     {
       "id": "source:libs/langgraph/src/runtime/publication.ts",
@@ -12612,10 +12619,16 @@
       "sha256": "7d290721417d504313f893ee7e90154b85e9eee27d05f6cce816d592495791e5"
     },
     {
+      "id": "source:libs/langgraph/src/runtime/run-recovery.ts",
+      "kind": "source",
+      "path": "libs/langgraph/src/runtime/run-recovery.ts",
+      "sha256": "c8941f15c76d617246b7f25e2fc25d02802123a4d7c6fc429bce7ebf6e781153"
+    },
+    {
       "id": "source:libs/langgraph/src/runtime/stream-projection.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/stream-projection.ts",
-      "sha256": "73f4c77f1d510f574a3ca3450a8e5e6c1c0ed43dabd7968b9be4a62b7a3e3f27"
+      "sha256": "4271e1db01f40d5f349e6b0307d01114fb5fbe5dc9c6dae6223457d73580c4e9"
     },
     {
       "id": "source:libs/langgraph/src/runtime/testing/binding-fixture.ts",
@@ -12639,7 +12652,7 @@
       "id": "source:libs/langgraph/src/runtime/transport.types.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/transport.types.ts",
-      "sha256": "ca5d20d673bec0ca60d3af59b50b948e0dbd93b0cc26efe59d962f666a6c12cb"
+      "sha256": "0a147a2a93936592afb73b662737b94a40b9640a122efc092107bbbdeddd979b"
     },
     {
       "id": "source:libs/langgraph/src/runtime/values-projection.ts",

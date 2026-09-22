@@ -6,7 +6,7 @@ import type {
 } from '@threadplane/core';
 
 export const reviewInstructions =
-  'Click Load three times: saved history, equal refresh, then empty history. Continue with Send → Tool → Error → Hold → Stop → Pause → Stop → Resume → Resume → Send. Resume first sends both approval responses, then confirms the final action. Finish with Unmount → Dispose → Send after dispose → Resume after dispose in the owner controls below. Only three Load requests are available per server; restart the review command to reset. Reloading the page does not reset history.';
+  'Click Load three times: saved history, equal refresh, then empty history. Continue with Send → Tool → Error → Hold → Stop → Pause → Stop → Resume → Resume → Drop → Reconnect → Send. Resume first sends both approval responses, then confirms the final action. Drop loses observation of a running run; Reconnect joins that same run without another submission. Finish with Unmount → Dispose → Send after dispose → Resume after dispose → Reconnect after dispose in the owner controls below. Only three Load requests and one Drop are available per server; restart the review command to reset. Reloading the page does not reset server state.';
 
 /** Application-authored choices for this fixture, not a library targeting helper. */
 export function reviewResponse(snapshot: FixtureSnapshot): PlainValue {
@@ -27,6 +27,7 @@ export interface FixtureTools {
 
 /** Fixture-local backend extension, expressed entirely through installed core. */
 export type FixtureSnapshot = AgentSnapshot<FixtureTools> & {
+  readonly reconnect?: { readonly runId: string };
   readonly values: Readonly<Record<string, PlainValue>> | undefined;
   readonly interrupts: readonly {
     readonly id?: string;
@@ -64,6 +65,7 @@ export function display(snapshot: FixtureSnapshot) {
 export function attachOwner(
   session: AgentSession<FixtureTools> & {
     resume(value?: PlainValue): Promise<CompleteOutcome>;
+    reconnect(): Promise<CompleteOutcome>;
   },
   unmount: () => void
 ) {
@@ -102,6 +104,10 @@ export function attachOwner(
   button('Resume after dispose', async () => {
     status.textContent = 'resuming';
     status.textContent = await session.resume(true);
+  });
+  button('Reconnect after dispose', async () => {
+    status.textContent = 'reconnecting';
+    status.textContent = await session.reconnect();
   });
   const label = document.createElement('h3');
   label.textContent = 'Owner state';

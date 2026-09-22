@@ -19,6 +19,9 @@ export function createFixtureSession(
     value?: PlainValue,
     options?: { readonly signal?: AbortSignal }
   ): Promise<CompleteOutcome>;
+  reconnect(options?: {
+    readonly signal?: AbortSignal;
+  }): Promise<CompleteOutcome>;
 } {
   return createSession({
     assistantId: 'fixture-assistant',

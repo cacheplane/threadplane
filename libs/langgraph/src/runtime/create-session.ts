@@ -29,6 +29,12 @@ import {
   projectInterrupts,
 } from './interrupt-projection';
 import { ownMessage, ownValue } from './ownership';
+import {
+  advanceCursor,
+  captureRun,
+  rebaseRun,
+  type RunEvidence,
+} from './run-recovery';
 import { createSafeRequestError } from './operation-errors';
 import {
   failureProjection,
@@ -72,6 +78,9 @@ export type LangGraphSession<
   >
 > = Omit<AgentSession<TTools>, 'getSnapshot'> & {
   getSnapshot(): LangGraphSnapshot<TTools>;
+  reconnect(options?: {
+    readonly signal?: AbortSignal;
+  }): Promise<CompleteOutcome>;
   resume(
     value?: PlainValue,
     options?: { readonly signal?: AbortSignal }
@@ -94,6 +103,14 @@ type AttemptInput =
     }
   | { readonly kind: 'resume'; readonly value: PlainValue | undefined };
 
+interface PhysicalRun {
+  readonly batch: ReturnType<ReturnType<typeof createToolBuffer>['snapshot']>;
+  evidence: RunEvidence;
+  captureOpen: boolean;
+  received: boolean;
+  confirmed: boolean;
+}
+
 interface Attempt {
   readonly controller: AbortController;
   readonly generation: string;
@@ -102,6 +119,9 @@ interface Attempt {
   readonly input: AttemptInput;
   projection: StreamProjection;
   readonly calls: Map<string, ToolCall>;
+  groups: number;
+  physical?: PhysicalRun;
+  joinCursor?: string;
   handoffIds: readonly string[];
   iterator?: AsyncIterator<StreamEvent>;
   unlink?: () => void;
@@ -150,6 +170,9 @@ export function createSession(
       ? transport.getHistory.bind(transport)
       : undefined;
   const canCheck = !!getHistory;
+  const joinStream = transport.joinStream?.bind(transport);
+  const getRunStatus = transport.getRunStatus?.bind(transport);
+  const canReconnect = !!joinStream && !!getRunStatus;
   const publication = createPublication({
     status: 'idle',
     messages: [],
@@ -163,6 +186,7 @@ export function createSession(
     publication.getSnapshot().interrupts;
   let owner: Attempt | undefined;
   let recoveryAttempt: Attempt | undefined;
+  let retained: { attempt: Attempt; run: PhysicalRun } | undefined;
   let disposed = false;
   let revision = 0;
   let checkController: AbortController | undefined;
@@ -176,6 +200,9 @@ export function createSession(
       status,
       values,
       interrupts,
+      ...(retained?.run.evidence.runId
+        ? { reconnect: { runId: retained.run.evidence.runId } }
+        : {}),
       messages: state.messages,
       toolCalls: typedTools
         ? state.toolCalls.filter(
@@ -233,10 +260,23 @@ export function createSession(
   function settle(
     attempt: Attempt,
     outcome: CompleteOutcome,
-    error?: AgentError
+    error?: AgentError,
+    retainRun = false
   ) {
     if (!owns(attempt)) return;
+    const run = attempt.physical;
+    const candidate =
+      retainRun &&
+      canReconnect &&
+      run &&
+      !run.confirmed &&
+      !run.evidence.unsafe &&
+      run.evidence.runId &&
+      run.evidence.cursor
+        ? { attempt, run }
+        : undefined;
     detach(outcome);
+    retained = candidate;
     recoveryAttempt = error?.recovery === 'check' ? attempt : undefined;
     publish(error ? 'error' : 'idle', error);
     // An error can end local consumption before the HTTP body closes. SDK
@@ -248,6 +288,7 @@ export function createSession(
     if (!attempt) return;
     owner = undefined;
     recoveryAttempt = undefined;
+    retained = undefined;
     for (const call of attempt.calls.values()) {
       const current = state.toolCalls.find((entry) => entry.id === call.id);
       if (current?.status !== 'running') continue;
@@ -348,10 +389,12 @@ export function createSession(
     );
   }
   function stopExecution() {
+    const hadRetained = !!retained;
+    retained = undefined;
     const reading = detachLoad();
     const checking = invalidateCheck();
     const attempt = detach('aborted');
-    if (attempt) publish('idle');
+    if (attempt || hadRetained) publish('idle');
     checking?.abort();
     if (attempt) close(attempt, true);
     closeLoad(reading);
@@ -425,12 +468,28 @@ export function createSession(
 
   async function execute(attempt: Attempt): Promise<void> {
     if (!owns(attempt)) return;
-    const attemptCanCheck = attempt.input.kind === 'submit' && canCheck;
+    const attemptCanCheck = () =>
+      attempt.input.kind === 'submit' &&
+      canCheck &&
+      !attempt.physical?.evidence.runId &&
+      !attempt.physical?.evidence.unsafe;
     try {
-      let groups = 0;
+      let groups = attempt.groups;
       let input = attempt.input.kind === 'submit' ? attempt.input.messages : [];
       while (owns(attempt)) {
-        const batch = buffer.snapshot();
+        const joining = attempt.joinCursor;
+        const run: PhysicalRun =
+          joining && attempt.physical
+            ? attempt.physical
+            : {
+                batch: buffer.snapshot(),
+                evidence: {},
+                captureOpen: true,
+                received: false,
+                confirmed: false,
+              };
+        attempt.physical = run;
+        const batch = run.batch;
         attempt.handoffIds =
           groups > 0 ? batch.messages.map((message) => message.id) : [];
         const resuming = groups === 0 && attempt.input.kind === 'resume';
@@ -442,19 +501,56 @@ export function createSession(
             };
         // Ownership is captured before the first effect. The signal always belongs
         // to us, even when the caller also supplied an external AbortSignal.
-        attempt.iterator = transport
-          .stream(
-            assistantId,
-            threadId,
-            payload,
-            attempt.controller.signal,
-            resuming &&
-              attempt.input.kind === 'resume' &&
-              attempt.input.value !== undefined
-              ? { command: { resume: attempt.input.value } }
-              : undefined
-          )
-          [Symbol.asyncIterator]();
+        const capture = (metadata: { run_id: string; thread_id?: string }) => {
+          if (!owns(attempt) || attempt.physical !== run || !run.captureOpen)
+            return;
+          const previous = run.evidence;
+          let evidence: RunEvidence;
+          try {
+            evidence = run.received
+              ? { unsafe: true }
+              : captureRun(previous, metadata, threadId);
+          } catch {
+            evidence = { unsafe: true };
+          }
+          if (owns(attempt) && attempt.physical === run && run.captureOpen)
+            run.evidence =
+              run.evidence === previous ? evidence : { unsafe: true };
+        };
+        const events =
+          joining && joinStream && run.evidence.runId
+            ? joinStream(
+                threadId,
+                run.evidence.runId,
+                joining,
+                attempt.controller.signal
+              )
+            : transport.stream(
+                assistantId,
+                threadId,
+                payload,
+                attempt.controller.signal,
+                canReconnect ||
+                  (resuming &&
+                    attempt.input.kind === 'resume' &&
+                    attempt.input.value !== undefined)
+                  ? {
+                      ...(canReconnect
+                        ? {
+                            streamResumable: true,
+                            onDisconnect: 'continue' as const,
+                            onRunCreated: capture,
+                          }
+                        : {}),
+                      ...(resuming &&
+                      attempt.input.kind === 'resume' &&
+                      attempt.input.value !== undefined
+                        ? { command: { resume: attempt.input.value } }
+                        : {}),
+                    }
+                  : undefined
+              );
+        attempt.iterator = events[Symbol.asyncIterator]();
         if (!owns(attempt)) {
           close(attempt);
           return;
@@ -463,6 +559,9 @@ export function createSession(
           const next = await attempt.iterator.next();
           if (!owns(attempt)) return;
           if (next.done) break;
+          // Run creation precedes stream frames. A later callback cannot safely
+          // attach an identity to already consumed data, including reentrant getters.
+          run.received = true;
           const event = next.value;
           const previousState = state;
           const previousValues = values;
@@ -473,10 +572,17 @@ export function createSession(
               event['data'] ?? event,
               protectedTransport,
               true,
-              attemptCanCheck
+              attemptCanCheck()
             );
             settle(attempt, 'error', error);
             return;
+          }
+          const previousEvidence = run.evidence;
+          const cursor = advanceCursor(previousEvidence, event, joining);
+          if (!owns(attempt)) return;
+          if (cursor.replay) {
+            run.evidence = cursor.evidence;
+            throw new Error('The joined stream repeated its requested cursor.');
           }
           const projected = projectStream(
             previousState,
@@ -491,6 +597,10 @@ export function createSession(
           // All three projections may invoke transport-owned getters. Commit no
           // candidate if projection failed or a getter changed the owner.
           if (!owns(attempt)) return;
+          run.evidence =
+            run.evidence === previousEvidence
+              ? cursor.evidence
+              : { unsafe: true };
           state = projected.state;
           values = projectedValues;
           interrupts = projectedInterrupts;
@@ -504,14 +614,55 @@ export function createSession(
           if (!owns(attempt)) return;
         }
         if (!owns(attempt)) return;
+        run.captureOpen = false;
         let outcome: CompleteOutcome = attempt.projection.paused
           ? 'paused'
           : attempt.projection.terminal
           ? 'success'
           : 'interrupted';
+        if (run.evidence.runId && !run.evidence.unsafe && getRunStatus) {
+          let status: Awaited<ReturnType<typeof getRunStatus>> | undefined;
+          try {
+            status = await getRunStatus(
+              threadId,
+              run.evidence.runId,
+              attempt.controller.signal
+            );
+          } catch {
+            /* Exact-run inspection failed; history cannot replace it. */
+          }
+          if (!owns(attempt)) return;
+          if (
+            (status === 'success' || status === 'interrupted') &&
+            attempt.projection.paused
+          ) {
+            outcome = 'paused';
+            run.confirmed = true;
+          } else if (status === 'success' && attempt.projection.terminal) {
+            outcome = 'success';
+            run.confirmed = true;
+          } else if (
+            status === 'error' ||
+            status === 'timeout' ||
+            status === 'interrupted'
+          ) {
+            run.confirmed = true;
+            settle(
+              attempt,
+              status === 'interrupted' ? 'interrupted' : 'error',
+              {
+                kind: status === 'interrupted' ? 'interrupted' : 'server',
+                message: 'The LangGraph run did not complete successfully.',
+                retryable: false,
+                recovery: 'none',
+              }
+            );
+            return;
+          } else outcome = 'interrupted';
+        } else if (run.evidence.unsafe) outcome = 'interrupted';
         if (
           outcome === 'interrupted' &&
-          attemptCanCheck &&
+          attemptCanCheck() &&
           transport.getHistory
         ) {
           try {
@@ -547,12 +698,16 @@ export function createSession(
           if (!owns(attempt)) return;
           if (followUp) {
             groups += 1;
+            attempt.groups = groups;
+            attempt.joinCursor = undefined;
+            attempt.physical = undefined;
             close(attempt, false, false);
             if (!owns(attempt)) return;
             attempt.closed = false;
             attempt.iterator = undefined;
             attempt.projection = {
               generation: attempt.generation,
+              messageIdPrefix: `${attempt.generation}-step-${groups}`,
               userId: attempt.projection.userId,
               baselineIds: state.messages.map((message) => message.id),
               sawAssistant: false,
@@ -590,23 +745,26 @@ export function createSession(
           attempt,
           outcome,
           outcome === 'interrupted'
-            ? interruptionError(attemptCanCheck)
-            : undefined
+            ? interruptionError(attemptCanCheck())
+            : undefined,
+          outcome === 'interrupted'
         );
         return;
       }
     } catch (raw) {
       if (!owns(attempt)) return;
+      if (attempt.physical) attempt.physical.captureOpen = false;
       const error = failureProjection(
         raw,
         protectedTransport,
         false,
-        attemptCanCheck
+        attemptCanCheck()
       );
       settle(
         attempt,
         error.kind === 'interrupted' ? 'interrupted' : 'error',
-        error
+        error,
+        true
       );
     }
   }
@@ -640,6 +798,7 @@ export function createSession(
       result,
       resolve,
       calls: new Map(),
+      groups: 0,
       handoffIds: [],
       input,
       projection: {
@@ -657,6 +816,7 @@ export function createSession(
     };
     owner = created;
     recoveryAttempt = undefined;
+    retained = undefined;
 
     if (input.kind === 'submit')
       state = reduceMessages(state, {
@@ -736,6 +896,7 @@ export function createSession(
           owner ||
           loading ||
           recoveryAttempt ||
+          retained ||
           pendingToolSettlements ||
           pendingToolWrites ||
           buffer.snapshot().messages.length
@@ -753,6 +914,87 @@ export function createSession(
         return;
       admit();
       attempt = beginAttempt({ kind: 'resume', value: captured }, external);
+    });
+    return dispatch(beginning, () => attempt);
+  }
+
+  function reconnect(options?: {
+    readonly signal?: AbortSignal;
+  }): Promise<CompleteOutcome> {
+    let attempt: Attempt | undefined;
+    const beginning = publication.command(() => {
+      const capturedRevision = revision;
+      const external = options?.signal;
+      if (disposed || external?.aborted) return;
+      const candidate = retained;
+      if (
+        owner ||
+        loading ||
+        checkController ||
+        pendingToolSettlements ||
+        pendingToolWrites ||
+        !candidate ||
+        !canReconnect
+      )
+        throw new Error(
+          'Reconnect requires an idle retained run with no unsettled work.'
+        );
+      if (
+        buffer
+          .snapshot()
+          .messages.some(
+            (message) => !candidate.run.batch.messages.includes(message)
+          )
+      )
+        throw new Error('Reconnect cannot hand off unrelated staged results.');
+      const generation = crypto.randomUUID();
+      const projected = rebaseRun(
+        state,
+        candidate.attempt.projection,
+        generation
+      );
+      if (
+        disposed ||
+        external?.aborted ||
+        revision !== capturedRevision ||
+        retained !== candidate
+      )
+        return;
+      const checking = invalidateCheck();
+      let resolve!: Attempt['resolve'];
+      const result = new Promise<CompleteOutcome>((done) => {
+        resolve = done;
+      });
+      const created: Attempt = {
+        controller: new AbortController(),
+        generation,
+        result,
+        resolve,
+        input: candidate.attempt.input,
+        calls: new Map(),
+        groups: candidate.attempt.groups,
+        handoffIds: candidate.attempt.handoffIds,
+        projection: projected.projection,
+        physical: { ...candidate.run, captureOpen: false },
+        joinCursor: candidate.run.evidence.cursor,
+      };
+      attempt = created;
+      retained = undefined;
+      recoveryAttempt = undefined;
+      state = projected.state;
+      owner = created;
+      if (external) {
+        const abort = () => {
+          void publication.command(() => {
+            if (owns(created)) stopExecution();
+          });
+        };
+        created.unlink = () => external.removeEventListener('abort', abort);
+        external.addEventListener('abort', abort, { once: true });
+        if (external.aborted) abort();
+      }
+      if (owns(created)) publish('running');
+      checking?.abort();
     });
     return dispatch(beginning, () => attempt);
   }
@@ -806,6 +1048,7 @@ export function createSession(
       if (
         owner ||
         recoveryAttempt ||
+        retained ||
         pendingToolSettlements ||
         pendingToolWrites ||
         buffer.snapshot().messages.length
@@ -915,6 +1158,7 @@ export function createSession(
       disposed ? () => undefined : publication.subscribe(notify),
     submit,
     resume,
+    reconnect,
     stop: () =>
       publication.command(() => {
         if (disposed) return;
@@ -925,6 +1169,7 @@ export function createSession(
       publication.command(() => {
         if (disposed) return;
         disposed = true;
+        retained = undefined;
         const reading = detachLoad();
         const checking = invalidateCheck();
         const attempt = detach('aborted');

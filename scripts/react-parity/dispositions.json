@@ -11481,6 +11481,18 @@
       "note": "Retains concrete backend snapshot extensions and publishes values/messages as one immutable aggregate with no-op identity. No public shared store or whole-task completion claim."
     },
     {
+      "id": "source:libs/langgraph/src/runtime/run-recovery.ts",
+      "taskIds": [
+        "T04",
+        "T09",
+        "T10"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private staged LangGraph runtime subset; fixture-only and not a neutral public LangGraph root or tarball.",
+      "note": "Pure owned-run identity/cursor admission and delivery rebasing for explicit reconnect. Arbitrary joins, persisted recovery and broader adapter migration remain open."
+    },
+    {
       "id": "source:libs/langgraph/src/runtime/stream-projection.ts",
       "taskIds": [
         "T09"

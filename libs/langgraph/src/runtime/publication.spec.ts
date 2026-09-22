@@ -31,6 +31,26 @@ function snapshot(content = 'one'): LangGraphSnapshot {
 }
 
 describe('private snapshot publication', () => {
+  it('owns and shares the reconnect descriptor, including removing it from an otherwise equal aggregate', () => {
+    const descriptor = { runId: 'run' };
+    const publication = createPublication({
+      ...snapshot(),
+      reconnect: descriptor,
+    });
+    const before = publication.getSnapshot();
+    descriptor.runId = 'mutated';
+    expect(before.reconnect).toEqual({ runId: 'run' });
+    expect(Object.isFrozen(before.reconnect)).toBe(true);
+    let calls = 0;
+    publication.subscribe(() => calls++);
+    publication.publish({ ...snapshot(), reconnect: { runId: 'run' } });
+    expect(publication.getSnapshot()).toBe(before);
+    expect(calls).toBe(0);
+    publication.publish(snapshot());
+    expect(publication.getSnapshot().reconnect).toBeUndefined();
+    expect(calls).toBe(1);
+  });
+
   it('owns interrupt payloads and suppresses equal aggregate publications', () => {
     const payload = { nested: [1] };
     const publication = createPublication({
