@@ -28,6 +28,39 @@ afterEach(async () => {
 });
 
 describe('useAgent borrowed session', () => {
+  it('observes explicit history loads without owning reads, refreshes, or teardown', async () => {
+    const f = fixture();
+    let renders = 0;
+    function History() {
+      const snapshot = useAgent(f.session);
+      renders++;
+      return <output>{snapshot.messages.map((message) => message.content).join('\n')}</output>;
+    }
+    const view = render(<History />, { reactStrictMode: true });
+    expect(f.session.load).toBeTypeOf('function');
+    expect(f.history.reads).toBe(0);
+    await act(async () => { await f.session.load(); });
+    expect(view.getByRole('status').textContent).toBe('Saved question\nSaved answer');
+    const snapshot = f.session.getSnapshot();
+    const beforeRefresh = renders;
+    await act(async () => { await f.session.load(); });
+    expect(f.session.getSnapshot()).toBe(snapshot);
+    expect(renders).toBe(beforeRefresh);
+    expect(f.history.reads).toBe(2);
+    view.unmount();
+    const reattached = render(<History />, { reactStrictMode: true });
+    expect(reattached.getByRole('status').textContent).toBe('Saved question\nSaved answer');
+    expect(f.history.reads).toBe(2);
+    reattached.unmount();
+    f.history.value = [];
+    await f.session.load();
+    expect(f.session.getSnapshot().messages).toEqual([]);
+    expect(f.history.reads).toBe(3);
+    expect(f.handlerCalls).toBe(0);
+    expect(f.streams).toHaveLength(0);
+    expect(f.session.submitCalls + f.session.stopCalls + f.session.disposeCalls).toBe(0);
+  });
+
   it('renders streamed text, tool results, errors and stop outcomes through native controls', async () => {
     const f = fixture();
     let run: ReturnType<typeof f.session.submit> | undefined;

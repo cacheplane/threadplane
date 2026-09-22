@@ -83,6 +83,41 @@ afterEach(async () => {
 });
 
 describe('observeAgent borrowed session', () => {
+  it('observes explicit history loads without owning reads, refreshes, or teardown', async () => {
+    const f = fixture();
+    TestBed.configureTestingModule({
+      imports: [Chat],
+      providers: [{ provide: SESSION, useValue: f.session }],
+    });
+    const view = TestBed.createComponent(Chat);
+    view.detectChanges();
+    expect(f.session.load).toBeTypeOf('function');
+    expect(f.history.reads).toBe(0);
+    let notifications = 0;
+    const release = f.session.subscribe(() => { notifications++; });
+    await f.session.load();
+    view.detectChanges();
+    expect(view.nativeElement.querySelector('[data-testid="messages"]').textContent).toBe('Saved question\nSaved answer');
+    const snapshot = view.componentInstance.snapshot();
+    await f.session.load();
+    expect(view.componentInstance.snapshot()).toBe(snapshot);
+    expect(notifications).toBe(1);
+    expect(f.history.reads).toBe(2);
+    release();
+    view.destroy();
+    const reattached = observe(f.session);
+    expect(reattached.snapshot()).toBe(snapshot);
+    expect(f.history.reads).toBe(2);
+    reattached.destroy();
+    f.history.value = [];
+    await f.session.load();
+    expect(f.session.getSnapshot().messages).toEqual([]);
+    expect(f.history.reads).toBe(3);
+    expect(f.handlerCalls).toBe(0);
+    expect(f.streams).toHaveLength(0);
+    expect(f.session.submitCalls + f.session.stopCalls + f.session.disposeCalls).toBe(0);
+  });
+
   it('renders streamed text, tool results, errors and stop outcomes through native controls', async () => {
     const f = fixture();
     TestBed.configureTestingModule({

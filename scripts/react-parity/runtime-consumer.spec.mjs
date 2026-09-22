@@ -75,3 +75,37 @@ test('unexpected fixture HTTP operations are recorded instead of silently served
     assert.equal(server.requests.length, 0);
   } finally { await server.close(); }
 });
+
+test('history uses the exact SDK body and counts reads separately from runs', async () => {
+  const server = await runtime.serveRuntimeConsumer(tmpdir());
+  try {
+    const read = () => fetch(`${server.url}/api/threads/fixture-thread/history`, { method: 'POST', body: JSON.stringify({ limit: 10 }) });
+    const first = await read();
+    assert.equal(first.status, 200);
+    const saved = await first.json();
+    assert.deepEqual(saved[0].values.messages.at(-1).content, [{ type: 'text', text: 'Saved final answer' }]);
+    assert.deepEqual(await (await read()).json(), saved);
+    assert.deepEqual(await (await read()).json(), []);
+    assert.deepEqual(server.historyRequests, [{ limit: 10 }, { limit: 10 }, { limit: 10 }]);
+    assert.equal(server.requests.length, 0);
+    assert.deepEqual(server.errors, []);
+  } finally { await server.close(); }
+});
+
+for (const [label, route, method, body] of [
+  ['wrong thread', '/api/threads/other/history', 'POST', { limit: 10 }],
+  ['wrong method', '/api/threads/fixture-thread/history', 'GET', undefined],
+  ['missing limit', '/api/threads/fixture-thread/history', 'POST', {}],
+  ['extra fields', '/api/threads/fixture-thread/history', 'POST', { limit: 10, before: 'unexpected' }],
+]) {
+  test(`history rejects ${label} without recording a valid read or run`, async () => {
+    const server = await runtime.serveRuntimeConsumer(tmpdir());
+    try {
+      const response = await fetch(`${server.url}${route}`, { method, ...(body ? { body: JSON.stringify(body) } : {}) });
+      assert.equal(response.status, 500);
+      assert.deepEqual(server.historyRequests, []);
+      assert.deepEqual(server.requests, []);
+      assert.equal(server.errors.length, 1);
+    } finally { await server.close(); }
+  });
+}

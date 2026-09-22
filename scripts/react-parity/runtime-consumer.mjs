@@ -25,6 +25,21 @@ const catalog = [{ name: 'weather', description: 'Current weather' }, { name: 'c
 const toolCall = { type: 'ai', id: 'assistant-tool', content: '', tool_calls: [{ id: 'call-weather', name: 'weather', args: { city: 'Paris' }, type: 'tool_call' }] };
 const sse = (event, data) => `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
 const textTrace = readFileSync(new URL('../../fixtures/react-parity/traces/langgraph-text-state.sse', import.meta.url), 'utf8');
+const savedHistory = [{
+  values: { messages: [
+    { id: 'saved-human', type: 'human', content: 'Saved question' },
+    { id: 'saved-tools', type: 'ai', content: 'Saved tool request', tool_calls: [
+      { id: 'saved-weather', name: 'weather', args: { city: 'Paris' }, type: 'tool_call' },
+      { id: 'saved-count', name: 'count', args: { values: ['saved'] }, type: 'tool_call' },
+    ] },
+    { id: 'saved-result', type: 'tool', tool_call_id: 'saved-weather', content: 'Raw historical weather result' },
+    { id: 'saved-final', type: 'ai', content: [{ type: 'text', text: 'Saved final answer' }] },
+  ] },
+  next: [], tasks: [], metadata: {},
+  checkpoint: { thread_id: 'fixture-thread', checkpoint_ns: '', checkpoint_id: 'saved-checkpoint', checkpoint_map: {} },
+  parent_checkpoint: null,
+  created_at: '2026-09-21T00:00:00Z',
+}];
 
 /** A strict wire fixture: malformed/extra operations fail the browser run. */
 export function runtimeResponse(body) {
@@ -110,9 +125,10 @@ export async function prepareRuntimeConsumer(root, consumer, kind) {
   } finally { rmSync(temporary, { recursive: true, force: true }); }
 }
 
-/** Bounded fixture server: built files and exactly one deterministic run route. */
+/** Bounded fixture server: built files and deterministic history/run routes. */
 export async function serveRuntimeConsumer(directory) {
   const requests = [];
+  const historyRequests = [];
   const errors = [];
   const held = new Set();
   let notifyHeld;
@@ -124,10 +140,17 @@ export async function serveRuntimeConsumer(directory) {
       const pathname = new URL(request.url, 'http://fixture').pathname;
       if (pathname.startsWith('/api/')) {
         assert.equal(request.method, 'POST');
-        assert.equal(pathname, '/api/threads/fixture-thread/runs/stream', 'only expected run endpoint');
+        assert.ok(['/api/threads/fixture-thread/history', '/api/threads/fixture-thread/runs/stream'].includes(pathname), 'only expected history/run endpoint');
         const chunks = [];
         for await (const chunk of request) chunks.push(chunk);
         const body = JSON.parse(Buffer.concat(chunks).toString());
+        if (pathname === '/api/threads/fixture-thread/history') {
+          assert.deepEqual(body, { limit: 10 }, 'exact SDK history body');
+          assert.ok(historyRequests.length < 3, 'only three explicit history reads');
+          historyRequests.push(body);
+          response.writeHead(200, { 'content-type': 'application/json' });
+          return response.end(JSON.stringify(historyRequests.length < 3 ? savedHistory : []));
+        }
         requests.push(body);
         const trace = runtimeResponse(body);
         response.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache' });
@@ -155,7 +178,7 @@ export async function serveRuntimeConsumer(directory) {
   server.listen(0, '127.0.0.1');
   await once(server, 'listening');
   return {
-    url: `http://127.0.0.1:${server.address().port}`, requests, errors, holdStarted, holdAborted,
+    url: `http://127.0.0.1:${server.address().port}`, requests, historyRequests, errors, holdStarted, holdAborted,
     async close() {
       for (const response of held) response.destroy();
       const closed = once(server, 'close');
@@ -192,7 +215,42 @@ export async function runRuntimeScenarios(directory, kind) {
     await expect(page.getByTestId('handler-calls')).toHaveText('0');
     await expect(page.getByTestId('submissions')).toHaveText('0');
     assert.equal(server.requests.length, 0, 'mount/observation performs no I/O');
+    assert.equal(server.historyRequests.length, 0, 'mount/observation performs no history reads');
     completed.push('inert mount');
+
+    await page.getByRole('button', { name: 'Load', exact: true }).click();
+    await expect(page.getByTestId('loads-finished')).toHaveText('1');
+    await expect(page.getByTestId('load-error')).toHaveText('');
+    await expect(page.getByTestId('text')).toHaveText('Saved tool request\nSaved final answer');
+    await expect(page.getByTestId('transcript')).toContainText('Saved question');
+    await expect(page.getByTestId('transcript')).toContainText('Raw historical weather result');
+    await expect(page.getByTestId('delivery')).toHaveText('complete:success');
+    await expect(page.getByTestId('status')).toHaveText('idle');
+    assert.deepEqual(JSON.parse(await page.getByTestId('tool').innerText()), [{ id: 'saved-count', name: 'count', args: { values: ['saved'] }, status: 'pending' }]);
+    assert.equal(server.historyRequests.length, 1);
+    assert.equal(server.requests.length, 0);
+    await expect(page.getByTestId('handler-calls')).toHaveText('0');
+    completed.push('explicit history load');
+
+    await page.getByRole('button', { name: 'Load', exact: true }).click();
+    await expect(page.getByTestId('loads-finished')).toHaveText('2');
+    await expect(page.getByTestId('load-error')).toHaveText('');
+    await expect(page.getByTestId('text')).toHaveText('Saved tool request\nSaved final answer');
+    await expect(page.getByTestId('handler-calls')).toHaveText('0');
+    assert.equal(server.historyRequests.length, 2);
+    assert.equal(server.requests.length, 0);
+    completed.push('equal history refresh');
+
+    await page.getByRole('button', { name: 'Load', exact: true }).click();
+    await expect(page.getByTestId('loads-finished')).toHaveText('3');
+    await expect(page.getByTestId('load-error')).toHaveText('');
+    await expect(page.getByTestId('text')).toHaveText('');
+    await expect(page.getByTestId('transcript')).toHaveText('');
+    await expect(page.getByTestId('tool')).toHaveText('[]');
+    await expect(page.getByTestId('handler-calls')).toHaveText('0');
+    assert.equal(server.historyRequests.length, 3);
+    assert.equal(server.requests.length, 0);
+    completed.push('empty history replacement');
 
     await page.getByRole('button', { name: 'Send', exact: true }).click();
     await expect(page.getByTestId('text')).toHaveText('Hello 🌍.');
@@ -246,11 +304,12 @@ export async function runRuntimeScenarios(directory, kind) {
     await page.getByRole('button', { name: 'Send after dispose', exact: true }).click();
     await expect(page.getByTestId('owner')).toHaveText('aborted');
     assert.equal(server.requests.length, 6, 'cleanup/disposal/post-disposal submit creates no extra runs');
+    assert.deepEqual(server.historyRequests, [{ limit: 10 }, { limit: 10 }, { limit: 10 }], 'only explicit loads read history');
     completed.push('unmount and explicit disposal');
     assert.deepEqual(server.errors.map(String), []);
     assert.deepEqual(pageErrors, []);
     assert.deepEqual(unexpected, []);
-    console.log(`${kind}: ${completed.length} browser scenarios passed (${completed.join('; ')}); 6 exact requests, one tool handler, no page errors/unexpected requests.`);
+    console.log(`${kind}: ${completed.length} browser scenarios passed (${completed.join('; ')}); 3 exact history reads, 6 exact run requests, one tool handler, no page errors/unexpected requests.`);
     return completed;
   } finally {
     try { await context?.close(); }

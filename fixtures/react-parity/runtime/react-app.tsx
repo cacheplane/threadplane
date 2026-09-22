@@ -1,4 +1,4 @@
-import { StrictMode } from 'react';
+import { StrictMode, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { useAgent } from '@threadplane/react';
 import { createFixtureSession } from './runtime-entry.js';
@@ -12,8 +12,18 @@ const submit = (input: string) => { submissions += 1; return session.submit(inpu
 
 function App() {
   const snapshot = useAgent(session);
+  const [loadsFinished, setLoadsFinished] = useState(0);
+  const [loadError, setLoadError] = useState('');
+  const load = async () => {
+    if (!session.load) return;
+    setLoadError('');
+    try { await session.load(); }
+    catch { setLoadError('History unavailable'); }
+    finally { setLoadsFinished((count) => count + 1); }
+  };
   const view = display(snapshot);
   return <main>
+    <button disabled={!session.load} onClick={() => void load()}>Load</button>
     <button onClick={() => void submit('Send')}>Send</button>
     <button onClick={() => void submit('Tool')}>Tool</button>
     <button onClick={() => void submit('Error')}>Error</button>
@@ -21,6 +31,9 @@ function App() {
     <button onClick={() => void session.stop()}>Stop</button>
     <output aria-label="Status" data-testid="status">{snapshot.status}</output>
     <output aria-label="Text" data-testid="text">{view.text}</output>
+    <output aria-label="Transcript" data-testid="transcript">{view.transcript}</output>
+    <output aria-label="Loads finished" data-testid="loads-finished">{loadsFinished}</output>
+    <output aria-label="Load error" data-testid="load-error">{loadError}</output>
     <output aria-label="Error" data-testid="error">{view.error}</output>
     <output aria-label="Tool result" data-testid="tool">{view.tool}</output>
     <output aria-label="Delivery" data-testid="delivery">{view.delivery}</output>

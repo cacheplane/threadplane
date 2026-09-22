@@ -8,7 +8,9 @@ export function createFixtureSession(
   endpoint: string,
   threadId: string,
   onHandler: () => void = () => undefined
-): AgentSession<FixtureTools> {
+): AgentSession<FixtureTools> & {
+  load?: (options?: { signal?: AbortSignal }) => Promise<void>;
+} {
   return createSession({
     assistantId: 'fixture-assistant',
     threadId,
@@ -24,7 +26,10 @@ export function createFixtureSession(
       },
       count: {
         description: 'Count values',
-        handler: ({ values }: { values: readonly string[] }) => values.length,
+        handler: ({ values }: { values: readonly string[] }) => {
+          onHandler();
+          return values.length;
+        },
       },
     },
   });

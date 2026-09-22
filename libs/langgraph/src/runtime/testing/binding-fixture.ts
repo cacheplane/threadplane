@@ -1,4 +1,5 @@
 import type { AgentSession, AgentSnapshot } from '@threadplane/core';
+import type { ThreadState } from '@langchain/langgraph-sdk';
 import { createSession } from '../create-session';
 import type { AgentTransport, StreamEvent } from '../transport.types';
 import { controlledTransport } from './controlled-transport';
@@ -18,6 +19,19 @@ export function bindingFixture() {
   const toolResult = deferred<{ temperature: number }>();
   let handlerCalls = 0;
   let handlerSignal: AbortSignal | undefined;
+  const history: { reads: number; value: ThreadState[] } = {
+    reads: 0,
+    value: [{
+      values: { messages: [
+        { id: 'saved-user', type: 'human', content: 'Saved question' },
+        { id: 'saved-answer', type: 'ai', content: 'Saved answer' },
+      ] },
+      next: [], tasks: [], metadata: {},
+      checkpoint: { thread_id: 'binding-thread', checkpoint_ns: '', checkpoint_id: 'saved', checkpoint_map: {} },
+      parent_checkpoint: null,
+      created_at: '2026-09-21T00:00:00Z',
+    }],
+  };
   const stream: AgentTransport['stream'] = (_a, _t, _p, signal) => {
     const controlled = controlledTransport<StreamEvent>({ signal });
     streams.push(controlled);
@@ -27,7 +41,7 @@ export function bindingFixture() {
   const runtime = createSession({
     assistantId: 'binding-agent',
     threadId: 'binding-thread',
-    transport: { stream },
+    transport: { stream, getHistory: async () => { history.reads++; return history.value; } },
     tools: {
       weather: {
         description: 'Weather',
@@ -75,6 +89,11 @@ export function bindingFixture() {
       this.stopCalls++;
       return runtime.stop();
     }
+    load(options?: { signal?: AbortSignal }) {
+      void this.subscriptions;
+      if (!runtime.load) throw new Error('Fixture requires history loading');
+      return runtime.load(options);
+    }
     dispose() {
       this.disposeCalls++;
       return runtime.dispose();
@@ -84,6 +103,7 @@ export function bindingFixture() {
   const session = new BorrowedSession();
   return {
     session,
+    history,
     streams,
     started: (index = 0) => starts[index].promise,
     entered: entered.promise,
