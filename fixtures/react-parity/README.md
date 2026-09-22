@@ -17,15 +17,20 @@ tools never execute. Private snapshots now include broad readonly application
 `values`, published atomically with messages. Full root state, history and conclusive
 correlated recovery replace the map; unchanged nested data retains identity, and
 token-only updates reuse it without traversal. `undefined` is unobserved state and
-`{}` an observed empty map. Child/update/custom/live-interrupt envelopes are ignored.
+`{}` an observed empty map. Child/update/custom/live-interrupt envelopes do not
+replace application values. A separate readonly interrupt batch now joins the same
+aggregate: root controls accumulate full payloads, and checkpoints/history replace
+them. An empty `__interrupt__` array represents a static breakpoint; explicit empty standalone
+batches clear interrupts. Observation offers no resume or target-selection API.
 Core contracts are unchanged; native structural signatures preserve the concrete
 snapshot extension and tool inference, with the same receiver and lifetime behavior.
 Angular and React borrow the app-owned session and observe it through their native
-lifecycles. The installed consumers run ten scenarios each: inert mount, explicit
+lifecycles. The installed consumers run eleven scenarios each: inert mount, explicit
 history load, equal refresh, empty replacement, text, weather tool
-roundtrip, protected error, held partial text and Stop, reuse after Stop, and
+roundtrip, protected error, held partial text and Stop, full pause batch retained
+after Stop, reuse after Stop, and
 unmount followed by explicit disposal and an aborted post-disposal submission.
-Five live component submissions plus one tool continuation produce six exact wire
+Six live component submissions plus one tool continuation produce seven exact wire
 requests, with one handler invocation and zero page errors or unexpected requests.
 The three explicit loads make three history reads and no run requests or handler
 calls. This is partial T09/T10 coverage: thread switching, pagination, branching,
@@ -40,12 +45,13 @@ exercise that subscription replay. See [runtime/README.md](./runtime/README.md) 
 reproduction and [runtime/evidence.json](./runtime/evidence.json) for fresh commands,
 counts, source provenance, cleanup assertions and limitations.
 
-The current inventory has **1,455 records**: the historical 1,438 plus twelve private
+The current inventory has **1,456 records**: the historical 1,438 plus thirteen private
 runtime production sources, three testing helpers, a runtime Vitest config and its
 type-test config asset. Public export occurrences remain 550 with 514 distinct local
 definitions. The original runtime extraction changed fourteen existing export
 records' declaration/import text; history loading and values observation each add
-two private sources and change no legacy public export records. There are no legacy export-name additions
+two private sources; interrupt observation adds one. These increments change no
+legacy public export records. There are no legacy export-name additions
 or removals. Existing task assignments
 are preserved; touched extraction/configuration subsets are in progress, not whole
 T03–T16 completion. Core and native package contracts remain outside this legacy
@@ -169,7 +175,7 @@ type-checks the tarballs outside workspace aliases with `skipLibCheck: false`.
 Its core-only consumer checks all three core exports and rejects extra dependencies.
 The separate Angular check packs the one Angular APF entry and proves CLI
 compilation/linking with `skipLibCheck: false`. Both frameworks now run installed
-production browser apps with the ten shared scenarios. Inferred native contract
+production browser apps with the eleven shared scenarios. Inferred native contract
 probes reject invalid tool names/arguments/results and deep mutations. The private
 runtime's narrow declaration is compiler-generated against installed core declarations,
 never hand-written; the staged SDK bundle is fixture-only. Both inspect consumer
@@ -225,7 +231,7 @@ burst streams and repeated agent/thread disposal.
 
 The foundation branch was `codex/react-support-baseline`; the runtime branch is
 `codex/shared-runtime-quality`, based on `bdcc22ed31aa94f420077e046e88e1481088d453`.
-The current values increment is `codex/langgraph-state-values`; its verified
+The current interrupt increment is `codex/langgraph-interrupt-observation`; its verified
 base and working-source fingerprint are recorded in `runtime/evidence.json`.
 The local maintenance
 branch `codex/angular-maintenance-v0.2` points to released tag `v0.2.0`
@@ -243,7 +249,7 @@ research documents. It is a scope map, not evidence that the tasks are complete.
 T01/T02 describe the foundation increment. The current G1 proof is deliberately limited
 to shared LangGraph text streaming and fixed function-tool execution with borrowed native
 Angular and React bindings: the runtime owns execution while each binding observes
-it. Explicit history loading and application-values observation cover further
+it. Explicit history loading, application-values and interrupt observation cover further
 subsets of T09/T10.
 Renderer reuse and SSR are deferred gates, alongside the broader T01–T39 map.
 This bounded runtime proof does not establish complete migration parity.

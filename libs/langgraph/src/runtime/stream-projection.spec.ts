@@ -32,6 +32,19 @@ function start(messages = [assistant('step', ['c1'])]) {
 }
 
 describe('authoritative tool ownership', () => {
+  it('leaves pause classification to the aggregate interrupt projector without reading control getters', () => {
+    const before = start();
+    const next = projectStream(before.state, before.projection, {
+      type: 'custom',
+      data: {
+        get __interrupt__() {
+          throw new Error('not a control event');
+        },
+      },
+    });
+    expect(next.state).toBe(before.state);
+    expect(next.projection).toBe(before.projection);
+  });
   it.each([{ ids: [] }, { ids: ['c2'] }])(
     'reconciles one assistant call list to $ids',
     ({ ids }) => {

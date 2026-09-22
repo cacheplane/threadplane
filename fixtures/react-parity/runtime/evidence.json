@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "status": "verified-local",
-  "increment": "Readonly application-state values observation (partial T09/T10)",
+  "increment": "Readonly interrupt batch observation (partial T09/T10)",
   "observedOn": "2026-09-21",
-  "recordedAt": "2026-09-22T03:19:34.895Z",
+  "recordedAt": "2026-09-22T04:36:01.807Z",
   "source": {
-    "branch": "codex/langgraph-state-values",
-    "baseCommit": "192f94e9b57b77e1858e2e4337f0d34bcd6a9c64",
-    "verificationHead": "192f94e9b57b77e1858e2e4337f0d34bcd6a9c64",
-    "workingTree": "Verified uncommitted values-projection, native signature, transport normalization, fixture/test and metadata changes on the merged history-loading HEAD. The fingerprint identifies actual selected working-tree bytes; no future commit or future CI result is claimed.",
+    "branch": "codex/langgraph-interrupt-observation",
+    "baseCommit": "db867f83be6cb6f9735de41f6aadddf64a0d9937",
+    "verificationHead": "db867f83be6cb6f9735de41f6aadddf64a0d9937",
+    "workingTree": "Verified uncommitted interrupt projection/session integration, fixtures, tests and metadata on the merged values-observation HEAD. The fingerprint identifies the actual selected working-tree bytes, not a future commit. I04 changed documentation/inventory/evidence only after the final I03 code checks.",
     "fingerprint": {
       "algorithm": "SHA-256 of a UTF-8 manifest: one line per selected file, lowercase SHA-256(file bytes), two ASCII spaces, repo-relative path, LF; unique paths sorted by JavaScript default string ordering.",
       "pathspecs": [
@@ -38,9 +38,9 @@
       "excludedPaths": [
         "fixtures/react-parity/runtime/evidence.json"
       ],
-      "fileCount": 775,
-      "sha256": "0ec1ffeca45fa046535ccd6f95c3754735ab5de0f8a355d23afe41f0dbe1d9ab",
-      "selection": "git ls-files -z --cached --others --exclude-standard -- <pathspecs>; keep existing files and remove excludedPaths. Includes tracked and non-ignored untracked files. Evidence itself is excluded to avoid self-reference; eight local research/planning reports are outside all selected paths.",
+      "fileCount": 780,
+      "sha256": "431e03e9ee0e38c14a267b205962f8bb300dbb01767c0892139f1b4d3047800e",
+      "selection": "git ls-files -z --cached --others --exclude-standard -- <pathspecs>; keep existing files and remove excludedPaths. Includes tracked and non-ignored untracked files. Evidence itself is excluded to avoid self-reference; nine local research/planning reports are outside all selected paths.",
       "reproduce": "node --input-type=module <<'JS'\nimport {createHash} from 'node:crypto';\nimport {execFileSync} from 'node:child_process';\nimport {readFileSync,existsSync} from 'node:fs';\nconst {fingerprint:f}=JSON.parse(readFileSync('fixtures/react-parity/runtime/evidence.json')).source;\nconst sha=value=>createHash('sha256').update(value).digest('hex');\nconst paths=[...new Set(execFileSync('git',['ls-files','-z','--cached','--others','--exclude-standard','--',...f.pathspecs],{encoding:'utf8'}).split('\\0').filter(Boolean))].filter(path=>!f.excludedPaths.includes(path)&&existsSync(path)).sort();\nconst actual=sha(paths.map(path=>sha(readFileSync(path))+'  '+path+'\\n').join(''));\nif(paths.length!==f.fileCount||actual!==f.sha256) throw new Error('Source fingerprint mismatch');\nconsole.log(paths.length+' files: '+actual);\nJS"
     },
     "sourceState": {
@@ -48,39 +48,36 @@
         "fixtures/react-parity/README.md",
         "fixtures/react-parity/runtime/README.md",
         "fixtures/react-parity/runtime/angular-app.ts",
-        "fixtures/react-parity/runtime/installed-types.ts",
         "fixtures/react-parity/runtime/react-app.tsx",
-        "fixtures/react-parity/runtime/runtime-entry.ts",
         "fixtures/react-parity/runtime/scenarios.ts",
-        "libs/angular/README.md",
         "libs/angular/src/observe-agent.spec.ts",
-        "libs/angular/src/observe-agent.ts",
         "libs/angular/src/observe-agent.type-test.ts",
-        "libs/langgraph/src/lib/transport/fetch-stream.transport.spec.ts",
-        "libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
         "libs/langgraph/src/runtime/create-session.ts",
+        "libs/langgraph/src/runtime/history-projection.spec.ts",
+        "libs/langgraph/src/runtime/history-projection.ts",
+        "libs/langgraph/src/runtime/langgraph-snapshot.ts",
         "libs/langgraph/src/runtime/ownership.ts",
         "libs/langgraph/src/runtime/publication.spec.ts",
-        "libs/langgraph/src/runtime/publication.ts",
+        "libs/langgraph/src/runtime/session-lifecycle.spec.ts",
+        "libs/langgraph/src/runtime/stream-projection.spec.ts",
         "libs/langgraph/src/runtime/stream-projection.ts",
         "libs/langgraph/src/runtime/testing/binding-fixture.ts",
         "libs/langgraph/src/runtime/transport.integration.spec.ts",
-        "libs/react/README.md",
+        "libs/langgraph/src/runtime/values.spec.ts",
+        "libs/langgraph/src/runtime/wire-message.ts",
         "libs/react/src/use-agent.spec.tsx",
-        "libs/react/src/use-agent.ts",
         "libs/react/src/use-agent.type-test.ts",
         "scripts/react-parity/baseline.json",
         "scripts/react-parity/dispositions.json",
         "scripts/react-parity/runtime-consumer.mjs",
-        "scripts/react-parity/runtime-consumer.spec.mjs",
-        "scripts/react-parity/verify-angular-package.mjs"
+        "scripts/react-parity/runtime-consumer.spec.mjs"
       ],
       "untracked": [
-        "libs/langgraph/src/runtime/langgraph-snapshot.ts",
-        "libs/langgraph/src/runtime/values-projection.spec.ts",
-        "libs/langgraph/src/runtime/values-projection.ts",
-        "libs/langgraph/src/runtime/values.spec.ts",
-        "libs/langgraph/src/runtime/values.type-test.ts"
+        "libs/langgraph/src/runtime/interrupt-projection.spec.ts",
+        "libs/langgraph/src/runtime/interrupt-projection.ts",
+        "libs/langgraph/src/runtime/interrupt-projection.type-test.ts",
+        "libs/langgraph/src/runtime/interrupts.spec.ts",
+        "libs/langgraph/src/runtime/interrupts.type-test.ts"
       ]
     }
   },
@@ -115,14 +112,28 @@
     {
       "command": "NX_DAEMON=false node --test scripts/ci-scope.spec.mjs scripts/ci-workflow.spec.mjs scripts/react-parity/*.spec.mjs fixtures/react-parity/traces.spec.mjs",
       "exitCode": 0,
-      "testsPassed": 413,
+      "verificationPhase": "I04 fresh",
+      "testsPassed": 414,
       "testsFailed": 0,
-      "log": "/tmp/v04-final-focused.log",
-      "logSha256": "6415b5511886a8f22b7681fd61e0d0a125372f0a12ffaae04282c968b9bf7bed"
+      "log": "/tmp/i04-final-focused.log",
+      "logSha256": "11fadd56f031e36e2944058eb2d629e9ac773cf588d79424da892093abdc3ed5"
     },
     {
-      "command": "NX_DAEMON=false npx nx run-many -t lint test type-tests build --projects=core,content,angular,react --parallel=2 --skip-nx-cache",
+      "command": "NX_DAEMON=false npx nx run-many -t runtime-quality,runtime-type-tests,lint -p langgraph --skip-nx-cache",
       "exitCode": 0,
+      "verificationPhase": "I03 final unchanged-code result reused",
+      "testFiles": 15,
+      "testsPassed": 359,
+      "typeTestsPassed": true,
+      "lintErrors": 0,
+      "existingLintWarnings": 68,
+      "log": "/tmp/i03-runtime-green.log",
+      "logSha256": "cc20283ffd737eeba07fa9ceb9bccb9eb601503ba9592d343dd7108b93ae6312"
+    },
+    {
+      "command": "NX_DAEMON=false npx nx run-many -t test,type-tests,lint,build -p core,content,angular,react --skip-nx-cache",
+      "exitCode": 0,
+      "verificationPhase": "I03 final unchanged-code result reused",
       "projects": 4,
       "targetConfigurations": 16,
       "behaviorTests": {
@@ -131,109 +142,86 @@
         "react": 7
       },
       "content": "Empty scaffold with passWithNoTests; no content behavior count claimed.",
-      "log": "/tmp/v04-final-foundations.log",
-      "logSha256": "01c0cf761887e34b3411d98372c328d0f1fda388ce6f51b0708a8ffb58ac4230"
+      "typeProbeProvenance": "This final foundation run includes the strengthened native inferred-payload probes; it supersedes the earlier native-only run.",
+      "log": "/tmp/i03-foundations.log",
+      "logSha256": "5a8e68f36a6544272ea242b556cec01b47834eed8e7e86dd7026e2ef3beb0dd5"
     },
     {
-      "command": "NX_DAEMON=false npx nx run langgraph:runtime-quality --skip-nx-cache",
+      "command": "NX_DAEMON=false npx nx run-many -t build --projects=chat,langgraph,ag-ui,render,a2ui,telemetry --configuration=production --skip-nx-cache",
       "exitCode": 0,
-      "testFiles": 13,
-      "testsPassed": 270,
-      "log": "/tmp/v04-final-runtime.log",
-      "logSha256": "c447e885bbe74aa3a2c8da9bd46e7db99b6e8953cb9cbcc40d16a9e1d92857db"
-    },
-    {
-      "command": "NX_DAEMON=false npx nx run langgraph:runtime-type-tests --skip-nx-cache",
-      "exitCode": 0,
-      "log": "/tmp/v04-final-runtime-types.log",
-      "logSha256": "6e5c64695f3aad8fd1b474649ebb26c81204d54e45d589424d65e2b0843c921d"
-    },
-    {
-      "command": "NX_DAEMON=false npx nx lint langgraph --skip-nx-cache",
-      "exitCode": 0,
-      "errors": 0,
-      "existingWarnings": 68,
-      "log": "/tmp/v04-final-langgraph-lint.log",
-      "logSha256": "3d2546b889adf06c0dedeb1966a4e9614458ce84bf40678192f46a7df21d4af4"
-    },
-    {
-      "command": "NX_DAEMON=false npx nx test langgraph --testFile=fetch-stream.transport.spec.ts --testFile=fetch-stream.transport.integration.spec.ts --testFile=create-langgraph-client.spec.ts --testFile=client-options.spec.ts --skip-nx-cache",
-      "exitCode": 0,
-      "reason": "Fresh selected legacy regression run after the transport source changed. Nx success is recorded; no undisplayed test count is inferred.",
-      "log": "/tmp/v04-final-legacy.log",
-      "logSha256": "d13fb1fe2f58b24cacb8d09fde4a4b08fcd8f5735cff62dbe1ee840b72414e4f"
-    },
-    {
-      "command": "NX_DAEMON=false npx nx run-many -t build --projects=chat,langgraph,ag-ui,render,a2ui,telemetry --configuration=production --parallel=2 --skip-nx-cache",
-      "exitCode": 0,
+      "verificationPhase": "I03 final unchanged-code result reused",
       "productionProjects": 6,
-      "log": "/tmp/v04-final-production-builds.log",
-      "logSha256": "6ab27d4499cf297148dde8b8699232b230ca86d085ca4d26b9730fe874617d7b"
+      "log": "/tmp/i03-legacy-builds.log",
+      "logSha256": "384a43124ce92b6f105142a4c2c0a4edaa293872f43783453ec37d8ef7cf6271"
     },
     {
       "command": "node scripts/react-parity/verify-boundaries.mjs",
       "exitCode": 0,
-      "log": "/tmp/v04-final-source-boundaries.log",
+      "verificationPhase": "I03 final unchanged-code result reused",
+      "log": "/tmp/i03-source-boundaries.log",
       "logSha256": "995db896b38cf7de5ca9db6590dba47e082d26abdf69bab04b92eee484696063"
     },
     {
       "command": "node scripts/react-parity/verify-boundaries.mjs --built",
       "exitCode": 0,
-      "order": "Executed after successful foundation and six legacy production builds.",
-      "log": "/tmp/v04-final-built-boundaries.log",
+      "verificationPhase": "I03 final unchanged-code result reused",
+      "order": "After successful foundation and six legacy production builds.",
+      "log": "/tmp/i03-built-boundaries.log",
       "logSha256": "c983a97d17ff7ced7aa9113afa031f464103f566f1bc94eec8160558ec2553f7"
     },
     {
       "command": "node scripts/react-parity/verify-packages.mjs",
       "exitCode": 0,
+      "verificationPhase": "I03 final unchanged-code result reused",
       "privatePlainTarballs": 3,
       "esmTypeExports": 9,
       "isolatedCoreExports": 3,
-      "browserScenariosPassed": 10,
-      "log": "/tmp/v04-final-packages.log",
-      "logSha256": "1e6e80a4a9c4568bfe6639d61d168ee7ffa9b08e7a435f57c4615c0e231c5075"
+      "browserScenariosPassed": 11,
+      "log": "/tmp/i03-react-browser-green.log",
+      "logSha256": "575f95d4bba603551c85a5910e07ce9a9e51dc41cb85225718cf60030e7db18e"
     },
     {
       "command": "node scripts/react-parity/verify-angular-package.mjs",
       "exitCode": 0,
+      "verificationPhase": "I03 final unchanged-code result reused",
       "angularAPFExports": 1,
-      "browserScenariosPassed": 10,
-      "order": "Successful retry after production builds completed; earlier artifact-availability failure is recorded separately.",
-      "log": "/tmp/v04-final-angular-package.log",
-      "logSha256": "ec02d28e5233ca0ba1276047d5dd83ed72048a6e0c1e3d2e3eebf995607ba07f"
+      "browserScenariosPassed": 11,
+      "log": "/tmp/i03-angular-browser-green.log",
+      "logSha256": "0c123f648eb1b3fb2a59447021945f01c0eecaeec20a99b9bb784b6fb88669a8"
     },
     {
       "command": "node scripts/react-parity/inventory.mjs --write-baseline; node scripts/react-parity/inventory.mjs --check",
       "exitCode": 0,
-      "inventoryRows": 1455,
-      "reviewedChange": "Two private production sources added; six existing source hashes changed. No legacy public export drift or prior disposition reassignment.",
-      "log": "/tmp/v04-final-inventory.log",
-      "logSha256": "757a321eb090a7dc7ef343f29202a3ad540d3bd70f386161e11271f06abefb0f"
+      "verificationPhase": "I04 fresh",
+      "inventoryRows": 1456,
+      "reviewedChange": "One private production projector added; seven existing private source hashes changed. No legacy public export drift or prior disposition reassignment.",
+      "log": "/tmp/i04-final-inventory.log",
+      "logSha256": "1f2afedb4b61388b4e9880a65639cb508bf28c9af2491e96c10d0b9719f4da3b"
     },
     {
       "command": "git diff --check",
       "exitCode": 0,
-      "log": "/tmp/v04-final-diff-check.log",
+      "verificationPhase": "I04 fresh",
+      "log": "/tmp/i04-final-diff-check.log",
       "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     }
   ],
   "scope": {
-    "privateSnapshot": "LangGraphSnapshot<TTools> extends the core snapshot with readonly values: Readonly<Record<string, PlainValue>> | undefined. Undefined means no current application-values map; an empty object is an observed empty root.",
-    "projection": "Root full values/checkpoints, explicit latest history and conclusive correlated recovery replace the map, including deletions. Only messages and __interrupt__ are excluded from application values. Missing authoritative history clears values to undefined.",
-    "excludedEvents": "Child namespaces, updates, custom events and live interrupt envelopes do not replace root application values.",
-    "publication": "Messages and values are owned and published as one immutable aggregate. Equal state retains root identity; changed state shares unchanged nested branches. Token-only updates reuse owned values without traversing them.",
-    "normalization": "Legacy SDK normalization protects protocol type/namespace from raw fields. messageMetadata selects delta text semantics only for actual message events; a same-named application field remains observable.",
-    "nativeInference": "Structural getSnapshot/subscribe parameters retain concrete backend snapshot extensions, typed tool results, method receivers and borrowed lifetimes. Omit<AgentSession, getSnapshot> replaces the getter instead of intersecting incompatible overloads.",
-    "history": "Explicit fixed-thread load remains optional; pending/failing/stale reads, active work admission, historical tool non-execution and execution deduplication retain the previously verified behavior.",
-    "boundary": "No core public API changes, application-schema inference, state writes, new I/O, SSR or public factory/root cutover. Private runtime and fixture extensions remain unpublished."
+    "privateSnapshot": "LangGraphSnapshot adds readonly interrupts: readonly LangGraphInterrupt[], where LangGraphInterrupt is DeepReadonly<SDK Interrupt> with owned plain payload data. Metadata and payloads are observations, not schema inference or resume/targeting instructions.",
+    "liveProjection": "Root values/updates with own array-valued __interrupt__ controls accumulate dynamic batches; first string ID wins and anonymous entries remain distinct. Empty __interrupt__ replaces the batch with { when: breakpoint }; the next dynamic batch replaces that sentinel. Explicit empty standalone interrupts clears the batch.",
+    "authoritativeProjection": "Root checkpoints/latest history replace interrupts. A valid values control takes precedence; otherwise all top-level task interrupt arrays contribute. Child namespaces, nested task state and next-only metadata do not infer a root pause.",
+    "publication": "Interrupts, values and messages are one owned immutable aggregate. History pause delivery uses the same candidate batch; equal reads retain identity and values-only changes share unchanged interrupts. Getter/stale-candidate guards prevent partial publication.",
+    "lifecycle": "Accepted new submissions clear prior interrupts. Pre-aborted/disposed submissions are inert; stop, disposal and failures retain the last observed batch. Recovery correlation, tool handoff and retained next-user input remain covered.",
+    "nativeAndInstalledTypes": "Observer implementations are unchanged. Native concrete inference and actual compiler-emitted installed factory declarations retain readonly metadata, namespace arrays, broad plain payloads and tool inference; fixture snapshot structure uses installed core only.",
+    "unchanged": "Existing values observation, transport normalization and borrowed native lifetime behavior are unchanged. Observation adds no implicit I/O, resume, target selection, state writes, application schema, public factory/root cutover or SSR."
   },
   "acceptanceMatrix": {
-    "status": "Both production-built installed browser verifiers passed, including values assertions within the existing ten scenarios.",
+    "status": "Both final I03 production-built installed browser verifiers passed against unchanged code; evidence reused during metadata-only I04.",
     "frameworks": [
       "Angular installed APF production app",
       "React installed Vite production app"
     ],
-    "scenariosPerFramework": 10,
+    "scenariosPerFramework": 11,
     "scenarios": [
       "inert mount",
       "explicit history load",
@@ -243,7 +231,8 @@
       "weather tool roundtrip",
       "protected visible error",
       "held partial DOM update and Stop/native response close",
-      "reuse after Stop",
+      "full interrupt batch and retained pause after Stop",
+      "reuse after Stop with next accepted submission clearing interrupts",
       "unmount/app-owned disposal/post-disposal submit"
     ],
     "observedPerFramework": {
@@ -261,9 +250,9 @@
       ],
       "historyRunRequests": 0,
       "historyHandlerCalls": 0,
-      "componentSubmissions": 5,
+      "componentSubmissions": 6,
       "toolContinuations": 1,
-      "runRequests": 6,
+      "runRequests": 7,
       "toolHandlerCalls": 1,
       "postDisposalSubmissions": 1,
       "postDisposalRequests": 0,
@@ -319,7 +308,135 @@
         },
         "reuseAfterStop": {
           "stage": "complete"
+        },
+        "pause": {
+          "stage": "approval"
         }
+      },
+      "loadedDelivery": "complete:paused",
+      "interrupts": {
+        "inertMount": [],
+        "historyLoad": [
+          {
+            "id": "saved-approval",
+            "value": {
+              "question": "Approve saved request?",
+              "choices": [
+                "yes",
+                "no"
+              ]
+            },
+            "namespace": [
+              "review",
+              "task-1"
+            ],
+            "when": "during",
+            "resumable": true,
+            "ns": [
+              "legacy-review"
+            ]
+          },
+          {
+            "id": "saved-confirmation",
+            "value": 0,
+            "namespace": [],
+            "when": "during",
+            "resumable": false,
+            "ns": []
+          }
+        ],
+        "equalRefresh": [
+          {
+            "id": "saved-approval",
+            "value": {
+              "question": "Approve saved request?",
+              "choices": [
+                "yes",
+                "no"
+              ]
+            },
+            "namespace": [
+              "review",
+              "task-1"
+            ],
+            "when": "during",
+            "resumable": true,
+            "ns": [
+              "legacy-review"
+            ]
+          },
+          {
+            "id": "saved-confirmation",
+            "value": 0,
+            "namespace": [],
+            "when": "during",
+            "resumable": false,
+            "ns": []
+          }
+        ],
+        "emptyHistoryReplacement": [],
+        "pause": [
+          {
+            "id": "live-approval",
+            "value": {
+              "question": "Approve action?",
+              "choices": [
+                "yes",
+                "no"
+              ]
+            },
+            "namespace": [
+              "review",
+              "live"
+            ],
+            "when": "during",
+            "resumable": true,
+            "ns": [
+              "legacy-live"
+            ]
+          },
+          {
+            "id": "live-confirmation",
+            "value": false,
+            "namespace": [],
+            "when": "during",
+            "resumable": false,
+            "ns": []
+          }
+        ],
+        "afterStopAtCompletedPause": [
+          {
+            "id": "live-approval",
+            "value": {
+              "question": "Approve action?",
+              "choices": [
+                "yes",
+                "no"
+              ]
+            },
+            "namespace": [
+              "review",
+              "live"
+            ],
+            "when": "during",
+            "resumable": true,
+            "ns": [
+              "legacy-live"
+            ]
+          },
+          {
+            "id": "live-confirmation",
+            "value": false,
+            "namespace": [],
+            "when": "during",
+            "resumable": false,
+            "ns": []
+          }
+        ],
+        "nextAcceptedSend": [],
+        "pauseDelivery": "complete:paused",
+        "pauseRunRequestCount": 6,
+        "stopAfterPauseAdditionalRequests": 0
       }
     },
     "notificationAssertions": {
@@ -333,7 +450,7 @@
     },
     "nativeHistoryObservation": {
       "readsPerFrameworkTest": 4,
-      "coverage": "Initial load, equal refresh, values-only replacement with unchanged messages, then empty history. Installed browser scenarios still use three reads.",
+      "coverage": "Two task payloads with paused history delivery; equal refresh preserves snapshot/batch identity; values-only refresh shares the batch; empty history clears it.",
       "lifetime": "No mount reads; observer teardown does not own session execution/disposal."
     },
     "valuesUnitEvidence": {
@@ -343,39 +460,50 @@
         "libs/langgraph/src/runtime/publication.spec.ts"
       ],
       "coverage": "Root/checkpoint/history/recovery replacement and deletion; nested sharing/no-op identity; atomic publication; stale candidate guards; immutable caller isolation; unobserved versus empty; ignored child/control envelopes; no token-time values traversal. These are behavioral assertions, not performance measurements."
+    },
+    "interruptUnitEvidence": {
+      "sources": [
+        "libs/langgraph/src/runtime/interrupt-projection.spec.ts",
+        "libs/langgraph/src/runtime/interrupts.spec.ts",
+        "libs/langgraph/src/runtime/history-projection.spec.ts",
+        "libs/langgraph/src/runtime/transport.integration.spec.ts"
+      ],
+      "coverage": "Root control/standalone event projection, batch ID rules, static breakpoints, checkpoint/task precedence, plain-data ownership, atomic getter guards, retention/clearing, correlated recovery, tool handoff and next-user input. No assertion count is a performance measurement."
     }
   },
   "cleanup": {
-    "assertions": "Unmount removes component controls; app-owned disposal resolves; post-disposal submit resolves aborted without extra I/O. Only three explicit browser loads read history. Held SSE waits for native response close.",
+    "assertions": "Unmount removes component controls; app disposal resolves; post-disposal submit resolves aborted without extra I/O. Three explicit browser loads read history. Held SSE awaits native response close; Stop after a completed pause retains both payloads and adds no request.",
     "resources": "Browser contexts, browsers, held responses, server connections and temporary install/bundle artifacts close in finally, including assertion failures.",
-    "processes": "Both final verifier processes exited 0 after awaited cleanup.",
+    "processes": "Both final I03 verifier processes exited 0 after awaited cleanup; I04 independently reconfirmed their temporary directories are absent.",
     "temporaryDirectories": [
       {
-        "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-consumer-x4TyEp",
+        "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-consumer-acRfSz",
         "existsAfterExit": false
       },
       {
-        "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-angular-consumer-zl68Zs",
+        "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-angular-consumer-owMIZi",
         "existsAfterExit": false
       }
     ],
-    "runtimeBundleDirectoriesRemaining": []
+    "runtimeBundleDirectoriesRemaining": [],
+    "capturedI03Cleanup": {
+      "log": "/tmp/i03-cleanup.log",
+      "logSha256": "02f4832739d9d112a2f5c35e29a0f83d895f24a852e308d19ce1e35b6b61d195",
+      "newArtifacts": []
+    }
   },
   "inventory": {
     "historicalFoundationRows": 1438,
-    "previousHistoryRows": 1453,
-    "currentRows": 1455,
-    "newValuesSourceFiles": [
-      "libs/langgraph/src/runtime/langgraph-snapshot.ts",
-      "libs/langgraph/src/runtime/values-projection.ts"
-    ],
-    "sourceFiles": 477,
+    "previousValuesRows": 1455,
+    "currentRows": 1456,
+    "newInterruptSourceFile": "libs/langgraph/src/runtime/interrupt-projection.ts",
+    "sourceFiles": 478,
     "legacyExports": 550,
     "uniqueLocalDefinitions": 514,
     "legacyExportRecordChangesThisIncrement": 0,
-    "existingAssignmentsPreserved": 1453,
-    "dispositions": "All prior IDs, task assignments, treatments, reasons and statuses preserved. Six scoped notes updated; two internal in-progress rows added under T09/T10. No whole-task completion claim.",
-    "scope": "Existing 16-library inventory only; core/native contracts are separately checked. Historical baseline-evidence.json untouched; prior runtime/history evidence retained in Git history."
+    "existingAssignmentsPreserved": 1455,
+    "dispositions": "All prior IDs, task assignments, treatments, reasons and statuses preserved. Seven scoped notes updated; one internal in-progress row added under T09/T10. No whole-task completion claim.",
+    "scope": "Existing 16-library inventory only; core/native contracts separately checked. Historical baseline-evidence.json untouched; prior runtime evidence retained in Git history."
   },
   "runtimePolicy": {
     "ownedSDKDefaultMaxRetries": 0,
@@ -394,8 +522,8 @@
       "fileBytes": 51240541,
       "lockLocationsIncludingOptionalPlatforms": 74,
       "productionAppModulesTransformed": 34,
-      "productionAppJavaScriptRawReported": "414.48 kB",
-      "productionAppJavaScriptGzipReported": "124.92 kB",
+      "productionAppJavaScriptRawReported": "416.16 kB",
+      "productionAppJavaScriptGzipReported": "125.45 kB",
       "developmentRootImportProbe": {
         "inputs": 5,
         "bytes": 47778,
@@ -408,24 +536,24 @@
       "lockLocationsIncludingOptionalPlatforms": 516,
       "bundleInputs": 257,
       "contentParserInputs": 0,
-      "productionAppRawReported": "315.92 kB",
-      "productionAppEstimatedTransferReported": "83.75 kB",
+      "productionAppRawReported": "317.59 kB",
+      "productionAppEstimatedTransferReported": "84.10 kB",
       "includes": "Angular CLI/compiler/build tooling"
     },
     "limits": "Installed files, optional lock locations, development probes and production apps are separate diagnostics. App bundles include the staged SDK. These are not performance benchmarks or comparable framework overhead measurements."
   },
   "ci": {
     "definition": "Existing library lane covers runtime, source/built boundaries and packed browser checks; it installs Chromium with --with-deps before browser verification.",
-    "result": "No new values PR CI result is claimed by this local record. Prior merged history/runtime CI does not verify these uncommitted changes."
+    "result": "No new interrupt-observation PR CI result is claimed by this local record. Prior merged values/history/runtime CI does not verify these uncommitted changes."
   },
   "limits": [
-    "Read-only broad application-data observation only; no application-schema inference, state writes, thread switching, pagination, branching or interrupt resume.",
+    "Read-only interrupt observation only: no resume, target selection, implicit I/O, state writes, application-schema inference, thread switching, pagination or branching.",
     "Private staged runtime/factory and snapshot extension remain fixture-only; no neutral LangGraph tarball or public root cutover.",
-    "The narrow fixture declaration is compiler-generated against installed core; Omit replaces its getter while preserving the concrete snapshot.",
-    "Native signatures retain backend fields and tool inference; lifecycle ownership remains with the app.",
+    "Compiler-emitted installed factory declarations are checked against installed core; metadata and payload types remain readonly and broad, not inferred application shapes.",
+    "No core public API or observer implementation changes in this increment; session lifetime remains app-owned.",
     "HTTP/SSE proves incremental DOM updates and native abort, not compositor timing.",
     "Production React StrictMode does not replay development effects; native unit tests separately exercise replay.",
-    "No full parity, renderer reuse, SSR, calibrated latency, retained-heap or performance claim.",
+    "No full T09/T10/product parity, renderer reuse, SSR, calibrated latency, retained-heap or performance claim.",
     "CI Node22/Linux and Angular20/22 consumer lanes were not run locally.",
     "Test-only imports still add Nx legacy build dependencies although production package graphs remain isolated.",
     "No production backend, release, deployment or publication was exercised."
@@ -435,16 +563,9 @@
     "Nx reports NO_COLOR/FORCE_COLOR overlap; legacy builds report stale Browserslist data, ng-packagr export-condition overrides and keepLifecycleScripts notices.",
     "Vite ignores use client directives in the client-only production consumer bundle; no SSR claim is made."
   ],
-  "verificationRetry": {
-    "command": "node scripts/react-parity/verify-angular-package.mjs",
-    "initialExitCode": 1,
-    "log": "/tmp/v04-angular-before-build-complete.log",
-    "logSha256": "62a271c8ae1aba31afa623380080b550015b46f4ea18c421f2ac343441efe5f3",
-    "cause": "Verifier was initially scheduled concurrently with legacy production builds, which rebuild core; it saw ENOENT for dist/libs/core/package.json. This was local verification ordering, not a source failure.",
-    "resolution": "Waited for successful build completion, confirmed the core manifest existed, then reran the unchanged verifier successfully. No production/test changes were made."
-  },
   "documentation": {
     "generatorsRun": [],
-    "reason": "The private runtime and native package READMEs are outside the registered legacy API/narrative/agent-context generation inputs. Legacy export records are unchanged; only directly affected README guidance was updated."
-  }
+    "reason": "Registered API roots are legacy public entries, narrative generation uses website content, and agent context uses its templates. Private runtime and fixture README guidance are outside those inputs; no generator or native README update was needed."
+  },
+  "verificationProvenance": "I03 implementer confirmed exact commands and successful exits. Logs were inspected and hashed here. Runtime code was unchanged after its combined check; the later foundation run checked final strengthened native type probes, and final packed browsers compiled the strengthened installed probes. No relevant code changed after those final builds/scans/browser runs. I04 changed only fixture README guidance, inventory metadata and this evidence; it reran the full focused suite, inventory and diff checks. No older V04 results or retry metadata are used."
 }

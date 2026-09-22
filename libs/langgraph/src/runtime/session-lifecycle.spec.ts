@@ -70,7 +70,13 @@ describe('neutral session ownership', () => {
     const unsubscribe = a.session.subscribe(first);
     a.session.subscribe(second);
     expect(a.session.getSnapshot()).toBe(initial);
-    expect(initial).toEqual({ status: 'idle', messages: [], toolCalls: [] });
+    expect(initial).toEqual({
+      status: 'idle',
+      messages: [],
+      toolCalls: [],
+      values: undefined,
+      interrupts: [],
+    });
     expect(first).not.toHaveBeenCalled();
     expect(a.stream).not.toHaveBeenCalled();
     const run = a.session.submit('Hello');

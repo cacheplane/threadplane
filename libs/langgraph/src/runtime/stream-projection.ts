@@ -12,9 +12,9 @@ import {
 } from './message-reducer';
 import type { StreamEvent } from './transport.types';
 import { ownMessage, ownToolCall } from './ownership';
-import { hasPause, record, roleOf, textContent } from './wire-message';
+import { record, roleOf, textContent } from './wire-message';
 
-export { hasPause, record } from './wire-message';
+export { record } from './wire-message';
 
 type CanonicalMessage = Extract<MessageEvent, { type: 'message' }>;
 
@@ -49,9 +49,6 @@ export function projectStream(
   const messageEvent = type === 'messages' || type.startsWith('messages/');
   const terminal =
     type === 'values' || type === 'messages/complete' || type === 'checkpoints';
-  if (type === 'interrupt' || type === 'interrupts' || hasPause(values)) {
-    projection = { ...projection, paused: true };
-  }
   if (!terminal && !messageEvent) return { state, projection };
   const mode = messageEvent && event.messageMetadata ? 'delta' : 'snapshot';
   const incoming = Array.isArray(messages)

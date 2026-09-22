@@ -70,6 +70,130 @@ describe('neutral real SDK transport', () => {
     vi.unstubAllGlobals();
   });
 
+  it('recognizes an actual SDK empty interrupt control as a messageless breakpoint', async () => {
+    const request = vi.fn<typeof fetch>(async (url) => {
+      expect(String(url)).toBe('https://runtime.example/threads/t/runs/stream');
+      return fragmentedResponse(
+        'event: values\ndata: {"__interrupt__":[]}\n\n'
+      );
+    });
+    vi.stubGlobal('fetch', request);
+    const session = createSession({
+      assistantId: 'a',
+      threadId: 't',
+      apiUrl: 'https://runtime.example',
+    });
+    try {
+      expect(await session.submit('Pause')).toBe('paused');
+      expect(session.getSnapshot().interrupts).toEqual([
+        { when: 'breakpoint' },
+      ]);
+      expect(session.getSnapshot().status).toBe('idle');
+      expect(session.getSnapshot().messages).toHaveLength(1);
+      expect(request).toHaveBeenCalledTimes(1);
+    } finally {
+      await session.dispose();
+    }
+  });
+
+  it('observes real SDK values and updates interrupt batches and history tasks without extra I/O', async () => {
+    const item = {
+      id: 'a',
+      value: { prompt: ['Approve'] },
+      namespace: ['root'],
+      when: 'during',
+      resumable: false,
+      ns: ['legacy'],
+    };
+    const history = [
+      {
+        values: {
+          count: 2,
+          messages: [{ type: 'ai', id: 'saved', content: 'Saved' }],
+        },
+        next: ['approval'],
+        tasks: [
+          {
+            id: 'task-a',
+            name: 'a',
+            interrupts: [{ id: 'history-a', value: false }],
+          },
+          {
+            id: 'task-b',
+            name: 'b',
+            interrupts: [{ id: 'history-b', value: 0 }],
+          },
+        ],
+        metadata: null,
+        created_at: null,
+        checkpoint: {
+          thread_id: 't',
+          checkpoint_id: 'c',
+          checkpoint_ns: '',
+          checkpoint_map: {},
+        },
+        parent_checkpoint: null,
+      },
+    ];
+    const trace = [
+      [
+        'values',
+        { type: 'domain', namespace: ['application'], __interrupt__: [item] },
+      ],
+      [
+        'updates',
+        {
+          __interrupt__: [
+            { id: 'a', value: 'duplicate' },
+            { id: 'b', value: 0 },
+          ],
+        },
+      ],
+      ['values|child', { namespace: [], __interrupt__: [{ id: 'ignored' }] }],
+    ]
+      .map(
+        ([event, data]) => `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`
+      )
+      .join('');
+    const request = vi.fn<typeof fetch>(async (url, init) => {
+      expect(init?.method).toBe('POST');
+      if (String(url).endsWith('/history')) {
+        expect(JSON.parse(String(init?.body))).toEqual({ limit: 10 });
+        return new Response(JSON.stringify(history), {
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      expect(String(url)).toBe('https://runtime.example/threads/t/runs/stream');
+      return fragmentedResponse(trace);
+    });
+    vi.stubGlobal('fetch', request);
+    const session = createSession({
+      assistantId: 'a',
+      threadId: 't',
+      apiUrl: 'https://runtime.example',
+    });
+    try {
+      expect(await session.submit('Go')).toBe('paused');
+      expect(session.getSnapshot().interrupts).toEqual([
+        item,
+        { id: 'b', value: 0 },
+      ]);
+      expect(request).toHaveBeenCalledTimes(1);
+      await session.load?.();
+      expect(session.getSnapshot().interrupts).toEqual([
+        { id: 'history-a', value: false },
+        { id: 'history-b', value: 0 },
+      ]);
+      expect(session.getSnapshot().values).toEqual({ count: 2 });
+      expect(session.getSnapshot().messages[0].delivery).toMatchObject({
+        outcome: 'paused',
+      });
+      expect(request).toHaveBeenCalledTimes(2);
+    } finally {
+      await session.dispose();
+    }
+  });
+
   it('keeps SDK routing authoritative while exposing colliding application keys', async () => {
     const root = {
       type: 'domain',

@@ -17,6 +17,24 @@ import {
 } from '../../langgraph/src/runtime/testing/binding-fixture';
 
 const fixtures: ReturnType<typeof bindingFixture>[] = [];
+const savedInterrupts = [
+  {
+    id: 'saved-approval',
+    value: { question: 'Approve saved request?', choices: ['yes', 'no'] },
+    namespace: ['review', 'task-1'],
+    when: 'during',
+    resumable: true,
+    ns: ['legacy-review'],
+  },
+  {
+    id: 'saved-confirmation',
+    value: 0,
+    namespace: [],
+    when: 'during',
+    resumable: false,
+    ns: [],
+  },
+];
 function fixture() {
   const value = bindingFixture();
   fixtures.push(value);
@@ -42,6 +60,12 @@ describe('useAgent borrowed session', () => {
           <output data-testid="values">
             {JSON.stringify(snapshot.values) ?? 'unobserved'}
           </output>
+          <output data-testid="interrupts">
+            {JSON.stringify(snapshot.interrupts)}
+          </output>
+          <output data-testid="history-delivery">
+            {JSON.stringify(snapshot.messages.at(-1)?.delivery)}
+          </output>
         </>
       );
     }
@@ -49,6 +73,7 @@ describe('useAgent borrowed session', () => {
     expect(f.session.load).toBeTypeOf('function');
     expect(f.history.reads).toBe(0);
     expect(view.getByTestId('values').textContent).toBe('unobserved');
+    expect(view.getByTestId('interrupts').textContent).toBe('[]');
     await act(async () => {
       await f.session.load();
     });
@@ -60,6 +85,12 @@ describe('useAgent borrowed session', () => {
       stable: { items: ['saved'] },
     });
     const snapshot = f.session.getSnapshot();
+    expect(
+      JSON.parse(view.getByTestId('interrupts').textContent ?? '')
+    ).toEqual(savedInterrupts);
+    expect(view.getByTestId('history-delivery').textContent).toContain(
+      'paused'
+    );
     const beforeRefresh = renders;
     await act(async () => {
       await f.session.load();
@@ -73,6 +104,7 @@ describe('useAgent borrowed session', () => {
       await f.session.load();
     });
     const refreshed = f.session.getSnapshot();
+    expect(refreshed.interrupts).toBe(snapshot.interrupts);
     expect(refreshed.values?.['stable']).toBe(snapshot.values?.['stable']);
     expect(JSON.parse(view.getByTestId('values').textContent ?? '')).toEqual({
       counter: 2,
@@ -90,6 +122,7 @@ describe('useAgent borrowed session', () => {
     await f.session.load();
     expect(f.session.getSnapshot().messages).toEqual([]);
     expect(f.session.getSnapshot().values).toBeUndefined();
+    expect(f.session.getSnapshot().interrupts).toEqual([]);
     expect(f.history.reads).toBe(4);
     expect(f.handlerCalls).toBe(0);
     expect(f.streams).toHaveLength(0);

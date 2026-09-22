@@ -49,10 +49,42 @@ function checkpoint(
 const initial = () => initialMessageState();
 
 describe('pure authoritative history projection', () => {
+  it('uses an explicit empty values control as breakpoint evidence for the latest assistant', () => {
+    const messages = [human('old-u'), ai('old-a'), human('new-u'), ai('new-a')];
+    const state = projectHistory(initial(), [
+      checkpoint(messages, { values: { messages, __interrupt__: [] } }),
+    ]);
+    expect(state.messages[1].delivery).toEqual(staticDelivery('old-a'));
+    expect(state.messages[3].delivery).toEqual(
+      completeDelivery('new-a', 'paused')
+    );
+  });
+
+  it('uses the aggregate caller interrupt candidate without revisiting raw interrupt getters', () => {
+    const messages = [human('u'), ai('a')];
+    const saved = checkpoint(messages, {
+      values: {
+        messages,
+        get __interrupt__() {
+          throw new Error('already projected');
+        },
+      },
+    });
+    const state = projectHistory(initial(), [saved], { interrupts: [] });
+    expect(state.messages[1].delivery).toEqual(staticDelivery('a'));
+    const paused = projectHistory(state, [saved], {
+      interrupts: [{ when: 'breakpoint' }],
+    });
+    expect(paused.messages[1].delivery).toEqual(
+      completeDelivery('a', 'paused')
+    );
+  });
   it('reads only the latest checkpoint, without merging older messages or pause evidence', () => {
     const state = projectHistory(initial(), [
       checkpoint([human('u'), ai('a', 'Latest')]),
-      checkpoint([ai('old')], { values: { __interrupt__: ['old'] } }),
+      checkpoint([ai('old')], {
+        values: { __interrupt__: [{ value: 'old' }] },
+      }),
     ]);
     expect(state.messages.map((message) => message.id)).toEqual(['u', 'a']);
     expect(state.messages[1].content).toBe('Latest');
@@ -302,7 +334,7 @@ describe('pure authoritative history projection', () => {
         checkpoint(
           messages,
           source === 'values'
-            ? { values: { messages, __interrupt__: ['Continue?'] } }
+            ? { values: { messages, __interrupt__: [{ value: 'Continue?' }] } }
             : { tasks: [task] }
         ),
       ];
@@ -322,7 +354,7 @@ describe('pure authoritative history projection', () => {
     const messages = [human('old-u'), ai('old-a'), human('new-u')];
     const state = projectHistory(initial(), [
       checkpoint(messages, {
-        values: { messages, __interrupt__: ['Waiting'] },
+        values: { messages, __interrupt__: [{ value: 'Waiting' }] },
       }),
     ]);
     expect(state.messages.map((message) => message.delivery)).toEqual(

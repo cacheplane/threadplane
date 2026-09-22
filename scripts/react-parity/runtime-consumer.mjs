@@ -25,6 +25,14 @@ const catalog = [{ name: 'weather', description: 'Current weather' }, { name: 'c
 const toolCall = { type: 'ai', id: 'assistant-tool', content: '', tool_calls: [{ id: 'call-weather', name: 'weather', args: { city: 'Paris' }, type: 'tool_call' }] };
 const sse = (event, data) => `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
 const textTrace = readFileSync(new URL('../../fixtures/react-parity/traces/langgraph-text-state.sse', import.meta.url), 'utf8');
+const savedInterrupts = [
+  { id: 'saved-approval', value: { question: 'Approve saved request?', choices: ['yes', 'no'] }, namespace: ['review', 'task-1'], when: 'during', resumable: true, ns: ['legacy-review'] },
+  { id: 'saved-confirmation', value: 0, namespace: [], when: 'during', resumable: false, ns: [] },
+];
+const liveInterrupts = [
+  { id: 'live-approval', value: { question: 'Approve action?', choices: ['yes', 'no'] }, namespace: ['review', 'live'], when: 'during', resumable: true, ns: ['legacy-live'] },
+  { id: 'live-confirmation', value: false, namespace: [], when: 'during', resumable: false, ns: [] },
+];
 const savedHistory = [{
   values: { stage: 'saved', profile: { name: 'Saved user' }, messages: [
     { id: 'saved-human', type: 'human', content: 'Saved question' },
@@ -35,7 +43,9 @@ const savedHistory = [{
     { id: 'saved-result', type: 'tool', tool_call_id: 'saved-weather', content: 'Raw historical weather result' },
     { id: 'saved-final', type: 'ai', content: [{ type: 'text', text: 'Saved final answer' }] },
   ] },
-  next: [], tasks: [], metadata: {},
+  next: ['review', 'confirmation'],
+  tasks: savedInterrupts.map((interrupt, index) => ({ id: `saved-task-${index}`, name: index === 0 ? 'review' : 'confirmation', error: null, checkpoint: null, state: null, interrupts: [interrupt] })),
+  metadata: {},
   checkpoint: { thread_id: 'fixture-thread', checkpoint_ns: '', checkpoint_id: 'saved-checkpoint', checkpoint_map: {} },
   parent_checkpoint: null,
   created_at: '2026-09-21T00:00:00Z',
@@ -60,8 +70,11 @@ export function runtimeResponse(body) {
   if (message.content === 'Send') return textTrace.replaceAll('message-parity', `answer-${message.id}`)
     + sse('values|child', { type: 'values', namespace: [], stage: 'child' })
     + sse('updates', { writer: { stage: 'node-update' } })
-    + sse('custom', { stage: 'custom' })
-    + sse('values', { __interrupt__: [], stage: 'control-envelope' });
+    + sse('custom', { __interrupt__: [], stage: 'custom' })
+    + sse('values|child', { __interrupt__: [], stage: 'child-control' });
+  if (message.content === 'Pause') return sse('values', { stage: 'approval', messages: [message, { type: 'ai', id: `pause-${message.id}`, content: 'Waiting for approvals' }] })
+    + sse('values', { __interrupt__: [liveInterrupts[0]], stage: 'control-envelope' })
+    + sse('updates', { __interrupt__: [liveInterrupts[1]] });
   if (message.content === 'Tool') return sse('values', { messages: [message, toolCall] });
   if (message.content === 'Error') return sse('error', { error: 'FixtureFailure', message: 'PRIVATE backend diagnostic' });
   if (message.content === 'Hold') return null;
@@ -90,7 +103,28 @@ export function installedTypeSource(template, kind) {
       nested['name'] = 'mutable';
     }
   }
-  void [directValues, values, assumedCounter];`)
+  const directInterrupts: readonly { readonly value?: PlainValue }[] = direct.interrupts;
+  const interrupts = snapshot.interrupts;
+  const payload = interrupts[0]?.value;
+  const plainPayload: PlainValue = payload;
+  const id: string | undefined = interrupts[0]?.id;
+  const namespace: readonly string[] | undefined = interrupts[0]?.namespace;
+  const legacyNamespace: readonly string[] | undefined = interrupts[0]?.ns;
+  const when: string | undefined = interrupts[0]?.when;
+  const resumable: boolean | undefined = interrupts[0]?.resumable;
+  // @ts-expect-error The concrete interrupt field remains readonly.
+  snapshot.interrupts = [];
+  // @ts-expect-error The batch remains readonly.
+  interrupts.push({ value: false });
+  // @ts-expect-error SDK namespace metadata remains readonly.
+  interrupts[0].namespace?.push('changed');
+  // @ts-expect-error Broad interrupt data does not infer an application schema.
+  const assumedApproval: { approved: boolean } = payload;
+  if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+    // @ts-expect-error Nested interrupt payloads remain readonly.
+    payload['approved'] = true;
+  }
+  void [directValues, values, assumedCounter, directInterrupts, plainPayload, id, namespace, legacyNamespace, when, resumable, assumedApproval];`)
     .replace('  assertSnapshot(snapshot);', '  void snapshot;');
 }
 
@@ -228,6 +262,7 @@ export async function runRuntimeScenarios(directory, kind) {
     context = await browser.newContext();
     const page = await context.newPage();
     const expectValues = (value) => expect(page.getByTestId('values')).toHaveText(value === undefined ? 'unobserved' : JSON.stringify(value));
+    const expectInterrupts = (interrupts) => expect(page.getByTestId('interrupts')).toHaveText(JSON.stringify(interrupts));
     page.on('pageerror', (error) => pageErrors.push(error.message));
     page.on('request', (request) => {
       if (!request.url().startsWith(`${server.url}/`)) unexpected.push(request.url());
@@ -238,6 +273,7 @@ export async function runRuntimeScenarios(directory, kind) {
     await expect(page.getByTestId('handler-calls')).toHaveText('0');
     await expect(page.getByTestId('submissions')).toHaveText('0');
     await expectValues(undefined);
+    await expectInterrupts([]);
     assert.equal(server.requests.length, 0, 'mount/observation performs no I/O');
     assert.equal(server.historyRequests.length, 0, 'mount/observation performs no history reads');
     completed.push('inert mount');
@@ -246,10 +282,11 @@ export async function runRuntimeScenarios(directory, kind) {
     await expect(page.getByTestId('loads-finished')).toHaveText('1');
     await expect(page.getByTestId('load-error')).toHaveText('');
     await expectValues({ stage: 'saved', profile: { name: 'Saved user' } });
+    await expectInterrupts(savedInterrupts);
     await expect(page.getByTestId('text')).toHaveText('Saved tool request\nSaved final answer');
     await expect(page.getByTestId('transcript')).toContainText('Saved question');
     await expect(page.getByTestId('transcript')).toContainText('Raw historical weather result');
-    await expect(page.getByTestId('delivery')).toHaveText('complete:success');
+    await expect(page.getByTestId('delivery')).toHaveText('complete:paused');
     await expect(page.getByTestId('status')).toHaveText('idle');
     assert.deepEqual(JSON.parse(await page.getByTestId('tool').innerText()), [{ id: 'saved-count', name: 'count', args: { values: ['saved'] }, status: 'pending' }]);
     assert.equal(server.historyRequests.length, 1);
@@ -261,6 +298,8 @@ export async function runRuntimeScenarios(directory, kind) {
     await expect(page.getByTestId('loads-finished')).toHaveText('2');
     await expect(page.getByTestId('load-error')).toHaveText('');
     await expectValues({ stage: 'saved', profile: { name: 'Saved user' } });
+    await expectInterrupts(savedInterrupts);
+    await expect(page.getByTestId('delivery')).toHaveText('complete:paused');
     await expect(page.getByTestId('text')).toHaveText('Saved tool request\nSaved final answer');
     await expect(page.getByTestId('handler-calls')).toHaveText('0');
     assert.equal(server.historyRequests.length, 2);
@@ -271,6 +310,7 @@ export async function runRuntimeScenarios(directory, kind) {
     await expect(page.getByTestId('loads-finished')).toHaveText('3');
     await expect(page.getByTestId('load-error')).toHaveText('');
     await expectValues(undefined);
+    await expectInterrupts([]);
     await expect(page.getByTestId('text')).toHaveText('');
     await expect(page.getByTestId('transcript')).toHaveText('');
     await expect(page.getByTestId('tool')).toHaveText('[]');
@@ -285,6 +325,7 @@ export async function runRuntimeScenarios(directory, kind) {
     await expect(page.getByTestId('status')).toHaveText('idle');
     assert.equal(server.requests.length, 1);
     await expectValues({ stage: 'complete' });
+    await expectInterrupts([]);
     completed.push('text success');
 
     const beforeTool = server.requests.length;
@@ -319,14 +360,29 @@ export async function runRuntimeScenarios(directory, kind) {
     await expectValues({ stage: 'held', transient: true });
     completed.push('incremental DOM update and stop abort');
 
+    await page.getByRole('button', { name: 'Pause', exact: true }).click();
+    await expect(page.getByTestId('delivery')).toHaveText('complete:paused');
+    await expect(page.getByTestId('status')).toHaveText('idle');
+    await expect(page.getByTestId('text')).toContainText('Waiting for approvals');
+    await expectValues({ stage: 'approval' });
+    await expectInterrupts(liveInterrupts);
+    await expect(page.getByTestId('handler-calls')).toHaveText('1');
+    assert.equal(server.requests.length, 6, 'pause creates exactly one run with no tool continuation');
+    await page.getByRole('button', { name: 'Stop', exact: true }).click();
+    await expectInterrupts(liveInterrupts);
+    await expect(page.getByTestId('delivery')).toHaveText('complete:paused');
+    assert.equal(server.requests.length, 6, 'stop after completed pause does not create backend I/O');
+    completed.push('full interrupt batch and retained pause after stop');
+
     await page.getByRole('button', { name: 'Send', exact: true }).click();
     await expect(page.getByTestId('delivery')).toHaveText('complete:success');
     await expect(page.getByTestId('status')).toHaveText('idle');
     await expect(page.getByTestId('text')).toContainText('Hello 🌍.');
     await expect(page.getByTestId('handler-calls')).toHaveText('1');
-    assert.equal(server.requests.length, 6);
+    assert.equal(server.requests.length, 7);
     await expectValues({ stage: 'complete' });
-    await expect(page.getByTestId('submissions')).toHaveText('5');
+    await expectInterrupts([]);
+    await expect(page.getByTestId('submissions')).toHaveText('6');
     completed.push('reuse after stop');
 
     await page.getByRole('button', { name: 'Unmount', exact: true }).click();
@@ -336,13 +392,13 @@ export async function runRuntimeScenarios(directory, kind) {
     await expect(page.getByTestId('owner')).toHaveText('disposed');
     await page.getByRole('button', { name: 'Send after dispose', exact: true }).click();
     await expect(page.getByTestId('owner')).toHaveText('aborted');
-    assert.equal(server.requests.length, 6, 'cleanup/disposal/post-disposal submit creates no extra runs');
+    assert.equal(server.requests.length, 7, 'cleanup/disposal/post-disposal submit creates no extra runs');
     assert.deepEqual(server.historyRequests, [{ limit: 10 }, { limit: 10 }, { limit: 10 }], 'only explicit loads read history');
     completed.push('unmount and explicit disposal');
     assert.deepEqual(server.errors.map(String), []);
     assert.deepEqual(pageErrors, []);
     assert.deepEqual(unexpected, []);
-    console.log(`${kind}: ${completed.length} browser scenarios passed (${completed.join('; ')}); 3 exact history reads, 6 exact run requests, one tool handler, no page errors/unexpected requests.`);
+    console.log(`${kind}: ${completed.length} browser scenarios passed (${completed.join('; ')}); 3 exact history reads, 7 exact run requests, one tool handler, 6 component submissions, no page errors/unexpected requests.`);
     return completed;
   } finally {
     try { await context?.close(); }
