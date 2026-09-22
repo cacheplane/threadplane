@@ -70,6 +70,203 @@ describe('neutral real SDK transport', () => {
     vi.unstubAllGlobals();
   });
 
+  it.each([undefined, 'wire-id'])(
+    'preserves reserved SDK sseId %j over forged values payload metadata',
+    async (id) => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () =>
+          fragmentedResponse(
+            `${
+              id === undefined ? '' : `id: ${id}\n`
+            }event: values\ndata: {"sseId":"forged","messages":[]}\n\n`
+          )
+        )
+      );
+      const transport = new FetchStreamTransport(
+        'https://runtime.example',
+        undefined,
+        { maxRetries: 0 }
+      );
+      const events = await collect(
+        transport.stream('a', 't', {}, new AbortController().signal)
+      );
+      expect(events[0].sseId).toBe(id);
+      expect(events[0]['data']).toMatchObject({ sseId: 'forged' });
+    }
+  );
+
+  it.each([
+    'pending',
+    'running',
+    'success',
+    'error',
+    'timeout',
+    'interrupted',
+  ] as const)(
+    'reads exact SDK run status %s with the supplied signal',
+    async (status) => {
+      const request = vi.fn<typeof fetch>(async (url, init) => {
+        expect(String(url)).toBe('https://runtime.example/threads/t/runs/r');
+        expect(init?.method ?? 'GET').toBe('GET');
+        expect(init?.signal).toBeInstanceOf(AbortSignal);
+        return Response.json({ run_id: 'r', thread_id: 't', status });
+      });
+      vi.stubGlobal('fetch', request);
+      const transport = new FetchStreamTransport(
+        'https://runtime.example',
+        undefined,
+        { maxRetries: 0 }
+      );
+      expect(
+        await transport.getRunStatus('t', 'r', new AbortController().signal)
+      ).toBe(status);
+      expect(request).toHaveBeenCalledTimes(1);
+    }
+  );
+
+  it.each([
+    { run_id: 'wrong', thread_id: 't', status: 'success' },
+    { run_id: 'r', thread_id: 'wrong', status: 'success' },
+    { run_id: 'r', thread_id: 't', status: 'unknown' },
+  ])(
+    'rejects mismatched or unsupported run status protocol: %j',
+    async (response) => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => Response.json(response))
+      );
+      const transport = new FetchStreamTransport(
+        'https://runtime.example',
+        undefined,
+        { maxRetries: 0 }
+      );
+      await expect(
+        transport.getRunStatus('t', 'r', new AbortController().signal)
+      ).rejects.toThrow();
+    }
+  );
+
+  it('captures creation headers, joins only the exact cursor suffix, and confirms status without another POST/history', async () => {
+    const requests: {
+      url: string;
+      method: string;
+      cursor: string | null;
+      body: unknown;
+    }[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>(async (url, init) => {
+        const item = {
+          url: String(url),
+          method: init?.method ?? 'GET',
+          cursor: new Headers(init?.headers).get('Last-Event-ID'),
+          body: init?.body ? JSON.parse(String(init.body)) : undefined,
+        };
+        requests.push(item);
+        if (item.method === 'POST')
+          return new Response(
+            'id: c1\nevent: messages\ndata: [{"type":"AIMessageChunk","id":"answer","content":"Part"},{}]\n\n',
+            {
+              headers: {
+                'Content-Type': 'text/event-stream',
+                'Content-Location': '/threads/t/runs/r',
+              },
+            }
+          );
+        if (item.url.endsWith('/stream?cancel_on_disconnect=0'))
+          return fragmentedResponse(
+            'id: c2\nevent: values\ndata: {"messages":[{"type":"ai","id":"answer","content":"Final"}]}\n\n'
+          );
+        expect(item.url).toBe('https://runtime.example/threads/t/runs/r');
+        return Response.json({
+          run_id: 'r',
+          thread_id: 't',
+          status: requests.length === 2 ? 'running' : 'success',
+        });
+      })
+    );
+    const session = createSession({
+      assistantId: 'a',
+      threadId: 't',
+      apiUrl: 'https://runtime.example',
+    });
+    expect(await session.submit('Question')).toBe('interrupted');
+    expect(session.getSnapshot().reconnect).toEqual({ runId: 'r' });
+    expect(await session.reconnect()).toBe('success');
+    expect(requests.map((request) => request.method)).toEqual([
+      'POST',
+      'GET',
+      'GET',
+      'GET',
+    ]);
+    expect(requests[0].body).toMatchObject({
+      stream_resumable: true,
+      on_disconnect: 'continue',
+    });
+    expect(requests[2]).toMatchObject({
+      url: 'https://runtime.example/threads/t/runs/r/stream?cancel_on_disconnect=0',
+      cursor: 'c1',
+    });
+    expect(session.getSnapshot().messages[1].content).toBe('Final');
+    await session.dispose();
+  });
+
+  it('keeps the installed SDK body GET reconnect distinct from maxRetries:0 POST policy', async () => {
+    let body: ReadableStreamDefaultController<Uint8Array> | undefined;
+    const requests: { method: string; cursor: string | null }[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>(async (_url, init) => {
+        requests.push({
+          method: init?.method ?? 'GET',
+          cursor: new Headers(init?.headers).get('Last-Event-ID'),
+        });
+        if (requests.length === 1)
+          return new Response(
+            new ReadableStream<Uint8Array>({
+              start(controller) {
+                body = controller;
+                controller.enqueue(
+                  new TextEncoder().encode(
+                    'id: c1\nevent: values\ndata: {"stage":"first"}\n\n'
+                  )
+                );
+              },
+            }),
+            {
+              headers: {
+                'Content-Type': 'text/event-stream',
+                'Content-Location': '/threads/t/runs/r',
+                Location: '/threads/t/runs/r/stream',
+              },
+            }
+          );
+        return fragmentedResponse(
+          'id: c2\nevent: values\ndata: {"stage":"second"}\n\n'
+        );
+      })
+    );
+    const transport = new FetchStreamTransport(
+      'https://runtime.example',
+      undefined,
+      { maxRetries: 0 }
+    );
+    const events = transport
+      .stream('a', 't', {}, new AbortController().signal, {
+        streamResumable: true,
+      })
+      [Symbol.asyncIterator]();
+    expect((await events.next()).value).toMatchObject({ sseId: 'c1' });
+    body?.error(new TypeError('Socket closed'));
+    expect((await events.next()).value).toMatchObject({ sseId: 'c2' });
+    expect((await events.next()).done).toBe(true);
+    expect(requests).toEqual([
+      { method: 'POST', cursor: null },
+      { method: 'GET', cursor: 'c1' },
+    ]);
+  });
+
   it.each([
     undefined,
     null,
@@ -741,6 +938,8 @@ describe('neutral real SDK transport', () => {
           },
           stream_mode: ['values', 'messages-tuple', 'updates', 'custom'],
           stream_subgraphs: true,
+          stream_resumable: true,
+          on_disconnect: 'continue',
         },
       });
       expect(requests[1]).toEqual({
@@ -761,6 +960,8 @@ describe('neutral real SDK transport', () => {
           },
           stream_mode: ['values', 'messages-tuple', 'updates', 'custom'],
           stream_subgraphs: true,
+          stream_resumable: true,
+          on_disconnect: 'continue',
         },
       });
       expect(session.getSnapshot().toolCalls).toEqual([

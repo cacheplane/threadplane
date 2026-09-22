@@ -21,5 +21,6 @@ export type LangGraphSnapshot<
   >
 > = AgentSnapshot<TTools> & {
   readonly values: LangGraphValues | undefined;
+  readonly reconnect?: { readonly runId: string };
   readonly interrupts: readonly LangGraphInterrupt[];
 };

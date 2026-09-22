@@ -1,4 +1,4 @@
-import type { AgentSession, AgentSnapshot, PlainValue, ToolCall } from '@threadplane/core';
+import type { AgentSession, AgentSnapshot, CompleteOutcome, PlainValue, ToolCall } from '@threadplane/core';
 import type { FunctionTool } from '@threadplane/core/tools';
 import type { FixtureTools } from './scenarios';
 

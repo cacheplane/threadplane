@@ -20,6 +20,9 @@ type CanonicalMessage = Extract<MessageEvent, { type: 'message' }>;
 
 export interface StreamProjection {
   readonly generation: string;
+  /** Anonymous wire identities belong to a physical run, while delivery
+   * generations change when that same run is reconnected. */
+  readonly messageIdPrefix?: string;
   readonly userId?: string;
   /** Captured latest-turn membership permits finalized paused calls while
    * excluding historical baselines even when the stream omits its user anchor. */
@@ -58,6 +61,7 @@ export function projectStream(
     type === 'values' || type === 'messages/complete' || type === 'checkpoints';
   if (!terminal && !messageEvent) return { state, projection };
   const mode = messageEvent && event.messageMetadata ? 'delta' : 'snapshot';
+  const messageIdPrefix = projection.messageIdPrefix ?? projection.generation;
   const incoming = Array.isArray(messages)
     ? messages.map(record).filter((m): m is Record<string, unknown> => !!m)
     : [];
@@ -82,7 +86,7 @@ export function projectStream(
               ? [
                   typeof message['id'] === 'string'
                     ? message['id']
-                    : `${projection.generation}-assistant`,
+                    : `${messageIdPrefix}-assistant`,
                 ]
               : []
           ),
@@ -100,9 +104,7 @@ export function projectStream(
     const role = roleOf(raw);
     if (!role) continue;
     const wireId =
-      typeof raw['id'] === 'string'
-        ? raw['id']
-        : `${projection.generation}-${role}`;
+      typeof raw['id'] === 'string' ? raw['id'] : `${messageIdPrefix}-${role}`;
     // A shared turn/text does not establish message identity. This protocol
     // slice preserves wire IDs; cross-ID correlation needs explicit evidence.
     const id = wireId;

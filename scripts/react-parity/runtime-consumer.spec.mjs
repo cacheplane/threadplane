@@ -17,7 +17,7 @@ test('React consumer pins framework and compiler tooling from the actual lock', 
 test('tool trace requires a real serialized handler result before returning the final answer', () => {
   assert.equal(typeof runtime.runtimeResponse, 'function');
   const catalog = [{ name: 'weather', description: 'Current weather' }, { name: 'count', description: 'Count values' }];
-  const submit = { assistant_id: 'fixture-assistant', input: { messages: [{ id: 'user', type: 'human', content: 'Tool' }], client_tools: catalog }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom'], stream_subgraphs: true };
+  const submit = { assistant_id: 'fixture-assistant', input: { messages: [{ id: 'user', type: 'human', content: 'Tool' }], client_tools: catalog }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom'], stream_subgraphs: true, stream_resumable: true, on_disconnect: 'continue' };
   assert.match(runtime.runtimeResponse(submit), /call-weather/);
   const continuation = { ...submit, input: { ...submit.input, messages: [{ id: 'client-tool-result-call-weather', type: 'tool', role: 'tool', tool_call_id: 'call-weather', content: '{"city":"Paris","temperature":20}' }] } };
   assert.match(runtime.runtimeResponse(continuation), /20 degrees/);
@@ -28,7 +28,7 @@ test('tool trace requires a real serialized handler result before returning the 
 });
 
 test('successive submitted turns receive distinct server message IDs', () => {
-  const body = (id) => ({ assistant_id: 'fixture-assistant', input: { messages: [{ id, type: 'human', content: 'Send' }], client_tools: [{ name: 'weather', description: 'Current weather' }, { name: 'count', description: 'Count values' }] }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom'], stream_subgraphs: true });
+  const body = (id) => ({ assistant_id: 'fixture-assistant', input: { messages: [{ id, type: 'human', content: 'Send' }], client_tools: [{ name: 'weather', description: 'Current weather' }, { name: 'count', description: 'Count values' }] }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom'], stream_subgraphs: true, stream_resumable: true, on_disconnect: 'continue' });
   const first = runtime.runtimeResponse(body('first'));
   const second = runtime.runtimeResponse(body('second'));
   assert.notEqual(first, second);
@@ -36,7 +36,51 @@ test('successive submitted turns receive distinct server message IDs', () => {
   assert.match(second, /Hello/);
 });
 
-const heldBody = { assistant_id: 'fixture-assistant', input: { messages: [{ id: 'held-user', type: 'human', content: 'Hold' }], client_tools: [{ name: 'weather', description: 'Current weather' }, { name: 'count', description: 'Count values' }] }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom'], stream_subgraphs: true };
+const heldBody = { assistant_id: 'fixture-assistant', input: { messages: [{ id: 'held-user', type: 'human', content: 'Hold' }], client_tools: [{ name: 'weather', description: 'Current weather' }, { name: 'count', description: 'Count values' }] }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom'], stream_subgraphs: true, stream_resumable: true, on_disconnect: 'continue' };
+
+test('Drop reconnect joins the exact run and cursor, then confirms status without another POST', async () => {
+  const server = await runtime.serveRuntimeConsumer(tmpdir());
+  try {
+    const body = { ...heldBody, stream_resumable: true, on_disconnect: 'continue', input: { ...heldBody.input, messages: [{ id: 'drop-user', type: 'human', content: 'Drop' }] } };
+    const created = await fetch(`${server.url}/api/threads/fixture-thread/runs/stream`, { method: 'POST', body: JSON.stringify(body) });
+    assert.equal(created.status, 200);
+    assert.equal(created.headers.get('content-location'), '/threads/fixture-thread/runs/drop-run');
+    const initial = await created.text();
+    assert.match(initial, /id: 2\n/);
+    assert.match(initial, /Dropped partial/);
+    assert.match(initial, /event: values/);
+    const runUrl = `${server.url}/api/threads/fixture-thread/runs/drop-run`;
+    assert.deepEqual(await (await fetch(runUrl)).json(), { run_id: 'drop-run', thread_id: 'fixture-thread', status: 'running' });
+    const joined = await fetch(`${runUrl}/stream?cancel_on_disconnect=0`, { headers: { 'Last-Event-ID': '2' } });
+    assert.equal(joined.status, 200);
+    const suffix = await joined.text();
+    assert.match(suffix, /id: 3\n/);
+    assert.match(suffix, /Dropped partial recovered/);
+    assert.deepEqual(await (await fetch(runUrl)).json(), { run_id: 'drop-run', thread_id: 'fixture-thread', status: 'success' });
+    assert.equal(server.requests.length, 1);
+    assert.equal(server.historyRequests.length, 0);
+    assert.deepEqual(server.joinRequests, [{ runId: 'drop-run', lastEventId: '2' }]);
+    assert.deepEqual(server.statusRequests, ['running', 'success']);
+    assert.deepEqual(server.errors, []);
+  } finally { await server.close(); }
+});
+
+test('reconnect fixture rejects a wrong cursor and cannot invent a known run before Drop', async () => {
+  const server = await runtime.serveRuntimeConsumer(tmpdir());
+  try {
+    const runUrl = `${server.url}/api/threads/fixture-thread/runs/drop-run`;
+    assert.equal((await fetch(runUrl)).status, 500);
+    const body = { ...heldBody, stream_resumable: true, on_disconnect: 'continue', input: { ...heldBody.input, messages: [{ id: 'drop-user', type: 'human', content: 'Drop' }] } };
+    const created = await fetch(`${server.url}/api/threads/fixture-thread/runs/stream`, { method: 'POST', body: JSON.stringify(body) });
+    assert.equal(created.status, 200);
+    await created.text();
+    assert.equal((await fetch(`${runUrl}/stream?cancel_on_disconnect=0`, { headers: { 'Last-Event-ID': '1' } })).status, 500);
+    assert.deepEqual(server.joinRequests, []);
+    assert.deepEqual(server.statusRequests, []);
+    assert.equal(server.errors.length, 2);
+  } finally { await server.close(); }
+});
+
 test('explicit resume maps use null input, re-pause, and complete the same assistant message', () => {
   const base = { ...heldBody, input: null };
   const first = runtime.runtimeResponse({ ...base, command: { resume: { 'live-approval': 'yes', 'live-confirmation': false } } });

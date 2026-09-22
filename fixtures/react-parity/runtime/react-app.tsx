@@ -27,6 +27,18 @@ function App() {
   const [loadError, setLoadError] = useState('');
   const [resumesFinished, setResumesFinished] = useState(0);
   const [resumeOutcome, setResumeOutcome] = useState('');
+  const [reconnectsFinished, setReconnectsFinished] = useState(0);
+  const [reconnectOutcome, setReconnectOutcome] = useState('');
+  const reconnect = async () => {
+    setReconnectOutcome('');
+    try {
+      setReconnectOutcome(await session.reconnect());
+    } catch {
+      setReconnectOutcome('Reconnect unavailable');
+    } finally {
+      setReconnectsFinished((count) => count + 1);
+    }
+  };
   const resume = async () => {
     setResumeOutcome('');
     try {
@@ -78,11 +90,20 @@ function App() {
           <button onClick={() => void submit('Pause')}>Pause</button>
           <button
             disabled={
-              snapshot.status === 'running' || !snapshot.interrupts.length
+              snapshot.status === 'running' ||
+              !snapshot.interrupts.length ||
+              !!snapshot.reconnect
             }
             onClick={() => void resume()}
           >
             Resume
+          </button>
+          <button onClick={() => void submit('Drop')}>Drop</button>
+          <button
+            disabled={!snapshot.reconnect}
+            onClick={() => void reconnect()}
+          >
+            Reconnect
           </button>
           <button onClick={() => void session.stop()}>Stop</button>
         </div>
@@ -128,6 +149,30 @@ function App() {
               <h3>Resume outcome</h3>
               <output aria-label="Resume outcome" data-testid="resume-outcome">
                 {resumeOutcome}
+              </output>
+            </div>
+            <div className="field">
+              <h3>Reconnect run</h3>
+              <output aria-label="Reconnect run" data-testid="reconnect-run">
+                {snapshot.reconnect?.runId ?? ''}
+              </output>
+            </div>
+            <div className="field">
+              <h3>Reconnects finished</h3>
+              <output
+                aria-label="Reconnects finished"
+                data-testid="reconnects-finished"
+              >
+                {reconnectsFinished}
+              </output>
+            </div>
+            <div className="field">
+              <h3>Reconnect outcome</h3>
+              <output
+                aria-label="Reconnect outcome"
+                data-testid="reconnect-outcome"
+              >
+                {reconnectOutcome}
               </output>
             </div>
             <div className="field">

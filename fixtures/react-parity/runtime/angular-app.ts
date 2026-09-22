@@ -47,11 +47,16 @@ const submit = (input: string) => {
           ><button (click)="submit('Pause')">Pause</button
           ><button
             [disabled]="
-              snapshot().status === 'running' || !snapshot().interrupts.length
+              snapshot().status === 'running' ||
+              !snapshot().interrupts.length ||
+              !!snapshot().reconnect
             "
             (click)="resume()"
           >
             Resume</button
+          ><button (click)="submit('Drop')">Drop</button
+          ><button [disabled]="!snapshot().reconnect" (click)="reconnect()">
+            Reconnect</button
           ><button (click)="stop()">Stop</button>
         </div>
       </section>
@@ -99,6 +104,28 @@ const submit = (input: string) => {
                 aria-label="Resume outcome"
                 data-testid="resume-outcome"
                 >{{ resumeOutcome() }}</output
+              >
+            </div>
+            <div class="field">
+              <h3>Reconnect run</h3>
+              <output aria-label="Reconnect run" data-testid="reconnect-run">{{
+                snapshot().reconnect?.runId ?? ''
+              }}</output>
+            </div>
+            <div class="field">
+              <h3>Reconnects finished</h3>
+              <output
+                aria-label="Reconnects finished"
+                data-testid="reconnects-finished"
+                >{{ reconnectsFinished() }}</output
+              >
+            </div>
+            <div class="field">
+              <h3>Reconnect outcome</h3>
+              <output
+                aria-label="Reconnect outcome"
+                data-testid="reconnect-outcome"
+                >{{ reconnectOutcome() }}</output
               >
             </div>
             <div class="field">
@@ -190,6 +217,18 @@ class App {
   readonly loadError = signal('');
   readonly resumesFinished = signal(0);
   readonly resumeOutcome = signal('');
+  readonly reconnectsFinished = signal(0);
+  readonly reconnectOutcome = signal('');
+  async reconnect() {
+    this.reconnectOutcome.set('');
+    try {
+      this.reconnectOutcome.set(await session.reconnect());
+    } catch {
+      this.reconnectOutcome.set('Reconnect unavailable');
+    } finally {
+      this.reconnectsFinished.update((count) => count + 1);
+    }
+  }
   async resume() {
     this.resumeOutcome.set('');
     try {
