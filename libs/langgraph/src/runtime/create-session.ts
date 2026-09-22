@@ -4,6 +4,7 @@ import {
   type AgentSession,
   type CompleteOutcome,
   type ToolCall,
+  type ToolContract,
 } from '@threadplane/core';
 import type {
   CheckedTools,
@@ -15,6 +16,8 @@ import type { ThreadState } from '@langchain/langgraph-sdk';
 import { FetchStreamTransport } from '../lib/transport/fetch-stream.transport';
 import { initialMessageState, reduceMessages } from './message-reducer';
 import { createPublication } from './publication';
+import { projectHistory } from './history-projection';
+import { createSafeRequestError } from './operation-errors';
 import {
   failureProjection,
   finalizeProjection,
@@ -50,6 +53,24 @@ export interface SessionOptions {
   readonly executionStore?: ToolExecutionStore;
 }
 
+/** Backend-private capability; core sessions and borrowed observers stay minimal. */
+export type LangGraphSession<
+  TTools extends { [K in keyof TTools]: ToolContract } = Record<
+    string,
+    ToolContract
+  >
+> = AgentSession<TTools> & {
+  load?(options?: { readonly signal?: AbortSignal }): Promise<void>;
+};
+
+interface HistoryRead {
+  readonly controller: AbortController;
+  readonly result: Promise<void>;
+  readonly resolve: () => void;
+  readonly reject: (error: Error) => void;
+  unlink?: () => void;
+}
+
 interface Attempt {
   readonly controller: AbortController;
   readonly generation: string;
@@ -73,15 +94,15 @@ interface Attempt {
  * during a run; it only reads history and never creates another logical run. */
 export function createSession<T extends Record<string, FunctionToolDefinition>>(
   options: SessionOptions & { readonly tools: T & CheckedTools<T> }
-): AgentSession<ToolContracts<T>>;
+): LangGraphSession<ToolContracts<T>>;
 export function createSession(
   options: SessionOptions & { readonly tools?: undefined }
-): AgentSession;
+): LangGraphSession;
 export function createSession(
   options: SessionOptions & {
     readonly tools?: Record<string, FunctionToolDefinition>;
   }
-): AgentSession {
+): LangGraphSession {
   const { assistantId, threadId } = options;
   const { definitions, catalog } = captureTools(options.tools);
   const typedTools = options.tools !== undefined;
@@ -91,6 +112,9 @@ export function createSession(
   };
   const buffer = createToolBuffer();
   const resolvedTools = new Set<string>();
+  // Execution dedupe survives transcript replacement. Authored result provenance
+  // belongs only to the current transcript; a wire string cannot restore it.
+  const authoredTools = new Set<string>();
   const transport =
     options.transport ??
     new FetchStreamTransport(options.apiUrl ?? '', undefined, {
@@ -100,7 +124,11 @@ export function createSession(
   const protectedTransport =
     transport instanceof FetchStreamTransport &&
     transport.protectsOperationErrors;
-  const canCheck = typeof transport.getHistory === 'function';
+  const getHistory =
+    typeof transport.getHistory === 'function'
+      ? transport.getHistory.bind(transport)
+      : undefined;
+  const canCheck = !!getHistory;
   const publication = createPublication({
     status: 'idle',
     messages: [],
@@ -112,6 +140,9 @@ export function createSession(
   let disposed = false;
   let revision = 0;
   let checkController: AbortController | undefined;
+  let loading: HistoryRead | undefined;
+  let pendingToolSettlements = 0;
+  let pendingToolWrites = 0;
 
   const owns = (attempt: Attempt) => owner === attempt && !disposed;
   function publish(status: 'idle' | 'running' | 'error', error?: AgentError) {
@@ -122,7 +153,7 @@ export function createSession(
         ? state.toolCalls.filter(
             (call) =>
               definitions.has(call.name) &&
-              (resolvedTools.has(call.id) ||
+              (authoredTools.has(call.id) ||
                 !state.messages.some(
                   (message) =>
                     message.role === 'tool' && message.toolCallId === call.id
@@ -137,6 +168,22 @@ export function createSession(
     const previous = checkController;
     checkController = undefined;
     return previous;
+  }
+  const ownsLoad = (read: HistoryRead) => loading === read && !disposed;
+  function detachLoad() {
+    const previous = loading;
+    loading = undefined;
+    previous?.resolve();
+    return previous;
+  }
+  function closeLoad(read: HistoryRead | undefined, abort = true) {
+    if (!read) return;
+    const unlink = read.unlink;
+    read.unlink = undefined;
+    // Ownership must already be committed: abort/remove-listener hooks may
+    // synchronously start another command. Cleanup never owns its replacement.
+    if (abort) read.controller.abort();
+    unlink?.();
   }
   function close(attempt: Attempt, abort = false, final = true) {
     const unlink = final ? attempt.unlink : undefined;
@@ -177,6 +224,7 @@ export function createSession(
       const current = state.toolCalls.find((entry) => entry.id === call.id);
       if (current?.status !== 'running') continue;
       resolvedTools.add(call.id);
+      authoredTools.add(call.id);
       state = reduceMessages(state, {
         type: 'tool',
         toolCall: resultCall(call, cancelledResult(call.id)),
@@ -198,8 +246,17 @@ export function createSession(
       throw new Error(
         'Persisting terminal tool results requires transport.updateState().'
       );
-    await transport.updateState(threadId, { messages: batch.messages }, signal);
-    batch.acknowledge();
+    pendingToolWrites += 1;
+    try {
+      await transport.updateState(
+        threadId,
+        { messages: batch.messages },
+        signal
+      );
+      batch.acknowledge();
+    } finally {
+      pendingToolWrites -= 1;
+    }
   }
 
   async function executeTools(attempt: Attempt, groups: number) {
@@ -219,32 +276,42 @@ export function createSession(
         toolCall: { ...call, status: 'running' },
       });
     }
+    pendingToolSettlements += calls.length;
     publish('running');
     await Promise.all(
       calls.map(async (call) => {
-        const definition = definitions.get(call.name);
-        if (!definition) return;
-        const result = await executeTool(
-          definition,
-          call,
-          attempt.controller.signal,
-          { threadId, toolCallId: call.id },
-          store,
-          groups >= 10
-        );
-        resolvedTools.add(call.id);
-        buffer.stage(call.id, result);
-        if (owns(attempt)) {
-          state = reduceMessages(state, {
-            type: 'tool',
-            toolCall: resultCall(call, result),
-          });
-          publish('running');
-        }
-        if (!owns(attempt)) {
-          // Required durable cleanup may finish after stop/dispose. It can only
-          // persist results; it has no route back to publication or run creation.
-          void flushTools(new AbortController().signal).catch(() => undefined);
+        try {
+          const definition = definitions.get(call.name);
+          if (!definition) return;
+          const result = await executeTool(
+            definition,
+            call,
+            attempt.controller.signal,
+            { threadId, toolCallId: call.id },
+            store,
+            groups >= 10
+          );
+          resolvedTools.add(call.id);
+          authoredTools.add(call.id);
+          buffer.stage(call.id, result);
+          if (owns(attempt)) {
+            state = reduceMessages(state, {
+              type: 'tool',
+              toolCall: resultCall(call, result),
+            });
+            publish('running');
+          }
+          if (!owns(attempt)) {
+            // Required durable cleanup may finish after stop/dispose. It can only
+            // persist results; it has no route back to publication or run creation.
+            try {
+              await flushTools(new AbortController().signal);
+            } catch {
+              /* The staged result remains available for explicit handoff. */
+            }
+          }
+        } finally {
+          pendingToolSettlements -= 1;
         }
       })
     );
@@ -253,11 +320,13 @@ export function createSession(
     );
   }
   function stopExecution() {
+    const reading = detachLoad();
     const checking = invalidateCheck();
     const attempt = detach('aborted');
     if (attempt) publish('idle');
     checking?.abort();
     if (attempt) close(attempt, true);
+    closeLoad(reading);
   }
 
   function reconcile(
@@ -451,6 +520,7 @@ export function createSession(
     let attempt: Attempt | undefined;
     const beginning = publication.command(() => {
       if (disposed || submitOptions?.signal?.aborted) return;
+      const reading = detachLoad();
       const checking = invalidateCheck();
       const previous = detach('interrupted');
       const generation = crypto.randomUUID();
@@ -505,6 +575,7 @@ export function createSession(
       publish('running');
       checking?.abort();
       if (previous) close(previous, true);
+      closeLoad(reading);
     });
     // Even nested observer commands finish draining before this continuation can
     // issue I/O. A stop/dispose from the running publication can prevent it.
@@ -512,6 +583,88 @@ export function createSession(
       if (!attempt) return 'aborted';
       void execute(attempt);
       return attempt.result;
+    });
+  }
+
+  async function readHistory(read: HistoryRead) {
+    if (!ownsLoad(read) || !getHistory) return;
+    try {
+      const history = await getHistory(threadId, read.controller.signal);
+      await publication.command(() => {
+        if (!ownsLoad(read)) return;
+        const projected = projectHistory(
+          state,
+          history,
+          typedTools
+            ? { registeredTools: new Set(definitions.keys()) }
+            : undefined
+        );
+        // Even a plain projection can invoke getters supplied by a transport.
+        // Such a getter can submit/stop/dispose; never commit its stale result.
+        if (!ownsLoad(read)) return;
+        state = projected;
+        authoredTools.clear();
+        loading = undefined;
+        read.resolve();
+        publish('idle');
+        closeLoad(read, false);
+      });
+    } catch {
+      await publication.command(() => {
+        if (!ownsLoad(read)) return;
+        loading = undefined;
+        read.reject(createSafeRequestError());
+        closeLoad(read);
+      });
+    }
+  }
+
+  function load(options?: { readonly signal?: AbortSignal }): Promise<void> {
+    let read: HistoryRead | undefined;
+    const beginning = publication.command(() => {
+      if (disposed || options?.signal?.aborted) return;
+      if (
+        owner ||
+        recoveryAttempt ||
+        pendingToolSettlements ||
+        pendingToolWrites ||
+        buffer.snapshot().messages.length
+      )
+        throw new Error(
+          'History cannot replace an active request, recovery, or unsettled tool results.'
+        );
+      const previous = detachLoad();
+      let resolve!: HistoryRead['resolve'];
+      let reject!: HistoryRead['reject'];
+      const result = new Promise<void>((done, failed) => {
+        resolve = done;
+        reject = failed;
+      });
+      const created: HistoryRead = {
+        controller: new AbortController(),
+        result,
+        resolve,
+        reject,
+      };
+      read = created;
+      loading = created;
+      const external = options?.signal;
+      if (external) {
+        const abort = () => {
+          void publication.command(() => {
+            if (ownsLoad(created)) closeLoad(detachLoad());
+          });
+        };
+        created.unlink = () => external.removeEventListener('abort', abort);
+        external.addEventListener('abort', abort, { once: true });
+        if (external.aborted) abort();
+      }
+      closeLoad(previous);
+    });
+    return beginning.then(() => {
+      if (!read) return;
+      void readHistory(read);
+      return read.result;
     });
   }
 
@@ -579,11 +732,12 @@ export function createSession(
         if (disposed) return;
         stopExecution();
       }),
-    ...(canCheck ? { checkStatus } : {}),
+    ...(canCheck ? { checkStatus, load } : {}),
     dispose: () =>
       publication.command(() => {
         if (disposed) return;
         disposed = true;
+        const reading = detachLoad();
         const checking = invalidateCheck();
         const attempt = detach('aborted');
         recoveryAttempt = undefined;
@@ -591,6 +745,7 @@ export function createSession(
         publication.clearListeners();
         checking?.abort();
         if (attempt) close(attempt, true);
+        closeLoad(reading);
       }),
   };
 }

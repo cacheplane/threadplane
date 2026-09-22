@@ -1,35 +1,15 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "bdcc22ed31aa94f420077e046e88e1481088d453",
+  "baselineHead": "e1da2bd10d0f009924eeb2ea67203da92d71cd0b",
   "sourceState": {
     "modified": [
-      ".github/workflows/ci.yml",
-      "libs/langgraph/eslint.config.mjs",
-      "libs/langgraph/project.json",
-      "libs/langgraph/src/lib/agent.types.ts",
-      "libs/langgraph/src/lib/client/create-langgraph-client.ts",
-      "libs/langgraph/src/lib/runtime-operation-reporter.ts",
-      "libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
-      "libs/langgraph/src/lib/transport/transport.interface.ts",
-      "libs/langgraph/tsconfig.lib.json",
-      "libs/langgraph/tsconfig.lib.prod.json",
-      "libs/langgraph/vite.config.mts",
-      "package-lock.json"
+      "libs/langgraph/src/runtime/create-session.ts",
+      "libs/langgraph/src/runtime/stream-projection.ts",
+      "libs/langgraph/src/runtime/testing/binding-fixture.ts"
     ],
     "untracked": [
-      "libs/langgraph/src/runtime/create-session.ts",
-      "libs/langgraph/src/runtime/function-tools.ts",
-      "libs/langgraph/src/runtime/message-reducer.ts",
-      "libs/langgraph/src/runtime/operation-errors.ts",
-      "libs/langgraph/src/runtime/ownership.ts",
-      "libs/langgraph/src/runtime/publication.ts",
-      "libs/langgraph/src/runtime/stream-projection.ts",
-      "libs/langgraph/src/runtime/testing/binding-fixture.ts",
-      "libs/langgraph/src/runtime/testing/controlled-transport.ts",
-      "libs/langgraph/src/runtime/testing/deferred.ts",
-      "libs/langgraph/src/runtime/transport.types.ts",
-      "libs/langgraph/tsconfig.runtime-tests.json",
-      "libs/langgraph/vite.runtime.config.mts"
+      "libs/langgraph/src/runtime/history-projection.ts",
+      "libs/langgraph/src/runtime/wire-message.ts"
     ]
   },
   "scope": {
@@ -12585,13 +12565,19 @@
       "id": "source:libs/langgraph/src/runtime/create-session.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/create-session.ts",
-      "sha256": "4867cf1b7c6901174ba965265f6593b0b84113b28dcc75f5de9d68088a4b572e"
+      "sha256": "80db69d29a2fb196d149d10d925f12c7b988695a5e5bbd0c2b6508b15d42bc6e"
     },
     {
       "id": "source:libs/langgraph/src/runtime/function-tools.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/function-tools.ts",
       "sha256": "873ce2341b883ab6bcc17b7abf2d3eb0b61a3d5a9a7128449b8d4b90f5ae06fd"
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/history-projection.ts",
+      "kind": "source",
+      "path": "libs/langgraph/src/runtime/history-projection.ts",
+      "sha256": "f7065276cc2d2122d8cec64311592210b521a9d76cc35550ba94d85d8cbd4742"
     },
     {
       "id": "source:libs/langgraph/src/runtime/message-reducer.ts",
@@ -12621,13 +12607,13 @@
       "id": "source:libs/langgraph/src/runtime/stream-projection.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/stream-projection.ts",
-      "sha256": "da722b46e0d9e72ef79e6e762a2571786bdba5b2fea96cb8dbd6cc30aac60c97"
+      "sha256": "4e2d299abf3d0c5452366515eb9af4a227aecf8b7681496b5f5c6da83f411caf"
     },
     {
       "id": "source:libs/langgraph/src/runtime/testing/binding-fixture.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/testing/binding-fixture.ts",
-      "sha256": "e5f140179b43c203cca0222464a77a8447658c36747121893da498d3bb25385e"
+      "sha256": "41f4df4d94bfedee7f0bfa5b822bd58c07a7725eba2115ed2156665d1ff733e7"
     },
     {
       "id": "source:libs/langgraph/src/runtime/testing/controlled-transport.ts",
@@ -12646,6 +12632,12 @@
       "kind": "source",
       "path": "libs/langgraph/src/runtime/transport.types.ts",
       "sha256": "ca5d20d673bec0ca60d3af59b50b948e0dbd93b0cc26efe59d962f666a6c12cb"
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/wire-message.ts",
+      "kind": "source",
+      "path": "libs/langgraph/src/runtime/wire-message.ts",
+      "sha256": "0f134e1c7a664cec9df39b16aefae7595b7400c74fcb68c9c0b84b61dc500c13"
     },
     {
       "id": "source:libs/langgraph/src/test-setup.ts",

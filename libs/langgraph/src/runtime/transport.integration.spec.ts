@@ -70,6 +70,89 @@ describe('neutral real SDK transport', () => {
     vi.unstubAllGlobals();
   });
 
+  it('loads decoded history through the real SDK endpoint without issuing runs, writes or tools', async () => {
+    const request = vi.fn<typeof fetch>(
+      async () =>
+        new Response(
+          JSON.stringify([
+            {
+              values: {
+                messages: [
+                  { type: 'human', id: 'persisted-user', content: 'Weather?' },
+                  toolCall,
+                ],
+              },
+              next: ['tools'],
+              tasks: [],
+              checkpoint: {
+                thread_id: 'thread-1',
+                checkpoint_id: 'persisted',
+                checkpoint_ns: '',
+                checkpoint_map: {},
+              },
+              metadata: null,
+              created_at: null,
+              parent_checkpoint: null,
+            },
+          ]),
+          { headers: { 'content-type': 'application/json' } }
+        )
+    );
+    vi.stubGlobal('fetch', request);
+    const handler = vi.fn(() => 'Never');
+    const store: ToolExecutionStore = {
+      claim: vi.fn(async () => 'claimed' as const),
+      record: vi.fn(async () => undefined),
+    };
+    const session = createSession({
+      assistantId: 'assistant-1',
+      threadId: 'thread-1',
+      apiUrl: 'https://runtime.example/api',
+      clientOptions: { defaultHeaders: { authorization: 'session-token' } },
+      executionStore: store,
+      tools: { weather: { description: 'Weather', handler } },
+    });
+    const external = new AbortController();
+    const notify = vi.fn();
+    const off = session.subscribe(notify);
+    try {
+      session.getSnapshot();
+      expect(request).not.toHaveBeenCalled();
+      expect(session.load).toBeTypeOf('function');
+      await session.load?.({ signal: external.signal });
+      expect(request).toHaveBeenCalledTimes(1);
+      const [url, init] = request.mock.calls[0];
+      expect(String(url)).toBe(
+        'https://runtime.example/api/threads/thread-1/history'
+      );
+      expect(init?.method).toBe('POST');
+      expect(JSON.parse(String(init?.body))).toEqual({ limit: 10 });
+      expect(new Headers(init?.headers).get('authorization')).toBe(
+        'session-token'
+      );
+      expect(init?.signal).toBeInstanceOf(AbortSignal);
+      expect(init?.signal).not.toBe(external.signal);
+      expect(
+        session.getSnapshot().messages.map((message) => message.id)
+      ).toEqual(['persisted-user', 'assistant-tool']);
+      expect(session.getSnapshot().messages[1].delivery).toEqual({
+        generation: 'assistant-tool',
+        phase: 'complete',
+        outcome: 'success',
+      });
+      expect(session.getSnapshot().toolCalls).toMatchObject([
+        { id: 'call-weather', status: 'pending', args: { city: 'Paris' } },
+      ]);
+      expect(handler).not.toHaveBeenCalled();
+      expect(store.claim).not.toHaveBeenCalled();
+      expect(store.record).not.toHaveBeenCalled();
+      expect(notify).toHaveBeenCalledTimes(1);
+    } finally {
+      off();
+      await session.dispose();
+    }
+  });
+
   it.each([
     ['missing options', undefined, 1],
     ['empty options', {}, 1],

@@ -10,6 +10,7 @@ export function display(snapshot: AgentSnapshot<FixtureTools>) {
   const delivery = assistant.at(-1)?.delivery;
   return {
     text: assistant.map((message) => message.content).join('\n'),
+    transcript: snapshot.messages.map((message) => message.content).join('\n'),
     error: snapshot.error?.message ?? '',
     tool: JSON.stringify(snapshot.toolCalls),
     delivery: delivery?.phase === 'complete' ? `complete:${delivery.outcome}` : delivery?.phase ?? '',
