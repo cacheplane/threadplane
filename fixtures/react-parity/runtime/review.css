@@ -1,0 +1,138 @@
+:root {
+  color-scheme: light;
+  font-family: system-ui, sans-serif;
+  color: #182a3b;
+  background: #f1f5f8;
+  line-height: 1.5;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  padding: 28px 20px;
+}
+.review-shell,
+.owner-panel {
+  max-width: 1120px;
+  margin: 0 auto;
+}
+header {
+  margin-bottom: 24px;
+}
+h1 {
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  line-height: 1.15;
+  margin: 4px 0 12px;
+}
+h2 {
+  font-size: 1.15rem;
+  margin: 0 0 14px;
+}
+h3 {
+  font-size: 0.8rem;
+  color: #43566a;
+  margin: 0 0 6px;
+}
+p {
+  margin: 0 0 12px;
+}
+.eyebrow {
+  color: #335e7d;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.panel {
+  background: white;
+  border: 1px solid #c6d3df;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 18px;
+  min-width: 0;
+}
+.instructions {
+  border-left: 4px solid #1d6b94;
+}
+.instructions p,
+.owner-panel p {
+  max-width: 90ch;
+}
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+button {
+  font: inherit;
+  font-weight: 600;
+  color: #174361;
+  background: #eff7fc;
+  border: 1px solid #6489a3;
+  border-radius: 6px;
+  padding: 9px 16px;
+  cursor: pointer;
+}
+button:hover {
+  background: #daeaf5;
+}
+button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+button:focus-visible {
+  outline: 3px solid #975100;
+  outline-offset: 3px;
+}
+.review-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 18px;
+}
+.review-grid > :first-child,
+.review-grid > :nth-child(2),
+.review-grid > :last-child {
+  grid-column: 1 / -1;
+}
+.state-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+.fields {
+  display: grid;
+  gap: 18px;
+}
+.field {
+  min-width: 0;
+}
+output {
+  display: block;
+  min-height: 2.4rem;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: #f1f5f8;
+  font: 0.86rem/1.55 ui-monospace, SFMono-Regular, Consolas, monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+output:empty::before {
+  content: '—';
+  color: #64778a;
+}
+.owner-panel {
+  border-top: 3px solid #476c87;
+}
+.owner-panel h3 {
+  margin-top: 18px;
+}
+@media (max-width: 640px) {
+  body {
+    padding: 18px 12px;
+  }
+  .panel {
+    padding: 16px;
+  }
+  .review-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

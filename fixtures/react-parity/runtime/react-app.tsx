@@ -2,13 +2,19 @@ import { StrictMode, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { useAgent } from '@threadplane/react';
 import { createFixtureSession } from './runtime-entry.js';
-import { attachOwner, display } from './scenarios';
+import './review.css';
+import { attachOwner, display, reviewInstructions } from './scenarios';
 
 // Application ownership is outside StrictMode and the component lifetime.
 let handlerCalls = 0;
 let submissions = 0;
-const session = createFixtureSession('/api', 'fixture-thread', () => { handlerCalls += 1; });
-const submit = (input: string) => { submissions += 1; return session.submit(input); };
+const session = createFixtureSession('/api', 'fixture-thread', () => {
+  handlerCalls += 1;
+});
+const submit = (input: string) => {
+  submissions += 1;
+  return session.submit(input);
+};
 
 function App() {
   const snapshot = useAgent(session);
@@ -17,36 +23,152 @@ function App() {
   const load = async () => {
     if (!session.load) return;
     setLoadError('');
-    try { await session.load(); }
-    catch { setLoadError('History unavailable'); }
-    finally { setLoadsFinished((count) => count + 1); }
+    try {
+      await session.load();
+    } catch {
+      setLoadError('History unavailable');
+    } finally {
+      setLoadsFinished((count) => count + 1);
+    }
   };
   const view = display(snapshot);
-  return <main>
-    <button disabled={!session.load} onClick={() => void load()}>Load</button>
-    <button onClick={() => void submit('Send')}>Send</button>
-    <button onClick={() => void submit('Tool')}>Tool</button>
-    <button onClick={() => void submit('Error')}>Error</button>
-    <button onClick={() => void submit('Hold')}>Hold</button>
-    <button onClick={() => void submit('Pause')}>Pause</button>
-    <button onClick={() => void session.stop()}>Stop</button>
-    <output aria-label="Status" data-testid="status">{snapshot.status}</output>
-    <output aria-label="Text" data-testid="text">{view.text}</output>
-    <output aria-label="Transcript" data-testid="transcript">{view.transcript}</output>
-    <output aria-label="Application values" data-testid="values">{view.values}</output>
-    <output aria-label="Interrupts" data-testid="interrupts">{view.interrupts}</output>
-    <output aria-label="Loads finished" data-testid="loads-finished">{loadsFinished}</output>
-    <output aria-label="Load error" data-testid="load-error">{loadError}</output>
-    <output aria-label="Error" data-testid="error">{view.error}</output>
-    <output aria-label="Tool result" data-testid="tool">{view.tool}</output>
-    <output aria-label="Delivery" data-testid="delivery">{view.delivery}</output>
-    <output aria-label="Handler calls" data-testid="handler-calls">{handlerCalls}</output>
-    <output aria-label="Submissions" data-testid="submissions">{submissions}</output>
-  </main>;
+  return (
+    <main className="review-shell">
+      <header>
+        <p className="eyebrow">Installed package review · React</p>
+        <h1>Session runtime</h1>
+        <p>
+          Observe the application-owned session through the native React
+          binding.
+        </p>
+      </header>
+      <section className="panel instructions" aria-label="Review instructions">
+        <h2>Review sequence</h2>
+        <p>{reviewInstructions}</p>
+      </section>
+      <section className="panel" aria-label="Session controls">
+        <h2>Session controls</h2>
+        <div className="controls">
+          <button disabled={!session.load} onClick={() => void load()}>
+            Load
+          </button>
+          <button onClick={() => void submit('Send')}>Send</button>
+          <button onClick={() => void submit('Tool')}>Tool</button>
+          <button onClick={() => void submit('Error')}>Error</button>
+          <button onClick={() => void submit('Hold')}>Hold</button>
+          <button onClick={() => void submit('Pause')}>Pause</button>
+          <button onClick={() => void session.stop()}>Stop</button>
+        </div>
+      </section>
+      <div className="review-grid">
+        <section className="panel" aria-label="Request state panel">
+          <h2>Request state</h2>
+          <div className="state-grid">
+            <div className="field">
+              <h3>Status</h3>
+              <output aria-label="Status" data-testid="status">
+                {snapshot.status}
+              </output>
+            </div>
+            <div className="field">
+              <h3>Delivery</h3>
+              <output aria-label="Delivery" data-testid="delivery">
+                {view.delivery}
+              </output>
+            </div>
+            <div className="field">
+              <h3>Loads finished</h3>
+              <output aria-label="Loads finished" data-testid="loads-finished">
+                {loadsFinished}
+              </output>
+            </div>
+            <div className="field">
+              <h3>Submissions</h3>
+              <output aria-label="Submissions" data-testid="submissions">
+                {submissions}
+              </output>
+            </div>
+            <div className="field">
+              <h3>Handler calls</h3>
+              <output aria-label="Handler calls" data-testid="handler-calls">
+                {handlerCalls}
+              </output>
+            </div>
+            <div className="field">
+              <h3>Load error</h3>
+              <output aria-label="Load error" data-testid="load-error">
+                {loadError}
+              </output>
+            </div>
+            <div className="field">
+              <h3>Error</h3>
+              <output aria-label="Error" data-testid="error">
+                {view.error}
+              </output>
+            </div>
+          </div>
+        </section>
+        <section className="panel" aria-label="Conversation panel">
+          <h2>Conversation</h2>
+          <div className="fields">
+            <div className="field">
+              <h3>Text</h3>
+              <output aria-label="Text" data-testid="text">
+                {view.text}
+              </output>
+            </div>
+            <div className="field">
+              <h3>Transcript</h3>
+              <output aria-label="Transcript" data-testid="transcript">
+                {view.transcript}
+              </output>
+            </div>
+          </div>
+        </section>
+        <section className="panel" aria-label="Application values panel">
+          <h2>Application values</h2>
+          <div className="fields">
+            <div className="field">
+              <h3>Application values</h3>
+              <output aria-label="Application values" data-testid="values">
+                {view.values}
+              </output>
+            </div>
+          </div>
+        </section>
+        <section className="panel" aria-label="Interrupts panel">
+          <h2>Interrupts</h2>
+          <div className="fields">
+            <div className="field">
+              <h3>Interrupts</h3>
+              <output aria-label="Interrupts" data-testid="interrupts">
+                {view.interrupts}
+              </output>
+            </div>
+          </div>
+        </section>
+        <section className="panel" aria-label="Tools panel">
+          <h2>Tools</h2>
+          <div className="fields">
+            <div className="field">
+              <h3>Tool result</h3>
+              <output aria-label="Tool result" data-testid="tool">
+                {view.tool}
+              </output>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  );
 }
 
 const container = document.getElementById('root');
 if (!container) throw new Error('Missing fixture root');
 const root = createRoot(container);
-root.render(<StrictMode><App /></StrictMode>);
+root.render(
+  <StrictMode>
+    <App />
+  </StrictMode>
+);
 attachOwner(session, () => root.unmount());

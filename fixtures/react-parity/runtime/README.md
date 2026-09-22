@@ -1,5 +1,73 @@
 # Installed native runtime consumers
 
+## Manual review
+
+From the repository root, install dependencies and build the artifacts used by
+the review runner:
+
+```sh
+npm ci
+NX_DAEMON=false npx nx run-many -t build -p core,angular,react --skip-nx-cache
+npx playwright install chromium
+node scripts/react-parity/review-runtime.mjs
+```
+
+On Linux, install browser system dependencies with
+`npx playwright install --with-deps chromium`. The runner requires the existing
+`dist/libs/{core,angular,react}` artifacts and reports the build command if they
+are missing. `node scripts/react-parity/review-runtime.mjs --help` prints the
+prerequisite and review sequence.
+
+The runner packs those artifacts, installs and strictly type-checks isolated
+React and Angular consumers, builds each app, and runs all eleven browser
+scenarios on fresh fixture servers. Only after those checks pass does it print
+two new, untouched loopback URLs. Open each URL manually; no browser opens
+automatically. The review servers have made no SDK requests at that point.
+Separate preparation processes keep each framework's install/build environment
+isolated. The shared stylesheet and labelled panels are fixture review aids.
+
+The printed source HEAD and dirty source paths identify the checkout used for
+the private runtime bundle and fixture UI. They do **not** establish which commit
+built the preexisting package artifacts. Printed SHA-256 identifiers separately
+identify the actual packed bytes installed in each consumer. Rebuild the
+prerequisites when changing core or either native binding.
+
+Use this order once per fresh server, waiting for each expected state:
+
+| Action | Expected visible state |
+| --- | --- |
+| Open | Idle; zero loads, submissions and handler calls; values `unobserved`; interrupts `[]`. Mount performs no SDK I/O. |
+| Load | Loads finished `1`, empty Load error, saved transcript and profile, two saved interrupt payloads, delivery `complete:paused`. No tool handler executes. |
+| Load again | Loads finished `2`, empty Load error; the same saved content, values, interrupts and paused delivery. |
+| Load a third time | Loads finished `3`, empty Load error; empty transcript, values `unobserved`, interrupts `[]`. |
+| Send | `Hello 🌍.`, idle, delivery `complete:success`; values show the completed stage. |
+| Tool | `20 degrees`, a completed weather result for Paris, handler calls `1`; delivery `complete:success`. |
+| Error | Status `error` and a protected error message without the private backend diagnostic. Prior delivery remains `complete:success`; this fixture error does not replace it. |
+| Hold | `Held partial` appears while delivery is `streaming`. |
+| Stop | Delivery becomes `complete:aborted`; the native held response closes and partial text remains visible. |
+| Pause | `Waiting for approvals`, both live interrupt payloads, idle, delivery `complete:paused`. |
+| Stop again | Both interrupts and `complete:paused` remain; no extra request is made. |
+| Send again | Another successful greeting, interrupts `[]`, delivery `complete:success`; submissions `6`, handler calls `1`. |
+| Unmount | Component panels disappear; the separate owner controls report `unmounted`. |
+| Dispose | Owner reports `disposed`. |
+| Send after dispose | Owner reports `aborted`; no request is made. |
+
+This sequence makes three history reads with `{ limit: 10 }` and seven run
+requests, including the tool continuation. Each server permits only three Load
+requests. Restart the CLI for a fresh sequence; reloading the page does not reset
+server history. Unmount releases the framework observer, while the application
+owns the session and explicitly disposes it.
+
+Keep the CLI running during review. Ctrl+C or SIGTERM closes its servers and
+connections, stops and awaits preparation process groups, and removes this
+invocation's temporary consumers. Startup failures use the same cleanup path;
+if a preparation process group cannot be stopped, its temporary files are
+retained and an error is reported. Process-group cleanup targets POSIX macOS and
+Linux. The local HTTP/SSE fixture is not a production backend, interrupt resume
+API, SSR demonstration, or complete React migration.
+
+## Automated installed-consumer verification
+
 Run the owned commands from the repository root. On a fresh checkout, install
 dependencies, build the private artifacts, and install Playwright Chromium:
 
