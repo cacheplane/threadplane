@@ -7,8 +7,10 @@ import type { LangGraphSnapshot } from './langgraph-snapshot';
 function snapshot(content = 'one'): LangGraphSnapshot {
   return {
     status: 'idle',
+    history: undefined,
     values: undefined,
     interrupts: [],
+    subgraphs: [],
     messages: [
       {
         id: 'm',

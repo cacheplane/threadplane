@@ -70,6 +70,72 @@ describe('neutral real SDK transport', () => {
     vi.unstubAllGlobals();
   });
 
+  it('observes full child paths through the locked SDK without root values or tool authority', async () => {
+    const frame = (event: string, data: unknown) =>
+      `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+    const childTool = { ...toolCall, id: 'shared' };
+    const trace =
+      frame('messages|parent:1|child:1', [
+        { type: 'AIMessageChunk', id: 'shared', content: 'Long draft' },
+        {},
+      ]) +
+      frame('messages|sibling:1', [
+        { type: 'AIMessageChunk', id: 'shared', content: 'Sibling' },
+        {},
+      ]) +
+      frame('values|parent:1|child:1', {
+        child: { owned: true },
+        messages: [childTool],
+      }) +
+      frame('updates|parent:1|child:1', {
+        __interrupt__: [{ id: 'child-ask', value: 'Continue?' }],
+      }) +
+      frame('error|sibling:1', { message: 'PRIVATE_CHILD_ERROR' }) +
+      frame('values', {
+        root: true,
+        messages: [{ type: 'ai', id: 'root', content: 'Done' }],
+      });
+    const fetch = vi.fn(async () => fragmentedResponse(trace));
+    vi.stubGlobal('fetch', fetch);
+    const handler = vi.fn((args: { city: string }) => args.city);
+    const session = createSession({
+      assistantId: 'a',
+      threadId: 't',
+      apiUrl: 'https://runtime.example',
+      tools: { weather: { description: 'Weather', handler } },
+    });
+    expect(await session.submit('Go')).toBe('success');
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(handler).not.toHaveBeenCalled();
+    const snapshot = session.getSnapshot();
+    expect(snapshot.values).toEqual({ root: true });
+    expect(snapshot.interrupts).toEqual([]);
+    expect(snapshot.toolCalls).toEqual([]);
+    expect(snapshot.messages.map((message) => message.content)).toEqual([
+      'Go',
+      'Done',
+    ]);
+    expect(snapshot.subgraphs.map((entry) => entry.namespace)).toEqual([
+      ['parent:1', 'child:1'],
+      ['sibling:1'],
+    ]);
+    expect(snapshot.subgraphs[0].messages[0]).toMatchObject({
+      id: 'shared',
+      content: '',
+      delivery: { outcome: 'success' },
+    });
+    expect(snapshot.subgraphs[0].values).toEqual({ child: { owned: true } });
+    expect(snapshot.subgraphs[0].interrupts).toEqual([
+      { id: 'child-ask', value: 'Continue?' },
+    ]);
+    expect(snapshot.subgraphs[1].messages[0]).toMatchObject({
+      content: 'Sibling',
+      delivery: { outcome: 'error' },
+    });
+    expect(JSON.stringify(snapshot)).not.toContain('PRIVATE_CHILD_ERROR');
+    await session.dispose();
+  });
+
   it.each([false, true])(
     'sends application state only on the initial SDK POST, with reconnect=%s',
     async (reconnect) => {
@@ -820,6 +886,19 @@ describe('neutral real SDK transport', () => {
       expect(
         session.getSnapshot().messages.map((message) => message.id)
       ).toEqual(['persisted-user', 'assistant-tool']);
+      expect(session.getSnapshot().history).toEqual([
+        {
+          checkpoint: {
+            thread_id: 'thread-1',
+            checkpoint_id: 'persisted',
+            checkpoint_ns: '',
+            checkpoint_map: {},
+          },
+          parent_checkpoint: null,
+          created_at: null,
+          next: ['tools'],
+        },
+      ]);
       expect(session.getSnapshot().messages[1].delivery).toEqual({
         generation: 'assistant-tool',
         phase: 'complete',

@@ -196,6 +196,23 @@ const submit = (input: string) => {
             </div>
           </div>
         </section>
+        <section class="panel" aria-label="Checkpoint history panel">
+          <h2>Last loaded checkpoint history</h2>
+          <p>A saved page of checkpoint references. Load refreshes this page.</p>
+          <output aria-label="Checkpoint history" data-testid="history">{{
+            view().history
+          }}</output>
+        </section>
+        <section class="panel" aria-label="Subgraphs panel">
+          <h2>Subgraphs</h2>
+          <p>
+            Child observations stay separate from the root conversation and
+            tools.
+          </p>
+          <output aria-label="Subgraphs" data-testid="subgraphs">{{
+            view().subgraphs
+          }}</output>
+        </section>
         <section class="panel" aria-label="Tools panel">
           <h2>Tools</h2>
           <div class="fields">

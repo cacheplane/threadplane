@@ -1,6 +1,8 @@
 import type {
   AgentSession,
   AgentSnapshot,
+  AgentError,
+  Message,
   CompleteOutcome,
   PlainValue,
 } from '@threadplane/core';
@@ -14,10 +16,12 @@ export type FixtureInputState = Readonly<Record<string, PlainValue>> & {
   readonly client_tools?: never;
 };
 
-export type FixtureSubmitInput = string | {
-  readonly message: string;
-  readonly state?: FixtureInputState;
-};
+export type FixtureSubmitInput =
+  | string
+  | {
+      readonly message: string;
+      readonly state?: FixtureInputState;
+    };
 
 /** Project application records to plain data before passing them to the backend. */
 export function reviewInput(label: string): FixtureSubmitInput {
@@ -28,7 +32,9 @@ export function reviewInput(label: string): FixtureSubmitInput {
       model: 'gpt-5-mini',
       reasoning_effort: 'minimal',
       gen_ui_mode: 'a2ui',
-      itinerary: [{ id: 'paris', day: 1, place: 'Paris', note: 'Check the weather' }],
+      itinerary: [
+        { id: 'paris', day: 1, place: 'Paris', note: 'Check the weather' },
+      ],
     },
   };
 }
@@ -50,18 +56,40 @@ export interface FixtureTools {
   count: { args: { values: readonly string[] }; result: number };
 }
 
+type FixtureInterrupt = {
+  readonly id?: string;
+  readonly value?: PlainValue;
+  readonly namespace?: readonly string[];
+  readonly when?: string;
+  readonly resumable?: boolean;
+  readonly ns?: readonly string[];
+};
+
+type FixtureCheckpoint = {
+  readonly thread_id: string;
+  readonly checkpoint_ns: string;
+  readonly checkpoint_id: string | null | undefined;
+  readonly checkpoint_map: Readonly<Record<string, PlainValue>> | null | undefined;
+};
+
 /** Fixture-local backend extension, expressed entirely through installed core. */
 export type FixtureSnapshot = AgentSnapshot<FixtureTools> & {
+  readonly history: readonly {
+    readonly checkpoint: FixtureCheckpoint;
+    readonly parent_checkpoint: FixtureCheckpoint | null | undefined;
+    readonly created_at: string | null | undefined;
+    readonly next: readonly string[];
+  }[] | undefined;
+  readonly subgraphs: readonly {
+    readonly namespace: readonly string[];
+    readonly messages: readonly Message[];
+    readonly values: Readonly<Record<string, PlainValue>> | undefined;
+    readonly interrupts: readonly FixtureInterrupt[];
+    readonly error?: AgentError;
+  }[];
   readonly reconnect?: { readonly runId: string };
   readonly values: Readonly<Record<string, PlainValue>> | undefined;
-  readonly interrupts: readonly {
-    readonly id?: string;
-    readonly value?: PlainValue;
-    readonly namespace?: readonly string[];
-    readonly when?: string;
-    readonly resumable?: boolean;
-    readonly ns?: readonly string[];
-  }[];
+  readonly interrupts: readonly FixtureInterrupt[];
 };
 
 export function display(snapshot: FixtureSnapshot) {
@@ -73,7 +101,25 @@ export function display(snapshot: FixtureSnapshot) {
     text: assistant.map((message) => message.content).join('\n'),
     transcript: snapshot.messages.map((message) => message.content).join('\n'),
     values: JSON.stringify(snapshot.values) ?? 'unobserved',
+    history: JSON.stringify(snapshot.history) ?? 'unobserved',
     interrupts: JSON.stringify(snapshot.interrupts),
+    subgraphs: JSON.stringify(
+      snapshot.subgraphs.map((child) => ({
+        namespace: child.namespace,
+        messages: child.messages.map((message) => ({
+          id: message.id,
+          role: message.role,
+          content: message.content,
+          delivery:
+            message.delivery.phase === 'complete'
+              ? `complete:${message.delivery.outcome}`
+              : message.delivery.phase,
+        })),
+        values: child.values ?? null,
+        interrupts: child.interrupts,
+        error: child.error?.message ?? '',
+      }))
+    ),
     humanMessages: snapshot.messages.filter(
       (message) => message.role === 'user'
     ).length,

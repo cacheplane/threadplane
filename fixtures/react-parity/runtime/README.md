@@ -1,5 +1,58 @@
 # Installed native runtime consumers
 
+## Checkpoint history
+
+`snapshot.history` is the last explicitly loaded checkpoint page. It is undefined
+before Load and an empty array after an empty response. Entries retain only the
+SDK's `checkpoint`, `parent_checkpoint`, `created_at` and `next` fields, with deeply
+readonly references and map data. Order, duplicate ids and missing ids remain as
+received. Values, repeated transcripts, task subtrees and arbitrary metadata are
+not retained in this page. The latest entry still supplies the current root state.
+
+Successful Load replaces the page atomically with that state. Failed, cancelled
+or superseded loads preserve the prior aggregate. Equal refreshes share references;
+stream tokens reuse the owned page. Submit, resume, reconnect and recovery retain
+the last explicit page without claiming it is current or adding history requests.
+The locked SDK fetches ten entries by default. This is a bounded observation,
+not a complete history tree, checkpoint selection, pagination or fork command.
+
+Both review apps show "Last loaded checkpoint history". The first two Load clicks
+show latest, parent and sibling references; the third clears the page. Older
+checkpoint transcripts and task diagnostics never enter the displayed page or
+current transcript. The remaining twenty-action workflow is unchanged.
+
+## Child observations
+
+The private LangGraph snapshot exposes readonly `subgraphs`. Each entry has its
+full namespace tuple, messages, application values, interrupts and an optional
+protected error. Exact namespace paths keep siblings and nested invocations
+separate even when they reuse message IDs. Child data never enters the root
+transcript or function-tool executor. Observed child interrupts do not authorize
+root Resume; observed child completion does not prove root completion.
+
+The session owns plain child data and retains unchanged references. Root tokens
+reuse the whole child collection; updates to one child preserve its siblings.
+Child projection commits with the root projection and cursor under the same
+command ownership check. Stop and disposal settle active child delivery locally.
+Successful or paused physical closure finalizes authoritative child text, including
+shorter or empty replacements. Delivery describes the local observation outcome,
+not an independently verified child-job status.
+
+An admitted independent submission clears prior children. Resume retains child
+observations, while fresh child activity belongs to the new attempt. A child's
+first new interrupt batch replaces its previous attempt's batch, including when
+no child text arrives first. Root tool
+handoffs retain observations but start new physical-run projection ownership.
+Reconnect preserves anonymous identity only for its retained run; it cannot reopen
+a failed child from an earlier tool step. Successful explicit history replacement
+clears child observations because the history call supplies root state only.
+Failed loads retain them. Root recovery cannot reconstruct missing child history.
+
+The Subgraphs panel exercises same-ID siblings, nested namespaces, a protected
+child error, held output, pause/resume and same-run reconnect. Child-only tool
+requests never call the fixture handlers. Tool attribution, delegation cards,
+child history/navigation and public adapter cutover remain separate work.
+
 ## Application input
 
 The private backend session accepts either `submit('Hello')` or a text message
@@ -165,17 +218,17 @@ the page is inert; the following sequence contains twenty button actions:
 | Load again | Loads finished `2`, empty Load error; the same saved content, values, interrupts and paused delivery. |
 | Load a third time | Loads finished `3`, empty Load error; empty transcript, values `unobserved`, interrupts `[]`. |
 | Send | `Hello 🌍.`, idle, delivery `complete:success`; values show the completed stage. |
-| Tool | Observed values `{}` (submitted state is not echoed); `20 degrees`, a completed weather result for Paris, handler calls `1`; delivery `complete:success`. |
+| Tool | Observed root values `{}`; `20 degrees`, a completed weather result for Paris, handler calls `1`. Subgraphs show two same-ID siblings, one nested, and a protected failed child. Child tool data never executes. |
 | Error | Status `error` and a protected error message without the private backend diagnostic. Prior delivery remains `complete:success`; this fixture error does not replace it. |
-| Hold | `Held partial` appears while delivery is `streaming`. |
-| Stop | Delivery becomes `complete:aborted`; the native held response closes and partial text remains visible. |
-| Pause | `Waiting for approvals`, both live interrupt payloads, idle, delivery `complete:paused`. |
+| Hold | Root `Held partial` and separate `Child held partial` appear with streaming delivery. |
+| Stop | Both deliveries become `complete:aborted`; the native held response closes and partial text remains visible. |
+| Pause | Root `Waiting for approvals`, both live interrupts, idle and paused delivery. Child canonical text shortens to `Child draft`, with its own interrupt and paused delivery. |
 | Stop again | Both interrupts and `complete:paused` remain; no extra request is made. |
-| Resume | Sends both authored approval responses; shows `One final approval`, one new interrupt, resume outcome `paused`, resumes finished `1`. Human messages remain `5`. |
-| Resume again | Shows `Approvals complete` in the same assistant message, interrupts `[]`, delivery `complete:success`, resume outcome `success`, resumes finished `2`. Human messages remain `5`. |
-| Drop | `Dropped partial`, status `error`, delivery `complete:interrupted`, values stage `disconnected`, reconnect run `drop-run`. Submissions and human messages are `6`; the exact run is still running. |
-| Reconnect | `Dropped partial recovered` appears once; idle, delivery `complete:success`, values stage `reconnected`, reconnect outcome `success`, reconnects finished `1`. Availability clears and Reconnect disables. Human messages and submissions remain `6`; handler calls remain `1`. |
-| Send again | Another successful greeting, interrupts `[]`, delivery `complete:success`; submissions and human messages `7`, handler calls `1`. |
+| Resume | Shows root `One final approval` and separate `Child final approval`, each with its own new interrupt and paused delivery. Resumes finished `1`; human messages remain `5`. |
+| Resume again | Root `Approvals complete` and child `Child approved` replace their earlier text; both interrupt batches clear and deliveries succeed. Resumes finished `2`; human messages remain `5`. |
+| Drop | Root `Dropped partial` and child `Child partial` have interrupted delivery. Status `error`, values stage `disconnected`, reconnect run `drop-run`. Submissions and human messages are `6`; the exact run is still running. |
+| Reconnect | Root and child each append ` recovered` once, retaining their anonymous message IDs. Deliveries succeed, root values stage `reconnected`, reconnects finished `1`. Availability clears. Human messages and submissions remain `6`; handler calls remain `1`. |
+| Send again | Another successful greeting, root interrupts `[]`; prior child namespaces clear and only the Send fixture's `child` namespace remains. Submissions and human messages `7`, handler calls `1`. |
 | Unmount | Component panels disappear; the separate owner controls report `unmounted`. |
 | Dispose | Owner reports `disposed`. |
 | Send after dispose | Owner reports `aborted`; no request is made. |
@@ -228,7 +281,7 @@ versions come from the root lockfile. Contract probes compile the installed
 public entries with `strict` and `skipLibCheck:false`, standard DOM signals, and
 no workspace aliases. Negative probes check names, arguments, results and deep
 readonly types directly on each binding's inferred snapshot, including broad
-backend values and interrupt metadata/payloads without application-schema inference.
+backend values, interrupt metadata/payloads and immutable child observations without application-schema inference.
 The installed fixture shape uses core types only; the compiler-emitted factory
 declaration and native inferred result are checked together, including tool types.
 
@@ -318,7 +371,7 @@ capability described above. Core public contracts
 are unchanged; the native signatures now retain the concrete snapshot extension.
 
 The native fixtures expose Load, Send, Tool, Error, Hold, Pause, Resume, Drop,
-Reconnect and Stop buttons plus text, transcript, values, interrupts, load
+Reconnect and Stop buttons plus text, transcript, values, interrupts, subgraphs, load
 completion/error, status, tool result, delivery, human/submission/handler counts,
 resume/reconnect completion and outcome outputs, and reconnect availability.
 A single app-owned

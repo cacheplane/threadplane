@@ -18,6 +18,7 @@ import { FetchStreamTransport } from '../lib/transport/fetch-stream.transport';
 import { initialMessageState, reduceMessages } from './message-reducer';
 import { createPublication } from './publication';
 import { projectHistory } from './history-projection';
+import { projectCheckpointHistory } from './checkpoint-history';
 import type {
   LangGraphInterrupt,
   LangGraphSnapshot,
@@ -29,6 +30,14 @@ import {
   projectInterrupts,
 } from './interrupt-projection';
 import { ownMessage, ownValue } from './ownership';
+import {
+  captureStreamEvent,
+  initialSubgraphs,
+  projectSubgraphs,
+  rebaseSubgraphs,
+  settleSubgraphs,
+  type SubgraphObservation,
+} from './subgraph-projection';
 import {
   captureSubmitInput,
   createSubmitPayload,
@@ -130,6 +139,7 @@ interface Attempt {
   readonly resolve: (outcome: CompleteOutcome) => void;
   readonly input: AttemptInput;
   projection: StreamProjection;
+  subgraphs: SubgraphObservation;
   readonly calls: Map<string, ToolCall>;
   groups: number;
   physical?: PhysicalRun;
@@ -191,7 +201,11 @@ export function createSession(
     toolCalls: [],
     values: undefined,
     interrupts: [],
+    subgraphs: [],
+    history: undefined,
   });
+  let historyPage: LangGraphSnapshot['history'];
+  let subgraphs = initialSubgraphs(publication.getSnapshot().subgraphs);
   let state = initialMessageState();
   let values: LangGraphValues | undefined;
   let interrupts: readonly LangGraphInterrupt[] =
@@ -210,8 +224,10 @@ export function createSession(
   function publish(status: 'idle' | 'running' | 'error', error?: AgentError) {
     publication.publish({
       status,
+      history: historyPage,
       values,
       interrupts,
+      subgraphs: subgraphs.subgraphs,
       ...(retained?.run.evidence.runId
         ? { reconnect: { runId: retained.run.evidence.runId } }
         : {}),
@@ -316,6 +332,8 @@ export function createSession(
       generation: attempt.generation,
       outcome,
     });
+    subgraphs = settleSubgraphs(subgraphs, outcome);
+    attempt.subgraphs = subgraphs;
     attempt.resolve(outcome);
     return attempt;
   }
@@ -577,7 +595,8 @@ export function createSession(
           // Run creation precedes stream frames. A later callback cannot safely
           // attach an identity to already consumed data, including reentrant getters.
           run.received = true;
-          const event = next.value;
+          const event = captureStreamEvent(next.value);
+          if (!owns(attempt)) return;
           const previousState = state;
           const previousValues = values;
           const previousInterrupts = interrupts;
@@ -609,7 +628,15 @@ export function createSession(
             previousInterrupts,
             event
           );
-          // All three projections may invoke transport-owned getters. Commit no
+          const projectedSubgraphs = projectSubgraphs(
+            subgraphs,
+            event,
+            groups === 0
+              ? attempt.generation
+              : `${attempt.generation}-step-${groups}`,
+            attempt.projection.messageIdPrefix
+          );
+          // All projections may invoke transport-owned getters. Commit no
           // candidate if projection failed or a getter changed the owner.
           if (!owns(attempt)) return;
           run.evidence =
@@ -619,6 +646,8 @@ export function createSession(
           state = projected.state;
           values = projectedValues;
           interrupts = projectedInterrupts;
+          subgraphs = projectedSubgraphs;
+          attempt.subgraphs = subgraphs;
           attempt.projection = {
             ...projected.projection,
             paused: projectedInterrupts.length > 0,
@@ -700,8 +729,11 @@ export function createSession(
           }
         }
         if (!owns(attempt)) return;
-        if (outcome === 'success' || outcome === 'paused')
+        if (outcome === 'success' || outcome === 'paused') {
           state = finalizeProjection(state, attempt.projection);
+          subgraphs = settleSubgraphs(subgraphs, outcome, true);
+          attempt.subgraphs = subgraphs;
+        }
         if (outcome === 'success') {
           state = reduceMessages(state, {
             type: 'complete',
@@ -716,6 +748,8 @@ export function createSession(
             attempt.groups = groups;
             attempt.joinCursor = undefined;
             attempt.physical = undefined;
+            subgraphs = initialSubgraphs(subgraphs.subgraphs);
+            attempt.subgraphs = subgraphs;
             close(attempt, false, false);
             if (!owns(attempt)) return;
             attempt.closed = false;
@@ -797,6 +831,9 @@ export function createSession(
     const reading = detachLoad();
     const checking = invalidateCheck();
     const previous = detach('interrupted');
+    subgraphs = initialSubgraphs(
+      input.kind === 'submit' ? undefined : subgraphs.subgraphs
+    );
     const generation = crypto.randomUUID();
     const userId =
       input.kind === 'submit'
@@ -816,6 +853,7 @@ export function createSession(
       groups: 0,
       handoffIds: [],
       input,
+      subgraphs,
       projection: {
         generation,
         userId,
@@ -981,6 +1019,10 @@ export function createSession(
         candidate.attempt.projection,
         generation
       );
+      const projectedSubgraphs = rebaseSubgraphs(
+        candidate.attempt.subgraphs,
+        generation
+      );
       if (
         disposed ||
         external?.aborted ||
@@ -1003,6 +1045,7 @@ export function createSession(
         groups: candidate.attempt.groups,
         handoffIds: candidate.attempt.handoffIds,
         projection: projected.projection,
+        subgraphs: projectedSubgraphs,
         physical: { ...candidate.run, captureOpen: false },
         joinCursor: candidate.run.evidence.cursor,
       };
@@ -1010,6 +1053,7 @@ export function createSession(
       retained = undefined;
       recoveryAttempt = undefined;
       state = projected.state;
+      subgraphs = projectedSubgraphs;
       owner = created;
       if (external) {
         const abort = () => {
@@ -1047,12 +1091,15 @@ export function createSession(
             : {}),
         });
         const projectedValues = projectHistoryValues(previousValues, history);
+        const projectedHistory = projectCheckpointHistory(historyPage, history);
         // Even a plain projection can invoke getters supplied by a transport.
         // Such a getter can submit/stop/dispose; never commit its stale result.
         if (!ownsLoad(read)) return;
         state = projected;
         values = projectedValues;
         interrupts = projectedInterrupts;
+        historyPage = projectedHistory;
+        subgraphs = initialSubgraphs();
         authoredTools.clear();
         loading = undefined;
         read.resolve();
@@ -1164,6 +1211,12 @@ export function createSession(
               : message
           ),
         };
+        const recoveredSubgraphs = settleSubgraphs(
+          captured.attempt.subgraphs,
+          recovered.outcome,
+          true,
+          true
+        );
         // Projection and delivery ownership must finish before clearing this
         // check: a raw getter can synchronously start a replacement operation.
         if (disposed || captured.revision !== revision) return;
@@ -1172,6 +1225,8 @@ export function createSession(
         state = recoveredState;
         values = recovered.values;
         interrupts = recovered.interrupts;
+        subgraphs = recoveredSubgraphs;
+        captured.attempt.subgraphs = subgraphs;
         captured.attempt.projection = recovered.projection;
         publish('idle');
       });

@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "status": "verified-local",
-  "increment": "Explicit private LangGraph application input (A01/A02/A03)",
+  "increment": "Private LangGraph checkpoint history observation (H01/H02/H03)",
   "observedOn": "2026-09-22",
-  "recordedAt": "2026-09-22T18:45:28.020Z",
+  "recordedAt": "2026-09-22T21:41:02.419Z",
   "source": {
-    "branch": "codex/langgraph-application-input",
-    "baseCommit": "7f0284f1c740a4cfb69de6afffd9884dd091b41b",
-    "verificationHead": "7f0284f1c740a4cfb69de6afffd9884dd091b41b",
-    "workingTree": "Verified working-tree changes on merged #1122. Selected-byte fingerprint identifies actual source, not a future commit. Foundation artifacts were freshly built; tarball hashes identify installed native/core artifacts and runtime source was separately emitted/bundled for every consumer.",
+    "branch": "codex/langgraph-checkpoint-history",
+    "baseCommit": "c600429e1dcce656f59974851f80007120c3d5f7",
+    "verificationHead": "c600429e1dcce656f59974851f80007120c3d5f7",
+    "workingTree": "Verified working-tree changes on the reviewed #1124 head; predecessor CI is reported separately. Selected-byte fingerprint identifies actual source, not a future commit. Foundation artifacts were freshly built; tarball hashes identify installed native/core artifacts and runtime source was separately emitted/bundled for every consumer.",
     "fingerprint": {
       "algorithm": "SHA-256 of a UTF-8 manifest: one line per selected file, lowercase SHA-256(file bytes), two ASCII spaces, repo-relative path, LF; unique paths sorted by JavaScript default string ordering.",
       "pathspecs": [
@@ -42,21 +42,24 @@
       "excludedPaths": [
         "fixtures/react-parity/runtime/evidence.json"
       ],
-      "fileCount": 797,
-      "sha256": "38e780719e225d659e064cf44639969adac2e3f79fa474a093dcf2049b3917c9",
+      "fileCount": 804,
+      "sha256": "cef6b0e9c1031d8084e412409ac14a2b804759ef8455528410dd2edf43c7ee5b",
       "selection": "git ls-files -z --cached --others --exclude-standard -- <pathspecs>; existing files minus excludedPaths, including new tests. Local research/planning files are outside these paths. Evidence excludes itself to avoid self-reference.",
       "reproduce": "node --input-type=module <<'JS'\nimport {createHash} from 'node:crypto';\nimport {execFileSync} from 'node:child_process';\nimport {readFileSync,existsSync} from 'node:fs';\nconst {fingerprint:f}=JSON.parse(readFileSync('fixtures/react-parity/runtime/evidence.json')).source;\nconst sha=value=>createHash('sha256').update(value).digest('hex');\nconst paths=[...new Set(execFileSync('git',['ls-files','-z','--cached','--others','--exclude-standard','--',...f.pathspecs],{encoding:'utf8'}).split('\\0').filter(Boolean))].filter(path=>!f.excludedPaths.includes(path)&&existsSync(path)).sort();\nconst actual=sha(paths.map(path=>sha(readFileSync(path))+'  '+path+'\\n').join(''));\nif(paths.length!==f.fileCount||actual!==f.sha256) throw new Error('Source fingerprint mismatch');\nconsole.log(paths.length+' files: '+actual);\nJS"
     },
     "sourceState": {
       "modified": [
-        "fixtures/react-parity/README.md",
         "fixtures/react-parity/runtime/README.md",
         "fixtures/react-parity/runtime/angular-app.ts",
-        "fixtures/react-parity/runtime/installed-types.ts",
         "fixtures/react-parity/runtime/react-app.tsx",
-        "fixtures/react-parity/runtime/runtime-entry.ts",
+        "fixtures/react-parity/runtime/review.css",
         "fixtures/react-parity/runtime/scenarios.ts",
         "libs/langgraph/src/runtime/create-session.ts",
+        "libs/langgraph/src/runtime/langgraph-snapshot.ts",
+        "libs/langgraph/src/runtime/ownership.ts",
+        "libs/langgraph/src/runtime/publication.spec.ts",
+        "libs/langgraph/src/runtime/recovery.spec.ts",
+        "libs/langgraph/src/runtime/subgraph-projection.spec.ts",
         "libs/langgraph/src/runtime/transport.integration.spec.ts",
         "scripts/react-parity/baseline.json",
         "scripts/react-parity/dispositions.json",
@@ -64,10 +67,9 @@
         "scripts/react-parity/runtime-consumer.spec.mjs"
       ],
       "untracked": [
-        "libs/langgraph/src/runtime/application-input.spec.ts",
-        "libs/langgraph/src/runtime/submit-input.spec.ts",
-        "libs/langgraph/src/runtime/submit-input.ts",
-        "libs/langgraph/src/runtime/submit-input.type-test.ts"
+        "libs/langgraph/src/runtime/checkpoint-history.spec.ts",
+        "libs/langgraph/src/runtime/checkpoint-history.ts",
+        "libs/langgraph/src/runtime/checkpoint-history.type-test.ts"
       ]
     }
   },
@@ -100,81 +102,79 @@
   },
   "executed": [
     {
-      "command": "NX_DAEMON=false npx nx run-many -t runtime-quality,runtime-type-tests -p langgraph --skip-nx-cache",
-      "exitCode": 0,
-      "testsPassed": 513,
-      "testFiles": 20,
-      "log": "/tmp/ai03-parent-runtime.log",
-      "logSha256": "6e3c1eb9d94c96c0016f0f0f0d4c3bf7edd0c27a966d12f751b1602d6a7a4834"
-    },
-    {
       "command": "NX_DAEMON=false npx nx run-many -t runtime-quality,runtime-type-tests,lint -p langgraph --skip-nx-cache",
       "exitCode": 0,
-      "testsPassed": 513,
+      "testsPassed": 552,
+      "testFiles": 23,
       "lintErrors": 0,
       "lintWarnings": 68,
-      "provenance": "Implementer final run, log independently inspected; parent reran runtime and type checks.",
-      "log": "/tmp/ai01-final-checks.log",
-      "logSha256": "6a7925045b21af8f89015bf699602ea6a1a2a0181fe1aff2869d8b9968325ab2"
+      "log": "/tmp/ch01-runtime.log",
+      "logSha256": "21576c2f52c352f064546de4370d3e6a5bac10b191d50a15b51ff81a9b17f311"
     },
     {
       "command": "node --test scripts/react-parity/*.spec.mjs fixtures/react-parity/traces.spec.mjs scripts/ci-scope.spec.mjs scripts/ci-workflow.spec.mjs",
       "exitCode": 0,
-      "testsPassed": 437,
-      "log": "/tmp/ai03-infrastructure.log",
-      "logSha256": "68b0abe2f2f50d8d431fb8eb00582f1ed50c1cb0c097672219cb09c7e8484f4f"
+      "testsPassed": 438,
+      "log": "/tmp/ch03-infrastructure.log",
+      "logSha256": "a5e773c1e17278309c3c7afd9439715b76cf9bea4ada2d02f3d9b4defc4fe9b4"
     },
     {
-      "command": "NX_DAEMON=false npx nx run-many -t lint,test,type-tests,build -p core,content,angular,react --skip-nx-cache",
+      "command": "NX_DAEMON=false npx nx run-many -t lint,test,type-tests -p core,content,angular,react --parallel=2 --skip-nx-cache",
       "exitCode": 0,
-      "log": "/tmp/ai03-foundations.log",
-      "logSha256": "53934f409c3095bf0890b02f7084cd73c7c969a6a5063eb2c3b3235144a9cebe"
+      "log": "/tmp/ch03-foundations.log",
+      "logSha256": "38c924233672efcac52bb96e341fd4bccb50c0866d74fa71892b9c4ce12febdd"
+    },
+    {
+      "command": "NX_DAEMON=false npx nx run-many -t build -p core,content,angular,react --parallel=2 --skip-nx-cache",
+      "exitCode": 0,
+      "log": "/tmp/ch03-build.log",
+      "logSha256": "b2d1bbc80286a211aac7eb37a181fb0b561f3168bd1603fad15883afb038055c"
     },
     {
       "command": "node scripts/react-parity/verify-packages.mjs",
       "exitCode": 0,
       "browserScenariosPassed": 15,
       "framework": "React",
-      "log": "/tmp/ai03-packages.log",
-      "logSha256": "50e44cb53eae65bff3c78a1155f785da2874ff13791dcccb56945b46682a69e0"
+      "log": "/tmp/ch03-packages.log",
+      "logSha256": "6418b85d6db73691039d96321baaa530536fecf73e6021d3af1d7a395c04daf6"
     },
     {
       "command": "node scripts/react-parity/verify-angular-package.mjs",
       "exitCode": 0,
       "browserScenariosPassed": 15,
       "framework": "Angular",
-      "log": "/tmp/ai03-angular-package.log",
-      "logSha256": "7beeb844612eb65e3acbe5743501682b9864ddabf1870d37a4e44ac62b50dcfa"
+      "log": "/tmp/ch03-angular-package.log",
+      "logSha256": "5762d608cf85dacd848d7315ec3dfbbde3b3dab41a6e57b701ee4a32f4b76338"
     },
     {
       "command": "node scripts/react-parity/review-runtime.mjs",
       "exitCode": 0,
       "browserScenariosPerFramework": 15,
-      "termination": "SIGTERM, exit0; untouched final servers created only after both scenario suites passed.",
-      "log": "/tmp/ai03-cli.log",
-      "logSha256": "eee2c0802a9e19a0d219620e599a67b5a0f4c5769f43b5190efc9dee19611acc"
+      "termination": "SIGTERM, exit0; untouched review servers created only after both scenario suites passed.",
+      "log": "/tmp/ch03-cli.log",
+      "logSha256": "637936c3144a6ac33a811368fd8b052bc220efa4bb409473e0de7a8ebe00dc35"
     },
     {
       "command": "node scripts/react-parity/verify-boundaries.mjs",
       "exitCode": 0,
-      "log": "/tmp/ai03-source-boundaries.log",
+      "log": "/tmp/ch03-source-boundaries.log",
       "logSha256": "995db896b38cf7de5ca9db6590dba47e082d26abdf69bab04b92eee484696063"
     },
     {
       "command": "node scripts/react-parity/verify-boundaries.mjs --built",
       "exitCode": 0,
-      "log": "/tmp/ai03-built-boundaries.log",
+      "log": "/tmp/ch03-built-boundaries.log",
       "logSha256": "c983a97d17ff7ced7aa9113afa031f464103f566f1bc94eec8160558ec2553f7"
     },
     {
       "command": "node scripts/react-parity/inventory.mjs --check",
       "exitCode": 0,
-      "log": "/tmp/ai03-inventory-check.log",
-      "logSha256": "92117d8193f58bca26f1e039a36ef4b6c2c05c05dce6ddcf4d307e63adc33916"
+      "log": "/tmp/ch03-inventory-check.log",
+      "logSha256": "2190c4ee017d9e03cad13a1e0705b957e92dc9b18e94e3cc4f991d602804cff6"
     }
   ],
   "manualBrowserReview": {
-    "performedBy": "Parent using Chrome DevTools MCP and Codex in-app browser; each framework/surface used a fresh server and all 20 button actions. DOM assertions and screenshots are recorded in the task tool transcript.",
+    "performedBy": "Parent using Chrome DevTools MCP and Codex in-app browser. Each framework/surface used a fresh server and all 20 button actions. DOM assertions and screenshots are recorded in the task tool transcript.",
     "runs": [
       {
         "surface": "chrome",
@@ -187,16 +187,11 @@
         "resumes": 2,
         "reconnects": 1,
         "handlerCalls": 1,
-        "humanMessagesBeforeAndAfterReconnect": 6,
-        "humanMessagesAfterFinalSubmit": 7,
+        "buttonActions": 20,
         "finalOwnerOutcome": "aborted",
         "consoleWarnings": 0,
         "consoleErrors": 0,
-        "serverErrors": 0,
-        "stateBearingRunPosts": [
-          1,
-          8
-        ]
+        "serverErrors": 0
       },
       {
         "surface": "chrome",
@@ -209,16 +204,11 @@
         "resumes": 2,
         "reconnects": 1,
         "handlerCalls": 1,
-        "humanMessagesBeforeAndAfterReconnect": 6,
-        "humanMessagesAfterFinalSubmit": 7,
+        "buttonActions": 20,
         "finalOwnerOutcome": "aborted",
         "consoleWarnings": 0,
         "consoleErrors": 0,
-        "serverErrors": 0,
-        "stateBearingRunPosts": [
-          1,
-          8
-        ]
+        "serverErrors": 0
       },
       {
         "surface": "iab",
@@ -231,16 +221,11 @@
         "resumes": 2,
         "reconnects": 1,
         "handlerCalls": 1,
-        "humanMessagesBeforeAndAfterReconnect": 6,
-        "humanMessagesAfterFinalSubmit": 7,
+        "buttonActions": 20,
         "finalOwnerOutcome": "aborted",
         "consoleWarnings": 0,
         "consoleErrors": 0,
-        "serverErrors": 0,
-        "stateBearingRunPosts": [
-          1,
-          8
-        ]
+        "serverErrors": 0
       },
       {
         "surface": "iab",
@@ -253,45 +238,38 @@
         "resumes": 2,
         "reconnects": 1,
         "handlerCalls": 1,
-        "humanMessagesBeforeAndAfterReconnect": 6,
-        "humanMessagesAfterFinalSubmit": 7,
+        "buttonActions": 20,
         "finalOwnerOutcome": "aborted",
         "consoleWarnings": 0,
         "consoleErrors": 0,
-        "serverErrors": 0,
-        "stateBearingRunPosts": [
-          1,
-          8
-        ]
+        "serverErrors": 0
       }
     ],
     "checks": [
-      "inert mount",
-      "three explicit history loads",
-      "normal submit",
-      "Tool and Drop carry the exact four application state fields",
-      "all other POSTs exclude application state; resume input remains null",
-      "one actual tool handler and result handoff",
-      "Tool displays server-observed empty values, Drop and Reconnect display only server stage",
-      "protected error",
-      "held incremental DOM and local stop",
-      "two observed pauses",
-      "opaque response map then final response",
-      "no duplicate partial text or synthetic human on reconnect",
-      "exact Last-Event-ID: 2 join",
-      "unmount and explicit disposal",
-      "all three post-disposal commands inert"
+      "unobserved checkpoint page, exact loaded/parent/sibling references, equal refresh, empty replacement and subsequent retention",
+      "no old checkpoint values, transcripts or task data exposed in page",
+      "inert mount and three explicit history reads",
+      "exact application state on Tool and Drop only",
+      "same-ID sibling and nested child namespaces isolated from root text",
+      "child-only count request never executes a second handler",
+      "protected child failure survives successful root tool handoff",
+      "held child streaming and aborted delivery",
+      "shorter authoritative child text finalized on root pause",
+      "two child interrupt batches then resumed success",
+      "anonymous child ID retained across exact Last-Event-ID: 2 reconnect with no duplicate text",
+      "independent Send replaces prior child namespaces",
+      "unmount, disposal and three inert post-disposal commands"
     ],
-    "visual": "React and Angular inspected in Chrome at emulated 1280px and 390px; measured document width equals viewport width. Both in-app layouts inspected at their default viewport.",
-    "toolingNote": "Chrome window resize retained a 500px viewport; explicit viewport emulation established the measured 1280px and 390px checks. Browser endpoint assertions do not prove absence of transient optimistic publication; the runtime subscriber regression supplies that evidence.",
+    "visual": "Both native checkpoint panels inspected in IAB at the default desktop viewport. Both Chrome checkpoint panels inspected at 390px with document width equal to viewport width; React also inspected at 1280px with matching document width. Chrome network lists contained only expected local assets and fixture requests.",
+    "toolingNote": "The fixture displays observation data for contributor review; it is not the production subagent UI or a compositor/performance benchmark.",
     "logs": [
       {
-        "log": "/tmp/ai03-browser-verification.json",
-        "logSha256": "ebf99de880fa83da2649d2dbae5609ae3639d6338af8f45073628356962132f3"
+        "log": "/tmp/ch03-browser-verification.json",
+        "logSha256": "1d362a9b71134f47c2dedd4b99cb9f3017b44a9adff9ef24f61317e02da1c92c"
       },
       {
-        "log": "/tmp/ai03-browser-requests.json",
-        "logSha256": "b23296ed7e1f00287c1a2d7f57ec23b5880ba832d4a8ef454b7e5dfb56707e0b"
+        "log": "/tmp/ch03-browser-requests.json",
+        "logSha256": "d1809851061c2e4fd6ab98440404ce87278ef23e49c217ea9d8f2c0954853a99"
       }
     ]
   },
@@ -299,25 +277,25 @@
     {
       "framework": "react",
       "name": "@threadplane/react",
-      "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-runtime-review-twm7eZ/react/packed/threadplane-react-0.0.0.tgz",
+      "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-runtime-review-QK6woO/react/packed/threadplane-react-0.0.0.tgz",
       "sha256": "b71db72347e6ac0777304265d611968232b36e0dffe2171f7fb660f2e8958bc9"
     },
     {
       "framework": "react",
       "name": "@threadplane/core",
-      "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-runtime-review-twm7eZ/react/packed/threadplane-core-0.0.0.tgz",
+      "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-runtime-review-QK6woO/react/packed/threadplane-core-0.0.0.tgz",
       "sha256": "651fe687bf2909572eeb543b97b94361a91afbb93c8d74c92ab02cfe092b855c"
     },
     {
       "framework": "angular",
       "name": "@threadplane/angular",
-      "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-runtime-review-twm7eZ/angular/packed/threadplane-angular-0.0.0.tgz",
+      "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-runtime-review-QK6woO/angular/packed/threadplane-angular-0.0.0.tgz",
       "sha256": "632956c2279a700c9b8ba4b7762d58a6617b8e9b089776eec5fa8091397e15c5"
     },
     {
       "framework": "angular",
       "name": "@threadplane/core",
-      "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-runtime-review-twm7eZ/angular/packed/threadplane-core-0.0.0.tgz",
+      "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-runtime-review-QK6woO/angular/packed/threadplane-core-0.0.0.tgz",
       "sha256": "651fe687bf2909572eeb543b97b94361a91afbb93c8d74c92ab02cfe092b855c"
     }
   ],
@@ -325,24 +303,23 @@
     "reviewRunnerExitCode": 0,
     "temporaryConsumersRemoved": true,
     "allSixReviewAndVerificationPortsClosed": true,
-    "log": "/tmp/ai03-cleanup.log",
-    "logSha256": "3fe1c988697a0e93a8ba8dbcbe06a7762de455b3dbaecd3b8b41ebe98d667bac"
+    "log": "/tmp/ch03-cleanup.log",
+    "logSha256": "2ac312cd6d1972c69765d4fefef6c5ba1888efbaf27fe85ae9c25d452ea9d530"
   },
   "inventory": {
-    "rows": 1458,
-    "sourceRows": 480,
+    "rows": 1460,
+    "sourceRows": 482,
     "exports": 550,
     "uniqueExportDefinitions": 514,
     "assignmentsPreserved": true,
-    "changes": "Existing dispositions remain equivalent by row; one internal submit-input source row added. No public export or whole-task completion."
+    "changes": "Existing dispositions remain equivalent by row; one internal checkpoint-history source row added. No public export or whole-task completion."
   },
   "scope": [
-    "Backend-private text plus optional application state input",
-    "Pure capture and initial-payload assembly with existing plain-value ownership",
-    "Synchronous ownership before session effects, guarded against getter reentrancy",
-    "State sent on first creation POST only; no replay on tool continuation, resume, reconnect, or later submit",
-    "Observed values remain authoritative; no optimistic state merge",
-    "Installed Angular and React consumers with strict input types and independent HTTP expectations"
+    "Backend-private compact explicitly loaded checkpoint page using readonly SDK reference shapes",
+    "Pure four-field projection excludes repeated values, transcript, task and metadata data",
+    "Atomic load ownership; equal read sharing, stale/reentrant load rejection and immutable nested map data",
+    "Last explicit page retained through live observation, resume, stop, recovery and disposal",
+    "Installed React and Angular inferred readonly contracts and matching browser behavior"
   ],
   "runtimePolicy": {
     "sessionAutomaticReconnect": false,
@@ -355,16 +332,19 @@
     "publicBackendCutover": false,
     "inputStateReplayed": false,
     "optimisticInputPublication": false,
-    "schemaValidationAdded": false
+    "schemaValidationAdded": false,
+    "childExecutionAuthority": false,
+    "childRequestsAdded": false,
+    "childHistoryFabricated": false
   },
   "ci": {
     "status": "Not yet requested for this working tree; local evidence does not imply CI green."
   },
   "limits": [
-    "Application records must be plain data; interface-typed records may need an explicit object projection. This is ownership enforcement, not schema or argument validation.",
-    "State-only writes, resume updates, rich/multimodal messages, configurable/context/metadata run options and arbitrary checkpoint targeting are deferred.",
-    "Full adapter migration, public backend cutover and React component parity remain later milestones.",
-    "Local HTTP fixtures do not certify a live deployment."
+    "The history field is a received page, not a complete or automatically refreshed branch tree. The locked SDK defaults to ten entries.",
+    "Checkpoint selection, fork/replay execution and history pagination remain separate work.",
+    "Full adapter migration and React component parity remain later milestones; private consumer composition does not establish a neutral published LangGraph package.",
+    "Local HTTP fixtures do not certify a live deployment, full SSR or performance budgets."
   ],
   "warnings": [
     "68 existing legacy lint warnings; zero lint errors.",
@@ -373,7 +353,7 @@
   ],
   "documentation": {
     "generatorsRun": [],
-    "reason": "Only contributor fixture guidance and a private runtime source changed. No public export, narrative, API generator or public agent-context inputs changed."
+    "reason": "Only contributor fixture guidance and private runtime sources changed. No public export, narrative, API generator or public agent-context inputs changed."
   },
-  "verificationProvenance": "All listed checks were freshly run in this milestone. Legacy library builds and public docs generation were not rerun because their implementation and public exports did not change. Historical foundation evidence remains unchanged."
+  "verificationProvenance": "All listed commands were freshly run in this milestone. Native package implementation and public exports are unchanged. Historical foundation evidence remains unchanged. Parent performed source/spec/type/lifecycle/evidence review; independent subagent review was unavailable because thread agent capacity was exhausted. Hosted review status will be inspected separately from job success."
 }

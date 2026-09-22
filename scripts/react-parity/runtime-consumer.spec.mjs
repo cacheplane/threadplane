@@ -39,6 +39,15 @@ test('successive submitted turns receive distinct server message IDs', () => {
 
 const heldBody = { assistant_id: 'fixture-assistant', input: { messages: [{ id: 'held-user', type: 'human', content: 'Hold' }], client_tools: [{ name: 'weather', description: 'Current weather' }, { name: 'count', description: 'Count values' }] }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom'], stream_subgraphs: true, stream_resumable: true, on_disconnect: 'continue' };
 
+test('Tool observes same-ID siblings and a protected child failure without another root tool', () => {
+  const trace = runtime.runtimeResponse({ ...heldBody, input: { ...applicationState, ...heldBody.input, messages: [{ id: 'tool-user', type: 'human', content: 'Tool' }] } });
+  assert.match(trace, /event: values\|research:one\n/);
+  assert.match(trace, /event: values\|research:two\|writer:nested\n/);
+  assert.equal(trace.match(/"id":"child-answer"/g)?.length, 2);
+  assert.match(trace, /"id":"child-only-call"/);
+  assert.match(trace, /event: error\|research:failed\n/);
+});
+
 for (const label of ['Tool', 'Drop']) {
   test(`${label} rejects an initial submission with no application state`, () => {
     const body = { ...heldBody, input: { ...heldBody.input, messages: [{ id: 'state-user', type: 'human', content: label }] } };
@@ -83,6 +92,8 @@ test('Drop reconnect joins the exact run and cursor, then confirms status withou
     const initial = await created.text();
     assert.match(initial, /id: 2\n/);
     assert.match(initial, /Dropped partial/);
+    assert.match(initial, /event: messages\|research:drop\n/);
+    assert.match(initial, /Child partial/);
     assert.match(initial, /event: values/);
     const runUrl = `${server.url}/api/threads/fixture-thread/runs/drop-run`;
     assert.deepEqual(await (await fetch(runUrl)).json(), { run_id: 'drop-run', thread_id: 'fixture-thread', status: 'running' });
@@ -91,6 +102,8 @@ test('Drop reconnect joins the exact run and cursor, then confirms status withou
     const suffix = await joined.text();
     assert.match(suffix, /id: 3\n/);
     assert.match(suffix, /Dropped partial recovered/);
+    assert.match(suffix, /event: values\|research:drop\n/);
+    assert.match(suffix, /Child partial recovered/);
     assert.deepEqual(await (await fetch(runUrl)).json(), { run_id: 'drop-run', thread_id: 'fixture-thread', status: 'success' });
     assert.equal(server.requests.length, 1);
     assert.equal(server.historyRequests.length, 0);
@@ -121,10 +134,13 @@ test('explicit resume maps use null input, re-pause, and complete the same assis
   const first = runtime.runtimeResponse({ ...base, command: { resume: { 'live-approval': 'yes', 'live-confirmation': false } } });
   assert.match(first, /"id":"final-approval"/);
   assert.match(first, /"content":"One final approval"/);
+  assert.match(first, /"content":"Child final approval"/);
   const second = runtime.runtimeResponse({ ...base, command: { resume: { 'final-approval': true } } });
   assert.match(second, /"content":"Approvals complete"/);
   assert.match(second, /"stage":"approved"/);
-  const parse = (trace) => trace.trim().split('\n\n').map((event) => JSON.parse(event.match(/^data: (.*)/m)[1]));
+  assert.match(second, /"content":"Child approved"/);
+  assert.doesNotMatch(second, /__interrupt__/);
+  const parse = (trace) => trace.trim().split('\n\n').filter((event) => !event.match(/^event: (.*)/m)[1].includes('|')).map((event) => JSON.parse(event.match(/^data: (.*)/m)[1]));
   const firstMessages = parse(first).flatMap((event) => event.messages ?? []);
   const secondMessages = parse(second).flatMap((event) => event.messages ?? []);
   assert.equal(firstMessages.at(-1).id, secondMessages.at(-1).id);
@@ -151,6 +167,7 @@ for (const ending of ['native abort', 'fixture cleanup']) {
       const reader = response.body.getReader();
       const first = await reader.read();
       assert.match(new TextDecoder().decode(first.value), /Held partial/);
+      assert.match(new TextDecoder().decode(first.value), /Child held partial/);
       const rejected = assert.rejects(reader.read());
       if (ending === 'native abort') controller.abort();
       else { await server.close(); closed = true; }
@@ -183,6 +200,11 @@ test('history uses the exact SDK body and counts reads separately from runs', as
     const first = await read();
     assert.equal(first.status, 200);
     const saved = await first.json();
+    assert.equal(saved.length, 3);
+    assert.deepEqual(saved.map(entry => entry.checkpoint.checkpoint_id), ['saved-checkpoint', 'saved-parent', 'saved-sibling']);
+    assert.equal(saved[0].parent_checkpoint.checkpoint_id, 'saved-parent');
+    assert.equal(saved[2].parent_checkpoint.checkpoint_id, 'saved-parent');
+    assert.equal(saved[1].values.messages[0].content, 'Older transcript must stay out of the current state');
     assert.equal(saved[0].values.stage, 'saved');
     assert.deepEqual(saved[0].values.profile, { name: 'Saved user' });
     assert.deepEqual(saved[0].tasks.flatMap((task) => task.interrupts), [
@@ -214,14 +236,18 @@ test('Pause contains separate values and updates controls with full SDK payloads
   const body = { ...heldBody, input: { ...heldBody.input, messages: [{ id: 'pause-user', type: 'human', content: 'Pause' }] } };
   const trace = runtime.runtimeResponse(body);
   const events = trace.trim().split('\n\n').map((event) => ({ type: event.match(/^event: (.*)/m)?.[1], data: JSON.parse(event.match(/^data: (.*)/m)?.[1] ?? '{}') }));
-  assert.deepEqual(events.map((event) => event.type), ['values', 'values', 'updates']);
+  const root = events.filter((event) => !event.type.includes('|'));
+  assert.deepEqual(root.map((event) => event.type), ['values', 'values', 'updates']);
+  assert.ok(events.some((event) => event.type === 'messages|review:child'));
+  assert.ok(events.some((event) => event.type === 'values|review:child' && event.data.messages?.[0]?.content === 'Child draft'));
+  assert.ok(events.some((event) => event.type === 'updates|review:child' && event.data.__interrupt__?.[0]?.id === 'child-approval'));
   assert.equal(events[0].data.stage, 'approval');
   assert.equal(events[0].data.messages.at(-1).content, 'Waiting for approvals');
-  assert.deepEqual(events.slice(1).flatMap((event) => event.data.__interrupt__), [
+  assert.deepEqual(root.slice(1).flatMap((event) => event.data.__interrupt__), [
     { id: 'live-approval', value: { question: 'Approve action?', choices: ['yes', 'no'] }, namespace: ['review', 'live'], when: 'during', resumable: true, ns: ['legacy-live'] },
     { id: 'live-confirmation', value: false, namespace: [], when: 'during', resumable: false, ns: [] },
   ]);
-  assert.equal(events[1].data.stage, 'control-envelope');
+  assert.equal(root[1].data.stage, 'control-envelope');
 });
 
 for (const [label, route, method, body] of [

@@ -1,12 +1,14 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "7f0284f1c740a4cfb69de6afffd9884dd091b41b",
+  "baselineHead": "c600429e1dcce656f59974851f80007120c3d5f7",
   "sourceState": {
     "modified": [
-      "libs/langgraph/src/runtime/create-session.ts"
+      "libs/langgraph/src/runtime/create-session.ts",
+      "libs/langgraph/src/runtime/langgraph-snapshot.ts",
+      "libs/langgraph/src/runtime/ownership.ts"
     ],
     "untracked": [
-      "libs/langgraph/src/runtime/submit-input.ts"
+      "libs/langgraph/src/runtime/checkpoint-history.ts"
     ]
   },
   "scope": {
@@ -12559,10 +12561,16 @@
       "sha256": "3effe8f90bcd9967bb99b9902b3bb6ffbe2769c8c5b46824d2742e2906f6536b"
     },
     {
+      "id": "source:libs/langgraph/src/runtime/checkpoint-history.ts",
+      "kind": "source",
+      "path": "libs/langgraph/src/runtime/checkpoint-history.ts",
+      "sha256": "59618157c20ec9da6bfe0e7080876b78de5e773991e68eaf92fe81c77e7d981d"
+    },
+    {
       "id": "source:libs/langgraph/src/runtime/create-session.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/create-session.ts",
-      "sha256": "fc0470302580c24a3e0b4456f5812fcbd7a895708a42511433918d8f067fb54d"
+      "sha256": "d8f078aa149f7afb4f0117c4ba54cae6ce88459c1030499dbe44cf1c07b01c62"
     },
     {
       "id": "source:libs/langgraph/src/runtime/function-tools.ts",
@@ -12580,13 +12588,13 @@
       "id": "source:libs/langgraph/src/runtime/interrupt-projection.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/interrupt-projection.ts",
-      "sha256": "a4dd19e151581237acdbd0d312957b96bec153ed37e85428ab959c802316388e"
+      "sha256": "184ae04911babf4931cd3e89c69884e776b49d2b2b7d3e62aa456176752d6f7b"
     },
     {
       "id": "source:libs/langgraph/src/runtime/langgraph-snapshot.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/langgraph-snapshot.ts",
-      "sha256": "13000f55022270def22868f1ebbd49b45c8b5ab85d1f4f2be46c3a6d89192421"
+      "sha256": "63a85a0d0ead762ddf753ca6bf579054c3151451532100719d986d13c08d31d7"
     },
     {
       "id": "source:libs/langgraph/src/runtime/message-reducer.ts",
@@ -12604,7 +12612,7 @@
       "id": "source:libs/langgraph/src/runtime/ownership.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/ownership.ts",
-      "sha256": "bc757f0364ed36ff67dbb2bf28da444b9ba9323a1199f6735f55dca5df1549a9"
+      "sha256": "404cfa73108674b6d1c5fc57c345652297d087c3bb17a39977fc6b7b710362b0"
     },
     {
       "id": "source:libs/langgraph/src/runtime/publication.ts",
@@ -12623,6 +12631,12 @@
       "kind": "source",
       "path": "libs/langgraph/src/runtime/stream-projection.ts",
       "sha256": "4271e1db01f40d5f349e6b0307d01114fb5fbe5dc9c6dae6223457d73580c4e9"
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/subgraph-projection.ts",
+      "kind": "source",
+      "path": "libs/langgraph/src/runtime/subgraph-projection.ts",
+      "sha256": "790aa86055a60b0123cbb96f6530d47d2e494387394a47d1f6e93c1973c032ad"
     },
     {
       "id": "source:libs/langgraph/src/runtime/submit-input.ts",
