@@ -1,19 +1,12 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "db867f83be6cb6f9735de41f6aadddf64a0d9937",
+  "baselineHead": "c3b9ae6a09b869b2f4733007b7e39567c6e8bf04",
   "sourceState": {
     "modified": [
       "libs/langgraph/src/runtime/create-session.ts",
-      "libs/langgraph/src/runtime/history-projection.ts",
-      "libs/langgraph/src/runtime/langgraph-snapshot.ts",
-      "libs/langgraph/src/runtime/ownership.ts",
-      "libs/langgraph/src/runtime/stream-projection.ts",
-      "libs/langgraph/src/runtime/testing/binding-fixture.ts",
-      "libs/langgraph/src/runtime/wire-message.ts"
+      "libs/langgraph/src/runtime/stream-projection.ts"
     ],
-    "untracked": [
-      "libs/langgraph/src/runtime/interrupt-projection.ts"
-    ]
+    "untracked": []
   },
   "scope": {
     "libraries": [
@@ -12568,7 +12561,7 @@
       "id": "source:libs/langgraph/src/runtime/create-session.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/create-session.ts",
-      "sha256": "74f833ad7a0e2fb29b1c6cef5cc1ede6002db61306288b191b1753fdb1e91e5c"
+      "sha256": "13a0c740cfc2b3a33fe6d9ffad2ee1d7fbdab53c57a1f50ad1c2a8f6ede4bba4"
     },
     {
       "id": "source:libs/langgraph/src/runtime/function-tools.ts",
@@ -12622,7 +12615,7 @@
       "id": "source:libs/langgraph/src/runtime/stream-projection.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/stream-projection.ts",
-      "sha256": "0ae84a3605e587f8bbcf34d9c2dc5a93071324f5ea2e850afb0a8852b8e9c440"
+      "sha256": "73f4c77f1d510f574a3ca3450a8e5e6c1c0ed43dabd7968b9be4a62b7a3e3f27"
     },
     {
       "id": "source:libs/langgraph/src/runtime/testing/binding-fixture.ts",

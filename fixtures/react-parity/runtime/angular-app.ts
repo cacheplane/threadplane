@@ -2,7 +2,12 @@ import { Component, signal } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { observeAgent } from '@threadplane/angular';
 import { createFixtureSession } from './runtime-entry.js';
-import { attachOwner, display, reviewInstructions } from './scenarios';
+import {
+  attachOwner,
+  display,
+  reviewInstructions,
+  reviewResponse,
+} from './scenarios';
 
 let handlerCalls = 0;
 let submissions = 0;
@@ -40,6 +45,13 @@ const submit = (input: string) => {
           ><button (click)="submit('Error')">Error</button
           ><button (click)="submit('Hold')">Hold</button
           ><button (click)="submit('Pause')">Pause</button
+          ><button
+            [disabled]="
+              snapshot().status === 'running' || !snapshot().interrupts.length
+            "
+            (click)="resume()"
+          >
+            Resume</button
           ><button (click)="stop()">Stop</button>
         </div>
       </section>
@@ -72,6 +84,30 @@ const submit = (input: string) => {
               <output aria-label="Submissions" data-testid="submissions">{{
                 submissions()
               }}</output>
+            </div>
+            <div class="field">
+              <h3>Resumes finished</h3>
+              <output
+                aria-label="Resumes finished"
+                data-testid="resumes-finished"
+                >{{ resumesFinished() }}</output
+              >
+            </div>
+            <div class="field">
+              <h3>Resume outcome</h3>
+              <output
+                aria-label="Resume outcome"
+                data-testid="resume-outcome"
+                >{{ resumeOutcome() }}</output
+              >
+            </div>
+            <div class="field">
+              <h3>Human messages</h3>
+              <output
+                aria-label="Human messages"
+                data-testid="human-messages"
+                >{{ view().humanMessages }}</output
+              >
             </div>
             <div class="field">
               <h3>Handler calls</h3>
@@ -152,6 +188,20 @@ class App {
   readonly canLoad = !!session.load;
   readonly loadsFinished = signal(0);
   readonly loadError = signal('');
+  readonly resumesFinished = signal(0);
+  readonly resumeOutcome = signal('');
+  async resume() {
+    this.resumeOutcome.set('');
+    try {
+      this.resumeOutcome.set(
+        await session.resume(reviewResponse(session.getSnapshot()))
+      );
+    } catch {
+      this.resumeOutcome.set('Resume unavailable');
+    } finally {
+      this.resumesFinished.update((count) => count + 1);
+    }
+  }
   async load() {
     if (!session.load) return;
     this.loadError.set('');

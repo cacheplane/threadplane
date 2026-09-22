@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "status": "verified-local",
-  "increment": "Repeatable installed runtime manual review and readable fixture UI (M01/M02)",
-  "observedOn": "2026-09-21",
-  "recordedAt": "2026-09-22T05:38:24.924Z",
+  "increment": "Explicit private LangGraph interrupt resume (R01/R02/R03)",
+  "observedOn": "2026-09-22",
+  "recordedAt": "2026-09-22T16:05:23.192Z",
   "source": {
-    "branch": "codex/runtime-manual-review",
-    "baseCommit": "e4862cfaa93e3ae6a8b6c100ec9737e763bc9e23",
-    "verificationHead": "55781ffdb710a3610c07858b2685d27671e5934f",
-    "workingTree": "Verified the uncommitted PR #1120 review follow-up after merging the #1119 main merge. Changes are limited to review-runner process cleanup, its tests and this evidence. Fixture UI, private runtime and installed binding source bytes are unchanged from the M02 browser review. The fingerprint identifies selected working-tree bytes, not a future commit or prebuilt artifact provenance.",
+    "branch": "codex/langgraph-interrupt-resume",
+    "baseCommit": "c3b9ae6a09b869b2f4733007b7e39567c6e8bf04",
+    "verificationHead": "c3b9ae6a09b869b2f4733007b7e39567c6e8bf04",
+    "workingTree": "Verified working-tree runtime and fixture changes on merged #1120. Selected-byte fingerprint identifies actual source, not a future commit. Foundation and legacy artifacts were freshly built; tarball hashes separately identify installed artifacts.",
     "fingerprint": {
       "algorithm": "SHA-256 of a UTF-8 manifest: one line per selected file, lowercase SHA-256(file bytes), two ASCII spaces, repo-relative path, LF; unique paths sorted by JavaScript default string ordering.",
       "pathspecs": [
@@ -38,17 +38,32 @@
       "excludedPaths": [
         "fixtures/react-parity/runtime/evidence.json"
       ],
-      "fileCount": 783,
-      "sha256": "2309fc7b8dca28fffc7a13fc6edb8d198402a04f5e5d4f59d6756b7649d122f7",
-      "selection": "git ls-files -z --cached --others --exclude-standard -- <pathspecs>; keep existing files and remove excludedPaths. Includes tracked and non-ignored untracked files. Evidence itself is excluded to avoid self-reference; ten local research/planning reports are outside all selected paths.",
+      "fileCount": 785,
+      "sha256": "1acf81a791fe0b0300220f01fe125462981689ac1a8e422c0835bc31628908a1",
+      "selection": "git ls-files -z --cached --others --exclude-standard -- <pathspecs>; existing files minus excludedPaths, including new tests. Local research/planning files are outside these paths. Evidence excludes itself to avoid self-reference.",
       "reproduce": "node --input-type=module <<'JS'\nimport {createHash} from 'node:crypto';\nimport {execFileSync} from 'node:child_process';\nimport {readFileSync,existsSync} from 'node:fs';\nconst {fingerprint:f}=JSON.parse(readFileSync('fixtures/react-parity/runtime/evidence.json')).source;\nconst sha=value=>createHash('sha256').update(value).digest('hex');\nconst paths=[...new Set(execFileSync('git',['ls-files','-z','--cached','--others','--exclude-standard','--',...f.pathspecs],{encoding:'utf8'}).split('\\0').filter(Boolean))].filter(path=>!f.excludedPaths.includes(path)&&existsSync(path)).sort();\nconst actual=sha(paths.map(path=>sha(readFileSync(path))+'  '+path+'\\n').join(''));\nif(paths.length!==f.fileCount||actual!==f.sha256) throw new Error('Source fingerprint mismatch');\nconsole.log(paths.length+' files: '+actual);\nJS"
     },
     "sourceState": {
       "modified": [
+        "fixtures/react-parity/runtime/README.md",
+        "fixtures/react-parity/runtime/angular-app.ts",
+        "fixtures/react-parity/runtime/react-app.tsx",
+        "fixtures/react-parity/runtime/runtime-entry.ts",
+        "fixtures/react-parity/runtime/scenarios.ts",
+        "libs/langgraph/src/runtime/create-session.ts",
+        "libs/langgraph/src/runtime/stream-projection.spec.ts",
+        "libs/langgraph/src/runtime/stream-projection.ts",
+        "libs/langgraph/src/runtime/transport.integration.spec.ts",
+        "scripts/react-parity/baseline.json",
+        "scripts/react-parity/dispositions.json",
         "scripts/react-parity/review-runtime.mjs",
-        "scripts/react-parity/review-runtime.spec.mjs"
+        "scripts/react-parity/runtime-consumer.mjs",
+        "scripts/react-parity/runtime-consumer.spec.mjs"
       ],
-      "untracked": []
+      "untracked": [
+        "libs/langgraph/src/runtime/resume.spec.ts",
+        "libs/langgraph/src/runtime/resume.type-test.ts"
+      ]
     }
   },
   "environment": {
@@ -80,375 +95,252 @@
   },
   "executed": [
     {
-      "command": "NX_DAEMON=false node --test scripts/ci-scope.spec.mjs scripts/ci-workflow.spec.mjs scripts/react-parity/*.spec.mjs fixtures/react-parity/traces.spec.mjs",
+      "command": "NX_DAEMON=false npx nx run-many -t runtime-quality,runtime-type-tests -p langgraph --skip-nx-cache",
       "exitCode": 0,
-      "verificationPhase": "M03 final review-fix verification",
-      "testsPassed": 429,
+      "testsPassed": 417,
+      "testFiles": 16,
+      "provenance": "Fresh parent verification after implementer handoff; independently repeated by both reviewers.",
+      "log": "/tmp/ir03-parent-runtime.log",
+      "logSha256": "1a80a4fe0b7f9909b774b348005269a976fb45a67a83b49a0f54d3e0ede23bf2"
+    },
+    {
+      "command": "NX_DAEMON=false npx nx run-many -t runtime-quality,runtime-type-tests,lint -p langgraph --skip-nx-cache",
+      "exitCode": 0,
+      "testsPassed": 417,
+      "lintErrors": 0,
+      "lintWarnings": 68,
+      "provenance": "Implementer final run; parent inspected log and diff. Warnings are in existing legacy files.",
+      "log": "/tmp/r01-final-checks.log",
+      "logSha256": "86b8cffa6d96f815dae3892fc989de5701c40e35d769301fbe13932db25d8282"
+    },
+    {
+      "command": "node --test scripts/ci-scope.spec.mjs scripts/ci-workflow.spec.mjs scripts/react-parity/*.spec.mjs fixtures/react-parity/traces.spec.mjs",
+      "exitCode": 0,
+      "testsPassed": 430,
       "testsFailed": 0,
-      "log": "/tmp/m03-final-focused.log",
-      "logSha256": "d4972fae5116e9b0d500f675502e98317730de67c927e7dc8847d2f3aeb71ce8"
+      "log": "/tmp/ir03-focused.log",
+      "logSha256": "b19b128cb1e5095c0d8b1efd95e6edb569b6a183155c74bf6fa2b9dffa22cb16"
+    },
+    {
+      "command": "NX_DAEMON=false npx nx run-many -t lint test type-tests build -p core,content,angular,react --parallel=2 --skip-nx-cache",
+      "exitCode": 0,
+      "log": "/tmp/r02-foundations.log",
+      "logSha256": "77dfe7974d098a27baa83a19cce61f4f628507b7d3b55ee7a1a6d273e9c9f39d"
+    },
+    {
+      "command": "NX_DAEMON=false npx nx run-many -t build -p chat,langgraph,ag-ui,render,a2ui,telemetry --parallel=2 --skip-nx-cache",
+      "exitCode": 0,
+      "log": "/tmp/ir03-legacy-builds.log",
+      "logSha256": "5abac2a6f4909a4953db837d0fbcc4377b2138de6091305e8ff4bfac12207782"
+    },
+    {
+      "command": "node scripts/react-parity/verify-packages.mjs",
+      "exitCode": 0,
+      "browserScenariosPassed": 13,
+      "framework": "React",
+      "log": "/tmp/ir03-packages.log",
+      "logSha256": "0e72f7e8ac72721b75b5375426ff1cf0f593b632398a395d5e02adf183997b4e"
+    },
+    {
+      "command": "node scripts/react-parity/verify-angular-package.mjs",
+      "exitCode": 0,
+      "browserScenariosPassed": 13,
+      "framework": "Angular",
+      "log": "/tmp/ir03-angular-package.log",
+      "logSha256": "da7bea3174d73c7aae21de9ac2cab2de67d12799249fc873e9f39e0039cd16e2"
     },
     {
       "command": "node scripts/react-parity/review-runtime.mjs",
       "exitCode": 0,
-      "verificationPhase": "M03 final runner: installed declarations, builds, eleven scenarios per framework, then fresh servers; SIGTERM exited successfully",
-      "browserScenariosPerFramework": 11,
-      "log": "/tmp/m03-final-cli.log",
-      "logSha256": "45d80e8822b1be2aa86bbe9bca31dbc9a70829ee0c9950180be00d79fbf9c08a"
-    },
-    {
-      "command": "node scripts/react-parity/review-runtime.mjs",
-      "exitCode": 0,
-      "verificationPhase": "Parent final M02 actual CLI smoke, then SIGTERM cleanup",
-      "strictInstalledChecks": [
-        "React contracts and app",
-        "Angular contracts"
-      ],
-      "productionConsumerBuilds": [
-        "React Vite",
-        "Angular CLI/APF"
-      ],
-      "browserScenariosPassed": {
-        "react": 11,
-        "angular": 11
-      },
-      "freshReviewServers": "A separate untouched pair opened only after both e2e runs passed; zero SDK I/O at startup.",
-      "log": "/tmp/m02-cli.log",
-      "logSha256": "49672973797ea7ecc05f10fa309e3cde8c26511adec51d137488de1113e23f21"
+      "browserScenariosPerFramework": 13,
+      "termination": "SIGTERM, exit0; untouched final servers created only after both scenarios passed.",
+      "log": "/tmp/ir03-cli.log",
+      "logSha256": "a0cdf6a38ca34960b63cc457c59f71ee570764551b5baf3c53adacd6dd3f79ed"
     },
     {
       "command": "node scripts/react-parity/verify-boundaries.mjs",
       "exitCode": 0,
-      "verificationPhase": "Parent M02 final source check",
-      "log": "/tmp/m02-boundaries.log",
+      "log": "/tmp/ir03-source-boundaries.log",
       "logSha256": "995db896b38cf7de5ca9db6590dba47e082d26abdf69bab04b92eee484696063"
     },
     {
       "command": "node scripts/react-parity/verify-boundaries.mjs --built",
       "exitCode": 0,
-      "verificationPhase": "Parent M02 final emitted check against existing successful production builds; production source unchanged",
-      "log": "/tmp/m02-built-boundaries.log",
+      "log": "/tmp/ir03-built-boundaries.log",
       "logSha256": "c983a97d17ff7ced7aa9113afa031f464103f566f1bc94eec8160558ec2553f7"
     },
     {
       "command": "node scripts/react-parity/inventory.mjs --check",
       "exitCode": 0,
-      "verificationPhase": "M02 metadata final check",
-      "inventoryRows": 1456,
-      "log": "/tmp/m02-final-inventory.log",
+      "log": "/tmp/ir03-inventory-check.log",
       "logSha256": "d09feb53da89b1708c15d8212a3e9a429ddcb7bcce121917360327aa65bf7dae"
-    },
-    {
-      "command": "git diff --check",
-      "exitCode": 0,
-      "verificationPhase": "M02 metadata final check",
-      "log": "/tmp/m02-final-diff-check.log",
-      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     }
   ],
   "manualBrowserReview": {
-    "performedBy": "Parent agent using Chrome DevTools MCP and Codex in-app browser; separate fresh server session per framework/surface",
-    "frameworks": [
-      "React",
-      "Angular"
+    "performedBy": "Parent using Chrome DevTools MCP and Codex in-app browser, independent fresh server per framework/surface; all interactions and DOM assertions recorded in task tool transcript.",
+    "runs": [
+      {
+        "surface": "chrome",
+        "framework": "react",
+        "historyReads": 3,
+        "runRequests": 9,
+        "submissions": 6,
+        "resumes": 2,
+        "handlerCalls": 1,
+        "humanMessagesAfterBothResumes": 5,
+        "humanMessagesAfterFinalSubmit": 6,
+        "finalOwnerOutcome": "aborted",
+        "consoleWarnings": 0,
+        "consoleErrors": 0,
+        "serverErrors": 0
+      },
+      {
+        "surface": "chrome",
+        "framework": "angular",
+        "historyReads": 3,
+        "runRequests": 9,
+        "submissions": 6,
+        "resumes": 2,
+        "handlerCalls": 1,
+        "humanMessagesAfterBothResumes": 5,
+        "humanMessagesAfterFinalSubmit": 6,
+        "finalOwnerOutcome": "aborted",
+        "consoleWarnings": 0,
+        "consoleErrors": 0,
+        "serverErrors": 0
+      },
+      {
+        "surface": "iab",
+        "framework": "react",
+        "historyReads": 3,
+        "runRequests": 9,
+        "submissions": 6,
+        "resumes": 2,
+        "handlerCalls": 1,
+        "humanMessagesAfterBothResumes": 5,
+        "humanMessagesAfterFinalSubmit": 6,
+        "finalOwnerOutcome": "aborted",
+        "consoleWarnings": 0,
+        "consoleErrors": 0,
+        "serverErrors": 0
+      },
+      {
+        "surface": "iab",
+        "framework": "angular",
+        "historyReads": 3,
+        "runRequests": 9,
+        "submissions": 6,
+        "resumes": 2,
+        "handlerCalls": 1,
+        "humanMessagesAfterBothResumes": 5,
+        "humanMessagesAfterFinalSubmit": 6,
+        "finalOwnerOutcome": "aborted",
+        "consoleWarnings": 0,
+        "consoleErrors": 0,
+        "serverErrors": 0
+      }
     ],
-    "surfaces": [
-      "Chrome DevTools MCP",
-      "Codex in-app browser"
-    ],
-    "verified": [
+    "checks": [
       "inert mount",
-      "saved/equal/empty history",
-      "text",
-      "tool roundtrip",
+      "three explicit history loads",
+      "normal send",
+      "actual tool result handoff",
       "protected error",
-      "held partial text and stop abort",
-      "two observed interrupts retained after Stop",
-      "reuse clears interrupts",
-      "unmount",
-      "dispose",
-      "post-disposal aborted submission"
+      "held incremental text and local stop",
+      "two observed pauses",
+      "opaque response map then final response",
+      "same assistant message canonical replacement",
+      "no synthetic human messages",
+      "unmount then explicit disposal",
+      "both post-disposal commands inert"
     ],
-    "perSession": {
-      "historyReads": 3,
-      "runRequests": 7,
-      "handlerCalls": 1,
-      "componentSubmissions": 6,
-      "consoleWarnings": 0,
-      "consoleErrors": 0,
-      "fixtureErrors": 0
-    },
-    "serverSessions": [
+    "visual": "Chrome React and Angular inspected at desktop and 390px viewport; both narrow content widths were 390px without overflow. Both in-app framework views inspected at their default viewport.",
+    "toolingNote": "In-app selector regex encoding initially failed to match a JSON output. A direct DOM read confirmed the expected state; subsequent JSON assertions used exact DOM text. This was a verification selector issue, not an application failure.",
+    "logs": [
       {
-        "kind": "react",
-        "surface": "chrome",
-        "runs": 7,
-        "history": 3,
-        "errors": []
+        "log": "/tmp/ir03-browser-verification.json",
+        "logSha256": "9da1443432f91f4ec78178262dc8f2c2d5bfbd91e81937a2d69d33cfb6aa53f5"
       },
       {
-        "kind": "react",
-        "surface": "iab",
-        "runs": 7,
-        "history": 3,
-        "errors": []
-      },
-      {
-        "kind": "angular",
-        "surface": "chrome",
-        "runs": 7,
-        "history": 3,
-        "errors": []
-      },
-      {
-        "kind": "angular",
-        "surface": "iab",
-        "runs": 7,
-        "history": 3,
-        "errors": []
-      }
-    ],
-    "expectedDisplay": {
-      "pause": "complete:paused",
-      "heldStop": "complete:aborted",
-      "protectedError": "Status error and protected diagnostic; previous complete:success delivery remains.",
-      "afterDisposedSubmit": "Owner aborted, no I/O"
-    },
-    "visualReview": "Parent inspected React populated desktop screenshot, Angular populated narrow screenshot (actual Chrome viewport 500px, despite requested 390px), and React in-app screenshot. M01 separately captured both frameworks at 390px with no horizontal overflow.",
-    "notes": "A parent Chrome assertion initially expected paused instead of the existing complete:paused display contract; both apps already showed the correct batch. Corrected the assertion and completed Stop/reuse/disposal checks without replaying requests. Screenshot file export was unavailable in Chrome MCP; inline screenshots were inspected. No product defect found.",
-    "records": [
-      {
-        "log": "/tmp/m02-browser-verification.json",
-        "logSha256": "da34168bc592eaae450245ec36ff9cc083cf0da47644cac23bb1e90ccd0f53e6"
-      },
-      {
-        "log": "/tmp/m02-browser-state.json",
-        "logSha256": "402e3b793773159c68b670604df910f6e5659abf8fdb9d38a59f3d1cc847319f"
-      },
-      {
-        "log": "/tmp/m02-chrome-final-states.json",
-        "logSha256": "9b60bbab4fe95fcb776d4c6524ee0c978388014aa1ba74bcc3949ce644a1da3f"
+        "log": "/tmp/ir03-browser-requests.json",
+        "logSha256": "b94e55ee26f13e5f288e48c0c627f9bae3928c44d9cb4cb41c23136066e960c3"
       }
     ]
   },
-  "packageArtifacts": {
-    "provenance": "Actual tarballs packed and installed by the M02 CLI. SHA-256 identifies these bytes independently of the printed source HEAD; no claim that the prebuilt dist was produced by this commit.",
-    "sha256": [
-      {
-        "framework": "react",
-        "name": "@threadplane/react",
-        "sha256": "b71db72347e6ac0777304265d611968232b36e0dffe2171f7fb660f2e8958bc9"
-      },
-      {
-        "framework": "react",
-        "name": "@threadplane/core",
-        "sha256": "651fe687bf2909572eeb543b97b94361a91afbb93c8d74c92ab02cfe092b855c"
-      },
-      {
-        "framework": "angular",
-        "name": "@threadplane/angular",
-        "sha256": "632956c2279a700c9b8ba4b7762d58a6617b8e9b089776eec5fa8091397e15c5"
-      },
-      {
-        "framework": "angular",
-        "name": "@threadplane/core",
-        "sha256": "651fe687bf2909572eeb543b97b94361a91afbb93c8d74c92ab02cfe092b855c"
-      }
-    ]
-  },
-  "packageDiagnostics": {
-    "reactConsumer": {
-      "installedPackages": 23,
-      "fileBytes": 51236188,
-      "lockLocationsIncludingOptionalPlatforms": 73,
-      "productionAppModulesTransformed": 35,
-      "productionAppJavaScriptRawReported": "419.47 kB",
-      "productionAppJavaScriptGzipReported": "126.15 kB",
-      "productionAppCSSRawReported": "1.77 kB"
+  "packageArtifacts": [
+    {
+      "framework": "react",
+      "name": "@threadplane/react",
+      "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-runtime-review-8EspCG/react/packed/threadplane-react-0.0.0.tgz",
+      "sha256": "b71db72347e6ac0777304265d611968232b36e0dffe2171f7fb660f2e8958bc9"
     },
-    "angularConsumer": {
-      "installedPackages": 411,
-      "fileBytes": 196916646,
-      "lockLocationsIncludingOptionalPlatforms": 516,
-      "productionAppJavaScriptRawReported": "320.27 kB",
-      "productionAppJavaScriptEstimatedTransferReported": "84.82 kB",
-      "productionAppCSSRawReported": "1.78 kB",
-      "includes": "Angular CLI/compiler/build tooling"
+    {
+      "framework": "react",
+      "name": "@threadplane/core",
+      "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-runtime-review-8EspCG/react/packed/threadplane-core-0.0.0.tgz",
+      "sha256": "651fe687bf2909572eeb543b97b94361a91afbb93c8d74c92ab02cfe092b855c"
     },
-    "limits": "Actual CLI installation footprints and app build diagnostics; includes the private runtime/SDK bundle. Not framework overhead comparisons or performance benchmarks."
-  },
+    {
+      "framework": "angular",
+      "name": "@threadplane/angular",
+      "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-runtime-review-8EspCG/angular/packed/threadplane-angular-0.0.0.tgz",
+      "sha256": "632956c2279a700c9b8ba4b7762d58a6617b8e9b089776eec5fa8091397e15c5"
+    },
+    {
+      "framework": "angular",
+      "name": "@threadplane/core",
+      "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-runtime-review-8EspCG/angular/packed/threadplane-core-0.0.0.tgz",
+      "sha256": "651fe687bf2909572eeb543b97b94361a91afbb93c8d74c92ab02cfe092b855c"
+    }
+  ],
   "cleanup": {
-    "result": "Parent sent SIGTERM to the actual CLI; it exited 0. The invocation temporary directory was removed and all six review/manual-session ports closed. This record does not claim a later user handoff pair is running.",
-    "temporaryDirectory": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-runtime-review-FCAULj",
-    "existsAfterExit": false,
-    "closedPorts": [
-      58749,
-      58750,
-      58759,
-      58760,
-      58761,
-      58762
-    ],
-    "log": "/tmp/m02-cleanup.log",
-    "logSha256": "95d0dadd4191a5b4e36f6a1ba160d627b1b473f6b47c57c7848539ec247d5d6b",
-    "supportedPlatform": "Process-group cleanup targets POSIX macOS/Linux; exercised locally on macOS."
+    "reviewRunnerExitCode": 0,
+    "temporaryConsumersRemoved": true,
+    "allSixReviewAndVerificationPortsClosed": true,
+    "log": "/tmp/ir03-cleanup.log",
+    "logSha256": "7c2f052fe715f8b6922821f0de8508031a5dc08fc75af5ffc32145d152585dab"
   },
   "inventory": {
-    "currentRows": 1456,
-    "sourceFiles": 478,
-    "legacyExports": 550,
-    "uniqueLocalDefinitions": 514,
-    "changesThisIncrement": 0,
-    "dispositions": "All inventory baseline and disposition bytes unchanged. No new task completion claim. Historical baseline-evidence.json untouched."
+    "rows": 1456,
+    "sourceRows": 478,
+    "exports": 550,
+    "uniqueExportDefinitions": 514,
+    "assignmentsPreserved": true,
+    "changes": "Two private runtime source hashes and two scoped notes; no whole-task completion or new public exports."
   },
-  "productionRuntimeEvidence": {
-    "provenance": "Prior I03 final production runtime/native checks, recorded by I04 and included in merged PR #1119. Production libraries have no diff against the current verification HEAD; these checks are reused, not fresh M02 runs. Earlier packed-consumer logs describe the pre-M01 fixture UI; current UI/build/browser evidence is the M02 CLI above.",
-    "previousRecord": {
-      "gitCommit": "e4862cfaa93e3ae6a8b6c100ec9737e763bc9e23",
-      "path": "fixtures/react-parity/runtime/evidence.json",
-      "increment": "Readonly interrupt batch observation (partial T09/T10)",
-      "recordedAt": "2026-09-22T04:36:01.807Z",
-      "verificationHead": "db867f83be6cb6f9735de41f6aadddf64a0d9937",
-      "selectedSourceFileCount": 780,
-      "selectedSourceSha256": "431e03e9ee0e38c14a267b205962f8bb300dbb01767c0892139f1b4d3047800e"
-    },
-    "executed": [
-      {
-        "command": "NX_DAEMON=false npx nx run-many -t runtime-quality,runtime-type-tests,lint -p langgraph --skip-nx-cache",
-        "exitCode": 0,
-        "verificationPhase": "Historical I03 unchanged production-code evidence; not rerun for M02",
-        "testFiles": 15,
-        "testsPassed": 359,
-        "typeTestsPassed": true,
-        "lintErrors": 0,
-        "existingLintWarnings": 68,
-        "log": "/tmp/i03-runtime-green.log",
-        "logSha256": "cc20283ffd737eeba07fa9ceb9bccb9eb601503ba9592d343dd7108b93ae6312"
-      },
-      {
-        "command": "NX_DAEMON=false npx nx run-many -t test,type-tests,lint,build -p core,content,angular,react --skip-nx-cache",
-        "exitCode": 0,
-        "verificationPhase": "Historical I03 unchanged production-code evidence; not rerun for M02",
-        "projects": 4,
-        "targetConfigurations": 16,
-        "behaviorTests": {
-          "core": 2,
-          "angular": 7,
-          "react": 7
-        },
-        "content": "Empty scaffold with passWithNoTests; no content behavior count claimed.",
-        "typeProbeProvenance": "This final foundation run includes the strengthened native inferred-payload probes; it supersedes the earlier native-only run.",
-        "log": "/tmp/i03-foundations.log",
-        "logSha256": "5a8e68f36a6544272ea242b556cec01b47834eed8e7e86dd7026e2ef3beb0dd5"
-      },
-      {
-        "command": "NX_DAEMON=false npx nx run-many -t build --projects=chat,langgraph,ag-ui,render,a2ui,telemetry --configuration=production --skip-nx-cache",
-        "exitCode": 0,
-        "verificationPhase": "Historical I03 unchanged production-code evidence; not rerun for M02",
-        "productionProjects": 6,
-        "log": "/tmp/i03-legacy-builds.log",
-        "logSha256": "384a43124ce92b6f105142a4c2c0a4edaa293872f43783453ec37d8ef7cf6271"
-      },
-      {
-        "command": "node scripts/react-parity/verify-boundaries.mjs",
-        "exitCode": 0,
-        "verificationPhase": "Historical I03 unchanged production-code evidence; not rerun for M02",
-        "log": "/tmp/i03-source-boundaries.log",
-        "logSha256": "995db896b38cf7de5ca9db6590dba47e082d26abdf69bab04b92eee484696063"
-      },
-      {
-        "command": "node scripts/react-parity/verify-boundaries.mjs --built",
-        "exitCode": 0,
-        "verificationPhase": "Historical I03 unchanged production-code evidence; not rerun for M02",
-        "order": "After successful foundation and six legacy production builds.",
-        "log": "/tmp/i03-built-boundaries.log",
-        "logSha256": "c983a97d17ff7ced7aa9113afa031f464103f566f1bc94eec8160558ec2553f7"
-      },
-      {
-        "command": "node scripts/react-parity/verify-packages.mjs",
-        "exitCode": 0,
-        "verificationPhase": "Historical I03 unchanged production-code evidence; not rerun for M02",
-        "privatePlainTarballs": 3,
-        "esmTypeExports": 9,
-        "isolatedCoreExports": 3,
-        "browserScenariosPassed": 11,
-        "log": "/tmp/i03-react-browser-green.log",
-        "logSha256": "575f95d4bba603551c85a5910e07ce9a9e51dc41cb85225718cf60030e7db18e"
-      },
-      {
-        "command": "node scripts/react-parity/verify-angular-package.mjs",
-        "exitCode": 0,
-        "verificationPhase": "Historical I03 unchanged production-code evidence; not rerun for M02",
-        "angularAPFExports": 1,
-        "browserScenariosPassed": 11,
-        "log": "/tmp/i03-angular-browser-green.log",
-        "logSha256": "0c123f648eb1b3fb2a59447021945f01c0eecaeec20a99b9bb784b6fb88669a8"
-      }
-    ]
-  },
-  "scope": "Fixture readability and an explicit local contributor review command only. Production runtime, core/native implementations, protocol counters, inventory dispositions and public API are unchanged. Both apps still use the private staged runtime and real SDK against deterministic local HTTP/SSE routes.",
+  "scope": [
+    "Backend-private explicit dynamic and static resume",
+    "Owned opaque PlainValue responses; no schema or target transformation",
+    "Single application-owned session shared by native observers",
+    "Operation-specific projection and tool ownership",
+    "Repeatable installed manual-review fixture"
+  ],
   "runtimePolicy": {
-    "ownedSDKDefaultMaxRetries": 0,
-    "explicitOptIn": "Positive clientOptions.maxRetries enables SDK retries. Custom transports own their retry policy; no global no-retry guarantee is claimed.",
-    "recovery": "Uncertain failures use read-only reconciliation without implicit resubmission.",
-    "canonicalTools": "Canonical updates remove or replace pending tool references for the same assistant message, retain calls belonging to other messages, and preserve completed results; ownership is rechecked across pending async execution boundaries."
+    "automaticResumeRetries": false,
+    "resumeHistoryCorrelation": false,
+    "implicitResumeOnMount": false,
+    "remoteCancellationOnStop": false,
+    "coreApiChanged": false,
+    "publicBackendCutover": false
   },
   "ci": {
-    "priorInterruptPR": {
-      "number": 1119,
-      "head": "e4862cfaa93e3ae6a8b6c100ec9737e763bc9e23",
-      "requiredRun": 35687735742,
-      "requiredConclusion": "SUCCESS",
-      "mergeCommit": "e9159b21c265adb66c510dbae3d1b3cc697430a5",
-      "mergedAt": "2026-09-22T05:14:25Z",
-      "log": "/tmp/m02-pr1119-ci.json",
-      "logSha256": "c7f493818367f41bbf2eb5ecfdb0c3a29ed7d9e3bddf61530ae6a30216913a20"
-    },
-    "result": "Prior PR CI verifies the interrupt increment only. PR #1120 checks on c32d967 do not verify this uncommitted review follow-up; new-head CI and CodeQL confirmation are still required."
+    "status": "Not yet requested for this working tree; local evidence does not imply CI green."
   },
   "limits": [
-    "The CLI is a local review aid around installed core/native packages and a private source-composed LangGraph fixture; no neutral backend tarball, public root cutover or complete React migration.",
-    "No production backend, state writes, interrupt resume/target selection, application schema inference, SSR or remote deployment is exercised.",
-    "Only three explicit history reads per server; restart the CLI to reset. Page reload does not reset server history.",
-    "Six component submissions make seven wire runs, including one tool continuation. Post-disposal submission resolves aborted with no I/O.",
-    "Actual HTTP/SSE held-response tests prove incremental DOM updates and native abort, not compositor timing, latency or performance.",
-    "Production React StrictMode does not replay development effects; prior native tests separately cover replay.",
-    "No new local Node22/Linux or Angular20/22 consumer run; process cleanup was exercised on macOS.",
-    "The source fingerprint is distinct from prebuilt package identity. Temporary packed artifacts were deleted during verified cleanup."
+    "Ambiguous resume and its follow-ups report recovery:none; checkpoint queries do not prove command outcome.",
+    "Explicit load remains blocked by unsettled tool results; subsequent explicit submit can hand off buffered results.",
+    "Reloading a pause and resuming is a new command and can repeat remote work.",
+    "The fixture HTTP/SSE server is local deterministic protocol evidence, not a live deployed LangGraph integration.",
+    "Run-ID recovery/join, full adapter migration, public backend cutover and React UI parity remain later milestones."
   ],
   "warnings": [
-    "The client-only Vite production build ignores use client directives; no SSR claim is made.",
-    "The reused LangGraph lint result has 68 existing warnings and zero errors."
+    "68 pre-existing legacy lint warnings; zero lint errors.",
+    "Existing Vite use-client bundling warnings in a client-only consumer; no SSR claim.",
+    "Local Node24/macOS verification; Node22/Linux CI is reported separately after it runs."
   ],
   "documentation": {
     "generatorsRun": [],
-    "reason": "Only private fixture review guidance and evidence changed. Registered API roots, website narrative inputs and public agent-context templates are unchanged; no generator is needed."
+    "reason": "Only private runtime/fixture contributor documentation changed. Published APIs, website narrative and agent context inputs are unchanged."
   },
-  "verificationProvenance": "Parent performed the final M02 code suite, actual CLI smoke, both manual browser surfaces, boundary scans and signal cleanup. Their outputs were inspected and hashed for this record. M02 metadata work verified inventory/diff and reproduced the final selected-byte fingerprint without changing code. Unchanged earlier production checks are explicitly archived above; no future commit, CI result or live review handoff is presumed. The M03 review follow-up reran all 429 focused tests and the actual CLI after fixing the reproduced process-group race; SIGTERM removed its owned directory and closed both ports. M02 manual browser output and earlier production evidence are reused only for unchanged UI/runtime source.",
-  "reviewFollowup": {
-    "finding": "CodeQL js/bad-code-sanitization alert 90 on PR #1120: replace nested generated child JavaScript with static child scripts and JSON/argv path data, including quote/backslash coverage.",
-    "cleanup": "The broader verification reproduced macOS EPERM while probing an exiting process group. Cleanup now uses one memoized bounded awaited loop, retries transient permission errors, requires both group ESRCH and worker close, and retains files with the permission-error cause on persistent denial. No timer callback can throw outside the cleanup promise.",
-    "primaryReference": "https://github.com/apple-oss-distributions/xnu/blob/main/bsd/kern/kern_sig.c",
-    "regressions": "Three deterministic transient-denial cases cover SIGTERM, exit probe and SIGKILL; persistent denial verifies bounded rejection and retained files. The 28 focused runner/HTTP tests and 429 full focused tests pass.",
-    "records": [
-      {
-        "log": "/tmp/m03-codeql-focused.log",
-        "logSha256": "576406444f697b9a3b68f7a79d93f173ab1a1aa74c64786de5199d3d38965cd5"
-      },
-      {
-        "log": "/tmp/m03-eperm-red.log",
-        "logSha256": "394a4a9b696ab7c9dde4ac191c2373bb9bd019652e51e33a5605ef4b32ac23d4"
-      },
-      {
-        "log": "/tmp/m03-eperm-green.log",
-        "logSha256": "f826d2579cd099fa117ae1a445065cb308a424f1f4cd8b71a48230bef9513a3f"
-      },
-      {
-        "log": "/tmp/m03-final-cleanup.log",
-        "logSha256": "30fadac3450d40529380f3e8a7dd6f3a6cb0a93f86d34544b3f5efa0bc986745"
-      }
-    ],
-    "priorManualReviewCommit": "c32d967b4d2c88545ee070a2e2d43dcac74f3700",
-    "browserProvenance": "M02 Chrome MCP/in-app interactions remain applicable to byte-identical UI/runtime. M03 reran actual CLI preparation, installed strict declarations, both browser suites and signal cleanup. CodeQL closure awaits the pushed review-fix head; no future CI result is claimed."
-  }
+  "verificationProvenance": "All listed verification is fresh for this increment. Historical foundation evidence remains byte-identical; no old production runtime checks are presented as current."
 }

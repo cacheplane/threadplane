@@ -20,7 +20,14 @@ type CanonicalMessage = Extract<MessageEvent, { type: 'message' }>;
 
 export interface StreamProjection {
   readonly generation: string;
-  readonly userId: string;
+  readonly userId?: string;
+  /** Captured latest-turn membership permits finalized paused calls while
+   * excluding historical baselines even when the stream omits its user anchor. */
+  readonly resume?: {
+    readonly turnIds: readonly string[];
+    readonly turnEnded?: boolean;
+    readonly excludedIds?: readonly string[];
+  };
   readonly baselineIds: readonly string[];
   readonly currentAssistantId?: string;
   readonly sawAssistant: boolean;
@@ -56,12 +63,39 @@ export function projectStream(
     : [];
   const candidates: CanonicalMessage[] = [];
   const removedToolIds: string[] = [];
-  const anchor = incoming.findIndex(
-    (message) => message['id'] === projection.userId
-  );
+  const anchor =
+    projection.userId === undefined
+      ? -1
+      : incoming.findIndex((message) => message['id'] === projection.userId);
   const nextUser = incoming.findIndex(
     (message, index) => index > anchor && roleOf(message) === 'user'
   );
+  const turnEnded = projection.resume?.turnEnded;
+  if (projection.resume && nextUser >= 0) {
+    const excludedIds = [
+      ...new Set([
+        ...(projection.resume.excludedIds ?? []),
+        ...incoming
+          .slice(nextUser + 1)
+          .flatMap((message) =>
+            roleOf(message) === 'assistant'
+              ? [
+                  typeof message['id'] === 'string'
+                    ? message['id']
+                    : `${projection.generation}-assistant`,
+                ]
+              : []
+          ),
+      ]),
+    ];
+    projection = {
+      ...projection,
+      resume: { ...projection.resume, turnEnded: true, excludedIds },
+      toolAssistantIds: projection.toolAssistantIds?.filter(
+        (id) => !excludedIds.includes(id)
+      ),
+    };
+  }
   for (const raw of incoming) {
     const role = roleOf(raw);
     if (!role) continue;
@@ -93,12 +127,20 @@ export function projectStream(
           (callId) => !callIds.includes(callId)
         )
       );
+    const content = textContent(raw['content']);
+    const current =
+      !baseline ||
+      (!!projection.resume &&
+        role === 'assistant' &&
+        (mode === 'delta' ||
+          content !== previous?.content ||
+          previous?.delivery.generation === projection.generation));
     const message: Message = {
       id: wireId,
       role,
-      content: textContent(raw['content']),
+      content,
       delivery:
-        baseline && previous
+        !current && previous
           ? previous.delivery
           : role === 'assistant'
           ? streamingDelivery(projection.generation)
@@ -111,8 +153,8 @@ export function projectStream(
     };
     if (
       role === 'assistant' &&
-      !baseline &&
-      (!previous || id === projection.currentAssistantId)
+      current &&
+      (!previous || id === projection.currentAssistantId || !!projection.resume)
     ) {
       if (
         projection.currentAssistantId &&
@@ -185,7 +227,12 @@ export function projectStream(
       }
       const position = incoming.indexOf(raw);
       if (
-        !baseline &&
+        (!baseline || projection.resume?.turnIds.includes(id)) &&
+        !projection.resume?.excludedIds?.includes(id) &&
+        (!turnEnded ||
+          anchor >= 0 ||
+          projection.resume?.turnIds.includes(id) ||
+          projection.toolAssistantIds?.includes(id)) &&
         (anchor < 0 || position > anchor) &&
         (nextUser < 0 || position < nextUser)
       )

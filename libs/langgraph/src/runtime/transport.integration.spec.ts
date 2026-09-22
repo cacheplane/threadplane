@@ -70,6 +70,163 @@ describe('neutral real SDK transport', () => {
     vi.unstubAllGlobals();
   });
 
+  it.each([
+    undefined,
+    null,
+    false,
+    0,
+    '',
+    { approve: false, second: { answer: [0, null] } },
+  ])(
+    'sends real SDK null input and opaque resume %j exactly once',
+    async (value) => {
+      const bodies: Record<string, unknown>[] = [];
+      const request = vi.fn<typeof fetch>(async (url, init) => {
+        expect(String(url)).toBe(
+          'https://runtime.example/threads/t/runs/stream'
+        );
+        bodies.push(JSON.parse(String(init?.body)));
+        return fragmentedResponse(
+          bodies.length === 1
+            ? 'event: values\ndata: {"messages":[{"type":"ai","id":"answer","content":"Waiting"}],"__interrupt__":[{"id":"approve","value":"Proceed?"}]}\n\n'
+            : 'event: values\ndata: {"messages":[{"type":"ai","id":"answer","content":"Done"}],"stage":"complete"}\n\n'
+        );
+      });
+      vi.stubGlobal('fetch', request);
+      const session = createSession({
+        assistantId: 'a',
+        threadId: 't',
+        apiUrl: 'https://runtime.example',
+      });
+      expect(await session.submit('Question')).toBe('paused');
+      expect(await session.resume(value)).toBe('success');
+      expect(bodies[1]['input']).toBeNull();
+      expect(bodies[1]['command']).toEqual(
+        value === undefined ? undefined : { resume: value }
+      );
+      expect(
+        session
+          .getSnapshot()
+          .messages.filter((message) => message.role === 'user')
+      ).toHaveLength(1);
+      expect(session.getSnapshot().messages.at(-1)).toMatchObject({
+        content: 'Done',
+        delivery: { phase: 'complete', outcome: 'success' },
+      });
+      expect(request).toHaveBeenCalledTimes(2);
+      await session.dispose();
+    }
+  );
+
+  it('does not retry or query history after an ambiguous SDK resume POST failure', async () => {
+    vi.useFakeTimers();
+    let calls = 0;
+    const request = vi.fn<typeof fetch>(async (url, init) => {
+      expect(String(url)).toBe('https://runtime.example/threads/t/runs/stream');
+      calls += 1;
+      if (calls === 1)
+        return fragmentedResponse(
+          'event: values\ndata: {"__interrupt__":[]}\n\n'
+        );
+      expect(JSON.parse(String(init?.body))).toMatchObject({
+        input: null,
+        command: { resume: null },
+      });
+      throw new Error('NetworkError after acceptance');
+    });
+    vi.stubGlobal('fetch', request);
+    const session = createSession({
+      assistantId: 'a',
+      threadId: 't',
+      apiUrl: 'https://runtime.example',
+    });
+    expect(await session.submit('Pause')).toBe('paused');
+    const pending = session.resume(null);
+    await vi.runAllTimersAsync();
+    expect(await pending).toBe('interrupted');
+    expect(session.getSnapshot().error).toMatchObject({
+      recovery: 'none',
+      retryable: false,
+    });
+    await session.checkStatus?.();
+    expect(request).toHaveBeenCalledTimes(2);
+    await session.dispose();
+  });
+
+  it('observes a new actual SDK pause from a resumed command without another human', async () => {
+    let calls = 0;
+    const request = vi.fn<typeof fetch>(async () => {
+      calls += 1;
+      return fragmentedResponse(
+        calls === 1
+          ? 'event: values\ndata: {"__interrupt__":[]}\n\n'
+          : 'event: updates\ndata: {"__interrupt__":[{"id":"second","value":{"confirm":false}}]}\n\n'
+      );
+    });
+    vi.stubGlobal('fetch', request);
+    const session = createSession({
+      assistantId: 'a',
+      threadId: 't',
+      apiUrl: 'https://runtime.example',
+    });
+    expect(await session.submit('Pause')).toBe('paused');
+    expect(await session.resume()).toBe('paused');
+    expect(session.getSnapshot().interrupts).toEqual([
+      { id: 'second', value: { confirm: false } },
+    ]);
+    expect(session.getSnapshot().messages).toHaveLength(1);
+    expect(request).toHaveBeenCalledTimes(2);
+    await session.dispose();
+  });
+
+  it('sends the SDK resume command only on the first null-input run, never its tool follow-up', async () => {
+    const bodies: Record<string, unknown>[] = [];
+    const request = vi.fn<typeof fetch>(async (url, init) => {
+      expect(String(url)).toBe('https://runtime.example/threads/t/runs/stream');
+      bodies.push(JSON.parse(String(init?.body)));
+      return fragmentedResponse(
+        bodies.length === 1
+          ? 'event: updates\ndata: {"__interrupt__":[{"id":"approval","value":"Proceed?"}]}\n\n'
+          : bodies.length === 2
+          ? `event: values\ndata: ${JSON.stringify({
+              messages: [toolCall],
+            })}\n\n`
+          : 'event: values\ndata: {"messages":[{"type":"ai","id":"final","content":"Done"}]}\n\n'
+      );
+    });
+    vi.stubGlobal('fetch', request);
+    const handler = vi.fn((args: { city: string }) => ({
+      city: args.city,
+      temperature: 21,
+    }));
+    const session = createSession({
+      assistantId: 'a',
+      threadId: 't',
+      apiUrl: 'https://runtime.example',
+      tools: { weather: { description: 'Weather', handler } },
+    });
+    expect(await session.submit('Question')).toBe('paused');
+    expect(await session.resume({ approval: false })).toBe('success');
+    expect(bodies[1]).toMatchObject({
+      input: null,
+      command: { resume: { approval: false } },
+    });
+    expect(bodies[2]['command']).toBeUndefined();
+    expect(bodies[2]['input']).toMatchObject({
+      messages: [
+        {
+          type: 'tool',
+          tool_call_id: 'call-weather',
+          content: JSON.stringify({ city: 'Paris', temperature: 21 }),
+        },
+      ],
+      client_tools: [{ name: 'weather' }],
+    });
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(request).toHaveBeenCalledTimes(3);
+    await session.dispose();
+  });
+
   it('recognizes an actual SDK empty interrupt control as a messageless breakpoint', async () => {
     const request = vi.fn<typeof fetch>(async (url) => {
       expect(String(url)).toBe('https://runtime.example/threads/t/runs/stream');

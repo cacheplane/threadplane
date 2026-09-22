@@ -1,11 +1,21 @@
 import type {
   AgentSession,
   AgentSnapshot,
+  CompleteOutcome,
   PlainValue,
 } from '@threadplane/core';
 
 export const reviewInstructions =
-  'Click Load three times: saved history, equal refresh, then empty history. Continue with Send → Tool → Error → Hold → Stop → Pause → Stop → Send. Finish with Unmount → Dispose → Send after dispose in the owner controls below. Only three Load requests are available per server; restart the review command to reset. Reloading the page does not reset history.';
+  'Click Load three times: saved history, equal refresh, then empty history. Continue with Send → Tool → Error → Hold → Stop → Pause → Stop → Resume → Resume → Send. Resume first sends both approval responses, then confirms the final action. Finish with Unmount → Dispose → Send after dispose → Resume after dispose in the owner controls below. Only three Load requests are available per server; restart the review command to reset. Reloading the page does not reset history.';
+
+/** Application-authored choices for this fixture, not a library targeting helper. */
+export function reviewResponse(snapshot: FixtureSnapshot): PlainValue {
+  return snapshot.interrupts.some(
+    (interrupt) => interrupt.id === 'final-approval'
+  )
+    ? { 'final-approval': true }
+    : { 'live-approval': 'yes', 'live-confirmation': false };
+}
 
 export interface FixtureTools {
   weather: {
@@ -38,6 +48,9 @@ export function display(snapshot: FixtureSnapshot) {
     transcript: snapshot.messages.map((message) => message.content).join('\n'),
     values: JSON.stringify(snapshot.values) ?? 'unobserved',
     interrupts: JSON.stringify(snapshot.interrupts),
+    humanMessages: snapshot.messages.filter(
+      (message) => message.role === 'user'
+    ).length,
     error: snapshot.error?.message ?? '',
     tool: JSON.stringify(snapshot.toolCalls),
     delivery:
@@ -49,7 +62,9 @@ export function display(snapshot: FixtureSnapshot) {
 
 /** Owner controls deliberately survive framework teardown. */
 export function attachOwner(
-  session: AgentSession<FixtureTools>,
+  session: AgentSession<FixtureTools> & {
+    resume(value?: PlainValue): Promise<CompleteOutcome>;
+  },
   unmount: () => void
 ) {
   const owner = document.createElement('section');
@@ -81,7 +96,12 @@ export function attachOwner(
     status.textContent = 'disposed';
   });
   button('Send after dispose', async () => {
+    status.textContent = 'submitting';
     status.textContent = await session.submit('Send');
+  });
+  button('Resume after dispose', async () => {
+    status.textContent = 'resuming';
+    status.textContent = await session.resume(true);
   });
   const label = document.createElement('h3');
   label.textContent = 'Owner state';

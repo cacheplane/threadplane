@@ -37,6 +37,27 @@ test('successive submitted turns receive distinct server message IDs', () => {
 });
 
 const heldBody = { assistant_id: 'fixture-assistant', input: { messages: [{ id: 'held-user', type: 'human', content: 'Hold' }], client_tools: [{ name: 'weather', description: 'Current weather' }, { name: 'count', description: 'Count values' }] }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom'], stream_subgraphs: true };
+test('explicit resume maps use null input, re-pause, and complete the same assistant message', () => {
+  const base = { ...heldBody, input: null };
+  const first = runtime.runtimeResponse({ ...base, command: { resume: { 'live-approval': 'yes', 'live-confirmation': false } } });
+  assert.match(first, /"id":"final-approval"/);
+  assert.match(first, /"content":"One final approval"/);
+  const second = runtime.runtimeResponse({ ...base, command: { resume: { 'final-approval': true } } });
+  assert.match(second, /"content":"Approvals complete"/);
+  assert.match(second, /"stage":"approved"/);
+  const parse = (trace) => trace.trim().split('\n\n').map((event) => JSON.parse(event.match(/^data: (.*)/m)[1]));
+  const firstMessages = parse(first).flatMap((event) => event.messages ?? []);
+  const secondMessages = parse(second).flatMap((event) => event.messages ?? []);
+  assert.equal(firstMessages.at(-1).id, secondMessages.at(-1).id);
+  assert.ok([...firstMessages, ...secondMessages].every((message) => message.type === 'ai'), 'resume creates no synthetic human message');
+  for (const body of [
+    { ...base, command: { resume: { 'live-approval': 'yes' } } },
+    { ...base, command: { resume: { 'final-approval': false } } },
+    { ...base, command: { resume: { 'final-approval': true }, update: {} } },
+    { ...base, input: { messages: [] }, command: { resume: { 'final-approval': true } } },
+  ]) assert.throws(() => runtime.runtimeResponse(body));
+});
+
 for (const ending of ['native abort', 'fixture cleanup']) {
   test(`held SSE delivers real bytes and closes on ${ending}`, { timeout: 10_000 }, async () => {
     const directory = mkdtempSync(join(tmpdir(), 'r07-server-test-'));

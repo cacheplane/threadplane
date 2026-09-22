@@ -3,6 +3,7 @@ import {
   type AgentError,
   type AgentSession,
   type CompleteOutcome,
+  type PlainValue,
   type ToolCall,
   type ToolContract,
 } from '@threadplane/core';
@@ -27,7 +28,7 @@ import {
   projectHistoryInterrupts,
   projectInterrupts,
 } from './interrupt-projection';
-import { ownMessage } from './ownership';
+import { ownMessage, ownValue } from './ownership';
 import { createSafeRequestError } from './operation-errors';
 import {
   failureProjection,
@@ -71,6 +72,10 @@ export type LangGraphSession<
   >
 > = Omit<AgentSession<TTools>, 'getSnapshot'> & {
   getSnapshot(): LangGraphSnapshot<TTools>;
+  resume(
+    value?: PlainValue,
+    options?: { readonly signal?: AbortSignal }
+  ): Promise<CompleteOutcome>;
   load?(options?: { readonly signal?: AbortSignal }): Promise<void>;
 };
 
@@ -82,14 +87,19 @@ interface HistoryRead {
   unlink?: () => void;
 }
 
+type AttemptInput =
+  | {
+      readonly kind: 'submit';
+      readonly messages: { type: 'human'; id: string; content: string }[];
+    }
+  | { readonly kind: 'resume'; readonly value: PlainValue | undefined };
+
 interface Attempt {
   readonly controller: AbortController;
   readonly generation: string;
   readonly result: Promise<CompleteOutcome>;
   readonly resolve: (outcome: CompleteOutcome) => void;
-  readonly input: {
-    messages: { type: 'human'; id: string; content: string }[];
-  };
+  readonly input: AttemptInput;
   projection: StreamProjection;
   readonly calls: Map<string, ToolCall>;
   handoffIds: readonly string[];
@@ -348,6 +358,7 @@ export function createSession(
   }
 
   function reconcile(attempt: Attempt, history: ThreadState[]) {
+    if (attempt.input.kind === 'resume') return undefined;
     const previousState = state;
     const previousValues = values;
     const previousInterrupts = interrupts;
@@ -414,21 +425,35 @@ export function createSession(
 
   async function execute(attempt: Attempt): Promise<void> {
     if (!owns(attempt)) return;
+    const attemptCanCheck = attempt.input.kind === 'submit' && canCheck;
     try {
       let groups = 0;
-      let input: { readonly messages: readonly unknown[] } = attempt.input;
+      let input = attempt.input.kind === 'submit' ? attempt.input.messages : [];
       while (owns(attempt)) {
         const batch = buffer.snapshot();
         attempt.handoffIds =
           groups > 0 ? batch.messages.map((message) => message.id) : [];
-        const payload = {
-          messages: [...batch.messages, ...input.messages],
-          ...(catalog.length ? { client_tools: catalog } : {}),
-        };
+        const resuming = groups === 0 && attempt.input.kind === 'resume';
+        const payload = resuming
+          ? null
+          : {
+              messages: [...batch.messages, ...input],
+              ...(catalog.length ? { client_tools: catalog } : {}),
+            };
         // Ownership is captured before the first effect. The signal always belongs
         // to us, even when the caller also supplied an external AbortSignal.
         attempt.iterator = transport
-          .stream(assistantId, threadId, payload, attempt.controller.signal)
+          .stream(
+            assistantId,
+            threadId,
+            payload,
+            attempt.controller.signal,
+            resuming &&
+              attempt.input.kind === 'resume' &&
+              attempt.input.value !== undefined
+              ? { command: { resume: attempt.input.value } }
+              : undefined
+          )
           [Symbol.asyncIterator]();
         if (!owns(attempt)) {
           close(attempt);
@@ -448,7 +473,7 @@ export function createSession(
               event['data'] ?? event,
               protectedTransport,
               true,
-              canCheck
+              attemptCanCheck
             );
             settle(attempt, 'error', error);
             return;
@@ -484,7 +509,11 @@ export function createSession(
           : attempt.projection.terminal
           ? 'success'
           : 'interrupted';
-        if (outcome === 'interrupted' && transport.getHistory) {
+        if (
+          outcome === 'interrupted' &&
+          attemptCanCheck &&
+          transport.getHistory
+        ) {
           try {
             const history = await transport.getHistory(
               threadId,
@@ -530,8 +559,16 @@ export function createSession(
               terminal: false,
               paused: false,
               canonical: [],
+              ...(attempt.input.kind === 'resume'
+                ? {
+                    resume: {
+                      ...attempt.projection.resume,
+                      turnIds: turnIds(attempt.projection.userId),
+                    },
+                  }
+                : {}),
             };
-            input = { messages: [] };
+            input = [];
             continue;
           }
           try {
@@ -552,13 +589,20 @@ export function createSession(
         settle(
           attempt,
           outcome,
-          outcome === 'interrupted' ? interruptionError(canCheck) : undefined
+          outcome === 'interrupted'
+            ? interruptionError(attemptCanCheck)
+            : undefined
         );
         return;
       }
     } catch (raw) {
       if (!owns(attempt)) return;
-      const error = failureProjection(raw, protectedTransport, false, canCheck);
+      const error = failureProjection(
+        raw,
+        protectedTransport,
+        false,
+        attemptCanCheck
+      );
       settle(
         attempt,
         error.kind === 'interrupted' ? 'interrupted' : 'error',
@@ -567,78 +611,150 @@ export function createSession(
     }
   }
 
-  function submit(
-    input: string,
-    submitOptions?: { signal?: AbortSignal }
-  ): Promise<CompleteOutcome> {
-    let attempt: Attempt | undefined;
-    const beginning = publication.command(() => {
-      if (disposed || submitOptions?.signal?.aborted) return;
-      const reading = detachLoad();
-      const checking = invalidateCheck();
-      const previous = detach('interrupted');
-      const generation = crypto.randomUUID();
-      const userId = crypto.randomUUID();
-      let resolve!: Attempt['resolve'];
-      const result = new Promise<CompleteOutcome>((done) => {
-        resolve = done;
-      });
-      attempt = {
-        controller: new AbortController(),
+  function turnIds(userId: string | undefined) {
+    const anchor = state.messages.findIndex((message) => message.id === userId);
+    const after = state.messages.slice(anchor + 1);
+    const nextUser = after.findIndex((message) => message.role === 'user');
+    return (nextUser < 0 ? after : after.slice(0, nextUser)).map(
+      (message) => message.id
+    );
+  }
+
+  function beginAttempt(input: AttemptInput, external?: AbortSignal): Attempt {
+    const reading = detachLoad();
+    const checking = invalidateCheck();
+    const previous = detach('interrupted');
+    const generation = crypto.randomUUID();
+    const userId =
+      input.kind === 'submit'
+        ? input.messages[0].id
+        : state.messages.filter((message) => message.role === 'user').at(-1)
+            ?.id;
+    let resolve!: Attempt['resolve'];
+    const result = new Promise<CompleteOutcome>((done) => {
+      resolve = done;
+    });
+    const created: Attempt = {
+      controller: new AbortController(),
+      generation,
+      result,
+      resolve,
+      calls: new Map(),
+      handoffIds: [],
+      input,
+      projection: {
         generation,
-        result,
-        resolve,
-        calls: new Map(),
-        handoffIds: [],
-        input: { messages: [{ type: 'human', id: userId, content: input }] },
-        projection: {
-          generation,
-          userId,
-          baselineIds: state.messages.map((m) => m.id),
-          sawAssistant: false,
-          terminal: false,
-          paused: false,
-          canonical: [],
-        },
-      };
-      const created = attempt;
-      owner = created;
-      recoveryAttempt = undefined;
-      const external = submitOptions?.signal;
-      if (external) {
-        const abort = () => {
-          void publication.command(() => {
-            if (owns(created)) {
-              stopExecution();
-            }
-          });
-        };
-        external.addEventListener('abort', abort, { once: true });
-        created.unlink = () => external.removeEventListener('abort', abort);
-      }
+        userId,
+        baselineIds: state.messages.map((m) => m.id),
+        sawAssistant: false,
+        terminal: false,
+        paused: false,
+        canonical: [],
+        ...(input.kind === 'resume'
+          ? { resume: { turnIds: turnIds(userId) } }
+          : {}),
+      },
+    };
+    owner = created;
+    recoveryAttempt = undefined;
+
+    if (input.kind === 'submit')
       state = reduceMessages(state, {
         type: 'message',
         mode: 'snapshot',
         message: {
-          id: userId,
+          id: input.messages[0].id,
           role: 'user',
-          content: input,
+          content: input.messages[0].content,
           delivery: completeDelivery(generation, 'success'),
         },
       });
-      interrupts = projectHistoryInterrupts(interrupts, []);
-      publish('running');
-      checking?.abort();
-      if (previous) close(previous, true);
-      closeLoad(reading);
-    });
-    // Even nested observer commands finish draining before this continuation can
-    // issue I/O. A stop/dispose from the running publication can prevent it.
+    interrupts = projectHistoryInterrupts(interrupts, []);
+    if (external) {
+      const abort = () => {
+        void publication.command(() => {
+          if (owns(created)) {
+            stopExecution();
+          }
+        });
+      };
+      created.unlink = () => external.removeEventListener('abort', abort);
+      external.addEventListener('abort', abort, { once: true });
+      if (external.aborted) abort();
+    }
+    if (owns(created)) publish('running');
+    checking?.abort();
+    if (previous) close(previous, true);
+    closeLoad(reading);
+    return created;
+  }
+
+  function dispatch(
+    beginning: Promise<void>,
+    readAttempt: () => Attempt | undefined
+  ): Promise<CompleteOutcome> {
+    // Observer commands finish draining before this continuation can issue I/O.
     return beginning.then(() => {
+      const attempt = readAttempt();
       if (!attempt) return 'aborted';
       void execute(attempt);
       return attempt.result;
     });
+  }
+
+  function submit(
+    input: string,
+    options?: { signal?: AbortSignal }
+  ): Promise<CompleteOutcome> {
+    let attempt: Attempt | undefined;
+    const beginning = publication.command(() => {
+      if (disposed || options?.signal?.aborted) return;
+      attempt = beginAttempt(
+        {
+          kind: 'submit',
+          messages: [
+            { type: 'human', id: crypto.randomUUID(), content: input },
+          ],
+        },
+        options?.signal
+      );
+    });
+    return dispatch(beginning, () => attempt);
+  }
+
+  function resume(
+    value?: PlainValue,
+    options?: { readonly signal?: AbortSignal }
+  ): Promise<CompleteOutcome> {
+    let attempt: Attempt | undefined;
+    const beginning = publication.command(() => {
+      const capturedRevision = revision;
+      const external = options?.signal;
+      if (disposed || external?.aborted) return;
+      const admit = () => {
+        if (
+          owner ||
+          loading ||
+          recoveryAttempt ||
+          pendingToolSettlements ||
+          pendingToolWrites ||
+          buffer.snapshot().messages.length
+        )
+          throw new Error(
+            'Resume cannot replace an active request, history load, recovery, or unsettled tool results.'
+          );
+        if (!interrupts.length)
+          throw new Error('Resume requires an observed interrupt.');
+      };
+      admit();
+      const captured = ownValue(value);
+      // Response getters are caller effects, not a lock-protected projection.
+      if (disposed || external?.aborted || capturedRevision !== revision)
+        return;
+      admit();
+      attempt = beginAttempt({ kind: 'resume', value: captured }, external);
+    });
+    return dispatch(beginning, () => attempt);
   }
 
   async function readHistory(read: HistoryRead) {
@@ -798,6 +914,7 @@ export function createSession(
     subscribe: (notify) =>
       disposed ? () => undefined : publication.subscribe(notify),
     submit,
+    resume,
     stop: () =>
       publication.command(() => {
         if (disposed) return;
