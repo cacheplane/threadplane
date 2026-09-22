@@ -3,12 +3,12 @@
   "status": "verified-local",
   "increment": "Repeatable installed runtime manual review and readable fixture UI (M01/M02)",
   "observedOn": "2026-09-21",
-  "recordedAt": "2026-09-22T05:21:42.217Z",
+  "recordedAt": "2026-09-22T05:38:24.924Z",
   "source": {
     "branch": "codex/runtime-manual-review",
     "baseCommit": "e4862cfaa93e3ae6a8b6c100ec9737e763bc9e23",
-    "verificationHead": "e4862cfaa93e3ae6a8b6c100ec9737e763bc9e23",
-    "workingTree": "Verified uncommitted manual-review CLI, fixture styling/layout and helper changes on the interrupt-observation PR head. The selected fingerprint identifies current source bytes, not a future commit or prebuilt package provenance. M02 changes only this evidence and the runtime README after final M01 code checks.",
+    "verificationHead": "55781ffdb710a3610c07858b2685d27671e5934f",
+    "workingTree": "Verified the uncommitted PR #1120 review follow-up after merging the #1119 main merge. Changes are limited to review-runner process cleanup, its tests and this evidence. Fixture UI, private runtime and installed binding source bytes are unchanged from the M02 browser review. The fingerprint identifies selected working-tree bytes, not a future commit or prebuilt artifact provenance.",
     "fingerprint": {
       "algorithm": "SHA-256 of a UTF-8 manifest: one line per selected file, lowercase SHA-256(file bytes), two ASCII spaces, repo-relative path, LF; unique paths sorted by JavaScript default string ordering.",
       "pathspecs": [
@@ -39,23 +39,16 @@
         "fixtures/react-parity/runtime/evidence.json"
       ],
       "fileCount": 783,
-      "sha256": "d8d095dace5e97be52d19b841b81c6183b7bedc12969bfea927f3645c3ca2098",
+      "sha256": "2309fc7b8dca28fffc7a13fc6edb8d198402a04f5e5d4f59d6756b7649d122f7",
       "selection": "git ls-files -z --cached --others --exclude-standard -- <pathspecs>; keep existing files and remove excludedPaths. Includes tracked and non-ignored untracked files. Evidence itself is excluded to avoid self-reference; ten local research/planning reports are outside all selected paths.",
       "reproduce": "node --input-type=module <<'JS'\nimport {createHash} from 'node:crypto';\nimport {execFileSync} from 'node:child_process';\nimport {readFileSync,existsSync} from 'node:fs';\nconst {fingerprint:f}=JSON.parse(readFileSync('fixtures/react-parity/runtime/evidence.json')).source;\nconst sha=value=>createHash('sha256').update(value).digest('hex');\nconst paths=[...new Set(execFileSync('git',['ls-files','-z','--cached','--others','--exclude-standard','--',...f.pathspecs],{encoding:'utf8'}).split('\\0').filter(Boolean))].filter(path=>!f.excludedPaths.includes(path)&&existsSync(path)).sort();\nconst actual=sha(paths.map(path=>sha(readFileSync(path))+'  '+path+'\\n').join(''));\nif(paths.length!==f.fileCount||actual!==f.sha256) throw new Error('Source fingerprint mismatch');\nconsole.log(paths.length+' files: '+actual);\nJS"
     },
     "sourceState": {
       "modified": [
-        "fixtures/react-parity/runtime/README.md",
-        "fixtures/react-parity/runtime/angular-app.ts",
-        "fixtures/react-parity/runtime/react-app.tsx",
-        "fixtures/react-parity/runtime/scenarios.ts",
-        "scripts/react-parity/runtime-consumer.mjs"
-      ],
-      "untracked": [
-        "fixtures/react-parity/runtime/review.css",
         "scripts/react-parity/review-runtime.mjs",
         "scripts/react-parity/review-runtime.spec.mjs"
-      ]
+      ],
+      "untracked": []
     }
   },
   "environment": {
@@ -89,11 +82,19 @@
     {
       "command": "NX_DAEMON=false node --test scripts/ci-scope.spec.mjs scripts/ci-workflow.spec.mjs scripts/react-parity/*.spec.mjs fixtures/react-parity/traces.spec.mjs",
       "exitCode": 0,
-      "verificationPhase": "Parent final M02 code check; unchanged after this run",
-      "testsPassed": 425,
+      "verificationPhase": "M03 final review-fix verification",
+      "testsPassed": 429,
       "testsFailed": 0,
-      "log": "/tmp/m02-focused.log",
-      "logSha256": "a770c553e08e0ee62b5df8672a3141360658e802eb62da831f6fcc1e92dfd131"
+      "log": "/tmp/m03-final-focused.log",
+      "logSha256": "d4972fae5116e9b0d500f675502e98317730de67c927e7dc8847d2f3aeb71ce8"
+    },
+    {
+      "command": "node scripts/react-parity/review-runtime.mjs",
+      "exitCode": 0,
+      "verificationPhase": "M03 final runner: installed declarations, builds, eleven scenarios per framework, then fresh servers; SIGTERM exited successfully",
+      "browserScenariosPerFramework": 11,
+      "log": "/tmp/m03-final-cli.log",
+      "logSha256": "45d80e8822b1be2aa86bbe9bca31dbc9a70829ee0c9950180be00d79fbf9c08a"
     },
     {
       "command": "node scripts/react-parity/review-runtime.mjs",
@@ -403,7 +404,7 @@
       "log": "/tmp/m02-pr1119-ci.json",
       "logSha256": "c7f493818367f41bbf2eb5ecfdb0c3a29ed7d9e3bddf61530ae6a30216913a20"
     },
-    "result": "Prior PR CI verifies the interrupt increment only. No CI result for the uncommitted manual-review increment or future follow-up PR is claimed."
+    "result": "Prior PR CI verifies the interrupt increment only. PR #1120 checks on c32d967 do not verify this uncommitted review follow-up; new-head CI and CodeQL confirmation are still required."
   },
   "limits": [
     "The CLI is a local review aid around installed core/native packages and a private source-composed LangGraph fixture; no neutral backend tarball, public root cutover or complete React migration.",
@@ -423,5 +424,31 @@
     "generatorsRun": [],
     "reason": "Only private fixture review guidance and evidence changed. Registered API roots, website narrative inputs and public agent-context templates are unchanged; no generator is needed."
   },
-  "verificationProvenance": "Parent performed the final M02 code suite, actual CLI smoke, both manual browser surfaces, boundary scans and signal cleanup. Their outputs were inspected and hashed for this record. M02 metadata work verified inventory/diff and reproduced the final selected-byte fingerprint without changing code. Unchanged earlier production checks are explicitly archived above; no future commit, CI result or live review handoff is presumed."
+  "verificationProvenance": "Parent performed the final M02 code suite, actual CLI smoke, both manual browser surfaces, boundary scans and signal cleanup. Their outputs were inspected and hashed for this record. M02 metadata work verified inventory/diff and reproduced the final selected-byte fingerprint without changing code. Unchanged earlier production checks are explicitly archived above; no future commit, CI result or live review handoff is presumed. The M03 review follow-up reran all 429 focused tests and the actual CLI after fixing the reproduced process-group race; SIGTERM removed its owned directory and closed both ports. M02 manual browser output and earlier production evidence are reused only for unchanged UI/runtime source.",
+  "reviewFollowup": {
+    "finding": "CodeQL js/bad-code-sanitization alert 90 on PR #1120: replace nested generated child JavaScript with static child scripts and JSON/argv path data, including quote/backslash coverage.",
+    "cleanup": "The broader verification reproduced macOS EPERM while probing an exiting process group. Cleanup now uses one memoized bounded awaited loop, retries transient permission errors, requires both group ESRCH and worker close, and retains files with the permission-error cause on persistent denial. No timer callback can throw outside the cleanup promise.",
+    "primaryReference": "https://github.com/apple-oss-distributions/xnu/blob/main/bsd/kern/kern_sig.c",
+    "regressions": "Three deterministic transient-denial cases cover SIGTERM, exit probe and SIGKILL; persistent denial verifies bounded rejection and retained files. The 28 focused runner/HTTP tests and 429 full focused tests pass.",
+    "records": [
+      {
+        "log": "/tmp/m03-codeql-focused.log",
+        "logSha256": "576406444f697b9a3b68f7a79d93f173ab1a1aa74c64786de5199d3d38965cd5"
+      },
+      {
+        "log": "/tmp/m03-eperm-red.log",
+        "logSha256": "394a4a9b696ab7c9dde4ac191c2373bb9bd019652e51e33a5605ef4b32ac23d4"
+      },
+      {
+        "log": "/tmp/m03-eperm-green.log",
+        "logSha256": "f826d2579cd099fa117ae1a445065cb308a424f1f4cd8b71a48230bef9513a3f"
+      },
+      {
+        "log": "/tmp/m03-final-cleanup.log",
+        "logSha256": "30fadac3450d40529380f3e8a7dd6f3a6cb0a93f86d34544b3f5efa0bc986745"
+      }
+    ],
+    "priorManualReviewCommit": "c32d967b4d2c88545ee070a2e2d43dcac74f3700",
+    "browserProvenance": "M02 Chrome MCP/in-app interactions remain applicable to byte-identical UI/runtime. M03 reran actual CLI preparation, installed strict declarations, both browser suites and signal cleanup. CodeQL closure awaits the pushed review-fix head; no future CI result is claimed."
+  }
 }

@@ -265,19 +265,33 @@ test('abort terminates preparation descendants and awaits their close before del
   const { startRuntimeReview } = await import('./review-runtime.mjs');
   const root = fixtureRoot(t);
   const fake = worker(t);
-  const finished = join(fake.directory, 'descendant-finished');
+  const finished = join(fake.directory, `descendant-'quote"-\\backslash`);
   const ready = deferred();
   const controller = new AbortController();
-  const code = `import { spawn } from 'node:child_process';
-import { writeFileSync, existsSync } from 'node:fs';
-const temporary = process.argv[5];
-const child = spawn(process.execPath, ['--input-type=module', '-e', ${JSON.stringify(
-    `import { writeFileSync, existsSync } from 'node:fs'; process.on('SIGTERM', () => setTimeout(() => { writeFileSync(${JSON.stringify(
-      finished
-    )}, String(existsSync(process.argv[1]))); process.exit(0); }, 30)); console.log('DESCENDANT_READY'); setInterval(() => {}, 1000);`
-  )}, temporary], { stdio: ['ignore', 'inherit', 'inherit'] });
-setInterval(() => {}, 1000);`;
-  writeFileSync(fake.path, code);
+  writeFileSync(
+    join(fake.directory, 'paths.json'),
+    JSON.stringify({ finished })
+  );
+  writeFileSync(
+    join(fake.directory, 'descendant.mjs'),
+    `import { writeFileSync, existsSync } from 'node:fs';
+const [, , temporary, finished] = process.argv;
+process.on('SIGTERM', () => setTimeout(() => {
+  writeFileSync(finished, String(existsSync(temporary)));
+  process.exit(0);
+}, 30));
+console.log('DESCENDANT_READY');
+setInterval(() => {}, 1000);`
+  );
+  writeFileSync(
+    fake.path,
+    `import { spawn } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+const { finished } = JSON.parse(readFileSync(new URL('./paths.json', import.meta.url), 'utf8'));
+spawn(process.execPath, [fileURLToPath(new URL('./descendant.mjs', import.meta.url)), process.argv[5], finished], { stdio: ['ignore', 'inherit', 'inherit'] });
+setInterval(() => {}, 1000);`
+  );
   const starting = startRuntimeReview({
     root,
     worker: fake.path,
@@ -332,23 +346,29 @@ test('abort awaits ignored-stdio descendants after the worker has exited', async
   const finished = join(fake.directory, 'finished');
   const ready = deferred();
   const controller = new AbortController();
-  const descendant = `import { writeFileSync, existsSync } from 'node:fs';
-process.on('SIGTERM', () => setTimeout(() => { writeFileSync(${JSON.stringify(
-    finished
-  )}, String(existsSync(process.argv[1]))); process.exit(0); }, 150));
-writeFileSync(${JSON.stringify(
-    readyFile
-  )}, 'ready'); setInterval(() => {}, 1000);`;
+  writeFileSync(
+    join(fake.directory, 'paths.json'),
+    JSON.stringify({ finished, readyFile })
+  );
+  writeFileSync(
+    join(fake.directory, 'descendant.mjs'),
+    `import { writeFileSync, existsSync } from 'node:fs';
+const [, , temporary, finished, readyFile] = process.argv;
+process.on('SIGTERM', () => setTimeout(() => {
+  writeFileSync(finished, String(existsSync(temporary)));
+  process.exit(0);
+}, 150));
+writeFileSync(readyFile, 'ready');
+setInterval(() => {}, 1000);`
+  );
   writeFileSync(
     fake.path,
     `import { spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
-spawn(process.execPath, ['--input-type=module', '-e', ${JSON.stringify(
-      descendant
-    )}, process.argv[5]], { stdio: 'ignore' });
-const timer = setInterval(() => { if (existsSync(${JSON.stringify(
-      readyFile
-    )})) { clearInterval(timer); console.log('DESCENDANT_READY'); } }, 10);
+import { readFileSync, existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+const { finished, readyFile } = JSON.parse(readFileSync(new URL('./paths.json', import.meta.url), 'utf8'));
+spawn(process.execPath, [fileURLToPath(new URL('./descendant.mjs', import.meta.url)), process.argv[5], finished, readyFile], { stdio: 'ignore' });
+const timer = setInterval(() => { if (existsSync(readyFile)) { clearInterval(timer); console.log('DESCENDANT_READY'); } }, 10);
 setInterval(() => {}, 1000);`
   );
   const starting = startRuntimeReview({
@@ -378,22 +398,30 @@ test('failed workers retain ownership until surviving descendants exit', async (
   const fake = worker(t);
   const readyFile = join(fake.directory, 'ready');
   const finished = join(fake.directory, 'finished');
-  const descendant = `import { writeFileSync, existsSync } from 'node:fs';
-const finish = () => { writeFileSync(${JSON.stringify(
-    finished
-  )}, String(existsSync(process.argv[1]))); process.exit(0); };
+  writeFileSync(
+    join(fake.directory, 'paths.json'),
+    JSON.stringify({ finished, readyFile })
+  );
+  writeFileSync(
+    join(fake.directory, 'descendant.mjs'),
+    `import { writeFileSync, existsSync } from 'node:fs';
+const [, , temporary, finished, readyFile] = process.argv;
+const finish = () => {
+  writeFileSync(finished, String(existsSync(temporary)));
+  process.exit(0);
+};
 process.on('SIGTERM', () => setTimeout(finish, 50));
-writeFileSync(${JSON.stringify(readyFile)}, 'ready'); setTimeout(finish, 500);`;
+writeFileSync(readyFile, 'ready');
+setTimeout(finish, 500);`
+  );
   writeFileSync(
     fake.path,
     `import { spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
-spawn(process.execPath, ['--input-type=module', '-e', ${JSON.stringify(
-      descendant
-    )}, process.argv[5]], { stdio: 'ignore' });
-setInterval(() => { if (existsSync(${JSON.stringify(
-      readyFile
-    )})) process.exit(1); }, 10);`
+import { readFileSync, existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+const { finished, readyFile } = JSON.parse(readFileSync(new URL('./paths.json', import.meta.url), 'utf8'));
+spawn(process.execPath, [fileURLToPath(new URL('./descendant.mjs', import.meta.url)), process.argv[5], finished, readyFile], { stdio: 'ignore' });
+setInterval(() => { if (existsSync(readyFile)) process.exit(1); }, 10);`
   );
   await assert.rejects(
     startRuntimeReview({
@@ -408,4 +436,95 @@ setInterval(() => { if (existsSync(${JSON.stringify(
   while (!existsSync(finished) && Date.now() < deadline)
     await new Promise((resolve) => setTimeout(resolve, 10));
   assert.equal(readFileSync(finished, 'utf8'), 'true');
+});
+
+for (const deniedSignal of ['SIGTERM', 0, 'SIGKILL']) {
+  test(`cleanup retries transient EPERM at ${deniedSignal} until ESRCH`, async (t) => {
+    const { startRuntimeReview } = await import('./review-runtime.mjs');
+    const root = fixtureRoot(t);
+    const fake = worker(t);
+    const groups = new Map();
+    const review = await startRuntimeReview({
+      root,
+      worker: fake.path,
+      log() {},
+      verify: async () => undefined,
+      serve: async () => ({
+        url: 'http://127.0.0.1:1234',
+        close: async () => undefined,
+      }),
+      killProcessGroup: (pid, signal) => {
+        assert.ok(pid < 0);
+        const group = groups.get(pid) ?? { denied: false, confirmed: false };
+        groups.set(pid, group);
+        if (signal === deniedSignal && !group.denied) {
+          group.denied = true;
+          throw Object.assign(new Error('transient group denial'), {
+            code: 'EPERM',
+          });
+        }
+        // Keep the group present until the selected signal/probe was denied.
+        if (signal === 0 && group.denied) {
+          group.confirmed = true;
+          throw Object.assign(new Error('group exited'), { code: 'ESRCH' });
+        }
+      },
+    });
+    t.after(() => review.close());
+    assert.equal(groups.size, 2);
+    assert.ok(
+      [...groups.values()].every((group) => group.denied && group.confirmed)
+    );
+    await review.close();
+    assert.equal(existsSync(review.temporary), false);
+  });
+}
+
+test('persistent group permission denial rejects and retains owned files', async (t) => {
+  const { startRuntimeReview } = await import('./review-runtime.mjs');
+  const root = fixtureRoot(t);
+  const fake = worker(t, "console.log('OWNED_ROOT ' + temporary);");
+  let temporary;
+  t.after(() => {
+    if (temporary) rmSync(temporary, { recursive: true, force: true });
+  });
+  const signals = [];
+  await assert.rejects(
+    startRuntimeReview({
+      root,
+      worker: fake.path,
+      log() {},
+      onWorkerOutput: (text) => {
+        if (text.startsWith('OWNED_ROOT '))
+          temporary = text.trim().slice('OWNED_ROOT '.length);
+      },
+      verify: async () => undefined,
+      serve: async () => ({
+        url: 'http://127.0.0.1:1234',
+        close: async () => undefined,
+      }),
+      killProcessGroup: (_pid, signal) => {
+        signals.push(signal);
+        assert.ok(existsSync(temporary));
+        throw Object.assign(new Error('persistent group denial'), {
+          code: 'EPERM',
+        });
+      },
+    }).then((review) => {
+      t.after(() => review.close());
+      return review;
+    }),
+    (error) => {
+      assert.match(
+        error.message,
+        /process group did not exit; temporary files retained/
+      );
+      assert.equal(error.cause.code, 'EPERM');
+      return true;
+    }
+  );
+  assert.ok(signals.includes('SIGTERM'));
+  assert.ok(signals.includes('SIGKILL'));
+  assert.ok(signals.includes(0));
+  assert.ok(existsSync(temporary));
 });

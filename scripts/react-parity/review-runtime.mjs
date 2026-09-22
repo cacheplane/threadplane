@@ -188,41 +188,56 @@ function preparationChild(worker, kind, root, temporary, output) {
   return { child, done };
 }
 
-async function terminate(preparation) {
+async function terminate(preparation, killProcessGroup) {
   if (!preparation) return;
-  const { child, done } = preparation;
-  const kill = (signal) => {
-    if (!child.pid) return;
-    try {
-      process.kill(-child.pid, signal);
-    } catch (error) {
-      if (error.code !== 'ESRCH') throw error;
-    }
-  };
-  kill('SIGTERM');
-  const escalation = setTimeout(() => kill('SIGKILL'), 2000);
-  try {
-    await done.catch(() => undefined);
-    // Closing the worker's pipes does not prove ignored-stdio descendants have
-    // exited. Keep the group owned until the OS reports that it no longer exists.
-    const deadline = Date.now() + 5000;
-    while (child.pid) {
-      try {
-        process.kill(-child.pid, 0);
-      } catch (error) {
-        if (error.code === 'ESRCH') break;
-        throw error;
+  // Abort and startup failure can reach the same preparation concurrently.
+  // Share one bounded cleanup attempt, including its failure.
+  preparation.termination ??= Promise.resolve().then(async () => {
+    const { child, done } = preparation;
+    let closed = false;
+    void done.then(
+      () => {
+        closed = true;
+      },
+      () => {
+        closed = true;
       }
-      if (Date.now() >= deadline) {
+    );
+    let groupGone = !child.pid;
+    let permissionError;
+    const signal = (value) => {
+      if (groupGone) return;
+      try {
+        killProcessGroup(-child.pid, value);
+      } catch (error) {
+        if (error.code === 'ESRCH') groupGone = true;
+        // macOS can report EPERM while a zombie-only group is being reaped.
+        // Retain ownership until a later ESRCH; denial is never exit proof.
+        else if (error.code === 'EPERM') permissionError = error;
+        else throw error;
+      }
+    };
+    const started = Date.now();
+    let escalated = false;
+    signal('SIGTERM');
+    while (!groupGone || !closed) {
+      const elapsed = Date.now() - started;
+      if (!groupGone && !escalated && elapsed >= 2000) {
+        escalated = true;
+        signal('SIGKILL');
+      }
+      if (!groupGone) signal(0);
+      if (groupGone && closed) break;
+      if (elapsed >= 5000) {
         throw new Error(
-          'Preparation process group did not exit; temporary files retained'
+          'Preparation process group did not exit; temporary files retained',
+          { cause: permissionError }
         );
       }
       await new Promise((resolve) => setTimeout(resolve, 25));
     }
-  } finally {
-    clearTimeout(escalation);
-  }
+  });
+  return preparation.termination;
 }
 
 /** Bounded review lifecycle. Worker/verify/serve seams let tests exercise real
@@ -234,6 +249,7 @@ export async function startRuntimeReview({
   log = console.log,
   worker = script,
   onWorkerOutput = (text) => log(text.trimEnd()),
+  killProcessGroup = (pid, signal) => process.kill(pid, signal),
   verify = async (directory, kind) =>
     (await import('./runtime-consumer.mjs')).runRuntimeScenarios(
       directory,
@@ -261,7 +277,7 @@ export async function startRuntimeReview({
     if (!closing)
       closing = (async () => {
         try {
-          await terminate(preparation);
+          await terminate(preparation, killProcessGroup);
           await activePhase;
           const results = await Promise.allSettled(
             servers.map((server) => server.close())
@@ -324,7 +340,7 @@ export async function startRuntimeReview({
           onWorkerOutput
         );
         await preparation.done;
-        await terminate(preparation);
+        await terminate(preparation, killProcessGroup);
         preparation = undefined;
       });
       checkActive();
