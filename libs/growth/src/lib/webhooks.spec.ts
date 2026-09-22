@@ -485,6 +485,64 @@ describe('processVerifiedResendWebhook', () => {
     );
   });
 
+  it.each([null, 'smtp; 550 suppressed'])(
+    'accepts provider suppression diagnostics %s and applies the canonical stop',
+    async (diagnosticCode) => {
+      const harness = webhookHarness();
+      const result = await processVerifiedResendWebhook(
+        harness.executor,
+        {
+          providerEventId: 'msg_suppression_diagnostics',
+          payload: event('email.suppressed', {
+            suppressed: {
+              type: 'Suppressed',
+              message: 'suppressed',
+              reason: 'Suppressed recipient',
+              diagnosticCode,
+            },
+          }),
+        },
+        harness.dependencies
+      );
+      expect(result).toMatchObject({
+        applied: true,
+        deliveryStatus: 'suppressed',
+      });
+      expect(harness.stopContact).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ reason: 'provider_suppression' })
+      );
+    }
+  );
+
+  it.each([
+    ['reason', 'x'.repeat(501)],
+    ['diagnosticCode', 'x'.repeat(2001)],
+    ['reason', {}],
+  ])(
+    'rejects invalid suppression %s before database access',
+    async (key, value) => {
+      const harness = webhookHarness();
+      await expect(
+        processVerifiedResendWebhook(
+          harness.executor,
+          {
+            providerEventId: 'msg_invalid_suppression',
+            payload: event('email.suppressed', {
+              suppressed: {
+                type: 'Suppressed',
+                message: 'suppressed',
+                [key as string]: value,
+              },
+            }),
+          },
+          harness.dependencies
+        )
+      ).rejects.toThrow('Invalid Resend webhook payload');
+      expect(harness.runTransaction).not.toHaveBeenCalled();
+    }
+  );
+
   it('does not stop for a provider failure with arbitrary invalid-looking text', async () => {
     const harness = webhookHarness();
     await processVerifiedResendWebhook(
