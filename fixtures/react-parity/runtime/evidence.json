@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "status": "verified-local",
-  "increment": "Private LangGraph checkpoint history observation (H01/H02/H03)",
+  "increment": "Private LangGraph owned run options (O01/O02/O03)",
   "observedOn": "2026-09-22",
-  "recordedAt": "2026-09-22T21:41:02.419Z",
+  "recordedAt": "2026-09-22T22:17:23.533Z",
   "source": {
-    "branch": "codex/langgraph-checkpoint-history",
-    "baseCommit": "c600429e1dcce656f59974851f80007120c3d5f7",
-    "verificationHead": "c600429e1dcce656f59974851f80007120c3d5f7",
-    "workingTree": "Verified working-tree changes on the reviewed #1124 head; predecessor CI is reported separately. Selected-byte fingerprint identifies actual source, not a future commit. Foundation artifacts were freshly built; tarball hashes identify installed native/core artifacts and runtime source was separately emitted/bundled for every consumer.",
+    "branch": "codex/langgraph-run-options",
+    "baseCommit": "56cd7b799ee98c544ff670f868762dd87a8b6787",
+    "verificationHead": "28a03729acf3cea0ba29586b8a9c0a333deee0da",
+    "workingTree": "Verified working-tree changes on the reviewed #1126 head; predecessor CI is reported separately. Selected-byte fingerprint identifies actual source, not a future commit. Foundation artifacts were freshly built; tarball hashes identify installed native/core artifacts and private runtime source was separately emitted/bundled for each consumer.",
     "fingerprint": {
       "algorithm": "SHA-256 of a UTF-8 manifest: one line per selected file, lowercase SHA-256(file bytes), two ASCII spaces, repo-relative path, LF; unique paths sorted by JavaScript default string ordering.",
       "pathspecs": [
@@ -42,8 +42,8 @@
       "excludedPaths": [
         "fixtures/react-parity/runtime/evidence.json"
       ],
-      "fileCount": 804,
-      "sha256": "cef6b0e9c1031d8084e412409ac14a2b804759ef8455528410dd2edf43c7ee5b",
+      "fileCount": 807,
+      "sha256": "40ed0416736a45b4e259e364bbdc6f5f9cba9fe8f9b1fcf642a247f36bee64a6",
       "selection": "git ls-files -z --cached --others --exclude-standard -- <pathspecs>; existing files minus excludedPaths, including new tests. Local research/planning files are outside these paths. Evidence excludes itself to avoid self-reference.",
       "reproduce": "node --input-type=module <<'JS'\nimport {createHash} from 'node:crypto';\nimport {execFileSync} from 'node:child_process';\nimport {readFileSync,existsSync} from 'node:fs';\nconst {fingerprint:f}=JSON.parse(readFileSync('fixtures/react-parity/runtime/evidence.json')).source;\nconst sha=value=>createHash('sha256').update(value).digest('hex');\nconst paths=[...new Set(execFileSync('git',['ls-files','-z','--cached','--others','--exclude-standard','--',...f.pathspecs],{encoding:'utf8'}).split('\\0').filter(Boolean))].filter(path=>!f.excludedPaths.includes(path)&&existsSync(path)).sort();\nconst actual=sha(paths.map(path=>sha(readFileSync(path))+'  '+path+'\\n').join(''));\nif(paths.length!==f.fileCount||actual!==f.sha256) throw new Error('Source fingerprint mismatch');\nconsole.log(paths.length+' files: '+actual);\nJS"
     },
@@ -52,14 +52,11 @@
         "fixtures/react-parity/runtime/README.md",
         "fixtures/react-parity/runtime/angular-app.ts",
         "fixtures/react-parity/runtime/react-app.tsx",
-        "fixtures/react-parity/runtime/review.css",
+        "fixtures/react-parity/runtime/runtime-entry.ts",
         "fixtures/react-parity/runtime/scenarios.ts",
         "libs/langgraph/src/runtime/create-session.ts",
-        "libs/langgraph/src/runtime/langgraph-snapshot.ts",
-        "libs/langgraph/src/runtime/ownership.ts",
-        "libs/langgraph/src/runtime/publication.spec.ts",
-        "libs/langgraph/src/runtime/recovery.spec.ts",
-        "libs/langgraph/src/runtime/subgraph-projection.spec.ts",
+        "libs/langgraph/src/runtime/reconnect.spec.ts",
+        "libs/langgraph/src/runtime/submit-input.type-test.ts",
         "libs/langgraph/src/runtime/transport.integration.spec.ts",
         "scripts/react-parity/baseline.json",
         "scripts/react-parity/dispositions.json",
@@ -67,9 +64,9 @@
         "scripts/react-parity/runtime-consumer.spec.mjs"
       ],
       "untracked": [
-        "libs/langgraph/src/runtime/checkpoint-history.spec.ts",
-        "libs/langgraph/src/runtime/checkpoint-history.ts",
-        "libs/langgraph/src/runtime/checkpoint-history.type-test.ts"
+        "libs/langgraph/src/runtime/run-options.spec.ts",
+        "libs/langgraph/src/runtime/run-options.ts",
+        "libs/langgraph/src/runtime/run-options.type-test.ts"
       ]
     }
   },
@@ -104,73 +101,73 @@
     {
       "command": "NX_DAEMON=false npx nx run-many -t runtime-quality,runtime-type-tests,lint -p langgraph --skip-nx-cache",
       "exitCode": 0,
-      "testsPassed": 552,
-      "testFiles": 23,
+      "testsPassed": 574,
+      "testFiles": 24,
       "lintErrors": 0,
       "lintWarnings": 68,
-      "log": "/tmp/ch01-runtime.log",
-      "logSha256": "21576c2f52c352f064546de4370d3e6a5bac10b191d50a15b51ff81a9b17f311"
+      "log": "/tmp/ro03-runtime.log",
+      "logSha256": "a8c8e223921db5d0b0bc097494fec991dc8a78fb536f663674f3ad9d8971d9f3"
     },
     {
       "command": "node --test scripts/react-parity/*.spec.mjs fixtures/react-parity/traces.spec.mjs scripts/ci-scope.spec.mjs scripts/ci-workflow.spec.mjs",
       "exitCode": 0,
-      "testsPassed": 438,
-      "log": "/tmp/ch03-infrastructure.log",
-      "logSha256": "a5e773c1e17278309c3c7afd9439715b76cf9bea4ada2d02f3d9b4defc4fe9b4"
+      "testsPassed": 439,
+      "log": "/tmp/ro04-infrastructure.log",
+      "logSha256": "805e8ad1fd84faceb68a9a43c9c6e8d06253bee3eb378b61f7bf036239c16871"
     },
     {
       "command": "NX_DAEMON=false npx nx run-many -t lint,test,type-tests -p core,content,angular,react --parallel=2 --skip-nx-cache",
       "exitCode": 0,
-      "log": "/tmp/ch03-foundations.log",
-      "logSha256": "38c924233672efcac52bb96e341fd4bccb50c0866d74fa71892b9c4ce12febdd"
+      "log": "/tmp/ro03-foundations.log",
+      "logSha256": "d14ff294d8dcfc9f721b88c51637a2228161a0a97d66a923ce6624e7ae26fe26"
     },
     {
       "command": "NX_DAEMON=false npx nx run-many -t build -p core,content,angular,react --parallel=2 --skip-nx-cache",
       "exitCode": 0,
-      "log": "/tmp/ch03-build.log",
-      "logSha256": "b2d1bbc80286a211aac7eb37a181fb0b561f3168bd1603fad15883afb038055c"
+      "log": "/tmp/ro03-build.log",
+      "logSha256": "45a6495d56a757f6ce8ed862a0b015c854aa8ae7d57c4608abfeb3114082803f"
     },
     {
       "command": "node scripts/react-parity/verify-packages.mjs",
       "exitCode": 0,
       "browserScenariosPassed": 15,
       "framework": "React",
-      "log": "/tmp/ch03-packages.log",
-      "logSha256": "6418b85d6db73691039d96321baaa530536fecf73e6021d3af1d7a395c04daf6"
+      "log": "/tmp/ro04-packages.log",
+      "logSha256": "c0fac067ff100a4304a09a9b612749177cd0ce1fa31420ff9d06c3d8aa9f9ff3"
     },
     {
       "command": "node scripts/react-parity/verify-angular-package.mjs",
       "exitCode": 0,
       "browserScenariosPassed": 15,
       "framework": "Angular",
-      "log": "/tmp/ch03-angular-package.log",
-      "logSha256": "5762d608cf85dacd848d7315ec3dfbbde3b3dab41a6e57b701ee4a32f4b76338"
+      "log": "/tmp/ro04-angular-package.log",
+      "logSha256": "93eb306d0990db17d22d5cedf51136d8616dffba1d48d25addefaa9382b2aa66"
     },
     {
       "command": "node scripts/react-parity/review-runtime.mjs",
       "exitCode": 0,
       "browserScenariosPerFramework": 15,
-      "termination": "SIGTERM, exit0; untouched review servers created only after both scenario suites passed.",
-      "log": "/tmp/ch03-cli.log",
-      "logSha256": "637936c3144a6ac33a811368fd8b052bc220efa4bb409473e0de7a8ebe00dc35"
+      "termination": "SIGTERM, exit 0; untouched review servers created only after both scenario suites passed.",
+      "log": "/tmp/ro04-cli.log",
+      "logSha256": "929f273f67dbc732fee5995537363b3b815f4deea6974cc2f06ab6ceaf5d2d04"
     },
     {
       "command": "node scripts/react-parity/verify-boundaries.mjs",
       "exitCode": 0,
-      "log": "/tmp/ch03-source-boundaries.log",
+      "log": "/tmp/ro03-source-boundaries.log",
       "logSha256": "995db896b38cf7de5ca9db6590dba47e082d26abdf69bab04b92eee484696063"
     },
     {
       "command": "node scripts/react-parity/verify-boundaries.mjs --built",
       "exitCode": 0,
-      "log": "/tmp/ch03-built-boundaries.log",
+      "log": "/tmp/ro03-built-boundaries.log",
       "logSha256": "c983a97d17ff7ced7aa9113afa031f464103f566f1bc94eec8160558ec2553f7"
     },
     {
       "command": "node scripts/react-parity/inventory.mjs --check",
       "exitCode": 0,
-      "log": "/tmp/ch03-inventory-check.log",
-      "logSha256": "2190c4ee017d9e03cad13a1e0705b957e92dc9b18e94e3cc4f991d602804cff6"
+      "log": "/tmp/ro03-inventory-check.log",
+      "logSha256": "20ee033cb189a88e39e8ff73a6f1c984312a2bdcbfa74e3548bbf7090afe2ae1"
     }
   ],
   "manualBrowserReview": {
@@ -246,30 +243,26 @@
       }
     ],
     "checks": [
-      "unobserved checkpoint page, exact loaded/parent/sibling references, equal refresh, empty replacement and subsequent retention",
-      "no old checkpoint values, transcripts or task data exposed in page",
-      "inert mount and three explicit history reads",
-      "exact application state on Tool and Drop only",
-      "same-ID sibling and nested child namespaces isolated from root text",
-      "child-only count request never executes a second handler",
-      "protected child failure survives successful root tool handoff",
-      "held child streaming and aborted delivery",
-      "shorter authoritative child text finalized on root pause",
-      "two child interrupt batches then resumed success",
-      "anonymous child ID retained across exact Last-Event-ID: 2 reconnect with no duplicate text",
-      "independent Send replaces prior child namespaces",
+      "exact configuration/context/metadata on Tool, tool continuation, both explicit resumes and Drop",
+      "execution settings absent from later independent Send and other unconfigured submissions",
+      "three explicit history loads with equal refresh and empty replacement",
+      "application state only on initial Tool and Drop, never replayed on continuation",
+      "separate same-ID child namespaces, protected child failure and no child tool execution",
+      "held root/child output and local Stop",
+      "both pause batches, explicit response maps and same-message resume completion",
+      "retained anonymous root/child identities through exact cursor join without another POST",
       "unmount, disposal and three inert post-disposal commands"
     ],
-    "visual": "Both native checkpoint panels inspected in IAB at the default desktop viewport. Both Chrome checkpoint panels inspected at 390px with document width equal to viewport width; React also inspected at 1280px with matching document width. Chrome network lists contained only expected local assets and fixture requests.",
-    "toolingNote": "The fixture displays observation data for contributor review; it is not the production subagent UI or a compositor/performance benchmark.",
+    "visual": "React and Angular observation panels inspected in IAB at its default desktop viewport. Both Chrome apps inspected at 390px; document width equaled viewport width for each. Chrome network lists contained only expected local assets and fixture requests.",
+    "toolingNote": "Contributor fixtures verify observation and execution contracts, not production UI, SSR or compositor/performance budgets.",
     "logs": [
       {
-        "log": "/tmp/ch03-browser-verification.json",
-        "logSha256": "1d362a9b71134f47c2dedd4b99cb9f3017b44a9adff9ef24f61317e02da1c92c"
+        "log": "/tmp/ro04-browser-verification.json",
+        "logSha256": "e4151e8bb4eda847c0f2e29fed8d67a62b8f2d72e66307698f7fde87a27728c2"
       },
       {
-        "log": "/tmp/ch03-browser-requests.json",
-        "logSha256": "d1809851061c2e4fd6ab98440404ce87278ef23e49c217ea9d8f2c0954853a99"
+        "log": "/tmp/ro04-browser-requests.json",
+        "logSha256": "f8c744ddbb3fbca27456e70922257257ffa9411998670288d42e8355440d52a5"
       }
     ]
   },
@@ -277,25 +270,25 @@
     {
       "framework": "react",
       "name": "@threadplane/react",
-      "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-runtime-review-QK6woO/react/packed/threadplane-react-0.0.0.tgz",
+      "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-runtime-review-51UfI6/react/packed/threadplane-react-0.0.0.tgz",
       "sha256": "b71db72347e6ac0777304265d611968232b36e0dffe2171f7fb660f2e8958bc9"
     },
     {
       "framework": "react",
       "name": "@threadplane/core",
-      "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-runtime-review-QK6woO/react/packed/threadplane-core-0.0.0.tgz",
+      "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-runtime-review-51UfI6/react/packed/threadplane-core-0.0.0.tgz",
       "sha256": "651fe687bf2909572eeb543b97b94361a91afbb93c8d74c92ab02cfe092b855c"
     },
     {
       "framework": "angular",
       "name": "@threadplane/angular",
-      "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-runtime-review-QK6woO/angular/packed/threadplane-angular-0.0.0.tgz",
+      "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-runtime-review-51UfI6/angular/packed/threadplane-angular-0.0.0.tgz",
       "sha256": "632956c2279a700c9b8ba4b7762d58a6617b8e9b089776eec5fa8091397e15c5"
     },
     {
       "framework": "angular",
       "name": "@threadplane/core",
-      "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-runtime-review-QK6woO/angular/packed/threadplane-core-0.0.0.tgz",
+      "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-runtime-review-51UfI6/angular/packed/threadplane-core-0.0.0.tgz",
       "sha256": "651fe687bf2909572eeb543b97b94361a91afbb93c8d74c92ab02cfe092b855c"
     }
   ],
@@ -303,23 +296,23 @@
     "reviewRunnerExitCode": 0,
     "temporaryConsumersRemoved": true,
     "allSixReviewAndVerificationPortsClosed": true,
-    "log": "/tmp/ch03-cleanup.log",
-    "logSha256": "2ac312cd6d1972c69765d4fefef6c5ba1888efbaf27fe85ae9c25d452ea9d530"
+    "log": "/tmp/ro04-cleanup.log",
+    "logSha256": "4ef66267335599a4235a18ac035b143c9b6bdf4683b3d31eb48a8f9179f0cb60"
   },
   "inventory": {
-    "rows": 1460,
-    "sourceRows": 482,
+    "rows": 1461,
+    "sourceRows": 483,
     "exports": 550,
     "uniqueExportDefinitions": 514,
     "assignmentsPreserved": true,
-    "changes": "Existing dispositions remain equivalent by row; one internal checkpoint-history source row added. No public export or whole-task completion."
+    "changes": "All existing dispositions remain equivalent by row; one internal run-options source row added. No public export or whole-task completion."
   },
   "scope": [
-    "Backend-private compact explicitly loaded checkpoint page using readonly SDK reference shapes",
-    "Pure four-field projection excludes repeated values, transcript, task and metadata data",
-    "Atomic load ownership; equal read sharing, stale/reentrant load rejection and immutable nested map data",
-    "Last explicit page retained through live observation, resume, stop, recovery and disposal",
-    "Installed React and Angular inferred readonly contracts and matching browser behavior"
+    "Backend-private readonly per-command configuration, context and metadata on submit/resume",
+    "Pure supported-field capture, deep ownership and session-owned routing",
+    "Captured settings retained for tool continuations and reconnect handoff, never graph-input replay",
+    "Reentrant options getters cannot admit stale commands or displace newer history loads",
+    "Real SDK wire bodies and installed React/Angular consumers"
   ],
   "runtimePolicy": {
     "sessionAutomaticReconnect": false,
@@ -335,15 +328,18 @@
     "schemaValidationAdded": false,
     "childExecutionAuthority": false,
     "childRequestsAdded": false,
-    "childHistoryFabricated": false
+    "childHistoryFabricated": false,
+    "runOptionsInherited": false,
+    "runOptionsOnToolContinuation": true,
+    "runOptionsInGraphInput": false
   },
   "ci": {
     "status": "Not yet requested for this working tree; local evidence does not imply CI green."
   },
   "limits": [
-    "The history field is a received page, not a complete or automatically refreshed branch tree. The locked SDK defaults to ten entries.",
-    "Checkpoint selection, fork/replay execution and history pagination remain separate work.",
-    "Full adapter migration and React component parity remain later milestones; private consumer composition does not establish a neutral published LangGraph package.",
+    "Run settings have no session defaults or inheritance; callers explicitly supply settings for each independent submit or resume.",
+    "Checkpoint execution, pagination, thread switching/creation and queue policies remain separate work.",
+    "Full adapter migration and React component parity remain later milestones; fixture-local declarations and private source composition do not establish a neutral published LangGraph package.",
     "Local HTTP fixtures do not certify a live deployment, full SSR or performance budgets."
   ],
   "warnings": [
@@ -355,5 +351,5 @@
     "generatorsRun": [],
     "reason": "Only contributor fixture guidance and private runtime sources changed. No public export, narrative, API generator or public agent-context inputs changed."
   },
-  "verificationProvenance": "All listed commands were freshly run in this milestone. Native package implementation and public exports are unchanged. Historical foundation evidence remains unchanged. Parent performed source/spec/type/lifecycle/evidence review; independent subagent review was unavailable because thread agent capacity was exhausted. Hosted review status will be inspected separately from job success."
+  "verificationProvenance": "All listed commands were freshly run in this milestone. Native package implementation and public exports are unchanged. Historical foundation evidence remains unchanged. Parent audited source, spec, types, lifecycle and evidence. Independent subagent review was unavailable because thread agent capacity was exhausted. Hosted review output must be inspected separately from job success."
 }

@@ -46,6 +46,12 @@ import {
 } from './submit-input';
 export type { LangGraphInputState, LangGraphSubmitInput } from './submit-input';
 import {
+  captureRunOptions,
+  type CapturedRunOptions,
+  type LangGraphRunOptions,
+} from './run-options';
+export type { LangGraphRunOptions } from './run-options';
+import {
   advanceCursor,
   captureRun,
   rebaseRun,
@@ -96,14 +102,14 @@ export type LangGraphSession<
   getSnapshot(): LangGraphSnapshot<TTools>;
   submit(
     input: LangGraphSubmitInput,
-    options?: { readonly signal?: AbortSignal }
+    options?: LangGraphRunOptions
   ): Promise<CompleteOutcome>;
   reconnect(options?: {
     readonly signal?: AbortSignal;
   }): Promise<CompleteOutcome>;
   resume(
     value?: PlainValue,
-    options?: { readonly signal?: AbortSignal }
+    options?: LangGraphRunOptions
   ): Promise<CompleteOutcome>;
   load?(options?: { readonly signal?: AbortSignal }): Promise<void>;
 };
@@ -138,6 +144,7 @@ interface Attempt {
   readonly result: Promise<CompleteOutcome>;
   readonly resolve: (outcome: CompleteOutcome) => void;
   readonly input: AttemptInput;
+  readonly runOptions: CapturedRunOptions | undefined;
   projection: StreamProjection;
   subgraphs: SubgraphObservation;
   readonly calls: Map<string, ToolCall>;
@@ -563,11 +570,13 @@ export function createSession(
                 threadId,
                 payload,
                 attempt.controller.signal,
-                canReconnect ||
+                attempt.runOptions ||
+                  canReconnect ||
                   (resuming &&
                     attempt.input.kind === 'resume' &&
                     attempt.input.value !== undefined)
                   ? {
+                      ...attempt.runOptions,
                       ...(canReconnect
                         ? {
                             streamResumable: true,
@@ -827,7 +836,11 @@ export function createSession(
     );
   }
 
-  function beginAttempt(input: AttemptInput, external?: AbortSignal): Attempt {
+  function beginAttempt(
+    input: AttemptInput,
+    external?: AbortSignal,
+    runOptions?: CapturedRunOptions
+  ): Attempt {
     const reading = detachLoad();
     const checking = invalidateCheck();
     const previous = detach('interrupted');
@@ -853,6 +866,7 @@ export function createSession(
       groups: 0,
       handoffIds: [],
       input,
+      runOptions,
       subgraphs,
       projection: {
         generation,
@@ -917,18 +931,37 @@ export function createSession(
 
   function submit(
     input: LangGraphSubmitInput,
-    options?: { readonly signal?: AbortSignal }
+    options?: LangGraphRunOptions
   ): Promise<CompleteOutcome> {
     let attempt: Attempt | undefined;
     const beginning = publication.command(() => {
       if (disposed) return;
       const capturedRevision = revision;
+      const capturedLoad = loading;
       const external = options?.signal;
       // Even the signal getter can synchronously stop or replace this command.
-      if (disposed || external?.aborted || capturedRevision !== revision)
+      if (
+        disposed ||
+        external?.aborted ||
+        capturedRevision !== revision ||
+        capturedLoad !== loading
+      )
         return;
       const captured = captureSubmitInput(input);
-      if (disposed || external?.aborted || capturedRevision !== revision)
+      if (
+        disposed ||
+        external?.aborted ||
+        capturedRevision !== revision ||
+        capturedLoad !== loading
+      )
+        return;
+      const runOptions = captureRunOptions(options);
+      if (
+        disposed ||
+        external?.aborted ||
+        capturedRevision !== revision ||
+        capturedLoad !== loading
+      )
         return;
       attempt = beginAttempt(
         {
@@ -942,7 +975,8 @@ export function createSession(
             },
           ],
         },
-        external
+        external,
+        runOptions
       );
     });
     return dispatch(beginning, () => attempt);
@@ -950,13 +984,20 @@ export function createSession(
 
   function resume(
     value?: PlainValue,
-    options?: { readonly signal?: AbortSignal }
+    options?: LangGraphRunOptions
   ): Promise<CompleteOutcome> {
     let attempt: Attempt | undefined;
     const beginning = publication.command(() => {
       const capturedRevision = revision;
+      const capturedLoad = loading;
       const external = options?.signal;
-      if (disposed || external?.aborted) return;
+      if (
+        disposed ||
+        external?.aborted ||
+        capturedRevision !== revision ||
+        capturedLoad !== loading
+      )
+        return;
       const admit = () => {
         if (
           owner ||
@@ -975,11 +1016,28 @@ export function createSession(
       };
       admit();
       const captured = ownValue(value);
+      if (
+        disposed ||
+        external?.aborted ||
+        capturedRevision !== revision ||
+        capturedLoad !== loading
+      )
+        return;
+      const runOptions = captureRunOptions(options);
       // Response getters are caller effects, not a lock-protected projection.
-      if (disposed || external?.aborted || capturedRevision !== revision)
+      if (
+        disposed ||
+        external?.aborted ||
+        capturedRevision !== revision ||
+        capturedLoad !== loading
+      )
         return;
       admit();
-      attempt = beginAttempt({ kind: 'resume', value: captured }, external);
+      attempt = beginAttempt(
+        { kind: 'resume', value: captured },
+        external,
+        runOptions
+      );
     });
     return dispatch(beginning, () => attempt);
   }
@@ -1041,6 +1099,7 @@ export function createSession(
         result,
         resolve,
         input: candidate.attempt.input,
+        runOptions: candidate.attempt.runOptions,
         calls: new Map(),
         groups: candidate.attempt.groups,
         handoffIds: candidate.attempt.handoffIds,

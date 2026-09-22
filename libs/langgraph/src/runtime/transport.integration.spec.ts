@@ -203,7 +203,16 @@ describe('neutral real SDK transport', () => {
         itinerary: [{ city: 'Paris', day: 1 }],
         metadata: { domain: 'application' },
       } as const;
-      expect(await session.submit({ message: 'Plan', state })).toBe(
+      const runOptions = {
+        config: {
+          tags: ['memory'],
+          recursion_limit: 50,
+          configurable: { user_id: 'user-42' },
+        },
+        context: { locale: 'en' },
+        metadata: { domain: 'execution' },
+      } as const;
+      expect(await session.submit({ message: 'Plan', state }, runOptions)).toBe(
         reconnect ? 'interrupted' : 'success'
       );
       if (reconnect) expect(await session.reconnect()).toBe('success');
@@ -223,7 +232,7 @@ describe('neutral real SDK transport', () => {
         stream_resumable: true,
         on_disconnect: 'continue',
       });
-      expect(bodies[0]['metadata']).toBeUndefined();
+      for (const body of bodies) expect(body).toMatchObject(runOptions);
       expect(Object.keys(bodies[1]['input'] as object).sort()).toEqual([
         'client_tools',
         'messages',

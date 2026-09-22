@@ -11383,6 +11383,17 @@
       "status": "planned"
     },
     {
+      "id": "source:libs/langgraph/src/runtime/run-options.ts",
+      "taskIds": [
+        "T09",
+        "T10"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private staged LangGraph runtime subset; fixture-only and not a neutral public LangGraph root or tarball.",
+      "note": "Owned per-command configuration, context and metadata; routing, defaults and complete adapter migration remain open."
+    },
+    {
       "id": "source:libs/langgraph/src/runtime/checkpoint-history.ts",
       "taskIds": [
         "T09",

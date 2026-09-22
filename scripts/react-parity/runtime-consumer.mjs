@@ -25,6 +25,7 @@ const catalog = [{ name: 'weather', description: 'Current weather' }, { name: 'c
 const toolCall = { type: 'ai', id: 'assistant-tool', content: '', tool_calls: [{ id: 'call-weather', name: 'weather', args: { city: 'Paris' }, type: 'tool_call' }] };
 const sse = (event, data, id) => `${id === undefined ? '' : `id: ${id}\n`}event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
 const resumableRunFields = { stream_resumable: true, on_disconnect: 'continue' };
+const configuredRunFields = { config: { tags: ['runtime-review'], recursion_limit: 50, configurable: { user_id: 'review-user' } }, context: { locale: 'en', features: ['memory'] }, metadata: { source: 'runtime-review' } };
 const textTrace = readFileSync(new URL('../../fixtures/react-parity/traces/langgraph-text-state.sse', import.meta.url), 'utf8');
 const savedInterrupts = [
   { id: 'saved-approval', value: { question: 'Approve saved request?', choices: ['yes', 'no'] }, namespace: ['review', 'task-1'], when: 'during', resumable: true, ns: ['legacy-review'] },
@@ -67,7 +68,7 @@ export function runtimeResponse(body) {
   assert.equal(body.stream_subgraphs, true);
   if (body.input === null) {
     const response = body.command?.resume;
-    assert.deepEqual(body, { assistant_id: 'fixture-assistant', input: null, command: { resume: response }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom'], stream_subgraphs: true, ...resumableRunFields }, 'exact resume run fields');
+    assert.deepEqual(body, { assistant_id: 'fixture-assistant', input: null, command: { resume: response }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom'], stream_subgraphs: true, ...resumableRunFields, ...configuredRunFields }, 'exact resume run fields');
     if (Object.hasOwn(response ?? {}, 'live-approval')) {
       assert.deepEqual(response, { 'live-approval': 'yes', 'live-confirmation': false }, 'exact initial response map');
       return sse('values', { stage: 'final-approval', messages: [{ type: 'ai', id: 'resume-answer', content: 'One final approval' }] })
@@ -85,7 +86,8 @@ export function runtimeResponse(body) {
   const initialState = message.type === 'human' && ['Tool', 'Drop'].includes(message.content)
     ? { model: 'gpt-5-mini', reasoning_effort: 'minimal', gen_ui_mode: 'a2ui', itinerary: [{ id: 'paris', day: 1, place: 'Paris', note: 'Check the weather' }] }
     : {};
-  assert.deepEqual(body, { assistant_id: 'fixture-assistant', input: { ...initialState, messages: [message], client_tools: catalog }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom'], stream_subgraphs: true, ...resumableRunFields }, 'unexpected run fields');
+  const execution = message.type === 'tool' || ['Tool', 'Drop'].includes(message.content) ? configuredRunFields : {};
+  assert.deepEqual(body, { assistant_id: 'fixture-assistant', input: { ...initialState, messages: [message], client_tools: catalog }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom'], stream_subgraphs: true, ...resumableRunFields, ...execution }, 'unexpected run fields');
   if (message.type === 'tool') {
     assert.deepEqual(message, { id: 'client-tool-result-call-weather', type: 'tool', role: 'tool', tool_call_id: 'call-weather', content: '{"city":"Paris","temperature":20}' }, 'actual handler result continuation');
     return sse('values', { messages: [toolCall, message, { type: 'ai', id: 'answer', content: '20 degrees' }] });
@@ -134,6 +136,17 @@ export function installedTypeSource(template, kind) {
   // @ts-expect-error Interface records require projection into plain object data.
   void session.submit({ message: 'Hello', state: { itinerary: stops } });
   void session.submit({ message: 'Hello', state: { itinerary: stops.map(stop => ({ ...stop })) } });
+  const runOptions = { config: { tags: ['memory'], recursion_limit: 50, configurable: { user_id: 'user-42' } }, context: { locale: 'en' }, metadata: { source: 'ui' } } as const;
+  void session.submit('Hello', runOptions);
+  void session.resume(true, runOptions);
+  // @ts-expect-error Configuration cannot change owned thread routing.
+  void session.submit('Hello', { config: { configurable: { thread_id: 'other' } } });
+  // @ts-expect-error Configuration cannot bypass checkpoint execution ownership.
+  void session.resume(true, { config: { configurable: { checkpoint_id: 'old' } } });
+  // @ts-expect-error Run context remains plain data.
+  void session.submit('Hello', { context: new Date() });
+  // @ts-expect-error Metadata cannot contain callbacks.
+  void session.resume(true, { metadata: { callback: () => true } });
   // @ts-expect-error Object input still requires a message.
   void session.submit({ state: { model: 'gpt-5-mini' } });
   // @ts-expect-error Message text must be a string.

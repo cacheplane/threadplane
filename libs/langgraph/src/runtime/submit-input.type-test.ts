@@ -38,7 +38,6 @@ void session.submit({ message: 'Text', state: [] });
 void session.submit({ message: 'Text', state: { value: new Date() } });
 // @ts-expect-error State belongs to input, not transport options.
 void session.submit('Text', { state });
-// @ts-expect-error Run config is deferred.
 void session.submit('Text', { config: {} });
 const observer: AgentSession = session;
 // @ts-expect-error The neutral core still accepts text only.
