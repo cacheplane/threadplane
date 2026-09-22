@@ -1,12 +1,15 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "7f0284f1c740a4cfb69de6afffd9884dd091b41b",
+  "baselineHead": "1779d7fa571f2ba15511f15188d271e7dc4a37ca",
   "sourceState": {
     "modified": [
-      "libs/langgraph/src/runtime/create-session.ts"
+      "libs/langgraph/src/runtime/create-session.ts",
+      "libs/langgraph/src/runtime/interrupt-projection.ts",
+      "libs/langgraph/src/runtime/langgraph-snapshot.ts",
+      "libs/langgraph/src/runtime/ownership.ts"
     ],
     "untracked": [
-      "libs/langgraph/src/runtime/submit-input.ts"
+      "libs/langgraph/src/runtime/subgraph-projection.ts"
     ]
   },
   "scope": {
@@ -12562,7 +12565,7 @@
       "id": "source:libs/langgraph/src/runtime/create-session.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/create-session.ts",
-      "sha256": "fc0470302580c24a3e0b4456f5812fcbd7a895708a42511433918d8f067fb54d"
+      "sha256": "ee10ad3275b2fea117471a76528a8d1515a2bd5b0f1d82a20e55fdf08d1edbbb"
     },
     {
       "id": "source:libs/langgraph/src/runtime/function-tools.ts",
@@ -12580,13 +12583,13 @@
       "id": "source:libs/langgraph/src/runtime/interrupt-projection.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/interrupt-projection.ts",
-      "sha256": "a4dd19e151581237acdbd0d312957b96bec153ed37e85428ab959c802316388e"
+      "sha256": "184ae04911babf4931cd3e89c69884e776b49d2b2b7d3e62aa456176752d6f7b"
     },
     {
       "id": "source:libs/langgraph/src/runtime/langgraph-snapshot.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/langgraph-snapshot.ts",
-      "sha256": "13000f55022270def22868f1ebbd49b45c8b5ab85d1f4f2be46c3a6d89192421"
+      "sha256": "2e24f413aed975d59b66860b10ec2dea950db27f62d974daa9e415dc778f20ab"
     },
     {
       "id": "source:libs/langgraph/src/runtime/message-reducer.ts",
@@ -12604,7 +12607,7 @@
       "id": "source:libs/langgraph/src/runtime/ownership.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/ownership.ts",
-      "sha256": "bc757f0364ed36ff67dbb2bf28da444b9ba9323a1199f6735f55dca5df1549a9"
+      "sha256": "c6d22902e85d608b402923ce725c31d78d4b780424951e7ac5b5a3bb8b4270ae"
     },
     {
       "id": "source:libs/langgraph/src/runtime/publication.ts",
@@ -12623,6 +12626,12 @@
       "kind": "source",
       "path": "libs/langgraph/src/runtime/stream-projection.ts",
       "sha256": "4271e1db01f40d5f349e6b0307d01114fb5fbe5dc9c6dae6223457d73580c4e9"
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/subgraph-projection.ts",
+      "kind": "source",
+      "path": "libs/langgraph/src/runtime/subgraph-projection.ts",
+      "sha256": "790aa86055a60b0123cbb96f6530d47d2e494387394a47d1f6e93c1973c032ad"
     },
     {
       "id": "source:libs/langgraph/src/runtime/submit-input.ts",

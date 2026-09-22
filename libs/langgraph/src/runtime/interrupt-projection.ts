@@ -79,31 +79,40 @@ export function projectInterrupts(
   previous: Interrupts,
   event: StreamEvent
 ): Interrupts {
+  return observeInterrupts(previous, event) ?? previous;
+}
+
+/** Distinguish an unobserved control channel from an authoritative empty batch.
+ * Child physical projections use this without reading transport data twice. */
+export function observeInterrupts(
+  previous: Interrupts,
+  event: StreamEvent
+): Interrupts | undefined {
   if ((event.namespace?.length ?? 0) > 0 || event.type.includes('|'))
-    return previous;
+    return undefined;
   if (event.type === 'values' || event.type === 'updates') {
     const control = valuesControl(event['data']);
-    return control === undefined ? previous : merge(previous, control);
+    return control === undefined ? undefined : merge(previous, control);
   }
   if (event.type === 'checkpoints') {
     const checkpoint = record(event['data']);
     return checkpoint
       ? replace(previous, checkpointInterrupts(checkpoint))
-      : previous;
+      : undefined;
   }
   if (event.type !== 'interrupt' && event.type !== 'interrupts')
-    return previous;
+    return undefined;
   // Explicit malformed data is not permission to consume a different outer
   // payload. Custom transports without data use the existing wrapper fields.
   const payload = Object.hasOwn(event, 'data') ? record(event['data']) : event;
-  if (!payload || !Object.hasOwn(payload, event.type)) return previous;
+  if (!payload || !Object.hasOwn(payload, event.type)) return undefined;
   assertPlainRecord(payload);
   const input = payload[event.type];
   const interrupts =
     event.type === 'interrupt'
       ? batch(record(input) ? [input] : undefined)
       : batch(input);
-  return interrupts === undefined ? previous : merge(previous, interrupts);
+  return interrupts === undefined ? undefined : merge(previous, interrupts);
 }
 
 /** Only the latest checkpoint restores interrupts; next and nested child task

@@ -9,6 +9,7 @@ function snapshot(content = 'one'): LangGraphSnapshot {
     status: 'idle',
     values: undefined,
     interrupts: [],
+    subgraphs: [],
     messages: [
       {
         id: 'm',
