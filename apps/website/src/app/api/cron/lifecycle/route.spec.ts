@@ -128,12 +128,12 @@ describe('GET /api/cron/lifecycle', () => {
     expect(invoke).not.toHaveBeenCalled();
   });
 
-  it('registers one fifteen-minute fallback cron so idle Dawn computes can suspend', () => {
+  it('registers one thirty-minute fallback cron so idle Dawn computes can suspend', () => {
     const config = JSON.parse(
       readFileSync(resolve(REPOSITORY_ROOT, 'vercel.json'), 'utf8')
     ) as Record<string, unknown>;
     expect(config['crons']).toEqual([
-      { path: '/api/cron/lifecycle', schedule: '*/15 * * * *' },
+      { path: '/api/cron/lifecycle', schedule: '*/30 * * * *' },
     ]);
     expect(JSON.stringify(config)).not.toMatch(
       /NEXT_PUBLIC_(?:CRON|LIFECYCLE)/u
