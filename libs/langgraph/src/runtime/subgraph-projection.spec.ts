@@ -124,6 +124,7 @@ describe('pure subgraph projection', () => {
     expect(next).toBe(before);
     const snapshot = ownLangGraphSnapshot({
       status: 'running',
+      history: undefined,
       messages: [],
       toolCalls: [],
       values: undefined,

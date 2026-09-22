@@ -886,6 +886,19 @@ describe('neutral real SDK transport', () => {
       expect(
         session.getSnapshot().messages.map((message) => message.id)
       ).toEqual(['persisted-user', 'assistant-tool']);
+      expect(session.getSnapshot().history).toEqual([
+        {
+          checkpoint: {
+            thread_id: 'thread-1',
+            checkpoint_id: 'persisted',
+            checkpoint_ns: '',
+            checkpoint_map: {},
+          },
+          parent_checkpoint: null,
+          created_at: null,
+          next: ['tools'],
+        },
+      ]);
       expect(session.getSnapshot().messages[1].delivery).toEqual({
         generation: 'assistant-tool',
         phase: 'complete',

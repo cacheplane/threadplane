@@ -196,6 +196,13 @@ const submit = (input: string) => {
             </div>
           </div>
         </section>
+        <section class="panel" aria-label="Checkpoint history panel">
+          <h2>Last loaded checkpoint history</h2>
+          <p>A saved page of checkpoint references. Load refreshes this page.</p>
+          <output aria-label="Checkpoint history" data-testid="history">{{
+            view().history
+          }}</output>
+        </section>
         <section class="panel" aria-label="Subgraphs panel">
           <h2>Subgraphs</h2>
           <p>

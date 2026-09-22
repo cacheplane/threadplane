@@ -200,6 +200,11 @@ test('history uses the exact SDK body and counts reads separately from runs', as
     const first = await read();
     assert.equal(first.status, 200);
     const saved = await first.json();
+    assert.equal(saved.length, 3);
+    assert.deepEqual(saved.map(entry => entry.checkpoint.checkpoint_id), ['saved-checkpoint', 'saved-parent', 'saved-sibling']);
+    assert.equal(saved[0].parent_checkpoint.checkpoint_id, 'saved-parent');
+    assert.equal(saved[2].parent_checkpoint.checkpoint_id, 'saved-parent');
+    assert.equal(saved[1].values.messages[0].content, 'Older transcript must stay out of the current state');
     assert.equal(saved[0].values.stage, 'saved');
     assert.deepEqual(saved[0].values.profile, { name: 'Saved user' });
     assert.deepEqual(saved[0].tasks.flatMap((task) => task.interrupts), [

@@ -284,6 +284,10 @@ export function ownLangGraphSnapshot(
   previous?: LangGraphSnapshot
 ): LangGraphSnapshot {
   const core = ownSnapshot(input, previous);
+  const history = ownValueWithSharing(
+    input.history as PlainValue,
+    previous?.history as PlainValue
+  ) as LangGraphSnapshot['history'];
   const subgraphs = ownSubgraphs(input.subgraphs, previous?.subgraphs);
   const values = ownValueWithSharing(input.values, previous?.values) as
     | LangGraphValues
@@ -298,6 +302,7 @@ export function ownLangGraphSnapshot(
   ) as LangGraphSnapshot['reconnect'];
   if (
     core === previous &&
+    history === previous?.history &&
     values === previous?.values &&
     interrupts === previous?.interrupts &&
     subgraphs === previous?.subgraphs &&
@@ -311,6 +316,7 @@ export function ownLangGraphSnapshot(
     messages: core.messages,
     toolCalls: core.toolCalls,
     error: core.error,
+    history,
     values,
     interrupts,
     subgraphs,

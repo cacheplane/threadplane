@@ -48,9 +48,17 @@ const savedHistory = [{
   tasks: savedInterrupts.map((interrupt, index) => ({ id: `saved-task-${index}`, name: index === 0 ? 'review' : 'confirmation', error: null, checkpoint: null, state: null, interrupts: [interrupt] })),
   metadata: {},
   checkpoint: { thread_id: 'fixture-thread', checkpoint_ns: '', checkpoint_id: 'saved-checkpoint', checkpoint_map: {} },
-  parent_checkpoint: null,
+  parent_checkpoint: { thread_id: 'fixture-thread', checkpoint_ns: '', checkpoint_id: 'saved-parent', checkpoint_map: null },
   created_at: '2026-09-21T00:00:00Z',
-}];
+}, ...['saved-parent', 'saved-sibling'].map((id) => ({
+  values: { messages: [{ type: 'ai', content: 'Older transcript must stay out of the current state' }], old: true },
+  next: id === 'saved-parent' ? ['assistant'] : [],
+  tasks: [{ id: 'old-task', name: 'old', error: 'PRIVATE_OLD_TASK_ERROR', interrupts: [] }],
+  metadata: { old: true },
+  checkpoint: { thread_id: 'fixture-thread', checkpoint_ns: '', checkpoint_id: id, checkpoint_map: { branch: ['owned'] } },
+  parent_checkpoint: id === 'saved-parent' ? null : { thread_id: 'fixture-thread', checkpoint_ns: '', checkpoint_id: 'saved-parent', checkpoint_map: null },
+  created_at: '2026-09-20T00:00:00Z',
+}))];
 
 /** A strict wire fixture: malformed/extra operations fail the browser run. */
 export function runtimeResponse(body) {
@@ -171,6 +179,30 @@ export function installedTypeSource(template, kind) {
   // @ts-expect-error Resume does not expose transport command overrides.
   void session.resume(true, { command: { goto: 'other' } });
   const direct = session.getSnapshot();
+  const history = snapshot.history;
+  const directHistory: typeof history = direct.history;
+  // @ts-expect-error History belongs to the session.
+  snapshot.history = [];
+  if (history) {
+    // @ts-expect-error Loaded pages remain readonly.
+    history.pop();
+    const entry = history[0];
+    const checkpointId: string | null | undefined = entry.checkpoint.checkpoint_id;
+    const parentId: string | null | undefined = entry.parent_checkpoint?.checkpoint_id;
+    const checkpointData: PlainValue = entry.checkpoint.checkpoint_map?.['branch'];
+    // @ts-expect-error References remain readonly.
+    entry.checkpoint.checkpoint_id = 'changed';
+    // @ts-expect-error Node lists remain readonly.
+    entry.next.push('changed');
+    // @ts-expect-error Reference map data remains readonly.
+    if (entry.checkpoint.checkpoint_map) entry.checkpoint.checkpoint_map['branch'] = null;
+    // @ts-expect-error Compact pages omit repeated transcripts/state.
+    void entry.values;
+    // @ts-expect-error Compact pages omit task subtrees.
+    void entry.tasks;
+    void [checkpointId, parentId, checkpointData];
+  }
+  void directHistory;
   const observedChildren: readonly { readonly namespace: readonly string[]; readonly messages: readonly Message[] }[] = snapshot.subgraphs;
   const directChildren = direct.subgraphs;
   // @ts-expect-error Child collection belongs to the session.
@@ -450,12 +482,16 @@ export async function runRuntimeScenarios(directory, kind) {
     await expectValues(undefined);
     await expectInterrupts([]);
     assert.deepEqual(await children(), []);
+    await expect(page.getByTestId('history')).toHaveText('unobserved');
     assert.equal(server.requests.length, 0, 'mount/observation performs no I/O');
     assert.equal(server.historyRequests.length, 0, 'mount/observation performs no history reads');
     completed.push('inert mount');
 
     await page.getByRole('button', { name: 'Load', exact: true }).click();
     await expect(page.getByTestId('loads-finished')).toHaveText('1');
+    const expectedHistory = savedHistory.map(({ checkpoint, parent_checkpoint, created_at, next }) => ({ checkpoint, parent_checkpoint, created_at, next }));
+    await expect(page.getByTestId('history')).toHaveText(JSON.stringify(expectedHistory));
+    await expect(page.getByTestId('transcript')).not.toContainText('Older transcript');
     await expect(page.getByTestId('load-error')).toHaveText('');
     await expectValues({ stage: 'saved', profile: { name: 'Saved user' } });
     await expectInterrupts(savedInterrupts);
@@ -472,6 +508,7 @@ export async function runRuntimeScenarios(directory, kind) {
 
     await page.getByRole('button', { name: 'Load', exact: true }).click();
     await expect(page.getByTestId('loads-finished')).toHaveText('2');
+    await expect(page.getByTestId('history')).toHaveText(JSON.stringify(expectedHistory));
     await expect(page.getByTestId('load-error')).toHaveText('');
     await expectValues({ stage: 'saved', profile: { name: 'Saved user' } });
     await expectInterrupts(savedInterrupts);
@@ -484,6 +521,7 @@ export async function runRuntimeScenarios(directory, kind) {
 
     await page.getByRole('button', { name: 'Load', exact: true }).click();
     await expect(page.getByTestId('loads-finished')).toHaveText('3');
+    await expect(page.getByTestId('history')).toHaveText('[]');
     await expect(page.getByTestId('load-error')).toHaveText('');
     await expectValues(undefined);
     await expectInterrupts([]);
@@ -503,6 +541,7 @@ export async function runRuntimeScenarios(directory, kind) {
     await expectValues({ stage: 'complete' });
     await expectInterrupts([]);
     completed.push('text success');
+    await expect(page.getByTestId('history')).toHaveText('[]');
 
     const beforeTool = server.requests.length;
     await page.getByRole('button', { name: 'Tool', exact: true }).click();

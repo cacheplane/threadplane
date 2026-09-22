@@ -65,8 +65,21 @@ type FixtureInterrupt = {
   readonly ns?: readonly string[];
 };
 
+type FixtureCheckpoint = {
+  readonly thread_id: string;
+  readonly checkpoint_ns: string;
+  readonly checkpoint_id: string | null | undefined;
+  readonly checkpoint_map: Readonly<Record<string, PlainValue>> | null | undefined;
+};
+
 /** Fixture-local backend extension, expressed entirely through installed core. */
 export type FixtureSnapshot = AgentSnapshot<FixtureTools> & {
+  readonly history: readonly {
+    readonly checkpoint: FixtureCheckpoint;
+    readonly parent_checkpoint: FixtureCheckpoint | null | undefined;
+    readonly created_at: string | null | undefined;
+    readonly next: readonly string[];
+  }[] | undefined;
   readonly subgraphs: readonly {
     readonly namespace: readonly string[];
     readonly messages: readonly Message[];
@@ -88,6 +101,7 @@ export function display(snapshot: FixtureSnapshot) {
     text: assistant.map((message) => message.content).join('\n'),
     transcript: snapshot.messages.map((message) => message.content).join('\n'),
     values: JSON.stringify(snapshot.values) ?? 'unobserved',
+    history: JSON.stringify(snapshot.history) ?? 'unobserved',
     interrupts: JSON.stringify(snapshot.interrupts),
     subgraphs: JSON.stringify(
       snapshot.subgraphs.map((child) => ({
