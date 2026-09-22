@@ -172,10 +172,19 @@ export async function prepareRuntimeConsumer(root, consumer, kind) {
     cpSync(join(temporary, 'bundle/runtime-entry.js'), join(destination, 'runtime-entry.js'));
     cpSync(join(temporary, 'types/fixtures/react-parity/runtime/runtime-entry.d.ts'), join(destination, 'runtime-entry.d.ts'));
     cpSync(join(fixture, 'scenarios.ts'), join(destination, 'scenarios.ts'));
+    cpSync(join(fixture, 'review.css'), join(destination, 'review.css'));
     cpSync(join(fixture, `${kind}-app.${kind === 'react' ? 'tsx' : 'ts'}`), join(destination, kind === 'react' ? 'main.tsx' : 'main.ts'));
+    if (kind === 'angular') {
+      const configPath = join(consumer, 'angular.json');
+      const config = JSON.parse(readFileSync(configPath, 'utf8'));
+      config.projects.consumer.architect.build.options.styles = ['src/review.css'];
+      writeFileSync(configPath, JSON.stringify(config));
+      const index = join(destination, 'index.html');
+      writeFileSync(index, readFileSync(index, 'utf8').replace('<head>', '<head><meta name="viewport" content="width=device-width, initial-scale=1">'));
+    }
     if (kind === 'react') {
       cpSync(join(fixture, 'vite.config.mts'), join(consumer, 'vite.config.mts'));
-      writeFileSync(join(consumer, 'index.html'), '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>React installed consumer</title></head><body><div id="root"></div><script type="module" src="/main.tsx"></script></body></html>');
+      writeFileSync(join(consumer, 'index.html'), '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>React installed consumer</title></head><body><div id="root"></div><script type="module" src="/main.tsx"></script></body></html>');
       writeFileSync(join(consumer, 'tsconfig.app.json'), JSON.stringify({ compilerOptions: { target: 'ES2022', module: 'ESNext', moduleResolution: 'Bundler', lib: ['ES2022', 'DOM'], types: [], strict: true, skipLibCheck: false, jsx: 'react-jsx', noEmit: true }, files: ['main.tsx'] }));
     }
   } finally { rmSync(temporary, { recursive: true, force: true }); }
