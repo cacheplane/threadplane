@@ -2,10 +2,20 @@
   "name": "@threadplane/react",
   "version": "0.0.0",
   "private": true,
-  "description": "Private react foundation scaffolding. No supported runtime API yet.",
+  "description": "Private React binding for observing app-owned agent sessions.",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
+  "peerDependencies": {
+    "@threadplane/core": "0.0.0",
+    "react": "^19.2.4"
+  },
+  "devDependencies": {
+    "@testing-library/react": "16.3.2",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "react-dom": "19.2.4"
+  },
   "files": [
     "src/**/*.js",
     "src/**/*.d.ts",

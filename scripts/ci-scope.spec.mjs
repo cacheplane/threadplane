@@ -43,6 +43,11 @@ describe('React migration baseline scope', () => {
   for (const file of [
     'scripts/react-parity/inventory.mjs',
     'fixtures/react-parity/traces/ag-ui-text-state.sse',
+    'fixtures/react-parity/runtime/scenarios.ts',
+    'fixtures/react-parity/runtime/vite.config.mts',
+    'libs/langgraph/vite.runtime.config.mts',
+    'libs/langgraph/tsconfig.runtime-tests.json',
+    'libs/langgraph/src/runtime/testing/controlled-transport.ts',
     'libs/core/src/index.ts',
     'libs/angular/src/public-api.ts',
     'libs/react/src/index.ts',

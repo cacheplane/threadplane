@@ -769,3 +769,23 @@ describe('FetchStreamTransport', () => {
     expect(result).toBe(history);
   });
 });
+
+
+describe('SDK iterator cleanup', () => {
+  it.each([false, true])('preserves the primary error when cleanup fails (protected=%s)', async (protectedErrors) => {
+    const primary = new Error('primary failure');
+    const close = vi.fn().mockRejectedValue(new Error('cleanup failure'));
+    mocks.runsStream.mockReturnValue({
+      [Symbol.asyncIterator]: () => ({ next: async () => { throw primary; }, return: close }),
+    });
+    const transport = new FetchStreamTransport('https://runtime.example', undefined, protectedErrors ? { defaultHeaders: {} } : undefined);
+    const error = await collect(transport.stream('assistant', 'thread', {}, new AbortController().signal)).catch((reason: unknown) => reason);
+    expect(close).toHaveBeenCalledTimes(1);
+    if (protectedErrors) {
+      expect(error).toMatchObject({ name: 'LangGraphRequestError', message: 'The LangGraph request failed.' });
+      expect(error).not.toHaveProperty('cause');
+    } else {
+      expect(error).toBe(primary);
+    }
+  });
+});

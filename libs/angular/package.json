@@ -2,11 +2,12 @@
   "name": "@threadplane/angular",
   "version": "0.0.0",
   "private": true,
-  "description": "Private Angular foundation scaffolding. No supported runtime API yet.",
+  "description": "Private Angular binding for observing app-owned agent sessions.",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
   "peerDependencies": {
+    "@threadplane/core": "0.0.0",
     "@angular/core": "^20.0.0 || ^21.0.0 || ^22.0.0"
   },
   "files": [

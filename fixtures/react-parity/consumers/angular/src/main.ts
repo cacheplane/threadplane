@@ -1,15 +1,3 @@
-import { Component } from '@angular/core';
-import { bootstrapApplication } from '@angular/platform-browser';
-import * as angular from '@threadplane/angular';
-/* PACKAGE_IMPORTS */
-
-@Component({
-  selector: 'app-root',
-  standalone: true,
-  template: '<p>Private Angular scaffold: {{ supportedExportCount }} supported exports.</p>',
-})
-class App {
-  readonly supportedExportCount = Object.keys(angular).length /* PACKAGE_EXPORT_COUNT */;
-}
-
-bootstrapApplication(App).catch(console.error);
+// The owned verifier installs the tarballs, then replaces this entry with
+// fixtures/react-parity/runtime/angular-app.ts and the prebuilt private backend.
+// Keep package resolution and compilation inside that installed consumer.

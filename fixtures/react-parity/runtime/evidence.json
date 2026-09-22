@@ -1,0 +1,425 @@
+{
+  "schemaVersion": 1,
+  "status": "verified-local",
+  "observedOn": "2026-09-21",
+  "source": {
+    "branch": "codex/shared-runtime-quality",
+    "baseCommit": "bdcc22ed31aa94f420077e046e88e1481088d453",
+    "verificationHead": "bdcc22ed31aa94f420077e046e88e1481088d453",
+    "workingTree": "Verified uncommitted runtime, native binding, fixture and CI changes on the foundation HEAD. The fingerprint identifies the actual selected working-tree bytes, including tests and configuration; this is not a future commit SHA.",
+    "fingerprint": {
+      "algorithm": "SHA-256 of a UTF-8 manifest: one line per selected file, lowercase SHA-256(file bytes), two ASCII spaces, repo-relative path, LF; unique paths sorted by JavaScript default string ordering.",
+      "pathspecs": [
+        "libs/core",
+        "libs/content",
+        "libs/angular",
+        "libs/react",
+        "libs/langgraph",
+        "libs/chat",
+        "libs/ag-ui",
+        "libs/render",
+        "libs/a2ui",
+        "libs/telemetry",
+        "scripts/react-parity",
+        "fixtures/react-parity",
+        "scripts/ci-scope.mjs",
+        "scripts/ci-scope.spec.mjs",
+        "scripts/ci-workflow.spec.mjs",
+        ".github/workflows/ci.yml",
+        "package.json",
+        "package-lock.json",
+        "nx.json",
+        "tsconfig.json",
+        "tsconfig.base.json",
+        "eslint.config.mjs"
+      ],
+      "excludedPaths": [
+        "fixtures/react-parity/runtime/evidence.json"
+      ],
+      "fileCount": 765,
+      "sha256": "2385a2cf52c60c6e717c03d4b28f399d6228b068315d46947519848c49496669",
+      "selection": "git ls-files -z --cached --others --exclude-standard -- <pathspecs>; keep existing files and remove excludedPaths. This includes tracked and non-ignored untracked files. Evidence itself is excluded to avoid self-reference; the six research/planning reports are outside all selected paths.",
+      "reproduce": "node --input-type=module <<'JS'\nimport {createHash} from 'node:crypto';\nimport {execFileSync} from 'node:child_process';\nimport {readFileSync,existsSync} from 'node:fs';\nconst {fingerprint:f}=JSON.parse(readFileSync('fixtures/react-parity/runtime/evidence.json')).source;\nconst sha=value=>createHash('sha256').update(value).digest('hex');\nconst paths=[...new Set(execFileSync('git',['ls-files','-z','--cached','--others','--exclude-standard','--',...f.pathspecs],{encoding:'utf8'}).split('\\0').filter(Boolean))].filter(path=>!f.excludedPaths.includes(path)&&existsSync(path)).sort();\nconst actual=sha(paths.map(path=>sha(readFileSync(path))+'  '+path+'\\n').join(''));\nif(paths.length!==f.fileCount||actual!==f.sha256) throw new Error('Source fingerprint mismatch');\nconsole.log(paths.length+' files: '+actual);\nJS"
+    },
+    "sourceState": {
+      "modified": [
+        ".github/workflows/ci.yml",
+        "fixtures/react-parity/README.md",
+        "fixtures/react-parity/consumers/angular/src/main.ts",
+        "libs/angular/README.md",
+        "libs/angular/package.json",
+        "libs/angular/src/public-api.ts",
+        "libs/angular/tsconfig.spec.json",
+        "libs/angular/vite.config.mts",
+        "libs/core/README.md",
+        "libs/core/package.json",
+        "libs/core/src/index.ts",
+        "libs/core/src/tools/index.ts",
+        "libs/core/tsconfig.json",
+        "libs/core/vite.config.mts",
+        "libs/langgraph/eslint.config.mjs",
+        "libs/langgraph/project.json",
+        "libs/langgraph/src/lib/agent.types.ts",
+        "libs/langgraph/src/lib/client/create-langgraph-client.ts",
+        "libs/langgraph/src/lib/runtime-operation-reporter.ts",
+        "libs/langgraph/src/lib/transport/fetch-stream.transport.spec.ts",
+        "libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
+        "libs/langgraph/src/lib/transport/transport.interface.ts",
+        "libs/langgraph/tsconfig.lib.json",
+        "libs/langgraph/tsconfig.lib.prod.json",
+        "libs/langgraph/vite.config.mts",
+        "libs/react/README.md",
+        "libs/react/package.json",
+        "libs/react/src/index.ts",
+        "libs/react/tsconfig.spec.json",
+        "libs/react/vite.config.mts",
+        "package-lock.json",
+        "scripts/ci-scope.spec.mjs",
+        "scripts/ci-workflow.spec.mjs",
+        "scripts/react-parity/baseline.json",
+        "scripts/react-parity/dispositions.json",
+        "scripts/react-parity/package-policy.mjs",
+        "scripts/react-parity/verify-angular-package.mjs",
+        "scripts/react-parity/verify-angular-package.spec.mjs",
+        "scripts/react-parity/verify-boundaries.mjs",
+        "scripts/react-parity/verify-boundaries.spec.mjs",
+        "scripts/react-parity/verify-packages.mjs",
+        "scripts/react-parity/verify-packages.spec.mjs"
+      ],
+      "untracked": [
+        "fixtures/react-parity/runtime/README.md",
+        "fixtures/react-parity/runtime/angular-app.ts",
+        "fixtures/react-parity/runtime/installed-types.ts",
+        "fixtures/react-parity/runtime/react-app.tsx",
+        "fixtures/react-parity/runtime/runtime-entry.ts",
+        "fixtures/react-parity/runtime/scenarios.ts",
+        "fixtures/react-parity/runtime/vite.config.mts",
+        "libs/angular/src/observe-agent.spec.ts",
+        "libs/angular/src/observe-agent.ts",
+        "libs/angular/src/observe-agent.type-test.ts",
+        "libs/angular/src/test-setup.ts",
+        "libs/core/src/contracts/agent-session.ts",
+        "libs/core/src/contracts/agent-snapshot.ts",
+        "libs/core/src/contracts/contracts.spec.ts",
+        "libs/core/src/contracts/contracts.type-test.ts",
+        "libs/core/src/contracts/delivery.ts",
+        "libs/core/src/contracts/error.ts",
+        "libs/core/src/contracts/message.ts",
+        "libs/core/src/contracts/tool.ts",
+        "libs/core/src/tools/execution-context.ts",
+        "libs/core/src/tools/function-tool.ts",
+        "libs/core/src/tools/function-tool.type-test.ts",
+        "libs/langgraph/src/runtime/create-session.ts",
+        "libs/langgraph/src/runtime/function-tools.ts",
+        "libs/langgraph/src/runtime/function-tools.type-test.ts",
+        "libs/langgraph/src/runtime/harness.spec.ts",
+        "libs/langgraph/src/runtime/message-reducer.spec.ts",
+        "libs/langgraph/src/runtime/message-reducer.ts",
+        "libs/langgraph/src/runtime/operation-errors.ts",
+        "libs/langgraph/src/runtime/ownership.ts",
+        "libs/langgraph/src/runtime/publication.spec.ts",
+        "libs/langgraph/src/runtime/publication.ts",
+        "libs/langgraph/src/runtime/recovery.spec.ts",
+        "libs/langgraph/src/runtime/session-lifecycle.spec.ts",
+        "libs/langgraph/src/runtime/stream-projection.spec.ts",
+        "libs/langgraph/src/runtime/stream-projection.ts",
+        "libs/langgraph/src/runtime/testing/binding-fixture.ts",
+        "libs/langgraph/src/runtime/testing/controlled-transport.ts",
+        "libs/langgraph/src/runtime/testing/deferred.ts",
+        "libs/langgraph/src/runtime/tool-execution.spec.ts",
+        "libs/langgraph/src/runtime/tool-settlement.spec.ts",
+        "libs/langgraph/src/runtime/transport.integration.spec.ts",
+        "libs/langgraph/src/runtime/transport.types.ts",
+        "libs/langgraph/tsconfig.runtime-tests.json",
+        "libs/langgraph/vite.runtime.config.mts",
+        "libs/react/src/use-agent.spec.tsx",
+        "libs/react/src/use-agent.ts",
+        "libs/react/src/use-agent.type-test.ts",
+        "scripts/react-parity/runtime-config.spec.mjs",
+        "scripts/react-parity/runtime-consumer.mjs",
+        "scripts/react-parity/runtime-consumer.spec.mjs"
+      ]
+    }
+  },
+  "environment": {
+    "node": "v24.20.0",
+    "npm": "11.19.0",
+    "platform": "darwin",
+    "architecture": "arm64",
+    "osRelease": "25.5.0",
+    "lockedVersions": {
+      "react": "19.2.4",
+      "react-dom": "19.2.4",
+      "@types/react": "19.2.14",
+      "@types/react-dom": "19.2.3",
+      "@angular/core": "21.1.6",
+      "@angular/cli": "21.1.5",
+      "@angular/build": "21.1.5",
+      "@angular/compiler-cli": "21.1.6",
+      "@langchain/langgraph-sdk": "1.10.0",
+      "@langchain/core": "1.2.9",
+      "vitest": "4.1.0",
+      "vite": "7.3.1",
+      "typescript": "5.9.3",
+      "@playwright/test": "1.58.2",
+      "nx": "22.5.1"
+    },
+    "ciNode22ExecutedLocally": false,
+    "browser": "Google Chrome for Testing 145.0.7632.6 (Playwright Chromium)",
+    "browserInstallation": "Existing local Playwright browser installation; no local Linux --with-deps installation is claimed. CI installs Chromium with --with-deps."
+  },
+  "acceptanceMatrix": {
+    "status": "Both production-built installed browser verifiers passed against this source fingerprint.",
+    "frameworks": [
+      "Angular installed APF production app",
+      "React installed Vite production app"
+    ],
+    "scenariosPerFramework": 7,
+    "scenarios": [
+      "inert mount",
+      "text success",
+      "weather tool roundtrip",
+      "protected visible error",
+      "held partial DOM update and Stop/native response close",
+      "reuse after Stop",
+      "unmount/app-owned disposal/post-disposal submit"
+    ],
+    "notificationAssertions": {
+      "source": "libs/langgraph/src/runtime/publication.spec.ts and session-lifecycle.spec.ts",
+      "inertSubscription": 0,
+      "duplicateSnapshot": 0,
+      "changedSnapshot": 1,
+      "submitThenStop": {
+        "unsubscribedListener": 1,
+        "remainingListener": 2
+      },
+      "limit": "Behavioral counts, not render/paint or performance measurements."
+    },
+    "observedPerFramework": {
+      "componentSubmissions": 5,
+      "toolContinuations": 1,
+      "wireRequests": 6,
+      "toolHandlerCalls": 1,
+      "postDisposalSubmissions": 1,
+      "postDisposalRequests": 0,
+      "pageErrors": 0,
+      "unexpectedRequests": 0,
+      "text": "Hello 🌍.",
+      "toolResult": {
+        "city": "Paris",
+        "temperature": 20
+      },
+      "toolAnswerContains": "20 degrees",
+      "heldTextContains": "Held partial",
+      "stopDelivery": "complete:aborted",
+      "postDisposalOutcome": "aborted"
+    }
+  },
+  "cleanup": {
+    "assertions": "Unmount removes component controls; explicit app disposal resolves; post-disposal submit resolves aborted without extra I/O. Held SSE waits for the native response-close handshake.",
+    "resources": "Browser context, browser, held responses and server connections close in finally; verifier temporary install/bundle directories are removed in finally, including assertion failures.",
+    "finalBrowserCleanupVerified": true,
+    "processes": "Both verifier processes exited 0 after awaited finally cleanup of contexts, browsers and HTTP servers.",
+    "temporaryDirectories": [
+      {
+        "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-consumer-FdU7ri",
+        "existsAfterExit": false
+      },
+      {
+        "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-angular-consumer-XpH0tb",
+        "existsAfterExit": false
+      }
+    ],
+    "runtimeBundleDirectoriesRemaining": []
+  },
+  "inventory": {
+    "historicalRows": 1438,
+    "currentRows": 1451,
+    "newProductionRuntimeSources": 8,
+    "newTestingHelpers": 3,
+    "newRuntimeVitestConfigSources": 1,
+    "newRuntimeTypeConfigAssets": 1,
+    "legacyExports": 550,
+    "uniqueLocalDefinitions": 514,
+    "legacyExportRecordsWithReviewedTextChanges": 14,
+    "legacyExportNameChanges": 0,
+    "existingAssignmentsPreserved": true,
+    "scope": "Existing 16-library inventory only. Core/native package public contracts are checked separately. T01-T39 assignments are retained; only touched bounded subsets are in-progress."
+  },
+  "ci": {
+    "pullRequestBases": "unrestricted, including stacked branches",
+    "pushBranches": [
+      "main"
+    ],
+    "deploymentGuards": "Existing main-ref and push-event guards preserved.",
+    "runtimeEnvironment": "Isolated Node Vitest config, no Angular setup/plugins.",
+    "chromium": "npx playwright install --with-deps chromium precedes both packed browser calls.",
+    "builtScan": "Production legacy builds precede emitted boundary scan."
+  },
+  "limits": [
+    "Legacy LangGraph root and tarball remain Angular.",
+    "Private staged runtime is fixture-only; no neutral LangGraph tarball or public runtime entry is claimed.",
+    "Public core/native contracts compile against installed declarations; the narrow private fixture declaration is compiler-generated against installed core, never hand-written.",
+    "Native inferred type probes cover heterogeneous tool names, arguments, results and deep readonly behavior.",
+    "HTTP/SSE fixture proves incremental DOM updates and native request abort, not compositor paint.",
+    "Production React StrictMode has no development replay; native unit tests cover replay separately.",
+    "No full product parity, renderer reuse, SSR, calibrated latency, heap retention or performance claim.",
+    "CI Node22 and other platforms were not executed locally.",
+    "Test-only imports add Nx dependencies on legacy builds although production package graphs remain isolated.",
+    "No production backend, publication, release, deployment or remote data was exercised."
+  ],
+  "warnings": [
+    "Nx reports NO_COLOR/FORCE_COLOR overlap; legacy native builds report stale Browserslist data, ng-packagr export-condition overrides and keepLifecycleScripts notices.",
+    "Vite reports that use client directives are ignored in the client-only production consumer bundle. No SSR claim is made."
+  ],
+  "recordedAt": "2026-09-21T23:00:37.935Z",
+  "executed": [
+    {
+      "command": "NX_DAEMON=false node --test scripts/ci-scope.spec.mjs scripts/ci-workflow.spec.mjs scripts/react-parity/*.spec.mjs fixtures/react-parity/traces.spec.mjs",
+      "exitCode": 0,
+      "testsPassed": 407,
+      "testsFailed": 0,
+      "log": "/tmp/r08-final-focused.log",
+      "logSha256": "c2d520eccb4f0002282c2f043ac3b0f08dbcc756d95a559ac4d5448ef6f94bcf"
+    },
+    {
+      "command": "NX_DAEMON=false npx nx run-many -t lint test type-tests build --projects=core,content,angular,react --parallel=2 --skip-nx-cache",
+      "exitCode": 0,
+      "projects": 4,
+      "targetConfigurations": 16,
+      "behaviorTests": {
+        "core": 2,
+        "angular": 6,
+        "react": 6
+      },
+      "content": "Empty scaffold: test target passes with passWithNoTests; no content behavior test count claimed.",
+      "log": "/tmp/r08-final-foundations.log",
+      "logSha256": "0738c2cdf2575fa1a6269d3c96ef95a88663d80450a1042b9ae5dfe689b4bc91"
+    },
+    {
+      "command": "NX_DAEMON=false npx nx run langgraph:runtime-quality --skip-nx-cache",
+      "exitCode": 0,
+      "testFiles": 9,
+      "testsPassed": 156,
+      "log": "/tmp/r08-final-runtime-quality.log",
+      "logSha256": "9675327833ac0e4987c58d423da570da2bc476e487eec58838d61ef613c693f1"
+    },
+    {
+      "command": "NX_DAEMON=false npx nx run langgraph:runtime-type-tests --skip-nx-cache",
+      "exitCode": 0,
+      "log": "/tmp/r08-final-runtime-types.log",
+      "logSha256": "6e5c64695f3aad8fd1b474649ebb26c81204d54e45d589424d65e2b0843c921d"
+    },
+    {
+      "command": "NX_DAEMON=false npx nx run-many -t build --projects=chat,langgraph,ag-ui,render,a2ui,telemetry --configuration=production --parallel=2 --skip-nx-cache",
+      "exitCode": 0,
+      "productionProjects": 6,
+      "log": "/tmp/r08-final-production-builds.log",
+      "logSha256": "eeb87b96a645703d0511f4c26d7360397ad07cfbb6a02042ca78bb4e6cf427ff"
+    },
+    {
+      "command": "node scripts/react-parity/verify-boundaries.mjs",
+      "exitCode": 0,
+      "log": "/tmp/r08-final-source-boundaries.log",
+      "logSha256": "995db896b38cf7de5ca9db6590dba47e082d26abdf69bab04b92eee484696063"
+    },
+    {
+      "command": "node scripts/react-parity/verify-boundaries.mjs --built",
+      "exitCode": 0,
+      "order": "Executed after successful foundation and six legacy production builds.",
+      "log": "/tmp/r08-final-built-boundaries.log",
+      "logSha256": "c983a97d17ff7ced7aa9113afa031f464103f566f1bc94eec8160558ec2553f7"
+    },
+    {
+      "command": "node scripts/react-parity/verify-packages.mjs",
+      "exitCode": 0,
+      "privatePlainTarballs": 3,
+      "esmTypeExports": 9,
+      "isolatedCoreExports": 3,
+      "browserScenariosPassed": 7,
+      "log": "/tmp/r08-final-packages.log",
+      "logSha256": "91125a29c21f67710c85520d48339c49ef3854b0e7691adfb64747ff397ad319"
+    },
+    {
+      "command": "node scripts/react-parity/verify-angular-package.mjs",
+      "exitCode": 0,
+      "angularAPFExports": 1,
+      "browserScenariosPassed": 7,
+      "log": "/tmp/r08-final-angular-package.log",
+      "logSha256": "5d2c29a1435ed80ae0f1981319ef77eba62e56c35ab51d175a9bb0bdaf137c28"
+    },
+    {
+      "command": "node scripts/react-parity/inventory.mjs --write-baseline; node scripts/react-parity/inventory.mjs --check",
+      "exitCode": 0,
+      "inventoryRows": 1451,
+      "reviewedChange": "Final refresh changed only hashes for create-session.ts, message-reducer.ts and stream-projection.ts; no IDs/counts/assignments changed.",
+      "log": "/tmp/r08-final-inventory.log",
+      "logSha256": "5b8f74cc9f500da010e2933303fbeab9e4b06813a3cf5a95c97416a1621acd93"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "log": "/tmp/r08-final-diff-check.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "reusedUnchangedLegacyChecks": [
+    {
+      "command": "NX_DAEMON=false npx nx test langgraph --skip-nx-cache",
+      "exitCode": 0,
+      "log": "/tmp/runtime-final-legacy-langgraph.log",
+      "provenance": "Same-session parent run, with successful output inspected. Final review fixes changed private runtime files only; the Angular suite excludes src/runtime. These unchanged legacy results are reused, not represented as a new post-fix run. No test count inferred.",
+      "logSha256": "eb2085807b18946b5e3340b37475f8ae706f86471c392635748fe83b04f5b42e"
+    },
+    {
+      "command": "NX_DAEMON=false npx nx run langgraph:type-tests --skip-nx-cache",
+      "exitCode": 0,
+      "log": "/tmp/runtime-final-legacy-types.log",
+      "provenance": "Same-session parent run, with successful output inspected. Final review fixes changed private runtime files only; the Angular suite excludes src/runtime. These unchanged legacy results are reused, not represented as a new post-fix run. No test count inferred.",
+      "logSha256": "48a8dac2f4cc97169640bd20382f995f07e2cb40e125fac98b926d8ba39103b8"
+    }
+  ],
+  "runtimePolicy": {
+    "ownedSDKDefaultMaxRetries": 0,
+    "explicitOptIn": "Positive clientOptions.maxRetries enables SDK retries. Custom transports own their retry policy; no global no-retry guarantee is claimed.",
+    "recovery": "Uncertain failures use read-only reconciliation without implicit resubmission.",
+    "canonicalTools": "Canonical updates remove or replace pending tool references for the same assistant message, retain calls belonging to other messages, and preserve completed results; ownership is rechecked across pending async execution boundaries."
+  },
+  "packageDiagnostics": {
+    "core": {
+      "installedPackages": 1,
+      "fileBytes": 26099,
+      "lockLocations": 1
+    },
+    "reactConsumer": {
+      "installedPackages": 24,
+      "fileBytes": 51239870,
+      "lockLocationsIncludingOptionalPlatforms": 74,
+      "productionAppModulesTransformed": 34,
+      "productionAppJavaScriptRawReported": "408.65 kB",
+      "productionAppJavaScriptGzipReported": "123.14 kB",
+      "developmentRootImportProbe": {
+        "inputs": 5,
+        "bytes": 47778,
+        "contentParserInputs": 0
+      }
+    },
+    "angularConsumer": {
+      "installedPackages": 411,
+      "fileBytes": 196915823,
+      "lockLocationsIncludingOptionalPlatforms": 516,
+      "bundleInputs": 257,
+      "contentParserInputs": 0,
+      "productionAppRawReported": "309.75 kB",
+      "productionAppEstimatedTransferReported": "81.94 kB",
+      "includes": "Angular CLI/compiler/build tooling"
+    },
+    "limits": "Installed files, optional lock locations, development root-import probes and full production apps are separate diagnostics. App bundles include the staged SDK. These are not performance benchmarks or comparable framework overhead measurements."
+  },
+  "notRun": [
+    "CI Node22 or Linux environment",
+    "Angular20/22 consumer lanes",
+    "SSR, renderer reuse, full parity or calibrated performance benchmarks",
+    "Remote backend/deployment smoke, release or publication"
+  ]
+}

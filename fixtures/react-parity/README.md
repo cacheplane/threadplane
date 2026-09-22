@@ -1,24 +1,55 @@
 # React parity foundations
 
-This directory supports the first migration increment: a reviewed Angular baseline
-and four private, empty package scaffolds. It does not provide React components,
-state management, or extracted backend runtimes.
+This directory records the historical package foundations and the bounded shared
+LangGraph runtime proof. Core now exposes framework-free contracts; private Angular
+and React packages expose native observation bindings. A fixture-only private
+LangGraph session runs through the existing transport and SDK in both bindings.
 The existing Angular packages and release group remain the production path.
+
+## Bounded runtime slice
+
+The runtime owns immutable snapshots, request generations, stop/dispose, protected
+errors, read-only reconciliation after uncertain failures and fixed function-tool
+execution. Angular and
+React borrow the app-owned session and observe it through their native lifecycles.
+The installed consumers run seven scenarios each: inert mount, text, weather tool
+roundtrip, protected error, held partial text and Stop, reuse after Stop, and
+unmount followed by explicit disposal and an aborted post-disposal submission.
+Five live component submissions plus one tool continuation produce six exact wire
+requests, with one handler invocation and zero page errors or unexpected requests.
+
+A local HTTP/SSE fixture serves production-built apps and writes real held response
+bytes. Browser assertions observe incremental DOM text and a native response-close
+handshake on Stop. This is not compositor paint or a latency measurement. Production
+React StrictMode does not replay development effects; separate native unit tests
+exercise that subscription replay. See [runtime/README.md](./runtime/README.md) for
+reproduction and [runtime/evidence.json](./runtime/evidence.json) for fresh commands,
+counts, source provenance, cleanup assertions and limitations.
+
+The current inventory has **1,451 records**: the historical 1,438 plus eight private
+runtime production sources, three testing helpers, a runtime Vitest config and its
+type-test config asset. Public export occurrences remain 550 with 514 distinct local
+definitions. Fourteen existing export records changed declaration/import text;
+there are no legacy export-name additions or removals. Existing task assignments
+are preserved; touched extraction/configuration subsets are in progress, not whole
+T03–T16 completion. Core and native package contracts remain outside this legacy
+inventory scope and are checked by their own tests and package gates.
 
 ## Reviewed baseline
 
-The current facts were generated from the uncommitted foundation working tree at
+The historical foundation facts were generated from the uncommitted working tree at
 base HEAD `7e80cebd607f5c605ef1ec81f11e5ebe3324f81b`. The baseline records the four
 reviewed configuration changes: CI foundation projects and Angular consumer gate,
 the direct semver tooling dependency, workspace lockfile links, and package aliases.
 No inventoried API or implementation changed. This follows the main integration
 at `a93977ff1e75796336ddd93a882eab2e40f0ca7b`, including v0.2.0 and its package-version
-alignment fix. The inventory contains **1,438 records**: 550 public export
+alignment fix. The foundation inventory contained **1,438 records**: 550 public export
 occurrences (514 distinct local definitions), 102 decorated components in 100
 files, 461 non-test source files, 128 package assets, 16 distribution/configuration
 files, 12 entry points, 41 cockpit topics, and 128 documentation pages. These
-counts cover the 16 existing libraries selected for migration; the four new empty
-packages are checked separately by the boundary and packaging gates.
+counts cover the 16 existing libraries selected for migration; the four new packages
+are checked separately by the boundary and packaging gates. The original empty
+scaffold evidence remains in [baseline-evidence.json](./baseline-evidence.json).
 
 The earlier research snapshot at `b1685838069c6b1ec56d5e97a1a01170b26aa125`
 had 547 export occurrences and 1,435 records. Integration added `AgentRecovery`,
@@ -61,16 +92,17 @@ an Angular fix or dependency update changes the migration baseline.
 
 ## Private package boundaries
 
-| Current private scaffold | Intended responsibility |
+| Current private package | Intended responsibility |
 | --- | --- |
 | `@threadplane/core` | Framework-free data, observation, execution and tool contracts |
 | `@threadplane/content` | Shared Markdown, JSON, A2UI and rendering data processing |
 | `@threadplane/angular` | Native Angular binding and presentation |
 | `@threadplane/react` | Native React binding, rendering and presentation |
 
-All four are private version `0.0.0`, with empty entry points. Core, content and
-React use plain ESM packaging; Angular uses Angular Package Format (APF). Their
-intended responsibilities are not implemented. The source/declaration verifier follows
+All four remain private version `0.0.0`. Core contracts and the native observation
+bindings are populated; content and presentation entries remain scaffolds. Core,
+content and React use plain ESM packaging; Angular uses Angular Package Format (APF).
+The source/declaration verifier follows
 module edges, including type-only imports, aliases and re-exports. It blocks
 framework dependencies in neutral layers, UI dependencies in backend layers,
 backend SDKs in framework layers, Angular/React crossover, and optional/testing
@@ -94,8 +126,9 @@ The final package map is a separate destination, not the implemented topology:
 | `@threadplane/telemetry` | Neutral collector; native Angular providers belong to `@threadplane/angular` |
 
 There are no suffixed backend packages or separate React renderer in that map.
-The first runtime proof keeps the execution owner and publisher private to the
-backend; these foundations do not introduce a general shared store.
+The runtime proof keeps the execution owner and publisher private to the backend;
+it does not introduce a general shared store. The legacy LangGraph root and tarball
+remain Angular. The neutral session is staged only into temporary fixture consumers.
 The new tool contract deliberately omits a schema DSL, automatic argument
 validation/transformation and validator-to-JSON-Schema conversion. Callers may
 supply optional JSON Schema metadata and own any validation in their handlers.
@@ -105,7 +138,10 @@ transport decoding remain in scope.
 
 ```sh
 NX_DAEMON=false CI=true npx nx run-many -t lint test type-tests build --projects=core,content,angular,react --parallel=2 --skip-nx-cache
+NX_DAEMON=false npx nx run langgraph:runtime-quality --skip-nx-cache
+NX_DAEMON=false npx nx run langgraph:runtime-type-tests --skip-nx-cache
 NX_DAEMON=false CI=true npx nx run-many -t build --projects=chat,langgraph,ag-ui,render,a2ui,telemetry --configuration=production --parallel=1 --skip-nx-cache
+npx playwright install --with-deps chromium
 node scripts/react-parity/verify-boundaries.mjs --built
 node scripts/react-parity/verify-packages.mjs
 node scripts/react-parity/verify-angular-package.mjs
@@ -116,11 +152,20 @@ paths, README/license inclusion and production exclusions, then imports and
 type-checks the tarballs outside workspace aliases with `skipLibCheck: false`.
 Its core-only consumer checks all three core exports and rejects extra dependencies.
 The separate Angular check packs the one Angular APF entry and proves CLI
-compilation/linking with `skipLibCheck: false`. Both inspect consumer module inputs
-for unwanted parsers. Installation footprints include actual installed files;
+compilation/linking with `skipLibCheck: false`. Both frameworks now run installed
+production browser apps with the seven shared scenarios. Inferred native contract
+probes reject invalid tool names/arguments/results and deep mutations. The private
+runtime's narrow declaration is compiler-generated against installed core declarations,
+never hand-written; the staged SDK bundle is fixture-only. Both inspect consumer
+module inputs for unwanted parsers. Installation footprints include actual installed files;
 lockfile locations also include optional platform packages. The Angular footprint
-includes CLI/compiler/build tooling. These measurements prove scaffold packaging
-and isolation, not runtime performance, React SSR or shared-runtime correctness.
+includes CLI/compiler/build tooling. Footprints, root-import probes and application
+bundles measure separate surfaces; they are not runtime performance or SSR evidence.
+Test-only imports currently add Nx dependencies on legacy package builds even though
+the production graphs remain isolated. CI installs Chromium before the packed checks,
+runs the isolated Node runtime targets, and preserves production-build-before-scan
+ordering. Scenario-only/config-only changes schedule library verification. Stacked
+PRs are supported; pushes and production deployment remain guarded to main.
 
 ## Existing Angular regression checks
 
@@ -151,7 +196,7 @@ The existing LangGraph stream-manager/agent tests cover cancellation, delivery
 generations, queues and staged results. AG-UI interruption, resume-wire and
 persistence tests cover recovery and request serialization. Client-tool tests cover
 claim/record, cancellation and completed-result reuse. Later migration tasks must
-replay these behaviors through the extracted runtime and both bindings.
+extend the bounded runtime/binding proof to the remaining migration capabilities.
 
 The parser work test checks linear character processing under duplicate cumulative
 argument updates. A single test duration is not a calibrated performance budget.
@@ -162,24 +207,26 @@ burst streams and repeated agent/thread disposal.
 
 ## Maintenance and release
 
-The integrated candidate is `codex/react-support-baseline`. The local maintenance
+The foundation candidate is `codex/react-support-baseline`; the runtime candidate is
+`codex/shared-runtime-quality`, based on `bdcc22ed31aa94f420077e046e88e1481088d453`.
+The local maintenance
 branch `codex/angular-maintenance-v0.2` points to released tag `v0.2.0`
 (`8daea78d35bfa27513474bd624d0e9495af3cfab`) and retains its released lockfile.
 Creating that local branch does not establish an operated release lane: a maintainer
 must own the backport/publication workflow before it is used. No Angular facade
 currently depends on a new package. Version/tag enforcement, remote maintenance
 policy and a tested backport/rollback remain T37 work. The existing release group
-is unchanged, and none of the scaffolds is publishable.
+is unchanged, and none of the new private packages is publishable.
 
 ## Task identifiers
 
 The following task index makes the ownership ledger readable independently of local
 research documents. It is a scope map, not evidence that the tasks are complete.
-T01/T02 are this foundation increment. The next G1 proof is deliberately limited
+T01/T02 describe the foundation increment. The current G1 proof is deliberately limited
 to shared LangGraph text streaming and fixed function-tool execution with borrowed native
 Angular and React bindings: the runtime owns execution while each binding observes
 it. Renderer reuse and SSR are deferred gates, alongside the broader T01–T39 map.
-No runtime proof or parity is claimed by these foundations.
+This bounded runtime proof does not establish complete migration parity.
 
 | Task | Scope |
 | --- | --- |

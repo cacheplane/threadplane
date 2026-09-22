@@ -1,4 +1,5 @@
 {
+  // Inherit the library config's runtime test/helper exclusions.
   "extends": "./tsconfig.lib.json",
   "compilerOptions": {
     "declarationMap": false

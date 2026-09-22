@@ -322,3 +322,41 @@ for (const extension of ['mjs', 'd.ts']) {
     assert.ok(verifyBoundaries({ root, mode: 'built', projects: ['chat'] }).some((error) => error.includes('forbidden dependency') && error.includes('react')));
   });
 }
+
+for (const dependency of ['@angular/core', '@threadplane/chat', '@threadplane/telemetry', '@threadplane/render', 'react']) {
+  test(`neutral runtime rejects transitive ${dependency} despite legacy visits`, (t) => {
+    const root = fixture(t, {
+      'libs/langgraph/src/public-api.ts': "export * from './lib/shared.js';",
+      'libs/langgraph/src/lib/shared.ts': `export type { X } from '${dependency}';`,
+      'libs/langgraph/src/runtime/transport.ts': "export type { X } from '../lib/shared.js';",
+    });
+    assert.ok(verifyBoundaries({ root, projects: ['langgraph'] }).some((error) => error.includes('neutral runtime') && error.includes(dependency)));
+  });
+}
+
+test('neutral runtime permits public core and SDK but excludes private core and testing edges', (t) => {
+  const root = fixture(t, {
+    'tsconfig.base.json': JSON.stringify({ compilerOptions: { paths: { '@threadplane/core': ['./libs/core/src/index.ts'] } } }),
+    'libs/langgraph/src/public-api.ts': "export type { Signal } from '@angular/core';",
+    'libs/langgraph/src/runtime/transport.ts': "export type { X } from '@threadplane/core'; export type { Client } from '@langchain/langgraph-sdk';",
+    'libs/langgraph/src/runtime/testing/controlled.ts': 'export type T = string;',
+    'libs/langgraph/src/runtime/transport.spec.ts': "import '@angular/core'; import './testing/controlled';",
+    'libs/core/src/index.ts': 'export type X = string;',
+    'libs/core/src/private.ts': 'export type X = string;',
+  });
+  assert.deepEqual(verifyBoundaries({ root, projects: ['langgraph'] }), []);
+  for (const edge of ['../../../core/src/private.js', './testing/controlled.js', '@threadplane/core/private']) {
+    writeFileSync(join(root, 'libs/langgraph/src/runtime/transport.ts'), `export type { X } from '${edge}';`);
+    assert.ok(verifyBoundaries({ root, projects: ['langgraph'] }).some((error) => error.includes('neutral runtime') && error.includes(edge)));
+  }
+});
+
+for (const dependency of ['@langchain/langgraph-sdk/react', '@langchain/langgraph-sdk/react-ui', '@langchain/langgraph-sdk/react-ui/server']) {
+  test(`strict transport source root rejects ${dependency}`, (t) => {
+    const root = fixture(t, {
+      'libs/langgraph/src/public-api.ts': "export * from './lib/transport/fetch-stream.transport.js';",
+      'libs/langgraph/src/lib/transport/fetch-stream.transport.ts': `export type { X } from '${dependency}';`,
+    });
+    assert.ok(verifyBoundaries({ root, projects: ['langgraph'] }).some((error) => error.includes('neutral runtime') && error.includes(dependency)));
+  });
+}

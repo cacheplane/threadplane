@@ -28,14 +28,6 @@ test('Angular consumer uses installed CLI build with actual bundle stats, never 
   assert.equal(typeof angularVerifier.angularBuildCommand, 'function');
   assert.deepEqual(angularVerifier.angularBuildCommand('/tmp/consumer'), ['/tmp/consumer/node_modules/@angular/cli/bin/ng.js', 'build', '--configuration=production', '--stats-json']);
 });
-test('Angular app imports every supported executable entry and counts namespace exports', () => {
-  assert.equal(typeof angularVerifier.angularConsumerSource, 'function');
-  const template = "import * as angular from '@threadplane/angular';\n/* PACKAGE_IMPORTS */\nconst count = Object.keys(angular).length /* PACKAGE_EXPORT_COUNT */;";
-  const source = angularVerifier.angularConsumerSource(template, ['@threadplane/angular', '@threadplane/angular/tools']);
-  assert.match(source, /from '@threadplane\/angular'/);
-  assert.match(source, /from "@threadplane\/angular\/tools"/);
-  assert.match(source, /Object.keys\(entry0\).length/);
-});
 test('Angular fixture uses strict declarations and an application builder', () => {
   const base = 'fixtures/react-parity/consumers/angular/';
   const config = JSON.parse(readFileSync(`${base}tsconfig.json`, 'utf8'));

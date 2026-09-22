@@ -2,7 +2,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-import { angularTransitionProjects, assertFinalRelease, emittedEntries, forbiddenDependency, manifestViolations, packageOf, privateScaffoldProjects, scanProjects, sourceEntry } from './package-policy.mjs';
+import { angularTransitionProjects, assertFinalRelease, emittedEntries, forbiddenDependency, manifestViolations, neutralLangGraphRoots, packageOf, privateScaffoldProjects, scanProjects, sourceEntry } from './package-policy.mjs';
 
 export const foundationProjects = privateScaffoldProjects;
 const optional = /(?:^|\/)(?:testing|zod|math)(?:\/|$)/;
@@ -88,8 +88,8 @@ export function verifyBoundaries({ root = process.cwd(), mode = 'source', projec
     const browserEntries = mode === 'built' ? emittedEntries(manifest, './browser').map((value) => join(directory, value)) : [];
     const browserPath = (path) => project === 'telemetry' && telemetryBrowserTransition && (path.startsWith(join(directory, mode === 'source' ? 'src/browser' : 'browser') + '/') || browserEntries.includes(path));
     const visited = new Set();
-    function visit(path, rootRuntime, ancestry = [], browserTransition = false) {
-      const key = `${path}:${rootRuntime}:${browserTransition}`;
+    function visit(path, rootRuntime, ancestry = [], browserTransition = false, neutralRuntime = false) {
+      const key = `${path}:${rootRuntime}:${browserTransition}:${neutralRuntime}`;
       if (visited.has(key)) return;
       visited.add(key);
       if (!existsSync(path)) { errors.add(`${project}: unresolved ${relative(root, path)}`); return; }
@@ -100,19 +100,32 @@ export function verifyBoundaries({ root = process.cwd(), mode = 'source', projec
         const targetProject = target && projectOf(target);
         const normalized = targetProject ? `@threadplane/${targetProject}` : specifier;
         const trail = [...ancestry, relative(root, path), specifier].join(' -> ');
-        const policy = { angularTransitions, rootRuntime, browserTransition: browserTransition && browserPath(path) };
-        if (forbiddenDependency(project, specifier, policy) || forbiddenDependency(project, normalized, policy)) errors.add(`${project}: forbidden dependency ${trail}`);
+        const policy = { angularTransitions, rootRuntime, neutralRuntime, browserTransition: browserTransition && browserPath(path) };
+        const label = neutralRuntime ? 'neutral runtime forbidden dependency' : 'forbidden dependency';
+        if (forbiddenDependency(project, specifier, policy) || forbiddenDependency(project, normalized, policy)) errors.add(`${project}: ${label} ${trail}`);
+        if (neutralRuntime && (
+          optional.test(specifier) || (target && optional.test(relative(directory, target))) ||
+          (specifier.startsWith('@threadplane/core/') && specifier !== '@threadplane/core/tools') ||
+          (targetProject === 'core' && projectOf(path) !== 'core' && !['@threadplane/core', '@threadplane/core/tools'].includes(specifier))
+        )) errors.add(`${project}: neutral runtime private/testing dependency ${trail}`);
         // Every core entry is dependency-free. Explicitly
         // review any future external dependency instead of allowing a wrapper
         // package to hide a framework/parser dependency behind its own imports.
         if (project === 'core' && (!target || target.includes('/node_modules/')) && !specifier.startsWith('.')) errors.add(`${project}: unreviewed dependency ${trail}`);
         if (rootRuntime && (optional.test(specifier) || ['zod', 'katex'].includes(packageOf(specifier)) || (target && optional.test(relative(directory, target))))) errors.add(`${project}: optional/testing dependency reachable from root: ${trail}`);
         if (project === 'react' && rootRuntime && ((specifier.startsWith('@threadplane/react/') && reactFeature.test(specifier.slice('@threadplane/react/'.length))) || (targetProject === 'react' && reactFeature.test(relative(join(directory, 'src'), target))))) errors.add(`${project}: feature dependency reachable from root: ${trail}`);
-        if (target && !target.includes('/node_modules/')) visit(target, rootRuntime, [...ancestry, relative(root, path)], browserTransition && browserPath(target));
+        if (target && !target.includes('/node_modules/')) visit(target, rootRuntime, [...ancestry, relative(root, path)], browserTransition && browserPath(target), neutralRuntime);
         else if (!target && (specifier.startsWith('.') || specifier.startsWith('@threadplane/'))) errors.add(`${project}: unresolved dependency ${trail}`);
       }
     }
     for (const path of allFiles) visit(path, false, [], browserPath(path));
+    if (mode === 'source' && project === 'langgraph') {
+      const neutralRoots = [
+        ...filesIn(join(directory, 'src/runtime')).filter((path) => !optional.test(relative(directory, path))),
+        ...neutralLangGraphRoots.map((path) => join(directory, path)).filter(existsSync),
+      ];
+      for (const path of neutralRoots) visit(path, false, [], false, true);
+    }
     if (!angularTransitions.includes(project)) {
       if (!roots.length) errors.add(`${project}: missing root exports`);
       for (const path of roots) visit(path, true);

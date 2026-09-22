@@ -60,6 +60,18 @@
         "command": "node ./node_modules/typescript/bin/tsc --noEmit -p libs/langgraph/tsconfig.type-tests.json"
       }
     },
+    "runtime-quality": {
+      "executor": "@nx/vitest:test",
+      "options": {
+        "configFile": "libs/langgraph/vite.runtime.config.mts"
+      }
+    },
+    "runtime-type-tests": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node ./node_modules/typescript/bin/tsc --project libs/langgraph/tsconfig.runtime-tests.json"
+      }
+    },
     "prepare-install": {
       "executor": "nx:run-commands",
       "cache": true,

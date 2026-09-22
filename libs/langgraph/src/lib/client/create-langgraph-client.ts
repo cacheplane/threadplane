@@ -1,5 +1,5 @@
 import { Client } from '@langchain/langgraph-sdk';
-import type { LangGraphClientOptions } from '../agent.types';
+import type { LangGraphClientOptions } from '../../runtime/transport.types';
 
 /**
  * Construct a LangGraph SDK Client that accepts both absolute URLs
@@ -73,5 +73,6 @@ function constructLangGraphClient(
  *  share the same normalization logic. */
 export function toAbsoluteApiUrl(apiUrl: string): string {
   if (apiUrl.startsWith('http://') || apiUrl.startsWith('https://')) return apiUrl;
-  return typeof window !== 'undefined' ? `${window.location.origin}${apiUrl}` : apiUrl;
+  const browser = globalThis as typeof globalThis & { window?: { location: { origin: string } } };
+  return browser.window !== undefined ? `${browser.window.location.origin}${apiUrl}` : apiUrl;
 }

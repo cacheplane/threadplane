@@ -7,6 +7,7 @@ import ts from 'typescript';
 import { buildSync } from 'esbuild';
 import { satisfies } from 'semver';
 import { angularTransitionProjects, emittedEntries, manifestViolations, privateScaffoldProjects, scanProjects } from './package-policy.mjs';
+import { lockedReactManifest, prepareInstalledTypes, prepareRuntimeConsumer, runRuntimeScenarios } from './runtime-consumer.mjs';
 
 function filesIn(directory) {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => entry.isDirectory() ? filesIn(join(directory, entry.name)) : [join(directory, entry.name)]);
@@ -166,15 +167,20 @@ export function assertParserFreeInputs(inputs) {
 
 function verifyPlainExports(root, consumer, projects) {
   const specifiers = projects.flatMap((project) => consumerSpecifiers(JSON.parse(readFileSync(join(consumer, 'node_modules/@threadplane', project, 'package.json'), 'utf8'))));
-  writeFileSync(join(consumer, 'index.mjs'), specifiers.map((specifier) => `await import(${JSON.stringify(specifier)});`).join('\n'));
+  writeFileSync(join(consumer, 'index.mjs'), `${assertSupportedExports.toString()}\n` + specifiers.map((specifier) => `assertSupportedExports(${JSON.stringify(specifier.slice('@threadplane/'.length))}, await import(${JSON.stringify(specifier)}));`).join('\n'));
   writeFileSync(join(consumer, 'index.ts'), specifiers.map((specifier, index) => `import * as entry${index} from ${JSON.stringify(specifier)};\nexport type Entry${index} = typeof entry${index};`).join('\n'));
-  writeFileSync(join(consumer, 'tsconfig.json'), JSON.stringify({ compilerOptions: { target: 'ES2022', module: 'NodeNext', moduleResolution: 'NodeNext', lib: ['ES2022'], types: [], strict: true, skipLibCheck: false, noEmit: true }, files: ['index.ts'] }));
+  writeFileSync(join(consumer, 'tsconfig.json'), JSON.stringify({ compilerOptions: { target: 'ES2022', module: 'NodeNext', moduleResolution: 'NodeNext', lib: ['ES2022', 'DOM'], types: [], strict: true, skipLibCheck: false, noEmit: true }, files: ['index.ts'] }));
   runConsumer(process.execPath, ['index.mjs'], consumer);
   runConsumer(process.execPath, [join(root, 'node_modules/typescript/bin/tsc'), '-p', 'tsconfig.json'], consumer);
   return specifiers.length;
 }
 
-export function verifyPackedConsumers(root = process.cwd()) {
+export function assertSupportedExports(project, entry) {
+  const expected = { core: ['completeDelivery', 'streamingDelivery', 'staticDelivery', 'projectAgentError'], react: ['useAgent'] }[project] ?? [];
+  for (const name of expected) if (typeof entry[name] !== 'function') throw new Error(`${project} missing supported contract ${name}`);
+}
+
+export async function verifyPackedConsumers(root = process.cwd()) {
   root = resolve(root);
   const temporary = mkdtempSync(join(tmpdir(), 'threadplane-consumer-'));
   try {
@@ -184,15 +190,22 @@ export function verifyPackedConsumers(root = process.cwd()) {
     mkdirSync(core);
     installConsumer(core, { private: true, type: 'module' }, { '@threadplane/core': tarballs['@threadplane/core'] }, 'core');
     const coreCount = verifyPlainExports(root, core, ['core']);
+    prepareInstalledTypes(root, core, 'core');
+    runConsumer(process.execPath, [join(root, 'node_modules/typescript/bin/tsc'), '-p', 'tsconfig.contracts.json'], core);
     const plain = join(temporary, 'plain-consumer');
     mkdirSync(plain);
-    installConsumer(plain, { private: true, type: 'module' }, tarballs, 'plain');
+    installConsumer(plain, lockedReactManifest(JSON.parse(readFileSync(join(root, 'package-lock.json'), 'utf8'))), tarballs, 'plain');
     const count = verifyPlainExports(root, plain, Object.keys(tarballs).map((name) => name.slice('@threadplane/'.length)));
     writeFileSync(join(plain, 'react-root.mjs'), "import * as react from '@threadplane/react';\nconsole.log(Object.keys(react));\n");
     const bundle = buildSync({ absWorkingDir: plain, entryPoints: [join(plain, 'react-root.mjs')], bundle: true, platform: 'browser', format: 'esm', write: false, metafile: true });
     assertParserFreeInputs(bundle.metafile.inputs);
-    console.log(`React root bundle: ${Object.keys(bundle.metafile.inputs).length} inputs, ${bundle.outputFiles[0].contents.length} bytes, no content parsers. Inputs: ${Object.keys(bundle.metafile.inputs).join(', ')}.`);
-    console.log(`Verified ${Object.keys(tarballs).length} private plain tarballs, ${count} ESM/type exports, and ${coreCount} isolated core exports with skipLibCheck:false. These are empty scaffolds; no framework runtime behavior is claimed.`);
+    console.log(`React development root-import probe (unminified, separate from the production app): ${Object.keys(bundle.metafile.inputs).length} inputs, ${bundle.outputFiles[0].contents.length} bytes, no content parsers. Inputs: ${Object.keys(bundle.metafile.inputs).join(', ')}.`);
+    prepareInstalledTypes(root, plain, 'react');
+    await prepareRuntimeConsumer(root, plain, 'react');
+    for (const config of ['tsconfig.contracts.json', 'tsconfig.app.json']) runConsumer(process.execPath, [join(plain, 'node_modules/typescript/bin/tsc'), '-p', config], plain);
+    console.log(runConsumer(process.execPath, [join(plain, 'node_modules/vite/bin/vite.js'), 'build'], plain));
+    await runRuntimeScenarios(join(plain, 'dist'), 'React');
+    console.log(`Verified ${Object.keys(tarballs).length} private plain tarballs, ${count} ESM/type exports, and ${coreCount} isolated core exports with skipLibCheck:false, precise heterogeneous tool contracts, and a production-built installed React consumer.`);
   } finally { rmSync(temporary, { recursive: true, force: true }); }
 }
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) verifyPackedConsumers();
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await verifyPackedConsumers();
