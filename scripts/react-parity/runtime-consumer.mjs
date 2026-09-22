@@ -53,10 +53,21 @@ const savedHistory = [{
 
 /** A strict wire fixture: malformed/extra operations fail the browser run. */
 export function runtimeResponse(body) {
-  assert.deepEqual(body.input?.client_tools, catalog, 'exact client tool catalog');
   assert.equal(body.assistant_id, 'fixture-assistant');
   assert.deepEqual(body.stream_mode, ['values', 'messages-tuple', 'updates', 'custom']);
   assert.equal(body.stream_subgraphs, true);
+  if (body.input === null) {
+    const response = body.command?.resume;
+    assert.deepEqual(body, { assistant_id: 'fixture-assistant', input: null, command: { resume: response }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom'], stream_subgraphs: true }, 'exact resume run fields');
+    if (Object.hasOwn(response ?? {}, 'live-approval')) {
+      assert.deepEqual(response, { 'live-approval': 'yes', 'live-confirmation': false }, 'exact initial response map');
+      return sse('values', { stage: 'final-approval', messages: [{ type: 'ai', id: 'resume-answer', content: 'One final approval' }] })
+        + sse('updates', { __interrupt__: [{ id: 'final-approval', value: { question: 'Confirm final action?' } }] });
+    }
+    assert.deepEqual(response, { 'final-approval': true }, 'exact final response map');
+    return sse('values', { stage: 'approved', messages: [{ type: 'ai', id: 'resume-answer', content: 'Approvals complete' }] });
+  }
+  assert.deepEqual(body.input?.client_tools, catalog, 'exact client tool catalog');
   assert.equal(body.input.messages.length, 1);
   const message = body.input.messages[0];
   assert.deepEqual(body, { assistant_id: 'fixture-assistant', input: { messages: [message], client_tools: catalog }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom'], stream_subgraphs: true }, 'unexpected run fields');
@@ -87,7 +98,15 @@ export function installedTypeSource(template, kind) {
   const entry = kind === 'angular' ? './src/runtime-entry.js' : './runtime-entry.js';
   return template.replace('/* BINDING_IMPORT */', `import { ${binding} } from '@threadplane/${kind}';\nimport type { createFixtureSession } from '${entry}';`)
     .replace('export function assertSnapshot(snapshot: AgentSnapshot<FixtureTools>) {', `export function assertSnapshot(session: ReturnType<typeof createFixtureSession>) {\n  const snapshot = ${binding}(session)${kind === 'angular' ? '()' : ''};\n  const exact: AgentSnapshot<FixtureTools> = snapshot;\n  void exact;`)
-    .replace('/* BACKEND_VALUES */', `const direct = session.getSnapshot();
+    .replace('/* BACKEND_VALUES */', `void session.resume();
+  void session.resume(false);
+  void session.resume(null);
+  void session.resume({ approval: { choice: 'yes' } } as const, { signal: new AbortController().signal });
+  // @ts-expect-error Responses must be portable authored data, not SDK instances.
+  void session.resume(new Date());
+  // @ts-expect-error Resume does not expose transport command overrides.
+  void session.resume(true, { command: { goto: 'other' } });
+  const direct = session.getSnapshot();
   const directValues: Readonly<Record<string, PlainValue>> | undefined = direct.values;
   const values: Readonly<Record<string, PlainValue>> | undefined = snapshot.values;
   // @ts-expect-error No application schema is inferred from the broad values map.
@@ -281,6 +300,10 @@ export async function runRuntimeScenarios(directory, kind) {
     await expect(page.getByTestId('owner')).toHaveText('mounted');
     await expect(page.getByTestId('handler-calls')).toHaveText('0');
     await expect(page.getByTestId('submissions')).toHaveText('0');
+    await expect(page.getByTestId('resumes-finished')).toHaveText('0');
+    await expect(page.getByTestId('resume-outcome')).toHaveText('');
+    await expect(page.getByTestId('human-messages')).toHaveText('0');
+    await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeDisabled();
     await expectValues(undefined);
     await expectInterrupts([]);
     assert.equal(server.requests.length, 0, 'mount/observation performs no I/O');
@@ -383,12 +406,43 @@ export async function runRuntimeScenarios(directory, kind) {
     assert.equal(server.requests.length, 6, 'stop after completed pause does not create backend I/O');
     completed.push('full interrupt batch and retained pause after stop');
 
+    await expect(page.getByTestId('human-messages')).toHaveText('5');
+    await page.getByRole('button', { name: 'Resume', exact: true }).click();
+    await expect(page.getByTestId('resumes-finished')).toHaveText('1');
+    await expect(page.getByTestId('resume-outcome')).toHaveText('paused');
+    await expect(page.getByTestId('delivery')).toHaveText('complete:paused');
+    await expect(page.getByTestId('text')).toContainText('One final approval');
+    await expectInterrupts([{ id: 'final-approval', value: { question: 'Confirm final action?' } }]);
+    await expectValues({ stage: 'final-approval' });
+    await expect(page.getByTestId('human-messages')).toHaveText('5');
+    assert.equal(server.requests.length, 7);
+    assert.deepEqual(server.requests[6].command, { resume: { 'live-approval': 'yes', 'live-confirmation': false } });
+    assert.equal(server.requests[6].input, null);
+    completed.push('explicit response map and second pause');
+
+    await page.getByRole('button', { name: 'Resume', exact: true }).click();
+    await expect(page.getByTestId('resumes-finished')).toHaveText('2');
+    await expect(page.getByTestId('resume-outcome')).toHaveText('success');
+    await expect(page.getByTestId('delivery')).toHaveText('complete:success');
+    await expect(page.getByTestId('text')).toContainText('Approvals complete');
+    await expect(page.getByTestId('text')).not.toContainText('One final approval');
+    await expectInterrupts([]);
+    await expectValues({ stage: 'approved' });
+    await expect(page.getByTestId('human-messages')).toHaveText('5');
+    await expect(page.getByTestId('submissions')).toHaveText('5');
+    await expect(page.getByTestId('handler-calls')).toHaveText('1');
+    await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeDisabled();
+    assert.equal(server.requests.length, 8);
+    assert.deepEqual(server.requests[7].command, { resume: { 'final-approval': true } });
+    assert.equal(server.requests[7].input, null);
+    completed.push('same-message resume completion without synthetic input');
+
     await page.getByRole('button', { name: 'Send', exact: true }).click();
     await expect(page.getByTestId('delivery')).toHaveText('complete:success');
     await expect(page.getByTestId('status')).toHaveText('idle');
     await expect(page.getByTestId('text')).toContainText('Hello 🌍.');
     await expect(page.getByTestId('handler-calls')).toHaveText('1');
-    assert.equal(server.requests.length, 7);
+    assert.equal(server.requests.length, 9);
     await expectValues({ stage: 'complete' });
     await expectInterrupts([]);
     await expect(page.getByTestId('submissions')).toHaveText('6');
@@ -401,13 +455,15 @@ export async function runRuntimeScenarios(directory, kind) {
     await expect(page.getByTestId('owner')).toHaveText('disposed');
     await page.getByRole('button', { name: 'Send after dispose', exact: true }).click();
     await expect(page.getByTestId('owner')).toHaveText('aborted');
-    assert.equal(server.requests.length, 7, 'cleanup/disposal/post-disposal submit creates no extra runs');
+    await page.getByRole('button', { name: 'Resume after dispose', exact: true }).click();
+    await expect(page.getByTestId('owner')).toHaveText('aborted');
+    assert.equal(server.requests.length, 9, 'cleanup/disposal/post-disposal commands create no extra runs');
     assert.deepEqual(server.historyRequests, [{ limit: 10 }, { limit: 10 }, { limit: 10 }], 'only explicit loads read history');
     completed.push('unmount and explicit disposal');
     assert.deepEqual(server.errors.map(String), []);
     assert.deepEqual(pageErrors, []);
     assert.deepEqual(unexpected, []);
-    console.log(`${kind}: ${completed.length} browser scenarios passed (${completed.join('; ')}); 3 exact history reads, 7 exact run requests, one tool handler, 6 component submissions, no page errors/unexpected requests.`);
+    console.log(`${kind}: ${completed.length} browser scenarios passed (${completed.join('; ')}); 3 exact history reads, 9 exact run requests, one tool handler, 6 component submissions, 2 explicit resumes, no page errors/unexpected requests.`);
     return completed;
   } finally {
     try { await context?.close(); }

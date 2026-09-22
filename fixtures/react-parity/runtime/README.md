@@ -1,5 +1,39 @@
 # Installed native runtime consumers
 
+## Explicit resume contract
+
+The private development session exposes
+`resume(value?: PlainValue, options?: { signal?: AbortSignal })`. Supply the
+application's response for a dynamic interrupt, including an interrupt-ID map
+when responding to several interrupts. Omit the response to continue a static
+breakpoint. `false`, `0`, `''`, and `null` are responses and are preserved. The
+runtime owns a plain-data copy; it does not validate an application schema,
+select interrupt targets, or transform arguments.
+
+Resume requires an observed pause and no active run, history load, unresolved
+submission recovery, or unsettled tool results. It creates a null-input run on
+the same thread with the supplied resume command, without a new human message.
+Function-tool follow-ups use ordinary result messages and never repeat that
+command. React and Angular borrow this application-owned session through their
+existing observers. Construction and observation do not resume a graph.
+
+Stop and disposal end local ownership; they do not cancel remote side effects.
+The owned SDK transport defaults to zero request retries. If a resume connection
+drops without conclusive completion, the outcome stays unconfirmed:
+`retryable: false`, `recovery: 'none'`. Submission's human-message correlation
+cannot prove a resume's outcome, so `checkStatus()` does not reconcile it.
+When no unsettled tool results remain, an explicit `load()` can inspect current
+history. This does not prove the earlier command completed or retry it. Loading
+a pause and choosing Resume again is a new command; it can repeat server work
+if the earlier run is still active. Failed tool follow-ups retain their buffered
+results and continue to block load/resume; an explicit normal submission can
+hand them off under the existing session contract.
+
+This is a backend-private runtime milestone. Run-ID recovery, joining an existing
+run, checkpoint selection, and public backend package cutover remain separate
+work. The fixture's emitted declaration is a development consumer contract, not
+a new published LangGraph entry point.
+
 ## Manual review
 
 From the repository root, install dependencies and build the artifacts used by
@@ -19,7 +53,7 @@ are missing. `node scripts/react-parity/review-runtime.mjs --help` prints the
 prerequisite and review sequence.
 
 The runner packs those artifacts, installs and strictly type-checks isolated
-React and Angular consumers, builds each app, and runs all eleven browser
+React and Angular consumers, builds each app, and runs all thirteen browser
 scenarios on fresh fixture servers. Only after those checks pass does it print
 two new, untouched loopback URLs. Open each URL manually; no browser opens
 automatically. The review servers have made no SDK requests at that point.
@@ -47,13 +81,16 @@ Use this order once per fresh server, waiting for each expected state:
 | Stop | Delivery becomes `complete:aborted`; the native held response closes and partial text remains visible. |
 | Pause | `Waiting for approvals`, both live interrupt payloads, idle, delivery `complete:paused`. |
 | Stop again | Both interrupts and `complete:paused` remain; no extra request is made. |
+| Resume | Sends both authored approval responses; shows `One final approval`, one new interrupt, resume outcome `paused`, resumes finished `1`. Human messages remain `5`. |
+| Resume again | Shows `Approvals complete` in the same assistant message, interrupts `[]`, delivery `complete:success`, resume outcome `success`, resumes finished `2`. Human messages remain `5`. |
 | Send again | Another successful greeting, interrupts `[]`, delivery `complete:success`; submissions `6`, handler calls `1`. |
 | Unmount | Component panels disappear; the separate owner controls report `unmounted`. |
 | Dispose | Owner reports `disposed`. |
 | Send after dispose | Owner reports `aborted`; no request is made. |
+| Resume after dispose | Owner reports `aborted`; no request is made. |
 
-This sequence makes three history reads with `{ limit: 10 }` and seven run
-requests, including the tool continuation. Each server permits only three Load
+This sequence makes three history reads with `{ limit: 10 }` and nine run
+requests: six submissions, one tool continuation, and two resumes. Each server permits only three Load
 requests. Restart the CLI for a fresh sequence; reloading the page does not reset
 server history. Unmount releases the framework observer, while the application
 owns the session and explicitly disposes it.
@@ -63,7 +100,7 @@ connections, stops and awaits preparation process groups, and removes this
 invocation's temporary consumers. Startup failures use the same cleanup path;
 if a preparation process group cannot be stopped, its temporary files are
 retained and an error is reported. Process-group cleanup targets POSIX macOS and
-Linux. The local HTTP/SSE fixture is not a production backend, interrupt resume
+Linux. The local HTTP/SSE fixture is not a production backend, public backend
 API, SSR demonstration, or complete React migration.
 
 ## Automated installed-consumer verification
@@ -157,9 +194,9 @@ control takes precedence; otherwise all top-level task interrupt arrays contribu
 Child namespaces, nested task state and `next` alone do not establish a root pause.
 History pause delivery is derived from the same candidate as messages, values and
 interrupts. Equal refreshes retain identity, and values-only refreshes share the
-unchanged interrupt batch. An accepted new submission clears the prior batch; stop, disposal
-and failures retain the last observed batch. Observation adds no implicit I/O,
-resume or target-selection API. Existing getter/stale-candidate guards, recovery
+unchanged interrupt batch. An accepted submission or resume clears the prior batch;
+stop, disposal and failures retain the last observed batch. Observation never
+implicitly resumes or selects targets. Existing getter/stale-candidate guards, recovery
 correlation, tool handoff and next-user-input behavior remain covered.
 
 The private `LangGraphSession` offers `load({ signal })` only when its transport
@@ -178,10 +215,11 @@ deduplication survives a load, while locally authored result provenance is clear
 Persisted ToolMessage strings remain transcript text rather than becoming typed
 handler results, including on later stream replay. This is a fixed-thread history
 subset of T10, not thread switching, pagination, branching, state writes,
-interrupt resume, SSR, or a public LangGraph package cutover. Core public contracts
+SSR, or a public LangGraph package cutover. Explicit resume is the subsequent private
+capability described above. Core public contracts
 are unchanged; the native signatures now retain the concrete snapshot extension.
 
-The native fixtures expose Load, Send, Tool, Error, Hold, Pause and Stop buttons plus text,
+The native fixtures expose Load, Send, Tool, Error, Hold, Pause, Resume and Stop buttons plus text,
 transcript, values, interrupts, load completion/error, status, tool result, delivery, submission and
 handler count outputs. A single app-owned
 session is created outside component lifetime and outside React's StrictMode
@@ -190,15 +228,16 @@ React uses a Vite production build. Angular uses the existing consumer template'
 installed Angular CLI application builder and real APF linking, with output in
 `dist/consumer/browser` and input evidence from `dist/consumer/stats.json`.
 
-Both built apps run the same eleven browser scenarios in installed Playwright
+Both built apps run the same thirteen browser scenarios in installed Playwright
 Chromium: inert mount, explicit history load, equal history refresh, empty history
 replacement, successful text, a real local tool handler and exact
 two-request result continuation, protected visible server error, held streaming
-DOM updates and Stop, the full pause batch retained after Stop, reuse after Stop,
-then unmount/dispose/post-disposal submission.
-Six submissions through the component controls make exactly seven run requests
-(including one tool continuation) and call the handler once. The separate
-post-disposal submit attempt resolves aborted without making a request.
+DOM updates and Stop, the full pause batch retained after Stop, an explicit response
+map and second pause, same-message resume completion, reuse after Stop,
+then unmount/dispose/post-disposal commands.
+Six submissions and two resumes through the component controls make exactly nine
+run requests (including one tool continuation) and call the handler once. The separate
+post-disposal submit and resume attempts resolve aborted without making requests.
 Three explicit Load clicks make exactly three history reads with `{ limit: 10 }`
 and no run requests or handler calls. Every completed load must leave its visible
 error output empty, so retained text cannot conceal a failed equal refresh. Both
@@ -210,7 +249,9 @@ Separate native component tests make four history reads to cover a values-only
 refresh with unchanged messages and interrupts; installed browser scenarios still
 make three. History fixtures contain two separate task payloads and show paused
 delivery. The Pause button sends two separate root controls and renders both
-payloads; Stop retains them without another request, and the next Send clears them.
+payloads; Stop retains them without another request. Resume clears the old batch
+and observes a new pause, then a second explicit resume completes without adding
+human messages. Both null inputs and exact response maps are asserted server-side.
 Unrelated custom/child noise does not contain a root empty control, because an
 actual empty root `__interrupt__` is a static breakpoint rather than noise.
 

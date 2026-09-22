@@ -11394,7 +11394,7 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private staged LangGraph runtime subset; fixture-only and not a neutral public LangGraph root or tarball.",
-      "note": "Adds readonly interrupt batches to the messages/values aggregate, with submit clearing, retained stop/failure/disposal state, candidate ownership and correlated recovery. Observation only; no resume/targeting or whole-task completion."
+      "note": "Private explicit resume continues observed pauses with owned opaque responses and null input, shares local cancellation/tool ownership, and never applies submission checkpoint correlation to resume. No automatic targeting, public backend cutover, or whole-task completion."
     },
     {
       "id": "source:libs/langgraph/src/runtime/function-tools.ts",
@@ -11488,7 +11488,7 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private staged LangGraph runtime subset; fixture-only and not a neutral public LangGraph root or tarball.",
-      "note": "Live pause delivery uses root interrupt evidence shared with the observed batch; values projection and messageMetadata routing remain unchanged. Broader T09 migration remains open."
+      "note": "Resume projection preserves unchanged baseline delivery, attributes current same-ID activity, and limits finalized tool eligibility to the resumed turn across stream batches and follow-ups. Live pause delivery still uses the shared root interrupt batch. Broader T09 migration remains open."
     },
     {
       "id": "source:libs/langgraph/src/runtime/testing/binding-fixture.ts",

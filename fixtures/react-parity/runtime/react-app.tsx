@@ -3,7 +3,12 @@ import { createRoot } from 'react-dom/client';
 import { useAgent } from '@threadplane/react';
 import { createFixtureSession } from './runtime-entry.js';
 import './review.css';
-import { attachOwner, display, reviewInstructions } from './scenarios';
+import {
+  attachOwner,
+  display,
+  reviewInstructions,
+  reviewResponse,
+} from './scenarios';
 
 // Application ownership is outside StrictMode and the component lifetime.
 let handlerCalls = 0;
@@ -20,6 +25,20 @@ function App() {
   const snapshot = useAgent(session);
   const [loadsFinished, setLoadsFinished] = useState(0);
   const [loadError, setLoadError] = useState('');
+  const [resumesFinished, setResumesFinished] = useState(0);
+  const [resumeOutcome, setResumeOutcome] = useState('');
+  const resume = async () => {
+    setResumeOutcome('');
+    try {
+      setResumeOutcome(
+        await session.resume(reviewResponse(session.getSnapshot()))
+      );
+    } catch {
+      setResumeOutcome('Resume unavailable');
+    } finally {
+      setResumesFinished((count) => count + 1);
+    }
+  };
   const load = async () => {
     if (!session.load) return;
     setLoadError('');
@@ -57,6 +76,14 @@ function App() {
           <button onClick={() => void submit('Error')}>Error</button>
           <button onClick={() => void submit('Hold')}>Hold</button>
           <button onClick={() => void submit('Pause')}>Pause</button>
+          <button
+            disabled={
+              snapshot.status === 'running' || !snapshot.interrupts.length
+            }
+            onClick={() => void resume()}
+          >
+            Resume
+          </button>
           <button onClick={() => void session.stop()}>Stop</button>
         </div>
       </section>
@@ -86,6 +113,27 @@ function App() {
               <h3>Submissions</h3>
               <output aria-label="Submissions" data-testid="submissions">
                 {submissions}
+              </output>
+            </div>
+            <div className="field">
+              <h3>Resumes finished</h3>
+              <output
+                aria-label="Resumes finished"
+                data-testid="resumes-finished"
+              >
+                {resumesFinished}
+              </output>
+            </div>
+            <div className="field">
+              <h3>Resume outcome</h3>
+              <output aria-label="Resume outcome" data-testid="resume-outcome">
+                {resumeOutcome}
+              </output>
+            </div>
+            <div className="field">
+              <h3>Human messages</h3>
+              <output aria-label="Human messages" data-testid="human-messages">
+                {view.humanMessages}
               </output>
             </div>
             <div className="field">

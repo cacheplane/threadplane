@@ -164,3 +164,113 @@ describe('authoritative tool ownership', () => {
     expect(next.projection.toolCallIds).toEqual([]);
   });
 });
+
+describe('resume projection turn ownership', () => {
+  function resumed() {
+    const initial = start([assistant('step', ['pending'], 'Waiting')]);
+    const state = reduceMessages(
+      finalizeProjection(initial.state, initial.projection),
+      { type: 'complete', generation: 'run', outcome: 'paused' }
+    );
+    const next: StreamProjection = {
+      ...projection(),
+      generation: 'resume',
+      baselineIds: state.messages.map((message) => message.id),
+      resume: { turnIds: ['step'] },
+    };
+    return { state, projection: next };
+  }
+
+  it('retains exact replay delivery but recognizes current terminal pending arguments', () => {
+    const before = resumed();
+    const next = projectStream(before.state, before.projection, {
+      type: 'values',
+      data: { messages: [user, assistant('step', ['pending'], 'Waiting')] },
+    });
+    expect(next.state.messages).toBe(before.state.messages);
+    expect(next.projection.terminal).toBe(true);
+    expect(next.projection.toolCallIds).toEqual(['pending']);
+  });
+
+  it.each(['', 'Changed'])(
+    'attributes changed same-ID terminal content %j to resume',
+    (content) => {
+      const before = resumed();
+      const next = projectStream(before.state, before.projection, {
+        type: 'values',
+        data: { messages: [assistant('step', [], content)] },
+      });
+      expect(next.state.messages.at(-1)).toMatchObject({
+        content,
+        delivery: { generation: 'resume', phase: 'streaming' },
+      });
+      expect(next.projection.sawAssistant).toBe(true);
+      expect(
+        finalizeProjection(next.state, next.projection).messages.at(-1)?.content
+      ).toBe(content);
+    }
+  );
+
+  it('treats same-ID chunks as new activity and replaces interim text with the terminal correction', () => {
+    const before = resumed();
+    const delta = projectStream(before.state, before.projection, {
+      type: 'messages',
+      messageMetadata: {},
+      messages: [
+        {
+          type: 'AIMessageChunk',
+          id: 'step',
+          content: 'New streaming content',
+        },
+      ],
+    });
+    expect(delta.state.messages.at(-1)?.content).toBe('New streaming content');
+    expect(delta.state.messages.at(-1)?.delivery).toMatchObject({
+      generation: 'resume',
+      phase: 'streaming',
+    });
+    expect(delta.projection.terminal).toBe(false);
+    const terminal = projectStream(delta.state, delta.projection, {
+      type: 'values',
+      data: { messages: [assistant('step', [], 'Final')] },
+    });
+    expect(
+      finalizeProjection(terminal.state, terminal.projection).messages.at(-1)
+        ?.content
+    ).toBe('Final');
+  });
+
+  it('uses captured baseline turn membership when the current user anchor is omitted', () => {
+    const before = resumed();
+    const withOld = reduceMessages(before.state, {
+      type: 'message',
+      mode: 'snapshot',
+      message: {
+        id: 'old',
+        role: 'assistant',
+        content: '',
+        toolCallIds: ['old-call'],
+        delivery: before.state.messages[0].delivery,
+      },
+    });
+    const next = projectStream(
+      withOld,
+      {
+        ...before.projection,
+        baselineIds: [...before.projection.baselineIds, 'old'],
+      },
+      {
+        type: 'values',
+        data: {
+          messages: [
+            assistant('old', ['old-call']),
+            assistant('step', ['pending']),
+            { ...user, id: 'next-user' },
+            assistant('next', ['next-call']),
+          ],
+        },
+      }
+    );
+    expect(next.projection.toolCallIds).toEqual(['pending']);
+  });
+});

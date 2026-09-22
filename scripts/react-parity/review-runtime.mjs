@@ -17,7 +17,7 @@ const script = fileURLToPath(import.meta.url);
 const buildCommand =
   'NX_DAEMON=false npx nx run-many -t build -p core,angular,react --skip-nx-cache';
 const manualOrder =
-  'Use three Load clicks (saved, equal refresh, empty); Send → Tool → Error → Hold → Stop → Pause → Stop → Send → Unmount → Dispose → Send after dispose. History allows only three Load requests per server; restart this command for a fresh review. Reloading the page does not reset server history.';
+  'Use three Load clicks (saved, equal refresh, empty); Send → Tool → Error → Hold → Stop → Pause → Stop → Resume → Resume → Send → Unmount → Dispose → Send after dispose → Resume after dispose. Resume answers both approvals, then the final confirmation. History allows only three Load requests per server; restart this command for a fresh review. Reloading the page does not reset server history.';
 
 function prerequisites(root) {
   const missing = ['core', 'angular', 'react'].filter(
