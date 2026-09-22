@@ -1,4 +1,12 @@
-import type { AgentSession, AgentSnapshot, CompleteOutcome, PlainValue, ToolCall } from '@threadplane/core';
+import type {
+  AgentError,
+  AgentSession,
+  AgentSnapshot,
+  CompleteOutcome,
+  Message,
+  PlainValue,
+  ToolCall,
+} from '@threadplane/core';
 import type { FunctionTool } from '@threadplane/core/tools';
 import type { FixtureTools } from './scenarios';
 
@@ -45,7 +53,10 @@ export function assertSnapshot(snapshot: AgentSnapshot<FixtureTools>) {
   snapshot.toolCalls.push({} as ToolCall<FixtureTools>);
 }
 
-export function assertCore(session: AgentSession<FixtureTools>, signal: AbortSignal) {
+export function assertCore(
+  session: AgentSession<FixtureTools>,
+  signal: AbortSignal
+) {
   const snapshot: AgentSnapshot<FixtureTools> = session.getSnapshot();
   assertSnapshot(snapshot);
   void session.submit('Hello', { signal });

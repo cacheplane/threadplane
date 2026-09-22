@@ -35,6 +35,12 @@ status confirmation before successful completion or tool execution; known-run
 uncertainty cannot fall back to thread history. Reconnection preserves anonymous
 message identity and does not replay submission or resume commands.
 
+Readonly `subgraphs` expose child messages, values, interrupts and protected errors
+under exact full namespace tuples. Siblings may reuse message IDs without sharing
+state. Child observations never become root messages or executable tool calls.
+Physical-run ownership limits reconnect rebasing; pause finalizes authoritative
+child text, and an independent submission replaces the prior child collection.
+
 The installed React and Angular consumers each verify fifteen scenarios through
 real SDK requests to a local HTTP/SSE fixture. The complete twenty-action review
 includes three history reads, ten run POSTs, one cursor join GET and two exact-run
@@ -46,14 +52,14 @@ effect replay is covered separately in native unit tests.
 
 These are bounded subsets of T08–T10 and related ownership/tool tasks. Thread
 switching, pagination, branching, state-only writes, resume state updates, broader
-run options, child-stream observation and complete public adapter migration remain
+run options, child tool attribution/navigation and complete public adapter migration remain
 future work. The factory is private; this proof does not establish an Angular-free
 published LangGraph package or full React component parity. See
 [runtime/README.md](./runtime/README.md) for precise semantics and reproduction,
 and [runtime/evidence.json](./runtime/evidence.json) for fresh verification,
 source/artifact identities and limitations.
 
-The current inventory has **1,458 records**: the historical 1,438 plus fifteen
+The current inventory has **1,459 records**: the historical 1,438 plus sixteen
 private runtime production sources, three testing helpers, a runtime Vitest
 config and its type-test config asset. Public export occurrences remain 550 with
 514 distinct local definitions. Existing task assignments are preserved;
@@ -178,7 +184,7 @@ type-checks the tarballs outside workspace aliases with `skipLibCheck: false`.
 Its core-only consumer checks all three core exports and rejects extra dependencies.
 The separate Angular check packs the one Angular APF entry and proves CLI
 compilation/linking with `skipLibCheck: false`. Both frameworks now run installed
-production browser apps with the eleven shared scenarios. Inferred native contract
+production browser apps with the fifteen shared scenarios. Inferred native contract
 probes reject invalid tool names/arguments/results and deep mutations. The private
 runtime's narrow declaration is compiler-generated against installed core declarations,
 never hand-written; the staged SDK bundle is fixture-only. Both inspect consumer
@@ -234,7 +240,7 @@ burst streams and repeated agent/thread disposal.
 
 The foundation branch was `codex/react-support-baseline`; the runtime branch is
 `codex/shared-runtime-quality`, based on `bdcc22ed31aa94f420077e046e88e1481088d453`.
-The application-input increment is `codex/langgraph-application-input`; its verified
+The child-observation increment is `codex/langgraph-subgraph-observation`; its verified
 base and working-source fingerprint are recorded in `runtime/evidence.json`.
 The local maintenance
 branch `codex/angular-maintenance-v0.2` points to released tag `v0.2.0`
@@ -253,7 +259,7 @@ T01/T02 describe the foundation increment. The current G1 proof is deliberately 
 to shared LangGraph text streaming and fixed function-tool execution with borrowed native
 Angular and React bindings: the runtime owns execution while each binding observes
 it. Explicit history loading, application values, interrupt observation/resume,
-owned-run reconnect and application input cover further subsets of T08–T10.
+owned-run reconnect, application input and child observation cover further subsets of T08–T10.
 Renderer reuse and SSR are deferred gates, alongside the broader T01–T39 map.
 This bounded runtime proof does not establish complete migration parity.
 

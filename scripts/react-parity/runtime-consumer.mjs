@@ -63,10 +63,13 @@ export function runtimeResponse(body) {
     if (Object.hasOwn(response ?? {}, 'live-approval')) {
       assert.deepEqual(response, { 'live-approval': 'yes', 'live-confirmation': false }, 'exact initial response map');
       return sse('values', { stage: 'final-approval', messages: [{ type: 'ai', id: 'resume-answer', content: 'One final approval' }] })
+        + sse('values|review:child', { stage: 'child-final-approval', messages: [{ type: 'ai', id: 'child-review', content: 'Child final approval' }] })
+        + sse('updates|review:child', { __interrupt__: [{ id: 'child-final', value: 'Child confirmation' }] })
         + sse('updates', { __interrupt__: [{ id: 'final-approval', value: { question: 'Confirm final action?' } }] });
     }
     assert.deepEqual(response, { 'final-approval': true }, 'exact final response map');
-    return sse('values', { stage: 'approved', messages: [{ type: 'ai', id: 'resume-answer', content: 'Approvals complete' }] });
+    return sse('values|review:child', { stage: 'child-approved', messages: [{ type: 'ai', id: 'child-review', content: 'Child approved' }] })
+      + sse('values', { stage: 'approved', messages: [{ type: 'ai', id: 'resume-answer', content: 'Approvals complete' }] });
   }
   assert.deepEqual(body.input?.client_tools, catalog, 'exact client tool catalog');
   assert.equal(body.input.messages.length, 1);
@@ -88,11 +91,19 @@ export function runtimeResponse(body) {
     + sse('custom', { __interrupt__: [], stage: 'custom' })
     + sse('values|child', { __interrupt__: [], stage: 'child-control' });
   if (message.content === 'Pause') return sse('values', { stage: 'approval', messages: [message, { type: 'ai', id: `pause-${message.id}`, content: 'Waiting for approvals' }] })
+    + sse('messages|review:child', [{ type: 'AIMessageChunk', id: 'child-review', content: 'Child draft answer' }, { langgraph_node: 'review' }])
+    + sse('values|review:child', { stage: 'child-approval', messages: [{ type: 'ai', id: 'child-review', content: 'Child draft' }] })
+    + sse('updates|review:child', { __interrupt__: [{ id: 'child-approval', value: 'Child review' }] })
     + sse('values', { __interrupt__: [liveInterrupts[0]], stage: 'control-envelope' })
     + sse('updates', { __interrupt__: [liveInterrupts[1]] });
-  if (message.content === 'Tool') return sse('values', { messages: [message, toolCall] });
+  if (message.content === 'Tool') return sse('values|research:one', { stage: 'first-child', messages: [{ type: 'ai', id: 'child-answer', content: 'Child one', tool_calls: [{ id: 'child-only-call', name: 'count', args: { values: ['child'] }, type: 'tool_call' }] }] })
+    + sse('values|research:two|writer:nested', { stage: 'nested-child', messages: [{ type: 'ai', id: 'child-answer', content: 'Child two' }] })
+    + sse('messages|research:failed', [{ type: 'AIMessageChunk', id: 'child-failed', content: 'Child failure partial' }, { langgraph_node: 'research' }])
+    + sse('error|research:failed', { error: 'ChildFailure', message: 'PRIVATE child diagnostic' })
+    + sse('values', { messages: [message, toolCall] });
   if (message.content === 'Error') return sse('error', { error: 'FixtureFailure', message: 'PRIVATE backend diagnostic' });
   if (message.content === 'Drop') return sse('messages', [{ type: 'AIMessageChunk', content: 'Dropped partial' }, { langgraph_node: 'assistant' }], '1')
+    + sse('messages|research:drop', [{ type: 'AIMessageChunk', content: 'Child partial' }, { langgraph_node: 'research' }], '1-child')
     + sse('values', { stage: 'disconnected', messages: [message, { type: 'ai', content: 'Dropped partial' }] }, '2');
   if (message.content === 'Hold') return null;
   throw new Error(`Unexpected input ${message.content}`);
@@ -160,6 +171,37 @@ export function installedTypeSource(template, kind) {
   // @ts-expect-error Resume does not expose transport command overrides.
   void session.resume(true, { command: { goto: 'other' } });
   const direct = session.getSnapshot();
+  const observedChildren: readonly { readonly namespace: readonly string[]; readonly messages: readonly Message[] }[] = snapshot.subgraphs;
+  const directChildren = direct.subgraphs;
+  // @ts-expect-error Child collection belongs to the session.
+  snapshot.subgraphs = [];
+  // @ts-expect-error Child observations are immutable.
+  snapshot.subgraphs.push(directChildren[0]);
+  for (const child of snapshot.subgraphs) {
+    const childValues: Readonly<Record<string, PlainValue>> | undefined = child.values;
+    const childInterrupt: PlainValue = child.interrupts[0]?.value;
+    const childError: AgentError | undefined = child.error;
+    const childInterruptNamespace: readonly string[] | undefined = child.interrupts[0]?.namespace;
+    const childResumable: boolean | undefined = child.interrupts[0]?.resumable;
+    // @ts-expect-error Child interrupt metadata is deeply readonly.
+    child.interrupts[0]?.namespace?.push('changed');
+    // @ts-expect-error Namespace tuples are immutable.
+    child.namespace.push('changed');
+    // @ts-expect-error Child messages are immutable.
+    child.messages[0].content = 'changed';
+    // @ts-expect-error Child streams have no execution commands.
+    child.submit('Run');
+    // @ts-expect-error Child streams have no executable tool list.
+    void child.toolCalls;
+    if (child.values) {
+      // @ts-expect-error Child values are readonly plain data.
+      child.values['stage'] = 'changed';
+    }
+    // @ts-expect-error Child interrupts cannot be mutated.
+    child.interrupts.push({ value: true });
+    void [childValues, childInterrupt, childError, childInterruptNamespace, childResumable];
+  }
+  void [observedChildren, directChildren];
   const directValues: Readonly<Record<string, PlainValue>> | undefined = direct.values;
   const values: Readonly<Record<string, PlainValue>> | undefined = snapshot.values;
   // @ts-expect-error No application schema is inferred from the broad values map.
@@ -301,6 +343,8 @@ export async function serveRuntimeConsumer(directory) {
           joinRequests.push({ runId: 'drop-run', lastEventId: '2' });
           response.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache' });
           return response.end(sse('messages', [{ type: 'AIMessageChunk', content: ' recovered' }, { langgraph_node: 'assistant' }], '3')
+            + sse('messages|research:drop', [{ type: 'AIMessageChunk', content: ' recovered' }, { langgraph_node: 'research' }], '3-child-1')
+            + sse('values|research:drop', { stage: 'child-reconnected', messages: [{ type: 'ai', content: 'Child partial recovered' }] }, '3-child-2')
             + sse('values', { stage: 'reconnected', messages: [{ type: 'ai', content: 'Dropped partial recovered' }] }, '4'));
         }
         assert.equal(request.method, 'POST');
@@ -327,7 +371,9 @@ export async function serveRuntimeConsumer(directory) {
         held.add(response);
         response.once('close', () => { held.delete(response); notifyAborted(); });
         // Actual incremental network bytes, not a whole-response route.fulfill.
-        response.write(sse('values', { stage: 'held', transient: true }) + sse('messages', [{ type: 'AIMessageChunk', id: 'held-answer', content: 'Held partial' }, { langgraph_node: 'assistant' }]));
+        response.write(sse('values', { stage: 'held', transient: true })
+          + sse('messages', [{ type: 'AIMessageChunk', id: 'held-answer', content: 'Held partial' }, { langgraph_node: 'assistant' }])
+          + sse('messages|research:held', [{ type: 'AIMessageChunk', id: 'child-held', content: 'Child held partial' }, { langgraph_node: 'research' }]));
         notifyHeld();
         return;
       }
@@ -376,6 +422,14 @@ export async function runRuntimeScenarios(directory, kind) {
     const page = await context.newPage();
     const expectValues = (value) => expect(page.getByTestId('values')).toHaveText(value === undefined ? 'unobserved' : JSON.stringify(value));
     const expectInterrupts = (interrupts) => expect(page.getByTestId('interrupts')).toHaveText(JSON.stringify(interrupts));
+    const children = async () => JSON.parse(await page.getByTestId('subgraphs').innerText());
+    const expectChild = async (namespace, content, delivery, values = null, interrupts = []) => {
+      await expect.poll(async () => {
+        const child = (await children()).find((entry) => JSON.stringify(entry.namespace) === JSON.stringify(namespace));
+        return child && { content: child.messages.map((message) => message.content).join('\n'), delivery: child.messages.at(-1)?.delivery, values: child.values, interrupts: child.interrupts };
+      }).toEqual({ content, delivery, values, interrupts });
+      await expect(page.getByTestId('text')).not.toContainText(content);
+    };
     page.on('pageerror', (error) => pageErrors.push(error.message));
     page.on('request', (request) => {
       if (!request.url().startsWith(`${server.url}/`)) unexpected.push(request.url());
@@ -395,6 +449,7 @@ export async function runRuntimeScenarios(directory, kind) {
     await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeDisabled();
     await expectValues(undefined);
     await expectInterrupts([]);
+    assert.deepEqual(await children(), []);
     assert.equal(server.requests.length, 0, 'mount/observation performs no I/O');
     assert.equal(server.historyRequests.length, 0, 'mount/observation performs no history reads');
     completed.push('inert mount');
@@ -457,6 +512,14 @@ export async function runRuntimeScenarios(directory, kind) {
     assert.deepEqual(JSON.parse(await page.getByTestId('tool').innerText()), [{ id: 'call-weather', name: 'weather', args: { city: 'Paris' }, status: 'complete', result: { city: 'Paris', temperature: 20 } }]);
     assert.equal(server.requests.length - beforeTool, 2, 'tool has exactly one run and one result continuation');
     await expectValues({});
+    assert.deepEqual((await children()).map((child) => child.namespace), [['research:one'], ['research:two', 'writer:nested'], ['research:failed']]);
+    await expectChild(['research:one'], 'Child one', 'complete:success', { stage: 'first-child' });
+    await expectChild(['research:two', 'writer:nested'], 'Child two', 'complete:success', { stage: 'nested-child' });
+    await expectChild(['research:failed'], 'Child failure partial', 'complete:error');
+    const failedChild = (await children()).find((child) => child.namespace[0] === 'research:failed');
+    assert.ok(failedChild.error);
+    assert.ok(!failedChild.error.includes('PRIVATE'));
+    assert.equal((await children())[0].messages[0].id, (await children())[1].messages[0].id, 'wire IDs repeat only across isolated namespaces');
     completed.push('tool roundtrip');
 
     await page.getByRole('button', { name: 'Error', exact: true }).click();
@@ -465,6 +528,7 @@ export async function runRuntimeScenarios(directory, kind) {
     await expect(page.getByTestId('error')).not.toContainText('PRIVATE');
     assert.equal(server.requests.length, 4, 'failed run is not retried');
     await expectValues({});
+    assert.deepEqual(await children(), [], 'independent submission clears child observations');
     completed.push('visible protected error');
 
     await page.getByRole('button', { name: 'Hold', exact: true }).click();
@@ -473,12 +537,14 @@ export async function runRuntimeScenarios(directory, kind) {
     await expect(page.getByTestId('delivery')).toHaveText('streaming');
     await expect(page.getByTestId('status')).toHaveText('running');
     await expectValues({ stage: 'held', transient: true });
+    await expectChild(['research:held'], 'Child held partial', 'streaming');
     await page.getByRole('button', { name: 'Stop', exact: true }).click();
     await handshake(server.holdAborted, 'native request abort');
     await expect(page.getByTestId('status')).toHaveText('idle');
     await expect(page.getByTestId('delivery')).toHaveText('complete:aborted');
     assert.equal(server.requests.length, 5);
     await expectValues({ stage: 'held', transient: true });
+    await expectChild(['research:held'], 'Child held partial', 'complete:aborted');
     completed.push('incremental DOM update and stop abort');
 
     await page.getByRole('button', { name: 'Pause', exact: true }).click();
@@ -487,6 +553,7 @@ export async function runRuntimeScenarios(directory, kind) {
     await expect(page.getByTestId('text')).toContainText('Waiting for approvals');
     await expectValues({ stage: 'approval' });
     await expectInterrupts(liveInterrupts);
+    await expectChild(['review:child'], 'Child draft', 'complete:paused', { stage: 'child-approval' }, [{ id: 'child-approval', value: 'Child review' }]);
     await expect(page.getByTestId('handler-calls')).toHaveText('1');
     assert.equal(server.requests.length, 6, 'pause creates exactly one run with no tool continuation');
     await page.getByRole('button', { name: 'Stop', exact: true }).click();
@@ -503,6 +570,7 @@ export async function runRuntimeScenarios(directory, kind) {
     await expect(page.getByTestId('text')).toContainText('One final approval');
     await expectInterrupts([{ id: 'final-approval', value: { question: 'Confirm final action?' } }]);
     await expectValues({ stage: 'final-approval' });
+    await expectChild(['review:child'], 'Child final approval', 'complete:paused', { stage: 'child-final-approval' }, [{ id: 'child-final', value: 'Child confirmation' }]);
     await expect(page.getByTestId('human-messages')).toHaveText('5');
     assert.equal(server.requests.length, 7);
     assert.deepEqual(server.requests[6].command, { resume: { 'live-approval': 'yes', 'live-confirmation': false } });
@@ -517,6 +585,7 @@ export async function runRuntimeScenarios(directory, kind) {
     await expect(page.getByTestId('text')).not.toContainText('One final approval');
     await expectInterrupts([]);
     await expectValues({ stage: 'approved' });
+    await expectChild(['review:child'], 'Child approved', 'complete:success', { stage: 'child-approved' });
     await expect(page.getByTestId('human-messages')).toHaveText('5');
     await expect(page.getByTestId('submissions')).toHaveText('5');
     await expect(page.getByTestId('handler-calls')).toHaveText('1');
@@ -534,6 +603,8 @@ export async function runRuntimeScenarios(directory, kind) {
     await expect(page.getByTestId('human-messages')).toHaveText('6');
     await expect(page.getByTestId('submissions')).toHaveText('6');
     await expectValues({ stage: 'disconnected' });
+    await expectChild(['research:drop'], 'Child partial', 'complete:interrupted');
+    const droppedChildId = (await children())[0].messages[0].id;
     assert.equal(server.requests.length, 9, 'Drop creates one identified run');
     assert.deepEqual(server.statusRequests, ['running'], 'interim values and EOF do not prove success');
     assert.deepEqual(server.joinRequests, [], 'no session automatic reconnect');
@@ -548,6 +619,9 @@ export async function runRuntimeScenarios(directory, kind) {
     const recoveredText = await page.getByTestId('text').innerText();
     assert.equal(recoveredText.split('Dropped partial').length - 1, 1, 'reconnect neither duplicates partial text nor creates a second assistant');
     await expectValues({ stage: 'reconnected' });
+    await expectChild(['research:drop'], 'Child partial recovered', 'complete:success', { stage: 'child-reconnected' });
+    assert.equal((await children())[0].messages.length, 1);
+    assert.equal((await children())[0].messages[0].id, droppedChildId, 'same-run anonymous child identity survives reconnect');
     await expect(page.getByTestId('reconnect-run')).toHaveText('');
     await expect(page.getByRole('button', { name: 'Reconnect', exact: true })).toBeDisabled();
     await expect(page.getByTestId('human-messages')).toHaveText('6');
@@ -569,6 +643,7 @@ export async function runRuntimeScenarios(directory, kind) {
     await expect(page.getByTestId('submissions')).toHaveText('7');
     await expect(page.getByTestId('human-messages')).toHaveText('7');
     completed.push('reuse after stop');
+    assert.deepEqual((await children()).map((child) => child.namespace), [['child']], 'later Send replaces the earlier namespace set');
 
     await page.getByRole('button', { name: 'Unmount', exact: true }).click();
     await expect(page.getByTestId('owner')).toHaveText('unmounted');

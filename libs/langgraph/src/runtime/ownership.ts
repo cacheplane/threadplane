@@ -11,6 +11,7 @@ import {
 import type {
   LangGraphInterrupt,
   LangGraphSnapshot,
+  LangGraphSubgraph,
   LangGraphValues,
 } from './langgraph-snapshot';
 
@@ -283,6 +284,7 @@ export function ownLangGraphSnapshot(
   previous?: LangGraphSnapshot
 ): LangGraphSnapshot {
   const core = ownSnapshot(input, previous);
+  const subgraphs = ownSubgraphs(input.subgraphs, previous?.subgraphs);
   const values = ownValueWithSharing(input.values, previous?.values) as
     | LangGraphValues
     | undefined;
@@ -298,6 +300,7 @@ export function ownLangGraphSnapshot(
     core === previous &&
     values === previous?.values &&
     interrupts === previous?.interrupts &&
+    subgraphs === previous?.subgraphs &&
     reconnect === previous?.reconnect
   )
     return previous;
@@ -310,6 +313,68 @@ export function ownLangGraphSnapshot(
     error: core.error,
     values,
     interrupts,
+    subgraphs,
     ...(reconnect ? { reconnect } : {}),
   });
+}
+
+export function ownSubgraph(
+  input: LangGraphSubgraph,
+  previous?: LangGraphSubgraph
+): LangGraphSubgraph {
+  if (input === previous || (owned.has(input) && !previous)) return input;
+  const namespace = ownValueWithSharing(
+    input.namespace,
+    previous?.namespace
+  ) as readonly string[];
+  const messages = ownArray(
+    input.messages,
+    previous?.messages,
+    ownMessage,
+    sameMessage
+  );
+  const values = ownValueWithSharing(input.values, previous?.values) as
+    | LangGraphValues
+    | undefined;
+  const interrupts = ownValueWithSharing(
+    input.interrupts,
+    previous?.interrupts
+  ) as readonly LangGraphInterrupt[];
+  const error = sameError(input.error, previous?.error)
+    ? previous?.error
+    : input.error && ownError(input.error);
+  if (
+    previous &&
+    namespace === previous.namespace &&
+    messages === previous.messages &&
+    values === previous.values &&
+    interrupts === previous.interrupts &&
+    error === previous.error
+  )
+    return previous;
+  return freeze({
+    namespace,
+    messages,
+    values,
+    interrupts,
+    ...(error ? { error } : {}),
+  });
+}
+
+export function ownSubgraphs(
+  input: readonly LangGraphSubgraph[],
+  previous?: readonly LangGraphSubgraph[]
+): readonly LangGraphSubgraph[] {
+  return ownArray(
+    input,
+    previous,
+    ownSubgraph,
+    (a, b) =>
+      a === b ||
+      (a.namespace === b.namespace &&
+        a.messages === b.messages &&
+        a.values === b.values &&
+        a.interrupts === b.interrupts &&
+        sameError(a.error, b.error))
+  );
 }

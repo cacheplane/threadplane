@@ -241,6 +241,16 @@ function App() {
             </div>
           </div>
         </section>
+        <section className="panel" aria-label="Subgraphs panel">
+          <h2>Subgraphs</h2>
+          <p>
+            Child observations stay separate from the root conversation and
+            tools.
+          </p>
+          <output aria-label="Subgraphs" data-testid="subgraphs">
+            {view.subgraphs}
+          </output>
+        </section>
         <section className="panel" aria-label="Tools panel">
           <h2>Tools</h2>
           <div className="fields">
