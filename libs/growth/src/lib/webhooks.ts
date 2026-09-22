@@ -215,7 +215,7 @@ function validateClosedDetails(
     if (
       !bounce ||
       Object.keys(bounce).some(
-        (key) => !['message', 'subType', 'type'].includes(key)
+        (key) => !['message', 'subType', 'type', 'diagnosticCode'].includes(key)
       )
     ) {
       throw new Error('Invalid Resend webhook payload');
@@ -223,6 +223,8 @@ function validateClosedDetails(
     const bounceType = boundedText(bounce['type'], 100).toLowerCase();
     boundedText(bounce['subType'], 100);
     boundedText(bounce['message'], 500);
+    if (bounce['diagnosticCode'] != null)
+      boundedText(bounce['diagnosticCode'], 2_000);
     if (bounceType === 'permanent' || bounceType === 'hard') return 'permanent';
     if (bounceType === 'transient' || bounceType === 'soft') return 'transient';
     return 'unknown';

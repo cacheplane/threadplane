@@ -469,6 +469,58 @@ describe('processVerifiedResendWebhook', () => {
     expect(soft.stopContact).not.toHaveBeenCalled();
   });
 
+  it.each([null, 'smtp; 550 user unknown'])(
+    'accepts provider bounce diagnostics %s and applies the hard-bounce stop',
+    async (diagnosticCode) => {
+      const harness = webhookHarness();
+      const result = await processVerifiedResendWebhook(
+        harness.executor,
+        {
+          providerEventId: 'msg_bounce_diagnostics',
+          payload: event('email.bounced', {
+            bounce: {
+              type: 'Permanent',
+              subType: 'General',
+              message: 'bounced',
+              diagnosticCode,
+            },
+          }),
+        },
+        harness.dependencies
+      );
+      expect(result).toMatchObject({
+        applied: true,
+        deliveryStatus: 'bounced',
+      });
+      expect(harness.stopContact).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ reason: 'hard_bounce' })
+      );
+    }
+  );
+
+  it('rejects an oversized bounce diagnostic before database access', async () => {
+    const harness = webhookHarness();
+    await expect(
+      processVerifiedResendWebhook(
+        harness.executor,
+        {
+          providerEventId: 'msg_invalid_bounce_diagnostic',
+          payload: event('email.bounced', {
+            bounce: {
+              type: 'Permanent',
+              subType: 'General',
+              message: 'bounced',
+              diagnosticCode: 'x'.repeat(2001),
+            },
+          }),
+        },
+        harness.dependencies
+      )
+    ).rejects.toThrow(/Invalid Resend webhook payload/u);
+    expect(harness.runTransaction).not.toHaveBeenCalled();
+  });
+
   it.each([
     ['email.complained', 'complaint'],
     ['email.suppressed', 'provider_suppression'],
