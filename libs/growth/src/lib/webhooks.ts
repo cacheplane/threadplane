@@ -215,7 +215,7 @@ function validateClosedDetails(
     if (
       !bounce ||
       Object.keys(bounce).some(
-        (key) => !['message', 'subType', 'type'].includes(key)
+        (key) => !['message', 'subType', 'type', 'diagnosticCode'].includes(key)
       )
     ) {
       throw new Error('Invalid Resend webhook payload');
@@ -223,6 +223,8 @@ function validateClosedDetails(
     const bounceType = boundedText(bounce['type'], 100).toLowerCase();
     boundedText(bounce['subType'], 100);
     boundedText(bounce['message'], 500);
+    if (bounce['diagnosticCode'] != null)
+      boundedText(bounce['diagnosticCode'], 2_000);
     if (bounceType === 'permanent' || bounceType === 'hard') return 'permanent';
     if (bounceType === 'transient' || bounceType === 'soft') return 'transient';
     return 'unknown';
@@ -238,12 +240,17 @@ function validateClosedDetails(
     const suppressed = plainObject(data['suppressed']);
     if (
       !suppressed ||
-      Object.keys(suppressed).some((key) => !['message', 'type'].includes(key))
+      Object.keys(suppressed).some(
+        (key) => !['message', 'type', 'reason', 'diagnosticCode'].includes(key)
+      )
     ) {
       throw new Error('Invalid Resend webhook payload');
     }
     boundedText(suppressed['type'], 100);
     boundedText(suppressed['message'], 500);
+    if (suppressed['reason'] != null) boundedText(suppressed['reason'], 500);
+    if (suppressed['diagnosticCode'] != null)
+      boundedText(suppressed['diagnosticCode'], 2_000);
   }
   return undefined;
 }
@@ -488,17 +495,30 @@ function defaultWebhookDependencies(): ProcessResendWebhookDependencies {
   };
 }
 
+export class ResendWebhookPayloadError extends Error {
+  constructor() {
+    super('Invalid Resend webhook payload');
+    this.name = 'ResendWebhookPayloadError';
+  }
+}
+
 export async function processVerifiedResendWebhook(
   executor: SqlExecutor,
   input: { providerEventId: string; payload: unknown },
   dependencies: ProcessResendWebhookDependencies = defaultWebhookDependencies()
 ): Promise<ProcessResendWebhookResult> {
-  const providerEventId = boundedText(
-    input.providerEventId,
-    240,
-    PROVIDER_ID_PATTERN
-  );
-  const event = parseSupportedEvent(input.payload);
+  let providerEventId: string;
+  let event: ParsedResendEvent | null;
+  try {
+    providerEventId = boundedText(
+      input.providerEventId,
+      240,
+      PROVIDER_ID_PATTERN
+    );
+    event = parseSupportedEvent(input.payload);
+  } catch {
+    throw new ResendWebhookPayloadError();
+  }
   if (!event) return { applied: false, reason: 'ignored_event_type' };
   if (event.tags['environment'] !== dependencies.databaseEnvironment) {
     return { applied: false, reason: 'environment_mismatch' };
