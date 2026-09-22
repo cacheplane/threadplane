@@ -71,7 +71,10 @@ export function runtimeResponse(body) {
   assert.deepEqual(body.input?.client_tools, catalog, 'exact client tool catalog');
   assert.equal(body.input.messages.length, 1);
   const message = body.input.messages[0];
-  assert.deepEqual(body, { assistant_id: 'fixture-assistant', input: { messages: [message], client_tools: catalog }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom'], stream_subgraphs: true, ...resumableRunFields }, 'unexpected run fields');
+  const initialState = message.type === 'human' && ['Tool', 'Drop'].includes(message.content)
+    ? { model: 'gpt-5-mini', reasoning_effort: 'minimal', gen_ui_mode: 'a2ui', itinerary: [{ id: 'paris', day: 1, place: 'Paris', note: 'Check the weather' }] }
+    : {};
+  assert.deepEqual(body, { assistant_id: 'fixture-assistant', input: { ...initialState, messages: [message], client_tools: catalog }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom'], stream_subgraphs: true, ...resumableRunFields }, 'unexpected run fields');
   if (message.type === 'tool') {
     assert.deepEqual(message, { id: 'client-tool-result-call-weather', type: 'tool', role: 'tool', tool_call_id: 'call-weather', content: '{"city":"Paris","temperature":20}' }, 'actual handler result continuation');
     return sse('values', { messages: [toolCall, message, { type: 'ai', id: 'answer', content: '20 degrees' }] });
@@ -101,7 +104,40 @@ export function installedTypeSource(template, kind) {
   const entry = kind === 'angular' ? './src/runtime-entry.js' : './runtime-entry.js';
   return template.replace('/* BINDING_IMPORT */', `import { ${binding} } from '@threadplane/${kind}';\nimport type { createFixtureSession } from '${entry}';`)
     .replace('export function assertSnapshot(snapshot: AgentSnapshot<FixtureTools>) {', `export function assertSnapshot(session: ReturnType<typeof createFixtureSession>) {\n  const snapshot = ${binding}(session)${kind === 'angular' ? '()' : ''};\n  const exact: AgentSnapshot<FixtureTools> = snapshot;\n  void exact;`)
-    .replace('/* BACKEND_VALUES */', `void session.resume();
+    .replace('/* BACKEND_VALUES */', `const borrowed: AgentSession<FixtureTools> = session;
+  void borrowed.submit('Borrowed text');
+  const submitted: Promise<CompleteOutcome> = session.submit('Hello');
+  void submitted;
+  void session.submit({ message: '' });
+  void session.submit({ message: 'Hello', state: { model: 'gpt-5-mini', itinerary: [{ day: 1, place: 'Paris' }] } } as const, { signal: new AbortController().signal });
+  interface ItineraryStop { day: number; place: string }
+  const stops: readonly ItineraryStop[] = [{ day: 1, place: 'Paris' }];
+  // @ts-expect-error Interface records require projection into plain object data.
+  void session.submit({ message: 'Hello', state: { itinerary: stops } });
+  void session.submit({ message: 'Hello', state: { itinerary: stops.map(stop => ({ ...stop })) } });
+  // @ts-expect-error Object input still requires a message.
+  void session.submit({ state: { model: 'gpt-5-mini' } });
+  // @ts-expect-error Message text must be a string.
+  void session.submit({ message: 42 });
+  // @ts-expect-error State contains only plain data.
+  void session.submit({ message: 'Hello', state: { callback: () => true } });
+  // @ts-expect-error State rejects SDK or application instances.
+  void session.submit({ message: 'Hello', state: { date: new Date() } });
+  // @ts-expect-error The state root must be a plain record.
+  void session.submit({ message: 'Hello', state: new Date() });
+  // @ts-expect-error The state root cannot be an array.
+  void session.submit({ message: 'Hello', state: [] });
+  // @ts-expect-error The runtime owns its messages.
+  void session.submit({ message: 'Hello', state: { messages: [] } });
+  // @ts-expect-error The runtime owns its tool catalog.
+  void session.submit({ message: 'Hello', state: { client_tools: [] } });
+  // @ts-expect-error Input does not expose transport overrides.
+  void session.submit({ message: 'Hello', config: { configurable: { thread_id: 'other' } } });
+  // @ts-expect-error Transport options do not contain application state.
+  void session.submit('Hello', { state: { model: 'gpt-5-mini' } });
+  // @ts-expect-error Submit does not expose transport command overrides.
+  void session.submit({ message: 'Hello' }, { command: { goto: 'other' } });
+  void session.resume();
   const reconnected: Promise<CompleteOutcome> = session.reconnect({ signal: new AbortController().signal });
   void reconnected;
   // @ts-expect-error Reconnect cannot attach an arbitrary run.

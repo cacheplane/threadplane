@@ -6,7 +6,32 @@ import type {
 } from '@threadplane/core';
 
 export const reviewInstructions =
-  'Click Load three times: saved history, equal refresh, then empty history. Continue with Send → Tool → Error → Hold → Stop → Pause → Stop → Resume → Resume → Drop → Reconnect → Send. Resume first sends both approval responses, then confirms the final action. Drop loses observation of a running run; Reconnect joins that same run without another submission. Finish with Unmount → Dispose → Send after dispose → Resume after dispose → Reconnect after dispose in the owner controls below. Only three Load requests and one Drop are available per server; restart the review command to reset. Reloading the page does not reset server state.';
+  'Click Load three times: saved history, equal refresh, then empty history. Continue with Send → Tool → Error → Hold → Stop → Pause → Stop → Resume → Resume → Drop → Reconnect → Send. Tool and Drop send model, reasoning effort, UI mode and itinerary state once; displayed values come from the server. Resume first sends both approval responses, then confirms the final action. Drop loses observation of a running run; Reconnect joins that same run without another submission. Finish with Unmount → Dispose → Send after dispose → Resume after dispose → Reconnect after dispose in the owner controls below. Only three Load requests and one Drop are available per server; restart the review command to reset. Reloading the page does not reset server state.';
+
+/** Fixture-local input contract uses only the installed neutral data vocabulary. */
+export type FixtureInputState = Readonly<Record<string, PlainValue>> & {
+  readonly messages?: never;
+  readonly client_tools?: never;
+};
+
+export type FixtureSubmitInput = string | {
+  readonly message: string;
+  readonly state?: FixtureInputState;
+};
+
+/** Project application records to plain data before passing them to the backend. */
+export function reviewInput(label: string): FixtureSubmitInput {
+  if (label !== 'Tool' && label !== 'Drop') return label;
+  return {
+    message: label,
+    state: {
+      model: 'gpt-5-mini',
+      reasoning_effort: 'minimal',
+      gen_ui_mode: 'a2ui',
+      itinerary: [{ id: 'paris', day: 1, place: 'Paris', note: 'Check the weather' }],
+    },
+  };
+}
 
 /** Application-authored choices for this fixture, not a library targeting helper. */
 export function reviewResponse(snapshot: FixtureSnapshot): PlainValue {

@@ -6,6 +6,7 @@ import './review.css';
 import {
   attachOwner,
   display,
+  reviewInput,
   reviewInstructions,
   reviewResponse,
 } from './scenarios';
@@ -18,7 +19,7 @@ const session = createFixtureSession('/api', 'fixture-thread', () => {
 });
 const submit = (input: string) => {
   submissions += 1;
-  return session.submit(input);
+  return session.submit(reviewInput(input));
 };
 
 function App() {

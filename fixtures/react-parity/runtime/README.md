@@ -1,5 +1,43 @@
 # Installed native runtime consumers
 
+## Application input
+
+The private backend session accepts either `submit('Hello')` or a text message
+with application state:
+
+```ts
+await session.submit({
+  message: 'Plan my trip',
+  state: {
+    model: 'chosen-model',
+    reasoning_effort: 'low',
+    itinerary: stops.map((stop) => ({ ...stop })),
+  },
+}, { signal });
+```
+
+This is a readonly plain-data input, not application-schema inference or argument
+validation. Interface-typed records without index signatures may need an explicit
+plain-object projection, as shown for `stops`. State-only input, rich message
+content, run options and state updates during resume remain separate work.
+
+The owner captures input before admitting the command. Later caller mutations
+cannot change the request. Unsupported cyclic data and class instances fail at
+the existing plain-data ownership boundary without replacing active work. The
+session owns `messages` and `client_tools`; authored inputs cannot set those keys,
+and untyped reserved fields are omitted without reading their values.
+
+Application fields go directly into the initial run's input. They are not resent
+on tool continuations, owned-run reconnect, or subsequent independent submits:
+server reducers may accumulate repeated values. Input state never changes
+snapshot `values` optimistically; only backend observations do. Core sessions
+remain text-only, while the private backend method accepts this extension.
+
+Tool and Drop in the review apps send fixed model, reasoning, UI-mode and
+itinerary choices. The strict fixture requires them on those initial requests
+and rejects replay on continuation or later simple Send. The unchanged server
+responses demonstrate the distinction between submitted and observed state.
+
 ## Explicit resume contract
 
 The private development session exposes
@@ -127,7 +165,7 @@ the page is inert; the following sequence contains twenty button actions:
 | Load again | Loads finished `2`, empty Load error; the same saved content, values, interrupts and paused delivery. |
 | Load a third time | Loads finished `3`, empty Load error; empty transcript, values `unobserved`, interrupts `[]`. |
 | Send | `Hello 🌍.`, idle, delivery `complete:success`; values show the completed stage. |
-| Tool | `20 degrees`, a completed weather result for Paris, handler calls `1`; delivery `complete:success`. |
+| Tool | Observed values `{}` (submitted state is not echoed); `20 degrees`, a completed weather result for Paris, handler calls `1`; delivery `complete:success`. |
 | Error | Status `error` and a protected error message without the private backend diagnostic. Prior delivery remains `complete:success`; this fixture error does not replace it. |
 | Hold | `Held partial` appears while delivery is `streaming`. |
 | Stop | Delivery becomes `complete:aborted`; the native held response closes and partial text remains visible. |
@@ -198,9 +236,10 @@ declaration and native inferred result are checked together, including tool type
 the production `FetchStreamTransport`, and the real LangGraph SDK. A focused
 TypeScript check resolves its public core imports against the installed tarball
 declarations, then emits its narrow annotated fixture return type. It replaces
-the core getter with `Omit<AgentSession<FixtureTools>, 'getSnapshot'>` and a concrete
-snapshot getter, avoiding an intersected overload that would hide `values` from
-inference; `load` remains optional. Vite bundles the private backend
+the core getter and submit method with
+`Omit<AgentSession<FixtureTools>, 'getSnapshot' | 'submit'>`, a concrete snapshot
+getter and fixture-local `FixtureSubmitInput` command. This avoids intersected
+overloads that would hide backend inference; `load` remains optional. Vite bundles the private backend
 and SDK into temporary ESM, externalizing
 `@threadplane/core` and `@threadplane/core/tools`. Only that JavaScript bundle and
 entry declaration are copied into each installed consumer. No private TypeScript,
@@ -234,7 +273,7 @@ normalization prevents raw data fields from overriding protocol type/namespace;
 The application field remains observable as data. The native bindings infer
 the concrete snapshot through structural getter/subscription signatures while
 retaining typed tool results, method receivers and borrowed lifetime semantics.
-The factory and snapshot extension remain private; state writes, application
+The factory and snapshot extension remain private; state-only writes, application
 schema inference, SSR and package-root cutover remain outside this slice.
 
 `LangGraphSnapshot.interrupts` now observes a readonly batch in that same immutable
@@ -273,7 +312,7 @@ History is observation only: loading never executes pending tools. Execution
 deduplication survives a load, while locally authored result provenance is cleared.
 Persisted ToolMessage strings remain transcript text rather than becoming typed
 handler results, including on later stream replay. This is a fixed-thread history
-subset of T10, not thread switching, pagination, branching, state writes,
+subset of T10, not thread switching, pagination, branching, state-only writes,
 SSR, or a public LangGraph package cutover. Explicit resume is the subsequent private
 capability described above. Core public contracts
 are unchanged; the native signatures now retain the concrete snapshot extension.

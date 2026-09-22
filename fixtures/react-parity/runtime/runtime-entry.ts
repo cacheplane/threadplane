@@ -5,15 +5,19 @@ import type {
 } from '@threadplane/core';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- This development-only entry composes private source into a temporary fixture bundle, never a package export.
 import { createSession } from '../../../libs/langgraph/src/runtime/create-session';
-import type { FixtureSnapshot, FixtureTools } from './scenarios';
+import type { FixtureSnapshot, FixtureSubmitInput, FixtureTools } from './scenarios';
 
 /** Development-only composition, never a package entry or a shipped factory. */
 export function createFixtureSession(
   endpoint: string,
   threadId: string,
   onHandler: () => void = () => undefined
-): Omit<AgentSession<FixtureTools>, 'getSnapshot'> & {
+): Omit<AgentSession<FixtureTools>, 'getSnapshot' | 'submit'> & {
   getSnapshot(): FixtureSnapshot;
+  submit(
+    input: FixtureSubmitInput,
+    options?: { readonly signal?: AbortSignal }
+  ): Promise<CompleteOutcome>;
   load?: (options?: { signal?: AbortSignal }) => Promise<void>;
   resume(
     value?: PlainValue,

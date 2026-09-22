@@ -49,6 +49,8 @@ export function assertCore(session: AgentSession<FixtureTools>, signal: AbortSig
   const snapshot: AgentSnapshot<FixtureTools> = session.getSnapshot();
   assertSnapshot(snapshot);
   void session.submit('Hello', { signal });
+  // @ts-expect-error The neutral session does not acquire backend application input.
+  void session.submit({ message: 'Hello', state: { model: 'gpt-5-mini' } });
   const tool: FunctionTool<{ values: readonly string[] }, number> = {
     description: 'Count values',
     handler: ({ values }, context) => {

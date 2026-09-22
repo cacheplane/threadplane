@@ -30,6 +30,13 @@ import {
 } from './interrupt-projection';
 import { ownMessage, ownValue } from './ownership';
 import {
+  captureSubmitInput,
+  createSubmitPayload,
+  type LangGraphInputState,
+  type LangGraphSubmitInput,
+} from './submit-input';
+export type { LangGraphInputState, LangGraphSubmitInput } from './submit-input';
+import {
   advanceCursor,
   captureRun,
   rebaseRun,
@@ -76,8 +83,12 @@ export type LangGraphSession<
     string,
     ToolContract
   >
-> = Omit<AgentSession<TTools>, 'getSnapshot'> & {
+> = Omit<AgentSession<TTools>, 'getSnapshot' | 'submit'> & {
   getSnapshot(): LangGraphSnapshot<TTools>;
+  submit(
+    input: LangGraphSubmitInput,
+    options?: { readonly signal?: AbortSignal }
+  ): Promise<CompleteOutcome>;
   reconnect(options?: {
     readonly signal?: AbortSignal;
   }): Promise<CompleteOutcome>;
@@ -100,6 +111,7 @@ type AttemptInput =
   | {
       readonly kind: 'submit';
       readonly messages: { type: 'human'; id: string; content: string }[];
+      readonly state?: LangGraphInputState;
     }
   | { readonly kind: 'resume'; readonly value: PlainValue | undefined };
 
@@ -495,10 +507,13 @@ export function createSession(
         const resuming = groups === 0 && attempt.input.kind === 'resume';
         const payload = resuming
           ? null
-          : {
-              messages: [...batch.messages, ...input],
-              ...(catalog.length ? { client_tools: catalog } : {}),
-            };
+          : createSubmitPayload(
+              [...batch.messages, ...input],
+              catalog,
+              !joining && groups === 0 && attempt.input.kind === 'submit'
+                ? attempt.input.state
+                : undefined
+            );
         // Ownership is captured before the first effect. The signal always belongs
         // to us, even when the caller also supplied an external AbortSignal.
         const capture = (metadata: { run_id: string; thread_id?: string }) => {
@@ -863,20 +878,33 @@ export function createSession(
   }
 
   function submit(
-    input: string,
-    options?: { signal?: AbortSignal }
+    input: LangGraphSubmitInput,
+    options?: { readonly signal?: AbortSignal }
   ): Promise<CompleteOutcome> {
     let attempt: Attempt | undefined;
     const beginning = publication.command(() => {
-      if (disposed || options?.signal?.aborted) return;
+      if (disposed) return;
+      const capturedRevision = revision;
+      const external = options?.signal;
+      // Even the signal getter can synchronously stop or replace this command.
+      if (disposed || external?.aborted || capturedRevision !== revision)
+        return;
+      const captured = captureSubmitInput(input);
+      if (disposed || external?.aborted || capturedRevision !== revision)
+        return;
       attempt = beginAttempt(
         {
           kind: 'submit',
+          state: captured.state,
           messages: [
-            { type: 'human', id: crypto.randomUUID(), content: input },
+            {
+              type: 'human',
+              id: crypto.randomUUID(),
+              content: captured.message,
+            },
           ],
         },
-        options?.signal
+        external
       );
     });
     return dispatch(beginning, () => attempt);

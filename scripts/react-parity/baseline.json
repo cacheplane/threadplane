@@ -1,18 +1,12 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "7567d923aefa74774692c55969e6624c50aac91e",
+  "baselineHead": "7f0284f1c740a4cfb69de6afffd9884dd091b41b",
   "sourceState": {
     "modified": [
-      "apps/website/scripts/generate-api-docs.ts",
-      "libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
-      "libs/langgraph/src/runtime/create-session.ts",
-      "libs/langgraph/src/runtime/langgraph-snapshot.ts",
-      "libs/langgraph/src/runtime/ownership.ts",
-      "libs/langgraph/src/runtime/stream-projection.ts",
-      "libs/langgraph/src/runtime/transport.types.ts"
+      "libs/langgraph/src/runtime/create-session.ts"
     ],
     "untracked": [
-      "libs/langgraph/src/runtime/run-recovery.ts"
+      "libs/langgraph/src/runtime/submit-input.ts"
     ]
   },
   "scope": {
@@ -12568,7 +12562,7 @@
       "id": "source:libs/langgraph/src/runtime/create-session.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/create-session.ts",
-      "sha256": "372f070a8ef7ab1b4498e599f2606d425584e79b7b34bd8c82dd4ae308380850"
+      "sha256": "fc0470302580c24a3e0b4456f5812fcbd7a895708a42511433918d8f067fb54d"
     },
     {
       "id": "source:libs/langgraph/src/runtime/function-tools.ts",
@@ -12629,6 +12623,12 @@
       "kind": "source",
       "path": "libs/langgraph/src/runtime/stream-projection.ts",
       "sha256": "4271e1db01f40d5f349e6b0307d01114fb5fbe5dc9c6dae6223457d73580c4e9"
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/submit-input.ts",
+      "kind": "source",
+      "path": "libs/langgraph/src/runtime/submit-input.ts",
+      "sha256": "9e60a9045389e43b98e6a6a8971192988d0763369cefb90a5ebb45f6ec7eb8dd"
     },
     {
       "id": "source:libs/langgraph/src/runtime/testing/binding-fixture.ts",
