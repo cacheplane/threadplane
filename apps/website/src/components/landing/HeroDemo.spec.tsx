@@ -84,7 +84,11 @@ describe('HeroDemo', () => {
    * markup, the <source> has to precede the <img> (a <picture> takes the FIRST
    * matching source, and an <img> that came first would win every time), and
    * the media query has to stay on the same 768px boundary as the stage's
-   * portrait ratio in landing.css and as MIN_AUTOPLAY_WIDTH.
+   * portrait ratio in landing.css. Those two are the whole coupling, and both
+   * are tied to the phone poster's 390x906 geometry: the poster is served
+   * exactly where the stage is portrait, so `object-fit: cover` crops nothing.
+   * MIN_AUTOPLAY_WIDTH used to be a third leg and is not one any more —
+   * autoplay is width-independent and this boundary says nothing about it.
    */
   it('offers a phone-width poster source ahead of the desktop img', async () => {
     installEnv();
@@ -97,9 +101,12 @@ describe('HeroDemo', () => {
     expect(HERO_POSTER_MOBILE).not.toBe(HERO_POSTER);
     expect(source.getAttribute('media')).toBe('(max-width: 767px)');
     expect(HERO_POSTER_MOBILE_MEDIA).toBe('(max-width: 767px)');
-    // 585x975 — the 3:5 phone capture, so `object-fit: cover` crops nothing.
+    // 585x1359 — the 65:151 phone capture (390x906 at the 1.5x ship scale), so
+    // `object-fit: cover` crops nothing. Moves with the recorder's viewport and
+    // the `.hero-demo-stage` ratio in landing.css; see that recorder's header
+    // for how 906 is measured from the replay's own block boundaries.
     expect(source.getAttribute('width')).toBe('585');
-    expect(source.getAttribute('height')).toBe('975');
+    expect(source.getAttribute('height')).toBe('1359');
     expect([...picture.children].map((el) => el.tagName)).toEqual(['SOURCE', 'IMG']);
   });
 
@@ -114,10 +121,10 @@ describe('HeroDemo', () => {
    * files are re-recorded together, so re-recording the walkthrough shrank the
    * desktop capture 38.1KB -> 33.0KB and failed the phone poster for content it
    * does not contain. The phone poster is not justified on bytes anyway. Below
-   * 768px `.hero-demo-stage` is `aspect-ratio: 3 / 5` with `object-fit: cover`,
-   * so the 1200x720 desktop capture covering that portrait box shows about 36%
-   * of its own width — the phone poster exists because that crop is unusable,
-   * and it would still be worth shipping if it cost slightly more.
+   * 768px `.hero-demo-stage` is `aspect-ratio: 65 / 151` with `object-fit:
+   * cover`, so the 1200x720 desktop capture covering that portrait box shows
+   * about 26% of its own width — the phone poster exists because that crop is
+   * unusable, and it would still be worth shipping if it cost slightly more.
    *
    * The ceiling is what the recorder actually budgeted against when it chose to
    * ship 1.5x rather than 2x ("2x would cost ~51KB"): the mid-30s KB. Raise it
@@ -286,8 +293,15 @@ describe('HeroDemo', () => {
     expect(post).toHaveBeenCalledWith({ type: 'tplane-hero', visible: true }, 'https://demo.threadplane.ai');
   });
 
-  it('shows Play walkthrough instead of mounting on narrow viewports, and mounts on click', async () => {
-    installEnv({ width: 390 });
+  /**
+   * Reduced motion is the ONLY thing that still holds the iframe back, and a
+   * phone is where it matters most — the stage is portrait and the replay
+   * fills it.
+   * The suite's other reduced-motion test runs at the default 1280, so without
+   * this one nothing covers reduce at phone width.
+   */
+  it('shows Play walkthrough under reduced motion at phone width, and mounts on click', async () => {
+    installEnv({ width: 390, reduced: true });
     const { HeroDemo } = await import('./HeroDemo');
     const { container } = render(<HeroDemo />);
     act(() => {
@@ -299,6 +313,24 @@ describe('HeroDemo', () => {
     });
     expect(container.querySelector('iframe')).toBeTruthy();
     expect(trackCtaClickMock).toHaveBeenCalledWith(expect.objectContaining({ cta_id: 'hero_demo_play' }));
+  });
+
+  /**
+   * The change this guards: MIN_AUTOPLAY_WIDTH is 0, so a phone autoplays. The
+   * poster is a capture displayed at ~0.86 scale while a live iframe lays out
+   * at the stage's real width, so mobile autoplay is a legibility win, not just
+   * motion. Restoring any width floor would fail here.
+   */
+  it('autoplays the iframe at phone width when motion is allowed', async () => {
+    installEnv({ width: 390 });
+    const { HeroDemo } = await import('./HeroDemo');
+    const { container } = render(<HeroDemo />);
+    expect(container.querySelector('iframe')).toBeNull();
+    act(() => {
+      ioCallback?.([{ isIntersecting: true }]);
+    });
+    expect(container.querySelector('iframe')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Play walkthrough' })).toBeNull();
   });
 
   it('shows Play walkthrough under reduced motion', async () => {

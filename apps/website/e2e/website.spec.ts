@@ -26,10 +26,12 @@ async function expectNoHorizontalOverflow(
 test('landing page renders hero headline', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('#hero-heading')).toBeVisible();
-  await expect(page.locator('#hero-heading')).toHaveText('The open-source thread-plane for agents.');
-  // The tagline stopped naming Angular on 2026-09-06, so the guard that the
-  // hero says which framework this is moved to the eyebrow directly above it.
-  await expect(page.locator('.hero-eyebrow')).toContainText('Angular');
+  // This also carries the guard that the hero names the framework. That guard
+  // used to live on .hero-eyebrow, because the H1 was framework-neutral; the H1
+  // names Angular itself now, so the eyebrow no longer repeats it. Asserting
+  // "Angular" separately here would be green by construction — the literal
+  // above already contains it — so the full-text pin is the whole check.
+  await expect(page.locator('#hero-heading')).toHaveText('The open-source thread-plane for Angular agents.');
 });
 
 test('the default social card renders as a PNG', async ({ request }) => {

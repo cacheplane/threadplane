@@ -128,12 +128,12 @@ describe('GET /api/cron/lifecycle', () => {
     expect(invoke).not.toHaveBeenCalled();
   });
 
-  it('registers exactly one every-minute root Vercel cron without public secrets', () => {
+  it('registers one fifteen-minute fallback cron so idle Dawn computes can suspend', () => {
     const config = JSON.parse(
       readFileSync(resolve(REPOSITORY_ROOT, 'vercel.json'), 'utf8')
     ) as Record<string, unknown>;
     expect(config['crons']).toEqual([
-      { path: '/api/cron/lifecycle', schedule: '* * * * *' },
+      { path: '/api/cron/lifecycle', schedule: '*/15 * * * *' },
     ]);
     expect(JSON.stringify(config)).not.toMatch(
       /NEXT_PUBLIC_(?:CRON|LIFECYCLE)/u
