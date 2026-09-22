@@ -1,4 +1,4 @@
-import { expect, type Locator, type Page } from '@playwright/test';
+import { expect, type Locator, type Page, type Route } from '@playwright/test';
 
 export function attachBrowserHygiene(page: Page): {
   consoleErrors: string[];
@@ -34,11 +34,22 @@ function isBenignAbortedRequest(url: string, failure: string): boolean {
 }
 
 export async function openDemo(page: Page, path = '/embed'): Promise<void> {
-  await page.goto(path);
-  await page.evaluate(() => {
-    localStorage.clear();
-    sessionStorage.clear();
+  // Clear same-origin storage without starting Angular twice. Navigating away
+  // during the first app startup can abort lazy chunks and HMR component loads.
+  const storageDocument = (route: Route) => route.fulfill({
+    contentType: 'text/html',
+    body: '<!doctype html><title>Reset demo storage</title>',
   });
+  await page.route(path, storageDocument, { times: 1 });
+  try {
+    await page.goto(path);
+    await page.evaluate(() => {
+      localStorage.clear();
+      sessionStorage.clear();
+    });
+  } finally {
+    await page.unroute(path, storageDocument);
+  }
   await page.goto(path);
 }
 
