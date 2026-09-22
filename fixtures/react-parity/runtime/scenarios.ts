@@ -39,6 +39,37 @@ export function reviewInput(label: string): FixtureSubmitInput {
   };
 }
 
+/** Fixture-local backend contract; installed consumers import only core types. */
+export interface FixtureRunOptions {
+  readonly signal?: AbortSignal;
+  readonly config?: {
+    readonly tags?: readonly string[];
+    readonly recursion_limit?: number;
+    readonly configurable?: Readonly<Record<string, PlainValue>> & {
+      readonly thread_id?: never;
+      readonly checkpoint_id?: never;
+      readonly checkpoint_ns?: never;
+      readonly checkpoint_map?: never;
+    };
+  };
+  readonly context?: PlainValue;
+  readonly metadata?: Readonly<Record<string, PlainValue>>;
+}
+
+/** Explicit execution choices, separate from accumulated graph input. */
+export function reviewRunOptions(label: string) {
+  if (!['Tool', 'Drop', 'Resume'].includes(label)) return undefined;
+  return {
+    config: {
+      tags: ['runtime-review'],
+      recursion_limit: 50,
+      configurable: { user_id: 'review-user' },
+    },
+    context: { locale: 'en', features: ['memory'] },
+    metadata: { source: 'runtime-review' },
+  } as const;
+}
+
 /** Application-authored choices for this fixture, not a library targeting helper. */
 export function reviewResponse(snapshot: FixtureSnapshot): PlainValue {
   return snapshot.interrupts.some(
@@ -69,17 +100,22 @@ type FixtureCheckpoint = {
   readonly thread_id: string;
   readonly checkpoint_ns: string;
   readonly checkpoint_id: string | null | undefined;
-  readonly checkpoint_map: Readonly<Record<string, PlainValue>> | null | undefined;
+  readonly checkpoint_map:
+    | Readonly<Record<string, PlainValue>>
+    | null
+    | undefined;
 };
 
 /** Fixture-local backend extension, expressed entirely through installed core. */
 export type FixtureSnapshot = AgentSnapshot<FixtureTools> & {
-  readonly history: readonly {
-    readonly checkpoint: FixtureCheckpoint;
-    readonly parent_checkpoint: FixtureCheckpoint | null | undefined;
-    readonly created_at: string | null | undefined;
-    readonly next: readonly string[];
-  }[] | undefined;
+  readonly history:
+    | readonly {
+        readonly checkpoint: FixtureCheckpoint;
+        readonly parent_checkpoint: FixtureCheckpoint | null | undefined;
+        readonly created_at: string | null | undefined;
+        readonly next: readonly string[];
+      }[]
+    | undefined;
   readonly subgraphs: readonly {
     readonly namespace: readonly string[];
     readonly messages: readonly Message[];

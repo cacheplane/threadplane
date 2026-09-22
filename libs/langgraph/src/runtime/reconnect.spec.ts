@@ -743,7 +743,13 @@ describe('owned run reconnect', () => {
       tools: { work: { description: 'Work', handler } },
       events: [toolFrame('call')],
     });
-    await f.session.submit('Question');
+    const runOptions = {
+      config: { configurable: { user_id: 'user-42' } },
+      context: { locale: 'en' },
+      metadata: { source: 'ui' },
+    };
+    await f.session.submit('Question', runOptions);
+    runOptions.context.locale = 'changed';
     expect(handler).not.toHaveBeenCalled();
     f.getRunStatus.mockResolvedValue('success');
     f.joinStream.mockImplementation(async function* () {
@@ -762,6 +768,13 @@ describe('owned run reconnect', () => {
     expect(await f.session.reconnect()).toBe('success');
     expect(handler).toHaveBeenCalledTimes(1);
     expect(f.stream).toHaveBeenCalledTimes(2);
+    for (const call of f.stream.mock.calls) {
+      expect(call[4]).toMatchObject({
+        config: { configurable: { user_id: 'user-42' } },
+        context: { locale: 'en' },
+        metadata: { source: 'ui' },
+      });
+    }
     expect(f.stream.mock.calls[1][2]).toMatchObject({
       messages: [{ type: 'tool', tool_call_id: 'call' }],
     });
