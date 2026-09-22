@@ -80,12 +80,12 @@ explicit operator action; a smoke command without `DRY_RUN=1` can publish.
 
 ## Schedules and measurement limits
 
-The website Vercel cron invokes lifecycle every 15 minutes, at UTC minutes
-00, 15, 30 and 45. This reduces scheduled Dawn executions from 1,440 to 96 per
+The website Vercel cron invokes lifecycle every 30 minutes, at UTC minutes
+00 and 30. This reduces scheduled Dawn executions from 1,440 to 48 per
 day and allows idle computes to suspend between ticks when no other activity
 keeps them awake. Forms still nudge lifecycle immediately after their durable
 submission; the cron is the fallback when that nudge fails. Background retries,
-projection and research reconciliation can wait up to 15 minutes plus execution
+projection and research reconciliation can wait up to 30 minutes plus execution
 time. Due times live in Growth jobs. The founder sequence starts the next
 business morning at 07:00 Pacific; later steps are three and five business days
 after the preceding accepted send.
