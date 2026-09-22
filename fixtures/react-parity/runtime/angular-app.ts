@@ -8,6 +8,7 @@ import {
   reviewInput,
   reviewInstructions,
   reviewResponse,
+  reviewRunOptions,
 } from './scenarios';
 
 let handlerCalls = 0;
@@ -17,7 +18,7 @@ const session = createFixtureSession('/api', 'fixture-thread', () => {
 });
 const submit = (input: string) => {
   submissions += 1;
-  return session.submit(reviewInput(input));
+  return session.submit(reviewInput(input), reviewRunOptions(input));
 };
 
 @Component({
@@ -198,7 +199,9 @@ const submit = (input: string) => {
         </section>
         <section class="panel" aria-label="Checkpoint history panel">
           <h2>Last loaded checkpoint history</h2>
-          <p>A saved page of checkpoint references. Load refreshes this page.</p>
+          <p>
+            A saved page of checkpoint references. Load refreshes this page.
+          </p>
           <output aria-label="Checkpoint history" data-testid="history">{{
             view().history
           }}</output>
@@ -251,7 +254,10 @@ class App {
     this.resumeOutcome.set('');
     try {
       this.resumeOutcome.set(
-        await session.resume(reviewResponse(session.getSnapshot()))
+        await session.resume(
+          reviewResponse(session.getSnapshot()),
+          reviewRunOptions('Resume')
+        )
       );
     } catch {
       this.resumeOutcome.set('Resume unavailable');

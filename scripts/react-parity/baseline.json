@@ -1,14 +1,12 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "c600429e1dcce656f59974851f80007120c3d5f7",
+  "baselineHead": "56cd7b799ee98c544ff670f868762dd87a8b6787",
   "sourceState": {
     "modified": [
-      "libs/langgraph/src/runtime/create-session.ts",
-      "libs/langgraph/src/runtime/langgraph-snapshot.ts",
-      "libs/langgraph/src/runtime/ownership.ts"
+      "libs/langgraph/src/runtime/create-session.ts"
     ],
     "untracked": [
-      "libs/langgraph/src/runtime/checkpoint-history.ts"
+      "libs/langgraph/src/runtime/run-options.ts"
     ]
   },
   "scope": {
@@ -12570,7 +12568,7 @@
       "id": "source:libs/langgraph/src/runtime/create-session.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/create-session.ts",
-      "sha256": "d8f078aa149f7afb4f0117c4ba54cae6ce88459c1030499dbe44cf1c07b01c62"
+      "sha256": "38a4617921d75e4325adfb5e78468c07125047563d33b33b42f5519b3b67cb6d"
     },
     {
       "id": "source:libs/langgraph/src/runtime/function-tools.ts",
@@ -12619,6 +12617,12 @@
       "kind": "source",
       "path": "libs/langgraph/src/runtime/publication.ts",
       "sha256": "7d290721417d504313f893ee7e90154b85e9eee27d05f6cce816d592495791e5"
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/run-options.ts",
+      "kind": "source",
+      "path": "libs/langgraph/src/runtime/run-options.ts",
+      "sha256": "d13781b0757e9168a017a7127fe3d3b69424045fd9d17d67e499c83e49d71138"
     },
     {
       "id": "source:libs/langgraph/src/runtime/run-recovery.ts",

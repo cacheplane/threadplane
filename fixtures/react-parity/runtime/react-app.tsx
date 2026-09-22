@@ -9,6 +9,7 @@ import {
   reviewInput,
   reviewInstructions,
   reviewResponse,
+  reviewRunOptions,
 } from './scenarios';
 
 // Application ownership is outside StrictMode and the component lifetime.
@@ -19,7 +20,7 @@ const session = createFixtureSession('/api', 'fixture-thread', () => {
 });
 const submit = (input: string) => {
   submissions += 1;
-  return session.submit(reviewInput(input));
+  return session.submit(reviewInput(input), reviewRunOptions(input));
 };
 
 function App() {
@@ -44,7 +45,10 @@ function App() {
     setResumeOutcome('');
     try {
       setResumeOutcome(
-        await session.resume(reviewResponse(session.getSnapshot()))
+        await session.resume(
+          reviewResponse(session.getSnapshot()),
+          reviewRunOptions('Resume')
+        )
       );
     } catch {
       setResumeOutcome('Resume unavailable');
@@ -243,7 +247,9 @@ function App() {
         </section>
         <section className="panel" aria-label="Checkpoint history panel">
           <h2>Last loaded checkpoint history</h2>
-          <p>A saved page of checkpoint references. Load refreshes this page.</p>
+          <p>
+            A saved page of checkpoint references. Load refreshes this page.
+          </p>
           <output aria-label="Checkpoint history" data-testid="history">
             {view.history}
           </output>

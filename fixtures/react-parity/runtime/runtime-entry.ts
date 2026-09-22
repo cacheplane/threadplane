@@ -5,7 +5,12 @@ import type {
 } from '@threadplane/core';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- This development-only entry composes private source into a temporary fixture bundle, never a package export.
 import { createSession } from '../../../libs/langgraph/src/runtime/create-session';
-import type { FixtureSnapshot, FixtureSubmitInput, FixtureTools } from './scenarios';
+import type {
+  FixtureRunOptions,
+  FixtureSnapshot,
+  FixtureSubmitInput,
+  FixtureTools,
+} from './scenarios';
 
 /** Development-only composition, never a package entry or a shipped factory. */
 export function createFixtureSession(
@@ -16,12 +21,12 @@ export function createFixtureSession(
   getSnapshot(): FixtureSnapshot;
   submit(
     input: FixtureSubmitInput,
-    options?: { readonly signal?: AbortSignal }
+    options?: FixtureRunOptions
   ): Promise<CompleteOutcome>;
   load?: (options?: { signal?: AbortSignal }) => Promise<void>;
   resume(
     value?: PlainValue,
-    options?: { readonly signal?: AbortSignal }
+    options?: FixtureRunOptions
   ): Promise<CompleteOutcome>;
   reconnect(options?: {
     readonly signal?: AbortSignal;

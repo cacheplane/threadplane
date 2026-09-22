@@ -7,6 +7,7 @@ import * as runtime from './runtime-consumer.mjs';
 
 const versions = { react: '19.2.4', 'react-dom': '19.2.4', '@types/react': '19.2.14', '@types/react-dom': '19.2.3', vite: '7.3.1', typescript: '5.9.3' };
 const applicationState = { model: 'gpt-5-mini', reasoning_effort: 'minimal', gen_ui_mode: 'a2ui', itinerary: [{ id: 'paris', day: 1, place: 'Paris', note: 'Check the weather' }] };
+const runSettings = { config: { tags: ['runtime-review'], recursion_limit: 50, configurable: { user_id: 'review-user' } }, context: { locale: 'en', features: ['memory'] }, metadata: { source: 'runtime-review' } };
 test('React consumer pins framework and compiler tooling from the actual lock', () => {
   assert.equal(typeof runtime.lockedReactManifest, 'function');
   const lock = { packages: Object.fromEntries(Object.entries(versions).map(([name, version]) => [`node_modules/${name}`, { version }])) };
@@ -18,14 +19,16 @@ test('React consumer pins framework and compiler tooling from the actual lock', 
 test('tool trace requires a real serialized handler result before returning the final answer', () => {
   assert.equal(typeof runtime.runtimeResponse, 'function');
   const catalog = [{ name: 'weather', description: 'Current weather' }, { name: 'count', description: 'Count values' }];
-  const submit = { assistant_id: 'fixture-assistant', input: { ...applicationState, messages: [{ id: 'user', type: 'human', content: 'Tool' }], client_tools: catalog }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom'], stream_subgraphs: true, stream_resumable: true, on_disconnect: 'continue' };
+  const submit = { ...runSettings, assistant_id: 'fixture-assistant', input: { ...applicationState, messages: [{ id: 'user', type: 'human', content: 'Tool' }], client_tools: catalog }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom'], stream_subgraphs: true, stream_resumable: true, on_disconnect: 'continue' };
   assert.match(runtime.runtimeResponse(submit), /call-weather/);
   const continuation = { ...submit, input: { client_tools: catalog, messages: [{ id: 'client-tool-result-call-weather', type: 'tool', role: 'tool', tool_call_id: 'call-weather', content: '{"city":"Paris","temperature":20}' }] } };
   assert.match(runtime.runtimeResponse(continuation), /20 degrees/);
   assert.throws(() => runtime.runtimeResponse({ ...continuation, input: { ...continuation.input, messages: [{ ...continuation.input.messages[0], content: 'fake result' }] } }), /result/);
   assert.throws(() => runtime.runtimeResponse({ ...submit, input: { ...submit.input, client_tools: [] } }), /catalog/);
   assert.throws(() => runtime.runtimeResponse({ ...submit, command: { resume: 'unexpected' } }), /unexpected run fields/);
-  assert.throws(() => runtime.runtimeResponse({ ...submit, input: { client_tools: catalog, messages: [{ id: 'user', type: 'human', content: 'Unexpected' }] } }), /Unexpected/);
+  const unexpected = { ...submit, input: { client_tools: catalog, messages: [{ id: 'user', type: 'human', content: 'Unexpected' }] } };
+  for (const key of Object.keys(runSettings)) delete unexpected[key];
+  assert.throws(() => runtime.runtimeResponse(unexpected), /Unexpected/);
 });
 
 test('successive submitted turns receive distinct server message IDs', () => {
@@ -39,8 +42,32 @@ test('successive submitted turns receive distinct server message IDs', () => {
 
 const heldBody = { assistant_id: 'fixture-assistant', input: { messages: [{ id: 'held-user', type: 'human', content: 'Hold' }], client_tools: [{ name: 'weather', description: 'Current weather' }, { name: 'count', description: 'Count values' }] }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom'], stream_subgraphs: true, stream_resumable: true, on_disconnect: 'continue' };
 
+test('execution settings are required for configured submits, tool continuations and explicit resumes only', () => {
+  const messages = [
+    { id: 'tool-user', type: 'human', content: 'Tool' },
+    { id: 'drop-user', type: 'human', content: 'Drop' },
+    { id: 'client-tool-result-call-weather', type: 'tool', role: 'tool', tool_call_id: 'call-weather', content: '{"city":"Paris","temperature":20}' },
+  ];
+  for (const message of messages) {
+    const input = { ...heldBody.input, ...(message.type === 'human' ? applicationState : {}), messages: [message] };
+    const body = { ...heldBody, ...runSettings, input };
+    assert.doesNotThrow(() => runtime.runtimeResponse(body));
+    for (const key of Object.keys(runSettings)) {
+      const missing = { ...body }; delete missing[key];
+      assert.throws(() => runtime.runtimeResponse(missing), /unexpected run fields/);
+    }
+  }
+  const resume = { ...heldBody, ...runSettings, input: null, command: { resume: { 'final-approval': true } } };
+  assert.doesNotThrow(() => runtime.runtimeResponse(resume));
+  for (const key of Object.keys(runSettings)) {
+    const missing = { ...resume }; delete missing[key];
+    assert.throws(() => runtime.runtimeResponse(missing), /exact resume run fields/);
+  }
+  assert.throws(() => runtime.runtimeResponse({ ...heldBody, ...runSettings }), /unexpected run fields/);
+});
+
 test('Tool observes same-ID siblings and a protected child failure without another root tool', () => {
-  const trace = runtime.runtimeResponse({ ...heldBody, input: { ...applicationState, ...heldBody.input, messages: [{ id: 'tool-user', type: 'human', content: 'Tool' }] } });
+  const trace = runtime.runtimeResponse({ ...heldBody, ...runSettings, input: { ...applicationState, ...heldBody.input, messages: [{ id: 'tool-user', type: 'human', content: 'Tool' }] } });
   assert.match(trace, /event: values\|research:one\n/);
   assert.match(trace, /event: values\|research:two\|writer:nested\n/);
   assert.equal(trace.match(/"id":"child-answer"/g)?.length, 2);
@@ -50,12 +77,12 @@ test('Tool observes same-ID siblings and a protected child failure without anoth
 
 for (const label of ['Tool', 'Drop']) {
   test(`${label} rejects an initial submission with no application state`, () => {
-    const body = { ...heldBody, input: { ...heldBody.input, messages: [{ id: 'state-user', type: 'human', content: label }] } };
+    const body = { ...heldBody, ...runSettings, input: { ...heldBody.input, messages: [{ id: 'state-user', type: 'human', content: label }] } };
     assert.throws(() => runtime.runtimeResponse(body), /unexpected run fields/);
   });
   test(`${label} requires exact root application state only on its initial submission`, () => {
     const input = { ...applicationState, messages: [{ id: 'state-user', type: 'human', content: label }], client_tools: heldBody.input.client_tools };
-    const body = { ...heldBody, input };
+    const body = { ...heldBody, ...runSettings, input };
     assert.doesNotThrow(() => runtime.runtimeResponse(body));
     for (const key of Object.keys(applicationState)) {
       const missing = { ...input };
@@ -72,11 +99,11 @@ for (const label of ['Tool', 'Drop']) {
 test('application state cannot replay on tool continuation, a later Send, or resume', () => {
   const toolMessage = { id: 'client-tool-result-call-weather', type: 'tool', role: 'tool', tool_call_id: 'call-weather', content: '{"city":"Paris","temperature":20}' };
   for (const message of [toolMessage, { id: 'later-user', type: 'human', content: 'Send' }]) {
-    const body = { ...heldBody, input: { client_tools: heldBody.input.client_tools, messages: [message] } };
+    const body = { ...heldBody, ...(message.type === 'tool' ? runSettings : {}), input: { client_tools: heldBody.input.client_tools, messages: [message] } };
     assert.doesNotThrow(() => runtime.runtimeResponse(body));
     assert.throws(() => runtime.runtimeResponse({ ...body, input: { ...applicationState, ...body.input } }), /unexpected run fields/);
   }
-  const resume = { ...heldBody, input: null, command: { resume: { 'final-approval': true } } };
+  const resume = { ...heldBody, ...runSettings, input: null, command: { resume: { 'final-approval': true } } };
   assert.doesNotThrow(() => runtime.runtimeResponse(resume));
   assert.throws(() => runtime.runtimeResponse({ ...resume, state: applicationState }), /exact resume run fields/);
   assert.throws(() => runtime.runtimeResponse({ ...resume, input: applicationState }));
@@ -85,7 +112,7 @@ test('application state cannot replay on tool continuation, a later Send, or res
 test('Drop reconnect joins the exact run and cursor, then confirms status without another POST', async () => {
   const server = await runtime.serveRuntimeConsumer(tmpdir());
   try {
-    const body = { ...heldBody, stream_resumable: true, on_disconnect: 'continue', input: { ...applicationState, ...heldBody.input, messages: [{ id: 'drop-user', type: 'human', content: 'Drop' }] } };
+    const body = { ...heldBody, ...runSettings, stream_resumable: true, on_disconnect: 'continue', input: { ...applicationState, ...heldBody.input, messages: [{ id: 'drop-user', type: 'human', content: 'Drop' }] } };
     const created = await fetch(`${server.url}/api/threads/fixture-thread/runs/stream`, { method: 'POST', body: JSON.stringify(body) });
     assert.equal(created.status, 200);
     assert.equal(created.headers.get('content-location'), '/threads/fixture-thread/runs/drop-run');
@@ -118,7 +145,7 @@ test('reconnect fixture rejects a wrong cursor and cannot invent a known run bef
   try {
     const runUrl = `${server.url}/api/threads/fixture-thread/runs/drop-run`;
     assert.equal((await fetch(runUrl)).status, 500);
-    const body = { ...heldBody, stream_resumable: true, on_disconnect: 'continue', input: { ...applicationState, ...heldBody.input, messages: [{ id: 'drop-user', type: 'human', content: 'Drop' }] } };
+    const body = { ...heldBody, ...runSettings, stream_resumable: true, on_disconnect: 'continue', input: { ...applicationState, ...heldBody.input, messages: [{ id: 'drop-user', type: 'human', content: 'Drop' }] } };
     const created = await fetch(`${server.url}/api/threads/fixture-thread/runs/stream`, { method: 'POST', body: JSON.stringify(body) });
     assert.equal(created.status, 200);
     await created.text();
@@ -130,7 +157,7 @@ test('reconnect fixture rejects a wrong cursor and cannot invent a known run bef
 });
 
 test('explicit resume maps use null input, re-pause, and complete the same assistant message', () => {
-  const base = { ...heldBody, input: null };
+  const base = { ...heldBody, ...runSettings, input: null };
   const first = runtime.runtimeResponse({ ...base, command: { resume: { 'live-approval': 'yes', 'live-confirmation': false } } });
   assert.match(first, /"id":"final-approval"/);
   assert.match(first, /"content":"One final approval"/);

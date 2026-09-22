@@ -1,5 +1,28 @@
 # Installed native runtime consumers
 
+## Run configuration
+
+The private LangGraph session accepts readonly `config`, `context`, `metadata`
+and `signal` on both submit and resume. Configuration supports SDK tags,
+recursion_limit and plain application configurable data such as `user_id` for
+memory. Thread and checkpoint routing fields remain session-owned; untyped
+routing fields and extra root options are omitted without reading their getters.
+
+Settings are copied and frozen before command admission. Every physical run in
+that command, including tool continuations, uses the same captured settings.
+Reconnect joins an existing run without another POST; any subsequent tool run
+still uses the original command's settings. A later independent submit or resume
+must supply its own settings. There are no inherited defaults or merge rules.
+Settings never become graph input or optimistic snapshot values. This uses the
+existing plain-data ownership boundary, without application schema validation.
+
+Tool, Drop and both Resume clicks send `config.configurable.user_id: 'review-user'`,
+the tag `runtime-review`, recursion limit 50, context
+`{ locale: 'en', features: ['memory'] }` and metadata
+`{ source: 'runtime-review' }`. The strict server requires these exact settings,
+including on the tool continuation, and rejects them on later simple Send.
+The visible server observations and request counts remain unchanged.
+
 ## Checkpoint history
 
 `snapshot.history` is the last explicitly loaded checkpoint page. It is undefined
@@ -72,7 +95,7 @@ await session.submit({
 This is a readonly plain-data input, not application-schema inference or argument
 validation. Interface-typed records without index signatures may need an explicit
 plain-object projection, as shown for `stops`. State-only input, rich message
-content, run options and state updates during resume remain separate work.
+content and state updates during resume remain separate work.
 
 The owner captures input before admitting the command. Later caller mutations
 cannot change the request. Unsupported cyclic data and class instances fail at
@@ -94,7 +117,7 @@ responses demonstrate the distinction between submitted and observed state.
 ## Explicit resume contract
 
 The private development session exposes
-`resume(value?: PlainValue, options?: { signal?: AbortSignal })`. Supply the
+`resume(value?: PlainValue, options?: LangGraphRunOptions)`. Supply the
 application's response for a dynamic interrupt, including an interrupt-ID map
 when responding to several interrupts. Omit the response to continue a static
 breakpoint. `false`, `0`, `''`, and `null` are responses and are preserved. The
