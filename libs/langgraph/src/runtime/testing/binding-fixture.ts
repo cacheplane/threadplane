@@ -31,8 +31,46 @@ export function bindingFixture() {
             { id: 'saved-answer', type: 'ai', content: 'Saved answer' },
           ],
         },
-        next: [],
-        tasks: [],
+        next: ['review', 'confirmation'],
+        tasks: [
+          {
+            id: 'review-task',
+            name: 'review',
+            error: null,
+            checkpoint: null,
+            state: null,
+            interrupts: [
+              {
+                id: 'saved-approval',
+                value: {
+                  question: 'Approve saved request?',
+                  choices: ['yes', 'no'],
+                },
+                namespace: ['review', 'task-1'],
+                when: 'during',
+                resumable: true,
+                ns: ['legacy-review'],
+              },
+            ],
+          },
+          {
+            id: 'confirmation-task',
+            name: 'confirmation',
+            error: null,
+            checkpoint: null,
+            state: null,
+            interrupts: [
+              {
+                id: 'saved-confirmation',
+                value: 0,
+                namespace: [],
+                when: 'during',
+                resumable: false,
+                ns: [],
+              },
+            ],
+          },
+        ],
         metadata: {},
         checkpoint: {
           thread_id: 'binding-thread',

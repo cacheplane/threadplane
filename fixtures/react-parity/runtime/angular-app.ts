@@ -19,11 +19,13 @@ const submit = (input: string) => { submissions += 1; return session.submit(inpu
       <button (click)="submit('Tool')">Tool</button>
       <button (click)="submit('Error')">Error</button>
       <button (click)="submit('Hold')">Hold</button>
+      <button (click)="submit('Pause')">Pause</button>
       <button (click)="stop()">Stop</button>
       <output aria-label="Status" data-testid="status">{{ snapshot().status }}</output>
       <output aria-label="Text" data-testid="text">{{ view().text }}</output>
       <output aria-label="Transcript" data-testid="transcript">{{ view().transcript }}</output>
       <output aria-label="Application values" data-testid="values">{{ view().values }}</output>
+      <output aria-label="Interrupts" data-testid="interrupts">{{ view().interrupts }}</output>
       <output aria-label="Loads finished" data-testid="loads-finished">{{ loadsFinished() }}</output>
       <output aria-label="Load error" data-testid="load-error">{{ loadError() }}</output>
       <output aria-label="Error" data-testid="error">{{ view().error }}</output>

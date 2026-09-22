@@ -8,7 +8,11 @@ import {
   type PlainValue,
   type ToolCall,
 } from '@threadplane/core';
-import type { LangGraphSnapshot, LangGraphValues } from './langgraph-snapshot';
+import type {
+  LangGraphInterrupt,
+  LangGraphSnapshot,
+  LangGraphValues,
+} from './langgraph-snapshot';
 
 // Only objects projected here are trusted. Object.isFrozen on external input is
 // insufficient: its children may still be mutable. The weak set retains no data.
@@ -282,6 +286,15 @@ export function ownLangGraphSnapshot(
   const values = ownValueWithSharing(input.values, previous?.values) as
     | LangGraphValues
     | undefined;
-  if (core === previous && values === previous?.values) return previous;
-  return freeze({ ...core, values });
+  const interrupts = ownValueWithSharing(
+    input.interrupts,
+    previous?.interrupts
+  ) as readonly LangGraphInterrupt[];
+  if (
+    core === previous &&
+    values === previous?.values &&
+    interrupts === previous?.interrupts
+  )
+    return previous;
+  return freeze({ ...core, values, interrupts });
 }

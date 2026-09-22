@@ -85,6 +85,10 @@ test('history uses the exact SDK body and counts reads separately from runs', as
     const saved = await first.json();
     assert.equal(saved[0].values.stage, 'saved');
     assert.deepEqual(saved[0].values.profile, { name: 'Saved user' });
+    assert.deepEqual(saved[0].tasks.flatMap((task) => task.interrupts), [
+      { id: 'saved-approval', value: { question: 'Approve saved request?', choices: ['yes', 'no'] }, namespace: ['review', 'task-1'], when: 'during', resumable: true, ns: ['legacy-review'] },
+      { id: 'saved-confirmation', value: 0, namespace: [], when: 'during', resumable: false, ns: [] },
+    ]);
     assert.deepEqual(saved[0].values.messages.at(-1).content, [{ type: 'text', text: 'Saved final answer' }]);
     assert.deepEqual(await (await read()).json(), saved);
     assert.deepEqual(await (await read()).json(), []);
@@ -94,7 +98,7 @@ test('history uses the exact SDK body and counts reads separately from runs', as
   } finally { await server.close(); }
 });
 
-test('text fixture retains root application state while exercising ignored child and control data', () => {
+test('text fixture retains root application state while exercising only ignored interrupt lookalikes', () => {
   const body = { ...heldBody, input: { ...heldBody.input, messages: [{ id: 'user', type: 'human', content: 'Send' }] } };
   const trace = runtime.runtimeResponse(body);
   assert.match(trace, /"stage":"complete"/);
@@ -102,6 +106,22 @@ test('text fixture retains root application state while exercising ignored child
   assert.match(trace, /event: updates/);
   assert.match(trace, /event: custom/);
   assert.match(trace, /"__interrupt__":\[\]/);
+  const events = trace.trim().split('\n\n').map((event) => ({ type: event.match(/^event: (.*)/m)?.[1], data: JSON.parse(event.match(/^data: (.*)/m)?.[1] ?? '{}') }));
+  assert.ok(events.every((event) => event.type !== 'values' || !Object.hasOwn(event.data, '__interrupt__')));
+});
+
+test('Pause contains separate values and updates controls with full SDK payloads and retained application values', () => {
+  const body = { ...heldBody, input: { ...heldBody.input, messages: [{ id: 'pause-user', type: 'human', content: 'Pause' }] } };
+  const trace = runtime.runtimeResponse(body);
+  const events = trace.trim().split('\n\n').map((event) => ({ type: event.match(/^event: (.*)/m)?.[1], data: JSON.parse(event.match(/^data: (.*)/m)?.[1] ?? '{}') }));
+  assert.deepEqual(events.map((event) => event.type), ['values', 'values', 'updates']);
+  assert.equal(events[0].data.stage, 'approval');
+  assert.equal(events[0].data.messages.at(-1).content, 'Waiting for approvals');
+  assert.deepEqual(events.slice(1).flatMap((event) => event.data.__interrupt__), [
+    { id: 'live-approval', value: { question: 'Approve action?', choices: ['yes', 'no'] }, namespace: ['review', 'live'], when: 'during', resumable: true, ns: ['legacy-live'] },
+    { id: 'live-confirmation', value: false, namespace: [], when: 'during', resumable: false, ns: [] },
+  ]);
+  assert.equal(events[1].data.stage, 'control-envelope');
 });
 
 for (const [label, route, method, body] of [

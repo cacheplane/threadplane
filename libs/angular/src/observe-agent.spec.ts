@@ -19,6 +19,24 @@ import {
 } from '../../langgraph/src/runtime/testing/binding-fixture';
 
 const fixtures: ReturnType<typeof bindingFixture>[] = [];
+const savedInterrupts = [
+  {
+    id: 'saved-approval',
+    value: { question: 'Approve saved request?', choices: ['yes', 'no'] },
+    namespace: ['review', 'task-1'],
+    when: 'during',
+    resumable: true,
+    ns: ['legacy-review'],
+  },
+  {
+    id: 'saved-confirmation',
+    value: 0,
+    namespace: [],
+    when: 'during',
+    resumable: false,
+    ns: [],
+  },
+];
 const injectors: EnvironmentInjector[] = [];
 const SESSION = new InjectionToken<
   ReturnType<typeof bindingFixture>['session']
@@ -32,6 +50,7 @@ const SESSION = new InjectionToken<
     <output data-testid="status">{{ snapshot().status }}</output>
     <div data-testid="messages">{{ messages }}</div>
     <output data-testid="values">{{ values }}</output>
+    <output data-testid="interrupts">{{ interrupts }}</output>
     <div data-testid="delivery">{{ delivery }}</div>
     <div data-testid="tools">{{ tools }}</div>
     <div role="alert">{{ snapshot().error?.message }}</div>
@@ -60,6 +79,9 @@ class Chat {
   }
   get tools() {
     return JSON.stringify(this.snapshot().toolCalls);
+  }
+  get interrupts() {
+    return JSON.stringify(this.snapshot().interrupts);
   }
 }
 function fixture() {
@@ -98,6 +120,9 @@ describe('observeAgent borrowed session', () => {
     expect(f.session.load).toBeTypeOf('function');
     expect(f.history.reads).toBe(0);
     expect(
+      view.nativeElement.querySelector('[data-testid="interrupts"]').textContent
+    ).toBe('[]');
+    expect(
       view.nativeElement.querySelector('[data-testid="values"]').textContent
     ).toBe('unobserved');
     let notifications = 0;
@@ -115,6 +140,15 @@ describe('observeAgent borrowed session', () => {
       )
     ).toEqual({ counter: 1, stable: { items: ['saved'] } });
     const snapshot = view.componentInstance.snapshot();
+    expect(
+      JSON.parse(
+        view.nativeElement.querySelector('[data-testid="interrupts"]')
+          .textContent
+      )
+    ).toEqual(savedInterrupts);
+    expect(
+      view.nativeElement.querySelector('[data-testid="delivery"]').textContent
+    ).toContain('paused');
     await f.session.load();
     expect(view.componentInstance.snapshot()).toBe(snapshot);
     expect(notifications).toBe(1);
@@ -124,6 +158,7 @@ describe('observeAgent borrowed session', () => {
     await f.session.load();
     view.detectChanges();
     const refreshed = view.componentInstance.snapshot();
+    expect(refreshed.interrupts).toBe(snapshot.interrupts);
     expect(refreshed.values?.['stable']).toBe(snapshot.values?.['stable']);
     expect(
       JSON.parse(
@@ -141,6 +176,7 @@ describe('observeAgent borrowed session', () => {
     await f.session.load();
     expect(f.session.getSnapshot().messages).toEqual([]);
     expect(f.session.getSnapshot().values).toBeUndefined();
+    expect(f.session.getSnapshot().interrupts).toEqual([]);
     expect(f.history.reads).toBe(4);
     expect(f.handlerCalls).toBe(0);
     expect(f.streams).toHaveLength(0);

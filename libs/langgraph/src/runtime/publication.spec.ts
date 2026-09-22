@@ -8,6 +8,7 @@ function snapshot(content = 'one'): LangGraphSnapshot {
   return {
     status: 'idle',
     values: undefined,
+    interrupts: [],
     messages: [
       {
         id: 'm',
@@ -30,6 +31,36 @@ function snapshot(content = 'one'): LangGraphSnapshot {
 }
 
 describe('private snapshot publication', () => {
+  it('owns interrupt payloads and suppresses equal aggregate publications', () => {
+    const payload = { nested: [1] };
+    const publication = createPublication({
+      ...snapshot(),
+      interrupts: [{ id: 'a', value: payload, namespace: ['root'] }],
+    });
+    const before = publication.getSnapshot();
+    expect(before.interrupts).toEqual([
+      { id: 'a', value: { nested: [1] }, namespace: ['root'] },
+    ]);
+    payload.nested.push(2);
+    expect(before.interrupts[0].value).toEqual({ nested: [1] });
+    expect(Object.isFrozen(before.interrupts[0].namespace)).toBe(true);
+    let calls = 0;
+    publication.subscribe(() => calls++);
+    publication.publish({
+      ...snapshot(),
+      interrupts: [{ id: 'a', value: { nested: [1] }, namespace: ['root'] }],
+    });
+    expect(publication.getSnapshot()).toBe(before);
+    expect(calls).toBe(0);
+    expect(() =>
+      publication.publish({
+        ...snapshot('Invalid'),
+        values: { count: 9 },
+        interrupts: [{ value: new Date() }],
+      } as unknown as LangGraphSnapshot)
+    ).toThrow(TypeError);
+    expect(publication.getSnapshot()).toBe(before);
+  });
   it('leaves the aggregate unchanged if application values ownership throws', () => {
     const publication = createPublication(snapshot());
     const before = publication.getSnapshot();
@@ -55,8 +86,12 @@ describe('private snapshot publication', () => {
       publication.subscribe(() => {
         if (publication.getSnapshot().status === 'running') {
           const values = { stable: { x: 1 }, count: 2 };
-          publication.publish({ ...snapshot('two'), values });
+          const interrupts = [
+            { id: 'queued', value: { choices: ['continue'] } },
+          ];
+          publication.publish({ ...snapshot('two'), values, interrupts });
           values.count = 99;
+          interrupts[0].value.choices.push('late mutation');
         }
       });
     publication.subscribe(() =>
@@ -66,6 +101,9 @@ describe('private snapshot publication', () => {
     expect(seen).toHaveLength(2);
     expect(seen[1].values).toEqual({ stable: { x: 1 }, count: 2 });
     expect(seen[1].values?.['stable']).toBe(first.values?.['stable']);
+    expect(seen[1].interrupts).toEqual([
+      { id: 'queued', value: { choices: ['continue'] } },
+    ]);
     expect(seen[1].messages[0].content).toBe('two');
     expect(Object.isFrozen(seen[1].values)).toBe(true);
   });

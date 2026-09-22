@@ -8,6 +8,14 @@ export interface FixtureTools {
 /** Fixture-local backend extension, expressed entirely through installed core. */
 export type FixtureSnapshot = AgentSnapshot<FixtureTools> & {
   readonly values: Readonly<Record<string, PlainValue>> | undefined;
+  readonly interrupts: readonly {
+    readonly id?: string;
+    readonly value?: PlainValue;
+    readonly namespace?: readonly string[];
+    readonly when?: string;
+    readonly resumable?: boolean;
+    readonly ns?: readonly string[];
+  }[];
 };
 
 export function display(snapshot: FixtureSnapshot) {
@@ -17,6 +25,7 @@ export function display(snapshot: FixtureSnapshot) {
     text: assistant.map((message) => message.content).join('\n'),
     transcript: snapshot.messages.map((message) => message.content).join('\n'),
     values: JSON.stringify(snapshot.values) ?? 'unobserved',
+    interrupts: JSON.stringify(snapshot.interrupts),
     error: snapshot.error?.message ?? '',
     tool: JSON.stringify(snapshot.toolCalls),
     delivery: delivery?.phase === 'complete' ? `complete:${delivery.outcome}` : delivery?.phase ?? '',

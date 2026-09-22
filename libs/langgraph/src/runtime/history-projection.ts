@@ -13,12 +13,17 @@ import {
   sameMessage,
   sameToolCall,
 } from './ownership';
-import { hasPause, record, roleOf, textContent } from './wire-message';
+import { record, roleOf, textContent } from './wire-message';
+import { projectHistoryInterrupts } from './interrupt-projection';
+import type { LangGraphInterrupt } from './langgraph-snapshot';
 
 export interface HistoryProjectionOptions {
   /** Omit for broad wire observation. A supplied catalog exposes only its
    * pending calls: a persisted ToolMessage string is not an authored result. */
   readonly registeredTools?: ReadonlySet<string>;
+  /** An aggregate caller supplies its already-owned candidate to avoid reading
+   * transport-owned interrupt getters a second time. */
+  readonly interrupts?: readonly LangGraphInterrupt[];
 }
 
 function sameEntries(left: readonly unknown[], right: readonly unknown[]) {
@@ -39,6 +44,8 @@ export function projectHistory(
   history: readonly ThreadState[],
   options: HistoryProjectionOptions = {}
 ): MessageState {
+  const interrupts =
+    options.interrupts ?? projectHistoryInterrupts([], history);
   const latest = history[0];
   const values = record(latest?.values);
   const rawMessages: unknown[] = Array.isArray(values?.['messages'])
@@ -113,10 +120,7 @@ export function projectHistory(
     }
   });
 
-  if (
-    hasPause(values) ||
-    latest?.tasks?.some((task) => (task.interrupts?.length ?? 0) > 0)
-  ) {
+  if (interrupts.length > 0) {
     // A pause belongs to the current turn. Do not reach past its last user to
     // borrow an older assistant when the latest request has no response yet.
     for (let index = projectedMessages.length - 1; index >= 0; index -= 1) {

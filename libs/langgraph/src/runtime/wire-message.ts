@@ -42,10 +42,3 @@ export function textContent(value: unknown): string {
     })
     .join('');
 }
-
-export function hasPause(value: unknown): boolean {
-  const data = record(value);
-  return (
-    Array.isArray(data?.['__interrupt__']) && data['__interrupt__'].length > 0
-  );
-}

@@ -11394,7 +11394,7 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private staged LangGraph runtime subset; fixture-only and not a neutral public LangGraph root or tarball.",
-      "note": "Explicit history and root live values now publish application data atomically with messages, including conclusive correlated recovery. Read-only fixed-thread T09/T10 subsets only; broader migration and public cutover remain open."
+      "note": "Adds readonly interrupt batches to the messages/values aggregate, with submit clearing, retained stop/failure/disposal state, candidate ownership and correlated recovery. Observation only; no resume/targeting or whole-task completion."
     },
     {
       "id": "source:libs/langgraph/src/runtime/function-tools.ts",
@@ -11415,7 +11415,18 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private staged LangGraph runtime subset; fixture-only and not a neutral public LangGraph root or tarball.",
-      "note": "Authoritative latest-checkpoint transcript projection only: replacement, deletion, reordering, identity sharing and observed wire tools. No full history, branch, pagination, state or interrupt-resume migration claim."
+      "note": "Latest-checkpoint pause delivery now uses the same candidate interrupt batch as the transcript. Task/control precedence is observed without nested-task or next-only inference; broader T10 and resume remain open."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/interrupt-projection.ts",
+      "taskIds": [
+        "T09",
+        "T10"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private staged LangGraph runtime subset; fixture-only and not a neutral public LangGraph root or tarball.",
+      "note": "Readonly root interrupt accumulation and authoritative checkpoint/history replacement only, including static breakpoint evidence and ID rules. No resume, targeting or full T09/T10 migration claim."
     },
     {
       "id": "source:libs/langgraph/src/runtime/langgraph-snapshot.ts",
@@ -11426,7 +11437,7 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private staged LangGraph runtime subset; fixture-only and not a neutral public LangGraph root or tarball.",
-      "note": "Private broad readonly application-values snapshot extension; undefined distinguishes no current observation from an observed empty record. No application-schema inference or public root export."
+      "note": "Private readonly values and interrupt snapshot extensions retain SDK interrupt metadata with plain payloads. No application-schema inference, targeting, resume or public root export."
     },
     {
       "id": "source:libs/langgraph/src/runtime/message-reducer.ts",
@@ -11457,7 +11468,7 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private staged LangGraph runtime subset; fixture-only and not a neutral public LangGraph root or tarball.",
-      "note": "Owns immutable plain application values and shares unchanged nested branches; token-only publication reuses owned graphs. Broader execution/publication migration remains open."
+      "note": "Owns immutable interrupt batches alongside values/messages, preserving unchanged nested identity. Broader execution/publication migration remains open."
     },
     {
       "id": "source:libs/langgraph/src/runtime/publication.ts",
@@ -11477,7 +11488,7 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private staged LangGraph runtime subset; fixture-only and not a neutral public LangGraph root or tarball.",
-      "note": "Uses messageMetadata for delta text semantics only on actual message events while preserving a same-named application value. Broader T09 migration remains open."
+      "note": "Live pause delivery uses root interrupt evidence shared with the observed batch; values projection and messageMetadata routing remain unchanged. Broader T09 migration remains open."
     },
     {
       "id": "source:libs/langgraph/src/runtime/testing/binding-fixture.ts",
@@ -11488,7 +11499,7 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private controlled runtime/binding test helper; excluded from public exports and production packages.",
-      "note": "Controlled native fixtures cover four history reads, including values-only replacement with unchanged messages, alongside equal/empty refresh. Broader T05/T06 coverage remains open."
+      "note": "Controlled native history fixtures include two task interrupt payloads, paused delivery, equal identity, values-only sharing and empty replacement. Broader T05/T06 coverage remains open."
     },
     {
       "id": "source:libs/langgraph/src/runtime/testing/controlled-transport.ts",
@@ -11542,7 +11553,7 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private staged LangGraph runtime subset; fixture-only and not a neutral public LangGraph root or tarball.",
-      "note": "Private wire role/text/pause decoding shared by stream and latest-history projection; broader T09/T10 capabilities remain open."
+      "note": "Private wire role/text decoding remains shared; pause extraction now belongs to the dedicated interrupt projector. Broader T09/T10 capabilities remain open."
     },
     {
       "id": "source:libs/langgraph/src/test-setup.ts",

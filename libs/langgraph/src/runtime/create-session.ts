@@ -17,14 +17,21 @@ import { FetchStreamTransport } from '../lib/transport/fetch-stream.transport';
 import { initialMessageState, reduceMessages } from './message-reducer';
 import { createPublication } from './publication';
 import { projectHistory } from './history-projection';
-import type { LangGraphSnapshot, LangGraphValues } from './langgraph-snapshot';
+import type {
+  LangGraphInterrupt,
+  LangGraphSnapshot,
+  LangGraphValues,
+} from './langgraph-snapshot';
 import { projectHistoryValues, projectValues } from './values-projection';
+import {
+  projectHistoryInterrupts,
+  projectInterrupts,
+} from './interrupt-projection';
 import { ownMessage } from './ownership';
 import { createSafeRequestError } from './operation-errors';
 import {
   failureProjection,
   finalizeProjection,
-  hasPause,
   interruptionError,
   projectStream,
   record,
@@ -138,9 +145,12 @@ export function createSession(
     messages: [],
     toolCalls: [],
     values: undefined,
+    interrupts: [],
   });
   let state = initialMessageState();
   let values: LangGraphValues | undefined;
+  let interrupts: readonly LangGraphInterrupt[] =
+    publication.getSnapshot().interrupts;
   let owner: Attempt | undefined;
   let recoveryAttempt: Attempt | undefined;
   let disposed = false;
@@ -155,6 +165,7 @@ export function createSession(
     publication.publish({
       status,
       values,
+      interrupts,
       messages: state.messages,
       toolCalls: typedTools
         ? state.toolCalls.filter(
@@ -339,6 +350,8 @@ export function createSession(
   function reconcile(attempt: Attempt, history: ThreadState[]) {
     const previousState = state;
     const previousValues = values;
+    const previousInterrupts = interrupts;
+    const previousProjection = attempt.projection;
     const latest = history[0];
     if (!latest) return undefined;
     const checkpointValues = record(latest.values);
@@ -349,7 +362,7 @@ export function createSession(
     // user ID can correlate this checkpoint to this request, including when the
     // persisted assistant retains the ID of its earlier streamed partial.
     const anchor = messages.findIndex(
-      (value) => record(value)?.['id'] === attempt.projection.userId
+      (value) => record(value)?.['id'] === previousProjection.userId
     );
     if (anchor < 0) return undefined;
     const after = messages.slice(anchor + 1);
@@ -367,10 +380,11 @@ export function createSession(
     const evidence = handoffs.length
       ? turn.slice(Math.max(...handoffs) + 1)
       : turn;
-    const paused =
-      nextUser < 0 &&
-      (hasPause(checkpointValues) ||
-        latest.tasks?.some((task) => (task.interrupts?.length ?? 0) > 0));
+    const projectedInterrupts = projectHistoryInterrupts(
+      previousInterrupts,
+      history
+    );
+    const paused = nextUser < 0 && projectedInterrupts.length > 0;
     const committed =
       (nextUser >= 0 || latest.next.length === 0) &&
       evidence.some((value) => {
@@ -384,15 +398,16 @@ export function createSession(
         );
       });
     if (!paused && !committed) return undefined;
-    const projected = projectStream(previousState, attempt.projection, {
+    const projected = projectStream(previousState, previousProjection, {
       type: 'values',
-      data: { ...checkpointValues, messages: [messages[anchor], ...turn] },
+      data: { messages: [messages[anchor], ...turn] },
     });
     const projectedValues = projectHistoryValues(previousValues, history);
     return {
       state: finalizeProjection(projected.state, projected.projection),
-      projection: projected.projection,
+      projection: { ...projected.projection, paused },
       values: projectedValues,
+      interrupts: projectedInterrupts,
       outcome: paused ? ('paused' as const) : ('success' as const),
     };
   }
@@ -424,6 +439,10 @@ export function createSession(
           if (!owns(attempt)) return;
           if (next.done) break;
           const event = next.value;
+          const previousState = state;
+          const previousValues = values;
+          const previousInterrupts = interrupts;
+          const previousProjection = attempt.projection;
           if (event.type === 'error' && !event.namespace?.length) {
             const error = failureProjection(
               event['data'] ?? event,
@@ -434,14 +453,26 @@ export function createSession(
             settle(attempt, 'error', error);
             return;
           }
-          const projected = projectStream(state, attempt.projection, event);
-          const projectedValues = projectValues(values, event);
-          // Both projections may invoke transport-owned getters. Commit neither
+          const projected = projectStream(
+            previousState,
+            previousProjection,
+            event
+          );
+          const projectedValues = projectValues(previousValues, event);
+          const projectedInterrupts = projectInterrupts(
+            previousInterrupts,
+            event
+          );
+          // All three projections may invoke transport-owned getters. Commit no
           // candidate if projection failed or a getter changed the owner.
           if (!owns(attempt)) return;
           state = projected.state;
           values = projectedValues;
-          attempt.projection = projected.projection;
+          interrupts = projectedInterrupts;
+          attempt.projection = {
+            ...projected.projection,
+            paused: projectedInterrupts.length > 0,
+          };
           publish('running');
           // publish drains observer commands before returning. Never dispatch or
           // read on behalf of an attempt a listener just stopped/superseded.
@@ -465,6 +496,7 @@ export function createSession(
             if (recovered) {
               state = recovered.state;
               values = recovered.values;
+              interrupts = recovered.interrupts;
               attempt.projection = recovered.projection;
               outcome = recovered.outcome;
             }
@@ -594,6 +626,7 @@ export function createSession(
           delivery: completeDelivery(generation, 'success'),
         },
       });
+      interrupts = projectHistoryInterrupts(interrupts, []);
       publish('running');
       checking?.abort();
       if (previous) close(previous, true);
@@ -614,19 +647,26 @@ export function createSession(
       const history = await getHistory(threadId, read.controller.signal);
       await publication.command(() => {
         if (!ownsLoad(read)) return;
-        const projected = projectHistory(
-          state,
-          history,
-          typedTools
-            ? { registeredTools: new Set(definitions.keys()) }
-            : undefined
+        const previousState = state;
+        const previousValues = values;
+        const previousInterrupts = interrupts;
+        const projectedInterrupts = projectHistoryInterrupts(
+          previousInterrupts,
+          history
         );
-        const projectedValues = projectHistoryValues(values, history);
+        const projected = projectHistory(previousState, history, {
+          interrupts: projectedInterrupts,
+          ...(typedTools
+            ? { registeredTools: new Set(definitions.keys()) }
+            : {}),
+        });
+        const projectedValues = projectHistoryValues(previousValues, history);
         // Even a plain projection can invoke getters supplied by a transport.
         // Such a getter can submit/stop/dispose; never commit its stale result.
         if (!ownsLoad(read)) return;
         state = projected;
         values = projectedValues;
+        interrupts = projectedInterrupts;
         authoredTools.clear();
         loading = undefined;
         read.resolve();
@@ -744,6 +784,7 @@ export function createSession(
         checkController = undefined;
         state = recoveredState;
         values = recovered.values;
+        interrupts = recovered.interrupts;
         captured.attempt.projection = recovered.projection;
         publish('idle');
       });

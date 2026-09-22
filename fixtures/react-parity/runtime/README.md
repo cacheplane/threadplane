@@ -28,7 +28,9 @@ versions come from the root lockfile. Contract probes compile the installed
 public entries with `strict` and `skipLibCheck:false`, standard DOM signals, and
 no workspace aliases. Negative probes check names, arguments, results and deep
 readonly types directly on each binding's inferred snapshot, including broad
-backend values without application-schema inference.
+backend values and interrupt metadata/payloads without application-schema inference.
+The installed fixture shape uses core types only; the compiler-emitted factory
+declaration and native inferred result are checked together, including tool types.
 
 `runtime-entry.ts` is development-only composition around private `createSession`,
 the production `FetchStreamTransport`, and the real LangGraph SDK. A focused
@@ -72,6 +74,26 @@ retaining typed tool results, method receivers and borrowed lifetime semantics.
 The factory and snapshot extension remain private; state writes, application
 schema inference, SSR and package-root cutover remain outside this slice.
 
+`LangGraphSnapshot.interrupts` now observes a readonly batch in that same immutable
+aggregate. Each item retains SDK interrupt metadata and an owned plain payload;
+neither metadata nor payload is a resume command or an inferred application schema.
+Root `values`/`updates` controls must have an own array-valued `__interrupt__` field.
+Separate dynamic batches accumulate: the first occurrence of a string ID wins,
+while anonymous entries stay distinct. An empty `__interrupt__` array replaces
+the batch with the static breakpoint sentinel `{ when: 'breakpoint' }`; the next
+dynamic batch replaces that sentinel. An explicit empty standalone `interrupts`
+batch clears the observed batch.
+
+Authoritative checkpoints and latest history replace interrupts. A valid values
+control takes precedence; otherwise all top-level task interrupt arrays contribute.
+Child namespaces, nested task state and `next` alone do not establish a root pause.
+History pause delivery is derived from the same candidate as messages, values and
+interrupts. Equal refreshes retain identity, and values-only refreshes share the
+unchanged interrupt batch. An accepted new submission clears the prior batch; stop, disposal
+and failures retain the last observed batch. Observation adds no implicit I/O,
+resume or target-selection API. Existing getter/stale-candidate guards, recovery
+correlation, tool handoff and next-user-input behavior remain covered.
+
 The private `LangGraphSession` offers `load({ signal })` only when its transport
 supports history reads. Loading is explicit: construction, mount and subscription
 perform no I/O. The latest checkpoint authoritatively replaces the transcript,
@@ -91,8 +113,8 @@ subset of T10, not thread switching, pagination, branching, state writes,
 interrupt resume, SSR, or a public LangGraph package cutover. Core public contracts
 are unchanged; the native signatures now retain the concrete snapshot extension.
 
-The native fixtures expose Load, Send, Tool, Error, Hold and Stop buttons plus text,
-transcript, values, load completion/error, status, tool result, delivery, submission and
+The native fixtures expose Load, Send, Tool, Error, Hold, Pause and Stop buttons plus text,
+transcript, values, interrupts, load completion/error, status, tool result, delivery, submission and
 handler count outputs. A single app-owned
 session is created outside component lifetime and outside React's StrictMode
 tree; owner buttons perform framework unmount and explicit session disposal.
@@ -100,12 +122,13 @@ React uses a Vite production build. Angular uses the existing consumer template'
 installed Angular CLI application builder and real APF linking, with output in
 `dist/consumer/browser` and input evidence from `dist/consumer/stats.json`.
 
-Both built apps run the same ten browser scenarios in installed Playwright
+Both built apps run the same eleven browser scenarios in installed Playwright
 Chromium: inert mount, explicit history load, equal history refresh, empty history
 replacement, successful text, a real local tool handler and exact
 two-request result continuation, protected visible server error, held streaming
-DOM updates and Stop, reuse after Stop, then unmount/dispose/post-disposal submission.
-Five submissions through the component controls make exactly six run requests
+DOM updates and Stop, the full pause batch retained after Stop, reuse after Stop,
+then unmount/dispose/post-disposal submission.
+Six submissions through the component controls make exactly seven run requests
 (including one tool continuation) and call the handler once. The separate
 post-disposal submit attempt resolves aborted without making a request.
 Three explicit Load clicks make exactly three history reads with `{ limit: 10 }`
@@ -116,7 +139,12 @@ the catalog and actual serialized ToolMessage payload.
 Values assertions distinguish unobserved from empty state, show loaded application
 fields, and verify replacement/deletion across root, tool, held and reused runs.
 Separate native component tests make four history reads to cover a values-only
-refresh with unchanged messages; installed browser scenarios still make three.
+refresh with unchanged messages and interrupts; installed browser scenarios still
+make three. History fixtures contain two separate task payloads and show paused
+delivery. The Pause button sends two separate root controls and renders both
+payloads; Stop retains them without another request, and the next Send clears them.
+Unrelated custom/child noise does not contain a root empty control, because an
+actual empty root `__interrupt__` is a static breakpoint rather than noise.
 
 A small in-process HTTP fixture serves only built artifacts and the expected
 LangGraph run/history routes on dynamic port 0. The held response writes an actual SSE

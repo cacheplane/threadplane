@@ -1,5 +1,49 @@
-import type { AgentSession, AgentSnapshot } from '@threadplane/core';
+import type {
+  AgentSession,
+  AgentSnapshot,
+  PlainValue,
+} from '@threadplane/core';
 import { useAgent } from './index.js';
+// eslint-disable-next-line @nx/enforce-module-boundaries -- This type-only integration probe observes the actual private factory through the borrowed fixture.
+import type { bindingFixture } from '../../langgraph/src/runtime/testing/binding-fixture';
+
+export function useInferredRuntime(
+  session: ReturnType<typeof bindingFixture>['session']
+) {
+  const snapshot = useAgent(session);
+  const payload = snapshot.interrupts[0]?.value;
+  const plainPayload: PlainValue = payload;
+  const namespace: readonly string[] | undefined =
+    snapshot.interrupts[0]?.namespace;
+  // @ts-expect-error The backend interrupt field remains readonly.
+  snapshot.interrupts = [];
+  // @ts-expect-error The observed batch remains readonly.
+  snapshot.interrupts.push({ value: false });
+  // @ts-expect-error Namespace metadata remains readonly.
+  snapshot.interrupts[0].namespace?.push('changed');
+  // @ts-expect-error The broad backend payload has no inferred application schema.
+  const assumed: { approved: boolean } = payload;
+  if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+    // @ts-expect-error Nested payload fields remain readonly.
+    payload['changed'] = true;
+  }
+  for (const call of snapshot.toolCalls)
+    if (call.status === 'complete') {
+      if (call.name === 'weather') {
+        const temperature: number = call.result.temperature;
+        // @ts-expect-error The weather result retains its authored object shape.
+        const wrong: number = call.result;
+        void [temperature, wrong];
+      } else {
+        const count: number = call.result;
+        // @ts-expect-error The count result retains its authored primitive shape.
+        void call.result.temperature;
+        void count;
+      }
+    }
+  void [plainPayload, namespace, assumed];
+  return snapshot;
+}
 
 interface Tools {
   weather: { args: { city: string }; result: { temperature: number } };
