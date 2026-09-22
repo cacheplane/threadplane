@@ -21,16 +21,29 @@ export function bindingFixture() {
   let handlerSignal: AbortSignal | undefined;
   const history: { reads: number; value: ThreadState[] } = {
     reads: 0,
-    value: [{
-      values: { messages: [
-        { id: 'saved-user', type: 'human', content: 'Saved question' },
-        { id: 'saved-answer', type: 'ai', content: 'Saved answer' },
-      ] },
-      next: [], tasks: [], metadata: {},
-      checkpoint: { thread_id: 'binding-thread', checkpoint_ns: '', checkpoint_id: 'saved', checkpoint_map: {} },
-      parent_checkpoint: null,
-      created_at: '2026-09-21T00:00:00Z',
-    }],
+    value: [
+      {
+        values: {
+          counter: 1,
+          stable: { items: ['saved'] },
+          messages: [
+            { id: 'saved-user', type: 'human', content: 'Saved question' },
+            { id: 'saved-answer', type: 'ai', content: 'Saved answer' },
+          ],
+        },
+        next: [],
+        tasks: [],
+        metadata: {},
+        checkpoint: {
+          thread_id: 'binding-thread',
+          checkpoint_ns: '',
+          checkpoint_id: 'saved',
+          checkpoint_map: {},
+        },
+        parent_checkpoint: null,
+        created_at: '2026-09-21T00:00:00Z',
+      },
+    ],
   };
   const stream: AgentTransport['stream'] = (_a, _t, _p, signal) => {
     const controlled = controlledTransport<StreamEvent>({ signal });
@@ -41,7 +54,13 @@ export function bindingFixture() {
   const runtime = createSession({
     assistantId: 'binding-agent',
     threadId: 'binding-thread',
-    transport: { stream, getHistory: async () => { history.reads++; return history.value; } },
+    transport: {
+      stream,
+      getHistory: async () => {
+        history.reads++;
+        return history.value;
+      },
+    },
     tools: {
       weather: {
         description: 'Weather',
@@ -146,7 +165,10 @@ export const delta = (content: string, id = 'answer'): StreamEvent => ({
 
 export const finalText = (content: string): StreamEvent => ({
   type: 'values',
-  data: { messages: [{ type: 'ai', id: 'answer', content }] },
+  data: {
+    stage: 'complete',
+    messages: [{ type: 'ai', id: 'answer', content }],
+  },
 });
 
 export const weatherCall: StreamEvent = {

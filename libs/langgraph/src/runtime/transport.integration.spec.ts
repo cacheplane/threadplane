@@ -70,6 +70,85 @@ describe('neutral real SDK transport', () => {
     vi.unstubAllGlobals();
   });
 
+  it('keeps SDK routing authoritative while exposing colliding application keys', async () => {
+    const root = {
+      type: 'domain',
+      namespace: ['application'],
+      stage: 'root',
+      messages: [{ type: 'ai', id: 'answer', content: 'Root' }],
+    };
+    const child = {
+      type: 'values',
+      namespace: [],
+      stage: 'child',
+      messages: [{ type: 'ai', id: 'child', content: 'Child' }],
+    };
+    const request = vi.fn<typeof fetch>(async (url) =>
+      String(url).endsWith('/history')
+        ? new Response('[]')
+        : fragmentedResponse(
+            `event: values\ndata: ${JSON.stringify(
+              root
+            )}\n\nevent: values|child\ndata: ${JSON.stringify(child)}\n\n`
+          )
+    );
+    vi.stubGlobal('fetch', request);
+    const session = createSession({
+      assistantId: 'a',
+      threadId: 't',
+      apiUrl: 'https://runtime.example',
+    });
+    try {
+      expect(await session.submit('Go')).toBe('success');
+      expect(session.getSnapshot()).toMatchObject({
+        values: { type: 'domain', namespace: ['application'], stage: 'root' },
+      });
+      expect(session.getSnapshot().messages.at(-1)?.content).toBe('Root');
+      expect(request).toHaveBeenCalledTimes(1);
+    } finally {
+      await session.dispose();
+    }
+  });
+
+  it('does not treat application messageMetadata as message-chunk routing', async () => {
+    const request = vi.fn<typeof fetch>(async () =>
+      fragmentedResponse(
+        ['First', 'Second']
+          .map(
+            (content) =>
+              `event: values\ndata: ${JSON.stringify({
+                messageMetadata: { domain: true },
+                count: content,
+                messages: [{ type: 'ai', id: 'answer', content }],
+              })}\n\n`
+          )
+          .join('')
+      )
+    );
+    vi.stubGlobal('fetch', request);
+    const session = createSession({
+      assistantId: 'a',
+      threadId: 't',
+      apiUrl: 'https://runtime.example',
+    });
+    const text: string[] = [];
+    session.subscribe(() => {
+      const last = session.getSnapshot().messages.at(-1);
+      if (last?.role === 'assistant') text.push(last.content);
+    });
+    try {
+      expect(await session.submit('Go')).toBe('success');
+      expect(text).toContain('Second');
+      expect(text).not.toContain('FirstSecond');
+      expect(session.getSnapshot()).toMatchObject({
+        values: { messageMetadata: { domain: true }, count: 'Second' },
+      });
+      expect(request).toHaveBeenCalledTimes(1);
+    } finally {
+      await session.dispose();
+    }
+  });
+
   it('loads decoded history through the real SDK endpoint without issuing runs, writes or tools', async () => {
     const request = vi.fn<typeof fetch>(
       async () =>

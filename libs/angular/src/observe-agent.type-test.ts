@@ -7,6 +7,43 @@ interface Tools {
   count: { args: { values: readonly string[] }; result: number };
 }
 
+interface ConcreteSnapshot extends AgentSnapshot<Tools> {
+  readonly backend: 'concrete';
+  readonly values: {
+    readonly counter: number;
+    readonly items: readonly string[];
+  };
+}
+
+class ConcreteObserver {
+  constructor(readonly snapshot: ConcreteSnapshot) {}
+  getSnapshot() {
+    return this.snapshot;
+  }
+  subscribe(notify: () => void) {
+    void notify;
+    return () => undefined;
+  }
+}
+
+export function observeConcreteSession(session: ConcreteObserver) {
+  const observation = observeAgent(session);
+  const exact: Signal<ConcreteSnapshot> = observation;
+  const snapshot = observation();
+  const count: number = snapshot.values.counter;
+  const backend: 'concrete' = snapshot.backend;
+  // @ts-expect-error The concrete values field remains readonly.
+  snapshot.values = { counter: 2, items: [] };
+  // @ts-expect-error Concrete fields remain readonly.
+  snapshot.values.counter = 2;
+  // @ts-expect-error Nested concrete arrays remain readonly.
+  snapshot.values.items.push('mutable');
+  // @ts-expect-error Exact concrete fields cannot widen to any.
+  const invalid: string = snapshot.values.counter;
+  void [count, backend, invalid];
+  return exact;
+}
+
 export function observeTypedSession(session: AgentSession<Tools>) {
   const signal = observeAgent(session);
   const exact: Signal<AgentSnapshot<Tools>> = signal;

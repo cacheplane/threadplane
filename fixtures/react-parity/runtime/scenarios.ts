@@ -1,16 +1,22 @@
-import type { AgentSession, AgentSnapshot } from '@threadplane/core';
+import type { AgentSession, AgentSnapshot, PlainValue } from '@threadplane/core';
 
 export interface FixtureTools {
   weather: { args: { city: string }; result: { city: string; temperature: number } };
   count: { args: { values: readonly string[] }; result: number };
 }
 
-export function display(snapshot: AgentSnapshot<FixtureTools>) {
+/** Fixture-local backend extension, expressed entirely through installed core. */
+export type FixtureSnapshot = AgentSnapshot<FixtureTools> & {
+  readonly values: Readonly<Record<string, PlainValue>> | undefined;
+};
+
+export function display(snapshot: FixtureSnapshot) {
   const assistant = snapshot.messages.filter((message) => message.role === 'assistant');
   const delivery = assistant.at(-1)?.delivery;
   return {
     text: assistant.map((message) => message.content).join('\n'),
     transcript: snapshot.messages.map((message) => message.content).join('\n'),
+    values: JSON.stringify(snapshot.values) ?? 'unobserved',
     error: snapshot.error?.message ?? '',
     tool: JSON.stringify(snapshot.toolCalls),
     delivery: delivery?.phase === 'complete' ? `complete:${delivery.outcome}` : delivery?.phase ?? '',

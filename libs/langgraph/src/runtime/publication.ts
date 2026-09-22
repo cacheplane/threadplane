@@ -1,14 +1,14 @@
-import type { AgentSnapshot } from '@threadplane/core';
-import { ownSnapshot } from './ownership';
+import type { LangGraphSnapshot } from './langgraph-snapshot';
+import { ownLangGraphSnapshot } from './ownership';
 
 /** Backend-private publication. Listener failures are reported once to the
  * optional callback and otherwise ignored; reporter failures are contained too.
  * Neither kind of failure changes execution state or rejects a command. */
 export function createPublication(
-  initial: AgentSnapshot,
+  initial: LangGraphSnapshot,
   reportListenerError: (error: unknown) => void = () => undefined
 ) {
-  let current = ownSnapshot(initial);
+  let current = ownLangGraphSnapshot(initial);
   const listeners = new Set<{ notify: () => void }>();
   const pending: (() => void)[] = [];
   let flushing = false;
@@ -32,11 +32,11 @@ export function createPublication(
     }
   }
 
-  function publish(input: AgentSnapshot): void {
+  function publish(input: LangGraphSnapshot): void {
     // Capture external ingress now, including when a listener queues a publish.
-    const captured = ownSnapshot(input, current);
+    const captured = ownLangGraphSnapshot(input, current);
     schedule(() => {
-      const next = ownSnapshot(captured, current);
+      const next = ownLangGraphSnapshot(captured, current);
       if (next === current) return;
       current = next;
       notifying = true;

@@ -34,31 +34,68 @@ describe('useAgent borrowed session', () => {
     function History() {
       const snapshot = useAgent(f.session);
       renders++;
-      return <output>{snapshot.messages.map((message) => message.content).join('\n')}</output>;
+      return (
+        <>
+          <output data-testid="history-messages">
+            {snapshot.messages.map((message) => message.content).join('\n')}
+          </output>
+          <output data-testid="values">
+            {JSON.stringify(snapshot.values) ?? 'unobserved'}
+          </output>
+        </>
+      );
     }
     const view = render(<History />, { reactStrictMode: true });
     expect(f.session.load).toBeTypeOf('function');
     expect(f.history.reads).toBe(0);
-    await act(async () => { await f.session.load(); });
-    expect(view.getByRole('status').textContent).toBe('Saved question\nSaved answer');
+    expect(view.getByTestId('values').textContent).toBe('unobserved');
+    await act(async () => {
+      await f.session.load();
+    });
+    expect(view.getByTestId('history-messages').textContent).toBe(
+      'Saved question\nSaved answer'
+    );
+    expect(JSON.parse(view.getByTestId('values').textContent ?? '')).toEqual({
+      counter: 1,
+      stable: { items: ['saved'] },
+    });
     const snapshot = f.session.getSnapshot();
     const beforeRefresh = renders;
-    await act(async () => { await f.session.load(); });
+    await act(async () => {
+      await f.session.load();
+    });
     expect(f.session.getSnapshot()).toBe(snapshot);
     expect(renders).toBe(beforeRefresh);
     expect(f.history.reads).toBe(2);
+    const saved = f.history.value[0];
+    f.history.value = [{ ...saved, values: { ...saved.values, counter: 2 } }];
+    await act(async () => {
+      await f.session.load();
+    });
+    const refreshed = f.session.getSnapshot();
+    expect(refreshed.values?.['stable']).toBe(snapshot.values?.['stable']);
+    expect(JSON.parse(view.getByTestId('values').textContent ?? '')).toEqual({
+      counter: 2,
+      stable: { items: ['saved'] },
+    });
     view.unmount();
     const reattached = render(<History />, { reactStrictMode: true });
-    expect(reattached.getByRole('status').textContent).toBe('Saved question\nSaved answer');
-    expect(f.history.reads).toBe(2);
+    expect(reattached.getByTestId('history-messages').textContent).toBe(
+      'Saved question\nSaved answer'
+    );
+    expect(f.session.getSnapshot()).toBe(refreshed);
+    expect(f.history.reads).toBe(3);
     reattached.unmount();
     f.history.value = [];
     await f.session.load();
     expect(f.session.getSnapshot().messages).toEqual([]);
-    expect(f.history.reads).toBe(3);
+    expect(f.session.getSnapshot().values).toBeUndefined();
+    expect(f.history.reads).toBe(4);
     expect(f.handlerCalls).toBe(0);
     expect(f.streams).toHaveLength(0);
-    expect(f.session.submitCalls + f.session.stopCalls + f.session.disposeCalls).toBe(0);
+    expect(
+      f.session.submitCalls + f.session.stopCalls + f.session.disposeCalls
+    ).toBe(0);
   });
 
   it('renders streamed text, tool results, errors and stop outcomes through native controls', async () => {
@@ -120,6 +157,7 @@ describe('useAgent borrowed session', () => {
       expect(await run).toBe('success');
     });
     expect(view.getByTestId('messages').textContent).toContain('Visible final');
+    expect(f.session.getSnapshot().values).toEqual({ stage: 'complete' });
     expect(view.getByTestId('status').textContent).toBe('idle');
     expect(view.getByTestId('delivery').textContent).toContain('success');
 

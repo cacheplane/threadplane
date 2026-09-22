@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "status": "verified-local",
-  "increment": "Explicit fixed-thread history loading (partial T10)",
+  "increment": "Readonly application-state values observation (partial T09/T10)",
   "observedOn": "2026-09-21",
-  "recordedAt": "2026-09-22T02:09:48.896Z",
+  "recordedAt": "2026-09-22T03:19:34.895Z",
   "source": {
-    "branch": "codex/langgraph-history-loading",
-    "baseCommit": "e1da2bd10d0f009924eeb2ea67203da92d71cd0b",
-    "verificationHead": "e1da2bd10d0f009924eeb2ea67203da92d71cd0b",
-    "workingTree": "Verified uncommitted history-loading, fixture, test and metadata changes on the runtime integration HEAD. The fingerprint identifies the actual selected working-tree bytes. No future commit or future CI result is claimed.",
+    "branch": "codex/langgraph-state-values",
+    "baseCommit": "192f94e9b57b77e1858e2e4337f0d34bcd6a9c64",
+    "verificationHead": "192f94e9b57b77e1858e2e4337f0d34bcd6a9c64",
+    "workingTree": "Verified uncommitted values-projection, native signature, transport normalization, fixture/test and metadata changes on the merged history-loading HEAD. The fingerprint identifies actual selected working-tree bytes; no future commit or future CI result is claimed.",
     "fingerprint": {
       "algorithm": "SHA-256 of a UTF-8 manifest: one line per selected file, lowercase SHA-256(file bytes), two ASCII spaces, repo-relative path, LF; unique paths sorted by JavaScript default string ordering.",
       "pathspecs": [
@@ -38,9 +38,9 @@
       "excludedPaths": [
         "fixtures/react-parity/runtime/evidence.json"
       ],
-      "fileCount": 770,
-      "sha256": "5ad0835c76b0a039165f1cc1419a553690d25c8c0a34452211aeb69e5e5002b2",
-      "selection": "git ls-files -z --cached --others --exclude-standard -- <pathspecs>; keep existing files and remove excludedPaths. Includes tracked and non-ignored untracked files. Evidence itself is excluded to avoid self-reference; the seven local research/planning reports are outside all selected paths.",
+      "fileCount": 775,
+      "sha256": "0ec1ffeca45fa046535ccd6f95c3754735ab5de0f8a355d23afe41f0dbe1d9ab",
+      "selection": "git ls-files -z --cached --others --exclude-standard -- <pathspecs>; keep existing files and remove excludedPaths. Includes tracked and non-ignored untracked files. Evidence itself is excluded to avoid self-reference; eight local research/planning reports are outside all selected paths.",
       "reproduce": "node --input-type=module <<'JS'\nimport {createHash} from 'node:crypto';\nimport {execFileSync} from 'node:child_process';\nimport {readFileSync,existsSync} from 'node:fs';\nconst {fingerprint:f}=JSON.parse(readFileSync('fixtures/react-parity/runtime/evidence.json')).source;\nconst sha=value=>createHash('sha256').update(value).digest('hex');\nconst paths=[...new Set(execFileSync('git',['ls-files','-z','--cached','--others','--exclude-standard','--',...f.pathspecs],{encoding:'utf8'}).split('\\0').filter(Boolean))].filter(path=>!f.excludedPaths.includes(path)&&existsSync(path)).sort();\nconst actual=sha(paths.map(path=>sha(readFileSync(path))+'  '+path+'\\n').join(''));\nif(paths.length!==f.fileCount||actual!==f.sha256) throw new Error('Source fingerprint mismatch');\nconsole.log(paths.length+' files: '+actual);\nJS"
     },
     "sourceState": {
@@ -48,26 +48,39 @@
         "fixtures/react-parity/README.md",
         "fixtures/react-parity/runtime/README.md",
         "fixtures/react-parity/runtime/angular-app.ts",
+        "fixtures/react-parity/runtime/installed-types.ts",
         "fixtures/react-parity/runtime/react-app.tsx",
         "fixtures/react-parity/runtime/runtime-entry.ts",
         "fixtures/react-parity/runtime/scenarios.ts",
+        "libs/angular/README.md",
         "libs/angular/src/observe-agent.spec.ts",
+        "libs/angular/src/observe-agent.ts",
+        "libs/angular/src/observe-agent.type-test.ts",
+        "libs/langgraph/src/lib/transport/fetch-stream.transport.spec.ts",
+        "libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
         "libs/langgraph/src/runtime/create-session.ts",
+        "libs/langgraph/src/runtime/ownership.ts",
+        "libs/langgraph/src/runtime/publication.spec.ts",
+        "libs/langgraph/src/runtime/publication.ts",
         "libs/langgraph/src/runtime/stream-projection.ts",
         "libs/langgraph/src/runtime/testing/binding-fixture.ts",
         "libs/langgraph/src/runtime/transport.integration.spec.ts",
+        "libs/react/README.md",
         "libs/react/src/use-agent.spec.tsx",
+        "libs/react/src/use-agent.ts",
+        "libs/react/src/use-agent.type-test.ts",
         "scripts/react-parity/baseline.json",
         "scripts/react-parity/dispositions.json",
         "scripts/react-parity/runtime-consumer.mjs",
-        "scripts/react-parity/runtime-consumer.spec.mjs"
+        "scripts/react-parity/runtime-consumer.spec.mjs",
+        "scripts/react-parity/verify-angular-package.mjs"
       ],
       "untracked": [
-        "libs/langgraph/src/runtime/history-projection.spec.ts",
-        "libs/langgraph/src/runtime/history-projection.ts",
-        "libs/langgraph/src/runtime/history.spec.ts",
-        "libs/langgraph/src/runtime/history.type-test.ts",
-        "libs/langgraph/src/runtime/wire-message.ts"
+        "libs/langgraph/src/runtime/langgraph-snapshot.ts",
+        "libs/langgraph/src/runtime/values-projection.spec.ts",
+        "libs/langgraph/src/runtime/values-projection.ts",
+        "libs/langgraph/src/runtime/values.spec.ts",
+        "libs/langgraph/src/runtime/values.type-test.ts"
       ]
     }
   },
@@ -102,10 +115,10 @@
     {
       "command": "NX_DAEMON=false node --test scripts/ci-scope.spec.mjs scripts/ci-workflow.spec.mjs scripts/react-parity/*.spec.mjs fixtures/react-parity/traces.spec.mjs",
       "exitCode": 0,
-      "testsPassed": 412,
+      "testsPassed": 413,
       "testsFailed": 0,
-      "log": "/tmp/h04-final-focused.log",
-      "logSha256": "8d929ce23bb0c125cdbb859166c4a9fef70b8304ae4de7fa0bc12ee035c77fe8"
+      "log": "/tmp/v04-final-focused.log",
+      "logSha256": "6415b5511886a8f22b7681fd61e0d0a125372f0a12ffaae04282c968b9bf7bed"
     },
     {
       "command": "NX_DAEMON=false npx nx run-many -t lint test type-tests build --projects=core,content,angular,react --parallel=2 --skip-nx-cache",
@@ -118,21 +131,21 @@
         "react": 7
       },
       "content": "Empty scaffold with passWithNoTests; no content behavior count claimed.",
-      "log": "/tmp/h04-final-foundations.log",
-      "logSha256": "499d4f3a8ed8fdd6af1c26252aa418a9f70b667ce6fb28c39f5f4793d654d18c"
+      "log": "/tmp/v04-final-foundations.log",
+      "logSha256": "01c0cf761887e34b3411d98372c328d0f1fda388ce6f51b0708a8ffb58ac4230"
     },
     {
       "command": "NX_DAEMON=false npx nx run langgraph:runtime-quality --skip-nx-cache",
       "exitCode": 0,
-      "testFiles": 11,
-      "testsPassed": 207,
-      "log": "/tmp/h04-final-runtime.log",
-      "logSha256": "6b18035d54c771dfba77a48230512e9001b268075bc834e7f5b13dc5d4fd2e1c"
+      "testFiles": 13,
+      "testsPassed": 270,
+      "log": "/tmp/v04-final-runtime.log",
+      "logSha256": "c447e885bbe74aa3a2c8da9bd46e7db99b6e8953cb9cbcc40d16a9e1d92857db"
     },
     {
       "command": "NX_DAEMON=false npx nx run langgraph:runtime-type-tests --skip-nx-cache",
       "exitCode": 0,
-      "log": "/tmp/h04-final-runtime-types.log",
+      "log": "/tmp/v04-final-runtime-types.log",
       "logSha256": "6e5c64695f3aad8fd1b474649ebb26c81204d54e45d589424d65e2b0843c921d"
     },
     {
@@ -140,27 +153,34 @@
       "exitCode": 0,
       "errors": 0,
       "existingWarnings": 68,
-      "log": "/tmp/h04-final-langgraph-lint.log",
-      "logSha256": "1fc98b0ca0707512f2ebf1084ed37e8e979f82be6b3cfb7a7194e17795710432"
+      "log": "/tmp/v04-final-langgraph-lint.log",
+      "logSha256": "3d2546b889adf06c0dedeb1966a4e9614458ce84bf40678192f46a7df21d4af4"
+    },
+    {
+      "command": "NX_DAEMON=false npx nx test langgraph --testFile=fetch-stream.transport.spec.ts --testFile=fetch-stream.transport.integration.spec.ts --testFile=create-langgraph-client.spec.ts --testFile=client-options.spec.ts --skip-nx-cache",
+      "exitCode": 0,
+      "reason": "Fresh selected legacy regression run after the transport source changed. Nx success is recorded; no undisplayed test count is inferred.",
+      "log": "/tmp/v04-final-legacy.log",
+      "logSha256": "d13fb1fe2f58b24cacb8d09fde4a4b08fcd8f5735cff62dbe1ee840b72414e4f"
     },
     {
       "command": "NX_DAEMON=false npx nx run-many -t build --projects=chat,langgraph,ag-ui,render,a2ui,telemetry --configuration=production --parallel=2 --skip-nx-cache",
       "exitCode": 0,
       "productionProjects": 6,
-      "log": "/tmp/h04-final-production-builds.log",
-      "logSha256": "b757c69ada7ddf18e2ef60f8b702aec960243099cea7b66ab3af8d54c445d453"
+      "log": "/tmp/v04-final-production-builds.log",
+      "logSha256": "6ab27d4499cf297148dde8b8699232b230ca86d085ca4d26b9730fe874617d7b"
     },
     {
       "command": "node scripts/react-parity/verify-boundaries.mjs",
       "exitCode": 0,
-      "log": "/tmp/h04-final-source-boundaries.log",
+      "log": "/tmp/v04-final-source-boundaries.log",
       "logSha256": "995db896b38cf7de5ca9db6590dba47e082d26abdf69bab04b92eee484696063"
     },
     {
       "command": "node scripts/react-parity/verify-boundaries.mjs --built",
       "exitCode": 0,
       "order": "Executed after successful foundation and six legacy production builds.",
-      "log": "/tmp/h04-final-built-boundaries.log",
+      "log": "/tmp/v04-final-built-boundaries.log",
       "logSha256": "c983a97d17ff7ced7aa9113afa031f464103f566f1bc94eec8160558ec2553f7"
     },
     {
@@ -170,62 +190,45 @@
       "esmTypeExports": 9,
       "isolatedCoreExports": 3,
       "browserScenariosPassed": 10,
-      "log": "/tmp/h04-final-packages.log",
-      "logSha256": "8e749830c928e0102cb2b74c34361667d62022c2767fe1d36d11acd338213943"
+      "log": "/tmp/v04-final-packages.log",
+      "logSha256": "1e6e80a4a9c4568bfe6639d61d168ee7ffa9b08e7a435f57c4615c0e231c5075"
     },
     {
       "command": "node scripts/react-parity/verify-angular-package.mjs",
       "exitCode": 0,
       "angularAPFExports": 1,
       "browserScenariosPassed": 10,
-      "log": "/tmp/h04-final-angular-package.log",
-      "logSha256": "908c659075d0bba45f969d7bed4a268cafca74eda94bb1128527aa67f6e8a080"
-    },
-    {
-      "command": "NX_DAEMON=false npx nx run-many -t test --projects=angular,react --parallel=2 --skip-nx-cache",
-      "exitCode": 0,
-      "behaviorTests": {
-        "angular": 7,
-        "react": 7
-      },
-      "reason": "Fresh native tests after replacing a test-fixture non-null assertion with an explicit capability guard. Installed browser bundles exclude this helper; runtime production code and browser fixture inputs were unchanged.",
-      "log": "/tmp/h04-final-native-after-lint-fix.log",
-      "logSha256": "d6cfb218eddc90aea5872a9bb60f7c4fae8843adb753639ad853b62066d01bc3"
+      "order": "Successful retry after production builds completed; earlier artifact-availability failure is recorded separately.",
+      "log": "/tmp/v04-final-angular-package.log",
+      "logSha256": "ec02d28e5233ca0ba1276047d5dd83ed72048a6e0c1e3d2e3eebf995607ba07f"
     },
     {
       "command": "node scripts/react-parity/inventory.mjs --write-baseline; node scripts/react-parity/inventory.mjs --check",
       "exitCode": 0,
-      "inventoryRows": 1453,
-      "reviewedChange": "Two private production sources added; three existing private source hashes changed. No public export drift or existing assignment changes.",
-      "log": "/tmp/h04-final-inventory.log",
-      "logSha256": "97f59e86a59a01fc04a5802a60c8b439a30f922131445dbbdbb8c4cbe1003293"
+      "inventoryRows": 1455,
+      "reviewedChange": "Two private production sources added; six existing source hashes changed. No legacy public export drift or prior disposition reassignment.",
+      "log": "/tmp/v04-final-inventory.log",
+      "logSha256": "757a321eb090a7dc7ef343f29202a3ad540d3bd70f386161e11271f06abefb0f"
     },
     {
       "command": "git diff --check",
       "exitCode": 0,
-      "log": "/tmp/h04-final-diff-check.log",
+      "log": "/tmp/v04-final-diff-check.log",
       "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     }
   ],
-  "reusedUnchangedLegacyChecks": [
-    {
-      "commandAsPrintedByNx": "nx run langgraph:test --testFile=fetch-stream.transport.spec.ts --testFile=fetch-stream.transport.integration.spec.ts --testFile=create-langgraph-client.spec.ts --testFile=client-options.spec.ts",
-      "exitCode": 0,
-      "log": "/tmp/h02-legacy-green.log",
-      "logSha256": "f95c0a34f354e73d7b94871ca4e048b0ef48fc7c8c356575e3398d42c6cec60d",
-      "provenance": "Same-increment H02 selected legacy transport/client run; success output inspected. Legacy source and these tests are unchanged since that run. Original launcher flags and a test count are not inferred from the Nx log."
-    }
-  ],
   "scope": {
-    "privateCapability": "LangGraphSession.load?(options?: { readonly signal?: AbortSignal }): Promise<void>, exposed only when the captured transport supports history reads.",
-    "projection": "Latest checkpoint is authoritative: replace/delete/reorder messages, accept shorter/empty corrections, own immutable data and share unchanged explicit IDs. Equal reads retain snapshot identity.",
-    "lifecycle": "Construction/mount remain inert; pending or failed loads preserve snapshots. Read failure rejects protected diagnostics; abort/supersession/stop/dispose settle promptly and prevent stale publication even with a noncooperative transport.",
-    "admission": "Refuses active execution, uncertain recovery, staged tool results and pending claim/record/write work before issuing history I/O.",
-    "toolSafety": "History loading never executes tools. Execution deduplication is retained; successful loads clear locally authored result provenance so persisted wire strings cannot masquerade as typed results on later stream replay.",
-    "unchanged": "No core public API or native binding implementation changes. Legacy LangGraph package root remains Angular; the factory and history capability remain private and fixture-only."
+    "privateSnapshot": "LangGraphSnapshot<TTools> extends the core snapshot with readonly values: Readonly<Record<string, PlainValue>> | undefined. Undefined means no current application-values map; an empty object is an observed empty root.",
+    "projection": "Root full values/checkpoints, explicit latest history and conclusive correlated recovery replace the map, including deletions. Only messages and __interrupt__ are excluded from application values. Missing authoritative history clears values to undefined.",
+    "excludedEvents": "Child namespaces, updates, custom events and live interrupt envelopes do not replace root application values.",
+    "publication": "Messages and values are owned and published as one immutable aggregate. Equal state retains root identity; changed state shares unchanged nested branches. Token-only updates reuse owned values without traversing them.",
+    "normalization": "Legacy SDK normalization protects protocol type/namespace from raw fields. messageMetadata selects delta text semantics only for actual message events; a same-named application field remains observable.",
+    "nativeInference": "Structural getSnapshot/subscribe parameters retain concrete backend snapshot extensions, typed tool results, method receivers and borrowed lifetimes. Omit<AgentSession, getSnapshot> replaces the getter instead of intersecting incompatible overloads.",
+    "history": "Explicit fixed-thread load remains optional; pending/failing/stale reads, active work admission, historical tool non-execution and execution deduplication retain the previously verified behavior.",
+    "boundary": "No core public API changes, application-schema inference, state writes, new I/O, SSR or public factory/root cutover. Private runtime and fixture extensions remain unpublished."
   },
   "acceptanceMatrix": {
-    "status": "Both production-built installed browser verifiers passed.",
+    "status": "Both production-built installed browser verifiers passed, including values assertions within the existing ten scenarios.",
     "frameworks": [
       "Angular installed APF production app",
       "React installed Vite production app"
@@ -289,7 +292,35 @@
       "toolAnswerContains": "20 degrees",
       "heldTextContains": "Held partial",
       "stopDelivery": "complete:aborted",
-      "postDisposalOutcome": "aborted"
+      "postDisposalOutcome": "aborted",
+      "values": {
+        "inertMount": "unobserved",
+        "historyLoad": {
+          "stage": "saved",
+          "profile": {
+            "name": "Saved user"
+          }
+        },
+        "equalRefresh": {
+          "stage": "saved",
+          "profile": {
+            "name": "Saved user"
+          }
+        },
+        "emptyHistoryReplacement": "unobserved",
+        "textSuccess": {
+          "stage": "complete"
+        },
+        "toolRoundtrip": {},
+        "protectedError": {},
+        "heldAndStopped": {
+          "stage": "held",
+          "transient": true
+        },
+        "reuseAfterStop": {
+          "stage": "complete"
+        }
+      }
     },
     "notificationAssertions": {
       "source": "libs/langgraph/src/runtime/history.spec.ts",
@@ -299,19 +330,32 @@
       "emptyReplacementCumulative": 2,
       "failedRefreshAdditional": 0,
       "limit": "Unit-test behavioral counts, not render/paint or performance measurements."
+    },
+    "nativeHistoryObservation": {
+      "readsPerFrameworkTest": 4,
+      "coverage": "Initial load, equal refresh, values-only replacement with unchanged messages, then empty history. Installed browser scenarios still use three reads.",
+      "lifetime": "No mount reads; observer teardown does not own session execution/disposal."
+    },
+    "valuesUnitEvidence": {
+      "sources": [
+        "libs/langgraph/src/runtime/values-projection.spec.ts",
+        "libs/langgraph/src/runtime/values.spec.ts",
+        "libs/langgraph/src/runtime/publication.spec.ts"
+      ],
+      "coverage": "Root/checkpoint/history/recovery replacement and deletion; nested sharing/no-op identity; atomic publication; stale candidate guards; immutable caller isolation; unobserved versus empty; ignored child/control envelopes; no token-time values traversal. These are behavioral assertions, not performance measurements."
     }
   },
   "cleanup": {
-    "assertions": "Unmount removes component controls; app-owned disposal resolves; post-disposal submit resolves aborted without extra I/O. Only three explicit loads read history. Held SSE waits for the native response-close handshake.",
+    "assertions": "Unmount removes component controls; app-owned disposal resolves; post-disposal submit resolves aborted without extra I/O. Only three explicit browser loads read history. Held SSE waits for native response close.",
     "resources": "Browser contexts, browsers, held responses, server connections and temporary install/bundle artifacts close in finally, including assertion failures.",
     "processes": "Both final verifier processes exited 0 after awaited cleanup.",
     "temporaryDirectories": [
       {
-        "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-consumer-dtU2kZ",
+        "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-consumer-x4TyEp",
         "existsAfterExit": false
       },
       {
-        "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-angular-consumer-3OGMOu",
+        "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/threadplane-angular-consumer-zl68Zs",
         "existsAfterExit": false
       }
     ],
@@ -319,19 +363,19 @@
   },
   "inventory": {
     "historicalFoundationRows": 1438,
-    "previousRuntimeRows": 1451,
-    "currentRows": 1453,
-    "newHistorySourceFiles": [
-      "libs/langgraph/src/runtime/history-projection.ts",
-      "libs/langgraph/src/runtime/wire-message.ts"
+    "previousHistoryRows": 1453,
+    "currentRows": 1455,
+    "newValuesSourceFiles": [
+      "libs/langgraph/src/runtime/langgraph-snapshot.ts",
+      "libs/langgraph/src/runtime/values-projection.ts"
     ],
-    "sourceFiles": 475,
+    "sourceFiles": 477,
     "legacyExports": 550,
     "uniqueLocalDefinitions": 514,
     "legacyExportRecordChangesThisIncrement": 0,
-    "existingAssignmentsPreserved": 1451,
-    "dispositions": "Existing IDs, task assignments, treatments, reasons and statuses preserved; three scoped notes updated and two internal in-progress rows added under T10 and T09/T10. No whole-task completion claim.",
-    "scope": "Existing 16-library inventory only. Core/native contracts remain separately checked. Historical baseline-evidence.json is untouched; the previous runtime evidence remains in Git history."
+    "existingAssignmentsPreserved": 1453,
+    "dispositions": "All prior IDs, task assignments, treatments, reasons and statuses preserved. Six scoped notes updated; two internal in-progress rows added under T09/T10. No whole-task completion claim.",
+    "scope": "Existing 16-library inventory only; core/native contracts are separately checked. Historical baseline-evidence.json untouched; prior runtime/history evidence retained in Git history."
   },
   "runtimePolicy": {
     "ownedSDKDefaultMaxRetries": 0,
@@ -347,11 +391,11 @@
     },
     "reactConsumer": {
       "installedPackages": 24,
-      "fileBytes": 51239870,
+      "fileBytes": 51240541,
       "lockLocationsIncludingOptionalPlatforms": 74,
       "productionAppModulesTransformed": 34,
-      "productionAppJavaScriptRawReported": "412.73 kB",
-      "productionAppJavaScriptGzipReported": "124.43 kB",
+      "productionAppJavaScriptRawReported": "414.48 kB",
+      "productionAppJavaScriptGzipReported": "124.92 kB",
       "developmentRootImportProbe": {
         "inputs": 5,
         "bytes": 47778,
@@ -360,35 +404,47 @@
     },
     "angularConsumer": {
       "installedPackages": 411,
-      "fileBytes": 196915823,
+      "fileBytes": 196916614,
       "lockLocationsIncludingOptionalPlatforms": 516,
       "bundleInputs": 257,
       "contentParserInputs": 0,
-      "productionAppRawReported": "314.20 kB",
-      "productionAppEstimatedTransferReported": "83.30 kB",
+      "productionAppRawReported": "315.92 kB",
+      "productionAppEstimatedTransferReported": "83.75 kB",
       "includes": "Angular CLI/compiler/build tooling"
     },
-    "limits": "Installed files, optional lock locations, development root-import probes and full production apps are separate diagnostics. App bundles include the staged SDK. These are not performance benchmarks or comparable framework overhead measurements."
+    "limits": "Installed files, optional lock locations, development probes and production apps are separate diagnostics. App bundles include the staged SDK. These are not performance benchmarks or comparable framework overhead measurements."
   },
   "ci": {
     "definition": "Existing library lane covers runtime, source/built boundaries and packed browser checks; it installs Chromium with --with-deps before browser verification.",
-    "result": "No new history-loading PR CI result is claimed by this local record. Prior runtime integration CI does not verify these uncommitted history changes."
+    "result": "No new values PR CI result is claimed by this local record. Prior merged history/runtime CI does not verify these uncommitted changes."
   },
   "limits": [
-    "Fixed-thread latest-history transcript projection only; no thread switching, pagination, branching, full backend state or interrupt resume.",
-    "Private staged runtime is fixture-only; no neutral LangGraph tarball or public factory/root cutover.",
-    "The narrow fixture declaration, including optional load, is compiler-generated against installed core; it is not hand-written or a new core API.",
-    "Native inferred type probes retain heterogeneous tool and readonly checks; observation bindings themselves are unchanged.",
+    "Read-only broad application-data observation only; no application-schema inference, state writes, thread switching, pagination, branching or interrupt resume.",
+    "Private staged runtime/factory and snapshot extension remain fixture-only; no neutral LangGraph tarball or public root cutover.",
+    "The narrow fixture declaration is compiler-generated against installed core; Omit replaces its getter while preserving the concrete snapshot.",
+    "Native signatures retain backend fields and tool inference; lifecycle ownership remains with the app.",
     "HTTP/SSE proves incremental DOM updates and native abort, not compositor timing.",
     "Production React StrictMode does not replay development effects; native unit tests separately exercise replay.",
-    "No full product parity, renderer reuse, SSR, calibrated latency, retained-heap or performance claim.",
+    "No full parity, renderer reuse, SSR, calibrated latency, retained-heap or performance claim.",
     "CI Node22/Linux and Angular20/22 consumer lanes were not run locally.",
     "Test-only imports still add Nx legacy build dependencies although production package graphs remain isolated.",
     "No production backend, release, deployment or publication was exercised."
   ],
   "warnings": [
-    "LangGraph lint passes with 68 existing warnings and no errors; the one newly introduced test-helper non-null assertion was removed and both native suites rerun.",
+    "LangGraph lint passes with 68 existing warnings and no errors.",
     "Nx reports NO_COLOR/FORCE_COLOR overlap; legacy builds report stale Browserslist data, ng-packagr export-condition overrides and keepLifecycleScripts notices.",
     "Vite ignores use client directives in the client-only production consumer bundle; no SSR claim is made."
-  ]
+  ],
+  "verificationRetry": {
+    "command": "node scripts/react-parity/verify-angular-package.mjs",
+    "initialExitCode": 1,
+    "log": "/tmp/v04-angular-before-build-complete.log",
+    "logSha256": "62a271c8ae1aba31afa623380080b550015b46f4ea18c421f2ac343441efe5f3",
+    "cause": "Verifier was initially scheduled concurrently with legacy production builds, which rebuild core; it saw ENOENT for dist/libs/core/package.json. This was local verification ordering, not a source failure.",
+    "resolution": "Waited for successful build completion, confirmed the core manifest existed, then reran the unchanged verifier successfully. No production/test changes were made."
+  },
+  "documentation": {
+    "generatorsRun": [],
+    "reason": "The private runtime and native package READMEs are outside the registered legacy API/narrative/agent-context generation inputs. Legacy export records are unchanged; only directly affected README guidance was updated."
+  }
 }

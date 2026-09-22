@@ -53,7 +53,7 @@ export function projectStream(
     projection = { ...projection, paused: true };
   }
   if (!terminal && !messageEvent) return { state, projection };
-  const mode = event.messageMetadata ? 'delta' : 'snapshot';
+  const mode = messageEvent && event.messageMetadata ? 'delta' : 'snapshot';
   const incoming = Array.isArray(messages)
     ? messages.map(record).filter((m): m is Record<string, unknown> => !!m)
     : [];

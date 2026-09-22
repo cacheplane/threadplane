@@ -8,6 +8,7 @@ import {
   type PlainValue,
   type ToolCall,
 } from '@threadplane/core';
+import type { LangGraphSnapshot, LangGraphValues } from './langgraph-snapshot';
 
 // Only objects projected here are trusted. Object.isFrozen on external input is
 // insufficient: its children may still be mutable. The weak set retains no data.
@@ -56,6 +57,46 @@ export function ownValue(
       );
   ancestors.delete(value);
   return result;
+}
+
+/** Full-state ingress can reuse equal owned branches while replacing changed
+ * data. Both inputs pass the same ownership boundary before any reuse. */
+export function ownValueWithSharing(
+  value: PlainValue,
+  previous?: PlainValue
+): PlainValue {
+  return shareOwnedValue(ownValue(value), ownValue(previous));
+}
+
+function shareOwnedValue(next: PlainValue, previous: PlainValue): PlainValue {
+  if (Object.is(next, previous)) return previous;
+  if (
+    next === null ||
+    previous === null ||
+    typeof next !== 'object' ||
+    typeof previous !== 'object' ||
+    Array.isArray(next) !== Array.isArray(previous)
+  )
+    return next;
+  const prior = previous as Record<string, PlainValue>;
+  let equal =
+    Object.keys(next).length === Object.keys(previous).length &&
+    (!Array.isArray(next) ||
+      next.length === (previous as readonly PlainValue[]).length);
+  let shared = false;
+  const child = (value: PlainValue, key: string) => {
+    const exists = Object.hasOwn(previous, key);
+    const projected = exists ? shareOwnedValue(value, prior[key]) : value;
+    if (!exists || !Object.is(projected, prior[key])) equal = false;
+    if (!Object.is(projected, value)) shared = true;
+    return projected;
+  };
+  const result = Array.isArray(next)
+    ? next.map((value, index) => child(value, String(index)))
+    : Object.fromEntries(
+        Object.entries(next).map(([key, value]) => [key, child(value, key)])
+      );
+  return equal ? previous : shared ? freeze(result) : next;
 }
 
 function equalValue(a: PlainValue, b: PlainValue): boolean {
@@ -230,4 +271,17 @@ export function ownSnapshot(
   )
     return previous;
   return freeze({ status: input.status, messages, toolCalls, error });
+}
+
+/** One backend aggregate, composing the core fields and owned application data. */
+export function ownLangGraphSnapshot(
+  input: LangGraphSnapshot,
+  previous?: LangGraphSnapshot
+): LangGraphSnapshot {
+  const core = ownSnapshot(input, previous);
+  const values = ownValueWithSharing(input.values, previous?.values) as
+    | LangGraphValues
+    | undefined;
+  if (core === previous && values === previous?.values) return previous;
+  return freeze({ ...core, values });
 }

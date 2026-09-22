@@ -1,15 +1,18 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "e1da2bd10d0f009924eeb2ea67203da92d71cd0b",
+  "baselineHead": "192f94e9b57b77e1858e2e4337f0d34bcd6a9c64",
   "sourceState": {
     "modified": [
+      "libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
       "libs/langgraph/src/runtime/create-session.ts",
+      "libs/langgraph/src/runtime/ownership.ts",
+      "libs/langgraph/src/runtime/publication.ts",
       "libs/langgraph/src/runtime/stream-projection.ts",
       "libs/langgraph/src/runtime/testing/binding-fixture.ts"
     ],
     "untracked": [
-      "libs/langgraph/src/runtime/history-projection.ts",
-      "libs/langgraph/src/runtime/wire-message.ts"
+      "libs/langgraph/src/runtime/langgraph-snapshot.ts",
+      "libs/langgraph/src/runtime/values-projection.ts"
     ]
   },
   "scope": {
@@ -12541,7 +12544,7 @@
       "id": "source:libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
       "kind": "source",
       "path": "libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
-      "sha256": "78e712be228f3354bd63f30b13093695701b730c2e8415322d126f2a84e04876"
+      "sha256": "c32e0512ede7c3b1d1ae945af4ec3e4deed0a4d7207ffc256536105bb7ecfd39"
     },
     {
       "id": "source:libs/langgraph/src/lib/transport/mock-stream.transport.ts",
@@ -12565,7 +12568,7 @@
       "id": "source:libs/langgraph/src/runtime/create-session.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/create-session.ts",
-      "sha256": "80db69d29a2fb196d149d10d925f12c7b988695a5e5bbd0c2b6508b15d42bc6e"
+      "sha256": "5341e188ac9663a3b5d058602e91dd1ba5c0df2983d264d92de0049a792b22ce"
     },
     {
       "id": "source:libs/langgraph/src/runtime/function-tools.ts",
@@ -12578,6 +12581,12 @@
       "kind": "source",
       "path": "libs/langgraph/src/runtime/history-projection.ts",
       "sha256": "f7065276cc2d2122d8cec64311592210b521a9d76cc35550ba94d85d8cbd4742"
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/langgraph-snapshot.ts",
+      "kind": "source",
+      "path": "libs/langgraph/src/runtime/langgraph-snapshot.ts",
+      "sha256": "2c5f72c9c9b5259426bb94a7a1e44e1e81c401e4c9ec7d6724adfd2fb1b7670f"
     },
     {
       "id": "source:libs/langgraph/src/runtime/message-reducer.ts",
@@ -12595,25 +12604,25 @@
       "id": "source:libs/langgraph/src/runtime/ownership.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/ownership.ts",
-      "sha256": "5cbf266756c5558997bd187944ccba4b84b9c291653f441e8a0ae6e195dcc22f"
+      "sha256": "eb7692b96d5113ba690c275624280142df905c78c69b6e5ebdf4f788b6fa7811"
     },
     {
       "id": "source:libs/langgraph/src/runtime/publication.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/publication.ts",
-      "sha256": "00c5f784139690c001475bd7ef63a5446a4e5d77a99f57353a03d22fbc3569f3"
+      "sha256": "7d290721417d504313f893ee7e90154b85e9eee27d05f6cce816d592495791e5"
     },
     {
       "id": "source:libs/langgraph/src/runtime/stream-projection.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/stream-projection.ts",
-      "sha256": "4e2d299abf3d0c5452366515eb9af4a227aecf8b7681496b5f5c6da83f411caf"
+      "sha256": "ef917d98131c0311846247550ca653d8340f2dcaa97858a5d9a4acaa6bffc1e4"
     },
     {
       "id": "source:libs/langgraph/src/runtime/testing/binding-fixture.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/testing/binding-fixture.ts",
-      "sha256": "41f4df4d94bfedee7f0bfa5b822bd58c07a7725eba2115ed2156665d1ff733e7"
+      "sha256": "9299cc57319e881aebe684f6ad5daffd8549aef7e62e83c104f94e7f3a6f5c9c"
     },
     {
       "id": "source:libs/langgraph/src/runtime/testing/controlled-transport.ts",
@@ -12632,6 +12641,12 @@
       "kind": "source",
       "path": "libs/langgraph/src/runtime/transport.types.ts",
       "sha256": "ca5d20d673bec0ca60d3af59b50b948e0dbd93b0cc26efe59d962f666a6c12cb"
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/values-projection.ts",
+      "kind": "source",
+      "path": "libs/langgraph/src/runtime/values-projection.ts",
+      "sha256": "8c640b8386f2e8cd127188c9961276ec80df820ac05c4b12184fa7954452e0a1"
     },
     {
       "id": "source:libs/langgraph/src/runtime/wire-message.ts",

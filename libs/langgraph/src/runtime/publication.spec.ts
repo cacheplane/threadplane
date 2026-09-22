@@ -1,11 +1,13 @@
-import { streamingDelivery, type AgentSnapshot } from '@threadplane/core';
+import { streamingDelivery } from '@threadplane/core';
 import { describe, expect, it } from 'vitest';
 import { createPublication } from './publication';
 import { deferred } from './testing/deferred';
+import type { LangGraphSnapshot } from './langgraph-snapshot';
 
-function snapshot(content = 'one'): AgentSnapshot {
+function snapshot(content = 'one'): LangGraphSnapshot {
   return {
     status: 'idle',
+    values: undefined,
     messages: [
       {
         id: 'm',
@@ -28,6 +30,46 @@ function snapshot(content = 'one'): AgentSnapshot {
 }
 
 describe('private snapshot publication', () => {
+  it('leaves the aggregate unchanged if application values ownership throws', () => {
+    const publication = createPublication(snapshot());
+    const before = publication.getSnapshot();
+    expect(() =>
+      publication.publish({
+        ...snapshot('candidate'),
+        values: { bad: new Date(0) },
+      } as unknown as LangGraphSnapshot)
+    ).toThrow(TypeError);
+    expect(publication.getSnapshot()).toBe(before);
+  });
+
+  it('owns application values and suppresses equal queued aggregate publications', () => {
+    const data = { stable: { x: 1 }, count: 1 };
+    const publication = createPublication({ ...snapshot(), values: data });
+    const first = publication.getSnapshot() as LangGraphSnapshot;
+    expect(first.values).toEqual(data);
+    expect(first.values).not.toBe(data);
+    data.stable.x = 9;
+    expect(first.values?.['stable']).toEqual({ x: 1 });
+    const seen: LangGraphSnapshot[] = [];
+    for (let index = 0; index < 2; index++)
+      publication.subscribe(() => {
+        if (publication.getSnapshot().status === 'running') {
+          const values = { stable: { x: 1 }, count: 2 };
+          publication.publish({ ...snapshot('two'), values });
+          values.count = 99;
+        }
+      });
+    publication.subscribe(() =>
+      seen.push(publication.getSnapshot() as LangGraphSnapshot)
+    );
+    publication.publish({ ...first, status: 'running' });
+    expect(seen).toHaveLength(2);
+    expect(seen[1].values).toEqual({ stable: { x: 1 }, count: 2 });
+    expect(seen[1].values?.['stable']).toBe(first.values?.['stable']);
+    expect(seen[1].messages[0].content).toBe('two');
+    expect(Object.isFrozen(seen[1].values)).toBe(true);
+  });
+
   it('does not turn unsupported SDK instances into apparently portable tool data', () => {
     const input = snapshot();
     const invalid = {
@@ -35,7 +77,7 @@ describe('private snapshot publication', () => {
       toolCalls: [{ ...input.toolCalls[0], args: new Date() }],
     };
     expect(() =>
-      createPublication(invalid as unknown as AgentSnapshot)
+      createPublication(invalid as unknown as LangGraphSnapshot)
     ).toThrow(TypeError);
     const publication = createPublication({
       ...input,
@@ -47,7 +89,7 @@ describe('private snapshot publication', () => {
         toolCalls: [
           { id: 't', name: 'search', status: 'running', args: new Date() },
         ],
-      } as unknown as AgentSnapshot)
+      } as unknown as LangGraphSnapshot)
     ).toThrow(TypeError);
   });
   it('caches repeated reads per session and observes only actual changes', () => {

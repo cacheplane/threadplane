@@ -13,7 +13,13 @@ errors, read-only reconciliation after uncertain failures and fixed function-too
 execution. The private session also supports explicit fixed-thread history loading
 when its transport can read history. The latest checkpoint replaces the transcript;
 equal reads preserve identity, failures preserve the prior snapshot, and loaded
-tools never execute. Core contracts and native binding implementations are unchanged.
+tools never execute. Private snapshots now include broad readonly application
+`values`, published atomically with messages. Full root state, history and conclusive
+correlated recovery replace the map; unchanged nested data retains identity, and
+token-only updates reuse it without traversal. `undefined` is unobserved state and
+`{}` an observed empty map. Child/update/custom/live-interrupt envelopes are ignored.
+Core contracts are unchanged; native structural signatures preserve the concrete
+snapshot extension and tool inference, with the same receiver and lifetime behavior.
 Angular and React borrow the app-owned session and observe it through their native
 lifecycles. The installed consumers run ten scenarios each: inert mount, explicit
 history load, equal refresh, empty replacement, text, weather tool
@@ -22,8 +28,9 @@ unmount followed by explicit disposal and an aborted post-disposal submission.
 Five live component submissions plus one tool continuation produce six exact wire
 requests, with one handler invocation and zero page errors or unexpected requests.
 The three explicit loads make three history reads and no run requests or handler
-calls. This is partial T10 coverage: thread switching, pagination, branching, full
-backend state and interrupt resume remain outside this proof.
+calls. This is partial T09/T10 coverage: thread switching, pagination, branching,
+state writes, application-schema inference and interrupt resume remain outside this
+proof. The factory and snapshot extension remain private.
 
 A local HTTP/SSE fixture serves production-built apps and writes real held response
 bytes. Browser assertions observe incremental DOM text and a native response-close
@@ -33,12 +40,12 @@ exercise that subscription replay. See [runtime/README.md](./runtime/README.md) 
 reproduction and [runtime/evidence.json](./runtime/evidence.json) for fresh commands,
 counts, source provenance, cleanup assertions and limitations.
 
-The current inventory has **1,453 records**: the historical 1,438 plus ten private
+The current inventory has **1,455 records**: the historical 1,438 plus twelve private
 runtime production sources, three testing helpers, a runtime Vitest config and its
 type-test config asset. Public export occurrences remain 550 with 514 distinct local
 definitions. The original runtime extraction changed fourteen existing export
-records' declaration/import text; history loading adds two private sources and
-changes no legacy public export records. There are no legacy export-name additions
+records' declaration/import text; history loading and values observation each add
+two private sources and change no legacy public export records. There are no legacy export-name additions
 or removals. Existing task assignments
 are preserved; touched extraction/configuration subsets are in progress, not whole
 T03–T16 completion. Core and native package contracts remain outside this legacy
@@ -218,7 +225,7 @@ burst streams and repeated agent/thread disposal.
 
 The foundation branch was `codex/react-support-baseline`; the runtime branch is
 `codex/shared-runtime-quality`, based on `bdcc22ed31aa94f420077e046e88e1481088d453`.
-The history-loading increment is `codex/langgraph-history-loading`; its verified
+The current values increment is `codex/langgraph-state-values`; its verified
 base and working-source fingerprint are recorded in `runtime/evidence.json`.
 The local maintenance
 branch `codex/angular-maintenance-v0.2` points to released tag `v0.2.0`
@@ -236,7 +243,8 @@ research documents. It is a scope map, not evidence that the tasks are complete.
 T01/T02 describe the foundation increment. The current G1 proof is deliberately limited
 to shared LangGraph text streaming and fixed function-tool execution with borrowed native
 Angular and React bindings: the runtime owns execution while each binding observes
-it. Explicit fixed-thread history loading now covers a further subset of T10.
+it. Explicit history loading and application-values observation cover further
+subsets of T09/T10.
 Renderer reuse and SSR are deferred gates, alongside the broader T01–T39 map.
 This bounded runtime proof does not establish complete migration parity.
 

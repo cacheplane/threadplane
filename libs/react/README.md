@@ -1,9 +1,10 @@
 # @threadplane/react
 
-Private, unpublished React binding for app-owned `AgentSession` values from
-`@threadplane/core`. The root exports `useAgent(session)`, which returns the
-current `AgentSnapshot` through React's `useSyncExternalStore`. Tool names,
-arguments, and results retain the session's declared types.
+Private, unpublished React binding for app-owned sessions. The root exports
+`useAgent(session)`, which accepts `getSnapshot()` and `subscribe(notify)` methods
+and returns their concrete `TSnapshot` through React's `useSyncExternalStore`.
+The snapshot must extend the core `AgentSnapshot`; its additional fields and tool
+names, arguments, and results retain their inferred types.
 
 ```tsx
 import { useAgent } from '@threadplane/react';
@@ -21,6 +22,15 @@ it does not stop pending work or dispose the session. Multiple components can
 observe the same session. The app calls `session.submit(text)`, `session.stop()`,
 and `session.dispose()` and owns the session's lifetime. Replacing the session
 prop transfers the subscription without disposing the previous session.
+Snapshot reads and subscription calls preserve the session method receiver.
+
+Keep the concrete session type when observing backend-specific fields. The private
+LangGraph fixture exposes a broad readonly `values` map on its snapshot: `undefined`
+means no current application-values map is observed, while `{}` is an observed
+empty map. The hook preserves that field without inferring an application schema,
+validating values, or issuing extra reads. Values and messages arrive in the same
+immutable snapshot. This does not make the private backend factory public or add
+state-writing support.
 
 The root retains `use client`. Server rendering and hydration are not supported
 by this binding. No backend constructor is exported here; the current real

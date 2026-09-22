@@ -26,7 +26,7 @@ const toolCall = { type: 'ai', id: 'assistant-tool', content: '', tool_calls: [{
 const sse = (event, data) => `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
 const textTrace = readFileSync(new URL('../../fixtures/react-parity/traces/langgraph-text-state.sse', import.meta.url), 'utf8');
 const savedHistory = [{
-  values: { messages: [
+  values: { stage: 'saved', profile: { name: 'Saved user' }, messages: [
     { id: 'saved-human', type: 'human', content: 'Saved question' },
     { id: 'saved-tools', type: 'ai', content: 'Saved tool request', tool_calls: [
       { id: 'saved-weather', name: 'weather', args: { city: 'Paris' }, type: 'tool_call' },
@@ -57,7 +57,11 @@ export function runtimeResponse(body) {
   assert.equal(message.type, 'human');
   assert.equal(typeof message.id, 'string');
   assert.deepEqual(message, { id: message.id, type: 'human', content: message.content }, 'exact user message fields');
-  if (message.content === 'Send') return textTrace.replaceAll('message-parity', `answer-${message.id}`);
+  if (message.content === 'Send') return textTrace.replaceAll('message-parity', `answer-${message.id}`)
+    + sse('values|child', { type: 'values', namespace: [], stage: 'child' })
+    + sse('updates', { writer: { stage: 'node-update' } })
+    + sse('custom', { stage: 'custom' })
+    + sse('values', { __interrupt__: [], stage: 'control-envelope' });
   if (message.content === 'Tool') return sse('values', { messages: [message, toolCall] });
   if (message.content === 'Error') return sse('error', { error: 'FixtureFailure', message: 'PRIVATE backend diagnostic' });
   if (message.content === 'Hold') return null;
@@ -67,8 +71,26 @@ export function runtimeResponse(body) {
 export function installedTypeSource(template, kind) {
   if (kind === 'core') return template;
   const binding = kind === 'react' ? 'useAgent' : 'observeAgent';
-  return template.replace('/* BINDING_IMPORT */', `import { ${binding} } from '@threadplane/${kind}';`)
-    .replace('export function assertSnapshot(snapshot: AgentSnapshot<FixtureTools>) {', `export function assertSnapshot(session: AgentSession<FixtureTools>) {\n  const snapshot = ${binding}(session)${kind === 'angular' ? '()' : ''};\n  const exact: AgentSnapshot<FixtureTools> = snapshot;\n  void exact;`)
+  const entry = kind === 'angular' ? './src/runtime-entry.js' : './runtime-entry.js';
+  return template.replace('/* BINDING_IMPORT */', `import { ${binding} } from '@threadplane/${kind}';\nimport type { createFixtureSession } from '${entry}';`)
+    .replace('export function assertSnapshot(snapshot: AgentSnapshot<FixtureTools>) {', `export function assertSnapshot(session: ReturnType<typeof createFixtureSession>) {\n  const snapshot = ${binding}(session)${kind === 'angular' ? '()' : ''};\n  const exact: AgentSnapshot<FixtureTools> = snapshot;\n  void exact;`)
+    .replace('/* BACKEND_VALUES */', `const direct = session.getSnapshot();
+  const directValues: Readonly<Record<string, PlainValue>> | undefined = direct.values;
+  const values: Readonly<Record<string, PlainValue>> | undefined = snapshot.values;
+  // @ts-expect-error No application schema is inferred from the broad values map.
+  const assumedCounter: number = snapshot.values?.['counter'];
+  // @ts-expect-error Concrete backend fields remain readonly.
+  snapshot.values = {};
+  if (snapshot.values) {
+    // @ts-expect-error Application records remain readonly.
+    snapshot.values['counter'] = 2;
+    const nested = snapshot.values['profile'];
+    if (nested && typeof nested === 'object' && !Array.isArray(nested)) {
+      // @ts-expect-error Nested application records remain readonly.
+      nested['name'] = 'mutable';
+    }
+  }
+  void [directValues, values, assumedCounter];`)
     .replace('  assertSnapshot(snapshot);', '  void snapshot;');
 }
 
@@ -158,7 +180,7 @@ export async function serveRuntimeConsumer(directory) {
         held.add(response);
         response.once('close', () => { held.delete(response); notifyAborted(); });
         // Actual incremental network bytes, not a whole-response route.fulfill.
-        response.write(sse('messages', [{ type: 'AIMessageChunk', id: 'held-answer', content: 'Held partial' }, { langgraph_node: 'assistant' }]));
+        response.write(sse('values', { stage: 'held', transient: true }) + sse('messages', [{ type: 'AIMessageChunk', id: 'held-answer', content: 'Held partial' }, { langgraph_node: 'assistant' }]));
         notifyHeld();
         return;
       }
@@ -205,6 +227,7 @@ export async function runRuntimeScenarios(directory, kind) {
     browser = await chromium.launch({ headless: true });
     context = await browser.newContext();
     const page = await context.newPage();
+    const expectValues = (value) => expect(page.getByTestId('values')).toHaveText(value === undefined ? 'unobserved' : JSON.stringify(value));
     page.on('pageerror', (error) => pageErrors.push(error.message));
     page.on('request', (request) => {
       if (!request.url().startsWith(`${server.url}/`)) unexpected.push(request.url());
@@ -214,6 +237,7 @@ export async function runRuntimeScenarios(directory, kind) {
     await expect(page.getByTestId('owner')).toHaveText('mounted');
     await expect(page.getByTestId('handler-calls')).toHaveText('0');
     await expect(page.getByTestId('submissions')).toHaveText('0');
+    await expectValues(undefined);
     assert.equal(server.requests.length, 0, 'mount/observation performs no I/O');
     assert.equal(server.historyRequests.length, 0, 'mount/observation performs no history reads');
     completed.push('inert mount');
@@ -221,6 +245,7 @@ export async function runRuntimeScenarios(directory, kind) {
     await page.getByRole('button', { name: 'Load', exact: true }).click();
     await expect(page.getByTestId('loads-finished')).toHaveText('1');
     await expect(page.getByTestId('load-error')).toHaveText('');
+    await expectValues({ stage: 'saved', profile: { name: 'Saved user' } });
     await expect(page.getByTestId('text')).toHaveText('Saved tool request\nSaved final answer');
     await expect(page.getByTestId('transcript')).toContainText('Saved question');
     await expect(page.getByTestId('transcript')).toContainText('Raw historical weather result');
@@ -235,6 +260,7 @@ export async function runRuntimeScenarios(directory, kind) {
     await page.getByRole('button', { name: 'Load', exact: true }).click();
     await expect(page.getByTestId('loads-finished')).toHaveText('2');
     await expect(page.getByTestId('load-error')).toHaveText('');
+    await expectValues({ stage: 'saved', profile: { name: 'Saved user' } });
     await expect(page.getByTestId('text')).toHaveText('Saved tool request\nSaved final answer');
     await expect(page.getByTestId('handler-calls')).toHaveText('0');
     assert.equal(server.historyRequests.length, 2);
@@ -244,6 +270,7 @@ export async function runRuntimeScenarios(directory, kind) {
     await page.getByRole('button', { name: 'Load', exact: true }).click();
     await expect(page.getByTestId('loads-finished')).toHaveText('3');
     await expect(page.getByTestId('load-error')).toHaveText('');
+    await expectValues(undefined);
     await expect(page.getByTestId('text')).toHaveText('');
     await expect(page.getByTestId('transcript')).toHaveText('');
     await expect(page.getByTestId('tool')).toHaveText('[]');
@@ -257,6 +284,7 @@ export async function runRuntimeScenarios(directory, kind) {
     await expect(page.getByTestId('delivery')).toHaveText('complete:success');
     await expect(page.getByTestId('status')).toHaveText('idle');
     assert.equal(server.requests.length, 1);
+    await expectValues({ stage: 'complete' });
     completed.push('text success');
 
     const beforeTool = server.requests.length;
@@ -266,6 +294,7 @@ export async function runRuntimeScenarios(directory, kind) {
     await expect(page.getByTestId('status')).toHaveText('idle');
     assert.deepEqual(JSON.parse(await page.getByTestId('tool').innerText()), [{ id: 'call-weather', name: 'weather', args: { city: 'Paris' }, status: 'complete', result: { city: 'Paris', temperature: 20 } }]);
     assert.equal(server.requests.length - beforeTool, 2, 'tool has exactly one run and one result continuation');
+    await expectValues({});
     completed.push('tool roundtrip');
 
     await page.getByRole('button', { name: 'Error', exact: true }).click();
@@ -273,6 +302,7 @@ export async function runRuntimeScenarios(directory, kind) {
     await expect(page.getByTestId('error')).not.toHaveText('');
     await expect(page.getByTestId('error')).not.toContainText('PRIVATE');
     assert.equal(server.requests.length, 4, 'failed run is not retried');
+    await expectValues({});
     completed.push('visible protected error');
 
     await page.getByRole('button', { name: 'Hold', exact: true }).click();
@@ -280,11 +310,13 @@ export async function runRuntimeScenarios(directory, kind) {
     await expect(page.getByTestId('text')).toContainText('Held partial');
     await expect(page.getByTestId('delivery')).toHaveText('streaming');
     await expect(page.getByTestId('status')).toHaveText('running');
+    await expectValues({ stage: 'held', transient: true });
     await page.getByRole('button', { name: 'Stop', exact: true }).click();
     await handshake(server.holdAborted, 'native request abort');
     await expect(page.getByTestId('status')).toHaveText('idle');
     await expect(page.getByTestId('delivery')).toHaveText('complete:aborted');
     assert.equal(server.requests.length, 5);
+    await expectValues({ stage: 'held', transient: true });
     completed.push('incremental DOM update and stop abort');
 
     await page.getByRole('button', { name: 'Send', exact: true }).click();
@@ -293,6 +325,7 @@ export async function runRuntimeScenarios(directory, kind) {
     await expect(page.getByTestId('text')).toContainText('Hello 🌍.');
     await expect(page.getByTestId('handler-calls')).toHaveText('1');
     assert.equal(server.requests.length, 6);
+    await expectValues({ stage: 'complete' });
     await expect(page.getByTestId('submissions')).toHaveText('5');
     completed.push('reuse after stop');
 
