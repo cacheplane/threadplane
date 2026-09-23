@@ -83,7 +83,7 @@ test('checkpoint protocol: terminal replay preserves a pending call; pre-agent r
     expect(pending.next).toEqual([]);
     expect(calls(pending)).toHaveLength(1);
     const original = calls(pending)[0];
-    expect(original).toMatchObject({ id: expect.any(String), name: 'get_weather', args: { location: 'Paris' } });
+    expect(original).toMatchObject({ id: expect.stringMatching(/\S/), name: 'get_weather', args: { location: 'Paris' } });
     const beforeAgent = (await api.threads.getHistory(threadId)).find((state) => state.next.includes('agent'));
     if (!beforeAgent) throw new Error('History must include a checkpoint before the agent runs');
     expect(calls(beforeAgent)).toEqual([]);
@@ -97,7 +97,7 @@ test('checkpoint protocol: terminal replay preserves a pending call; pre-agent r
 
     const regenerated = await run(api, threadId, beforeAgent.checkpoint);
     expect(calls(regenerated)).toHaveLength(1);
-    expect(calls(regenerated)[0]).toMatchObject({ name: original.name, args: original.args });
+    expect(calls(regenerated)[0]).toMatchObject({ id: expect.stringMatching(/\S/), name: original.name, args: original.args });
     expect(calls(regenerated)[0].id).not.toBe(original.id);
     expect(await modelRequests()).toBe(count + 1);
 
