@@ -46,6 +46,41 @@ afterEach(async () => {
 });
 
 describe('useAgent borrowed session', () => {
+  it('follows a replaced session while the application retains the old run', async () => {
+    const a = fixture();
+    const b = fixture();
+    const view = renderHook(({ session }) => useAgent(session), {
+      initialProps: { session: a.session },
+      reactStrictMode: true,
+    });
+    let run!: ReturnType<typeof a.session.submit>;
+    await act(async () => {
+      run = a.session.submit('A');
+      await a.started();
+    });
+    view.rerender({ session: b.session });
+    expect(view.result.current).toBe(b.session.getSnapshot());
+    expect(a.session.releases).toBe(a.session.subscriptions);
+    expect(a.session.stopCalls + a.session.disposeCalls).toBe(0);
+    expect(b.history.reads).toBe(0);
+    expect(b.streams).toHaveLength(0);
+    const selected = view.result.current;
+    await act(async () => {
+      a.streams[0].release(finalText('A retained result'));
+      a.streams[0].finish();
+      expect(await run).toBe('success');
+    });
+    expect(view.result.current).toBe(selected);
+    view.rerender({ session: a.session });
+    expect(view.result.current.messages.at(-1)?.content).toBe(
+      'A retained result'
+    );
+    expect(b.session.releases).toBe(b.session.subscriptions);
+    expect(b.session.disposeCalls).toBe(0);
+    view.unmount();
+    expect(a.session.releases).toBe(a.session.subscriptions);
+  });
+
   it('observes explicit history loads without owning reads, refreshes, or teardown', async () => {
     const f = fixture();
     let renders = 0;

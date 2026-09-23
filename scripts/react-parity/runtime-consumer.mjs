@@ -7,6 +7,7 @@ import { once } from 'node:events';
 import { build } from 'vite';
 import ts from 'typescript';
 import { chromium, expect } from '@playwright/test';
+import { createThreadRoutes, runThreadScenarios } from './thread-lifetime.mjs';
 
 export function lockedReactManifest(lock) {
   const entries = (names) => Object.fromEntries(names.map((name) => {
@@ -331,8 +332,14 @@ export async function prepareRuntimeConsumer(root, consumer, kind) {
     cpSync(join(temporary, 'bundle/runtime-entry.js'), join(destination, 'runtime-entry.js'));
     cpSync(join(temporary, 'types/fixtures/react-parity/runtime/runtime-entry.d.ts'), join(destination, 'runtime-entry.d.ts'));
     cpSync(join(fixture, 'scenarios.ts'), join(destination, 'scenarios.ts'));
+    cpSync(join(fixture, 'thread-owner.ts'), join(destination, 'thread-owner.ts'));
+    const threadView = `${kind}-threads.${kind === 'react' ? 'tsx' : 'ts'}`;
+    cpSync(join(fixture, threadView), join(destination, threadView));
     cpSync(join(fixture, 'review.css'), join(destination, 'review.css'));
-    cpSync(join(fixture, `${kind}-app.${kind === 'react' ? 'tsx' : 'ts'}`), join(destination, kind === 'react' ? 'main.tsx' : 'main.ts'));
+    const app = `${kind}-app.${kind === 'react' ? 'tsx' : 'ts'}`;
+    cpSync(join(fixture, app), join(destination, app));
+    writeFileSync(join(destination, kind === 'react' ? 'main.tsx' : 'main.ts'),
+      `if (new URLSearchParams(location.search).has('threads')) {\n  void import('./${kind}-threads');\n} else {\n  void import('./${kind}-app');\n}\n`);
     if (kind === 'angular') {
       const configPath = join(consumer, 'angular.json');
       const config = JSON.parse(readFileSync(configPath, 'utf8'));
@@ -351,6 +358,7 @@ export async function prepareRuntimeConsumer(root, consumer, kind) {
 
 /** Bounded fixture server: built files and deterministic history/run routes. */
 export async function serveRuntimeConsumer(directory) {
+  const threads = createThreadRoutes();
   const requests = [];
   const historyRequests = [];
   const joinRequests = [];
@@ -368,6 +376,7 @@ export async function serveRuntimeConsumer(directory) {
       const url = new URL(request.url, 'http://fixture');
       const pathname = url.pathname;
       if (pathname.startsWith('/api/')) {
+        if (await threads.handle(request, response, pathname)) return;
         const runPath = '/api/threads/fixture-thread/runs/drop-run';
         if (pathname === runPath || pathname === `${runPath}/stream`) {
           assert.equal(request.method, 'GET', 'known-run recovery only performs GET');
@@ -438,8 +447,9 @@ export async function serveRuntimeConsumer(directory) {
   server.listen(0, '127.0.0.1');
   await once(server, 'listening');
   return {
-    url: `http://127.0.0.1:${server.address().port}`, requests, historyRequests, joinRequests, statusRequests, errors, holdStarted, holdAborted,
+    url: `http://127.0.0.1:${server.address().port}`, requests, historyRequests, joinRequests, statusRequests, errors, holdStarted, holdAborted, threads,
     async close() {
+      threads.close();
       for (const response of held) response.destroy();
       const closed = once(server, 'close');
       server.close();
@@ -713,10 +723,11 @@ export async function runRuntimeScenarios(directory, kind) {
     assert.equal(server.statusRequests.length, 2);
     assert.deepEqual(server.historyRequests, [{ limit: 10 }, { limit: 10 }, { limit: 10 }], 'only explicit loads read history');
     completed.push('unmount and explicit disposal');
+    completed.push(...await runThreadScenarios(page, server));
     assert.deepEqual(server.errors.map(String), []);
     assert.deepEqual(pageErrors, []);
     assert.deepEqual(unexpected, []);
-    console.log(`${kind}: ${completed.length} browser scenarios passed (${completed.join('; ')}); 3 exact history reads, 10 exact run POSTs, 1 cursor join GET, 2 exact-run status GETs, one tool handler, 7 component submissions, 2 explicit resumes, 1 explicit reconnect, no page errors/unexpected requests.`);
+    console.log(`${kind}: ${completed.length} browser scenarios passed (${completed.join('; ')}); main workflow: 3 exact history reads, 10 exact run POSTs, 1 cursor join GET, 2 exact-run status GETs, one tool handler, 7 component submissions, 2 explicit resumes, 1 explicit reconnect; thread workflow: 4 history POSTs, 2 run POSTs, stream/history abort, no implicit selection I/O; no page errors/unexpected requests.`);
     return completed;
   } finally {
     try { await context?.close(); }

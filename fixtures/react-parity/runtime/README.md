@@ -1,5 +1,37 @@
 # Installed native runtime consumers
 
+## Thread lifetime
+
+Open `/?threads` on either review URL for the separate conversation-selection
+workflow. Both apps use a fixed-thread session for each selected conversation.
+The application selects a new session and explicitly disposes the outgoing one;
+selecting the same thread is a no-op. Returning to an old thread creates a fresh
+local session. Selection performs no history read, submission or server thread
+creation. Click **Load selected** to observe persisted data.
+
+React borrows the selected session through `useAgent`. A keyed view also resets
+its local command feedback. Angular keys a child component by selection identity
+and calls `observeAgent` in that component's injection context once its required
+input is available. Destroying the component releases the subscription. The
+application owns disposal, independently of view destruction. Binding tests also
+cover retaining the old session and reattaching to its completed run.
+
+Follow the thirteen-action sequence shown in the app. The wire fixture requires
+four history POSTs and two run POSTs. Selecting B during A's stream aborts local
+observation; returning to A starts empty. A's second history request deliberately
+stays pending until selecting B disposes it. Each new session starts with no
+observed values or history. Disposal permanently closes this example's owner.
+The existing main review sequence remains available at `/` on the same server.
+
+The selection owner is fixture-only application code, not a public library
+manager, cache or router. URL selection can feed an application's selected ID,
+but URL synchronization and thread creation/list CRUD remain migration work.
+Disposal stops local ownership, not remote execution or already-started side
+effects. Runtime tests cover late history, concurrent sessions and a late durable
+tool claim settled under its retired thread. Checkpoint execution is separate
+from thread selection. No core, runtime or native binding API changes are added
+by this proof.
+
 ## Run configuration
 
 The private LangGraph session accepts readonly `config`, `context`, `metadata`
@@ -218,7 +250,7 @@ are missing. `node scripts/react-parity/review-runtime.mjs --help` prints the
 prerequisite and review sequence.
 
 The runner packs those artifacts, installs and strictly type-checks isolated
-React and Angular consumers, builds each app, and runs all fifteen browser
+React and Angular consumers, builds each app, and runs all twenty-one browser
 scenarios on fresh fixture servers. Only after those checks pass does it print
 two new, untouched loopback URLs. Open each URL manually; no browser opens
 automatically. The review servers have made no SDK requests at that point.
@@ -404,14 +436,18 @@ React uses a Vite production build. Angular uses the existing consumer template'
 installed Angular CLI application builder and real APF linking, with output in
 `dist/consumer/browser` and input evidence from `dist/consumer/stats.json`.
 
-Both built apps run the same fifteen browser scenarios in installed Playwright
+Both built apps run the same twenty-one browser scenarios in installed Playwright
 Chromium: inert mount, explicit history load, equal history refresh, empty history
 replacement, successful text, a real local tool handler and exact
 two-request result continuation, protected visible server error, held streaming
 DOM updates and Stop, the full pause batch retained after Stop, an explicit response
 map and second pause, same-message resume completion, known-run premature EOF,
 explicit cursor join with exact-run completion, reuse after Stop,
-then unmount/dispose/post-disposal commands.
+then unmount/dispose/post-disposal commands. The separate thread view adds six
+scenario groups covering explicit selection/load, switching during streaming,
+same-thread identity, a fresh session on return, switching during history and
+permanent owner disposal. Its four history and two run POSTs are counted
+separately from the main workflow below.
 Seven submissions and two resumes through the component controls make exactly ten
 run POSTs (including one tool continuation) and call the handler once. One explicit
 reconnect makes one join GET; the original Drop EOF and joined EOF each require
@@ -425,8 +461,8 @@ the catalog and actual serialized ToolMessage payload.
 Values assertions distinguish unobserved from empty state, show loaded application
 fields, and verify replacement/deletion across root, tool, held and reused runs.
 Separate native component tests make four history reads to cover a values-only
-refresh with unchanged messages and interrupts; installed browser scenarios still
-make three. History fixtures contain two separate task payloads and show paused
+refresh with unchanged messages and interrupts; the main installed workflow
+makes three. History fixtures contain two separate task payloads and show paused
 delivery. The Pause button sends two separate root controls and renders both
 payloads; Stop retains them without another request. Resume clears the old batch
 and observes a new pause, then a second explicit resume completes without adding

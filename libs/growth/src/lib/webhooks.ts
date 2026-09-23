@@ -158,6 +158,21 @@ function boundedRecord(
 
 const MAX_DATA_KEYS = 32;
 const MAX_HEADER_ENTRIES = 32;
+const MAX_DIAGNOSTIC_CODES = 10;
+
+function validateProviderDiagnosticCode(value: unknown): void {
+  if (value == null) return;
+  if (typeof value === 'string') {
+    boundedText(value, 2_000);
+    return;
+  }
+  if (!Array.isArray(value) || value.length > MAX_DIAGNOSTIC_CODES) {
+    throw new Error('Invalid Resend webhook payload');
+  }
+  for (const code of value) {
+    if (code != null) boundedText(code, 2_000);
+  }
+}
 
 // Known keys are validated; unknown keys are ignored rather than fatal, because
 // Resend has added keys (message_id, headers) without notice and each addition
@@ -223,8 +238,7 @@ function validateClosedDetails(
     const bounceType = boundedText(bounce['type'], 100).toLowerCase();
     boundedText(bounce['subType'], 100);
     boundedText(bounce['message'], 500);
-    if (bounce['diagnosticCode'] != null)
-      boundedText(bounce['diagnosticCode'], 2_000);
+    validateProviderDiagnosticCode(bounce['diagnosticCode']);
     if (bounceType === 'permanent' || bounceType === 'hard') return 'permanent';
     if (bounceType === 'transient' || bounceType === 'soft') return 'transient';
     return 'unknown';
@@ -249,8 +263,7 @@ function validateClosedDetails(
     boundedText(suppressed['type'], 100);
     boundedText(suppressed['message'], 500);
     if (suppressed['reason'] != null) boundedText(suppressed['reason'], 500);
-    if (suppressed['diagnosticCode'] != null)
-      boundedText(suppressed['diagnosticCode'], 2_000);
+    validateProviderDiagnosticCode(suppressed['diagnosticCode']);
   }
   return undefined;
 }
