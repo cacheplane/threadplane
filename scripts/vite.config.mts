@@ -20,6 +20,7 @@ export default defineConfig({
       // node:test suites — run by ci.yml directly, not by vitest.
       'ci-scope.spec.mjs',
       'ci-workflow.spec.mjs',
+      'verify-claude-review.spec.mjs',
       'cockpit-matrix.spec.mjs',
       'cockpit-ports.spec.mjs',
       'cockpit-runtime-bridge-coverage.spec.mjs',
