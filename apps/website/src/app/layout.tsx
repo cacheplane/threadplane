@@ -84,10 +84,13 @@ const sansItalic = Archivo({
 
 /**
  * Inter is retained for diagrams only, and MUST be loaded here rather than
- * left to theme.css: next/font registers its family under a hashed name, so
- * theme.css's raw `Inter, system-ui` stack never matches it and would silently
- * fall back to system-ui. Diagram geometry is pinned to Inter's metrics —
- * see the FONTS note in src/styles/ui.css and e2e/home-architecture.spec.ts.
+ * left to theme.css. theme.css's `Inter, system-ui` stack only names the
+ * family; this loader is what actually ships the font file. Without it no
+ * `Inter` face exists and diagrams silently fall back to system-ui. (Older
+ * next/font versions also registered hashed family names, which a raw stack
+ * could never match; next/font 16 registers the real name, `Inter`.) Diagram
+ * geometry is pinned to Inter's metrics — see the FONTS note in
+ * src/styles/ui.css and e2e/home-architecture.spec.ts.
  */
 const diagram = Inter({
   subsets: ['latin'],
