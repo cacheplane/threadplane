@@ -24,7 +24,15 @@ describe('website posthog init options', () => {
       autocapture: true,
       capture_performance: { web_vitals: true },
       person_profiles: 'always',
+      disable_surveys: true,
     });
+  });
+
+  // Named for the same reason as the capture_pageview case below: the project's
+  // remote `surveys: false` does not stop posthog-js downloading surveys.js,
+  // so dropping this flag silently restores a 33.5KB fetch on every page.
+  it('keeps the surveys bundle from loading at all', () => {
+    expect(POSTHOG_INIT_OPTIONS.disable_surveys).toBe(true);
   });
 
   // Redundant with the toEqual above, deliberately: this IS the bug this fix

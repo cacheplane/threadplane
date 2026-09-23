@@ -37,6 +37,16 @@ export const POSTHOG_INIT_OPTIONS = {
   autocapture: true,
   capture_performance: { web_vitals: true },
   person_profiles: 'always',
+  /*
+   * The site runs no surveys, and the project's remote config already says
+   * `surveys: false` — but that does NOT stop the 33.5KB `surveys.js` download.
+   * posthog-js loads the extension once the remote value has ARRIVED, whatever
+   * it is (`if (!isUndefined(remoteSurveys) || advanced_enable_surveys)`), then
+   * does nothing with it. Only this client flag is checked before that load, so
+   * the project setting alone can never prevent it. Measured on production with
+   * mobile throttling, the bundle arrived at ~4.9s on every page.
+   */
+  disable_surveys: true,
 } satisfies Partial<PostHogConfig>;
 
 if (shouldCaptureAnalytics({ token, captureLocal, host: browserHost })) {
