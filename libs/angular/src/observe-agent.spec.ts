@@ -109,6 +109,35 @@ afterEach(async () => {
 });
 
 describe('observeAgent borrowed session', () => {
+  it('replaces observation scopes while the application retains the old run', async () => {
+    const a = fixture();
+    const b = fixture();
+    const first = observe(a.session);
+    const run = a.session.submit('A');
+    await a.started();
+    first.destroy();
+    const second = observe(b.session);
+    expect(second.snapshot()).toBe(b.session.getSnapshot());
+    expect(a.session.releases).toBe(a.session.subscriptions);
+    expect(a.session.stopCalls + a.session.disposeCalls).toBe(0);
+    expect(b.history.reads).toBe(0);
+    expect(b.streams).toHaveLength(0);
+    const selected = second.snapshot();
+    a.streams[0].release(finalText('A retained result'));
+    a.streams[0].finish();
+    expect(await run).toBe('success');
+    expect(second.snapshot()).toBe(selected);
+    second.destroy();
+    const restored = observe(a.session);
+    expect(restored.snapshot().messages.at(-1)?.content).toBe(
+      'A retained result'
+    );
+    expect(b.session.releases).toBe(b.session.subscriptions);
+    expect(b.session.disposeCalls).toBe(0);
+    restored.destroy();
+    expect(a.session.releases).toBe(a.session.subscriptions);
+  });
+
   it('observes explicit history loads without owning reads, refreshes, or teardown', async () => {
     const f = fixture();
     TestBed.configureTestingModule({
