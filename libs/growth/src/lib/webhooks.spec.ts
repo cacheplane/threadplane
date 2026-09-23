@@ -186,11 +186,26 @@ function webhookHarness(
   options: {
     existingActivity?: TestRow;
     job?: TestRow;
+    boundRfcMessageId?: string;
   } = {}
 ) {
   const currentJob = options.job ?? jobRow();
   const insertedRows = options.existingActivity ? [] : [{ event_key: 'x' }];
   const harness = executorWith({
+    'inspect-resend-terminal-rfc-binding': (parameters) => {
+      expect(parameters).toEqual([providerEmailId]);
+      return {
+        rows: [
+          {
+            kind: currentJob['kind'],
+            status: currentJob['status'],
+            contact_id: currentJob['contact_id'],
+            delivery_status: currentJob['delivery_status'],
+            rfc_message_id: options.boundRfcMessageId ?? null,
+          },
+        ],
+      };
+    },
     'discover-resend-webhook-job': (parameters, sql) => {
       expect(parameters).toEqual([providerEmailId]);
       expect(sql).toMatch(/where provider_email_id = \$1/u);
@@ -253,6 +268,83 @@ describe('processVerifiedResendWebhook', () => {
       },
       { stopContact: h.stopContact }
     );
+  });
+  it('preserves an existing RFC binding while applying a terminal suppression with a different provider Message-ID', async () => {
+    const h = webhookHarness({ boundRfcMessageId: '<original@resend.dev>' });
+    const result = await processVerifiedResendWebhook(
+      h.executor,
+      {
+        providerEventId: 'msg_terminal_binding_conflict',
+        payload: event('email.suppressed', {
+          message_id: '<different@resend.dev>',
+        }),
+      },
+      h.dependencies
+    );
+    expect(result).toMatchObject({
+      applied: true,
+      deliveryStatus: 'suppressed',
+    });
+    expect(h.dependencies.bindProviderMessageId).not.toHaveBeenCalled();
+    expect(h.stopContact).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ reason: 'provider_suppression' })
+    );
+  });
+  it('still reconciles a matching RFC binding on a terminal event', async () => {
+    const h = webhookHarness({ boundRfcMessageId: '<actual@resend.dev>' });
+    await processVerifiedResendWebhook(
+      h.executor,
+      {
+        providerEventId: 'msg_matching_terminal_binding',
+        payload: event('email.suppressed', {
+          message_id: '<actual@resend.dev>',
+        }),
+      },
+      h.dependencies
+    );
+    expect(h.dependencies.bindProviderMessageId).toHaveBeenCalledOnce();
+  });
+  it('does not bypass binding checks for an unfinished job', async () => {
+    const h = webhookHarness({
+      boundRfcMessageId: '<original@resend.dev>',
+      job: jobRow({ status: 'pending' }),
+    });
+    vi.mocked(h.dependencies.bindProviderMessageId).mockRejectedValueOnce(
+      new Error('Provider Message-ID binding conflict')
+    );
+    await expect(
+      processVerifiedResendWebhook(
+        h.executor,
+        {
+          providerEventId: 'msg_unfinished_terminal_binding',
+          payload: event('email.suppressed', {
+            message_id: '<different@resend.dev>',
+          }),
+        },
+        h.dependencies
+      )
+    ).rejects.toThrow(/Provider Message-ID binding conflict/u);
+    expect(h.stopContact).not.toHaveBeenCalled();
+  });
+  it('keeps a nonterminal RFC binding conflict retryable', async () => {
+    const h = webhookHarness({ boundRfcMessageId: '<original@resend.dev>' });
+    vi.mocked(h.dependencies.bindProviderMessageId).mockRejectedValueOnce(
+      new Error('Provider Message-ID binding conflict')
+    );
+    await expect(
+      processVerifiedResendWebhook(
+        h.executor,
+        {
+          providerEventId: 'msg_nonterminal_binding_conflict',
+          payload: event('email.delivered', {
+            message_id: '<different@resend.dev>',
+          }),
+        },
+        h.dependencies
+      )
+    ).rejects.toThrow(/Provider Message-ID binding conflict/u);
+    expect(h.calls).not.toContain('inspect-resend-terminal-rfc-binding');
   });
   it('keeps supported parser fixtures assignable to the pinned Resend webhook union', () => {
     expect(supportedSdkFixtures).toHaveLength(7);
