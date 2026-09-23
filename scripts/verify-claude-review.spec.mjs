@@ -59,6 +59,44 @@ for (const [name, content] of [
   });
 }
 
+test('an errored execution states its reason, so the failure is diagnosable', () => {
+  // Claude Code exits on an API error with is_error: true and puts the error in
+  // the terminal result's `result` field. Without it, every failure reads the
+  // same and nobody can tell a revoked key from an empty balance.
+  const reason =
+    'API Error: 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API."}}';
+  const result = verify(JSON.stringify([{ ...success, is_error: true, result: reason }]));
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /Claude review execution failed/);
+  assert.match(result.stderr, /Reason: API Error: 400 .*credit balance is too low/);
+});
+
+test('the reason is one bounded line with anything key-shaped redacted', () => {
+  const secret = 'sk-ant-api03-SECRETSECRETSECRET_1234567890';
+  const long = `Invalid API key ${secret}\n${'x'.repeat(2000)}`;
+  const result = verify(JSON.stringify([{ ...success, is_error: true, result: long }]));
+  assert.equal(result.status, 1);
+  const line = result.stderr.split('\n').find((l) => l.startsWith('Reason: '));
+  assert.ok(line, result.stderr);
+  assert.ok(line.length <= 'Reason: '.length + 300, `reason is ${line.length} chars`);
+  assert.doesNotMatch(result.stdout + result.stderr, /SECRETSECRETSECRET/);
+  assert.match(line, /sk-ant-\[redacted\]/);
+});
+
+test('a result that is not an error never prints its text', () => {
+  // A finished review's `result` is the review itself: transcript-grade
+  // content. Only an execution that reports is_error: true gets a reason line.
+  for (const content of [
+    JSON.stringify([{ ...success, subtype: 'error_max_turns', result: 'private-transcript-do-not-print' }]),
+    JSON.stringify([{ type: 'result', subtype: 'success', result: 'private-transcript-do-not-print' }]),
+  ]) {
+    const result = verify(content);
+    assert.equal(result.status, 1);
+    assert.doesNotMatch(result.stdout + result.stderr, /private-transcript-do-not-print/);
+    assert.doesNotMatch(result.stderr, /Reason:/);
+  }
+});
+
 test('rejects a missing action output', () => {
   const result = spawnSync(process.execPath, [script.pathname], {
     encoding: 'utf8',
