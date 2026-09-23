@@ -7,6 +7,14 @@
       "response": {
         "content": "Hi! How can I help you today?\n\nQuick note: every response here is saved as a checkpoint snapshot. If you want to explore a different path later, you can inspect the conversation history and branch from any previous checkpoint using stream.setBranch(checkpointId) to create an alternate timeline."
       }
+    },
+    {
+      "match": { "userMessage": "Continue the original path." },
+      "response": { "content": "This reply belongs only to the original path." }
+    },
+    {
+      "match": { "userMessage": "Try a different approach from here." },
+      "response": { "content": "This reply belongs to the checkpoint fork." }
     }
   ]
 }

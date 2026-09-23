@@ -272,15 +272,24 @@ function buildRunPayload(
   streamMode: StreamMode[];
   streamSubgraphs: boolean;
   signal: AbortSignal;
-} & Omit<LangGraphSubmitOptions, 'signal' | 'resume' | 'checkpoint' | 'streamMode' | 'streamSubgraphs'> {
+} & Omit<LangGraphSubmitOptions, 'signal' | 'resume' | 'checkpoint' | 'checkpointId' | 'streamMode' | 'streamSubgraphs'> {
   const runOptions = { ...(options ?? {}) };
-  const hasCheckpoint = Object.prototype.hasOwnProperty.call(runOptions, 'checkpoint');
-  const checkpoint = runOptions.checkpoint;
+  const hasCheckpoint = Object.prototype.hasOwnProperty.call(runOptions, 'checkpoint') ||
+    runOptions.checkpointId !== undefined;
+  // SDK stream serializes only `checkpoint`, unlike create/wait. Normalize the
+  // documented ID alias for both paths; an explicit object or null wins.
+  // Older API versions require checkpoint_map to be an object, not null.
+  const checkpoint: LangGraphSubmitOptions['checkpoint'] = runOptions.checkpoint !== undefined
+    ? runOptions.checkpoint
+    : runOptions.checkpointId !== undefined
+      ? { checkpoint_id: runOptions.checkpointId, checkpoint_ns: '', checkpoint_map: {} }
+      : undefined;
   const streamMode = runOptions.streamMode;
   const streamSubgraphs = runOptions.streamSubgraphs;
   delete runOptions.signal;
   delete runOptions.resume;
   delete runOptions.checkpoint;
+  delete runOptions.checkpointId;
   delete runOptions.streamMode;
   delete runOptions.streamSubgraphs;
 
