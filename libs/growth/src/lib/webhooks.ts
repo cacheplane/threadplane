@@ -21,6 +21,12 @@ const SUPPORTED_EVENT_TYPES = new Set([
   'email.suppressed',
   'email.failed',
 ]);
+const TERMINAL_DELIVERY_TYPES = new Set([
+  'email.bounced',
+  'email.complained',
+  'email.suppressed',
+  'email.failed',
+]);
 const DELIVERY_STATUS_PRECEDENCE: Readonly<
   Record<GrowthDeliveryStatus, number>
 > = {
@@ -553,14 +559,44 @@ export async function processVerifiedResendWebhook(
       event.rfcMessageId &&
       ['fulfill', 'send_step'].includes(event.tags['job_kind'] ?? '')
     ) {
-      await (dependencies.bindProviderMessageId ?? bindProviderMessageId)(
-        transactionExecutor(transaction),
-        {
-          providerEmailId: event.providerEmailId,
-          rfcMessageId: event.rfcMessageId,
-        },
-        { stopContact: dependencies.stopContact }
-      );
+      let preserveExistingBinding = false;
+      if (TERMINAL_DELIVERY_TYPES.has(event.type)) {
+        const existingBinding = await transaction.execute<{
+          kind: string;
+          status: string;
+          contact_id: string | null;
+          delivery_status: GrowthDeliveryStatus;
+          rfc_message_id: string | null;
+        }>(
+          `/* growth:inspect-resend-terminal-rfc-binding */
+           select kind, status, contact_id, delivery_status, rfc_message_id
+           from growth_jobs where provider_email_id = $1`,
+          [event.providerEmailId]
+        );
+        const job = existingBinding.rows[0];
+        // A terminal provider event can carry a different Message-ID from the
+        // sent message. Preserve the established reply binding and still apply
+        // the delivery outcome after normal job corroboration below.
+        preserveExistingBinding = Boolean(
+          job &&
+            job.status === 'completed' &&
+            job.contact_id &&
+            ['fulfill', 'send_step'].includes(job.kind) &&
+            job.delivery_status !== 'not_submitted' &&
+            job.rfc_message_id &&
+            job.rfc_message_id !== event.rfcMessageId
+        );
+      }
+      if (!preserveExistingBinding) {
+        await (dependencies.bindProviderMessageId ?? bindProviderMessageId)(
+          transactionExecutor(transaction),
+          {
+            providerEmailId: event.providerEmailId,
+            rfcMessageId: event.rfcMessageId,
+          },
+          { stopContact: dependencies.stopContact }
+        );
+      }
     }
     const existing = await transaction.execute<WebhookActivityRow>(
       `/* growth:read-resend-webhook-activity */
