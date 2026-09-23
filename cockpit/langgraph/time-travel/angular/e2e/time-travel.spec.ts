@@ -83,4 +83,5 @@ test('time-travel: fork starts at the selected checkpoint, not the thread tip', 
       'Try a different approach from here.',
       'This reply belongs to the checkpoint fork.',
     ]);
+  await expect(page.locator('.row--active .id')).toHaveText(checkpointId);
 });

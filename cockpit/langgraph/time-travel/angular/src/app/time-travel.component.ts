@@ -155,10 +155,16 @@ import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
             <p class="empty">No checkpoints yet. Send a message to begin.</p>
           }
 
-          @for (state of checkpoints(); track $index; let i = $index) {
-            <div class="row" [class.row--active]="i === selectedIndex()">
+          @for (state of checkpoints(); track state.checkpoint?.checkpoint_id ?? $index; let i = $index) {
+            <div
+              class="row"
+              [class.row--active]="state.checkpoint?.checkpoint_id === selectedCheckpointId()"
+            >
               <!-- Numbered badge -->
-              <span class="badge" [class.badge--active]="i === selectedIndex()">
+              <span
+                class="badge"
+                [class.badge--active]="state.checkpoint?.checkpoint_id === selectedCheckpointId()"
+              >
                 {{ i + 1 }}
               </span>
 
@@ -175,14 +181,14 @@ import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
                 <button
                   class="btn"
                   title="Select this checkpoint as the active branch"
-                  (click)="select(state, i)"
+                  (click)="select(state)"
                 >
                   Select
                 </button>
                 <button
                   class="btn"
                   title="Fork from this checkpoint"
-                  (click)="fork(state, i)"
+                  (click)="fork(state)"
                 >
                   Fork
                 </button>
@@ -199,8 +205,8 @@ export class TimeTravelComponent {
   // #region history
   protected readonly agent = injectAgent();
 
-  /** Index of the currently selected checkpoint in the sidebar. */
-  protected readonly selectedIndex = signal<number>(-1);
+  /** Selection survives new checkpoints being prepended to the history. */
+  protected readonly selectedCheckpointId = signal<string | null>(null);
 
   /** Checkpoint history derived from the agent. */
   protected readonly checkpoints = computed(
@@ -226,9 +232,9 @@ export class TimeTravelComponent {
    * `setBranch()` records the identifier in the agent's `branch()` signal.
    * It starts no run: it is a pointer the interface can read back.
    */
-  protected select(state: ThreadState<any>, index: number): void {
+  protected select(state: ThreadState<any>): void {
     if (state.checkpoint?.checkpoint_id) {
-      this.selectedIndex.set(index);
+      this.selectedCheckpointId.set(state.checkpoint.checkpoint_id);
       this.agent.setBranch(state.checkpoint.checkpoint_id);
     }
   }
@@ -240,10 +246,10 @@ export class TimeTravelComponent {
    * rather than at its tip, so the new run hangs off the chosen checkpoint
    * and the original path stays intact.
    */
-  protected fork(state: ThreadState<any>, index: number): void {
+  protected fork(state: ThreadState<any>): void {
     const checkpointId = state.checkpoint?.checkpoint_id;
     if (!checkpointId) return;
-    this.selectedIndex.set(index);
+    this.selectedCheckpointId.set(checkpointId);
     void this.agent.submit(
       { message: 'Try a different approach from here.' },
       { checkpointId },

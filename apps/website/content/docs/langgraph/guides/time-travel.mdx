@@ -36,7 +36,7 @@ The example resolves its connection details at runtime from the host that serves
 
 ### Reading the checkpoint history
 
-The component injects the agent and derives the timeline from it. `langGraphHistory()` is LangGraph's own view of the thread: an array of `ThreadState` snapshots. `selectedIndex` is local interface state, holding the row the user clicked last.
+The component injects the agent and derives the timeline from it. `langGraphHistory()` is LangGraph's own view of the thread: an array of `ThreadState` snapshots. `selectedCheckpointId` is local interface state, holding the checkpoint the user clicked last. New checkpoints can move existing rows, so selection follows the identifier across history refreshes.
 
 <ExampleCode file="time-travel.component.ts" region="history" title="time-travel.component.ts — the history signals" />
 
