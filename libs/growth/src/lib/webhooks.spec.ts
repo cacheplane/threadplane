@@ -469,9 +469,13 @@ describe('processVerifiedResendWebhook', () => {
     expect(soft.stopContact).not.toHaveBeenCalled();
   });
 
-  it.each([null, 'smtp; 550 user unknown'])(
-    'accepts provider bounce diagnostics %s and applies the hard-bounce stop',
-    async (diagnosticCode) => {
+  it.each([
+    { name: 'null', diagnosticCode: null },
+    { name: 'string', diagnosticCode: 'smtp; 550 user unknown' },
+    { name: 'array with null', diagnosticCode: [null] },
+  ])(
+    'accepts provider bounce diagnostics $name and applies the hard-bounce stop',
+    async ({ diagnosticCode }) => {
       const harness = webhookHarness();
       const result = await processVerifiedResendWebhook(
         harness.executor,
@@ -499,27 +503,35 @@ describe('processVerifiedResendWebhook', () => {
     }
   );
 
-  it('rejects an oversized bounce diagnostic before database access', async () => {
-    const harness = webhookHarness();
-    await expect(
-      processVerifiedResendWebhook(
-        harness.executor,
-        {
-          providerEventId: 'msg_invalid_bounce_diagnostic',
-          payload: event('email.bounced', {
-            bounce: {
-              type: 'Permanent',
-              subType: 'General',
-              message: 'bounced',
-              diagnosticCode: 'x'.repeat(2001),
-            },
-          }),
-        },
-        harness.dependencies
-      )
-    ).rejects.toThrow(/Invalid Resend webhook payload/u);
-    expect(harness.runTransaction).not.toHaveBeenCalled();
-  });
+  it.each([
+    { name: 'oversized string', diagnosticCode: 'x'.repeat(2001) },
+    { name: 'oversized array item', diagnosticCode: ['x'.repeat(2001)] },
+    { name: 'object array item', diagnosticCode: [{}] },
+    { name: 'oversized array', diagnosticCode: Array(11).fill(null) },
+  ])(
+    'rejects $name bounce diagnostic before database access',
+    async ({ diagnosticCode }) => {
+      const harness = webhookHarness();
+      await expect(
+        processVerifiedResendWebhook(
+          harness.executor,
+          {
+            providerEventId: 'msg_invalid_bounce_diagnostic',
+            payload: event('email.bounced', {
+              bounce: {
+                type: 'Permanent',
+                subType: 'General',
+                message: 'bounced',
+                diagnosticCode,
+              },
+            }),
+          },
+          harness.dependencies
+        )
+      ).rejects.toThrow(/Invalid Resend webhook payload/u);
+      expect(harness.runTransaction).not.toHaveBeenCalled();
+    }
+  );
 
   it.each([
     ['email.complained', 'complaint'],
@@ -537,9 +549,14 @@ describe('processVerifiedResendWebhook', () => {
     );
   });
 
-  it.each([null, 'smtp; 550 suppressed'])(
-    'accepts provider suppression diagnostics %s and applies the canonical stop',
-    async (diagnosticCode) => {
+  it.each([
+    { name: 'null', diagnosticCode: null },
+    { name: 'string', diagnosticCode: 'smtp; 550 suppressed' },
+    { name: 'array with string', diagnosticCode: ['smtp; 550 suppressed'] },
+    { name: 'array with null', diagnosticCode: [null] },
+  ])(
+    'accepts provider suppression diagnostics $name and applies the canonical stop',
+    async ({ diagnosticCode }) => {
       const harness = webhookHarness();
       const result = await processVerifiedResendWebhook(
         harness.executor,
@@ -570,6 +587,9 @@ describe('processVerifiedResendWebhook', () => {
   it.each([
     ['reason', 'x'.repeat(501)],
     ['diagnosticCode', 'x'.repeat(2001)],
+    ['diagnosticCode', ['x'.repeat(2001)]],
+    ['diagnosticCode', [{}]],
+    ['diagnosticCode', Array(11).fill(null)],
     ['reason', {}],
   ])(
     'rejects invalid suppression %s before database access',
