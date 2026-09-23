@@ -5,7 +5,7 @@ import './global.css';
 import { Nav } from '../components/shared/Nav';
 import { SiteFooter } from '../components/shared/SiteFooter';
 import { AnnouncementToast } from '../components/shared/AnnouncementToast';
-import { WebsiteWorkspaceRoot } from '../components/workspace/WebsiteWorkspace';
+import { WebsiteWorkspaceRoot } from '../components/workspace/WebsiteWorkspaceRoot';
 import { JsonLd } from '../components/shared/JsonLd';
 import { rootJsonLd } from '../lib/structured-data';
 import {
@@ -48,6 +48,13 @@ const sans = Archivo({
 const diagram = Inter({
   subsets: ['latin'],
   variable: '--font-diagram',
+  // Not preloaded. A preload makes the file a High-priority request at the
+  // same instant as the hero poster, and on a phone that is a straight fight
+  // for bandwidth with the LCP image — 47KB of a face no hero text uses. Left
+  // unpreloaded, it still loads the moment a diagram lays out, behind the
+  // size-adjusted fallback next/font generates; the diagram e2e already waits
+  // on document.fonts.ready. e2e/home-bundle.spec.ts budgets the preloads.
+  preload: false,
 });
 
 const mono = JetBrains_Mono({
