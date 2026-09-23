@@ -193,17 +193,17 @@ export class FetchStreamTransport implements AgentTransport {
   async updateState(
     threadId: string,
     values: Record<string, unknown>,
-    _signal: AbortSignal,
+    signal: AbortSignal,
     options?: { asNode?: string },
   ): Promise<void> {
-    const body: { values: Record<string, unknown>; asNode?: string } = { values };
+    const body: { values: Record<string, unknown>; signal: AbortSignal; asNode?: string } = { values, signal };
     if (options?.asNode !== undefined) {
       body.asNode = options.asNode;
     }
     try {
       await this.client.threads.updateState(threadId, body);
     } catch (error) {
-      this.rethrowOperationError(error, _signal);
+      this.rethrowOperationError(error, signal);
     }
   }
 

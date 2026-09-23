@@ -363,7 +363,7 @@
       },
       {
         "name": "updateState",
-        "signature": "updateState(threadId: string, values: Record<string, unknown>, _signal: AbortSignal, options: object): Promise<void>",
+        "signature": "updateState(threadId: string, values: Record<string, unknown>, signal: AbortSignal, options: object): Promise<void>",
         "description": "Update server-side thread state, e.g. to remove messages for regenerate rollback.",
         "params": [
           {
@@ -379,7 +379,7 @@
             "optional": false
           },
           {
-            "name": "_signal",
+            "name": "signal",
             "type": "AbortSignal",
             "description": "",
             "optional": false
