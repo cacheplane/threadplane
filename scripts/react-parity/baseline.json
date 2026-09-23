@@ -1,13 +1,9 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "56cd7b799ee98c544ff670f868762dd87a8b6787",
+  "baselineHead": "2082b01664a220ab30473d5a991a79154fba7a25",
   "sourceState": {
-    "modified": [
-      "libs/langgraph/src/runtime/create-session.ts"
-    ],
-    "untracked": [
-      "libs/langgraph/src/runtime/run-options.ts"
-    ]
+    "modified": [],
+    "untracked": []
   },
   "scope": {
     "libraries": [
@@ -12538,7 +12534,7 @@
       "id": "source:libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
       "kind": "source",
       "path": "libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
-      "sha256": "e3bca3ff3a3959c4d61cb41ddb5cf4087b3d55ceb55bdca4afda4d815e1ed44d"
+      "sha256": "a4a66891600fdf1bed6cc769deca86b87a724f392568369ba006c987fc583f95"
     },
     {
       "id": "source:libs/langgraph/src/lib/transport/mock-stream.transport.ts",
