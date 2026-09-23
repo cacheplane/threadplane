@@ -66,6 +66,43 @@ describe('website posthog init call', () => {
     expect(initMock).toHaveBeenCalledWith('dummy-token', reloadedOptions);
   });
 
+  it('disarms the pre-analytics beacon once PostHog has initialized', async () => {
+    vi.stubEnv('NEXT_PUBLIC_POSTHOG_TOKEN', 'dummy-token');
+    vi.stubEnv('NEXT_PUBLIC_POSTHOG_CAPTURE_LOCAL', 'true');
+    vi.resetModules();
+    const disarm = vi.fn();
+    window.__tplanePreAnalytics = { disarm };
+    const posthogModule = await import('posthog-js');
+    const initMock = vi.mocked(posthogModule.default.init);
+    initMock.mockClear();
+
+    await import('./instrumentation-client');
+
+    expect(initMock).toHaveBeenCalled();
+    expect(disarm).toHaveBeenCalledTimes(1);
+    // After init, not before: until then only the beacon can see a leave.
+    expect(disarm.mock.invocationCallOrder[0]).toBeGreaterThan(initMock.mock.invocationCallOrder[0]);
+    delete window.__tplanePreAnalytics;
+  });
+
+  it('disarms the pre-analytics beacon when PostHog is not going to run at all', async () => {
+    // No token: the gate declines, PostHog never initializes here, so the
+    // beacon must not report for it either.
+    vi.stubEnv('NEXT_PUBLIC_POSTHOG_TOKEN', '');
+    vi.resetModules();
+    const disarm = vi.fn();
+    window.__tplanePreAnalytics = { disarm };
+    const posthogModule = await import('posthog-js');
+    const initMock = vi.mocked(posthogModule.default.init);
+    initMock.mockClear();
+
+    await import('./instrumentation-client');
+
+    expect(initMock).not.toHaveBeenCalled();
+    expect(disarm).toHaveBeenCalledTimes(1);
+    delete window.__tplanePreAnalytics;
+  });
+
   it('calls posthog.init on a production host, with no capture-local opt-in', async () => {
     // This exercises the OTHER branch of shouldCaptureAnalytics: a real
     // deployed host, no NEXT_PUBLIC_POSTHOG_CAPTURE_LOCAL at all. A guard

@@ -1,5 +1,8 @@
 import posthog, { type PostHogConfig } from 'posthog-js';
 import { shouldCaptureAnalytics } from '@threadplane/telemetry/browser';
+// Type-only: brings in the `window.__tplanePreAnalytics` declaration without
+// bundling the beacon, which app/layout.tsx already inlines into the HTML.
+import type {} from './src/lib/analytics/pre-analytics-beacon';
 
 const token = process.env.NEXT_PUBLIC_POSTHOG_TOKEN;
 const captureLocal = process.env.NEXT_PUBLIC_POSTHOG_CAPTURE_LOCAL === 'true';
@@ -39,3 +42,10 @@ export const POSTHOG_INIT_OPTIONS = {
 if (shouldCaptureAnalytics({ token, captureLocal, host: browserHost })) {
   posthog.init(token!, POSTHOG_INIT_OPTIONS);
 }
+
+// Stand down the pre-analytics exit beacon inlined by app/layout.tsx. After
+// init, posthog-js owns the session and flushes its own events on unload; when
+// the gate above declines, PostHog never runs here and neither should the
+// beacon. Either way the two must never both report one visit. See
+// src/lib/analytics/pre-analytics-beacon.ts.
+if (typeof window !== 'undefined') window.__tplanePreAnalytics?.disarm();

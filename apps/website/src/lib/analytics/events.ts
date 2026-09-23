@@ -29,6 +29,7 @@ export const analyticsEvents = {
   marketingAiCrawlerVisit: 'marketing:ai_crawler_visit',
   marketingAiReferralVisit: 'marketing:ai_referral_visit',
   marketingStageProgress: 'marketing:stage_progress',
+  marketingPreAnalyticsExit: 'marketing:pre_analytics_exit',
   marketingEngagedTime: 'marketing:engaged_time',
 } as const;
 

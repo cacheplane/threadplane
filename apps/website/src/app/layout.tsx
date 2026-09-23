@@ -20,6 +20,7 @@ import {
 } from '../lib/site-metadata';
 import { getFormPolicy } from '../lib/growth/form-policy';
 import { WebsiteSignals } from '../components/shared/WebsiteSignals';
+import { PreAnalyticsBeacon } from '../components/shared/PreAnalyticsBeacon';
 import { EngagedTimeSignal } from '../components/shared/EngagedTimeSignal';
 import { websiteContentCatalog } from '../lib/growth/website-content';
 
@@ -96,6 +97,12 @@ export default function RootLayout({
       className={`${display.variable} ${sans.variable} ${diagram.variable} ${mono.variable}`}
     >
       <body>
+        {/*
+          First in <body> so it is armed while the HTML is still parsing, before
+          any bundle loads. It records visitors who leave before PostHog has
+          initialized; instrumentation-client.ts disarms it once PostHog runs.
+        */}
+        <PreAnalyticsBeacon />
         {/*
           Site-wide structured data, mounted once here so it is present on every
           route. Per-route nodes (BlogPosting, TechArticle) reference the
