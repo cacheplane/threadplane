@@ -31,13 +31,15 @@ const REGISTRY_MARKER = 'LangGraph Durable Execution (Python)';
 const DOCS_ROUTE = '/docs/langgraph/guides/streaming';
 
 /**
- * The fonts the homepage's above-the-fold hero actually renders: Archivo Black
- * (the H1), Archivo normal and italic (one next/font instance, so they preload
- * together), and JetBrains Mono (the eyebrow and the demo's URL bar). A fifth
- * preload is a new High-priority request racing the LCP image on a phone — add
- * one only after measuring that it is above the fold.
+ * The fonts the homepage preloads, identified by family and style. See the
+ * FONT PRELOADS note in app/layout.tsx for the measurements behind this list:
+ * on a throttled phone every preloaded font races the hero poster for
+ * bandwidth, so only faces whose late arrival would visibly hurt are here.
+ * Archivo italic and JetBrains Mono were measured at -228ms and -224ms of LCP
+ * each; Archivo normal stays because un-preloading it reflowed the subhead
+ * (CLS 0.206). Change this list only with a measurement.
  */
-const MAX_FONT_PRELOADS = 4;
+const EXPECTED_PRELOADS = ['Archivo Black normal', 'Archivo normal'];
 
 /**
  * The bodies of the scripts `path` itself requires: the `<script src>` tags and
@@ -79,10 +81,60 @@ test.describe('homepage bundle', () => {
     ).toBe(true);
   });
 
-  test('the homepage preloads only the fonts the hero renders', async ({ page }) => {
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
-    const preloads = await page.locator('link[rel="preload"][as="font"]').count();
-    expect(preloads).toBeGreaterThan(0);
-    expect(preloads).toBeLessThanOrEqual(MAX_FONT_PRELOADS);
+  test('the homepage preloads only the H1 face and the body face', async ({ page }) => {
+    // Read the live DOM, not the server HTML: under `next dev` React injects
+    // the font preloads into <head> during hydration, while a production build
+    // writes them into the HTML. The DOM has them either way.
+    await page.goto('/', { waitUntil: 'load' });
+    const faces = await page.evaluate(() => {
+      const files = [...document.querySelectorAll<HTMLLinkElement>('link[rel="preload"][as="font"]')].map(
+        (link) => new URL(link.href).pathname.split('/').pop() ?? ''
+      );
+      // Resolve each preloaded file to its @font-face through the CSSOM: a bare
+      // count would pass with the wrong face preloaded, e.g. the italic.
+      const rules: CSSFontFaceRule[] = [];
+      for (const sheet of [...document.styleSheets]) {
+        let list: CSSRuleList;
+        try {
+          list = sheet.cssRules;
+        } catch {
+          continue; // a cross-origin sheet; ours are same-origin
+        }
+        for (const rule of [...list]) if (rule instanceof CSSFontFaceRule) rules.push(rule);
+      }
+      return files.map((file) => {
+        const rule = rules.find((r) => r.style.getPropertyValue('src').includes(file));
+        const family = rule?.style.getPropertyValue('font-family').replace(/["']/g, '').trim();
+        const style = rule?.style.getPropertyValue('font-style').trim() || 'normal';
+        return `${family} ${style}`;
+      });
+    });
+    expect(faces.sort()).toEqual([...EXPECTED_PRELOADS].sort());
+  });
+
+  test('the unpreloaded italic still merges into the Archivo family', async ({ page }) => {
+    // Archivo's italic is its own next/font instance so it can skip the
+    // preload. That only works because both instances register the real
+    // family name, `Archivo`, and the browser merges them: italic text then
+    // picks the true italic. If the italic ended up under any other family,
+    // this load would find no italic face and every italic would turn faux.
+    await page.goto('/');
+    const faces = await page.evaluate(async () =>
+      (await document.fonts.load('italic 400 16px Archivo')).map((f) => `${f.family.replace(/["']/g, '')} ${f.style}`)
+    );
+    expect(faces).toContain('Archivo italic');
+  });
+
+  test('monospace text never falls back to a proportional font', async ({ page }) => {
+    // JetBrains Mono is not preloaded, so its fallback is visible while it
+    // loads. next/font's generated fallback for it is `local(Arial)`, which
+    // would misalign code; layout.tsx replaces it with a monospace stack.
+    await page.goto('/');
+    const stack = await page.evaluate(() =>
+      getComputedStyle(document.documentElement).getPropertyValue('--font-mono')
+    );
+    expect(stack).toContain('ui-monospace');
+    expect(stack).toContain('monospace');
+    expect(stack).not.toContain('JetBrains Mono Fallback');
   });
 });
