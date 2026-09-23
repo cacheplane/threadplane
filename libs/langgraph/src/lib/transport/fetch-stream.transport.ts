@@ -278,10 +278,11 @@ function buildRunPayload(
     runOptions.checkpointId !== undefined;
   // SDK stream serializes only `checkpoint`, unlike create/wait. Normalize the
   // documented ID alias for both paths; an explicit object or null wins.
+  // Older API versions require checkpoint_map to be an object, not null.
   const checkpoint: LangGraphSubmitOptions['checkpoint'] = runOptions.checkpoint !== undefined
     ? runOptions.checkpoint
     : runOptions.checkpointId !== undefined
-      ? { checkpoint_id: runOptions.checkpointId, checkpoint_ns: '', checkpoint_map: null }
+      ? { checkpoint_id: runOptions.checkpointId, checkpoint_ns: '', checkpoint_map: {} }
       : undefined;
   const streamMode = runOptions.streamMode;
   const streamSubgraphs = runOptions.streamSubgraphs;

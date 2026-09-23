@@ -20,7 +20,7 @@ const cases: {
     expected: {
       checkpoint_id: 'chosen-checkpoint',
       checkpoint_ns: '',
-      checkpoint_map: null,
+      checkpoint_map: {},
     },
   },
   {
@@ -39,7 +39,7 @@ const cases: {
     expected: {
       checkpoint_id: 'chosen-checkpoint',
       checkpoint_ns: '',
-      checkpoint_map: null,
+      checkpoint_map: {},
     },
   },
   { name: 'no checkpoint', options: undefined },
