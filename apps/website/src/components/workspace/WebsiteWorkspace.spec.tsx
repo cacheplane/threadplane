@@ -62,7 +62,8 @@ vi.mock('@threadplane/workspace-react', async (importOriginal) => {
   };
 });
 
-import { WebsiteWorkspace, WebsiteWorkspaceRoot } from './WebsiteWorkspace';
+import { WebsiteWorkspace } from './WebsiteWorkspace';
+import { WebsiteWorkspaceRoot } from './WebsiteWorkspaceRoot';
 
 const emptyContent: ContentBundle = {
   codeFiles: {},
