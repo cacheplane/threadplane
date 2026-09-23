@@ -1,0 +1,13 @@
+{
+  "fixtures": [
+    {
+      "match": { "userMessage": "Checkpoint protocol weather in Paris", "hasToolResult": true },
+      "response": { "content": "Protocol weather complete: Paris is 68°F." }
+    },
+    {
+      "match": { "userMessage": "Checkpoint protocol weather in Paris" },
+      "response": { "toolCalls": [{ "name": "get_weather", "arguments": { "location": "Paris" } }] },
+      "latency": 250
+    }
+  ]
+}
