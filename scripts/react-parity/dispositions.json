@@ -8675,6 +8675,14 @@
       "note": "Composes physical HTTP ownership with captured caller identity, synchronous cancellation and first terminal outcome. Framework-neutral session projection, transcript fidelity and public parity remain separate migration work. Child-attributed RUN_* events are unsupported when delivered by the SDK; protobuf decoding can erase attribution."
     },
     {
+      "id": "source:libs/ag-ui/src/runtime/transcript.ts",
+      "taskIds": ["T12", "T13"],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private immutable AG-UI transcript ownership and explicit mutable request projection; excluded from public exports and legacy Angular reachability.",
+      "note": "Preserves complete observed portable protocol data, excludes activity and null top-level child attribution only at request egress. Session snapshot replacement, stream reduction, provider normalization and public parity remain separate migration work."
+    },
+    {
       "id": "source:libs/ag-ui/src/test-setup.ts",
       "taskIds": [
         "T02",
