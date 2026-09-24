@@ -971,7 +971,7 @@ describe('owned run reconnect', () => {
     expect(f.updateState).toHaveBeenCalledTimes(1);
   });
 
-  it('blocks reconnect during late claim/record/write settlement and on unrelated staged results', async () => {
+  it('blocks submit/reconnect during late guarded settlement and retains a failed write', async () => {
     const claimed =
       deferred<Awaited<ReturnType<ToolExecutionStore['claim']>>>();
     const recorded = deferred<void>();
@@ -1011,12 +1011,13 @@ describe('owned run reconnect', () => {
     await claimStarted.promise;
     await f.session.stop();
     expect(await old).toBe('aborted');
-    await f.session.submit('New');
+    await expect(f.session.submit('New')).rejects.toThrow(/unsettled tool/);
     const retained = f.session.getSnapshot();
     await expect(f.session.reconnect()).rejects.toThrow();
     expect(f.session.getSnapshot()).toBe(retained);
     claimed.resolve('claimed');
     await recordStarted.promise;
+    await expect(f.session.submit('New')).rejects.toThrow(/unsettled tool/);
     await expect(f.session.reconnect()).rejects.toThrow();
     recorded.resolve();
     await writeStarted.promise;
@@ -1025,9 +1026,19 @@ describe('owned run reconnect', () => {
     // Observe cleanup settlement; all effect promises are explicitly controlled.
     await written.promise.catch(() => undefined);
     for (let index = 0; index < 8; index++) await Promise.resolve();
-    await expect(f.session.reconnect()).rejects.toThrow('unrelated staged');
+    await expect(f.session.reconnect()).rejects.toThrow();
     expect(f.joinStream).not.toHaveBeenCalled();
     expect(handler).not.toHaveBeenCalled();
+    await expect(f.session.submit('New')).resolves.toBe('interrupted');
+    expect(f.stream.mock.calls[1][2]).toMatchObject({
+      messages: [
+        {
+          tool_call_id: 'old-call',
+          content: expect.stringContaining('cancelled'),
+        },
+        { type: 'human', content: 'New' },
+      ],
+    });
   });
 
   it('guards external abort registration reentrancy before issuing a joined GET', async () => {

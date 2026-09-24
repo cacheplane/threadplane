@@ -38,6 +38,7 @@ export type MessageEvent =
       readonly existingId?: string;
     }
   | { readonly type: 'tool'; readonly toolCall: ToolCall }
+  | { readonly type: 'tool-unsettled'; readonly id: string }
   | { readonly type: 'remove-pending-tools'; readonly ids: readonly string[] }
   | {
       readonly type: 'complete';
@@ -77,6 +78,16 @@ export function reduceMessages(
     return toolCalls.length === state.toolCalls.length
       ? state
       : Object.freeze({ ...state, toolCalls: Object.freeze(toolCalls) });
+  }
+  if (event.type === 'tool-unsettled') {
+    // Only an execution owner can withdraw a local running projection. This
+    // does not reopen settled facts or change replayed arguments.
+    const index = state.toolCalls.findIndex((call) => call.id === event.id);
+    const call = state.toolCalls[index];
+    if (call?.status !== 'running') return state;
+    const toolCalls = [...state.toolCalls];
+    toolCalls[index] = ownToolCall({ ...call, status: 'pending' });
+    return Object.freeze({ ...state, toolCalls: Object.freeze(toolCalls) });
   }
   if (event.type === 'tool') {
     const index = state.toolCalls.findIndex(

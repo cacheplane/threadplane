@@ -143,6 +143,8 @@ jobs:
           npx nx run langgraph:runtime-type-tests
           npx nx run langgraph:type-tests
       - run: npx nx test langgraph --coverage --maxWorkers=2 --reporter=default
+      - name: Verify tool claim ownership with production stores
+        run: node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.base.json scripts/react-parity/verify-tool-claims.ts
       - run: npx nx run-many -t test --projects=chat,ag-ui,render,a2ui,telemetry --coverage --parallel=1 --maxWorkers=2
       - run: npx nx run-many -t build --projects=$LIBS --configuration=production
       - name: Install Chromium for packed runtime consumers
