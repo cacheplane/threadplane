@@ -1,12 +1,10 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "7b64fcb51e06bbf96c3ca0f33a861fd0b2527436",
+  "baselineHead": "3e7da956bd7e12927412a7a533045f69fcf5c27b",
   "sourceState": {
-    "modified": [
-      "libs/ag-ui/eslint.config.mjs"
-    ],
+    "modified": [],
     "untracked": [
-      "libs/ag-ui/src/runtime/create-run.ts"
+      "libs/ag-ui/src/runtime/transcript.ts"
     ]
   },
   "scope": {
@@ -10623,6 +10621,12 @@
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/create-run.ts",
       "sha256": "c830bfa2f0832f4c0ea3dfcc5c64360bfbe067227b60b3b86140dd5a686013cb"
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/transcript.ts",
+      "kind": "source",
+      "path": "libs/ag-ui/src/runtime/transcript.ts",
+      "sha256": "b35b5af35621c891f9309f3cc6702a71a8b264d959333de45df9334455c56d53"
     },
     {
       "id": "source:libs/ag-ui/src/test-setup.ts",
