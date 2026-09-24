@@ -8708,6 +8708,14 @@
       "note": "Consumes six SDK-normalized message events, captures incoming metadata before shallow merging, preserves prior observations and fails on invalid targets. HTTP coverage composes streaming with snapshot reconciliation and request egress. Caller admission, root/child routing, other protocol families, session integration and public parity remain separate migration work."
     },
     {
+      "id": "source:libs/ag-ui/src/runtime/tool-messages.ts",
+      "taskIds": ["T12", "T13"],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private immutable tool call and result observation only; excluded from public exports and legacy Angular reachability.",
+      "note": "Consumes four SDK-normalized tool events, preserves raw arguments and owned metadata, checks selected ambiguities and inserts or replays result messages without parsing or execution. Actual HTTP covers chunk normalization, authoritative snapshots, full request egress and callback failure closure. Full-history admission, routing, lifecycle, tool execution, session integration and public parity remain separate migration work."
+    },
+    {
       "id": "source:libs/ag-ui/src/runtime/transcript.ts",
       "taskIds": ["T12", "T13"],
       "treatment": "internal",

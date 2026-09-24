@@ -1,14 +1,10 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "7ee867effd94022a2fd2cc1380f6f5844a22964a",
+  "baselineHead": "625ce334b3e270724c02a89039c5915dfd105258",
   "sourceState": {
-    "modified": [
-      "libs/ag-ui/src/lib/internal/apply-patch.ts",
-      "libs/ag-ui/src/runtime/transcript.ts"
-    ],
+    "modified": [],
     "untracked": [
-      "libs/ag-ui/src/lib/internal/copy-data.ts",
-      "libs/ag-ui/src/runtime/state.ts"
+      "libs/ag-ui/src/runtime/tool-messages.ts"
     ]
   },
   "scope": {
@@ -10649,6 +10645,12 @@
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/text-messages.ts",
       "sha256": "6751d4b7f53350ccedafa2e1cae808d80c88acc894e8993441e30d60022e625e"
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/tool-messages.ts",
+      "kind": "source",
+      "path": "libs/ag-ui/src/runtime/tool-messages.ts",
+      "sha256": "dc3d89fefd80fcbb8197ca329b946ffce2c309252fe3a58d8abf7e1ae9997c3c"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/transcript.ts",
