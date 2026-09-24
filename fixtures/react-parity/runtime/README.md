@@ -1,5 +1,44 @@
 # Installed native runtime consumers
 
+## Durable tool claims
+
+The private runtime can use an application-supplied execution store. Only a newly
+acquired claim may run and record a handler. Stored results are reused without
+another record. An executing claim, a failed record without a result, or a
+rejected claim/record acknowledgement leaves the call pending and ends the local
+command as interrupted. It does not create a tool failure or continue the graph.
+
+Guarded execution blocks submit, resume and reconnect until settlement; stop and
+dispose remain prompt. A mixed group persists its conclusive results without
+continuing past an unresolved call. No-store and explicitly idempotent tools keep
+their existing behavior. Late acquired claims still record cancellation, and
+late stored results may still be handed off after stop without reviving the UI.
+
+After local work settles, explicit `load()` can release blocked call IDs only
+when the latest transcript contains their ToolMessages. It does not infer typed
+results, acknowledge staged results, retry claims, or take over another worker.
+If a graph write failed, legitimate staged results retain the existing next-submit
+handoff once the blockers clear. Message-ID deduplication does not guarantee a
+single write/checkpoint or branch-safe retry.
+
+A durable result without a graph result requires external reconciliation; this
+phase has no automatic store lookup or crash recovery. A transport without
+history loading cannot reconcile these calls in-session. `checkStatus()` remains
+graph-run recovery and does not inspect execution claims. The stores themselves
+do not enforce claim-token ownership, and result reuse by call ID does not prove
+argument equivalence or exactly-once external effects.
+
+Run the required real-store regression with Docker available:
+
+```sh
+node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.base.json scripts/react-parity/verify-tool-claims.ts
+```
+
+It exercises two actual sessions against the production memory and PostgreSQL
+stores. PostgreSQL runs in a disposable container with no host port or existing
+database credentials. Graph delivery in this test is deterministic and injected;
+the ordinary installed browser scenarios below do not exercise durable stores.
+
 ## Thread lifetime
 
 Open `/?threads` on either review URL for the separate conversation-selection

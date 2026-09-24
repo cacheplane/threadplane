@@ -3,6 +3,7 @@ import type {
   FunctionToolDefinition,
   ToolExecutionKey,
   ToolExecutionResult,
+  ToolExecutionRecord,
   ToolExecutionStore,
 } from '@threadplane/core/tools';
 import { ownToolCall, ownValue } from './ownership';
@@ -55,13 +56,24 @@ export function cancelledResult(id: string): ToolExecutionResult {
   };
 }
 
-function guardFailure(id: string, error: unknown): ToolExecutionResult {
-  return {
-    ok: false,
-    error: `Client tool execution guard failed for ${id}: ${
-      error instanceof Error ? error.message : String(error)
-    }`,
-  };
+export type ToolExecutionOutcome =
+  | { readonly type: 'settled'; readonly result: ToolExecutionResult }
+  | {
+      readonly type: 'unavailable';
+      readonly reason: 'claim' | 'record' | 'outstanding';
+    }
+  | { readonly type: 'not-started' };
+
+function settled(result: ToolExecutionResult): ToolExecutionOutcome {
+  return { type: 'settled', result: ownResult(result) };
+}
+
+/** Observing an existing execution never grants authority to record it. */
+function observeClaim(claim: 'claimed' | ToolExecutionRecord) {
+  if (claim === 'claimed') return { type: 'acquired' } as const;
+  if (claim.status === 'done') return settled(claim.result);
+  if (claim.status === 'failed' && claim.result) return settled(claim.result);
+  return { type: 'unavailable', reason: 'outstanding' } as const;
 }
 
 export type ExecutionOutcome<T> =
@@ -107,46 +119,32 @@ export async function executeTool(
   key: ToolExecutionKey,
   store?: ToolExecutionStore,
   blocked = false
-): Promise<ToolExecutionResult> {
-  if (signal.aborted) return cancelledResult(call.id);
+): Promise<ToolExecutionOutcome> {
   const guard = definition.idempotent ? undefined : store;
-  async function record(result: ToolExecutionResult) {
-    if (!guard) return result;
+  if (signal.aborted)
+    return guard ? { type: 'not-started' } : settled(cancelledResult(call.id));
+  async function record(
+    result: ToolExecutionResult
+  ): Promise<ToolExecutionOutcome> {
+    if (!guard) return settled(result);
     const captured = ownResult(result);
     try {
       await guard.record(key, captured);
-      return captured;
-    } catch (error) {
-      return guardFailure(call.id, error);
+      return settled(captured);
+    } catch {
+      // A rejected acknowledgement says nothing about durable acceptance or
+      // the handler's external effect. It is not a tool failure to serialize.
+      return { type: 'unavailable', reason: 'record' };
     }
   }
   if (guard) {
     try {
-      const claim = await guard.claim(key);
-      if (signal.aborted) {
-        if (claim === 'claimed') return record(cancelledResult(call.id));
-        // Prior completed facts belong to the durable store, not the cancelled
-        // attempt. Reuse them without invoking a handler or overwriting a row.
-        if (claim.status === 'done') return ownResult(claim.result);
-        if (claim.status === 'failed' && claim.result)
-          return ownResult(claim.result);
-        return cancelledResult(call.id);
-      }
-      if (claim !== 'claimed') {
-        if (claim.status === 'done') return ownResult(claim.result);
-        return record(
-          claim.status === 'failed' && claim.result
-            ? ownResult(claim.result)
-            : {
-                ok: false,
-                error: `Client tool execution interrupted before completion: ${call.id}`,
-              }
-        );
-      }
-    } catch (error) {
-      return signal.aborted
-        ? cancelledResult(call.id)
-        : guardFailure(call.id, error);
+      const observation = observeClaim(await guard.claim(key));
+      // Conclusive stored facts may still be handed off after stop. A foreign
+      // outstanding claim never enters owned cancellation or durable cleanup.
+      if (observation.type !== 'acquired') return observation;
+    } catch {
+      return { type: 'unavailable', reason: 'claim' };
     }
   }
   if (signal.aborted) return record(cancelledResult(call.id));

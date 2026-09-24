@@ -182,6 +182,9 @@ export function createSession(
   };
   const buffer = createToolBuffer();
   const resolvedTools = new Set<string>();
+  // Provisional guarded claims and unavailable results survive command stop.
+  // Only conclusive execution or explicit graph evidence releases admission.
+  const unsettledTools = new Set<string>();
   // Execution dedupe survives transcript replacement. Authored result provenance
   // belongs only to the current transcript; a wire string cannot restore it.
   const authoredTools = new Set<string>();
@@ -226,6 +229,23 @@ export function createSession(
   let loading: HistoryRead | undefined;
   let pendingToolSettlements = 0;
   let pendingToolWrites = 0;
+
+  function unsettledToolError(): AgentError {
+    return {
+      kind: 'interrupted',
+      message:
+        'Tool execution is unresolved. Reconcile the result externally, then load history before submitting again.' +
+        (buffer.snapshot().messages.length
+          ? ' Completed tool results remain staged.'
+          : ''),
+      retryable: false,
+      recovery: 'none',
+    };
+  }
+  function admitSubmission() {
+    if (unsettledTools.size)
+      throw new Error('Submission cannot replace unsettled tool execution.');
+  }
 
   const owns = (attempt: Attempt) => owner === attempt && !disposed;
   function publish(status: 'idle' | 'running' | 'error', error?: AgentError) {
@@ -327,6 +347,10 @@ export function createSession(
     for (const call of attempt.calls.values()) {
       const current = state.toolCalls.find((entry) => entry.id === call.id);
       if (current?.status !== 'running') continue;
+      if (unsettledTools.has(call.id)) {
+        state = reduceMessages(state, { type: 'tool-unsettled', id: call.id });
+        continue;
+      }
       resolvedTools.add(call.id);
       authoredTools.add(call.id);
       state = reduceMessages(state, {
@@ -373,10 +397,12 @@ export function createSession(
         attempt.projection.toolCallIds?.includes(call.id) &&
         !resolvedTools.has(call.id)
     );
-    if (!calls.length) return false;
+    if (!calls.length) return 'complete';
     // Capture all calls before publication: observers may synchronously stop.
     for (const call of calls) {
       attempt.calls.set(call.id, call);
+      if (store && !definitions.get(call.name)?.idempotent)
+        unsettledTools.add(call.id);
       state = reduceMessages(state, {
         type: 'tool',
         toolCall: { ...call, status: 'running' },
@@ -389,7 +415,7 @@ export function createSession(
         try {
           const definition = definitions.get(call.name);
           if (!definition) return;
-          const result = await executeTool(
+          const outcome = await executeTool(
             definition,
             call,
             attempt.controller.signal,
@@ -397,9 +423,22 @@ export function createSession(
             store,
             groups >= 10
           );
+          if (outcome.type !== 'settled') {
+            if (outcome.type === 'not-started') unsettledTools.delete(call.id);
+            if (owns(attempt)) {
+              state = reduceMessages(state, {
+                type: 'tool-unsettled',
+                id: call.id,
+              });
+              publish('running');
+            }
+            return;
+          }
+          const result = outcome.result;
           resolvedTools.add(call.id);
           authoredTools.add(call.id);
           buffer.stage(call.id, result);
+          unsettledTools.delete(call.id);
           if (owns(attempt)) {
             state = reduceMessages(state, {
               type: 'tool',
@@ -421,9 +460,11 @@ export function createSession(
         }
       })
     );
-    return (
-      groups < 10 && calls.some((call) => definitions.get(call.name)?.followUp)
-    );
+    if (unsettledTools.size) return 'blocked';
+    return groups < 10 &&
+      calls.some((call) => definitions.get(call.name)?.followUp)
+      ? 'follow-up'
+      : 'complete';
   }
   function stopExecution() {
     const hadRetained = !!retained;
@@ -752,7 +793,19 @@ export function createSession(
           batch.acknowledge();
           const followUp = await executeTools(attempt, groups);
           if (!owns(attempt)) return;
-          if (followUp) {
+          if (followUp === 'blocked') {
+            // Persist legitimate mixed-group results without continuing past
+            // an unavailable call. Failed writes keep the exact staged buffer.
+            try {
+              await flushTools(attempt.controller.signal);
+            } catch {
+              /* retained */
+            }
+            if (owns(attempt))
+              settle(attempt, 'interrupted', unsettledToolError());
+            return;
+          }
+          if (followUp === 'follow-up') {
             groups += 1;
             attempt.groups = groups;
             attempt.joinCursor = undefined;
@@ -936,6 +989,7 @@ export function createSession(
     let attempt: Attempt | undefined;
     const beginning = publication.command(() => {
       if (disposed) return;
+      admitSubmission();
       const capturedRevision = revision;
       const capturedLoad = loading;
       const external = options?.signal;
@@ -963,6 +1017,7 @@ export function createSession(
         capturedLoad !== loading
       )
         return;
+      admitSubmission();
       attempt = beginAttempt(
         {
           kind: 'submit',
@@ -1006,6 +1061,7 @@ export function createSession(
           retained ||
           pendingToolSettlements ||
           pendingToolWrites ||
+          unsettledTools.size ||
           buffer.snapshot().messages.length
         )
           throw new Error(
@@ -1057,6 +1113,7 @@ export function createSession(
         checkController ||
         pendingToolSettlements ||
         pendingToolWrites ||
+        unsettledTools.size ||
         !candidate ||
         !canReconnect
       )
@@ -1154,6 +1211,16 @@ export function createSession(
         // Even a plain projection can invoke getters supplied by a transport.
         // Such a getter can submit/stop/dispose; never commit its stale result.
         if (!ownsLoad(read)) return;
+        // Use the owned latest transcript only. An empty read or an older
+        // checkpoint cannot clear authority; wire text is not a typed result.
+        for (const message of projected.messages) {
+          if (
+            message.role === 'tool' &&
+            message.toolCallId &&
+            unsettledTools.delete(message.toolCallId)
+          )
+            resolvedTools.add(message.toolCallId);
+        }
         state = projected;
         values = projectedValues;
         interrupts = projectedInterrupts;
@@ -1162,7 +1229,10 @@ export function createSession(
         authoredTools.clear();
         loading = undefined;
         read.resolve();
-        publish('idle');
+        publish(
+          unsettledTools.size ? 'error' : 'idle',
+          unsettledTools.size ? unsettledToolError() : undefined
+        );
         closeLoad(read, false);
       });
     } catch {
@@ -1185,7 +1255,7 @@ export function createSession(
         retained ||
         pendingToolSettlements ||
         pendingToolWrites ||
-        buffer.snapshot().messages.length
+        (buffer.snapshot().messages.length && !unsettledTools.size)
       )
         throw new Error(
           'History cannot replace an active request, recovery, or unsettled tool results.'

@@ -1,9 +1,12 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "ea15ba3e48b156872bed66066462fc0a30f0425a",
+  "baselineHead": "bb64e8fdb5d8d9eee2185da426e1676c5f898616",
   "sourceState": {
     "modified": [
-      "libs/langgraph/src/lib/transport/fetch-stream.transport.ts"
+      ".github/workflows/ci.yml",
+      "libs/langgraph/src/runtime/create-session.ts",
+      "libs/langgraph/src/runtime/function-tools.ts",
+      "libs/langgraph/src/runtime/message-reducer.ts"
     ],
     "untracked": []
   },
@@ -1860,7 +1863,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "f6f53967664c94ce5001308d4f8847ffe48ca6081b61c4f10f404a74b8260c42"
+      "sha256": "3a9b661575b6884e491d00f6ffce6d0da0c04b60a241cf9fee381da99c5bd434"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -12566,13 +12569,13 @@
       "id": "source:libs/langgraph/src/runtime/create-session.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/create-session.ts",
-      "sha256": "38a4617921d75e4325adfb5e78468c07125047563d33b33b42f5519b3b67cb6d"
+      "sha256": "841a5f57ec5ac4d3e7107098fd3c6e03a50f6b433e9054524d277b709d479659"
     },
     {
       "id": "source:libs/langgraph/src/runtime/function-tools.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/function-tools.ts",
-      "sha256": "873ce2341b883ab6bcc17b7abf2d3eb0b61a3d5a9a7128449b8d4b90f5ae06fd"
+      "sha256": "4677b619e1f7702c6b1b772ece4354b49a4f4c3327854ed2e7f686e496463666"
     },
     {
       "id": "source:libs/langgraph/src/runtime/history-projection.ts",
@@ -12596,7 +12599,7 @@
       "id": "source:libs/langgraph/src/runtime/message-reducer.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/message-reducer.ts",
-      "sha256": "eeea886260ca5969733215fe58498ecebbe74f71cfc4461724c8cea089f1a44c"
+      "sha256": "45d13f0c0076ccfa9e26956b8d9aa110fffd835be58dfb8aa22450f048e3b2b1"
     },
     {
       "id": "source:libs/langgraph/src/runtime/operation-errors.ts",

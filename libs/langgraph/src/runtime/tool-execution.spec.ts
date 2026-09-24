@@ -754,7 +754,7 @@ describe('function tool execution guard', () => {
       await session.dispose();
     }
   });
-  it('retains captured store methods and exposes record rejection as a guard failure', async () => {
+  it('retains captured store methods and keeps record rejection unresolved', async () => {
     const transport = fixture();
     const claim = vi.fn(async () => 'claimed' as const);
     const record = vi.fn(async () => {
@@ -777,14 +777,15 @@ describe('function tool execution guard', () => {
     executionStore.record = vi.fn(async () => {
       throw new Error('different');
     });
-    await session.submit('Go');
+    await expect(session.submit('Go')).resolves.toBe('interrupted');
     expect(claim).toHaveBeenCalledTimes(1);
     expect(record).toHaveBeenCalledTimes(1);
     expect(executionStore.claim).not.toHaveBeenCalled();
     expect(session.getSnapshot().toolCalls[0]).toMatchObject({
-      status: 'error',
-      error: expect.stringContaining('write failed'),
+      status: 'pending',
     });
+    expect(transport.updateState).not.toHaveBeenCalled();
+    expect(transport.stream).toHaveBeenCalledTimes(1);
   });
   it('claims before handling, records before settlement, and idempotent tools skip the guard', async () => {
     const recorded = deferred<void>();
@@ -880,7 +881,7 @@ describe('function tool execution guard', () => {
       expect(session.getSnapshot().toolCalls[0]).toMatchObject(
         status === 'done'
           ? { status: 'complete', result: 'Saved' }
-          : { status: 'error' }
+          : { status: 'pending' }
       );
     }
   );
@@ -918,7 +919,14 @@ describe('function tool execution guard', () => {
         const snapshot = session.getSnapshot();
         if (ending === 'resolve') claimed.resolve('claimed');
         else claimed.reject(new Error('late'));
-        await flushed.promise;
+        if (ending === 'resolve') await flushed.promise;
+        else {
+          await new Promise<void>((resolve) => setImmediate(resolve));
+          expect(transport.updateState).not.toHaveBeenCalled();
+          await expect(session.submit('Retry')).rejects.toThrow(
+            /unsettled tool/
+          );
+        }
         expect(handler).not.toHaveBeenCalled();
         expect(transport.stream).toHaveBeenCalledTimes(1);
         expect(session.getSnapshot()).toBe(snapshot);
@@ -974,22 +982,27 @@ describe('function tool execution guard', () => {
         const snapshot = session.getSnapshot();
         if (ending === 'resolve') recorded.resolve();
         else recorded.reject(new Error('durability failed'));
-        await flushed.promise;
+        if (ending === 'resolve') await flushed.promise;
+        else {
+          await new Promise<void>((resolve) => setImmediate(resolve));
+          expect(transport.updateState).not.toHaveBeenCalled();
+          await expect(session.submit('Retry')).rejects.toThrow(
+            /unsettled tool/
+          );
+        }
         expect(executionStore.record).toHaveBeenCalledTimes(1);
         expect(executionStore.record.mock.calls[0][1]).toEqual({
           ok: true,
           value: 'Recorded success',
         });
-        expect(transport.updateState.mock.calls[0][1]).toMatchObject({
-          messages: [
-            {
-              content:
-                ending === 'resolve'
-                  ? 'Recorded success'
-                  : expect.stringContaining('guard failed'),
-            },
-          ],
-        });
+        if (ending === 'resolve')
+          expect(transport.updateState.mock.calls[0][1]).toMatchObject({
+            messages: [
+              {
+                content: 'Recorded success',
+              },
+            ],
+          });
         expect(transport.stream).toHaveBeenCalledTimes(1);
         expect(session.getSnapshot()).toBe(snapshot);
       } finally {

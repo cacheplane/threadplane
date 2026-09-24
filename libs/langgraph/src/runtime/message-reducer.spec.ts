@@ -20,6 +20,51 @@ function message(
 }
 
 describe('pure text and tool transitions', () => {
+  it('withdraws only a running tool projection without reopening settled facts', () => {
+    const call: ToolCall = {
+      id: 'call',
+      name: 'work',
+      args: {},
+      status: 'pending',
+    };
+    const initial = initialMessageState();
+    expect(
+      reduceMessages(initial, { type: 'tool-unsettled', id: call.id })
+    ).toBe(initial);
+    const running = reduceMessages(initial, {
+      type: 'tool',
+      toolCall: { ...call, status: 'running' },
+    });
+    expect(reduceMessages(running, { type: 'tool', toolCall: call })).toBe(
+      running
+    );
+    const pending = reduceMessages(running, {
+      type: 'tool-unsettled',
+      id: call.id,
+    });
+    expect(pending.toolCalls[0]).toEqual(call);
+    expect(pending.messages).toBe(running.messages);
+    expect(running.toolCalls[0].status).toBe('running');
+    expect(
+      reduceMessages(pending, { type: 'tool-unsettled', id: call.id })
+    ).toBe(pending);
+    for (const result of [
+      { ...call, status: 'complete', result: 'Done' },
+      { ...call, status: 'error', error: 'Declined' },
+    ] as const) {
+      const settled = reduceMessages(running, {
+        type: 'tool',
+        toolCall: result,
+      });
+      expect(reduceMessages(settled, { type: 'tool', toolCall: call })).toBe(
+        settled
+      );
+      expect(
+        reduceMessages(settled, { type: 'tool-unsettled', id: call.id })
+      ).toBe(settled);
+    }
+  });
+
   it('appends repeated identical deltas and shares untouched messages', () => {
     const before = reduceMessages(initialMessageState(), {
       type: 'message',
