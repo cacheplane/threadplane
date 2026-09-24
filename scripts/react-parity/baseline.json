@@ -1,16 +1,12 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "3a50f98a33dbc83cda3259840329a6c921e08ced",
+  "baselineHead": "7b64fcb51e06bbf96c3ca0f33a861fd0b2527436",
   "sourceState": {
     "modified": [
-      ".github/workflows/ci.yml",
-      "libs/ag-ui/project.json",
-      "libs/ag-ui/vite.config.mts"
+      "libs/ag-ui/eslint.config.mjs"
     ],
     "untracked": [
-      "libs/ag-ui/src/runtime/create-http-request.ts",
-      "libs/ag-ui/tsconfig.runtime-tests.json",
-      "libs/ag-ui/vite.runtime.config.mts"
+      "libs/ag-ui/src/runtime/create-run.ts"
     ]
   },
   "scope": {
@@ -10518,7 +10514,7 @@
       "id": "source:libs/ag-ui/eslint.config.mjs",
       "kind": "source",
       "path": "libs/ag-ui/eslint.config.mjs",
-      "sha256": "677c24253f9bbf0a4357c73c41f9e124b8db772e2f049ed9171e98ee73cb083c"
+      "sha256": "0e86d473aa0106362669f5077d9f44adf3fdabe6271eda6b96ab0ad0827fae05"
     },
     {
       "id": "source:libs/ag-ui/install/postinstall.cjs",
@@ -10621,6 +10617,12 @@
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/create-http-request.ts",
       "sha256": "c91749ff830d7e3500606d51e8c687657820ac1c5f4b6eee080ca5285d2c2373"
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/create-run.ts",
+      "kind": "source",
+      "path": "libs/ag-ui/src/runtime/create-run.ts",
+      "sha256": "c830bfa2f0832f4c0ea3dfcc5c64360bfbe067227b60b3b86140dd5a686013cb"
     },
     {
       "id": "source:libs/ag-ui/src/test-setup.ts",
