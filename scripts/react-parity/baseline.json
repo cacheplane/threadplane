@@ -1,10 +1,9 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "c5510a40423fb711536a800bc5abb8ae534958a0",
+  "baselineHead": "1bf764e4ee9c9a6cffc0bd15d305679c3206a8e3",
   "sourceState": {
     "modified": [
-      "libs/middleware/README.md",
-      "libs/middleware/src/langgraph/client-tool-result-guard.ts"
+      "libs/langgraph/src/runtime/ownership.ts"
     ],
     "untracked": []
   },
@@ -12609,7 +12608,7 @@
       "id": "source:libs/langgraph/src/runtime/ownership.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/ownership.ts",
-      "sha256": "404cfa73108674b6d1c5fc57c345652297d087c3bb17a39977fc6b7b710362b0"
+      "sha256": "ec54b382a512eed0f6cc519528851ed113ca346b4973b838b0572af329ce079f"
     },
     {
       "id": "source:libs/langgraph/src/runtime/publication.ts",

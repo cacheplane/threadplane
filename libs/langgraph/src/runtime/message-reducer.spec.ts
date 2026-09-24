@@ -20,6 +20,82 @@ function message(
 }
 
 describe('pure text and tool transitions', () => {
+  it.each([
+    { label: 'empty to holes', from: 0, to: 2, populated: false },
+    { label: 'shorter trailing holes', from: 3, to: 1, populated: true },
+  ])(
+    'retains a pending argument correction: $label',
+    ({ from, to, populated }) => {
+      const values = (length: number) => {
+        const array = new Array<number>(length);
+        if (populated) array[0] = 1;
+        return array;
+      };
+      const call: ToolCall = {
+        id: 'call',
+        name: 'work',
+        status: 'pending',
+        args: { nested: { marker: true, values: values(from) } },
+      };
+      const before = reduceMessages(initialMessageState(), {
+        type: 'tool',
+        toolCall: call,
+      });
+      const corrected = {
+        ...call,
+        args: { nested: { marker: true, values: values(to) } },
+      };
+      const after = reduceMessages(before, {
+        type: 'tool',
+        toolCall: corrected,
+      });
+      expect(after).not.toBe(before);
+      expect(after.toolCalls[0]).toHaveProperty(
+        'args.nested.values.length',
+        to
+      );
+      expect(before.toolCalls[0]).toHaveProperty(
+        'args.nested.values.length',
+        from
+      );
+      expect(after.messages).toBe(before.messages);
+      corrected.args.nested.values.length = 5;
+      expect(after.toolCalls[0]).toHaveProperty(
+        'args.nested.values.length',
+        to
+      );
+      expect(
+        reduceMessages(after, {
+          type: 'tool',
+          toolCall: {
+            ...call,
+            args: { nested: { values: values(to), marker: true } },
+          },
+        })
+      ).toBe(after);
+    }
+  );
+
+  it('distinguishes a pending argument hole from explicit undefined', () => {
+    const call: ToolCall = {
+      id: 'call',
+      name: 'work',
+      status: 'pending',
+      args: { values: new Array(1) },
+    };
+    const before = reduceMessages(initialMessageState(), {
+      type: 'tool',
+      toolCall: call,
+    });
+    const after = reduceMessages(before, {
+      type: 'tool',
+      toolCall: { ...call, args: { values: [undefined] } },
+    });
+    expect(after).not.toBe(before);
+    expect(after.toolCalls[0]).toHaveProperty('args.values.0', undefined);
+    expect(before.toolCalls[0]).not.toHaveProperty('args.values.0');
+  });
+
   it('withdraws only a running tool projection without reopening settled facts', () => {
     const call: ToolCall = {
       id: 'call',
