@@ -49,6 +49,59 @@ function checkpoint(
 const initial = () => initialMessageState();
 
 describe('pure authoritative history projection', () => {
+  it('settles legitimate ToolMessage IDs with projected receipt text', () => {
+    const state = projectHistory(initial(), [
+      checkpoint([
+        ai('a', '', [call('real')]),
+        {
+          type: 'ToolMessage',
+          id: 'receipt',
+          tool_call_id: 'real',
+          content: [
+            'Received',
+            { text: ' result' },
+            { type: 'tool_result', text: 'Hidden' },
+          ],
+        },
+      ]),
+    ]);
+    expect(state.toolCalls).toMatchObject([
+      { id: 'real', status: 'complete', result: 'Received result' },
+    ]);
+    expect(state.messages[1]).toMatchObject({
+      role: 'tool',
+      toolCallId: 'real',
+      content: 'Received result',
+    });
+  });
+
+  it('owns mixed visible text independently of reasoning and citations', () => {
+    const text = { type: 'output_text', text: 'final' };
+    const input = checkpoint([
+      {
+        ...ai('a'),
+        content: [
+          'Saved ',
+          text,
+          { text: ' answer' },
+          { type: 'reasoning', text: 'Hidden' },
+        ],
+        reasoning: 'Separate',
+        additional_kwargs: { citations: [{ title: 'Source' }] },
+      },
+    ]);
+    const first = projectHistory(initial(), [input]);
+    expect(first.messages[0]).toMatchObject({
+      content: 'Saved final answer',
+      reasoning: 'Separate',
+      citations: [{ title: 'Source' }],
+    });
+    expect(projectHistory(first, [input])).toBe(first);
+    text.text = 'Changed';
+    expect(first.messages[0].content).toBe('Saved final answer');
+    expect(Object.isFrozen(text)).toBe(false);
+  });
+
   it('owns citations, shares equal histories and equal metadata across text changes, and clears authoritative omissions', () => {
     const citations = [{ title: 'Source', extra: { tags: ['original'] } }];
     const input = () =>

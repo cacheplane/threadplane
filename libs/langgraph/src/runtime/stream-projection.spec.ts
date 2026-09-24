@@ -32,6 +32,43 @@ function start(messages: unknown[] = [assistant('step', ['c1'])]) {
 }
 
 describe('authoritative tool ownership', () => {
+  it.each(['Short', ''])(
+    'commits mixed canonical text %j exactly and bars late text',
+    (finalText) => {
+      let current = start([
+        { ...assistant('step'), content: [{ text: 'Long answer' }] },
+      ]);
+      current = projectStream(current.state, current.projection, {
+        type: 'values',
+        data: {
+          messages: [
+            {
+              ...assistant('step'),
+              content: [
+                { type: 'output_text', text: finalText },
+                { type: 'image', text: 'Hidden' },
+              ],
+              reasoning: 'Separate',
+              additional_kwargs: { citations: [{ title: 'Source' }] },
+            },
+          ],
+        },
+      });
+      const final = finalizeProjection(current.state, current.projection);
+      expect(final.messages.at(-1)).toMatchObject({
+        content: finalText,
+        reasoning: 'Separate',
+        citations: [{ title: 'Source' }],
+      });
+      const late = projectStream(final, current.projection, {
+        type: 'messages',
+        messageMetadata: {},
+        messages: [{ type: 'AIMessageChunk', id: 'step', content: ['Late'] }],
+      });
+      expect(late.state.messages.at(-1)?.content).toBe(finalText);
+    }
+  );
+
   it('captures terminal citations before finalization and clears omitted canonical metadata', () => {
     const citations = [
       { id: 'source', title: 'Original', extra: { tags: ['original'] } },

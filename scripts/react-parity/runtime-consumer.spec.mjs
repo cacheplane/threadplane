@@ -238,7 +238,22 @@ test('history uses the exact SDK body and counts reads separately from runs', as
       { id: 'saved-approval', value: { question: 'Approve saved request?', choices: ['yes', 'no'] }, namespace: ['review', 'task-1'], when: 'during', resumable: true, ns: ['legacy-review'] },
       { id: 'saved-confirmation', value: 0, namespace: [], when: 'during', resumable: false, ns: [] },
     ]);
-    assert.deepEqual(saved[0].values.messages.at(-1).content, [{ type: 'text', text: 'Saved final answer' }]);
+    const final = saved[0].values.messages.at(-1);
+    assert.deepEqual(final.content, [
+      'Saved ',
+      { type: 'output_text', text: 'final' },
+      { text: ' answer' },
+      { type: 'text', text: '' },
+      { type: 'reasoning', text: 'Hidden block reasoning' },
+      { type: 'image', text: 'Hidden image caption', url: 'https://example.test/image.png' },
+      { type: 'tool_use', id: 'ignored-block-call', name: 'savedTool', input: {}, text: 'Hidden tool request' },
+      { type: 'tool_result', tool_use_id: 'ignored-block-call', text: 'Hidden tool result' },
+    ]);
+    assert.equal(final.id, 'saved-final');
+    assert.equal(final.type, 'ai');
+    assert.equal(final.reasoning, 'Saved reasoning');
+    assert.deepEqual(final.additional_kwargs.sources, [{ refId: 'saved-source', name: 'Saved reference', publishedAt: '2026-09-24', extra: { provider: { labels: ['history'] } } }]);
+    assert.equal(final.tool_calls, undefined);
     assert.deepEqual(await (await read()).json(), saved);
     assert.deepEqual(await (await read()).json(), []);
     assert.deepEqual(server.historyRequests, [{ limit: 10 }, { limit: 10 }, { limit: 10 }]);

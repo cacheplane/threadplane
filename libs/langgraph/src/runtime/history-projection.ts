@@ -18,6 +18,7 @@ import { projectHistoryInterrupts } from './interrupt-projection';
 import type { LangGraphInterrupt } from './langgraph-snapshot';
 import { observeInvocation, type ToolInvocation } from './tool-invocations';
 import { projectCitations } from './citation-projection';
+import { projectReasoning } from './reasoning-projection';
 
 export interface HistoryProjectionOptions {
   /** Omit for broad wire observation. A supplied catalog exposes only its
@@ -164,6 +165,7 @@ export function projectHistory(
       role,
       content: textContent(message['content']),
       citations: projectCitations(message),
+      reasoning: projectReasoning(message),
       delivery: staticDelivery(id),
       ...(typeof message['name'] === 'string' ? { name: message['name'] } : {}),
       ...(typeof message['tool_call_id'] === 'string'

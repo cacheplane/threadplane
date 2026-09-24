@@ -23,6 +23,10 @@ they do not certify source accuracy or safe HTML/navigation. No URL is fetched o
 footnote resolved. Date instances, SDK objects and functions are outside this
 portable contract.
 
+`Message.reasoning` is optional readonly backend-supplied display text. An explicit
+empty string is distinct from absent data. It is not inferred from answer text,
+an execution signal, a duration measurement, or a rich content block model.
+
 Tool contracts pair authored TypeScript argument/result types by name, including
 ordinary interfaces. Pending calls have decoded, finalized arguments awaiting
 execution; partial streamed arguments are not exposed as authored types. `void`

@@ -14,6 +14,7 @@ import type { StreamEvent } from './transport.types';
 import { ownMessage, ownToolCall } from './ownership';
 import { record, roleOf, textContent } from './wire-message';
 import { projectCitations } from './citation-projection';
+import { projectReasoning } from './reasoning-projection';
 
 export { record } from './wire-message';
 
@@ -172,6 +173,7 @@ export function projectStream(
       role,
       content,
       citations: projectCitations(raw),
+      reasoning: projectReasoning(raw),
       delivery:
         !current && previous
           ? previous.delivery

@@ -1,5 +1,21 @@
 # Installed native runtime consumers
 
+## Reasoning projection
+
+Both main native views expose plain text from the real snapshot's readonly
+`Message.reasoning` field. The same three Load requests show `Saved reasoning`,
+retain it through equal history, and clear it with empty history. The first Resume
+shows `Approval reasoning`; the second canonically clears it on the same assistant.
+Installed type probes reject writes and non-string values with `skipLibCheck:false`.
+Main, thread and checkpoint request and handler counts are unchanged. A temporary
+production history-assignment omission must fail the saved reasoning assertion in
+both consumers, followed by exact-byte restoration and green reruns. Evidence is
+recorded additively in `evidence.json` under `ownedReasoningProjection`.
+
+This verifies owned display strings and these lifecycle paths only. It does not
+claim timing/duration parity, rich blocks, a reasoning renderer, live-provider
+conformance, performance, public backend cutover or full T09/T15 completion.
+
 ## Citation projection
 
 The main view's plain-text Citations field proves the installed readonly core
@@ -559,6 +575,14 @@ and no run requests or handler calls. Every completed load must leave its visibl
 error output empty, so retained text cannot conceal a failed equal refresh. Both
 registered handlers increment the same counter if executed. Request bodies check
 the catalog and actual serialized ToolMessage payload.
+The saved final answer combines a string entry, `output_text`, untyped text and an
+empty `text` block. Its visible text remains exactly `Saved final answer` through
+the initial and equal history reads. Reasoning, image and tool-shaped blocks with
+text fields stay out of the answer; explicit `Saved reasoning` still wins reasoning
+precedence, and saved citations remain visible. The Node fixture test checks the
+raw response shapes. Reverting only the private helper to typed `text` entries is
+the semantic negative control for both installed consumers. This is text projection
+coverage, not rich-media rendering, new tool admission or provider conformance.
 Values assertions distinguish unobserved from empty state, show loaded application
 fields, and verify replacement/deletion across root, tool, held and reused runs.
 Separate native component tests make four history reads to cover a values-only
