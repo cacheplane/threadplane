@@ -12,6 +12,12 @@
     ],
     "baseUrl": "../../../../..",
     "paths": {
+      "@threadplane/core": [
+        "libs/core/src/index.ts"
+      ],
+      "@threadplane/core/tools": [
+        "libs/core/src/tools/index.ts"
+      ],
       "@threadplane-internal/e2e-harness": [
         "libs/e2e-harness/src/index.ts"
       ],
