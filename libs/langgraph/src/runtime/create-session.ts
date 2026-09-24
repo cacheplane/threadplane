@@ -58,6 +58,7 @@ import {
   type RunEvidence,
 } from './run-recovery';
 import { createSafeRequestError } from './operation-errors';
+import { createToolPersistence } from './tool-persistence';
 import {
   failureProjection,
   finalizeProjection,
@@ -197,6 +198,13 @@ export function createSession(
   const protectedTransport =
     transport instanceof FetchStreamTransport &&
     transport.protectsOperationErrors;
+  const persistence = createToolPersistence(buffer, async (messages, signal) => {
+    if (!transport.updateState)
+      throw new Error(
+        'Persisting terminal tool results requires transport.updateState().'
+      );
+    await transport.updateState(threadId, { messages }, signal);
+  });
   const getHistory =
     typeof transport.getHistory === 'function'
       ? transport.getHistory.bind(transport)
@@ -228,7 +236,6 @@ export function createSession(
   let checkController: AbortController | undefined;
   let loading: HistoryRead | undefined;
   let pendingToolSettlements = 0;
-  let pendingToolWrites = 0;
 
   function unsettledToolError(): AgentError {
     return {
@@ -245,6 +252,8 @@ export function createSession(
   function admitSubmission() {
     if (unsettledTools.size)
       throw new Error('Submission cannot replace unsettled tool execution.');
+    if (persistence.pending)
+      throw new Error('Submission cannot replace pending tool persistence.');
   }
 
   const owns = (attempt: Attempt) => owner === attempt && !disposed;
@@ -369,26 +378,6 @@ export function createSession(
     return attempt;
   }
 
-  async function flushTools(signal: AbortSignal) {
-    const batch = buffer.snapshot();
-    if (!batch.messages.length) return;
-    if (!transport.updateState)
-      throw new Error(
-        'Persisting terminal tool results requires transport.updateState().'
-      );
-    pendingToolWrites += 1;
-    try {
-      await transport.updateState(
-        threadId,
-        { messages: batch.messages },
-        signal
-      );
-      batch.acknowledge();
-    } finally {
-      pendingToolWrites -= 1;
-    }
-  }
-
   async function executeTools(attempt: Attempt, groups: number) {
     const calls = state.toolCalls.filter(
       (call) =>
@@ -450,7 +439,7 @@ export function createSession(
             // Required durable cleanup may finish after stop/dispose. It can only
             // persist results; it has no route back to publication or run creation.
             try {
-              await flushTools(new AbortController().signal);
+              await persistence.flush(new AbortController().signal);
             } catch {
               /* The staged result remains available for explicit handoff. */
             }
@@ -790,14 +779,14 @@ export function createSession(
             generation: attempt.generation,
             outcome: 'success',
           });
-          batch.acknowledge();
+          persistence.acknowledge(batch);
           const followUp = await executeTools(attempt, groups);
           if (!owns(attempt)) return;
           if (followUp === 'blocked') {
             // Persist legitimate mixed-group results without continuing past
             // an unavailable call. Failed writes keep the exact staged buffer.
             try {
-              await flushTools(attempt.controller.signal);
+              await persistence.flush(attempt.controller.signal);
             } catch {
               /* retained */
             }
@@ -838,7 +827,7 @@ export function createSession(
             continue;
           }
           try {
-            await flushTools(attempt.controller.signal);
+            await persistence.flush(attempt.controller.signal);
           } catch {
             if (owns(attempt))
               settle(attempt, 'error', {
@@ -1060,7 +1049,7 @@ export function createSession(
           recoveryAttempt ||
           retained ||
           pendingToolSettlements ||
-          pendingToolWrites ||
+          persistence.pending ||
           unsettledTools.size ||
           buffer.snapshot().messages.length
         )
@@ -1112,7 +1101,7 @@ export function createSession(
         loading ||
         checkController ||
         pendingToolSettlements ||
-        pendingToolWrites ||
+        persistence.pending ||
         unsettledTools.size ||
         !candidate ||
         !canReconnect
@@ -1254,7 +1243,7 @@ export function createSession(
         recoveryAttempt ||
         retained ||
         pendingToolSettlements ||
-        pendingToolWrites ||
+        persistence.pending ||
         (buffer.snapshot().messages.length && !unsettledTools.size)
       )
         throw new Error(
