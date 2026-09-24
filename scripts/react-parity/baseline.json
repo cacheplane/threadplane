@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "9a87f53641064041cae89e1e83fd2da071440e5b",
+  "baselineHead": "a8ce8720b269099ffe5d8c6b0dbd696f1a427b60",
   "sourceState": {
-    "modified": [
-      "libs/ag-ui/src/lib/internal/apply-patch.ts"
-    ],
-    "untracked": []
+    "modified": [],
+    "untracked": [
+      "libs/ag-ui/src/runtime/reconcile-transcript.ts"
+    ]
   },
   "scope": {
     "libraries": [
@@ -10621,6 +10621,12 @@
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/create-run.ts",
       "sha256": "c830bfa2f0832f4c0ea3dfcc5c64360bfbe067227b60b3b86140dd5a686013cb"
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/reconcile-transcript.ts",
+      "kind": "source",
+      "path": "libs/ag-ui/src/runtime/reconcile-transcript.ts",
+      "sha256": "c2efbe4561a3d348422b144f7ab09656aa85b85771870fff4d4963880b9c6b74"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/transcript.ts",
