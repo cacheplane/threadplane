@@ -17,7 +17,10 @@ import type { ThreadState } from '@langchain/langgraph-sdk';
 import { FetchStreamTransport } from '../lib/transport/fetch-stream.transport';
 import { initialMessageState, reduceMessages } from './message-reducer';
 import { createPublication } from './publication';
-import { projectHistory } from './history-projection';
+import {
+  observeHistoryInvocations,
+  projectHistory,
+} from './history-projection';
 import { projectCheckpointHistory } from './checkpoint-history';
 import type {
   LangGraphInterrupt,
@@ -59,6 +62,7 @@ import {
 } from './run-recovery';
 import { createSafeRequestError } from './operation-errors';
 import { createToolPersistence } from './tool-persistence';
+import { hasInvocationConflict } from './tool-invocations';
 import {
   failureProjection,
   finalizeProjection,
@@ -198,13 +202,19 @@ export function createSession(
   const protectedTransport =
     transport instanceof FetchStreamTransport &&
     transport.protectsOperationErrors;
-  const persistence = createToolPersistence(buffer, async (messages, signal) => {
-    if (!transport.updateState)
-      throw new Error(
-        'Persisting terminal tool results requires transport.updateState().'
-      );
-    await transport.updateState(threadId, { messages }, signal);
-  });
+  const persistence = createToolPersistence(
+    buffer,
+    async (messages, signal) => {
+      // A queued flush can start after history/stream observation found a conflict.
+      // Durable claim/record ownership may finish, but its results stay quarantined.
+      assertInvocationIdentity();
+      if (!transport.updateState)
+        throw new Error(
+          'Persisting terminal tool results requires transport.updateState().'
+        );
+      await transport.updateState(threadId, { messages }, signal);
+    }
+  );
   const getHistory =
     typeof transport.getHistory === 'function'
       ? transport.getHistory.bind(transport)
@@ -237,6 +247,20 @@ export function createSession(
   let loading: HistoryRead | undefined;
   let pendingToolSettlements = 0;
 
+  function invocationConflictError(): AgentError {
+    return {
+      kind: 'interrupted',
+      message:
+        'A tool invocation identity conflict prevents further execution in this session.',
+      retryable: false,
+      recovery: 'none',
+    };
+  }
+  function assertInvocationIdentity() {
+    if (hasInvocationConflict(state.invocations))
+      throw new Error(invocationConflictError().message);
+  }
+
   function unsettledToolError(): AgentError {
     return {
       kind: 'interrupted',
@@ -250,6 +274,7 @@ export function createSession(
     };
   }
   function admitSubmission() {
+    assertInvocationIdentity();
     if (unsettledTools.size)
       throw new Error('Submission cannot replace unsettled tool execution.');
     if (persistence.pending)
@@ -258,6 +283,10 @@ export function createSession(
 
   const owns = (attempt: Attempt) => owner === attempt && !disposed;
   function publish(status: 'idle' | 'running' | 'error', error?: AgentError) {
+    if (hasInvocationConflict(state.invocations)) {
+      status = 'error';
+      error = invocationConflictError();
+    }
     publication.publish({
       status,
       history: historyPage,
@@ -328,6 +357,11 @@ export function createSession(
     retainRun = false
   ) {
     if (!owns(attempt)) return;
+    if (hasInvocationConflict(state.invocations)) {
+      outcome = 'interrupted';
+      error = invocationConflictError();
+      retainRun = false;
+    }
     const run = attempt.physical;
     const candidate =
       retainRun &&
@@ -345,7 +379,10 @@ export function createSession(
     publish(error ? 'error' : 'idle', error);
     // An error can end local consumption before the HTTP body closes. SDK
     // iterator return releases its reader; abort also cancels our request.
-    close(attempt, outcome === 'error');
+    close(
+      attempt,
+      outcome === 'error' || hasInvocationConflict(state.invocations)
+    );
   }
   function detach(outcome: CompleteOutcome): Attempt | undefined {
     const attempt = owner;
@@ -379,6 +416,7 @@ export function createSession(
   }
 
   async function executeTools(attempt: Attempt, groups: number) {
+    assertInvocationIdentity();
     const calls = state.toolCalls.filter(
       (call) =>
         call.status === 'pending' &&
@@ -389,6 +427,7 @@ export function createSession(
     if (!calls.length) return 'complete';
     // Capture all calls before publication: observers may synchronously stop.
     for (const call of calls) {
+      state = reduceMessages(state, { type: 'tool-admitted', toolCall: call });
       attempt.calls.set(call.id, call);
       if (store && !definitions.get(call.name)?.idempotent)
         unsettledTools.add(call.id);
@@ -468,7 +507,6 @@ export function createSession(
   }
 
   function reconcile(attempt: Attempt, history: ThreadState[]) {
-    if (attempt.input.kind === 'resume') return undefined;
     const previousState = state;
     const previousValues = values;
     const previousInterrupts = interrupts;
@@ -479,6 +517,22 @@ export function createSession(
     const messages = Array.isArray(checkpointValues?.['messages'])
       ? checkpointValues['messages']
       : [];
+    const invocations = observeHistoryInvocations(
+      previousState.invocations,
+      messages
+    );
+    if (hasInvocationConflict(invocations)) {
+      // Keep the attempt transcript while committing the independently observed
+      // identity facts only after the caller's ownership/revision check.
+      return {
+        state: Object.freeze({ ...previousState, invocations }),
+        projection: previousProjection,
+        values: projectHistoryValues(previousValues, history),
+        interrupts: projectHistoryInterrupts(previousInterrupts, history),
+        outcome: 'interrupted' as const,
+      };
+    }
+    if (attempt.input.kind === 'resume') return undefined;
     // Inert construction gives us no server baseline. Only our unique submitted
     // user ID can correlate this checkpoint to this request, including when the
     // persisted assistant retains the ID of its earlier streamed partial.
@@ -524,12 +578,21 @@ export function createSession(
       data: { messages: [messages[anchor], ...turn] },
     });
     const projectedValues = projectHistoryValues(previousValues, history);
+    // Stream projection owns its own read of history data. A getter may have
+    // changed since the identity scan, so final completion follows its facts.
+    const conflicted = hasInvocationConflict(projected.state.invocations);
     return {
-      state: finalizeProjection(projected.state, projected.projection),
-      projection: { ...projected.projection, paused },
+      state: conflicted
+        ? projected.state
+        : finalizeProjection(projected.state, projected.projection),
+      projection: { ...projected.projection, paused: !conflicted && paused },
       values: projectedValues,
       interrupts: projectedInterrupts,
-      outcome: paused ? ('paused' as const) : ('success' as const),
+      outcome: conflicted
+        ? ('interrupted' as const)
+        : paused
+        ? ('paused' as const)
+        : ('success' as const),
     };
   }
 
@@ -544,6 +607,7 @@ export function createSession(
       let groups = attempt.groups;
       let input = attempt.input.kind === 'submit' ? attempt.input.messages : [];
       while (owns(attempt)) {
+        assertInvocationIdentity();
         const joining = attempt.joinCursor;
         const run: PhysicalRun =
           joining && attempt.physical
@@ -691,6 +755,10 @@ export function createSession(
             ...projected.projection,
             paused: projectedInterrupts.length > 0,
           };
+          if (hasInvocationConflict(state.invocations)) {
+            settle(attempt, 'interrupted', invocationConflictError());
+            return;
+          }
           publish('running');
           // publish drains observer commands before returning. Never dispatch or
           // read on behalf of an attempt a listener just stopped/superseded.
@@ -768,6 +836,10 @@ export function createSession(
           }
         }
         if (!owns(attempt)) return;
+        if (hasInvocationConflict(state.invocations)) {
+          settle(attempt, 'interrupted', invocationConflictError());
+          return;
+        }
         if (outcome === 'success' || outcome === 'paused') {
           state = finalizeProjection(state, attempt.projection);
           subgraphs = settleSubgraphs(subgraphs, outcome, true);
@@ -1043,6 +1115,7 @@ export function createSession(
       )
         return;
       const admit = () => {
+        assertInvocationIdentity();
         if (
           owner ||
           loading ||
@@ -1095,6 +1168,7 @@ export function createSession(
       const capturedRevision = revision;
       const external = options?.signal;
       if (disposed || external?.aborted) return;
+      assertInvocationIdentity();
       const candidate = retained;
       if (
         owner ||
@@ -1244,7 +1318,9 @@ export function createSession(
         retained ||
         pendingToolSettlements ||
         persistence.pending ||
-        (buffer.snapshot().messages.length && !unsettledTools.size)
+        (buffer.snapshot().messages.length &&
+          !unsettledTools.size &&
+          !hasInvocationConflict(state.invocations))
       )
         throw new Error(
           'History cannot replace an active request, recovery, or unsettled tool results.'

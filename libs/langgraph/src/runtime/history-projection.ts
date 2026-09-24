@@ -16,6 +16,7 @@ import {
 import { record, roleOf, textContent } from './wire-message';
 import { projectHistoryInterrupts } from './interrupt-projection';
 import type { LangGraphInterrupt } from './langgraph-snapshot';
+import { observeInvocation, type ToolInvocation } from './tool-invocations';
 
 export interface HistoryProjectionOptions {
   /** Omit for broad wire observation. A supplied catalog exposes only its
@@ -31,6 +32,70 @@ function sameEntries(left: readonly unknown[], right: readonly unknown[]) {
     left.length === right.length &&
     left.every((value, index) => value === right[index])
   );
+}
+
+/** Read finalized identities independently of transcript/result filtering. */
+export function observeHistoryInvocations(
+  previous: readonly ToolInvocation[],
+  messages: readonly unknown[]
+) {
+  if (!previous.length) return previous;
+  return observeCapturedInvocations(
+    previous,
+    messages.map((value) => captureHistoryCalls(record(value), previous))
+  );
+}
+
+function captureHistoryCalls(
+  message: Record<string, unknown> | undefined,
+  invocations: readonly ToolInvocation[]
+) {
+  if (
+    !message ||
+    roleOf(message) !== 'assistant' ||
+    message['type'] === 'AIMessageChunk'
+  )
+    return undefined;
+  const rawCalls = message['tool_calls'];
+  if (!Array.isArray(rawCalls)) return undefined;
+  const ids: string[] = [];
+  const calls: {
+    id: string;
+    name: string;
+    raw: Record<string, unknown>;
+    owned?: ToolCall;
+  }[] = [];
+  for (const value of rawCalls) {
+    const call = record(value);
+    const id = call?.['id'];
+    const name = call?.['name'];
+    if (typeof id !== 'string') continue;
+    ids.push(id);
+    if (typeof name !== 'string' || !call) continue;
+    // Bound arguments must be captured once for comparison and projection.
+    // Unbound overwritten calls keep the observer's existing lazy ownership.
+    const owned = invocations.some((entry) => entry.id === id)
+      ? ownToolCall({
+          id,
+          name,
+          args: call['args'] as PlainValue,
+          status: 'pending',
+        })
+      : undefined;
+    calls.push({ id, name, raw: call, owned });
+  }
+  return { ids, calls };
+}
+
+function observeCapturedInvocations(
+  previous: readonly ToolInvocation[],
+  captured: readonly ReturnType<typeof captureHistoryCalls>[]
+) {
+  let invocations = previous;
+  for (const message of captured)
+    for (const call of message?.calls ?? [])
+      if (call.owned) invocations = observeInvocation(invocations, call.owned);
+  return invocations;
 }
 
 /** Replace the transcript from the latest checkpoint, independently of any run.
@@ -52,6 +117,14 @@ export function projectHistory(
     ? values['messages']
     : [];
   const raw = rawMessages.map(record);
+  const capturedCalls = previous.invocations.length
+    ? raw.map((message) => captureHistoryCalls(message, previous.invocations))
+    : undefined;
+  // Inspect every finalized occurrence before duplicate-message/call overwrite,
+  // catalog filtering, or a ToolMessage can hide a contradictory invocation.
+  const invocations = capturedCalls
+    ? observeCapturedInvocations(previous.invocations, capturedCalls)
+    : previous.invocations;
   const explicitIds = new Map<string, number>();
   raw.forEach((message, index) => {
     if (typeof message?.['id'] === 'string')
@@ -82,15 +155,9 @@ export function projectHistory(
       while (reservedIds.has(id)) id = `${base}-${++suffix}`;
       reservedIds.add(id);
     }
-    const finalizedCalls =
-      role === 'assistant' &&
-      message['type'] !== 'AIMessageChunk' &&
-      Array.isArray(message['tool_calls']);
-    const messageCalls = finalizedCalls
-      ? (message['tool_calls'] as unknown[])
-          .map(record)
-          .filter((call): call is Record<string, unknown> => !!call)
-      : [];
+    const finalizedCalls = capturedCalls
+      ? capturedCalls[index]
+      : captureHistoryCalls(message, previous.invocations);
     projectedMessages.push({
       id,
       role,
@@ -102,22 +169,20 @@ export function projectHistory(
         : {}),
       ...(finalizedCalls
         ? {
-            toolCallIds: messageCalls.flatMap((call) =>
-              typeof call['id'] === 'string' ? [call['id']] : []
-            ),
+            toolCallIds: finalizedCalls.ids,
           }
         : {}),
     });
-    for (const call of messageCalls) {
-      if (typeof call['id'] !== 'string' || typeof call['name'] !== 'string')
-        continue;
-      calls.set(call['id'], {
-        id: call['id'],
-        name: call['name'],
-        args: call['args'] as PlainValue,
-        status: 'pending',
-      });
-    }
+    for (const call of finalizedCalls?.calls ?? [])
+      calls.set(
+        call.id,
+        call.owned ?? {
+          id: call.id,
+          name: call.name,
+          args: call.raw['args'] as PlainValue,
+          status: 'pending',
+        }
+      );
   });
 
   if (interrupts.length > 0) {
@@ -167,12 +232,14 @@ export function projectHistory(
     : Object.freeze(projectedTools);
   if (
     messages === previous.messages &&
+    invocations === previous.invocations &&
     toolCalls === previous.toolCalls &&
     previous.canonical.length === 0 &&
     previous.aliases.length === 0
   )
     return previous;
   return Object.freeze({
+    invocations,
     messages,
     toolCalls,
     canonical: previous.canonical.length
