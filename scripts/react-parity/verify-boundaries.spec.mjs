@@ -1,11 +1,104 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { verifyBoundaries } from './verify-boundaries.mjs';
 
 const finalOptions = { angularTransitions: [], telemetryBrowserTransition: false };
+
+for (const edge of [
+  "export * from './runtime/create-session';",
+  "export type { Session } from './runtime/create-session';",
+  "export * from './bridge';",
+  "export * from '@private-session';",
+  "void import('./runtime/create-session');",
+]) {
+  test(`legacy source rejects private runtime exposure: ${edge}`, (t) => {
+    const root = fixture(t, {
+      'tsconfig.base.json': JSON.stringify({ compilerOptions: { baseUrl: '.', paths: { '@private-session': ['libs/langgraph/src/runtime/create-session.ts'] } } }),
+      'libs/langgraph/src/public-api.ts': edge,
+      ...(edge.includes('./bridge') ? { 'libs/langgraph/src/bridge.ts': "export * from './runtime/create-session';" } : {}),
+      'libs/langgraph/src/runtime/create-session.ts': 'export interface Session {}',
+    });
+    assert.ok(verifyBoundaries({ root, projects: ['langgraph'] }).some((error) => error.includes('private runtime reachable from legacy source')));
+  });
+}
+
+for (const shared of ['transport.types', 'operation-errors']) {
+  test(`legacy source may reach exactly shared ${shared}, but not private dependencies`, (t) => {
+    const root = fixture(t, {
+      'libs/langgraph/src/public-api.ts': `export * from './runtime/${shared}';`,
+      [`libs/langgraph/src/runtime/${shared}.ts`]: 'export interface Shared {}',
+      'libs/langgraph/src/runtime/create-session.ts': 'export interface Session {}',
+    });
+    assert.deepEqual(verifyBoundaries({ root, projects: ['langgraph'] }), []);
+    writeFileSync(join(root, `libs/langgraph/src/runtime/${shared}.ts`), "export * from './create-session';");
+    assert.ok(verifyBoundaries({ root, projects: ['langgraph'] }).some((error) => error.includes('private runtime reachable from legacy source')));
+  });
+}
+
+test('legacy context revisits a shared module after an earlier permissive runtime visit', (t) => {
+  const root = fixture(t, {
+    'libs/langgraph/src/public-api.ts': 'export {};',
+    'libs/langgraph/src/runtime/operation-errors.ts': "export * from './create-session';",
+    'libs/langgraph/src/runtime/create-session.ts': 'export interface Session {}',
+    'libs/langgraph/src/z-legacy.ts': "export * from './runtime/operation-errors';",
+  });
+  const errors = verifyBoundaries({ root, projects: ['langgraph'] });
+  assert.ok(errors.some((error) => error.includes('private runtime reachable from legacy source') && error.includes('z-legacy.ts')), errors.join('\n'));
+});
+
+test('private neutral modules may depend on each other', (t) => {
+  const root = fixture(t, {
+    'libs/langgraph/src/public-api.ts': 'export {};',
+    'libs/langgraph/src/runtime/create-session.ts': "export * from './ownership';",
+    'libs/langgraph/src/runtime/ownership.ts': 'export interface Owned {}',
+  });
+  assert.deepEqual(verifyBoundaries({ root, projects: ['langgraph'] }), []);
+});
+
+test('another legacy library cannot import the private runtime directly', (t) => {
+  const root = fixture(t, {
+    'libs/chat/src/public-api.ts': "export * from '../../langgraph/src/runtime/create-session';",
+    'libs/langgraph/src/runtime/create-session.ts': 'export interface Session {}',
+  });
+  assert.ok(verifyBoundaries({ root, projects: ['chat'] }).some((error) => error.includes('private runtime reachable from legacy source')));
+});
+
+test('case-insensitive filesystem aliases preserve exact runtime sharing policy', (t) => {
+  const root = fixture(t, {
+    'libs/langgraph/src/public-api.ts': "export * from './RUNTIME/create-session';",
+    'libs/langgraph/src/runtime/create-session.ts': 'export interface Session {}',
+    'libs/langgraph/src/runtime/transport.types.ts': 'export interface Shared {}',
+  });
+  if (!existsSync(join(root, 'libs/langgraph/src/RUNTIME/create-session.ts'))) {
+    t.skip('Requires a case-insensitive filesystem; literal source checks remain covered.');
+    return;
+  }
+  assert.ok(verifyBoundaries({ root, projects: ['langgraph'] }).some((error) => error.includes('private runtime reachable from legacy source')));
+  writeFileSync(join(root, 'libs/langgraph/src/public-api.ts'), "export * from './RUNTIME/TRANSPORT.TYPES';");
+  assert.deepEqual(verifyBoundaries({ root, projects: ['langgraph'] }), []);
+});
+
+for (const path of ['public-api.ts', 'runtime/create-session.ts']) {
+  for (const code of [
+    "const target = '@angular/core'; void import(target);",
+    "const target = '@angular/core'; require(target);",
+    'export const broken = ;',
+  ]) {
+    test(`guarded ${path} rejects unsupported dependency analysis: ${code}`, (t) => {
+      const root = fixture(t, { [`libs/langgraph/src/${path}`]: code });
+      assert.ok(verifyBoundaries({ root, projects: ['langgraph'] }).some((error) => error.includes('cannot analyze guarded dependencies')));
+    });
+  }
+}
+
+test('guarded legacy graph rejects unresolved internal sources', (t) => {
+  const root = fixture(t, { 'libs/langgraph/src/public-api.ts': "export * from './missing';" });
+  assert.ok(verifyBoundaries({ root, projects: ['langgraph'] }).some((error) => error.includes('unresolved dependency')));
+});
+
 for (const mode of ['source', 'built']) {
   for (const field of ['dependencies', 'peerDependencies', 'optionalDependencies']) {
     test(`empty ${mode} core rejects manifest-only ${field}`, (t) => {
