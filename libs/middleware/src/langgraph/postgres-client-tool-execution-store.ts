@@ -88,12 +88,12 @@ export function createPostgresClientToolExecutionStore(
           AND thread_id = ${threadId}
           AND tool_call_id = ANY(${[...toolCallIds]})
       `;
-      const out: Record<string, ClientToolExecutionRecord> = {};
+      const entries: [string, ClientToolExecutionRecord][] = [];
       for (const row of rows) {
         if (typeof row['tool_call_id'] !== 'string') continue;
-        out[row['tool_call_id']] = rowToRecord(row);
+        entries.push([row['tool_call_id'], rowToRecord(row)]);
       }
-      return out;
+      return Object.fromEntries(entries);
     },
   };
 }
