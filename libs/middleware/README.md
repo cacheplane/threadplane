@@ -143,6 +143,23 @@ M3 is server-side Tier 1 only: it dedups delivered client-tool results and
 supports lookup-based reload reconciliation. Pre-execution claims for
 non-idempotent browser effects are a later opt-in layer.
 
+Always await `recordClientToolResults` before continuing to the model. It records
+only receipts for which it acquired a new claim and reports existing `done`
+records as duplicates. An existing `executing` or `failed` record rejects
+ingestion without changing that record. An unresolved receipt claim needs
+external reconciliation; this helper does not retry or take over another claim.
+
+Processing is per receipt, not a transaction across the batch. Earlier receipts
+may already be recorded when a later one rejects. A rejected acknowledgement can
+also follow a committed write. A recorded receipt does not prove that the graph
+consumed it, so replaying a partial batch is not guaranteed recovery.
+
+Keep delivery receipts and pre-execution claims in disjoint persisted namespaces
+or separate storage. Two PostgreSQL store objects using the same database, table
+and tenant share records; separate in-memory instances have separate maps.
+Receipt deduplication by call ID does not establish invocation equivalence or
+reconstruct an authored result type from serialized message content.
+
 ## Peer dependencies
 
 `@langchain/core` and `@langchain/langgraph`. The package has no runtime dependencies of its

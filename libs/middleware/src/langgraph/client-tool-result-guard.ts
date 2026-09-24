@@ -34,7 +34,10 @@ export function extractClientToolResultMessages(
   return out;
 }
 
-/** Record first-seen client-tool results and identify duplicate redeliveries. */
+/** Record newly claimed receipts and identify already-done duplicates.
+ * Await before graph continuation: existing executing/failed records reject
+ * without being changed. A batch is not transactional; earlier receipts may
+ * already be recorded when a later receipt rejects. */
 export async function recordClientToolResults(
   input: RecordClientToolResultsInput,
 ): Promise<RecordClientToolResultsResult> {
@@ -53,8 +56,7 @@ export async function recordClientToolResults(
       duplicateToolCallIds.push(entry.toolCallId);
       continue;
     }
-    await input.store.record(key, entry.result);
-    recordedToolCallIds.push(entry.toolCallId);
+    throw new Error(`Client tool result cannot settle an unowned execution: ${entry.toolCallId}`);
   }
 
   return { recordedToolCallIds, duplicateToolCallIds };
