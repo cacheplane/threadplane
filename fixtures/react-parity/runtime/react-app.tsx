@@ -226,6 +226,9 @@ function App() {
               <output aria-label="Citations" data-testid="citations">
                 {view.citations}
               </output>
+              <output aria-label="Reasoning" data-testid="reasoning">
+                {view.reasoning}
+              </output>
             </div>
           </div>
         </section>

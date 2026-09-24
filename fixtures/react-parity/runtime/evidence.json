@@ -698,5 +698,330 @@
       "Legacy Angular arbitrary-extra semantics remain separate until backend cutover.",
       "No full T09/T15 parity, rich blocks, reasoning/timing, citation UI, dependency upgrade, release, live-server, SSR or performance claim."
     ]
+  },
+  "ownedReasoningProjection": {
+    "observedOn": "2026-09-24",
+    "scope": "Private owned reasoning display strings in shared immutable messages and both installed native main views; no execution-authority or public-backend change.",
+    "source": {
+      "baseCommit": "9ddeb1579323898cb5e470d658cfa53852931830",
+      "workingTree": "Uncommitted owned-reasoning implementation based on the reviewed citation milestone. These hashes identify tested inputs, not a future commit.",
+      "algorithm": "SHA-256(file bytes); inputs sorted lexicographically by path using JavaScript default string ordering, then manifest hash is SHA-256 of sha256 + two spaces + path + LF lines.",
+      "inputs": [
+        {
+          "path": "fixtures/react-parity/runtime/README.md",
+          "sha256": "eba776bf8928a7976109722220aab64dde508587fad8aec9893da338b1db3b68"
+        },
+        {
+          "path": "fixtures/react-parity/runtime/angular-app.ts",
+          "sha256": "5c5dd1cb9c6fb4cb2a9f13345fad3f08ddab175606a4fab22f83d76985ec7cd1"
+        },
+        {
+          "path": "fixtures/react-parity/runtime/installed-types.ts",
+          "sha256": "08fbaed23db4f9763707df0b495737f87428d1189de63f63adade369793665f3"
+        },
+        {
+          "path": "fixtures/react-parity/runtime/react-app.tsx",
+          "sha256": "5c3020c64d2fd102ba6255856a99b08321d00bb812cc56b2910cb728befc3f0e"
+        },
+        {
+          "path": "fixtures/react-parity/runtime/runtime-entry.ts",
+          "sha256": "72509ac95343b1e2d09c825d5017408fcd66891d5efb96e6e742270baf90aebd"
+        },
+        {
+          "path": "fixtures/react-parity/runtime/scenarios.ts",
+          "sha256": "5541e93b15cb8ef4c957f4b3cc53a4fb12cfc7f4b23ae40fa38eceff70a150db"
+        },
+        {
+          "path": "libs/core/README.md",
+          "sha256": "638c4e0e0ed1bd4ff7e94512f1f5fc9589a3815ac35ad9df3b1aebe8bd5b48e4"
+        },
+        {
+          "path": "libs/core/src/contracts/contracts.type-test.ts",
+          "sha256": "aaa8bc7327d346715a1d364063433f75d94aa8e1d7f64b386ce49b600d256bf4"
+        },
+        {
+          "path": "libs/core/src/contracts/message.ts",
+          "sha256": "9bfa684f4793ccdfd6b3f566f5d00e1b7ee821fcd51d1ea84995ef5b4caa61f7"
+        },
+        {
+          "path": "libs/langgraph/src/runtime/README.md",
+          "sha256": "5a1897fc817d9ece371923f369193dbd2ee5be5f2aaf4da8cacbb05fb752e66c"
+        },
+        {
+          "path": "libs/langgraph/src/runtime/checkpoint-authority.ts",
+          "sha256": "f56912f077e4ba891f9a55419e89743d62f573c435c3984fb64ac0803271c3dc"
+        },
+        {
+          "path": "libs/langgraph/src/runtime/citations.spec.ts",
+          "sha256": "6d08887785cdc0a40ea0d6ea8f4455d3cf599a16ad0a7cbde9b4f6b42313af35"
+        },
+        {
+          "path": "libs/langgraph/src/runtime/create-session.ts",
+          "sha256": "f4c6a1e693d205cf48a7c9ec357ddf037bdcf4ceabe315c6529c6806fbdaefb1"
+        },
+        {
+          "path": "libs/langgraph/src/runtime/history-projection.ts",
+          "sha256": "4e5e7d27e2ae9429274ac47ed979d6b94848dde9b1d03018af39ad888f236fd1"
+        },
+        {
+          "path": "libs/langgraph/src/runtime/message-reducer.spec.ts",
+          "sha256": "a4360839d00a32e02a985dd8dbd7bb5452797398327ee043d53f7825adc0561f"
+        },
+        {
+          "path": "libs/langgraph/src/runtime/message-reducer.ts",
+          "sha256": "714be5a4c60d442f84f46b08ac12b43ac901fe6005cf2ba5f35dfb8bfa33f249"
+        },
+        {
+          "path": "libs/langgraph/src/runtime/ownership.ts",
+          "sha256": "3d9e0cad3c64b2884fd3049c78e6a844115efa6c839fbe997b17f7defc639641"
+        },
+        {
+          "path": "libs/langgraph/src/runtime/publication.spec.ts",
+          "sha256": "db037834e2a8de6bbc50042994d4e6e7d51c42a09719d26ee4d5b7436c80662e"
+        },
+        {
+          "path": "libs/langgraph/src/runtime/publication.ts",
+          "sha256": "7d290721417d504313f893ee7e90154b85e9eee27d05f6cce816d592495791e5"
+        },
+        {
+          "path": "libs/langgraph/src/runtime/reasoning-projection.spec.ts",
+          "sha256": "0131f6cfbe863a537d582b0f249dd2cab38ff0e3bc58dc9d4c4b14c034882d44"
+        },
+        {
+          "path": "libs/langgraph/src/runtime/reasoning-projection.ts",
+          "sha256": "3f408da1d2ca5a28af466c11d49391a524117cd705d0363a2bf1bca2ad659cc5"
+        },
+        {
+          "path": "libs/langgraph/src/runtime/reasoning.spec.ts",
+          "sha256": "91f8d9fbb8ecf71f308800709954d0647a70606bfb4b071f4967596d1af69b53"
+        },
+        {
+          "path": "libs/langgraph/src/runtime/stream-projection.ts",
+          "sha256": "0462792cfff288ce4e4345bbcbfc32f1e162db35fe94f26b348a12ab064ccae4"
+        },
+        {
+          "path": "libs/langgraph/src/runtime/testing/controlled-session.ts",
+          "sha256": "36a297e2bb35627c49bcf531df46f4c3bfb8aacef85cf8b22bb906c332b82072"
+        },
+        {
+          "path": "package-lock.json",
+          "sha256": "530c28574a832ab39c15c9607717de0eb8ccfae2593e09c7ae373bd8936d0b64"
+        },
+        {
+          "path": "scripts/react-parity/runtime-consumer.mjs",
+          "sha256": "361524bf67fc6b040ca9e94776c859f361c48f203a5399d6ec12d4f334871406"
+        }
+      ],
+      "manifestSha256": "e42418ae4c8b8b441e33d0b3c635109ec49e8344fb774ba7f22bc08b3776fbee"
+    },
+    "automated": {
+      "core": {
+        "targets": [
+          "test",
+          "type-tests",
+          "lint"
+        ],
+        "tests": 2,
+        "path": "/tmp/owned-reasoning-core-final.log",
+        "sha256": "ae0cbbf32cbf4c6cea038dac69054d68443ef15c772775be718a81ca3cfdd2d8"
+      },
+      "nativeBuild": {
+        "projects": [
+          "core",
+          "content",
+          "react",
+          "angular"
+        ],
+        "targets": [
+          "build"
+        ],
+        "path": "/tmp/owned-reasoning-build-native.log",
+        "sha256": "6f85c88b4d17e732b027e18560bda383c841a570fd236f6d542edb91ed719371"
+      },
+      "runtime": {
+        "targets": [
+          "runtime-quality",
+          "runtime-type-tests"
+        ],
+        "tests": 884,
+        "files": 48,
+        "path": "/tmp/owned-reasoning-runtime-final.log",
+        "sha256": "e5b2f55723f5a42fc2b14c73ca592f2c0be4633aa5bf85dc6035cc977134d79f"
+      },
+      "publicLangGraph": {
+        "targets": [
+          "test",
+          "type-tests",
+          "build"
+        ],
+        "path": "/tmp/owned-reasoning-public-final.log",
+        "sha256": "96c85b9664610c0e4ee8663963e4983a9075d1eb8b9df22807ce2d3a6104c80f"
+      },
+      "publicLangGraphReportedTests": {
+        "tests": 481,
+        "files": 22,
+        "command": "NX_DAEMON=false NX_TUI=false npx nx run langgraph:test --skip-nx-cache --outputStyle=stream --watch=false --reporter=default",
+        "note": "The installed Nx executor substitutes only NxReporter when the public config has no reporters, so the explicit default reporter records actual counts. No source/config change.",
+        "path": "/tmp/owned-reasoning-public-test-reported.log",
+        "sha256": "d02a59149dc3e2ffe5b42ac56fc5a6f2bcd3ad61bbd6992a8d768f7ed5ee97ed"
+      },
+      "parityScripts": {
+        "tests": 329,
+        "path": "/tmp/owned-reasoning-parity-scripts.log",
+        "sha256": "d3f99536e053637b1b5f278684b793a0b6cd50a6a5f278ea889850a7961b5625"
+      },
+      "react": {
+        "scenarios": 27,
+        "path": "/tmp/owned-reasoning-installed-react-restored.log",
+        "sha256": "4380e1e10d6cd771241cf96312c8e53868d20793d50c17013647500a3d5f14f7"
+      },
+      "angular": {
+        "scenarios": 27,
+        "path": "/tmp/owned-reasoning-installed-angular-restored.log",
+        "sha256": "dc431fa4ad227081e2274830e3cb44455c66ea13ca09e8a461c87158307fb97d"
+      },
+      "boundaries": {
+        "path": "/tmp/owned-reasoning-boundaries.log",
+        "sha256": "995db896b38cf7de5ca9db6590dba47e082d26abdf69bab04b92eee484696063"
+      },
+      "versions": {
+        "path": "/tmp/owned-reasoning-versions.log",
+        "sha256": "1d9f9440bfffad48cca3d74ddec850cf803b8f449dcee2216776392713bf9374"
+      },
+      "inventory": {
+        "path": "/tmp/owned-reasoning-inventory-check.log",
+        "sha256": "5c01ca9da9d098941941f29835953ec7bb56fe6d385cab7bdcbdc3fe87f77db3"
+      },
+      "diff": {
+        "path": "/tmp/owned-reasoning-diff-check.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "packedArtifacts": {
+      "note": "Repacked unchanged built artifacts after final restored installed runs; no native binding implementation changes. Temporary paths are local provenance, not published artifacts. Core contributor README edits are source documentation and were made after the native build.",
+      "log": {
+        "path": "/tmp/owned-reasoning-packed-artifacts.log",
+        "sha256": "8a1770a523b81ab9a3b1c4728b30bed9fd5534457d3e70bbff38df6d95e065d3"
+      },
+      "artifacts": [
+        {
+          "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/owned-reasoning-packed-DFqZN1/threadplane-angular-0.0.0.tgz",
+          "sha256": "632956c2279a700c9b8ba4b7762d58a6617b8e9b089776eec5fa8091397e15c5"
+        },
+        {
+          "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/owned-reasoning-packed-DFqZN1/threadplane-content-0.0.0.tgz",
+          "sha256": "9c6083c293798b1b10aa6883ea94de97103d5ca65726a74884ed8763079c0e8b"
+        },
+        {
+          "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/owned-reasoning-packed-DFqZN1/threadplane-core-0.0.0.tgz",
+          "sha256": "636fb54e16d163cdc7f87e6fa1dc89dc32b0f9e1d4aeaa845bafbe8999989435"
+        },
+        {
+          "path": "/var/folders/_b/0t5_pyt94n7dlqkv1gmt29300000gn/T/owned-reasoning-packed-DFqZN1/threadplane-react-0.0.0.tgz",
+          "sha256": "b71db72347e6ac0777304265d611968232b36e0dffe2171f7fb660f2e8958bc9"
+        }
+      ]
+    },
+    "redGreen": [
+      {
+        "expectedFailure": "Message.reasoning absent; positive read/type-index probe fails before adding the field.",
+        "path": "/tmp/owned-reasoning-red-contract.log",
+        "sha256": "b77f4fc0a487cb59a50c42ed5532bfbb5726bf4dbd70b9a1886dcab40fb8ab0d"
+      },
+      {
+        "expectedFailure": "Private reasoning-projection module missing before implementation.",
+        "path": "/tmp/owned-reasoning-red-normalizer.log",
+        "sha256": "09d649cfa9b04230594543a90f4b3c19e20f7ded8cde3fceddd8eefcc745ec2d"
+      },
+      {
+        "expectedFailure": "Reasoning is dropped by ownMessage and reasoning-only publication produces zero notifications; 44 predecessor cases remain green.",
+        "path": "/tmp/owned-reasoning-red-reduction.log",
+        "sha256": "af569300ab70bb59ed1517e99b1773b263452f6ce178843e2df17e3b13d7f43d"
+      },
+      {
+        "tests": 58,
+        "files": 3,
+        "path": "/tmp/owned-reasoning-green-reduction.log",
+        "sha256": "dde4b4506055718ea308b7b206451d89eff32be89129c8a866ccf6a4f6d43fb5"
+      },
+      {
+        "expectedFailure": "Session ingestion assertions observe missing reasoning before history/stream wiring. The history reentrant getter case times out because the missing projection never reads that getter; other cases fail explicit assertions.",
+        "path": "/tmp/owned-reasoning-red-session.log",
+        "sha256": "0622247a7b0644c871dfbda0b4455ffdbeb598ba849c50324addcd66d7844e56"
+      },
+      {
+        "path": "/tmp/owned-reasoning-green-contract.log",
+        "sha256": "cb01bdc4e043d034b2c550fc77c18e9756aebab8ee536395045cc8d138172a86"
+      },
+      {
+        "tests": 884,
+        "files": 48,
+        "path": "/tmp/owned-reasoning-green-runtime.log",
+        "sha256": "25afc3ee5221f754c98d7a0e47116b750ad38a1a5ca162f08954768dd797ec7d"
+      }
+    ],
+    "semanticNegativeControl": {
+      "mutation": "Temporarily omit only reasoning: projectReasoning(message) from production history construction, leaving native fields and wire data in place.",
+      "react": {
+        "path": "/tmp/owned-reasoning-installed-react-negative.log",
+        "sha256": "03f3fd08de30353f53c8522f9400b84ae59ba9d45c7d7dc0eb661d753921b02c"
+      },
+      "angular": {
+        "path": "/tmp/owned-reasoning-installed-angular-negative.log",
+        "sha256": "43a2051f4006e9d87c3a2f978c6a1eda66f48dc6672abb35f04a4f3f39ed2e4e"
+      },
+      "expectedFailure": "Both consumers fail getByTestId(reasoning): expected Saved reasoning, received empty text.",
+      "restoration": {
+        "path": "/tmp/owned-reasoning-negative-restoration.log",
+        "sha256": "2176f45c5e702e4def2e0acec3f3f2db77e997a860abc6934a1da7afaeabf5db"
+      },
+      "restoredHistorySha256": "4e5e7d27e2ae9429274ac47ed979d6b94848dde9b1d03018af39ad888f236fd1",
+      "method": "Original bytes saved and restored in finally, then byte-compared. An outer log-label check expected Received string rather than this Playwright version's Received; inspection and the corrected check confirm both intended assertion failures. Both final restored verifiers passed."
+    },
+    "installedAssertions": [
+      "Readonly optional string through core and both native bindings with skipLibCheck:false.",
+      "Saved reasoning on load/equal refresh, empty history clears; Approval reasoning on first Resume, final canonical omission clears on second Resume.",
+      "Existing 27 scenarios each retain all main/thread/checkpoint request counts, one main tool handler, cancellation and disposal assertions."
+    ],
+    "manualReview": {
+      "date": "2026-09-24",
+      "react": "Chrome MCP, owned port 57809",
+      "angular": "In-app browser, owned port 57810",
+      "sequence": "Load, Load, Load, Pause, Resume, Resume, Dispose",
+      "observations": [
+        "Saved reasoning appeared on initial history, survived equal history, and cleared with empty history in both native views.",
+        "Approval reasoning appeared during the first resume and cleared on canonical completion during the second resume.",
+        "Both views finished three loads, one submission and two resumes with zero tool handlers and a disposed owner.",
+        "Both browser consoles had zero warnings and errors.",
+        "Chrome independently recorded exactly six successful POST requests: three histories and three runs. Angular network behavior is supplied by the automated oracle."
+      ],
+      "runner": "/tmp/owned-reasoning-manual-runner.log",
+      "freshAutomatedScenarios": 54,
+      "parentRuntimeVerification": "/tmp/owned-reasoning-parent-runtime.log (884 runtime tests plus runtime/public types)",
+      "cleanup": "Only the two owned tabs and runner were closed; ports 57809 and 57810 were confirmed closed. Existing manual sessions were preserved.",
+      "scope": "Reasoning lifecycle walkthrough only, not another manual review of every main, thread or checkpoint scenario."
+    },
+    "independentReview": {
+      "compliance": "Approved after 88 focused runtime tests, core/runtime/public types, boundaries/inventory/versions, additive evidence audit and 53 matching hashes.",
+      "quality": "Approved after fresh 88 focused tests, runtime types, source boundaries and 53 matching hashes. Reconnect documentation and manifest sort-key wording were clarified; production code was unchanged."
+    },
+    "ownershipCoverage": [
+      "Top-level and kwargs string precedence including empty; ordered reasoning/thinking block text, fallback and summaries; unsupported sources never serialize or infer answer text.",
+      "Repeated and prefix-equal delta strings append verbatim; snapshots replace including shorter/empty; same-generation omission retains; canonical/history omissions clear; later interim cannot resurrect; ordered correction replaces; new generation cannot inherit.",
+      "Equal history identity, reasoning-only queued publication, source/getter mutation capture, terminal candidates, actual load/submit/stop/stale owner, genuine resumed-generation omission, retained reconnect reasoning and canonical clear.",
+      "Namespaced children stay isolated; exact checkpoint fork/load retains strings with historical tool handlers inert; Date/cyclic checkpoint ingress remains rejected."
+    ],
+    "documentation": {
+      "generatorsRun": [],
+      "reason": "Inspected apps/website/scripts/generate-api-docs.ts entrypoints (langgraph/chat/render/ag-ui/a2ui/middleware; no core) and generate-agent-context.ts content inputs. Only private core/runtime and contributor fixture docs changed; no public root, narrative or agent-context input changed."
+    },
+    "limits": [
+      "No timing/duration, rich/media block preservation, event-only retention, renderer/markdown/sanitization, text alias expansion or provider-version conformance claim.",
+      "No new clocks, caches, queue/scheduler, transport protocol, generation classification, checkpoint authority or tool admission logic.",
+      "No performance, live-provider, full T09/T15, public backend cutover, dependency upgrade or release claim. The separate manualReview record states the exact parent walkthrough scope; independent review remains a delivery gate."
+    ],
+    "knownToolingWarnings": [
+      "Existing NO_COLOR/FORCE_COLOR and browserslist-age warnings; Vite ignores native React use-client directives during bundling. All recorded gates above passed."
+    ]
   }
 }

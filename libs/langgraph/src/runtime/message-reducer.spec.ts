@@ -20,6 +20,49 @@ function message(
 }
 
 describe('pure text and tool transitions', () => {
+  it('uses explicit reasoning modes, preserving omission and appending even repeated or prefix-equal deltas', () => {
+    let state = initialMessageState();
+    const apply = (
+      mode: 'delta' | 'snapshot' | 'canonical',
+      reasoning?: string,
+      generation = 'run-1'
+    ) => {
+      state = reduceMessages(state, {
+        type: 'message',
+        mode,
+        message: {
+          ...message('m', ''),
+          reasoning,
+          delivery: streamingDelivery(generation),
+        },
+      });
+      return state.messages[0].reasoning;
+    };
+    expect(apply('delta', 'A')).toBe('A');
+    expect(apply('delta', 'A')).toBe('AA');
+    expect(apply('delta', 'AA')).toBe('AAAA');
+    expect(apply('delta')).toBe('AAAA');
+    expect(apply('snapshot')).toBe('AAAA');
+    expect(apply('snapshot', 'B')).toBe('B');
+    expect(apply('snapshot', '')).toBe('');
+    expect(apply('delta', 'Long')).toBe('Long');
+    expect(apply('canonical', 'C')).toBe('C');
+    expect(apply('delta', 'Late')).toBe('C');
+    expect(apply('snapshot', 'Late')).toBe('C');
+    expect(apply('canonical', '')).toBe('');
+    expect(apply('canonical')).toBeUndefined();
+    expect(apply('snapshot', 'Late')).toBeUndefined();
+    expect(apply('canonical', 'Corrected')).toBe('Corrected');
+    expect(apply('delta', undefined, 'run-2')).toBeUndefined();
+    expect(apply('delta', 'New', 'run-2')).toBe('New');
+    state = reduceMessages(state, {
+      type: 'complete',
+      generation: 'run-2',
+      outcome: 'success',
+    });
+    expect(apply('delta', 'Late', 'run-2')).toBe('New');
+    expect(state.messages[0].delivery.phase).toBe('complete');
+  });
   it('replaces citation lists, preserves omitted interim metadata and shares equal metadata across text changes', () => {
     const citations = [{ id: 'c', index: 1, extra: { nested: ['original'] } }];
     const first = reduceMessages(initialMessageState(), {

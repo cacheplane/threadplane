@@ -14,6 +14,12 @@ import type { FixtureTools } from './scenarios';
 /* BINDING_IMPORT */
 
 export function assertSnapshot(snapshot: AgentSnapshot<FixtureTools>) {
+  const reasoning: Message['reasoning'] = snapshot.messages[0]?.reasoning;
+  // @ts-expect-error Reasoning remains readonly through native snapshots.
+  snapshot.messages[0].reasoning = 'changed';
+  // @ts-expect-error Reasoning is display text, not an SDK object.
+  const invalidReasoning: Message['reasoning'] = { text: 'reasoning' };
+  void [reasoning, invalidReasoning];
   /* BACKEND_VALUES */
   const citations: readonly Citation[] | undefined =
     snapshot.messages[0]?.citations;

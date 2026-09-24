@@ -45,7 +45,7 @@ const savedHistory = [{
       { id: 'saved-count', name: 'count', args: { values: ['saved'] }, type: 'tool_call' },
     ] },
     { id: 'saved-result', type: 'tool', tool_call_id: 'saved-weather', content: 'Raw historical weather result' },
-    { id: 'saved-final', type: 'ai', content: [{ type: 'text', text: 'Saved final answer' }], additional_kwargs: { sources: [{ refId: 'saved-source', name: 'Saved reference', publishedAt: '2026-09-24', extra: { provider: { labels: ['history'] } } }] } },
+    { id: 'saved-final', type: 'ai', reasoning: 'Saved reasoning', content: [{ type: 'text', text: 'Saved final answer' }], additional_kwargs: { sources: [{ refId: 'saved-source', name: 'Saved reference', publishedAt: '2026-09-24', extra: { provider: { labels: ['history'] } } }] } },
   ] },
   next: ['review', 'confirmation'],
   tasks: savedInterrupts.map((interrupt, index) => ({ id: `saved-task-${index}`, name: index === 0 ? 'review' : 'confirmation', error: null, checkpoint: null, state: null, interrupts: [interrupt] })),
@@ -73,7 +73,7 @@ export function runtimeResponse(body) {
     assert.deepEqual(body, { assistant_id: 'fixture-assistant', input: null, command: { resume: response }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom'], stream_subgraphs: true, ...resumableRunFields, ...configuredRunFields }, 'exact resume run fields');
     if (Object.hasOwn(response ?? {}, 'live-approval')) {
       assert.deepEqual(response, { 'live-approval': 'yes', 'live-confirmation': false }, 'exact initial response map');
-      return sse('values', { stage: 'final-approval', messages: [{ type: 'ai', id: 'resume-answer', content: 'One final approval', additional_kwargs: { citations: [{ id: 'approval-source', title: 'Approval reference', publishedAt: 0 }] } }] })
+      return sse('values', { stage: 'final-approval', messages: [{ type: 'ai', id: 'resume-answer', content: 'One final approval', additional_kwargs: { reasoning_content: 'Approval reasoning', citations: [{ id: 'approval-source', title: 'Approval reference', publishedAt: 0 }] } }] })
         + sse('values|review:child', { stage: 'child-final-approval', messages: [{ type: 'ai', id: 'child-review', content: 'Child final approval' }] })
         + sse('updates|review:child', { __interrupt__: [{ id: 'child-final', value: 'Child confirmation' }] })
         + sse('updates', { __interrupt__: [{ id: 'final-approval', value: { question: 'Confirm final action?' } }] });
@@ -530,6 +530,7 @@ export async function runRuntimeScenarios(directory, kind) {
     assert.deepEqual(await children(), []);
     await expect(page.getByTestId('history')).toHaveText('unobserved');
     await expect(page.getByTestId('citations')).toHaveText('');
+    await expect(page.getByTestId('reasoning')).toHaveText('');
     assert.equal(server.requests.length, 0, 'mount/observation performs no I/O');
     assert.equal(server.historyRequests.length, 0, 'mount/observation performs no history reads');
     completed.push('inert mount');
@@ -544,6 +545,7 @@ export async function runRuntimeScenarios(directory, kind) {
     await expectInterrupts(savedInterrupts);
     await expect(page.getByTestId('text')).toHaveText('Saved tool request\nSaved final answer');
     await expect(page.getByTestId('citations')).toHaveText('saved-source: Saved reference');
+    await expect(page.getByTestId('reasoning')).toHaveText('Saved reasoning');
     await expect(page.getByTestId('transcript')).toContainText('Saved question');
     await expect(page.getByTestId('transcript')).toContainText('Raw historical weather result');
     await expect(page.getByTestId('delivery')).toHaveText('complete:paused');
@@ -567,6 +569,7 @@ export async function runRuntimeScenarios(directory, kind) {
     assert.equal(server.requests.length, 0);
     completed.push('equal history refresh');
     await expect(page.getByTestId('citations')).toHaveText('saved-source: Saved reference');
+    await expect(page.getByTestId('reasoning')).toHaveText('Saved reasoning');
 
     await page.getByRole('button', { name: 'Load', exact: true }).click();
     await expect(page.getByTestId('loads-finished')).toHaveText('3');
@@ -577,6 +580,7 @@ export async function runRuntimeScenarios(directory, kind) {
     await expect(page.getByTestId('text')).toHaveText('');
     await expect(page.getByTestId('transcript')).toHaveText('');
     await expect(page.getByTestId('citations')).toHaveText('');
+    await expect(page.getByTestId('reasoning')).toHaveText('');
     await expect(page.getByTestId('tool')).toHaveText('[]');
     await expect(page.getByTestId('handler-calls')).toHaveText('0');
     assert.equal(server.historyRequests.length, 3);
@@ -658,6 +662,7 @@ export async function runRuntimeScenarios(directory, kind) {
     await expect(page.getByTestId('delivery')).toHaveText('complete:paused');
     await expect(page.getByTestId('text')).toContainText('One final approval');
     await expect(page.getByTestId('citations')).toHaveText('approval-source: Approval reference');
+    await expect(page.getByTestId('reasoning')).toHaveText('Approval reasoning');
     await expectInterrupts([{ id: 'final-approval', value: { question: 'Confirm final action?' } }]);
     await expectValues({ stage: 'final-approval' });
     await expectChild(['review:child'], 'Child final approval', 'complete:paused', { stage: 'child-final-approval' }, [{ id: 'child-final', value: 'Child confirmation' }]);
@@ -674,6 +679,7 @@ export async function runRuntimeScenarios(directory, kind) {
     await expect(page.getByTestId('text')).toContainText('Approvals complete');
     await expect(page.getByTestId('text')).not.toContainText('One final approval');
     await expect(page.getByTestId('citations')).toHaveText('');
+    await expect(page.getByTestId('reasoning')).toHaveText('');
     await expectInterrupts([]);
     await expectValues({ stage: 'approved' });
     await expectChild(['review:child'], 'Child approved', 'complete:success', { stage: 'child-approved' });

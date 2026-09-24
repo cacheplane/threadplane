@@ -194,6 +194,16 @@ export function reduceMessages(
     ...incoming,
     id,
     content,
+    reasoning:
+      sameGeneration && event.mode !== 'canonical'
+        ? canonical
+          ? previous.reasoning
+          : incoming.reasoning === undefined
+          ? previous.reasoning
+          : event.mode === 'delta'
+          ? (previous.reasoning ?? '') + incoming.reasoning
+          : incoming.reasoning
+        : incoming.reasoning,
     citations:
       sameGeneration && event.mode !== 'canonical'
         ? canonical

@@ -1,5 +1,21 @@
 # Installed native runtime consumers
 
+## Reasoning projection
+
+Both main native views expose plain text from the real snapshot's readonly
+`Message.reasoning` field. The same three Load requests show `Saved reasoning`,
+retain it through equal history, and clear it with empty history. The first Resume
+shows `Approval reasoning`; the second canonically clears it on the same assistant.
+Installed type probes reject writes and non-string values with `skipLibCheck:false`.
+Main, thread and checkpoint request and handler counts are unchanged. A temporary
+production history-assignment omission must fail the saved reasoning assertion in
+both consumers, followed by exact-byte restoration and green reruns. Evidence is
+recorded additively in `evidence.json` under `ownedReasoningProjection`.
+
+This verifies owned display strings and these lifecycle paths only. It does not
+claim timing/duration parity, rich blocks, a reasoning renderer, live-provider
+conformance, performance, public backend cutover or full T09/T15 completion.
+
 ## Citation projection
 
 The main view's plain-text Citations field proves the installed readonly core

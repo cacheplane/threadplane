@@ -23,8 +23,34 @@ optional fields, and reject instances/cycles in extras at the ownership boundary
 Exact checkpoint ingress remains stricter: it captures the complete plain state
 before projection and rejects Date instances even in otherwise optional metadata.
 Citation changes never authorize tools, change execution positions, or reopen
-delivery. Rich blocks, reasoning/timing, event render state and citation components
+delivery. Rich blocks, reasoning timing, event render state and citation components
 remain separate future capabilities.
+
+## Owned reasoning
+
+History and root/child streams capture backend-supplied reasoning into the optional
+readonly `Message.reasoning` string. The private normalizer prefers a top-level
+string, then `additional_kwargs.reasoning_content`, then ordered reasoning/thinking
+blocks. Each block contributes string text (or thinking's string `thinking` fallback)
+followed by string summary text. Explicit empty strings win source precedence;
+recognized empty blocks yield an empty string, while unsupported sources fall
+through and ordinary answer text never becomes reasoning.
+
+Within a delivery generation, omitted interim reasoning is retained, deltas append
+verbatim, and cumulative snapshots replace even shorter or empty strings. Canonical
+messages and full history replace exactly, including clearing omissions. Committed
+canonical data bars later interim changes; ordered canonical corrections still
+replace it. New independent generations do not inherit reasoning. Reconnecting the
+same physical run retains captured reasoning while rebasing its delivery generation.
+Equal histories preserve identity, and reasoning-only changes publish through the existing queue.
+Captured terminal candidates and published strings cannot change with wire mutation.
+
+This bounded normalization duplicates part of the legacy Angular extractor until
+backend cutover. It uses explicit event modes, not that adapter's prefix heuristics
+or clock map. No timing, rich-block, renderer, event-only retention, provider-version
+conformance or complete T09/T15 parity is claimed. Strict checkpoint capture still
+rejects non-plain/cyclic data before display normalization. Reasoning never changes
+tool admission, checkpoint authority, transport requests or lifecycle scheduling.
 
 ## Completed checkpoint forks
 

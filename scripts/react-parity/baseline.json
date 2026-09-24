@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "4d47995333278f9a19491925bc555d30f8490956",
+  "baselineHead": "9ddeb1579323898cb5e470d658cfa53852931830",
   "sourceState": {
     "modified": [
       "libs/langgraph/src/runtime/README.md",
@@ -10,7 +10,8 @@
       "libs/langgraph/src/runtime/stream-projection.ts"
     ],
     "untracked": [
-      "libs/langgraph/src/runtime/citation-projection.ts"
+      "libs/langgraph/src/runtime/reasoning-projection.ts",
+      "libs/langgraph/src/runtime/testing/controlled-session.ts"
     ]
   },
   "scope": {
@@ -600,7 +601,7 @@
       "id": "asset:libs/langgraph/src/runtime/README.md",
       "kind": "asset",
       "path": "libs/langgraph/src/runtime/README.md",
-      "sha256": "289b901753126e898d40f9a84c093afeb630a7f78692ef6bf867e955e1c77f48"
+      "sha256": "5a1897fc817d9ece371923f369193dbd2ee5be5f2aaf4da8cacbb05fb752e66c"
     },
     {
       "id": "asset:libs/langgraph/test/fixtures/streaming-reasoning-puzzle.json",
@@ -12522,7 +12523,7 @@
       "id": "source:libs/langgraph/src/runtime/history-projection.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/history-projection.ts",
-      "sha256": "c9b18e186261d16d6b363ddc906793acbf3295e4a5c45e93bbf2d555bd2b2e92"
+      "sha256": "4e5e7d27e2ae9429274ac47ed979d6b94848dde9b1d03018af39ad888f236fd1"
     },
     {
       "id": "source:libs/langgraph/src/runtime/interrupt-projection.ts",
@@ -12540,7 +12541,7 @@
       "id": "source:libs/langgraph/src/runtime/message-reducer.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/message-reducer.ts",
-      "sha256": "5758caaae8c31361a9361b81a7995239c10a48bf670a135a9fe6a327da2e6531"
+      "sha256": "714be5a4c60d442f84f46b08ac12b43ac901fe6005cf2ba5f35dfb8bfa33f249"
     },
     {
       "id": "source:libs/langgraph/src/runtime/operation-errors.ts",
@@ -12552,13 +12553,19 @@
       "id": "source:libs/langgraph/src/runtime/ownership.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/ownership.ts",
-      "sha256": "0cfc4dabfedbc3aa9406b943257ab3df3bae240276ccaec6d50f1e51f11e5c69"
+      "sha256": "3d9e0cad3c64b2884fd3049c78e6a844115efa6c839fbe997b17f7defc639641"
     },
     {
       "id": "source:libs/langgraph/src/runtime/publication.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/publication.ts",
       "sha256": "7d290721417d504313f893ee7e90154b85e9eee27d05f6cce816d592495791e5"
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/reasoning-projection.ts",
+      "kind": "source",
+      "path": "libs/langgraph/src/runtime/reasoning-projection.ts",
+      "sha256": "3f408da1d2ca5a28af466c11d49391a524117cd705d0363a2bf1bca2ad659cc5"
     },
     {
       "id": "source:libs/langgraph/src/runtime/run-options.ts",
@@ -12576,7 +12583,7 @@
       "id": "source:libs/langgraph/src/runtime/stream-projection.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/stream-projection.ts",
-      "sha256": "076cf6eb83b633d67a42118d7f17931b3f5010ca9f00b7c15e97bf5214f42240"
+      "sha256": "0462792cfff288ce4e4345bbcbfc32f1e162db35fe94f26b348a12ab064ccae4"
     },
     {
       "id": "source:libs/langgraph/src/runtime/subgraph-projection.ts",
@@ -12601,6 +12608,12 @@
       "kind": "source",
       "path": "libs/langgraph/src/runtime/testing/checkpoint-fixture.ts",
       "sha256": "3afa6abd58e1ec630f1b66ce7f4ff7da83023c559564f00dd4f9f6df58434fb3"
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/testing/controlled-session.ts",
+      "kind": "source",
+      "path": "libs/langgraph/src/runtime/testing/controlled-session.ts",
+      "sha256": "36a297e2bb35627c49bcf531df46f4c3bfb8aacef85cf8b22bb906c332b82072"
     },
     {
       "id": "source:libs/langgraph/src/runtime/testing/controlled-transport.ts",
