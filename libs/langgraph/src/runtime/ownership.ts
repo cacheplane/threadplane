@@ -132,6 +132,14 @@ function equalValue(a: PlainValue, b: PlainValue): boolean {
   );
 }
 
+/** Invocation identity excludes execution status and result projection. */
+export function sameToolInvocation(
+  a: { readonly name: string; readonly args: PlainValue },
+  b: { readonly name: string; readonly args: PlainValue }
+): boolean {
+  return a.name === b.name && equalValue(a.args, b.args);
+}
+
 function sameError(
   a: AgentError | undefined,
   b: AgentError | undefined

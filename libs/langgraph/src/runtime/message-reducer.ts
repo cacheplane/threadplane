@@ -10,8 +10,10 @@ import {
   sameMessage,
   sameToolCall,
 } from './ownership';
+import { observeInvocation, type ToolInvocation } from './tool-invocations';
 
 export interface MessageState {
+  readonly invocations: readonly ToolInvocation[];
   readonly messages: readonly Message[];
   readonly toolCalls: readonly ToolCall[];
   readonly canonical: readonly {
@@ -38,6 +40,7 @@ export type MessageEvent =
       readonly existingId?: string;
     }
   | { readonly type: 'tool'; readonly toolCall: ToolCall }
+  | { readonly type: 'tool-admitted'; readonly toolCall: ToolCall }
   | { readonly type: 'tool-unsettled'; readonly id: string }
   | { readonly type: 'remove-pending-tools'; readonly ids: readonly string[] }
   | {
@@ -48,6 +51,7 @@ export type MessageEvent =
 
 export function initialMessageState(): MessageState {
   return Object.freeze({
+    invocations: Object.freeze([]),
     messages: Object.freeze([]),
     toolCalls: Object.freeze([]),
     canonical: Object.freeze([]),
@@ -62,6 +66,26 @@ export function reduceMessages(
   state: MessageState,
   event: MessageEvent
 ): MessageState {
+  if (
+    event.type === 'tool-admitted' ||
+    (event.type === 'tool' && event.toolCall.status === 'pending')
+  ) {
+    const invocations = observeInvocation(
+      state.invocations,
+      event.toolCall,
+      event.type === 'tool-admitted'
+    );
+    if (invocations !== state.invocations)
+      state = Object.freeze({ ...state, invocations });
+    if (event.type === 'tool-admitted') return state;
+    // Contradictory finalized data cannot replace the execution-owned call.
+    if (
+      invocations.some(
+        (entry) => entry.id === event.toolCall.id && entry.conflicted
+      )
+    )
+      return state;
+  }
   if (event.type === 'remove-pending-tools') {
     // Authoritative assistant corrections can retract unexecuted calls. Keep
     // running/settled facts and any call still owned by a distinct assistant.
