@@ -1,9 +1,13 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "fe4fefad734834e78ff183d3087904ad657ebced",
+  "baselineHead": "6eb6a0a86c35da59082d0c490f943505af46be8f",
   "sourceState": {
     "modified": [
-      "libs/langgraph/src/runtime/ownership.ts"
+      ".github/workflows/ci.yml",
+      "apps/website/content/docs/middleware/api/client-tool-helpers.mdx",
+      "apps/website/content/docs/middleware/getting-started/introduction.mdx",
+      "libs/middleware/README.md",
+      "libs/middleware/src/langgraph/index.ts"
     ],
     "untracked": []
   },
@@ -636,7 +640,7 @@
       "id": "asset:libs/middleware/README.md",
       "kind": "asset",
       "path": "libs/middleware/README.md",
-      "sha256": "471758d98f4021fd379bddcd6a776fedffc210a3dd6cbdb58f604884801f1cf6"
+      "sha256": "92cbdc1844e47232d885c58e7450e56291bac8ff874942e086d1778ebf055a84"
     },
     {
       "id": "asset:libs/middleware/package.json",
@@ -1860,7 +1864,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "3a9b661575b6884e491d00f6ffce6d0da0c04b60a241cf9fee381da99c5bd434"
+      "sha256": "c9a6410f05ca8b9f9e6ff36e55a217a1d501f988b9d0cf2ba9779a5123ba18f9"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -2544,13 +2548,13 @@
       "id": "doc:apps/website/content/docs/middleware/api/client-tool-helpers.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/middleware/api/client-tool-helpers.mdx",
-      "sha256": "c30f91ef36b3836439692ba34a486018b810d25dafaf557ce04021d7f0d8d72b"
+      "sha256": "0f493d2b82463928906fc5fb768699ab437a1bef6b7ba630ad31d2d9be44f1d0"
     },
     {
       "id": "doc:apps/website/content/docs/middleware/getting-started/introduction.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/middleware/getting-started/introduction.mdx",
-      "sha256": "544ca54c46d8341cd4fd6473e7296702c31bf65495d97932ecd9f09bb41b5bfa"
+      "sha256": "d5fc46ef253624fa2f9471a49bfed9c071bdf9cfe696d74858ecaa1de05447cd"
     },
     {
       "id": "doc:apps/website/content/docs/middleware/getting-started/quickstart.mdx",
@@ -8897,20 +8901,6 @@
       ]
     },
     {
-      "id": "export:libs/middleware/src/langgraph/index.ts#ClientToolResultMessage",
-      "kind": "export",
-      "path": "libs/middleware/src/langgraph/index.ts",
-      "symbol": "ClientToolResultMessage",
-      "declarations": [
-        {
-          "path": "libs/middleware/src/langgraph/client-tool-result-guard.ts",
-          "symbol": "ClientToolResultMessage",
-          "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface ClientToolResultMessage {\n    readonly toolCallId: string;\n    readonly result: ClientToolResult;\n}"
-        }
-      ]
-    },
-    {
       "id": "export:libs/middleware/src/langgraph/index.ts#ClientToolSpec",
       "kind": "export",
       "path": "libs/middleware/src/langgraph/index.ts",
@@ -8991,34 +8981,6 @@
           "symbol": "PostgresTaggedSql",
           "syntaxKind": "TypeAliasDeclaration",
           "signature": "export type PostgresTaggedSql = (strings: TemplateStringsArray, ...values: unknown[]) => Promise<readonly PostgresRow[]>;"
-        }
-      ]
-    },
-    {
-      "id": "export:libs/middleware/src/langgraph/index.ts#RecordClientToolResultsInput",
-      "kind": "export",
-      "path": "libs/middleware/src/langgraph/index.ts",
-      "symbol": "RecordClientToolResultsInput",
-      "declarations": [
-        {
-          "path": "libs/middleware/src/langgraph/client-tool-result-guard.ts",
-          "symbol": "RecordClientToolResultsInput",
-          "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface RecordClientToolResultsInput {\n    readonly threadId: string;\n    readonly messages: readonly BaseMessage[];\n    readonly store: ClientToolExecutionStore;\n}"
-        }
-      ]
-    },
-    {
-      "id": "export:libs/middleware/src/langgraph/index.ts#RecordClientToolResultsResult",
-      "kind": "export",
-      "path": "libs/middleware/src/langgraph/index.ts",
-      "symbol": "RecordClientToolResultsResult",
-      "declarations": [
-        {
-          "path": "libs/middleware/src/langgraph/client-tool-result-guard.ts",
-          "symbol": "RecordClientToolResultsResult",
-          "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface RecordClientToolResultsResult {\n    readonly recordedToolCallIds: string[];\n    readonly duplicateToolCallIds: string[];\n}"
         }
       ]
     },
@@ -9135,34 +9097,6 @@
       ]
     },
     {
-      "id": "export:libs/middleware/src/langgraph/index.ts#extractClientToolResultMessages",
-      "kind": "export",
-      "path": "libs/middleware/src/langgraph/index.ts",
-      "symbol": "extractClientToolResultMessages",
-      "declarations": [
-        {
-          "path": "libs/middleware/src/langgraph/client-tool-result-guard.ts",
-          "symbol": "extractClientToolResultMessages",
-          "syntaxKind": "FunctionDeclaration",
-          "signature": "export function extractClientToolResultMessages(messages: readonly BaseMessage[]): ClientToolResultMessage[] {\n    const out: ClientToolResultMessage[] = [];\n    for (const message of messages) {\n        const toolCallId = toolCallIdFromMessage(message);\n        if (!toolCallId)\n            continue;\n        out.push({ toolCallId, result: resultFromMessageContent(message.content) });\n    }\n    return out;\n}"
-        }
-      ]
-    },
-    {
-      "id": "export:libs/middleware/src/langgraph/index.ts#filterDuplicateClientToolResultMessages",
-      "kind": "export",
-      "path": "libs/middleware/src/langgraph/index.ts",
-      "symbol": "filterDuplicateClientToolResultMessages",
-      "declarations": [
-        {
-          "path": "libs/middleware/src/langgraph/client-tool-result-guard.ts",
-          "symbol": "filterDuplicateClientToolResultMessages",
-          "syntaxKind": "FunctionDeclaration",
-          "signature": "export function filterDuplicateClientToolResultMessages(input: {\n    readonly messages: readonly BaseMessage[];\n    readonly duplicateToolCallIds: ReadonlySet<string>;\n}): BaseMessage[] {\n    return input.messages.filter((message) => {\n        const toolCallId = toolCallIdFromMessage(message);\n        return !toolCallId || !input.duplicateToolCallIds.has(toolCallId);\n    });\n}"
-        }
-      ]
-    },
-    {
       "id": "export:libs/middleware/src/langgraph/index.ts#hasClientToolCall",
       "kind": "export",
       "path": "libs/middleware/src/langgraph/index.ts",
@@ -9201,34 +9135,6 @@
           "symbol": "lastMessage",
           "syntaxKind": "FunctionDeclaration",
           "signature": "export function lastMessage(state: ClientToolsState): BaseMessage | undefined {\n    const msgs = state.messages ?? [];\n    return msgs.length ? msgs[msgs.length - 1] : undefined;\n}"
-        }
-      ]
-    },
-    {
-      "id": "export:libs/middleware/src/langgraph/index.ts#lookupClientToolExecutions",
-      "kind": "export",
-      "path": "libs/middleware/src/langgraph/index.ts",
-      "symbol": "lookupClientToolExecutions",
-      "declarations": [
-        {
-          "path": "libs/middleware/src/langgraph/client-tool-result-guard.ts",
-          "symbol": "lookupClientToolExecutions",
-          "syntaxKind": "FunctionDeclaration",
-          "signature": "export function lookupClientToolExecutions(input: {\n    readonly threadId: string;\n    readonly toolCallIds: readonly string[];\n    readonly store: ClientToolExecutionStore;\n}): Promise<Record<string, ClientToolExecutionRecord>> {\n    return input.store.lookup(input.threadId, input.toolCallIds);\n}"
-        }
-      ]
-    },
-    {
-      "id": "export:libs/middleware/src/langgraph/index.ts#recordClientToolResults",
-      "kind": "export",
-      "path": "libs/middleware/src/langgraph/index.ts",
-      "symbol": "recordClientToolResults",
-      "declarations": [
-        {
-          "path": "libs/middleware/src/langgraph/client-tool-result-guard.ts",
-          "symbol": "recordClientToolResults",
-          "syntaxKind": "FunctionDeclaration",
-          "signature": "export async function recordClientToolResults(input: RecordClientToolResultsInput): Promise<RecordClientToolResultsResult> {\n    const recordedToolCallIds: string[] = [];\n    const duplicateToolCallIds: string[] = [];\n    for (const entry of extractClientToolResultMessages(input.messages)) {\n        const key = { threadId: input.threadId, toolCallId: entry.toolCallId };\n        const claim = await input.store.claim(key);\n        if (claim === 'claimed') {\n            await input.store.record(key, entry.result);\n            recordedToolCallIds.push(entry.toolCallId);\n            continue;\n        }\n        if (claim.status === 'done') {\n            duplicateToolCallIds.push(entry.toolCallId);\n            continue;\n        }\n        throw new Error(`Client tool result cannot settle an unowned execution: ${entry.toolCallId}`);\n    }\n    return { recordedToolCallIds, duplicateToolCallIds };\n}"
         }
       ]
     },
@@ -12737,16 +12643,10 @@
       "sha256": "74a7909e937d9b24094e41dd1cb08cd3710d1bc12320c0213a9d31e5b578452d"
     },
     {
-      "id": "source:libs/middleware/src/langgraph/client-tool-result-guard.ts",
-      "kind": "source",
-      "path": "libs/middleware/src/langgraph/client-tool-result-guard.ts",
-      "sha256": "a8a5f2a6d88fd025ccf5a3ba8acedca7b1a4bf3e03160f0f445154a9e67d6e3d"
-    },
-    {
       "id": "source:libs/middleware/src/langgraph/index.ts",
       "kind": "source",
       "path": "libs/middleware/src/langgraph/index.ts",
-      "sha256": "e401a9c62b732d3257efb6c6f272a0367c5a6a7e085505563b493bd945b9422b"
+      "sha256": "327da4d6a782fe99b0b2f7e1992956a5326cd74c8b0b9d3a3adc3bf68389d6e5"
     },
     {
       "id": "source:libs/middleware/src/langgraph/middleware.ts",

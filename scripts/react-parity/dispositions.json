@@ -7496,14 +7496,6 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/middleware/src/langgraph/index.ts#ClientToolResultMessage",
-      "taskIds": [
-        "T16"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "export:libs/middleware/src/langgraph/index.ts#ClientToolSpec",
       "taskIds": [
         "T16"
@@ -7545,22 +7537,6 @@
     },
     {
       "id": "export:libs/middleware/src/langgraph/index.ts#PostgresTaggedSql",
-      "taskIds": [
-        "T16"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/middleware/src/langgraph/index.ts#RecordClientToolResultsInput",
-      "taskIds": [
-        "T16"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/middleware/src/langgraph/index.ts#RecordClientToolResultsResult",
       "taskIds": [
         "T16"
       ],
@@ -7632,22 +7608,6 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/middleware/src/langgraph/index.ts#extractClientToolResultMessages",
-      "taskIds": [
-        "T16"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/middleware/src/langgraph/index.ts#filterDuplicateClientToolResultMessages",
-      "taskIds": [
-        "T16"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "export:libs/middleware/src/langgraph/index.ts#hasClientToolCall",
       "taskIds": [
         "T16"
@@ -7665,22 +7625,6 @@
     },
     {
       "id": "export:libs/middleware/src/langgraph/index.ts#lastMessage",
-      "taskIds": [
-        "T16"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/middleware/src/langgraph/index.ts#lookupClientToolExecutions",
-      "taskIds": [
-        "T16"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/middleware/src/langgraph/index.ts#recordClientToolResults",
       "taskIds": [
         "T16"
       ],
@@ -11687,14 +11631,6 @@
     },
     {
       "id": "source:libs/middleware/src/langgraph/client-tool-execution-store.ts",
-      "taskIds": [
-        "T16"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/middleware/src/langgraph/client-tool-result-guard.ts",
       "taskIds": [
         "T16"
       ],

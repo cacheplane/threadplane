@@ -120,7 +120,7 @@ jobs:
     if: github.event_name == 'push' || needs.ci-scope.outputs.library == 'true' || needs.ci-scope.outputs.angular_compatibility == 'true'
     runs-on: ubuntu-latest
     env:
-      LIBS: chat,langgraph,ag-ui,render,a2ui,telemetry
+      LIBS: chat,langgraph,ag-ui,render,a2ui,telemetry,middleware
       FOUNDATIONS: core,content,angular,react
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -145,7 +145,7 @@ jobs:
       - run: npx nx test langgraph --coverage --maxWorkers=2 --reporter=default
       - name: Verify tool claim ownership with production stores
         run: node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.base.json scripts/react-parity/verify-tool-claims.ts
-      - run: npx nx run-many -t test --projects=chat,ag-ui,render,a2ui,telemetry --coverage --parallel=1 --maxWorkers=2
+      - run: npx nx run-many -t test --projects=chat,ag-ui,render,a2ui,telemetry,middleware --coverage --parallel=1 --maxWorkers=2
       - run: npx nx run-many -t build --projects=$LIBS --configuration=production
       - name: Install Chromium for packed runtime consumers
         run: npx playwright install --with-deps chromium
@@ -154,6 +154,7 @@ jobs:
           node scripts/react-parity/verify-boundaries.mjs --built
           node scripts/react-parity/verify-packages.mjs
           node scripts/react-parity/verify-angular-package.mjs
+          node scripts/react-parity/verify-middleware-package.mjs
       - run: node scripts/verify-release-versions.mjs
       - name: DX-coverage — public dev-facing functions must have a JSDoc summary
         run: node scripts/check-dx-coverage.mjs

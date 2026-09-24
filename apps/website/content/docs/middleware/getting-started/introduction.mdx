@@ -62,17 +62,21 @@ If a turn mixes server tool calls and client tool calls, server tools win the fi
 | `routeAfterAgent()` | Lower-level routing helper used by `clientToolsRouter()`. |
 | `lastMessage()` | Reads the last message from state. |
 
-The same entry point also exports a deduplication surface, for backends that must tolerate the same client-tool result arriving twice:
+The same entry point exports execution stores with `claim`, `record`, and `lookup` operations:
 
 | API | Purpose |
 |-----|---------|
 | `createInMemoryClientToolExecutionStore()` | An execution store held in process, for tests and single-instance backends. |
 | `createPostgresClientToolExecutionStore()` | An execution store backed by a Postgres table. |
 | `THREADPLANE_CLIENT_TOOL_EXECUTIONS_SCHEMA` | The table definition that store expects. |
-| `extractClientToolResultMessages()` | Extracts serialized client-tool results from LangGraph `ToolMessage`s. |
-| `recordClientToolResults()` | Records first-seen results and reports which tool-call ids were redeliveries. |
-| `filterDuplicateClientToolResultMessages()` | Removes those redelivered result messages before continuation logic sees them. |
-| `lookupClientToolExecutions()` | Reads prior executions back for reload reconciliation. |
+
+### Breaking removal of receipt helpers
+
+`extractClientToolResultMessages`, `filterDuplicateClientToolResultMessages`, `lookupClientToolExecutions`, and `recordClientToolResults` have been deliberately removed, along with the helper-only types `ClientToolResultMessage`, `RecordClientToolResultsInput`, and `RecordClientToolResultsResult`. Remove these imports and the receipt-ingestion or filtering code that used them. No replacement receipt helper or compatibility alias is provided.
+
+The execution-store contract and factories remain available for coordinating claims and reusing saved results. They do not yet provide durable invocation provenance: records identify a thread and tool-call ID (plus a PostgreSQL tenant), without verifying tool-name or argument identity or guaranteeing lossless result fidelity. `record` does not authenticate an owner token; callers must coordinate result writes and reconcile unresolved executions.
+
+A stored result does not prove invocation equivalence or graph consumption and does not guarantee exactly-once effects. Do not treat execution records as delivery receipts or use them to filter graph history. No new receipt table is introduced.
 
 ## Python public surface
 
