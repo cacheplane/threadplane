@@ -13,6 +13,7 @@ import {
 import type { StreamEvent } from './transport.types';
 import { ownMessage, ownToolCall } from './ownership';
 import { record, roleOf, textContent } from './wire-message';
+import { projectCitations } from './citation-projection';
 
 export { record } from './wire-message';
 
@@ -170,6 +171,7 @@ export function projectStream(
       id: wireId,
       role,
       content,
+      citations: projectCitations(raw),
       delivery:
         !current && previous
           ? previous.delivery

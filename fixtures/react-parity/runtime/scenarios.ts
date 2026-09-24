@@ -139,6 +139,9 @@ export function display(snapshot: FixtureSnapshot) {
   return {
     text: assistant.map((message) => message.content).join('\n'),
     transcript: snapshot.messages.map((message) => message.content).join('\n'),
+    citations: snapshot.messages.flatMap((message) =>
+      (message.citations ?? []).map((citation) => `${citation.id}: ${citation.title ?? ''}`)
+    ).join('\n'),
     values: JSON.stringify(snapshot.values) ?? 'unobserved',
     history: JSON.stringify(snapshot.history) ?? 'unobserved',
     interrupts: JSON.stringify(snapshot.interrupts),

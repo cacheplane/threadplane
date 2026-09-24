@@ -17,6 +17,7 @@ import { record, roleOf, textContent } from './wire-message';
 import { projectHistoryInterrupts } from './interrupt-projection';
 import type { LangGraphInterrupt } from './langgraph-snapshot';
 import { observeInvocation, type ToolInvocation } from './tool-invocations';
+import { projectCitations } from './citation-projection';
 
 export interface HistoryProjectionOptions {
   /** Omit for broad wire observation. A supplied catalog exposes only its
@@ -162,6 +163,7 @@ export function projectHistory(
       id,
       role,
       content: textContent(message['content']),
+      citations: projectCitations(message),
       delivery: staticDelivery(id),
       ...(typeof message['name'] === 'string' ? { name: message['name'] } : {}),
       ...(typeof message['tool_call_id'] === 'string'
@@ -222,7 +224,10 @@ export function projectHistory(
   }
   const ownedMessages = projectedMessages.map((message) => {
     const prior = previousMessages.get(message.id);
-    return ownMessage(prior && sameMessage(prior, message) ? prior : message);
+    return ownMessage(
+      prior && sameMessage(prior, message) ? prior : message,
+      prior
+    );
   });
   const messages = sameEntries(ownedMessages, previous.messages)
     ? previous.messages

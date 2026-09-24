@@ -33,6 +33,60 @@ function snapshot(content = 'one'): LangGraphSnapshot {
 }
 
 describe('private snapshot publication', () => {
+  it('captures citation ingress during synchronous reentrant publication and suppresses an equal queued value', () => {
+    const publication = createPublication(snapshot());
+    const citations = [
+      { id: 'c', index: 1, title: 'Original', extra: { tags: ['original'] } },
+    ];
+    const input = (): LangGraphSnapshot => ({
+      ...snapshot('two'),
+      messages: [{ ...snapshot('two').messages[0], citations }],
+    });
+    const seen: LangGraphSnapshot[] = [];
+    publication.subscribe(() => {
+      seen.push(publication.getSnapshot());
+      if (seen.length === 1) {
+        publication.publish(input());
+        publication.publish(input());
+        citations[0].title = 'Mutated';
+        citations[0].extra.tags.push('mutated');
+        citations.push({
+          id: 'other',
+          index: 2,
+          title: 'Other',
+          extra: { tags: [] },
+        });
+      }
+    });
+    publication.publish(snapshot('two'));
+    expect(seen).toHaveLength(2);
+    expect(seen[1].messages[0].citations).toEqual([
+      { id: 'c', index: 1, title: 'Original', extra: { tags: ['original'] } },
+    ]);
+    expect(Object.isFrozen(citations[0])).toBe(false);
+    const prior = publication.getSnapshot();
+    publication.publish({
+      ...prior,
+      messages: [
+        {
+          ...prior.messages[0],
+          content: 'three',
+          citations: [
+            {
+              id: 'c',
+              index: 1,
+              title: 'Original',
+              extra: { tags: ['original'] },
+            },
+          ],
+        },
+      ],
+    });
+    expect(publication.getSnapshot().messages[0].citations).toBe(
+      prior.messages[0].citations
+    );
+  });
+
   it.each([
     { label: 'empty to holes', from: 0, to: 2, populated: false },
     { label: 'longer trailing holes', from: 1, to: 3, populated: true },

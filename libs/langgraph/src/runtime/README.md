@@ -4,6 +4,28 @@ This directory stages the framework-independent session owner. It is not the
 published LangGraph package entry point. Core and framework bindings do not own
 backend execution positions.
 
+## Owned citations
+
+History, root streams and read-only child streams project citations from
+`additional_kwargs.citations ?? additional_kwargs.sources`. Supported arrays replace
+the list; an empty array clears it. Missing metadata retains the current list on
+interim events within one generation, while canonical messages and authoritative
+history reads define the complete state and clear omissions. Later interim events
+cannot undo committed canonical metadata. Equal metadata shares owned references,
+including when only text changes. Terminal candidates and queued publications
+capture metadata before callers can mutate it.
+
+The private normalizer stages the existing Angular extractor's aliases without an
+Angular dependency. Consolidate this bounded duplication at the backend cutover.
+The adapters do not promise identical arbitrary-extra semantics: neutral snapshots
+accept plain provider records and string/finite-number timestamps, omit unsupported
+optional fields, and reject instances/cycles in extras at the ownership boundary.
+Exact checkpoint ingress remains stricter: it captures the complete plain state
+before projection and rejects Date instances even in otherwise optional metadata.
+Citation changes never authorize tools, change execution positions, or reopen
+delivery. Rich blocks, reasoning/timing, event render state and citation components
+remain separate future capabilities.
+
 ## Completed checkpoint forks
 
 `session.fork(checkpoint, input, options?)` submits new input in the session's

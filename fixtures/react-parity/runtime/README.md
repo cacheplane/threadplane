@@ -1,5 +1,17 @@
 # Installed native runtime consumers
 
+## Citation projection
+
+The main view's plain-text Citations field proves the installed readonly core
+`Citation` contract through both native bindings. The existing Load sequence
+shows `saved-source: Saved reference`, preserves it on an equal refresh, and
+clears it on empty history. The first Resume shows `approval-source: Approval
+reference`; the next Resume canonically completes the same assistant message
+without metadata and clears the field. These assertions add no requests, tool
+executions or navigation. Installed declaration probes reject citation mutation,
+Date timestamps and non-plain provider metadata. This is display projection only,
+not a citation renderer or completion of rich-message parity.
+
 ## Checkpoint review
 
 Open `/?checkpoints` on either installed review URL for the separate fixed

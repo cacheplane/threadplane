@@ -2,6 +2,7 @@ import type {
   AgentError,
   AgentSession,
   AgentSnapshot,
+  Citation,
   Message,
   MessageDelivery,
   PlainValue,
@@ -10,6 +11,31 @@ import type {
 
 declare const snapshot: AgentSnapshot;
 declare const session: AgentSession;
+declare const citation: Citation;
+const citationList: Message['citations'] = [citation];
+// @ts-expect-error citation collections are readonly
+citationList.push(citation);
+// @ts-expect-error citation fields are readonly
+citation.title = 'changed';
+if (citation.extra) {
+  // @ts-expect-error provider metadata is readonly
+  citation.extra['changed'] = true;
+}
+// @ts-expect-error timestamps are portable primitives
+const datedCitation: Citation = { id: 'c', index: 1, publishedAt: new Date() };
+const opaqueCitation: Citation = {
+  id: 'c',
+  index: 1,
+  // @ts-expect-error SDK instances are not portable metadata
+  extra: { date: new Date() },
+};
+const callableCitation: Citation = {
+  id: 'c',
+  index: 1,
+  // @ts-expect-error functions are not portable metadata
+  extra: { run: () => 1 },
+};
+void [datedCitation, opaqueCitation, callableCitation];
 // @ts-expect-error snapshot fields are readonly
 snapshot.status = 'running';
 // @ts-expect-error snapshot collections are readonly

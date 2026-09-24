@@ -5,6 +5,7 @@ export type {
 } from './contracts/agent-session.js';
 export type { AgentSnapshot, AgentStatus } from './contracts/agent-snapshot.js';
 export type { Message, Role } from './contracts/message.js';
+export type { Citation } from './contracts/citation.js';
 export {
   completeDelivery,
   staticDelivery,

@@ -194,6 +194,12 @@ export function reduceMessages(
     ...incoming,
     id,
     content,
+    citations:
+      sameGeneration && event.mode !== 'canonical'
+        ? canonical
+          ? previous.citations
+          : incoming.citations ?? previous.citations
+        : incoming.citations,
     // A late snapshot cannot reopen a finalized generation.
     delivery:
       sameGeneration && previous.delivery.phase === 'complete'
@@ -207,7 +213,7 @@ export function reduceMessages(
   if (!previous || !sameMessage(previous, candidate)) {
     const next = [...messages];
     if (index < 0) next.push(ownMessage(candidate));
-    else next[index] = ownMessage(candidate);
+    else next[index] = ownMessage(candidate, previous);
     messages = Object.freeze(next);
   }
   const aliases =
