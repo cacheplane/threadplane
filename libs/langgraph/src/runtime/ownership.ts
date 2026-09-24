@@ -170,6 +170,7 @@ export function sameMessage(a: Message, b: Message): boolean {
     (a.id === b.id &&
       a.role === b.role &&
       a.content === b.content &&
+      a.reasoning === b.reasoning &&
       sameOwnedValue(
         a.citations as unknown as PlainValue,
         b.citations as unknown as PlainValue
@@ -195,6 +196,7 @@ export function ownMessage(message: Message, previous?: Message): Message {
     id: message.id,
     role: message.role,
     content: message.content,
+    reasoning: message.reasoning,
     citations,
     delivery:
       message.delivery.phase === 'complete'

@@ -33,6 +33,46 @@ function snapshot(content = 'one'): LangGraphSnapshot {
 }
 
 describe('private snapshot publication', () => {
+  it('publishes reasoning-only changes, owns queued getter strings and suppresses equal values', () => {
+    const publication = createPublication(snapshot());
+    let reasoning = 'Captured';
+    const input = (): LangGraphSnapshot => ({
+      ...snapshot(),
+      messages: [
+        {
+          ...snapshot().messages[0],
+          get reasoning() {
+            return reasoning;
+          },
+        },
+      ],
+    });
+    const seen: LangGraphSnapshot[] = [];
+    publication.subscribe(() => {
+      seen.push(publication.getSnapshot());
+      if (seen.length === 1) {
+        publication.publish(input());
+        publication.publish(input());
+        reasoning = 'Mutated';
+      }
+    });
+    publication.publish({
+      ...snapshot(),
+      messages: [{ ...snapshot().messages[0], reasoning: 'First' }],
+    });
+    expect(seen).toHaveLength(2);
+    expect(seen[0].messages[0].reasoning).toBe('First');
+    expect(seen[1].messages[0].reasoning).toBe('Captured');
+    const before = publication.getSnapshot();
+    publication.publish({
+      ...snapshot(),
+      messages: [{ ...snapshot().messages[0], reasoning: 'Captured' }],
+    });
+    expect(publication.getSnapshot()).toBe(before);
+    publication.publish(snapshot());
+    expect(publication.getSnapshot().messages[0].reasoning).toBeUndefined();
+    expect(seen).toHaveLength(3);
+  });
   it('captures citation ingress during synchronous reentrant publication and suppresses an equal queued value', () => {
     const publication = createPublication(snapshot());
     const citations = [

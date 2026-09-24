@@ -138,10 +138,17 @@ export function display(snapshot: FixtureSnapshot) {
   const delivery = assistant.at(-1)?.delivery;
   return {
     text: assistant.map((message) => message.content).join('\n'),
+    reasoning: assistant
+      .flatMap((message) => (message.reasoning ? [message.reasoning] : []))
+      .join('\n'),
     transcript: snapshot.messages.map((message) => message.content).join('\n'),
-    citations: snapshot.messages.flatMap((message) =>
-      (message.citations ?? []).map((citation) => `${citation.id}: ${citation.title ?? ''}`)
-    ).join('\n'),
+    citations: snapshot.messages
+      .flatMap((message) =>
+        (message.citations ?? []).map(
+          (citation) => `${citation.id}: ${citation.title ?? ''}`
+        )
+      )
+      .join('\n'),
     values: JSON.stringify(snapshot.values) ?? 'unobserved',
     history: JSON.stringify(snapshot.history) ?? 'unobserved',
     interrupts: JSON.stringify(snapshot.interrupts),

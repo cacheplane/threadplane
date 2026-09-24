@@ -12,6 +12,12 @@ import type {
 declare const snapshot: AgentSnapshot;
 declare const session: AgentSession;
 declare const citation: Citation;
+const reasoning: Message['reasoning'] = snapshot.messages[0].reasoning;
+// @ts-expect-error reasoning is readonly display data
+snapshot.messages[0].reasoning = 'changed';
+// @ts-expect-error reasoning accepts strings only
+const invalidReasoning: Message['reasoning'] = { text: 'hidden' };
+void [reasoning, invalidReasoning];
 const citationList: Message['citations'] = [citation];
 // @ts-expect-error citation collections are readonly
 citationList.push(citation);

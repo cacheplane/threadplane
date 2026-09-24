@@ -11353,7 +11353,22 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private owned citation metadata projection, verified through both installed native bindings; not a public backend cutover.",
-      "note": "Normalizes existing aliases with absent/empty distinction, finite primitive timestamps and deeply owned plain extras. Rich blocks, reasoning/timing, citation UI and full T09/T15 parity remain open."
+      "note": "Normalizes existing aliases with absent/empty distinction, finite primitive timestamps and deeply owned plain extras. Rich blocks, reasoning timing, citation UI and full T09/T15 parity remain open."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/reasoning-projection.ts",
+      "taskIds": ["T09", "T15"],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private owned reasoning display-string projection through both installed native bindings; no public backend cutover.",
+      "note": "Explicit source precedence and delta/snapshot/canonical modes, immutable publication and lifecycle ownership are covered. Timing, rich blocks, event-only retention, UI and full T09/T15 parity remain open."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/testing/controlled-session.ts",
+      "taskIds": ["T09", "T15"],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Shared test-only controlled session fixture for owned citation and reasoning regressions; excluded from production imports and public entry points."
     },
     {
       "id": "source:libs/langgraph/src/runtime/run-options.ts",

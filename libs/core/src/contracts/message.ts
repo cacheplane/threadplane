@@ -8,6 +8,8 @@ export interface Message {
   readonly id: string;
   readonly role: Role;
   readonly content: string;
+  /** Backend-supplied reasoning display text. */
+  readonly reasoning?: string;
   readonly citations?: readonly Citation[];
   readonly delivery: MessageDelivery;
   readonly toolCallId?: string;
