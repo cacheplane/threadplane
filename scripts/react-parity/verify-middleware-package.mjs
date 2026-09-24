@@ -128,7 +128,7 @@ export async function verifyMiddlewarePackage(root = process.cwd()) {
       catch (error) { failures.push(error); }
     }
     if (failures.length) throw new AggregateError(failures, 'Installed middleware contracts failed');
-    console.log('Verified standalone middleware tarball: strict declarations, seven removed imports, ESM exports, and retained execution-store behavior.');
+    console.log('Verified standalone middleware tarball: strict declarations, removed imports, ESM exports, and owned execution-store behavior.');
   } finally { rmSync(temporary, { recursive: true, force: true }); }
 }
 

@@ -14,3 +14,9 @@ import type { ClientToolResultMessage } from '@threadplane/middleware/langgraph'
 import type { RecordClientToolResultsInput } from '@threadplane/middleware/langgraph';
 // @ts-expect-error Removed receipt-only type.
 import type { RecordClientToolResultsResult } from '@threadplane/middleware/langgraph';
+// @ts-expect-error removed unowned result surface
+import type { ClientToolResult } from '@threadplane/middleware/langgraph';
+// @ts-expect-error removed unowned record surface
+import type { ClientToolExecutionRecord } from '@threadplane/middleware/langgraph';
+// @ts-expect-error removed unowned status surface
+import type { ClientToolExecutionStatus } from '@threadplane/middleware/langgraph';

@@ -11,6 +11,21 @@ const call = (
 const admit = (toolCall = call()) =>
   reduceMessages(initialMessageState(), { type: 'tool-admitted', toolCall });
 describe('owned session invocation facts', () => {
+  it('keeps an externally observed conflict sticky on only the admitted invocation', () => {
+    const before = admit();
+    const after = reduceMessages(before, { type: 'tool-conflict', id: 'call' });
+    expect(after.invocations[0].conflicted).toBe(true);
+    expect(after.invocations[0].args).toBe(before.invocations[0].args);
+    expect(
+      reduceMessages(after, { type: 'tool-admitted', toolCall: call() })
+    ).toBe(after);
+    expect(reduceMessages(after, { type: 'tool-conflict', id: 'call' })).toBe(
+      after
+    );
+    expect(
+      reduceMessages(before, { type: 'tool-conflict', id: 'unknown' })
+    ).toBe(before);
+  });
   it('owns admitted data and preserves matching/no-op references', () => {
     const args = { nested: { city: 'Paris' } };
     const state = admit(call(args));

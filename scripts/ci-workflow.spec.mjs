@@ -90,6 +90,9 @@ describe('CI workflow', () => {
     const build = job.indexOf('run-many -t build --projects=$LIBS');
     const verify = job.indexOf('node scripts/react-parity/verify-middleware-package.mjs');
     assert.ok(build >= 0 && verify > build, 'standalone middleware gate must run after build');
+    const conformance = job.indexOf('node scripts/react-parity/verify-middleware-conformance.mjs');
+    assert.ok(conformance > build && conformance !== verify, 'separate installed core/middleware conformance must run after build');
+    assert.match(job, /scripts\/react-parity\/verify-tool-claims\.ts/);
     assert.doesNotMatch(job, /continue-on-error: true/);
   });
   it('verifies pull requests against any base while push and deployment stay main-only', async () => {

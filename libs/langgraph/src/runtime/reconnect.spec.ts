@@ -786,13 +786,18 @@ describe('owned run reconnect', () => {
     expect(f.session.getSnapshot().reconnect).toBeUndefined();
   });
 
-  it('retains the exact follow-up handoff across two joins, with no repeated claim or premature acknowledgment', async () => {
+  it('retains the exact follow-up handoff across two joins, with no repeated acquire or premature acknowledgment', async () => {
     const handler = vi.fn(() => 1);
-    const claim = vi.fn<ToolExecutionStore['claim']>(async () => 'claimed');
-    const record = vi.fn<ToolExecutionStore['record']>(async () => undefined);
+    const acquire = vi.fn<ToolExecutionStore['acquire']>(async () => ({
+      status: 'acquired' as const,
+      token: 'owner',
+    }));
+    const settle = vi.fn<ToolExecutionStore['settle']>(
+      async () => 'accepted' as const
+    );
     const f = fixture({
       tools: { work: { description: 'Work', handler } },
-      executionStore: { claim, record },
+      executionStore: { acquire, settle },
     });
     let number = 0;
     let oldCallback: NonNullable<
@@ -839,8 +844,8 @@ describe('owned run reconnect', () => {
         .messages.find((message) => message.id === 'assistant-call')
     ).toBe(earlier);
     expect(handler).toHaveBeenCalledTimes(1);
-    expect(claim).toHaveBeenCalledTimes(1);
-    expect(record).toHaveBeenCalledTimes(1);
+    expect(acquire).toHaveBeenCalledTimes(1);
+    expect(settle).toHaveBeenCalledTimes(1);
     expect(f.stream).toHaveBeenCalledTimes(2);
     expect(f.joinStream.mock.calls.map((call) => call.slice(1, 3))).toEqual([
       ['run-2', 'follow-1'],
@@ -973,24 +978,24 @@ describe('owned run reconnect', () => {
 
   it('blocks submit/reconnect during late guarded settlement and retains a failed write', async () => {
     const claimed =
-      deferred<Awaited<ReturnType<ToolExecutionStore['claim']>>>();
+      deferred<Awaited<ReturnType<ToolExecutionStore['acquire']>>>();
     const recorded = deferred<void>();
     const written = deferred<void>();
     const claimStarted = deferred<void>();
     const recordStarted = deferred<void>();
     const writeStarted = deferred<void>();
-    const claim = vi.fn<ToolExecutionStore['claim']>(() => {
+    const acquire = vi.fn<ToolExecutionStore['acquire']>(() => {
       claimStarted.resolve();
       return claimed.promise;
     });
-    const record = vi.fn<ToolExecutionStore['record']>(() => {
+    const settle = vi.fn<ToolExecutionStore['settle']>(() => {
       recordStarted.resolve();
-      return recorded.promise;
+      return recorded.promise.then(() => 'accepted' as const);
     });
     const handler = vi.fn(() => 1);
     const f = fixture({
       tools: { work: { description: 'Work', handler } },
-      executionStore: { claim, record },
+      executionStore: { acquire, settle },
     });
     f.stream.mockImplementationOnce(async function* (
       _a,
@@ -1015,7 +1020,7 @@ describe('owned run reconnect', () => {
     const retained = f.session.getSnapshot();
     await expect(f.session.reconnect()).rejects.toThrow();
     expect(f.session.getSnapshot()).toBe(retained);
-    claimed.resolve('claimed');
+    claimed.resolve({ status: 'acquired' as const, token: 'owner' });
     await recordStarted.promise;
     await expect(f.session.submit('New')).rejects.toThrow(/unsettled tool/);
     await expect(f.session.reconnect()).rejects.toThrow();

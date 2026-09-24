@@ -57,13 +57,16 @@ function fixture() {
     async () => undefined
   );
   const handler = vi.fn((args: { input: string }) => args.input);
-  const claim = vi.fn(async () => 'claimed' as const);
-  const record = vi.fn(async () => undefined);
+  const acquire = vi.fn(async () => ({
+    status: 'acquired' as const,
+    token: 'owner',
+  }));
+  const settle = vi.fn(async () => 'accepted' as const);
   const session = createSession({
     assistantId: 'a',
     threadId: 't',
     transport: { stream, getHistory: history, updateState: write },
-    executionStore: { claim, record },
+    executionStore: { acquire, settle },
     tools: { work: { description: 'Work', handler } },
   });
   const f = {
@@ -73,8 +76,8 @@ function fixture() {
     history,
     write,
     handler,
-    claim,
-    record,
+    acquire,
+    settle,
     snapshot: () => session.getSnapshot() as LangGraphSnapshot,
     started: (index = 0) => starts[index].promise,
     async emit(event: StreamEvent, index = 0) {
@@ -255,8 +258,8 @@ describe('session application values', () => {
       expect(f.snapshot().values).toBe(prior.values);
       expect(f.snapshot().toolCalls).toBe(prior.toolCalls);
       expect(f.handler).not.toHaveBeenCalled();
-      expect(f.claim).not.toHaveBeenCalled();
-      expect(f.record).not.toHaveBeenCalled();
+      expect(f.acquire).not.toHaveBeenCalled();
+      expect(f.settle).not.toHaveBeenCalled();
       expect(f.write).not.toHaveBeenCalled();
       expect(f.stream).toHaveBeenCalledTimes(1);
       await run;

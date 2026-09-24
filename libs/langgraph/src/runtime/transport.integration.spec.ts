@@ -1,3 +1,4 @@
+import { canonicalInvocation } from './tool-provenance';
 import { readFileSync } from 'node:fs';
 import { ReadableStream, ReadableStreamDefaultReader } from 'node:stream/web';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -861,8 +862,11 @@ describe('neutral real SDK transport', () => {
     vi.stubGlobal('fetch', request);
     const handler = vi.fn(() => 'Never');
     const store: ToolExecutionStore = {
-      claim: vi.fn(async () => 'claimed' as const),
-      record: vi.fn(async () => undefined),
+      acquire: vi.fn(async () => ({
+        status: 'acquired' as const,
+        token: 'owner',
+      })),
+      settle: vi.fn(async () => 'accepted' as const),
     };
     const session = createSession({
       assistantId: 'assistant-1',
@@ -917,8 +921,8 @@ describe('neutral real SDK transport', () => {
         { id: 'call-weather', status: 'pending', args: { city: 'Paris' } },
       ]);
       expect(handler).not.toHaveBeenCalled();
-      expect(store.claim).not.toHaveBeenCalled();
-      expect(store.record).not.toHaveBeenCalled();
+      expect(store.acquire).not.toHaveBeenCalled();
+      expect(store.settle).not.toHaveBeenCalled();
       expect(notify).toHaveBeenCalledTimes(1);
     } finally {
       off();
@@ -996,8 +1000,11 @@ describe('neutral real SDK transport', () => {
       const requests: { url: string; body: Record<string, unknown> }[] = [];
       const handler = vi.fn((args: { id: string }) => args.id);
       const store: ToolExecutionStore = {
-        claim: vi.fn(async () => 'claimed' as const),
-        record: vi.fn(async () => undefined),
+        acquire: vi.fn(async () => ({
+          status: 'acquired' as const,
+          token: 'owner',
+        })),
+        settle: vi.fn(async () => 'accepted' as const),
       };
       vi.stubGlobal(
         'fetch',
@@ -1068,13 +1075,16 @@ describe('neutral real SDK transport', () => {
           ids
         );
         expect(handler.mock.calls.map(([args]) => args.id)).toEqual(ids);
-        expect(store.claim).toHaveBeenCalledTimes(ids.length);
-        expect(store.record).toHaveBeenCalledTimes(ids.length);
+        expect(store.acquire).toHaveBeenCalledTimes(ids.length);
+        expect(store.settle).toHaveBeenCalledTimes(ids.length);
         if (ids.length)
-          expect(store.claim).toHaveBeenCalledWith({
-            threadId: 'thread',
-            toolCallId: 'c2',
-          });
+          expect(store.acquire).toHaveBeenCalledWith(
+            {
+              threadId: 'thread',
+              toolCallId: 'c2',
+            },
+            canonicalInvocation('work', { id: 'c2' })
+          );
         expect(
           requests.filter((request) => request.url.endsWith('/runs/stream'))
         ).toHaveLength(1);

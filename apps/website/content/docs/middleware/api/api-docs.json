@@ -222,47 +222,60 @@
     "examples": []
   },
   {
+    "name": "ClientToolExecutionSettlement",
+    "kind": "interface",
+    "description": "",
+    "properties": [
+      {
+        "name": "invocation",
+        "type": "string",
+        "description": "",
+        "optional": false
+      },
+      {
+        "name": "result",
+        "type": "string | null",
+        "description": "",
+        "optional": false
+      },
+      {
+        "name": "token",
+        "type": "string",
+        "description": "",
+        "optional": false
+      }
+    ],
+    "examples": []
+  },
+  {
     "name": "ClientToolExecutionStore",
     "kind": "interface",
-    "description": "Backend-authoritative store for client-tool execution deduplication.",
+    "description": "Opaque invocation ownership protocol, structurally shared with the runtime.",
     "properties": [],
     "methods": [
       {
-        "name": "claim",
-        "signature": "claim(key: ClientToolExecutionKey): Promise<\"claimed\" | ClientToolExecutionRecord>",
-        "description": "Atomically claim a tool-call execution. Returns prior state when present.",
+        "name": "acquire",
+        "signature": "acquire(key: ClientToolExecutionKey, invocation: string): Promise<ClientToolExecutionAcquisition>",
+        "description": "",
         "params": [
           {
             "name": "key",
             "type": "ClientToolExecutionKey",
             "description": "",
             "optional": false
-          }
-        ]
-      },
-      {
-        "name": "lookup",
-        "signature": "lookup(threadId: string, toolCallIds: readonly string[]): Promise<Record<string, ClientToolExecutionRecord>>",
-        "description": "Reload reconciliation: statuses/results for selected tool calls on a thread.",
-        "params": [
+          },
           {
-            "name": "threadId",
+            "name": "invocation",
             "type": "string",
             "description": "",
             "optional": false
-          },
-          {
-            "name": "toolCallIds",
-            "type": "readonly string[]",
-            "description": "",
-            "optional": false
           }
         ]
       },
       {
-        "name": "record",
-        "signature": "record(key: ClientToolExecutionKey, result: ClientToolResult): Promise<void>",
-        "description": "Record the final client-tool result for a claimed or first-seen execution.",
+        "name": "settle",
+        "signature": "settle(key: ClientToolExecutionKey, settlement: ClientToolExecutionSettlement): Promise<\"accepted\" | \"rejected\">",
+        "description": "",
         "params": [
           {
             "name": "key",
@@ -271,8 +284,8 @@
             "optional": false
           },
           {
-            "name": "result",
-            "type": "ClientToolResult",
+            "name": "settlement",
+            "type": "ClientToolExecutionSettlement",
             "description": "",
             "optional": false
           }
@@ -361,31 +374,17 @@
       {
         "name": "tenantId",
         "type": "string | null",
-        "description": "Tenant scope for every read and write. Defaults to `''` (the single-tenant scope).",
+        "description": "Tenant scope for every read and write. Defaults to the empty scope.",
         "optional": true
       }
     ],
     "examples": []
   },
   {
-    "name": "ClientToolExecutionRecord",
+    "name": "ClientToolExecutionAcquisition",
     "kind": "type",
     "description": "",
-    "signature": "object | object | object",
-    "examples": []
-  },
-  {
-    "name": "ClientToolExecutionStatus",
-    "kind": "type",
-    "description": "",
-    "signature": "\"executing\" | \"done\" | \"failed\"",
-    "examples": []
-  },
-  {
-    "name": "ClientToolResult",
-    "kind": "type",
-    "description": "Serialized result for a browser-executed client tool.",
-    "signature": "object | object",
+    "signature": "object | object | object | object",
     "examples": []
   },
   {
@@ -403,10 +402,17 @@
     "examples": []
   },
   {
+    "name": "THREADPLANE_CLIENT_TOOL_EXECUTIONS_MIGRATION",
+    "kind": "const",
+    "description": "Drain all writers first. This fences old INSERT/UPSERT factory statements,\nnot custom direct UPDATE writers. Historical results remain uncertified.",
+    "signature": "\"\\nBEGIN;\\nLOCK TABLE threadplane_client_tool_executions IN ACCESS EXCLUSIVE MODE;\\nALTER TABLE threadplane_client_tool_executions\\n  ADD COLUMN IF NOT EXISTS invocation text,\\n  ADD COLUMN IF NOT EXISTS owner_token text,\\n  ADD COLUMN IF NOT EXISTS encoded_result text;\\nUPDATE threadplane_client_tool_executions\\nSET owner_token = 'legacy-unknown'\\nWHERE owner_token IS NULL;\\nALTER TABLE threadplane_client_tool_executions\\n  ALTER COLUMN owner_token DROP DEFAULT,\\n  ALTER COLUMN owner_token SET NOT NULL;\\nCOMMIT;\\n\"",
+    "examples": []
+  },
+  {
     "name": "THREADPLANE_CLIENT_TOOL_EXECUTIONS_SCHEMA",
     "kind": "const",
-    "description": "",
-    "signature": "\"\\nCREATE TABLE IF NOT EXISTS threadplane_client_tool_executions (\\n  tenant_id     text        NOT NULL DEFAULT '',\\n  thread_id     text        NOT NULL,\\n  tool_call_id  text        NOT NULL,\\n  status        text        NOT NULL,\\n  result        jsonb,\\n  created_at    timestamptz NOT NULL DEFAULT now(),\\n  updated_at    timestamptz NOT NULL DEFAULT now(),\\n  PRIMARY KEY (tenant_id, thread_id, tool_call_id)\\n);\\n\"",
+    "description": "Fresh installations only. Existing tables require the explicit migration.",
+    "signature": "\"\\nCREATE TABLE IF NOT EXISTS threadplane_client_tool_executions (\\n  tenant_id     text        NOT NULL DEFAULT '',\\n  thread_id     text        NOT NULL,\\n  tool_call_id  text        NOT NULL,\\n  status        text        NOT NULL,\\n  result        jsonb,\\n  invocation    text,\\n  owner_token   text        NOT NULL,\\n  encoded_result text,\\n  created_at    timestamptz NOT NULL DEFAULT now(),\\n  updated_at    timestamptz NOT NULL DEFAULT now(),\\n  PRIMARY KEY (tenant_id, thread_id, tool_call_id)\\n);\\n\"",
     "examples": []
   },
   {
@@ -518,7 +524,7 @@
   {
     "name": "createInMemoryClientToolExecutionStore",
     "kind": "function",
-    "description": "Non-persistent store useful for tests and Tier-0/Tier-1 local backends.",
+    "description": "Non-persistent, single-process ownership. No takeover or expiration.",
     "signature": "createInMemoryClientToolExecutionStore(): ClientToolExecutionStore",
     "params": [],
     "returns": {
@@ -530,7 +536,7 @@
   {
     "name": "createPostgresClientToolExecutionStore",
     "kind": "function",
-    "description": "Create a Postgres-backed client-tool execution store from a supplied SQL tag.",
+    "description": "Constructor performs no DDL. Apply the fresh schema or explicit migration.",
     "signature": "createPostgresClientToolExecutionStore(sql: PostgresTaggedSql, opts: PostgresClientToolExecutionStoreOptions): ClientToolExecutionStore",
     "params": [
       {

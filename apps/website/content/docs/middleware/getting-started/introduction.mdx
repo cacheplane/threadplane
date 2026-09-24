@@ -62,21 +62,30 @@ If a turn mixes server tool calls and client tool calls, server tools win the fi
 | `routeAfterAgent()` | Lower-level routing helper used by `clientToolsRouter()`. |
 | `lastMessage()` | Reads the last message from state. |
 
-The same entry point exports execution stores with `claim`, `record`, and `lookup` operations:
+The unreleased source-tree protocol exports execution stores with `acquire` and `settle` operations. This does not describe the currently published package contract:
 
 | API | Purpose |
 |-----|---------|
 | `createInMemoryClientToolExecutionStore()` | An execution store held in process, for tests and single-instance backends. |
 | `createPostgresClientToolExecutionStore()` | An execution store backed by a Postgres table. |
-| `THREADPLANE_CLIENT_TOOL_EXECUTIONS_SCHEMA` | The table definition that store expects. |
+| `THREADPLANE_CLIENT_TOOL_EXECUTIONS_SCHEMA` | Fresh installation table definition. |
+| `THREADPLANE_CLIENT_TOOL_EXECUTIONS_MIGRATION` | Explicit transactional in-place upgrade for an existing table. |
 
 ### Breaking removal of receipt helpers
 
 `extractClientToolResultMessages`, `filterDuplicateClientToolResultMessages`, `lookupClientToolExecutions`, and `recordClientToolResults` have been deliberately removed, along with the helper-only types `ClientToolResultMessage`, `RecordClientToolResultsInput`, and `RecordClientToolResultsResult`. Remove these imports and the receipt-ingestion or filtering code that used them. No replacement receipt helper or compatibility alias is provided.
 
-The execution-store contract and factories remain available for coordinating claims and reusing saved results. They do not yet provide durable invocation provenance: records identify a thread and tool-call ID (plus a PostgreSQL tenant), without verifying tool-name or argument identity or guaranteeing lossless result fidelity. `record` does not authenticate an owner token; callers must coordinate result writes and reconcile unresolved executions.
+### Breaking invocation ownership protocol (unreleased)
 
-A stored result does not prove invocation equivalence or graph consumption and does not guarantee exactly-once effects. Do not treat execution records as delivery receipts or use them to filter graph history. No new receipt table is introduced.
+The factory names remain, but the old `claim`/`record`/`lookup` port and `ClientToolResult`, `ClientToolExecutionRecord`, and `ClientToolExecutionStatus` types are removed. `acquire(key, invocation)` atomically binds the tenant/thread/tool-call identity to one exact invocation and one owner token. Only `{ status: 'acquired', token }` authorizes execution. Matching exact completions return `{ status: 'complete', result }`; changed invocations conflict; executing, legacy, unknown, and non-reusable completions are unavailable.
+
+`settle(key, { invocation, token, result })` accepts only the original owner's completion. An identical reusable string retry is acknowledged without changing the logical result; different retries and every retry after a `null` non-reusable completion are rejected. There is no takeover, lease, or automatic runtime retry. SQL triggers can still run for an identical acknowledgment retry.
+
+The private shared LangGraph runtime reuses only whole success/error envelopes preserved exactly by JSON. Literal JSON-looking and `Error:` strings remain strings. Undefined values/properties, sparse arrays, NaN, infinities, and negative zero stay exact for the original owner but are non-reusable in later sessions. Conflicting tool names or arguments block further execution and graph writes, even after history recovery. Idempotent tools bypass durable storage but retain local identity checks. The legacy `@threadplane/chat` guard keeps its separate old contract and is outside this guarantee; renaming methods does not migrate it.
+
+For PostgreSQL, drain executions and all writers, audit custom SQL, explicitly apply `THREADPLANE_CLIENT_TOOL_EXECUTIONS_MIGRATION`, deploy the new runtime/provider integration, then resume. Construction performs no DDL. The repeat-safe migration locks and preserves the existing table, identity, historical status/result JSON and new-protocol data. Missing ownership tokens become legacy-unknown; historical results are never certified, including partially upgraded rows. The required token column without a default rejects the former factory's INSERT/UPSERT statements but cannot fence custom direct UPDATE writers. Unknown outcomes require external reconciliation; the migration never reopens execution.
+
+These are source-tree changes, with no package release or version bump implied. Upgrade the runtime, provider and schema together when adopting them. A stored result does not prove graph consumption or guarantee exactly-once external effects. Do not use it as a delivery receipt or filter history from it. No replacement receipt helper or new receipt table is introduced.
 
 ## Python public surface
 
