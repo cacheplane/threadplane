@@ -8683,6 +8683,14 @@
       "note": "Captures complete replacement records, preserves existing ID order and omitted reasoning/activity roles, and rejects duplicate IDs atomically. Seeded HTTP coverage proves reconciliation and request egress; stream reduction, session integration and public parity remain separate migration work."
     },
     {
+      "id": "source:libs/ag-ui/src/runtime/text-messages.ts",
+      "taskIds": ["T12", "T13"],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private immutable text and reasoning message accumulation only; excluded from public exports and legacy Angular reachability.",
+      "note": "Consumes six SDK-normalized message events, captures incoming metadata before shallow merging, preserves prior observations and fails on invalid targets. HTTP coverage composes streaming with snapshot reconciliation and request egress. Caller admission, root/child routing, other protocol families, session integration and public parity remain separate migration work."
+    },
+    {
       "id": "source:libs/ag-ui/src/runtime/transcript.ts",
       "taskIds": ["T12", "T13"],
       "treatment": "internal",

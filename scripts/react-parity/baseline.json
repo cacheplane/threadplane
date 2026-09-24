@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "a8ce8720b269099ffe5d8c6b0dbd696f1a427b60",
+  "baselineHead": "d329076ac466b54b45a4aea44d0c5edd6977661b",
   "sourceState": {
     "modified": [],
     "untracked": [
-      "libs/ag-ui/src/runtime/reconcile-transcript.ts"
+      "libs/ag-ui/src/runtime/text-messages.ts"
     ]
   },
   "scope": {
@@ -10627,6 +10627,12 @@
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/reconcile-transcript.ts",
       "sha256": "c2efbe4561a3d348422b144f7ab09656aa85b85771870fff4d4963880b9c6b74"
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/text-messages.ts",
+      "kind": "source",
+      "path": "libs/ag-ui/src/runtime/text-messages.ts",
+      "sha256": "6751d4b7f53350ccedafa2e1cae808d80c88acc894e8993441e30d60022e625e"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/transcript.ts",
