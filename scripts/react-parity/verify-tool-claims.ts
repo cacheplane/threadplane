@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { setTimeout as delay } from 'node:timers/promises';
-import { ToolMessage } from '@langchain/core/messages';
 import type { ThreadState } from '@langchain/langgraph-sdk';
 import type { PlainValue } from '@threadplane/core';
 import type {
@@ -26,8 +25,6 @@ import {
   THREADPLANE_CLIENT_TOOL_EXECUTIONS_SCHEMA,
   type PostgresTaggedSql,
 } from '../../libs/middleware/src/langgraph/postgres-client-tool-execution-store';
-// eslint-disable-next-line @nx/enforce-module-boundaries
-import { recordClientToolResults } from '../../libs/middleware/src/langgraph/client-tool-result-guard';
 
 // Two real sessions and production stores; only graph delivery is deterministic.
 // PostgreSQL runs without host ports, network access, or existing DB credentials.
@@ -292,31 +289,6 @@ async function scenario(
       await store.lookup(key.threadId, [key.toolCallId]),
       outstanding
     );
-    const conflictingReceipt = new ToolMessage({
-      tool_call_id: key.toolCallId,
-      content: JSON.stringify({ city: 'Paris', source: 'foreign-receipt' }),
-    });
-    await bounded(
-      assert.rejects(
-        () =>
-          recordClientToolResults({
-            threadId: key.threadId,
-            messages: [conflictingReceipt],
-            store,
-          }),
-        {
-          message:
-            'Client tool result cannot settle an unowned execution: shared-call',
-        },
-        `${kind}: a receipt must not settle another session's execution`
-      ),
-      `${kind}: conflicting receipt rejection`
-    );
-    assert.deepEqual(
-      await store.lookup(key.threadId, [key.toolCallId]),
-      outstanding,
-      `${kind}: rejected receipt must preserve the executing owner`
-    );
     assert.deepEqual(handlers, ['owner']);
     assert.equal(records.length, 0);
     assert.equal(writes.length, 0);
@@ -380,22 +352,6 @@ async function scenario(
       streams.filter((item) => item.session === 'owner' && item.continuation)
         .length,
       1
-    );
-    assert.deepEqual(
-      await bounded(
-        recordClientToolResults({
-          threadId: key.threadId,
-          messages: [conflictingReceipt],
-          store,
-        }),
-        `${kind}: completed receipt deduplication`
-      ),
-      { recordedToolCallIds: [], duplicateToolCallIds: [key.toolCallId] }
-    );
-    assert.deepEqual(
-      await store.lookup(key.threadId, [key.toolCallId]),
-      done,
-      `${kind}: duplicate receipt must preserve the owner's result`
     );
 
     const fresh = session('fresh');
@@ -461,7 +417,7 @@ async function scenario(
       ]);
     }
     console.log(
-      `${kind}: claim and receipt ownership, saved result reuse, and history recovery passed`
+      `${kind}: execution ownership, saved result reuse, and history recovery passed`
     );
   } finally {
     release.resolve(ownerValue);
@@ -483,13 +439,11 @@ async function identityScenario(
       status: 'done', result: { ok: true, value: `saved-${id}` },
     }])
   );
-  await bounded(recordClientToolResults({
-    threadId,
-    messages: ids.map((id) => new ToolMessage({
-      tool_call_id: id, content: `saved-${id}`,
-    })),
-    store,
-  }), `${kind}: special-ID receipts`);
+  for (const toolCallId of ids) {
+    const key = { threadId, toolCallId };
+    assert.equal(await bounded(store.claim(key), `${kind}: special-ID claim`), 'claimed');
+    await bounded(store.record(key, { ok: true, value: `saved-${toolCallId}` }), `${kind}: special-ID owner record`);
+  }
   const found = await bounded(
     store.lookup(threadId, [...ids, 'missing']), `${kind}: special-ID lookup`
   );
@@ -502,12 +456,14 @@ async function identityScenario(
   const alternate = { ok: true as const, value: 'other scope' };
   const otherThread = 'identity-other-thread';
   assert.deepEqual(await bounded(store.lookup(otherThread, ids), `${kind}: other thread`), {});
+  assert.equal(await bounded(store.claim({ threadId: otherThread, toolCallId: '__proto__' }), `${kind}: other thread claim`), 'claimed');
   await bounded(store.record({ threadId: otherThread, toolCallId: '__proto__' }, alternate), `${kind}: other thread record`);
   assert.deepEqual(await bounded(store.lookup(otherThread, ['__proto__']), `${kind}: other thread lookup`), {
     ['__proto__']: { status: 'done', result: alternate },
   });
   if (otherTenant) {
     assert.deepEqual(await bounded(otherTenant.lookup(threadId, ids), `${kind}: other tenant`), {});
+    assert.equal(await bounded(otherTenant.claim({ threadId, toolCallId: '__proto__' }), `${kind}: other tenant claim`), 'claimed');
     await bounded(otherTenant.record({ threadId, toolCallId: '__proto__' }, alternate), `${kind}: other tenant record`);
     assert.deepEqual(await bounded(otherTenant.lookup(threadId, ['__proto__']), `${kind}: other tenant lookup`), {
       ['__proto__']: { status: 'done', result: alternate },
@@ -515,7 +471,7 @@ async function identityScenario(
   }
   found['__proto__'].status = 'failed';
   assert.deepEqual(await bounded(store.lookup(threadId, ids), `${kind}: original detached lookup`), expected);
-  console.log(`${kind}: special-ID receipt lookup, serialization and scope isolation passed`);
+  console.log(`${kind}: special-ID execution lookup, string results, serialization and scope isolation passed`);
 }
 
 async function main(): Promise<void> {

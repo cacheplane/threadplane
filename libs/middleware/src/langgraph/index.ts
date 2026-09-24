@@ -22,17 +22,6 @@ export type {
   ClientToolResult,
 } from './client-tool-execution-store.js';
 export {
-  extractClientToolResultMessages,
-  filterDuplicateClientToolResultMessages,
-  lookupClientToolExecutions,
-  recordClientToolResults,
-} from './client-tool-result-guard.js';
-export type {
-  ClientToolResultMessage,
-  RecordClientToolResultsInput,
-  RecordClientToolResultsResult,
-} from './client-tool-result-guard.js';
-export {
   THREADPLANE_CLIENT_TOOL_EXECUTIONS_SCHEMA,
   createPostgresClientToolExecutionStore,
 } from './postgres-client-tool-execution-store.js';

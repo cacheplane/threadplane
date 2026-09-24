@@ -90,38 +90,21 @@ import {
 } from '@threadplane/middleware/langgraph';
 ```
 
-## Durable client-tool result guard
+## Execution stores and receipt helper removal
 
-Tier 1 durable dedup records inbound client-tool `ToolMessage` results by
-`tool_call_id` before the graph continues. A duplicate redelivery can then be
-filtered before server continuation logic sees it.
+The receipt helpers `extractClientToolResultMessages`,
+`filterDuplicateClientToolResultMessages`, `lookupClientToolExecutions`, and
+`recordClientToolResults` have been deliberately removed. Their helper-only types
+`ClientToolResultMessage`, `RecordClientToolResultsInput`, and
+`RecordClientToolResultsResult` are also removed. This is a breaking API change:
+remove those imports and any receipt-ingestion or message-filtering integration.
+There is no replacement receipt helper or compatibility alias.
 
-```ts
-import {
-  createInMemoryClientToolExecutionStore,
-  filterDuplicateClientToolResultMessages,
-  recordClientToolResults,
-} from '@threadplane/middleware/langgraph';
-
-const clientToolExecutions = createInMemoryClientToolExecutionStore();
-
-async function agent(state: typeof State.State, config: { configurable?: { thread_id?: string } }) {
-  const threadId = config.configurable?.thread_id ?? 'default-thread';
-  const guard = await recordClientToolResults({
-    threadId,
-    messages: state.messages,
-    store: clientToolExecutions,
-  });
-  const messages = filterDuplicateClientToolResultMessages({
-    messages: state.messages,
-    duplicateToolCallIds: new Set(guard.duplicateToolCallIds),
-  });
-
-  const llm = bindClientTools(baseLlm, SERVER_TOOLS, state);
-  const response = await llm.invoke(messages);
-  return { messages: [response] };
-}
-```
+`createInMemoryClientToolExecutionStore()` and
+`createPostgresClientToolExecutionStore()` retain the `claim`, `record`, and
+`lookup` execution-store contract. A caller that acquires a claim can execute a
+tool and record its result; a later caller can reuse the saved result. In-memory
+records live only for the lifetime of that store instance.
 
 For persistent storage, create the table once and pass a `postgres`-style SQL
 tag to the Postgres store:
@@ -139,26 +122,18 @@ await sql.unsafe(THREADPLANE_CLIENT_TOOL_EXECUTIONS_SCHEMA);
 const clientToolExecutions = createPostgresClientToolExecutionStore(sql);
 ```
 
-M3 is server-side Tier 1 only: it dedups delivered client-tool results and
-supports lookup-based reload reconciliation. Pre-execution claims for
-non-idempotent browser effects are a later opt-in layer.
+These stores do not yet persist durable invocation provenance: identity is a
+thread and tool-call ID (plus the configured PostgreSQL tenant), without a
+verified tool name or argument identity, and without a guarantee of lossless
+result fidelity. `record` does not
+authenticate an owner token. Applications must coordinate which claimant may
+write a result and handle unresolved executions themselves.
 
-Always await `recordClientToolResults` before continuing to the model. It records
-only receipts for which it acquired a new claim and reports existing `done`
-records as duplicates. An existing `executing` or `failed` record rejects
-ingestion without changing that record. An unresolved receipt claim needs
-external reconciliation; this helper does not retry or take over another claim.
-
-Processing is per receipt, not a transaction across the batch. Earlier receipts
-may already be recorded when a later one rejects. A rejected acknowledgement can
-also follow a committed write. A recorded receipt does not prove that the graph
-consumed it, so replaying a partial batch is not guaranteed recovery.
-
-Keep delivery receipts and pre-execution claims in disjoint persisted namespaces
-or separate storage. Two PostgreSQL store objects using the same database, table
-and tenant share records; separate in-memory instances have separate maps.
-Receipt deduplication by call ID does not establish invocation equivalence or
-reconstruct an authored result type from serialized message content.
+A saved result does not establish that a redelivered call is the same invocation,
+prove that the graph consumed it, or guarantee exactly-once effects. Do not use
+the execution records as delivery receipts or filter graph history based on
+them. Two PostgreSQL stores using the same database, table, and tenant share
+records. No new receipt table is introduced by this removal.
 
 ## Peer dependencies
 

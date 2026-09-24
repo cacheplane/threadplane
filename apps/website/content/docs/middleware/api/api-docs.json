@@ -282,26 +282,6 @@
     "examples": []
   },
   {
-    "name": "ClientToolResultMessage",
-    "kind": "interface",
-    "description": "",
-    "properties": [
-      {
-        "name": "result",
-        "type": "ClientToolResult",
-        "description": "",
-        "optional": false
-      },
-      {
-        "name": "toolCallId",
-        "type": "string",
-        "description": "",
-        "optional": false
-      }
-    ],
-    "examples": []
-  },
-  {
     "name": "ClientToolSpec",
     "kind": "interface",
     "description": "A frontend-declared client tool: name + description + JSON-Schema parameters.",
@@ -383,52 +363,6 @@
         "type": "string | null",
         "description": "Tenant scope for every read and write. Defaults to `''` (the single-tenant scope).",
         "optional": true
-      }
-    ],
-    "examples": []
-  },
-  {
-    "name": "RecordClientToolResultsInput",
-    "kind": "interface",
-    "description": "",
-    "properties": [
-      {
-        "name": "messages",
-        "type": "readonly BaseMessage<MessageStructure<MessageToolSet>, MessageType>[]",
-        "description": "",
-        "optional": false
-      },
-      {
-        "name": "store",
-        "type": "ClientToolExecutionStore",
-        "description": "",
-        "optional": false
-      },
-      {
-        "name": "threadId",
-        "type": "string",
-        "description": "",
-        "optional": false
-      }
-    ],
-    "examples": []
-  },
-  {
-    "name": "RecordClientToolResultsResult",
-    "kind": "interface",
-    "description": "",
-    "properties": [
-      {
-        "name": "duplicateToolCallIds",
-        "type": "string[]",
-        "description": "",
-        "optional": false
-      },
-      {
-        "name": "recordedToolCallIds",
-        "type": "string[]",
-        "description": "",
-        "optional": false
       }
     ],
     "examples": []
@@ -619,44 +553,6 @@
     "examples": []
   },
   {
-    "name": "extractClientToolResultMessages",
-    "kind": "function",
-    "description": "Extract serialized client-tool results from LangGraph ToolMessages.",
-    "signature": "extractClientToolResultMessages(messages: readonly BaseMessage<MessageStructure<MessageToolSet>, MessageType>[]): ClientToolResultMessage[]",
-    "params": [
-      {
-        "name": "messages",
-        "type": "readonly BaseMessage<MessageStructure<MessageToolSet>, MessageType>[]",
-        "description": "",
-        "optional": false
-      }
-    ],
-    "returns": {
-      "type": "ClientToolResultMessage[]",
-      "description": ""
-    },
-    "examples": []
-  },
-  {
-    "name": "filterDuplicateClientToolResultMessages",
-    "kind": "function",
-    "description": "Remove duplicate client-tool result messages before server continuation logic sees them.",
-    "signature": "filterDuplicateClientToolResultMessages(input: object): BaseMessage<MessageStructure<MessageToolSet>, MessageType>[]",
-    "params": [
-      {
-        "name": "input",
-        "type": "object",
-        "description": "",
-        "optional": false
-      }
-    ],
-    "returns": {
-      "type": "BaseMessage<MessageStructure<MessageToolSet>, MessageType>[]",
-      "description": ""
-    },
-    "examples": []
-  },
-  {
     "name": "hasClientToolCall",
     "kind": "function",
     "description": "True if the last message calls at least one client tool.",
@@ -715,44 +611,6 @@
     ],
     "returns": {
       "type": "BaseMessage<MessageStructure<MessageToolSet>, MessageType> | undefined",
-      "description": ""
-    },
-    "examples": []
-  },
-  {
-    "name": "lookupClientToolExecutions",
-    "kind": "function",
-    "description": "Lookup prior client-tool executions for reload reconciliation.",
-    "signature": "lookupClientToolExecutions(input: object): Promise<Record<string, ClientToolExecutionRecord>>",
-    "params": [
-      {
-        "name": "input",
-        "type": "object",
-        "description": "",
-        "optional": false
-      }
-    ],
-    "returns": {
-      "type": "Promise<Record<string, ClientToolExecutionRecord>>",
-      "description": ""
-    },
-    "examples": []
-  },
-  {
-    "name": "recordClientToolResults",
-    "kind": "function",
-    "description": "Record newly claimed receipts and identify already-done duplicates.\nAwait before graph continuation: existing executing/failed records reject\nwithout being changed. A batch is not transactional; earlier receipts may\nalready be recorded when a later receipt rejects.",
-    "signature": "recordClientToolResults(input: RecordClientToolResultsInput): Promise<RecordClientToolResultsResult>",
-    "params": [
-      {
-        "name": "input",
-        "type": "RecordClientToolResultsInput",
-        "description": "",
-        "optional": false
-      }
-    ],
-    "returns": {
-      "type": "Promise<RecordClientToolResultsResult>",
       "description": ""
     },
     "examples": []

@@ -80,6 +80,18 @@ function readNamedStep(job, name) {
 }
 
 describe('CI workflow', () => {
+  it('requires middleware lint, tests, build, and standalone package verification in the library job', async () => {
+    const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'library');
+    const libraries = job.match(/LIBS: ([^\n]+)/)?.[1].split(',');
+    assert.ok(libraries?.includes('middleware'), 'middleware must join the lint/build library set');
+    assert.match(job, /run-many -t lint --projects=\$LIBS/);
+    const tests = job.match(/run-many -t test --projects=([^\s]+)/)?.[1].split(',');
+    assert.ok(tests?.includes('middleware'), 'middleware needs the separately enumerated test gate');
+    const build = job.indexOf('run-many -t build --projects=$LIBS');
+    const verify = job.indexOf('node scripts/react-parity/verify-middleware-package.mjs');
+    assert.ok(build >= 0 && verify > build, 'standalone middleware gate must run after build');
+    assert.doesNotMatch(job, /continue-on-error: true/);
+  });
   it('verifies pull requests against any base while push and deployment stay main-only', async () => {
     const workflow = withoutYamlCommentLines(await readFile('.github/workflows/ci.yml', 'utf8'));
     const triggers = workflow.slice(workflow.indexOf('on:'), workflow.indexOf('\nconcurrency:'));
@@ -306,7 +318,7 @@ describe('CI workflow', () => {
     );
     assert.match(
       libraryJob,
-      /npx nx run-many -t test --projects=chat,ag-ui,render,a2ui,telemetry --coverage --parallel=1 --maxWorkers=2/
+      /npx nx run-many -t test --projects=chat,ag-ui,render,a2ui,telemetry,middleware --coverage --parallel=1 --maxWorkers=2/
     );
   });
 

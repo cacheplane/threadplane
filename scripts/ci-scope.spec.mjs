@@ -40,8 +40,15 @@ const POSTHOG_TAGS = ['scope:posthog'];
 const GROWTH_LIFECYCLE_TAGS = ['scope:growth-lifecycle'];
 
 describe('React migration baseline scope', () => {
+  it('selects required library checks for the middleware project through its actual tags', async () => {
+    const project = JSON.parse(await readFile('libs/middleware/project.json', 'utf8'));
+    const scope = classifyFromAffected(['libs/middleware/src/langgraph/index.ts'], [{ name: project.name, tags: project.tags }]);
+    assert.equal(scope.library, true);
+  });
   for (const file of [
     'scripts/react-parity/inventory.mjs',
+    'scripts/react-parity/verify-middleware-package.mjs',
+    'fixtures/react-parity/consumers/middleware/contracts.ts',
     'fixtures/react-parity/traces/ag-ui-text-state.sse',
     'fixtures/react-parity/runtime/scenarios.ts',
     'fixtures/react-parity/runtime/vite.config.mts',
