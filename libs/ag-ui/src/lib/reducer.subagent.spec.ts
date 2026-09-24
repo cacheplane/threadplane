@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { signal } from '@angular/core';
 import { Subject } from 'rxjs';
 import {
@@ -19,6 +19,7 @@ interface TestDeliveryRun {
   currentAssistantMessageId?: string;
   eligibleBaselineAssistantId?: string;
   protocolRunId?: string;
+  pendingReasoning?: { messageId: string; startedAt: number };
   outcome?: 'success' | 'error' | 'aborted' | 'interrupted' | 'paused';
 }
 
@@ -52,7 +53,167 @@ function makeStore(generation = 'run-generation-1'): TestStore {
 
 const ev = (e: Record<string, unknown>) => e as unknown as BaseEvent;
 
+describe('reduceEvent attributed child reasoning', () => {
+  const reasoningTypes = ['START', 'CONTENT', 'CHUNK', 'END'];
+  const reason = (store: TestStore, type: string, fields: Record<string, unknown> = {}) =>
+    reduceEvent(ev({ type: `REASONING_MESSAGE_${type}`, subagentRunId: 'child', messageId: 'shared', ...fields }), store);
+
+  it.each(['shared', 'different'])('isolates child message %s from the parent, sibling and root timer', childMessageId => {
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(100);
+    try {
+      const store = makeStore();
+      reduceEvent(ev({ type: 'REASONING_MESSAGE_START', messageId: 'shared' }), store);
+      reduceEvent(ev({ type: 'REASONING_MESSAGE_CONTENT', messageId: 'shared', delta: 'parent' }), store);
+      reduceEvent(ev({ type: 'TEXT_MESSAGE_CONTENT', subagentRunId: 'sibling', messageId: childMessageId, delta: 'sibling' }), store);
+      const parent = store.messages();
+      const tools = store.toolCalls();
+      const pending = store.deliveryRun!.pendingReasoning;
+      const sibling = store.activities().get('sibling')!;
+      const siblingContent = sibling.content();
+      clock.mockReturnValue(200);
+      reason(store, 'START', { messageId: childMessageId });
+      reason(store, 'CONTENT', { messageId: childMessageId, delta: '  child\n' });
+      reason(store, 'CHUNK', { messageId: childMessageId, delta: 'reasoning  ' });
+      reason(store, 'END', { messageId: childMessageId });
+      expect(store.messages()).toBe(parent);
+      expect(store.messages()[0]).toBe(parent[0]);
+      expect(store.toolCalls()).toBe(tools);
+      expect(store.deliveryRun!.pendingReasoning).toBe(pending);
+      expect(store.deliveryRun!.currentAssistantMessageId).toBe('shared');
+      expect([...store.deliveryRun!.ownedMessageIds]).toEqual(['shared']);
+      expect(store.activities().get('sibling')).toBe(sibling);
+      expect(sibling.content()).toBe(siblingContent);
+      expect(store.activities().get('child')!.content()['messages']).toEqual([
+        { id: childMessageId, role: 'assistant', content: '', reasoning: '  child\nreasoning  ' },
+      ]);
+      expect(store.deliveryRun!.outcome).toBeUndefined();
+      clock.mockReturnValue(400);
+      reduceEvent(ev({ type: 'REASONING_MESSAGE_END', messageId: 'shared' }), store);
+      expect(store.messages()[0].reasoningDurationMs).toBe(300);
+    } finally {
+      clock.mockRestore();
+    }
+  });
+
+  it.each(['CONTENT', 'CHUNK'])('buffers %s before STARTED and preserves reasoning through identity refresh', type => {
+    const store = makeStore();
+    reason(store, type, { delta: 'early' });
+    const buffered = store.activities().get('child');
+    expect(buffered?.content()['messages']).toMatchObject([{ reasoning: 'early', content: '' }]);
+    reduceEvent(ev({ type: 'SUBAGENT_STARTED', subagentRunId: 'child', name: 'researcher', parentToolCallId: 'parent-tool' }), store);
+    const announced = store.activities().get('child')!;
+    expect(announced.generation).not.toBe(buffered?.generation);
+    expect(announced.content()).toMatchObject({ name: 'researcher', toolCallId: 'parent-tool', messages: [{ reasoning: 'early' }] });
+    const activities = store.activities();
+    reason(store, 'CHUNK', { delta: ' later' });
+    expect(store.activities()).toBe(activities);
+    expect(store.activities().get('child')).toBe(announced);
+    expect(announced.content()['messages']).toMatchObject([{ reasoning: 'early later' }]);
+  });
+
+  it('keeps reasoning, answer and tool links in one slot across empty deltas and duplicate START', () => {
+    const store = makeStore();
+    reason(store, 'START');
+    expect(store.activities().get('child')?.content()['messages']).toEqual([{ id: 'shared', role: 'assistant', content: '', reasoning: '' }]);
+    reason(store, 'CONTENT', { delta: 'thought' });
+    reduceEvent(ev({ type: 'TOOL_CALL_START', subagentRunId: 'child', toolCallId: 'tool', toolCallName: 'lookup', parentMessageId: 'shared' }), store);
+    reduceEvent(ev({ type: 'TEXT_MESSAGE_START', subagentRunId: 'child', messageId: 'shared' }), store);
+    reduceEvent(ev({ type: 'TEXT_MESSAGE_CONTENT', subagentRunId: 'child', messageId: 'shared', delta: 'answer' }), store);
+    reason(store, 'START');
+    reason(store, 'START');
+    reason(store, 'CONTENT', { delta: '' });
+    reason(store, 'CHUNK');
+    expect(store.activities().get('child')!.content()['messages']).toEqual([
+      { id: 'shared', role: 'assistant', content: 'answer', reasoning: 'thought', toolCallIds: ['tool'] },
+    ]);
+    expect(store.messages()).toEqual([]);
+    expect(store.toolCalls()).toEqual([]);
+  });
+
+  it('END alone and duplicate END do not allocate, bind a run, or change existing content', () => {
+    const store = makeStore();
+    const activities = store.activities();
+    const messages = store.messages();
+    reason(store, 'END', { runId: 'unbound' });
+    expect(store.activities()).toBe(activities);
+    expect(store.messages()).toBe(messages);
+    expect(store.deliveryRun!.protocolRunId).toBeUndefined();
+    reason(store, 'CONTENT', { delta: 'thought' });
+    const entry = store.activities().get('child')!;
+    const content = entry.content();
+    reason(store, 'END', { runId: 'unbound' });
+    reason(store, 'END', { runId: 'unbound' });
+    expect(entry.content()).toBe(content);
+    expect(store.deliveryRun!.protocolRunId).toBeUndefined();
+    expect(store.deliveryRun!.outcome).toBeUndefined();
+  });
+
+  it.each(['SUBAGENT_FINISHED', 'SUBAGENT_ERROR'])('rejects every reasoning event after %s without binding the root run', terminalType => {
+    const store = makeStore();
+    reduceEvent(ev({ type: 'SUBAGENT_STARTED', subagentRunId: 'child', name: 'researcher' }), store);
+    reduceEvent(ev({ type: terminalType, subagentRunId: 'child', message: 'failed' }), store);
+    const activities = store.activities();
+    const entry = activities.get('child')!;
+    const content = entry.content();
+    const messages = store.messages();
+    for (const type of reasoningTypes) reason(store, type, { runId: 'unbound', delta: 'late' });
+    expect(store.activities()).toBe(activities);
+    expect(entry.content()).toBe(content);
+    expect(store.messages()).toBe(messages);
+    expect(store.deliveryRun!.protocolRunId).toBeUndefined();
+    expect(store.deliveryRun!.pendingReasoning).toBeUndefined();
+  });
+
+  it('accepts reasoning for a suspended child and retains the re-announced identity', () => {
+    const store = makeStore();
+    reason(store, 'CONTENT', { delta: 'before' });
+    reduceEvent(ev({ type: 'SUBAGENT_STARTED', subagentRunId: 'child', name: 'researcher' }), store);
+    const entry = store.activities().get('child')!;
+    reduceEvent(ev({ type: 'SUBAGENT_FINISHED', subagentRunId: 'child', outcome: { type: 'suspended' } }), store);
+    reason(store, 'CHUNK', { delta: ' during' });
+    reduceEvent(ev({ type: 'SUBAGENT_STARTED', subagentRunId: 'child', name: 'researcher' }), store);
+    expect(store.activities().get('child')).toBe(entry);
+    expect(entry.content()).toMatchObject({ status: 'running', messages: [{ reasoning: 'before during' }] });
+  });
+
+  it.each(['missing', 'settled', 'foreign'])('rejects every child reasoning event with a %s root run before mutation', state => {
+    const store = makeStore();
+    if (state === 'missing') store.deliveryRun = null;
+    else if (state === 'settled') store.deliveryRun!.outcome = 'success';
+    else store.deliveryRun!.protocolRunId = 'current';
+    const runBefore = store.deliveryRun ? { ...store.deliveryRun } : null;
+    const activities = store.activities();
+    const messages = store.messages();
+    for (const type of reasoningTypes) reason(store, type, { runId: 'foreign', delta: 'late' });
+    expect(store.activities()).toBe(activities);
+    expect(store.messages()).toBe(messages);
+    expect(store.deliveryRun).toEqual(runBefore);
+  });
+
+  it('accepts matching run IDs and binds an initially unbound active run', () => {
+    const store = makeStore();
+    reason(store, 'START', { runId: 'current' });
+    reason(store, 'CONTENT', { runId: 'current', delta: 'thought' });
+    expect(store.deliveryRun!.protocolRunId).toBe('current');
+    expect(store.activities().get('child')?.content()['messages']).toMatchObject([{ reasoning: 'thought' }]);
+  });
+});
+
 describe('reduceEvent SUBAGENT_* lifecycle', () => {
+  it('keeps child reasoning with its child even when the parent uses the same message ID', () => {
+    const store = makeStore();
+    reduceEvent(ev({ type: 'REASONING_MESSAGE_START', messageId: 'shared' }), store);
+    reduceEvent(ev({ type: 'REASONING_MESSAGE_CONTENT', messageId: 'shared', delta: 'parent reasoning' }), store);
+    const parentMessages = store.messages();
+    reduceEvent(ev({ type: 'SUBAGENT_STARTED', subagentRunId: 'child', name: 'researcher' }), store);
+    reduceEvent(ev({ type: 'REASONING_MESSAGE_START', messageId: 'shared', subagentRunId: 'child' }), store);
+    reduceEvent(ev({ type: 'REASONING_MESSAGE_CONTENT', messageId: 'shared', subagentRunId: 'child', delta: 'child reasoning' }), store);
+    expect(store.messages()).toBe(parentMessages);
+    expect(store.activities().get('child')?.content()['messages']).toMatchObject([
+      { id: 'shared', role: 'assistant', content: '', reasoning: 'child reasoning' },
+    ]);
+  });
+
   it('SUBAGENT_STARTED creates a running subagent activity entry', () => {
     const store = makeStore();
     reduceEvent(ev({ type: 'SUBAGENT_STARTED', subagentRunId: 'sa-1', name: 'researcher', parentToolCallId: 'call-9' }), store);

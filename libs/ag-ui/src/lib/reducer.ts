@@ -120,8 +120,8 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
   // A subagentRunId on a content event means the child produced it: route it
   // into that subagent's activity entry and never into the parent transcript —
   // the same structural rule @threadplane/langgraph applies to namespaced
-  // events. Scope: text + tool events (what our emitters produce). Reasoning/
-  // step attribution is deliberately not routed yet (YAGNI).
+  // events. Scope: text, tool and reasoning message events. Step attribution
+  // is not routed yet.
   const subagentRunId = (event as { subagentRunId?: string }).subagentRunId;
   if (subagentRunId && SUBAGENT_ROUTED_TYPES.has(event.type as string)) {
     routeSubagentContentEvent(subagentRunId, event, store);
@@ -599,6 +599,8 @@ function randomId(): string {
 const SUBAGENT_ROUTED_TYPES = new Set([
   'TEXT_MESSAGE_START', 'TEXT_MESSAGE_CONTENT', 'TEXT_MESSAGE_END',
   'TOOL_CALL_START', 'TOOL_CALL_ARGS', 'TOOL_CALL_END', 'TOOL_CALL_RESULT',
+  'REASONING_MESSAGE_START', 'REASONING_MESSAGE_CONTENT',
+  'REASONING_MESSAGE_CHUNK', 'REASONING_MESSAGE_END',
 ]);
 
 function subagentArgsBufferKey(subagentRunId: string, toolCallId: string): string {
@@ -638,6 +640,17 @@ function ensureSubagentEntry(subagentRunId: string, store: ReducerStore): Activi
  *  TOOL_CALL cases above, but written against the entry's content record
  *  instead of store.messages/store.toolCalls. */
 function routeSubagentContentEvent(subagentRunId: string, event: BaseEvent, store: ReducerStore): void {
+  if (event.type === 'REASONING_MESSAGE_START' || event.type === 'REASONING_MESSAGE_CONTENT'
+    || event.type === 'REASONING_MESSAGE_CHUNK' || event.type === 'REASONING_MESSAGE_END') {
+    if (!store.deliveryRun || store.deliveryRun.outcome !== undefined) return;
+    // END carries no child timing or lifecycle effect, even before STARTED.
+    // Reject inert/terminal events before currentRunForEvent can bind a run ID.
+    if (event.type === 'REASONING_MESSAGE_END') return;
+    const existing = store.activities().get(subagentRunId);
+    const status = existing?.content()['status'];
+    if (existing?.activityType === 'subagent' && (status === 'complete' || status === 'error')) return;
+    if (!currentRunForEvent(event, store)) return;
+  }
   const entry = ensureSubagentEntry(subagentRunId, store); // buffer-not-drop: creates on first sight
   const e = event as unknown as Record<string, unknown>;
 
@@ -664,6 +677,16 @@ function routeSubagentContentEvent(subagentRunId: string, event: BaseEvent, stor
     const messages = [...((c['messages'] as Array<Record<string, unknown>>) ?? [])];
     const toolCalls = [...((c['toolCalls'] as Array<Record<string, unknown>>) ?? [])];
     switch (event.type as string) {
+      case 'REASONING_MESSAGE_START':
+      case 'REASONING_MESSAGE_CONTENT':
+      case 'REASONING_MESSAGE_CHUNK': {
+        const id = e['messageId'] as string;
+        const idx = messages.findIndex((m) => m['id'] === id);
+        const delta = event.type === 'REASONING_MESSAGE_START' ? '' : (e['delta'] as string) ?? '';
+        if (idx < 0) messages.push({ id, role: 'assistant', content: '', reasoning: delta });
+        else messages[idx] = { ...messages[idx], reasoning: `${messages[idx]['reasoning'] ?? ''}${delta}` };
+        return { ...c, messages };
+      }
       case 'TEXT_MESSAGE_START': {
         const id = e['messageId'] as string;
         if (!messages.some((m) => m['id'] === id)) messages.push({ id, role: 'assistant', content: '' });
