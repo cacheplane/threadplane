@@ -272,9 +272,100 @@ describe('applyPatch — safe own data keys', () => {
     const out = applyPatch(input, [{ op: 'replace', path: '/__proto__/value', value: 2 }]);
     expect(Object.getPrototypeOf(input)).toBe(null);
     expect(Object.hasOwn(out, '__proto__')).toBe(true);
-    expect(Object.getPrototypeOf(out)).toBe(Object.prototype);
+    expect(Object.getPrototypeOf(out)).toBe(null);
     expect(out['__proto__']).toEqual({ value: 2 });
     expect(input['__proto__']).toEqual({ value: 1 });
+  });
+});
+
+describe('applyPatch — portable data fidelity', () => {
+  function payload() {
+    const items = new Array(3);
+    items[1] = undefined;
+    items[2] = { value: 1 };
+    Object.defineProperty(items, 'extra', { value: { value: 2 }, enumerable: true });
+    const value = Object.assign(Object.create(null), { optional: undefined, items });
+    return Object.freeze(value);
+  }
+
+  it.each(['add', 'replace', 'copy'] as const)('captures complete %s payloads without trusting frozen parents', (op) => {
+    const value = payload();
+    const input = { source: value, result: null };
+    const output = applyPatch(input, [op === 'copy'
+      ? { op, from: '/source', path: '/result' }
+      : { op, path: '/result', value }]);
+    const result = output.result as unknown as typeof value;
+    expect(Object.getPrototypeOf(result)).toBe(null);
+    expect(Object.keys(result)).toEqual(['optional', 'items']);
+    expect(Object.keys(result.items)).toEqual(['1', '2', 'extra']);
+    expect(result.items.length).toBe(3);
+    expect(result.items[1]).toBeUndefined();
+    expect(result.items).not.toBe(value.items);
+    expect(result.items.extra).not.toBe(value.items.extra);
+    expect(Object.isFrozen(value.items)).toBe(false);
+    value.items[2].value = 9;
+    expect(result.items[2].value).toBe(1);
+  });
+
+  for (const constructor of [null, 1]) {
+    for (const op of [
+      { op: 'add', path: '/items/0', value: { value: 9 } },
+      { op: 'remove', path: '/items/1' },
+      { op: 'replace', path: '/items/1/value', value: 9 },
+      { op: 'add', path: '/items/1/added', value: 9 },
+      { op: 'remove', path: '/items/1/value' },
+      { op: 'move', from: '/items/1', path: '/items/0' },
+      { op: 'copy', from: '/items/1', path: '/items/0' },
+    ] satisfies JsonPatchOp[]) {
+      it(`preserves frozen sparse ancestors and extensions for ${op.op} ${op.path}, constructor=${constructor}`, () => {
+        const items = new Array(3);
+        items[1] = Object.freeze({ value: 1 });
+        items[2] = undefined;
+        const extra = { unchanged: true };
+        for (const [key, value] of Object.entries({ extra, constructor, splice: 'payload', __proto__: null })) {
+          Object.defineProperty(items, key, { value, enumerable: true });
+        }
+        Object.defineProperty(items, '__proto__', { value: extra, enumerable: true });
+        Object.freeze(items);
+        const input = Object.freeze(Object.assign(Object.create(null), { items, untouched: extra }));
+        const descriptors = Object.getOwnPropertyDescriptors(items);
+        const output = applyPatch(input, [op]);
+        expect(Object.getPrototypeOf(output)).toBe(null);
+        expect(Object.getPrototypeOf(output.items)).toBe(Array.prototype);
+        for (const key of ['extra', 'constructor', 'splice', '__proto__']) {
+          expect(Object.hasOwn(output.items, key)).toBe(true);
+          expect(output.items[key]).toBe(items[key]);
+        }
+        expect(output.untouched).toBe(extra);
+        expect(Object.getOwnPropertyDescriptors(items)).toEqual(descriptors);
+        const inserted = op.op === 'add' && op.path === '/items/0' || op.op === 'copy';
+        const removed = op.op === 'remove' && op.path === '/items/1';
+        expect(output.items.length).toBe(inserted ? 4 : removed ? 2 : 3);
+        const hole = inserted || op.op === 'move' ? 1 : 0;
+        expect(Object.hasOwn(output.items, hole)).toBe(false);
+        expect(Object.hasOwn(output.items, output.items.length - 1)).toBe(true);
+        expect(output.items[output.items.length - 1]).toBeUndefined();
+      });
+    }
+  }
+
+  it('tests array own keys, holes, extensions and length as data', () => {
+    const hole = new Array(1);
+    expect(() => applyPatch(hole, [{ op: 'test', path: '', value: [undefined] }])).toThrow(/test/);
+    const extended = Object.assign([undefined], { extra: undefined });
+    expect(() => applyPatch(extended, [{ op: 'test', path: '', value: [undefined] }])).toThrow(/test/);
+    expect(() => applyPatch(extended, [{ op: 'test', path: '', value: Object.assign([undefined], { other: undefined }) }])).toThrow(/test/);
+    expect(() => applyPatch(extended, [{ op: 'test', path: '', value: Object.assign([undefined], { extra: 1 }) }])).toThrow(/test/);
+    expect(applyPatch(extended, [{ op: 'test', path: '', value: Object.assign([undefined], { extra: undefined }) }])).toBe(extended);
+    expect(() => applyPatch(hole, [{ op: 'test', path: '', value: new Array(2) }])).toThrow(/test/);
+    expect(applyPatch(0, [{ op: 'test', path: '', value: -0 }])).toBe(0);
+    expect(applyPatch(Object.create(null), [{ op: 'test', path: '', value: {} }])).toEqual({});
+  });
+
+  it.each([new Date(), () => undefined, Symbol('payload'), { nested: () => undefined }])('rejects nonportable inserted payload %s atomically', (value) => {
+    const input = { value: { original: true } };
+    expect(() => applyPatch(input, [{ op: 'replace', path: '/value', value }])).toThrow(TypeError);
+    expect(input).toEqual({ value: { original: true } });
   });
 });
 

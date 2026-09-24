@@ -8552,7 +8552,16 @@
         "T12"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "note": "Shared six-operation path-copy helper preserves portable payload and ancestor shape, own array keys and atomic failure. Private state ownership composes it without exposing a public state or session API."
+    },
+    {
+      "id": "source:libs/ag-ui/src/lib/internal/copy-data.ts",
+      "taskIds": ["T12", "T13"],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Dependency-free portable-data capture shared by private runtime ownership and the legacy patch helper; no public export.",
+      "note": "Extracted unchanged capture algorithm from transcript ownership. Preserves own enumerable plain data, undefined, sparse arrays and null prototypes, and rejects nonportable values or cycles."
     },
     {
       "id": "source:libs/ag-ui/src/lib/interrupt-persistence.ts",
@@ -8683,6 +8692,14 @@
       "note": "Captures complete replacement records, preserves existing ID order and omitted reasoning/activity roles, and rejects duplicate IDs atomically. Seeded HTTP coverage proves reconciliation and request egress; stream reduction, session integration and public parity remain separate migration work."
     },
     {
+      "id": "source:libs/ag-ui/src/runtime/state.ts",
+      "taskIds": ["T12", "T13"],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private immutable state snapshot, delta and mutable request ownership; excluded from public exports and legacy Angular reachability.",
+      "note": "Captures literal state and complete delta data, propagates patch errors atomically, and preserves prior observations. Changed state uses full graph capture. Actual HTTP covers incremental state, egress and error closure; routing, session integration and public parity remain separate migration work. Local portable fidelity is distinct from JSON wire fidelity."
+    },
+    {
       "id": "source:libs/ag-ui/src/runtime/text-messages.ts",
       "taskIds": ["T12", "T13"],
       "treatment": "internal",
@@ -8696,7 +8713,7 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private immutable AG-UI transcript ownership and explicit mutable request projection; excluded from public exports and legacy Angular reachability.",
-      "note": "Preserves complete observed portable protocol data, excludes activity and null top-level child attribution only at request egress. Session snapshot replacement, stream reduction, provider normalization and public parity remain separate migration work."
+      "note": "Preserves complete observed portable protocol data using the shared internal copier; selects request messages by own array indices without consulting payload methods or constructor. Excludes activity and null top-level child attribution only at request egress. Session integration, provider normalization and public parity remain separate migration work."
     },
     {
       "id": "source:libs/ag-ui/src/test-setup.ts",
