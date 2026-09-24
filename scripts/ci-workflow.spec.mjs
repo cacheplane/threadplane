@@ -114,6 +114,9 @@ describe('CI workflow', () => {
     assert.match(job, /npx nx run langgraph:runtime-quality/);
     assert.match(job, /npx nx run langgraph:runtime-type-tests/);
     assert.match(job, /npx nx run langgraph:type-tests/);
+    assert.match(job, /npx nx run ag-ui:runtime-quality/);
+    assert.match(job, /npx nx run ag-ui:runtime-type-tests/);
+    assert.match(job, /npx nx run ag-ui:type-tests/);
     const install = job.indexOf('npx playwright install --with-deps chromium');
     assert.ok(install >= 0, 'library browser checks need Chromium and OS dependencies');
     for (const script of ['verify-packages.mjs', 'verify-angular-package.mjs']) {

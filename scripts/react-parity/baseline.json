@@ -1,18 +1,17 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "900f1e60be7edaf242af7dc7f634eac6e54b1f7f",
+  "baselineHead": "3a50f98a33dbc83cda3259840329a6c921e08ced",
   "sourceState": {
     "modified": [
-      "libs/langgraph/src/runtime/README.md",
-      "libs/langgraph/src/runtime/history-projection.ts",
-      "libs/langgraph/src/runtime/message-reducer.ts",
-      "libs/langgraph/src/runtime/ownership.ts",
-      "libs/langgraph/src/runtime/reasoning-projection.ts",
-      "libs/langgraph/src/runtime/stream-projection.ts",
-      "libs/langgraph/src/runtime/testing/controlled-session.ts",
-      "libs/langgraph/src/runtime/wire-message.ts"
+      ".github/workflows/ci.yml",
+      "libs/ag-ui/project.json",
+      "libs/ag-ui/vite.config.mts"
     ],
-    "untracked": []
+    "untracked": [
+      "libs/ag-ui/src/runtime/create-http-request.ts",
+      "libs/ag-ui/tsconfig.runtime-tests.json",
+      "libs/ag-ui/vite.runtime.config.mts"
+    ]
   },
   "scope": {
     "libraries": [
@@ -211,7 +210,7 @@
       "id": "asset:libs/ag-ui/project.json",
       "kind": "asset",
       "path": "libs/ag-ui/project.json",
-      "sha256": "6bbdf56f7f8275a191b3bb24550f62022bead7d2d4b173ed3067e6dcfc89b2fa"
+      "sha256": "5a2901f7c18951ffb31a736d1a78af41760c0020eb834bffe1565bd4bf698bfc"
     },
     {
       "id": "asset:libs/ag-ui/tsconfig.json",
@@ -230,6 +229,12 @@
       "kind": "asset",
       "path": "libs/ag-ui/tsconfig.lib.prod.json",
       "sha256": "4815c5ece87bc626f79d81495b3b60bce7bca2dc355106a9b77bea8d11855a8b"
+    },
+    {
+      "id": "asset:libs/ag-ui/tsconfig.runtime-tests.json",
+      "kind": "asset",
+      "path": "libs/ag-ui/tsconfig.runtime-tests.json",
+      "sha256": "a692d9d309837d9f37f0e18779a22d7a6f3a2fff1c96ce95a93ccbd0b81397dc"
     },
     {
       "id": "asset:libs/ag-ui/tsconfig.type-tests.json",
@@ -1873,7 +1878,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "bf216c2aadd0e521c312d70ea23065873eec1cfeb0d86f5c797137c6711229e3"
+      "sha256": "45d3465a27b053b180b3507f5993be73c6ee48a2f2b69f7f7ba65b676392392c"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -10612,6 +10617,12 @@
       "sha256": "3a6e03c590c4ed74eca832b04c206b8efa6544232618a8f573981e26ed8ee180"
     },
     {
+      "id": "source:libs/ag-ui/src/runtime/create-http-request.ts",
+      "kind": "source",
+      "path": "libs/ag-ui/src/runtime/create-http-request.ts",
+      "sha256": "c91749ff830d7e3500606d51e8c687657820ac1c5f4b6eee080ca5285d2c2373"
+    },
+    {
       "id": "source:libs/ag-ui/src/test-setup.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/test-setup.ts",
@@ -10627,7 +10638,13 @@
       "id": "source:libs/ag-ui/vite.config.mts",
       "kind": "source",
       "path": "libs/ag-ui/vite.config.mts",
-      "sha256": "3c93dbe6de30075f257d09a992fa84ee272078a8dea4520ad7e40afc4be72624"
+      "sha256": "c9b37e87270940807ac16e0ab5826ad1a2b71228e76188f304079062abe28b43"
+    },
+    {
+      "id": "source:libs/ag-ui/vite.runtime.config.mts",
+      "kind": "source",
+      "path": "libs/ag-ui/vite.runtime.config.mts",
+      "sha256": "abbc5ed9727c0a4ff268d09cf18c22280b8093b1d16ac4d7440b27bf2c89a591"
     },
     {
       "id": "source:libs/chat/.install-collector/development-install.d.ts",
