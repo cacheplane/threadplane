@@ -67,6 +67,7 @@ export interface ReducerDeliveryRun {
   snapshotReplacementIds: Set<string>;
   eligibleBaselineAssistantId?: string;
   currentAssistantMessageId?: string;
+  pendingReasoning?: { messageId: string; startedAt: number };
   protocolRunId?: string;
   outcome?: CompleteOutcome;
 }
@@ -101,6 +102,7 @@ export function finalizeDeliveryRun(
 ): boolean {
   if (run.outcome !== undefined) return false;
   run.outcome = outcome;
+  delete run.pendingReasoning;
   store.messages.update(messages => messages.map(message =>
     message.delivery.generation === run.generation
       ? { ...message, delivery: completeDelivery(run.generation, outcome) }
@@ -110,28 +112,9 @@ export function finalizeDeliveryRun(
 }
 
 /**
- * Per-message reasoning timing. Populated by REASONING_MESSAGE_START /
- * REASONING_MESSAGE_END handlers. The map lives on the module — same
- * scope as the reducer function. ReducerStore stays free of timing
- * state; consumers read it via `Message.reasoningDurationMs` on
- * messages that completed reasoning.
- *
- * Keyed by messageId. We do not need cross-thread isolation here:
- * AG-UI's source agent recreates the reducer pipeline per session, and
- * messageIds are unique within a session.
- */
-const reasoningTimingMap = new Map<string, { startedAt: number; endedAt?: number }>();
-
-function resolveReasoningDurationMs(messageId: string): number | undefined {
-  const entry = reasoningTimingMap.get(messageId);
-  if (!entry || entry.endedAt === undefined) return undefined;
-  return entry.endedAt - entry.startedAt;
-}
-
-/**
- * Pure function: applies a single AG-UI BaseEvent to the store. Caller
- * subscribes to source.agent() and forwards each event here. Designed
- * for testability — no side effects beyond the supplied store.
+ * Applies a single AG-UI BaseEvent to the supplied signal store. The adapter
+ * forwards source subscriber events here; reasoning timing reads Date.now()
+ * at this imperative boundary and retains its pending start on the delivery run.
  */
 export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
   // A subagentRunId on a content event means the child produced it: route it
@@ -208,15 +191,17 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
       return;
     }
     case 'REASONING_MESSAGE_START': {
+      const run = currentRunForEvent(event, store);
+      if (!run || run.outcome !== undefined) return;
       const id = messageIdFrom(event);
       const delivery = ownAssistantMessage(store, id);
       if (!delivery) return;
-      reasoningTimingMap.set(id, { startedAt: Date.now() });
+      run.pendingReasoning = { messageId: id, startedAt: Date.now() };
       // Initialize an assistant slot with empty reasoning if it doesn't already exist.
       store.messages.update((prev) =>
         prev.some((m) => m.id === id)
           ? prev.map((m) => m.id === id
-              ? { ...m, reasoning: m.reasoning ?? '', delivery }
+              ? { ...m, reasoning: m.reasoning ?? '', reasoningDurationMs: undefined, delivery }
               : m)
           : [...prev, { id, role: 'assistant', content: '', reasoning: '', delivery }],
       );
@@ -224,6 +209,8 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
     }
     case 'REASONING_MESSAGE_CONTENT':
     case 'REASONING_MESSAGE_CHUNK': {
+      const run = currentRunForEvent(event, store);
+      if (!run || run.outcome !== undefined) return;
       const id = messageIdFrom(event);
       const delivery = ownAssistantMessage(store, id);
       if (!delivery) return;
@@ -236,18 +223,20 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
       return;
     }
     case 'REASONING_MESSAGE_END': {
+      const run = currentRunForEvent(event, store);
+      if (!run || run.outcome !== undefined) return;
       const id = messageIdFrom(event);
-      const entry = reasoningTimingMap.get(id);
-      if (entry) {
-        entry.endedAt = Date.now();
-        reasoningTimingMap.set(id, entry);
-        const duration = resolveReasoningDurationMs(id);
-        if (duration !== undefined) {
-          store.messages.update((prev) =>
-            prev.map((m) => m.id === id ? { ...m, reasoningDurationMs: duration } : m),
-          );
-        }
-      }
+      const pending = run.pendingReasoning;
+      if (!pending || pending.messageId !== id
+        || run.currentAssistantMessageId !== id || !run.ownedMessageIds.has(id)) return;
+      const message = store.messages().find(m => m.id === id && m.role === 'assistant'
+        && m.delivery.generation === run.generation && m.delivery.phase === 'streaming');
+      if (!message) return;
+      const duration = Date.now() - pending.startedAt;
+      delete run.pendingReasoning;
+      store.messages.update(messages => messages.map(m =>
+        m === message ? { ...m, reasoningDurationMs: duration } : m,
+      ));
       return;
     }
     case 'TEXT_MESSAGE_CONTENT': {
@@ -801,6 +790,7 @@ function ownAssistantMessage(store: ReducerStore, id: string) {
   const currentId = run.currentAssistantMessageId;
   if (currentId && currentId !== id) {
     if (run.ownedMessageIds.has(id)) return undefined;
+    delete run.pendingReasoning;
     store.messages.update(messages => messages.map(message =>
       message.id === currentId
         && message.delivery.generation === run.generation

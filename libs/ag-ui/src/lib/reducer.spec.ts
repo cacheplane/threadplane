@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import { signal } from '@angular/core';
 import { Subject } from 'rxjs';
 import {
@@ -11,7 +11,7 @@ import {
   type ToolCall,
   type AgentEvent,
 } from '@threadplane/chat';
-import { reduceEvent, type ReducerStore, type CustomStreamEvent, type ActivityEntry } from './reducer';
+import { finalizeDeliveryRun, reduceEvent, type ReducerStore, type CustomStreamEvent, type ActivityEntry } from './reducer';
 
 interface TestDeliveryRun {
   generation: string;
@@ -625,6 +625,175 @@ describe('reduceEvent — interrupt', () => {
 });
 
 describe('reduceEvent — REASONING_MESSAGE_*', () => {
+  let now = 100;
+  beforeEach(() => {
+    now = 100;
+    vi.spyOn(Date, 'now').mockImplementation(() => now);
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  function reasoning(store: ReducerStore, type: string, messageId = 'owned', runId?: string) {
+    reduceEvent({ type: `REASONING_MESSAGE_${type}`, messageId, runId, delta: 'thinking' } as any, store);
+  }
+
+  it('consumes a start once and leaves duplicate END references unchanged', () => {
+    const store = makeStore();
+    reasoning(store, 'START');
+    now = 200;
+    reasoning(store, 'END');
+    const messages = store.messages();
+    expect(messages[0].reasoningDurationMs).toBe(100);
+    now = 400;
+    reasoning(store, 'END');
+    expect(store.messages()).toBe(messages);
+    expect(store.messages()[0]).toBe(messages[0]);
+  });
+
+  it('does not inherit a same-id start from a previous run', () => {
+    const store = makeStore();
+    reasoning(store, 'START');
+    finalizeDeliveryRun(store, store.deliveryRun!, 'success');
+    store.deliveryRun = makeStore('next-generation').deliveryRun;
+    reduceEvent({ type: 'TEXT_MESSAGE_START', messageId: 'owned' } as any, store);
+    const messages = store.messages();
+    now = 400;
+    reasoning(store, 'END');
+    expect(store.messages()).toBe(messages);
+    expect(messages[0].reasoningDurationMs).toBeUndefined();
+    reasoning(store, 'START');
+    now = 450;
+    reasoning(store, 'END');
+    expect(store.messages()[0].reasoningDurationMs).toBe(50);
+  });
+
+  it('restarts the clock and clears stale duration while retaining reasoning text', () => {
+    const store = makeStore();
+    reasoning(store, 'START');
+    reasoning(store, 'CONTENT');
+    now = 200;
+    reasoning(store, 'END');
+    now = 300;
+    reasoning(store, 'START');
+    expect(store.messages()[0].reasoningDurationMs).toBeUndefined();
+    expect(store.messages()[0].reasoning).toBe('thinking');
+    now = 350;
+    reasoning(store, 'START');
+    now = 400;
+    reasoning(store, 'END');
+    expect(store.messages()[0].reasoningDurationMs).toBe(50);
+  });
+
+  it.each(['success', 'error', 'paused', 'aborted', 'interrupted'] as const)(
+    'clears pending timing on %s and ignores late reasoning events', outcome => {
+      const store = makeStore();
+      reasoning(store, 'START');
+      const run = store.deliveryRun!;
+      finalizeDeliveryRun(store, run, outcome);
+      const messages = store.messages();
+      now = 500;
+      for (const type of ['END', 'START', 'CONTENT', 'CHUNK']) reasoning(store, type);
+      expect(store.messages()).toBe(messages);
+      expect(run).not.toHaveProperty('pendingReasoning');
+      expect(finalizeDeliveryRun(store, run, outcome)).toBe(false);
+    },
+  );
+
+  it.each(['TEXT_MESSAGE_START', 'TOOL_CALL_START', 'MESSAGES_SNAPSHOT'])(
+    'discards the previous clock when %s moves assistant ownership', type => {
+      const store = makeStore();
+      reasoning(store, 'START');
+      reduceEvent({ type, messageId: 'next', parentMessageId: 'next', toolCallId: 'tool',
+        toolCallName: 'tool', messages: [{ id: 'next', role: 'assistant', content: 'canonical' }] } as any, store);
+      const messages = store.messages();
+      now = 500;
+      reasoning(store, 'END');
+      expect(store.messages()).toBe(messages);
+      expect(store.deliveryRun).not.toHaveProperty('pendingReasoning');
+      expect(store.deliveryRun?.currentAssistantMessageId).toBe('next');
+    },
+  );
+
+  it.each(['START', 'CONTENT', 'CHUNK', 'END'])(
+    'ignores foreign-run reasoning %s without disturbing the valid clock', type => {
+      const store = makeStore();
+      reduceEvent({ type: 'RUN_STARTED', runId: 'current' } as any, store);
+      reasoning(store, 'START', 'owned', 'current');
+      const messages = store.messages();
+      now = 200;
+      reasoning(store, type, 'owned', 'foreign');
+      expect(store.messages()).toBe(messages);
+      now = 300;
+      reasoning(store, 'END', 'owned', 'current');
+      expect(store.messages()[0].reasoningDurationMs).toBe(200);
+    },
+  );
+
+  it.each(['static', 'wrong-generation', 'completed', 'non-assistant', 'unowned', 'not-current', 'no-run'])(
+    'does not let END mutate a %s message or claim ownership', scenario => {
+      const store = makeStore();
+      reasoning(store, 'START');
+      const message = store.messages()[0];
+      if (scenario === 'static') store.messages.set([{ ...message, delivery: staticDelivery('owned') }]);
+      if (scenario === 'wrong-generation') store.messages.set([{ ...message, delivery: streamingDelivery('other') }]);
+      if (scenario === 'completed') store.messages.set([{ ...message, delivery: completeDelivery('run-generation-1', 'success') }]);
+      if (scenario === 'non-assistant') store.messages.set([{ ...message, role: 'user' }]);
+      if (scenario === 'unowned') store.deliveryRun!.ownedMessageIds.clear();
+      if (scenario === 'not-current') store.deliveryRun!.currentAssistantMessageId = 'different';
+      if (scenario === 'no-run') store.deliveryRun = null;
+      const messages = store.messages();
+      now = 200;
+      reasoning(store, 'END');
+      expect(store.messages()).toBe(messages);
+    },
+  );
+
+  it('leaves an END without a local start inert even when another store has that ID', () => {
+    const other = makeStore();
+    reasoning(other, 'START');
+    const store = makeStore();
+    reduceEvent({ type: 'TEXT_MESSAGE_START', messageId: 'owned' } as any, store);
+    const messages = store.messages();
+    reasoning(store, 'END');
+    expect(store.messages()).toBe(messages);
+    expect(store.deliveryRun?.currentAssistantMessageId).toBe('owned');
+  });
+
+  it('keeps pending timing across a same-id canonical snapshot and keeps its replacement policy', () => {
+    const store = makeStore();
+    reasoning(store, 'START');
+    const snapshot = { type: 'MESSAGES_SNAPSHOT', messages: [{ id: 'owned', role: 'assistant', content: 'canonical' }] } as any;
+    reduceEvent(snapshot, store);
+    now = 200;
+    reasoning(store, 'END');
+    expect(store.messages()[0].reasoningDurationMs).toBe(100);
+    expect(store.messages()[0].content).toBe('canonical');
+    reduceEvent(snapshot, store);
+    expect(store.messages()[0].reasoningDurationMs).toBeUndefined();
+    const messages = store.messages();
+    reasoning(store, 'END');
+    expect(store.messages()).toBe(messages);
+  });
+
+  it('keeps same-id reasoning clocks isolated between simultaneous stores', () => {
+    const first = makeStore('first');
+    const second = makeStore('second');
+    const clock = vi.spyOn(Date, 'now');
+    try {
+      clock.mockReturnValue(100);
+      reduceEvent({ type: 'REASONING_MESSAGE_START', messageId: 'shared' } as any, first);
+      clock.mockReturnValue(200);
+      reduceEvent({ type: 'REASONING_MESSAGE_START', messageId: 'shared' } as any, second);
+      clock.mockReturnValue(300);
+      reduceEvent({ type: 'REASONING_MESSAGE_END', messageId: 'shared' } as any, first);
+      expect(first.messages()[0].reasoningDurationMs).toBe(200);
+      clock.mockReturnValue(450);
+      reduceEvent({ type: 'REASONING_MESSAGE_END', messageId: 'shared' } as any, second);
+      expect(second.messages()[0].reasoningDurationMs).toBe(250);
+    } finally {
+      clock.mockRestore();
+    }
+  });
+
   it('REASONING_MESSAGE_START creates an assistant slot with empty reasoning', () => {
     const store = makeStore();
     reduceEvent({ type: 'REASONING_MESSAGE_START', messageId: 'm1', role: 'assistant' } as any, store);
