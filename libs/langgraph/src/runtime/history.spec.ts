@@ -660,8 +660,8 @@ describe('history admission around tool ownership', () => {
       await expect(load(session)).rejects.toThrow();
       expect(getHistory).not.toHaveBeenCalled();
       written.resolve();
-      await written.promise;
-      await Promise.resolve();
+      // Drain acknowledged cleanup without depending on its promise-chain depth.
+      await new Promise<void>((resolve) => setImmediate(resolve));
       await load(session);
       expect(session.getSnapshot().messages[1].content).toBe(
         'After settlement'

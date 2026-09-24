@@ -1,9 +1,10 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "1bf764e4ee9c9a6cffc0bd15d305679c3206a8e3",
+  "baselineHead": "0e1549c15628fc55d128e437e175d03dfa8e89e0",
   "sourceState": {
     "modified": [
-      "libs/langgraph/src/runtime/ownership.ts"
+      "libs/langgraph/src/runtime/create-session.ts",
+      "libs/langgraph/src/runtime/tool-persistence.ts"
     ],
     "untracked": []
   },
@@ -12566,7 +12567,7 @@
       "id": "source:libs/langgraph/src/runtime/create-session.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/create-session.ts",
-      "sha256": "841a5f57ec5ac4d3e7107098fd3c6e03a50f6b433e9054524d277b709d479659"
+      "sha256": "2feb4482e1457629e3a639c17376880faf0b0152e4158c222b5251e79bbf2544"
     },
     {
       "id": "source:libs/langgraph/src/runtime/function-tools.ts",
@@ -12663,6 +12664,12 @@
       "kind": "source",
       "path": "libs/langgraph/src/runtime/testing/deferred.ts",
       "sha256": "1e3db2740d991eca3822ad08afc2510c8f714bc7763cc1d75ea623f875f72ce0"
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/tool-persistence.ts",
+      "kind": "source",
+      "path": "libs/langgraph/src/runtime/tool-persistence.ts",
+      "sha256": "d65667e465e91dee1e2ac2154e43ad72d788dbc2fad5fa04fca8a749d08bd0da"
     },
     {
       "id": "source:libs/langgraph/src/runtime/transport.types.ts",
