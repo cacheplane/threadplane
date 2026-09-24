@@ -62,8 +62,13 @@ function fixture(
   );
   const updateState = vi.fn(async () => undefined);
   const executionStore = {
-    claim: vi.fn<ToolExecutionStore['claim']>(async () => 'claimed'),
-    record: vi.fn<ToolExecutionStore['record']>(async () => undefined),
+    acquire: vi.fn<ToolExecutionStore['acquire']>(async () => ({
+      status: 'acquired' as const,
+      token: 'owner',
+    })),
+    settle: vi.fn<ToolExecutionStore['settle']>(
+      async () => 'accepted' as const
+    ),
   };
   const weather = vi.fn(() => ({ saved: true }));
   const alternate = vi.fn(() => ({ saved: true }));
@@ -146,8 +151,8 @@ describe('session invocation identity', () => {
     expect(await f.session.submit('Start')).toBe('interrupted');
     expect(f.weather).toHaveBeenCalledTimes(1);
     expect(f.freshHandler).not.toHaveBeenCalled();
-    expect(f.executionStore.claim).not.toHaveBeenCalled();
-    expect(f.executionStore.record).not.toHaveBeenCalled();
+    expect(f.executionStore.acquire).not.toHaveBeenCalled();
+    expect(f.executionStore.settle).not.toHaveBeenCalled();
     await f.session.dispose();
   });
 
@@ -174,7 +179,7 @@ describe('session invocation identity', () => {
     await f.session.dispose();
   });
 
-  it('retains admission when a running observer stops before a guarded claim starts', async () => {
+  it('retains admission when a running observer stops before a guarded acquire starts', async () => {
     const f = fixture(original, true, true);
     const off = f.session.subscribe(() => {
       if (
@@ -187,7 +192,7 @@ describe('session invocation identity', () => {
     expect(await f.session.submit('Start')).toBe('aborted');
     off();
     await new Promise<void>((resolve) => setImmediate(resolve));
-    expect(f.executionStore.claim).not.toHaveBeenCalled();
+    expect(f.executionStore.acquire).not.toHaveBeenCalled();
     expect(f.weather).not.toHaveBeenCalled();
     f.history([assistant([{ ...original, args: { city: 'Tokyo' } }])]);
     await f.session.load?.();
@@ -450,8 +455,8 @@ describe('session invocation identity', () => {
         expect(f.freshHandler).not.toHaveBeenCalled();
         expect(f.stream).toHaveBeenCalledTimes(2);
         expect(f.updateState).not.toHaveBeenCalled();
-        expect(f.executionStore.claim).toHaveBeenCalledTimes(guarded ? 1 : 0);
-        expect(f.executionStore.record).toHaveBeenCalledTimes(guarded ? 1 : 0);
+        expect(f.executionStore.acquire).toHaveBeenCalledTimes(guarded ? 1 : 0);
+        expect(f.executionStore.settle).toHaveBeenCalledTimes(guarded ? 1 : 0);
         await f.session.dispose();
       }
     );

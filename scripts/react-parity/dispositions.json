@@ -7456,6 +7456,16 @@
       "status": "planned"
     },
     {
+      "id": "export:libs/middleware/src/langgraph/index.ts#ClientToolExecutionAcquisition",
+      "taskIds": [
+        "T16"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Durable invocation acquisition, owner settlement, and explicit PostgreSQL migration.",
+      "note": "Verified bounded durable execution protocol; no replay command, takeover, legacy-chat migration, release, or whole-task completion claim."
+    },
+    {
       "id": "export:libs/middleware/src/langgraph/index.ts#ClientToolExecutionKey",
       "taskIds": [
         "T16"
@@ -7464,31 +7474,17 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/middleware/src/langgraph/index.ts#ClientToolExecutionRecord",
+      "id": "export:libs/middleware/src/langgraph/index.ts#ClientToolExecutionSettlement",
       "taskIds": [
         "T16"
       ],
       "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/middleware/src/langgraph/index.ts#ClientToolExecutionStatus",
-      "taskIds": [
-        "T16"
-      ],
-      "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "reason": "Durable invocation acquisition, owner settlement, and explicit PostgreSQL migration.",
+      "note": "Verified bounded durable execution protocol; no replay command, takeover, legacy-chat migration, release, or whole-task completion claim."
     },
     {
       "id": "export:libs/middleware/src/langgraph/index.ts#ClientToolExecutionStore",
-      "taskIds": [
-        "T16"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/middleware/src/langgraph/index.ts#ClientToolResult",
       "taskIds": [
         "T16"
       ],
@@ -7542,6 +7538,16 @@
       ],
       "treatment": "shared",
       "status": "planned"
+    },
+    {
+      "id": "export:libs/middleware/src/langgraph/index.ts#THREADPLANE_CLIENT_TOOL_EXECUTIONS_MIGRATION",
+      "taskIds": [
+        "T16"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Durable invocation acquisition, owner settlement, and explicit PostgreSQL migration.",
+      "note": "Verified bounded durable execution protocol; no replay command, takeover, legacy-chat migration, release, or whole-task completion claim."
     },
     {
       "id": "export:libs/middleware/src/langgraph/index.ts#THREADPLANE_CLIENT_TOOL_EXECUTIONS_SCHEMA",
@@ -11545,6 +11551,17 @@
       "note": "Serializes terminal writes with execution-time capture, exact-entry acknowledgement and failure retention across queued and later cleanup. Explicit successful handoff releases retained failure; distributed ownership, branch-safe uncertain writes and broader T15/T16 remain open."
     },
     {
+      "id": "source:libs/langgraph/src/runtime/tool-provenance.ts",
+      "taskIds": [
+        "T15",
+        "T16"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private invocation canonicalization and exact result reuse; excluded from public exports.",
+      "note": "Verified bounded durable execution protocol; no replay command, takeover, legacy-chat migration, release, or whole-task completion claim."
+    },
+    {
       "id": "source:libs/langgraph/src/runtime/transport.types.ts",
       "taskIds": [
         "T08"
@@ -11671,6 +11688,16 @@
       ],
       "treatment": "shared",
       "status": "planned"
+    },
+    {
+      "id": "source:libs/middleware/src/langgraph/postgres-tool-execution-schema.ts",
+      "taskIds": [
+        "T16"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Durable invocation acquisition, owner settlement, and explicit PostgreSQL migration.",
+      "note": "Verified bounded durable execution protocol; no replay command, takeover, legacy-chat migration, release, or whole-task completion claim."
     },
     {
       "id": "source:libs/middleware/src/langgraph/router.ts",

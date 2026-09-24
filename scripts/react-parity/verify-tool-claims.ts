@@ -2,27 +2,25 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { setTimeout as delay } from 'node:timers/promises';
 import type { ThreadState } from '@langchain/langgraph-sdk';
-import type { PlainValue } from '@threadplane/core';
-import type {
-  ToolExecutionResult,
-  ToolExecutionStore,
-} from '@threadplane/core/tools';
+import type { ToolExecutionStore } from '@threadplane/core/tools';
 // This integration gate deliberately exercises the source implementations before
 // package builds, including stores that are not in the runtime's public surface.
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { createSession } from '../../libs/langgraph/src/runtime/create-session';
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { canonicalInvocation } from '../../libs/langgraph/src/runtime/tool-provenance';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { deferred } from '../../libs/langgraph/src/runtime/testing/deferred';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import {
   createInMemoryClientToolExecutionStore,
   type ClientToolExecutionStore,
-  type ClientToolResult,
 } from '../../libs/middleware/src/langgraph/client-tool-execution-store';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import {
   createPostgresClientToolExecutionStore,
   THREADPLANE_CLIENT_TOOL_EXECUTIONS_SCHEMA,
+  THREADPLANE_CLIENT_TOOL_EXECUTIONS_MIGRATION,
   type PostgresTaggedSql,
 } from '../../libs/middleware/src/langgraph/postgres-client-tool-execution-store';
 
@@ -145,19 +143,12 @@ const sql: PostgresTaggedSql = async (strings, ...values) => {
   return [];
 };
 
-// Middleware accepts unknown results while runtime snapshots require plain
-// data. This scenario only writes ownerValue; check that fact before narrowing.
-function runtimeResult(result: ClientToolResult): ToolExecutionResult {
-  if (!result.ok) return result;
-  assert.deepEqual(result.value, ownerValue);
-  return { ok: true, value: result.value as PlainValue };
-}
-
 async function scenario(
   kind: string,
   store: ClientToolExecutionStore
 ): Promise<void> {
   const key = { threadId: `claim-${kind}`, toolCallId: 'shared-call' };
+  const invocation = canonicalInvocation('weather', { city: 'Paris' });
   const started = deferred<void>();
   const release = deferred<typeof ownerValue>();
   const sessions: ReturnType<typeof createSession>[] = [];
@@ -177,19 +168,10 @@ async function scenario(
 
   function session(name: string, waitForRelease = false) {
     const executionStore: ToolExecutionStore = {
-      async claim(claimKey) {
-        const prior = await store.claim(claimKey);
-        if (prior === 'claimed' || prior.status === 'executing') return prior;
-        if (prior.status === 'done')
-          return { status: 'done', result: runtimeResult(prior.result) };
-        return {
-          status: 'failed',
-          ...(prior.result ? { result: runtimeResult(prior.result) } : {}),
-        };
-      },
-      async record(claimKey, result) {
+      acquire: store.acquire.bind(store),
+      async settle(settlementKey, settlement) {
         records.push(name);
-        await store.record(claimKey, result);
+        return store.settle(settlementKey, settlement);
       },
     };
     let streamCount = 0;
@@ -284,11 +266,8 @@ async function scenario(
     const owner = session('owner', true);
     ownerRun = owner.submit('Go');
     await bounded(started.promise, `${kind}: owner handler start`);
-    const outstanding = { [key.toolCallId]: { status: 'executing' } };
-    assert.deepEqual(
-      await store.lookup(key.threadId, [key.toolCallId]),
-      outstanding
-    );
+    const outstanding = { status: 'unavailable' };
+    assert.deepEqual(await store.acquire(key, invocation), outstanding);
     assert.deepEqual(handlers, ['owner']);
     assert.equal(records.length, 0);
     assert.equal(writes.length, 0);
@@ -299,7 +278,7 @@ async function scenario(
     );
 
     assert.deepEqual(
-      await store.lookup(key.threadId, [key.toolCallId]),
+      await store.acquire(key, invocation),
       outstanding,
       `${kind}: contender must not overwrite the executing owner`
     );
@@ -337,12 +316,10 @@ async function scenario(
     assert.ok(ownerCall?.status === 'complete');
     assert.deepEqual(ownerCall.result, ownerValue);
     const done = {
-      [key.toolCallId]: {
-        status: 'done',
-        result: { ok: true, value: ownerValue },
-      },
+      status: 'complete',
+      result: JSON.stringify({ ok: true, value: ownerValue }),
     };
-    assert.deepEqual(await store.lookup(key.threadId, [key.toolCallId]), done);
+    assert.deepEqual(await store.acquire(key, invocation), done);
     assert.deepEqual(records, ['owner']);
     assert.deepEqual(
       writes.map((write) => write.session),
@@ -367,7 +344,7 @@ async function scenario(
     assert.deepEqual(freshCall.result, ownerValue);
     assert.deepEqual(handlers, ['owner']);
     assert.deepEqual(records, ['owner']);
-    assert.deepEqual(await store.lookup(key.threadId, [key.toolCallId]), done);
+    assert.deepEqual(await store.acquire(key, invocation), done);
 
     assert.ok(contender.load);
     await bounded(contender.load(), `${kind}: contender history load`);
@@ -432,46 +409,370 @@ async function identityScenario(
   store: ClientToolExecutionStore,
   otherTenant?: ClientToolExecutionStore
 ): Promise<void> {
-  const threadId = 'identity-thread';
-  const ids = ['__proto__', 'constructor', 'toString', 'ordinary'];
-  const expected = Object.fromEntries(
-    ids.map((id) => [id, {
-      status: 'done', result: { ok: true, value: `saved-${id}` },
-    }])
-  );
-  for (const toolCallId of ids) {
+  const invocation = 'opaque';
+  const tuples = [
+    ['identity-thread', '__proto__'],
+    ['identity-thread', 'constructor'],
+    ['identity-thread', 'toString'],
+    ['', ''],
+    ['a:b', 'c'],
+    ['a', 'b:c'],
+    ['雪', '😀'],
+    ['other-thread', '__proto__'],
+  ];
+  if (kind === 'memory') tuples.push(['a\0b', 'c'], ['a', 'b\0c']);
+  for (const [threadId, toolCallId] of tuples) {
     const key = { threadId, toolCallId };
-    assert.equal(await bounded(store.claim(key), `${kind}: special-ID claim`), 'claimed');
-    await bounded(store.record(key, { ok: true, value: `saved-${toolCallId}` }), `${kind}: special-ID owner record`);
-  }
-  const found = await bounded(
-    store.lookup(threadId, [...ids, 'missing']), `${kind}: special-ID lookup`
-  );
-  assert.equal(Object.getPrototypeOf(found), Object.prototype);
-  assert.deepEqual(Object.keys(found).sort(), [...ids].sort());
-  for (const id of ids) assert.equal(Object.hasOwn(found, id), true);
-  assert.equal(Object.hasOwn(found, 'missing'), false);
-  assert.deepEqual(JSON.parse(JSON.stringify(found)), expected);
-
-  const alternate = { ok: true as const, value: 'other scope' };
-  const otherThread = 'identity-other-thread';
-  assert.deepEqual(await bounded(store.lookup(otherThread, ids), `${kind}: other thread`), {});
-  assert.equal(await bounded(store.claim({ threadId: otherThread, toolCallId: '__proto__' }), `${kind}: other thread claim`), 'claimed');
-  await bounded(store.record({ threadId: otherThread, toolCallId: '__proto__' }, alternate), `${kind}: other thread record`);
-  assert.deepEqual(await bounded(store.lookup(otherThread, ['__proto__']), `${kind}: other thread lookup`), {
-    ['__proto__']: { status: 'done', result: alternate },
-  });
-  if (otherTenant) {
-    assert.deepEqual(await bounded(otherTenant.lookup(threadId, ids), `${kind}: other tenant`), {});
-    assert.equal(await bounded(otherTenant.claim({ threadId, toolCallId: '__proto__' }), `${kind}: other tenant claim`), 'claimed');
-    await bounded(otherTenant.record({ threadId, toolCallId: '__proto__' }, alternate), `${kind}: other tenant record`);
-    assert.deepEqual(await bounded(otherTenant.lookup(threadId, ['__proto__']), `${kind}: other tenant lookup`), {
-      ['__proto__']: { status: 'done', result: alternate },
+    assert.equal(
+      await store.settle(key, { invocation, token: 'forged', result: 'first' }),
+      'rejected'
+    );
+    const acquisitions = await Promise.all(
+      Array.from({ length: 8 }, () => store.acquire(key, invocation))
+    );
+    const owners = acquisitions.filter((a) => a.status === 'acquired');
+    assert.equal(owners.length, 1);
+    assert.equal(
+      acquisitions.filter((a) => a.status === 'unavailable').length,
+      7
+    );
+    const token = owners[0].token;
+    assert.deepEqual(await store.acquire(key, 'other'), { status: 'conflict' });
+    assert.equal(
+      await store.settle(key, { invocation, token: 'forged', result: 'first' }),
+      'rejected'
+    );
+    assert.equal(
+      await store.settle(key, { invocation: 'other', token, result: 'first' }),
+      'rejected'
+    );
+    const settlement = {
+      invocation,
+      token,
+      result: JSON.stringify({ ok: true, value: `saved-${toolCallId}` }),
+    };
+    assert.equal(await store.settle(key, settlement), 'accepted');
+    assert.equal(await store.settle(key, settlement), 'accepted');
+    assert.equal(
+      await store.settle(key, { ...settlement, result: 'different' }),
+      'rejected'
+    );
+    assert.equal(
+      await store.settle(key, { ...settlement, result: null }),
+      'rejected'
+    );
+    assert.deepEqual(await store.acquire(key, invocation), {
+      status: 'complete',
+      result: settlement.result,
     });
+    assert.deepEqual(await store.acquire(key, 'other'), { status: 'conflict' });
+    if (otherTenant)
+      assert.equal(
+        (await otherTenant.acquire(key, invocation)).status,
+        'acquired'
+      );
   }
-  found['__proto__'].status = 'failed';
-  assert.deepEqual(await bounded(store.lookup(threadId, ids), `${kind}: original detached lookup`), expected);
-  console.log(`${kind}: special-ID execution lookup, string results, serialization and scope isolation passed`);
+  const key = { threadId: 'nonreusable', toolCallId: 'call' };
+  const owner = await store.acquire(key, invocation);
+  assert.equal(owner.status, 'acquired');
+  if (owner.status !== 'acquired') throw new Error('No owner');
+  const settlement = { invocation, token: owner.token, result: null };
+  assert.equal(await store.settle(key, settlement), 'accepted');
+  assert.equal(await store.settle(key, settlement), 'rejected');
+  assert.equal(
+    await store.settle(key, { ...settlement, result: 'new' }),
+    'rejected'
+  );
+  assert.deepEqual(await store.acquire(key, invocation), {
+    status: 'unavailable',
+  });
+  assert.deepEqual(await store.acquire(key, 'other'), { status: 'conflict' });
+  console.log(
+    `${kind}: actual provider contention, opaque identity, ownership, retries, nonreuse, and scope isolation passed`
+  );
+}
+
+async function fidelityScenario(
+  kind: string,
+  store: ClientToolExecutionStore
+): Promise<void> {
+  for (const [label, value] of [
+    ['json', { nested: [1, 'literal'] }],
+    ['string', 'Error: {"ok":false}'],
+    ['undefined', undefined],
+    ['special', { x: -0, n: NaN, missing: undefined, sparse: Array(2) }],
+  ] as const) {
+    const threadId = `fidelity-${kind}-${label}`;
+    let handlers = 0,
+      settlements = 0;
+    const guarded: ToolExecutionStore = {
+      acquire: store.acquire.bind(store),
+      settle: (key, settlement) => {
+        settlements++;
+        return store.settle(key, settlement);
+      },
+    };
+    const sessions: ReturnType<typeof createSession>[] = [];
+    const build = (name: string, args: { a: number; b: number }) => {
+      const writes: unknown[] = [];
+      const session = createSession({
+        assistantId: 'agent',
+        threadId,
+        executionStore: guarded,
+        transport: {
+          async *stream() {
+            yield {
+              type: 'values',
+              data: {
+                messages: [
+                  {
+                    type: 'ai',
+                    id: 'ai',
+                    content: '',
+                    tool_calls: [{ id: 'call', name, args }],
+                  },
+                ],
+              },
+            };
+          },
+          async updateState(_thread, values) {
+            writes.push(values);
+          },
+        },
+        tools: {
+          work: {
+            description: 'Work',
+            followUp: false,
+            handler: () => {
+              handlers++;
+              return value;
+            },
+          },
+          changed: {
+            description: 'Changed',
+            followUp: false,
+            handler: () => {
+              handlers++;
+              return value;
+            },
+          },
+        },
+      });
+      sessions.push(session);
+      return { session, writes };
+    };
+    try {
+      const owner = build('work', { a: 1, b: 2 });
+      assert.equal(await owner.session.submit('Owner'), 'success');
+      const completed = owner.session.getSnapshot().toolCalls[0];
+      assert.equal(completed.status, 'complete');
+      if (completed.status === 'complete')
+        assert.deepEqual(completed.result, value);
+      const observer = build('work', { b: 2, a: 1 });
+      assert.equal(
+        await observer.session.submit('Observer'),
+        label === 'json' || label === 'string' ? 'success' : 'interrupted'
+      );
+      if (label === 'undefined' || label === 'special')
+        assert.deepEqual(observer.writes, []);
+      else {
+        const reused = observer.session.getSnapshot().toolCalls[0];
+        assert.equal(reused.status, 'complete');
+        if (reused.status === 'complete')
+          assert.deepEqual(reused.result, value);
+      }
+      for (const [name, args] of [
+        ['changed', { a: 1, b: 2 }],
+        ['work', { a: 2, b: 2 }],
+      ] as const) {
+        const mismatch = build(name, args);
+        assert.equal(await mismatch.session.submit('Mismatch'), 'interrupted');
+        assert.match(
+          mismatch.session.getSnapshot().error?.message ?? '',
+          /identity conflict/
+        );
+        assert.deepEqual(mismatch.writes, []);
+      }
+      assert.equal(handlers, 1);
+      assert.equal(settlements, 1);
+    } finally {
+      for (const session of sessions) await session.dispose();
+    }
+  }
+  console.log(
+    `${kind}: real-provider two-session exact reuse, name/argument conflict and non-reusable original fidelity passed`
+  );
+}
+
+async function corruptedStateScenario(): Promise<void> {
+  const store = createPostgresClientToolExecutionStore(sql);
+  for (const [status, result] of [
+    ['bogus', null],
+    ['executing', 'inconsistent'],
+  ] as const) {
+    const key = { threadId: 'corrupted-state', toolCallId: status };
+    const owner = await store.acquire(key, 'original');
+    assert.equal(owner.status, 'acquired');
+    if (owner.status !== 'acquired')
+      throw new Error('No corruption fixture owner');
+    // Deliberately corrupt only rows created in our disposable database.
+    await psql(`UPDATE threadplane_client_tool_executions
+      SET status=${literal(status)}, encoded_result=${literal(result)}
+      WHERE thread_id=${literal(key.threadId)} AND tool_call_id=${literal(
+      key.toolCallId
+    )};`);
+    for (const invocation of ['original', 'different']) {
+      assert.deepEqual(await store.acquire(key, invocation), {
+        status: 'unavailable',
+      });
+      assert.equal(
+        await store.settle(key, {
+          invocation,
+          token: owner.token,
+          result: 'replacement',
+        }),
+        'rejected'
+      );
+    }
+  }
+  console.log(
+    'postgres: corrupted status/result states stay unavailable for matching and changed invocations, with no settlement authority'
+  );
+}
+
+async function migrationScenario(): Promise<void> {
+  await psql('DROP TABLE threadplane_client_tool_executions;');
+  const legacySchema = THREADPLANE_CLIENT_TOOL_EXECUTIONS_SCHEMA.replace(
+    /  invocation.*\n|  owner_token.*\n|  encoded_result.*\n/g,
+    ''
+  );
+  await psql(legacySchema);
+  const legacyRows = ['executing', 'done', 'failed', 'receipt']
+    .map(
+      (status, index) =>
+        `('', 'legacy', 'call-${index}', '${
+          status === 'receipt' ? 'done' : status
+        }', '{"ok":true,"value":"historical-${status}"}'::jsonb)`
+    )
+    .join(',');
+  await psql(
+    `INSERT INTO threadplane_client_tool_executions (tenant_id,thread_id,tool_call_id,status,result) VALUES ${legacyRows};`
+  );
+  const before = await psql(
+    'SELECT json_agg(t) FROM (SELECT tableoid::oid,tenant_id,thread_id,tool_call_id,status,result,created_at,updated_at FROM threadplane_client_tool_executions ORDER BY tool_call_id) t;'
+  );
+  await assert.rejects(
+    psql(
+      THREADPLANE_CLIENT_TOOL_EXECUTIONS_MIGRATION.replace(
+        'COMMIT;',
+        'SELECT 1 / 0; COMMIT;'
+      )
+    ),
+    /division by zero/
+  );
+  assert.equal(
+    await psql(
+      "SELECT count(*) FROM information_schema.columns WHERE table_name='threadplane_client_tool_executions' AND column_name='owner_token';"
+    ),
+    '0'
+  );
+  // A partial prior upgrade must preserve invocation yet never certify authority.
+  await psql(
+    "ALTER TABLE threadplane_client_tool_executions ADD COLUMN invocation text, ADD COLUMN owner_token text DEFAULT 'unsafe-default'; UPDATE threadplane_client_tool_executions SET invocation='partial',owner_token=NULL WHERE tool_call_id='call-0'; UPDATE threadplane_client_tool_executions SET owner_token=NULL;"
+  );
+  await psql(THREADPLANE_CLIENT_TOOL_EXECUTIONS_MIGRATION);
+  const after = await psql(
+    'SELECT json_agg(t) FROM (SELECT tableoid::oid,tenant_id,thread_id,tool_call_id,status,result,created_at,updated_at FROM threadplane_client_tool_executions ORDER BY tool_call_id) t;'
+  );
+  assert.equal(
+    after,
+    before,
+    'migration preserves historical values and table OID'
+  );
+  const store = createPostgresClientToolExecutionStore(sql);
+  for (let index = 0; index < 4; index++) {
+    const key = { threadId: 'legacy', toolCallId: `call-${index}` };
+    assert.deepEqual(await store.acquire(key, 'partial'), {
+      status: 'unavailable',
+    });
+    assert.equal(
+      await store.settle(key, {
+        invocation: 'partial',
+        token: 'legacy-unknown',
+        result: 'forged',
+      }),
+      'rejected'
+    );
+  }
+  assert.equal(
+    await psql(
+      "SELECT invocation FROM threadplane_client_tool_executions WHERE tool_call_id='call-0';"
+    ),
+    'partial'
+  );
+  for (const result of ['saved', null]) {
+    const key = { threadId: 'new', toolCallId: String(result) };
+    const owner = await store.acquire(key, 'new-invocation');
+    assert.equal(owner.status, 'acquired');
+    if (owner.status === 'acquired')
+      assert.equal(
+        await store.settle(key, {
+          invocation: 'new-invocation',
+          token: owner.token,
+          result,
+        }),
+        'accepted'
+      );
+  }
+  const mixed = await psql(
+    'SELECT json_agg(t) FROM (SELECT * FROM threadplane_client_tool_executions ORDER BY thread_id,tool_call_id) t;'
+  );
+  await psql(THREADPLANE_CLIENT_TOOL_EXECUTIONS_MIGRATION);
+  assert.equal(
+    await psql(
+      'SELECT json_agg(t) FROM (SELECT * FROM threadplane_client_tool_executions ORDER BY thread_id,tool_call_id) t;'
+    ),
+    mixed
+  );
+  assert.equal(
+    await psql(
+      "SELECT column_default IS NULL AND is_nullable='NO' FROM information_schema.columns WHERE table_name='threadplane_client_tool_executions' AND column_name='owner_token';"
+    ),
+    't'
+  );
+  // Execute the former factory's actual INSERT and UPSERT shapes, for both old
+  // and new identities. NOT NULL is checked before ON CONFLICT can update.
+  for (const toolCallId of ['call-0', 'new-legacy-writer']) {
+    const values = `('', 'legacy', ${literal(toolCallId)}, 'executing')`;
+    await assert.rejects(
+      psql(
+        `INSERT INTO threadplane_client_tool_executions (tenant_id,thread_id,tool_call_id,status) VALUES ${values} ON CONFLICT (tenant_id,thread_id,tool_call_id) DO NOTHING RETURNING status,result;`
+      ),
+      /owner_token/
+    );
+    await assert.rejects(
+      psql(
+        `INSERT INTO threadplane_client_tool_executions (tenant_id,thread_id,tool_call_id,status,result) VALUES ('','legacy',${literal(
+          toolCallId
+        )},'done','{"ok":true,"value":"old"}'::jsonb) ON CONFLICT (tenant_id,thread_id,tool_call_id) DO UPDATE SET status='done',result=CASE WHEN threadplane_client_tool_executions.status='done' THEN threadplane_client_tool_executions.result ELSE EXCLUDED.result END,updated_at=now();`
+      ),
+      /owner_token/
+    );
+  }
+  // Deliberately demonstrate why drain/audit remains mandatory: custom direct
+  // UPDATE writers are not universally fenced by the column requirement.
+  await psql(
+    "UPDATE threadplane_client_tool_executions SET result='{\"custom\":true}'::jsonb WHERE thread_id='legacy' AND tool_call_id='call-0';"
+  );
+  assert.equal(
+    await psql(
+      "SELECT result->>'custom' FROM threadplane_client_tool_executions WHERE thread_id='legacy' AND tool_call_id='call-0';"
+    ),
+    'true'
+  );
+  console.log(
+    'postgres: actual PG16 transactional rollback, preserved legacy/partial upgrade, repeat migration, old INSERT/UPSERT fencing, and direct UPDATE limitation passed'
+  );
 }
 
 async function main(): Promise<void> {
@@ -512,13 +813,22 @@ async function main(): Promise<void> {
     ] as const) {
       try {
         await scenario(kind, store);
-        await identityScenario(kind, store, kind === 'postgres'
-          ? createPostgresClientToolExecutionStore(sql, { tenantId: 'identity-other-tenant' })
-          : undefined);
+        await fidelityScenario(kind, store);
+        await identityScenario(
+          kind,
+          store,
+          kind === 'postgres'
+            ? createPostgresClientToolExecutionStore(sql, {
+                tenantId: 'identity-other-tenant',
+              })
+            : undefined
+        );
       } catch (error) {
         failures.push(error);
       }
     }
+    await corruptedStateScenario();
+    await migrationScenario();
     if (failures.length)
       throw new AggregateError(
         failures,

@@ -106,30 +106,30 @@ describe('runtime test harness', () => {
     await transport.closed;
   });
 
-  it('controls tool, claim, and record completions independently', async () => {
+  it('controls tool, acquire, and settle completions independently', async () => {
     const tool = deferred<string>();
-    const claim = deferred<boolean>();
-    const record = deferred<void>();
+    const acquire = deferred<boolean>();
+    const settle = deferred<void>();
     const completed: string[] = [];
     const toolResult = tool.promise.then((value) => {
       completed.push('tool');
       return value;
     });
-    const claimResult = claim.promise.then((value) => {
-      completed.push('claim');
+    const claimResult = acquire.promise.then((value) => {
+      completed.push('acquire');
       return value;
     });
-    const recordResult = record.promise.then(() => completed.push('record'));
+    const recordResult = settle.promise.then(() => completed.push('settle'));
 
-    claim.resolve(true);
+    acquire.resolve(true);
     await expect(claimResult).resolves.toBe(true);
-    expect(completed).toEqual(['claim']);
-    record.resolve();
+    expect(completed).toEqual(['acquire']);
+    settle.resolve();
     await recordResult;
-    expect(completed).toEqual(['claim', 'record']);
+    expect(completed).toEqual(['acquire', 'settle']);
     tool.resolve('tool result');
     await expect(toolResult).resolves.toBe('tool result');
-    expect(completed).toEqual(['claim', 'record', 'tool']);
+    expect(completed).toEqual(['acquire', 'settle', 'tool']);
   });
 
   it('can reject a deferred completion', async () => {

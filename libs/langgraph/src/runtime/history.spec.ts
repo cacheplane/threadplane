@@ -483,8 +483,11 @@ describe('history admission around tool ownership', () => {
   it('never runs registered historical pending tools during load or later baseline replay', async () => {
     const handler = vi.fn(() => 'Never');
     const store: ToolExecutionStore = {
-      claim: vi.fn(async () => 'claimed' as const),
-      record: vi.fn(async () => undefined),
+      acquire: vi.fn(async () => ({
+        status: 'acquired' as const,
+        token: 'owner',
+      })),
+      settle: vi.fn(async () => 'accepted' as const),
     };
     const getHistory = vi.fn(async () => history('', [toolMessage]));
     const stream = vi.fn<AgentTransport['stream']>(async function* () {
@@ -512,12 +515,12 @@ describe('history admission around tool ownership', () => {
     ]);
     expect(stream).not.toHaveBeenCalled();
     expect(handler).not.toHaveBeenCalled();
-    expect(store.claim).not.toHaveBeenCalled();
+    expect(store.acquire).not.toHaveBeenCalled();
     expect(updateState).not.toHaveBeenCalled();
     await session.submit('New turn');
     expect(handler).not.toHaveBeenCalled();
-    expect(store.claim).not.toHaveBeenCalled();
-    expect(store.record).not.toHaveBeenCalled();
+    expect(store.acquire).not.toHaveBeenCalled();
+    expect(store.settle).not.toHaveBeenCalled();
     expect(updateState).not.toHaveBeenCalled();
     await session.dispose();
   });
@@ -604,10 +607,10 @@ describe('history admission around tool ownership', () => {
     await session.dispose();
   });
 
-  it.each(['claim', 'record', 'write'] as const)(
+  it.each(['acquire', 'settle', 'write'] as const)(
     'blocks replacement until late %s and persistence settle after stop',
     async (phase) => {
-      const claim = deferred<'claimed'>();
+      const acquire = deferred<{ status: 'acquired'; token: string }>();
       const recorded = deferred<void>();
       const written = deferred<void>();
       const claimStarted = deferred<void>();
@@ -615,15 +618,17 @@ describe('history admission around tool ownership', () => {
       const writeStarted = deferred<void>();
       const getHistory = vi.fn(async () => history('After settlement'));
       const store: ToolExecutionStore = {
-        claim: vi.fn(() => {
+        acquire: vi.fn(() => {
           claimStarted.resolve();
-          return phase === 'claim'
-            ? claim.promise
-            : Promise.resolve('claimed' as const);
+          return phase === 'acquire'
+            ? acquire.promise
+            : Promise.resolve({ status: 'acquired' as const, token: 'owner' });
         }),
-        record: vi.fn(() => {
+        settle: vi.fn(() => {
           recordStarted.resolve();
-          return phase === 'record' ? recorded.promise : Promise.resolve();
+          return (
+            phase === 'settle' ? recorded.promise : Promise.resolve()
+          ).then(() => 'accepted' as const);
         }),
       };
       const session = createSession({
@@ -645,16 +650,16 @@ describe('history admission around tool ownership', () => {
         },
       });
       const submitted = session.submit('Work');
-      await (phase === 'claim'
+      await (phase === 'acquire'
         ? claimStarted.promise
-        : phase === 'record'
+        : phase === 'settle'
         ? recordStarted.promise
         : writeStarted.promise);
       await session.stop();
       await expect(submitted).resolves.toBe('aborted');
       await expect(load(session)).rejects.toThrow();
       expect(getHistory).not.toHaveBeenCalled();
-      claim.resolve('claimed');
+      acquire.resolve({ status: 'acquired' as const, token: 'owner' });
       recorded.resolve();
       await writeStarted.promise;
       await expect(load(session)).rejects.toThrow();

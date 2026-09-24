@@ -10,7 +10,11 @@ import {
   sameMessage,
   sameToolCall,
 } from './ownership';
-import { observeInvocation, type ToolInvocation } from './tool-invocations';
+import {
+  conflictInvocation,
+  observeInvocation,
+  type ToolInvocation,
+} from './tool-invocations';
 
 export interface MessageState {
   readonly invocations: readonly ToolInvocation[];
@@ -41,6 +45,7 @@ export type MessageEvent =
     }
   | { readonly type: 'tool'; readonly toolCall: ToolCall }
   | { readonly type: 'tool-admitted'; readonly toolCall: ToolCall }
+  | { readonly type: 'tool-conflict'; readonly id: string }
   | { readonly type: 'tool-unsettled'; readonly id: string }
   | { readonly type: 'remove-pending-tools'; readonly ids: readonly string[] }
   | {
@@ -66,6 +71,12 @@ export function reduceMessages(
   state: MessageState,
   event: MessageEvent
 ): MessageState {
+  if (event.type === 'tool-conflict') {
+    const invocations = conflictInvocation(state.invocations, event.id);
+    return invocations === state.invocations
+      ? state
+      : Object.freeze({ ...state, invocations });
+  }
   if (
     event.type === 'tool-admitted' ||
     (event.type === 'tool' && event.toolCall.status === 'pending')

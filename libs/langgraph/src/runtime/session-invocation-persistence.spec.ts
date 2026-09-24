@@ -62,13 +62,16 @@ it('checks current conflict at the real queued write callback and quarantines th
     };
   });
   const updateState = vi.fn(async () => undefined);
-  const record = vi.fn(async () => undefined);
+  const settle = vi.fn(async () => 'accepted' as const);
   const handler = vi.fn(() => 'Owned result');
   const session = createSession({
     assistantId: 'a',
     threadId: 't',
     transport: { stream, updateState, getHistory: async () => [] },
-    executionStore: { claim: async () => 'claimed', record },
+    executionStore: {
+      acquire: async () => ({ status: 'acquired' as const, token: 'owner' }),
+      settle,
+    },
     tools: { work: { description: 'Work', handler } },
   });
   try {
@@ -77,7 +80,7 @@ it('checks current conflict at the real queued write callback and quarantines th
     await expect(flush).rejects.toThrow(/identity conflict/);
     expect(updateState).not.toHaveBeenCalled();
     expect(handler).toHaveBeenCalledTimes(1);
-    expect(record).toHaveBeenCalledTimes(1);
+    expect(settle).toHaveBeenCalledTimes(1);
     expect(stream).toHaveBeenCalledTimes(2);
     expect(seam.persistence?.pending).toBe(0);
     const staged = seam.buffer?.snapshot().messages;

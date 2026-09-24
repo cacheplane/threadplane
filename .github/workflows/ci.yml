@@ -143,7 +143,7 @@ jobs:
           npx nx run langgraph:runtime-type-tests
           npx nx run langgraph:type-tests
       - run: npx nx test langgraph --coverage --maxWorkers=2 --reporter=default
-      - name: Verify tool claim ownership with production stores
+      - name: Verify durable tool ownership and PostgreSQL migration
         run: node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.base.json scripts/react-parity/verify-tool-claims.ts
       - run: npx nx run-many -t test --projects=chat,ag-ui,render,a2ui,telemetry,middleware --coverage --parallel=1 --maxWorkers=2
       - run: npx nx run-many -t build --projects=$LIBS --configuration=production
@@ -155,6 +155,7 @@ jobs:
           node scripts/react-parity/verify-packages.mjs
           node scripts/react-parity/verify-angular-package.mjs
           node scripts/react-parity/verify-middleware-package.mjs
+          node scripts/react-parity/verify-middleware-conformance.mjs
       - run: node scripts/verify-release-versions.mjs
       - name: DX-coverage — public dev-facing functions must have a JSDoc summary
         run: node scripts/check-dx-coverage.mjs

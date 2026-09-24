@@ -1,3 +1,4 @@
+import { canonicalInvocation } from './tool-provenance';
 /* eslint @typescript-eslint/no-unused-vars: ["warn", { "argsIgnorePattern": "^_" }] */
 import { describe, expect, it, vi } from 'vitest';
 import { createSession } from './create-session';
@@ -79,15 +80,18 @@ describe('owned function tools', () => {
       ]);
       const handler = vi.fn((_args: { city: string }) => ({ saved: true }));
       const executionStore: ToolExecutionStore = {
-        claim: vi.fn(async () =>
+        acquire: vi.fn(async () =>
           source === 'local'
-            ? ('claimed' as const)
+            ? { status: 'acquired' as const, token: 'owner' }
             : {
-                status: 'done' as const,
-                result: { ok: true as const, value: { saved: true } },
+                status: 'complete' as const,
+                result: JSON.stringify({
+                  ok: true as const,
+                  value: { saved: true },
+                }),
               }
         ),
-        record: vi.fn(async () => undefined),
+        settle: vi.fn(async () => 'accepted' as const),
       };
       const session = createSession({
         assistantId: 'agent',
@@ -115,8 +119,8 @@ describe('owned function tools', () => {
           { id: 'call-1', status: 'complete', result: { saved: true } },
         ]);
         expect(handler).toHaveBeenCalledTimes(source === 'local' ? 1 : 0);
-        expect(executionStore.claim).toHaveBeenCalledTimes(1);
-        expect(executionStore.record).toHaveBeenCalledTimes(
+        expect(executionStore.acquire).toHaveBeenCalledTimes(1);
+        expect(executionStore.settle).toHaveBeenCalledTimes(
           source === 'local' ? 1 : 0
         );
         expect(transport.stream).toHaveBeenCalledTimes(2);
@@ -187,7 +191,7 @@ describe('owned function tools', () => {
       }
     }
   );
-  it('does not claim a later user turn replayed in the active stream history', async () => {
+  it('does not acquire a later user turn replayed in the active stream history', async () => {
     const handler = vi.fn((_args: { city: string }) => 'Never');
     const transport = fixture();
     transport.stream.mockImplementation(async function* (
@@ -291,8 +295,11 @@ describe('owned function tools', () => {
   it('checkStatus with finalized tools is read-only and never claims, handles, or continues', async () => {
     const handler = vi.fn((_args: { city: string }) => 'Never');
     const executionStore = {
-      claim: vi.fn(async () => 'claimed' as const),
-      record: vi.fn(async () => undefined),
+      acquire: vi.fn(async () => ({
+        status: 'acquired' as const,
+        token: 'owner',
+      })),
+      settle: vi.fn(async () => 'accepted' as const),
     };
     const transport = fixture();
     transport.stream.mockImplementation(async function* () {
@@ -346,7 +353,7 @@ describe('owned function tools', () => {
       id: 'recovered-call',
       status: 'pending',
     });
-    expect(executionStore.claim).not.toHaveBeenCalled();
+    expect(executionStore.acquire).not.toHaveBeenCalled();
     expect(handler).not.toHaveBeenCalled();
     expect(transport.stream).toHaveBeenCalledTimes(1);
   });
@@ -571,8 +578,13 @@ describe('owned function tools', () => {
         flushed.resolve();
       });
       const executionStore = {
-        claim: vi.fn(async () => 'claimed' as const),
-        record: vi.fn<ToolExecutionStore['record']>(async () => undefined),
+        acquire: vi.fn(async () => ({
+          status: 'acquired' as const,
+          token: 'owner',
+        })),
+        settle: vi.fn<ToolExecutionStore['settle']>(
+          async () => 'accepted' as const
+        ),
       };
       const session = createSession({
         assistantId: 'agent',
@@ -596,15 +608,19 @@ describe('owned function tools', () => {
         await expect(run).resolves.toBe('aborted');
         await flushed.promise;
         const snapshot = session.getSnapshot();
-        expect(executionStore.record).toHaveBeenCalledWith(
+        expect(executionStore.settle).toHaveBeenCalledWith(
           { threadId: 'thread', toolCallId: 'call-1' },
-          { ok: false, error: expect.stringContaining('cancelled') }
+          {
+            invocation: canonicalInvocation('weather', { city: 'Paris' }),
+            token: 'owner',
+            result: expect.stringContaining('cancelled'),
+          }
         );
         if (ending === 'resolve') result.resolve('Late');
         else result.reject(new Error('Late rejection'));
         await result.promise.catch(() => undefined);
         expect(session.getSnapshot()).toBe(snapshot);
-        expect(executionStore.record).toHaveBeenCalledTimes(1);
+        expect(executionStore.settle).toHaveBeenCalledTimes(1);
         expect(transport.stream).toHaveBeenCalledTimes(1);
       } finally {
         result.resolve('cleanup');
@@ -709,9 +725,9 @@ describe('owned function tools', () => {
 describe('function tool execution guard', () => {
   it('retains a durable done fact discovered after stop instead of replacing it with cancellation', async () => {
     const claiming = deferred<void>();
-    const claim = deferred<{
-      status: 'done';
-      result: { ok: true; value: string };
+    const acquire = deferred<{
+      status: 'complete';
+      result: string;
     }>();
     const flushed = deferred<void>();
     const transport = fixture();
@@ -720,11 +736,11 @@ describe('function tool execution guard', () => {
     });
     const handler = vi.fn((_args: { city: string }) => 'Never');
     const executionStore = {
-      claim: () => {
+      acquire: () => {
         claiming.resolve();
-        return claim.promise;
+        return acquire.promise;
       },
-      record: vi.fn(async () => undefined),
+      settle: vi.fn(async () => 'accepted' as const),
     };
     const session = createSession({
       assistantId: 'agent',
@@ -738,29 +754,35 @@ describe('function tool execution guard', () => {
       await claiming.promise;
       await session.stop();
       await expect(run).resolves.toBe('aborted');
-      claim.resolve({
-        status: 'done',
-        result: { ok: true, value: 'Previously completed' },
+      acquire.resolve({
+        status: 'complete' as const,
+        result: JSON.stringify({ ok: true, value: 'Previously completed' }),
       });
       await flushed.promise;
       expect(transport.updateState.mock.calls[0][1]).toMatchObject({
         messages: [{ content: 'Previously completed' }],
       });
-      expect(executionStore.record).not.toHaveBeenCalled();
+      expect(executionStore.settle).not.toHaveBeenCalled();
       expect(handler).not.toHaveBeenCalled();
       expect(transport.stream).toHaveBeenCalledTimes(1);
     } finally {
-      claim.resolve({ status: 'done', result: { ok: true, value: 'cleanup' } });
+      acquire.resolve({
+        status: 'complete' as const,
+        result: JSON.stringify({ ok: true, value: 'cleanup' }),
+      });
       await session.dispose();
     }
   });
-  it('retains captured store methods and keeps record rejection unresolved', async () => {
+  it('retains captured store methods and keeps settle rejection unresolved', async () => {
     const transport = fixture();
-    const claim = vi.fn(async () => 'claimed' as const);
-    const record = vi.fn(async () => {
+    const acquire = vi.fn(async () => ({
+      status: 'acquired' as const,
+      token: 'owner',
+    }));
+    const settle = vi.fn(async () => {
       throw new Error('write failed');
     });
-    const executionStore = { claim, record };
+    const executionStore = { acquire, settle };
     const session = createSession({
       assistantId: 'agent',
       threadId: 'thread',
@@ -773,14 +795,17 @@ describe('function tool execution guard', () => {
         },
       },
     });
-    executionStore.claim = vi.fn(async () => 'claimed' as const);
-    executionStore.record = vi.fn(async () => {
+    executionStore.acquire = vi.fn(async () => ({
+      status: 'acquired' as const,
+      token: 'owner',
+    }));
+    executionStore.settle = vi.fn(async () => {
       throw new Error('different');
     });
     await expect(session.submit('Go')).resolves.toBe('interrupted');
-    expect(claim).toHaveBeenCalledTimes(1);
-    expect(record).toHaveBeenCalledTimes(1);
-    expect(executionStore.claim).not.toHaveBeenCalled();
+    expect(acquire).toHaveBeenCalledTimes(1);
+    expect(settle).toHaveBeenCalledTimes(1);
+    expect(executionStore.acquire).not.toHaveBeenCalled();
     expect(session.getSnapshot().toolCalls[0]).toMatchObject({
       status: 'pending',
     });
@@ -793,14 +818,15 @@ describe('function tool execution guard', () => {
     const order: string[] = [];
     const transport = fixture();
     const executionStore = {
-      claim: vi.fn(async () => {
-        order.push('claim');
-        return 'claimed' as const;
+      acquire: vi.fn(async () => {
+        order.push('acquire');
+        return { status: 'acquired' as const, token: 'owner' };
       }),
-      record: vi.fn(async () => {
-        order.push('record');
+      settle: vi.fn(async () => {
+        order.push('settle');
         recording.resolve();
         await recorded.promise;
+        return 'accepted' as const;
       }),
     };
     const session = createSession({
@@ -821,11 +847,14 @@ describe('function tool execution guard', () => {
     try {
       const run = session.submit('Go');
       await recording.promise;
-      expect(order).toEqual(['claim', 'handler', 'record']);
-      expect(executionStore.claim).toHaveBeenCalledWith({
-        threadId: 'thread',
-        toolCallId: 'call-1',
-      });
+      expect(order).toEqual(['acquire', 'handler', 'settle']);
+      expect(executionStore.acquire).toHaveBeenCalledWith(
+        {
+          threadId: 'thread',
+          toolCallId: 'call-1',
+        },
+        canonicalInvocation('weather', { city: 'Paris' })
+      );
       expect(session.getSnapshot().toolCalls[0].status).toBe('running');
       expect(transport.stream).toHaveBeenCalledTimes(1);
       recorded.resolve();
@@ -852,8 +881,8 @@ describe('function tool execution guard', () => {
       },
     });
     await bypass.submit('Go');
-    expect(executionStore.claim).toHaveBeenCalledTimes(1);
-    expect(executionStore.record).toHaveBeenCalledTimes(1);
+    expect(executionStore.acquire).toHaveBeenCalledTimes(1);
+    expect(executionStore.settle).toHaveBeenCalledTimes(1);
   });
 
   it.each(['done', 'executing', 'failed', 'reject'] as const)(
@@ -861,13 +890,16 @@ describe('function tool execution guard', () => {
     async (status) => {
       const handler = vi.fn((_args: { city: string }) => 'New');
       const executionStore = {
-        claim: vi.fn(async () => {
+        acquire: vi.fn(async () => {
           if (status === 'reject') throw new Error('offline');
           return status === 'done'
-            ? { status, result: { ok: true as const, value: 'Saved' } }
-            : { status };
+            ? {
+                status: 'complete' as const,
+                result: JSON.stringify({ ok: true, value: 'Saved' }),
+              }
+            : ({ status } as never);
         }),
-        record: vi.fn(async () => undefined),
+        settle: vi.fn(async () => 'accepted' as const),
       };
       const session = createSession({
         assistantId: 'agent',
@@ -887,9 +919,9 @@ describe('function tool execution guard', () => {
   );
 
   it.each(['resolve', 'reject'] as const)(
-    'settles stop while claim is pending; late claim %s cannot execute',
+    'settles stop while acquire is pending; late acquire %s cannot execute',
     async (ending) => {
-      const claimed = deferred<'claimed'>();
+      const claimed = deferred<{ status: 'acquired'; token: string }>();
       const claiming = deferred<void>();
       const flushed = deferred<void>();
       const handler = vi.fn((_args: { city: string }) => 'Bad');
@@ -898,11 +930,11 @@ describe('function tool execution guard', () => {
         flushed.resolve();
       });
       const executionStore = {
-        claim: vi.fn(() => {
+        acquire: vi.fn(() => {
           claiming.resolve();
           return claimed.promise;
         }),
-        record: vi.fn(async () => undefined),
+        settle: vi.fn(async () => 'accepted' as const),
       };
       const session = createSession({
         assistantId: 'agent',
@@ -917,7 +949,8 @@ describe('function tool execution guard', () => {
         await session.stop();
         await expect(run).resolves.toBe('aborted');
         const snapshot = session.getSnapshot();
-        if (ending === 'resolve') claimed.resolve('claimed');
+        if (ending === 'resolve')
+          claimed.resolve({ status: 'acquired' as const, token: 'owner' });
         else claimed.reject(new Error('late'));
         if (ending === 'resolve') await flushed.promise;
         else {
@@ -930,23 +963,27 @@ describe('function tool execution guard', () => {
         expect(handler).not.toHaveBeenCalled();
         expect(transport.stream).toHaveBeenCalledTimes(1);
         expect(session.getSnapshot()).toBe(snapshot);
-        expect(executionStore.record).toHaveBeenCalledTimes(
+        expect(executionStore.settle).toHaveBeenCalledTimes(
           ending === 'resolve' ? 1 : 0
         );
         if (ending === 'resolve')
-          expect(executionStore.record.mock.calls[0]).toEqual([
+          expect(executionStore.settle.mock.calls[0]).toEqual([
             { threadId: 'thread', toolCallId: 'call-1' },
-            { ok: false, error: expect.stringContaining('cancelled') },
+            {
+              invocation: canonicalInvocation('weather', { city: 'Paris' }),
+              token: 'owner',
+              result: expect.stringContaining('cancelled'),
+            },
           ]);
       } finally {
-        claimed.resolve('claimed');
+        claimed.resolve({ status: 'acquired' as const, token: 'owner' });
         await session.dispose();
       }
     }
   );
 
   it.each(['resolve', 'reject'] as const)(
-    'preserves the durable fact when stop races a pending record %s',
+    'preserves the durable fact when stop races a pending settle %s',
     async (ending) => {
       const recorded = deferred<void>();
       const recording = deferred<void>();
@@ -956,10 +993,13 @@ describe('function tool execution guard', () => {
         flushed.resolve();
       });
       const executionStore = {
-        claim: vi.fn(async () => 'claimed' as const),
-        record: vi.fn<ToolExecutionStore['record']>(() => {
+        acquire: vi.fn(async () => ({
+          status: 'acquired' as const,
+          token: 'owner',
+        })),
+        settle: vi.fn<ToolExecutionStore['settle']>(() => {
           recording.resolve();
-          return recorded.promise;
+          return recorded.promise.then(() => 'accepted' as const);
         }),
       };
       const session = createSession({
@@ -990,10 +1030,11 @@ describe('function tool execution guard', () => {
             /unsettled tool/
           );
         }
-        expect(executionStore.record).toHaveBeenCalledTimes(1);
-        expect(executionStore.record.mock.calls[0][1]).toEqual({
-          ok: true,
-          value: 'Recorded success',
+        expect(executionStore.settle).toHaveBeenCalledTimes(1);
+        expect(executionStore.settle.mock.calls[0][1]).toEqual({
+          invocation: canonicalInvocation('weather', { city: 'Paris' }),
+          token: 'owner',
+          result: JSON.stringify({ ok: true, value: 'Recorded success' }),
         });
         if (ending === 'resolve')
           expect(transport.updateState.mock.calls[0][1]).toMatchObject({
