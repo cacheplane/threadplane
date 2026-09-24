@@ -471,6 +471,53 @@ async function scenario(
   }
 }
 
+async function identityScenario(
+  kind: string,
+  store: ClientToolExecutionStore,
+  otherTenant?: ClientToolExecutionStore
+): Promise<void> {
+  const threadId = 'identity-thread';
+  const ids = ['__proto__', 'constructor', 'toString', 'ordinary'];
+  const expected = Object.fromEntries(
+    ids.map((id) => [id, {
+      status: 'done', result: { ok: true, value: `saved-${id}` },
+    }])
+  );
+  await bounded(recordClientToolResults({
+    threadId,
+    messages: ids.map((id) => new ToolMessage({
+      tool_call_id: id, content: `saved-${id}`,
+    })),
+    store,
+  }), `${kind}: special-ID receipts`);
+  const found = await bounded(
+    store.lookup(threadId, [...ids, 'missing']), `${kind}: special-ID lookup`
+  );
+  assert.equal(Object.getPrototypeOf(found), Object.prototype);
+  assert.deepEqual(Object.keys(found).sort(), [...ids].sort());
+  for (const id of ids) assert.equal(Object.hasOwn(found, id), true);
+  assert.equal(Object.hasOwn(found, 'missing'), false);
+  assert.deepEqual(JSON.parse(JSON.stringify(found)), expected);
+
+  const alternate = { ok: true as const, value: 'other scope' };
+  const otherThread = 'identity-other-thread';
+  assert.deepEqual(await bounded(store.lookup(otherThread, ids), `${kind}: other thread`), {});
+  await bounded(store.record({ threadId: otherThread, toolCallId: '__proto__' }, alternate), `${kind}: other thread record`);
+  assert.deepEqual(await bounded(store.lookup(otherThread, ['__proto__']), `${kind}: other thread lookup`), {
+    ['__proto__']: { status: 'done', result: alternate },
+  });
+  if (otherTenant) {
+    assert.deepEqual(await bounded(otherTenant.lookup(threadId, ids), `${kind}: other tenant`), {});
+    await bounded(otherTenant.record({ threadId, toolCallId: '__proto__' }, alternate), `${kind}: other tenant record`);
+    assert.deepEqual(await bounded(otherTenant.lookup(threadId, ['__proto__']), `${kind}: other tenant lookup`), {
+      ['__proto__']: { status: 'done', result: alternate },
+    });
+  }
+  found['__proto__'].status = 'failed';
+  assert.deepEqual(await bounded(store.lookup(threadId, ids), `${kind}: original detached lookup`), expected);
+  console.log(`${kind}: special-ID receipt lookup, serialization and scope isolation passed`);
+}
+
 async function main(): Promise<void> {
   const failures: unknown[] = [];
   try {
@@ -509,6 +556,9 @@ async function main(): Promise<void> {
     ] as const) {
       try {
         await scenario(kind, store);
+        await identityScenario(kind, store, kind === 'postgres'
+          ? createPostgresClientToolExecutionStore(sql, { tenantId: 'identity-other-tenant' })
+          : undefined);
       } catch (error) {
         failures.push(error);
       }

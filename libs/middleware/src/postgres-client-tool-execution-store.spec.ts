@@ -28,6 +28,33 @@ describe('THREADPLANE_CLIENT_TOOL_EXECUTIONS_SCHEMA', () => {
 });
 
 describe('createPostgresClientToolExecutionStore', () => {
+  it('returns special call IDs as enumerable own lookup entries', async () => {
+    const ids = ['__proto__', 'constructor', 'toString', 'ordinary'];
+    const result = { ok: true, value: 'saved' };
+    const { sql } = makeSql([[
+      ...ids.map(tool_call_id => ({ tool_call_id, status: 'done', result })),
+      { tool_call_id: 42, status: 'done', result },
+    ]]);
+    const store = createPostgresClientToolExecutionStore(sql);
+    const found = await store.lookup('thread-1', [...ids, 'missing']);
+
+    expect(Object.getPrototypeOf(found)).toBe(Object.prototype);
+    expect(Object.keys(found)).toEqual(ids);
+    for (const id of ids) expect(Object.hasOwn(found, id)).toBe(true);
+    expect(Object.hasOwn(found, 'missing')).toBe(false);
+    expect(JSON.parse(JSON.stringify(found))).toEqual(
+      Object.fromEntries(ids.map(id => [id, { status: 'done', result }])),
+    );
+  });
+
+  it('returns an ordinary empty lookup without querying for no IDs', async () => {
+    const { sql, queries } = makeSql([]);
+    const found = await createPostgresClientToolExecutionStore(sql).lookup('thread-1', []);
+    expect(found).toEqual({});
+    expect(Object.getPrototypeOf(found)).toBe(Object.prototype);
+    expect(queries).toEqual([]);
+  });
+
   it('claims a new execution with ON CONFLICT DO NOTHING', async () => {
     const { sql, queries, values } = makeSql([[{ status: 'executing', result: null }]]);
     const store = createPostgresClientToolExecutionStore(sql, { tenantId: 'tenant-1' });

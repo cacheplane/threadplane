@@ -49,18 +49,19 @@ export function createInMemoryClientToolExecutionStore(): ClientToolExecutionSto
       threadId: string,
       toolCallIds: readonly string[],
     ): Promise<Record<string, ClientToolExecutionRecord>> {
-      const out: Record<string, ClientToolExecutionRecord> = {};
+      const entries: [string, ClientToolExecutionRecord][] = [];
       for (const toolCallId of toolCallIds) {
         const existing = records.get(mapKey({ threadId, toolCallId }));
-        if (existing) out[toolCallId] = cloneRecord(existing);
+        if (existing) entries.push([toolCallId, cloneRecord(existing)]);
       }
-      return out;
+      return Object.fromEntries(entries);
     },
   };
 }
 
 function mapKey(key: ClientToolExecutionKey): string {
-  return `${key.threadId}\0${key.toolCallId}`;
+  // Frame both strings without reserving a delimiter in either identity.
+  return JSON.stringify([key.threadId, key.toolCallId]);
 }
 
 function cloneRecord(record: ClientToolExecutionRecord): ClientToolExecutionRecord {

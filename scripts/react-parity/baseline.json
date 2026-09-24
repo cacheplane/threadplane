@@ -1,10 +1,9 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "0e1549c15628fc55d128e437e175d03dfa8e89e0",
+  "baselineHead": "fe4fefad734834e78ff183d3087904ad657ebced",
   "sourceState": {
     "modified": [
-      "libs/langgraph/src/runtime/create-session.ts",
-      "libs/langgraph/src/runtime/tool-persistence.ts"
+      "libs/langgraph/src/runtime/ownership.ts"
     ],
     "untracked": []
   },
@@ -9117,7 +9116,7 @@
           "path": "libs/middleware/src/langgraph/client-tool-execution-store.ts",
           "symbol": "createInMemoryClientToolExecutionStore",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function createInMemoryClientToolExecutionStore(): ClientToolExecutionStore {\n    const records = new Map<string, ClientToolExecutionRecord>();\n    return {\n        async claim(key: ClientToolExecutionKey): Promise<'claimed' | ClientToolExecutionRecord> {\n            const existing = records.get(mapKey(key));\n            if (existing)\n                return cloneRecord(existing);\n            records.set(mapKey(key), { status: 'executing' });\n            return 'claimed';\n        },\n        async record(key: ClientToolExecutionKey, result: ClientToolResult): Promise<void> {\n            records.set(mapKey(key), { status: 'done', result: cloneResult(result) });\n        },\n        async lookup(threadId: string, toolCallIds: readonly string[]): Promise<Record<string, ClientToolExecutionRecord>> {\n            const out: Record<string, ClientToolExecutionRecord> = {};\n            for (const toolCallId of toolCallIds) {\n                const existing = records.get(mapKey({ threadId, toolCallId }));\n                if (existing)\n                    out[toolCallId] = cloneRecord(existing);\n            }\n            return out;\n        },\n    };\n}"
+          "signature": "export function createInMemoryClientToolExecutionStore(): ClientToolExecutionStore {\n    const records = new Map<string, ClientToolExecutionRecord>();\n    return {\n        async claim(key: ClientToolExecutionKey): Promise<'claimed' | ClientToolExecutionRecord> {\n            const existing = records.get(mapKey(key));\n            if (existing)\n                return cloneRecord(existing);\n            records.set(mapKey(key), { status: 'executing' });\n            return 'claimed';\n        },\n        async record(key: ClientToolExecutionKey, result: ClientToolResult): Promise<void> {\n            records.set(mapKey(key), { status: 'done', result: cloneResult(result) });\n        },\n        async lookup(threadId: string, toolCallIds: readonly string[]): Promise<Record<string, ClientToolExecutionRecord>> {\n            const entries: [\n                string,\n                ClientToolExecutionRecord\n            ][] = [];\n            for (const toolCallId of toolCallIds) {\n                const existing = records.get(mapKey({ threadId, toolCallId }));\n                if (existing)\n                    entries.push([toolCallId, cloneRecord(existing)]);\n            }\n            return Object.fromEntries(entries);\n        },\n    };\n}"
         }
       ]
     },
@@ -9131,7 +9130,7 @@
           "path": "libs/middleware/src/langgraph/postgres-client-tool-execution-store.ts",
           "symbol": "createPostgresClientToolExecutionStore",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function createPostgresClientToolExecutionStore(sql: PostgresTaggedSql, opts: PostgresClientToolExecutionStoreOptions = {}): ClientToolExecutionStore {\n    const tenantId = opts.tenantId ?? '';\n    return {\n        async claim(key: ClientToolExecutionKey): Promise<'claimed' | ClientToolExecutionRecord> {\n            const inserted = await sql `\n        INSERT INTO threadplane_client_tool_executions\n          (tenant_id, thread_id, tool_call_id, status)\n        VALUES (${tenantId}, ${key.threadId}, ${key.toolCallId}, 'executing')\n        ON CONFLICT (tenant_id, thread_id, tool_call_id) DO NOTHING\n        RETURNING status, result\n      `;\n            if (inserted.length > 0)\n                return 'claimed';\n            const existing = await sql `\n        SELECT status, result\n        FROM threadplane_client_tool_executions\n        WHERE tenant_id = ${tenantId}\n          AND thread_id = ${key.threadId}\n          AND tool_call_id = ${key.toolCallId}\n        LIMIT 1\n      `;\n            return rowToRecord(existing[0]);\n        },\n        async record(key: ClientToolExecutionKey, result: ClientToolResult): Promise<void> {\n            await sql `\n        INSERT INTO threadplane_client_tool_executions\n          (tenant_id, thread_id, tool_call_id, status, result)\n        VALUES (${tenantId}, ${key.threadId}, ${key.toolCallId}, 'done', ${JSON.stringify(result)}::jsonb)\n        ON CONFLICT (tenant_id, thread_id, tool_call_id) DO UPDATE\n        SET status = 'done',\n            result = CASE\n              WHEN threadplane_client_tool_executions.status = 'done'\n                THEN threadplane_client_tool_executions.result\n              ELSE EXCLUDED.result\n            END,\n            updated_at = now()\n      `;\n        },\n        async lookup(threadId: string, toolCallIds: readonly string[]): Promise<Record<string, ClientToolExecutionRecord>> {\n            if (toolCallIds.length === 0)\n                return {};\n            const rows = await sql `\n        SELECT tool_call_id, status, result\n        FROM threadplane_client_tool_executions\n        WHERE tenant_id = ${tenantId}\n          AND thread_id = ${threadId}\n          AND tool_call_id = ANY(${[...toolCallIds]})\n      `;\n            const out: Record<string, ClientToolExecutionRecord> = {};\n            for (const row of rows) {\n                if (typeof row['tool_call_id'] !== 'string')\n                    continue;\n                out[row['tool_call_id']] = rowToRecord(row);\n            }\n            return out;\n        },\n    };\n}"
+          "signature": "export function createPostgresClientToolExecutionStore(sql: PostgresTaggedSql, opts: PostgresClientToolExecutionStoreOptions = {}): ClientToolExecutionStore {\n    const tenantId = opts.tenantId ?? '';\n    return {\n        async claim(key: ClientToolExecutionKey): Promise<'claimed' | ClientToolExecutionRecord> {\n            const inserted = await sql `\n        INSERT INTO threadplane_client_tool_executions\n          (tenant_id, thread_id, tool_call_id, status)\n        VALUES (${tenantId}, ${key.threadId}, ${key.toolCallId}, 'executing')\n        ON CONFLICT (tenant_id, thread_id, tool_call_id) DO NOTHING\n        RETURNING status, result\n      `;\n            if (inserted.length > 0)\n                return 'claimed';\n            const existing = await sql `\n        SELECT status, result\n        FROM threadplane_client_tool_executions\n        WHERE tenant_id = ${tenantId}\n          AND thread_id = ${key.threadId}\n          AND tool_call_id = ${key.toolCallId}\n        LIMIT 1\n      `;\n            return rowToRecord(existing[0]);\n        },\n        async record(key: ClientToolExecutionKey, result: ClientToolResult): Promise<void> {\n            await sql `\n        INSERT INTO threadplane_client_tool_executions\n          (tenant_id, thread_id, tool_call_id, status, result)\n        VALUES (${tenantId}, ${key.threadId}, ${key.toolCallId}, 'done', ${JSON.stringify(result)}::jsonb)\n        ON CONFLICT (tenant_id, thread_id, tool_call_id) DO UPDATE\n        SET status = 'done',\n            result = CASE\n              WHEN threadplane_client_tool_executions.status = 'done'\n                THEN threadplane_client_tool_executions.result\n              ELSE EXCLUDED.result\n            END,\n            updated_at = now()\n      `;\n        },\n        async lookup(threadId: string, toolCallIds: readonly string[]): Promise<Record<string, ClientToolExecutionRecord>> {\n            if (toolCallIds.length === 0)\n                return {};\n            const rows = await sql `\n        SELECT tool_call_id, status, result\n        FROM threadplane_client_tool_executions\n        WHERE tenant_id = ${tenantId}\n          AND thread_id = ${threadId}\n          AND tool_call_id = ANY(${[...toolCallIds]})\n      `;\n            const entries: [\n                string,\n                ClientToolExecutionRecord\n            ][] = [];\n            for (const row of rows) {\n                if (typeof row['tool_call_id'] !== 'string')\n                    continue;\n                entries.push([row['tool_call_id'], rowToRecord(row)]);\n            }\n            return Object.fromEntries(entries);\n        },\n    };\n}"
         }
       ]
     },
@@ -12735,7 +12734,7 @@
       "id": "source:libs/middleware/src/langgraph/client-tool-execution-store.ts",
       "kind": "source",
       "path": "libs/middleware/src/langgraph/client-tool-execution-store.ts",
-      "sha256": "08f74dd9648bd9c762e4a22169052a8426ed00426359d9b583c02b6662811cea"
+      "sha256": "74a7909e937d9b24094e41dd1cb08cd3710d1bc12320c0213a9d31e5b578452d"
     },
     {
       "id": "source:libs/middleware/src/langgraph/client-tool-result-guard.ts",
@@ -12759,7 +12758,7 @@
       "id": "source:libs/middleware/src/langgraph/postgres-client-tool-execution-store.ts",
       "kind": "source",
       "path": "libs/middleware/src/langgraph/postgres-client-tool-execution-store.ts",
-      "sha256": "a579cbdb494c1d89181c031e8db4691fea7c7e938a26c4f28f469c59d4d28c6b"
+      "sha256": "b97390ce9daa239694da63ba6cedf0eb8e420047c9aa0645abb741f750e42892"
     },
     {
       "id": "source:libs/middleware/src/langgraph/router.ts",
