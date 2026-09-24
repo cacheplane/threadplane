@@ -20,6 +20,114 @@ function message(
 }
 
 describe('pure text and tool transitions', () => {
+  it('replaces citation lists, preserves omitted interim metadata and shares equal metadata across text changes', () => {
+    const citations = [{ id: 'c', index: 1, extra: { nested: ['original'] } }];
+    const first = reduceMessages(initialMessageState(), {
+      type: 'message',
+      mode: 'snapshot',
+      message: { ...message('m', 'A'), citations },
+    });
+    const owned = first.messages[0].citations;
+    citations[0].extra.nested.push('mutated');
+    expect(owned?.[0].extra).toEqual({ nested: ['original'] });
+    const delta = reduceMessages(first, {
+      type: 'message',
+      mode: 'delta',
+      message: message('m', 'B'),
+    });
+    expect(delta.messages[0].content).toBe('AB');
+    expect(delta.messages[0].citations).toBe(owned);
+    const equal = reduceMessages(delta, {
+      type: 'message',
+      mode: 'snapshot',
+      message: {
+        ...message('m', 'ABC'),
+        citations: [{ id: 'c', index: 1, extra: { nested: ['original'] } }],
+      },
+    });
+    expect(equal.messages[0].citations).toBe(owned);
+    const updatedTitle = reduceMessages(equal, {
+      type: 'message',
+      mode: 'snapshot',
+      message: {
+        ...message('m', 'ABC'),
+        citations: [
+          {
+            id: 'c',
+            index: 1,
+            title: 'Updated',
+            extra: { nested: ['original'] },
+          },
+        ],
+      },
+    });
+    expect(updatedTitle.messages[0].citations).not.toBe(owned);
+    expect(updatedTitle.messages[0].citations?.[0].extra).toBe(owned?.[0].extra);
+    const changed = reduceMessages(equal, {
+      type: 'message',
+      mode: 'delta',
+      message: { ...message('m', ''), citations: [{ id: 'next', index: 2 }] },
+    });
+    expect(changed.messages[0].citations).toEqual([{ id: 'next', index: 2 }]);
+    expect(
+      reduceMessages(changed, {
+        type: 'message',
+        mode: 'delta',
+        message: { ...message('m', ''), citations: [{ id: 'next', index: 2 }] },
+      })
+    ).toBe(changed);
+    expect(
+      reduceMessages(changed, {
+        type: 'message',
+        mode: 'snapshot',
+        message: { ...message('m', ''), citations: [] },
+      }).messages[0].citations
+    ).toEqual([]);
+  });
+
+  it.each([undefined, []])(
+    'canonical citation removal %j bars late resurrection while ordered corrections remain authoritative',
+    (removed) => {
+      const withCitation = {
+        ...message('m', 'Text'),
+        citations: [{ id: 'c', index: 1 }],
+      };
+      const first = reduceMessages(initialMessageState(), {
+        type: 'message',
+        mode: 'snapshot',
+        message: withCitation,
+      });
+      const canonical = reduceMessages(first, {
+        type: 'message',
+        mode: 'canonical',
+        message: { ...message('m', 'Final'), citations: removed },
+      });
+      expect(canonical.messages[0].citations).toEqual(removed);
+      for (const mode of ['delta', 'snapshot'] as const) {
+        const late = reduceMessages(canonical, {
+          type: 'message',
+          mode,
+          message: withCitation,
+        });
+        expect(late.messages[0].content).toBe('Final');
+        expect(late.messages[0].citations).toBe(canonical.messages[0].citations);
+      }
+      expect(
+        reduceMessages(canonical, {
+          type: 'message',
+          mode: 'canonical',
+          message: withCitation,
+        }).messages[0].citations
+      ).toEqual(withCitation.citations);
+      const nextGeneration = reduceMessages(first, {
+        type: 'message',
+        mode: 'snapshot',
+        message: { ...message('m', 'New'), delivery: streamingDelivery('run-2') },
+      });
+      expect(nextGeneration.messages[0].citations).toBeUndefined();
+    }
+  );
+
   it.each([
     { label: 'empty to holes', from: 0, to: 2, populated: false },
     { label: 'shorter trailing holes', from: 3, to: 1, populated: true },

@@ -170,6 +170,10 @@ export function sameMessage(a: Message, b: Message): boolean {
     (a.id === b.id &&
       a.role === b.role &&
       a.content === b.content &&
+      sameOwnedValue(
+        a.citations as unknown as PlainValue,
+        b.citations as unknown as PlainValue
+      ) &&
       a.name === b.name &&
       a.toolCallId === b.toolCallId &&
       sameOwnedValue(a.toolCallIds, b.toolCallIds) &&
@@ -181,12 +185,17 @@ export function sameMessage(a: Message, b: Message): boolean {
   );
 }
 
-export function ownMessage(message: Message): Message {
-  if (owned.has(message)) return message;
+export function ownMessage(message: Message, previous?: Message): Message {
+  const citations = ownValueWithSharing(
+    message.citations as unknown as PlainValue,
+    previous?.citations as unknown as PlainValue
+  ) as unknown as Message['citations'];
+  if (owned.has(message) && citations === message.citations) return message;
   return freeze({
     id: message.id,
     role: message.role,
     content: message.content,
+    citations,
     delivery:
       message.delivery.phase === 'complete'
         ? completeDelivery(
@@ -233,7 +242,7 @@ export function ownToolCall(call: ToolCall): ToolCall {
 function ownArray<T>(
   values: readonly T[],
   previous: readonly T[] | undefined,
-  project: (value: T) => T,
+  project: (value: T, previous?: T) => T,
   equal: (a: T, b: T) => boolean
 ): readonly T[] {
   if (values === previous) return values;
@@ -242,7 +251,10 @@ function ownArray<T>(
   const next = values.map((value, index) => {
     // Ownership permits reuse, not a change notification. A distinct owned
     // array may still equal the current one (including queued publications).
-    const projected = alreadyOwned ? value : project(value);
+    const projected =
+      alreadyOwned && previous?.[index] === undefined
+        ? value
+        : project(value, previous?.[index]);
     return previous?.[index] !== undefined && equal(projected, previous[index])
       ? previous[index]
       : projected;

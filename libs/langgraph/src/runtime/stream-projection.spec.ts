@@ -24,7 +24,7 @@ const projection = (): StreamProjection => ({
   paused: false,
   canonical: [],
 });
-function start(messages = [assistant('step', ['c1'])]) {
+function start(messages: unknown[] = [assistant('step', ['c1'])]) {
   return projectStream(initialMessageState(), projection(), {
     type: 'values',
     data: { messages: [user, ...messages] },
@@ -32,6 +32,36 @@ function start(messages = [assistant('step', ['c1'])]) {
 }
 
 describe('authoritative tool ownership', () => {
+  it('captures terminal citations before finalization and clears omitted canonical metadata', () => {
+    const citations = [
+      { id: 'source', title: 'Original', extra: { tags: ['original'] } },
+    ];
+    const before = start([
+      { ...assistant('step'), additional_kwargs: { citations } },
+    ]);
+    expect(before.state.messages[1].citations?.[0].title).toBe('Original');
+    citations[0].title = 'Mutated';
+    citations[0].extra.tags.push('mutated');
+    const final = finalizeProjection(before.state, before.projection);
+    expect(final.messages[1].citations?.[0]).toEqual({
+      id: 'source',
+      index: 1,
+      title: 'Original',
+      extra: { tags: ['original'] },
+    });
+    const correction = projectStream(final, before.projection, {
+      type: 'values',
+      data: { messages: [user, assistant('step', undefined, 'Corrected')] },
+    });
+    expect(correction.state.messages[1].citations).toBe(
+      final.messages[1].citations
+    );
+    expect(
+      finalizeProjection(correction.state, correction.projection).messages[1]
+        .citations
+    ).toBeUndefined();
+  });
+
   it('leaves pause classification to the aggregate interrupt projector without reading control getters', () => {
     const before = start();
     const next = projectStream(before.state, before.projection, {

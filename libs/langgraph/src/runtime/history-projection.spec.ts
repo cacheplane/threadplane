@@ -49,6 +49,35 @@ function checkpoint(
 const initial = () => initialMessageState();
 
 describe('pure authoritative history projection', () => {
+  it('owns citations, shares equal histories and equal metadata across text changes, and clears authoritative omissions', () => {
+    const citations = [{ title: 'Source', extra: { tags: ['original'] } }];
+    const input = () =>
+      checkpoint([{ ...ai('a'), additional_kwargs: { citations } }]);
+    const first = projectHistory(initial(), [input()]);
+    expect(first.messages[0].citations?.[0]).toEqual({
+      id: 'c1',
+      index: 1,
+      title: 'Source',
+      extra: { tags: ['original'] },
+    });
+    expect(projectHistory(first, [input()])).toBe(first);
+    const changed = projectHistory(first, [
+      checkpoint([{ ...ai('a', 'Changed'), additional_kwargs: { citations } }]),
+    ]);
+    expect(changed.messages[0].citations).toBe(first.messages[0].citations);
+    citations[0].title = 'Mutated';
+    citations[0].extra.tags.push('mutated');
+    citations.push({ title: 'Another', extra: { tags: [] } });
+    expect(first.messages[0].citations).toHaveLength(1);
+    expect(first.messages[0].citations?.[0].title).toBe('Source');
+    expect(first.messages[0].citations?.[0].extra).toEqual({
+      tags: ['original'],
+    });
+    expect(
+      projectHistory(first, [checkpoint([ai('a')])]).messages[0].citations
+    ).toBeUndefined();
+  });
+
   it('uses an explicit empty values control as breakpoint evidence for the latest assistant', () => {
     const messages = [human('old-u'), ai('old-a'), human('new-u'), ai('new-a')];
     const state = projectHistory(initial(), [

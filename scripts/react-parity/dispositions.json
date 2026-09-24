@@ -11215,7 +11215,8 @@
         "T08"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "planned",
+      "note": "Private runtime citation projection now stages the aliases with owned plain metadata. Consolidation/removal at backend cutover remains planned; legacy arbitrary-extra and Date semantics are not claimed equivalent."
     },
     {
       "id": "source:libs/langgraph/src/lib/internals/stream-manager.bridge.ts",
@@ -11345,6 +11346,14 @@
       ],
       "treatment": "shared",
       "status": "planned"
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/citation-projection.ts",
+      "taskIds": ["T08", "T09", "T15"],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private owned citation metadata projection, verified through both installed native bindings; not a public backend cutover.",
+      "note": "Normalizes existing aliases with absent/empty distinction, finite primitive timestamps and deeply owned plain extras. Rich blocks, reasoning/timing, citation UI and full T09/T15 parity remain open."
     },
     {
       "id": "source:libs/langgraph/src/runtime/run-options.ts",
@@ -11478,7 +11487,7 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private staged LangGraph runtime subset; fixture-only and not a neutral public LangGraph root or tarball.",
-      "note": "Owns immutable interrupt batches alongside values/messages, preserving unchanged nested identity. Broader execution/publication migration remains open."
+      "note": "Owns immutable interrupt batches and citation arrays/entries/plain extras alongside values/messages, preserving equal metadata identity across changed text and queued publications. Broader execution/publication migration remains open."
     },
     {
       "id": "source:libs/langgraph/src/runtime/publication.ts",

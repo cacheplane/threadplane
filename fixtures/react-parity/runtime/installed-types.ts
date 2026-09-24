@@ -2,6 +2,7 @@ import type {
   AgentError,
   AgentSession,
   AgentSnapshot,
+  Citation,
   CompleteOutcome,
   Message,
   PlainValue,
@@ -14,6 +15,41 @@ import type { FixtureTools } from './scenarios';
 
 export function assertSnapshot(snapshot: AgentSnapshot<FixtureTools>) {
   /* BACKEND_VALUES */
+  const citations: readonly Citation[] | undefined =
+    snapshot.messages[0]?.citations;
+  if (citations) {
+    const citation: Citation = citations[0];
+    const publishedAt: string | number | undefined = citation.publishedAt;
+    const extra: Readonly<Record<string, PlainValue>> | undefined =
+      citation.extra;
+    // @ts-expect-error Citation collections remain readonly through the native binding.
+    citations.push(citation);
+    // @ts-expect-error Citation fields remain readonly.
+    citation.title = 'changed';
+    if (extra) {
+      // @ts-expect-error Provider records remain deeply readonly plain data.
+      extra['changed'] = true;
+      const nested = extra['nested'];
+      if (nested && typeof nested === 'object') {
+        // @ts-expect-error Nested provider records remain readonly.
+        nested['value'] = true;
+      }
+    }
+    void publishedAt;
+  }
+  const badTimestamp: Citation = {
+    id: 'c',
+    index: 1,
+    // @ts-expect-error Date timestamps are not in the neutral contract.
+    publishedAt: new Date(),
+  };
+  const badExtra: Citation = {
+    id: 'c',
+    index: 1,
+    // @ts-expect-error SDK instances and callbacks cannot enter plain extras.
+    extra: { date: new Date(), callback: () => true },
+  };
+  void [badTimestamp, badExtra];
   for (const call of snapshot.toolCalls) {
     if (call.name === 'weather') {
       const city: string = call.args.city;

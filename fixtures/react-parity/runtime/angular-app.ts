@@ -173,6 +173,12 @@ const submit = (input: string) => {
                 view().transcript
               }}</output>
             </div>
+            <div class="field">
+              <h3>Citations</h3>
+              <output aria-label="Citations" data-testid="citations">{{
+                view().citations
+              }}</output>
+            </div>
           </div>
         </section>
         <section class="panel" aria-label="Application values panel">

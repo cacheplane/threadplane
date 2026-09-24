@@ -1,7 +1,7 @@
 # @threadplane/core
 
 Private, unpublished agent contracts for the shared runtime work. The root exports
-readonly text messages, delivery outcomes, plain error projections, authored tool
+readonly text messages and citations, delivery outcomes, plain error projections, authored tool
 call types, snapshots and the minimal session interface. This package implements
 delivery constructors and error projection, not an execution owner or public store.
 
@@ -15,6 +15,13 @@ readonly plain snapshot data and keep references stable between changes. Raw err
 causes, controllers, SDK instances and arbitrary extras belong to effect boundaries.
 `projectAgentError` copies already classified display fields; it does not classify
 transport failures. Tool failures carry a plain error string instead.
+
+`Message.citations` optionally contains readonly `Citation` source metadata: stable
+IDs/order, title, URL, snippet, source type, icon URL, primitive publication time,
+and deeply readonly plain provider extras. These strings are authored display data;
+they do not certify source accuracy or safe HTML/navigation. No URL is fetched or
+footnote resolved. Date instances, SDK objects and functions are outside this
+portable contract.
 
 Tool contracts pair authored TypeScript argument/result types by name, including
 ordinary interfaces. Pending calls have decoded, finalized arguments awaiting

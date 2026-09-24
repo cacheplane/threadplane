@@ -221,6 +221,12 @@ function App() {
                 {view.transcript}
               </output>
             </div>
+            <div className="field">
+              <h3>Citations</h3>
+              <output aria-label="Citations" data-testid="citations">
+                {view.citations}
+              </output>
+            </div>
           </div>
         </section>
         <section className="panel" aria-label="Application values panel">

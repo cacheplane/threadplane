@@ -1,21 +1,16 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "f8de78635270a3158de156aa060dce2bdd875fd6",
+  "baselineHead": "4d47995333278f9a19491925bc555d30f8490956",
   "sourceState": {
     "modified": [
-      "libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
-      "libs/langgraph/src/runtime/create-session.ts",
-      "libs/langgraph/src/runtime/stream-projection.ts",
-      "libs/langgraph/src/runtime/tool-persistence.ts",
-      "libs/langgraph/src/runtime/transport.types.ts"
+      "libs/langgraph/src/runtime/README.md",
+      "libs/langgraph/src/runtime/history-projection.ts",
+      "libs/langgraph/src/runtime/message-reducer.ts",
+      "libs/langgraph/src/runtime/ownership.ts",
+      "libs/langgraph/src/runtime/stream-projection.ts"
     ],
     "untracked": [
-      "libs/langgraph/src/lib/transport/checkpoint-position.ts",
-      "libs/langgraph/src/runtime/README.md",
-      "libs/langgraph/src/runtime/checkpoint-authority.ts",
-      "libs/langgraph/src/runtime/checkpoint-state.ts",
-      "libs/langgraph/src/runtime/checkpoint-tool-evidence.ts",
-      "libs/langgraph/src/runtime/testing/checkpoint-fixture.ts"
+      "libs/langgraph/src/runtime/citation-projection.ts"
     ]
   },
   "scope": {
@@ -605,7 +600,7 @@
       "id": "asset:libs/langgraph/src/runtime/README.md",
       "kind": "asset",
       "path": "libs/langgraph/src/runtime/README.md",
-      "sha256": "45d9aad401d27f6e53dbe2aa5f495e4665a89a69bdf4208525b7e7ca619c818b"
+      "sha256": "289b901753126e898d40f9a84c093afeb630a7f78692ef6bf867e955e1c77f48"
     },
     {
       "id": "asset:libs/langgraph/test/fixtures/streaming-reasoning-puzzle.json",
@@ -12506,6 +12501,12 @@
       "sha256": "833f052dee8017dd6bdf1968457d85e0efa7a204dbc0d75b490b5ec82e6d2db2"
     },
     {
+      "id": "source:libs/langgraph/src/runtime/citation-projection.ts",
+      "kind": "source",
+      "path": "libs/langgraph/src/runtime/citation-projection.ts",
+      "sha256": "52d99b652713e964242f38ec9e81f74695ecac938d42f10255b70d3c7eab8201"
+    },
+    {
       "id": "source:libs/langgraph/src/runtime/create-session.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/create-session.ts",
@@ -12521,7 +12522,7 @@
       "id": "source:libs/langgraph/src/runtime/history-projection.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/history-projection.ts",
-      "sha256": "9a12195d4b74caab2776cf5cbb4da72949f60db5abab8ed762c75608dbbe5239"
+      "sha256": "c9b18e186261d16d6b363ddc906793acbf3295e4a5c45e93bbf2d555bd2b2e92"
     },
     {
       "id": "source:libs/langgraph/src/runtime/interrupt-projection.ts",
@@ -12539,7 +12540,7 @@
       "id": "source:libs/langgraph/src/runtime/message-reducer.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/message-reducer.ts",
-      "sha256": "b4842acc1b3c957b7606fcdf3c9c42ab4f569bc858abab46f722e8d2a98b55b2"
+      "sha256": "5758caaae8c31361a9361b81a7995239c10a48bf670a135a9fe6a327da2e6531"
     },
     {
       "id": "source:libs/langgraph/src/runtime/operation-errors.ts",
@@ -12551,7 +12552,7 @@
       "id": "source:libs/langgraph/src/runtime/ownership.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/ownership.ts",
-      "sha256": "f7f3d00e1f1b7bd196a09dc907d06618a85c8513b69a5ffa229d7567451b7876"
+      "sha256": "0cfc4dabfedbc3aa9406b943257ab3df3bae240276ccaec6d50f1e51f11e5c69"
     },
     {
       "id": "source:libs/langgraph/src/runtime/publication.ts",
@@ -12575,7 +12576,7 @@
       "id": "source:libs/langgraph/src/runtime/stream-projection.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/stream-projection.ts",
-      "sha256": "85ac624f5921d63ba5bff724c14612279934447c5178654b6d5db2d257f99635"
+      "sha256": "076cf6eb83b633d67a42118d7f17931b3f5010ca9f00b7c15e97bf5214f42240"
     },
     {
       "id": "source:libs/langgraph/src/runtime/subgraph-projection.ts",

@@ -477,5 +477,226 @@
       "Strict deterministic HTTP evidence complements separate real-server tests; it does not certify general LangGraph compatibility or cross-client atomicity.",
       "No new public API, branch UI library, dependency update, package-root migration or release."
     ]
+  },
+  "ownedCitationProjection": {
+    "observedOn": "2026-09-24",
+    "scope": "Private owned citation metadata in the shared message read model, observed through both installed native bindings; no public LangGraph root migration or citation renderer.",
+    "source": {
+      "baseCommit": "4d47995333278f9a19491925bc555d30f8490956",
+      "workingTree": "Uncommitted owned-citation implementation on the reviewed installed-checkpoint milestone, itself based on merged #1156. Hashes identify tested inputs, not a future commit.",
+      "algorithm": "SHA-256(file bytes); manifest hash is SHA-256 of sorted sha256 + two spaces + path + LF lines.",
+      "inputs": [
+        {
+          "path": "fixtures/react-parity/runtime/angular-app.ts",
+          "sha256": "596f37317491248d7ec86d02fcc2138bc4231667c73d1e4bfa244a81c1970937"
+        },
+        {
+          "path": "fixtures/react-parity/runtime/installed-types.ts",
+          "sha256": "3ef07efb0d9f3531dbe77ea464683cc4a7f0cfd6f10bad7b3e119978b1c7165d"
+        },
+        {
+          "path": "fixtures/react-parity/runtime/react-app.tsx",
+          "sha256": "cde2df17216eb7ea132f495dd48b77ca38122f36122c924ffbe2c199588412bc"
+        },
+        {
+          "path": "fixtures/react-parity/runtime/runtime-entry.ts",
+          "sha256": "72509ac95343b1e2d09c825d5017408fcd66891d5efb96e6e742270baf90aebd"
+        },
+        {
+          "path": "fixtures/react-parity/runtime/scenarios.ts",
+          "sha256": "6a43712903b9529a2f16fead4e2164f3d1ba2f2da4556abccbb784d3ed660d4a"
+        },
+        {
+          "path": "libs/core/src/contracts/citation.ts",
+          "sha256": "5b8b1acdbdfc6a4f74305f2cd3e507858727069582b3f9d81bc5a71498ceb1c1"
+        },
+        {
+          "path": "libs/core/src/contracts/message.ts",
+          "sha256": "e8661f99972c20e22728566e6219105507e91ccd7166b1686d0a92d34c6d84ff"
+        },
+        {
+          "path": "libs/core/src/index.ts",
+          "sha256": "90b04d322bb6ea03f41263a4756d7edae70e49794f1201fbdd6f7b5b99ba549d"
+        },
+        {
+          "path": "libs/langgraph/src/runtime/checkpoint-authority.ts",
+          "sha256": "f56912f077e4ba891f9a55419e89743d62f573c435c3984fb64ac0803271c3dc"
+        },
+        {
+          "path": "libs/langgraph/src/runtime/citation-projection.ts",
+          "sha256": "52d99b652713e964242f38ec9e81f74695ecac938d42f10255b70d3c7eab8201"
+        },
+        {
+          "path": "libs/langgraph/src/runtime/create-session.ts",
+          "sha256": "f4c6a1e693d205cf48a7c9ec357ddf037bdcf4ceabe315c6529c6806fbdaefb1"
+        },
+        {
+          "path": "libs/langgraph/src/runtime/history-projection.ts",
+          "sha256": "c9b18e186261d16d6b363ddc906793acbf3295e4a5c45e93bbf2d555bd2b2e92"
+        },
+        {
+          "path": "libs/langgraph/src/runtime/message-reducer.ts",
+          "sha256": "5758caaae8c31361a9361b81a7995239c10a48bf670a135a9fe6a327da2e6531"
+        },
+        {
+          "path": "libs/langgraph/src/runtime/ownership.ts",
+          "sha256": "0cfc4dabfedbc3aa9406b943257ab3df3bae240276ccaec6d50f1e51f11e5c69"
+        },
+        {
+          "path": "libs/langgraph/src/runtime/publication.ts",
+          "sha256": "7d290721417d504313f893ee7e90154b85e9eee27d05f6cce816d592495791e5"
+        },
+        {
+          "path": "libs/langgraph/src/runtime/stream-projection.ts",
+          "sha256": "076cf6eb83b633d67a42118d7f17931b3f5010ca9f00b7c15e97bf5214f42240"
+        },
+        {
+          "path": "package-lock.json",
+          "sha256": "530c28574a832ab39c15c9607717de0eb8ccfae2593e09c7ae373bd8936d0b64"
+        },
+        {
+          "path": "scripts/react-parity/runtime-consumer.mjs",
+          "sha256": "1620b2bea166aa3cb0ea9fd2bef835b8f60f298eeea55331a3e045f36068c8d8"
+        }
+      ],
+      "manifestSha256": "734886ae78fe391f149ca6a3fce7eedf08eddd03790bb1de78fbecde44ecba2f"
+    },
+    "automated": {
+      "core": {
+        "targets": [
+          "test",
+          "type-tests",
+          "lint",
+          "build"
+        ],
+        "path": "/tmp/owned-citations-core-final-restored.log",
+        "sha256": "e05e9066f318050de23cf28a6c6eadb71f0dabaacd5a747c0f186d1f125935ca"
+      },
+      "runtime": {
+        "targets": [
+          "runtime-quality",
+          "runtime-type-tests"
+        ],
+        "tests": 859,
+        "files": 46,
+        "path": "/tmp/owned-citations-runtime-final.log",
+        "sha256": "72e0e86b389deff226249eeb4bd3fcc31e8530c953c58b967a6d214a7ae6b960"
+      },
+      "publicLangGraph": {
+        "targets": [
+          "test",
+          "type-tests",
+          "build"
+        ],
+        "path": "/tmp/owned-citations-public-langgraph.log",
+        "sha256": "9f46bbff7513f767d905cc0dad955a1b7eaac1d307900d617d15d6bec289835f"
+      },
+      "packageBuilds": {
+        "projects": [
+          "core",
+          "content",
+          "react",
+          "angular"
+        ],
+        "path": "/tmp/owned-citations-build-consumers.log",
+        "sha256": "35d5810824fba54bc69b0cf54ab9b13a1ab147e3d62ddcb60b6fbc07f13e96e8"
+      },
+      "parityScripts": {
+        "tests": 329,
+        "path": "/tmp/owned-citations-parity-scripts.log",
+        "sha256": "36923eccbb0ff34d967909d8bbd7f928c2167d57f9e71808739e80d55d89142b"
+      },
+      "react": {
+        "scenarios": 27,
+        "path": "/tmp/owned-citations-installed-react-restored.log",
+        "sha256": "2b11a4267ff6e40cfaae745f805118d25916f7a8276787a8bf814d0056e39e9f"
+      },
+      "angular": {
+        "scenarios": 27,
+        "path": "/tmp/owned-citations-installed-angular-restored.log",
+        "sha256": "ea4619deb6f8a1a487a5cd09733256f94c31a78820af1e9c385649f7276c1618"
+      },
+      "boundaries": {
+        "path": "/tmp/owned-citations-boundaries.log",
+        "sha256": "995db896b38cf7de5ca9db6590dba47e082d26abdf69bab04b92eee484696063"
+      },
+      "versions": {
+        "path": "/tmp/owned-citations-versions.log",
+        "sha256": "1d9f9440bfffad48cca3d74ddec850cf803b8f449dcee2216776392713bf9374"
+      },
+      "inventory": {
+        "path": "/tmp/owned-citations-inventory-check.log",
+        "sha256": "ee3072f80303358bc95e35f0d8f71b478dc82b1049814291166802e581948719"
+      }
+    },
+    "redGreen": [
+      {
+        "path": "/tmp/owned-citations-contract-red.log",
+        "sha256": "4d1b4438ae3840b3b25139d69d37336dddd380f2b3acb9cda48d984da39bd880",
+        "expectedFailure": "Core has no exported Citation type or Message.citations field."
+      },
+      {
+        "path": "/tmp/owned-citations-normalizer-red.log",
+        "sha256": "f34bb7c33368482aec4e736d0323535aef1b43147356607e91ccfa37e26cd774",
+        "expectedFailure": "Neutral citation projection module missing."
+      },
+      {
+        "path": "/tmp/owned-citations-projection-red.log",
+        "sha256": "3b41e28eae7a61e86610c440f4a6c6201ff81138738bee4a12cc4541834db320",
+        "expectedFailure": "Six ownership/reduction/history/stream/publication citation tests fail while existing cases pass."
+      }
+    ],
+    "semanticNegativeControl": {
+      "mutation": "Temporarily omit only the production history-projection citations assignment, keeping the native fields and wire citations in place.",
+      "react": {
+        "path": "/tmp/owned-citations-installed-react-negative.log",
+        "sha256": "8fa5d26b97a748146996ddde49597b97814095c05178110f4c70fbc984968472"
+      },
+      "angular": {
+        "path": "/tmp/owned-citations-installed-angular-negative.log",
+        "sha256": "48301b5348f2f86d61b37e3557a41211f6e171daceccb946bcc096631cbc7c74"
+      },
+      "expectedFailure": "Both native installed consumers expected saved-source: Saved reference and received empty citation text.",
+      "restoration": "Original history-projection source restored in finally and byte-compared with cmp; both installed consumers then passed all 27 scenarios.",
+      "restoredHistorySha256": "c9b18e186261d16d6b363ddc906793acbf3295e4a5c45e93bbf2d555bd2b2e92"
+    },
+    "installedAssertions": [
+      "Readonly Citation and nested plain metadata through both native bindings with skipLibCheck:false.",
+      "Saved source alias normalizes on history load and equal refresh, and empty history clears it.",
+      "First Resume publishes approval-source; second Resume canonically clears citations on the same assistant message.",
+      "Existing main/thread/checkpoint request counts, tool runs and lifecycle assertions stay unchanged."
+    ],
+    "manualReview": {
+      "date": "2026-09-24",
+      "react": "Chrome MCP, owned port 56833",
+      "angular": "In-app browser, owned port 56834",
+      "sequence": "Load, Load, Load, Pause, Resume, Resume, Dispose",
+      "observations": [
+        "Saved reference appeared on the first history load, survived equal history, and cleared with empty history.",
+        "Approval reference appeared during resumed approval and cleared at canonical completion in both native views.",
+        "Both views finished three loads and two resumes, recorded zero local tool handlers, and disposed their owner.",
+        "Both browser consoles had zero warnings and errors.",
+        "Chrome independently recorded exactly six successful POST requests: three histories and three runs. Angular network behavior was checked by the automated oracle."
+      ],
+      "runner": "/tmp/owned-citations-manual-runner.log",
+      "freshAutomatedScenarios": 54,
+      "cleanup": "Only the two owned tabs and runner were closed; ports 56833 and 56834 were confirmed closed. Existing manual sessions were preserved.",
+      "scope": "Citation lifecycle walkthrough only; not an additional manual review of every main, thread or checkpoint scenario."
+    },
+    "independentReview": {
+      "compliance": "Approved; 106 focused runtime tests passed. A misleading test title was clarified and all 19 session citation tests rerun.",
+      "quality": "Approved with no must-fix findings; 39 citation/metadata tests passed. All 18 input hashes and 15 recorded log hashes matched.",
+      "parent": "Inspected production and fixture changes, reran all 859 runtime tests and runtime/public types, and performed the scoped browser walkthrough."
+    },
+    "documentation": {
+      "generatorsRun": [],
+      "reason": "Only private core/runtime and contributor fixtures changed. API generator registers langgraph/chat/render/ag-ui/a2ui/middleware public roots, with no core entry. No public API, narrative docs or public agent-context input changed."
+    },
+    "limits": [
+      "Display strings do not certify source truth or safe HTML/navigation.",
+      "Strict checkpoint ingress still rejects Date and cyclic/non-plain values before citation normalization.",
+      "Legacy Angular arbitrary-extra semantics remain separate until backend cutover.",
+      "No full T09/T15 parity, rich blocks, reasoning/timing, citation UI, dependency upgrade, release, live-server, SSR or performance claim."
+    ]
   }
 }
