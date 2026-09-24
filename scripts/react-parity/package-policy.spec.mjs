@@ -2,6 +2,23 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as policy from './package-policy.mjs';
 
+for (const root of ['/repo', '/repo/', 'C:\\repo', 'C:/repo/']) {
+  test(`runtime source policy normalizes path separators for ${root}`, () => {
+    const prefix = `${root.replace(/[/\\]$/, '')}/libs/langgraph/`;
+    for (const path of [
+      `${prefix}src/runtime/create-session.ts`,
+      `${prefix}src/runtime/transport.types.ts`,
+      `${prefix}src/runtime/operation-errors.ts`,
+      `${prefix}src/runtime/transport.types.ts/bridge.ts`,
+      `${prefix}src/runtime-copy/create-session.ts`,
+    ]) {
+      const expected = path.endsWith('/transport.types.ts') || path.endsWith('/operation-errors.ts') ? 'shared' : path.includes('/runtime/') ? 'private' : undefined;
+      assert.equal(policy.langGraphRuntimeSourceKind(root, path), expected);
+      assert.equal(policy.langGraphRuntimeSourceKind(root, path.replaceAll('/', '\\')), expected);
+    }
+  });
+}
+
 test('final internal dependencies follow the approved package roles', () => {
   const expected = { core: [], langgraph: ['core'], 'ag-ui': ['core'], render: ['core'], a2ui: [], content: ['core', 'render', 'a2ui'], angular: ['core', 'content', 'render', 'a2ui'], react: ['core', 'content', 'render', 'a2ui'], telemetry: ['core'] };
   for (const [project, allowed] of Object.entries(expected)) {
