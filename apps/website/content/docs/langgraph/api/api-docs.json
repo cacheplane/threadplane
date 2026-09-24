@@ -294,8 +294,33 @@
         ]
       },
       {
+        "name": "getState",
+        "signature": "getState(threadId: string, checkpoint: OwnedCheckpointPosition, signal: AbortSignal): Promise<ThreadState<DefaultValues>>",
+        "description": "Read one exact saved checkpoint with the command's cancellation signal.",
+        "params": [
+          {
+            "name": "threadId",
+            "type": "string",
+            "description": "",
+            "optional": false
+          },
+          {
+            "name": "checkpoint",
+            "type": "OwnedCheckpointPosition",
+            "description": "",
+            "optional": false
+          },
+          {
+            "name": "signal",
+            "type": "AbortSignal",
+            "description": "",
+            "optional": false
+          }
+        ]
+      },
+      {
         "name": "joinStream",
-        "signature": "joinStream(threadId: string, runId: string, lastEventId: string | undefined, signal: AbortSignal): AsyncIterable<StreamEvent>",
+        "signature": "joinStream(threadId: string, runId: string, lastEventId: string | undefined, signal: AbortSignal, options: object): AsyncIterable<StreamEvent>",
         "description": "Join an already-started run without creating a new thread.",
         "params": [
           {
@@ -321,6 +346,12 @@
             "type": "AbortSignal",
             "description": "",
             "optional": false
+          },
+          {
+            "name": "options",
+            "type": "object",
+            "description": "",
+            "optional": true
           }
         ]
       },
@@ -363,8 +394,8 @@
       },
       {
         "name": "updateState",
-        "signature": "updateState(threadId: string, values: Record<string, unknown>, signal: AbortSignal, options: object): Promise<void>",
-        "description": "Update server-side thread state, e.g. to remove messages for regenerate rollback.",
+        "signature": "updateState(threadId: string, values: Record<string, unknown>, signal: AbortSignal, options: object): Promise<void | OwnedCheckpointPosition>",
+        "description": "Update state once and return only usable root routing, when supplied.",
         "params": [
           {
             "name": "threadId",
@@ -1274,8 +1305,33 @@
         ]
       },
       {
+        "name": "getState",
+        "signature": "getState(threadId: string, checkpoint: OwnedCheckpointPosition, signal: AbortSignal): Promise<ThreadState<DefaultValues>>",
+        "description": "Exact saved root read. Branch effects must not infer authority from latest.",
+        "params": [
+          {
+            "name": "threadId",
+            "type": "string",
+            "description": "",
+            "optional": false
+          },
+          {
+            "name": "checkpoint",
+            "type": "OwnedCheckpointPosition",
+            "description": "",
+            "optional": false
+          },
+          {
+            "name": "signal",
+            "type": "AbortSignal",
+            "description": "",
+            "optional": false
+          }
+        ]
+      },
+      {
         "name": "joinStream",
-        "signature": "joinStream(threadId: string, runId: string, lastEventId: string | undefined, signal: AbortSignal): AsyncIterable<StreamEvent>",
+        "signature": "joinStream(threadId: string, runId: string, lastEventId: string | undefined, signal: AbortSignal, options: object): AsyncIterable<StreamEvent>",
         "description": "Optional: join an already-started run without creating a new one.",
         "params": [
           {
@@ -1301,6 +1357,12 @@
             "type": "AbortSignal",
             "description": "",
             "optional": false
+          },
+          {
+            "name": "options",
+            "type": "object",
+            "description": "",
+            "optional": true
           }
         ]
       },
@@ -1343,7 +1405,7 @@
       },
       {
         "name": "updateState",
-        "signature": "updateState(threadId: string, values: Record<string, unknown>, signal: AbortSignal, options: object): Promise<void>",
+        "signature": "updateState(threadId: string, values: Record<string, unknown>, signal: AbortSignal, options: object): Promise<void | OwnedCheckpointPosition>",
         "description": "Optional: update server-side thread state (e.g. to emit RemoveMessage\nentries for regenerate rollback). Forwards to the LangGraph\n`threads.updateState` API.\n\n`options.asNode` corresponds to LangGraph's `as_node` parameter — the\nserver treats the update as if that node had just produced the values,\nwhich determines what the next pull resumes. `regenerate()` passes\n`asNode: '__start__'` so the next `submit(null)` resumes at the entry\nnode and re-runs `generate` against the rolled-back state.",
         "params": [
           {

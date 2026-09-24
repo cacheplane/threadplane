@@ -7,6 +7,8 @@ import type {
   StreamMode,
   ThreadState,
 } from '@langchain/langgraph-sdk';
+import type { OwnedCheckpointPosition } from '../lib/transport/checkpoint-position';
+export type { OwnedCheckpointPosition } from '../lib/transport/checkpoint-position';
 
 /** An event emitted by a LangGraph stream. */
 export interface StreamEvent {
@@ -127,11 +129,16 @@ export interface AgentTransport {
     threadId: string,
     runId: string,
     lastEventId: string | undefined,
-    signal: AbortSignal
+    signal: AbortSignal,
+    options?: { streamMode?: StreamMode[] }
   ): AsyncIterable<StreamEvent>;
 
   /** @internal Inspect the exact owned physical run, without thread-history inference. */
-  getRunStatus?(threadId: string, runId: string, signal: AbortSignal): Promise<Run['status']>;
+  getRunStatus?(
+    threadId: string,
+    runId: string,
+    signal: AbortSignal
+  ): Promise<Run['status']>;
 
   /** Optional: create a server-side queued run without joining it immediately. */
   createQueuedRun?(
@@ -152,6 +159,13 @@ export interface AgentTransport {
   /** Optional: load persisted checkpoint history for a thread. */
   getHistory?(threadId: string, signal: AbortSignal): Promise<ThreadState[]>;
 
+  /** Exact saved root read. Branch effects must not infer authority from latest. */
+  getState?(
+    threadId: string,
+    checkpoint: OwnedCheckpointPosition,
+    signal: AbortSignal
+  ): Promise<ThreadState>;
+
   /**
    * Optional: update server-side thread state (e.g. to emit RemoveMessage
    * entries for regenerate rollback). Forwards to the LangGraph
@@ -167,8 +181,8 @@ export interface AgentTransport {
     threadId: string,
     values: Record<string, unknown>,
     signal: AbortSignal,
-    options?: { asNode?: string }
-  ): Promise<void>;
+    options?: { asNode?: string; checkpoint?: OwnedCheckpointPosition }
+  ): Promise<void | OwnedCheckpointPosition>;
 }
 
 /**
