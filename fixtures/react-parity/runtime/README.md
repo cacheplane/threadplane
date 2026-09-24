@@ -21,6 +21,16 @@ If a graph write failed, legitimate staged results retain the existing next-subm
 handoff once the blockers clear. Message-ID deduplication does not guarantee a
 single write/checkpoint or branch-safe retry.
 
+Terminal graph writes are serialized within the session. Each write captures only
+the results still staged after its predecessor acknowledges; new commands cannot
+overtake queued persistence. Stop and disposal remain prompt, while required late
+cleanup uses its independent signal without publishing stale state or starting runs.
+A rejected write blocks queued and later automatic writes, because a lost response
+may follow a committed write. Results remain staged for the existing explicit
+fixed-thread submission handoff. Only successful handoff of the retained batch
+releases that failure state. This is local serialization, not distributed locking
+or branch-safe recovery from uncertain acceptance.
+
 A durable result without a graph result requires external reconciliation; this
 phase has no automatic store lookup or crash recovery. A transport without
 history loading cannot reconcile these calls in-session. `checkStatus()` remains

@@ -11579,6 +11579,17 @@
       "note": "Bounded runtime proof only; broader task capabilities and final public package cutover remain open."
     },
     {
+      "id": "source:libs/langgraph/src/runtime/tool-persistence.ts",
+      "taskIds": [
+        "T15",
+        "T16"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private fixed-thread persistence owner; excluded from public exports.",
+      "note": "Serializes terminal writes with execution-time capture, exact-entry acknowledgement and failure retention across queued and later cleanup. Explicit successful handoff releases retained failure; distributed ownership, branch-safe uncertain writes and broader T15/T16 remain open."
+    },
+    {
       "id": "source:libs/langgraph/src/runtime/transport.types.ts",
       "taskIds": [
         "T08"
