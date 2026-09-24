@@ -114,6 +114,9 @@ function equalValue(a: PlainValue, b: PlainValue): boolean {
   )
     return false;
   if (Array.isArray(a) !== Array.isArray(b)) return false;
+  // Trailing holes affect array shape without adding enumerable keys.
+  if (Array.isArray(a) && Array.isArray(b) && a.length !== b.length)
+    return false;
   const left = Object.keys(a);
   const right = Object.keys(b);
   return (
