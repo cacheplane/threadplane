@@ -575,6 +575,14 @@ and no run requests or handler calls. Every completed load must leave its visibl
 error output empty, so retained text cannot conceal a failed equal refresh. Both
 registered handlers increment the same counter if executed. Request bodies check
 the catalog and actual serialized ToolMessage payload.
+The saved final answer combines a string entry, `output_text`, untyped text and an
+empty `text` block. Its visible text remains exactly `Saved final answer` through
+the initial and equal history reads. Reasoning, image and tool-shaped blocks with
+text fields stay out of the answer; explicit `Saved reasoning` still wins reasoning
+precedence, and saved citations remain visible. The Node fixture test checks the
+raw response shapes. Reverting only the private helper to typed `text` entries is
+the semantic negative control for both installed consumers. This is text projection
+coverage, not rich-media rendering, new tool admission or provider conformance.
 Values assertions distinguish unobserved from empty state, show loaded application
 fields, and verify replacement/deletion across root, tool, held and reused runs.
 Separate native component tests make four history reads to cover a values-only

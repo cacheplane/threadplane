@@ -35,10 +35,13 @@ export function textContent(value: unknown): string {
   if (!Array.isArray(value)) return '';
   return value
     .flatMap((block) => {
+      if (typeof block === 'string') return [block];
       const content = record(block);
-      return content?.['type'] === 'text' && typeof content['text'] === 'string'
-        ? [content['text']]
-        : [];
+      const type = content?.['type'];
+      if (type !== 'text' && type !== 'output_text' && type !== undefined)
+        return [];
+      const text = content?.['text'];
+      return typeof text === 'string' ? [text] : [];
     })
     .join('');
 }

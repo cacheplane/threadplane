@@ -4,6 +4,27 @@ This directory stages the framework-independent session owner. It is not the
 published LangGraph package entry point. Core and framework bindings do not own
 backend execution positions.
 
+## Visible text
+
+The shared private wire helper preserves a top-level string verbatim. Arrays join
+string entries and string `text` fields from `text`, `output_text` or untyped
+objects in order, without separators. Empty and whitespace strings are preserved.
+Unknown typed blocks (including reasoning, thinking, images and tool blocks),
+non-string text, nested arrays and other values are ignored without coercion.
+Inputs are neither mutated nor frozen; only the projected string is published.
+
+History and canonical final messages replace text exactly, including shorter or
+empty corrections. Deltas append verbatim. Interim answer snapshots retain the
+existing prefix rule: a shorter prefix or empty snapshot does not truncate the
+answer. This differs from reasoning snapshot replacement. Committed canonical text
+bars late interim text. Text shape does not establish finality, tool identity or
+execution authority; actual ToolMessage roles and IDs still determine settlement.
+
+This closes text-alias loss shared by the native bindings. It does not retain rich
+media/block order for rendering, add multimodal input, or establish provider,
+SSR or performance parity. The legacy Angular extractor remains a bounded
+duplicate until the separate backend cutover.
+
 ## Owned citations
 
 History, root streams and read-only child streams project citations from

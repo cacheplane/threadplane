@@ -1,18 +1,12 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "9ddeb1579323898cb5e470d658cfa53852931830",
+  "baselineHead": "c16c509e6fbd73ceafa47f9af33873662fc2b030",
   "sourceState": {
     "modified": [
       "libs/langgraph/src/runtime/README.md",
-      "libs/langgraph/src/runtime/history-projection.ts",
-      "libs/langgraph/src/runtime/message-reducer.ts",
-      "libs/langgraph/src/runtime/ownership.ts",
-      "libs/langgraph/src/runtime/stream-projection.ts"
+      "libs/langgraph/src/runtime/wire-message.ts"
     ],
-    "untracked": [
-      "libs/langgraph/src/runtime/reasoning-projection.ts",
-      "libs/langgraph/src/runtime/testing/controlled-session.ts"
-    ]
+    "untracked": []
   },
   "scope": {
     "libraries": [
@@ -601,7 +595,7 @@
       "id": "asset:libs/langgraph/src/runtime/README.md",
       "kind": "asset",
       "path": "libs/langgraph/src/runtime/README.md",
-      "sha256": "5a1897fc817d9ece371923f369193dbd2ee5be5f2aaf4da8cacbb05fb752e66c"
+      "sha256": "075fa7e026752a0e2c1caac1ae4bb467f9251f5b81deb6e4378a3bf82e22dda7"
     },
     {
       "id": "asset:libs/langgraph/test/fixtures/streaming-reasoning-puzzle.json",
@@ -12661,7 +12655,7 @@
       "id": "source:libs/langgraph/src/runtime/wire-message.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/wire-message.ts",
-      "sha256": "df124134df4288905ba9a46d084efc64653a6b092592e43b178297c22bd241f0"
+      "sha256": "6b407ff8a968e61420c81160cb2b5063ebbe3cc3593e981c8695474cecb25d89"
     },
     {
       "id": "source:libs/langgraph/src/test-setup.ts",
