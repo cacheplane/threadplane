@@ -851,6 +851,13 @@
       "note": "Bounded runtime verification/configuration subset updated; broader assigned migration and release work remain open."
     },
     {
+      "id": "asset:libs/langgraph/src/runtime/README.md",
+      "taskIds": ["T08", "T10", "T36"],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "note": "Contributor guidance for private checkpoint authority, transport obligations and consumed-task limits; no public package migration or release claim."
+    },
+    {
       "id": "asset:libs/langgraph/test/fixtures/streaming-reasoning-puzzle.json",
       "taskIds": [
         "T05",
@@ -11299,13 +11306,20 @@
       "status": "planned"
     },
     {
+      "id": "source:libs/langgraph/src/lib/transport/checkpoint-position.ts",
+      "taskIds": ["T08"],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Shared SDK routing capture owns root checkpoint identity and string map entries without importing private session or core implementation."
+    },
+    {
       "id": "source:libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
       "taskIds": [
         "T08"
       ],
       "treatment": "shared",
       "status": "in-progress",
-      "note": "SDK event normalization now protects protocol type and namespace from raw application fields. This narrow routing correction retains legacy transport ownership; broader T08 migration remains open."
+      "note": "SDK event normalization protects protocol type and namespace. Exact checkpoint reads, routed writes with returned positions, and checkpoint delivery on join retain legacy transport ownership; broader T08 migration remains open."
     },
     {
       "id": "source:libs/langgraph/src/lib/transport/mock-stream.transport.ts",
@@ -11344,6 +11358,14 @@
       "note": "Owned per-command configuration, context and metadata; routing, defaults and complete adapter migration remain open."
     },
     {
+      "id": "source:libs/langgraph/src/runtime/checkpoint-authority.ts",
+      "taskIds": ["T04", "T09", "T10"],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private completed-root execution evidence; excluded from public exports.",
+      "note": "Checks source eligibility, physical-run checkpoint correlation and unconsumed dynamic pauses. Historical replay and public backend cutover remain open."
+    },
+    {
       "id": "source:libs/langgraph/src/runtime/checkpoint-history.ts",
       "taskIds": [
         "T09",
@@ -11353,6 +11375,22 @@
       "status": "in-progress",
       "reason": "Private staged LangGraph runtime subset; fixture-only and not a neutral public LangGraph root or tarball.",
       "note": "Compact explicit checkpoint history observation; execution from checkpoints, pagination and complete adapter migration remain open."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/checkpoint-state.ts",
+      "taskIds": ["T04", "T09", "T10"],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private branch owner state; excluded from public exports.",
+      "note": "Retains ready, in-flight and uncertain authority for the existing session owner; no second scheduler, branch cache or global-tip recovery."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/checkpoint-tool-evidence.ts",
+      "taskIds": ["T04", "T09", "T10"],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private saved-state tool evidence assertion; excluded from public exports.",
+      "note": "Compares current-turn invocation and resolution evidence before granting checkpoint authority; preserves existing projection ownership and sticky conflicts."
     },
     {
       "id": "source:libs/langgraph/src/runtime/create-session.ts",
@@ -11366,7 +11404,7 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private staged LangGraph runtime subset; fixture-only and not a neutral public LangGraph root or tarball.",
-      "note": "Private explicit resume continues observed pauses with owned opaque responses and null input, shares local cancellation/tool ownership, and never applies submission checkpoint correlation to resume. No automatic targeting, public backend cutover, or whole-task completion."
+      "note": "Private completed-checkpoint fork retains resulting authority across submit, exact load, dynamic resume, reconnect and tool effects. Consumed-task preflight is not atomic cross-client ownership. No historical pending replay, public backend cutover or whole-task completion."
     },
     {
       "id": "source:libs/langgraph/src/runtime/function-tools.ts",
@@ -11507,6 +11545,14 @@
       "note": "Controlled native history fixtures include two task interrupt payloads, paused delivery, equal identity, values-only sharing and empty replacement. Broader T05/T06 coverage remains open."
     },
     {
+      "id": "source:libs/langgraph/src/runtime/testing/checkpoint-fixture.ts",
+      "taskIds": ["T09", "T10", "T36"],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private controlled checkpoint test helper; excluded from public exports and production packages.",
+      "note": "Unit evidence for exact position, run and persistence ownership; actual protocol and server regressions provide separate integration evidence."
+    },
+    {
       "id": "source:libs/langgraph/src/runtime/testing/controlled-transport.ts",
       "taskIds": [
         "T05",
@@ -11548,7 +11594,7 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private fixed-thread persistence owner; excluded from public exports.",
-      "note": "Serializes terminal writes with execution-time capture, exact-entry acknowledgement and failure retention across queued and later cleanup. Explicit successful handoff releases retained failure; distributed ownership, branch-safe uncertain writes and broader T15/T16 remain open."
+      "note": "Serializes terminal writes with execution-time batch capture and an originating owner captured at enqueue. Returned checkpoints chain late writes; uncertain acknowledgments retain staged batches without retry. Broader T15/T16 and cross-client coordination remain open."
     },
     {
       "id": "source:libs/langgraph/src/runtime/tool-provenance.ts",

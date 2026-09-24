@@ -63,6 +63,25 @@ import {
 import { createSafeRequestError } from './operation-errors';
 import { createToolPersistence } from './tool-persistence';
 import { hasInvocationConflict } from './tool-invocations';
+import { observeInvocation } from './tool-invocations';
+import {
+  assertResumeCheckpoint,
+  captureCheckpoint,
+  captureCheckpointEvent,
+  captureCheckpointState,
+  captureCompletedCheckpoint,
+  confirmCheckpoint,
+  type CheckpointCandidate,
+  type CheckpointReference,
+  type OwnedCheckpointPosition,
+} from './checkpoint-authority';
+import {
+  beginCheckpointEffect,
+  readyCheckpoint,
+  uncertainCheckpoint,
+  type CheckpointOwner,
+} from './checkpoint-state';
+import { assertCheckpointToolEvidence } from './checkpoint-tool-evidence';
 import {
   failureProjection,
   finalizeProjection,
@@ -109,6 +128,11 @@ export type LangGraphSession<
     input: LangGraphSubmitInput,
     options?: LangGraphRunOptions
   ): Promise<CompleteOutcome>;
+  fork(
+    checkpoint: CheckpointReference,
+    input: LangGraphSubmitInput,
+    options?: LangGraphRunOptions
+  ): Promise<CompleteOutcome>;
   reconnect(options?: {
     readonly signal?: AbortSignal;
   }): Promise<CompleteOutcome>;
@@ -127,6 +151,13 @@ interface HistoryRead {
   unlink?: () => void;
 }
 
+interface Preparation extends Omit<HistoryRead, 'result' | 'resolve'> {
+  readonly result: Promise<CompleteOutcome>;
+  readonly resolve: (outcome: CompleteOutcome) => void;
+  readonly checkpoint: OwnedCheckpointPosition;
+  readonly adopt: (saved: ThreadState) => () => Attempt;
+}
+
 type AttemptInput =
   | {
       readonly kind: 'submit';
@@ -141,6 +172,8 @@ interface PhysicalRun {
   captureOpen: boolean;
   received: boolean;
   confirmed: boolean;
+  checkpoint?: CheckpointCandidate;
+  positionConfirmed?: boolean;
 }
 
 interface Attempt {
@@ -150,6 +183,7 @@ interface Attempt {
   readonly resolve: (outcome: CompleteOutcome) => void;
   readonly input: AttemptInput;
   readonly runOptions: CapturedRunOptions | undefined;
+  readonly branch?: CheckpointOwner;
   projection: StreamProjection;
   subgraphs: SubgraphObservation;
   readonly calls: Map<string, ToolCall>;
@@ -205,18 +239,23 @@ export function createSession(
   // Execution dedupe survives transcript replacement. Authored result provenance
   // belongs only to the current transcript; a wire string cannot restore it.
   const authoredTools = new Set<string>();
+  const suppliedTransport = options.transport;
+  const ownedClientOptions = suppliedTransport
+    ? undefined
+    : { ...options.clientOptions };
+  const ownedRetries = ownedClientOptions?.maxRetries ?? 0;
   const transport =
-    options.transport ??
+    suppliedTransport ??
     new FetchStreamTransport(options.apiUrl ?? '', undefined, {
-      ...options.clientOptions,
-      maxRetries: options.clientOptions?.maxRetries ?? 0,
+      ...ownedClientOptions,
+      maxRetries: ownedRetries,
     });
   const protectedTransport =
     transport instanceof FetchStreamTransport &&
     transport.protectsOperationErrors;
-  const persistence = createToolPersistence(
+  const persistence = createToolPersistence<CheckpointOwner>(
     buffer,
-    async (messages, signal) => {
+    async (messages, signal, branch) => {
       // A queued flush can start after history/stream observation found a conflict.
       // Durable claim/record ownership may finish, but its results stay quarantined.
       assertInvocationIdentity();
@@ -224,7 +263,26 @@ export function createSession(
         throw new Error(
           'Persisting terminal tool results requires transport.updateState().'
         );
-      await transport.updateState(threadId, { messages }, signal);
+      const confirmed = branch && readyCheckpoint(branch.state);
+      if (branch) branch.state = beginCheckpointEffect(branch.state, 'write');
+      try {
+        const result = await transport.updateState(
+          threadId,
+          { messages },
+          signal,
+          confirmed ? { checkpoint: confirmed.position } : undefined
+        );
+        if (branch && confirmed) {
+          const position = captureCheckpoint(result, threadId);
+          branch.state = {
+            kind: 'ready',
+            confirmed: { ...confirmed, position },
+          };
+        }
+      } catch (error) {
+        if (branch) branch.state = uncertainCheckpoint(branch.state);
+        throw error;
+      }
     }
   );
   const getHistory =
@@ -234,6 +292,7 @@ export function createSession(
   const canCheck = !!getHistory;
   const joinStream = transport.joinStream?.bind(transport);
   const getRunStatus = transport.getRunStatus?.bind(transport);
+  const getState = transport.getState?.bind(transport);
   const canReconnect = !!joinStream && !!getRunStatus;
   const publication = createPublication({
     status: 'idle',
@@ -258,6 +317,15 @@ export function createSession(
   let checkController: AbortController | undefined;
   let loading: HistoryRead | undefined;
   let pendingToolSettlements = 0;
+  let branch: CheckpointOwner | undefined;
+  let preparing: Preparation | undefined;
+  const branchStreamModes = [
+    'values',
+    'messages-tuple',
+    'updates',
+    'custom',
+    'checkpoints',
+  ] as const;
 
   function invocationConflictError(): AgentError {
     return {
@@ -287,10 +355,31 @@ export function createSession(
   }
   function admitSubmission() {
     assertInvocationIdentity();
+    if (branch || preparing) admitBranchCommand();
     if (unsettledTools.size)
       throw new Error('Submission cannot replace unsettled tool execution.');
     if (persistence.pending)
       throw new Error('Submission cannot replace pending tool persistence.');
+  }
+
+  function admitBranchCommand() {
+    assertInvocationIdentity();
+    if (
+      owner ||
+      loading ||
+      checkController ||
+      preparing ||
+      recoveryAttempt ||
+      retained ||
+      pendingToolSettlements ||
+      persistence.pending ||
+      unsettledTools.size ||
+      buffer.snapshot().messages.length
+    )
+      throw new Error(
+        'Checkpoint commands cannot replace active or unsettled work.'
+      );
+    if (branch) readyCheckpoint(branch.state);
   }
 
   const owns = (attempt: Attempt) => owner === attempt && !disposed;
@@ -345,6 +434,17 @@ export function createSession(
     if (abort) read.controller.abort();
     unlink?.();
   }
+  function detachPreparation() {
+    const previous = preparing;
+    preparing = undefined;
+    previous?.resolve('aborted');
+    return previous;
+  }
+  function closePreparation(preparation: Preparation | undefined) {
+    if (!preparation) return;
+    preparation.controller.abort();
+    preparation.unlink?.();
+  }
   function close(attempt: Attempt, abort = false, final = true) {
     const unlink = final ? attempt.unlink : undefined;
     if (final) attempt.unlink = undefined;
@@ -369,6 +469,7 @@ export function createSession(
     retainRun = false
   ) {
     if (!owns(attempt)) return;
+    retainRun ||= !!attempt.branch;
     if (hasInvocationConflict(state.invocations)) {
       outcome = 'interrupted';
       error = invocationConflictError();
@@ -379,7 +480,7 @@ export function createSession(
       retainRun &&
       canReconnect &&
       run &&
-      !run.confirmed &&
+      !(attempt.branch ? run.positionConfirmed : run.confirmed) &&
       !run.evidence.unsafe &&
       run.evidence.runId &&
       run.evidence.cursor
@@ -387,6 +488,8 @@ export function createSession(
         : undefined;
     detach(outcome);
     retained = candidate;
+    if (attempt.branch)
+      attempt.branch.state = uncertainCheckpoint(attempt.branch.state);
     recoveryAttempt = error?.recovery === 'check' ? attempt : undefined;
     publish(error ? 'error' : 'idle', error);
     // An error can end local consumption before the HTTP body closes. SDK
@@ -489,6 +592,7 @@ export function createSession(
             return;
           }
           const result = outcome.result;
+          attempt.branch?.settledToolIds.add(call.id);
           resolvedTools.add(call.id);
           authoredTools.add(call.id);
           buffer.stage(call.id, result);
@@ -504,7 +608,10 @@ export function createSession(
             // Required durable cleanup may finish after stop/dispose. It can only
             // persist results; it has no route back to publication or run creation.
             try {
-              await persistence.flush(new AbortController().signal);
+              await persistence.flush(
+                new AbortController().signal,
+                attempt.branch
+              );
             } catch {
               /* The staged result remains available for explicit handoff. */
             }
@@ -521,15 +628,33 @@ export function createSession(
       : 'complete';
   }
   function stopExecution() {
+    const preparation = detachPreparation();
     const hadRetained = !!retained;
+    const previousRetained = retained;
+    const previousOwner = owner;
+    const run = previousOwner?.physical;
+    const retainBranch =
+      previousOwner?.branch &&
+      run &&
+      !run.positionConfirmed &&
+      !run.evidence.unsafe &&
+      run.evidence.runId &&
+      run.evidence.cursor &&
+      canReconnect
+        ? { attempt: previousOwner, run }
+        : undefined;
     retained = undefined;
     const reading = detachLoad();
     const checking = invalidateCheck();
     const attempt = detach('aborted');
+    if (attempt?.branch)
+      attempt.branch.state = uncertainCheckpoint(attempt.branch.state);
+    retained = retainBranch ?? (branch ? previousRetained : undefined);
     if (attempt || hadRetained) publish('idle');
     checking?.abort();
     if (attempt) close(attempt, true);
     closeLoad(reading);
+    closePreparation(preparation);
   }
 
   function reconcile(attempt: Attempt, history: ThreadState[]) {
@@ -625,6 +750,7 @@ export function createSession(
   async function execute(attempt: Attempt): Promise<void> {
     if (!owns(attempt)) return;
     const attemptCanCheck = () =>
+      !attempt.branch &&
       attempt.input.kind === 'submit' &&
       canCheck &&
       !attempt.physical?.evidence.runId &&
@@ -659,6 +785,15 @@ export function createSession(
                 ? attempt.input.state
                 : undefined
             );
+        const from =
+          attempt.branch && !joining
+            ? readyCheckpoint(attempt.branch.state).position
+            : undefined;
+        if (attempt.branch && !joining)
+          attempt.branch.state = beginCheckpointEffect(
+            attempt.branch.state,
+            'run'
+          );
         // Ownership is captured before the first effect. The signal always belongs
         // to us, even when the caller also supplied an external AbortSignal.
         const capture = (metadata: { run_id: string; thread_id?: string }) => {
@@ -683,7 +818,10 @@ export function createSession(
                 threadId,
                 run.evidence.runId,
                 joining,
-                attempt.controller.signal
+                attempt.controller.signal,
+                ...(attempt.branch
+                  ? [{ streamMode: [...branchStreamModes] }]
+                  : [])
               )
             : transport.stream(
                 assistantId,
@@ -697,6 +835,12 @@ export function createSession(
                     attempt.input.value !== undefined)
                   ? {
                       ...attempt.runOptions,
+                      ...(from
+                        ? {
+                            checkpoint: from,
+                            streamMode: [...branchStreamModes],
+                          }
+                        : {}),
                       ...(canReconnect
                         ? {
                             streamResumable: true,
@@ -741,6 +885,9 @@ export function createSession(
             return;
           }
           const previousEvidence = run.evidence;
+          const checkpoint = attempt.branch
+            ? captureCheckpointEvent(event, threadId)
+            : undefined;
           const cursor = advanceCursor(previousEvidence, event, joining);
           if (!owns(attempt)) return;
           if (cursor.replay) {
@@ -772,6 +919,7 @@ export function createSession(
             run.evidence === previousEvidence
               ? cursor.evidence
               : { unsafe: true };
+          if (checkpoint) run.checkpoint = checkpoint;
           state = projected.state;
           values = projectedValues;
           interrupts = projectedInterrupts;
@@ -809,7 +957,43 @@ export function createSession(
             /* Exact-run inspection failed; history cannot replace it. */
           }
           if (!owns(attempt)) return;
-          if (
+          if (attempt.branch) {
+            if (status !== 'success' || !run.checkpoint || !getState) {
+              outcome = 'interrupted';
+            } else {
+              run.confirmed = true;
+              const saved = await getState(
+                threadId,
+                run.checkpoint.position,
+                attempt.controller.signal
+              );
+              if (!owns(attempt)) return;
+              const confirmed = confirmCheckpoint(
+                run.checkpoint,
+                saved,
+                run.evidence.runId
+              );
+              assertCheckpointToolEvidence(
+                confirmed.state,
+                state,
+                attempt.projection,
+                resolvedTools,
+                attempt.branch.settledToolIds
+              );
+              const projectedInterrupts = projectHistoryInterrupts(interrupts, [
+                confirmed.state,
+              ]);
+              if (!owns(attempt)) return;
+              attempt.branch.state = { kind: 'ready', confirmed };
+              run.positionConfirmed = true;
+              interrupts = projectedInterrupts;
+              attempt.projection = {
+                ...attempt.projection,
+                paused: confirmed.paused,
+              };
+              outcome = confirmed.paused ? 'paused' : 'success';
+            }
+          } else if (
             (status === 'success' || status === 'interrupted') &&
             attempt.projection.paused
           ) {
@@ -836,7 +1020,8 @@ export function createSession(
             );
             return;
           } else outcome = 'interrupted';
-        } else if (run.evidence.unsafe) outcome = 'interrupted';
+        } else if (run.evidence.unsafe || attempt.branch)
+          outcome = 'interrupted';
         if (
           outcome === 'interrupted' &&
           attemptCanCheck() &&
@@ -870,6 +1055,10 @@ export function createSession(
           state = finalizeProjection(state, attempt.projection);
           subgraphs = settleSubgraphs(subgraphs, outcome, true);
           attempt.subgraphs = subgraphs;
+          // The exact saved pause confirms the submitted handoff just as a
+          // completed run does. Keeping that batch would block its own resume.
+          if (outcome === 'paused' && attempt.branch && run.positionConfirmed)
+            persistence.acknowledge(batch);
         }
         if (outcome === 'success') {
           state = reduceMessages(state, {
@@ -884,7 +1073,10 @@ export function createSession(
             // Persist legitimate mixed-group results without continuing past
             // an unavailable call. Failed writes keep the exact staged buffer.
             try {
-              await persistence.flush(attempt.controller.signal);
+              await persistence.flush(
+                attempt.controller.signal,
+                attempt.branch
+              );
             } catch {
               /* retained */
             }
@@ -912,6 +1104,9 @@ export function createSession(
               terminal: false,
               paused: false,
               canonical: [],
+              ...(attempt.branch
+                ? { baselineCallIds: attempt.branch.baselineCallIds }
+                : {}),
               ...(attempt.input.kind === 'resume'
                 ? {
                     resume: {
@@ -925,7 +1120,7 @@ export function createSession(
             continue;
           }
           try {
-            await persistence.flush(attempt.controller.signal);
+            await persistence.flush(attempt.controller.signal, attempt.branch);
           } catch {
             if (owns(attempt))
               settle(attempt, 'error', {
@@ -1007,6 +1202,7 @@ export function createSession(
       handoffIds: [],
       input,
       runOptions,
+      branch,
       subgraphs,
       projection: {
         generation,
@@ -1016,6 +1212,7 @@ export function createSession(
         terminal: false,
         paused: false,
         canonical: [],
+        ...(branch ? { baselineCallIds: branch.baselineCallIds } : {}),
         ...(input.kind === 'resume'
           ? { resume: { turnIds: turnIds(userId) } }
           : {}),
@@ -1066,6 +1263,150 @@ export function createSession(
       if (!attempt) return 'aborted';
       void execute(attempt);
       return attempt.result;
+    });
+  }
+
+  function prepare(
+    checkpoint: OwnedCheckpointPosition,
+    external: AbortSignal | undefined,
+    adopt: Preparation['adopt']
+  ) {
+    let resolve!: Preparation['resolve'];
+    let reject!: Preparation['reject'];
+    const result = new Promise<CompleteOutcome>((done, failed) => {
+      resolve = done;
+      reject = failed;
+    });
+    const created: Preparation = {
+      controller: new AbortController(),
+      result,
+      resolve,
+      reject,
+      checkpoint,
+      adopt,
+    };
+    preparing = created;
+    if (external) {
+      const abort = () => {
+        void publication.command(() => {
+          if (preparing === created) stopExecution();
+        });
+      };
+      created.unlink = () => external.removeEventListener('abort', abort);
+      external.addEventListener('abort', abort, { once: true });
+      if (external.aborted) abort();
+    }
+    return created;
+  }
+
+  async function runPreparation(preparation: Preparation) {
+    if (preparing !== preparation || disposed || !getState) return;
+    try {
+      const saved = await getState(
+        threadId,
+        preparation.checkpoint,
+        preparation.controller.signal
+      );
+      let attempt: Attempt | undefined;
+      await publication.command(() => {
+        if (preparing !== preparation || disposed) return;
+        const commit = preparation.adopt(saved);
+        if (preparing !== preparation || disposed) return;
+        preparing = undefined;
+        attempt = commit();
+        preparation.unlink?.();
+        void attempt.result.then(preparation.resolve);
+      });
+      if (attempt) void execute(attempt);
+    } catch {
+      await publication.command(() => {
+        if (preparing !== preparation || disposed) return;
+        preparing = undefined;
+        preparation.reject(createSafeRequestError());
+        closePreparation(preparation);
+      });
+    }
+  }
+
+  function fork(
+    checkpoint: CheckpointReference,
+    input: LangGraphSubmitInput,
+    options?: LangGraphRunOptions
+  ): Promise<CompleteOutcome> {
+    let preparation: Preparation | undefined;
+    const beginning = publication.command(() => {
+      if (disposed) return;
+      admitBranchCommand();
+      if (!getState || !getRunStatus || !joinStream)
+        throw new Error(
+          'Fork requires exact checkpoint and physical-run transport capabilities.'
+        );
+      if (!suppliedTransport && ownedRetries > 0)
+        throw new Error(
+          'Fork requires an SDK transport with maxRetries set to zero.'
+        );
+      const capturedRevision = revision;
+      const external = options?.signal;
+      const current = () =>
+        !disposed && !external?.aborted && capturedRevision === revision;
+      if (!current()) return;
+      const position = captureCheckpoint(checkpoint, threadId);
+      if (!current()) return;
+      const captured = captureSubmitInput(input);
+      if (!current()) return;
+      const runOptions = captureRunOptions(options);
+      if (!current()) return;
+      admitBranchCommand();
+      preparation = prepare(position, external, (raw) => {
+        const source = captureCompletedCheckpoint(raw, position);
+        let projected = projectHistory(state, [source.state], {
+          interrupts: [],
+          ...(typedTools
+            ? { registeredTools: new Set(definitions.keys()) }
+            : {}),
+        });
+        let invocations = projected.invocations;
+        for (const call of source.calls)
+          invocations = observeInvocation(invocations, call, true);
+        projected = Object.freeze({ ...projected, invocations });
+        if (hasInvocationConflict(invocations))
+          throw new Error(invocationConflictError().message);
+        const projectedValues = projectHistoryValues(values, [source.state]);
+        return () => {
+          state = projected;
+          values = projectedValues;
+          authoredTools.clear();
+          for (const call of source.calls) resolvedTools.add(call.id);
+          branch = {
+            state: {
+              kind: 'ready',
+              confirmed: { position, state: source.state, paused: false },
+            },
+            baselineCallIds: source.calls.map((call) => call.id),
+            settledToolIds: new Set(),
+          };
+          return beginAttempt(
+            {
+              kind: 'submit',
+              state: captured.state,
+              messages: [
+                {
+                  type: 'human',
+                  id: crypto.randomUUID(),
+                  content: captured.message,
+                },
+              ],
+            },
+            external,
+            runOptions
+          );
+        };
+      });
+    });
+    return beginning.then(() => {
+      if (!preparation) return 'aborted';
+      void runPreparation(preparation);
+      return preparation.result;
     });
   }
 
@@ -1129,6 +1470,7 @@ export function createSession(
     options?: LangGraphRunOptions
   ): Promise<CompleteOutcome> {
     let attempt: Attempt | undefined;
+    let preparation: Preparation | undefined;
     const beginning = publication.command(() => {
       const capturedRevision = revision;
       const capturedLoad = loading;
@@ -1142,6 +1484,7 @@ export function createSession(
         return;
       const admit = () => {
         assertInvocationIdentity();
+        if (branch || preparing) admitBranchCommand();
         if (
           owner ||
           loading ||
@@ -1159,6 +1502,8 @@ export function createSession(
           throw new Error('Resume requires an observed interrupt.');
       };
       admit();
+      if (branch && value === undefined)
+        throw new Error('Branch resume requires a defined response value.');
       const captured = ownValue(value);
       if (
         disposed ||
@@ -1177,13 +1522,36 @@ export function createSession(
       )
         return;
       admit();
+      if (branch) {
+        if (!getState)
+          throw new Error('Branch resume requires an exact checkpoint read.');
+        const confirmed = readyCheckpoint(branch.state);
+        preparation = prepare(confirmed.position, external, (saved) => {
+          assertResumeCheckpoint(confirmed, saved);
+          return () =>
+            beginAttempt(
+              { kind: 'resume', value: captured },
+              external,
+              runOptions
+            );
+        });
+        return;
+      }
       attempt = beginAttempt(
         { kind: 'resume', value: captured },
         external,
         runOptions
       );
     });
-    return dispatch(beginning, () => attempt);
+    return beginning.then(() => {
+      if (preparation) {
+        void runPreparation(preparation);
+        return preparation.result;
+      }
+      if (!attempt) return 'aborted';
+      void execute(attempt);
+      return attempt.result;
+    });
   }
 
   function reconnect(options?: {
@@ -1199,6 +1567,7 @@ export function createSession(
       if (
         owner ||
         loading ||
+        preparing ||
         checkController ||
         pendingToolSettlements ||
         persistence.pending ||
@@ -1246,6 +1615,7 @@ export function createSession(
         resolve,
         input: candidate.attempt.input,
         runOptions: candidate.attempt.runOptions,
+        branch: candidate.attempt.branch,
         calls: new Map(),
         groups: candidate.attempt.groups,
         handoffIds: candidate.attempt.handoffIds,
@@ -1277,9 +1647,23 @@ export function createSession(
   }
 
   async function readHistory(read: HistoryRead) {
-    if (!ownsLoad(read) || !getHistory) return;
+    if (!ownsLoad(read)) return;
     try {
-      const history = await getHistory(threadId, read.controller.signal);
+      const capturedBranch = branch;
+      const confirmed = capturedBranch && readyCheckpoint(capturedBranch.state);
+      const history =
+        confirmed && getState
+          ? [
+              captureCheckpointState(
+                await getState(
+                  threadId,
+                  confirmed.position,
+                  read.controller.signal
+                ),
+                confirmed.position
+              ),
+            ]
+          : await getHistory!(threadId, read.controller.signal);
       await publication.command(() => {
         if (!ownsLoad(read)) return;
         const previousState = state;
@@ -1313,7 +1697,7 @@ export function createSession(
         state = projected;
         values = projectedValues;
         interrupts = projectedInterrupts;
-        historyPage = projectedHistory;
+        if (!capturedBranch) historyPage = projectedHistory;
         subgraphs = initialSubgraphs();
         authoredTools.clear();
         loading = undefined;
@@ -1338,6 +1722,11 @@ export function createSession(
     let read: HistoryRead | undefined;
     const beginning = publication.command(() => {
       if (disposed || options?.signal?.aborted) return;
+      if (!branch && !getHistory)
+        throw new Error(
+          'Loading before checkpoint activation requires transport.getHistory().'
+        );
+      if (branch || preparing) admitBranchCommand();
       if (
         owner ||
         recoveryAttempt ||
@@ -1392,6 +1781,22 @@ export function createSession(
       | undefined;
     await publication.command(() => {
       if (disposed) throw new Error('Agent has been disposed');
+      if (branch || preparing) {
+        if (
+          owner ||
+          loading ||
+          checkController ||
+          preparing ||
+          pendingToolSettlements ||
+          persistence.pending
+        )
+          throw new Error(
+            'Checkpoint status cannot be checked during an active operation.'
+          );
+        if (!branch) throw new Error('Checkpoint preparation is active.');
+        readyCheckpoint(branch.state);
+        return;
+      }
       if (owner)
         throw new Error('Stop the active request before checking status');
       if (!recoveryAttempt) return;
@@ -1460,6 +1865,7 @@ export function createSession(
     subscribe: (notify) =>
       disposed ? () => undefined : publication.subscribe(notify),
     submit,
+    fork,
     resume,
     reconnect,
     stop: () =>
@@ -1467,11 +1873,12 @@ export function createSession(
         if (disposed) return;
         stopExecution();
       }),
-    ...(canCheck ? { checkStatus, load } : {}),
+    ...(canCheck || getState ? { checkStatus, load } : {}),
     dispose: () =>
       publication.command(() => {
         if (disposed) return;
         disposed = true;
+        const preparation = detachPreparation();
         retained = undefined;
         const reading = detachLoad();
         const checking = invalidateCheck();
@@ -1482,6 +1889,7 @@ export function createSession(
         checking?.abort();
         if (attempt) close(attempt, true);
         closeLoad(reading);
+        closePreparation(preparation);
       }),
   };
 }

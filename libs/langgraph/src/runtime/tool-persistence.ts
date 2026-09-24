@@ -6,11 +6,12 @@ type ToolBatch = ReturnType<ToolBuffer['snapshot']>;
 /** Fixed-thread persistence effects. Capture a batch only when its write starts;
  * an earlier write must acknowledge its exact entries before the next capture.
  * Rejected acknowledgement blocks automatic retries, including later arrivals. */
-export function createToolPersistence(
+export function createToolPersistence<Context = undefined>(
   buffer: ToolBuffer,
   write: (
     messages: readonly ToolMessage[],
-    signal: AbortSignal
+    signal: AbortSignal,
+    context: Context | undefined
   ) => Promise<void>
 ) {
   let pending = 0;
@@ -27,7 +28,7 @@ export function createToolPersistence(
       batch.acknowledge();
       if (!buffer.snapshot().messages.length) failed = false;
     },
-    flush(signal: AbortSignal): Promise<void> {
+    flush(signal: AbortSignal, context?: Context): Promise<void> {
       // Admission must see queued work before any promise continuation runs.
       pending += 1;
       const operation = tail.then(async () => {
@@ -39,7 +40,7 @@ export function createToolPersistence(
         const batch = buffer.snapshot();
         if (!batch.messages.length) return;
         try {
-          await write(batch.messages, signal);
+          await write(batch.messages, signal, context);
         } catch (error) {
           // A rejected response may follow a committed remote write. Do not
           // retry it merely because another durable result arrives afterward.

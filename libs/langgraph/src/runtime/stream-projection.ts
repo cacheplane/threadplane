@@ -32,6 +32,8 @@ export interface StreamProjection {
     readonly excludedIds?: readonly string[];
   };
   readonly baselineIds: readonly string[];
+  /** Historical completed calls may echo, but cannot become a new invocation. */
+  readonly baselineCallIds?: readonly string[];
   readonly currentAssistantId?: string;
   readonly sawAssistant: boolean;
   readonly terminal: boolean;
@@ -120,6 +122,34 @@ export function projectStream(
       role === 'assistant' &&
       raw['type'] !== 'AIMessageChunk' &&
       Array.isArray(raw['tool_calls']);
+    const position = incoming.indexOf(raw);
+    const content = textContent(raw['content']);
+    const executionCandidate =
+      (!baseline || projection.resume?.turnIds.includes(id)) &&
+      !projection.resume?.excludedIds?.includes(id) &&
+      (!turnEnded ||
+        anchor >= 0 ||
+        projection.resume?.turnIds.includes(id) ||
+        projection.toolAssistantIds?.includes(id)) &&
+      (anchor < 0 || position > anchor) &&
+      (nextUser < 0 || position < nextUser);
+    if (
+      finalizedCalls &&
+      (executionCandidate ||
+        (baseline && content !== previous?.content) ||
+        (anchor >= 0 &&
+          position > anchor &&
+          (nextUser < 0 || position < nextUser)))
+    )
+      for (const call of calls)
+        if (
+          typeof call['id'] === 'string' &&
+          projection.baselineCallIds?.includes(call['id'])
+        )
+          state = reduceMessages(state, {
+            type: 'tool-conflict',
+            id: call['id'],
+          });
     const callIds = calls.flatMap((call) =>
       typeof call['id'] === 'string' ? [call['id']] : []
     );
@@ -129,7 +159,6 @@ export function projectStream(
           (callId) => !callIds.includes(callId)
         )
       );
-    const content = textContent(raw['content']);
     const current =
       !baseline ||
       (!!projection.resume &&
@@ -227,17 +256,7 @@ export function projectStream(
           }),
         });
       }
-      const position = incoming.indexOf(raw);
-      if (
-        (!baseline || projection.resume?.turnIds.includes(id)) &&
-        !projection.resume?.excludedIds?.includes(id) &&
-        (!turnEnded ||
-          anchor >= 0 ||
-          projection.resume?.turnIds.includes(id) ||
-          projection.toolAssistantIds?.includes(id)) &&
-        (anchor < 0 || position > anchor) &&
-        (nextUser < 0 || position < nextUser)
-      )
+      if (executionCandidate)
         projection = {
           ...projection,
           toolAssistantIds: [

@@ -1,4 +1,5 @@
 import type { Client, Run, StreamMode, ThreadState } from '@langchain/langgraph-sdk';
+import { captureCheckpoint, type OwnedCheckpointPosition } from './checkpoint-position';
 import type { AgentQueueEntry, AgentTransport, LangGraphClientOptions, LangGraphSubmitOptions, StreamEvent } from '../../runtime/transport.types';
 import {
   createLangGraphClient,
@@ -108,12 +109,14 @@ export class FetchStreamTransport implements AgentTransport {
     runId: string,
     lastEventId: string | undefined,
     signal: AbortSignal,
+    options?: { streamMode?: StreamMode[] }
   ): AsyncIterable<StreamEvent> {
     // SDK joinStream: joins an already-started run without creating a new one.
     let run: ReturnType<Client['runs']['joinStream']>;
     try {
       run = this.client.runs.joinStream(threadId, runId, {
         signal,
+        ...(options?.streamMode ? { streamMode: options.streamMode } : {}),
         ...(lastEventId !== undefined ? { lastEventId } : {}),
       });
     } catch (error) {
@@ -189,19 +192,47 @@ export class FetchStreamTransport implements AgentTransport {
     }
   }
 
-  /** Update server-side thread state, e.g. to remove messages for regenerate rollback. */
+  /** Read one exact saved checkpoint with the command's cancellation signal. */
+  async getState(
+    threadId: string,
+    checkpoint: OwnedCheckpointPosition,
+    signal: AbortSignal
+  ): Promise<ThreadState> {
+    try {
+      return await this.client.threads.getState(threadId, checkpoint, {
+        signal,
+      });
+    } catch (error) {
+      return this.rethrowOperationError(error, signal);
+    }
+  }
+
+  /** Update state once and return only usable root routing, when supplied. */
   async updateState(
     threadId: string,
     values: Record<string, unknown>,
     signal: AbortSignal,
-    options?: { asNode?: string },
-  ): Promise<void> {
-    const body: { values: Record<string, unknown>; signal: AbortSignal; asNode?: string } = { values, signal };
+    options?: { asNode?: string; checkpoint?: OwnedCheckpointPosition }
+  ): Promise<void | OwnedCheckpointPosition> {
+    const body: {
+      values: Record<string, unknown>;
+      signal: AbortSignal;
+      asNode?: string;
+      checkpoint?: OwnedCheckpointPosition;
+    } = { values, signal };
     if (options?.asNode !== undefined) {
       body.asNode = options.asNode;
     }
+    if (options?.checkpoint) body.checkpoint = options.checkpoint;
     try {
-      await this.client.threads.updateState(threadId, body);
+      const result = await this.client.threads.updateState(threadId, body);
+      // Legacy non-branch callers need no routing acknowledgment. The branch
+      // effect owner rejects absence without replaying the successful request.
+      try {
+        return captureCheckpoint(result.configurable, threadId);
+      } catch {
+        return undefined;
+      }
     } catch (error) {
       this.rethrowOperationError(error, signal);
     }
