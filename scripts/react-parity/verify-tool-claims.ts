@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { setTimeout as delay } from 'node:timers/promises';
+import { ToolMessage } from '@langchain/core/messages';
 import type { ThreadState } from '@langchain/langgraph-sdk';
 import type { PlainValue } from '@threadplane/core';
 import type {
@@ -25,6 +26,8 @@ import {
   THREADPLANE_CLIENT_TOOL_EXECUTIONS_SCHEMA,
   type PostgresTaggedSql,
 } from '../../libs/middleware/src/langgraph/postgres-client-tool-execution-store';
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { recordClientToolResults } from '../../libs/middleware/src/langgraph/client-tool-result-guard';
 
 // Two real sessions and production stores; only graph delivery is deterministic.
 // PostgreSQL runs without host ports, network access, or existing DB credentials.
@@ -289,6 +292,34 @@ async function scenario(
       await store.lookup(key.threadId, [key.toolCallId]),
       outstanding
     );
+    const conflictingReceipt = new ToolMessage({
+      tool_call_id: key.toolCallId,
+      content: JSON.stringify({ city: 'Paris', source: 'foreign-receipt' }),
+    });
+    await bounded(
+      assert.rejects(
+        () =>
+          recordClientToolResults({
+            threadId: key.threadId,
+            messages: [conflictingReceipt],
+            store,
+          }),
+        {
+          message:
+            'Client tool result cannot settle an unowned execution: shared-call',
+        },
+        `${kind}: a receipt must not settle another session's execution`
+      ),
+      `${kind}: conflicting receipt rejection`
+    );
+    assert.deepEqual(
+      await store.lookup(key.threadId, [key.toolCallId]),
+      outstanding,
+      `${kind}: rejected receipt must preserve the executing owner`
+    );
+    assert.deepEqual(handlers, ['owner']);
+    assert.equal(records.length, 0);
+    assert.equal(writes.length, 0);
     const contender = session('contender');
     const outcome = await bounded(
       contender.submit('Go'),
@@ -349,6 +380,22 @@ async function scenario(
       streams.filter((item) => item.session === 'owner' && item.continuation)
         .length,
       1
+    );
+    assert.deepEqual(
+      await bounded(
+        recordClientToolResults({
+          threadId: key.threadId,
+          messages: [conflictingReceipt],
+          store,
+        }),
+        `${kind}: completed receipt deduplication`
+      ),
+      { recordedToolCallIds: [], duplicateToolCallIds: [key.toolCallId] }
+    );
+    assert.deepEqual(
+      await store.lookup(key.threadId, [key.toolCallId]),
+      done,
+      `${kind}: duplicate receipt must preserve the owner's result`
     );
 
     const fresh = session('fresh');
@@ -414,7 +461,7 @@ async function scenario(
       ]);
     }
     console.log(
-      `${kind}: overlapping claim ownership, saved result reuse, and history recovery passed`
+      `${kind}: claim and receipt ownership, saved result reuse, and history recovery passed`
     );
   } finally {
     release.resolve(ownerValue);

@@ -1,12 +1,10 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "bb64e8fdb5d8d9eee2185da426e1676c5f898616",
+  "baselineHead": "c5510a40423fb711536a800bc5abb8ae534958a0",
   "sourceState": {
     "modified": [
-      ".github/workflows/ci.yml",
-      "libs/langgraph/src/runtime/create-session.ts",
-      "libs/langgraph/src/runtime/function-tools.ts",
-      "libs/langgraph/src/runtime/message-reducer.ts"
+      "libs/middleware/README.md",
+      "libs/middleware/src/langgraph/client-tool-result-guard.ts"
     ],
     "untracked": []
   },
@@ -639,7 +637,7 @@
       "id": "asset:libs/middleware/README.md",
       "kind": "asset",
       "path": "libs/middleware/README.md",
-      "sha256": "74ebc0a85ad48d3812d3a504c9b5764432ed754148c86518809782ad3fc04f40"
+      "sha256": "471758d98f4021fd379bddcd6a776fedffc210a3dd6cbdb58f604884801f1cf6"
     },
     {
       "id": "asset:libs/middleware/package.json",
@@ -9231,7 +9229,7 @@
           "path": "libs/middleware/src/langgraph/client-tool-result-guard.ts",
           "symbol": "recordClientToolResults",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export async function recordClientToolResults(input: RecordClientToolResultsInput): Promise<RecordClientToolResultsResult> {\n    const recordedToolCallIds: string[] = [];\n    const duplicateToolCallIds: string[] = [];\n    for (const entry of extractClientToolResultMessages(input.messages)) {\n        const key = { threadId: input.threadId, toolCallId: entry.toolCallId };\n        const claim = await input.store.claim(key);\n        if (claim === 'claimed') {\n            await input.store.record(key, entry.result);\n            recordedToolCallIds.push(entry.toolCallId);\n            continue;\n        }\n        if (claim.status === 'done') {\n            duplicateToolCallIds.push(entry.toolCallId);\n            continue;\n        }\n        await input.store.record(key, entry.result);\n        recordedToolCallIds.push(entry.toolCallId);\n    }\n    return { recordedToolCallIds, duplicateToolCallIds };\n}"
+          "signature": "export async function recordClientToolResults(input: RecordClientToolResultsInput): Promise<RecordClientToolResultsResult> {\n    const recordedToolCallIds: string[] = [];\n    const duplicateToolCallIds: string[] = [];\n    for (const entry of extractClientToolResultMessages(input.messages)) {\n        const key = { threadId: input.threadId, toolCallId: entry.toolCallId };\n        const claim = await input.store.claim(key);\n        if (claim === 'claimed') {\n            await input.store.record(key, entry.result);\n            recordedToolCallIds.push(entry.toolCallId);\n            continue;\n        }\n        if (claim.status === 'done') {\n            duplicateToolCallIds.push(entry.toolCallId);\n            continue;\n        }\n        throw new Error(`Client tool result cannot settle an unowned execution: ${entry.toolCallId}`);\n    }\n    return { recordedToolCallIds, duplicateToolCallIds };\n}"
         }
       ]
     },
@@ -12737,7 +12735,7 @@
       "id": "source:libs/middleware/src/langgraph/client-tool-result-guard.ts",
       "kind": "source",
       "path": "libs/middleware/src/langgraph/client-tool-result-guard.ts",
-      "sha256": "05c3bdfa13d1d79666afcf377c3ca90b5799bc02c27c9dd2136d2d5f433f3b68"
+      "sha256": "a8a5f2a6d88fd025ccf5a3ba8acedca7b1a4bf3e03160f0f445154a9e67d6e3d"
     },
     {
       "id": "source:libs/middleware/src/langgraph/index.ts",

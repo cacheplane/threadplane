@@ -741,7 +741,7 @@
   {
     "name": "recordClientToolResults",
     "kind": "function",
-    "description": "Record first-seen client-tool results and identify duplicate redeliveries.",
+    "description": "Record newly claimed receipts and identify already-done duplicates.\nAwait before graph continuation: existing executing/failed records reject\nwithout being changed. A batch is not transactional; earlier receipts may\nalready be recorded when a later receipt rejects.",
     "signature": "recordClientToolResults(input: RecordClientToolResultsInput): Promise<RecordClientToolResultsResult>",
     "params": [
       {
