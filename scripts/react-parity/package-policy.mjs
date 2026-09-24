@@ -19,12 +19,15 @@ export const neutralLangGraphRoots = ['src/lib/transport/fetch-stream.transport.
 // Exact source-sharing exceptions during the Angular transition. Their imports
 // remain guarded; neither file may expose the private session through a bridge.
 export const sharedLangGraphRuntimeSources = ['src/runtime/transport.types.ts', 'src/runtime/operation-errors.ts'];
+export const neutralRuntimeSdkEntries = { langgraph: '@langchain/langgraph-sdk', 'ag-ui': '@ag-ui/client' };
 // TypeScript resolution and filesystem enumeration can use different separators.
-export function langGraphRuntimeSourceKind(root, path) {
-  const directory = `${root.replaceAll('\\', '/').replace(/\/$/, '')}/libs/langgraph/`;
+export function backendRuntimeSourceKind(root, path) {
+  const directory = `${root.replaceAll('\\', '/').replace(/\/$/, '')}/libs/`;
   const normalized = path.replaceAll('\\', '/');
-  if (!normalized.startsWith(`${directory}src/runtime/`)) return undefined;
-  return sharedLangGraphRuntimeSources.includes(normalized.slice(directory.length)) ? 'shared' : 'private';
+  if (normalized.startsWith(`${directory}ag-ui/src/runtime/`)) return 'private';
+  const langGraphDirectory = `${directory}langgraph/`;
+  if (!normalized.startsWith(`${langGraphDirectory}src/runtime/`)) return undefined;
+  return sharedLangGraphRuntimeSources.includes(normalized.slice(langGraphDirectory.length)) ? 'shared' : 'private';
 }
 const retiredProjects = ['chat', 'langgraph-core', 'ag-ui-core', 'react-render'];
 
@@ -40,9 +43,9 @@ export function forbiddenDependency(project, specifier, { angularTransitions = [
   const pkg = packageOf(specifier);
   const internal = pkg.startsWith('@threadplane/') ? pkg.slice('@threadplane/'.length) : undefined;
   if (neutralRuntime) {
-    if (internal) return !['langgraph', 'core'].includes(internal);
+    if (internal) return ![project, 'core'].includes(internal);
     if (specifier.startsWith('.')) return false;
-    return specifier !== '@langchain/langgraph-sdk';
+    return specifier !== neutralRuntimeSdkEntries[project];
   }
   const angular = pkg.startsWith('@angular/');
   const react = ['react', 'react-dom', '@types/react', '@types/react-dom'].includes(pkg) || ['react', 'react-render', 'ui-react', 'workspace-react'].includes(internal);

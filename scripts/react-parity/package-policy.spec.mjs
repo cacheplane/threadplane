@@ -13,8 +13,8 @@ for (const root of ['/repo', '/repo/', 'C:\\repo', 'C:/repo/']) {
       `${prefix}src/runtime-copy/create-session.ts`,
     ]) {
       const expected = path.endsWith('/transport.types.ts') || path.endsWith('/operation-errors.ts') ? 'shared' : path.includes('/runtime/') ? 'private' : undefined;
-      assert.equal(policy.langGraphRuntimeSourceKind(root, path), expected);
-      assert.equal(policy.langGraphRuntimeSourceKind(root, path.replaceAll('/', '\\')), expected);
+      assert.equal(policy.backendRuntimeSourceKind(root, path), expected);
+      assert.equal(policy.backendRuntimeSourceKind(root, path.replaceAll('/', '\\')), expected);
     }
   });
 }
@@ -26,6 +26,28 @@ test('final internal dependencies follow the approved package roles', () => {
       assert.equal(policy.forbiddenDependency(project, `@threadplane/${dependency}`), !allowed.includes(dependency), `${project} -> ${dependency}`);
     }
   }
+});
+
+for (const project of ['langgraph', 'ag-ui']) {
+  test(`${project} neutral dependency policy admits only its own backend and exact SDK`, () => {
+    const sdk = project === 'langgraph' ? '@langchain/langgraph-sdk' : '@ag-ui/client';
+    const policyOptions = { neutralRuntime: true, angularTransitions: [project] };
+    for (const allowed of [sdk, `@threadplane/${project}`, '@threadplane/core', './local']) {
+      assert.equal(policy.forbiddenDependency(project, allowed, policyOptions), false, allowed);
+    }
+    for (const denied of ['@angular/core', '@threadplane/chat', '@threadplane/angular', 'rxjs', 'zod', 'unreviewed', `${sdk}/private`,
+      ...(project === 'ag-ui' ? ['@threadplane/langgraph', '@langchain/langgraph-sdk', '@ag-ui/core'] : ['@threadplane/ag-ui', '@ag-ui/client'])]) {
+      assert.equal(policy.forbiddenDependency(project, denied, policyOptions), true, denied);
+    }
+  });
+}
+
+test('AG-UI runtime has no shared source exceptions', () => {
+  for (const filename of ['create-http-request.ts', 'transport.types.ts', 'operation-errors.ts']) {
+    assert.equal(policy.backendRuntimeSourceKind('/repo', `/repo/libs/ag-ui/src/runtime/${filename}`), 'private');
+    assert.equal(policy.backendRuntimeSourceKind('C:\\repo', `C:\\repo\\libs\\ag-ui\\src\\runtime\\${filename}`), 'private');
+  }
+  assert.equal(policy.backendRuntimeSourceKind('/repo', '/repo/libs/ag-ui/src/runtime-copy/owner.ts'), undefined);
 });
 
 test('private scaffolds and temporary Angular exceptions are separate inventories', () => {

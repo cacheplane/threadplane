@@ -2,13 +2,14 @@ import { existsSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-import { angularTransitionProjects, assertFinalRelease, emittedEntries, forbiddenDependency, langGraphRuntimeSourceKind, manifestViolations, neutralLangGraphRoots, packageOf, privateScaffoldProjects, scanProjects, sourceEntry } from './package-policy.mjs';
+import { angularTransitionProjects, assertFinalRelease, backendRuntimeSourceKind, emittedEntries, forbiddenDependency, manifestViolations, neutralLangGraphRoots, neutralRuntimeSdkEntries, packageOf, privateScaffoldProjects, scanProjects, sourceEntry } from './package-policy.mjs';
 
 export const foundationProjects = privateScaffoldProjects;
 const optional = /(?:^|\/)(?:testing|zod|math)(?:\/|$)/;
 const reactFeature = /^(?:chat|markdown|a2ui|debug|tools|testing|render)(?:\/|$)/;
 const sourceFile = /\.(?:[cm]?[jt]sx?)$/;
 const testFile = /(?:\.(?:spec|test|type-test)\.[cm]?[jt]sx?$|\/test-setup\.)/;
+const coreEntries = new Map([['@threadplane/core', 'src/index.ts'], ['@threadplane/core/tools', 'src/tools/index.ts']]);
 const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'));
 
 function filesIn(directory) {
@@ -55,6 +56,7 @@ export function verifyBoundaries({ root = process.cwd(), mode = 'source', projec
   const options = ts.convertCompilerOptionsFromJson(config.compilerOptions ?? {}, root).options;
   options.pathsBasePath = root;
   options.moduleResolution = ts.ModuleResolutionKind.Bundler;
+  const sdkOptions = { ...options, paths: undefined, baseUrl: undefined };
   const cache = new Map();
   const prefix = mode === 'built' ? 'dist/libs' : 'libs';
   // Resolve filesystem identity before applying exact source exceptions. Import
@@ -65,7 +67,7 @@ export function verifyBoundaries({ root = process.cwd(), mode = 'source', projec
     return identities.get(path);
   };
   const canonicalRoot = canonical(root);
-  const runtimeSourceKind = (path) => langGraphRuntimeSourceKind(canonicalRoot, canonical(path));
+  const runtimeSourceKind = (path) => backendRuntimeSourceKind(canonicalRoot, canonical(path));
   const manifestFor = (project) => {
     const path = join(root, prefix, project, 'package.json');
     return existsSync(path) ? readJson(path) : undefined;
@@ -113,33 +115,46 @@ export function verifyBoundaries({ root = process.cwd(), mode = 'source', projec
       }
       for (const specifier of dependencies.imports) {
         const target = resolveImport(specifier, path);
-        const targetProject = target && projectOf(target);
-        const normalized = targetProject ? `@threadplane/${targetProject}` : specifier;
+        const canonicalTarget = target && canonical(target);
+        const targetPaths = target ? [...new Set([target, canonicalTarget])] : [];
+        const targetProjects = [...new Set(targetPaths.map(projectOf).filter(Boolean))];
+        const targetLocations = target ? [relative(directory, target), relative(canonical(directory), canonicalTarget)] : [];
         const trail = [...ancestry, relative(root, path), specifier].join(' -> ');
         if (legacyRuntime && target && runtimeSourceKind(target) === 'private') errors.add(`${project}: private runtime reachable from legacy source: ${trail}`);
         const policy = { angularTransitions, rootRuntime, neutralRuntime, browserTransition: browserTransition && browserPath(path) };
         const label = neutralRuntime ? 'neutral runtime forbidden dependency' : 'forbidden dependency';
-        if (forbiddenDependency(project, specifier, policy) || forbiddenDependency(project, normalized, policy)) errors.add(`${project}: ${label} ${trail}`);
+        if (forbiddenDependency(project, specifier, policy) || targetProjects.some((owner) => forbiddenDependency(project, `@threadplane/${owner}`, policy))) errors.add(`${project}: ${label} ${trail}`);
+        // Neither import aliases nor filesystem aliases may turn a private
+        // external file into an approved own-package, core or SDK-root edge.
+        if (neutralRuntime && target &&
+          targetPaths.some((path) => path.replaceAll('\\', '/').includes('/node_modules/'))
+        ) {
+          const sdk = neutralRuntimeSdkEntries[project];
+          const entry = specifier === sdk ? ts.resolveModuleName(sdk, path, sdkOptions, ts.sys).resolvedModule?.resolvedFileName : undefined;
+          if (!entry || canonical(entry) !== canonicalTarget) errors.add(`${project}: neutral runtime forbidden dependency ${trail}`);
+        }
+        const coreEntry = coreEntries.get(specifier);
+        const crossesCoreBoundary = targetProjects.includes('core') && projectOf(canonical(path)) !== 'core';
         if (neutralRuntime && (
-          optional.test(specifier) || (target && optional.test(relative(directory, target))) ||
+          optional.test(specifier) || targetLocations.some((location) => optional.test(location)) ||
           (specifier.startsWith('@threadplane/core/') && specifier !== '@threadplane/core/tools') ||
-          (targetProject === 'core' && projectOf(path) !== 'core' && !['@threadplane/core', '@threadplane/core/tools'].includes(specifier))
+          (crossesCoreBoundary && (!coreEntry || canonicalTarget !== canonical(join(root, 'libs/core', coreEntry))))
         )) errors.add(`${project}: neutral runtime private/testing dependency ${trail}`);
         // Every core entry is dependency-free. Explicitly
         // review any future external dependency instead of allowing a wrapper
         // package to hide a framework/parser dependency behind its own imports.
         if (project === 'core' && (!target || target.includes('/node_modules/')) && !specifier.startsWith('.')) errors.add(`${project}: unreviewed dependency ${trail}`);
         if (rootRuntime && (optional.test(specifier) || ['zod', 'katex'].includes(packageOf(specifier)) || (target && optional.test(relative(directory, target))))) errors.add(`${project}: optional/testing dependency reachable from root: ${trail}`);
-        if (project === 'react' && rootRuntime && ((specifier.startsWith('@threadplane/react/') && reactFeature.test(specifier.slice('@threadplane/react/'.length))) || (targetProject === 'react' && reactFeature.test(relative(join(directory, 'src'), target))))) errors.add(`${project}: feature dependency reachable from root: ${trail}`);
+        if (project === 'react' && rootRuntime && ((specifier.startsWith('@threadplane/react/') && reactFeature.test(specifier.slice('@threadplane/react/'.length))) || (target && projectOf(target) === 'react' && reactFeature.test(relative(join(directory, 'src'), target))))) errors.add(`${project}: feature dependency reachable from root: ${trail}`);
         if (target && !target.includes('/node_modules/')) visit(target, rootRuntime, [...ancestry, relative(root, path)], browserTransition && browserPath(target), neutralRuntime, legacyRuntime);
         else if (!target && (specifier.startsWith('.') || specifier.startsWith('@threadplane/'))) errors.add(`${project}: unresolved dependency ${trail}`);
       }
     }
-    for (const path of allFiles) visit(path, false, [], browserPath(path), false, mode === 'source' && angularTransitions.includes(project) && runtimeSourceKind(path) === undefined);
-    if (mode === 'source' && project === 'langgraph') {
+    for (const path of allFiles) visit(path, false, [], browserPath(path), false, mode === 'source' && (project === 'angular' || angularTransitions.includes(project)) && runtimeSourceKind(path) === undefined);
+    if (mode === 'source' && ['langgraph', 'ag-ui'].includes(project)) {
       const neutralRoots = [
         ...filesIn(join(directory, 'src/runtime')).filter((path) => !optional.test(relative(directory, path))),
-        ...neutralLangGraphRoots.map((path) => join(directory, path)).filter(existsSync),
+        ...(project === 'langgraph' ? neutralLangGraphRoots.map((path) => join(directory, path)).filter(existsSync) : []),
       ];
       for (const path of neutralRoots) visit(path, false, [], false, true);
     }

@@ -256,6 +256,13 @@
       "status": "planned"
     },
     {
+      "id": "asset:libs/ag-ui/tsconfig.runtime-tests.json",
+      "taskIds": ["T36"],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "note": "Isolated Node verification for the private AG-UI request owner; broader CI and release migration remain open."
+    },
+    {
       "id": "asset:libs/ag-ui/tsconfig.type-tests.json",
       "taskIds": [
         "T02",
@@ -8652,6 +8659,14 @@
       "status": "planned"
     },
     {
+      "id": "source:libs/ag-ui/src/runtime/create-http-request.ts",
+      "taskIds": ["T12", "T13"],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private physical HTTP request ownership only; excluded from public exports and legacy Angular reachability.",
+      "note": "Uses the locked SDK raw stream, normalization and verification. Domain run authority and framework-neutral session integration remain separate migration work."
+    },
+    {
       "id": "source:libs/ag-ui/src/test-setup.ts",
       "taskIds": [
         "T02",
@@ -8678,6 +8693,13 @@
       ],
       "treatment": "infrastructure",
       "status": "planned"
+    },
+    {
+      "id": "source:libs/ag-ui/vite.runtime.config.mts",
+      "taskIds": ["T36"],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "note": "Isolated Node verification for the private AG-UI request owner; broader CI and release migration remain open."
     },
     {
       "id": "source:libs/chat/.install-collector/development-install.d.ts",
