@@ -8667,6 +8667,14 @@
       "note": "Uses the locked SDK raw stream, normalization and verification. Domain run authority and framework-neutral session integration remain separate migration work."
     },
     {
+      "id": "source:libs/ag-ui/src/runtime/create-run.ts",
+      "taskIds": ["T12", "T13"],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private domain run authority only; excluded from public exports and legacy Angular reachability.",
+      "note": "Composes physical HTTP ownership with captured caller identity, synchronous cancellation and first terminal outcome. Framework-neutral session projection, transcript fidelity and public parity remain separate migration work. Child-attributed RUN_* events are unsupported when delivered by the SDK; protobuf decoding can erase attribution."
+    },
+    {
       "id": "source:libs/ag-ui/src/test-setup.ts",
       "taskIds": [
         "T02",
