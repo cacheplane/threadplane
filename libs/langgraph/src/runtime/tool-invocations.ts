@@ -39,3 +39,16 @@ export function observeInvocation(
 export function hasInvocationConflict(invocations: readonly ToolInvocation[]) {
   return invocations.some((entry) => entry.conflicted);
 }
+
+/** Durable mismatch is a monotone fact about an already admitted call. */
+export function conflictInvocation(
+  previous: readonly ToolInvocation[],
+  id: string
+): readonly ToolInvocation[] {
+  const index = previous.findIndex((entry) => entry.id === id);
+  const prior = previous[index];
+  if (!prior || prior.conflicted) return previous;
+  const next = [...previous];
+  next[index] = Object.freeze({ ...prior, conflicted: true });
+  return Object.freeze(next);
+}

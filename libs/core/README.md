@@ -7,7 +7,7 @@ delivery constructors and error projection, not an execution owner or public sto
 
 `@threadplane/core/tools` exports optional authored `FunctionTool<Args, Result>`,
 minimal signal-based execution context, catalog inference, and a structural
-claim/record execution-store contract. `@threadplane/core/testing` is reserved.
+acquire/settle invocation-ownership contract. `@threadplane/core/testing` is reserved.
 
 Sessions accept text and an optional standard `AbortSignal`. Read and subscribe are
 inert; subscribe notifies changes only. Implementations must publish owned, deeply
@@ -24,14 +24,21 @@ objects and arrays. Schema validation belongs to consumers and their chosen libr
 there is no inference from schemas, runtime argument conversion or execution registry.
 Function tools may carry caller-authored JSON Schema in `parameters`; it is metadata
 only. Handlers may return promises or void and receive isolated mutable arguments.
-The optional guard claims before handlers and records before settlement; tools
-marked `idempotent: true` bypass it. A stale executing record fails closed.
+The optional guard binds a stable thread/tool-call key to the exact invocation and
+one owner token before handlers. Only that owner settles; observers reuse only exact
+encoded completions. Results that cannot survive a whole-envelope JSON round trip
+remain exact locally and store a non-reusable null marker. Different invocations
+conflict; executing, legacy, malformed, and non-reusable completions fail closed.
+Tools marked `idempotent: true` bypass durable storage but retain local identity checks.
+There is no takeover, lease, automatic retry, or graph-delivery receipt inference.
+This is an unreleased source-tree protocol change; old claim/record providers are
+rejected at construction. The legacy chat execution guard remains separate.
 
 The private LangGraph development session captures a fixed catalog and store at
 construction. Its submit attempt owns tool execution and allows at most ten
 automatic continuation groups per explicit user turn. `followUp: false` persists
 results without another run. Stop/dispose settle local ownership promptly; required
-claim cleanup and already-started durable writes may finish without publishing or
+owned cancellation cleanup and already-started durable writes may finish without publishing or
 continuing. Failed handoffs retain stable tool-result messages for the next explicit
 submission. Reading, subscribing and checking history never start tools.
 

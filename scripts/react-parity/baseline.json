@@ -1,15 +1,24 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "1864f3d58495eb00d0b979afba9a5ec3bd191246",
+  "baselineHead": "22d837101fdd621d878f58079d55946a1948a845",
   "sourceState": {
     "modified": [
+      ".github/workflows/ci.yml",
+      "apps/website/content/docs/middleware/getting-started/introduction.mdx",
       "libs/langgraph/src/runtime/create-session.ts",
-      "libs/langgraph/src/runtime/history-projection.ts",
+      "libs/langgraph/src/runtime/function-tools.ts",
       "libs/langgraph/src/runtime/message-reducer.ts",
       "libs/langgraph/src/runtime/ownership.ts",
-      "libs/langgraph/src/runtime/tool-invocations.ts"
+      "libs/langgraph/src/runtime/tool-invocations.ts",
+      "libs/middleware/README.md",
+      "libs/middleware/src/langgraph/client-tool-execution-store.ts",
+      "libs/middleware/src/langgraph/index.ts",
+      "libs/middleware/src/langgraph/postgres-client-tool-execution-store.ts"
     ],
-    "untracked": []
+    "untracked": [
+      "libs/langgraph/src/runtime/tool-provenance.ts",
+      "libs/middleware/src/langgraph/postgres-tool-execution-schema.ts"
+    ]
   },
   "scope": {
     "libraries": [
@@ -640,7 +649,7 @@
       "id": "asset:libs/middleware/README.md",
       "kind": "asset",
       "path": "libs/middleware/README.md",
-      "sha256": "92cbdc1844e47232d885c58e7450e56291bac8ff874942e086d1778ebf055a84"
+      "sha256": "5375257d1f24a2afe5a0db1bf939c215461d6372f38d91b48ce09e08c91b8d9f"
     },
     {
       "id": "asset:libs/middleware/package.json",
@@ -1864,7 +1873,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "c9a6410f05ca8b9f9e6ff36e55a217a1d501f988b9d0cf2ba9779a5123ba18f9"
+      "sha256": "bf216c2aadd0e521c312d70ea23065873eec1cfeb0d86f5c797137c6711229e3"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -2554,7 +2563,7 @@
       "id": "doc:apps/website/content/docs/middleware/getting-started/introduction.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/middleware/getting-started/introduction.mdx",
-      "sha256": "d5fc46ef253624fa2f9471a49bfed9c071bdf9cfe696d74858ecaa1de05447cd"
+      "sha256": "4e7d07abddfa443f4a6b1add5952267eb6d8df21d4497799d277f6dd9efb6a5f"
     },
     {
       "id": "doc:apps/website/content/docs/middleware/getting-started/quickstart.mdx",
@@ -8831,6 +8840,20 @@
       ]
     },
     {
+      "id": "export:libs/middleware/src/langgraph/index.ts#ClientToolExecutionAcquisition",
+      "kind": "export",
+      "path": "libs/middleware/src/langgraph/index.ts",
+      "symbol": "ClientToolExecutionAcquisition",
+      "declarations": [
+        {
+          "path": "libs/middleware/src/langgraph/client-tool-execution-store.ts",
+          "symbol": "ClientToolExecutionAcquisition",
+          "syntaxKind": "TypeAliasDeclaration",
+          "signature": "export type ClientToolExecutionAcquisition = {\n    readonly status: 'acquired';\n    readonly token: string;\n} | {\n    readonly status: 'complete';\n    readonly result: string;\n} | {\n    readonly status: 'unavailable';\n} | {\n    readonly status: 'conflict';\n};"
+        }
+      ]
+    },
+    {
       "id": "export:libs/middleware/src/langgraph/index.ts#ClientToolExecutionKey",
       "kind": "export",
       "path": "libs/middleware/src/langgraph/index.ts",
@@ -8845,30 +8868,16 @@
       ]
     },
     {
-      "id": "export:libs/middleware/src/langgraph/index.ts#ClientToolExecutionRecord",
+      "id": "export:libs/middleware/src/langgraph/index.ts#ClientToolExecutionSettlement",
       "kind": "export",
       "path": "libs/middleware/src/langgraph/index.ts",
-      "symbol": "ClientToolExecutionRecord",
+      "symbol": "ClientToolExecutionSettlement",
       "declarations": [
         {
           "path": "libs/middleware/src/langgraph/client-tool-execution-store.ts",
-          "symbol": "ClientToolExecutionRecord",
-          "syntaxKind": "TypeAliasDeclaration",
-          "signature": "export type ClientToolExecutionRecord = {\n    status: 'executing';\n} | {\n    status: 'done';\n    result: ClientToolResult;\n} | {\n    status: 'failed';\n    result?: ClientToolResult;\n};"
-        }
-      ]
-    },
-    {
-      "id": "export:libs/middleware/src/langgraph/index.ts#ClientToolExecutionStatus",
-      "kind": "export",
-      "path": "libs/middleware/src/langgraph/index.ts",
-      "symbol": "ClientToolExecutionStatus",
-      "declarations": [
-        {
-          "path": "libs/middleware/src/langgraph/client-tool-execution-store.ts",
-          "symbol": "ClientToolExecutionStatus",
-          "syntaxKind": "TypeAliasDeclaration",
-          "signature": "export type ClientToolExecutionStatus = 'executing' | 'done' | 'failed';"
+          "symbol": "ClientToolExecutionSettlement",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface ClientToolExecutionSettlement {\n    readonly invocation: string;\n    readonly token: string;\n    readonly result: string | null;\n}"
         }
       ]
     },
@@ -8882,21 +8891,7 @@
           "path": "libs/middleware/src/langgraph/client-tool-execution-store.ts",
           "symbol": "ClientToolExecutionStore",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface ClientToolExecutionStore {\n    claim(key: ClientToolExecutionKey): Promise<'claimed' | ClientToolExecutionRecord>;\n    record(key: ClientToolExecutionKey, result: ClientToolResult): Promise<void>;\n    lookup(threadId: string, toolCallIds: readonly string[]): Promise<Record<string, ClientToolExecutionRecord>>;\n}"
-        }
-      ]
-    },
-    {
-      "id": "export:libs/middleware/src/langgraph/index.ts#ClientToolResult",
-      "kind": "export",
-      "path": "libs/middleware/src/langgraph/index.ts",
-      "symbol": "ClientToolResult",
-      "declarations": [
-        {
-          "path": "libs/middleware/src/langgraph/client-tool-execution-store.ts",
-          "symbol": "ClientToolResult",
-          "syntaxKind": "TypeAliasDeclaration",
-          "signature": "export type ClientToolResult = {\n    readonly ok: true;\n    readonly value: unknown;\n} | {\n    readonly ok: false;\n    readonly error: string;\n};"
+          "signature": "export interface ClientToolExecutionStore {\n    acquire(key: ClientToolExecutionKey, invocation: string): Promise<ClientToolExecutionAcquisition>;\n    settle(key: ClientToolExecutionKey, settlement: ClientToolExecutionSettlement): Promise<'accepted' | 'rejected'>;\n}"
         }
       ]
     },
@@ -8985,16 +8980,30 @@
       ]
     },
     {
+      "id": "export:libs/middleware/src/langgraph/index.ts#THREADPLANE_CLIENT_TOOL_EXECUTIONS_MIGRATION",
+      "kind": "export",
+      "path": "libs/middleware/src/langgraph/index.ts",
+      "symbol": "THREADPLANE_CLIENT_TOOL_EXECUTIONS_MIGRATION",
+      "declarations": [
+        {
+          "path": "libs/middleware/src/langgraph/postgres-tool-execution-schema.ts",
+          "symbol": "THREADPLANE_CLIENT_TOOL_EXECUTIONS_MIGRATION",
+          "syntaxKind": "VariableDeclaration",
+          "signature": "THREADPLANE_CLIENT_TOOL_EXECUTIONS_MIGRATION = `\nBEGIN;\nLOCK TABLE threadplane_client_tool_executions IN ACCESS EXCLUSIVE MODE;\nALTER TABLE threadplane_client_tool_executions\n  ADD COLUMN IF NOT EXISTS invocation text,\n  ADD COLUMN IF NOT EXISTS owner_token text,\n  ADD COLUMN IF NOT EXISTS encoded_result text;\nUPDATE threadplane_client_tool_executions\nSET owner_token = 'legacy-unknown'\nWHERE owner_token IS NULL;\nALTER TABLE threadplane_client_tool_executions\n  ALTER COLUMN owner_token DROP DEFAULT,\n  ALTER COLUMN owner_token SET NOT NULL;\nCOMMIT;\n`"
+        }
+      ]
+    },
+    {
       "id": "export:libs/middleware/src/langgraph/index.ts#THREADPLANE_CLIENT_TOOL_EXECUTIONS_SCHEMA",
       "kind": "export",
       "path": "libs/middleware/src/langgraph/index.ts",
       "symbol": "THREADPLANE_CLIENT_TOOL_EXECUTIONS_SCHEMA",
       "declarations": [
         {
-          "path": "libs/middleware/src/langgraph/postgres-client-tool-execution-store.ts",
+          "path": "libs/middleware/src/langgraph/postgres-tool-execution-schema.ts",
           "symbol": "THREADPLANE_CLIENT_TOOL_EXECUTIONS_SCHEMA",
           "syntaxKind": "VariableDeclaration",
-          "signature": "THREADPLANE_CLIENT_TOOL_EXECUTIONS_SCHEMA = `\nCREATE TABLE IF NOT EXISTS threadplane_client_tool_executions (\n  tenant_id     text        NOT NULL DEFAULT '',\n  thread_id     text        NOT NULL,\n  tool_call_id  text        NOT NULL,\n  status        text        NOT NULL,\n  result        jsonb,\n  created_at    timestamptz NOT NULL DEFAULT now(),\n  updated_at    timestamptz NOT NULL DEFAULT now(),\n  PRIMARY KEY (tenant_id, thread_id, tool_call_id)\n);\n`"
+          "signature": "THREADPLANE_CLIENT_TOOL_EXECUTIONS_SCHEMA = `\nCREATE TABLE IF NOT EXISTS threadplane_client_tool_executions (\n  tenant_id     text        NOT NULL DEFAULT '',\n  thread_id     text        NOT NULL,\n  tool_call_id  text        NOT NULL,\n  status        text        NOT NULL,\n  result        jsonb,\n  invocation    text,\n  owner_token   text        NOT NULL,\n  encoded_result text,\n  created_at    timestamptz NOT NULL DEFAULT now(),\n  updated_at    timestamptz NOT NULL DEFAULT now(),\n  PRIMARY KEY (tenant_id, thread_id, tool_call_id)\n);\n`"
         }
       ]
     },
@@ -9078,7 +9087,7 @@
           "path": "libs/middleware/src/langgraph/client-tool-execution-store.ts",
           "symbol": "createInMemoryClientToolExecutionStore",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function createInMemoryClientToolExecutionStore(): ClientToolExecutionStore {\n    const records = new Map<string, ClientToolExecutionRecord>();\n    return {\n        async claim(key: ClientToolExecutionKey): Promise<'claimed' | ClientToolExecutionRecord> {\n            const existing = records.get(mapKey(key));\n            if (existing)\n                return cloneRecord(existing);\n            records.set(mapKey(key), { status: 'executing' });\n            return 'claimed';\n        },\n        async record(key: ClientToolExecutionKey, result: ClientToolResult): Promise<void> {\n            records.set(mapKey(key), { status: 'done', result: cloneResult(result) });\n        },\n        async lookup(threadId: string, toolCallIds: readonly string[]): Promise<Record<string, ClientToolExecutionRecord>> {\n            const entries: [\n                string,\n                ClientToolExecutionRecord\n            ][] = [];\n            for (const toolCallId of toolCallIds) {\n                const existing = records.get(mapKey({ threadId, toolCallId }));\n                if (existing)\n                    entries.push([toolCallId, cloneRecord(existing)]);\n            }\n            return Object.fromEntries(entries);\n        },\n    };\n}"
+          "signature": "export function createInMemoryClientToolExecutionStore(): ClientToolExecutionStore {\n    const records = new Map<string, RecordState>();\n    return {\n        async acquire(key, invocation) {\n            const threadId = key.threadId;\n            const toolCallId = key.toolCallId;\n            const identity = JSON.stringify([threadId, toolCallId]);\n            const existing = records.get(identity);\n            if (existing) {\n                if (existing.invocation !== invocation)\n                    return { status: 'conflict' };\n                return existing.status === 'done' && existing.result !== null\n                    ? { status: 'complete', result: existing.result }\n                    : { status: 'unavailable' };\n            }\n            const token = crypto.randomUUID();\n            records.set(identity, {\n                invocation,\n                token,\n                status: 'executing',\n                result: null,\n            });\n            return { status: 'acquired', token };\n        },\n        async settle(key, settlement) {\n            const threadId = key.threadId;\n            const toolCallId = key.toolCallId;\n            const invocation = settlement.invocation;\n            const token = settlement.token;\n            const result = settlement.result;\n            const identity = JSON.stringify([threadId, toolCallId]);\n            const existing = records.get(identity);\n            if (!existing ||\n                existing.invocation !== invocation ||\n                existing.token !== token)\n                return 'rejected';\n            if (existing.status === 'done')\n                return existing.result !== null && existing.result === result\n                    ? 'accepted'\n                    : 'rejected';\n            records.set(identity, { invocation, token, status: 'done', result });\n            return 'accepted';\n        },\n    };\n}"
         }
       ]
     },
@@ -9092,7 +9101,7 @@
           "path": "libs/middleware/src/langgraph/postgres-client-tool-execution-store.ts",
           "symbol": "createPostgresClientToolExecutionStore",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function createPostgresClientToolExecutionStore(sql: PostgresTaggedSql, opts: PostgresClientToolExecutionStoreOptions = {}): ClientToolExecutionStore {\n    const tenantId = opts.tenantId ?? '';\n    return {\n        async claim(key: ClientToolExecutionKey): Promise<'claimed' | ClientToolExecutionRecord> {\n            const inserted = await sql `\n        INSERT INTO threadplane_client_tool_executions\n          (tenant_id, thread_id, tool_call_id, status)\n        VALUES (${tenantId}, ${key.threadId}, ${key.toolCallId}, 'executing')\n        ON CONFLICT (tenant_id, thread_id, tool_call_id) DO NOTHING\n        RETURNING status, result\n      `;\n            if (inserted.length > 0)\n                return 'claimed';\n            const existing = await sql `\n        SELECT status, result\n        FROM threadplane_client_tool_executions\n        WHERE tenant_id = ${tenantId}\n          AND thread_id = ${key.threadId}\n          AND tool_call_id = ${key.toolCallId}\n        LIMIT 1\n      `;\n            return rowToRecord(existing[0]);\n        },\n        async record(key: ClientToolExecutionKey, result: ClientToolResult): Promise<void> {\n            await sql `\n        INSERT INTO threadplane_client_tool_executions\n          (tenant_id, thread_id, tool_call_id, status, result)\n        VALUES (${tenantId}, ${key.threadId}, ${key.toolCallId}, 'done', ${JSON.stringify(result)}::jsonb)\n        ON CONFLICT (tenant_id, thread_id, tool_call_id) DO UPDATE\n        SET status = 'done',\n            result = CASE\n              WHEN threadplane_client_tool_executions.status = 'done'\n                THEN threadplane_client_tool_executions.result\n              ELSE EXCLUDED.result\n            END,\n            updated_at = now()\n      `;\n        },\n        async lookup(threadId: string, toolCallIds: readonly string[]): Promise<Record<string, ClientToolExecutionRecord>> {\n            if (toolCallIds.length === 0)\n                return {};\n            const rows = await sql `\n        SELECT tool_call_id, status, result\n        FROM threadplane_client_tool_executions\n        WHERE tenant_id = ${tenantId}\n          AND thread_id = ${threadId}\n          AND tool_call_id = ANY(${[...toolCallIds]})\n      `;\n            const entries: [\n                string,\n                ClientToolExecutionRecord\n            ][] = [];\n            for (const row of rows) {\n                if (typeof row['tool_call_id'] !== 'string')\n                    continue;\n                entries.push([row['tool_call_id'], rowToRecord(row)]);\n            }\n            return Object.fromEntries(entries);\n        },\n    };\n}"
+          "signature": "export function createPostgresClientToolExecutionStore(sql: PostgresTaggedSql, opts: PostgresClientToolExecutionStoreOptions = {}): ClientToolExecutionStore {\n    const tenantId = opts.tenantId ?? '';\n    return {\n        async acquire(key, invocation) {\n            const threadId = key.threadId;\n            const toolCallId = key.toolCallId;\n            const token = crypto.randomUUID();\n            const inserted = await sql `\n        INSERT INTO threadplane_client_tool_executions\n          (tenant_id, thread_id, tool_call_id, status, invocation, owner_token)\n        VALUES (${tenantId}, ${threadId}, ${toolCallId}, 'executing', ${invocation}, ${token})\n        ON CONFLICT (tenant_id, thread_id, tool_call_id) DO NOTHING\n        RETURNING owner_token\n      `;\n            if (inserted.length > 0)\n                return inserted.length === 1 && inserted[0]?.['owner_token'] === token\n                    ? { status: 'acquired', token }\n                    : { status: 'unavailable' };\n            const existing = await sql `\n        SELECT status, invocation, owner_token, encoded_result\n        FROM threadplane_client_tool_executions\n        WHERE tenant_id COLLATE \"C\" = ${tenantId} COLLATE \"C\"\n          AND thread_id COLLATE \"C\" = ${threadId} COLLATE \"C\"\n          AND tool_call_id COLLATE \"C\" = ${toolCallId} COLLATE \"C\"\n        LIMIT 1\n      `;\n            return observe(existing[0], invocation);\n        },\n        async settle(key, settlement) {\n            const threadId = key.threadId;\n            const toolCallId = key.toolCallId;\n            const invocation = settlement.invocation;\n            const token = settlement.token;\n            const result = settlement.result;\n            if (typeof invocation !== 'string' ||\n                typeof token !== 'string' ||\n                !ownerPattern.test(token) ||\n                (result !== null && typeof result !== 'string'))\n                return 'rejected';\n            const updated = await sql `\n        UPDATE threadplane_client_tool_executions\n        SET status = 'done', encoded_result = ${result},\n          updated_at = CASE WHEN status = 'executing' THEN now() ELSE updated_at END\n        WHERE tenant_id COLLATE \"C\" = ${tenantId} COLLATE \"C\"\n          AND thread_id COLLATE \"C\" = ${threadId} COLLATE \"C\"\n          AND tool_call_id COLLATE \"C\" = ${toolCallId} COLLATE \"C\"\n          AND owner_token COLLATE \"C\" = ${token} COLLATE \"C\"\n          AND invocation COLLATE \"C\" = ${invocation} COLLATE \"C\"\n          AND ((status = 'executing' AND encoded_result IS NULL)\n            OR (status = 'done' AND encoded_result IS NOT NULL\n              AND encoded_result COLLATE \"C\" = ${result} COLLATE \"C\"))\n        RETURNING owner_token\n      `;\n            return updated.length === 1 && updated[0]?.['owner_token'] === token\n                ? 'accepted'\n                : 'rejected';\n        },\n    };\n}"
         }
       ]
     },
@@ -12472,13 +12481,13 @@
       "id": "source:libs/langgraph/src/runtime/create-session.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/create-session.ts",
-      "sha256": "199584e8e20255c83832b513fff842c17ad90923a475e5667ce3a271b0249f83"
+      "sha256": "9660c52244fca8fd8712abfe2683aea6a95d8aa13f840c0fbb7b706f87d03106"
     },
     {
       "id": "source:libs/langgraph/src/runtime/function-tools.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/function-tools.ts",
-      "sha256": "4677b619e1f7702c6b1b772ece4354b49a4f4c3327854ed2e7f686e496463666"
+      "sha256": "aa587bc0294182f46e0e9f4b02ddf64dcb7b02f76031d0bce168e829794a99dc"
     },
     {
       "id": "source:libs/langgraph/src/runtime/history-projection.ts",
@@ -12502,7 +12511,7 @@
       "id": "source:libs/langgraph/src/runtime/message-reducer.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/message-reducer.ts",
-      "sha256": "9f0eeef5aff26c5f1743d0f003cb2df563d4b168f253040f7370e23b76dd0b8e"
+      "sha256": "b4842acc1b3c957b7606fcdf3c9c42ab4f569bc858abab46f722e8d2a98b55b2"
     },
     {
       "id": "source:libs/langgraph/src/runtime/operation-errors.ts",
@@ -12514,7 +12523,7 @@
       "id": "source:libs/langgraph/src/runtime/ownership.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/ownership.ts",
-      "sha256": "0d4eb6e0f3eafb113a8d939a4ac5ffbebb1565205fb20937c31dcdfde5b32b4d"
+      "sha256": "f7f3d00e1f1b7bd196a09dc907d06618a85c8513b69a5ffa229d7567451b7876"
     },
     {
       "id": "source:libs/langgraph/src/runtime/publication.ts",
@@ -12574,13 +12583,19 @@
       "id": "source:libs/langgraph/src/runtime/tool-invocations.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/tool-invocations.ts",
-      "sha256": "52b2d5c99173c404f6c29172c47d7f4ee0e86cb12b93ab238b151a05b5bbd88f"
+      "sha256": "b2fd115f4c9e08e14e8f6c0941fbcb58d141bfe5fca3eb8cbd76d24b97b038b0"
     },
     {
       "id": "source:libs/langgraph/src/runtime/tool-persistence.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/tool-persistence.ts",
       "sha256": "d65667e465e91dee1e2ac2154e43ad72d788dbc2fad5fa04fca8a749d08bd0da"
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/tool-provenance.ts",
+      "kind": "source",
+      "path": "libs/langgraph/src/runtime/tool-provenance.ts",
+      "sha256": "a235c6b097fee006ba65f53cc935ba3a6a6bd0d80599abe248e5a10fcfebbf5b"
     },
     {
       "id": "source:libs/langgraph/src/runtime/transport.types.ts",
@@ -12646,13 +12661,13 @@
       "id": "source:libs/middleware/src/langgraph/client-tool-execution-store.ts",
       "kind": "source",
       "path": "libs/middleware/src/langgraph/client-tool-execution-store.ts",
-      "sha256": "74a7909e937d9b24094e41dd1cb08cd3710d1bc12320c0213a9d31e5b578452d"
+      "sha256": "a17d5102599fff69cdb88ffaf86804a8ac4ef5840356499776bb81a361718cef"
     },
     {
       "id": "source:libs/middleware/src/langgraph/index.ts",
       "kind": "source",
       "path": "libs/middleware/src/langgraph/index.ts",
-      "sha256": "327da4d6a782fe99b0b2f7e1992956a5326cd74c8b0b9d3a3adc3bf68389d6e5"
+      "sha256": "c9d73edd0b7f53862781043965ac3ad65691fb890b3b46781af3615496c4cd44"
     },
     {
       "id": "source:libs/middleware/src/langgraph/middleware.ts",
@@ -12664,7 +12679,13 @@
       "id": "source:libs/middleware/src/langgraph/postgres-client-tool-execution-store.ts",
       "kind": "source",
       "path": "libs/middleware/src/langgraph/postgres-client-tool-execution-store.ts",
-      "sha256": "b97390ce9daa239694da63ba6cedf0eb8e420047c9aa0645abb741f750e42892"
+      "sha256": "30949f079b4cb2c7102f44fb3fe45851db2cb46dd96be2ca70416b57f95d82ae"
+    },
+    {
+      "id": "source:libs/middleware/src/langgraph/postgres-tool-execution-schema.ts",
+      "kind": "source",
+      "path": "libs/middleware/src/langgraph/postgres-tool-execution-schema.ts",
+      "sha256": "7f0c04917e8a9c425ffbeffbd78374df478a94ad99b1be2987b252b93a894826"
     },
     {
       "id": "source:libs/middleware/src/langgraph/router.ts",

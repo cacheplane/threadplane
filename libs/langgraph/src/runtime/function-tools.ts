@@ -3,10 +3,16 @@ import type {
   FunctionToolDefinition,
   ToolExecutionKey,
   ToolExecutionResult,
-  ToolExecutionRecord,
   ToolExecutionStore,
 } from '@threadplane/core/tools';
 import { ownToolCall, ownValue } from './ownership';
+import {
+  canonicalInvocation,
+  captureAcquisition,
+  captureSettlement,
+  encodeResult,
+  ownResult,
+} from './tool-provenance';
 
 export interface ToolMessage {
   readonly id: string;
@@ -60,20 +66,13 @@ export type ToolExecutionOutcome =
   | { readonly type: 'settled'; readonly result: ToolExecutionResult }
   | {
       readonly type: 'unavailable';
-      readonly reason: 'claim' | 'record' | 'outstanding';
+      readonly reason: 'acquire' | 'settle' | 'outstanding';
     }
-  | { readonly type: 'not-started' };
+  | { readonly type: 'not-started' }
+  | { readonly type: 'conflict' };
 
 function settled(result: ToolExecutionResult): ToolExecutionOutcome {
   return { type: 'settled', result: ownResult(result) };
-}
-
-/** Observing an existing execution never grants authority to record it. */
-function observeClaim(claim: 'claimed' | ToolExecutionRecord) {
-  if (claim === 'claimed') return { type: 'acquired' } as const;
-  if (claim.status === 'done') return settled(claim.result);
-  if (claim.status === 'failed' && claim.result) return settled(claim.result);
-  return { type: 'unavailable', reason: 'outstanding' } as const;
 }
 
 export type ExecutionOutcome<T> =
@@ -104,8 +103,8 @@ async function untilAbort<T>(
   }
 }
 
-/** One call, owned by one command. Claim/record may outlive the command: a late
- * acquired claim must record cancellation, while a record already in flight
+/** One call, owned by one command. Acquisition/settlement may outlive it: a late
+ * acquired owner must settle cancellation, while a settlement already in flight
  * keeps its original result. The caller controls stale UI and run publication. */
 export async function executeTool(
   definition: ReturnType<typeof captureTools>['definitions'] extends Map<
@@ -123,33 +122,47 @@ export async function executeTool(
   const guard = definition.idempotent ? undefined : store;
   if (signal.aborted)
     return guard ? { type: 'not-started' } : settled(cancelledResult(call.id));
-  async function record(
+  const invocation = canonicalInvocation(call.name, call.args);
+  let token: string | undefined;
+  async function settle(
     result: ToolExecutionResult
   ): Promise<ToolExecutionOutcome> {
     if (!guard) return settled(result);
     const captured = ownResult(result);
     try {
-      await guard.record(key, captured);
-      return settled(captured);
+      if (token === undefined) return { type: 'unavailable', reason: 'settle' };
+      const acknowledgment = await guard.settle(key, {
+        invocation,
+        token,
+        result: encodeResult(captured),
+      });
+      return captureSettlement(acknowledgment)
+        ? settled(captured)
+        : { type: 'unavailable', reason: 'settle' };
     } catch {
       // A rejected acknowledgement says nothing about durable acceptance or
       // the handler's external effect. It is not a tool failure to serialize.
-      return { type: 'unavailable', reason: 'record' };
+      return { type: 'unavailable', reason: 'settle' };
     }
   }
   if (guard) {
     try {
-      const observation = observeClaim(await guard.claim(key));
-      // Conclusive stored facts may still be handed off after stop. A foreign
-      // outstanding claim never enters owned cancellation or durable cleanup.
-      if (observation.type !== 'acquired') return observation;
+      const observation = captureAcquisition(
+        await guard.acquire(key, invocation)
+      );
+      // Conclusive facts survive stop. Observers never own cancellation cleanup.
+      if (observation.status === 'complete') return settled(observation.result);
+      if (observation.status === 'conflict') return { type: 'conflict' };
+      if (observation.status !== 'acquired')
+        return { type: 'unavailable', reason: 'outstanding' };
+      token = observation.token;
     } catch {
-      return { type: 'unavailable', reason: 'claim' };
+      return { type: 'unavailable', reason: 'acquire' };
     }
   }
-  if (signal.aborted) return record(cancelledResult(call.id));
+  if (signal.aborted) return settle(cancelledResult(call.id));
   if (blocked)
-    return record({
+    return settle({
       ok: false,
       error: 'Client tool continuation limit reached.',
     });
@@ -173,16 +186,8 @@ export async function executeTool(
     }
   );
   const outcome = await untilAbort(execution, signal);
-  return record(
+  return settle(
     outcome.type === 'aborted' ? cancelledResult(call.id) : outcome.value
-  );
-}
-
-function ownResult(result: ToolExecutionResult): ToolExecutionResult {
-  return Object.freeze(
-    result.ok
-      ? { ok: true, value: ownValue(result.value) }
-      : { ok: false, error: result.error }
   );
 }
 

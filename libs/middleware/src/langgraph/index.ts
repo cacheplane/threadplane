@@ -1,4 +1,9 @@
-export type { ClientToolSpec, ClientToolsState, OpenAIFunctionTool, BaseMessage } from './types.js';
+export type {
+  ClientToolSpec,
+  ClientToolsState,
+  OpenAIFunctionTool,
+  BaseMessage,
+} from './types.js';
 export {
   clientToolSpecs,
   clientToolNames,
@@ -11,18 +16,16 @@ export {
 } from './middleware.js';
 export { clientToolsChannel } from './channel.js';
 export { clientToolsRouter } from './router.js';
-export {
-  createInMemoryClientToolExecutionStore,
-} from './client-tool-execution-store.js';
+export { createInMemoryClientToolExecutionStore } from './client-tool-execution-store.js';
 export type {
   ClientToolExecutionKey,
-  ClientToolExecutionRecord,
-  ClientToolExecutionStatus,
+  ClientToolExecutionAcquisition,
+  ClientToolExecutionSettlement,
   ClientToolExecutionStore,
-  ClientToolResult,
 } from './client-tool-execution-store.js';
 export {
   THREADPLANE_CLIENT_TOOL_EXECUTIONS_SCHEMA,
+  THREADPLANE_CLIENT_TOOL_EXECUTIONS_MIGRATION,
   createPostgresClientToolExecutionStore,
 } from './postgres-client-tool-execution-store.js';
 export type {

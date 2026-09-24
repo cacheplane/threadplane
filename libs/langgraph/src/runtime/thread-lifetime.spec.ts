@@ -1,3 +1,4 @@
+import { canonicalInvocation } from './tool-provenance';
 import { describe, expect, it, vi } from 'vitest';
 import type { ThreadState } from '@langchain/langgraph-sdk';
 import type { ToolExecutionStore } from '@threadplane/core/tools';
@@ -100,8 +101,13 @@ describe('application-owned fixed thread lifetime', () => {
   });
 
   it('scopes durable claims by fixed thread even when servers reuse a tool call ID', async () => {
-    const claim = vi.fn<ToolExecutionStore['claim']>(async () => 'claimed');
-    const record = vi.fn<ToolExecutionStore['record']>(async () => undefined);
+    const acquire = vi.fn<ToolExecutionStore['acquire']>(async () => ({
+      status: 'acquired' as const,
+      token: 'owner',
+    }));
+    const settle = vi.fn<ToolExecutionStore['settle']>(
+      async () => 'accepted' as const
+    );
     const handler = vi.fn(({ city }: { city: string }) => ({ city }));
     const transport: AgentTransport = {
       stream: async function* (_assistant, _thread, payload) {
@@ -116,7 +122,7 @@ describe('application-owned fixed thread lifetime', () => {
         assistantId: 'agent',
         threadId,
         transport,
-        executionStore: { claim, record },
+        executionStore: { acquire, settle },
         tools: { weather: { description: 'Weather', handler } },
       });
     const a = create('a');
@@ -124,12 +130,12 @@ describe('application-owned fixed thread lifetime', () => {
     try {
       expect(await a.submit('A')).toBe('success');
       expect(await b.submit('B')).toBe('success');
-      expect(claim.mock.calls.map((call) => call[0])).toEqual([
+      expect(acquire.mock.calls.map((call) => call[0])).toEqual([
         { threadId: 'a', toolCallId: 'weather-call' },
         { threadId: 'b', toolCallId: 'weather-call' },
       ]);
-      expect(record.mock.calls.map((call) => call[0])).toEqual(
-        claim.mock.calls.map((call) => call[0])
+      expect(settle.mock.calls.map((call) => call[0])).toEqual(
+        acquire.mock.calls.map((call) => call[0])
       );
       expect(handler).toHaveBeenCalledTimes(2);
     } finally {
@@ -137,12 +143,14 @@ describe('application-owned fixed thread lifetime', () => {
     }
   });
 
-  it('settles a late durable claim under the retired thread without executing its tool', async () => {
+  it('settles a late durable acquire under the retired thread without executing its tool', async () => {
     const claiming = deferred<void>();
-    const claimed = deferred<'claimed'>();
+    const claimed = deferred<{ status: 'acquired'; token: string }>();
     const retiredFlushed = deferred<void>();
     const handler = vi.fn(({ city }: { city: string }) => ({ city }));
-    const record = vi.fn<ToolExecutionStore['record']>(async () => undefined);
+    const settle = vi.fn<ToolExecutionStore['settle']>(
+      async () => 'accepted' as const
+    );
     const flush = vi.fn<NonNullable<AgentTransport['updateState']>>(
       async (thread) => {
         expect(thread).toBe('a');
@@ -161,14 +169,14 @@ describe('application-owned fixed thread lifetime', () => {
       updateState: flush,
     };
     const store: ToolExecutionStore = {
-      claim: async (key) => {
+      acquire: async (key) => {
         if (key.threadId === 'a') {
           claiming.resolve();
           return claimed.promise;
         }
-        return 'claimed';
+        return { status: 'acquired' as const, token: 'owner' };
       },
-      record,
+      settle,
     };
     const create = (threadId: string) =>
       createSession({
@@ -187,23 +195,31 @@ describe('application-owned fixed thread lifetime', () => {
       expect(await oldRun).toBe('aborted');
       expect(await b.submit('B')).toBe('success');
       const current = b.getSnapshot();
-      claimed.resolve('claimed');
+      claimed.resolve({ status: 'acquired' as const, token: 'owner' });
       await retiredFlushed.promise;
       expect(handler).toHaveBeenCalledTimes(1);
-      expect(record.mock.calls).toEqual([
+      expect(settle.mock.calls).toEqual([
         [
           { threadId: 'b', toolCallId: 'weather-call' },
-          { ok: true, value: { city: 'Paris' } },
+          {
+            invocation: canonicalInvocation('weather', { city: 'Paris' }),
+            token: 'owner',
+            result: JSON.stringify({ ok: true, value: { city: 'Paris' } }),
+          },
         ],
         [
           { threadId: 'a', toolCallId: 'weather-call' },
-          { ok: false, error: expect.stringContaining('cancelled') },
+          {
+            invocation: canonicalInvocation('weather', { city: 'Paris' }),
+            token: 'owner',
+            result: expect.stringContaining('cancelled'),
+          },
         ],
       ]);
       expect(routes).toEqual(['a', 'b', 'b']);
       expect(b.getSnapshot()).toBe(current);
     } finally {
-      claimed.resolve('claimed');
+      claimed.resolve({ status: 'acquired' as const, token: 'owner' });
       await Promise.all([a.dispose(), b.dispose()]);
     }
   });

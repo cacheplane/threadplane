@@ -104,7 +104,7 @@ function shareOwnedValue(next: PlainValue, previous: PlainValue): PlainValue {
   return equal ? previous : shared ? freeze(result) : next;
 }
 
-function equalValue(a: PlainValue, b: PlainValue): boolean {
+export function sameOwnedValue(a: PlainValue, b: PlainValue): boolean {
   if (Object.is(a, b)) return true;
   if (
     a === null ||
@@ -124,7 +124,7 @@ function equalValue(a: PlainValue, b: PlainValue): boolean {
     left.every(
       (key) =>
         Object.hasOwn(b, key) &&
-        equalValue(
+        sameOwnedValue(
           (a as Record<string, PlainValue>)[key],
           (b as Record<string, PlainValue>)[key]
         )
@@ -137,7 +137,7 @@ export function sameToolInvocation(
   a: { readonly name: string; readonly args: PlainValue },
   b: { readonly name: string; readonly args: PlainValue }
 ): boolean {
-  return a.name === b.name && equalValue(a.args, b.args);
+  return a.name === b.name && sameOwnedValue(a.args, b.args);
 }
 
 function sameError(
@@ -172,7 +172,7 @@ export function sameMessage(a: Message, b: Message): boolean {
       a.content === b.content &&
       a.name === b.name &&
       a.toolCallId === b.toolCallId &&
-      equalValue(a.toolCallIds, b.toolCallIds) &&
+      sameOwnedValue(a.toolCallIds, b.toolCallIds) &&
       a.delivery.generation === b.delivery.generation &&
       a.delivery.phase === b.delivery.phase &&
       (a.delivery.phase !== 'complete' ||
@@ -209,9 +209,9 @@ export function sameToolCall(a: ToolCall, b: ToolCall): boolean {
     (a.id === b.id &&
       a.name === b.name &&
       a.status === b.status &&
-      equalValue(a.args, b.args) &&
+      sameOwnedValue(a.args, b.args) &&
       (a.status !== 'complete' ||
-        (b.status === 'complete' && equalValue(a.result, b.result))) &&
+        (b.status === 'complete' && sameOwnedValue(a.result, b.result))) &&
       (a.status !== 'error' || (b.status === 'error' && a.error === b.error)))
   );
 }

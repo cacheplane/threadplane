@@ -77,12 +77,17 @@ function fixture(failedFirstWrite = false) {
     async () => []
   );
   const executionStore = {
-    claim: vi.fn(async () => 'claimed' as const),
-    record: vi.fn<ToolExecutionStore['record']>((key) => {
-      if (executionStore.record.mock.calls.length === callIds.length)
+    acquire: vi.fn(async () => ({
+      status: 'acquired' as const,
+      token: 'owner',
+    })),
+    settle: vi.fn<ToolExecutionStore['settle']>((key) => {
+      if (executionStore.settle.mock.calls.length === callIds.length)
         allRecording.resolve();
       const index = callIds.indexOf(key.toolCallId);
-      return index < 0 ? Promise.resolve() : recorded[index].promise;
+      return (index < 0 ? Promise.resolve() : recorded[index].promise).then(
+        () => 'accepted' as const
+      );
     }),
   };
   const handler = vi.fn((args: { id: string }) => `Result ${args.id}`);
@@ -124,13 +129,13 @@ function fixture(failedFirstWrite = false) {
 
 describe('terminal tool write serialization', () => {
   it.each(['stop', 'dispose'] as const)(
-    'serializes late record acknowledgements after %s without stale publication',
+    'serializes late settle acknowledgements after %s without stale publication',
     async (command) => {
       const f = fixture();
       try {
         const run = f.session.submit('First');
         await f.allRecording.promise;
-        expect(f.executionStore.record).toHaveBeenCalledTimes(3);
+        expect(f.executionStore.settle).toHaveBeenCalledTimes(3);
         expect(f.handler).toHaveBeenCalledTimes(3);
         await f.session[command]();
         await expect(run).resolves.toBe('aborted');
@@ -243,7 +248,7 @@ describe('terminal tool write serialization', () => {
       expect(f.updateState.mock.calls[1][1]).toEqual({
         messages: [result('later')],
       });
-      expect(f.executionStore.record).toHaveBeenCalledTimes(4);
+      expect(f.executionStore.settle).toHaveBeenCalledTimes(4);
       expect(f.maxActiveWrites()).toBe(1);
       expect(
         (f.stream.mock.calls[2][2] as { messages: unknown[] }).messages

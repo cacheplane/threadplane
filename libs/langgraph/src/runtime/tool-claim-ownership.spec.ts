@@ -1,3 +1,4 @@
+import { canonicalInvocation } from './tool-provenance';
 import { describe, expect, it, vi } from 'vitest';
 import type { ThreadState } from '@langchain/langgraph-sdk';
 import type { ToolExecutionStore } from '@threadplane/core/tools';
@@ -51,17 +52,17 @@ function fixture(events = [call('foreign')]) {
 }
 const drain = () => new Promise<void>((resolve) => setImmediate(resolve));
 
-describe('tool claim ownership', () => {
+describe('tool acquire ownership', () => {
   it.each(['executing', 'failed', 'reject'] as const)(
     'does not turn %s authority into a tool result or allow a bypass',
     async (status) => {
       const f = fixture();
       const store: ToolExecutionStore = {
-        claim: vi.fn(async () => {
+        acquire: vi.fn(async () => {
           if (status === 'reject') throw new Error('secret');
-          return { status };
+          return { status } as never;
         }),
-        record: vi.fn(async () => undefined),
+        settle: vi.fn(async () => 'accepted' as const),
       };
       const session = createSession({
         assistantId: 'agent',
@@ -74,7 +75,7 @@ describe('tool claim ownership', () => {
         await expect(session.submit('Go')).resolves.toBe('interrupted');
         expect(f.stream).toHaveBeenCalledTimes(1);
         expect(f.handler).not.toHaveBeenCalled();
-        expect(store.record).not.toHaveBeenCalled();
+        expect(store.settle).not.toHaveBeenCalled();
         expect(f.updateState).not.toHaveBeenCalled();
         expect(session.getSnapshot().toolCalls).toMatchObject([
           { status: 'pending' },
@@ -101,7 +102,7 @@ describe('tool claim ownership', () => {
         f.getHistory.mockResolvedValue(history(['foreign']));
         await session.load?.();
         await expect(session.submit('Recovered')).resolves.toBe('success');
-        expect(store.claim).toHaveBeenCalledTimes(1);
+        expect(store.acquire).toHaveBeenCalledTimes(1);
         expect(f.handler).not.toHaveBeenCalled();
       } finally {
         await session.dispose();
@@ -112,11 +113,11 @@ describe('tool claim ownership', () => {
   it('reuses a stored failed result without rewriting it', async () => {
     const f = fixture();
     const store: ToolExecutionStore = {
-      claim: vi.fn<ToolExecutionStore['claim']>(async () => ({
-        status: 'failed',
-        result: { ok: false, error: 'Recorded failure' },
+      acquire: vi.fn<ToolExecutionStore['acquire']>(async () => ({
+        status: 'complete' as const,
+        result: JSON.stringify({ ok: false, error: 'Recorded failure' }),
       })),
-      record: vi.fn(async () => undefined),
+      settle: vi.fn(async () => 'accepted' as const),
     };
     const session = createSession({
       assistantId: 'agent',
@@ -130,7 +131,7 @@ describe('tool claim ownership', () => {
     try {
       await expect(session.submit('Go')).resolves.toBe('success');
       expect(f.handler).not.toHaveBeenCalled();
-      expect(store.record).not.toHaveBeenCalled();
+      expect(store.settle).not.toHaveBeenCalled();
       expect(f.updateState.mock.calls[0][1]).toMatchObject({
         messages: [{ content: 'Error: Recorded failure' }],
       });
@@ -140,13 +141,13 @@ describe('tool claim ownership', () => {
   });
 
   it.each([false, true])(
-    'preserves record uncertainty (accepted=%s) without inventing a failure',
+    'preserves simulated settlement acknowledgment uncertainty (accepted=%s) without inventing a failure',
     async (accepted) => {
       const f = fixture();
       let saved: unknown;
       const store: ToolExecutionStore = {
-        claim: async () => 'claimed',
-        record: vi.fn(async (_key, result) => {
+        acquire: async () => ({ status: 'acquired' as const, token: 'owner' }),
+        settle: vi.fn(async (_key, result) => {
           if (accepted) saved = result;
           throw new Error('secret database failure');
         }),
@@ -162,7 +163,13 @@ describe('tool claim ownership', () => {
         await expect(session.submit('Go')).resolves.toBe('interrupted');
         expect(f.handler).toHaveBeenCalledTimes(1);
         expect(saved).toEqual(
-          accepted ? { ok: true, value: 'Owned foreign' } : undefined
+          accepted
+            ? {
+                invocation: canonicalInvocation('work', { id: 'foreign' }),
+                token: 'owner',
+                result: JSON.stringify({ ok: true, value: 'Owned foreign' }),
+              }
+            : undefined
         );
         expect(f.updateState).not.toHaveBeenCalled();
         expect(f.stream).toHaveBeenCalledTimes(1);
@@ -178,18 +185,18 @@ describe('tool claim ownership', () => {
   );
 
   it.each(['stop', 'dispose'] as const)(
-    'does not author a late foreign claim after %s',
+    'does not author a late foreign acquire after %s',
     async (command) => {
       const f = fixture();
       const entered = deferred<void>();
       const claiming =
-        deferred<Awaited<ReturnType<ToolExecutionStore['claim']>>>();
+        deferred<Awaited<ReturnType<ToolExecutionStore['acquire']>>>();
       const store: ToolExecutionStore = {
-        claim: () => {
+        acquire: () => {
           entered.resolve();
           return claiming.promise;
         },
-        record: vi.fn(async () => undefined),
+        settle: vi.fn(async () => 'accepted' as const),
       };
       const session = createSession({
         assistantId: 'agent',
@@ -210,11 +217,11 @@ describe('tool claim ownership', () => {
           status: 'pending',
         });
         const snapshot = session.getSnapshot();
-        claiming.resolve({ status: 'executing' });
+        claiming.resolve({ status: 'unavailable' });
         await drain();
         expect(session.getSnapshot()).toBe(snapshot);
         expect(f.handler).not.toHaveBeenCalled();
-        expect(store.record).not.toHaveBeenCalled();
+        expect(store.settle).not.toHaveBeenCalled();
         expect(f.updateState).not.toHaveBeenCalled();
         expect(f.stream).toHaveBeenCalledTimes(1);
         if (command === 'stop')
@@ -222,17 +229,20 @@ describe('tool claim ownership', () => {
             /unsettled tool/
           );
       } finally {
-        claiming.resolve({ status: 'executing' });
+        claiming.resolve({ status: 'unavailable' });
         await session.dispose();
       }
     }
   );
 
-  it('a synchronous stop before claim authors nothing and releases provisional admission', async () => {
+  it('a synchronous stop before acquire authors nothing and releases provisional admission', async () => {
     const f = fixture();
     const store: ToolExecutionStore = {
-      claim: vi.fn<ToolExecutionStore['claim']>(async () => 'claimed'),
-      record: vi.fn(async () => undefined),
+      acquire: vi.fn<ToolExecutionStore['acquire']>(async () => ({
+        status: 'acquired' as const,
+        token: 'owner',
+      })),
+      settle: vi.fn(async () => 'accepted' as const),
     };
     const session = createSession({
       assistantId: 'agent',
@@ -254,8 +264,8 @@ describe('tool claim ownership', () => {
     try {
       await expect(session.submit('Go')).resolves.toBe('aborted');
       await drain();
-      expect(store.claim).not.toHaveBeenCalled();
-      expect(store.record).not.toHaveBeenCalled();
+      expect(store.acquire).not.toHaveBeenCalled();
+      expect(store.settle).not.toHaveBeenCalled();
       expect(f.updateState).not.toHaveBeenCalled();
       off();
       f.stream.mockImplementation(async function* () {
@@ -283,20 +293,21 @@ describe('tool claim ownership', () => {
           throw new Error('Handler declined');
         });
       const foreign =
-        deferred<Awaited<ReturnType<ToolExecutionStore['claim']>>>();
+        deferred<Awaited<ReturnType<ToolExecutionStore['acquire']>>>();
       const recorded = deferred<void>();
       const recording = deferred<void>();
       const store: ToolExecutionStore = {
-        claim: ({ toolCallId }) =>
+        acquire: ({ toolCallId }) =>
           toolCallId === 'foreign'
             ? foreign.promise
-            : Promise.resolve('claimed'),
-        record: vi.fn(async () => {
+            : Promise.resolve({ status: 'acquired' as const, token: 'owner' }),
+        settle: vi.fn(async () => {
           recording.resolve();
           await recorded.promise;
+          return 'accepted' as const;
         }),
       };
-      // Model a state write accepted by the server with its response lost.
+      // Simulate a state write accepted by the server with its response lost; no network fault injection.
       let accepted: unknown;
       f.updateState.mockImplementation(async (_thread, values) => {
         accepted = values;
@@ -313,18 +324,18 @@ describe('tool claim ownership', () => {
         const run = session.submit('Go');
         await recording.promise;
         if (order === 'foreign-first') {
-          foreign.resolve({ status: 'executing' });
+          foreign.resolve({ status: 'unavailable' });
           await drain();
         }
         recorded.resolve();
         if (order === 'owned-first') {
           await drain();
-          foreign.resolve({ status: 'executing' });
+          foreign.resolve({ status: 'unavailable' });
         }
         await expect(run).resolves.toBe('interrupted');
         expect(f.stream).toHaveBeenCalledTimes(1);
         expect(f.handler).toHaveBeenCalledTimes(1);
-        expect(store.record).toHaveBeenCalledTimes(1);
+        expect(store.settle).toHaveBeenCalledTimes(1);
         expect(accepted).toEqual({
           messages: [
             expect.objectContaining({
@@ -353,22 +364,22 @@ describe('tool claim ownership', () => {
         });
         expect(f.handler).toHaveBeenCalledTimes(1);
       } finally {
-        foreign.resolve({ status: 'executing' });
+        foreign.resolve({ status: 'unavailable' });
         recorded.resolve();
         await session.dispose();
       }
     }
   );
 
-  it('a lost claim acknowledgement never turns acquired authority into a fabricated result', async () => {
+  it('a simulated lost acquire acknowledgement never turns acquired authority into a fabricated result', async () => {
     const f = fixture();
     let claimed = false;
     const store: ToolExecutionStore = {
-      claim: async () => {
+      acquire: async () => {
         claimed = true;
         throw new Error('Lost acknowledgement');
       },
-      record: vi.fn(async () => undefined),
+      settle: vi.fn(async () => 'accepted' as const),
     };
     const session = createSession({
       assistantId: 'agent',
@@ -381,7 +392,7 @@ describe('tool claim ownership', () => {
       await expect(session.submit('Go')).resolves.toBe('interrupted');
       expect(claimed).toBe(true);
       expect(f.handler).not.toHaveBeenCalled();
-      expect(store.record).not.toHaveBeenCalled();
+      expect(store.settle).not.toHaveBeenCalled();
       expect(f.updateState).not.toHaveBeenCalled();
       await session.load?.();
       await expect(session.submit('Retry')).rejects.toThrow(/unsettled tool/);
@@ -395,8 +406,8 @@ describe('tool claim ownership', () => {
     async (action) => {
       const f = fixture();
       const store: ToolExecutionStore = {
-        claim: async () => ({ status: 'executing' }),
-        record: vi.fn(async () => undefined),
+        acquire: async () => ({ status: 'unavailable' }),
+        settle: vi.fn(async () => 'accepted' as const),
       };
       const session = createSession({
         assistantId: 'agent',
@@ -440,7 +451,7 @@ describe('tool claim ownership', () => {
           await expect(session.submit('Retry')).rejects.toThrow(
             /unsettled tool/
           );
-        expect(store.record).not.toHaveBeenCalled();
+        expect(store.settle).not.toHaveBeenCalled();
         expect(f.updateState).not.toHaveBeenCalled();
         expect(f.stream).toHaveBeenCalledTimes(1);
       } finally {
@@ -453,8 +464,8 @@ describe('tool claim ownership', () => {
   it('requires evidence for every unresolved call before releasing admission', async () => {
     const f = fixture([call('foreign'), call('another')]);
     const store: ToolExecutionStore = {
-      claim: async () => ({ status: 'executing' }),
-      record: vi.fn(async () => undefined),
+      acquire: async () => ({ status: 'unavailable' }),
+      settle: vi.fn(async () => 'accepted' as const),
     };
     const session = createSession({
       assistantId: 'agent',
@@ -482,8 +493,8 @@ describe('tool claim ownership', () => {
   it('stages a conclusive owned result before a completion subscriber submits', async () => {
     const f = fixture();
     const store: ToolExecutionStore = {
-      claim: async () => 'claimed',
-      record: vi.fn(async () => undefined),
+      acquire: async () => ({ status: 'acquired' as const, token: 'owner' }),
+      settle: vi.fn(async () => 'accepted' as const),
     };
     const session = createSession({
       assistantId: 'agent',
@@ -517,7 +528,7 @@ describe('tool claim ownership', () => {
           { type: 'human', content: 'Replacement' },
         ],
       });
-      expect(store.record).toHaveBeenCalledTimes(1);
+      expect(store.settle).toHaveBeenCalledTimes(1);
     } finally {
       off();
       await session.dispose();

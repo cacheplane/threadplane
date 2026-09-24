@@ -1,7 +1,8 @@
 export type {
   ExecutionContext,
   ToolExecutionKey,
-  ToolExecutionRecord,
+  ToolExecutionAcquisition,
+  ToolExecutionSettlement,
   ToolExecutionResult,
   ToolExecutionStore,
 } from './execution-context.js';

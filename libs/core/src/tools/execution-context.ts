@@ -14,15 +14,28 @@ export interface ToolExecutionKey {
   readonly toolCallId: string;
 }
 
-export type ToolExecutionRecord =
-  | { readonly status: 'executing' }
-  | { readonly status: 'done'; readonly result: ToolExecutionResult }
-  | { readonly status: 'failed'; readonly result?: ToolExecutionResult };
+export type ToolExecutionAcquisition =
+  | { readonly status: 'acquired'; readonly token: string }
+  | { readonly status: 'complete'; readonly result: string }
+  | { readonly status: 'unavailable' }
+  | { readonly status: 'conflict' };
 
-/** Optional structural durability guard. The session supplies its fixed thread.
- * claim must be atomic. Existing executing records fail closed; only a newly
- * claimed call may invoke a side effect. record precedes local settlement. */
+export interface ToolExecutionSettlement {
+  readonly invocation: string;
+  readonly token: string;
+  /** Exact encoded completion, or null when the result cannot be reused. */
+  readonly result: string | null;
+}
+
+/** Atomically bind a stable identity to its invocation and one execution owner.
+ * Only the acquired token can settle; observers never receive that authority. */
 export interface ToolExecutionStore {
-  claim(key: ToolExecutionKey): Promise<'claimed' | ToolExecutionRecord>;
-  record(key: ToolExecutionKey, result: ToolExecutionResult): Promise<void>;
+  acquire(
+    key: ToolExecutionKey,
+    invocation: string
+  ): Promise<ToolExecutionAcquisition>;
+  settle(
+    key: ToolExecutionKey,
+    settlement: ToolExecutionSettlement
+  ): Promise<'accepted' | 'rejected'>;
 }

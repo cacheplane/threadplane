@@ -181,10 +181,22 @@ export function createSession(
   const { assistantId, threadId } = options;
   const { definitions, catalog } = captureTools(options.tools);
   const typedTools = options.tools !== undefined;
-  const store = options.executionStore && {
-    claim: options.executionStore.claim.bind(options.executionStore),
-    record: options.executionStore.record.bind(options.executionStore),
-  };
+  const suppliedStore = options.executionStore;
+  const acquire = suppliedStore?.acquire;
+  const settleExecution = suppliedStore?.settle;
+  if (
+    suppliedStore &&
+    (typeof acquire !== 'function' || typeof settleExecution !== 'function')
+  ) {
+    throw new TypeError('executionStore requires acquire and settle methods.');
+  }
+  const store =
+    suppliedStore && acquire && settleExecution
+      ? {
+          acquire: acquire.bind(suppliedStore),
+          settle: settleExecution.bind(suppliedStore),
+        }
+      : undefined;
   const buffer = createToolBuffer();
   const resolvedTools = new Set<string>();
   // Provisional guarded claims and unavailable results survive command stop.
@@ -451,6 +463,20 @@ export function createSession(
             store,
             groups >= 10
           );
+          if (outcome.type === 'conflict') {
+            // This durable fact belongs to the admitted invocation, even after
+            // command handoff. Commit it before abort hooks or publication.
+            state = reduceMessages(state, {
+              type: 'tool-conflict',
+              id: call.id,
+            });
+            if (!disposed) {
+              if (owner)
+                settle(owner, 'interrupted', invocationConflictError());
+              else publish('error', invocationConflictError());
+            }
+            return;
+          }
           if (outcome.type !== 'settled') {
             if (outcome.type === 'not-started') unsettledTools.delete(call.id);
             if (owns(attempt)) {

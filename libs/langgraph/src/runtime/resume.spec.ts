@@ -546,10 +546,10 @@ it('blocks resume while an uncertain normal submit still owns history recovery',
   expect(f.stream).toHaveBeenCalledTimes(1);
 });
 
-it.each(['claim', 'record', 'write'] as const)(
+it.each(['acquire', 'settle', 'write'] as const)(
   'blocks resume through outstanding late %s and persistence',
   async (phase) => {
-    const claim = deferred<'claimed'>();
+    const acquire = deferred<{ status: 'acquired'; token: string }>();
     const recorded = deferred<void>();
     const written = deferred<void>();
     const claimStarted = deferred<void>();
@@ -559,15 +559,17 @@ it.each(['claim', 'record', 'write'] as const)(
       messages: [human, tool('step')],
       followUp: false,
       store: {
-        claim: () => {
+        acquire: () => {
           claimStarted.resolve();
-          return phase === 'claim'
-            ? claim.promise
-            : Promise.resolve('claimed' as const);
+          return phase === 'acquire'
+            ? acquire.promise
+            : Promise.resolve({ status: 'acquired' as const, token: 'owner' });
         },
-        record: () => {
+        settle: () => {
           recordStarted.resolve();
-          return phase === 'record' ? recorded.promise : Promise.resolve();
+          return (
+            phase === 'settle' ? recorded.promise : Promise.resolve()
+          ).then(() => 'accepted' as const);
         },
       },
       stream: async function* () {
@@ -579,15 +581,15 @@ it.each(['claim', 'record', 'write'] as const)(
       return written.promise;
     });
     const resumed = f.session.resume(true);
-    await (phase === 'claim'
+    await (phase === 'acquire'
       ? claimStarted.promise
-      : phase === 'record'
+      : phase === 'settle'
       ? recordStarted.promise
       : writeStarted.promise);
     await f.session.stop();
     expect(await resumed).toBe('aborted');
     await expect(f.session.resume(true)).rejects.toThrow(/unsettled/i);
-    claim.resolve('claimed');
+    acquire.resolve({ status: 'acquired' as const, token: 'owner' });
     recorded.resolve();
     await writeStarted.promise;
     await expect(f.session.resume(true)).rejects.toThrow(/unsettled/i);
@@ -604,14 +606,14 @@ it.each(['claim', 'record', 'write'] as const)(
 );
 
 it('preserves durable completed facts and local resolved IDs across explicit reload/resume', async () => {
-  const claim = vi.fn(async () => ({
-    status: 'done' as const,
-    result: { ok: true as const, value: { doubled: 12 } },
+  const acquire = vi.fn(async () => ({
+    status: 'complete' as const,
+    result: JSON.stringify({ ok: true as const, value: { doubled: 12 } }),
   }));
-  const record = vi.fn(async () => undefined);
+  const settle = vi.fn(async () => 'accepted' as const);
   const f = await fixture({
     messages: [human, tool('step')],
-    store: { claim, record },
+    store: { acquire, settle },
     stream: async function* (_a, _t, payload) {
       yield payload === null
         ? { type: 'values', data: { messages: [tool('step')] } }
@@ -625,8 +627,8 @@ it('preserves durable completed facts and local resolved IDs across explicit rel
   });
   await f.session.load?.();
   expect(await f.session.resume(true)).toBe('success');
-  expect(claim).toHaveBeenCalledTimes(1);
-  expect(record).not.toHaveBeenCalled();
+  expect(acquire).toHaveBeenCalledTimes(1);
+  expect(settle).not.toHaveBeenCalled();
   expect(f.handler).not.toHaveBeenCalled();
 });
 

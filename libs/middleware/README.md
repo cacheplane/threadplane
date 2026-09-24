@@ -100,40 +100,86 @@ The receipt helpers `extractClientToolResultMessages`,
 remove those imports and any receipt-ingestion or message-filtering integration.
 There is no replacement receipt helper or compatibility alias.
 
-`createInMemoryClientToolExecutionStore()` and
-`createPostgresClientToolExecutionStore()` retain the `claim`, `record`, and
-`lookup` execution-store contract. A caller that acquires a claim can execute a
-tool and record its result; a later caller can reuse the saved result. In-memory
-records live only for the lifetime of that store instance.
+### Unreleased invocation ownership protocol
 
-For persistent storage, create the table once and pass a `postgres`-style SQL
-tag to the Postgres store:
+This source-tree change is unreleased. It does not imply that the currently published
+middleware version implements this contract. Upgrade the runtime, provider integration,
+and database together when adopting this code; no compatibility adapter is provided.
+
+The existing factory names now implement `acquire(key, invocation)` and
+`settle(key, { invocation, token, result })`. `claim`, `record`, `lookup`,
+`ClientToolResult`, `ClientToolExecutionRecord`, and `ClientToolExecutionStatus` are
+removed. The key remains a thread ID and tool-call ID, plus the configured PostgreSQL
+tenant. The invocation is opaque metadata bound to that stable key, never another key.
+
+Acquisition returns one of:
+
+- `{ status: 'acquired', token }`: the only owner allowed to execute and settle.
+- `{ status: 'complete', result }`: an exact encoded completion for reuse, with no owner token.
+- `{ status: 'conflict' }`: the stable identity is already bound to a different invocation.
+- `{ status: 'unavailable' }`: executing, unknown, legacy, or completed without a reusable result.
+
+Settlement returns `accepted` or `rejected`. It never inserts an unknown execution.
+Only the original token and invocation can complete it. An identical reusable string
+retry is acknowledged without changing the logical result; a different result is
+rejected. After a `null` non-reusable completion, every retry is rejected. SQL UPDATE
+triggers may still run for an identical acknowledgment retry. There is no lease,
+expiration, ownership takeover, or automatic runtime retry after an uncertain response.
+Memory records last only as long as their store instance.
+
+The private LangGraph session owns the representation: it compares tool name and exact
+plain arguments (including missing values, array holes, and special numbers), and
+reuses a result only if its entire success/error envelope survives JSON serialization
+without changing that value. Literal JSON-looking and `Error:` strings stay strings.
+Undefined values/properties, sparse arrays, NaN, infinities, and negative zero complete
+exactly for the original owner but store `null`; later sessions cannot reuse or rerun
+them. A mismatch blocks further execution and graph writes in that session, including
+after a history load. Tools marked `idempotent: true` bypass durable storage while
+retaining same-session invocation identity checks.
+
+These guarantees apply to the private shared runtime and this new provider protocol.
+The legacy `@threadplane/chat` execution guard still uses its separate old contract and
+is outside this guarantee. Do not adapt it by merely renaming its methods.
+
+### PostgreSQL setup and cutover
+
+For a **fresh** installation, explicitly apply
+`THREADPLANE_CLIENT_TOOL_EXECUTIONS_SCHEMA`. For an **existing** table, explicitly apply
+`THREADPLANE_CLIENT_TOOL_EXECUTIONS_MIGRATION`. Factory construction never runs DDL.
 
 ```ts
 import postgres from 'postgres';
 import {
-  THREADPLANE_CLIENT_TOOL_EXECUTIONS_SCHEMA,
+  THREADPLANE_CLIENT_TOOL_EXECUTIONS_MIGRATION,
   createPostgresClientToolExecutionStore,
 } from '@threadplane/middleware/langgraph';
 
 const sql = postgres(process.env.DATABASE_URL!);
-await sql.unsafe(THREADPLANE_CLIENT_TOOL_EXECUTIONS_SCHEMA);
-
-const clientToolExecutions = createPostgresClientToolExecutionStore(sql);
+// Run once as an operational cutover step after draining and auditing writers.
+await sql.unsafe(THREADPLANE_CLIENT_TOOL_EXECUTIONS_MIGRATION);
+const clientToolExecutions = createPostgresClientToolExecutionStore(sql, {
+  tenantId: 'tenant-a',
+});
 ```
 
-These stores do not yet persist durable invocation provenance: identity is a
-thread and tool-call ID (plus the configured PostgreSQL tenant), without a
-verified tool name or argument identity, and without a guarantee of lossless
-result fidelity. `record` does not
-authenticate an owner token. Applications must coordinate which claimant may
-write a result and handle unresolved executions themselves.
+Cut over by draining tool executions and all writers, auditing custom SQL writers,
+applying the migration, deploying the new runtime/provider integration, then resuming
+traffic. The repeat-safe migration locks the existing table in a transaction. It keeps
+the table and its primary key, historical status/result JSON, timestamps, and existing
+new-protocol data. Only missing ownership tokens receive a legacy-unknown marker.
+Historical rows remain unavailable; historical JSON results are never promoted into
+certified completions, including partially upgraded rows with invocation metadata.
 
-A saved result does not establish that a redelivered call is the same invocation,
-prove that the graph consumed it, or guarantee exactly-once effects. Do not use
-the execution records as delivery receipts or filter graph history based on
-them. Two PostgreSQL stores using the same database, table, and tenant share
-records. No new receipt table is introduced by this removal.
+The required owner-token column has no default. This rejects the old factory's
+INSERT/UPSERT statements for both existing and new identities, but **does not fence
+custom direct UPDATE writers**. The drain and audit are therefore required. Resolve
+unknown executions externally; the migration neither guesses their outcomes nor
+reopens their identities.
+
+A saved execution result is not a graph-delivery receipt or an exactly-once guarantee
+for external effects. Do not filter graph history from these records. Two PostgreSQL
+stores using the same database, table, and tenant share ownership. The removed receipt
+helpers have no replacement and no new receipt table is introduced.
 
 ## Peer dependencies
 
