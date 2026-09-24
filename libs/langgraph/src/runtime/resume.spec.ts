@@ -592,8 +592,8 @@ it.each(['claim', 'record', 'write'] as const)(
     await writeStarted.promise;
     await expect(f.session.resume(true)).rejects.toThrow(/unsettled/i);
     written.resolve();
-    await written.promise;
-    await Promise.resolve();
+    // Drain acknowledged cleanup without depending on its promise-chain depth.
+    await new Promise<void>((resolve) => setImmediate(resolve));
     await f.session.load?.();
     f.stream.mockImplementation(async function* () {
       yield final;

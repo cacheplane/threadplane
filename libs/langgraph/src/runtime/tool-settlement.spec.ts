@@ -178,7 +178,7 @@ describe('tool result handoff', () => {
     }
   );
 
-  it('stop settles promptly while terminal persistence is pending and a late ACK preserves newer entries', async () => {
+  it('stop settles promptly but submission waits for pending terminal persistence', async () => {
     const persisted = deferred<void>();
     const persisting = deferred<void>();
     let count = 0;
@@ -211,11 +211,15 @@ describe('tool result handoff', () => {
       await persisting.promise;
       await session.stop();
       await expect(first).resolves.toBe('aborted');
-      await session.submit('Second');
+      await expect(
+        session.submit('Cannot overtake persistence')
+      ).rejects.toThrow(/pending tool persistence/);
+      expect(stream).toHaveBeenCalledTimes(1);
       persisted.resolve();
-      await persisted.promise;
-      // Third stream input captures remaining second-call result, never loses it
-      // when the first update finally acknowledges its earlier snapshot.
+      await new Promise<void>((resolve) => setImmediate(resolve));
+      await session.submit('Second');
+      // The successful first write removed only its batch; the failed second
+      // write leaves its result available for the next explicit submission.
       await session.submit('Third');
       expect(stream.mock.calls[2][2]).toMatchObject({
         messages: [
