@@ -51,7 +51,7 @@ test('checkpoint protocol: terminal replay preserves a pending call; pre-agent r
   }
 });
 
-test('checkpoint protocol: reconnect retains the run and exact saved checkpoint identity', async () => {
+test('checkpoint protocol: reconnect retains the run and routes a tool result through its exact final checkpoint', async () => {
   const requests: { path: string; method: string }[] = [];
   const api = new Client<State>({
     apiUrl: backendUrl(), apiKey: null, callerOptions: { maxRetries: 0 }, timeoutMs: 20_000,
@@ -65,7 +65,7 @@ test('checkpoint protocol: reconnect retains the run and exact saved checkpoint 
   try {
     let runId: string | undefined;
     let cursor: string | undefined;
-    let disconnectedCheckpoint: string | undefined;
+    let disconnectedPosition: ReturnType<typeof position> | undefined;
     try {
       for await (const event of api.runs.stream(threadId, 'client-tools', {
         input, streamMode: ['values', 'checkpoints'], streamResumable: true,
@@ -75,7 +75,7 @@ test('checkpoint protocol: reconnect retains the run and exact saved checkpoint 
         if (event.event === 'metadata') runId = event.data.run_id;
         if (event.event === 'checkpoints' && event.id && event.data.next.includes('agent')) {
           cursor = event.id;
-          disconnectedCheckpoint = position(event.data.config.configurable).checkpoint_id;
+          disconnectedPosition = position(event.data.config.configurable);
           controller.abort();
           break;
         }
@@ -83,7 +83,7 @@ test('checkpoint protocol: reconnect retains the run and exact saved checkpoint 
     } catch (error) {
       if (!controller.signal.aborted) throw error;
     }
-    if (!runId || !cursor) throw new Error('Disconnected stream must provide a run ID and checkpoint cursor');
+    if (!runId || !cursor || !disconnectedPosition) throw new Error('Disconnected stream must provide a run ID, checkpoint position and cursor');
     const checkpoints: CheckpointEvent[] = [];
     for await (const event of api.runs.joinStream(threadId, runId, {
       lastEventId: cursor, cancelOnDisconnect: false, streamMode: ['values', 'checkpoints'], signal: AbortSignal.timeout(20_000),
@@ -101,13 +101,68 @@ test('checkpoint protocol: reconnect retains the run and exact saved checkpoint 
     // checkpoint metadata are the two independently checked run identities.
     expect(final.data.metadata['run_id']).toBeUndefined();
     const exactPosition = position(config);
-    expect(exactPosition.checkpoint_id).not.toBe(disconnectedCheckpoint);
+    expect(exactPosition.thread_id).toBe(threadId);
+    expect(exactPosition.checkpoint_id).not.toBe(disconnectedPosition.checkpoint_id);
     const saved = await api.threads.getState(threadId, exactPosition);
     expect(saved.checkpoint.checkpoint_id).toBe(exactPosition.checkpoint_id);
     expect(saved.metadata?.['run_id']).toBe(runId);
     expect(saved.values).toEqual(final.data.values);
+    expect(final.data.next).toEqual([]);
     expect(saved.next).toEqual([]);
     expect((await api.runs.get(threadId, runId)).status).toBe('success');
+
+    const intermediate = await api.threads.getState(threadId, disconnectedPosition);
+    expect(intermediate.checkpoint.checkpoint_id).toBe(disconnectedPosition.checkpoint_id);
+    expect(calls(intermediate)).toEqual([]);
+    expect(calls(saved)).toHaveLength(1);
+    const pendingCall = calls(saved)[0];
+    expect(pendingCall).toMatchObject({ id: expect.stringMatching(/\S/), name: 'get_weather', args: { location: 'Paris' } });
+    const count = await modelRequests();
+    const competingMessage = { id: 'reconnect-competitor', type: 'ai', content: 'Competing branch after reconnect.' };
+    const competingPosition = position((await api.threads.updateState(threadId, {
+      checkpoint: disconnectedPosition, values: { messages: [competingMessage] }, asNode: 'agent', signal: AbortSignal.timeout(10_000),
+    })).configurable);
+    expect(competingPosition.thread_id).toBe(threadId);
+    expect(competingPosition.checkpoint_ns).toBe(disconnectedPosition.checkpoint_ns);
+    const competitor = await api.threads.getState(threadId, competingPosition);
+    expect(competitor.checkpoint.checkpoint_id).toBe(competingPosition.checkpoint_id);
+    expect(competitor.parent_checkpoint?.checkpoint_id).toBe(disconnectedPosition.checkpoint_id);
+    expect(competitor.values).toEqual({
+      ...intermediate.values, messages: [...intermediate.values.messages, expect.objectContaining(competingMessage)],
+    });
+    // Latest proves the adversarial setup only; the following write retains
+    // the joined run's final position as its authority.
+    expect((await api.threads.getState(threadId)).checkpoint.checkpoint_id).toBe(competingPosition.checkpoint_id);
+
+    // Protocol test data for the saved call, not an authored handler result.
+    const terminalMessage = {
+      id: 'reconnect-terminal-result', type: 'tool', tool_call_id: pendingCall.id,
+      name: pendingCall.name, content: `Test terminal result for ${pendingCall.args['location']}.`,
+    };
+    const writtenPosition = position((await api.threads.updateState(threadId, {
+      checkpoint: exactPosition, values: { messages: [terminalMessage] }, asNode: 'agent', signal: AbortSignal.timeout(10_000),
+    })).configurable);
+    expect(writtenPosition.thread_id).toBe(threadId);
+    expect(writtenPosition.checkpoint_ns).toBe(exactPosition.checkpoint_ns);
+    expect(new Set([
+      disconnectedPosition.checkpoint_id, exactPosition.checkpoint_id,
+      competingPosition.checkpoint_id, writtenPosition.checkpoint_id,
+    ]).size).toBe(4);
+    const written = await api.threads.getState(threadId, writtenPosition);
+    expect(written.checkpoint.checkpoint_id).toBe(writtenPosition.checkpoint_id);
+    // This graph always routes agent to END. next: [] alone cannot establish
+    // that the write preserved the final pending call or its correct parent.
+    expect(written.next).toEqual([]);
+    expect(written.parent_checkpoint?.checkpoint_id).toBe(exactPosition.checkpoint_id);
+    expect(written.values).toEqual({
+      ...saved.values, messages: [...saved.values.messages, expect.objectContaining(terminalMessage)],
+    });
+    expect(calls(written)).toEqual([pendingCall]);
+    expect(written.values.messages.some((message) => message.id === competingMessage.id)).toBe(false);
+    expect(await api.threads.getState(threadId, disconnectedPosition)).toEqual(intermediate);
+    expect(await api.threads.getState(threadId, exactPosition)).toEqual(saved);
+    expect(await api.threads.getState(threadId, competingPosition)).toEqual(competitor);
+    expect(await modelRequests()).toBe(count);
     expect(requests.filter((request) => request.method === 'POST' && /^\/threads\/[^/]+\/runs(?:\/stream|\/wait)?$/.test(request.path)))
       .toEqual([{ method: 'POST', path: `/threads/${threadId}/runs/stream` }]);
     expect(requests).toContainEqual({ method: 'GET', path: `/threads/${threadId}/runs/${runId}/stream` });

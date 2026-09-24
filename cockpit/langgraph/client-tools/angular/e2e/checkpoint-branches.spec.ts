@@ -6,8 +6,10 @@ import {
 const secondPrompt = 'Checkpoint branch original second turn';
 const competitorPrompt = 'Checkpoint branch competing later turn';
 const forkPrompt = 'Checkpoint branch fork from first turn';
+const advancedCompetitorPrompt = 'Checkpoint continuity advance the competing branch';
+const followUpPrompt = 'Checkpoint continuity continue the completed fork';
 
-test('checkpoint branches: a fork uses the selected completed turn despite a newer competing tip', async () => {
+test('checkpoint branches: a completed fork retains continuity after the competing branch advances', async () => {
   const api = client();
   const { thread_id: threadId } = await api.threads.create();
   try {
@@ -35,6 +37,8 @@ test('checkpoint branches: a fork uses the selected completed turn despite a new
       messages: [{ id: 'fork-question', type: 'human', content: forkPrompt }],
     });
     expect(fork.checkpoint.checkpoint_id).not.toBe(selected.checkpoint_id);
+    expect(fork.next).toEqual([]);
+    const completedFork = position(fork.checkpoint);
     expect(fork.values.messages).toEqual([
       ...first.values.messages,
       expect.objectContaining({ id: 'fork-question', type: 'human', content: forkPrompt }),
@@ -47,8 +51,64 @@ test('checkpoint branches: a fork uses the selected completed turn despite a new
     // The OpenAI adapter encodes an empty tool-call assistant's content as null.
     expect(requests[0].body?.messages?.filter((message) => message.role !== 'system').map((message) => message.content ?? ''))
       .toEqual([...first.values.messages.map((message) => message.content), forkPrompt]);
-    expect((await api.threads.getState(threadId, selected)).values).toEqual(first.values);
-    expect((await api.threads.getState(threadId, competitor.checkpoint)).values).toEqual(competitor.values);
+
+    // Advance B only after A has completed, so following the global tip on a
+    // separate submission would lose the retained completed fork's authority.
+    const advancedCompetitor = await run(api, threadId, position(competitor.checkpoint), {
+      messages: [{ id: 'advanced-competitor-question', type: 'human', content: advancedCompetitorPrompt }],
+    });
+    expect(advancedCompetitor.next).toEqual([]);
+    expect(advancedCompetitor.values.messages).toEqual([
+      ...competitor.values.messages,
+      expect.objectContaining({ id: 'advanced-competitor-question', type: 'human', content: advancedCompetitorPrompt }),
+      expect.objectContaining({ type: 'ai', content: 'Competing branch advanced after fork completion.' }),
+    ]);
+    // Latest-thread lookup establishes the adversarial setup, never routing.
+    expect((await api.threads.getState(threadId)).checkpoint.checkpoint_id).toBe(advancedCompetitor.checkpoint.checkpoint_id);
+
+    const beforeFollowUp = await modelRequests(followUpPrompt);
+    const followUp = await run(api, threadId, completedFork, {
+      messages: [{ id: 'follow-up-question', type: 'human', content: followUpPrompt }],
+    });
+    expect(followUp.next).toEqual([]);
+    expect(followUp.checkpoint.checkpoint_id).not.toBe(completedFork.checkpoint_id);
+    expect(followUp.values.messages).toEqual([
+      ...fork.values.messages,
+      expect.objectContaining({ id: 'follow-up-question', type: 'human', content: followUpPrompt }),
+      expect.objectContaining({ type: 'ai', content: 'Completed fork follow-up answer.' }),
+    ]);
+    const followUpRequests = (await modelJournal(followUpPrompt)).slice(beforeFollowUp);
+    expect(followUpRequests).toHaveLength(1);
+    expect(followUpRequests[0].body?.messages?.filter((message) => message.role !== 'system').map((message) => message.content ?? ''))
+      .toEqual([...fork.values.messages.map((message) => message.content), followUpPrompt]);
+
+    // Input and agent checkpoints can sit between the final output and A.
+    // Follow exact parent references only, with a small bound for this graph.
+    const competingIds = [second, competitor, advancedCompetitor].map((state) => state.checkpoint.checkpoint_id);
+    const ancestry: string[] = [];
+    let ancestor = followUp;
+    for (let depth = 0; depth < 6; depth++) {
+      const current = position(ancestor.checkpoint);
+      expect(current.thread_id).toBe(threadId);
+      expect(current.checkpoint_ns).toBe(completedFork.checkpoint_ns);
+      expect(competingIds).not.toContain(current.checkpoint_id);
+      expect(ancestry).not.toContain(current.checkpoint_id);
+      ancestry.push(current.checkpoint_id);
+      if (current.checkpoint_id === completedFork.checkpoint_id) break;
+      expect(ancestor.parent_checkpoint).not.toBeNull();
+      const parent = position(ancestor.parent_checkpoint ?? undefined);
+      ancestor = await api.threads.getState(threadId, parent);
+      expect(position(ancestor.checkpoint)).toEqual(parent);
+    }
+    expect(ancestry.at(-1)).toBe(completedFork.checkpoint_id);
+
+    // Every pre-follow-up snapshot remains unchanged at its exact position.
+    for (const saved of [pending, first, second, competitor, fork, advancedCompetitor]) {
+      const unchanged = await api.threads.getState(threadId, position(saved.checkpoint));
+      expect(position(unchanged.checkpoint)).toEqual(position(saved.checkpoint));
+      expect(unchanged.values).toEqual(saved.values);
+      expect(unchanged.next).toEqual(saved.next);
+    }
   } finally {
     await api.threads.delete(threadId);
   }
