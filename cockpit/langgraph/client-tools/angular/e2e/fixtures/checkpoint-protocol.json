@@ -1,6 +1,18 @@
 {
   "fixtures": [
     {
+      "match": { "userMessage": "Checkpoint branch original second turn" },
+      "response": { "content": "Original second answer." }
+    },
+    {
+      "match": { "userMessage": "Checkpoint branch competing later turn" },
+      "response": { "content": "Competing later answer." }
+    },
+    {
+      "match": { "userMessage": "Checkpoint branch fork from first turn" },
+      "response": { "content": "Fork answer from first turn." }
+    },
+    {
       "match": { "userMessage": "Checkpoint protocol weather in Paris", "hasToolResult": true },
       "response": { "content": "Protocol weather complete: Paris is 68°F." }
     },
