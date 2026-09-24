@@ -1,5 +1,45 @@
 # Installed native runtime consumers
 
+## Checkpoint review
+
+Open `/?checkpoints` on either installed review URL for the separate fixed
+`checkpoint-thread` workflow. One application-owned session lives outside
+component lifetime. React observes it with `useAgent` under StrictMode; Angular
+uses `observeAgent` in its component injection context. Selected checkpoint
+references and command outcome/completion counts are application state. The
+session's execution position is private and is not invented as a snapshot field.
+
+Follow the sequence displayed in the view: **Load → Select A → Select B → Select
+A → Fork selected → Select B → Continue branch → Load → Select P → Fork selected
+→ Drop branch → Reconnect branch → Dispose → Continue branch → Fork selected**.
+Selection performs no I/O and changes no transcript or values. Fork A reads the
+exact completed source and confirms A1; continuation uses A1 even while B is
+selected. The subsequent Load reads exact A2 and retains the earlier B/A/P
+history page. Pending P rejects after its source read without a creation POST or
+optimistic state change. Drop from A2 ends with physical status running; explicit
+reconnect joins that same run at its cursor and confirms A3. Commands after
+disposal resolve aborted without I/O.
+
+`checkpoint-execution.mjs` is an independent, bounded wire oracle. The server's
+global latest remains B. It checks all 15 requests in order: one history POST,
+six exact checkpoint-read POSTs, three creation POSTs, four physical status GETs
+and one cursor join GET. Root checkpoint maps, input, catalog and stream modes
+are exact; the installed SDK serializes join modes as one JSON query parameter.
+Unexpected requests fail verification. The same six browser scenario groups run
+in both package verifiers and the interactive review command, alongside the main
+and thread workflows; scenario totals are derived from completed assertions.
+Node oracle tests also reject original-A/selected-B continuation, missing routing,
+wrong root maps/catalog/modes, extra POSTs and wrong join cursors/modes.
+
+The development factory exports its existing fixture checkpoint vocabulary and
+adds a narrow `fork(checkpoint, input, options?)` return signature. Installed type
+probes pass an observed readonly history reference directly, reject malformed
+inputs and reserved routing, and check `Promise<CompleteOutcome>`. Its emitted
+declaration uses installed core and fixture data types only, with no private
+source or SDK references. This fixture changes no public API or production
+branch UI. The strict HTTP fixture complements the separate real-server tests;
+it does not establish general backend compatibility or cross-client atomicity.
+
 ## Durable tool claims
 
 The private runtime can use an application-supplied execution store. Only a newly
@@ -299,7 +339,7 @@ are missing. `node scripts/react-parity/review-runtime.mjs --help` prints the
 prerequisite and review sequence.
 
 The runner packs those artifacts, installs and strictly type-checks isolated
-React and Angular consumers, builds each app, and runs all twenty-one browser
+React and Angular consumers, builds each app, and runs all main, thread and checkpoint browser
 scenarios on fresh fixture servers. Only after those checks pass does it print
 two new, untouched loopback URLs. Open each URL manually; no browser opens
 automatically. The review servers have made no SDK requests at that point.
@@ -485,7 +525,7 @@ React uses a Vite production build. Angular uses the existing consumer template'
 installed Angular CLI application builder and real APF linking, with output in
 `dist/consumer/browser` and input evidence from `dist/consumer/stats.json`.
 
-Both built apps run the same twenty-one browser scenarios in installed Playwright
+Both built apps run the same main and thread browser scenarios in installed Playwright
 Chromium: inert mount, explicit history load, equal history refresh, empty history
 replacement, successful text, a real local tool handler and exact
 two-request result continuation, protected visible server error, held streaming

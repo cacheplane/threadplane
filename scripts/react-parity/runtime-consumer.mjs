@@ -8,6 +8,7 @@ import { build } from 'vite';
 import ts from 'typescript';
 import { chromium, expect } from '@playwright/test';
 import { createThreadRoutes, runThreadScenarios } from './thread-lifetime.mjs';
+import { createCheckpointRoutes, runCheckpointScenarios } from './checkpoint-execution.mjs';
 
 export function lockedReactManifest(lock) {
   const entries = (names) => Object.fromEntries(names.map((name) => {
@@ -201,6 +202,21 @@ export function installedTypeSource(template, kind) {
     // @ts-expect-error Loaded pages remain readonly.
     history.pop();
     const entry = history[0];
+    const forked: Promise<CompleteOutcome> = session.fork(entry.checkpoint, 'Fork A', runOptions);
+    void forked;
+    void session.fork(entry.checkpoint, { message: 'Fork A', state: { color: 'blue' } } as const);
+    // @ts-expect-error Fork requires a checkpoint reference.
+    void session.fork('A', 'Fork A');
+    // @ts-expect-error Fork input must be authored text/plain data.
+    void session.fork(entry.checkpoint, { message: 42 });
+    // @ts-expect-error Fork cannot override thread routing.
+    void session.fork(entry.checkpoint, 'Fork A', { config: { configurable: { thread_id: 'other' } } });
+    // @ts-expect-error Fork cannot override checkpoint routing.
+    void session.fork(entry.checkpoint, 'Fork A', { config: { configurable: { checkpoint_id: 'B' } } });
+    // @ts-expect-error Fork cannot override root namespace.
+    void session.fork(entry.checkpoint, 'Fork A', { config: { configurable: { checkpoint_ns: 'child' } } });
+    // @ts-expect-error Fork cannot override checkpoint map.
+    void session.fork(entry.checkpoint, 'Fork A', { config: { configurable: { checkpoint_map: {} } } });
     const checkpointId: string | null | undefined = entry.checkpoint.checkpoint_id;
     const parentId: string | null | undefined = entry.parent_checkpoint?.checkpoint_id;
     const checkpointData: PlainValue = entry.checkpoint.checkpoint_map?.['branch'];
@@ -331,15 +347,19 @@ export async function prepareRuntimeConsumer(root, consumer, kind) {
     const destination = kind === 'angular' ? join(consumer, 'src') : consumer;
     cpSync(join(temporary, 'bundle/runtime-entry.js'), join(destination, 'runtime-entry.js'));
     cpSync(join(temporary, 'types/fixtures/react-parity/runtime/runtime-entry.d.ts'), join(destination, 'runtime-entry.d.ts'));
+    const declaration = readFileSync(join(destination, 'runtime-entry.d.ts'), 'utf8');
+    assert.doesNotMatch(declaration, /@langchain|libs\/|create-session/, 'emitted fixture declaration exposes no SDK/private references');
     cpSync(join(fixture, 'scenarios.ts'), join(destination, 'scenarios.ts'));
     cpSync(join(fixture, 'thread-owner.ts'), join(destination, 'thread-owner.ts'));
     const threadView = `${kind}-threads.${kind === 'react' ? 'tsx' : 'ts'}`;
     cpSync(join(fixture, threadView), join(destination, threadView));
+    const checkpointView = `${kind}-checkpoints.${kind === 'react' ? 'tsx' : 'ts'}`;
+    cpSync(join(fixture, checkpointView), join(destination, checkpointView));
     cpSync(join(fixture, 'review.css'), join(destination, 'review.css'));
     const app = `${kind}-app.${kind === 'react' ? 'tsx' : 'ts'}`;
     cpSync(join(fixture, app), join(destination, app));
     writeFileSync(join(destination, kind === 'react' ? 'main.tsx' : 'main.ts'),
-      `if (new URLSearchParams(location.search).has('threads')) {\n  void import('./${kind}-threads');\n} else {\n  void import('./${kind}-app');\n}\n`);
+      `if (new URLSearchParams(location.search).has('checkpoints')) {\n  void import('./${kind}-checkpoints');\n} else if (new URLSearchParams(location.search).has('threads')) {\n  void import('./${kind}-threads');\n} else {\n  void import('./${kind}-app');\n}\n`);
     if (kind === 'angular') {
       const configPath = join(consumer, 'angular.json');
       const config = JSON.parse(readFileSync(configPath, 'utf8'));
@@ -359,6 +379,7 @@ export async function prepareRuntimeConsumer(root, consumer, kind) {
 /** Bounded fixture server: built files and deterministic history/run routes. */
 export async function serveRuntimeConsumer(directory) {
   const threads = createThreadRoutes();
+  const checkpoints = createCheckpointRoutes();
   const requests = [];
   const historyRequests = [];
   const joinRequests = [];
@@ -377,6 +398,7 @@ export async function serveRuntimeConsumer(directory) {
       const pathname = url.pathname;
       if (pathname.startsWith('/api/')) {
         if (await threads.handle(request, response, pathname)) return;
+        if (await checkpoints.handle(request, response, pathname)) return;
         const runPath = '/api/threads/fixture-thread/runs/drop-run';
         if (pathname === runPath || pathname === `${runPath}/stream`) {
           assert.equal(request.method, 'GET', 'known-run recovery only performs GET');
@@ -447,9 +469,10 @@ export async function serveRuntimeConsumer(directory) {
   server.listen(0, '127.0.0.1');
   await once(server, 'listening');
   return {
-    url: `http://127.0.0.1:${server.address().port}`, requests, historyRequests, joinRequests, statusRequests, errors, holdStarted, holdAborted, threads,
+    url: `http://127.0.0.1:${server.address().port}`, requests, historyRequests, joinRequests, statusRequests, errors, holdStarted, holdAborted, threads, checkpoints,
     async close() {
       threads.close();
+      checkpoints.close();
       for (const response of held) response.destroy();
       const closed = once(server, 'close');
       server.close();
@@ -724,6 +747,7 @@ export async function runRuntimeScenarios(directory, kind) {
     assert.deepEqual(server.historyRequests, [{ limit: 10 }, { limit: 10 }, { limit: 10 }], 'only explicit loads read history');
     completed.push('unmount and explicit disposal');
     completed.push(...await runThreadScenarios(page, server));
+    completed.push(...await runCheckpointScenarios(page, server));
     assert.deepEqual(server.errors.map(String), []);
     assert.deepEqual(pageErrors, []);
     assert.deepEqual(unexpected, []);

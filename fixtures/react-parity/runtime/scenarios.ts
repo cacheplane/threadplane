@@ -10,6 +10,9 @@ import type {
 export const reviewInstructions =
   'Click Load three times: saved history, equal refresh, then empty history. Continue with Send → Tool → Error → Hold → Stop → Pause → Stop → Resume → Resume → Drop → Reconnect → Send. Tool and Drop send model, reasoning effort, UI mode and itinerary state once; displayed values come from the server. Resume first sends both approval responses, then confirms the final action. Drop loses observation of a running run; Reconnect joins that same run without another submission. Finish with Unmount → Dispose → Send after dispose → Resume after dispose → Reconnect after dispose in the owner controls below. Only three Load requests and one Drop are available per server; restart the review command to reset. Reloading the page does not reset server state.';
 
+export const checkpointInstructions =
+  'Load → Select A → Select B → Select A → Fork selected → Select B → Continue branch → Load → Select P → Fork selected (rejected) → Drop branch → Reconnect branch → Dispose → Continue branch → Fork selected. Selection only chooses a saved reference for Fork selected. Continue and Load follow the session’s confirmed branch position even while B is selected; the global latest remains B. One bounded sequence is available per server; restart the review command to reset.';
+
 /** Fixture-local input contract uses only the installed neutral data vocabulary. */
 export type FixtureInputState = Readonly<Record<string, PlainValue>> & {
   readonly messages?: never;
@@ -96,7 +99,7 @@ type FixtureInterrupt = {
   readonly ns?: readonly string[];
 };
 
-type FixtureCheckpoint = {
+export type FixtureCheckpoint = {
   readonly thread_id: string;
   readonly checkpoint_ns: string;
   readonly checkpoint_id: string | null | undefined;

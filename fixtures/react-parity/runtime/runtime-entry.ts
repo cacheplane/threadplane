@@ -6,6 +6,7 @@ import type {
 // eslint-disable-next-line @nx/enforce-module-boundaries -- This development-only entry composes private source into a temporary fixture bundle, never a package export.
 import { createSession } from '../../../libs/langgraph/src/runtime/create-session';
 import type {
+  FixtureCheckpoint,
   FixtureRunOptions,
   FixtureSnapshot,
   FixtureSubmitInput,
@@ -20,6 +21,11 @@ export function createFixtureSession(
 ): Omit<AgentSession<FixtureTools>, 'getSnapshot' | 'submit'> & {
   getSnapshot(): FixtureSnapshot;
   submit(
+    input: FixtureSubmitInput,
+    options?: FixtureRunOptions
+  ): Promise<CompleteOutcome>;
+  fork(
+    checkpoint: FixtureCheckpoint,
     input: FixtureSubmitInput,
     options?: FixtureRunOptions
   ): Promise<CompleteOutcome>;

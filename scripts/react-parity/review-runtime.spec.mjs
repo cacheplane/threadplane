@@ -25,6 +25,10 @@ function fixtureRoot(t) {
   }
   const git = (...args) =>
     execFileSync('git', args, { cwd: root, stdio: 'pipe' });
+  for (const path of ['scripts/react-parity/checkpoint-execution.mjs', 'fixtures/react-parity/runtime/scenarios.ts']) {
+    mkdirSync(join(root, path, '..'), { recursive: true });
+    writeFileSync(join(root, path), `fixture ${path}`);
+  }
   git('init');
   git(
     '-c',
@@ -155,6 +159,10 @@ test('workers have isolated unset build environments, e2e runs before fresh manu
     }).trim()
   );
   assert.equal(review.artifacts.length, 2);
+  assert.ok(Array.isArray(review.provenance.inputs), 'review provenance includes input hashes');
+  for (const path of ['scripts/react-parity/checkpoint-execution.mjs', 'fixtures/react-parity/runtime/scenarios.ts']) {
+    assert.match(review.provenance.inputs.find(input => input.path === path)?.sha256 ?? '', /^[a-f0-9]{64}$/, `${path} has review input evidence`);
+  }
   assert.match(review.artifacts[0].sha256, /^[a-f0-9]{64}$/);
   assert.ok(
     logs.some(
