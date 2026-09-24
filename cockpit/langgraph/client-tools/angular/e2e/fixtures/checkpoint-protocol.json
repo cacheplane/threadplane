@@ -13,6 +13,14 @@
       "response": { "content": "Fork answer from first turn." }
     },
     {
+      "match": { "userMessage": "Checkpoint continuity advance the competing branch" },
+      "response": { "content": "Competing branch advanced after fork completion." }
+    },
+    {
+      "match": { "userMessage": "Checkpoint continuity continue the completed fork" },
+      "response": { "content": "Completed fork follow-up answer." }
+    },
+    {
       "match": { "userMessage": "Checkpoint protocol weather in Paris", "hasToolResult": true },
       "response": { "content": "Protocol weather complete: Paris is 68°F." }
     },
