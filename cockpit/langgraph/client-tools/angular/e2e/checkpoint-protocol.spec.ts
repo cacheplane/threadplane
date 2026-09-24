@@ -1,80 +1,14 @@
-import { createServer } from 'node:http';
+import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { test, expect } from '@playwright/test';
-import { Client, type Checkpoint, type ThreadState } from '@langchain/langgraph-sdk';
+import { Client, type Checkpoint } from '@langchain/langgraph-sdk';
+import {
+  backendUrl, calls, client, input, modelRequests, position, run,
+  type CheckpointEvent, type State,
+} from './checkpoint-protocol.helpers';
 
 // This lane uses the published middleware from python/uv.lock (0.1.0), not a
 // PYTHONPATH override to packages/threadplane-middleware. It proves the actual
 // client-tools graph/API protocol, not browser tool execution or store claims.
-const prompt = 'Checkpoint protocol weather in Paris';
-const input = {
-  messages: [{ type: 'human', content: prompt }],
-  client_tools: [{
-    name: 'get_weather',
-    description: 'Get weather for a location',
-    parameters: { type: 'object', properties: { location: { type: 'string' } } },
-  }],
-};
-type ToolCall = { id: string; name: string; args: Record<string, unknown> };
-type State = { messages: { type: string; content: unknown; tool_calls?: ToolCall[]; tool_call_id?: string }[] };
-type CheckpointEvent = {
-  id?: string;
-  event: string;
-  data: { config: { configurable?: Record<string, unknown> }; values: State; next: string[]; metadata: Record<string, unknown> };
-};
-
-function backendUrl(): string {
-  const url = process.env['CLIENT_TOOLS_API_URL'];
-  if (!url) throw new Error('Global setup must expose the local client-tools API URL');
-  return url;
-}
-
-function client() {
-  return new Client<State>({ apiUrl: backendUrl(), apiKey: null, callerOptions: { maxRetries: 0 }, timeoutMs: 20_000 });
-}
-
-// Copy only supported routing fields, never the complete event configurable
-// object (which may also contain run identity or request-specific metadata).
-function position(config: Record<string, unknown> | undefined): Checkpoint & { checkpoint_id: string } {
-  if (!config) throw new Error('Checkpoint event must include routing configuration');
-  expect(config['thread_id']).toEqual(expect.any(String));
-  expect(config['checkpoint_ns']).toEqual(expect.any(String));
-  expect(config['checkpoint_id']).toEqual(expect.any(String));
-  return {
-    thread_id: config['thread_id'] as string,
-    checkpoint_ns: config['checkpoint_ns'] as string,
-    checkpoint_id: config['checkpoint_id'] as string,
-    checkpoint_map: undefined,
-  };
-}
-
-async function run(api: Client<State>, threadId: string, checkpoint?: Checkpoint, values: Record<string, unknown> | null = null) {
-  let final: CheckpointEvent | undefined;
-  for await (const event of api.runs.stream(threadId, 'client-tools', {
-    input: values, checkpoint, streamMode: ['values', 'checkpoints'], signal: AbortSignal.timeout(20_000),
-  })) {
-    expect(event.event).not.toBe('error');
-    if (event.event === 'checkpoints') final = event as CheckpointEvent;
-  }
-  if (!final) throw new Error('Run must emit a checkpoint event');
-  const saved = await api.threads.getState(threadId, position(final.data.config.configurable));
-  expect(saved.values).toEqual(final.data.values);
-  expect(saved.next).toEqual(final.data.next);
-  return saved;
-}
-
-function calls(state: ThreadState<State>) {
-  return state.values.messages.flatMap((message) => message.tool_calls ?? []);
-}
-
-async function modelRequests() {
-  const url = process.env['CLIENT_TOOLS_AIMOCK_URL'];
-  if (!url) throw new Error('Global setup must expose the local aimock journal URL');
-  const response = await fetch(`${url}/__aimock/journal`, { signal: AbortSignal.timeout(5_000) });
-  expect(response.ok).toBe(true);
-  const entries = await response.json() as { body?: { messages?: { role: string; content: unknown }[] } }[];
-  return entries.filter((entry) => entry.body?.messages?.some((message) => message.role === 'user' && message.content === prompt)).length;
-}
-
 test('checkpoint protocol: terminal replay preserves a pending call; pre-agent replay creates a new call', async () => {
   const api = client();
   const { thread_id: threadId } = await api.threads.create();
@@ -187,9 +121,15 @@ test('checkpoint protocol: a lost write response is ambiguous even with retries 
   const api = client();
   const { thread_id: threadId } = await api.threads.create();
   const accepted: Checkpoint[] = [];
+  const competitors: Checkpoint[] = [];
+  let parentPosition: Checkpoint | undefined;
+  const ownedMessage = { id: 'lost-write-owned', type: 'ai', content: 'Accepted on owned branch.' };
+  const competingMessage = { id: 'lost-write-competitor', type: 'ai', content: 'Newer competing branch.' };
   const proxyErrors: unknown[] = [];
+  const proxyController = new AbortController();
+  const handlers = new Set<Promise<void>>();
   let writeRequests = 0;
-  const proxy = createServer(async (request, response) => {
+  async function handleRequest(request: IncomingMessage, response: ServerResponse) {
     try {
       expect(request.method).toBe('POST');
       expect(request.url).toBe(`/threads/${threadId}/state`);
@@ -197,21 +137,37 @@ test('checkpoint protocol: a lost write response is ambiguous even with retries 
       const chunks: Buffer[] = [];
       for await (const chunk of request) chunks.push(Buffer.from(chunk));
       const upstream = await fetch(`${backendUrl()}${request.url}`, {
-        method: 'POST', headers: { 'content-type': 'application/json' }, body: Buffer.concat(chunks), signal: AbortSignal.timeout(10_000),
+        method: 'POST', headers: { 'content-type': 'application/json' }, body: Buffer.concat(chunks),
+        signal: AbortSignal.any([proxyController.signal, AbortSignal.timeout(10_000)]),
       });
       expect(upstream.status).toBe(200);
       const result = await upstream.json() as { configurable: Record<string, unknown> };
       accepted.push(position(result.configurable));
+      if (!parentPosition) throw new Error('Parent must be captured before the request');
+      competitors.push(position((await api.threads.updateState(threadId, {
+        checkpoint: parentPosition, values: { messages: [competingMessage] }, asNode: 'agent',
+        signal: AbortSignal.any([proxyController.signal, AbortSignal.timeout(5_000)]),
+      })).configurable));
       // Upstream has accepted and returned the child position. Only this test
-      // proxy knows it: the caller receives no successful response to adopt.
+      // proxy knows it. A competing branch is now newer, and the caller receives
+      // no successful response: neither its old position nor latest is safe.
       response.destroy();
     } catch (error) {
       proxyErrors.push(error);
-      response.writeHead(500).end();
+      if (!response.destroyed) response.writeHead(500).end();
     }
+  }
+  const proxy = createServer((request, response) => {
+    const handling = handleRequest(request, response);
+    handlers.add(handling);
+    void handling.then(
+      () => handlers.delete(handling),
+      (error) => { proxyErrors.push(error); handlers.delete(handling); response.destroy(); },
+    );
   });
   try {
     const parent = await run(api, threadId, undefined, input);
+    parentPosition = position(parent.checkpoint);
     await new Promise<void>((resolve, reject) => {
       proxy.once('error', reject);
       proxy.listen(0, '127.0.0.1', resolve);
@@ -224,21 +180,33 @@ test('checkpoint protocol: a lost write response is ambiguous even with retries 
       callerOptions: { maxRetries: 0 },
     });
     await expect(caller.threads.updateState(threadId, {
-      checkpoint: position(parent.checkpoint), values: { messages: [] }, asNode: 'agent', signal: AbortSignal.timeout(15_000),
+      checkpoint: parentPosition, values: { messages: [ownedMessage] }, asNode: 'agent', signal: AbortSignal.timeout(20_000),
     })).rejects.toThrow();
     expect(proxyErrors).toEqual([]);
     expect(writeRequests).toBe(1);
     expect(accepted).toHaveLength(1);
+    expect(competitors).toHaveLength(1);
     expect(accepted[0].checkpoint_id).not.toBe(parent.checkpoint.checkpoint_id);
+    expect(competitors[0].checkpoint_id).not.toBe(parent.checkpoint.checkpoint_id);
+    expect(competitors[0].checkpoint_id).not.toBe(accepted[0].checkpoint_id);
     // Read the proxy-observed child, never the thread's global latest tip.
     const child = await api.threads.getState(threadId, accepted[0]);
     expect(child.checkpoint.checkpoint_id).toBe(accepted[0].checkpoint_id);
     expect(child.parent_checkpoint?.checkpoint_id).toBe(parent.checkpoint.checkpoint_id);
-    expect(child.values).toEqual(parent.values);
+    expect(child.values.messages).toEqual([...parent.values.messages, expect.objectContaining(ownedMessage)]);
     expect(child.metadata?.['source']).toBe('update');
+    const competitor = await api.threads.getState(threadId, competitors[0]);
+    expect(competitor.parent_checkpoint?.checkpoint_id).toBe(parent.checkpoint.checkpoint_id);
+    expect(competitor.values.messages).toEqual([...parent.values.messages, expect.objectContaining(competingMessage)]);
+    // Demonstrate why a latest-tip reconciliation would adopt the wrong branch.
+    // Neither exact read above obtains its position from this latest read.
+    expect((await api.threads.getState(threadId)).checkpoint.checkpoint_id).toBe(competitors[0].checkpoint_id);
   } finally {
+    proxyController.abort();
+    const closed = proxy.listening ? new Promise<void>((resolve) => proxy.close(() => resolve())) : Promise.resolve();
     proxy.closeAllConnections();
-    if (proxy.listening) await new Promise<void>((resolve) => proxy.close(() => resolve()));
+    await closed;
+    await Promise.allSettled([...handlers]);
     await api.threads.delete(threadId);
   }
 });
