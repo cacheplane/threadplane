@@ -15,8 +15,9 @@ export interface JsonPatchOp {
  * new document. The input is not mutated.
  *
  * Operations apply in order; if any operation fails (invalid path, failed
- * test, etc.) the whole patch throws — matching `fast-json-patch`'s
- * `validate: false` behavior used by the reducer.
+ * test, etc.) the whole patch throws without changing the input. Paths must
+ * resolve through existing own members; only a final add may create a member
+ * or insert at the array end. Root add/replace is supported, root remove is not.
  */
 export function applyPatch<T>(target: T, ops: readonly JsonPatchOp[]): T {
   let current: unknown = target;
@@ -28,8 +29,8 @@ export function applyPatch<T>(target: T, ops: readonly JsonPatchOp[]): T {
 
 function applyOne(doc: unknown, op: JsonPatchOp): unknown {
   switch (op.op) {
-    case 'add':     return setAt(doc, parsePointer(op.path), op.value, /*replaceArrayDash*/ true);
-    case 'replace': return setAt(doc, parsePointer(op.path), op.value, /*replaceArrayDash*/ false);
+    case 'add':     return setAt(doc, parsePointer(op.path), op.value, /*add*/ true);
+    case 'replace': return setAt(doc, parsePointer(op.path), op.value, /*add*/ false);
     case 'remove':  return removeAt(doc, parsePointer(op.path));
     case 'move': {
       if (op.from == null) throw new Error("'move' op requires 'from'");
@@ -85,10 +86,11 @@ function getAt(doc: unknown, tokens: readonly string[]): unknown {
 
 function stepInto(node: unknown, token: string): unknown {
   if (Array.isArray(node)) {
-    const i = parseArrayIndex(token, node.length);
+    const i = existingArrayIndex(node, token);
     return node[i];
   }
   if (node !== null && typeof node === 'object') {
+    if (!Object.hasOwn(node, token)) throw new Error(`Cannot read non-existent key "${token}"`);
     return (node as Record<string, unknown>)[token];
   }
   throw new Error(`Cannot traverse non-container at token "${token}"`);
@@ -98,7 +100,7 @@ function setAt(
   doc: unknown,
   tokens: readonly string[],
   value: unknown,
-  allowArrayAppend: boolean,
+  add: boolean,
 ): unknown {
   if (tokens.length === 0) {
     // Replace root.
@@ -106,36 +108,35 @@ function setAt(
   }
   const [head, ...rest] = tokens;
   if (Array.isArray(doc)) {
+    const i = add && rest.length === 0
+      ? head === '-' ? doc.length : parseArrayIndex(head!, doc.length)
+      : existingArrayIndex(doc, head!);
     const arr = doc.slice();
-    const i = head === '-' && allowArrayAppend ? arr.length : parseArrayIndex(head!, arr.length + (allowArrayAppend ? 1 : 0));
     if (rest.length === 0) {
-      if (allowArrayAppend) {
+      if (add) {
         // RFC-6902 add: insert at index, shifting elements right
         arr.splice(i, 0, structuredCloneSafe(value));
       } else {
         // replace: overwrite at index
-        if (i >= arr.length) throw new Error(`Cannot replace beyond array length at "/${tokens.join('/')}"`);
         arr[i] = structuredCloneSafe(value);
       }
     } else {
-      if (i >= arr.length) throw new Error(`Cannot descend into non-existent array index ${i}`);
-      arr[i] = setAt(arr[i], rest, value, allowArrayAppend);
+      arr[i] = setAt(arr[i], rest, value, add);
     }
     return arr;
   }
   if (doc === null || typeof doc !== 'object') {
     throw new Error(`Cannot descend into non-container at "/${tokens.join('/')}"`);
   }
-  const obj = { ...(doc as Record<string, unknown>) };
-  if (rest.length === 0) {
-    obj[head!] = structuredCloneSafe(value);
-  } else {
-    if (!(head! in obj)) {
-      throw new Error(`Cannot descend into missing path "/${tokens.join('/')}"`);
-    }
-    obj[head!] = setAt(obj[head!], rest, value, allowArrayAppend);
+  const obj = doc as Record<string, unknown>;
+  if ((!add || rest.length > 0) && !Object.hasOwn(obj, head!)) {
+    throw new Error(`Cannot update missing path "/${tokens.join('/')}"`);
   }
-  return obj;
+  if (rest.length === 0) {
+    // Computed properties create own data even for the key "__proto__".
+    return { ...obj, [head!]: structuredCloneSafe(value) };
+  }
+  return { ...obj, [head!]: setAt(obj[head!], rest, value, add) };
 }
 
 function removeAt(doc: unknown, tokens: readonly string[]): unknown {
@@ -144,9 +145,8 @@ function removeAt(doc: unknown, tokens: readonly string[]): unknown {
   }
   const [head, ...rest] = tokens;
   if (Array.isArray(doc)) {
+    const i = existingArrayIndex(doc, head!);
     const arr = doc.slice();
-    const i = parseArrayIndex(head!, arr.length);
-    if (i >= arr.length) throw new Error(`Cannot remove non-existent array index ${i}`);
     if (rest.length === 0) {
       arr.splice(i, 1);
     } else {
@@ -157,15 +157,20 @@ function removeAt(doc: unknown, tokens: readonly string[]): unknown {
   if (doc === null || typeof doc !== 'object') {
     throw new Error(`Cannot remove from non-container at token "${head}"`);
   }
-  const obj = { ...(doc as Record<string, unknown>) };
+  if (!Object.hasOwn(doc, head!)) throw new Error(`Cannot remove non-existent key "${head}"`);
+  const obj = doc as Record<string, unknown>;
   if (rest.length === 0) {
-    if (!(head! in obj)) throw new Error(`Cannot remove non-existent key "${head}"`);
-    delete obj[head!];
-  } else {
-    if (!(head! in obj)) throw new Error(`Cannot descend into missing path "${head}"`);
-    obj[head!] = removeAt(obj[head!], rest);
+    const out = { ...obj };
+    delete out[head!];
+    return out;
   }
-  return obj;
+  return { ...obj, [head!]: removeAt(obj[head!], rest) };
+}
+
+function existingArrayIndex(array: readonly unknown[], token: string): number {
+  const i = parseArrayIndex(token, array.length - 1);
+  if (!Object.hasOwn(array, i)) throw new Error(`Cannot access non-existent array index ${i}`);
+  return i;
 }
 
 function parseArrayIndex(token: string, lengthBound: number): number {

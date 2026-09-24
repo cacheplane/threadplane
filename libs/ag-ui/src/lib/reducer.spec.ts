@@ -494,6 +494,39 @@ describe('reduceEvent', () => {
     expect(store.state()).toEqual({ a: 2, b: 3 });
   });
 
+  it.each([
+    { op: 'replace', path: '/missing', value: 2 },
+    { op: 'copy', from: '/missing', path: '/copy' },
+  ])('STATE_DELTA rejects a failed $op batch before publishing state or citations', (invalid) => {
+    const store = makeStore();
+    store.messages.set([{ id: 'm1', role: 'assistant', content: 'answer', delivery: staticDelivery('m1') }]);
+    reduceEvent({ type: 'STATE_SNAPSHOT', snapshot: {
+      citations: { m1: [{ id: 'prior', title: 'Prior citation' }] },
+    } } as never, store);
+    const state = store.state();
+    const messages = store.messages();
+    const citations = messages[0].citations;
+    expect(() => reduceEvent({ type: 'STATE_DELTA', delta: [
+      { op: 'replace', path: '/citations/m1', value: [{ id: 'next', title: 'Unpublished citation' }] },
+      invalid,
+    ] } as never, store)).toThrow();
+    expect(store.state()).toBe(state);
+    expect(store.messages()).toBe(messages);
+    expect(store.messages()[0].citations).toBe(citations);
+    expect(citations?.[0].id).toBe('prior');
+    expect(state['citations']).toEqual({ m1: [{ id: 'prior', title: 'Prior citation' }] });
+  });
+
+  it('STATE_DELTA publishes an own __proto__ data member with a safe prototype', () => {
+    const store = makeStore();
+    reduceEvent({ type: 'STATE_DELTA', delta: [
+      { op: 'add', path: '/__proto__', value: { label: 'data' } },
+    ] } as never, store);
+    expect(Object.hasOwn(store.state(), '__proto__')).toBe(true);
+    expect(store.state()['__proto__']).toEqual({ label: 'data' });
+    expect(Object.getPrototypeOf(store.state())).toBe(Object.prototype);
+  });
+
   it('MESSAGES_SNAPSHOT replaces messages wholesale', () => {
     const store = makeStore();
     store.deliveryRun = null;
@@ -908,6 +941,44 @@ describe('ACTIVITY events (F5 subagent activities)', () => {
     reduceEvent({ type: 'ACTIVITY_DELTA', messageId: 'nope', activityType: 'subagent',
       patch: [{ op: 'replace', path: '/text', value: 'x' }] } as any, store);
     expect(store.activities().size).toBe(0);
+  });
+
+  it.each([
+    { op: 'replace', path: '/missing', value: 2 },
+    { op: 'copy', from: '/missing', path: '/copy' },
+  ])('ACTIVITY_DELTA retains the original content and membership after a failed $op batch', (invalid) => {
+    const store = makeStore();
+    const content = Object.freeze({ text: 'prior', items: Object.freeze([1, 2]) });
+    reduceEvent({ type: 'ACTIVITY_SNAPSHOT', messageId: 'tc-1', activityType: 'subagent', content } as never, store);
+    const activities = store.activities();
+    const entry = activities.get('tc-1');
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    try {
+      expect(() => reduceEvent({ type: 'ACTIVITY_DELTA', messageId: 'tc-1', patch: [
+        { op: 'replace', path: '/text', value: 'unpublished' },
+        { op: 'replace', path: '/items/0', value: 9 },
+        invalid,
+      ] } as never, store)).not.toThrow();
+      expect(entry?.content()).toBe(content);
+      expect(entry?.content()).toEqual({ text: 'prior', items: [1, 2] });
+      expect(store.activities()).toBe(activities);
+      expect(store.activities().get('tc-1')).toBe(entry);
+      expect(warning).toHaveBeenCalledExactlyOnceWith('[ag-ui] dropping malformed ACTIVITY_DELTA patch', expect.any(Error));
+    } finally {
+      warning.mockRestore();
+    }
+  });
+
+  it('ACTIVITY_DELTA publishes an own __proto__ data member with a safe prototype', () => {
+    const store = makeStore();
+    reduceEvent({ type: 'ACTIVITY_SNAPSHOT', messageId: 'tc-1', activityType: 'subagent', content: {} } as never, store);
+    reduceEvent({ type: 'ACTIVITY_DELTA', messageId: 'tc-1', patch: [
+      { op: 'add', path: '/__proto__', value: { label: 'data' } },
+    ] } as never, store);
+    const content = store.activities().get('tc-1')?.content() ?? {};
+    expect(Object.hasOwn(content, '__proto__')).toBe(true);
+    expect(content['__proto__']).toEqual({ label: 'data' });
+    expect(Object.getPrototypeOf(content)).toBe(Object.prototype);
   });
 
   it('two concurrent subagents are keyed independently', () => {

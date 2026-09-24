@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "3e7da956bd7e12927412a7a533045f69fcf5c27b",
+  "baselineHead": "9a87f53641064041cae89e1e83fd2da071440e5b",
   "sourceState": {
-    "modified": [],
-    "untracked": [
-      "libs/ag-ui/src/runtime/transcript.ts"
-    ]
+    "modified": [
+      "libs/ag-ui/src/lib/internal/apply-patch.ts"
+    ],
+    "untracked": []
   },
   "scope": {
     "libraries": [
@@ -10536,7 +10536,7 @@
       "id": "source:libs/ag-ui/src/lib/internal/apply-patch.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/internal/apply-patch.ts",
-      "sha256": "6a348d876814bc7f1ec10c698bcbca11eb5e224866f0df55546f4e3481d2af1f"
+      "sha256": "7d241f7d6cfbffbb4a562c5e73ff660c628e11e34aa59229dba771dc14c68427"
     },
     {
       "id": "source:libs/ag-ui/src/lib/interrupt-persistence.ts",
