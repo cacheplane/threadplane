@@ -17,7 +17,7 @@ const script = fileURLToPath(import.meta.url);
 const buildCommand =
   'NX_DAEMON=false npx nx run-many -t build -p core,angular,react --skip-nx-cache';
 const manualOrder =
-  'Use three Load clicks (saved, equal refresh, empty); Send → Tool → Error → Hold → Stop → Pause → Stop → Resume → Resume → Drop → Reconnect → Send → Unmount → Dispose → Send after dispose → Resume after dispose → Reconnect after dispose. Resume answers both approvals, then the final confirmation. Reconnect joins the dropped run without resubmitting. Open /?threads on either review URL for application-owned conversation selection; follow its separate sequence. Only bounded requests are available per server; restart this command for a fresh review. Reloading the page does not reset server state.';
+  'Use three Load clicks (saved, equal refresh, empty); Send → Tool → Error → Hold → Stop → Pause → Stop → Resume → Resume → Drop → Reconnect → Send → Unmount → Dispose → Send after dispose → Resume after dispose → Reconnect after dispose. Resume answers both approvals, then the final confirmation. Reconnect joins the dropped run without resubmitting. Open /?threads for application-owned conversation selection or /?checkpoints for completed checkpoint fork, continued branch, pending rejection and cursor reconnect; follow each view’s separate sequence. Only bounded requests are available per server; restart this command for a fresh review. Reloading the page does not reset server state.';
 
 function prerequisites(root) {
   const missing = ['core', 'angular', 'react'].filter(
@@ -40,10 +40,15 @@ function sourceProvenance(root) {
     'fixtures/react-parity/runtime',
     'scripts/react-parity/runtime-consumer.mjs',
     'scripts/react-parity/thread-lifetime.mjs',
+    'scripts/react-parity/checkpoint-execution.mjs',
     'scripts/react-parity/review-runtime.mjs',
   ];
   return {
     head: git('rev-parse', 'HEAD'),
+    inputs: [...new Set(git('ls-files', '-z', '--cached', '--others', '--exclude-standard', '--', ...paths).split('\0').filter(Boolean))]
+      .filter(path => existsSync(join(root, path)))
+      .sort()
+      .map(path => ({ path, sha256: createHash('sha256').update(readFileSync(join(root, path))).digest('hex') })),
     trackedRuntimeFixtureStatus: git(
       'status',
       '--short',

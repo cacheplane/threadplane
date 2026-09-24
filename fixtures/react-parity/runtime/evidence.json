@@ -360,5 +360,122 @@
     "generatorsRun": [],
     "reason": "Only contributor fixture guidance, tests and private review infrastructure changed; no public docs/API/context generator inputs changed."
   },
-  "verificationProvenance": "All listed commands ran in this increment. Runtime and native package production implementation/public exports remain unchanged. Historical foundation evidence remains unchanged. Parent audited spec, source, lifecycle, types, installed behavior and evidence. New independent subagent review was unavailable after earlier thread capacity exhaustion; hosted review must be inspected separately from job success."
+  "verificationProvenance": "All listed commands ran in this increment. Runtime and native package production implementation/public exports remain unchanged. Historical foundation evidence remains unchanged. Parent audited spec, source, lifecycle, types, installed behavior and evidence. New independent subagent review was unavailable after earlier thread capacity exhaustion; hosted review must be inspected separately from job success.",
+  "installedCheckpointReview": {
+    "recordScope": "This additive record covers only the September 24 installed checkpoint fixture milestone. The other top-level fields remain the historical September 22 thread-lifetime record, including its source fingerprint and manual browser claims.",
+    "observedOn": "2026-09-24",
+    "status": "local automated and manual verification passed; independent compliance and quality reviews approved; CI reported separately",
+    "verificationHead": "d3d8e018b31ca6ab71f238df38f8429e4c153765",
+    "integratedMain": "f4ccd582ccc0d36bcb3a6a0d51c0dfa8cb1ff33f",
+    "integrationEvidence": "PR #1156 required CI 36037710445 passed on verificationHead. Its main merge tree 51d158f52748566e8630bda74881ae9c66ecec0c is identical. Fixture changes were preserved byte-for-byte when moving onto that main commit.",
+    "workingTree": "Fixture-only changes on the reviewed production predecessor plus its recording-transport return-type follow-up; no production runtime, core, binding or dependency change in this milestone.",
+    "executed": [
+      {
+        "log": "/tmp/installed-checkpoint-build.log",
+        "logSha256": "d301e3126fa75071ede57c077da114657206c2b396d986ac6c4f98bd85f322c4",
+        "command": "NX_DAEMON=false NX_TUI=false npx nx run-many -t build -p core,content,react,angular --skip-nx-cache",
+        "exitCode": 0
+      },
+      {
+        "log": "/tmp/installed-checkpoint-node-final.log",
+        "logSha256": "f8f5893229b03f595345ab7ff29a7723fbf9b29710f56a1f8a4e5c89a9cb89e3",
+        "command": "node --test scripts/react-parity/*.spec.mjs",
+        "exitCode": 0,
+        "testsPassed": 329
+      },
+      {
+        "log": "/tmp/installed-checkpoint-react-restored.log",
+        "logSha256": "9c30fcfda00d425a46a19dbb16f35c8f2e0afb2cb4da434d2c936be12079149e",
+        "command": "node scripts/react-parity/verify-packages.mjs",
+        "exitCode": 0,
+        "browserScenarios": 27,
+        "checkpointScenarioGroups": 6,
+        "installedTypeProbes": true,
+        "productionBuild": true
+      },
+      {
+        "log": "/tmp/installed-checkpoint-angular.log",
+        "logSha256": "d444c583c5324e61e8dd2f1f01698baa456867fa10cde3a3eff212bb710b3a7d",
+        "command": "node scripts/react-parity/verify-angular-package.mjs",
+        "exitCode": 0,
+        "browserScenarios": 27,
+        "checkpointScenarioGroups": 6,
+        "installedTypeProbes": true,
+        "productionBuild": true
+      }
+    ],
+    "testFirstEvidence": [
+      {
+        "log": "/tmp/installed-checkpoint-types-red.log",
+        "logSha256": "9f52b6058e55809923f7f4e72a174cb58b45ee6fa89df963e9017e41f88653af",
+        "expectedFailure": "Readonly observed history checkpoint cannot call missing factory fork method."
+      },
+      {
+        "log": "/tmp/installed-checkpoint-oracle-red.log",
+        "logSha256": "192e8c826cb661b95f2c16b328f82d991c333acf665fd3146683076afe15f246",
+        "expectedFailure": "Checkpoint-thread HTTP routes are not implemented."
+      },
+      {
+        "log": "/tmp/installed-checkpoint-browser-red.log",
+        "logSha256": "26977eeae155251e4f3bdfc771d4dc3af84931e1a4a09c7db9243d9e29f41fc4",
+        "expectedFailure": "Installed checkpoint view does not exist."
+      },
+      {
+        "log": "/tmp/installed-checkpoint-review-evidence-red.log",
+        "logSha256": "a6339c88470a344fad5bb48e8341bdb83578337bb8a0a19da2ed189716b0603c",
+        "expectedFailure": "Review provenance has no input hashes."
+      },
+      {
+        "log": "/tmp/installed-checkpoint-review-evidence-green.log",
+        "logSha256": "8f1891e83b6bdeba32a4cb15539f46a116e90460dd7ab1f191db99f0f20f0d93",
+        "exitCode": 0
+      }
+    ],
+    "semanticNegativeControl": {
+      "log": "/tmp/installed-checkpoint-negative-control.log",
+      "logSha256": "158ea6ee10872775772a06e74c5d2fb67b33748a175bcc326598acb45ddb56ef",
+      "mutation": "Temporarily change actual create-session stream routing from A1 to original A (ID and root map) for continuation.",
+      "expectedFailure": "Continue branch: wire oracle errors; exact branch creation routing, input, catalog and modes",
+      "restoration": "Original production file bytes restored in finally, empty production diff checked; restored React installed verifier passed."
+    },
+    "checkpointProtocol": {
+      "thread": "checkpoint-thread",
+      "globalLatest": "B",
+      "historyPosts": 1,
+      "exactCheckpointReadPosts": 6,
+      "creationPosts": 3,
+      "physicalStatusGets": 4,
+      "cursorJoinGets": 1,
+      "fullSequenceAsserted": true,
+      "selectionImplicitIO": false,
+      "postDisposalIO": false,
+      "handlerCalls": 0,
+      "joinModesEncoding": "One JSON array query parameter, matching the installed SDK BaseClient."
+    },
+    "declarations": "Readonly native-observer history reference passes directly to fork; outcome is Promise<CompleteOutcome>; malformed input and reserved config routing fail type probes; emitted declaration rejects SDK/private-source references.",
+    "cleanup": "Both package verifiers close page contexts, browsers, HTTP connections and temporary installed consumers in finally. No persistent manual servers were started by implementation.",
+    "manualBrowserReview": {
+      "performedBy": "Parent using Chrome DevTools MCP for React and Codex in-app browser for Angular, on fresh loopback review servers.",
+      "observedOn": "2026-09-24",
+      "reactUrl": "http://127.0.0.1:55315/?checkpoints",
+      "angularUrl": "http://127.0.0.1:55316/?checkpoints",
+      "sequence": "Load; Select A/B/A; Fork selected; Select B; Continue branch; Load; Select P; Fork selected; Drop branch; Reconnect branch; Dispose; Continue branch; Fork selected.",
+      "observations": "Both views retained branch A1/A2 despite selected B, rejected pending P without replacing A2, recovered run-A3 into A3, and returned aborted for both commands after disposal. Final selected P, owner disposed, session idle, completed commands 9, handlers 0; history remained B/A/P.",
+      "consoleWarnings": 0,
+      "consoleErrors": 0,
+      "reactNetwork": "Chrome recorded exactly 15 HTTP requests: one history POST, six checkpoint reads, three run creations, four status GETs and one run-A3 cursor join GET; all returned 200.",
+      "limits": "Angular network sequence is asserted by the installed automated oracle; its manual review claims visible state and console observations only. No live deployment, SSR or performance-budget claim.",
+      "runnerLog": "/tmp/installed-checkpoint-manual-runner.log",
+      "cleanup": "Owned review tabs closed and loopback ports 55315/55316 confirmed closed; user-owned manual sessions preserved."
+    },
+    "independentReview": "Fresh compliance and quality reviewers independently approved the fixture diff; each ran 28 focused Node tests. Parent additionally ran all 329 parity-script tests, 829 runtime tests plus runtime/public type targets, inventory, source boundaries and version consistency. A whole-workspace emitted-boundary scan was not completed in this fixture worktree because the unchanged ag-ui built artifact was absent; installed declaration checks passed for both exercised consumers.",
+    "documentation": {
+      "generatorsRun": [],
+      "reason": "Only contributor fixtures and review infrastructure changed; no public API/docs/context generator inputs."
+    },
+    "limits": [
+      "Strict deterministic HTTP evidence complements separate real-server tests; it does not certify general LangGraph compatibility or cross-client atomicity.",
+      "No new public API, branch UI library, dependency update, package-root migration or release."
+    ]
+  }
 }
