@@ -1,17 +1,11 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "4d47995333278f9a19491925bc555d30f8490956",
+  "baselineHead": "a4a0c7b9b5a364dc70336f59818ac486909bdfef",
   "sourceState": {
     "modified": [
-      "libs/langgraph/src/runtime/README.md",
-      "libs/langgraph/src/runtime/history-projection.ts",
-      "libs/langgraph/src/runtime/message-reducer.ts",
-      "libs/langgraph/src/runtime/ownership.ts",
-      "libs/langgraph/src/runtime/stream-projection.ts"
+      "libs/ag-ui/src/lib/reducer.ts"
     ],
-    "untracked": [
-      "libs/langgraph/src/runtime/citation-projection.ts"
-    ]
+    "untracked": []
   },
   "scope": {
     "libraries": [
@@ -10572,7 +10566,7 @@
       "id": "source:libs/ag-ui/src/lib/reducer.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/reducer.ts",
-      "sha256": "82ed040383d718c9460b4d8040a942a0b5f969f3060c2522cfb4adfd23686379"
+      "sha256": "b179449025f05f653d44505a491fbe05a04ae2dd7625bc2cd45fe9f2c3924863"
     },
     {
       "id": "source:libs/ag-ui/src/lib/run-state-transaction.ts",
