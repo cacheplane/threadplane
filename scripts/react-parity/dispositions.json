@@ -11523,6 +11523,17 @@
       "note": "Bounded runtime proof only; broader task capabilities and final public package cutover remain open."
     },
     {
+      "id": "source:libs/langgraph/src/runtime/tool-invocations.ts",
+      "taskIds": [
+        "T15",
+        "T16"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private same-session execution-admission facts; excluded from public exports.",
+      "note": "Owns admitted invocation identity and retains conflicts before stream suppression and history filtering. No cross-session provenance, durable-store migration, replay authority or whole-task completion claim."
+    },
+    {
       "id": "source:libs/langgraph/src/runtime/tool-persistence.ts",
       "taskIds": [
         "T15",
