@@ -33,6 +33,63 @@ function snapshot(content = 'one'): LangGraphSnapshot {
 }
 
 describe('private snapshot publication', () => {
+  it.each([
+    { label: 'empty to holes', from: 0, to: 2, populated: false },
+    { label: 'longer trailing holes', from: 1, to: 3, populated: true },
+  ])(
+    'publishes a changed sparse tool result: $label',
+    ({ from, to, populated }) => {
+      const values = (length: number) => {
+        const array = new Array<number>(length);
+        if (populated) array[0] = 1;
+        return array;
+      };
+      const input = (length: number): LangGraphSnapshot => ({
+        ...snapshot(),
+        toolCalls: [
+          {
+            id: 't',
+            name: 'search',
+            status: 'complete',
+            args: {},
+            result: { nested: { marker: true, values: values(length) } },
+          },
+        ],
+      });
+      const publication = createPublication(input(from));
+      const before = publication.getSnapshot();
+      let notifications = 0;
+      publication.subscribe(() => notifications++);
+      publication.publish(input(to));
+      const after = publication.getSnapshot();
+      expect(after).not.toBe(before);
+      expect(after.toolCalls[0]).toHaveProperty(
+        'result.nested.values.length',
+        to
+      );
+      expect(before.toolCalls[0]).toHaveProperty(
+        'result.nested.values.length',
+        from
+      );
+      expect(after.messages).toBe(before.messages);
+      expect(notifications).toBe(1);
+      publication.publish({
+        ...after,
+        toolCalls: [
+          {
+            id: 't',
+            name: 'search',
+            status: 'complete',
+            args: {},
+            result: { nested: { values: values(to), marker: true } },
+          },
+        ],
+      });
+      expect(publication.getSnapshot()).toBe(after);
+      expect(notifications).toBe(1);
+    }
+  );
+
   it('owns and shares the reconnect descriptor, including removing it from an otherwise equal aggregate', () => {
     const descriptor = { runId: 'run' };
     const publication = createPublication({

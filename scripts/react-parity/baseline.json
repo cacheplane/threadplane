@@ -1,10 +1,9 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "436307f2e75672963fa8213b944a5b911dedd081",
+  "baselineHead": "fe4fefad734834e78ff183d3087904ad657ebced",
   "sourceState": {
     "modified": [
-      "libs/middleware/src/langgraph/client-tool-execution-store.ts",
-      "libs/middleware/src/langgraph/postgres-client-tool-execution-store.ts"
+      "libs/langgraph/src/runtime/ownership.ts"
     ],
     "untracked": []
   },
@@ -12609,7 +12608,7 @@
       "id": "source:libs/langgraph/src/runtime/ownership.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/ownership.ts",
-      "sha256": "404cfa73108674b6d1c5fc57c345652297d087c3bb17a39977fc6b7b710362b0"
+      "sha256": "ec54b382a512eed0f6cc519528851ed113ca346b4973b838b0572af329ce079f"
     },
     {
       "id": "source:libs/langgraph/src/runtime/publication.ts",
