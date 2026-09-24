@@ -16,6 +16,16 @@ export const angularTransitionProjects = ['chat', 'langgraph', 'ag-ui', 'render'
 export const scanProjects = [...new Set([...privateScaffoldProjects, ...angularTransitionProjects, 'a2ui', 'telemetry'])];
 // Source-only staging boundary; this does not declare a published entry point.
 export const neutralLangGraphRoots = ['src/lib/transport/fetch-stream.transport.ts', 'src/lib/client/create-langgraph-client.ts'];
+// Exact source-sharing exceptions during the Angular transition. Their imports
+// remain guarded; neither file may expose the private session through a bridge.
+export const sharedLangGraphRuntimeSources = ['src/runtime/transport.types.ts', 'src/runtime/operation-errors.ts'];
+// TypeScript resolution and filesystem enumeration can use different separators.
+export function langGraphRuntimeSourceKind(root, path) {
+  const directory = `${root.replaceAll('\\', '/').replace(/\/$/, '')}/libs/langgraph/`;
+  const normalized = path.replaceAll('\\', '/');
+  if (!normalized.startsWith(`${directory}src/runtime/`)) return undefined;
+  return sharedLangGraphRuntimeSources.includes(normalized.slice(directory.length)) ? 'shared' : 'private';
+}
 const retiredProjects = ['chat', 'langgraph-core', 'ag-ui-core', 'react-render'];
 
 export function packageOf(specifier) {
