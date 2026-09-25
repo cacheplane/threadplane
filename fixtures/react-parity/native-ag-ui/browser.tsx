@@ -10,9 +10,12 @@ import { bootstrapApplication } from '@angular/platform-browser';
 import React, { useLayoutEffect, useMemo } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { useAgent } from '@threadplane/react';
-import { TextTranscript } from '@threadplane/react/chat';
+import { TextTranscript, ToolObservation } from '@threadplane/react/chat';
 import { observeAgent } from '@threadplane/angular';
-import { TextTranscriptComponent } from '@threadplane/angular/chat';
+import {
+  TextTranscriptComponent,
+  ToolObservationComponent,
+} from '@threadplane/angular/chat';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Private source is composed only into this local review bundle, never a package export.
 import {
   createSession,
@@ -46,6 +49,35 @@ const a = owner('a'),
   b = owner('b');
 const SESSION = new InjectionToken<Session>('review owner');
 type Snapshot = ReturnType<Session['getSnapshot']>;
+// This fixture authors exactly one weather call in worker, never a root call.
+function workerWeather(snapshot: Snapshot) {
+  const calls = snapshot.transcript.flatMap((message) =>
+    message.role === 'assistant'
+      ? (message.toolCalls ?? [])
+          .filter((call) => call.function.name === 'weather')
+          .map((call) => ({ message, call }))
+      : []
+  );
+  if (!calls.length) return undefined;
+  if (calls.length !== 1 || calls[0].message.subagentRunId !== 'worker')
+    throw new Error('Expected exactly one worker weather call');
+  const { call } = calls[0];
+  const results = snapshot.transcript.flatMap((message) =>
+    message.role === 'tool' && message.toolCallId === call.id ? [message] : []
+  );
+  if (
+    results.length > 1 ||
+    results.some((result) => result.subagentRunId !== 'worker')
+  )
+    throw new Error(
+      'Ambiguous or incorrectly attributed worker weather result'
+    );
+  return {
+    name: call.function.name,
+    argumentsText: call.function.arguments,
+    ...(results.length === 1 && { resultText: results[0].content }),
+  };
+}
 const records: { owner: string; text: string; outcome?: string }[] = [];
 const saved: { value: Snapshot; json: string }[] = [];
 let reactSnapshot: Snapshot | undefined,
@@ -114,12 +146,18 @@ function renderState() {
 const releases = [a, b].map((session) =>
   session.subscribe(() => {
     const value = session.getSnapshot();
+    try {
+      workerWeather(value);
+    } catch (error) {
+      failure = String(error);
+    }
     saved.push({ value, json: JSON.stringify(value) });
     renderState();
   })
 );
 function View({ session, kind }: { session: Session; kind: 'a' | 'b' }) {
   const snapshot = useAgent(session);
+  const tool = workerWeather(snapshot);
   const rows = useMemo(
     () => projectTextTranscript(snapshot.transcript),
     [session, snapshot.transcript]
@@ -140,6 +178,12 @@ function View({ session, kind }: { session: Session; kind: 'a' | 'b' }) {
         messages={rows}
         label={`React ${kind.toUpperCase()} conversation`}
       />
+      {tool && (
+        <ToolObservation
+          {...tool}
+          label={`React ${kind.toUpperCase()} worker weather`}
+        />
+      )}
       <pre data-view={`react-${kind}`}>{JSON.stringify(snapshot, null, 2)}</pre>
     </>
   );
@@ -161,6 +205,7 @@ class NativeView {
   readonly snapshot = observeAgent(inject(SESSION));
   readonly transcript = computed(() => this.snapshot().transcript);
   readonly rows = computed(() => projectTextTranscript(this.transcript()));
+  readonly tool = computed(() => workerWeather(this.snapshot()));
   readonly status = computed(() => status(this.snapshot()));
   get json() {
     angularSnapshot = this.snapshot();
@@ -171,9 +216,9 @@ class NativeView {
 Component({
   selector: 'native-angular-review',
   standalone: true,
-  imports: [TextTranscriptComponent],
+  imports: [TextTranscriptComponent, ToolObservationComponent],
   template:
-    '<p role="status">{{ status() }}</p><threadplane-text-transcript [messages]="rows()" label="Angular A conversation" /><pre data-view="angular-a">{{ json }}</pre>',
+    '<p role="status">{{ status() }}</p><threadplane-text-transcript [messages]="rows()" label="Angular A conversation" />@if (tool(); as observed) { <threadplane-tool-observation [name]="observed.name" [argumentsText]="observed.argumentsText" [resultText]="observed.resultText" label="Angular A worker weather" /> }<pre data-view="angular-a">{{ json }}</pre>',
 })(NativeView);
 function mountReact() {
   reactRoot = createRoot(element('#react-a'));

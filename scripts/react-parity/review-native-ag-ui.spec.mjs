@@ -1,7 +1,13 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import test from 'node:test';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
@@ -11,6 +17,21 @@ import {
   runReview,
 } from './review-native-ag-ui.mjs';
 import { createReviewServer } from '../../fixtures/react-parity/native-ag-ui/server.mjs';
+
+test('native provenance explicitly retains source for both compiled tool observations', () => {
+  const runner = readFileSync(
+    new URL('./review-native-ag-ui.mjs', import.meta.url),
+    'utf8'
+  );
+  for (const path of [
+    'libs/react/src/chat/tool-observation.tsx',
+    'libs/angular/chat/src/tool-observation.component.ts',
+  ])
+    assert.ok(
+      runner.includes(`'${path}'`),
+      `${path} remains a provenance input`
+    );
+});
 
 async function until(predicate) {
   const deadline = Date.now() + 2000;

@@ -29,17 +29,35 @@ export function angularBuildCommand(consumer) {
   return [join(consumer, 'node_modules/@angular/cli/bin/ng.js'), 'build', '--configuration=production', '--stats-json'];
 }
 
+export function assertAngularChatExports(names) {
+  const expected = ['TextTranscriptComponent', 'ToolObservationComponent'];
+  for (const name of expected)
+    assert.ok(names.includes(name), `Angular chat missing ${name}`);
+  assert.deepEqual(
+    [...names].sort(),
+    expected,
+    'Angular chat has unexpected exports'
+  );
+}
+
 /** Real Angular template checking against the installed secondary declarations. */
 function verifyRejectedTranscriptTemplates(consumer) {
   writeFileSync(join(consumer, 'transcript-negative.ts'), `
 import { Component } from '@angular/core';
-import { TextTranscriptComponent } from '@threadplane/angular/chat';
-@Component({ selector: 'negative-transcript', standalone: true, imports: [TextTranscriptComponent], template: \`
+import { TextTranscriptComponent, ToolObservationComponent } from '@threadplane/angular/chat';
+@Component({ selector: 'negative-transcript', standalone: true, imports: [TextTranscriptComponent, ToolObservationComponent], template: \`
   <threadplane-text-transcript [messages]="missingId" />
   <threadplane-text-transcript [messages]="missingContent" />
   <threadplane-text-transcript [messages]="objectContent" />
+  <threadplane-tool-observation argumentsText="{}" />
+  <threadplane-tool-observation name="weather" />
+  <threadplane-tool-observation name="weather" [argumentsText]="objectArgs" />
+  <threadplane-tool-observation name="weather" argumentsText="{}" [resultText]="123" />
+  <threadplane-tool-observation name="weather" argumentsText="{}" [execute]="execute" [status]="'running'" [session]="objectArgs" />
 \` })
 export class NegativeTranscript {
+  readonly objectArgs = { city: 'Paris' };
+  readonly execute = () => undefined;
   readonly missingId = [{ role: 'user', content: 'Hello' }] as const;
   readonly missingContent = [{ id: 'a', role: 'user' }] as const;
   readonly objectContent = [{ id: 'a', role: 'user', content: { text: 'Hello' } }] as const;
@@ -56,7 +74,14 @@ export class NegativeTranscript {
     assert.match(diagnostics, /Property 'id' is missing/);
     assert.match(diagnostics, /Property 'content' is missing/);
     assert.match(diagnostics, /not assignable to type 'string'/);
-    console.log('Installed Angular strict templates rejected missing IDs, missing content and object content.');
+    assert.match(diagnostics, /Required input 'name'/);
+    assert.match(diagnostics, /Required input 'argumentsText'/);
+    assert.match(diagnostics, /Type '\{ city: string; \}' is not assignable to type 'string'/);
+    assert.match(diagnostics, /Type 'number' is not assignable to type 'string'/);
+    for (const input of ['execute', 'status', 'session'])
+      assert.match(diagnostics, new RegExp(`Can't bind to '${input}'`));
+    assert.doesNotMatch(diagnostics, /Cannot find module|Could not resolve/);
+    console.log('Installed Angular strict templates rejected malformed transcript rows and missing, structured, numeric or command tool inputs.');
   } finally {
     rmSync(join(consumer, 'transcript-negative.ts'));
     rmSync(join(consumer, 'tsconfig.negative.json'));
@@ -78,6 +103,22 @@ export async function verifyAngularPackage(root = process.cwd()) {
     assertHeadlessInputs(rootProbe.metafile.inputs);
     const installed = JSON.parse(readFileSync(join(consumer, 'node_modules/@threadplane/angular/package.json'), 'utf8'));
     const specifiers = consumerSpecifiers(installed);
+    const chatProbe = buildSync({
+      absWorkingDir: consumer,
+      stdin: {
+        contents: "export * from '@threadplane/angular/chat';",
+        resolveDir: consumer,
+      },
+      bundle: true,
+      platform: 'browser',
+      format: 'esm',
+      write: false,
+      metafile: true,
+      external: ['@angular/core'],
+    });
+    assertAngularChatExports(
+      Object.values(chatProbe.metafile.outputs)[0].exports
+    );
     prepareInstalledTypes(root, consumer, 'angular');
     verifyRejectedTranscriptTemplates(consumer);
     const contracts = join(consumer, 'installed-types.ts');

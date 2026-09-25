@@ -60,6 +60,26 @@ export async function verifyBrowser(browser, server) {
   await text('React A', []);
   await text('Angular A', []);
   await text('React B', []);
+  const observation = (framework) =>
+    page.getByRole('region', {
+      name: `${framework} A worker weather`,
+      exact: true,
+    });
+  const toolText = async (framework, args, result) => {
+    const region = observation(framework);
+    await expect(region).toContainText('weather');
+    await expect(region.locator('pre')).toHaveCount(
+      result === undefined ? 1 : 2
+    );
+    assert.equal(await region.locator('pre').nth(0).textContent(), args);
+    if (result !== undefined)
+      assert.equal(await region.locator('pre').nth(1).textContent(), result);
+    await expect(
+      region.locator('button, [aria-live], [role="status"]')
+    ).toHaveCount(0);
+  };
+  await expect(observation('React')).toHaveCount(0);
+  await expect(observation('Angular')).toHaveCount(0);
   await click('First');
   const partial = await shared();
   const notice = {
@@ -87,6 +107,16 @@ export async function verifyBrowser(browser, server) {
   assert.equal(partial.a.toolCalls, undefined);
   await text('React A', ['First']);
   await text('Angular A', ['First']);
+  await toolText('React', '{"city":');
+  await toolText('Angular', '{"city":');
+  const oldReactArgs = await observation('React')
+    .locator('pre')
+    .first()
+    .elementHandle();
+  const oldAngularArgs = await observation('Angular')
+    .locator('pre')
+    .first()
+    .elementHandle();
   const oldReactRow = await conversation('React A')
     .locator('li')
     .first()
@@ -104,6 +134,17 @@ export async function verifyBrowser(browser, server) {
   assert.equal(await oldReactRow.evaluate((node) => node.isConnected), false);
   assert.equal(requests()[0].closed, false);
   await click('Advance first');
+  await toolText('Angular', '{"city":"Paris"}', '{"temperature":20}');
+  assert.equal(
+    await oldAngularArgs.evaluate(
+      (node) =>
+        node ===
+        document.querySelector(
+          'section[aria-label="Angular A worker weather"] pre'
+        )
+    ),
+    true
+  );
   const paused = await state();
   assert.deepEqual(paused.a.run.legacyInterrupt, notice);
   assert.equal(paused.records[0].outcome, 'paused');
@@ -133,6 +174,8 @@ export async function verifyBrowser(browser, server) {
     true
   );
   await click('Mount React');
+  await toolText('React', '{"city":"Paris"}', '{"temperature":20}');
+  assert.equal(await oldReactArgs.evaluate((node) => node.isConnected), false);
   const remounted = await shared();
   assert.deepEqual(remounted.a.run.legacyInterrupt, notice);
   assert.deepEqual(remounted.a.run.terminal, paused.a.run.terminal);
@@ -206,6 +249,11 @@ export async function verifyBrowser(browser, server) {
     true
   );
   await click('Mount Angular');
+  await toolText('Angular', '{"city":"Paris"}', '{"temperature":20}');
+  assert.equal(
+    await oldAngularArgs.evaluate((node) => node.isConnected),
+    false
+  );
   await shared();
   assert.equal(requests().length, 2);
   await text('Angular A', ['First', 'Next answer']);

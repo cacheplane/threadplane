@@ -8,7 +8,7 @@ import type {
 } from '@threadplane/core';
 
 export const reviewInstructions =
-  'Click Load three times: saved history, equal refresh, then empty history. Continue with Send → Tool → Error → Hold → Stop → Pause → Stop → Resume → Resume → Drop → Reconnect → Send. Tool and Drop send model, reasoning effort, UI mode and itinerary state once; displayed values come from the server. Resume first sends both approval responses, then confirms the final action. Drop loses observation of a running run; Reconnect joins that same run without another submission. Finish with Unmount → Dispose → Send after dispose → Resume after dispose → Reconnect after dispose in the owner controls below. Only three Load requests and one Drop are available per server; restart the review command to reset. Reloading the page does not reset server state.';
+  'Click Load three times: saved history, equal refresh, then empty history. Continue with Send → Tool → Error → Hold → Stop → Pause → Stop → Resume → Resume → Drop → Reconnect → Send. Tool and Drop send model, reasoning effort, UI mode and itinerary state once; displayed values come from the server. Tool also displays the root call-weather arguments and actual handler result as caller-formatted literal text. Resume first sends both approval responses, then confirms the final action. Drop loses observation of a running run; Reconnect joins that same run without another submission. Finish with Unmount → Dispose → Send after dispose → Resume after dispose → Reconnect after dispose in the owner controls below. Only three Load requests and one Drop are available per server; restart the review command to reset. Reloading the page does not reset server state.';
 
 export const checkpointInstructions =
   'Load → Select A → Select B → Select A → Fork selected → Select B → Continue branch → Load → Select P → Fork selected (rejected) → Drop branch → Reconnect branch → Dispose → Continue branch → Fork selected. Selection only chooses a saved reference for Fork selected. Continue and Load follow the session’s confirmed branch position even while B is selected; the global latest remains B. One bounded sequence is available per server; restart the review command to reset.';
@@ -131,9 +131,42 @@ export type FixtureSnapshot = AgentSnapshot<FixtureTools> & {
   readonly interrupts: readonly FixtureInterrupt[];
 };
 
+/** Only the authored root call-weather example; this is not a generic value formatter. */
+export function weatherObservation(snapshot: FixtureSnapshot) {
+  const calls = snapshot.toolCalls.filter((call) => call.id === 'call-weather');
+  if (!calls.length) return undefined;
+  if (calls.length !== 1 || calls[0].name !== 'weather')
+    throw new Error('Expected one root call-weather observation');
+  const call = calls[0];
+  if (call.name !== 'weather' || call.args.city !== 'Paris')
+    throw new Error('Unexpected authored weather arguments');
+  let resultText: string | undefined;
+  if (call.status === 'complete') {
+    const result = call.result;
+    // Available undefined and strings stay explicit; known records have authored fields.
+    if (result === undefined) resultText = 'undefined';
+    else if (typeof result === 'string') resultText = result;
+    else {
+      if (result.city !== 'Paris' || result.temperature !== 20)
+        throw new Error('Unexpected authored weather result');
+      resultText = JSON.stringify({
+        city: result.city,
+        temperature: result.temperature,
+      });
+    }
+  }
+  return {
+    name: call.name,
+    argumentsText: JSON.stringify({ city: call.args.city }),
+    ...(resultText !== undefined && { resultText }),
+  };
+}
+
 /** View selection only; the session retains canonical history for requests. */
 export function textRows(messages: readonly Message[]) {
-  return messages.filter((message) => message.role === 'user' || message.role === 'assistant');
+  return messages.filter(
+    (message) => message.role === 'user' || message.role === 'assistant'
+  );
 }
 
 export function display(snapshot: FixtureSnapshot) {

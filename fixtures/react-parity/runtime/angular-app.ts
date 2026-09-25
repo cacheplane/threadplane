@@ -1,7 +1,10 @@
 import { Component, computed, signal } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { observeAgent } from '@threadplane/angular';
-import { TextTranscriptComponent } from '@threadplane/angular/chat';
+import {
+  TextTranscriptComponent,
+  ToolObservationComponent,
+} from '@threadplane/angular/chat';
 import { createFixtureSession } from './runtime-entry.js';
 import {
   attachOwner,
@@ -11,6 +14,7 @@ import {
   reviewResponse,
   reviewRunOptions,
   textRows,
+  weatherObservation,
 } from './scenarios';
 
 let handlerCalls = 0;
@@ -26,7 +30,7 @@ const submit = (input: string) => {
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [TextTranscriptComponent],
+  imports: [TextTranscriptComponent, ToolObservationComponent],
   template: `
     <main class="review-shell">
       <header>
@@ -231,6 +235,14 @@ const submit = (input: string) => {
         </section>
         <section class="panel" aria-label="Tools panel">
           <h2>Tools</h2>
+          @if (tool(); as observed) {
+          <threadplane-tool-observation
+            [name]="observed.name"
+            [argumentsText]="observed.argumentsText"
+            [resultText]="observed.resultText"
+            label="Root weather observation"
+          />
+          }
           <div class="fields">
             <div class="field">
               <h3>Tool result</h3>
@@ -290,6 +302,7 @@ class App {
     }
   }
   readonly snapshot = observeAgent(session);
+  readonly tool = computed(() => weatherObservation(this.snapshot()));
   readonly messages = computed(() => this.snapshot().messages);
   readonly rows = computed(() => textRows(this.messages()));
   readonly view = () => display(this.snapshot());

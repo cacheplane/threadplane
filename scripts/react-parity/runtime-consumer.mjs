@@ -135,6 +135,34 @@ export function installedTypeSource(template, kind) {
   const binding = kind === 'react' ? 'useAgent' : 'observeAgent';
   const entry = kind === 'angular' ? './src/runtime-entry.js' : './runtime-entry.js';
   return template.replace('/* BINDING_IMPORT */', `import { ${binding} } from '@threadplane/${kind}';\nimport type { createFixtureSession } from '${entry}';`)
+    .replace(
+      '/* TOOL_OBSERVATION_TYPES */',
+      `${
+        kind === 'react'
+          ? "import type { ToolObservationProps as ObservationProps } from '@threadplane/react/chat';"
+          : "import type { ToolObservationComponent } from '@threadplane/angular/chat';\ntype ObservationProps = { readonly name: ReturnType<ToolObservationComponent['name']>; readonly argumentsText: ReturnType<ToolObservationComponent['argumentsText']>; readonly resultText?: ReturnType<ToolObservationComponent['resultText']>; readonly label?: ReturnType<ToolObservationComponent['label']> };"
+      }
+export function assertToolObservation() {
+  const props: ObservationProps = { name: 'weather', argumentsText: '{"city":', resultText: '', label: 'Scoped weather' };
+  // @ts-expect-error Props remain readonly.
+  props.argumentsText = 'changed';
+  // @ts-expect-error Name is required.
+  const missingName: ObservationProps = { argumentsText: '' };
+  // @ts-expect-error Arguments text is required.
+  const missingArgs: ObservationProps = { name: 'weather' };
+  // @ts-expect-error Structured values require caller formatting.
+  const object: ObservationProps = { name: 'weather', argumentsText: {} };
+  // @ts-expect-error Results must be text.
+  const number: ObservationProps = { name: 'weather', argumentsText: '', resultText: 1 };
+  // @ts-expect-error This is not an execution component.
+  const callback: ObservationProps = { name: 'weather', argumentsText: '', execute: () => undefined };
+  // @ts-expect-error No status inference contract.
+  const status: ObservationProps = { name: 'weather', argumentsText: '', status: 'running' };
+  // @ts-expect-error No session contract.
+  const session: ObservationProps = { name: 'weather', argumentsText: '', session: {} };
+  return [props, missingName, missingArgs, object, number, callback, status, session];
+}`
+    )
     .replace('/* TEXT_TRANSCRIPT_TYPES */', `${kind === 'react' ? "import type { TextTranscriptProps } from '@threadplane/react/chat';\ntype TranscriptRows = TextTranscriptProps['messages'];" : "import type { InputSignal } from '@angular/core';\nimport type { TextTranscriptComponent } from '@threadplane/angular/chat';\ntype TranscriptRows = TextTranscriptComponent['messages'] extends InputSignal<infer Rows> ? Rows : never;"}
 export function assertTextTranscript(messages: readonly Message[]) {
   const narrow = [{ id: 'root', role: 'assistant', content: 'Hello', extra: true }] as const;
@@ -631,11 +659,30 @@ export async function runRuntimeScenarios(directory, kind) {
     await expect(page.getByTestId('history')).toHaveText('[]');
 
     const beforeTool = server.requests.length;
+    await expect(
+      page.getByRole('region', {
+        name: 'Root weather observation',
+        exact: true,
+      })
+    ).toHaveCount(0);
     await page.getByRole('button', { name: 'Tool', exact: true }).click();
     await expect(page.getByTestId('text')).toContainText('20 degrees');
     await expect(page.getByTestId('handler-calls')).toHaveText('1');
     await expect(page.getByTestId('status')).toHaveText('idle');
     assert.deepEqual(JSON.parse(await page.getByTestId('tool').innerText()), [{ id: 'call-weather', name: 'weather', args: { city: 'Paris' }, status: 'complete', result: { city: 'Paris', temperature: 20 } }]);
+    const observation = page.getByRole('region', {
+      name: 'Root weather observation',
+      exact: true,
+    });
+    await expect(observation).toHaveCount(1);
+    assert.equal(await observation.locator('h3').textContent(), 'weather');
+    assert.deepEqual(await observation.locator('pre').allTextContents(), [
+      '{"city":"Paris"}',
+      '{"city":"Paris","temperature":20}',
+    ]);
+    await expect(
+      observation.locator('button, [aria-live], [role="status"]')
+    ).toHaveCount(0);
     assert.equal(server.requests.length - beforeTool, 2, 'tool has exactly one run and one result continuation');
     await expectValues({});
     assert.deepEqual((await children()).map((child) => child.namespace), [['research:one'], ['research:two', 'writer:nested'], ['research:failed']]);

@@ -62,8 +62,32 @@ for (const [name, entry, files] of [
   assert.ok(validatePackage(fixture(t, { manifest, files })).length > 0);
 });
 test('React chat requires its real supported export', () => {
-  assert.throws(() => packageVerifier.assertSupportedExports('react/chat', {}), /TextTranscript/);
-  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/chat', { TextTranscript() { return null; } }));
+  assert.throws(
+    () => packageVerifier.assertSupportedExports('react/chat', {}),
+    /TextTranscript/
+  );
+  assert.throws(
+    () =>
+      packageVerifier.assertSupportedExports('react/chat', {
+        TextTranscript() { return undefined; },
+      }),
+    /ToolObservation/
+  );
+  assert.doesNotThrow(() =>
+    packageVerifier.assertSupportedExports('react/chat', {
+      TextTranscript() { return undefined; },
+      ToolObservation() { return undefined; },
+    })
+  );
+  assert.throws(
+    () =>
+      packageVerifier.assertSupportedExports('react/chat', {
+        TextTranscript() { return undefined; },
+        ToolObservation() { return undefined; },
+        execute() { return undefined; },
+      }),
+    /unexpected/
+  );
 });
 test('React chat still requires import and use client', (t) => {
   for (const entry of [

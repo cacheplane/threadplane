@@ -13,6 +13,7 @@ import type { FixtureTools } from './scenarios';
 
 /* BINDING_IMPORT */
 /* TEXT_TRANSCRIPT_TYPES */
+/* TOOL_OBSERVATION_TYPES */
 
 export function assertSnapshot(snapshot: AgentSnapshot<FixtureTools>) {
   const reasoning: Message['reasoning'] = snapshot.messages[0]?.reasoning;
