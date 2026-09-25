@@ -1,10 +1,13 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "46f2f742c3ecd2180a88c906b604fcca14891a03",
+  "baselineHead": "c32ef55e284afdb493e1d1d9686e85926af404aa",
   "sourceState": {
     "modified": [],
     "untracked": [
-      "libs/ag-ui/src/runtime/subagents.ts"
+      "libs/ag-ui/src/runtime/create-session.ts",
+      "libs/ag-ui/src/runtime/session-attribution.ts",
+      "libs/ag-ui/src/runtime/session-observation.ts",
+      "libs/ag-ui/src/runtime/session-publication.ts"
     ]
   },
   "scope": {
@@ -10635,6 +10638,12 @@
       "sha256": "c830bfa2f0832f4c0ea3dfcc5c64360bfbe067227b60b3b86140dd5a686013cb"
     },
     {
+      "id": "source:libs/ag-ui/src/runtime/create-session.ts",
+      "kind": "source",
+      "path": "libs/ag-ui/src/runtime/create-session.ts",
+      "sha256": "89ea958e5f20415a3962cf535a2f8dd5057bef95f3f68f00e53d77a9b0167298"
+    },
+    {
       "id": "source:libs/ag-ui/src/runtime/encrypted-messages.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/encrypted-messages.ts",
@@ -10645,6 +10654,24 @@
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/reconcile-transcript.ts",
       "sha256": "c2efbe4561a3d348422b144f7ab09656aa85b85771870fff4d4963880b9c6b74"
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/session-attribution.ts",
+      "kind": "source",
+      "path": "libs/ag-ui/src/runtime/session-attribution.ts",
+      "sha256": "19585438111ce137c20c37ec743a8c00f5643da9003a5d3a2b31165eda002e26"
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/session-observation.ts",
+      "kind": "source",
+      "path": "libs/ag-ui/src/runtime/session-observation.ts",
+      "sha256": "17d27bfdf0bc355ac87c5583340a1579a0970fff2ca2cf5f5da256acfba3592d"
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/session-publication.ts",
+      "kind": "source",
+      "path": "libs/ag-ui/src/runtime/session-publication.ts",
+      "sha256": "a09ea3714ceb59a3a7ac2631584df6b884340a226fdef47c14b815c7875ecca7"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/state.ts",
