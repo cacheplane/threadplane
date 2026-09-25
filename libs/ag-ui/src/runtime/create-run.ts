@@ -86,7 +86,7 @@ export function createRun(
         if (closed) return { abort, done };
         physical = request.start(capturedInput, (event) => {
           if (closed) return;
-          const child = typeof event.subagentRunId === 'string';
+          const child = typeof event['subagentRunId'] === 'string';
           const rootLifecycle =
             event.type === EventType.RUN_STARTED ||
             event.type === EventType.RUN_FINISHED ||
@@ -103,7 +103,7 @@ export function createRun(
             event.type === EventType.RUN_STARTED ||
             event.type === EventType.RUN_FINISHED
           ) {
-            if (event.threadId !== threadId || event.runId !== runId) {
+            if (event['threadId'] !== threadId || event['runId'] !== runId) {
               settle({
                 outcome: 'error',
                 error: new Error(
@@ -118,15 +118,15 @@ export function createRun(
             // Copy scalar evidence before application code can mutate the event.
             candidate = {
               outcome: 'error',
-              error: new Error(String(event.message)),
+              error: new Error(String(event['message'])),
             };
           } else if (!admitted) return;
           else if (event.type === EventType.RUN_FINISHED)
-            candidate = finishedResult(event.outcome);
+            candidate = finishedResult(event['outcome']);
           else if (
             !child &&
             event.type === EventType.CUSTOM &&
-            event.name === 'on_interrupt'
+            event['name'] === 'on_interrupt'
           )
             candidate = { outcome: 'paused' };
           try {
