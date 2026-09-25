@@ -14,6 +14,7 @@ import {
 } from './session-observation';
 import { createRun, type RunHandle } from './create-run';
 import { createPublication } from './session-publication';
+import type { InterruptMode } from './interrupt-mode';
 import {
   captureSubmit,
   mergeSubmitState,
@@ -25,6 +26,7 @@ export interface SessionOptions
   readonly threadId: string;
   readonly messages?: readonly Message[] | Transcript;
   readonly state?: unknown;
+  readonly interruptMode?: InterruptMode;
 }
 export interface Session {
   getSnapshot(): SessionSnapshot;
@@ -49,9 +51,17 @@ interface Attempt {
 
 /** Private protocol owner. This does not yet implement core AgentSession. */
 export function createSession(options: SessionOptions): Session {
-  const { threadId, url, headers, fetch, messages, state } = options;
+  const {
+    threadId,
+    url,
+    headers,
+    fetch,
+    messages,
+    state,
+    interruptMode = 'native',
+  } = options;
   if (!threadId) throw new TypeError('A nonempty threadId is required');
-  const factory = createRun({ url, headers, fetch });
+  const factory = createRun({ url, headers, fetch, interruptMode });
   const publication = createPublication(initialObservation(messages, state));
   let active: Attempt | undefined;
   let disposed = false;
@@ -110,7 +120,8 @@ export function createSession(options: SessionOptions): Session {
           // BaseEvent callback. No second schema parse or sequence verifier.
           const next = applyObservation(
             publication.getSnapshot(),
-            event as AGUIEvent
+            event as AGUIEvent,
+            interruptMode
           );
           if (current(attempt)) publication.publish(next);
         },

@@ -33,10 +33,14 @@ Use each enabled control in order:
 1. **First** submits `model: review-small`, `reasoning_effort: low`, and
    `gen_ui_mode: inline`. A server delta replaces that submitted effort with
    `high` and adds `count: 1`, alongside a worker start and raw partial arguments.
+   Both diagnostic views show a literal `legacyInterrupt` notice and no terminal;
+   the response remains open in the default native mode.
 2. **Remove React**, then **Advance first**. Angular receives the completed weather
    arguments, tool result, `Hello`, an authoritative snapshot containing only
-   `count: 2`, a suspended child, and a root pause.
-3. **Mount React** reconnects observation without a request.
+   `count: 2`, a suspended child, and a native root interrupt terminal. Angular
+   retains the earlier custom notice beside that terminal.
+3. **Mount React** reconnects observation without a request and displays both the
+   retained notice and native terminal.
 4. **Second** sends full prior native history with `count: 2` and new settings
    `model: review-large`, `reasoning_effort: medium`, `gen_ui_mode: panel`, then
    shows `Next answer`. Its server snapshot again keeps only `count: 2`.
@@ -60,6 +64,14 @@ document before dispatch. They supply the baseline for native deltas; later
 server snapshots can remove them. Stop or failure retains admitted local data
 without claiming remote persistence. The server's expected settings are fixed
 independently of the request body.
+
+Native custom notices are evidence, not terminal pauses or actionable decisions.
+This fixture waits for the later native terminal. A notice-only native stream
+ending at EOF would be `interrupted`; local cancellation can be `aborted` even
+after terminal evidence was observed. Explicit private `legacy-observation` mode
+retains the older close-at-notice convention but supplies no resume capability.
+Ordinary submission remains caller-controlled and does not prove a possible
+server pause was safely resolved. No provider resume compatibility is claimed.
 
 For automated verification, use existing Playwright Chromium (install it once
 with `npx playwright install chromium`, or `--with-deps chromium` on Linux):

@@ -243,6 +243,12 @@ export async function createReviewServer({ bundle, provenance }) {
               toolCallId: `${input.runId}-call`,
               delta: '{"city":',
             },
+            {
+              type: 'CUSTOM',
+              name: 'on_interrupt',
+              value: 'Approve the weather lookup',
+              metadata: { source: 'review-notice' },
+            },
           ]);
         } else {
           const content = {

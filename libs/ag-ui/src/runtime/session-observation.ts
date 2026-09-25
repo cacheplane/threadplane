@@ -20,6 +20,14 @@ import { applyActivityMessage } from './activity-messages';
 import { applyEncryptedValue } from './encrypted-messages';
 import { copyData } from '../lib/internal/copy-data';
 import { assertAttribution } from './session-attribution';
+import {
+  isLegacyInterruptTerminal,
+  type InterruptMode,
+} from './interrupt-mode';
+
+export type OwnedLegacyInterrupt = DeepReadonly<
+  Pick<CustomEvent, 'type' | 'name' | 'value' | 'timestamp' | 'metadata'>
+>;
 
 export type OwnedRootTerminal = DeepReadonly<
   | Pick<
@@ -44,6 +52,7 @@ export interface SessionSnapshot {
     readonly id: string;
     readonly outcome?: CompleteOutcome;
     readonly terminal?: OwnedRootTerminal;
+    readonly legacyInterrupt?: OwnedLegacyInterrupt;
   };
 }
 /** Session policy, not an SDK guarantee: identifiers are global in history. */
@@ -79,7 +88,8 @@ export function initialObservation(
  * projection in this slice. Child state still updates the one shared document. */
 export function applyObservation(
   previous: SessionSnapshot,
-  event: AGUIEvent
+  event: AGUIEvent,
+  interruptMode: InterruptMode = 'native'
 ): SessionSnapshot {
   assertAttribution(previous.transcript, event);
   let { transcript, state, subagents, run } = previous;
@@ -153,10 +163,18 @@ export function applyObservation(
         const { value } = event;
         selected = { type, name: name as string, value, ...common };
       }
-      run = Object.freeze({
-        ...run,
-        terminal: copyData(selected, true) as OwnedRootTerminal,
-      });
+      const owned = copyData(selected, true) as OwnedRootTerminal;
+      run = Object.freeze(
+        type === 'CUSTOM'
+          ? {
+              ...run,
+              legacyInterrupt: owned as OwnedLegacyInterrupt,
+              ...(isLegacyInterruptTerminal(event, interruptMode) && {
+                terminal: owned,
+              }),
+            }
+          : { ...run, terminal: owned }
+      );
       break;
     }
   }

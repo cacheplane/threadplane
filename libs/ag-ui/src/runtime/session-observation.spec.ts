@@ -13,6 +13,58 @@ const running = (): SessionSnapshot =>
     run: Object.freeze({ id: 'run' }),
   });
 describe('private session observation', () => {
+  it('owns literal native notices separately and preserves them beside later terminal evidence', () => {
+    const previous = running();
+    const event = {
+      type: E.CUSTOM as const,
+      name: 'on_interrupt',
+      value: { nested: [1], responseSchema: '{not parsed}' },
+      metadata: { detail: [2] },
+      timestamp: 3,
+    };
+    const observed = applyObservation(previous, event);
+    expect(observed.run?.terminal).toBeUndefined();
+    expect(observed.run?.legacyInterrupt).toEqual(event);
+    event.value.nested.push(99);
+    event.metadata.detail.push(99);
+    expect(observed.run?.legacyInterrupt).toEqual({
+      type: E.CUSTOM,
+      name: 'on_interrupt',
+      value: { nested: [1], responseSchema: '{not parsed}' },
+      metadata: { detail: [2] },
+      timestamp: 3,
+    });
+    expect(Object.isFrozen(observed.run?.legacyInterrupt?.value)).toBe(true);
+    expect(
+      Object.isFrozen(observed.run?.legacyInterrupt?.metadata?.['detail'])
+    ).toBe(true);
+    expect(Object.isFrozen(event.value)).toBe(false);
+    expect(previous.run?.legacyInterrupt).toBeUndefined();
+    const terminal = {
+      type: E.RUN_FINISHED as const,
+      threadId: 'thread',
+      runId: 'run',
+      outcome: { type: 'success' as const },
+    };
+    const finished = applyObservation(observed, terminal);
+    expect(finished.run?.terminal).toEqual(terminal);
+    expect(finished.run?.legacyInterrupt).toBe(observed.run?.legacyInterrupt);
+    expect(finished.state).toBe(previous.state);
+    expect(finished.transcript).toBe(previous.transcript);
+    expect(observed.run?.terminal).toBeUndefined();
+  });
+  it('explicit legacy observation shares one selected immutable object between notice and terminal', () => {
+    const event = {
+      type: E.CUSTOM as const,
+      name: 'on_interrupt',
+      value: '{literal}',
+      metadata: { detail: [1] },
+    };
+    const value = applyObservation(running(), event, 'legacy-observation');
+    expect(value.run?.legacyInterrupt).toEqual(event);
+    expect(value.run?.legacyInterrupt).toBe(value.run?.terminal);
+    expect(value.run?.legacyInterrupt?.value).toBe('{literal}');
+  });
   it.each([null, false, 0])(
     'owns initial inputs and preserves literal %s state',
     (state) => {
@@ -152,11 +204,15 @@ describe('private session observation', () => {
     'owns selected root terminal fields without settling $type',
     (event) => {
       const previous = running();
-      const value = applyObservation(previous, {
-        ...event,
-        rawEvent: new Error('raw'),
-        extension: () => undefined,
-      } as AGUIEvent);
+      const value = applyObservation(
+        previous,
+        {
+          ...event,
+          rawEvent: new Error('raw'),
+          extension: () => undefined,
+        } as AGUIEvent,
+        'legacy-observation'
+      );
       expect(value.run?.terminal).toEqual(event);
       expect(value.run?.terminal).not.toBe(event);
       expect(value.run?.outcome).toBeUndefined();

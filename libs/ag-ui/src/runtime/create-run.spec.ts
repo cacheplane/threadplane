@@ -704,7 +704,10 @@ describe('private run authority', () => {
   ]) {
     it(`captures ${terminal.type} authority before callback mutation`, async () => {
       const server = await serve();
-      const handle = createRun({ url: server.url }).start(input(), (event) => {
+      const handle = createRun({
+        url: server.url,
+        interruptMode: 'legacy-observation',
+      }).start(input(), (event) => {
         event.threadId = 'mutated';
         event.runId = 'mutated';
         event.message = 'mutated';
@@ -828,11 +831,13 @@ describe('private run authority', () => {
       const events: BaseEvent[] = [];
       const external = new AbortController();
       const remove = vi.spyOn(external.signal, 'removeEventListener');
-      const handle = createRun({ url: server.url }).start(
-        input(),
-        (event) => events.push(event),
-        external.signal
-      );
+      const handle = createRun({
+        url: server.url,
+        interruptMode:
+          scenario.name === 'legacy pause before finish'
+            ? 'legacy-observation'
+            : 'native',
+      }).start(input(), (event) => events.push(event), external.signal);
       try {
         const exchange = await server.next();
         exchange.send(...scenario.events);
