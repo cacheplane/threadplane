@@ -8,11 +8,13 @@
     "lib": ["es2022", "dom"],
     "types": []
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "chat/src/**/*.ts"],
   "exclude": [
     "src/**/*.spec.ts",
     "src/**/*.test.ts",
     "src/**/*.type-test.ts",
+    "chat/src/**/*.spec.ts",
+    "chat/src/**/*.type-test.ts",
     "src/test-setup.ts"
   ]
 }

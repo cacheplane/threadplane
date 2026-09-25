@@ -416,10 +416,14 @@ test('compiled entry resolution follows actual package exports and rejects missi
         join(folder, 'package.json'),
         JSON.stringify({
           name: `@threadplane/${name}`,
-          exports: { '.': { default: `./${entry}` } },
+          exports: {
+            '.': { default: `./${entry}` },
+            ...(name === 'core' ? {} : { './chat': { default: './chat.js' } }),
+          },
         })
       );
       writeFileSync(join(folder, entry), 'export {};');
+      if (name !== 'core') writeFileSync(join(folder, 'chat.js'), 'export {};');
     }
     const artifacts = resolveArtifacts(root);
     assert.equal(
@@ -430,6 +434,17 @@ test('compiled entry resolution follows actual package exports and rejects missi
       artifacts['@threadplane/angular'],
       join(root, 'dist/libs/angular/fesm2022/threadplane-angular.mjs')
     );
+    assert.equal(
+      artifacts['@threadplane/react/chat'],
+      join(root, 'dist/libs/react/chat.js')
+    );
+    assert.equal(
+      artifacts['@threadplane/angular/chat'],
+      join(root, 'dist/libs/angular/chat.js')
+    );
+    rmSync(artifacts['@threadplane/angular/chat']);
+    assert.throws(() => resolveArtifacts(root), /prebuilt angular/);
+    writeFileSync(artifacts['@threadplane/angular/chat'], 'export {};');
     rmSync(artifacts['@threadplane/react']);
     assert.throws(() => resolveArtifacts(root), /prebuilt/);
   } finally {

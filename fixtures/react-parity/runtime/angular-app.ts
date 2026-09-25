@@ -1,6 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { observeAgent } from '@threadplane/angular';
+import { TextTranscriptComponent } from '@threadplane/angular/chat';
 import { createFixtureSession } from './runtime-entry.js';
 import {
   attachOwner,
@@ -9,6 +10,7 @@ import {
   reviewInstructions,
   reviewResponse,
   reviewRunOptions,
+  textRows,
 } from './scenarios';
 
 let handlerCalls = 0;
@@ -24,6 +26,7 @@ const submit = (input: string) => {
 @Component({
   selector: 'app-root',
   standalone: true,
+  imports: [TextTranscriptComponent],
   template: `
     <main class="review-shell">
       <header>
@@ -68,7 +71,7 @@ const submit = (input: string) => {
           <div class="state-grid">
             <div class="field">
               <h3>Status</h3>
-              <output aria-label="Status" data-testid="status">{{
+              <output role="status" aria-label="Status" data-testid="status">{{
                 snapshot().status
               }}</output>
             </div>
@@ -160,6 +163,7 @@ const submit = (input: string) => {
         </section>
         <section class="panel" aria-label="Conversation panel">
           <h2>Conversation</h2>
+          <threadplane-text-transcript [messages]="rows()" />
           <div class="fields">
             <div class="field">
               <h3>Text</h3>
@@ -286,6 +290,8 @@ class App {
     }
   }
   readonly snapshot = observeAgent(session);
+  readonly messages = computed(() => this.snapshot().messages);
+  readonly rows = computed(() => textRows(this.messages()));
   readonly view = () => display(this.snapshot());
   readonly handlerCalls = () => handlerCalls;
   readonly submissions = () => submissions;

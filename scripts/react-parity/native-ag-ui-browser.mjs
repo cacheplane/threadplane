@@ -21,6 +21,14 @@ export async function verifyBrowser(browser, server) {
   const state = () => page.locator('#state').innerText().then(JSON.parse);
   const view = (name) =>
     page.locator(`[data-view="${name}"]`).innerText().then(JSON.parse);
+  const conversation = (name) =>
+    page.getByRole('region', { name: `${name} conversation`, exact: true });
+  const text = async (name, rows) => {
+    await expect(conversation(name).locator('li p')).toHaveText(rows);
+    await expect(
+      conversation(name).locator('[role="log"], [aria-live], [tabindex]')
+    ).toHaveCount(0);
+  };
   const ready = async () => {
     await expect.poll(async () => (await state()).busy).toBe(false);
     assert.equal((await state()).failure, '');
@@ -49,6 +57,9 @@ export async function verifyBrowser(browser, server) {
   assert.equal(requests().length, 0);
   assert.deepEqual(initial.a.transcript, []);
   assert.deepEqual(initial.b.transcript, []);
+  await text('React A', []);
+  await text('Angular A', []);
+  await text('React B', []);
   await click('First');
   const partial = await shared();
   const tool = partial.a.transcript.find(
@@ -59,12 +70,23 @@ export async function verifyBrowser(browser, server) {
   assert.equal(partial.a.subagents[0].started.name, 'Worker');
   assert.equal(partial.a.subagents[0].terminal, undefined);
   assert.equal(partial.a.toolCalls, undefined);
+  await text('React A', ['First']);
+  await text('Angular A', ['First']);
+  const oldReactRow = await conversation('React A')
+    .locator('li')
+    .first()
+    .elementHandle();
+  const oldAngularRow = await conversation('Angular A')
+    .locator('li')
+    .first()
+    .elementHandle();
   await expect(page.locator('[data-view="react-a"]')).toContainText('weather');
   await expect(page.locator('[data-view="angular-a"]')).toContainText(
     'weather'
   );
   await click('Remove React');
   await expect(page.locator('[data-view="react-a"]')).toHaveCount(0);
+  assert.equal(await oldReactRow.evaluate((node) => node.isConnected), false);
   assert.equal(requests()[0].closed, false);
   await click('Advance first');
   const paused = await state();
@@ -80,15 +102,52 @@ export async function verifyBrowser(browser, server) {
   assert.deepEqual(await view('angular-a'), paused.a);
   await expect(page.locator('[data-view="angular-a"]')).toContainText('Hello');
   assert.equal(requests()[0].closed, true);
+  await text('Angular A', ['First']);
+  assert.equal(
+    await oldAngularRow.evaluate(
+      (node) =>
+        node ===
+        document.querySelector(
+          'section[aria-label="Angular A conversation"] li'
+        )
+    ),
+    true
+  );
   await click('Mount React');
   await shared();
   assert.equal(requests().length, 1);
+  await text('React A', ['First']);
+  assert.equal(
+    await oldReactRow.evaluate(
+      (node) =>
+        node ===
+        document.querySelector('section[aria-label="React A conversation"] li')
+    ),
+    false
+  );
+  const mountedReactRow = await conversation('React A')
+    .locator('li')
+    .first()
+    .elementHandle();
   await click('Second');
   const second = await shared();
   assert.equal(second.a.transcript.at(-1).content, 'Next answer');
   assert.equal(requests().length, 2);
+  await text('React A', ['First', 'Second', 'Next answer']);
+  await text('Angular A', ['First', 'Second', 'Next answer']);
+  assert.equal(
+    await oldAngularRow.evaluate(
+      (node) =>
+        node ===
+        document.querySelector(
+          'section[aria-label="Angular A conversation"] li'
+        )
+    ),
+    true
+  );
   await click('Remove Angular');
   await expect(page.locator('[data-view="angular-a"]')).toHaveCount(0);
+  assert.equal(await oldAngularRow.evaluate((node) => node.isConnected), false);
   assert.equal(requests()[1].closed, false);
   await click('Complete second');
   const completed = await state();
@@ -98,9 +157,28 @@ export async function verifyBrowser(browser, server) {
     'Next answer'
   );
   assert.equal(requests()[1].closed, true);
+  assert.equal(
+    await mountedReactRow.evaluate(
+      (node) =>
+        node ===
+        document.querySelector('section[aria-label="React A conversation"] li')
+    ),
+    true
+  );
   await click('Mount Angular');
   await shared();
   assert.equal(requests().length, 2);
+  await text('Angular A', ['First', 'Second', 'Next answer']);
+  assert.equal(
+    await oldAngularRow.evaluate(
+      (node) =>
+        node ===
+        document.querySelector(
+          'section[aria-label="Angular A conversation"] li'
+        )
+    ),
+    false
+  );
   const beforeOther = (await state()).a;
   await click('Start other');
   const other = await state();
@@ -108,6 +186,7 @@ export async function verifyBrowser(browser, server) {
   assert.deepEqual(other.b.state, { count: 99 });
   assert.equal(other.b.transcript.at(-1).content, 'Other answer');
   assert.deepEqual(await view('react-b'), other.b);
+  await text('React B', ['Other', 'Other answer']);
   await click('Cancelable');
   const active = await shared();
   assert.deepEqual(active.a.state, { count: 3 });
@@ -132,6 +211,20 @@ export async function verifyBrowser(browser, server) {
   assert.deepEqual(await view('react-b'), final.b);
   assert.equal(final.otherCurrent, true);
   assert.equal(final.nextAction, 'Complete');
+  await text('React A', [
+    'First',
+    'Second',
+    'Next answer',
+    'Cancelable',
+    'Cancelable answer',
+  ]);
+  await text('Angular A', [
+    'First',
+    'Second',
+    'Next answer',
+    'Cancelable',
+    'Cancelable answer',
+  ]);
   await expect
     .poll(
       () =>

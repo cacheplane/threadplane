@@ -47,9 +47,9 @@ export function validatePackage(directory, { angularTransitions = angularTransit
     const metadataAsset = metadataExport(subpath, entry);
     if (!conditions || typeof conditions !== 'object' || Array.isArray(conditions) || !Object.keys(conditions).length) { errors.push(`${subpath}: invalid export conditions.`); continue; }
     if (scaffold && !metadataAsset) {
-      // ng-packagr's APF root uses types/default, without an import condition.
-      const angularRoot = project === 'angular' && subpath === '.';
-      if (!conditions.types || !conditions.default || (!angularRoot && !conditions.import)) errors.push(`${subpath}: requires ${angularRoot ? 'types and default' : 'types, import and default'} export conditions.`);
+      // ng-packagr APF root and real secondary entries use types/default.
+      const angularEntry = project === 'angular';
+      if (!conditions.types || !conditions.default || (!angularEntry && !conditions.import)) errors.push(`${subpath}: requires ${angularEntry ? 'types and default' : 'types, import and default'} export conditions.`);
     }
     for (const [condition, target] of Object.entries(conditions)) {
       if (typeof target !== 'string' || !target.startsWith('./') || !resolve(directory, target).startsWith(resolve(directory) + sep)) { errors.push(`${subpath}: invalid export target ${target}`); continue; }
@@ -165,6 +165,12 @@ export function assertParserFreeInputs(inputs) {
   if (found.length) throw new Error(`Framework root includes content parser inputs: ${found.join(', ')}`);
 }
 
+export function assertHeadlessInputs(inputs) {
+  assertParserFreeInputs(inputs);
+  const chat = Object.keys(inputs).filter((path) => /@threadplane\/(?:react\/src\/chat\/|angular\/fesm2022\/threadplane-angular-chat\.mjs)/.test(path.replaceAll('\\', '/')));
+  if (chat.length) throw new Error(`Headless framework root includes chat components: ${chat.join(', ')}`);
+}
+
 function verifyPlainExports(root, consumer, projects) {
   const specifiers = projects.flatMap((project) => consumerSpecifiers(JSON.parse(readFileSync(join(consumer, 'node_modules/@threadplane', project, 'package.json'), 'utf8'))));
   writeFileSync(join(consumer, 'index.mjs'), `${assertSupportedExports.toString()}\n` + specifiers.map((specifier) => `assertSupportedExports(${JSON.stringify(specifier.slice('@threadplane/'.length))}, await import(${JSON.stringify(specifier)}));`).join('\n'));
@@ -176,7 +182,7 @@ function verifyPlainExports(root, consumer, projects) {
 }
 
 export function assertSupportedExports(project, entry) {
-  const expected = { core: ['completeDelivery', 'streamingDelivery', 'staticDelivery', 'projectAgentError'], react: ['useAgent'] }[project] ?? [];
+  const expected = { core: ['completeDelivery', 'streamingDelivery', 'staticDelivery', 'projectAgentError'], react: ['useAgent'], 'react/chat': ['TextTranscript'] }[project] ?? [];
   for (const name of expected) if (typeof entry[name] !== 'function') throw new Error(`${project} missing supported contract ${name}`);
 }
 
@@ -198,7 +204,7 @@ export async function verifyPackedConsumers(root = process.cwd()) {
     const count = verifyPlainExports(root, plain, Object.keys(tarballs).map((name) => name.slice('@threadplane/'.length)));
     writeFileSync(join(plain, 'react-root.mjs'), "import * as react from '@threadplane/react';\nconsole.log(Object.keys(react));\n");
     const bundle = buildSync({ absWorkingDir: plain, entryPoints: [join(plain, 'react-root.mjs')], bundle: true, platform: 'browser', format: 'esm', write: false, metafile: true });
-    assertParserFreeInputs(bundle.metafile.inputs);
+    assertHeadlessInputs(bundle.metafile.inputs);
     console.log(`React development root-import probe (unminified, separate from the production app): ${Object.keys(bundle.metafile.inputs).length} inputs, ${bundle.outputFiles[0].contents.length} bytes, no content parsers. Inputs: ${Object.keys(bundle.metafile.inputs).join(', ')}.`);
     prepareInstalledTypes(root, plain, 'react');
     await prepareRuntimeConsumer(root, plain, 'react');

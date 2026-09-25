@@ -131,6 +131,11 @@ export type FixtureSnapshot = AgentSnapshot<FixtureTools> & {
   readonly interrupts: readonly FixtureInterrupt[];
 };
 
+/** View selection only; the session retains canonical history for requests. */
+export function textRows(messages: readonly Message[]) {
+  return messages.filter((message) => message.role === 'user' || message.role === 'assistant');
+}
+
 export function display(snapshot: FixtureSnapshot) {
   const assistant = snapshot.messages.filter(
     (message) => message.role === 'assistant'

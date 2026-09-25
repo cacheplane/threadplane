@@ -1,16 +1,31 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "d613fee59c3db7d34b5e7f9fe5dc52bfb66b9245",
+  "baselineHead": "eae3d0c008062258bb3df55b03479e9acb9d76ae",
   "sourceState": {
     "modified": [
-      ".github/workflows/ci.yml"
+      "libs/angular/README.md",
+      "libs/angular/package.json",
+      "libs/angular/tsconfig.lib.json",
+      "libs/angular/tsconfig.spec.json",
+      "libs/angular/vite.config.mts",
+      "libs/react/README.md",
+      "libs/react/package.json",
+      "tsconfig.base.json"
     ],
-    "untracked": []
+    "untracked": [
+      "libs/ag-ui/src/runtime/text-transcript.ts",
+      "libs/angular/chat/ng-package.json",
+      "libs/angular/chat/src/public-api.ts",
+      "libs/angular/chat/src/text-transcript.component.ts",
+      "libs/react/src/chat/index.ts",
+      "libs/react/src/chat/text-transcript.tsx"
+    ]
   },
   "scope": {
     "libraries": [
       "a2ui",
       "ag-ui",
+      "angular",
       "chat",
       "cockpit-registry",
       "cockpit-runtime-bridge",
@@ -21,6 +36,7 @@
       "example-layouts",
       "langgraph",
       "middleware",
+      "react",
       "render",
       "telemetry",
       "ui-react",
@@ -29,11 +45,15 @@
     "entryPoints": [
       "libs/a2ui/src/index.ts",
       "libs/ag-ui/src/public-api.ts",
+      "libs/angular/src/public-api.ts",
+      "libs/angular/chat/src/public-api.ts",
       "libs/chat/src/public-api.ts",
       "libs/chat/debug/public-api.ts",
       "libs/chat/testing/public-api.ts",
       "libs/langgraph/src/public-api.ts",
       "libs/middleware/src/langgraph/index.ts",
+      "libs/react/src/index.ts",
+      "libs/react/src/chat/index.ts",
       "libs/render/src/public-api.ts",
       "libs/telemetry/src/index.ts",
       "libs/telemetry/src/browser/public-api.ts",
@@ -235,6 +255,66 @@
       "kind": "asset",
       "path": "libs/ag-ui/tsconfig.type-tests.json",
       "sha256": "c178776b9c33a23d56c7c6bb2bf99caedd3f05b1b3de0ebe5ec46076f9ff0ba6"
+    },
+    {
+      "id": "asset:libs/angular/LICENSE.md",
+      "kind": "asset",
+      "path": "libs/angular/LICENSE.md",
+      "sha256": "d20c571ef693b2ea2e1c552d688d596804d64795aee4c941ab12a21e01752ba4"
+    },
+    {
+      "id": "asset:libs/angular/README.md",
+      "kind": "asset",
+      "path": "libs/angular/README.md",
+      "sha256": "e9ca6d6b01ea37d427a604a433e8d195a6f7af5bb189f231064392835f20b0a7"
+    },
+    {
+      "id": "asset:libs/angular/chat/ng-package.json",
+      "kind": "asset",
+      "path": "libs/angular/chat/ng-package.json",
+      "sha256": "c83be3fa51ce104435831c59caa9a2d3e8c2d76d6e6f4ffdbc42d721f014ab04"
+    },
+    {
+      "id": "asset:libs/angular/ng-package.json",
+      "kind": "asset",
+      "path": "libs/angular/ng-package.json",
+      "sha256": "835e5ab8b39be5585a7078606b43340fbc3ed77fa5918630da3afb4a57a3559e"
+    },
+    {
+      "id": "asset:libs/angular/package.json",
+      "kind": "asset",
+      "path": "libs/angular/package.json",
+      "sha256": "df2c6a31cfc63e188cc54ba1678db4456cf045cbd2fbefd9250546986afd1657"
+    },
+    {
+      "id": "asset:libs/angular/project.json",
+      "kind": "asset",
+      "path": "libs/angular/project.json",
+      "sha256": "70535a8222da9e99a4f0627cbb4039b5dc7f78cbea1136c3ee42503b0174177f"
+    },
+    {
+      "id": "asset:libs/angular/tsconfig.json",
+      "kind": "asset",
+      "path": "libs/angular/tsconfig.json",
+      "sha256": "5c2892c801d90fb5553a8aacd6e17b60da16fe3f86f95c886b8833e69c42dc5f"
+    },
+    {
+      "id": "asset:libs/angular/tsconfig.lib.json",
+      "kind": "asset",
+      "path": "libs/angular/tsconfig.lib.json",
+      "sha256": "12cb1bb81a90e053d2fdd28502273d1e9309c1997c0828f513b2244602cb838d"
+    },
+    {
+      "id": "asset:libs/angular/tsconfig.lib.prod.json",
+      "kind": "asset",
+      "path": "libs/angular/tsconfig.lib.prod.json",
+      "sha256": "f49940b81b527d663f7dcb27fcb91dd9ab3e01338a04370927a27836473718f0"
+    },
+    {
+      "id": "asset:libs/angular/tsconfig.spec.json",
+      "kind": "asset",
+      "path": "libs/angular/tsconfig.spec.json",
+      "sha256": "cb8e1041214006b39909e6043d8273ce173a2332c56ad77bc62200064a61a2dc"
     },
     {
       "id": "asset:libs/chat/CHANGELOG.md",
@@ -681,6 +761,48 @@
       "sha256": "9a15688caeaea6c7159bdbff2a3bd53dd09dc6ffbe35b40f14d67b961567715c"
     },
     {
+      "id": "asset:libs/react/LICENSE.md",
+      "kind": "asset",
+      "path": "libs/react/LICENSE.md",
+      "sha256": "d20c571ef693b2ea2e1c552d688d596804d64795aee4c941ab12a21e01752ba4"
+    },
+    {
+      "id": "asset:libs/react/README.md",
+      "kind": "asset",
+      "path": "libs/react/README.md",
+      "sha256": "fd4117b2f03dae11b482fada15a9e0344ab3a086cf46389d09523bf19e31897d"
+    },
+    {
+      "id": "asset:libs/react/package.json",
+      "kind": "asset",
+      "path": "libs/react/package.json",
+      "sha256": "366ba6527b8e3164d91fdced7dba450fe67230fc493b8b3f2dcdb388b274daf7"
+    },
+    {
+      "id": "asset:libs/react/project.json",
+      "kind": "asset",
+      "path": "libs/react/project.json",
+      "sha256": "42c1c5b710f0d74648825ad0608db0297029730289881f242a063a88317ba039"
+    },
+    {
+      "id": "asset:libs/react/tsconfig.json",
+      "kind": "asset",
+      "path": "libs/react/tsconfig.json",
+      "sha256": "b5a277d88ec22046ce7be00a92aede0bdb628b8a3fd645a741addc7a5d82418b"
+    },
+    {
+      "id": "asset:libs/react/tsconfig.lib.json",
+      "kind": "asset",
+      "path": "libs/react/tsconfig.lib.json",
+      "sha256": "abb746233f5f420e91cc5d1406833195b07adc1898398968150cc33790352dae"
+    },
+    {
+      "id": "asset:libs/react/tsconfig.spec.json",
+      "kind": "asset",
+      "path": "libs/react/tsconfig.spec.json",
+      "sha256": "446c935b1170a5b79e0c37f24a946dd734d0a21d504743d65e46307e2814b92f"
+    },
+    {
       "id": "asset:libs/render/LICENSE.md",
       "kind": "asset",
       "path": "libs/render/LICENSE.md",
@@ -847,6 +969,16 @@
       "kind": "asset",
       "path": "libs/workspace-react/tsconfig.lib.json",
       "sha256": "7b1c282944428eef146c336541cd5c6ac8e6b1cc4c6452ab39a55481896d6be0"
+    },
+    {
+      "id": "component:libs/angular/chat/src/text-transcript.component.ts#TextTranscriptComponent",
+      "kind": "component",
+      "path": "libs/angular/chat/src/text-transcript.component.ts",
+      "symbol": "TextTranscriptComponent",
+      "decorators": [
+        "Component"
+      ],
+      "signature": "@Component({\n    selector: 'threadplane-text-transcript',\n    standalone: true,\n    changeDetection: ChangeDetectionStrategy.OnPush,\n    template: `\n    <section [attr.aria-label]=\"label()\">\n      <!-- Explicit role preserves list semantics when markers are hidden in WebKit. -->\n      <ol role=\"list\">\n        @for (message of messages(); track message.id) {\n        <li>\n          <span>{{ speakers[message.role] }}</span>\n          <p>{{ message.content }}</p>\n        </li>\n        }\n      </ol>\n    </section>\n  `,\n    styles: `\n    :host { display: block; color: var(--ds-text-primary, #142435); font-family: inherit; }\n    ol { margin: 0; padding: 0; list-style: none; }\n    li { margin-block: 1rem; }\n    span { font-weight: 600; }\n    p { margin-block: .25rem; white-space: pre-wrap; overflow-wrap: anywhere; }\n  `,\n})\nexport class TextTranscriptComponent {\n    readonly messages = input.required<readonly Pick<Message, 'id' | 'role' | 'content'>[]>();\n    readonly label = input('Conversation');\n    protected readonly speakers = {\n        user: 'User',\n        assistant: 'Assistant',\n        system: 'System',\n        tool: 'Tool',\n    };\n}"
     },
     {
       "id": "component:libs/chat/debug/src/lib/compositions/chat-debug/chat-debug.component.ts#ChatDebugComponent",
@@ -1962,7 +2094,7 @@
       "id": "config:tsconfig.base.json",
       "kind": "config",
       "path": "tsconfig.base.json",
-      "sha256": "0948b24b699da2cd2e4bc61f35a0340d25dd21300245b9c04aabadaa32c48fdd"
+      "sha256": "b0e1c1319ee03580e9de9b629ba430fa6dd111ba4c434e14c335e8ac08c94d6e"
     },
     {
       "id": "doc:apps/website/content/docs/a2ui/getting-started/introduction.mdx",
@@ -2743,6 +2875,16 @@
       "path": "libs/ag-ui/src/public-api.ts"
     },
     {
+      "id": "entry:libs/angular/chat/src/public-api.ts",
+      "kind": "entry",
+      "path": "libs/angular/chat/src/public-api.ts"
+    },
+    {
+      "id": "entry:libs/angular/src/public-api.ts",
+      "kind": "entry",
+      "path": "libs/angular/src/public-api.ts"
+    },
+    {
       "id": "entry:libs/chat/debug/public-api.ts",
       "kind": "entry",
       "path": "libs/chat/debug/public-api.ts"
@@ -2766,6 +2908,16 @@
       "id": "entry:libs/middleware/src/langgraph/index.ts",
       "kind": "entry",
       "path": "libs/middleware/src/langgraph/index.ts"
+    },
+    {
+      "id": "entry:libs/react/src/chat/index.ts",
+      "kind": "entry",
+      "path": "libs/react/src/chat/index.ts"
+    },
+    {
+      "id": "entry:libs/react/src/index.ts",
+      "kind": "entry",
+      "path": "libs/react/src/index.ts"
     },
     {
       "id": "entry:libs/render/src/public-api.ts",
@@ -3975,6 +4127,34 @@
           "symbol": "RuntimeOperationFailureReporter",
           "syntaxKind": "TypeAliasDeclaration",
           "signature": "export type RuntimeOperationFailureReporter = (code: 'unauthorized' | 'network_blocked') => void;"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/angular/chat/src/public-api.ts#TextTranscriptComponent",
+      "kind": "export",
+      "path": "libs/angular/chat/src/public-api.ts",
+      "symbol": "TextTranscriptComponent",
+      "declarations": [
+        {
+          "path": "libs/angular/chat/src/text-transcript.component.ts",
+          "symbol": "TextTranscriptComponent",
+          "syntaxKind": "ClassDeclaration",
+          "signature": "@Component({\n    selector: 'threadplane-text-transcript',\n    standalone: true,\n    changeDetection: ChangeDetectionStrategy.OnPush,\n    template: `\n    <section [attr.aria-label]=\"label()\">\n      <!-- Explicit role preserves list semantics when markers are hidden in WebKit. -->\n      <ol role=\"list\">\n        @for (message of messages(); track message.id) {\n        <li>\n          <span>{{ speakers[message.role] }}</span>\n          <p>{{ message.content }}</p>\n        </li>\n        }\n      </ol>\n    </section>\n  `,\n    styles: `\n    :host { display: block; color: var(--ds-text-primary, #142435); font-family: inherit; }\n    ol { margin: 0; padding: 0; list-style: none; }\n    li { margin-block: 1rem; }\n    span { font-weight: 600; }\n    p { margin-block: .25rem; white-space: pre-wrap; overflow-wrap: anywhere; }\n  `,\n})\nexport class TextTranscriptComponent {\n    readonly messages = input.required<readonly Pick<Message, 'id' | 'role' | 'content'>[]>();\n    readonly label = input('Conversation');\n    protected readonly speakers = {\n        user: 'User',\n        assistant: 'Assistant',\n        system: 'System',\n        tool: 'Tool',\n    };\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#observeAgent",
+      "kind": "export",
+      "path": "libs/angular/src/public-api.ts",
+      "symbol": "observeAgent",
+      "declarations": [
+        {
+          "path": "libs/angular/src/observe-agent.ts",
+          "symbol": "observeAgent",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function observeAgent<TSnapshot>(session: {\n    getSnapshot(): TSnapshot;\n    subscribe(notify: () => void): () => void;\n}): Signal<TSnapshot> {\n    const destroyRef = inject(DestroyRef);\n    const snapshot = signal(session.getSnapshot());\n    const release = session.subscribe(() => snapshot.set(session.getSnapshot()));\n    destroyRef.onDestroy(release);\n    return snapshot.asReadonly();\n}"
         }
       ]
     },
@@ -9161,6 +9341,48 @@
       ]
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#TextTranscript",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "TextTranscript",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/text-transcript.tsx",
+          "symbol": "TextTranscript",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function TextTranscript({ messages, label = 'Conversation', }: TextTranscriptProps) {\n    return (<section aria-label={label} style={{\n            color: 'var(--ds-text-primary, #142435)',\n            fontFamily: 'inherit',\n        }}>\n      \n      <ol role=\"list\" style={{ margin: 0, padding: 0, listStyle: 'none' }}>\n        {messages.map((message) => (<li key={message.id} style={{ marginBlock: '1rem' }}>\n            <span style={{ fontWeight: 600 }}>{speakers[message.role]}</span>\n            <p style={{\n                marginBlock: '.25rem',\n                whiteSpace: 'pre-wrap',\n                overflowWrap: 'anywhere',\n            }}>\n              {message.content}\n            </p>\n          </li>))}\n      </ol>\n    </section>);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#TextTranscriptProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "TextTranscriptProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/text-transcript.tsx",
+          "symbol": "TextTranscriptProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface TextTranscriptProps {\n    readonly messages: readonly Pick<Message, 'id' | 'role' | 'content'>[];\n    readonly label?: string;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/index.ts#useAgent",
+      "kind": "export",
+      "path": "libs/react/src/index.ts",
+      "symbol": "useAgent",
+      "declarations": [
+        {
+          "path": "libs/react/src/use-agent.ts",
+          "symbol": "useAgent",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function useAgent<TSnapshot>(session: {\n    getSnapshot(): TSnapshot;\n    subscribe(notify: () => void): () => void;\n}): TSnapshot {\n    const getSnapshot = useCallback(() => session.getSnapshot(), [session]);\n    const subscribe = useCallback((notify: () => void) => session.subscribe(notify), [session]);\n    return useSyncExternalStore(subscribe, getSnapshot);\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/render/src/public-api.ts#AngularComponentInputs",
       "kind": "export",
       "path": "libs/render/src/public-api.ts",
@@ -10695,6 +10917,12 @@
       "sha256": "6751d4b7f53350ccedafa2e1cae808d80c88acc894e8993441e30d60022e625e"
     },
     {
+      "id": "source:libs/ag-ui/src/runtime/text-transcript.ts",
+      "kind": "source",
+      "path": "libs/ag-ui/src/runtime/text-transcript.ts",
+      "sha256": "0f73bdee71181f14563845acd51523d339d3893ba1a0e23c4568d1ffec50a193"
+    },
+    {
       "id": "source:libs/ag-ui/src/runtime/tool-messages.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/tool-messages.ts",
@@ -10729,6 +10957,42 @@
       "kind": "source",
       "path": "libs/ag-ui/vite.runtime.config.mts",
       "sha256": "abbc5ed9727c0a4ff268d09cf18c22280b8093b1d16ac4d7440b27bf2c89a591"
+    },
+    {
+      "id": "source:libs/angular/chat/src/public-api.ts",
+      "kind": "source",
+      "path": "libs/angular/chat/src/public-api.ts",
+      "sha256": "ce9a19ef6875b08d93b16f1be59ae94138078247adff05aa4651fa243008a2c6"
+    },
+    {
+      "id": "source:libs/angular/chat/src/text-transcript.component.ts",
+      "kind": "source",
+      "path": "libs/angular/chat/src/text-transcript.component.ts",
+      "sha256": "47e22cd372aa227fb18e4956cfe628a44a364d2de1aabe10eb08db54702c40f2"
+    },
+    {
+      "id": "source:libs/angular/src/observe-agent.ts",
+      "kind": "source",
+      "path": "libs/angular/src/observe-agent.ts",
+      "sha256": "056e453f08aaf3d67f14824abcdd7410e175fdeb450738973c81da1c2ffa4fa6"
+    },
+    {
+      "id": "source:libs/angular/src/public-api.ts",
+      "kind": "source",
+      "path": "libs/angular/src/public-api.ts",
+      "sha256": "d28b643af7667fec72eddbfcc0f42552e270f3dac3c6442d81986611b5671173"
+    },
+    {
+      "id": "source:libs/angular/src/test-setup.ts",
+      "kind": "source",
+      "path": "libs/angular/src/test-setup.ts",
+      "sha256": "251866e62862107d3d26d8f516c4c9871798905164e7b422844bb3e9247d752b"
+    },
+    {
+      "id": "source:libs/angular/vite.config.mts",
+      "kind": "source",
+      "path": "libs/angular/vite.config.mts",
+      "sha256": "23bc2f3961e0b8e50902a084c00a39a3912ce7dbb11b85c7a97669b377b55b6c"
     },
     {
       "id": "source:libs/chat/.install-collector/development-install.d.ts",
@@ -12853,6 +13117,36 @@
       "kind": "source",
       "path": "libs/middleware/vite.config.mts",
       "sha256": "56dba6e5f8e0ec195271f37e8de4cbe0eb98c0ad8f04f60749ea7a54e621384d"
+    },
+    {
+      "id": "source:libs/react/src/chat/index.ts",
+      "kind": "source",
+      "path": "libs/react/src/chat/index.ts",
+      "sha256": "f0e2b3ddf6b3fc0f934f6842515850dc4ad956b2dd8db5157fe5809810d90cee"
+    },
+    {
+      "id": "source:libs/react/src/chat/text-transcript.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/text-transcript.tsx",
+      "sha256": "13c651497f0792ff3d8cd6108c7faa586d121c9527047851f93ede94c68d03f6"
+    },
+    {
+      "id": "source:libs/react/src/index.ts",
+      "kind": "source",
+      "path": "libs/react/src/index.ts",
+      "sha256": "41d38aefa80e4fe90ec783dbf5ab6960b473be2eac4b0ce83fb1e281dffe4193"
+    },
+    {
+      "id": "source:libs/react/src/use-agent.ts",
+      "kind": "source",
+      "path": "libs/react/src/use-agent.ts",
+      "sha256": "095f1880b34773e50250b6770afb9824db79fe3649cf9e5ad7c14c6d01556881"
+    },
+    {
+      "id": "source:libs/react/vite.config.mts",
+      "kind": "source",
+      "path": "libs/react/vite.config.mts",
+      "sha256": "a946655ac0e138e7aa0f6d9577d41dccbef0254575438cfa9c1976077732d9e1"
     },
     {
       "id": "source:libs/render/.install-collector/development-install.d.ts",

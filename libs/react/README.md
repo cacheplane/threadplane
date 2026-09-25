@@ -64,3 +64,28 @@ under development and is not a published compatibility or feature-parity claim.
 Build with `npx nx build react`; run `npx nx test react` and
 `npx nx run react:type-tests` for real-session and strict type coverage. React
 19.2.4 is the tested runtime; React DOM is used only by the test host.
+
+`@threadplane/react/chat` is a separate client entry for a plain-text conversation:
+
+```tsx
+import { TextTranscript } from '@threadplane/react/chat';
+
+const rows = [
+  { id: 'question', role: 'user', content: 'Hello\nworld' },
+] as const;
+<TextTranscript messages={rows} label="Conversation" />;
+```
+
+Rows are readonly structural `id`, core `role`, and string `content` values; extra
+fields are allowed. IDs must be unique within the list. The component renders all
+supplied rows literally, including empty text and intentionally supplied system or
+tool rows. Caller composition selects visible messages without rewriting history.
+It preserves whitespace and keyed mounted rows, using a named section and ordered
+list. It does not announce tokens, move focus, scroll, issue commands or own a
+session. Unmount/remount creates new DOM while ownership stays with the app.
+
+The root remains headless. This first text view does not provide Markdown, tool
+cards, citations, reasoning, rich chat parity, SSR or hydration support. The private
+AG-UI review uses an O(N) pure root-text selection; previous-output row reuse is an
+optional bounded current-row optimization. React composition memoizes by the actual
+owner and immutable transcript reference without advancing a mutable render cache.

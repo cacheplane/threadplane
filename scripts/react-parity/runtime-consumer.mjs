@@ -135,6 +135,20 @@ export function installedTypeSource(template, kind) {
   const binding = kind === 'react' ? 'useAgent' : 'observeAgent';
   const entry = kind === 'angular' ? './src/runtime-entry.js' : './runtime-entry.js';
   return template.replace('/* BINDING_IMPORT */', `import { ${binding} } from '@threadplane/${kind}';\nimport type { createFixtureSession } from '${entry}';`)
+    .replace('/* TEXT_TRANSCRIPT_TYPES */', `${kind === 'react' ? "import type { TextTranscriptProps } from '@threadplane/react/chat';\ntype TranscriptRows = TextTranscriptProps['messages'];" : "import type { InputSignal } from '@angular/core';\nimport type { TextTranscriptComponent } from '@threadplane/angular/chat';\ntype TranscriptRows = TextTranscriptComponent['messages'] extends InputSignal<infer Rows> ? Rows : never;"}
+export function assertTextTranscript(messages: readonly Message[]) {
+  const narrow = [{ id: 'root', role: 'assistant', content: 'Hello', extra: true }] as const;
+  const accepted: readonly TranscriptRows[] = [messages, narrow];
+  // @ts-expect-error IDs are required by the installed component.
+  const missingId: TranscriptRows = [{ role: 'user', content: 'Hello' }];
+  // @ts-expect-error Content is required by the installed component.
+  const missingContent: TranscriptRows = [{ id: 'a', role: 'user' }];
+  // @ts-expect-error Rich objects are not plain text.
+  const rich: TranscriptRows = [{ id: 'a', role: 'user', content: { text: 'Hello' } }];
+  // @ts-expect-error Caller rows remain readonly.
+  accepted[0][0].content = 'changed';
+  return [accepted, missingId, missingContent, rich];
+}`)
     .replace('export function assertSnapshot(snapshot: AgentSnapshot<FixtureTools>) {', `export function assertSnapshot(session: ReturnType<typeof createFixtureSession>) {\n  const snapshot = ${binding}(session)${kind === 'angular' ? '()' : ''};\n  const exact: AgentSnapshot<FixtureTools> = snapshot;\n  void exact;`)
     .replace('/* BACKEND_VALUES */', `const borrowed: AgentSession<FixtureTools> = session;
   void borrowed.submit('Borrowed text');
@@ -507,6 +521,8 @@ export async function runRuntimeScenarios(directory, kind) {
     browser = await chromium.launch({ headless: true });
     context = await browser.newContext();
     const page = await context.newPage();
+    const conversation = page.getByRole('region', { name: 'Conversation', exact: true });
+    const expectConversation = (rows) => expect(conversation.locator('li p')).toHaveText(rows);
     const expectValues = (value) => expect(page.getByTestId('values')).toHaveText(value === undefined ? 'unobserved' : JSON.stringify(value));
     const expectInterrupts = (interrupts) => expect(page.getByTestId('interrupts')).toHaveText(JSON.stringify(interrupts));
     const children = async () => JSON.parse(await page.getByTestId('subgraphs').innerText());
@@ -543,6 +559,8 @@ export async function runRuntimeScenarios(directory, kind) {
     assert.equal(server.requests.length, 0, 'mount/observation performs no I/O');
     assert.equal(server.historyRequests.length, 0, 'mount/observation performs no history reads');
     completed.push('inert mount');
+    await expectConversation([]);
+    await expect(conversation.locator('[role="log"], [aria-live], [tabindex]')).toHaveCount(0);
 
     await page.getByRole('button', { name: 'Load', exact: true }).click();
     await expect(page.getByTestId('loads-finished')).toHaveText('1');
@@ -564,6 +582,8 @@ export async function runRuntimeScenarios(directory, kind) {
     assert.equal(server.requests.length, 0);
     await expect(page.getByTestId('handler-calls')).toHaveText('0');
     completed.push('explicit history load');
+    await expectConversation(['Saved question', 'Saved tool request', 'Saved final answer']);
+    const savedRow = await conversation.locator('li').first().elementHandle();
 
     await page.getByRole('button', { name: 'Load', exact: true }).click();
     await expect(page.getByTestId('loads-finished')).toHaveText('2');
@@ -577,6 +597,8 @@ export async function runRuntimeScenarios(directory, kind) {
     assert.equal(server.historyRequests.length, 2);
     assert.equal(server.requests.length, 0);
     completed.push('equal history refresh');
+    await expectConversation(['Saved question', 'Saved tool request', 'Saved final answer']);
+    assert.equal(await savedRow.evaluate((node) => node === document.querySelector('section[aria-label="Conversation"] li')), true);
     await expect(page.getByTestId('citations')).toHaveText('saved-source: Saved reference');
     await expect(page.getByTestId('reasoning')).toHaveText('Saved reasoning');
 
@@ -595,6 +617,7 @@ export async function runRuntimeScenarios(directory, kind) {
     assert.equal(server.historyRequests.length, 3);
     assert.equal(server.requests.length, 0);
     completed.push('empty history replacement');
+    await expectConversation([]);
 
     await page.getByRole('button', { name: 'Send', exact: true }).click();
     await expect(page.getByTestId('text')).toHaveText('Hello 🌍.');
@@ -604,6 +627,7 @@ export async function runRuntimeScenarios(directory, kind) {
     await expectValues({ stage: 'complete' });
     await expectInterrupts([]);
     completed.push('text success');
+    await expectConversation(['Send', 'Hello 🌍.']);
     await expect(page.getByTestId('history')).toHaveText('[]');
 
     const beforeTool = server.requests.length;
@@ -632,12 +656,16 @@ export async function runRuntimeScenarios(directory, kind) {
     await expectValues({});
     assert.deepEqual(await children(), [], 'independent submission clears child observations');
     completed.push('visible protected error');
+    await expect(conversation.locator('li p').last()).toHaveText('Error');
+    await expect(conversation).not.toContainText('PRIVATE');
 
     await page.getByRole('button', { name: 'Hold', exact: true }).click();
     await handshake(server.holdStarted, 'held request');
     await expect(page.getByTestId('text')).toContainText('Held partial');
     await expect(page.getByTestId('delivery')).toHaveText('streaming');
     await expect(page.getByTestId('status')).toHaveText('running');
+    await expect(conversation.locator('li p').last()).toHaveText('Held partial');
+    const heldRow = await conversation.locator('li').last().elementHandle();
     await expectValues({ stage: 'held', transient: true });
     await expectChild(['research:held'], 'Child held partial', 'streaming');
     await page.getByRole('button', { name: 'Stop', exact: true }).click();
@@ -648,11 +676,14 @@ export async function runRuntimeScenarios(directory, kind) {
     await expectValues({ stage: 'held', transient: true });
     await expectChild(['research:held'], 'Child held partial', 'complete:aborted');
     completed.push('incremental DOM update and stop abort');
+    await expect(conversation.locator('li p').last()).toHaveText('Held partial');
+    assert.equal(await heldRow.evaluate((node) => node === document.querySelector('section[aria-label="Conversation"] li:last-child')), true);
 
     await page.getByRole('button', { name: 'Pause', exact: true }).click();
     await expect(page.getByTestId('delivery')).toHaveText('complete:paused');
     await expect(page.getByTestId('status')).toHaveText('idle');
     await expect(page.getByTestId('text')).toContainText('Waiting for approvals');
+    await expect(conversation.locator('li p').last()).toHaveText('Waiting for approvals');
     await expectValues({ stage: 'approval' });
     await expectInterrupts(liveInterrupts);
     await expectChild(['review:child'], 'Child draft', 'complete:paused', { stage: 'child-approval' }, [{ id: 'child-approval', value: 'Child review' }]);

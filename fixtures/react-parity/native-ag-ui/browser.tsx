@@ -1,20 +1,25 @@
 import '@angular/compiler';
 import {
   Component,
+  computed,
   inject,
   InjectionToken,
   provideZonelessChangeDetection,
 } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
-import React, { useLayoutEffect } from 'react';
+import React, { useLayoutEffect, useMemo } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { useAgent } from '@threadplane/react';
+import { TextTranscript } from '@threadplane/react/chat';
 import { observeAgent } from '@threadplane/angular';
+import { TextTranscriptComponent } from '@threadplane/angular/chat';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Private source is composed only into this local review bundle, never a package export.
 import {
   createSession,
   type Session,
 } from '../../../libs/ag-ui/src/runtime/create-session';
+// eslint-disable-next-line @nx/enforce-module-boundaries -- Private display selection stays in this review composition, never a package export.
+import { projectTextTranscript } from '../../../libs/ag-ui/src/runtime/text-transcript';
 
 const sequence = [
   'First',
@@ -115,6 +120,10 @@ const releases = [a, b].map((session) =>
 );
 function View({ session, kind }: { session: Session; kind: 'a' | 'b' }) {
   const snapshot = useAgent(session);
+  const rows = useMemo(
+    () => projectTextTranscript(snapshot.transcript),
+    [session, snapshot.transcript]
+  );
   useLayoutEffect(() => {
     if (kind === 'a') reactSnapshot = snapshot;
     else bSnapshot = snapshot;
@@ -125,11 +134,34 @@ function View({ session, kind }: { session: Session; kind: 'a' | 'b' }) {
     };
   }, [snapshot]);
   return (
-    <pre data-view={`react-${kind}`}>{JSON.stringify(snapshot, null, 2)}</pre>
+    <>
+      <p role="status">{status(snapshot)}</p>
+      <TextTranscript
+        messages={rows}
+        label={`React ${kind.toUpperCase()} conversation`}
+      />
+      <pre data-view={`react-${kind}`}>{JSON.stringify(snapshot, null, 2)}</pre>
+    </>
   );
+}
+function status(snapshot: Snapshot) {
+  if (snapshot.status === 'running') return 'Running';
+  const outcome = snapshot.run?.outcome;
+  return outcome
+    ? {
+        success: 'Complete',
+        paused: 'Paused',
+        error: 'Failed',
+        interrupted: 'Interrupted',
+        aborted: 'Stopped',
+      }[outcome]
+    : 'Idle';
 }
 class NativeView {
   readonly snapshot = observeAgent(inject(SESSION));
+  readonly transcript = computed(() => this.snapshot().transcript);
+  readonly rows = computed(() => projectTextTranscript(this.transcript()));
+  readonly status = computed(() => status(this.snapshot()));
   get json() {
     angularSnapshot = this.snapshot();
     renderState();
@@ -139,7 +171,9 @@ class NativeView {
 Component({
   selector: 'native-angular-review',
   standalone: true,
-  template: '<pre data-view="angular-a">{{ json }}</pre>',
+  imports: [TextTranscriptComponent],
+  template:
+    '<p role="status">{{ status() }}</p><threadplane-text-transcript [messages]="rows()" label="Angular A conversation" /><pre data-view="angular-a">{{ json }}</pre>',
 })(NativeView);
 function mountReact() {
   reactRoot = createRoot(element('#react-a'));

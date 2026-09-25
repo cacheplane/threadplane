@@ -2,7 +2,10 @@ import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:f
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { assertParserFreeInputs, consumerSpecifiers, installConsumer, packLocalArtifacts, runConsumer } from './verify-packages.mjs';
+import { execFileSync } from 'node:child_process';
+import assert from 'node:assert/strict';
+import { assertHeadlessInputs, assertParserFreeInputs, consumerSpecifiers, installConsumer, packLocalArtifacts, runConsumer } from './verify-packages.mjs';
+import { buildSync } from 'esbuild';
 import { prepareInstalledTypes, prepareRuntimeConsumer, runRuntimeScenarios } from './runtime-consumer.mjs';
 
 export function lockedAngularManifest(template, lock) {
@@ -26,6 +29,40 @@ export function angularBuildCommand(consumer) {
   return [join(consumer, 'node_modules/@angular/cli/bin/ng.js'), 'build', '--configuration=production', '--stats-json'];
 }
 
+/** Real Angular template checking against the installed secondary declarations. */
+function verifyRejectedTranscriptTemplates(consumer) {
+  writeFileSync(join(consumer, 'transcript-negative.ts'), `
+import { Component } from '@angular/core';
+import { TextTranscriptComponent } from '@threadplane/angular/chat';
+@Component({ selector: 'negative-transcript', standalone: true, imports: [TextTranscriptComponent], template: \`
+  <threadplane-text-transcript [messages]="missingId" />
+  <threadplane-text-transcript [messages]="missingContent" />
+  <threadplane-text-transcript [messages]="objectContent" />
+\` })
+export class NegativeTranscript {
+  readonly missingId = [{ role: 'user', content: 'Hello' }] as const;
+  readonly missingContent = [{ id: 'a', role: 'user' }] as const;
+  readonly objectContent = [{ id: 'a', role: 'user', content: { text: 'Hello' } }] as const;
+}
+`);
+  writeFileSync(join(consumer, 'tsconfig.negative.json'), JSON.stringify({ extends: './tsconfig.json', compilerOptions: { noEmit: true, skipLibCheck: false }, angularCompilerOptions: { strictTemplates: true }, files: ['transcript-negative.ts'], include: [] }));
+  try {
+    let diagnostics = '';
+    try {
+      execFileSync(process.execPath, [join(consumer, 'node_modules/@angular/compiler-cli/bundles/src/bin/ngc.js'), '-p', 'tsconfig.negative.json'], { cwd: consumer, encoding: 'utf8', stdio: 'pipe' });
+    } catch (error) {
+      diagnostics = String(error.stdout ?? '') + String(error.stderr ?? '');
+    }
+    assert.match(diagnostics, /Property 'id' is missing/);
+    assert.match(diagnostics, /Property 'content' is missing/);
+    assert.match(diagnostics, /not assignable to type 'string'/);
+    console.log('Installed Angular strict templates rejected missing IDs, missing content and object content.');
+  } finally {
+    rmSync(join(consumer, 'transcript-negative.ts'));
+    rmSync(join(consumer, 'tsconfig.negative.json'));
+  }
+}
+
 export async function verifyAngularPackage(root = process.cwd()) {
   root = resolve(root);
   const temporary = mkdtempSync(join(tmpdir(), 'threadplane-angular-consumer-'));
@@ -37,9 +74,12 @@ export async function verifyAngularPackage(root = process.cwd()) {
     const manifest = lockedAngularManifest(template, JSON.parse(readFileSync(join(root, 'package-lock.json'), 'utf8')));
     console.log(`Angular consumer toolchain: ${JSON.stringify({ ...manifest.dependencies, ...manifest.devDependencies })}`);
     installConsumer(consumer, manifest, tarballs, 'angular');
+    const rootProbe = buildSync({ absWorkingDir: consumer, stdin: { contents: "import * as angular from '@threadplane/angular'; console.log(angular);", resolveDir: consumer }, bundle: true, platform: 'browser', format: 'esm', write: false, metafile: true });
+    assertHeadlessInputs(rootProbe.metafile.inputs);
     const installed = JSON.parse(readFileSync(join(consumer, 'node_modules/@threadplane/angular/package.json'), 'utf8'));
     const specifiers = consumerSpecifiers(installed);
     prepareInstalledTypes(root, consumer, 'angular');
+    verifyRejectedTranscriptTemplates(consumer);
     const contracts = join(consumer, 'installed-types.ts');
     writeFileSync(contracts, readFileSync(contracts, 'utf8') + '\n' + specifiers.map((specifier, index) => `import type * as entry${index} from ${JSON.stringify(specifier)};\nexport type Entry${index} = typeof entry${index};`).join('\n'));
     await prepareRuntimeConsumer(root, consumer, 'angular');
@@ -48,6 +88,7 @@ export async function verifyAngularPackage(root = process.cwd()) {
     const stats = JSON.parse(readFileSync(join(consumer, 'dist/consumer/stats.json'), 'utf8'));
     assertParserFreeInputs(stats.inputs);
     if (!Object.keys(stats.inputs).some((path) => path.includes('node_modules/@threadplane/angular/'))) throw new Error('Angular stats did not include the installed APF artifact');
+    if (!Object.keys(stats.inputs).some((path) => path.includes('node_modules/@threadplane/angular/fesm2022/threadplane-angular-chat.mjs'))) throw new Error('Angular app did not include the installed chat component');
     console.log(`Angular runtime consumer bundle (app, binding and staged SDK): ${Object.keys(stats.inputs).length} inputs, no content parsers. Threadplane inputs: ${Object.keys(stats.inputs).filter((path) => path.includes('node_modules/@threadplane/')).join(', ')}.`);
     await runRuntimeScenarios(join(consumer, 'dist/consumer/browser'), 'Angular');
     console.log(`Verified ${specifiers.length} Angular APF exports through CLI compilation/linking with skipLibCheck:false, precise heterogeneous tool contracts, and a production-built installed Angular consumer.`);

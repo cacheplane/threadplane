@@ -24,16 +24,21 @@ export function resolveArtifacts(root = defaultRoot) {
       );
       if (manifest.name !== `@threadplane/${name}`)
         throw new Error('wrong package');
-      const exported = manifest.exports?.['.'];
-      const entry =
-        typeof exported === 'string'
-          ? exported
-          : exported?.import ?? exported?.default ?? manifest.module;
-      if (typeof entry !== 'string') throw new Error('missing root export');
-      const absolute = resolve(folder, entry);
-      if (!absolute.startsWith(folder + '/') || !existsSync(absolute))
-        throw new Error('missing implementation');
-      entries[manifest.name] = absolute;
+      for (const subpath of name === 'core' ? ['.'] : ['.', './chat']) {
+        const exported = manifest.exports?.[subpath];
+        const entry =
+          typeof exported === 'string'
+            ? exported
+            : exported?.import ??
+              exported?.default ??
+              (subpath === '.' ? manifest.module : undefined);
+        if (typeof entry !== 'string') throw new Error('missing root export');
+        const absolute = resolve(folder, entry);
+        if (!absolute.startsWith(folder + '/') || !existsSync(absolute))
+          throw new Error('missing implementation');
+        entries[manifest.name + (subpath === '.' ? '' : subpath.slice(1))] =
+          absolute;
+      }
     } catch {
       throw new Error(
         `Missing prebuilt ${name} artifacts. Run: ${buildCommand}`
@@ -130,6 +135,11 @@ export async function buildFixture(root = defaultRoot) {
     'scripts/react-parity/native-ag-ui-browser.mjs',
     'libs/react/src/use-agent.ts',
     'libs/angular/src/observe-agent.ts',
+    'libs/react/src/chat/index.ts',
+    'libs/react/src/chat/text-transcript.tsx',
+    'libs/angular/chat/src/public-api.ts',
+    'libs/angular/chat/src/text-transcript.component.ts',
+    'libs/angular/chat/ng-package.json',
     ...['core', 'react', 'angular'].map(
       (name) => `dist/libs/${name}/package.json`
     ),
