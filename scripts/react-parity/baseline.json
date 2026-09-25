@@ -1,11 +1,10 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "a77e09d3a3bf5dc5c68186004052055bcd88212f",
+  "baselineHead": "46f2f742c3ecd2180a88c906b604fcca14891a03",
   "sourceState": {
     "modified": [],
     "untracked": [
-      "libs/ag-ui/src/runtime/activity-messages.ts",
-      "libs/ag-ui/src/runtime/encrypted-messages.ts"
+      "libs/ag-ui/src/runtime/subagents.ts"
     ]
   },
   "scope": {
@@ -10652,6 +10651,12 @@
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/state.ts",
       "sha256": "fca5833b9a0956c6f11cb8ea7bda6ab82d83bf4acb98d972e1a2082b6f616423"
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/subagents.ts",
+      "kind": "source",
+      "path": "libs/ag-ui/src/runtime/subagents.ts",
+      "sha256": "488d605df720eb89ef0ebfffbd1600e957bb7a2a6d30f0fb7509d6512b894fc9"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/text-messages.ts",
