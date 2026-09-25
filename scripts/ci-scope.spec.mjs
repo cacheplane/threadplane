@@ -47,6 +47,10 @@ describe('React migration baseline scope', () => {
   });
   for (const file of [
     'scripts/react-parity/inventory.mjs',
+    'scripts/react-parity/review-native-ag-ui.mjs',
+    'scripts/react-parity/native-ag-ui-browser.mjs',
+    'fixtures/react-parity/native-ag-ui/server.mjs',
+    'fixtures/react-parity/native-ag-ui/browser.tsx',
     'scripts/react-parity/verify-middleware-package.mjs',
     'fixtures/react-parity/consumers/middleware/contracts.ts',
     'fixtures/react-parity/traces/ag-ui-text-state.sse',

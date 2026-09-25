@@ -80,6 +80,16 @@ function readNamedStep(job, name) {
 }
 
 describe('CI workflow', () => {
+  it('requires the native same-document review after foundations and Chromium, keeping early tests independent', async () => {
+    const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'library');
+    const early = job.indexOf('node --test scripts/react-parity/*.spec.mjs fixtures/react-parity/traces.spec.mjs');
+    const build = job.indexOf('Build and validate private React foundations');
+    const chromium = job.indexOf('npx playwright install --with-deps chromium');
+    const review = job.indexOf('node scripts/react-parity/review-native-ag-ui.mjs --verify');
+    assert.ok(early >= 0 && early < build);
+    assert.ok(review > build && review > chromium);
+    assert.doesNotMatch(readNamedStep(job, 'Verify native same-document session bindings'), /continue-on-error/);
+  });
   it('requires middleware lint, tests, build, and standalone package verification in the library job', async () => {
     const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'library');
     const libraries = job.match(/LIBS: ([^\n]+)/)?.[1].split(',');

@@ -1,13 +1,11 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "9a80f8b520c9681a2b084297c0319453a63eeb81",
+  "baselineHead": "d613fee59c3db7d34b5e7f9fe5dc52bfb66b9245",
   "sourceState": {
     "modified": [
-      "libs/ag-ui/src/runtime/create-run.ts"
+      ".github/workflows/ci.yml"
     ],
-    "untracked": [
-      "libs/ag-ui/src/runtime/testing/binding-fixture.ts"
-    ]
+    "untracked": []
   },
   "scope": {
     "libraries": [
@@ -1874,7 +1872,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "45d3465a27b053b180b3507f5993be73c6ee48a2f2b69f7f7ba65b676392392c"
+      "sha256": "c287a5617d8871e42a39d8ff24d28512b95575fc5a79f7dd2276ce9812a993ef"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
