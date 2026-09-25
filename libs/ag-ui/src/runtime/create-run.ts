@@ -6,6 +6,10 @@ import {
 } from '@ag-ui/client';
 import type { CompleteOutcome } from '@threadplane/core';
 import {
+  isLegacyInterruptTerminal,
+  type InterruptMode,
+} from './interrupt-mode';
+import {
   createHttpRequest,
   type HttpRequestHandle,
 } from './create-http-request';
@@ -38,8 +42,11 @@ function finishedResult(outcome: unknown): RunResult {
 
 /** Owns one domain result; physical HTTP completion alone is not success. */
 export function createRun(
-  config: Pick<HttpAgentConfig, 'url' | 'headers' | 'fetch'>
+  config: Pick<HttpAgentConfig, 'url' | 'headers' | 'fetch'> & {
+    readonly interruptMode?: InterruptMode;
+  }
 ) {
+  const interruptMode = config.interruptMode ?? 'native';
   const request = createHttpRequest(config);
   return {
     start(
@@ -123,11 +130,7 @@ export function createRun(
           } else if (!admitted) return;
           else if (event.type === EventType.RUN_FINISHED)
             candidate = finishedResult(event['outcome']);
-          else if (
-            !child &&
-            event.type === EventType.CUSTOM &&
-            event['name'] === 'on_interrupt'
-          )
+          else if (isLegacyInterruptTerminal(event, interruptMode))
             candidate = { outcome: 'paused' };
           try {
             onEvent(event);

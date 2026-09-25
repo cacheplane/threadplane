@@ -345,7 +345,11 @@ describe('composed private session over held HTTP', () => {
     'settles %s once without retry or invented native terminal',
     async (ending, expected) => {
       const server = await serve();
-      const owner = createSession({ threadId: 'thread', url: server.url });
+      const owner = createSession({
+        threadId: 'thread',
+        url: server.url,
+        interruptMode: ending === 'legacy' ? 'legacy-observation' : 'native',
+      });
       const done = owner.submit('one');
       try {
         const exchange = await server.next();

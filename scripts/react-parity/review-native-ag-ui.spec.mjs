@@ -87,6 +87,12 @@ test(
         /"op":"replace","path":"\/reasoning_effort","value":"high"/
       );
       assert.doesNotMatch(text, /STATE_SNAPSHOT/);
+      // The initial held batch includes the notice before any native terminal.
+      let initialText = text;
+      while (!initialText.includes('on_interrupt'))
+        initialText += new TextDecoder().decode((await reader.read()).value);
+      assert.match(initialText, /"value":"Approve the weather lookup"/);
+      assert.doesNotMatch(initialText, /RUN_FINISHED/);
       assert.equal(server.stats().requests[0].closed, false);
       assert.equal(
         (await control(server, reviewId, 'advance-first')).status,

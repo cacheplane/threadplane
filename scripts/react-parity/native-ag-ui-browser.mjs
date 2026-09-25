@@ -62,6 +62,16 @@ export async function verifyBrowser(browser, server) {
   await text('React B', []);
   await click('First');
   const partial = await shared();
+  const notice = {
+    type: 'CUSTOM',
+    name: 'on_interrupt',
+    value: 'Approve the weather lookup',
+    metadata: { source: 'review-notice' },
+  };
+  assert.deepEqual(partial.a.run.legacyInterrupt, notice);
+  assert.equal(partial.a.run.terminal, undefined);
+  assert.equal(partial.a.status, 'running');
+  assert.equal(requests()[0].closed, false);
   const tool = partial.a.transcript.find(
     (message) => message.role === 'assistant'
   );
@@ -95,6 +105,7 @@ export async function verifyBrowser(browser, server) {
   assert.equal(requests()[0].closed, false);
   await click('Advance first');
   const paused = await state();
+  assert.deepEqual(paused.a.run.legacyInterrupt, notice);
   assert.equal(paused.records[0].outcome, 'paused');
   assert.equal(paused.a.subagents[0].terminal.outcome.type, 'suspended');
   assert.equal(paused.a.run.terminal.outcome.type, 'interrupt');
@@ -119,7 +130,9 @@ export async function verifyBrowser(browser, server) {
     true
   );
   await click('Mount React');
-  await shared();
+  const remounted = await shared();
+  assert.deepEqual(remounted.a.run.legacyInterrupt, notice);
+  assert.deepEqual(remounted.a.run.terminal, paused.a.run.terminal);
   assert.equal(requests().length, 1);
   await text('React A', ['First']);
   assert.equal(

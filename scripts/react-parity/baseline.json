@@ -1,13 +1,15 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "4e474ae1d9e41529da222c0305700015f8b04c78",
+  "baselineHead": "59cedda294126a81c8ad4eaaef1a941eaff39b11",
   "sourceState": {
     "modified": [
-      "libs/ag-ui/src/runtime/create-session.ts"
+      "libs/ag-ui/src/runtime/README.md",
+      "libs/ag-ui/src/runtime/create-run.ts",
+      "libs/ag-ui/src/runtime/create-session.ts",
+      "libs/ag-ui/src/runtime/session-observation.ts"
     ],
     "untracked": [
-      "libs/ag-ui/src/runtime/README.md",
-      "libs/ag-ui/src/runtime/submit-input.ts"
+      "libs/ag-ui/src/runtime/interrupt-mode.ts"
     ]
   },
   "scope": {
@@ -219,7 +221,7 @@
       "id": "asset:libs/ag-ui/src/runtime/README.md",
       "kind": "asset",
       "path": "libs/ag-ui/src/runtime/README.md",
-      "sha256": "6f1d3e5895def11ca44c77db0385409083c5c95dc195cad5a409b6241b6baeee"
+      "sha256": "aa889d331f9c7c14ff4125658a14b3ea66f977e11c585e15d6a1958db971787e"
     },
     {
       "id": "asset:libs/ag-ui/tsconfig.json",
@@ -10849,19 +10851,25 @@
       "id": "source:libs/ag-ui/src/runtime/create-run.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/create-run.ts",
-      "sha256": "eaa4aac0a1657167051abd31addc0ab2041f54aa2a197842a4a09d8ae31064e4"
+      "sha256": "067799f23bc30baab98438ab52219ad047ba175d931d108bb1602b7454819164"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/create-session.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/create-session.ts",
-      "sha256": "323081e3e2e6845bf0045aa7d5a0ef80d022a9e51beb30ed221dba0a29861239"
+      "sha256": "69a823853a447bb46835f86ec502bc835ba5eebf2a56e84254a8b947cb5ad58b"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/encrypted-messages.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/encrypted-messages.ts",
       "sha256": "5e0dcee1dcdfa3f360ad1c1e7bb3dff61dc1c6db73e84ff19e3faafd6491862d"
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/interrupt-mode.ts",
+      "kind": "source",
+      "path": "libs/ag-ui/src/runtime/interrupt-mode.ts",
+      "sha256": "19f89d877d761da40dc44d207630a190ae883829dc5086639fc48475114d44b6"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/reconcile-transcript.ts",
@@ -10879,7 +10887,7 @@
       "id": "source:libs/ag-ui/src/runtime/session-observation.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/session-observation.ts",
-      "sha256": "17d27bfdf0bc355ac87c5583340a1579a0970fff2ca2cf5f5da256acfba3592d"
+      "sha256": "c35818da47cbe3f5b139ae10e5baa6aa1d70db474e861a0fc9b87a7e2e724703"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/session-publication.ts",

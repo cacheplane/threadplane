@@ -43,3 +43,29 @@ This module is private source, not a public backend export or a core
 `AgentSession` implementation. Core submission stays string-only. Framework
 observers and transcript components continue to consume the same native owner;
 no second store, resume command or forwarding bag is introduced.
+
+## Interruption evidence
+
+Both `createSession` and standalone `createRun` default to
+`interruptMode: 'native'`. They capture this constructor option once. A root
+`CUSTOM on_interrupt` event is retained as `run.legacyInterrupt`, with its literal
+value and selected metadata. It does not set `run.terminal` or close the stream.
+A later native `RUN_FINISHED` or `RUN_ERROR` supplies terminal evidence. Child
+custom notices and unrelated custom events do not become root notices.
+
+An explicit `interruptMode: 'legacy-observation'` preserves the legacy convention:
+the root custom notice occupies both evidence fields, selects `paused` and closes
+the response. This option provides observation only, not legacy resume support.
+Neither mode parses JSON strings, executes response schemas or guesses providers.
+
+Server evidence and local outcomes are distinct. A terminal callback can stop the
+owner, selecting local `aborted` while retaining the accepted native terminal.
+A native notice followed only by EOF selects `interrupted`; stopping at the
+notice selects `aborted`, with no invented native terminal. New runs reset these
+run-local fields while retaining history and shared state.
+
+Notices are not actionable decisions in this slice. There is no resume command,
+decision ledger, retry guarantee or persistence/recovery contract. Caller control
+remains unchanged, but ordinary resubmission is not evidence that a possible
+server pause was safely resolved. Captured Mastra replay verifies event retention
+and ordering only; it does not establish native Mastra resume compatibility.
