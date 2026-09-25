@@ -9,7 +9,7 @@ Both compiled `/chat` entries render root text beside the full protocol panels.
 The private pure selector includes root user/assistant text and multipart user
 text parts joined by newlines. It omits child text (including `Hello`), reasoning,
 tools and activity from that view while preserving all native request history.
-`First`, then root `Second` and `Next answer`, appear in both conversation views.
+`First`, then root `Next answer`, appear in both conversation views.
 Status is separate from the rows and follows only observed run facts.
 
 From the repository root, build the prerequisites once:
@@ -41,10 +41,12 @@ Use each enabled control in order:
    retains the earlier custom notice beside that terminal.
 3. **Mount React** reconnects observation without a request and displays both the
    retained notice and native terminal.
-4. **Second** sends full prior native history with `count: 2` and new settings
-   `model: review-large`, `reasoning_effort: medium`, `gen_ui_mode: panel`, then
-   shows `Next answer`. Its server snapshot again keeps only `count: 2`.
-5. **Remove Angular**, then **Complete second**. React receives successful completion.
+4. **Resume** uses the observed native pause token and an explicit resolved
+   `approval` response with payload `{ approved: true }`. It sends full prior native
+   history and `count: 2`, adds no user row or settings patch, then shows root
+   `Next answer`. The diagnostic decision contains the captured running attempt.
+5. **Remove Angular**, then **Complete resume**. React receives successful
+   completion and the decision clears at local settlement.
 6. **Mount Angular** reconnects observation without a request.
 7. **Start other** shows independent B state `count: 99`.
 8. **Cancelable** shows A state `count: 3` while B stays active.
@@ -70,8 +72,13 @@ This fixture waits for the later native terminal. A notice-only native stream
 ending at EOF would be `interrupted`; local cancellation can be `aborted` even
 after terminal evidence was observed. Explicit private `legacy-observation` mode
 retains the older close-at-notice convention but supplies no resume capability.
-Ordinary submission remains caller-controlled and does not prove a possible
-server pause was safely resolved. No provider resume compatibility is claimed.
+Any decision blocks ordinary submission. Only a settled unclaimed native pause
+can be answered once with its current token; legacy notices cannot be resumed.
+If an invoked resume fails, ends at EOF or is stopped without conclusive native
+evidence, its retained attempt is uncertain and blocks replay and ordinary bypass.
+Local stop or reconstructing an owner is not recovery. Separate held HTTP tests
+cover these uncertain outcomes; this main walkthrough uses synthetic success.
+No hosted provider resume compatibility is claimed.
 
 For automated verification, use existing Playwright Chromium (install it once
 with `npx playwright install chromium`, or `--with-deps chromium` on Linux):
@@ -95,6 +102,6 @@ No temporary bundle tree is retained.
 
 This deterministic synthetic fixture does not establish hosted-provider parity,
 public backend exports, rich component parity, tool execution, persistence,
-resume support, SSR or hydration. It retains raw protocol arguments without
+provider resume interoperability, SSR or hydration. It retains raw protocol arguments without
 parsing them or fabricating executable core tool states. Public documentation
 and generated agent context remain unchanged.

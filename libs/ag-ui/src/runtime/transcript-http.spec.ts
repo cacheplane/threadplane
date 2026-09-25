@@ -222,7 +222,10 @@ describe('private transcript actual HTTP egress', () => {
         { type: EventType.MESSAGES_SNAPSHOT, messages: wire },
         lifecycle(initial, EventType.RUN_FINISHED)
       );
-      expect(await bounded(firstDone)).toEqual({ outcome: 'success' });
+      expect(await bounded(firstDone)).toEqual({
+        outcome: 'success',
+        fetchInvoked: true,
+      });
       await bounded(initial.closed);
       ok(observed);
       ok(captured);
@@ -252,7 +255,10 @@ describe('private transcript actual HTTP egress', () => {
         lifecycle(continuation, EventType.RUN_STARTED),
         lifecycle(continuation, EventType.RUN_FINISHED)
       );
-      expect(await bounded(secondDone)).toEqual({ outcome: 'success' });
+      expect(await bounded(secondDone)).toEqual({
+        outcome: 'success',
+        fetchInvoked: true,
+      });
       await bounded(continuation.closed);
       expect(server.exchanges).toHaveLength(2);
     } finally {
@@ -316,7 +322,10 @@ describe('private transcript actual HTTP egress', () => {
           lifecycle(exchange, EventType.RUN_STARTED),
           lifecycle(exchange, EventType.RUN_FINISHED)
         );
-        expect(await bounded(done)).toEqual({ outcome: 'success' });
+        expect(await bounded(done)).toEqual({
+          outcome: 'success',
+          fetchInvoked: true,
+        });
         await bounded(exchange.closed);
         expect(server.exchanges).toHaveLength(1);
       } finally {
@@ -361,7 +370,11 @@ describe('private transcript actual HTTP egress', () => {
       );
       const result = await bounded(done);
       expect(failure).toBeInstanceOf(TypeError);
-      expect(result).toEqual({ outcome: 'error', error: failure });
+      expect(result).toEqual({
+        outcome: 'error',
+        error: failure,
+        fetchInvoked: true,
+      });
       if (result.outcome === 'error') expect(result.error).toBe(failure);
       expect(captured).toBe(retained);
       await bounded(exchange.closed);

@@ -4,7 +4,7 @@ import { createServer } from 'node:http';
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const order = [
   ['a', 'First'],
-  ['a', 'Second'],
+  ['a', 'Resume'],
   ['b', 'Other'],
   ['a', 'Cancelable'],
 ];
@@ -38,11 +38,11 @@ function firstHistory(first) {
 }
 function expectedInput(reviewId, role, command, runId, userId, review) {
   let messages = [];
-  if (command === 'Second' || command === 'Cancelable')
+  if (command === 'Resume' || command === 'Cancelable')
     messages = firstHistory(review.accepted[0]);
   if (command === 'Cancelable') {
     const second = review.accepted[1];
-    messages.push(user(second.userId, 'Second'), {
+    messages.push({
       id: `${second.runId}-answer`,
       role: 'assistant',
       content: 'Next answer',
@@ -51,7 +51,8 @@ function expectedInput(reviewId, role, command, runId, userId, review) {
   return {
     threadId: `${reviewId}-${role}`,
     runId,
-    messages: [...messages, user(userId, command)],
+    messages:
+      command === 'Resume' ? messages : [...messages, user(userId, command)],
     state:
       command === 'First'
         ? {
@@ -59,19 +60,21 @@ function expectedInput(reviewId, role, command, runId, userId, review) {
             reasoning_effort: 'low',
             gen_ui_mode: 'inline',
           }
-        : command === 'Second'
-        ? {
-            count: 2,
-            model: 'review-large',
-            reasoning_effort: 'medium',
-            gen_ui_mode: 'panel',
-          }
-        : command === 'Cancelable'
+        : command === 'Resume' || command === 'Cancelable'
         ? { count: 2 }
         : {},
     tools: [],
     context: [],
     forwardedProps: {},
+    ...(command === 'Resume' && {
+      resume: [
+        {
+          interruptId: 'approval',
+          status: 'resolved',
+          payload: { approved: true },
+        },
+      ],
+    }),
   };
 }
 function emit(response, events) {
@@ -171,34 +174,45 @@ export async function createReviewServer({ bundle, provenance }) {
         assert.match(input.runId ?? '', uuid, 'valid run ID required');
         assert.ok(Array.isArray(input.messages), 'messages required');
         const last = input.messages.at(-1);
-        assert.match(last?.id ?? '', uuid, 'valid user ID required');
-        assert.equal(last.content, command, 'command order/content');
-        assert.ok(
-          input.runId !== last.id && !ids.has(input.runId) && !ids.has(last.id),
-          'fresh distinct run and user IDs required'
-        );
-        if (command === 'Second')
+        assert.ok(!ids.has(input.runId), 'fresh run ID required');
+        if (command !== 'Resume') {
+          assert.match(last?.id ?? '', uuid, 'valid user ID required');
+          assert.equal(last.role, 'user', 'ordinary command needs a user row');
+          assert.equal(last.content, command, 'command order/content');
+          assert.ok(
+            input.runId !== last.id && !ids.has(last.id),
+            'fresh distinct run and user IDs required'
+          );
+        }
+        if (command === 'Resume')
           assert.ok(
             review.phase === 'first-advanced' &&
               review.accepted[0].record.closed,
-            'First must pause and close before Second'
+            'First must pause and close before Resume'
           );
         if (command === 'Other')
           assert.ok(
-            review.phase === 'second-complete' &&
+            review.phase === 'resume-complete' &&
               review.accepted[1].record.closed,
-            'Second must complete and close before Other'
+            'Resume must complete and close before Other'
           );
         assert.deepEqual(
           input,
-          expectedInput(reviewId, role, command, input.runId, last.id, review),
+          expectedInput(
+            reviewId,
+            role,
+            command,
+            input.runId,
+            command === 'Resume' ? undefined : last.id,
+            review
+          ),
           'exact full native input envelope'
         );
         ids.add(input.runId);
-        ids.add(last.id);
+        if (command !== 'Resume') ids.add(last.id);
         const accepted = {
           runId: input.runId,
-          userId: last.id,
+          ...(command !== 'Resume' && { userId: last.id }),
           response,
           record,
         };
@@ -252,7 +266,7 @@ export async function createReviewServer({ bundle, provenance }) {
           ]);
         } else {
           const content = {
-            Second: 'Next answer',
+            Resume: 'Next answer',
             Other: 'Other answer',
             Cancelable: 'Cancelable answer',
           }[command];
@@ -282,7 +296,7 @@ export async function createReviewServer({ bundle, provenance }) {
         reviewId = body.reviewId;
         assert.match(reviewId ?? '', uuid, 'valid review ID required');
         assert.ok(
-          ['advance-first', 'complete-second'].includes(body.action),
+          ['advance-first', 'complete-resume'].includes(body.action),
           'known control action required'
         );
         assert.deepEqual(
@@ -294,7 +308,7 @@ export async function createReviewServer({ bundle, provenance }) {
         const first = body.action === 'advance-first';
         assert.equal(
           review?.phase,
-          first ? 'first-held' : 'second-held',
+          first ? 'first-held' : 'resume-held',
           'invalid control phase'
         );
         const target = review.accepted[first ? 0 : 1];
@@ -354,7 +368,7 @@ export async function createReviewServer({ bundle, provenance }) {
             },
           ]);
         } else emit(target.response, [terminal]);
-        review.phase = first ? 'first-advanced' : 'second-complete';
+        review.phase = first ? 'first-advanced' : 'resume-complete';
         json(200, { sent: body.action });
       } else throw new Error('Unexpected method or route');
     } catch (error) {

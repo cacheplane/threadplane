@@ -124,19 +124,21 @@ test(
         content: '{"temperature":20}',
         subagentRunId: 'worker',
       };
-      const second = body(reviewId, 'a', 'Second');
-      second.messages = [...first.messages, answer, result, ...second.messages];
-      second.state = {
-        count: 2,
-        model: 'review-large',
-        reasoning_effort: 'medium',
-        gen_ui_mode: 'panel',
-      };
+      const second = body(reviewId, 'a', 'Resume');
+      second.messages = [...first.messages, answer, result];
+      second.state = { count: 2 };
+      second.resume = [
+        {
+          interruptId: 'approval',
+          status: 'resolved',
+          payload: { approved: true },
+        },
+      ];
       const next = await agent(server, reviewId, second);
       assert.equal(next.status, 200);
       const nextStream = await consume(next, /Next answer/);
       assert.equal(
-        (await control(server, reviewId, 'complete-second')).status,
+        (await control(server, reviewId, 'complete-resume')).status,
         200
       );
       await nextStream.reader.cancel();
@@ -305,7 +307,7 @@ for (const [name, mutate] of [
     },
   ],
   [
-    'reused user identity',
+    'altered retained message identity',
     (next, first) => {
       next.messages.at(-1).id = first.messages[0].id;
     },
@@ -323,13 +325,15 @@ for (const [name, mutate] of [
         assert.equal((await control(server, id, 'advance-first')).status, 200);
         await reader.cancel();
         await until(() => server.stats().requests[0].closed);
-        const next = body(id, 'a', 'Second');
-        next.state = {
-          count: 2,
-          model: 'review-large',
-          reasoning_effort: 'medium',
-          gen_ui_mode: 'panel',
-        };
+        const next = body(id, 'a', 'Resume');
+        next.state = { count: 2 };
+        next.resume = [
+          {
+            interruptId: 'approval',
+            status: 'resolved',
+            payload: { approved: true },
+          },
+        ];
         next.messages = [
           { id: first.messages[0].id, role: 'user', content: 'First' },
           {
@@ -352,7 +356,6 @@ for (const [name, mutate] of [
             content: '{"temperature":20}',
             subagentRunId: 'worker',
           },
-          ...next.messages,
         ];
         mutate(next, first);
         const rejected = await agent(server, id, next);
@@ -374,7 +377,7 @@ test(
         response = await agent(server, id, body(id));
       const { reader } = await consume(response, /TOOL_CALL_ARGS/);
       assert.equal((await control(server, id, 'unknown')).status, 422);
-      assert.equal((await control(server, id, 'complete-second')).status, 422);
+      assert.equal((await control(server, id, 'complete-resume')).status, 422);
       assert.equal((await control(server, id, 'advance-first')).status, 200);
       assert.equal((await control(server, id, 'advance-first')).status, 422);
       await reader.cancel();
@@ -411,7 +414,7 @@ test('invalid control phase is rejected explicitly and shutdown is idempotent', 
   const server = await createReviewServer({ bundle: '', provenance: {} });
   try {
     assert.equal(
-      (await control(server, randomUUID(), 'complete-second')).status,
+      (await control(server, randomUUID(), 'complete-resume')).status,
       422
     );
     assert.equal(server.stats().errors.length, 1);

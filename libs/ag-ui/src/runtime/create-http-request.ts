@@ -73,7 +73,8 @@ export function createHttpRequest(
     start(
       input: RunAgentInput,
       onEvent: (event: BaseEvent) => void,
-      signal?: AbortSignal
+      signal?: AbortSignal,
+      beforeFetch?: () => boolean
     ): HttpRequestHandle {
       let resolve!: (outcome: HttpRequestOutcome) => void;
       const done = new Promise<HttpRequestOutcome>((yes) => {
@@ -107,11 +108,26 @@ export function createHttpRequest(
         // It does not apply SDK events to a second messages/state authority.
         const source = new HttpAgent({
           ...captured,
-          fetch: async (url, init) =>
-            withOwnedReaderCleanup(
+          fetch: async (url, init) => {
+            if (
+              settled ||
+              signal?.aborted ||
+              controller?.signal.aborted ||
+              beforeFetch?.() === false
+            ) {
+              abort();
+              throw new DOMException(
+                'Request cancelled before fetch',
+                'AbortError'
+              );
+            }
+            // The private gate and captured fetch are adjacent: no application
+            // callback or asynchronous work may obscure the invocation boundary.
+            return withOwnedReaderCleanup(
               await captured.fetch(url, init),
               () => settled
-            ),
+            );
+          },
         });
         controller = source.abortController;
         const events = source

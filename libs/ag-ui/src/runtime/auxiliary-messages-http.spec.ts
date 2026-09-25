@@ -322,7 +322,10 @@ describe('private auxiliary observation over actual held HTTP', () => {
         { type: EventType.MESSAGES_SNAPSHOT, messages: [user, assistant] },
         lifecycle(exchange, EventType.RUN_FINISHED)
       );
-      expect(await bounded(done)).toEqual({ outcome: 'success' });
+      expect(await bounded(done)).toEqual({
+        outcome: 'success',
+        fetchInvoked: true,
+      });
       await bounded(exchange.closed);
       expect(exchange.response.destroyed).toBe(true);
       expect(latest).toStrictEqual([user, ignoredPatch, assistant]);
@@ -359,7 +362,10 @@ describe('private auxiliary observation over actual held HTTP', () => {
         lifecycle(continuation, EventType.RUN_STARTED),
         lifecycle(continuation, EventType.RUN_FINISHED)
       );
-      expect(await bounded(secondDone)).toEqual({ outcome: 'success' });
+      expect(await bounded(secondDone)).toEqual({
+        outcome: 'success',
+        fetchInvoked: true,
+      });
       await bounded(continuation.closed);
       expect(continuation.response.destroyed).toBe(true);
       expect(server.exchanges).toHaveLength(2);

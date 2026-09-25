@@ -276,7 +276,10 @@ describe('private tool observation over actual held HTTP', () => {
         },
         lifecycle(exchange, EventType.RUN_FINISHED)
       );
-      expect(await bounded(first.done)).toEqual({ outcome: 'success' });
+      expect(await bounded(first.done)).toEqual({
+        outcome: 'success',
+        fetchInvoked: true,
+      });
       await bounded(exchange.closed);
       expect(events.map((event) => event.type)).toEqual([
         EventType.RUN_STARTED,
@@ -311,7 +314,10 @@ describe('private tool observation over actual held HTTP', () => {
         lifecycle(continuation, EventType.RUN_STARTED),
         lifecycle(continuation, EventType.RUN_FINISHED)
       );
-      expect(await bounded(second.done)).toEqual({ outcome: 'success' });
+      expect(await bounded(second.done)).toEqual({
+        outcome: 'success',
+        fetchInvoked: true,
+      });
       await bounded(continuation.closed);
     } finally {
       first.abort();
@@ -362,7 +368,10 @@ describe('private tool observation over actual held HTTP', () => {
         },
         lifecycle(exchange, EventType.RUN_FINISHED)
       );
-      expect(await bounded(handle.done)).toEqual({ outcome: 'success' });
+      expect(await bounded(handle.done)).toEqual({
+        outcome: 'success',
+        fetchInvoked: true,
+      });
       await bounded(exchange.closed);
       expect(transcript).toBe(seed);
       expect(transcript.map((message) => message.id)).toEqual(['owner', 'r']);
@@ -423,7 +432,11 @@ describe('private tool observation over actual held HTTP', () => {
         );
         const outcome = await bounded(handle.done);
         expect(failure).toBeInstanceOf(TypeError);
-        expect(outcome).toEqual({ outcome: 'error', error: failure });
+        expect(outcome).toEqual({
+          outcome: 'error',
+          error: failure,
+          fetchInvoked: true,
+        });
         if (outcome.outcome === 'error') expect(outcome.error).toBe(failure);
         await bounded(exchange.closed);
         expect(delivered).toEqual([

@@ -166,8 +166,12 @@ describe('useAgent native AG-UI owner', () => {
     });
     expect(second.result.current.run?.terminal).toEqual(terminal);
     expect(second.result.current.run?.outcome).toBe('paused');
+    const decision = second.result.current.decision;
+    if (decision?.kind !== 'native') throw new Error('Missing observed pause');
     await act(async () => {
-      run = f.session.submit('Next');
+      run = f.session.resume(decision.id, [
+        { interruptId: 'approval', status: 'resolved', payload: 'yes' },
+      ]);
       await f.started(1);
     });
     const next = f.exchanges[1];
@@ -189,9 +193,9 @@ describe('useAgent native AG-UI owner', () => {
             },
           ],
         },
-        { id: expect.any(String), role: 'user', content: 'Next' },
       ],
       state: { count: 1 },
+      resume: [{ interruptId: 'approval', status: 'resolved', payload: 'yes' }],
       tools: [],
       context: [],
       forwardedProps: {},

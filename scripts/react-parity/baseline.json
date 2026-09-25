@@ -1,15 +1,16 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "59cedda294126a81c8ad4eaaef1a941eaff39b11",
+  "baselineHead": "e1d154438e2bda5fffeca5129a2e531f82185918",
   "sourceState": {
     "modified": [
       "libs/ag-ui/src/runtime/README.md",
+      "libs/ag-ui/src/runtime/create-http-request.ts",
       "libs/ag-ui/src/runtime/create-run.ts",
       "libs/ag-ui/src/runtime/create-session.ts",
       "libs/ag-ui/src/runtime/session-observation.ts"
     ],
     "untracked": [
-      "libs/ag-ui/src/runtime/interrupt-mode.ts"
+      "libs/ag-ui/src/runtime/decision.ts"
     ]
   },
   "scope": {
@@ -221,7 +222,7 @@
       "id": "asset:libs/ag-ui/src/runtime/README.md",
       "kind": "asset",
       "path": "libs/ag-ui/src/runtime/README.md",
-      "sha256": "aa889d331f9c7c14ff4125658a14b3ea66f977e11c585e15d6a1958db971787e"
+      "sha256": "f3ba1554c68983fc08c8a740e149f8f85a77504cba22b809af38e4de028a965b"
     },
     {
       "id": "asset:libs/ag-ui/tsconfig.json",
@@ -10845,19 +10846,25 @@
       "id": "source:libs/ag-ui/src/runtime/create-http-request.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/create-http-request.ts",
-      "sha256": "c91749ff830d7e3500606d51e8c687657820ac1c5f4b6eee080ca5285d2c2373"
+      "sha256": "539e8165b13cccc571ef39e939d598814a2ffe8dad2593a6f5800bca0fbc3121"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/create-run.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/create-run.ts",
-      "sha256": "067799f23bc30baab98438ab52219ad047ba175d931d108bb1602b7454819164"
+      "sha256": "6807b4b77b34b135befc72c4b80d3df9a0f36d1d1cde01e4498d05911f6b1a05"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/create-session.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/create-session.ts",
-      "sha256": "69a823853a447bb46835f86ec502bc835ba5eebf2a56e84254a8b947cb5ad58b"
+      "sha256": "31f9f5ef06e8a7c1521fc151db1f628bf4cb7561b707f932435467314b709f89"
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/decision.ts",
+      "kind": "source",
+      "path": "libs/ag-ui/src/runtime/decision.ts",
+      "sha256": "0f8bee2692214552d2ef10d68b56f598779fcd04fa49aba7664f42d580d5cb2d"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/encrypted-messages.ts",
@@ -10887,7 +10894,7 @@
       "id": "source:libs/ag-ui/src/runtime/session-observation.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/session-observation.ts",
-      "sha256": "c35818da47cbe3f5b139ae10e5baa6aa1d70db474e861a0fc9b87a7e2e724703"
+      "sha256": "56f96a2d084470c25f62caef84aac10dda8a9ee4c91e28f9803a1294558872cb"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/session-publication.ts",

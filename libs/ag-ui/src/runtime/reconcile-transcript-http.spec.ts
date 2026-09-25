@@ -247,7 +247,10 @@ describe('private snapshot reconciliation over actual HTTP', () => {
         },
         lifecycle(initial, EventType.RUN_FINISHED)
       );
-      expect(await bounded(first.done)).toEqual({ outcome: 'success' });
+      expect(await bounded(first.done)).toEqual({
+        outcome: 'success',
+        fetchInvoked: true,
+      });
       await bounded(initial.closed);
       expect(observed).toStrictEqual([
         richSnapshot,
@@ -303,7 +306,10 @@ describe('private snapshot reconciliation over actual HTTP', () => {
         lifecycle(continuation, EventType.RUN_STARTED),
         lifecycle(continuation, EventType.RUN_FINISHED)
       );
-      expect(await bounded(second.done)).toEqual({ outcome: 'success' });
+      expect(await bounded(second.done)).toEqual({
+        outcome: 'success',
+        fetchInvoked: true,
+      });
       await bounded(continuation.closed);
       expect(server.exchanges).toHaveLength(2);
     } finally {
@@ -350,7 +356,11 @@ describe('private snapshot reconciliation over actual HTTP', () => {
       );
       const result = await bounded(handle.done);
       expect(failure).toBeInstanceOf(TypeError);
-      expect(result).toEqual({ outcome: 'error', error: failure });
+      expect(result).toEqual({
+        outcome: 'error',
+        error: failure,
+        fetchInvoked: true,
+      });
       if (result.outcome === 'error') expect(result.error).toBe(failure);
       await bounded(exchange.closed);
       expect(await handle.done).toBe(result);
