@@ -8668,6 +8668,14 @@
       "status": "planned"
     },
     {
+      "id": "source:libs/ag-ui/src/runtime/activity-messages.ts",
+      "taskIds": ["T12", "T13"],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private immutable activity snapshot and delta observation only; excluded from public exports and legacy Angular reachability.",
+      "note": "Captures activity content, complete patches and metadata, checks selected message ambiguity, and preserves prior observations. Operational patch failure retains content/type while admitting independently owned metadata; ownership failures propagate. Actual held HTTP covers continuation, snapshot retention, egress exclusion and callback error closure. Full-history admission, routing, lifecycle, rendering, session integration and public parity remain separate migration work."
+    },
+    {
       "id": "source:libs/ag-ui/src/runtime/create-http-request.ts",
       "taskIds": ["T12", "T13"],
       "treatment": "internal",
@@ -8682,6 +8690,14 @@
       "status": "in-progress",
       "reason": "Private domain run authority only; excluded from public exports and legacy Angular reachability.",
       "note": "Composes physical HTTP ownership with captured caller identity, synchronous cancellation and first terminal outcome. Framework-neutral session projection, transcript fidelity and public parity remain separate migration work. Child-attributed RUN_* events are unsupported when delivered by the SDK; protobuf decoding can erase attribution."
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/encrypted-messages.ts",
+      "taskIds": ["T12", "T13"],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private immutable opaque encrypted message and tool-call observation only; excluded from public exports and legacy Angular reachability.",
+      "note": "Updates only existing selected entities, checks selected call/message ambiguity and freezes changed shells while sharing other owned data. Event metadata and attribution are ignored; values are never decoded or decrypted. Actual held HTTP covers encrypted entities through authoritative snapshots and complete request egress. Routing, lifecycle, session integration and public parity remain separate migration work; current recorded provider traces do not cover these events."
     },
     {
       "id": "source:libs/ag-ui/src/runtime/reconcile-transcript.ts",
