@@ -46,6 +46,11 @@ describe('React migration baseline scope', () => {
     assert.equal(scope.library, true);
   });
   for (const file of [
+    'deployments/ag-ui-mastra/server.mjs',
+    'deployments/ag-ui-mastra/agents.mjs',
+    'deployments/ag-ui-mastra/package-lock.json',
+    'deployments/ag-ui-mastra/test/scripted-service.mjs',
+    'scripts/react-parity/verify-native-mastra.ts',
     'scripts/react-parity/inventory.mjs',
     'scripts/react-parity/review-native-ag-ui.mjs',
     'scripts/react-parity/native-ag-ui-browser.mjs',
@@ -84,6 +89,8 @@ describe('React migration baseline scope', () => {
     for (const file of [
       'apps/website/content/blog/post.mdx',
       'cockpit/chat/messages/python/src/graph.py',
+      'deployments/ag-ui-mastra-other/server.mjs',
+      'deployments/ag-ui-mastra.mjs',
     ]) assert.equal(classifyFromAffected([file], []).library, false);
   });
 });

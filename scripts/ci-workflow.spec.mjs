@@ -80,6 +80,18 @@ function readNamedStep(job, name) {
 }
 
 describe('CI workflow', () => {
+  it('requires exact-lock Mastra installation, service tests and native owner proof after isolated runtimes', async () => {
+    const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'library');
+    const runtime = job.indexOf('npx nx run ag-ui:runtime-type-tests');
+    const install = job.indexOf('npm ci --prefix deployments/ag-ui-mastra --no-audit --no-fund');
+    const tests = job.indexOf('npm test --prefix deployments/ag-ui-mastra');
+    const proof = job.indexOf('node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.base.json scripts/react-parity/verify-native-mastra.ts');
+    assert.ok(runtime >= 0 && install > runtime && tests > install && proof > tests, 'install, existing service tests and actual-owner proof must be required and ordered');
+    const step = readNamedStep(job, 'Verify native owner with pinned Mastra service');
+    assert.doesNotMatch(step, /continue-on-error|\|\|\s*true|set\s+\+e/);
+    assert.match(step, /node node_modules\/typescript\/bin\/tsc -p scripts\/react-parity\/tsconfig.native-mastra.json/);
+    assert.ok(job.indexOf('node --test scripts/react-parity/*.spec.mjs') < install, 'early Node suites remain service-install independent');
+  });
   it('requires the native same-document review after foundations and Chromium, keeping early tests independent', async () => {
     const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'library');
     const early = job.indexOf('node --test scripts/react-parity/*.spec.mjs fixtures/react-parity/traces.spec.mjs');

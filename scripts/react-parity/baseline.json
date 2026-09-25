@@ -1,17 +1,12 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "e1d154438e2bda5fffeca5129a2e531f82185918",
+  "baselineHead": "08c084379ebaf4fe5d6380f48f21ef44ea30d2ba",
   "sourceState": {
     "modified": [
-      "libs/ag-ui/src/runtime/README.md",
-      "libs/ag-ui/src/runtime/create-http-request.ts",
-      "libs/ag-ui/src/runtime/create-run.ts",
-      "libs/ag-ui/src/runtime/create-session.ts",
-      "libs/ag-ui/src/runtime/session-observation.ts"
+      ".github/workflows/ci.yml",
+      "libs/ag-ui/src/runtime/README.md"
     ],
-    "untracked": [
-      "libs/ag-ui/src/runtime/decision.ts"
-    ]
+    "untracked": []
   },
   "scope": {
     "libraries": [
@@ -222,7 +217,7 @@
       "id": "asset:libs/ag-ui/src/runtime/README.md",
       "kind": "asset",
       "path": "libs/ag-ui/src/runtime/README.md",
-      "sha256": "f3ba1554c68983fc08c8a740e149f8f85a77504cba22b809af38e4de028a965b"
+      "sha256": "bd9702a48c2fd3d5e54cba8a00fa1601aad34f026e4271bf515956e2a8c7be59"
     },
     {
       "id": "asset:libs/ag-ui/tsconfig.json",
@@ -2002,7 +1997,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "c287a5617d8871e42a39d8ff24d28512b95575fc5a79f7dd2276ce9812a993ef"
+      "sha256": "e46863c352093cfe296b5183f39f510e7dca08768167ced87f225f8d0cd2a72b"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
