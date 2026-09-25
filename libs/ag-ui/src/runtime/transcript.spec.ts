@@ -92,6 +92,28 @@ function expectFrozen(value: unknown): void {
 }
 
 describe('private transcript ownership', () => {
+  it.each([
+    ['filter', 'payload'],
+    ['constructor', null],
+    ['constructor', 1],
+  ])('selects messages without interpreting own %s payload', (key, value) => {
+    const source = richMessages();
+    Object.defineProperty(source, key as string, { value, enumerable: true });
+    const output = requestMessages(ownTranscript(source));
+    expect(output).toStrictEqual(
+      richMessages().filter((message) => message.role !== 'activity')
+    );
+    expect(Object.hasOwn(output, key as string)).toBe(false);
+  });
+
+  it('skips top-level holes while retaining explicit undefined admission failure', () => {
+    const source = new Array<Message>(3);
+    source[1] = { id: 'user', role: 'user', content: 'hello' };
+    expect(requestMessages(ownTranscript(source))).toEqual([source[1]]);
+    const invalid = [undefined] as unknown as Message[];
+    expect(() => requestMessages(ownTranscript(invalid))).toThrow(TypeError);
+  });
+
   it('owns all roles and fields without aliasing caller data', () => {
     const source = richMessages();
     const expected = structuredClone(source);

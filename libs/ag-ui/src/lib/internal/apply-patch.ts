@@ -3,6 +3,8 @@
 // move, copy, test. Pure ESM, zero deps. Replaces a CommonJS-only third-party
 // dependency that broke ESM-strict consumers (Vitest, Vite test envs).
 
+import { copyData } from './copy-data';
+
 export interface JsonPatchOp {
   readonly op: 'add' | 'replace' | 'remove' | 'move' | 'copy' | 'test';
   readonly path: string;
@@ -42,7 +44,7 @@ function applyOne(doc: unknown, op: JsonPatchOp): unknown {
     case 'copy': {
       if (op.from == null) throw new Error("'copy' op requires 'from'");
       const value = getAt(doc, parsePointer(op.from));
-      return setAt(doc, parsePointer(op.path), structuredCloneSafe(value), true);
+      return setAt(doc, parsePointer(op.path), value, true);
     }
     case 'test': {
       const actual = getAt(doc, parsePointer(op.path));
@@ -104,21 +106,27 @@ function setAt(
 ): unknown {
   if (tokens.length === 0) {
     // Replace root.
-    return structuredCloneSafe(value);
+    return copyData(value, false);
   }
   const [head, ...rest] = tokens;
   if (Array.isArray(doc)) {
     const i = add && rest.length === 0
       ? head === '-' ? doc.length : parseArrayIndex(head!, doc.length)
       : existingArrayIndex(doc, head!);
-    const arr = doc.slice();
+    const arr = copyContainer(doc);
     if (rest.length === 0) {
       if (add) {
         // RFC-6902 add: insert at index, shifting elements right
-        arr.splice(i, 0, structuredCloneSafe(value));
+        const length = arr.length;
+        for (let index = length; index > i; index--) {
+          if (Object.hasOwn(arr, index - 1)) arr[index] = arr[index - 1];
+          else delete arr[index];
+        }
+        arr[i] = copyData(value, false);
+        arr.length = length + 1;
       } else {
         // replace: overwrite at index
-        arr[i] = structuredCloneSafe(value);
+        arr[i] = copyData(value, false);
       }
     } else {
       arr[i] = setAt(arr[i], rest, value, add);
@@ -132,11 +140,11 @@ function setAt(
   if ((!add || rest.length > 0) && !Object.hasOwn(obj, head!)) {
     throw new Error(`Cannot update missing path "/${tokens.join('/')}"`);
   }
-  if (rest.length === 0) {
-    // Computed properties create own data even for the key "__proto__".
-    return { ...obj, [head!]: structuredCloneSafe(value) };
-  }
-  return { ...obj, [head!]: setAt(obj[head!], rest, value, add) };
+  const out = copyContainer(obj);
+  defineData(out, head!, rest.length === 0
+    ? copyData(value, false)
+    : setAt(obj[head!], rest, value, add));
+  return out;
 }
 
 function removeAt(doc: unknown, tokens: readonly string[]): unknown {
@@ -146,9 +154,15 @@ function removeAt(doc: unknown, tokens: readonly string[]): unknown {
   const [head, ...rest] = tokens;
   if (Array.isArray(doc)) {
     const i = existingArrayIndex(doc, head!);
-    const arr = doc.slice();
+    const arr = copyContainer(doc);
     if (rest.length === 0) {
-      arr.splice(i, 1);
+      const length = arr.length;
+      for (let index = i; index < length - 1; index++) {
+        if (Object.hasOwn(arr, index + 1)) arr[index] = arr[index + 1];
+        else delete arr[index];
+      }
+      delete arr[length - 1];
+      arr.length = length - 1;
     } else {
       arr[i] = removeAt(arr[i], rest);
     }
@@ -159,12 +173,13 @@ function removeAt(doc: unknown, tokens: readonly string[]): unknown {
   }
   if (!Object.hasOwn(doc, head!)) throw new Error(`Cannot remove non-existent key "${head}"`);
   const obj = doc as Record<string, unknown>;
+  const out = copyContainer(obj);
   if (rest.length === 0) {
-    const out = { ...obj };
     delete out[head!];
     return out;
   }
-  return { ...obj, [head!]: removeAt(obj[head!], rest) };
+  defineData(out, head!, removeAt(obj[head!], rest));
+  return out;
 }
 
 function existingArrayIndex(array: readonly unknown[], token: string): number {
@@ -188,12 +203,21 @@ function parseArrayIndex(token: string, lengthBound: number): number {
   return i;
 }
 
-function structuredCloneSafe<T>(v: T): T {
-  // Cheap deep clone for JSON-like values (no functions, no cycles) — matches
-  // the deep-clone the reducer was already doing pre-applyPatch with the prior
-  // dependency.
-  if (v === null || typeof v !== 'object') return v;
-  return JSON.parse(JSON.stringify(v)) as T;
+/** Detach a changed ancestor while retaining unaffected child references. */
+function copyContainer<T extends object>(value: T): T {
+  const copy = Array.isArray(value)
+    ? new Array(value.length)
+    : Object.create(Object.getPrototypeOf(value));
+  for (const key of Object.keys(value)) {
+    defineData(copy, key, (value as Record<string, unknown>)[key]);
+  }
+  return copy;
+}
+
+function defineData(target: object, key: string, value: unknown): void {
+  Object.defineProperty(target, key, {
+    value, enumerable: true, writable: true, configurable: true,
+  });
 }
 
 function deepEqual(a: unknown, b: unknown): boolean {
@@ -203,10 +227,6 @@ function deepEqual(a: unknown, b: unknown): boolean {
   if (Array.isArray(a) !== Array.isArray(b)) return false;
   if (Array.isArray(a) && Array.isArray(b)) {
     if (a.length !== b.length) return false;
-    for (let i = 0; i < a.length; i++) {
-      if (!deepEqual(a[i], b[i])) return false;
-    }
-    return true;
   }
   const ao = a as Record<string, unknown>;
   const bo = b as Record<string, unknown>;

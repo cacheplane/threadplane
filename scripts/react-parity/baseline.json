@@ -1,10 +1,14 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "d329076ac466b54b45a4aea44d0c5edd6977661b",
+  "baselineHead": "7ee867effd94022a2fd2cc1380f6f5844a22964a",
   "sourceState": {
-    "modified": [],
+    "modified": [
+      "libs/ag-ui/src/lib/internal/apply-patch.ts",
+      "libs/ag-ui/src/runtime/transcript.ts"
+    ],
     "untracked": [
-      "libs/ag-ui/src/runtime/text-messages.ts"
+      "libs/ag-ui/src/lib/internal/copy-data.ts",
+      "libs/ag-ui/src/runtime/state.ts"
     ]
   },
   "scope": {
@@ -10536,7 +10540,13 @@
       "id": "source:libs/ag-ui/src/lib/internal/apply-patch.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/internal/apply-patch.ts",
-      "sha256": "7d241f7d6cfbffbb4a562c5e73ff660c628e11e34aa59229dba771dc14c68427"
+      "sha256": "00f2a5789735548f4651fc1ee1fddd24ffbdc4e63266faa89047b1585d468ae6"
+    },
+    {
+      "id": "source:libs/ag-ui/src/lib/internal/copy-data.ts",
+      "kind": "source",
+      "path": "libs/ag-ui/src/lib/internal/copy-data.ts",
+      "sha256": "74c5ff897842a482c646a73f62a3caf775fb85e9be6d6cbe54b9735f33b8a77a"
     },
     {
       "id": "source:libs/ag-ui/src/lib/interrupt-persistence.ts",
@@ -10629,6 +10639,12 @@
       "sha256": "c2efbe4561a3d348422b144f7ab09656aa85b85771870fff4d4963880b9c6b74"
     },
     {
+      "id": "source:libs/ag-ui/src/runtime/state.ts",
+      "kind": "source",
+      "path": "libs/ag-ui/src/runtime/state.ts",
+      "sha256": "fca5833b9a0956c6f11cb8ea7bda6ab82d83bf4acb98d972e1a2082b6f616423"
+    },
+    {
       "id": "source:libs/ag-ui/src/runtime/text-messages.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/text-messages.ts",
@@ -10638,7 +10654,7 @@
       "id": "source:libs/ag-ui/src/runtime/transcript.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/transcript.ts",
-      "sha256": "b35b5af35621c891f9309f3cc6702a71a8b264d959333de45df9334455c56d53"
+      "sha256": "6b7e87e442efbb45d9913c3c6c03cf3bb7a32bcb140ecfa6eb2665962a350eb4"
     },
     {
       "id": "source:libs/ag-ui/src/test-setup.ts",
