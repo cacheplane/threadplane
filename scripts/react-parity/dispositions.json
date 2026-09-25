@@ -8756,6 +8756,14 @@
       "note": "Captures explicitly selected native event fields, preserves start order and structural sharing, and rejects selected lifecycle ambiguity atomically. Held HTTP proves child evidence is separate from root outcomes, global transcript attribution and shared state, including missing terminal evidence and SDK rejection. Local callback injection covers nonportable ownership failure, not JSON wire admission. Session integration, cross-run continuation and public parity remain separate migration work; recorded provider traces do not cover native child lifecycle events."
     },
     {
+      "id": "source:libs/ag-ui/src/runtime/testing/binding-fixture.ts",
+      "taskIds": ["T05", "T06"],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private browser-safe native binding fixture; actual AG-UI session owns all snapshots and commands. No public export or production framework dependency.",
+      "note": "Controlled Fetch API bytes prove native snapshot observation, complete request envelopes, isolated owners and local cancellation across both frameworks. Actual HTTP closure and shared display/tool policy are separate proof boundaries."
+    },
+    {
       "id": "source:libs/ag-ui/src/runtime/text-messages.ts",
       "taskIds": ["T12", "T13"],
       "treatment": "internal",

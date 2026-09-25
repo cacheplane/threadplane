@@ -6,6 +6,10 @@ import type {
 import { useAgent } from './index.js';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- This type-only integration probe observes the actual private factory through the borrowed fixture.
 import type { bindingFixture } from '../../langgraph/src/runtime/testing/binding-fixture';
+// eslint-disable-next-line @nx/enforce-module-boundaries -- Type-only admission proof for the actual private native owner, not a production dependency.
+import type { createSession } from '../../ag-ui/src/runtime/create-session';
+// eslint-disable-next-line @nx/enforce-module-boundaries -- The private native snapshot is inferred without a core display projection.
+import type { SessionSnapshot } from '../../ag-ui/src/runtime/session-observation';
 
 export function useInferredRuntime(
   session: ReturnType<typeof bindingFixture>['session']
@@ -122,5 +126,79 @@ export function useTypedSession(session: AgentSession<Tools>) {
   }
   // @ts-expect-error The binding exposes a snapshot, not session commands.
   snapshot.submit('Hello');
+  return exact;
+}
+
+export function useNativeSession(session: ReturnType<typeof createSession>) {
+  const snapshot = useAgent(session);
+  const exact: SessionSnapshot = snapshot;
+  const state: PlainValue = snapshot.state;
+  const name: string | undefined = snapshot.subagents[0]?.started.name;
+  const terminal = snapshot.run?.terminal;
+  if (terminal?.type === 'RUN_FINISHED') {
+    const runId: string = terminal.runId;
+    if (terminal.outcome?.type === 'interrupt') {
+      const reason: string = terminal.outcome.interrupts[0].reason;
+      // @ts-expect-error Native terminal payloads remain readonly.
+      terminal.outcome.interrupts.push({ reason: 'changed' });
+      void reason;
+    }
+    // @ts-expect-error Root terminal fields are readonly.
+    terminal.runId = runId;
+  }
+  const child = snapshot.subagents[0]?.terminal;
+  if (child?.type === 'SUBAGENT_ERROR') {
+    const error: string = child.message;
+    void error;
+  }
+  for (const message of snapshot.transcript) {
+    if (message.role === 'assistant') {
+      const raw: string | undefined =
+        message.toolCalls?.[0]?.function.arguments;
+      if (message.toolCalls?.[0]) {
+        // @ts-expect-error Native arguments remain raw protocol strings, not decoded objects.
+        const decoded: { city: string } =
+          message.toolCalls[0].function.arguments;
+        // @ts-expect-error Nested protocol tool fields stay readonly.
+        message.toolCalls[0].function.arguments = '{}';
+        void decoded;
+      }
+      void raw;
+    }
+    // @ts-expect-error Native transcript messages remain readonly.
+    message.id = 'changed';
+  }
+  // @ts-expect-error Collections retain their readonly native shape.
+  snapshot.transcript.push({ id: 'new', role: 'user', content: 'mutable' });
+  // @ts-expect-error Child start evidence remains readonly.
+  snapshot.subagents[0].started.name = 'changed';
+  // @ts-expect-error The native owner does not fabricate executable core tools.
+  void snapshot.toolCalls;
+  // @ts-expect-error Commands belong to the session, not its snapshot.
+  snapshot.submit('Hello');
+  // @ts-expect-error The native state field is readonly.
+  snapshot.state = {};
+  if (state && typeof state === 'object' && !Array.isArray(state)) {
+    // @ts-expect-error Nested native state is readonly too.
+    state['changed'] = true;
+  }
+  void [state, name];
+  return exact;
+}
+
+export function useStructuralContract() {
+  const primitive = useAgent({
+    getSnapshot: () => 1,
+    subscribe: () => () => undefined,
+  });
+  const exact: number = primitive;
+  // @ts-expect-error Observation requires a snapshot getter.
+  useAgent({ subscribe: () => () => undefined });
+  // @ts-expect-error The snapshot getter must be callable.
+  useAgent({ getSnapshot: 1, subscribe: () => () => undefined });
+  // @ts-expect-error Observation requires a subscription method.
+  useAgent({ getSnapshot: () => 1 });
+  // @ts-expect-error Subscription must return a release function.
+  useAgent({ getSnapshot: () => 1, subscribe: () => undefined });
   return exact;
 }
