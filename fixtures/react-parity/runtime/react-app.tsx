@@ -1,6 +1,7 @@
-import { StrictMode, useState } from 'react';
+import { StrictMode, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { useAgent } from '@threadplane/react';
+import { TextTranscript } from '@threadplane/react/chat';
 import { createFixtureSession } from './runtime-entry.js';
 import './review.css';
 import {
@@ -10,6 +11,7 @@ import {
   reviewInstructions,
   reviewResponse,
   reviewRunOptions,
+  textRows,
 } from './scenarios';
 
 // Application ownership is outside StrictMode and the component lifetime.
@@ -25,6 +27,7 @@ const submit = (input: string) => {
 
 function App() {
   const snapshot = useAgent(session);
+  const rows = useMemo(() => textRows(snapshot.messages), [snapshot.messages]);
   const [loadsFinished, setLoadsFinished] = useState(0);
   const [loadError, setLoadError] = useState('');
   const [resumesFinished, setResumesFinished] = useState(0);
@@ -119,7 +122,7 @@ function App() {
           <div className="state-grid">
             <div className="field">
               <h3>Status</h3>
-              <output aria-label="Status" data-testid="status">
+              <output role="status" aria-label="Status" data-testid="status">
                 {snapshot.status}
               </output>
             </div>
@@ -208,6 +211,7 @@ function App() {
         </section>
         <section className="panel" aria-label="Conversation panel">
           <h2>Conversation</h2>
+          <TextTranscript messages={rows} />
           <div className="fields">
             <div className="field">
               <h3>Text</h3>

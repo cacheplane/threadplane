@@ -7,6 +7,6 @@
     "inlineSources": false,
     "types": ["vitest/globals"]
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "chat/src/**/*.ts"],
   "exclude": []
 }

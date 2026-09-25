@@ -13325,6 +13325,457 @@
       ],
       "treatment": "infrastructure",
       "status": "planned"
+    },
+    {
+      "id": "asset:libs/angular/LICENSE.md",
+      "taskIds": [
+        "T02",
+        "T22"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "asset:libs/angular/README.md",
+      "taskIds": [
+        "T02",
+        "T22"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "asset:libs/angular/chat/ng-package.json",
+      "taskIds": [
+        "T02",
+        "T22"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "asset:libs/angular/ng-package.json",
+      "taskIds": [
+        "T02",
+        "T22"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "asset:libs/angular/package.json",
+      "taskIds": [
+        "T02",
+        "T22"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "asset:libs/angular/project.json",
+      "taskIds": [
+        "T02",
+        "T22"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "asset:libs/angular/tsconfig.json",
+      "taskIds": [
+        "T02",
+        "T22"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "asset:libs/angular/tsconfig.lib.json",
+      "taskIds": [
+        "T02",
+        "T22"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "asset:libs/angular/tsconfig.lib.prod.json",
+      "taskIds": [
+        "T02",
+        "T22"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "asset:libs/angular/tsconfig.spec.json",
+      "taskIds": [
+        "T02",
+        "T22"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "asset:libs/react/LICENSE.md",
+      "taskIds": [
+        "T02",
+        "T22"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "asset:libs/react/README.md",
+      "taskIds": [
+        "T02",
+        "T22"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "asset:libs/react/package.json",
+      "taskIds": [
+        "T02",
+        "T22"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "asset:libs/react/project.json",
+      "taskIds": [
+        "T02",
+        "T22"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "asset:libs/react/tsconfig.json",
+      "taskIds": [
+        "T02",
+        "T22"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "asset:libs/react/tsconfig.lib.json",
+      "taskIds": [
+        "T02",
+        "T22"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "asset:libs/react/tsconfig.spec.json",
+      "taskIds": [
+        "T02",
+        "T22"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "component:libs/angular/chat/src/text-transcript.component.ts#TextTranscriptComponent",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "entry:libs/angular/chat/src/public-api.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "entry:libs/angular/src/public-api.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "entry:libs/react/src/chat/index.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "entry:libs/react/src/index.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "export:libs/angular/chat/src/public-api.ts#TextTranscriptComponent",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#observeAgent",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#TextTranscript",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#TextTranscriptProps",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "export:libs/react/src/index.ts#useAgent",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/text-transcript.ts",
+      "taskIds": [
+        "T12",
+        "T14",
+        "T23"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private pure root-text display selection only; full native history and command ownership remain unchanged.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "source:libs/angular/chat/src/public-api.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "source:libs/angular/chat/src/text-transcript.component.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "source:libs/angular/src/observe-agent.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "source:libs/angular/src/public-api.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "source:libs/angular/src/test-setup.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "source:libs/angular/vite.config.mts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "source:libs/react/src/chat/index.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "source:libs/react/src/chat/text-transcript.tsx",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "source:libs/react/src/index.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "source:libs/react/src/use-agent.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "source:libs/react/vite.config.mts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
     }
   ]
 }

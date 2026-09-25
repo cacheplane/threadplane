@@ -11,6 +11,7 @@
     "@angular/core": "^20.0.0 || ^21.0.0 || ^22.0.0"
   },
   "files": [
+    "chat/package.json",
     "fesm2022/*.mjs",
     "fesm2022/*.mjs.map",
     "types/**/*.d.ts",

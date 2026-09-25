@@ -66,3 +66,24 @@ follows existing workspace policy; it is not a compatibility-matrix claim.
 Build with `npx nx build angular` (ng-packagr and partial Angular compilation).
 Run `npx nx test angular` and `npx nx run angular:type-tests` for real-session
 and strict type coverage. The tests use Angular 21.1.6.
+
+`@threadplane/angular/chat` is a separate APF entry exporting standalone
+`TextTranscriptComponent`. Import it in your component's `imports` and bind rows:
+
+```html
+<threadplane-text-transcript [messages]="rows" label="Conversation" />
+```
+
+Rows are readonly structural `id`, core `role`, and string `content` values; extra
+fields are allowed. IDs must be unique within the list. Every supplied row renders
+literally, including empty text and intentionally supplied system or tool rows.
+Select visible rows in app composition without rewriting the owner's history.
+The named section and ordered list preserve whitespace and keyed mounted DOM.
+The component has no commands, subscription, token announcements, focus or scroll
+behavior. A remount creates new DOM; the app still owns the session lifetime.
+
+The root remains headless. This first text view does not provide Markdown, tool
+cards, citations, reasoning, full chat parity, SSR or hydration. The private AG-UI
+review uses O(N) pure root-text selection with optional previous-output row reuse
+bounded to current rows. Framework memoization follows immutable transcript
+references and is disposable; it is not another owner or execution controller.

@@ -5,6 +5,13 @@ AG-UI session. A second React view observes an independent session. It uses loca
 compiled framework bindings and bundles private AG-UI source; it is not an
 installed or publicly exported backend package.
 
+Both compiled `/chat` entries render root text beside the full protocol panels.
+The private pure selector includes root user/assistant text and multipart user
+text parts joined by newlines. It omits child text (including `Hello`), reasoning,
+tools and activity from that view while preserving all native request history.
+`First`, then root `Second` and `Next answer`, appear in both conversation views.
+Status is separate from the rows and follows only observed run facts.
+
 From the repository root, build the prerequisites once:
 
 ```sh
@@ -64,7 +71,7 @@ alone does not establish artifact freshness. Build again after changing bindings
 No temporary bundle tree is retained.
 
 This deterministic synthetic fixture does not establish hosted-provider parity,
-public backend exports, shared component compatibility, tool execution, persistence,
+public backend exports, rich component parity, tool execution, persistence,
 resume support, SSR or hydration. It retains raw protocol arguments without
 parsing them or fabricating executable core tool states. Public documentation
 and generated agent context remain unchanged.

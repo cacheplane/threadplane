@@ -40,6 +40,45 @@ test('package validation accepts private Angular APF declarations and default ES
   const directory = fixture(t, { manifest: angularManifest, files: angularFiles });
   assert.deepEqual(validatePackage(directory), []);
 });
+const angularChat = { types: './types/threadplane-angular-chat.d.ts', default: './fesm2022/threadplane-angular-chat.mjs' };
+const angularChatFiles = { ...angularFiles, 'types/threadplane-angular-chat.d.ts': 'export declare class TextTranscriptComponent {}', 'fesm2022/threadplane-angular-chat.mjs': 'export class TextTranscriptComponent {}' };
+test('real Angular APF secondary entries use types/default conditions too', (t) => {
+  const manifest = { ...angularManifest, exports: { ...angularManifest.exports, './chat': angularChat } };
+  assert.deepEqual(validatePackage(fixture(t, { manifest, files: angularChatFiles })), []);
+  assert.deepEqual(packageVerifier.consumerSpecifiers(manifest), ['@threadplane/angular', '@threadplane/angular/chat']);
+});
+test('APF secondary support does not admit backend SDK dependencies', (t) => {
+  const manifest = { ...angularManifest, exports: { ...angularManifest.exports, './chat': angularChat }, dependencies: { '@ag-ui/client': '0.0.59' } };
+  assert.ok(validatePackage(fixture(t, { manifest, files: angularChatFiles })).some(error => error.includes('forbidden dependencies entry @ag-ui/client')));
+});
+for (const [name, entry, files] of [
+  ['missing types', { default: angularChat.default }, angularChatFiles],
+  ['missing default', { types: angularChat.types }, angularChatFiles],
+  ['missing declaration file', angularChat, { ...angularChatFiles, 'types/threadplane-angular-chat.d.ts': null }],
+  ['missing runtime file', angularChat, { ...angularChatFiles, 'fesm2022/threadplane-angular-chat.mjs': null }],
+  ['nondeclaration types', { ...angularChat, types: angularChat.default }, angularChatFiles],
+]) test(`Angular secondary rejects ${name}`, (t) => {
+  const manifest = { ...angularManifest, exports: { ...angularManifest.exports, './chat': entry } };
+  assert.ok(validatePackage(fixture(t, { manifest, files })).length > 0);
+});
+test('React chat requires its real supported export', () => {
+  assert.throws(() => packageVerifier.assertSupportedExports('react/chat', {}), /TextTranscript/);
+  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/chat', { TextTranscript() { return null; } }));
+});
+test('React chat still requires import and use client', (t) => {
+  for (const entry of [
+    { types: './src/index.d.ts', default: './src/index.js' },
+    { types: './src/index.d.ts', import: './src/chat.js', default: './src/chat.js' },
+  ]) {
+    const directory = fixture(t, { manifest: { exports: { '.': { types: './src/index.d.ts', import: './src/index.js', default: './src/index.js' }, './chat': entry } }, files: { 'src/chat.js': 'export const TextTranscript = () => null;' } });
+    assert.ok(validatePackage(directory).length > 0);
+  }
+});
+test('headless framework root evidence excludes real chat components', () => {
+  assert.throws(() => packageVerifier.assertHeadlessInputs({ 'node_modules/@threadplane/react/src/chat/text-transcript.js': {} }), /chat/);
+  assert.throws(() => packageVerifier.assertHeadlessInputs({ 'node_modules/@threadplane/angular/fesm2022/threadplane-angular-chat.mjs': {} }), /chat/);
+  assert.doesNotThrow(() => packageVerifier.assertParserFreeInputs({ 'node_modules/@threadplane/angular/fesm2022/threadplane-angular-chat.mjs': {} }));
+});
 test('APF metadata exports are excluded from executable consumer imports', () => {
   assert.equal(typeof packageVerifier.consumerSpecifiers, 'function');
   assert.deepEqual(packageVerifier.consumerSpecifiers(angularManifest), ['@threadplane/angular']);

@@ -42,6 +42,26 @@ function ownership(inventory) {
 
 test('inventory API exists', () => assert.equal(typeof collectInventory, 'function'));
 
+test('native APF secondary and React feature entries are explicitly scoped and resolve actual declarations', t => {
+  for (const library of ['angular', 'react']) assert.ok(DEFAULT_SCOPE.libraries.includes(library));
+  const entries = ['libs/angular/chat/src/public-api.ts', 'libs/react/src/chat/index.ts'];
+  for (const entry of entries) assert.ok(DEFAULT_SCOPE.entryPoints.includes(entry));
+  const { root, put } = fixture(t);
+  put(entries[0], "export { TextTranscriptComponent } from './text-transcript.component';");
+  put('libs/angular/chat/src/text-transcript.component.ts', "import { Component } from '@angular/core'; @Component({selector:'threadplane-text-transcript'}) export class TextTranscriptComponent {}");
+  put('libs/angular/chat/ng-package.json', '{"lib":{"entryFile":"src/public-api.ts"}}');
+  put(entries[1], "'use client'; export { TextTranscript } from './text-transcript.js';");
+  put('libs/react/src/chat/text-transcript.tsx', 'export function TextTranscript() { return <section />; }');
+  const actual = collectInventory(root, { ...scope, libraries: ['angular', 'react'], entryPoints: entries });
+  assert.ok(actual.rows.some(row => row.id === 'component:libs/angular/chat/src/text-transcript.component.ts#TextTranscriptComponent'));
+  assert.ok(actual.rows.some(row => row.id === 'asset:libs/angular/chat/ng-package.json'));
+  const angular = actual.rows.find(row => row.id === `export:${entries[0]}#TextTranscriptComponent`);
+  const react = actual.rows.find(row => row.id === `export:${entries[1]}#TextTranscript`);
+  assert.equal(angular.declarations[0].path, 'libs/angular/chat/src/text-transcript.component.ts');
+  assert.equal(react.declarations[0].path, 'libs/react/src/chat/text-transcript.tsx');
+  assert.equal(actual.rows.filter(row => row.kind === 'entry').length, 2);
+});
+
 test('AST inventory resolves renamed exports, barrels and secondary entries; scans aliased decorators', t => {
   const { collect } = fixture(t);
   const inventory = collect();
