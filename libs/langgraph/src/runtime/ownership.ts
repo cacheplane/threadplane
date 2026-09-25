@@ -13,7 +13,7 @@ import type {
   LangGraphSnapshot,
   LangGraphSubgraph,
   LangGraphValues,
-} from './langgraph-snapshot';
+} from './langgraph-snapshot.js';
 
 // Only objects projected here are trusted. Object.isFrozen on external input is
 // insufficient: its children may still be mutable. The weak set retains no data.

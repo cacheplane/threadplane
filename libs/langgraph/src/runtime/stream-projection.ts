@@ -9,14 +9,14 @@ import {
   reduceMessages,
   type MessageEvent,
   type MessageState,
-} from './message-reducer';
-import type { StreamEvent } from './transport.types';
-import { ownMessage, ownToolCall } from './ownership';
-import { record, roleOf, textContent } from './wire-message';
-import { projectCitations } from './citation-projection';
-import { projectReasoning } from './reasoning-projection';
+} from './message-reducer.js';
+import type { StreamEvent } from './transport.types.js';
+import { ownMessage, ownToolCall } from './ownership.js';
+import { record, roleOf, textContent } from './wire-message.js';
+import { projectCitations } from './citation-projection.js';
+import { projectReasoning } from './reasoning-projection.js';
 
-export { record } from './wire-message';
+export { record } from './wire-message.js';
 
 type CanonicalMessage = Extract<MessageEvent, { type: 'message' }>;
 

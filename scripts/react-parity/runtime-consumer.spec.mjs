@@ -1,9 +1,21 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import * as runtime from './runtime-consumer.mjs';
+
+test('shared view preparation copies the complete views without composing a private backend or declaration', (t) => {
+  const consumer = mkdtempSync(join(tmpdir(), 'candidate-view-copy-'));
+  t.after(() => rmSync(consumer, { recursive: true, force: true }));
+  runtime.prepareRuntimeViews(process.cwd(), consumer, 'react');
+  for (const name of ['main.tsx', 'react-app.tsx', 'react-threads.tsx', 'react-checkpoints.tsx', 'scenarios.ts', 'thread-owner.ts', 'tools.ts', 'review.css', 'vite.config.mts'])
+    assert.equal(existsSync(join(consumer, name)), true, `shared ${name}`);
+  assert.equal(existsSync(join(consumer, 'runtime-entry.js')), false, 'no private bundle');
+  assert.equal(existsSync(join(consumer, 'runtime-entry.d.ts')), false, 'no surrogate declarations');
+  assert.match(readFileSync(join(consumer, 'main.tsx'), 'utf8'), /checkpoints/);
+  assert.match(readFileSync(join(consumer, 'main.tsx'), 'utf8'), /threads/);
+});
 
 const versions = { react: '19.2.4', 'react-dom': '19.2.4', '@types/react': '19.2.14', '@types/react-dom': '19.2.3', vite: '7.3.1', typescript: '5.9.3' };
 const applicationState = { model: 'gpt-5-mini', reasoning_effort: 'minimal', gen_ui_mode: 'a2ui', itinerary: [{ id: 'paris', day: 1, place: 'Paris', note: 'Check the weather' }] };

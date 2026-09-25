@@ -1,7 +1,7 @@
 import type { Config } from '@langchain/langgraph-sdk';
 import type { DeepReadonly, PlainValue } from '@threadplane/core';
-import { ownValue } from './ownership';
-import type { LangGraphSubmitOptions } from './transport.types';
+import { ownValue } from './ownership.js';
+import type { LangGraphSubmitOptions } from './transport.types.js';
 
 type Configurable = Readonly<Record<string, PlainValue>> & {
   readonly thread_id?: never;

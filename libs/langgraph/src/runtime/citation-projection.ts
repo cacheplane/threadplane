@@ -1,6 +1,6 @@
 import type { Citation, PlainValue } from '@threadplane/core';
-import { ownValue } from './ownership';
-import { record } from './wire-message';
+import { ownValue } from './ownership.js';
+import { record } from './wire-message.js';
 
 /** Bounded staging copy of the legacy extractor's aliases. Consolidate at the
  * backend cutover: this neutral contract deliberately requires plain extras and

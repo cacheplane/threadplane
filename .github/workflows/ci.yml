@@ -160,6 +160,8 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Verify native same-document session bindings
         run: node scripts/react-parity/review-native-ag-ui.mjs --verify
+      - name: Verify real LangGraph candidate package
+        run: node scripts/react-parity/verify-langgraph-candidate.mjs
       - name: Verify emitted boundaries and isolated packages
         run: |
           node scripts/react-parity/verify-boundaries.mjs --built
