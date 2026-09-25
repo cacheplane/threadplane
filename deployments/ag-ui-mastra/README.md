@@ -64,7 +64,40 @@ Do NOT `source` the repo root `.env` — export only what you need. (A stray
 asserted against the measured 2026-08-31 spike captures, and the
 interrupt→resume round trip is driven through the real `@ag-ui/client` 0.0.59
 (`devDependencies`) — the same client the Angular adapter wraps. The model is
-a scripted OpenAI responses-API mock; no network, no key.
+a scripted OpenAI responses-API mock over owned loopback HTTP; no hosted model
+or real key is used.
+
+The shared test-only setup is `test/scripted-service.mjs`. It starts the local
+model, chooses a temporary LibSQL path and dummy credentials, then dynamically
+imports the unchanged service. Run one real service setup per standalone process:
+the production module captures configuration at import. Cleanup closes owned
+servers, removes the temporary database and restores the selected environment.
+Startup and HTTP waits are bounded. The helper cannot cancel arbitrary module
+evaluation or resources a custom loader creates outside its returned factory;
+its cleanup contract covers the resources it allocates.
+
+From the repository root, the separate native-owner proof is:
+
+```sh
+npm ci --prefix deployments/ag-ui-mastra --no-audit --no-fund
+npm test --prefix deployments/ag-ui-mastra
+node node_modules/typescript/bin/tsc -p scripts/react-parity/tsconfig.native-mastra.json
+node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.base.json scripts/react-parity/verify-native-mastra.ts
+```
+
+It uses the actual private Threadplane owner and this service's pinned bridge;
+there is no client provider profile or interrupt-ID parser. The eight provider
+POSTs prove resolved approval, `{ approved: false }` rejection, native cancellation,
+and an accepted resume whose terminal is deliberately lost downstream. Tool
+results establish execution; the scripted model's fixed “Booked” prose does not.
+Physical response closure is required before cleanup. Fresh-thread memory warnings
+from the pinned bridge can appear on stderr; the final JSON records proof results.
+
+The bridge handles only the first resolved/cancelled entry. Resolved null/undefined
+does not enter its resume branch. Literal false/native cancellation differs from
+`{ approved: false }`; cancellation success does not prove durable snapshot
+deletion. This is local Mastra/LibSQL interoperability, not a live model, remote
+deployment, multi-interrupt, arbitrary-payload or safe-recovery guarantee.
 
 ## Deployment
 

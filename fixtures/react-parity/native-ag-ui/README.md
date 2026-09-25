@@ -80,6 +80,12 @@ Local stop or reconstructing an owner is not recovery. Separate held HTTP tests
 cover these uncertain outcomes; this main walkthrough uses synthetic success.
 No hosted provider resume compatibility is claimed.
 
+The separate `scripts/react-parity/verify-native-mastra.ts` command exercises the
+actual private owner against the pinned local Mastra service and a scripted model.
+Its approval, rejection, cancellation and lost-terminal HTTP proof is documented
+in `libs/ag-ui/src/runtime/README.md`; it adds no browser controls or hosted-provider
+claim to this synthetic walkthrough.
+
 For automated verification, use existing Playwright Chromium (install it once
 with `npx playwright install chromium`, or `--with-deps chromium` on Linux):
 

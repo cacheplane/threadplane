@@ -145,6 +145,12 @@ jobs:
           npx nx run ag-ui:runtime-quality
           npx nx run ag-ui:runtime-type-tests
           npx nx run ag-ui:type-tests
+      - name: Verify native owner with pinned Mastra service
+        run: |
+          npm ci --prefix deployments/ag-ui-mastra --no-audit --no-fund
+          npm test --prefix deployments/ag-ui-mastra
+          node node_modules/typescript/bin/tsc -p scripts/react-parity/tsconfig.native-mastra.json
+          node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.base.json scripts/react-parity/verify-native-mastra.ts
       - run: npx nx test langgraph --coverage --maxWorkers=2 --reporter=default
       - name: Verify durable tool ownership and PostgreSQL migration
         run: node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.base.json scripts/react-parity/verify-tool-claims.ts

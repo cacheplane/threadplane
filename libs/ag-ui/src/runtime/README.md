@@ -127,3 +127,31 @@ when backend interrupt IDs repeat; old finalizers cannot clear that generation.
 Legacy observation has no resume support. Captured Strands replay establishes
 native response wire shape with synthetic completion only. Captured Mastra and
 translated Microsoft evidence do not establish provider resume interoperability.
+
+## Pinned local Mastra interoperability proof
+
+Run the actual private owner against the existing service and its exact lock:
+
+```sh
+npm ci --prefix deployments/ag-ui-mastra --no-audit --no-fund
+npm test --prefix deployments/ag-ui-mastra
+node node_modules/typescript/bin/tsc -p scripts/react-parity/tsconfig.native-mastra.json
+node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.base.json scripts/react-parity/verify-native-mastra.ts
+```
+
+This separate process uses the actual `@ag-ui/mastra` 1.1.2 bridge and LibSQL with a scripted local
+model, dummy credentials and owned ephemeral loopback servers. It checks eight
+complete native request envelopes across four independent owners. Approval and
+decline are established by actual reservation tool results, not the model's fixed
+prose. Native cancellation completes without a tool result. A response-loss case
+records actual provider success, removes only its matching root terminal, and
+requires the owner to retain uncertainty and reject replay without another POST.
+Both HTTP sides must physically close before cleanup. JSON output includes the
+installed provider/client versions, service lock hash and scenario evidence.
+
+The bridge consumes the first resolved/cancelled entry only. Resolved null or
+undefined falls outside its resume branch; arbitrary payload and multi-interrupt
+support are unproved. Literal false and native cancellation differ from the
+`{ approved: false }` application payload. Cancellation completion does not prove
+durable snapshot deletion. This local proof establishes neither hosted-model or
+remote-agent compatibility nor persistence, recovery or public backend exports.

@@ -177,6 +177,11 @@ export function classifyFromAffected(changedFiles, affectedProjects) {
   if (changedFiles.some(isParityChange)) {
     scope.library = true;
   }
+  // The native owner proof uses this service's isolated lock and test fixture,
+  // including changes Nx attributes only to the untagged root project.
+  if (changedFiles.some((file) => normalizePath(file).startsWith('deployments/ag-ui-mastra/'))) {
+    scope.library = true;
+  }
   return scope;
 }
 
