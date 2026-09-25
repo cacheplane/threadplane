@@ -8692,6 +8692,14 @@
       "note": "Composes physical HTTP ownership with captured caller identity, synchronous cancellation and first terminal outcome. Framework-neutral session projection, transcript fidelity and public parity remain separate migration work. Child-attributed RUN_* events are unsupported when delivered by the SDK; protobuf decoding can erase attribution."
     },
     {
+      "id": "source:libs/ag-ui/src/runtime/create-session.ts",
+      "taskIds": ["T12", "T13"],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private application-owned protocol session; excluded from public exports and legacy Angular reachability.",
+      "note": "Composes fixed thread configuration, owned history/state, explicit text submissions, first-result run authority and reentrant cancellation. Actual held HTTP covers native protocol fidelity, complete egress, cross-submit attribution and isolated concurrent owners. Core display/delivery projection, framework bindings, tool execution, persistence, resume and public parity remain separate work."
+    },
+    {
       "id": "source:libs/ag-ui/src/runtime/encrypted-messages.ts",
       "taskIds": ["T12", "T13"],
       "treatment": "internal",
@@ -8706,6 +8714,30 @@
       "status": "in-progress",
       "reason": "Private immutable AG-UI snapshot reconciliation only; excluded from public exports and legacy Angular reachability.",
       "note": "Captures complete replacement records, preserves existing ID order and omitted reasoning/activity roles, and rejects duplicate IDs atomically. Seeded HTTP coverage proves reconciliation and request egress; stream reduction, session integration and public parity remain separate migration work."
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/session-attribution.ts",
+      "taskIds": ["T12", "T13"],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private selected retained-target attribution guard; excluded from public exports and legacy Angular reachability.",
+      "note": "Checks explicit tags against retained message, call issuer, result executor or activity ownership across requests where the SDK verifier has no input echo. Does not add sequence validation, child routing, argument parsing or execution authority. Authoritative replacement and encrypted-value policies remain in existing helpers."
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/session-observation.ts",
+      "taskIds": ["T12", "T13"],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private immutable aggregate and native root terminal observation; excluded from public exports and legacy Angular reachability.",
+      "note": "Routes normalized SDK observations to existing transcript/state/child helpers and applies global identity admission only at initial/full snapshot boundaries. Shares owned branches, retains selected portable native terminal evidence separately from local outcomes and keeps one global state document. No core AgentSnapshot or framework parity claim."
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/session-publication.ts",
+      "taskIds": ["T12", "T13"],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private session-local publication and synchronous reentrant command queue; excluded from public exports and legacy Angular reachability.",
+      "note": "Publishes already-owned immutable aggregates without recopying history, contains subscriber errors, preserves one snapshot per notification pass and drains queued commands before callback return. This is not a shared core store or a second protocol owner."
     },
     {
       "id": "source:libs/ag-ui/src/runtime/state.ts",
