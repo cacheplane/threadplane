@@ -13816,6 +13816,75 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private correlated native resume capture, claim and settlement; retains uncertain invoked attempts and does not establish public backend or provider parity."
+    },
+    {
+      "id": "component:libs/angular/chat/src/tool-observation.component.ts#ToolObservationComponent",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Literal caller-supplied tool observation only; execution controls and full tool/chat parity remain incomplete.",
+      "note": "Required name and arguments text, optional literal result text, mounted DOM identity and real private-fixture consumption are verified. Association and formatting remain caller-owned; this is not a protocol selector, execution state model or public backend."
+    },
+    {
+      "id": "export:libs/angular/chat/src/public-api.ts#ToolObservationComponent",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Literal caller-supplied tool observation only; execution controls and full tool/chat parity remain incomplete.",
+      "note": "Required name and arguments text, optional literal result text, mounted DOM identity and real private-fixture consumption are verified. Association and formatting remain caller-owned; this is not a protocol selector, execution state model or public backend."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ToolObservation",
+      "taskIds": [
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Literal caller-supplied tool observation only; execution controls and full tool/chat parity remain incomplete.",
+      "note": "Required name and arguments text, optional literal result text, mounted DOM identity and real private-fixture consumption are verified. Association and formatting remain caller-owned; this is not a protocol selector, execution state model or public backend."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ToolObservationProps",
+      "taskIds": [
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Literal caller-supplied tool observation only; execution controls and full tool/chat parity remain incomplete.",
+      "note": "Required name and arguments text, optional literal result text, mounted DOM identity and real private-fixture consumption are verified. Association and formatting remain caller-owned; this is not a protocol selector, execution state model or public backend."
+    },
+    {
+      "id": "source:libs/angular/chat/src/tool-observation.component.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Literal caller-supplied tool observation only; execution controls and full tool/chat parity remain incomplete.",
+      "note": "Required name and arguments text, optional literal result text, mounted DOM identity and real private-fixture consumption are verified. Association and formatting remain caller-owned; this is not a protocol selector, execution state model or public backend."
+    },
+    {
+      "id": "source:libs/react/src/chat/tool-observation.tsx",
+      "taskIds": [
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Literal caller-supplied tool observation only; execution controls and full tool/chat parity remain incomplete.",
+      "note": "Required name and arguments text, optional literal result text, mounted DOM identity and real private-fixture consumption are verified. Association and formatting remain caller-owned; this is not a protocol selector, execution state model or public backend."
     }
   ]
 }

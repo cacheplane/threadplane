@@ -182,8 +182,25 @@ function verifyPlainExports(root, consumer, projects) {
 }
 
 export function assertSupportedExports(project, entry) {
-  const expected = { core: ['completeDelivery', 'streamingDelivery', 'staticDelivery', 'projectAgentError'], react: ['useAgent'], 'react/chat': ['TextTranscript'] }[project] ?? [];
-  for (const name of expected) if (typeof entry[name] !== 'function') throw new Error(`${project} missing supported contract ${name}`);
+  const expected =
+    {
+      core: [
+        'completeDelivery',
+        'streamingDelivery',
+        'staticDelivery',
+        'projectAgentError',
+      ],
+      react: ['useAgent'],
+      'react/chat': ['TextTranscript', 'ToolObservation'],
+    }[project] ?? [];
+  for (const name of expected)
+    if (typeof entry[name] !== 'function')
+      throw new Error(`${project} missing supported contract ${name}`);
+  if (
+    project === 'react/chat' &&
+    Object.keys(entry).some((name) => !expected.includes(name))
+  )
+    throw new Error('react/chat has unexpected exports');
 }
 
 export async function verifyPackedConsumers(root = process.cwd()) {

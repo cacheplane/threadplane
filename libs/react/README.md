@@ -84,8 +84,30 @@ It preserves whitespace and keyed mounted rows, using a named section and ordere
 list. It does not announce tokens, move focus, scroll, issue commands or own a
 session. Unmount/remount creates new DOM while ownership stays with the app.
 
-The root remains headless. This first text view does not provide Markdown, tool
-cards, citations, reasoning, rich chat parity, SSR or hydration support. The private
+The same `/chat` entry exports `ToolObservation` and readonly
+`ToolObservationProps` for explicitly supplied tool text:
+
+```tsx
+import { ToolObservation } from '@threadplane/react/chat';
+
+<ToolObservation
+  name="weather"
+  argumentsText={'{"city":'}
+  label="Worker weather"
+/>;
+```
+
+`name` and `argumentsText` are required strings. Optional `resultText` is omitted
+when absent; an empty string still renders a Result field. The default label is
+`Tool observation`. All text renders literally with whitespace and long-line
+wrapping, including partial JSON and strings such as `null` or `undefined`.
+The caller selects the call, associates its result and formats known values.
+The component does not parse arguments, infer execution status, subscribe or
+execute tools. Updating text preserves its mounted section and arguments DOM;
+remounting creates new DOM.
+
+The root remains headless. These text views do not provide Markdown, execution
+controls, citations, reasoning, rich chat parity, SSR or hydration support. The private
 AG-UI review uses an O(N) pure root-text selection; previous-output row reuse is an
 optional bounded current-row optimization. React composition memoizes by the actual
 owner and immutable transcript reference without advancing a mutable render cache.

@@ -1,12 +1,17 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "08c084379ebaf4fe5d6380f48f21ef44ea30d2ba",
+  "baselineHead": "ac063ac77efca710f2b1ff8b2ac3aac46a67b3d0",
   "sourceState": {
     "modified": [
-      ".github/workflows/ci.yml",
-      "libs/ag-ui/src/runtime/README.md"
+      "libs/angular/README.md",
+      "libs/angular/chat/src/public-api.ts",
+      "libs/react/README.md",
+      "libs/react/src/chat/index.ts"
     ],
-    "untracked": []
+    "untracked": [
+      "libs/angular/chat/src/tool-observation.component.ts",
+      "libs/react/src/chat/tool-observation.tsx"
+    ]
   },
   "scope": {
     "libraries": [
@@ -259,7 +264,7 @@
       "id": "asset:libs/angular/README.md",
       "kind": "asset",
       "path": "libs/angular/README.md",
-      "sha256": "e9ca6d6b01ea37d427a604a433e8d195a6f7af5bb189f231064392835f20b0a7"
+      "sha256": "b1798a92eb3f8980128a390f2f2d12585e9f5dc862062ad236bc8a99b7df3d58"
     },
     {
       "id": "asset:libs/angular/chat/ng-package.json",
@@ -763,7 +768,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "fd4117b2f03dae11b482fada15a9e0344ab3a086cf46389d09523bf19e31897d"
+      "sha256": "7de403004acbe39d62507327b6094d30d04bf6bb95775616f369eb42b9612012"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -972,6 +977,16 @@
         "Component"
       ],
       "signature": "@Component({\n    selector: 'threadplane-text-transcript',\n    standalone: true,\n    changeDetection: ChangeDetectionStrategy.OnPush,\n    template: `\n    <section [attr.aria-label]=\"label()\">\n      <!-- Explicit role preserves list semantics when markers are hidden in WebKit. -->\n      <ol role=\"list\">\n        @for (message of messages(); track message.id) {\n        <li>\n          <span>{{ speakers[message.role] }}</span>\n          <p>{{ message.content }}</p>\n        </li>\n        }\n      </ol>\n    </section>\n  `,\n    styles: `\n    :host { display: block; color: var(--ds-text-primary, #142435); font-family: inherit; }\n    ol { margin: 0; padding: 0; list-style: none; }\n    li { margin-block: 1rem; }\n    span { font-weight: 600; }\n    p { margin-block: .25rem; white-space: pre-wrap; overflow-wrap: anywhere; }\n  `,\n})\nexport class TextTranscriptComponent {\n    readonly messages = input.required<readonly Pick<Message, 'id' | 'role' | 'content'>[]>();\n    readonly label = input('Conversation');\n    protected readonly speakers = {\n        user: 'User',\n        assistant: 'Assistant',\n        system: 'System',\n        tool: 'Tool',\n    };\n}"
+    },
+    {
+      "id": "component:libs/angular/chat/src/tool-observation.component.ts#ToolObservationComponent",
+      "kind": "component",
+      "path": "libs/angular/chat/src/tool-observation.component.ts",
+      "symbol": "ToolObservationComponent",
+      "decorators": [
+        "Component"
+      ],
+      "signature": "@Component({\n    selector: 'threadplane-tool-observation',\n    standalone: true,\n    changeDetection: ChangeDetectionStrategy.OnPush,\n    template: `\n    <section [attr.aria-label]=\"label()\">\n      <h3>{{ name() }}</h3>\n      <dl>\n        <dt>Arguments</dt>\n        <dd>\n          <pre>{{ argumentsText() }}</pre>\n        </dd>\n        @if (resultText() !== undefined) {\n        <dt>Result</dt>\n        <dd>\n          <pre>{{ resultText() }}</pre>\n        </dd>\n        }\n      </dl>\n    </section>\n  `,\n    styles: `\n    :host { display: block; color: var(--ds-text-primary, #142435); font-family: inherit; overflow-wrap: anywhere; }\n    dl, dd { margin: 0; }\n    dt { font-weight: 600; }\n    pre { margin-block: .25rem; white-space: pre-wrap; overflow-wrap: anywhere; }\n  `,\n})\nexport class ToolObservationComponent {\n    readonly name = input.required<string>();\n    readonly argumentsText = input.required<string>();\n    readonly resultText = input<string>();\n    readonly label = input('Tool observation');\n}"
     },
     {
       "id": "component:libs/chat/debug/src/lib/compositions/chat-debug/chat-debug.component.ts#ChatDebugComponent",
@@ -4134,6 +4149,20 @@
           "symbol": "TextTranscriptComponent",
           "syntaxKind": "ClassDeclaration",
           "signature": "@Component({\n    selector: 'threadplane-text-transcript',\n    standalone: true,\n    changeDetection: ChangeDetectionStrategy.OnPush,\n    template: `\n    <section [attr.aria-label]=\"label()\">\n      <!-- Explicit role preserves list semantics when markers are hidden in WebKit. -->\n      <ol role=\"list\">\n        @for (message of messages(); track message.id) {\n        <li>\n          <span>{{ speakers[message.role] }}</span>\n          <p>{{ message.content }}</p>\n        </li>\n        }\n      </ol>\n    </section>\n  `,\n    styles: `\n    :host { display: block; color: var(--ds-text-primary, #142435); font-family: inherit; }\n    ol { margin: 0; padding: 0; list-style: none; }\n    li { margin-block: 1rem; }\n    span { font-weight: 600; }\n    p { margin-block: .25rem; white-space: pre-wrap; overflow-wrap: anywhere; }\n  `,\n})\nexport class TextTranscriptComponent {\n    readonly messages = input.required<readonly Pick<Message, 'id' | 'role' | 'content'>[]>();\n    readonly label = input('Conversation');\n    protected readonly speakers = {\n        user: 'User',\n        assistant: 'Assistant',\n        system: 'System',\n        tool: 'Tool',\n    };\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/angular/chat/src/public-api.ts#ToolObservationComponent",
+      "kind": "export",
+      "path": "libs/angular/chat/src/public-api.ts",
+      "symbol": "ToolObservationComponent",
+      "declarations": [
+        {
+          "path": "libs/angular/chat/src/tool-observation.component.ts",
+          "symbol": "ToolObservationComponent",
+          "syntaxKind": "ClassDeclaration",
+          "signature": "@Component({\n    selector: 'threadplane-tool-observation',\n    standalone: true,\n    changeDetection: ChangeDetectionStrategy.OnPush,\n    template: `\n    <section [attr.aria-label]=\"label()\">\n      <h3>{{ name() }}</h3>\n      <dl>\n        <dt>Arguments</dt>\n        <dd>\n          <pre>{{ argumentsText() }}</pre>\n        </dd>\n        @if (resultText() !== undefined) {\n        <dt>Result</dt>\n        <dd>\n          <pre>{{ resultText() }}</pre>\n        </dd>\n        }\n      </dl>\n    </section>\n  `,\n    styles: `\n    :host { display: block; color: var(--ds-text-primary, #142435); font-family: inherit; overflow-wrap: anywhere; }\n    dl, dd { margin: 0; }\n    dt { font-weight: 600; }\n    pre { margin-block: .25rem; white-space: pre-wrap; overflow-wrap: anywhere; }\n  `,\n})\nexport class ToolObservationComponent {\n    readonly name = input.required<string>();\n    readonly argumentsText = input.required<string>();\n    readonly resultText = input<string>();\n    readonly label = input('Tool observation');\n}"
         }
       ]
     },
@@ -9362,6 +9391,34 @@
       ]
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#ToolObservation",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ToolObservation",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/tool-observation.tsx",
+          "symbol": "ToolObservation",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function ToolObservation({ name, argumentsText, resultText, label = 'Tool observation', }: ToolObservationProps) {\n    return (<section aria-label={label} style={{\n            color: 'var(--ds-text-primary, #142435)',\n            fontFamily: 'inherit',\n            overflowWrap: 'anywhere',\n        }}>\n      <h3>{name}</h3>\n      <dl style={{ margin: 0 }}>\n        <dt style={{ fontWeight: 600 }}>Arguments</dt>\n        <dd style={{ margin: 0 }}>\n          <pre style={{\n            whiteSpace: 'pre-wrap',\n            overflowWrap: 'anywhere',\n            marginBlock: '.25rem',\n        }}>\n            {argumentsText}\n          </pre>\n        </dd>\n        {resultText !== undefined && (<>\n            <dt style={{ fontWeight: 600 }}>Result</dt>\n            <dd style={{ margin: 0 }}>\n              <pre style={{\n                whiteSpace: 'pre-wrap',\n                overflowWrap: 'anywhere',\n                marginBlock: '.25rem',\n            }}>\n                {resultText}\n              </pre>\n            </dd>\n          </>)}\n      </dl>\n    </section>);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ToolObservationProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ToolObservationProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/tool-observation.tsx",
+          "symbol": "ToolObservationProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface ToolObservationProps {\n    readonly name: string;\n    readonly argumentsText: string;\n    readonly resultText?: string;\n    readonly label?: string;\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/react/src/index.ts#useAgent",
       "kind": "export",
       "path": "libs/react/src/index.ts",
@@ -10973,13 +11030,19 @@
       "id": "source:libs/angular/chat/src/public-api.ts",
       "kind": "source",
       "path": "libs/angular/chat/src/public-api.ts",
-      "sha256": "ce9a19ef6875b08d93b16f1be59ae94138078247adff05aa4651fa243008a2c6"
+      "sha256": "2c2ad26d94027afab3671b22c1029ce21a19716bc7a0a9883324a9b34b95ff4c"
     },
     {
       "id": "source:libs/angular/chat/src/text-transcript.component.ts",
       "kind": "source",
       "path": "libs/angular/chat/src/text-transcript.component.ts",
       "sha256": "47e22cd372aa227fb18e4956cfe628a44a364d2de1aabe10eb08db54702c40f2"
+    },
+    {
+      "id": "source:libs/angular/chat/src/tool-observation.component.ts",
+      "kind": "source",
+      "path": "libs/angular/chat/src/tool-observation.component.ts",
+      "sha256": "1a1b4a37f8f97d9f73b84c1c1ba40c5362ee8048c157a964a764cf39a80aa59b"
     },
     {
       "id": "source:libs/angular/src/observe-agent.ts",
@@ -13133,13 +13196,19 @@
       "id": "source:libs/react/src/chat/index.ts",
       "kind": "source",
       "path": "libs/react/src/chat/index.ts",
-      "sha256": "f0e2b3ddf6b3fc0f934f6842515850dc4ad956b2dd8db5157fe5809810d90cee"
+      "sha256": "b947123b630825394b7c579ca03713dc0b7b34cbcd859256f71f112751b62afe"
     },
     {
       "id": "source:libs/react/src/chat/text-transcript.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/text-transcript.tsx",
       "sha256": "13c651497f0792ff3d8cd6108c7faa586d121c9527047851f93ede94c68d03f6"
+    },
+    {
+      "id": "source:libs/react/src/chat/tool-observation.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/tool-observation.tsx",
+      "sha256": "4770ffb6da23573b8bf0ecad9de36bec724b29ea96edb9776cb27078b4000e24"
     },
     {
       "id": "source:libs/react/src/index.ts",

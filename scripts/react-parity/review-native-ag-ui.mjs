@@ -137,8 +137,10 @@ export async function buildFixture(root = defaultRoot) {
     'libs/angular/src/observe-agent.ts',
     'libs/react/src/chat/index.ts',
     'libs/react/src/chat/text-transcript.tsx',
+    'libs/react/src/chat/tool-observation.tsx',
     'libs/angular/chat/src/public-api.ts',
     'libs/angular/chat/src/text-transcript.component.ts',
+    'libs/angular/chat/src/tool-observation.component.ts',
     'libs/angular/chat/ng-package.json',
     ...['core', 'react', 'angular'].map(
       (name) => `dist/libs/${name}/package.json`

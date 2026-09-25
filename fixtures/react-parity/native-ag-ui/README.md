@@ -12,6 +12,14 @@ tools and activity from that view while preserving all native request history.
 `First`, then root `Next answer`, appear in both conversation views.
 Status is separate from the rows and follows only observed run facts.
 
+Both `/chat` tool observations display the single authored `worker` weather call
+beside the diagnostics. First shows literal partial arguments `{"city":`; Advance
+first supplies `{"city":"Paris"}` and the exact child result `{"temperature":20}`.
+The fixture associates the result by call ID and child identity and fails on
+ambiguity. It does not promote child evidence into root text or infer execution
+status. The presentational components accept only caller-selected strings and
+remain inert through framework removal and remounting.
+
 From the repository root, build the prerequisites once:
 
 ```sh

@@ -82,8 +82,28 @@ The named section and ordered list preserve whitespace and keyed mounted DOM.
 The component has no commands, subscription, token announcements, focus or scroll
 behavior. A remount creates new DOM; the app still owns the session lifetime.
 
-The root remains headless. This first text view does not provide Markdown, tool
-cards, citations, reasoning, full chat parity, SSR or hydration. The private AG-UI
+The same `/chat` entry exports standalone, OnPush `ToolObservationComponent`.
+Import it in your component's `imports` and supply literal text:
+
+```html
+<threadplane-tool-observation
+  name="weather"
+  [argumentsText]="partialArguments"
+  label="Worker weather"
+/>
+```
+
+`name` and `argumentsText` are required string inputs. Optional `resultText` is
+omitted when absent; an empty string still renders a Result field. The default
+label is `Tool observation`. All text renders literally with whitespace and
+long-line wrapping, including partial JSON and strings such as `null` or
+`undefined`. The caller selects the call, associates its result and formats known
+values. The component does not parse arguments, infer execution status, subscribe
+or execute tools. Updating text preserves its mounted section and arguments DOM;
+remounting creates new DOM.
+
+The root remains headless. These text views do not provide Markdown, execution
+controls, citations, reasoning, full chat parity, SSR or hydration. The private AG-UI
 review uses O(N) pure root-text selection with optional previous-output row reuse
 bounded to current rows. Framework memoization follows immutable transcript
 references and is disposable; it is not another owner or execution controller.
