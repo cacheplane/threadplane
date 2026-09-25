@@ -1,19 +1,19 @@
 import type { ThreadState } from '@langchain/langgraph-sdk';
 import type { PlainValue } from '@threadplane/core';
-import { ownValue, sameOwnedValue, sameToolInvocation } from './ownership';
-import { record, roleOf } from './wire-message';
-import type { ToolInvocation } from './tool-invocations';
-import type { StreamEvent } from './transport.types';
+import { ownValue, sameOwnedValue, sameToolInvocation } from './ownership.js';
+import { record, roleOf } from './wire-message.js';
+import type { ToolInvocation } from './tool-invocations.js';
+import type { StreamEvent } from './transport.types.js';
 
 import {
   captureCheckpoint,
   type OwnedCheckpointPosition,
-} from '../lib/transport/checkpoint-position';
+} from '../lib/transport/checkpoint-position.js';
 export {
   captureCheckpoint,
   type OwnedCheckpointPosition,
   type CheckpointReference,
-} from '../lib/transport/checkpoint-position';
+} from '../lib/transport/checkpoint-position.js';
 
 const unavailable = () =>
   new Error('Checkpoint execution authority is unavailable.');

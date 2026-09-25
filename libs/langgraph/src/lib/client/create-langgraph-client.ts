@@ -1,5 +1,5 @@
 import { Client } from '@langchain/langgraph-sdk';
-import type { LangGraphClientOptions } from '../../runtime/transport.types';
+import type { LangGraphClientOptions } from '../../runtime/transport.types.d.ts';
 
 /**
  * Construct a LangGraph SDK Client that accepts both absolute URLs

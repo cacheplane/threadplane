@@ -1,5 +1,5 @@
 import type { PlainValue } from '@threadplane/core';
-import { ownValue } from './ownership';
+import { ownValue } from './ownership.js';
 
 /** Backend input is plain application data, independent of the observed values.
  * Project interface-typed records explicitly, e.g. itinerary.map(stop => ({ ...stop })).

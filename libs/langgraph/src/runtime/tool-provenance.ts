@@ -1,6 +1,6 @@
 import type { PlainValue } from '@threadplane/core';
 import type { ToolExecutionResult } from '@threadplane/core/tools';
-import { ownValue, sameOwnedValue } from './ownership';
+import { ownValue, sameOwnedValue } from './ownership.js';
 
 /** Comparison representation only: versioned, unambiguous, and never a hash. */
 export function canonicalInvocation(name: string, args: PlainValue): string {

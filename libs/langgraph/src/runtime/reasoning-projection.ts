@@ -1,4 +1,4 @@
-import { record } from './wire-message';
+import { record } from './wire-message.js';
 
 /** Supported backend display text only; absence and explicit empty stay distinct. */
 export function projectReasoning(

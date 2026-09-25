@@ -400,31 +400,38 @@ export async function prepareRuntimeConsumer(root, consumer, kind) {
     cpSync(join(temporary, 'types/fixtures/react-parity/runtime/runtime-entry.d.ts'), join(destination, 'runtime-entry.d.ts'));
     const declaration = readFileSync(join(destination, 'runtime-entry.d.ts'), 'utf8');
     assert.doesNotMatch(declaration, /@langchain|libs\/|create-session/, 'emitted fixture declaration exposes no SDK/private references');
-    cpSync(join(fixture, 'scenarios.ts'), join(destination, 'scenarios.ts'));
-    cpSync(join(fixture, 'thread-owner.ts'), join(destination, 'thread-owner.ts'));
-    const threadView = `${kind}-threads.${kind === 'react' ? 'tsx' : 'ts'}`;
-    cpSync(join(fixture, threadView), join(destination, threadView));
-    const checkpointView = `${kind}-checkpoints.${kind === 'react' ? 'tsx' : 'ts'}`;
-    cpSync(join(fixture, checkpointView), join(destination, checkpointView));
-    cpSync(join(fixture, 'review.css'), join(destination, 'review.css'));
-    const app = `${kind}-app.${kind === 'react' ? 'tsx' : 'ts'}`;
-    cpSync(join(fixture, app), join(destination, app));
-    writeFileSync(join(destination, kind === 'react' ? 'main.tsx' : 'main.ts'),
-      `if (new URLSearchParams(location.search).has('checkpoints')) {\n  void import('./${kind}-checkpoints');\n} else if (new URLSearchParams(location.search).has('threads')) {\n  void import('./${kind}-threads');\n} else {\n  void import('./${kind}-app');\n}\n`);
-    if (kind === 'angular') {
-      const configPath = join(consumer, 'angular.json');
-      const config = JSON.parse(readFileSync(configPath, 'utf8'));
-      config.projects.consumer.architect.build.options.styles = ['src/review.css'];
-      writeFileSync(configPath, JSON.stringify(config));
-      const index = join(destination, 'index.html');
-      writeFileSync(index, readFileSync(index, 'utf8').replace('<head>', '<head><meta name="viewport" content="width=device-width, initial-scale=1">'));
-    }
-    if (kind === 'react') {
-      cpSync(join(fixture, 'vite.config.mts'), join(consumer, 'vite.config.mts'));
-      writeFileSync(join(consumer, 'index.html'), '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>React installed consumer</title></head><body><div id="root"></div><script type="module" src="/main.tsx"></script></body></html>');
-      writeFileSync(join(consumer, 'tsconfig.app.json'), JSON.stringify({ compilerOptions: { target: 'ES2022', module: 'ESNext', moduleResolution: 'Bundler', lib: ['ES2022', 'DOM'], types: [], strict: true, skipLibCheck: false, jsx: 'react-jsx', noEmit: true }, files: ['main.tsx'] }));
-    }
+    prepareRuntimeViews(root, consumer, kind);
   } finally { rmSync(temporary, { recursive: true, force: true }); }
+}
+
+export function prepareRuntimeViews(root, consumer, kind) {
+  const fixture = join(root, 'fixtures/react-parity/runtime');
+  const destination = kind === 'angular' ? join(consumer, 'src') : consumer;
+  cpSync(join(fixture, 'tools.ts'), join(destination, 'tools.ts'));
+  cpSync(join(fixture, 'scenarios.ts'), join(destination, 'scenarios.ts'));
+  cpSync(join(fixture, 'thread-owner.ts'), join(destination, 'thread-owner.ts'));
+  const threadView = `${kind}-threads.${kind === 'react' ? 'tsx' : 'ts'}`;
+  cpSync(join(fixture, threadView), join(destination, threadView));
+  const checkpointView = `${kind}-checkpoints.${kind === 'react' ? 'tsx' : 'ts'}`;
+  cpSync(join(fixture, checkpointView), join(destination, checkpointView));
+  cpSync(join(fixture, 'review.css'), join(destination, 'review.css'));
+  const app = `${kind}-app.${kind === 'react' ? 'tsx' : 'ts'}`;
+  cpSync(join(fixture, app), join(destination, app));
+  writeFileSync(join(destination, kind === 'react' ? 'main.tsx' : 'main.ts'),
+    `if (new URLSearchParams(location.search).has('checkpoints')) {\n  void import('./${kind}-checkpoints');\n} else if (new URLSearchParams(location.search).has('threads')) {\n  void import('./${kind}-threads');\n} else {\n  void import('./${kind}-app');\n}\n`);
+  if (kind === 'angular') {
+    const configPath = join(consumer, 'angular.json');
+    const config = JSON.parse(readFileSync(configPath, 'utf8'));
+    config.projects.consumer.architect.build.options.styles = ['src/review.css'];
+    writeFileSync(configPath, JSON.stringify(config));
+    const index = join(destination, 'index.html');
+    writeFileSync(index, readFileSync(index, 'utf8').replace('<head>', '<head><meta name="viewport" content="width=device-width, initial-scale=1">'));
+  }
+  if (kind === 'react') {
+    cpSync(join(fixture, 'vite.config.mts'), join(consumer, 'vite.config.mts'));
+    writeFileSync(join(consumer, 'index.html'), '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>React installed consumer</title></head><body><div id="root"></div><script type="module" src="/main.tsx"></script></body></html>');
+    writeFileSync(join(consumer, 'tsconfig.app.json'), JSON.stringify({ compilerOptions: { target: 'ES2022', module: 'ESNext', moduleResolution: 'Bundler', lib: ['ES2022', 'DOM'], types: [], strict: true, skipLibCheck: false, jsx: 'react-jsx', noEmit: true }, files: ['main.tsx'] }));
+  }
 }
 
 /** Bounded fixture server: built files and deterministic history/run routes. */
@@ -543,6 +550,7 @@ export async function runRuntimeScenarios(directory, kind) {
   let browser;
   let context;
   const pageErrors = [];
+  const consoleFailures = [];
   const unexpected = [];
   const completed = [];
   try {
@@ -562,6 +570,9 @@ export async function runRuntimeScenarios(directory, kind) {
       await expect(page.getByTestId('text')).not.toContainText(content);
     };
     page.on('pageerror', (error) => pageErrors.push(error.message));
+    page.on('console', (message) => {
+      if (['warning', 'error'].includes(message.type())) consoleFailures.push(message.text());
+    });
     page.on('request', (request) => {
       if (!request.url().startsWith(`${server.url}/`)) unexpected.push(request.url());
     });
@@ -849,6 +860,7 @@ export async function runRuntimeScenarios(directory, kind) {
     completed.push(...await runCheckpointScenarios(page, server));
     assert.deepEqual(server.errors.map(String), []);
     assert.deepEqual(pageErrors, []);
+    assert.deepEqual(consoleFailures, [], 'browser console has no warnings or errors');
     assert.deepEqual(unexpected, []);
     console.log(`${kind}: ${completed.length} browser scenarios passed (${completed.join('; ')}); main workflow: 3 exact history reads, 10 exact run POSTs, 1 cursor join GET, 2 exact-run status GETs, one tool handler, 7 component submissions, 2 explicit resumes, 1 explicit reconnect; thread workflow: 4 history POSTs, 2 run POSTs, stream/history abort, no implicit selection I/O; no page errors/unexpected requests.`);
     return completed;

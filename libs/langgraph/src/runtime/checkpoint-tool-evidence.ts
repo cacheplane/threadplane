@@ -1,7 +1,7 @@
 import type { ThreadState } from '@langchain/langgraph-sdk';
-import { initialMessageState, type MessageState } from './message-reducer';
-import { sameToolInvocation } from './ownership';
-import { projectStream, type StreamProjection } from './stream-projection';
+import { initialMessageState, type MessageState } from './message-reducer.js';
+import { sameToolInvocation } from './ownership.js';
+import { projectStream, type StreamProjection } from './stream-projection.js';
 
 /** Confirm execution eligibility against only the exact saved messages. Reuse
  * turn selection, but none of the stream's accumulated calls, completions,
