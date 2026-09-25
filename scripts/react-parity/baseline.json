@@ -1,14 +1,11 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "7ee867effd94022a2fd2cc1380f6f5844a22964a",
+  "baselineHead": "a77e09d3a3bf5dc5c68186004052055bcd88212f",
   "sourceState": {
-    "modified": [
-      "libs/ag-ui/src/lib/internal/apply-patch.ts",
-      "libs/ag-ui/src/runtime/transcript.ts"
-    ],
+    "modified": [],
     "untracked": [
-      "libs/ag-ui/src/lib/internal/copy-data.ts",
-      "libs/ag-ui/src/runtime/state.ts"
+      "libs/ag-ui/src/runtime/activity-messages.ts",
+      "libs/ag-ui/src/runtime/encrypted-messages.ts"
     ]
   },
   "scope": {
@@ -10621,6 +10618,12 @@
       "sha256": "3a6e03c590c4ed74eca832b04c206b8efa6544232618a8f573981e26ed8ee180"
     },
     {
+      "id": "source:libs/ag-ui/src/runtime/activity-messages.ts",
+      "kind": "source",
+      "path": "libs/ag-ui/src/runtime/activity-messages.ts",
+      "sha256": "eca08290e21f826d68d613a1d09f51d5be24be1442e2b69516138cd494a9a126"
+    },
+    {
       "id": "source:libs/ag-ui/src/runtime/create-http-request.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/create-http-request.ts",
@@ -10631,6 +10634,12 @@
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/create-run.ts",
       "sha256": "c830bfa2f0832f4c0ea3dfcc5c64360bfbe067227b60b3b86140dd5a686013cb"
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/encrypted-messages.ts",
+      "kind": "source",
+      "path": "libs/ag-ui/src/runtime/encrypted-messages.ts",
+      "sha256": "5e0dcee1dcdfa3f360ad1c1e7bb3dff61dc1c6db73e84ff19e3faafd6491862d"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/reconcile-transcript.ts",
@@ -10649,6 +10658,12 @@
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/text-messages.ts",
       "sha256": "6751d4b7f53350ccedafa2e1cae808d80c88acc894e8993441e30d60022e625e"
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/tool-messages.ts",
+      "kind": "source",
+      "path": "libs/ag-ui/src/runtime/tool-messages.ts",
+      "sha256": "dc3d89fefd80fcbb8197ca329b946ffce2c309252fe3a58d8abf7e1ae9997c3c"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/transcript.ts",
