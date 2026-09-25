@@ -8716,6 +8716,14 @@
       "note": "Captures literal state and complete delta data, propagates patch errors atomically, and preserves prior observations. Changed state uses full graph capture. Actual HTTP covers incremental state, egress and error closure; routing, session integration and public parity remain separate migration work. Local portable fidelity is distinct from JSON wire fidelity."
     },
     {
+      "id": "source:libs/ag-ui/src/runtime/subagents.ts",
+      "taskIds": ["T12", "T13"],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private immutable native child start and terminal evidence within one root invocation; excluded from public exports and legacy Angular reachability.",
+      "note": "Captures explicitly selected native event fields, preserves start order and structural sharing, and rejects selected lifecycle ambiguity atomically. Held HTTP proves child evidence is separate from root outcomes, global transcript attribution and shared state, including missing terminal evidence and SDK rejection. Local callback injection covers nonportable ownership failure, not JSON wire admission. Session integration, cross-run continuation and public parity remain separate migration work; recorded provider traces do not cover native child lifecycle events."
+    },
+    {
       "id": "source:libs/ag-ui/src/runtime/text-messages.ts",
       "taskIds": ["T12", "T13"],
       "treatment": "internal",
