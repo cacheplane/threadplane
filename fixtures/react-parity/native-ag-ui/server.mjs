@@ -52,7 +52,23 @@ function expectedInput(reviewId, role, command, runId, userId, review) {
     threadId: `${reviewId}-${role}`,
     runId,
     messages: [...messages, user(userId, command)],
-    state: command === 'Second' || command === 'Cancelable' ? { count: 2 } : {},
+    state:
+      command === 'First'
+        ? {
+            model: 'review-small',
+            reasoning_effort: 'low',
+            gen_ui_mode: 'inline',
+          }
+        : command === 'Second'
+        ? {
+            count: 2,
+            model: 'review-large',
+            reasoning_effort: 'medium',
+            gen_ui_mode: 'panel',
+          }
+        : command === 'Cancelable'
+        ? { count: 2 }
+        : {},
     tools: [],
     context: [],
     forwardedProps: {},
@@ -203,7 +219,13 @@ export async function createReviewServer({ bundle, provenance }) {
         ]);
         if (command === 'First') {
           emit(response, [
-            { type: 'STATE_SNAPSHOT', snapshot: { count: 1 } },
+            {
+              type: 'STATE_DELTA',
+              delta: [
+                { op: 'replace', path: '/reasoning_effort', value: 'high' },
+                { op: 'add', path: '/count', value: 1 },
+              ],
+            },
             {
               type: 'SUBAGENT_STARTED',
               subagentRunId: 'worker',
@@ -309,8 +331,8 @@ export async function createReviewServer({ bundle, provenance }) {
             },
             { type: 'TEXT_MESSAGE_END', messageId: `${runId}-answer` },
             {
-              type: 'STATE_DELTA',
-              delta: [{ op: 'replace', path: '/count', value: 2 }],
+              type: 'STATE_SNAPSHOT',
+              snapshot: { count: 2 },
             },
             {
               type: 'SUBAGENT_FINISHED',

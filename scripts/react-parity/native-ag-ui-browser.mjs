@@ -66,7 +66,12 @@ export async function verifyBrowser(browser, server) {
     (message) => message.role === 'assistant'
   );
   assert.equal(tool.toolCalls[0].function.arguments, '{"city":');
-  assert.deepEqual(partial.a.state, { count: 1 });
+  assert.deepEqual(partial.a.state, {
+    model: 'review-small',
+    reasoning_effort: 'high',
+    gen_ui_mode: 'inline',
+    count: 1,
+  });
   assert.equal(partial.a.subagents[0].started.name, 'Worker');
   assert.equal(partial.a.subagents[0].terminal, undefined);
   assert.equal(partial.a.toolCalls, undefined);

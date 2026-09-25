@@ -14,6 +14,11 @@ import {
 } from './session-observation';
 import { createRun, type RunHandle } from './create-run';
 import { createPublication } from './session-publication';
+import {
+  captureSubmit,
+  mergeSubmitState,
+  type SubmitInput,
+} from './submit-input';
 
 export interface SessionOptions
   extends Pick<HttpAgentConfig, 'url' | 'headers' | 'fetch'> {
@@ -25,7 +30,7 @@ export interface Session {
   getSnapshot(): SessionSnapshot;
   subscribe(notify: () => void): () => void;
   submit(
-    text: string,
+    input: SubmitInput,
     options?: { readonly signal?: AbortSignal }
   ): Promise<CompleteOutcome>;
   stop(): Promise<void>;
@@ -145,21 +150,38 @@ export function createSession(options: SessionOptions): Session {
     getSnapshot: publication.getSnapshot,
     subscribe: (notify) =>
       disposed ? () => undefined : publication.subscribe(notify),
-    submit: (text, options) =>
+    submit: (input, options) =>
       new Promise<CompleteOutcome>((resolve) => {
         const capturedRevision = revision;
         let signal: AbortSignal | undefined;
         try {
           signal = options?.signal;
         } catch {
-          resolve('error');
+          resolve(
+            disposed || revision !== capturedRevision ? 'aborted' : 'error'
+          );
           return;
         }
         if (disposed || signal?.aborted || revision !== capturedRevision) {
           resolve('aborted');
           return;
         }
-        revision++;
+        const beforeInput = ++revision;
+        let captured;
+        try {
+          captured = captureSubmit(input);
+        } catch {
+          resolve(
+            disposed || signal?.aborted || revision !== beforeInput
+              ? 'aborted'
+              : 'error'
+          );
+          return;
+        }
+        if (disposed || signal?.aborted || revision !== beforeInput) {
+          resolve('aborted');
+          return;
+        }
         publication.command(() => {
           if (disposed || signal?.aborted) {
             resolve('aborted');
@@ -170,22 +192,30 @@ export function createSession(options: SessionOptions): Session {
           let id: string;
           try {
             const previous = publication.getSnapshot();
+            // Capture precedes queueing, but admission uses the latest state.
+            // Incompatible patches fail before transferring the active run.
+            const state = mergeSubmitState(previous.state, captured.state);
             const userId = crypto.randomUUID();
             if (previous.transcript.some((message) => message.id === userId))
               throw new TypeError('Generated message ID collides with history');
             id = crypto.randomUUID();
             const user = ownTranscript([
-              { id: userId, role: 'user', content: text },
+              { id: userId, role: 'user', content: captured.message },
             ])[0];
             next = Object.freeze({
               ...previous,
               status: 'running',
+              state,
               transcript: Object.freeze([...previous.transcript, user]),
               subagents: Object.freeze([]),
               run: Object.freeze({ id }),
             });
           } catch {
-            resolve('error');
+            resolve(
+              disposed || signal?.aborted || revision !== beforeCapture
+                ? 'aborted'
+                : 'error'
+            );
             return;
           }
           if (disposed || signal?.aborted || revision !== beforeCapture) {

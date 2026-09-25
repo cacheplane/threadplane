@@ -1,24 +1,13 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "eae3d0c008062258bb3df55b03479e9acb9d76ae",
+  "baselineHead": "4e474ae1d9e41529da222c0305700015f8b04c78",
   "sourceState": {
     "modified": [
-      "libs/angular/README.md",
-      "libs/angular/package.json",
-      "libs/angular/tsconfig.lib.json",
-      "libs/angular/tsconfig.spec.json",
-      "libs/angular/vite.config.mts",
-      "libs/react/README.md",
-      "libs/react/package.json",
-      "tsconfig.base.json"
+      "libs/ag-ui/src/runtime/create-session.ts"
     ],
     "untracked": [
-      "libs/ag-ui/src/runtime/text-transcript.ts",
-      "libs/angular/chat/ng-package.json",
-      "libs/angular/chat/src/public-api.ts",
-      "libs/angular/chat/src/text-transcript.component.ts",
-      "libs/react/src/chat/index.ts",
-      "libs/react/src/chat/text-transcript.tsx"
+      "libs/ag-ui/src/runtime/README.md",
+      "libs/ag-ui/src/runtime/submit-input.ts"
     ]
   },
   "scope": {
@@ -225,6 +214,12 @@
       "kind": "asset",
       "path": "libs/ag-ui/project.json",
       "sha256": "5a2901f7c18951ffb31a736d1a78af41760c0020eb834bffe1565bd4bf698bfc"
+    },
+    {
+      "id": "asset:libs/ag-ui/src/runtime/README.md",
+      "kind": "asset",
+      "path": "libs/ag-ui/src/runtime/README.md",
+      "sha256": "6f1d3e5895def11ca44c77db0385409083c5c95dc195cad5a409b6241b6baeee"
     },
     {
       "id": "asset:libs/ag-ui/tsconfig.json",
@@ -10860,7 +10855,7 @@
       "id": "source:libs/ag-ui/src/runtime/create-session.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/create-session.ts",
-      "sha256": "89ea958e5f20415a3962cf535a2f8dd5057bef95f3f68f00e53d77a9b0167298"
+      "sha256": "323081e3e2e6845bf0045aa7d5a0ef80d022a9e51beb30ed221dba0a29861239"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/encrypted-messages.ts",
@@ -10903,6 +10898,12 @@
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/subagents.ts",
       "sha256": "488d605df720eb89ef0ebfffbd1600e957bb7a2a6d30f0fb7509d6512b894fc9"
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/submit-input.ts",
+      "kind": "source",
+      "path": "libs/ag-ui/src/runtime/submit-input.ts",
+      "sha256": "d246a932974e8ec86951d13d3544caccbbd56b3d019c01baf03be8655ba392b4"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/testing/binding-fixture.ts",
