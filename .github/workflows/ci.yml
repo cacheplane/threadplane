@@ -152,6 +152,8 @@ jobs:
       - run: npx nx run-many -t build --projects=$LIBS --configuration=production
       - name: Install Chromium for packed runtime consumers
         run: npx playwright install --with-deps chromium
+      - name: Verify native same-document session bindings
+        run: node scripts/react-parity/review-native-ag-ui.mjs --verify
       - name: Verify emitted boundaries and isolated packages
         run: |
           node scripts/react-parity/verify-boundaries.mjs --built
