@@ -173,7 +173,10 @@ describe('private owned state over actual HTTP', () => {
       expect(Object.isFrozen((latest as typeof expected).items[1])).toBe(true);
       expect(settled).toBe(false);
       exchange.send(finished);
-      expect(await bounded(done)).toEqual({ outcome: 'success' });
+      expect(await bounded(done)).toEqual({
+        outcome: 'success',
+        fetchInvoked: true,
+      });
       await bounded(exchange.closed);
       expect(exchange.response.destroyed).toBe(true);
       expect(events.map((event) => event.type)).toEqual([
@@ -195,7 +198,10 @@ describe('private owned state over actual HTTP', () => {
         { ...started, runId: 'second' },
         { ...finished, runId: 'second' }
       );
-      expect(await bounded(secondDone)).toEqual({ outcome: 'success' });
+      expect(await bounded(secondDone)).toEqual({
+        outcome: 'success',
+        fetchInvoked: true,
+      });
       await bounded(next.closed);
       expect(server.exchanges).toHaveLength(2);
     } finally {

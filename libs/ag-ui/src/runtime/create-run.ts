@@ -14,16 +14,17 @@ import {
   type HttpRequestHandle,
 } from './create-http-request';
 
-export type RunResult =
+type RunOutcome =
   | { outcome: Exclude<CompleteOutcome, 'error'> }
   | { outcome: 'error'; error: unknown };
+export type RunResult = RunOutcome & { readonly fetchInvoked: boolean };
 
 export interface RunHandle {
   abort(): void;
   done: Promise<RunResult>;
 }
 
-function finishedResult(outcome: unknown): RunResult {
+function finishedResult(outcome: unknown): RunOutcome {
   if (outcome == null) return { outcome: 'success' };
   if (typeof outcome === 'object' && 'type' in outcome) {
     if (outcome.type === 'success') return { outcome: 'success' };
@@ -59,6 +60,7 @@ export function createRun(
         resolve = yes;
       });
       let closed = false;
+      let fetchInvoked = false;
       let admitted = false;
       let physical: HttpRequestHandle | undefined;
       const cleanup = () => {
@@ -68,12 +70,12 @@ export function createRun(
           // Teardown cannot replace the first result or leave done pending.
         }
       };
-      const settle = (result: RunResult) => {
+      const settle = (result: RunOutcome) => {
         if (closed) return;
         closed = true;
         signal?.removeEventListener('abort', abort);
         cleanup();
-        resolve(result);
+        resolve({ ...result, fetchInvoked });
       };
       const abort = () => settle({ outcome: 'aborted' });
       if (signal?.aborted) abort();
@@ -91,56 +93,67 @@ export function createRun(
         if (closed) return { abort, done };
         const capturedInput = { ...input, threadId, runId };
         if (closed) return { abort, done };
-        physical = request.start(capturedInput, (event) => {
-          if (closed) return;
-          const child = typeof event['subagentRunId'] === 'string';
-          const rootLifecycle =
-            event.type === EventType.RUN_STARTED ||
-            event.type === EventType.RUN_FINISHED ||
-            event.type === EventType.RUN_ERROR;
-          if (child && rootLifecycle) {
-            settle({
-              outcome: 'error',
-              error: new Error('Child-attributed RUN_* events are unsupported'),
-            });
-            return;
-          }
-          let candidate: RunResult | undefined;
-          if (
-            event.type === EventType.RUN_STARTED ||
-            event.type === EventType.RUN_FINISHED
-          ) {
-            if (event['threadId'] !== threadId || event['runId'] !== runId) {
+        physical = request.start(
+          capturedInput,
+          (event) => {
+            if (closed) return;
+            const child = typeof event['subagentRunId'] === 'string';
+            const rootLifecycle =
+              event.type === EventType.RUN_STARTED ||
+              event.type === EventType.RUN_FINISHED ||
+              event.type === EventType.RUN_ERROR;
+            if (child && rootLifecycle) {
               settle({
                 outcome: 'error',
                 error: new Error(
-                  'Root run identity does not match the requested operation'
+                  'Child-attributed RUN_* events are unsupported'
                 ),
               });
               return;
             }
-            if (event.type === EventType.RUN_STARTED) admitted = true;
+            let candidate: RunOutcome | undefined;
+            if (
+              event.type === EventType.RUN_STARTED ||
+              event.type === EventType.RUN_FINISHED
+            ) {
+              if (event['threadId'] !== threadId || event['runId'] !== runId) {
+                settle({
+                  outcome: 'error',
+                  error: new Error(
+                    'Root run identity does not match the requested operation'
+                  ),
+                });
+                return;
+              }
+              if (event.type === EventType.RUN_STARTED) admitted = true;
+            }
+            if (event.type === EventType.RUN_ERROR) {
+              // Copy scalar evidence before application code can mutate the event.
+              candidate = {
+                outcome: 'error',
+                error: new Error(String(event['message'])),
+              };
+            } else if (!admitted) return;
+            else if (event.type === EventType.RUN_FINISHED)
+              candidate = finishedResult(event['outcome']);
+            else if (isLegacyInterruptTerminal(event, interruptMode))
+              candidate = { outcome: 'paused' };
+            try {
+              onEvent(event);
+            } catch (error) {
+              settle({ outcome: 'error', error });
+              return;
+            }
+            // Evidence is captured before projection; reentrant abort still wins.
+            if (candidate) settle(candidate);
+          },
+          undefined,
+          () => {
+            if (closed) return false;
+            fetchInvoked = true;
+            return true;
           }
-          if (event.type === EventType.RUN_ERROR) {
-            // Copy scalar evidence before application code can mutate the event.
-            candidate = {
-              outcome: 'error',
-              error: new Error(String(event['message'])),
-            };
-          } else if (!admitted) return;
-          else if (event.type === EventType.RUN_FINISHED)
-            candidate = finishedResult(event['outcome']);
-          else if (isLegacyInterruptTerminal(event, interruptMode))
-            candidate = { outcome: 'paused' };
-          try {
-            onEvent(event);
-          } catch (error) {
-            settle({ outcome: 'error', error });
-            return;
-          }
-          // Evidence is captured before projection; reentrant abort still wins.
-          if (candidate) settle(candidate);
-        });
+        );
         // Synchronous SDK delivery may have settled before start returned.
         if (closed) cleanup();
         void physical.done

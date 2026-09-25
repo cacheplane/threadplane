@@ -109,6 +109,9 @@ export async function verifyBrowser(browser, server) {
   assert.equal(paused.records[0].outcome, 'paused');
   assert.equal(paused.a.subagents[0].terminal.outcome.type, 'suspended');
   assert.equal(paused.a.run.terminal.outcome.type, 'interrupt');
+  assert.equal(paused.a.decision.kind, 'native');
+  assert.equal(paused.a.decision.attempt, undefined);
+  assert.equal(paused.a.decision.sourceRunId, paused.a.run.id);
   assert.equal(
     paused.a.transcript.find((message) => message.role === 'assistant')
       .toolCalls[0].function.arguments,
@@ -147,12 +150,30 @@ export async function verifyBrowser(browser, server) {
     .locator('li')
     .first()
     .elementHandle();
-  await click('Second');
+  await click('Resume');
   const second = await shared();
   assert.equal(second.a.transcript.at(-1).content, 'Next answer');
+  assert.equal(second.a.decision.id, paused.a.decision.id);
+  assert.equal(second.a.decision.attempt.runId, second.a.run.id);
+  assert.deepEqual(second.a.decision.attempt.responses, [
+    {
+      interruptId: 'approval',
+      status: 'resolved',
+      payload: { approved: true },
+    },
+  ]);
+  assert.deepEqual(requests()[1].body.messages, paused.a.transcript);
+  assert.deepEqual(requests()[1].body.state, { count: 2 });
+  assert.deepEqual(requests()[1].body.resume, [
+    {
+      interruptId: 'approval',
+      status: 'resolved',
+      payload: { approved: true },
+    },
+  ]);
   assert.equal(requests().length, 2);
-  await text('React A', ['First', 'Second', 'Next answer']);
-  await text('Angular A', ['First', 'Second', 'Next answer']);
+  await text('React A', ['First', 'Next answer']);
+  await text('Angular A', ['First', 'Next answer']);
   assert.equal(
     await oldAngularRow.evaluate(
       (node) =>
@@ -167,9 +188,10 @@ export async function verifyBrowser(browser, server) {
   await expect(page.locator('[data-view="angular-a"]')).toHaveCount(0);
   assert.equal(await oldAngularRow.evaluate((node) => node.isConnected), false);
   assert.equal(requests()[1].closed, false);
-  await click('Complete second');
+  await click('Complete resume');
   const completed = await state();
   assert.equal(completed.records[1].outcome, 'success');
+  assert.equal(completed.a.decision, undefined);
   assert.deepEqual(await view('react-a'), completed.a);
   await expect(page.locator('[data-view="react-a"]')).toContainText(
     'Next answer'
@@ -186,7 +208,7 @@ export async function verifyBrowser(browser, server) {
   await click('Mount Angular');
   await shared();
   assert.equal(requests().length, 2);
-  await text('Angular A', ['First', 'Second', 'Next answer']);
+  await text('Angular A', ['First', 'Next answer']);
   assert.equal(
     await oldAngularRow.evaluate(
       (node) =>
@@ -231,14 +253,12 @@ export async function verifyBrowser(browser, server) {
   assert.equal(final.nextAction, 'Complete');
   await text('React A', [
     'First',
-    'Second',
     'Next answer',
     'Cancelable',
     'Cancelable answer',
   ]);
   await text('Angular A', [
     'First',
-    'Second',
     'Next answer',
     'Cancelable',
     'Cancelable answer',

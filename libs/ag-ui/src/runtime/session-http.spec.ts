@@ -292,19 +292,19 @@ describe('composed private session over held HTTP', () => {
         retained.find((m) => m.role === 'reasoning')
       );
       expect(settled.state).toEqual({ count: 2 });
-      second = owner.submit('second');
+      if (settled.decision?.kind !== 'native')
+        throw new Error('Missing native pause');
+      second = owner.resume(settled.decision.id, [
+        { interruptId: 'approval', status: 'resolved', payload: true },
+      ]);
       const next = await server.next(1);
       expect(next.body).toStrictEqual({
         threadId: 'thread',
         runId: owner.getSnapshot().run?.id,
         state: { count: 2 },
-        messages: [
-          ...settled.transcript.filter((m) => m.role !== 'activity'),
-          {
-            id: owner.getSnapshot().transcript.at(-1)?.id,
-            role: 'user',
-            content: 'second',
-          },
+        messages: settled.transcript.filter((m) => m.role !== 'activity'),
+        resume: [
+          { interruptId: 'approval', status: 'resolved', payload: true },
         ],
         tools: [],
         context: [],

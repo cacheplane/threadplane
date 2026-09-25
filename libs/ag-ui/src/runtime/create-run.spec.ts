@@ -119,6 +119,77 @@ const finished = {
   runId: 'run',
 };
 
+describe('private run invocation fact', () => {
+  it('denies eager SDK fetch if request preparation reenters cancellation before the gate', async () => {
+    const external = new AbortController();
+    const fetcher = vi.fn(async () => new Response(''));
+    const request = input();
+    request.messages = [
+      {
+        id: 'message',
+        role: 'user',
+        get content() {
+          external.abort();
+          return 'text';
+        },
+      },
+    ];
+    const handle = createRun({
+      url: 'http://unused.invalid',
+      fetch: fetcher,
+    }).start(request, () => undefined, external.signal);
+    const result = await bounded(handle.done);
+    expect(result).toEqual({ outcome: 'aborted', fetchInvoked: false });
+    await Promise.resolve();
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(await handle.done).toBe(result);
+  });
+
+  it.each(['abort', 'throw'] as const)(
+    'records synchronous custom-fetch %s before a physical handle is assigned',
+    async (action) => {
+      const external = new AbortController();
+      const error = new Error('fetch failure');
+      const fetcher = vi.fn(() => {
+        if (action === 'throw') throw error;
+        external.abort();
+        return Promise.resolve(
+          new Response('', { headers: { 'content-type': 'text/event-stream' } })
+        );
+      });
+      const handle = createRun({
+        url: 'http://unused.invalid',
+        fetch: fetcher,
+      }).start(input(), () => undefined, external.signal);
+      expect(await bounded(handle.done)).toEqual(
+        action === 'throw'
+          ? { outcome: 'error', error, fetchInvoked: true }
+          : { outcome: 'aborted', fetchInvoked: true }
+      );
+      expect(fetcher).toHaveBeenCalledTimes(1);
+    }
+  );
+
+  it('retains true after invoked cancellation and late custom-fetch completion', async () => {
+    const external = new AbortController();
+    const response = deferred<Response>();
+    const fetcher = vi.fn(() => response.promise);
+    const handle = createRun({
+      url: 'http://unused.invalid',
+      fetch: fetcher,
+    }).start(input(), () => undefined, external.signal);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    external.abort();
+    const result = await bounded(handle.done);
+    expect(result).toEqual({ outcome: 'aborted', fetchInvoked: true });
+    response.resolve(
+      new Response('', { headers: { 'content-type': 'text/event-stream' } })
+    );
+    await Promise.resolve();
+    expect(await handle.done).toBe(result);
+  });
+});
+
 describe('private run authority', () => {
   it('pre-aborted valid admission dispatches zero requests', async () => {
     const server = await serve();
@@ -129,7 +200,10 @@ describe('private run authority', () => {
       AbortSignal.abort()
     );
     try {
-      expect(await bounded(handle.done)).toEqual({ outcome: 'aborted' });
+      expect(await bounded(handle.done)).toEqual({
+        outcome: 'aborted',
+        fetchInvoked: false,
+      });
       expect(fetcher).not.toHaveBeenCalled();
       expect(server.exchanges).toHaveLength(0);
     } finally {
@@ -149,7 +223,7 @@ describe('private run authority', () => {
       },
     }).start(input(), () => undefined, external.signal);
     const result = await bounded(handle.done);
-    expect(result).toEqual({ outcome: 'error', error });
+    expect(result).toEqual({ outcome: 'error', error, fetchInvoked: true });
     if (result.outcome === 'error') expect(result.error).toBe(error);
     expect(remove).toHaveBeenCalledWith('abort', expect.any(Function));
   });
@@ -164,7 +238,11 @@ describe('private run authority', () => {
         input(),
         () => undefined
       );
-      expect(await bounded(handle.done)).toEqual({ outcome: 'error', error });
+      expect(await bounded(handle.done)).toEqual({
+        outcome: 'error',
+        error,
+        fetchInvoked: false,
+      });
     } finally {
       run.mockRestore();
     }
@@ -191,7 +269,10 @@ describe('private run authority', () => {
         input(),
         () => undefined
       );
-      expect(await bounded(handle.done)).toEqual({ outcome: 'success' });
+      expect(await bounded(handle.done)).toEqual({
+        outcome: 'success',
+        fetchInvoked: false,
+      });
       expect(teardown).toHaveBeenCalledOnce();
       expect(source?.abortController.signal.aborted).toBe(true);
     } finally {
@@ -230,8 +311,8 @@ describe('private run authority', () => {
       }).start(admitted, () => undefined, external.signal);
       expect(await bounded(handle.done)).toEqual(
         mode === 'throwing-identity'
-          ? { outcome: 'error', error }
-          : { outcome: 'aborted' }
+          ? { outcome: 'error', error, fetchInvoked: false }
+          : { outcome: 'aborted', fetchInvoked: false }
       );
       expect(fetcher).not.toHaveBeenCalled();
       if (mode === 'pre-aborted') expect(getter).not.toHaveBeenCalled();
@@ -296,7 +377,10 @@ describe('private run authority', () => {
       expect(exchange.body).toEqual(expected);
       expect(exchange.request.headers['x-captured']).toBe('original');
       exchange.send(started, finished);
-      expect(await bounded(handle.done)).toEqual({ outcome: 'success' });
+      expect(await bounded(handle.done)).toEqual({
+        outcome: 'success',
+        fetchInvoked: true,
+      });
       await bounded(exchange.closed);
       expect(server.exchanges).toHaveLength(1);
     } finally {
@@ -328,7 +412,10 @@ describe('private run authority', () => {
       ok(firstExchange);
       ok(secondExchange);
       external.abort();
-      expect(await bounded(first.done)).toEqual({ outcome: 'aborted' });
+      expect(await bounded(first.done)).toEqual({
+        outcome: 'aborted',
+        fetchInvoked: true,
+      });
       await bounded(firstExchange.closed);
       fresh = factory.start(input('fresh'), () => undefined);
       const freshExchange = await server.next(2);
@@ -341,8 +428,14 @@ describe('private run authority', () => {
         { ...started, runId: 'fresh' },
         { ...finished, runId: 'fresh' }
       );
-      expect(await bounded(second.done)).toEqual({ outcome: 'success' });
-      expect(await bounded(fresh.done)).toEqual({ outcome: 'success' });
+      expect(await bounded(second.done)).toEqual({
+        outcome: 'success',
+        fetchInvoked: true,
+      });
+      expect(await bounded(fresh.done)).toEqual({
+        outcome: 'success',
+        fetchInvoked: true,
+      });
       await bounded(Promise.all([secondExchange.closed, freshExchange.closed]));
       expect(firstEvents).toEqual([]);
       expect(server.exchanges).toHaveLength(3);
@@ -366,7 +459,10 @@ describe('private run authority', () => {
     try {
       const exchange = await server.next();
       exchange.send(started, finished);
-      expect(await bounded(first.done)).toEqual({ outcome: 'aborted' });
+      expect(await bounded(first.done)).toEqual({
+        outcome: 'aborted',
+        fetchInvoked: true,
+      });
       await bounded(exchange.closed);
       const fresh = await server.next(1);
       first.abort();
@@ -375,7 +471,10 @@ describe('private run authority', () => {
         { ...finished, runId: 'replacement' }
       );
       ok(replacement);
-      expect(await bounded(replacement.done)).toEqual({ outcome: 'success' });
+      expect(await bounded(replacement.done)).toEqual({
+        outcome: 'success',
+        fetchInvoked: true,
+      });
       await bounded(fresh.closed);
     } finally {
       first.abort();
@@ -620,7 +719,10 @@ describe('private run authority', () => {
           expect(settled).toBe(false);
           expect(events).toEqual(wire);
           exchange.send(finished);
-          expect(await bounded(done)).toEqual({ outcome: 'success' });
+          expect(await bounded(done)).toEqual({
+            outcome: 'success',
+            fetchInvoked: true,
+          });
           await bounded(exchange.closed);
         } finally {
           handle.abort();
@@ -683,8 +785,8 @@ describe('private run authority', () => {
         exchange.send(started, finished, failure);
         expect(await bounded(handle.done)).toEqual(
           mode === 'throw'
-            ? { outcome: 'error', error }
-            : { outcome: 'aborted' }
+            ? { outcome: 'error', error, fetchInvoked: true }
+            : { outcome: 'aborted', fetchInvoked: true }
         );
         expect(events).toEqual([started, finished]);
         expect(remove).toHaveBeenCalledWith('abort', expect.any(Function));
@@ -767,7 +869,10 @@ describe('private run authority', () => {
           },
           external.signal
         );
-        expect(await bounded(handle.done)).toEqual({ outcome: 'aborted' });
+        expect(await bounded(handle.done)).toEqual({
+          outcome: 'aborted',
+          fetchInvoked: false,
+        });
         expect(events).toEqual([started, finished]);
         expect(source?.abortController.signal.aborted).toBe(true);
         expect(teardown).toHaveBeenCalledOnce();

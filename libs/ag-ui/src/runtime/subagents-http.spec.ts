@@ -296,7 +296,10 @@ describe('private native child observations over actual held HTTP', () => {
           ],
         },
       });
-      expect(await bounded(done)).toEqual({ outcome: 'paused' });
+      expect(await bounded(done)).toEqual({
+        outcome: 'paused',
+        fetchInvoked: true,
+      });
       await bounded(exchange.closed);
       expect(exchange.response.destroyed).toBe(true);
       expect(children).toBe(terminalChildren);
@@ -344,7 +347,10 @@ describe('private native child observations over actual held HTTP', () => {
         { ...rootStart, runId: 'next' },
         { ...rootFinish, runId: 'next' }
       );
-      expect(await bounded(secondDone)).toEqual({ outcome: 'success' });
+      expect(await bounded(secondDone)).toEqual({
+        outcome: 'success',
+        fetchInvoked: true,
+      });
       await bounded(next.closed);
       expect(server.exchanges).toHaveLength(2);
     } finally {
@@ -372,7 +378,10 @@ describe('private native child observations over actual held HTTP', () => {
         childError('nested'),
         rootFinish
       );
-      expect(await bounded(done)).toEqual({ outcome: 'success' });
+      expect(await bounded(done)).toEqual({
+        outcome: 'success',
+        fetchInvoked: true,
+      });
       expect(children).toStrictEqual([
         { started: childStart(), terminal: childFinish() },
         { started: nested, terminal: childError('nested') },

@@ -171,7 +171,11 @@ describe('observeAgent native AG-UI owner', () => {
     await exchange.closed;
     expect(second.snapshot().run?.terminal).toEqual(terminal);
     expect(second.snapshot().run?.outcome).toBe('paused');
-    const nextRun = f.session.submit('Next');
+    const decision = second.snapshot().decision;
+    if (decision?.kind !== 'native') throw new Error('Missing observed pause');
+    const nextRun = f.session.resume(decision.id, [
+      { interruptId: 'approval', status: 'resolved', payload: 'yes' },
+    ]);
     const next = await f.started(1);
     expect(next.body).toEqual({
       threadId: 'native-thread',
@@ -191,9 +195,9 @@ describe('observeAgent native AG-UI owner', () => {
             },
           ],
         },
-        { id: expect.any(String), role: 'user', content: 'Next' },
       ],
       state: { count: 1 },
+      resume: [{ interruptId: 'approval', status: 'resolved', payload: 'yes' }],
       tools: [],
       context: [],
       forwardedProps: {},

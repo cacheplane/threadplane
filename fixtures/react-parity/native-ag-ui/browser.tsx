@@ -26,9 +26,9 @@ const sequence = [
   'Remove React',
   'Advance first',
   'Mount React',
-  'Second',
+  'Resume',
   'Remove Angular',
-  'Complete second',
+  'Complete resume',
   'Mount Angular',
   'Start other',
   'Cancelable',
@@ -66,10 +66,10 @@ h1{font-size:clamp(24px,4vw,38px);margin-bottom:8px}h2{font-size:20px;margin-top
 section{background:white;border:1px solid #d3dce5;border-radius:10px;padding:18px;margin-block:16px}pre{font:13px/1.5 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere;max-height:400px;overflow:auto}
 button{font:inherit;padding:9px 14px;margin:4px;border:1px solid #879bab;border-radius:6px;background:#173f65;color:white;cursor:pointer}button:disabled{opacity:.4;cursor:default}button:focus-visible{outline:3px solid #dd8800;outline-offset:2px}#failure{color:#9c2525}a{color:#164d79}
 </style>
-<header><h1>One native owner, two framework views</h1><p>React and Angular borrow the same private AG-UI session. Removing a view releases observation; only owner controls submit, stop or dispose work.</p><p>These are synthetic protocol review views, not public components or a hosted provider demonstration. Reload starts a separate review. <a href="/provenance" target="_blank" rel="noreferrer">Bundle provenance</a></p></header>
+<header><h1>One native owner, two framework views</h1><p>React and Angular borrow the same private AG-UI session. Removing a view releases observation; only owner controls submit, resume, stop or dispose work.</p><p>These are synthetic protocol review views, not a hosted provider demonstration. Reload starts a separate review. <a href="/provenance" target="_blank" rel="noreferrer">Bundle provenance</a></p></header>
 <section aria-label="Review controls"><h2>Walkthrough</h2><p id="next" aria-live="polite"></p><div id="actions"></div><p id="failure" role="alert"></p></section>
 <div class="panels"><section><h2>React · owner A</h2><div id="react-a"></div></section><section><h2>Angular · owner A</h2><div id="angular-slot"></div></section><section><h2>React · independent owner B</h2><div id="react-b"></div></section></div>
-<section><h2>Ownership and command evidence</h2><p>First and Second submit model, reasoning effort and UI settings into local shared state. First's server delta changes the submitted effort; later snapshots replace the settings. First also shows a custom notice while the response stays open. Advance first supplies the native interrupt terminal. These are retained observations, not resume decisions. Both mounted A views must hold the identical current snapshot. Native arguments remain raw strings. Prior snapshots must stay unchanged.</p><pre id="state"></pre></section>`;
+<section><h2>Ownership and command evidence</h2><p>First submits model, reasoning effort and UI settings into local shared state. Its server delta changes the submitted effort; later snapshots replace the settings. First also shows a custom notice while the response stays open. Advance first supplies the native interrupt terminal. Resume explicitly answers that observed pause with approval, preserving full history and state without adding a user row. Both mounted A views must hold the identical current snapshot. Native arguments remain raw strings. Prior snapshots must stay unchanged.</p><pre id="state"></pre></section>`;
 
 function evidence() {
   for (const old of saved) stable &&= JSON.stringify(old.value) === old.json;
@@ -199,28 +199,31 @@ function start(session: Session, text: string) {
     text,
   };
   records.push(record);
-  void session
-    .submit(
-      text === 'First'
-        ? {
-            message: text,
-            state: {
-              model: 'review-small',
-              reasoning_effort: 'low',
-              gen_ui_mode: 'inline',
+  const decision = session.getSnapshot().decision;
+  const command =
+    text === 'Resume'
+      ? decision?.kind === 'native'
+        ? session.resume(decision.id, [
+            {
+              interruptId: 'approval',
+              status: 'resolved',
+              payload: { approved: true },
             },
-          }
-        : text === 'Second'
-        ? {
-            message: text,
-            state: {
-              model: 'review-large',
-              reasoning_effort: 'medium',
-              gen_ui_mode: 'panel',
-            },
-          }
-        : text
-    )
+          ])
+        : Promise.reject(new Error('A current native pause is required'))
+      : session.submit(
+          text === 'First'
+            ? {
+                message: text,
+                state: {
+                  model: 'review-small',
+                  reasoning_effort: 'low',
+                  gen_ui_mode: 'inline',
+                },
+              }
+            : text
+        );
+  void command
     .then((outcome) => {
       record.outcome = outcome;
       renderState();
@@ -318,7 +321,7 @@ async function action(index: number) {
       await waitFor(() => evidence().sameReference);
       break;
     case 4:
-      start(a, 'Second');
+      start(a, 'Resume');
       await waitFor(
         () => a.getSnapshot().transcript.at(-1)?.content === 'Next answer'
       );
@@ -330,7 +333,7 @@ async function action(index: number) {
       angularSnapshot = undefined;
       break;
     case 6:
-      await control('complete-second');
+      await control('complete-resume');
       await waitFor(
         () => records[1].outcome === 'success' && evidence().reactCurrent
       );

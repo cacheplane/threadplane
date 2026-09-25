@@ -1,4 +1,4 @@
-# Private native AG-UI application input
+# Private native AG-UI session commands
 
 The private `createSession` owner accepts a literal string or
 `{ message, state? }`. `message` is required and is not trimmed. `state` is an
@@ -42,7 +42,7 @@ local state and history. There is no rollback or assertion of remote persistence
 This module is private source, not a public backend export or a core
 `AgentSession` implementation. Core submission stays string-only. Framework
 observers and transcript components continue to consume the same native owner;
-no second store, resume command or forwarding bag is introduced.
+no second store or forwarding bag is introduced.
 
 ## Interruption evidence
 
@@ -64,8 +64,66 @@ A native notice followed only by EOF selects `interrupted`; stopping at the
 notice selects `aborted`, with no invented native terminal. New runs reset these
 run-local fields while retaining history and shared state.
 
-Notices are not actionable decisions in this slice. There is no resume command,
-decision ledger, retry guarantee or persistence/recovery contract. Caller control
-remains unchanged, but ordinary resubmission is not evidence that a possible
-server pause was safely resolved. Captured Mastra replay verifies event retention
-and ordering only; it does not establish native Mastra resume compatibility.
+## Correlated native resume
+
+An observed root custom notice installs an unsupported decision blocker. A later
+native interrupt batch replaces it with one immutable `decision` containing a
+fresh branded `PauseId`, the source run ID and the already owned interrupt array.
+Child notices do not create root decisions. Duplicate interrupt IDs retain an
+unsupported blocker. The locked SDK rejects empty wire batches before delivery;
+that error preserves an existing blocker or claim and invents no terminal.
+
+After the native pause has locally settled, explicitly answer its current token:
+
+```ts
+const snapshot = session.getSnapshot();
+if (
+  snapshot.decision?.kind === 'native' &&
+  !snapshot.decision.attempt &&
+  snapshot.run?.outcome
+) {
+  await session.resume(snapshot.decision.id, [
+    { interruptId: 'approval', status: 'resolved', payload: null },
+  ]);
+}
+```
+
+Every observed interrupt needs exactly one response with its exact ID. Resolved
+responses may omit payload; `null` is meaningful. Cancelled responses use
+`{ interruptId, status: 'cancelled' }` and cannot contain a defined payload.
+Optional metadata must be a plain record. Responses and the options signal are
+captured once before queueing; nested data is copied and frozen without freezing
+the caller. Extra runtime getters are ignored. Response schemas are opaque; this
+owner neither validates business answers nor guesses defaults or aliases.
+
+Eligibility is checked at invocation and admission. The token must identify the
+current unclaimed native generation, the current run must be locally settled,
+and every supplied expiry must parse to a time strictly in the future. An
+observing terminal callback cannot enqueue future resume intent before settlement.
+Two observers can claim only once. Admission publishes the attempt and new run
+together, preserving state and transcript references and adding no user message.
+The wire request contains fresh mutable copies of full native history and state,
+native top-level `resume`, and empty tools, context and forwarded properties.
+Resume accepts no new message, state patch, identity or transport override.
+
+Availability is derived from existing run settlement and the optional attempt:
+an unsettled observation is not yet actionable; a settled unclaimed native
+decision is claimable; an unsettled attempt is running; a settled attempt without
+conclusive native evidence is uncertain. Any decision blocks ordinary submission
+before reading its input or cancelling active work. Stop and dispose remain local
+controls, not backend rejection or recovery.
+
+Each private run result reports `fetchInvoked`, recorded immediately before the
+captured fetch call. A claim cancelled before that boundary is released and can
+be retried with the same token. Once fetch was invoked, failure, EOF or abort
+without conclusive native evidence retains the attempt and forbids replay or
+ordinary bypass. `RUN_STARTED`, local promise completion and exception properties
+do not establish server acknowledgement or socket closure. No retry, reset,
+session reconstruction or persistence/recovery guarantee is provided.
+
+Native success clears the decision at local settlement, even if a terminal
+listener selected local `aborted`. A new native pause receives a fresh token even
+when backend interrupt IDs repeat; old finalizers cannot clear that generation.
+Legacy observation has no resume support. Captured Strands replay establishes
+native response wire shape with synthetic completion only. Captured Mastra and
+translated Microsoft evidence do not establish provider resume interoperability.

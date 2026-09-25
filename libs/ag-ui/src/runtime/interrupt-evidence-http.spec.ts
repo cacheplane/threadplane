@@ -309,7 +309,7 @@ describe('owned interrupt evidence over held HTTP', () => {
   );
 
   it.each(['notice', 'terminal'] as const)(
-    'replacement from %s cannot receive stale later evidence and resets run-local observations',
+    'replacement from %s is blocked until conclusive settlement, then a new run resets observations',
     async (when) => {
       const server = await serve();
       const owner = createSession({ threadId: 'thread', url: server.url });
@@ -339,9 +339,12 @@ describe('owned interrupt evidence over held HTTP', () => {
           ...lifecycle(exchange, 'RUN_FINISHED'),
           outcome: { type: 'success' },
         });
-        const second = await server.next(1);
-        expect(await bounded(first)).toBe('aborted');
+        expect(await bounded(first)).toBe('success');
+        expect(await bounded(replacement)).toBe('error');
+        expect(server.exchanges).toHaveLength(1);
         await bounded(exchange.closed);
+        replacement = owner.submit('Second');
+        const second = await server.next(1);
         const current = owner.getSnapshot();
         expect(current.run?.legacyInterrupt).toBeUndefined();
         expect(current.run?.terminal).toBeUndefined();

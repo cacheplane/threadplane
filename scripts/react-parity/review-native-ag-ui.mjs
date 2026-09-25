@@ -10,7 +10,7 @@ const defaultRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 export const buildCommand =
   'NX_DAEMON=false NX_TUI=false npx nx run-many -t build -p core,angular,react --skip-nx-cache';
 export const sequence =
-  'First → Remove React → Advance first → Mount React → Second → Remove Angular → Complete second → Mount Angular → Start other → Cancelable → Stop A → Dispose → Try disposed';
+  'First → Remove React → Advance first → Mount React → Resume → Remove Angular → Complete resume → Mount Angular → Start other → Cancelable → Stop A → Dispose → Try disposed';
 const hash = (value) => createHash('sha256').update(value).digest('hex');
 const portable = (path) => path.replaceAll('\\', '/');
 

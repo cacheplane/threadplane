@@ -13809,6 +13809,13 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private native-versus-legacy observation policy for owned interruption evidence; no resume, decision ledger or provider compatibility is claimed."
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/decision.ts",
+      "taskIds": ["T12", "T14", "T23"],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private correlated native resume capture, claim and settlement; retains uncertain invoked attempts and does not establish public backend or provider parity."
     }
   ]
 }

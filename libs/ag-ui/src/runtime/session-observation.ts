@@ -20,6 +20,7 @@ import { applyActivityMessage } from './activity-messages';
 import { applyEncryptedValue } from './encrypted-messages';
 import { copyData } from '../lib/internal/copy-data';
 import { assertAttribution } from './session-attribution';
+import type { Decision } from './decision';
 import {
   isLegacyInterruptTerminal,
   type InterruptMode,
@@ -48,6 +49,7 @@ export interface SessionSnapshot {
   readonly transcript: Transcript;
   readonly state: PlainValue;
   readonly subagents: Subagents;
+  readonly decision?: Decision;
   readonly run?: {
     readonly id: string;
     readonly outcome?: CompleteOutcome;

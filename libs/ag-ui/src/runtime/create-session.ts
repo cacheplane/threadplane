@@ -3,6 +3,7 @@ import type {
   HttpAgentConfig,
   Message,
   RunAgentInput,
+  ResumeEntry,
 } from '@ag-ui/client';
 import type { CompleteOutcome } from '@threadplane/core';
 import { ownTranscript, requestMessages, type Transcript } from './transcript';
@@ -15,6 +16,16 @@ import {
 import { createRun, type RunHandle } from './create-run';
 import { createPublication } from './session-publication';
 import type { InterruptMode } from './interrupt-mode';
+import {
+  assertResumeEligible,
+  captureResponses,
+  claimDecision,
+  observeDecision,
+  settleDecision,
+  type NativeResponse,
+  type PauseId,
+} from './decision';
+import { copyData } from '../lib/internal/copy-data';
 import {
   captureSubmit,
   mergeSubmitState,
@@ -33,6 +44,11 @@ export interface Session {
   subscribe(notify: () => void): () => void;
   submit(
     input: SubmitInput,
+    options?: { readonly signal?: AbortSignal }
+  ): Promise<CompleteOutcome>;
+  resume(
+    pause: PauseId,
+    responses: readonly NativeResponse[],
     options?: { readonly signal?: AbortSignal }
   ): Promise<CompleteOutcome>;
   stop(): Promise<void>;
@@ -71,7 +87,11 @@ export function createSession(options: SessionOptions): Session {
     !disposed &&
     !attempt.controller.signal.aborted &&
     !attempt.finished;
-  const finish = (attempt: Attempt, outcome: CompleteOutcome) => {
+  const finish = (
+    attempt: Attempt,
+    outcome: CompleteOutcome,
+    fetchInvoked: boolean
+  ) => {
     if (attempt.finished) return;
     attempt.finished = true;
     attempt.cleanup();
@@ -81,6 +101,11 @@ export function createSession(options: SessionOptions): Session {
       publication.publish(
         Object.freeze({
           ...previous,
+          decision: settleDecision(
+            previous.decision,
+            { id: attempt.id, outcome, terminal: previous.run?.terminal },
+            fetchInvoked
+          ),
           status:
             outcome === 'error' || outcome === 'interrupted' ? 'error' : 'idle',
           run: Object.freeze({ ...previous.run, id: attempt.id, outcome }),
@@ -95,13 +120,15 @@ export function createSession(options: SessionOptions): Session {
     attempt.handle?.abort();
     // A start in progress already owns first-result authority even though its
     // handle is not assigned. Its done promise must select the local outcome.
-    if (!attempt.starting && !attempt.handle) finish(attempt, 'aborted');
+    if (!attempt.starting && !attempt.handle) finish(attempt, 'aborted', false);
   };
   const dispatch = (attempt: Attempt) => {
     if (!current(attempt)) return;
+    let input: RunAgentInput;
     try {
       const value = publication.getSnapshot();
-      const input: RunAgentInput = {
+      const decision = value.decision;
+      input = {
         threadId,
         runId: attempt.id,
         messages: requestMessages(value.transcript),
@@ -109,35 +136,111 @@ export function createSession(options: SessionOptions): Session {
         tools: [],
         context: [],
         forwardedProps: {},
+        ...(decision?.kind === 'native' &&
+          decision.attempt?.runId === attempt.id && {
+            resume: copyData(
+              decision.attempt.responses,
+              false
+            ) as ResumeEntry[],
+          }),
       };
-      if (!current(attempt)) return;
-      attempt.starting = true;
-      attempt.handle = factory.start(
-        input,
-        (event) => {
-          if (!current(attempt)) return;
-          // createRun delivers the SDK's normalized/verified union through its
-          // BaseEvent callback. No second schema parse or sequence verifier.
-          const next = applyObservation(
-            publication.getSnapshot(),
-            event as AGUIEvent,
-            interruptMode
-          );
-          if (current(attempt)) publication.publish(next);
-        },
-        attempt.controller.signal
-      );
-      attempt.starting = false;
-      if (!current(attempt)) attempt.handle.abort();
-      void attempt.handle.done.then((result) =>
-        publication.command(() => finish(attempt, result.outcome))
-      );
     } catch {
-      attempt.starting = false;
       publication.command(() =>
-        finish(attempt, attempt.controller.signal.aborted ? 'aborted' : 'error')
+        finish(
+          attempt,
+          attempt.controller.signal.aborted ? 'aborted' : 'error',
+          false
+        )
       );
+      return;
     }
+    if (!current(attempt)) return;
+    attempt.starting = true;
+    // createRun owns all first-result and invocation facts once start is called.
+    attempt.handle = factory.start(
+      input,
+      (event) => {
+        if (!current(attempt)) return;
+        // createRun delivers the SDK's normalized/verified union through its
+        // BaseEvent callback. No second schema parse or sequence verifier.
+        const previous = publication.getSnapshot();
+        let next = applyObservation(
+          previous,
+          event as AGUIEvent,
+          interruptMode
+        );
+        const terminal = next.run?.terminal;
+        const notice = next.run?.legacyInterrupt;
+        const evidence =
+          terminal !== previous.run?.terminal
+            ? terminal
+            : notice !== previous.run?.legacyInterrupt
+            ? notice
+            : undefined;
+        if (evidence) {
+          const pause =
+            evidence.type === 'RUN_FINISHED' &&
+            evidence.outcome?.type === 'interrupt'
+              ? (crypto.randomUUID() as PauseId)
+              : undefined;
+          next = Object.freeze({
+            ...next,
+            decision: observeDecision(
+              previous.decision,
+              attempt.id,
+              evidence,
+              pause
+            ),
+          });
+        }
+        if (current(attempt)) publication.publish(next);
+      },
+      attempt.controller.signal
+    );
+    attempt.starting = false;
+    if (!current(attempt)) attempt.handle.abort();
+    void attempt.handle.done.then((result) =>
+      publication.command(() =>
+        finish(attempt, result.outcome, result.fetchInvoked)
+      )
+    );
+  };
+  const admit = (
+    id: string,
+    next: SessionSnapshot,
+    signal: AbortSignal | undefined,
+    resolve: (outcome: CompleteOutcome) => void
+  ) => {
+    revision++;
+    let settle!: (outcome: CompleteOutcome) => void;
+    const done = new Promise<CompleteOutcome>((yes) => {
+      settle = yes;
+    });
+    const attempt: Attempt = {
+      id,
+      controller: new AbortController(),
+      done,
+      resolve: settle,
+      cleanup: () => undefined,
+      starting: false,
+      finished: false,
+    };
+    void done.then(resolve);
+    const previous = active;
+    active = attempt;
+    if (previous) cancel(previous);
+    const abort = () =>
+      publication.command(() => {
+        if (active === attempt) {
+          revision++;
+          cancel(attempt);
+        }
+      });
+    signal?.addEventListener('abort', abort, { once: true });
+    attempt.cleanup = () => signal?.removeEventListener('abort', abort);
+    publication.publish(next);
+    // Dispatch only after commands queued by this publication have drained.
+    if (current(attempt)) queueMicrotask(() => dispatch(attempt));
   };
   const close = (permanent: boolean): Promise<void> => {
     // Track command intent even while notification defers its mutation. A
@@ -161,6 +264,86 @@ export function createSession(options: SessionOptions): Session {
     getSnapshot: publication.getSnapshot,
     subscribe: (notify) =>
       disposed ? () => undefined : publication.subscribe(notify),
+    resume: (pause, responses, options) =>
+      new Promise<CompleteOutcome>((resolve) => {
+        const beforeSignal = revision;
+        let signal: AbortSignal | undefined;
+        try {
+          signal = options?.signal;
+        } catch {
+          resolve(disposed || revision !== beforeSignal ? 'aborted' : 'error');
+          return;
+        }
+        if (disposed || signal?.aborted || revision !== beforeSignal) {
+          resolve('aborted');
+          return;
+        }
+        const beforeInput = ++revision;
+        let captured: readonly NativeResponse[];
+        try {
+          const previous = publication.getSnapshot();
+          if (interruptMode !== 'native' || active)
+            throw new TypeError('Resume requires a settled native owner');
+          assertResumeEligible(
+            previous.decision,
+            previous.run,
+            pause,
+            Date.now()
+          );
+          captured = captureResponses(responses);
+        } catch {
+          resolve(
+            disposed || signal?.aborted || revision !== beforeInput
+              ? 'aborted'
+              : 'error'
+          );
+          return;
+        }
+        if (disposed || signal?.aborted || revision !== beforeInput) {
+          resolve('aborted');
+          return;
+        }
+        publication.command(() => {
+          if (disposed || signal?.aborted) {
+            resolve('aborted');
+            return;
+          }
+          const beforeAdmission = revision;
+          let next: SessionSnapshot;
+          let id: string;
+          try {
+            const previous = publication.getSnapshot();
+            if (active || interruptMode !== 'native')
+              throw new TypeError('Resume requires a settled native owner');
+            const decision = assertResumeEligible(
+              previous.decision,
+              previous.run,
+              pause,
+              Date.now()
+            );
+            id = crypto.randomUUID();
+            next = Object.freeze({
+              ...previous,
+              decision: claimDecision(decision, captured, id),
+              status: 'running',
+              subagents: Object.freeze([]),
+              run: Object.freeze({ id }),
+            });
+          } catch {
+            resolve(
+              disposed || signal?.aborted || revision !== beforeAdmission
+                ? 'aborted'
+                : 'error'
+            );
+            return;
+          }
+          if (disposed || signal?.aborted || revision !== beforeAdmission) {
+            resolve('aborted');
+            return;
+          }
+          admit(id, next, signal, resolve);
+        });
+      }),
     submit: (input, options) =>
       new Promise<CompleteOutcome>((resolve) => {
         const capturedRevision = revision;
@@ -175,6 +358,10 @@ export function createSession(options: SessionOptions): Session {
         }
         if (disposed || signal?.aborted || revision !== capturedRevision) {
           resolve('aborted');
+          return;
+        }
+        if (publication.getSnapshot().decision) {
+          resolve('error');
           return;
         }
         const beforeInput = ++revision;
@@ -196,6 +383,10 @@ export function createSession(options: SessionOptions): Session {
         publication.command(() => {
           if (disposed || signal?.aborted) {
             resolve('aborted');
+            return;
+          }
+          if (publication.getSnapshot().decision) {
+            resolve('error');
             return;
           }
           const beforeCapture = revision;
@@ -233,38 +424,7 @@ export function createSession(options: SessionOptions): Session {
             resolve('aborted');
             return;
           }
-          revision++;
-          let settle!: (outcome: CompleteOutcome) => void;
-          const done = new Promise<CompleteOutcome>((yes) => {
-            settle = yes;
-          });
-          const attempt: Attempt = {
-            id,
-            controller: new AbortController(),
-            done,
-            resolve: settle,
-            cleanup: () => undefined,
-            starting: false,
-            finished: false,
-          };
-          void done.then(resolve);
-          const previous = active;
-          active = attempt;
-          if (previous) cancel(previous);
-          const abort = () =>
-            publication.command(() => {
-              if (active === attempt) {
-                revision++;
-                cancel(attempt);
-              }
-            });
-          signal?.addEventListener('abort', abort, { once: true });
-          attempt.cleanup = () => signal?.removeEventListener('abort', abort);
-          publication.publish(next);
-          // Never dispatch inside the synchronous command queue: a synchronous
-          // terminal listener's queued cancellation must drain before start's
-          // terminal candidate is committed by createRun.
-          if (current(attempt)) queueMicrotask(() => dispatch(attempt));
+          admit(id, next, signal, resolve);
         });
       }),
     stop: () => close(false),

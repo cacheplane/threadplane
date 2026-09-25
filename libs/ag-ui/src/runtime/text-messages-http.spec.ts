@@ -237,7 +237,10 @@ describe('private text accumulation over actual HTTP', () => {
         { type: EventType.MESSAGES_SNAPSHOT, messages: [user, corrected] },
         lifecycle(exchange, EventType.RUN_FINISHED)
       );
-      expect(await bounded(first.done)).toEqual({ outcome: 'success' });
+      expect(await bounded(first.done)).toEqual({
+        outcome: 'success',
+        fetchInvoked: true,
+      });
       await bounded(exchange.closed);
       expect(events.map((event) => event.type)).toEqual([
         EventType.RUN_STARTED,
@@ -284,7 +287,10 @@ describe('private text accumulation over actual HTTP', () => {
         lifecycle(continuation, EventType.RUN_STARTED),
         lifecycle(continuation, EventType.RUN_FINISHED)
       );
-      expect(await bounded(second.done)).toEqual({ outcome: 'success' });
+      expect(await bounded(second.done)).toEqual({
+        outcome: 'success',
+        fetchInvoked: true,
+      });
       await bounded(continuation.closed);
       expect(server.exchanges).toHaveLength(2);
     } finally {
@@ -347,7 +353,11 @@ describe('private text accumulation over actual HTTP', () => {
       );
       const result = await bounded(handle.done);
       expect(failure).toBeInstanceOf(TypeError);
-      expect(result).toEqual({ outcome: 'error', error: failure });
+      expect(result).toEqual({
+        outcome: 'error',
+        error: failure,
+        fetchInvoked: true,
+      });
       if (result.outcome === 'error') expect(result.error).toBe(failure);
       await bounded(exchange.closed);
       expect(delivered).toEqual([
