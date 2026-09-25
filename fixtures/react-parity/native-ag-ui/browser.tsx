@@ -69,7 +69,7 @@ button{font:inherit;padding:9px 14px;margin:4px;border:1px solid #879bab;border-
 <header><h1>One native owner, two framework views</h1><p>React and Angular borrow the same private AG-UI session. Removing a view releases observation; only owner controls submit, stop or dispose work.</p><p>These are synthetic protocol review views, not public components or a hosted provider demonstration. Reload starts a separate review. <a href="/provenance" target="_blank" rel="noreferrer">Bundle provenance</a></p></header>
 <section aria-label="Review controls"><h2>Walkthrough</h2><p id="next" aria-live="polite"></p><div id="actions"></div><p id="failure" role="alert"></p></section>
 <div class="panels"><section><h2>React · owner A</h2><div id="react-a"></div></section><section><h2>Angular · owner A</h2><div id="angular-slot"></div></section><section><h2>React · independent owner B</h2><div id="react-b"></div></section></div>
-<section><h2>Ownership and command evidence</h2><p>Both mounted A views must hold the identical current snapshot. Native arguments remain raw strings. Prior snapshots must stay unchanged.</p><pre id="state"></pre></section>`;
+<section><h2>Ownership and command evidence</h2><p>First and Second submit model, reasoning effort and UI settings into local shared state. First's server delta changes the submitted effort; later snapshots replace the settings. Both mounted A views must hold the identical current snapshot. Native arguments remain raw strings. Prior snapshots must stay unchanged.</p><pre id="state"></pre></section>`;
 
 function evidence() {
   for (const old of saved) stable &&= JSON.stringify(old.value) === old.json;
@@ -200,7 +200,27 @@ function start(session: Session, text: string) {
   };
   records.push(record);
   void session
-    .submit(text)
+    .submit(
+      text === 'First'
+        ? {
+            message: text,
+            state: {
+              model: 'review-small',
+              reasoning_effort: 'low',
+              gen_ui_mode: 'inline',
+            },
+          }
+        : text === 'Second'
+        ? {
+            message: text,
+            state: {
+              model: 'review-large',
+              reasoning_effort: 'medium',
+              gen_ui_mode: 'panel',
+            },
+          }
+        : text
+    )
     .then((outcome) => {
       record.outcome = outcome;
       renderState();
@@ -260,7 +280,13 @@ async function action(index: number) {
       start(a, 'First');
       await waitFor(
         () =>
-          count(a, 1) &&
+          JSON.stringify(a.getSnapshot().state) ===
+            JSON.stringify({
+              model: 'review-small',
+              reasoning_effort: 'high',
+              gen_ui_mode: 'inline',
+              count: 1,
+            }) &&
           a
             .getSnapshot()
             .transcript.some(

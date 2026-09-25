@@ -13776,6 +13776,28 @@
       "status": "in-progress",
       "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
       "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "asset:libs/ag-ui/src/runtime/README.md",
+      "taskIds": [
+        "T12",
+        "T14",
+        "T23"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Documents private per-submit application state ownership and local retention; no public backend, resume or persistence capability is claimed."
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/submit-input.ts",
+      "taskIds": [
+        "T12",
+        "T14",
+        "T23"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private plain-data capture and shallow admission merge for application settings; preserves the native owner and does not complete backend parity."
     }
   ]
 }

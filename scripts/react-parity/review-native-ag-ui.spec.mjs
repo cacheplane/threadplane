@@ -23,7 +23,14 @@ const body = (reviewId, role = 'a', command = 'First') => ({
   threadId: `${reviewId}-${role}`,
   runId: randomUUID(),
   messages: [{ id: randomUUID(), role: 'user', content: command }],
-  state: {},
+  state:
+    command === 'First'
+      ? {
+          model: 'review-small',
+          reasoning_effort: 'low',
+          gen_ui_mode: 'inline',
+        }
+      : {},
   tools: [],
   context: [],
   forwardedProps: {},
@@ -73,7 +80,13 @@ test(
       const first = body(reviewId);
       const initial = await agent(server, reviewId, first);
       assert.equal(initial.status, 200);
-      const { reader } = await consume(initial, /TOOL_CALL_ARGS/);
+      const { reader, text } = await consume(initial, /TOOL_CALL_ARGS/);
+      assert.match(text, /"type":"STATE_DELTA"/);
+      assert.match(
+        text,
+        /"op":"replace","path":"\/reasoning_effort","value":"high"/
+      );
+      assert.doesNotMatch(text, /STATE_SNAPSHOT/);
       assert.equal(server.stats().requests[0].closed, false);
       assert.equal(
         (await control(server, reviewId, 'advance-first')).status,
@@ -107,7 +120,12 @@ test(
       };
       const second = body(reviewId, 'a', 'Second');
       second.messages = [...first.messages, answer, result, ...second.messages];
-      second.state = { count: 2 };
+      second.state = {
+        count: 2,
+        model: 'review-large',
+        reasoning_effort: 'medium',
+        gen_ui_mode: 'panel',
+      };
       const next = await agent(server, reviewId, second);
       assert.equal(next.status, 200);
       const nextStream = await consume(next, /Next answer/);
@@ -153,6 +171,18 @@ test(
 );
 
 for (const [name, mutate] of [
+  [
+    'missing application field',
+    (value) => {
+      delete value.state.model;
+    },
+  ],
+  [
+    'extra application field',
+    (value) => {
+      value.state.extra = true;
+    },
+  ],
   [
     'missing envelope field',
     (value) => {
@@ -288,7 +318,12 @@ for (const [name, mutate] of [
         await reader.cancel();
         await until(() => server.stats().requests[0].closed);
         const next = body(id, 'a', 'Second');
-        next.state = { count: 2 };
+        next.state = {
+          count: 2,
+          model: 'review-large',
+          reasoning_effort: 'medium',
+          gen_ui_mode: 'panel',
+        };
         next.messages = [
           { id: first.messages[0].id, role: 'user', content: 'First' },
           {

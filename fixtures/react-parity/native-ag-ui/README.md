@@ -30,11 +30,16 @@ or SIGTERM closes only this invocation's server and connections.
 
 Use each enabled control in order:
 
-1. **First** shows shared state `count: 1`, a worker start, and raw partial tool arguments.
+1. **First** submits `model: review-small`, `reasoning_effort: low`, and
+   `gen_ui_mode: inline`. A server delta replaces that submitted effort with
+   `high` and adds `count: 1`, alongside a worker start and raw partial arguments.
 2. **Remove React**, then **Advance first**. Angular receives the completed weather
-   arguments, tool result, `Hello`, state `count: 2`, a suspended child, and a root pause.
+   arguments, tool result, `Hello`, an authoritative snapshot containing only
+   `count: 2`, a suspended child, and a root pause.
 3. **Mount React** reconnects observation without a request.
-4. **Second** sends full prior native history and state and shows `Next answer`.
+4. **Second** sends full prior native history with `count: 2` and new settings
+   `model: review-large`, `reasoning_effort: medium`, `gen_ui_mode: panel`, then
+   shows `Next answer`. Its server snapshot again keeps only `count: 2`.
 5. **Remove Angular**, then **Complete second**. React receives successful completion.
 6. **Mount Angular** reconnects observation without a request.
 7. **Start other** shows independent B state `count: 99`.
@@ -49,6 +54,12 @@ review ID and new owners; it does not reset or erase another page's evidence.
 Page teardown requests disposal. The server independently checks the four exact
 request envelopes and records actual response closure. `/stats` retains every
 review; `/provenance` identifies the served bundle.
+
+Submitted settings are shallow patches admitted into the owner's local shared
+document before dispatch. They supply the baseline for native deltas; later
+server snapshots can remove them. Stop or failure retains admitted local data
+without claiming remote persistence. The server's expected settings are fixed
+independently of the request body.
 
 For automated verification, use existing Playwright Chromium (install it once
 with `npx playwright install chromium`, or `--with-deps chromium` on Linux):
