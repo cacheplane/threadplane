@@ -42,6 +42,19 @@ function ownership(inventory) {
 
 test('inventory API exists', () => assert.equal(typeof collectInventory, 'function'));
 
+test('owned content and its Markdown feature are scoped separately from renderer parity', t => {
+  assert.ok(DEFAULT_SCOPE.libraries.includes('content'));
+  for (const entry of ['libs/content/src/index.ts', 'libs/content/src/markdown/index.ts']) assert.ok(DEFAULT_SCOPE.entryPoints.includes(entry));
+  const { root, put } = fixture(t);
+  put('libs/content/src/index.ts', 'export {};');
+  put('libs/content/src/markdown/index.ts', "export { createMarkdown } from './create-markdown.js';");
+  put('libs/content/src/markdown/create-markdown.ts', 'export function createMarkdown() { return {}; }');
+  const actual = collectInventory(root, { ...scope, libraries: ['content'], entryPoints: ['libs/content/src/index.ts', 'libs/content/src/markdown/index.ts'] });
+  assert.ok(actual.rows.some(row => row.id === 'source:libs/content/src/markdown/create-markdown.ts'));
+  assert.ok(actual.rows.some(row => row.id === 'export:libs/content/src/markdown/index.ts#createMarkdown'));
+  assert.equal(actual.rows.filter(row => row.kind === 'component').length, 0);
+});
+
 test('native APF secondary and React feature entries are explicitly scoped and resolve actual declarations', t => {
   for (const library of ['angular', 'react']) assert.ok(DEFAULT_SCOPE.libraries.includes(library));
   const entries = ['libs/angular/chat/src/public-api.ts', 'libs/react/src/chat/index.ts'];

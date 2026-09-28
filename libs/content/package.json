@@ -2,10 +2,13 @@
   "name": "@threadplane/content",
   "version": "0.0.0",
   "private": true,
-  "description": "Private content foundation scaffolding. No supported runtime API yet.",
+  "description": "Private content preparation with owned incremental Markdown documents.",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
+  "dependencies": {
+    "@cacheplane/partial-markdown": "0.5.8"
+  },
   "files": [
     "src/**/*.js",
     "src/**/*.d.ts",

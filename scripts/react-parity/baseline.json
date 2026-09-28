@@ -1,29 +1,21 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "38e78d4c9946694a092a453d54d265c7185530f0",
+  "baselineHead": "d8019da877f448430f6bc280771c5a3e5ef30b49",
   "sourceState": {
     "modified": [
       ".github/workflows/ci.yml",
-      "libs/ag-ui/src/lib/internal/apply-patch.ts",
-      "libs/ag-ui/src/runtime/README.md",
-      "libs/ag-ui/src/runtime/activity-messages.ts",
-      "libs/ag-ui/src/runtime/create-run.ts",
-      "libs/ag-ui/src/runtime/create-session.ts",
-      "libs/ag-ui/src/runtime/decision.ts",
-      "libs/ag-ui/src/runtime/encrypted-messages.ts",
-      "libs/ag-ui/src/runtime/reconcile-transcript.ts",
-      "libs/ag-ui/src/runtime/session-attribution.ts",
-      "libs/ag-ui/src/runtime/session-observation.ts",
-      "libs/ag-ui/src/runtime/session-publication.ts",
-      "libs/ag-ui/src/runtime/state.ts",
-      "libs/ag-ui/src/runtime/subagents.ts",
-      "libs/ag-ui/src/runtime/submit-input.ts",
-      "libs/ag-ui/src/runtime/text-messages.ts",
-      "libs/ag-ui/src/runtime/text-transcript.ts",
-      "libs/ag-ui/src/runtime/tool-messages.ts",
-      "libs/ag-ui/src/runtime/transcript.ts"
+      "libs/content/README.md",
+      "libs/content/package.json",
+      "libs/content/src/markdown/index.ts",
+      "libs/content/vite.config.mts",
+      "package-lock.json"
     ],
-    "untracked": []
+    "untracked": [
+      "libs/content/src/markdown/create-markdown.ts",
+      "libs/content/src/markdown/projection.ts",
+      "libs/content/src/markdown/transition.ts",
+      "libs/content/src/markdown/types.ts"
+    ]
   },
   "scope": {
     "libraries": [
@@ -35,6 +27,7 @@
       "cockpit-runtime-bridge",
       "cockpit-shell",
       "cockpit-telemetry",
+      "content",
       "design-tokens",
       "e2e-harness",
       "example-layouts",
@@ -54,6 +47,8 @@
       "libs/chat/src/public-api.ts",
       "libs/chat/debug/public-api.ts",
       "libs/chat/testing/public-api.ts",
+      "libs/content/src/index.ts",
+      "libs/content/src/markdown/index.ts",
       "libs/langgraph/src/public-api.ts",
       "libs/middleware/src/langgraph/index.ts",
       "libs/react/src/index.ts",
@@ -547,6 +542,48 @@
       "kind": "asset",
       "path": "libs/cockpit-telemetry/tsconfig.spec.json",
       "sha256": "440dbebe320488070e90cd28d50ed4e6b1e7a727762dceae581ff17e38133e8c"
+    },
+    {
+      "id": "asset:libs/content/LICENSE.md",
+      "kind": "asset",
+      "path": "libs/content/LICENSE.md",
+      "sha256": "d20c571ef693b2ea2e1c552d688d596804d64795aee4c941ab12a21e01752ba4"
+    },
+    {
+      "id": "asset:libs/content/README.md",
+      "kind": "asset",
+      "path": "libs/content/README.md",
+      "sha256": "d133bcfa6c3f1ccd48d5536fb14ce480c726835704072b9ec351285cd978835d"
+    },
+    {
+      "id": "asset:libs/content/package.json",
+      "kind": "asset",
+      "path": "libs/content/package.json",
+      "sha256": "98a416b3f718a50b0ee656440187c44ea50702d7c76d5d0bc2d0e205872e90b4"
+    },
+    {
+      "id": "asset:libs/content/project.json",
+      "kind": "asset",
+      "path": "libs/content/project.json",
+      "sha256": "f67be1c6d64e11f672b386b3e23f4d9918b3912898a39916b350603bfe8e33a4"
+    },
+    {
+      "id": "asset:libs/content/tsconfig.json",
+      "kind": "asset",
+      "path": "libs/content/tsconfig.json",
+      "sha256": "dd64aa93b1aa87b42ffc5088ff0666f48878b5cb9ab1ee3f9c253de8bf7efe56"
+    },
+    {
+      "id": "asset:libs/content/tsconfig.lib.json",
+      "kind": "asset",
+      "path": "libs/content/tsconfig.lib.json",
+      "sha256": "107fcd2e827015e26b31da7553ef7ddfde8eb19e6202664ddf911f388564b7ca"
+    },
+    {
+      "id": "asset:libs/content/tsconfig.spec.json",
+      "kind": "asset",
+      "path": "libs/content/tsconfig.spec.json",
+      "sha256": "87fddbd9d9fee3d22ef9dc3053325fc0d6a26492a28e405efbccc91b17b42cca"
     },
     {
       "id": "asset:libs/design-tokens/package.json",
@@ -2024,7 +2061,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "3b52ad89b8a57db82e23d47f1f7b2d43a12d2adf545c1457cfac2ab9766d6ef8"
+      "sha256": "877ee6b01e286d136a73c5e62e488ac7c81de9dfe61054f1a4bb73492030bf86"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -2078,7 +2115,7 @@
       "id": "config:package-lock.json",
       "kind": "config",
       "path": "package-lock.json",
-      "sha256": "530c28574a832ab39c15c9607717de0eb8ccfae2593e09c7ae373bd8936d0b64"
+      "sha256": "48f0110176f407c4a8e475eb61d0e99fb09914cb97f85076ca026767867bfa8d"
     },
     {
       "id": "config:package.json",
@@ -2918,6 +2955,16 @@
       "id": "entry:libs/chat/testing/public-api.ts",
       "kind": "entry",
       "path": "libs/chat/testing/public-api.ts"
+    },
+    {
+      "id": "entry:libs/content/src/index.ts",
+      "kind": "entry",
+      "path": "libs/content/src/index.ts"
+    },
+    {
+      "id": "entry:libs/content/src/markdown/index.ts",
+      "kind": "entry",
+      "path": "libs/content/src/markdown/index.ts"
     },
     {
       "id": "entry:libs/langgraph/src/public-api.ts",
@@ -8379,6 +8426,132 @@
       ]
     },
     {
+      "id": "export:libs/content/src/markdown/index.ts#CitationDefinition",
+      "kind": "export",
+      "path": "libs/content/src/markdown/index.ts",
+      "symbol": "CitationDefinition",
+      "declarations": [
+        {
+          "path": "libs/content/src/markdown/types.ts",
+          "symbol": "CitationDefinition",
+          "syntaxKind": "TypeAliasDeclaration",
+          "signature": "export type CitationDefinition = Owned<ParserCitationDefinition>;"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/markdown/index.ts#LinkDefinition",
+      "kind": "export",
+      "path": "libs/content/src/markdown/index.ts",
+      "symbol": "LinkDefinition",
+      "declarations": [
+        {
+          "path": "libs/content/src/markdown/types.ts",
+          "symbol": "LinkDefinition",
+          "syntaxKind": "TypeAliasDeclaration",
+          "signature": "export type LinkDefinition = Owned<ParserLinkDefinition>;"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/markdown/index.ts#Markdown",
+      "kind": "export",
+      "path": "libs/content/src/markdown/index.ts",
+      "symbol": "Markdown",
+      "declarations": [
+        {
+          "path": "libs/content/src/markdown/types.ts",
+          "symbol": "Markdown",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface Markdown {\n    readonly getSnapshot: () => MarkdownSnapshot;\n    readonly subscribe: (notify: () => void) => () => void;\n    readonly update: (document: MarkdownDocument) => void;\n    readonly dispose: () => void;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/markdown/index.ts#MarkdownDocument",
+      "kind": "export",
+      "path": "libs/content/src/markdown/index.ts",
+      "symbol": "MarkdownDocument",
+      "declarations": [
+        {
+          "path": "libs/content/src/markdown/types.ts",
+          "symbol": "MarkdownDocument",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface MarkdownDocument {\n    readonly generation: string;\n    readonly phase: 'streaming' | 'complete';\n    readonly content: string;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/markdown/index.ts#MarkdownDocumentNode",
+      "kind": "export",
+      "path": "libs/content/src/markdown/index.ts",
+      "symbol": "MarkdownDocumentNode",
+      "declarations": [
+        {
+          "path": "libs/content/src/markdown/types.ts",
+          "symbol": "MarkdownDocumentNode",
+          "syntaxKind": "TypeAliasDeclaration",
+          "signature": "export type MarkdownDocumentNode = Owned<ParserDocumentNode>;"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/markdown/index.ts#MarkdownNode",
+      "kind": "export",
+      "path": "libs/content/src/markdown/index.ts",
+      "symbol": "MarkdownNode",
+      "declarations": [
+        {
+          "path": "libs/content/src/markdown/types.ts",
+          "symbol": "MarkdownNode",
+          "syntaxKind": "TypeAliasDeclaration",
+          "signature": "export type MarkdownNode = Owned<ParserNode>;"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/markdown/index.ts#MarkdownOptions",
+      "kind": "export",
+      "path": "libs/content/src/markdown/index.ts",
+      "symbol": "MarkdownOptions",
+      "declarations": [
+        {
+          "path": "libs/content/src/markdown/types.ts",
+          "symbol": "MarkdownOptions",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface MarkdownOptions {\n    readonly violationPolicy?: 'throw' | 'rebuild';\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/markdown/index.ts#MarkdownSnapshot",
+      "kind": "export",
+      "path": "libs/content/src/markdown/index.ts",
+      "symbol": "MarkdownSnapshot",
+      "declarations": [
+        {
+          "path": "libs/content/src/markdown/types.ts",
+          "symbol": "MarkdownSnapshot",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface MarkdownSnapshot {\n    readonly document: MarkdownDocument;\n    readonly root: MarkdownDocumentNode | null;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/markdown/index.ts#createMarkdown",
+      "kind": "export",
+      "path": "libs/content/src/markdown/index.ts",
+      "symbol": "createMarkdown",
+      "declarations": [
+        {
+          "path": "libs/content/src/markdown/create-markdown.ts",
+          "symbol": "createMarkdown",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function createMarkdown(initial: MarkdownDocument, options: MarkdownOptions = {}): Markdown {\n    return createMarkdownOwner(initial, options, {\n        createParser: createPartialMarkdownParser,\n        createProjection,\n    });\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/langgraph/src/public-api.ts#AGENT_LIFECYCLE",
       "kind": "export",
       "path": "libs/langgraph/src/public-api.ts",
@@ -12573,6 +12746,66 @@
       "kind": "source",
       "path": "libs/cockpit-telemetry/vite.config.mts",
       "sha256": "c1afeb8d76bb58b54fc601ea871743a500ebdeb54bbe7cde47aa075e64f433e8"
+    },
+    {
+      "id": "source:libs/content/src/a2ui/index.ts",
+      "kind": "source",
+      "path": "libs/content/src/a2ui/index.ts",
+      "sha256": "2023e7c300e5129f80a87f3c5edea0213e5283fc55ae9a96fcb403024e63f783"
+    },
+    {
+      "id": "source:libs/content/src/index.ts",
+      "kind": "source",
+      "path": "libs/content/src/index.ts",
+      "sha256": "2023e7c300e5129f80a87f3c5edea0213e5283fc55ae9a96fcb403024e63f783"
+    },
+    {
+      "id": "source:libs/content/src/json/index.ts",
+      "kind": "source",
+      "path": "libs/content/src/json/index.ts",
+      "sha256": "2023e7c300e5129f80a87f3c5edea0213e5283fc55ae9a96fcb403024e63f783"
+    },
+    {
+      "id": "source:libs/content/src/markdown/create-markdown.ts",
+      "kind": "source",
+      "path": "libs/content/src/markdown/create-markdown.ts",
+      "sha256": "c07fdaea22d5a192b6436859b2c7012a708ac06123283d1c46028f5f1aa9694d"
+    },
+    {
+      "id": "source:libs/content/src/markdown/index.ts",
+      "kind": "source",
+      "path": "libs/content/src/markdown/index.ts",
+      "sha256": "98bfa0d1d0295504e41d590630b27797c3ce99e9216e7609ae82aac3c1e52dd8"
+    },
+    {
+      "id": "source:libs/content/src/markdown/projection.ts",
+      "kind": "source",
+      "path": "libs/content/src/markdown/projection.ts",
+      "sha256": "1069cc3f34e5f711609ced6b809e8af058e84eda4c21499196cea9294ed420a6"
+    },
+    {
+      "id": "source:libs/content/src/markdown/transition.ts",
+      "kind": "source",
+      "path": "libs/content/src/markdown/transition.ts",
+      "sha256": "ba3b3185458109d6ea836a234ec855c6c1be706621e493586be354d2e8d66588"
+    },
+    {
+      "id": "source:libs/content/src/markdown/types.ts",
+      "kind": "source",
+      "path": "libs/content/src/markdown/types.ts",
+      "sha256": "ee7f4ce8a6fd0010d2b941ed8f4ba6d77fd12cfbd902c4a5932d9f2c334bcc16"
+    },
+    {
+      "id": "source:libs/content/src/testing/index.ts",
+      "kind": "source",
+      "path": "libs/content/src/testing/index.ts",
+      "sha256": "2023e7c300e5129f80a87f3c5edea0213e5283fc55ae9a96fcb403024e63f783"
+    },
+    {
+      "id": "source:libs/content/vite.config.mts",
+      "kind": "source",
+      "path": "libs/content/vite.config.mts",
+      "sha256": "98f4ab54703df7bb995166851886d878bce68323fbbf5db8412042d7fa3790d3"
     },
     {
       "id": "source:libs/design-tokens/scripts/generate-theme-css.ts",

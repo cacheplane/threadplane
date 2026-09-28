@@ -114,6 +114,17 @@ describe('CI workflow', () => {
     assert.match(job, /node scripts\/react-parity\/verify-angular-package\.mjs/);
     assert.ok(job.indexOf('node --test scripts/react-parity/*.spec.mjs') < candidate);
   });
+  it('requires installed owned Markdown after foundations and Chromium without replacing existing proofs', async () => {
+    const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+    const job = readJobBlock(workflow, 'library');
+    const step = readNamedStep(job, 'Verify installed owned Markdown');
+    assert.match(step, /node scripts\/react-parity\/verify-markdown\.mjs/);
+    assert.doesNotMatch(step, /continue-on-error|\|\|\s*true|if:/);
+    assert.ok(job.indexOf('Build and validate private React foundations') < job.indexOf('Verify installed owned Markdown'));
+    assert.ok(job.indexOf('Install Chromium for packed runtime consumers') < job.indexOf('Verify installed owned Markdown'));
+    for (const command of ['verify-ag-ui-candidate.mjs', 'verify-langgraph-candidate.mjs', 'review-native-ag-ui.mjs --verify', 'verify-packages.mjs', 'verify-angular-package.mjs']) assert.ok(job.includes(command));
+  });
+
   it('requires the real AG-UI candidate after build, Chromium and service setup without replacing source proofs', async () => {
     const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'library');
     const candidate = job.indexOf('node scripts/react-parity/verify-ag-ui-candidate.mjs');

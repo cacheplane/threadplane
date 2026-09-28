@@ -13885,6 +13885,271 @@
       "status": "in-progress",
       "reason": "Literal caller-supplied tool observation only; execution controls and full tool/chat parity remain incomplete.",
       "note": "Required name and arguments text, optional literal result text, mounted DOM identity and real private-fixture consumption are verified. Association and formatting remain caller-owned; this is not a protocol selector, execution state model or public backend."
+    },
+    {
+      "id": "asset:libs/content/LICENSE.md",
+      "taskIds": [
+        "T02",
+        "T26"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Private content package and empty root infrastructure for owned Markdown preparation."
+    },
+    {
+      "id": "asset:libs/content/README.md",
+      "taskIds": [
+        "T02",
+        "T26"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Private content package and empty root infrastructure for owned Markdown preparation."
+    },
+    {
+      "id": "asset:libs/content/package.json",
+      "taskIds": [
+        "T02",
+        "T26"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Private content package and empty root infrastructure for owned Markdown preparation."
+    },
+    {
+      "id": "asset:libs/content/project.json",
+      "taskIds": [
+        "T02",
+        "T26"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Private content package and empty root infrastructure for owned Markdown preparation."
+    },
+    {
+      "id": "asset:libs/content/tsconfig.json",
+      "taskIds": [
+        "T02",
+        "T26"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Private content package and empty root infrastructure for owned Markdown preparation."
+    },
+    {
+      "id": "asset:libs/content/tsconfig.lib.json",
+      "taskIds": [
+        "T02",
+        "T26"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Private content package and empty root infrastructure for owned Markdown preparation."
+    },
+    {
+      "id": "asset:libs/content/tsconfig.spec.json",
+      "taskIds": [
+        "T02",
+        "T26"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Private content package and empty root infrastructure for owned Markdown preparation."
+    },
+    {
+      "id": "entry:libs/content/src/index.ts",
+      "taskIds": [
+        "T02",
+        "T26"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Private content package and empty root infrastructure for owned Markdown preparation."
+    },
+    {
+      "id": "entry:libs/content/src/markdown/index.ts",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Owned immutable Markdown preparation only; native rendering and legacy lifecycle extraction remain separate."
+    },
+    {
+      "id": "export:libs/content/src/markdown/index.ts#CitationDefinition",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Owned immutable Markdown preparation only; native rendering and legacy lifecycle extraction remain separate."
+    },
+    {
+      "id": "export:libs/content/src/markdown/index.ts#LinkDefinition",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Owned immutable Markdown preparation only; native rendering and legacy lifecycle extraction remain separate."
+    },
+    {
+      "id": "export:libs/content/src/markdown/index.ts#Markdown",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Owned immutable Markdown preparation only; native rendering and legacy lifecycle extraction remain separate."
+    },
+    {
+      "id": "export:libs/content/src/markdown/index.ts#MarkdownDocument",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Owned immutable Markdown preparation only; native rendering and legacy lifecycle extraction remain separate."
+    },
+    {
+      "id": "export:libs/content/src/markdown/index.ts#MarkdownDocumentNode",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Owned immutable Markdown preparation only; native rendering and legacy lifecycle extraction remain separate."
+    },
+    {
+      "id": "export:libs/content/src/markdown/index.ts#MarkdownNode",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Owned immutable Markdown preparation only; native rendering and legacy lifecycle extraction remain separate."
+    },
+    {
+      "id": "export:libs/content/src/markdown/index.ts#MarkdownOptions",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Owned immutable Markdown preparation only; native rendering and legacy lifecycle extraction remain separate."
+    },
+    {
+      "id": "export:libs/content/src/markdown/index.ts#MarkdownSnapshot",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Owned immutable Markdown preparation only; native rendering and legacy lifecycle extraction remain separate."
+    },
+    {
+      "id": "export:libs/content/src/markdown/index.ts#createMarkdown",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Owned immutable Markdown preparation only; native rendering and legacy lifecycle extraction remain separate."
+    },
+    {
+      "id": "source:libs/content/src/a2ui/index.ts",
+      "taskIds": [
+        "T02",
+        "T26"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned",
+      "reason": "Unchanged reserved content entry; no renderer capability claimed."
+    },
+    {
+      "id": "source:libs/content/src/index.ts",
+      "taskIds": [
+        "T02",
+        "T26"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Private content package and empty root infrastructure for owned Markdown preparation."
+    },
+    {
+      "id": "source:libs/content/src/json/index.ts",
+      "taskIds": [
+        "T02",
+        "T26"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned",
+      "reason": "Unchanged reserved content entry; no renderer capability claimed."
+    },
+    {
+      "id": "source:libs/content/src/markdown/create-markdown.ts",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Owned immutable Markdown preparation only; native rendering and legacy lifecycle extraction remain separate."
+    },
+    {
+      "id": "source:libs/content/src/markdown/index.ts",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Owned immutable Markdown preparation only; native rendering and legacy lifecycle extraction remain separate."
+    },
+    {
+      "id": "source:libs/content/src/markdown/projection.ts",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Owned immutable Markdown preparation only; native rendering and legacy lifecycle extraction remain separate."
+    },
+    {
+      "id": "source:libs/content/src/markdown/transition.ts",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Owned immutable Markdown preparation only; native rendering and legacy lifecycle extraction remain separate."
+    },
+    {
+      "id": "source:libs/content/src/markdown/types.ts",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Owned immutable Markdown preparation only; native rendering and legacy lifecycle extraction remain separate."
+    },
+    {
+      "id": "source:libs/content/src/testing/index.ts",
+      "taskIds": [
+        "T02",
+        "T26"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned",
+      "reason": "Unchanged reserved content entry; no renderer capability claimed."
+    },
+    {
+      "id": "source:libs/content/vite.config.mts",
+      "taskIds": [
+        "T02",
+        "T26"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Private content package and empty root infrastructure for owned Markdown preparation."
     }
   ]
 }
