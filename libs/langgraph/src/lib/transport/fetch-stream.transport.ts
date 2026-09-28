@@ -1,15 +1,16 @@
 import type { Client, Run, StreamMode, ThreadState } from '@langchain/langgraph-sdk';
-import { captureCheckpoint, type OwnedCheckpointPosition } from './checkpoint-position';
-import type { AgentQueueEntry, AgentTransport, LangGraphClientOptions, LangGraphSubmitOptions, StreamEvent } from '../../runtime/transport.types';
+import { captureCheckpoint } from './checkpoint-position.js';
+import type { OwnedCheckpointPosition } from './checkpoint-position.d.ts';
+import type { AgentQueueEntry, AgentTransport, LangGraphClientOptions, LangGraphSubmitOptions, StreamEvent } from '../../runtime/transport.types.d.ts';
 import {
   createLangGraphClient,
   ɵcreateProtectedLangGraphClient,
-} from '../client/create-langgraph-client';
+} from '../client/create-langgraph-client.js';
 import {
   createLangGraphRuntimeFetch,
   projectLangGraphOperationFailure,
-  type RuntimeOperationFailureReporter,
-} from '../../runtime/operation-errors';
+} from '../../runtime/operation-errors.js';
+import type { RuntimeOperationFailureReporter } from '../../runtime/operation-errors.d.ts';
 
 /**
  * Production transport that connects to a LangGraph Platform API via HTTP and SSE.

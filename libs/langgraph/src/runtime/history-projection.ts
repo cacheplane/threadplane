@@ -6,19 +6,19 @@ import {
   type PlainValue,
   type ToolCall,
 } from '@threadplane/core';
-import type { MessageState } from './message-reducer';
+import type { MessageState } from './message-reducer.js';
 import {
   ownMessage,
   ownToolCall,
   sameMessage,
   sameToolCall,
-} from './ownership';
-import { record, roleOf, textContent } from './wire-message';
-import { projectHistoryInterrupts } from './interrupt-projection';
-import type { LangGraphInterrupt } from './langgraph-snapshot';
-import { observeInvocation, type ToolInvocation } from './tool-invocations';
-import { projectCitations } from './citation-projection';
-import { projectReasoning } from './reasoning-projection';
+} from './ownership.js';
+import { record, roleOf, textContent } from './wire-message.js';
+import { projectHistoryInterrupts } from './interrupt-projection.js';
+import type { LangGraphInterrupt } from './langgraph-snapshot.js';
+import { observeInvocation, type ToolInvocation } from './tool-invocations.js';
+import { projectCitations } from './citation-projection.js';
+import { projectReasoning } from './reasoning-projection.js';
 
 export interface HistoryProjectionOptions {
   /** Omit for broad wire observation. A supplied catalog exposes only its

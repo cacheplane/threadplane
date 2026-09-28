@@ -1,4 +1,4 @@
-import type { ConfirmedCheckpoint } from './checkpoint-authority';
+import type { ConfirmedCheckpoint } from './checkpoint-authority.js';
 
 /** Position belongs to one session branch owner; physical run evidence remains
  * in the existing attempt. An in-flight checkpoint can authorize no new effect. */

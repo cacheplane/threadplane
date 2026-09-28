@@ -1,17 +1,37 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "ac063ac77efca710f2b1ff8b2ac3aac46a67b3d0",
+  "baselineHead": "48b6eb8d70a2f0c7c46bcef068df64c0b4abf438",
   "sourceState": {
     "modified": [
-      "libs/angular/README.md",
-      "libs/angular/chat/src/public-api.ts",
-      "libs/react/README.md",
-      "libs/react/src/chat/index.ts"
+      ".github/workflows/ci.yml",
+      "libs/langgraph/src/lib/client/create-langgraph-client.ts",
+      "libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
+      "libs/langgraph/src/runtime/README.md",
+      "libs/langgraph/src/runtime/checkpoint-authority.ts",
+      "libs/langgraph/src/runtime/checkpoint-history.ts",
+      "libs/langgraph/src/runtime/checkpoint-state.ts",
+      "libs/langgraph/src/runtime/checkpoint-tool-evidence.ts",
+      "libs/langgraph/src/runtime/citation-projection.ts",
+      "libs/langgraph/src/runtime/create-session.ts",
+      "libs/langgraph/src/runtime/function-tools.ts",
+      "libs/langgraph/src/runtime/history-projection.ts",
+      "libs/langgraph/src/runtime/interrupt-projection.ts",
+      "libs/langgraph/src/runtime/message-reducer.ts",
+      "libs/langgraph/src/runtime/ownership.ts",
+      "libs/langgraph/src/runtime/publication.ts",
+      "libs/langgraph/src/runtime/reasoning-projection.ts",
+      "libs/langgraph/src/runtime/run-options.ts",
+      "libs/langgraph/src/runtime/run-recovery.ts",
+      "libs/langgraph/src/runtime/stream-projection.ts",
+      "libs/langgraph/src/runtime/subgraph-projection.ts",
+      "libs/langgraph/src/runtime/submit-input.ts",
+      "libs/langgraph/src/runtime/tool-invocations.ts",
+      "libs/langgraph/src/runtime/tool-persistence.ts",
+      "libs/langgraph/src/runtime/tool-provenance.ts",
+      "libs/langgraph/src/runtime/transport.types.ts",
+      "libs/langgraph/src/runtime/values-projection.ts"
     ],
-    "untracked": [
-      "libs/angular/chat/src/tool-observation.component.ts",
-      "libs/react/src/chat/tool-observation.tsx"
-    ]
+    "untracked": []
   },
   "scope": {
     "libraries": [
@@ -678,7 +698,7 @@
       "id": "asset:libs/langgraph/src/runtime/README.md",
       "kind": "asset",
       "path": "libs/langgraph/src/runtime/README.md",
-      "sha256": "075fa7e026752a0e2c1caac1ae4bb467f9251f5b81deb6e4378a3bf82e22dda7"
+      "sha256": "c012f29e3d7d00b4182474d97741bd055be3ec0a97490fff6ab3eaf855f1e972"
     },
     {
       "id": "asset:libs/langgraph/test/fixtures/streaming-reasoning-puzzle.json",
@@ -2012,7 +2032,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "e46863c352093cfe296b5183f39f510e7dca08768167ced87f225f8d0cd2a72b"
+      "sha256": "0171bee631605ab56fa6d6a5223c018ee03cbdc55414a95db06fde4fd98be2ce"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -12806,7 +12826,7 @@
       "id": "source:libs/langgraph/src/lib/client/create-langgraph-client.ts",
       "kind": "source",
       "path": "libs/langgraph/src/lib/client/create-langgraph-client.ts",
-      "sha256": "70cbbc7b8054860323ef6808c251ffa0981656634053752601ea7df5d24827ab"
+      "sha256": "68e59f6dde7aaa04bf3c5e664d008b824725b284eef38b793cd15692d0b683b8"
     },
     {
       "id": "source:libs/langgraph/src/lib/inject-agent.ts",
@@ -12896,7 +12916,7 @@
       "id": "source:libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
       "kind": "source",
       "path": "libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
-      "sha256": "fcf23e540b9ad402403578a1c78e016392e1a41cafa663d08a31d333bd7d45d2"
+      "sha256": "9b71dace18869a16fc0518c899be23db627ca5582a54e81bebedd5ec3ee62cbe"
     },
     {
       "id": "source:libs/langgraph/src/lib/transport/mock-stream.transport.ts",
@@ -12920,55 +12940,55 @@
       "id": "source:libs/langgraph/src/runtime/checkpoint-authority.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/checkpoint-authority.ts",
-      "sha256": "f56912f077e4ba891f9a55419e89743d62f573c435c3984fb64ac0803271c3dc"
+      "sha256": "15376594a46d113766c9910204a4cd330faf12f21993080b9e5816b7b6e8c86f"
     },
     {
       "id": "source:libs/langgraph/src/runtime/checkpoint-history.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/checkpoint-history.ts",
-      "sha256": "59618157c20ec9da6bfe0e7080876b78de5e773991e68eaf92fe81c77e7d981d"
+      "sha256": "a616d2b0c58f969d2fb170953426810eace3cb15da9560a2a413a67df2232625"
     },
     {
       "id": "source:libs/langgraph/src/runtime/checkpoint-state.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/checkpoint-state.ts",
-      "sha256": "5daf89cc20549d1707f8589eedbb30ff9e7ebcb7d99965a8181f324a928c70ef"
+      "sha256": "0b67d18c3dc9c53bb9ff511ad642f36932a51381945b5aab6c4009f2305c5348"
     },
     {
       "id": "source:libs/langgraph/src/runtime/checkpoint-tool-evidence.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/checkpoint-tool-evidence.ts",
-      "sha256": "833f052dee8017dd6bdf1968457d85e0efa7a204dbc0d75b490b5ec82e6d2db2"
+      "sha256": "661b56c31e68382d5b9ccae4815aa5b6073cae3ab1ab4341759e51cc9983985b"
     },
     {
       "id": "source:libs/langgraph/src/runtime/citation-projection.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/citation-projection.ts",
-      "sha256": "52d99b652713e964242f38ec9e81f74695ecac938d42f10255b70d3c7eab8201"
+      "sha256": "76e6263a7e39ebde33d01208131e786280fbad313d94510fb21310a2b405c99d"
     },
     {
       "id": "source:libs/langgraph/src/runtime/create-session.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/create-session.ts",
-      "sha256": "f4c6a1e693d205cf48a7c9ec357ddf037bdcf4ceabe315c6529c6806fbdaefb1"
+      "sha256": "9125e17a017c15cff46e05baaf4ee4242e008aeab936be16d40e565a952779d8"
     },
     {
       "id": "source:libs/langgraph/src/runtime/function-tools.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/function-tools.ts",
-      "sha256": "aa587bc0294182f46e0e9f4b02ddf64dcb7b02f76031d0bce168e829794a99dc"
+      "sha256": "2553f8bf1205ac942597c22519890e37676c927c9c5c418d4f800f2de55cc93b"
     },
     {
       "id": "source:libs/langgraph/src/runtime/history-projection.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/history-projection.ts",
-      "sha256": "4e5e7d27e2ae9429274ac47ed979d6b94848dde9b1d03018af39ad888f236fd1"
+      "sha256": "140dc3442d785e2662db2983a1204204fb5eee6ef6c365706644ee841b039963"
     },
     {
       "id": "source:libs/langgraph/src/runtime/interrupt-projection.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/interrupt-projection.ts",
-      "sha256": "184ae04911babf4931cd3e89c69884e776b49d2b2b7d3e62aa456176752d6f7b"
+      "sha256": "c5f467f36d5739bfadb4cec2236cab049736e559d8cab3547d40ae8ae1d26094"
     },
     {
       "id": "source:libs/langgraph/src/runtime/langgraph-snapshot.ts",
@@ -12980,7 +13000,7 @@
       "id": "source:libs/langgraph/src/runtime/message-reducer.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/message-reducer.ts",
-      "sha256": "714be5a4c60d442f84f46b08ac12b43ac901fe6005cf2ba5f35dfb8bfa33f249"
+      "sha256": "6280dd289ba4ec76b83b8d29eae5f104f6c262e7b52e82184152f61de84300b8"
     },
     {
       "id": "source:libs/langgraph/src/runtime/operation-errors.ts",
@@ -12992,49 +13012,49 @@
       "id": "source:libs/langgraph/src/runtime/ownership.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/ownership.ts",
-      "sha256": "3d9e0cad3c64b2884fd3049c78e6a844115efa6c839fbe997b17f7defc639641"
+      "sha256": "ad4eedc945a5e86d69a4a7eb89dfad8aab3daa878af2b7b810ac4e367fe14cfe"
     },
     {
       "id": "source:libs/langgraph/src/runtime/publication.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/publication.ts",
-      "sha256": "7d290721417d504313f893ee7e90154b85e9eee27d05f6cce816d592495791e5"
+      "sha256": "0367c6c90532e7a579bf51e04e847b6f04221b0024d28a0ab60903e400cfc9c4"
     },
     {
       "id": "source:libs/langgraph/src/runtime/reasoning-projection.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/reasoning-projection.ts",
-      "sha256": "3f408da1d2ca5a28af466c11d49391a524117cd705d0363a2bf1bca2ad659cc5"
+      "sha256": "b184a8d6db21f2e9dcbdd23680dd59bba18832dcb860b5b9f9da0deb9efc6c24"
     },
     {
       "id": "source:libs/langgraph/src/runtime/run-options.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/run-options.ts",
-      "sha256": "d13781b0757e9168a017a7127fe3d3b69424045fd9d17d67e499c83e49d71138"
+      "sha256": "88e9a257045f8d7956f8d6b99bc1b672eebecefbcf4a2500b15708d56887cd1d"
     },
     {
       "id": "source:libs/langgraph/src/runtime/run-recovery.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/run-recovery.ts",
-      "sha256": "c8941f15c76d617246b7f25e2fc25d02802123a4d7c6fc429bce7ebf6e781153"
+      "sha256": "bed28cfeeb4ba0d098d70a42610f7e275eb3209fc1c2ad6c607e2b4251462def"
     },
     {
       "id": "source:libs/langgraph/src/runtime/stream-projection.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/stream-projection.ts",
-      "sha256": "0462792cfff288ce4e4345bbcbfc32f1e162db35fe94f26b348a12ab064ccae4"
+      "sha256": "232dbb85661a712f7d9faae80b4caaa0683de14eeb6bc7ace2b219dfd7e69021"
     },
     {
       "id": "source:libs/langgraph/src/runtime/subgraph-projection.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/subgraph-projection.ts",
-      "sha256": "790aa86055a60b0123cbb96f6530d47d2e494387394a47d1f6e93c1973c032ad"
+      "sha256": "e8654806621e56290010cd112ec933ec0fbf8d65db9b12e8b8c603a2f300491e"
     },
     {
       "id": "source:libs/langgraph/src/runtime/submit-input.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/submit-input.ts",
-      "sha256": "9e60a9045389e43b98e6a6a8971192988d0763369cefb90a5ebb45f6ec7eb8dd"
+      "sha256": "14b2971c1d8aa25e78b4502c30a06810895455803cdeb727a294023c9640816f"
     },
     {
       "id": "source:libs/langgraph/src/runtime/testing/binding-fixture.ts",
@@ -13070,31 +13090,31 @@
       "id": "source:libs/langgraph/src/runtime/tool-invocations.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/tool-invocations.ts",
-      "sha256": "b2fd115f4c9e08e14e8f6c0941fbcb58d141bfe5fca3eb8cbd76d24b97b038b0"
+      "sha256": "ca53c4d39d112ce32906b9504f56a5bd7c82b3ef1c9aa0e215e42d2e2d40b705"
     },
     {
       "id": "source:libs/langgraph/src/runtime/tool-persistence.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/tool-persistence.ts",
-      "sha256": "520ce165b602918e172470a6d9d80c75f8458d3bd0c3dee68f5761f4e6e2c6ac"
+      "sha256": "3dcf9a36873f5302dcef7e042ee1dddbb588b9c15be3750436077f5c80bf5b00"
     },
     {
       "id": "source:libs/langgraph/src/runtime/tool-provenance.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/tool-provenance.ts",
-      "sha256": "a235c6b097fee006ba65f53cc935ba3a6a6bd0d80599abe248e5a10fcfebbf5b"
+      "sha256": "dca663261010fdfe8e44f46e08ccc394b86664b8cedeae52dcc309d50148d302"
     },
     {
       "id": "source:libs/langgraph/src/runtime/transport.types.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/transport.types.ts",
-      "sha256": "de35976c3107e32df45e67403db6e74af7b961c79dd77cbd39aeaf036ffc0cae"
+      "sha256": "e523eb9eb90ffefefe5cca41d3d9d2ae9d39b59c1471530f5edc1ecedba599c8"
     },
     {
       "id": "source:libs/langgraph/src/runtime/values-projection.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/values-projection.ts",
-      "sha256": "8c640b8386f2e8cd127188c9961276ec80df820ac05c4b12184fa7954452e0a1"
+      "sha256": "78d38cbeb4b053d110a7775f83db0fae2eda70355c068cd5b05b529409bcfba9"
     },
     {
       "id": "source:libs/langgraph/src/runtime/wire-message.ts",

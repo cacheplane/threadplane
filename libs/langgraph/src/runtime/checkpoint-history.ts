@@ -1,7 +1,7 @@
 import type { ThreadState } from '@langchain/langgraph-sdk';
 import type { PlainValue } from '@threadplane/core';
-import type { LangGraphHistoryEntry } from './langgraph-snapshot';
-import { ownValueWithSharing } from './ownership';
+import type { LangGraphHistoryEntry } from './langgraph-snapshot.js';
+import { ownValueWithSharing } from './ownership.js';
 
 /** Preserve the received page, including order and missing/duplicate ids. Select
  * metadata before ownership so older values/tasks are neither read nor retained. */

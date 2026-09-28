@@ -1,5 +1,5 @@
 import type { PlainValue } from '@threadplane/core';
-import { ownValue, sameToolInvocation } from './ownership';
+import { ownValue, sameToolInvocation } from './ownership.js';
 
 /** Same-session execution admission, independent of transcript/result lifetime. */
 export interface ToolInvocation {

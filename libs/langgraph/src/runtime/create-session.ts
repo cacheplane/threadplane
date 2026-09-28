@@ -14,25 +14,25 @@ import type {
   ToolExecutionStore,
 } from '@threadplane/core/tools';
 import type { ThreadState } from '@langchain/langgraph-sdk';
-import { FetchStreamTransport } from '../lib/transport/fetch-stream.transport';
-import { initialMessageState, reduceMessages } from './message-reducer';
-import { createPublication } from './publication';
+import { FetchStreamTransport } from '../lib/transport/fetch-stream.transport.js';
+import { initialMessageState, reduceMessages } from './message-reducer.js';
+import { createPublication } from './publication.js';
 import {
   observeHistoryInvocations,
   projectHistory,
-} from './history-projection';
-import { projectCheckpointHistory } from './checkpoint-history';
+} from './history-projection.js';
+import { projectCheckpointHistory } from './checkpoint-history.js';
 import type {
   LangGraphInterrupt,
   LangGraphSnapshot,
   LangGraphValues,
-} from './langgraph-snapshot';
-import { projectHistoryValues, projectValues } from './values-projection';
+} from './langgraph-snapshot.js';
+import { projectHistoryValues, projectValues } from './values-projection.js';
 import {
   projectHistoryInterrupts,
   projectInterrupts,
-} from './interrupt-projection';
-import { ownMessage, ownValue } from './ownership';
+} from './interrupt-projection.js';
+import { ownMessage, ownValue } from './ownership.js';
 import {
   captureStreamEvent,
   initialSubgraphs,
@@ -40,30 +40,30 @@ import {
   rebaseSubgraphs,
   settleSubgraphs,
   type SubgraphObservation,
-} from './subgraph-projection';
+} from './subgraph-projection.js';
 import {
   captureSubmitInput,
   createSubmitPayload,
   type LangGraphInputState,
   type LangGraphSubmitInput,
-} from './submit-input';
-export type { LangGraphInputState, LangGraphSubmitInput } from './submit-input';
+} from './submit-input.js';
+export type { LangGraphInputState, LangGraphSubmitInput } from './submit-input.js';
 import {
   captureRunOptions,
   type CapturedRunOptions,
   type LangGraphRunOptions,
-} from './run-options';
-export type { LangGraphRunOptions } from './run-options';
+} from './run-options.js';
+export type { LangGraphRunOptions } from './run-options.js';
 import {
   advanceCursor,
   captureRun,
   rebaseRun,
   type RunEvidence,
-} from './run-recovery';
-import { createSafeRequestError } from './operation-errors';
-import { createToolPersistence } from './tool-persistence';
-import { hasInvocationConflict } from './tool-invocations';
-import { observeInvocation } from './tool-invocations';
+} from './run-recovery.js';
+import { createSafeRequestError } from './operation-errors.js';
+import { createToolPersistence } from './tool-persistence.js';
+import { hasInvocationConflict } from './tool-invocations.js';
+import { observeInvocation } from './tool-invocations.js';
 import {
   assertResumeCheckpoint,
   captureCheckpoint,
@@ -74,14 +74,14 @@ import {
   type CheckpointCandidate,
   type CheckpointReference,
   type OwnedCheckpointPosition,
-} from './checkpoint-authority';
+} from './checkpoint-authority.js';
 import {
   beginCheckpointEffect,
   readyCheckpoint,
   uncertainCheckpoint,
   type CheckpointOwner,
-} from './checkpoint-state';
-import { assertCheckpointToolEvidence } from './checkpoint-tool-evidence';
+} from './checkpoint-state.js';
+import { assertCheckpointToolEvidence } from './checkpoint-tool-evidence.js';
 import {
   failureProjection,
   finalizeProjection,
@@ -89,19 +89,19 @@ import {
   projectStream,
   record,
   type StreamProjection,
-} from './stream-projection';
+} from './stream-projection.js';
 import type {
   AgentTransport,
   LangGraphClientOptions,
   StreamEvent,
-} from './transport.types';
+} from './transport.types.js';
 import {
   cancelledResult,
   captureTools,
   createToolBuffer,
   executeTool,
   resultCall,
-} from './function-tools';
+} from './function-tools.js';
 
 export interface SessionOptions {
   readonly assistantId: string;

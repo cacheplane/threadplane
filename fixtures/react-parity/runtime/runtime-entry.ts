@@ -12,6 +12,7 @@ import type {
   FixtureSubmitInput,
   FixtureTools,
 } from './scenarios';
+import { createFixtureTools } from './tools.js';
 
 /** Development-only composition, never a package entry or a shipped factory. */
 export function createFixtureSession(
@@ -43,21 +44,6 @@ export function createFixtureSession(
     threadId,
     apiUrl: endpoint,
     clientOptions: { maxRetries: 0, defaultHeaders: {} },
-    tools: {
-      weather: {
-        description: 'Current weather',
-        handler: ({ city }: { city: string }) => {
-          onHandler();
-          return { city, temperature: 20 };
-        },
-      },
-      count: {
-        description: 'Count values',
-        handler: ({ values }: { values: readonly string[] }) => {
-          onHandler();
-          return values.length;
-        },
-      },
-    },
+    tools: createFixtureTools(onHandler),
   });
 }

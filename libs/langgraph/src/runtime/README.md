@@ -4,6 +4,15 @@ This directory stages the framework-independent session owner. It is not the
 published LangGraph package entry point. Core and framework bindings do not own
 backend execution positions.
 
+The test-only candidate proof emits this real factory and its complete local
+JavaScript/declaration graph, installs a private local tarball, and runs plain
+Node plus both full framework consumer suites. Run
+`node scripts/react-parity/verify-langgraph-candidate.mjs` after the foundation
+builds. Commands, frozen manual review and dependency/type limitations are in
+[`fixtures/react-parity/langgraph-candidate/README.md`](../../../../fixtures/react-parity/langgraph-candidate/README.md).
+This does not change the published package root or narrow the current custom
+transport declaration into a final public contract.
+
 ## Visible text
 
 The shared private wire helper preserves a top-level string verbatim. Arrays join

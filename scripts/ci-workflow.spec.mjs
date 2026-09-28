@@ -102,6 +102,18 @@ describe('CI workflow', () => {
     assert.ok(review > build && review > chromium);
     assert.doesNotMatch(readNamedStep(job, 'Verify native same-document session bindings'), /continue-on-error/);
   });
+  it('requires the real LangGraph candidate after builds and Chromium while preserving framework-only package gates', async () => {
+    const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'library');
+    const candidate = job.indexOf('node scripts/react-parity/verify-langgraph-candidate.mjs');
+    assert.ok(candidate > job.indexOf('Build and validate private React foundations'));
+    assert.ok(candidate > job.indexOf('npx playwright install --with-deps chromium'));
+    const step = readNamedStep(job, 'Verify real LangGraph candidate package');
+    assert.doesNotMatch(step, /continue-on-error|\|\|\s*true|if:/);
+    assert.match(step, /run: node scripts\/react-parity\/verify-langgraph-candidate\.mjs\s*$/);
+    assert.match(job, /node scripts\/react-parity\/verify-packages\.mjs/);
+    assert.match(job, /node scripts\/react-parity\/verify-angular-package\.mjs/);
+    assert.ok(job.indexOf('node --test scripts/react-parity/*.spec.mjs') < candidate);
+  });
   it('requires middleware lint, tests, build, and standalone package verification in the library job', async () => {
     const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'library');
     const libraries = job.match(/LIBS: ([^\n]+)/)?.[1].split(',');

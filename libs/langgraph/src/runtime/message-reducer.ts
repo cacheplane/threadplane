@@ -9,12 +9,12 @@ import {
   ownToolCall,
   sameMessage,
   sameToolCall,
-} from './ownership';
+} from './ownership.js';
 import {
   conflictInvocation,
   observeInvocation,
   type ToolInvocation,
-} from './tool-invocations';
+} from './tool-invocations.js';
 
 export interface MessageState {
   readonly invocations: readonly ToolInvocation[];

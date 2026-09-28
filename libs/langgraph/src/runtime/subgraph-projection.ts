@@ -1,22 +1,22 @@
 import { completeDelivery, type CompleteOutcome } from '@threadplane/core';
-import type { LangGraphSubgraph } from './langgraph-snapshot';
-import { observeInterrupts } from './interrupt-projection';
+import type { LangGraphSubgraph } from './langgraph-snapshot.js';
+import { observeInterrupts } from './interrupt-projection.js';
 import {
   initialMessageState,
   reduceMessages,
   type MessageState,
-} from './message-reducer';
-import { ownMessage, ownSubgraph, ownSubgraphs } from './ownership';
-import { rebaseRun } from './run-recovery';
+} from './message-reducer.js';
+import { ownMessage, ownSubgraph, ownSubgraphs } from './ownership.js';
+import { rebaseRun } from './run-recovery.js';
 import {
   failureProjection,
   finalizeProjection,
   projectStream,
   type StreamProjection,
-} from './stream-projection';
-import type { StreamEvent } from './transport.types';
-import { projectValues } from './values-projection';
-import { record, roleOf } from './wire-message';
+} from './stream-projection.js';
+import type { StreamEvent } from './transport.types.js';
+import { projectValues } from './values-projection.js';
+import { record, roleOf } from './wire-message.js';
 
 interface ChildProjection {
   readonly state: MessageState;

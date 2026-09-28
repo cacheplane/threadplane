@@ -1,5 +1,5 @@
-import type { LangGraphSnapshot } from './langgraph-snapshot';
-import { ownLangGraphSnapshot } from './ownership';
+import type { LangGraphSnapshot } from './langgraph-snapshot.js';
+import { ownLangGraphSnapshot } from './ownership.js';
 
 /** Backend-private publication. Listener failures are reported once to the
  * optional callback and otherwise ignored; reporter failures are contained too.

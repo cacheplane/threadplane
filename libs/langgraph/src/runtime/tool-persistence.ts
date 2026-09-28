@@ -1,4 +1,4 @@
-import type { createToolBuffer, ToolMessage } from './function-tools';
+import type { createToolBuffer, ToolMessage } from './function-tools.js';
 
 type ToolBuffer = ReturnType<typeof createToolBuffer>;
 type ToolBatch = ReturnType<ToolBuffer['snapshot']>;

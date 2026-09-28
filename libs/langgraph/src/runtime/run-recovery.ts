@@ -1,8 +1,8 @@
 import { streamingDelivery } from '@threadplane/core';
-import { ownMessage } from './ownership';
-import type { MessageState } from './message-reducer';
-import type { StreamProjection } from './stream-projection';
-import type { StreamEvent } from './transport.types';
+import { ownMessage } from './ownership.js';
+import type { MessageState } from './message-reducer.js';
+import type { StreamProjection } from './stream-projection.js';
+import type { StreamEvent } from './transport.types.js';
 
 /** One physical run and its last observed boundary; IDs are opaque, not a log. */
 export interface RunEvidence {

@@ -1,9 +1,9 @@
 import type { ThreadState } from '@langchain/langgraph-sdk';
 import type { PlainValue } from '@threadplane/core';
-import type { LangGraphInterrupt } from './langgraph-snapshot';
-import { ownValue, ownValueWithSharing } from './ownership';
-import type { StreamEvent } from './transport.types';
-import { record } from './wire-message';
+import type { LangGraphInterrupt } from './langgraph-snapshot.js';
+import { ownValue, ownValueWithSharing } from './ownership.js';
+import type { StreamEvent } from './transport.types.js';
+import { record } from './wire-message.js';
 
 type Interrupts = readonly LangGraphInterrupt[];
 

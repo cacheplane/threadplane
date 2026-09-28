@@ -5,14 +5,14 @@ import type {
   ToolExecutionResult,
   ToolExecutionStore,
 } from '@threadplane/core/tools';
-import { ownToolCall, ownValue } from './ownership';
+import { ownToolCall, ownValue } from './ownership.js';
 import {
   canonicalInvocation,
   captureAcquisition,
   captureSettlement,
   encodeResult,
   ownResult,
-} from './tool-provenance';
+} from './tool-provenance.js';
 
 export interface ToolMessage {
   readonly id: string;
