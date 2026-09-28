@@ -411,17 +411,30 @@ test('review closes its first server when second startup fails and reports clean
     /second setup failed/
   );
   assert.equal(closed, 1);
+  const controller = new AbortController();
+  opened = 0;
+  closed = 0;
   await assert.rejects(
-    reviewCandidate(root, AbortSignal.timeout(5), {
-      log: () => undefined,
-      serve: async () => ({
-        close: async () => {
-          throw new Error('close failed');
-        },
-      }),
+    reviewCandidate(root, controller.signal, {
+      // Mock servers have no event-loop handles. Abort explicitly once both
+      // have been registered instead of relying on an unreferenced timer.
+      log: () => {
+        if (opened === 2) controller.abort();
+      },
+      serve: async () => {
+        opened++;
+        return {
+          close: async () => {
+            closed++;
+            throw new Error('close failed');
+          },
+        };
+      },
     }),
     /cleanup failed/
   );
+  assert.equal(opened, 2);
+  assert.equal(closed, 2);
 });
 test('review abort during startup never opens its second server and closes the owned first', async (t) => {
   const root = reviewFixture(t),
