@@ -7,6 +7,36 @@ import { verifyBoundaries } from './verify-boundaries.mjs';
 
 const finalOptions = { angularTransitions: [], telemetryBrowserTransition: false };
 
+for (const extension of ['ts', 'js', 'd.ts']) {
+  const mode = extension === 'ts' ? 'source' : 'built';
+  const prefix = mode === 'source' ? 'libs/content' : 'dist/libs/content';
+  for (const [name, rootEntry, extra] of [
+    ['direct parser', "export * from '@cacheplane/partial-markdown';", {}],
+    ['indirect parser', "export * from './shared.js';", { [`${prefix}/src/shared.${extension}`]: extension === 'js' ? "export { createParser } from '@cacheplane/partial-markdown';" : "import type { MarkdownNode } from '@cacheplane/partial-markdown'; export type Node = MarkdownNode;" }],
+    ['own Markdown entry', "export * from './markdown/index.js';", {}],
+    ['type-only Markdown entry', "export type { Node } from './markdown/index.js';", {}],
+  ]) {
+    if (extension === 'js' && name === 'type-only Markdown entry') continue;
+    test(`content ${extension} root rejects ${name}`, (t) => {
+      const root = fixture(t, {
+        [`${prefix}/package.json`]: JSON.stringify({ exports: { '.': { [extension === 'd.ts' ? 'types' : 'import']: `./src/index.${extension}` } } }),
+        [`${prefix}/src/index.${extension}`]: rootEntry,
+        [`${prefix}/src/markdown/index.${extension}`]: extension === 'js' ? 'export const Node = {};' : 'export interface Node {}',
+        ...extra,
+      });
+      assert.ok(verifyBoundaries({ root, mode, projects: ['content'], ...finalOptions }).some(error => error.includes('content root dependency')), name);
+    });
+  }
+  test(`content ${extension} feature may own its parser while root stays empty`, (t) => {
+    const root = fixture(t, {
+      [`${prefix}/package.json`]: JSON.stringify({ exports: { '.': { [extension === 'd.ts' ? 'types' : 'import']: `./src/index.${extension}` }, './markdown': { import: './src/markdown/index.js' } } }),
+      [`${prefix}/src/index.${extension}`]: 'export {};',
+      [`${prefix}/src/markdown/index.${extension}`]: "export * from '@cacheplane/partial-markdown';",
+    });
+    assert.deepEqual(verifyBoundaries({ root, mode, projects: ['content'], ...finalOptions }), []);
+  });
+}
+
 test('React root retains lexical feature restrictions through filesystem aliases', (t) => {
   const root = fixture(t, {
     'libs/react/src/index.ts': "export * from './chat/linked';",
