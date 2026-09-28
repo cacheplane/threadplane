@@ -1,20 +1,31 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "d8019da877f448430f6bc280771c5a3e5ef30b49",
+  "baselineHead": "6021b3407524cf7d0154d4f6608c78345af082d8",
   "sourceState": {
     "modified": [
-      ".github/workflows/ci.yml",
+      "libs/angular/README.md",
+      "libs/angular/package.json",
+      "libs/angular/tsconfig.lib.json",
+      "libs/angular/tsconfig.spec.json",
+      "libs/angular/vite.config.mts",
       "libs/content/README.md",
-      "libs/content/package.json",
       "libs/content/src/markdown/index.ts",
-      "libs/content/vite.config.mts",
-      "package-lock.json"
+      "libs/content/tsconfig.lib.json",
+      "libs/react/README.md",
+      "libs/react/package.json",
+      "package-lock.json",
+      "tsconfig.base.json"
     ],
     "untracked": [
-      "libs/content/src/markdown/create-markdown.ts",
-      "libs/content/src/markdown/projection.ts",
-      "libs/content/src/markdown/transition.ts",
-      "libs/content/src/markdown/types.ts"
+      "libs/angular/markdown/ng-package.json",
+      "libs/angular/markdown/src/markdown-image.component.ts",
+      "libs/angular/markdown/src/markdown-template.directive.ts",
+      "libs/angular/markdown/src/markdown.component.ts",
+      "libs/angular/markdown/src/public-api.ts",
+      "libs/content/src/markdown/markdown-url.ts",
+      "libs/react/src/markdown/index.ts",
+      "libs/react/src/markdown/markdown-image.tsx",
+      "libs/react/src/markdown/markdown.tsx"
     ]
   },
   "scope": {
@@ -44,6 +55,7 @@
       "libs/ag-ui/src/public-api.ts",
       "libs/angular/src/public-api.ts",
       "libs/angular/chat/src/public-api.ts",
+      "libs/angular/markdown/src/public-api.ts",
       "libs/chat/src/public-api.ts",
       "libs/chat/debug/public-api.ts",
       "libs/chat/testing/public-api.ts",
@@ -53,6 +65,7 @@
       "libs/middleware/src/langgraph/index.ts",
       "libs/react/src/index.ts",
       "libs/react/src/chat/index.ts",
+      "libs/react/src/markdown/index.ts",
       "libs/render/src/public-api.ts",
       "libs/telemetry/src/index.ts",
       "libs/telemetry/src/browser/public-api.ts",
@@ -271,12 +284,18 @@
       "id": "asset:libs/angular/README.md",
       "kind": "asset",
       "path": "libs/angular/README.md",
-      "sha256": "b1798a92eb3f8980128a390f2f2d12585e9f5dc862062ad236bc8a99b7df3d58"
+      "sha256": "707932fd8352be0154a3cf6bcb3f61409829aae0031d2397b08c3b0b29e25339"
     },
     {
       "id": "asset:libs/angular/chat/ng-package.json",
       "kind": "asset",
       "path": "libs/angular/chat/ng-package.json",
+      "sha256": "c83be3fa51ce104435831c59caa9a2d3e8c2d76d6e6f4ffdbc42d721f014ab04"
+    },
+    {
+      "id": "asset:libs/angular/markdown/ng-package.json",
+      "kind": "asset",
+      "path": "libs/angular/markdown/ng-package.json",
       "sha256": "c83be3fa51ce104435831c59caa9a2d3e8c2d76d6e6f4ffdbc42d721f014ab04"
     },
     {
@@ -289,7 +308,7 @@
       "id": "asset:libs/angular/package.json",
       "kind": "asset",
       "path": "libs/angular/package.json",
-      "sha256": "df2c6a31cfc63e188cc54ba1678db4456cf045cbd2fbefd9250546986afd1657"
+      "sha256": "b36c60c1b1f13efa5cc1c6b33469434c4dc8c44a72096c79b05c21cac7b0973b"
     },
     {
       "id": "asset:libs/angular/project.json",
@@ -307,7 +326,7 @@
       "id": "asset:libs/angular/tsconfig.lib.json",
       "kind": "asset",
       "path": "libs/angular/tsconfig.lib.json",
-      "sha256": "12cb1bb81a90e053d2fdd28502273d1e9309c1997c0828f513b2244602cb838d"
+      "sha256": "496fdf19952c514927cb027091bbdc9977ca507c11c9f998f332d95b4f1e79e2"
     },
     {
       "id": "asset:libs/angular/tsconfig.lib.prod.json",
@@ -319,7 +338,7 @@
       "id": "asset:libs/angular/tsconfig.spec.json",
       "kind": "asset",
       "path": "libs/angular/tsconfig.spec.json",
-      "sha256": "cb8e1041214006b39909e6043d8273ce173a2332c56ad77bc62200064a61a2dc"
+      "sha256": "5b40af6f34da2e65accfc5015d8db0fa01ac0624401abddbebb366827046fd6c"
     },
     {
       "id": "asset:libs/chat/CHANGELOG.md",
@@ -553,7 +572,7 @@
       "id": "asset:libs/content/README.md",
       "kind": "asset",
       "path": "libs/content/README.md",
-      "sha256": "d133bcfa6c3f1ccd48d5536fb14ce480c726835704072b9ec351285cd978835d"
+      "sha256": "d4a002420478a0b267bd06e8ae8b479aa71a318572a2d148c96adbf6eae47d6a"
     },
     {
       "id": "asset:libs/content/package.json",
@@ -577,7 +596,7 @@
       "id": "asset:libs/content/tsconfig.lib.json",
       "kind": "asset",
       "path": "libs/content/tsconfig.lib.json",
-      "sha256": "107fcd2e827015e26b31da7553ef7ddfde8eb19e6202664ddf911f388564b7ca"
+      "sha256": "1471da31194a3544098a4a75093a9df98bb0d0075724237e3253f08500aebb83"
     },
     {
       "id": "asset:libs/content/tsconfig.spec.json",
@@ -817,13 +836,13 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "7de403004acbe39d62507327b6094d30d04bf6bb95775616f369eb42b9612012"
+      "sha256": "63083dd85fc688a7e9271ad8bc621f0d4eb71a5bcf10d9a67d7224f70352c1bb"
     },
     {
       "id": "asset:libs/react/package.json",
       "kind": "asset",
       "path": "libs/react/package.json",
-      "sha256": "366ba6527b8e3164d91fdced7dba450fe67230fc493b8b3f2dcdb388b274daf7"
+      "sha256": "b6926188a09cda9e29222c3dca6a8560db4a78299d6ba42dc465a65264d8be95"
     },
     {
       "id": "asset:libs/react/project.json",
@@ -1036,6 +1055,46 @@
         "Component"
       ],
       "signature": "@Component({\n    selector: 'threadplane-tool-observation',\n    standalone: true,\n    changeDetection: ChangeDetectionStrategy.OnPush,\n    template: `\n    <section [attr.aria-label]=\"label()\">\n      <h3>{{ name() }}</h3>\n      <dl>\n        <dt>Arguments</dt>\n        <dd>\n          <pre>{{ argumentsText() }}</pre>\n        </dd>\n        @if (resultText() !== undefined) {\n        <dt>Result</dt>\n        <dd>\n          <pre>{{ resultText() }}</pre>\n        </dd>\n        }\n      </dl>\n    </section>\n  `,\n    styles: `\n    :host { display: block; color: var(--ds-text-primary, #142435); font-family: inherit; overflow-wrap: anywhere; }\n    dl, dd { margin: 0; }\n    dt { font-weight: 600; }\n    pre { margin-block: .25rem; white-space: pre-wrap; overflow-wrap: anywhere; }\n  `,\n})\nexport class ToolObservationComponent {\n    readonly name = input.required<string>();\n    readonly argumentsText = input.required<string>();\n    readonly resultText = input<string>();\n    readonly label = input('Tool observation');\n}"
+    },
+    {
+      "id": "component:libs/angular/markdown/src/markdown-image.component.ts#MarkdownImageComponent",
+      "kind": "component",
+      "path": "libs/angular/markdown/src/markdown-image.component.ts",
+      "symbol": "MarkdownImageComponent",
+      "decorators": [
+        "Component"
+      ],
+      "signature": "@Component({\n    selector: 'threadplane-markdown-image',\n    standalone: true,\n    changeDetection: ChangeDetectionStrategy.OnPush,\n    template: `\n    @if (url(); as destination) { @if (!failed()) {\n    <img\n      [src]=\"destination\"\n      [alt]=\"image().alt\"\n      [title]=\"image().title\"\n      (error)=\"failed.set(true)\"\n    />\n    } @else {\n    <span role=\"img\" [attr.aria-label]=\"image().alt || 'Image unavailable'\">{{\n      image().alt || 'Image unavailable'\n    }}</span>\n    } } @else {\n    <span role=\"img\" [attr.aria-label]=\"image().alt || 'Image unavailable'\">{{\n      image().alt || 'Image unavailable'\n    }}</span>\n    }\n  `,\n})\nexport class MarkdownImageComponent {\n    readonly image = input.required<Extract<MarkdownNode, {\n        type: 'image';\n    }>>();\n    protected readonly failed = signal(false);\n    protected url() {\n        return markdownUrl(this.image().url, 'image');\n    }\n}"
+    },
+    {
+      "id": "component:libs/angular/markdown/src/markdown-template.directive.ts#MarkdownNodesDirective",
+      "kind": "component",
+      "path": "libs/angular/markdown/src/markdown-template.directive.ts",
+      "symbol": "MarkdownNodesDirective",
+      "decorators": [
+        "Directive"
+      ],
+      "signature": "@Directive({ selector: 'ng-template[markdownNodes]', standalone: true })\nexport class MarkdownNodesDirective {\n    static ngTemplateContextGuard(_directive: MarkdownNodesDirective, context: unknown): context is MarkdownContext {\n        return true;\n    }\n}"
+    },
+    {
+      "id": "component:libs/angular/markdown/src/markdown-template.directive.ts#MarkdownOutletDirective",
+      "kind": "component",
+      "path": "libs/angular/markdown/src/markdown-template.directive.ts",
+      "symbol": "MarkdownOutletDirective",
+      "decorators": [
+        "Directive"
+      ],
+      "signature": "@Directive({ selector: '[markdownOutlet]', standalone: true })\nexport class MarkdownOutletDirective implements OnChanges {\n    readonly markdownOutlet = input.required<TemplateRef<MarkdownContext>>();\n    readonly markdownContext = input.required<MarkdownContext>();\n    private readonly container = inject(ViewContainerRef);\n    private template: TemplateRef<MarkdownContext> | undefined;\n    private view: EmbeddedViewRef<MarkdownContext> | undefined;\n    ngOnChanges(): void {\n        const template = this.markdownOutlet();\n        const context = this.markdownContext();\n        if (!this.view || this.template !== template) {\n            this.container.clear();\n            this.template = template;\n            this.view = this.container.createEmbeddedView(template, { ...context });\n        }\n        else {\n            Object.assign(this.view.context, context);\n            this.view.markForCheck();\n        }\n    }\n}"
+    },
+    {
+      "id": "component:libs/angular/markdown/src/markdown.component.ts#MarkdownComponent",
+      "kind": "component",
+      "path": "libs/angular/markdown/src/markdown.component.ts",
+      "symbol": "MarkdownComponent",
+      "decorators": [
+        "Component"
+      ],
+      "signature": "@Component({\n    selector: 'threadplane-markdown',\n    standalone: true,\n    changeDetection: ChangeDetectionStrategy.OnPush,\n    imports: [\n        MarkdownNodesDirective,\n        MarkdownOutletDirective,\n        MarkdownImageComponent,\n    ],\n    template: `\n    @for (document of [snapshot().document]; track document.generation) {\n    @if (snapshot().root; as root) {\n    <ng-container\n      [markdownOutlet]=\"nodesView\"\n      [markdownContext]=\"{\n        $implicit: root.children,\n        root,\n        anchor: false,\n        header: false\n      }\"\n    />\n    } }\n    <ng-template\n      #nodesView\n      markdownNodes\n      let-nodes\n      let-root=\"root\"\n      let-anchor=\"anchor\"\n      let-header=\"header\"\n    >\n      @for (node of nodes; track node.type + ':' + node.id) { @switch\n      (node.type) { @case ('document') {\n      <ng-container\n        [markdownOutlet]=\"nodesView\"\n        [markdownContext]=\"{\n          $implicit: node.children,\n          root: node,\n          anchor,\n          header\n        }\"\n      />\n      } @case ('paragraph') {\n      <p>\n        <ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{ $implicit: node.children, root, anchor, header }\"\n        />\n      </p>\n      } @case ('heading') { @switch (node.level) { @case (1) {\n      <h1>\n        <ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{ $implicit: node.children, root, anchor, header }\"\n        />\n      </h1>\n      } @case (2) {\n      <h2>\n        <ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{ $implicit: node.children, root, anchor, header }\"\n        />\n      </h2>\n      } @case (3) {\n      <h3>\n        <ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{ $implicit: node.children, root, anchor, header }\"\n        />\n      </h3>\n      } @case (4) {\n      <h4>\n        <ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{ $implicit: node.children, root, anchor, header }\"\n        />\n      </h4>\n      } @case (5) {\n      <h5>\n        <ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{ $implicit: node.children, root, anchor, header }\"\n        />\n      </h5>\n      } @case (6) {\n      <h6>\n        <ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{ $implicit: node.children, root, anchor, header }\"\n        />\n      </h6>\n      } } } @case ('blockquote') {\n      <blockquote>\n        <ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{ $implicit: node.children, root, anchor, header }\"\n        />\n      </blockquote>\n      } @case ('list') { @if (node.ordered) {\n      <ol [attr.start]=\"node.start\">\n        <ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{ $implicit: node.children, root, anchor, header }\"\n        />\n      </ol>\n      } @else {\n      <ul>\n        <ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{ $implicit: node.children, root, anchor, header }\"\n        />\n      </ul>\n      } } @case ('list-item') {\n      <li>\n        @if (node.task; as task) {\n        <input\n          type=\"checkbox\"\n          disabled\n          [checked]=\"task.checked\"\n          [attr.aria-label]=\"task.checked ? 'Completed task' : 'Incomplete task'\"\n        />\n        }\n        <ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{ $implicit: node.children, root, anchor, header }\"\n        />\n      </li>\n      } @case ('code-block') {\n      <pre><code>{{ node.text }}</code></pre>\n      } @case ('thematic-break') {\n      <hr />\n      } @case ('text') {<ng-container>{{ node.text }}</ng-container\n      >} @case ('emphasis') {\n      <em\n        ><ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{\n            $implicit: node.children,\n            root,\n            anchor,\n            header\n          }\"\n      /></em>\n      } @case ('strong') {\n      <strong\n        ><ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{\n            $implicit: node.children,\n            root,\n            anchor,\n            header\n          }\"\n      /></strong>\n      } @case ('strikethrough') {\n      <del\n        ><ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{\n            $implicit: node.children,\n            root,\n            anchor,\n            header\n          }\"\n      /></del>\n      } @case ('inline-code') { <code class=\"inline-code\">{{ node.text }}</code> } @case ('link') {\n      @if (!anchor && url(node.url, 'link'); as destination) {\n      <a [href]=\"destination\" [title]=\"node.title\"\n        ><ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{\n            $implicit: node.children,\n            root,\n            anchor: true,\n            header\n          }\"\n      /></a>\n      } @else {\n      <ng-container\n        [markdownOutlet]=\"nodesView\"\n        [markdownContext]=\"{ $implicit: node.children, root, anchor, header }\"\n      />\n      } } @case ('autolink') { @if (!anchor && url(node.url, 'link'); as\n      destination) { <a [href]=\"destination\">{{ node.text }}</a> } @else\n      {<ng-container>{{ node.text }}</ng-container\n      >} } @case ('link-reference') { @if (node.resolved) { @if (!anchor &&\n      url(node.url, 'link'); as destination) {\n      <a [href]=\"destination\" [title]=\"node.title\"\n        ><ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{\n            $implicit: node.children,\n            root,\n            anchor: true,\n            header\n          }\"\n      /></a>\n      } @else {\n      <ng-container\n        [markdownOutlet]=\"nodesView\"\n        [markdownContext]=\"{ $implicit: node.children, root, anchor, header }\"\n      />\n      } } @else {<ng-container>[</ng-container\n      ><ng-container\n        [markdownOutlet]=\"nodesView\"\n        [markdownContext]=\"{ $implicit: node.children, root, anchor, header }\"\n      /><ng-container>{{ ']' + referenceSuffix(node) }}</ng-container\n      >} } @case ('image') { @for (image of [node]; track image.url)\n      { <threadplane-markdown-image [image]=\"image\" /> } } @case ('soft-break')\n      {<ng-container>{{ '\\\\n' }}</ng-container\n      >} @case ('hard-break') { <br />\n      } @case ('table') {\n      <table>\n        <thead>\n          <ng-container\n            [markdownOutlet]=\"nodesView\"\n            [markdownContext]=\"{\n              $implicit: tableRows(node, true),\n              root,\n              anchor,\n              header: true\n            }\"\n          />\n        </thead>\n        <tbody>\n          <ng-container\n            [markdownOutlet]=\"nodesView\"\n            [markdownContext]=\"{\n              $implicit: tableRows(node, false),\n              root,\n              anchor,\n              header: false\n            }\"\n          />\n        </tbody>\n      </table>\n      } @case ('table-row') {\n      <tr>\n        <ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{\n            $implicit: node.children,\n            root,\n            anchor,\n            header: node.isHeader\n          }\"\n        />\n      </tr>\n      } @case ('table-cell') { @if (header) {\n      <th [style.text-align]=\"node.alignment\">\n        <ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{ $implicit: node.children, root, anchor, header }\"\n        />\n      </th>\n      } @else {\n      <td [style.text-align]=\"node.alignment\">\n        <ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{ $implicit: node.children, root, anchor, header }\"\n        />\n      </td>\n      } } @case ('citation-reference') { @if (root.citations.get(node.refId); as\n      citation) {\n      <sup [attr.aria-label]=\"'Citation ' + citation.index\">{{\n        '[' + citation.index + ']'\n      }}</sup>\n      } @else {\n      <sup [attr.aria-label]=\"'Unresolved citation ' + node.refId\">{{\n        '[^' + node.refId + ']'\n      }}</sup>\n      } } @case ('math-inline') {<ng-container>{{\n        mathSource(node)\n      }}</ng-container\n      >} @case ('math-display') {\n      <pre>{{ mathSource(node) }}</pre>\n      } @case ('html-inline') {<ng-container>{{ node.raw }}</ng-container\n      >} @case ('html-block') {\n      <pre>{{ node.raw }}</pre>\n      } } }\n    </ng-template>\n  `,\n    styles: `\n    :host {\n      display: block;\n      color: var(--ds-text-primary, #142435);\n      font-family: inherit;\n      white-space: pre-wrap;\n      overflow-wrap: anywhere;\n    }\n    pre { white-space: pre-wrap; overflow-wrap: anywhere; }\n    .inline-code { white-space: pre-wrap; }\n  `,\n})\nexport class MarkdownComponent {\n    readonly snapshot = input.required<MarkdownSnapshot>();\n    protected readonly url = markdownUrl;\n    protected tableRows(node: Extract<MarkdownNode, {\n        type: 'table';\n    }>, header: boolean): readonly MarkdownNode[] {\n        return node.children.filter((row) => row.isHeader === header);\n    }\n    protected referenceSuffix(node: Extract<MarkdownNode, {\n        type: 'link-reference';\n    }>): string {\n        return node.form === 'full'\n            ? '[' + node.label + ']'\n            : node.form === 'collapsed'\n                ? '[]'\n                : '';\n    }\n    protected mathSource(node: Extract<MarkdownNode, {\n        type: 'math-inline' | 'math-display';\n    }>) {\n        if (node.type === 'math-inline')\n            return node.delimiter === '$'\n                ? '$' + node.text + '$'\n                : '\\\\(' + node.text + '\\\\)';\n        return node.delimiter === '$$'\n            ? '$$\\n' + node.text + '\\n$$'\n            : '\\\\[' + node.text + '\\\\]';\n    }\n}"
     },
     {
       "id": "component:libs/chat/debug/src/lib/compositions/chat-debug/chat-debug.component.ts#ChatDebugComponent",
@@ -2115,7 +2174,7 @@
       "id": "config:package-lock.json",
       "kind": "config",
       "path": "package-lock.json",
-      "sha256": "48f0110176f407c4a8e475eb61d0e99fb09914cb97f85076ca026767867bfa8d"
+      "sha256": "6a83829aa28ec3690596b22e961708585fc53bbebf828f86e3e5a709bfffd577"
     },
     {
       "id": "config:package.json",
@@ -2151,7 +2210,7 @@
       "id": "config:tsconfig.base.json",
       "kind": "config",
       "path": "tsconfig.base.json",
-      "sha256": "b0e1c1319ee03580e9de9b629ba430fa6dd111ba4c434e14c335e8ac08c94d6e"
+      "sha256": "9e0497a503e6b02f9df0954e8998fd8ce04a47e8dc1e79c02f96bd02b5ac3683"
     },
     {
       "id": "doc:apps/website/content/docs/a2ui/getting-started/introduction.mdx",
@@ -2937,6 +2996,11 @@
       "path": "libs/angular/chat/src/public-api.ts"
     },
     {
+      "id": "entry:libs/angular/markdown/src/public-api.ts",
+      "kind": "entry",
+      "path": "libs/angular/markdown/src/public-api.ts"
+    },
+    {
       "id": "entry:libs/angular/src/public-api.ts",
       "kind": "entry",
       "path": "libs/angular/src/public-api.ts"
@@ -2985,6 +3049,11 @@
       "id": "entry:libs/react/src/index.ts",
       "kind": "entry",
       "path": "libs/react/src/index.ts"
+    },
+    {
+      "id": "entry:libs/react/src/markdown/index.ts",
+      "kind": "entry",
+      "path": "libs/react/src/markdown/index.ts"
     },
     {
       "id": "entry:libs/render/src/public-api.ts",
@@ -4222,6 +4291,20 @@
           "symbol": "ToolObservationComponent",
           "syntaxKind": "ClassDeclaration",
           "signature": "@Component({\n    selector: 'threadplane-tool-observation',\n    standalone: true,\n    changeDetection: ChangeDetectionStrategy.OnPush,\n    template: `\n    <section [attr.aria-label]=\"label()\">\n      <h3>{{ name() }}</h3>\n      <dl>\n        <dt>Arguments</dt>\n        <dd>\n          <pre>{{ argumentsText() }}</pre>\n        </dd>\n        @if (resultText() !== undefined) {\n        <dt>Result</dt>\n        <dd>\n          <pre>{{ resultText() }}</pre>\n        </dd>\n        }\n      </dl>\n    </section>\n  `,\n    styles: `\n    :host { display: block; color: var(--ds-text-primary, #142435); font-family: inherit; overflow-wrap: anywhere; }\n    dl, dd { margin: 0; }\n    dt { font-weight: 600; }\n    pre { margin-block: .25rem; white-space: pre-wrap; overflow-wrap: anywhere; }\n  `,\n})\nexport class ToolObservationComponent {\n    readonly name = input.required<string>();\n    readonly argumentsText = input.required<string>();\n    readonly resultText = input<string>();\n    readonly label = input('Tool observation');\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/angular/markdown/src/public-api.ts#MarkdownComponent",
+      "kind": "export",
+      "path": "libs/angular/markdown/src/public-api.ts",
+      "symbol": "MarkdownComponent",
+      "declarations": [
+        {
+          "path": "libs/angular/markdown/src/markdown.component.ts",
+          "symbol": "MarkdownComponent",
+          "syntaxKind": "ClassDeclaration",
+          "signature": "@Component({\n    selector: 'threadplane-markdown',\n    standalone: true,\n    changeDetection: ChangeDetectionStrategy.OnPush,\n    imports: [\n        MarkdownNodesDirective,\n        MarkdownOutletDirective,\n        MarkdownImageComponent,\n    ],\n    template: `\n    @for (document of [snapshot().document]; track document.generation) {\n    @if (snapshot().root; as root) {\n    <ng-container\n      [markdownOutlet]=\"nodesView\"\n      [markdownContext]=\"{\n        $implicit: root.children,\n        root,\n        anchor: false,\n        header: false\n      }\"\n    />\n    } }\n    <ng-template\n      #nodesView\n      markdownNodes\n      let-nodes\n      let-root=\"root\"\n      let-anchor=\"anchor\"\n      let-header=\"header\"\n    >\n      @for (node of nodes; track node.type + ':' + node.id) { @switch\n      (node.type) { @case ('document') {\n      <ng-container\n        [markdownOutlet]=\"nodesView\"\n        [markdownContext]=\"{\n          $implicit: node.children,\n          root: node,\n          anchor,\n          header\n        }\"\n      />\n      } @case ('paragraph') {\n      <p>\n        <ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{ $implicit: node.children, root, anchor, header }\"\n        />\n      </p>\n      } @case ('heading') { @switch (node.level) { @case (1) {\n      <h1>\n        <ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{ $implicit: node.children, root, anchor, header }\"\n        />\n      </h1>\n      } @case (2) {\n      <h2>\n        <ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{ $implicit: node.children, root, anchor, header }\"\n        />\n      </h2>\n      } @case (3) {\n      <h3>\n        <ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{ $implicit: node.children, root, anchor, header }\"\n        />\n      </h3>\n      } @case (4) {\n      <h4>\n        <ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{ $implicit: node.children, root, anchor, header }\"\n        />\n      </h4>\n      } @case (5) {\n      <h5>\n        <ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{ $implicit: node.children, root, anchor, header }\"\n        />\n      </h5>\n      } @case (6) {\n      <h6>\n        <ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{ $implicit: node.children, root, anchor, header }\"\n        />\n      </h6>\n      } } } @case ('blockquote') {\n      <blockquote>\n        <ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{ $implicit: node.children, root, anchor, header }\"\n        />\n      </blockquote>\n      } @case ('list') { @if (node.ordered) {\n      <ol [attr.start]=\"node.start\">\n        <ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{ $implicit: node.children, root, anchor, header }\"\n        />\n      </ol>\n      } @else {\n      <ul>\n        <ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{ $implicit: node.children, root, anchor, header }\"\n        />\n      </ul>\n      } } @case ('list-item') {\n      <li>\n        @if (node.task; as task) {\n        <input\n          type=\"checkbox\"\n          disabled\n          [checked]=\"task.checked\"\n          [attr.aria-label]=\"task.checked ? 'Completed task' : 'Incomplete task'\"\n        />\n        }\n        <ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{ $implicit: node.children, root, anchor, header }\"\n        />\n      </li>\n      } @case ('code-block') {\n      <pre><code>{{ node.text }}</code></pre>\n      } @case ('thematic-break') {\n      <hr />\n      } @case ('text') {<ng-container>{{ node.text }}</ng-container\n      >} @case ('emphasis') {\n      <em\n        ><ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{\n            $implicit: node.children,\n            root,\n            anchor,\n            header\n          }\"\n      /></em>\n      } @case ('strong') {\n      <strong\n        ><ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{\n            $implicit: node.children,\n            root,\n            anchor,\n            header\n          }\"\n      /></strong>\n      } @case ('strikethrough') {\n      <del\n        ><ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{\n            $implicit: node.children,\n            root,\n            anchor,\n            header\n          }\"\n      /></del>\n      } @case ('inline-code') { <code class=\"inline-code\">{{ node.text }}</code> } @case ('link') {\n      @if (!anchor && url(node.url, 'link'); as destination) {\n      <a [href]=\"destination\" [title]=\"node.title\"\n        ><ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{\n            $implicit: node.children,\n            root,\n            anchor: true,\n            header\n          }\"\n      /></a>\n      } @else {\n      <ng-container\n        [markdownOutlet]=\"nodesView\"\n        [markdownContext]=\"{ $implicit: node.children, root, anchor, header }\"\n      />\n      } } @case ('autolink') { @if (!anchor && url(node.url, 'link'); as\n      destination) { <a [href]=\"destination\">{{ node.text }}</a> } @else\n      {<ng-container>{{ node.text }}</ng-container\n      >} } @case ('link-reference') { @if (node.resolved) { @if (!anchor &&\n      url(node.url, 'link'); as destination) {\n      <a [href]=\"destination\" [title]=\"node.title\"\n        ><ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{\n            $implicit: node.children,\n            root,\n            anchor: true,\n            header\n          }\"\n      /></a>\n      } @else {\n      <ng-container\n        [markdownOutlet]=\"nodesView\"\n        [markdownContext]=\"{ $implicit: node.children, root, anchor, header }\"\n      />\n      } } @else {<ng-container>[</ng-container\n      ><ng-container\n        [markdownOutlet]=\"nodesView\"\n        [markdownContext]=\"{ $implicit: node.children, root, anchor, header }\"\n      /><ng-container>{{ ']' + referenceSuffix(node) }}</ng-container\n      >} } @case ('image') { @for (image of [node]; track image.url)\n      { <threadplane-markdown-image [image]=\"image\" /> } } @case ('soft-break')\n      {<ng-container>{{ '\\\\n' }}</ng-container\n      >} @case ('hard-break') { <br />\n      } @case ('table') {\n      <table>\n        <thead>\n          <ng-container\n            [markdownOutlet]=\"nodesView\"\n            [markdownContext]=\"{\n              $implicit: tableRows(node, true),\n              root,\n              anchor,\n              header: true\n            }\"\n          />\n        </thead>\n        <tbody>\n          <ng-container\n            [markdownOutlet]=\"nodesView\"\n            [markdownContext]=\"{\n              $implicit: tableRows(node, false),\n              root,\n              anchor,\n              header: false\n            }\"\n          />\n        </tbody>\n      </table>\n      } @case ('table-row') {\n      <tr>\n        <ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{\n            $implicit: node.children,\n            root,\n            anchor,\n            header: node.isHeader\n          }\"\n        />\n      </tr>\n      } @case ('table-cell') { @if (header) {\n      <th [style.text-align]=\"node.alignment\">\n        <ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{ $implicit: node.children, root, anchor, header }\"\n        />\n      </th>\n      } @else {\n      <td [style.text-align]=\"node.alignment\">\n        <ng-container\n          [markdownOutlet]=\"nodesView\"\n          [markdownContext]=\"{ $implicit: node.children, root, anchor, header }\"\n        />\n      </td>\n      } } @case ('citation-reference') { @if (root.citations.get(node.refId); as\n      citation) {\n      <sup [attr.aria-label]=\"'Citation ' + citation.index\">{{\n        '[' + citation.index + ']'\n      }}</sup>\n      } @else {\n      <sup [attr.aria-label]=\"'Unresolved citation ' + node.refId\">{{\n        '[^' + node.refId + ']'\n      }}</sup>\n      } } @case ('math-inline') {<ng-container>{{\n        mathSource(node)\n      }}</ng-container\n      >} @case ('math-display') {\n      <pre>{{ mathSource(node) }}</pre>\n      } @case ('html-inline') {<ng-container>{{ node.raw }}</ng-container\n      >} @case ('html-block') {\n      <pre>{{ node.raw }}</pre>\n      } } }\n    </ng-template>\n  `,\n    styles: `\n    :host {\n      display: block;\n      color: var(--ds-text-primary, #142435);\n      font-family: inherit;\n      white-space: pre-wrap;\n      overflow-wrap: anywhere;\n    }\n    pre { white-space: pre-wrap; overflow-wrap: anywhere; }\n    .inline-code { white-space: pre-wrap; }\n  `,\n})\nexport class MarkdownComponent {\n    readonly snapshot = input.required<MarkdownSnapshot>();\n    protected readonly url = markdownUrl;\n    protected tableRows(node: Extract<MarkdownNode, {\n        type: 'table';\n    }>, header: boolean): readonly MarkdownNode[] {\n        return node.children.filter((row) => row.isHeader === header);\n    }\n    protected referenceSuffix(node: Extract<MarkdownNode, {\n        type: 'link-reference';\n    }>): string {\n        return node.form === 'full'\n            ? '[' + node.label + ']'\n            : node.form === 'collapsed'\n                ? '[]'\n                : '';\n    }\n    protected mathSource(node: Extract<MarkdownNode, {\n        type: 'math-inline' | 'math-display';\n    }>) {\n        if (node.type === 'math-inline')\n            return node.delimiter === '$'\n                ? '$' + node.text + '$'\n                : '\\\\(' + node.text + '\\\\)';\n        return node.delimiter === '$$'\n            ? '$$\\n' + node.text + '\\n$$'\n            : '\\\\[' + node.text + '\\\\]';\n    }\n}"
         }
       ]
     },
@@ -8552,6 +8635,20 @@
       ]
     },
     {
+      "id": "export:libs/content/src/markdown/index.ts#markdownUrl",
+      "kind": "export",
+      "path": "libs/content/src/markdown/index.ts",
+      "symbol": "markdownUrl",
+      "declarations": [
+        {
+          "path": "libs/content/src/markdown/markdown-url.ts",
+          "symbol": "markdownUrl",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function markdownUrl(value: string, kind: 'link' | 'image'): string | undefined {\n    if (!value.trim())\n        return undefined;\n    for (const character of value) {\n        const code = character.charCodeAt(0);\n        if (code < 32 || code === 127)\n            return undefined;\n    }\n    if (!/^(?:[a-z][a-z0-9+.-]*:|[^&:/?#]*(?:[/?#]|$))/i.test(value))\n        return undefined;\n    try {\n        const protocol = new URL(value, 'https://markdown.invalid/').protocol;\n        if (protocol === 'http:' ||\n            protocol === 'https:' ||\n            (kind === 'link' && (protocol === 'mailto:' || protocol === 'tel:')))\n            return value;\n    }\n    catch {\n    }\n    return undefined;\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/langgraph/src/public-api.ts#AGENT_LIFECYCLE",
       "kind": "export",
       "path": "libs/langgraph/src/public-api.ts",
@@ -9614,6 +9711,34 @@
           "symbol": "useAgent",
           "syntaxKind": "FunctionDeclaration",
           "signature": "export function useAgent<TSnapshot>(session: {\n    getSnapshot(): TSnapshot;\n    subscribe(notify: () => void): () => void;\n}): TSnapshot {\n    const getSnapshot = useCallback(() => session.getSnapshot(), [session]);\n    const subscribe = useCallback((notify: () => void) => session.subscribe(notify), [session]);\n    return useSyncExternalStore(subscribe, getSnapshot);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/markdown/index.ts#Markdown",
+      "kind": "export",
+      "path": "libs/react/src/markdown/index.ts",
+      "symbol": "Markdown",
+      "declarations": [
+        {
+          "path": "libs/react/src/markdown/markdown.tsx",
+          "symbol": "Markdown",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function Markdown({ snapshot }: MarkdownProps) {\n    return (<div style={{\n            color: 'var(--ds-text-primary, #142435)',\n            fontFamily: 'inherit',\n            whiteSpace: 'pre-wrap',\n            overflowWrap: 'anywhere',\n        }}>\n      {snapshot.root && (<NodeView key={snapshot.document.generation} node={snapshot.root} citations={snapshot.root.citations}/>)}\n    </div>);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/markdown/index.ts#MarkdownProps",
+      "kind": "export",
+      "path": "libs/react/src/markdown/index.ts",
+      "symbol": "MarkdownProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/markdown/markdown.tsx",
+          "symbol": "MarkdownProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface MarkdownProps {\n    readonly snapshot: MarkdownSnapshot;\n}"
         }
       ]
     },
@@ -11230,6 +11355,30 @@
       "sha256": "1a1b4a37f8f97d9f73b84c1c1ba40c5362ee8048c157a964a764cf39a80aa59b"
     },
     {
+      "id": "source:libs/angular/markdown/src/markdown-image.component.ts",
+      "kind": "source",
+      "path": "libs/angular/markdown/src/markdown-image.component.ts",
+      "sha256": "7ec94665f412b6877c8a4ba2498f426ec9663ac9895da15164aec63df39a47f7"
+    },
+    {
+      "id": "source:libs/angular/markdown/src/markdown-template.directive.ts",
+      "kind": "source",
+      "path": "libs/angular/markdown/src/markdown-template.directive.ts",
+      "sha256": "02a9db01b974b517d3ee8fd32c776968ae329e686044796d66c43cafc90533cf"
+    },
+    {
+      "id": "source:libs/angular/markdown/src/markdown.component.ts",
+      "kind": "source",
+      "path": "libs/angular/markdown/src/markdown.component.ts",
+      "sha256": "43b79290bab9df30923d97516f8251bb4d334ef84a90447580ee361cc8d7f298"
+    },
+    {
+      "id": "source:libs/angular/markdown/src/public-api.ts",
+      "kind": "source",
+      "path": "libs/angular/markdown/src/public-api.ts",
+      "sha256": "6ff33826bbd6f48fbd7b030adad21c916755848ba45132897868b3a778ca9d94"
+    },
+    {
       "id": "source:libs/angular/src/observe-agent.ts",
       "kind": "source",
       "path": "libs/angular/src/observe-agent.ts",
@@ -11251,7 +11400,7 @@
       "id": "source:libs/angular/vite.config.mts",
       "kind": "source",
       "path": "libs/angular/vite.config.mts",
-      "sha256": "23bc2f3961e0b8e50902a084c00a39a3912ce7dbb11b85c7a97669b377b55b6c"
+      "sha256": "ca044d37a79eb49dbb55c4b7f84113df19d731af6406385c475966e3cbcf6c2a"
     },
     {
       "id": "source:libs/chat/.install-collector/development-install.d.ts",
@@ -12775,7 +12924,13 @@
       "id": "source:libs/content/src/markdown/index.ts",
       "kind": "source",
       "path": "libs/content/src/markdown/index.ts",
-      "sha256": "98bfa0d1d0295504e41d590630b27797c3ce99e9216e7609ae82aac3c1e52dd8"
+      "sha256": "b72c4ab04bd7e7e0746ebdb80b1f48b06e1184d4f27a5c89c8b18d60ff642d54"
+    },
+    {
+      "id": "source:libs/content/src/markdown/markdown-url.ts",
+      "kind": "source",
+      "path": "libs/content/src/markdown/markdown-url.ts",
+      "sha256": "fd882a893feccb35e634b8d063a5934951cb28d70b705a579a3adb20387ccd72"
     },
     {
       "id": "source:libs/content/src/markdown/projection.ts",
@@ -13460,6 +13615,24 @@
       "kind": "source",
       "path": "libs/react/src/index.ts",
       "sha256": "41d38aefa80e4fe90ec783dbf5ab6960b473be2eac4b0ce83fb1e281dffe4193"
+    },
+    {
+      "id": "source:libs/react/src/markdown/index.ts",
+      "kind": "source",
+      "path": "libs/react/src/markdown/index.ts",
+      "sha256": "d6d49e217b048963d64decae4ceee0a77a7c0b4a26c558bf25ad6d1100036081"
+    },
+    {
+      "id": "source:libs/react/src/markdown/markdown-image.tsx",
+      "kind": "source",
+      "path": "libs/react/src/markdown/markdown-image.tsx",
+      "sha256": "df9df3daac81a6a2751db174f09aa9c084a07f805d03ef132e861d7375a7999d"
+    },
+    {
+      "id": "source:libs/react/src/markdown/markdown.tsx",
+      "kind": "source",
+      "path": "libs/react/src/markdown/markdown.tsx",
+      "sha256": "d088f04778a7b7742c786edcc9ef1e76285a90935999fe49df733a5dedc59461"
     },
     {
       "id": "source:libs/react/src/use-agent.ts",

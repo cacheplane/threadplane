@@ -111,3 +111,34 @@ controls, citations, reasoning, rich chat parity, SSR or hydration support. The 
 AG-UI review uses an O(N) pure root-text selection; previous-output row reuse is an
 optional bounded current-row optimization. React composition memoizes by the actual
 owner and immutable transcript reference without advancing a mutable render cache.
+
+`@threadplane/react/markdown` exports the client component `Markdown` and readonly
+`MarkdownProps`. It accepts a required, whole `MarkdownSnapshot` from an app-owned
+content object:
+
+```tsx
+import { useAgent } from '@threadplane/react';
+import { Markdown } from '@threadplane/react/markdown';
+import type { Markdown as MarkdownOwner } from '@threadplane/content/markdown';
+
+export function Answer({ owner }: { owner: MarkdownOwner }) {
+  const snapshot = useAgent(owner);
+  return <Markdown snapshot={snapshot} />;
+}
+```
+
+Create and update the owner in application composition, outside React rendering.
+The component only presents the supplied snapshot; it has no parsing, subscription
+or owner lifecycle. Use `useAgent` when observation is needed, or pass a snapshot
+directly. Unmounting the view does not dispose the owner. A document generation
+change resets local image state; replacing an image destination allows recovery
+after a failed load.
+
+The renderer preserves literal HTML as text, uses semantic lists/tables and
+disabled task checkboxes, and resolves references from the snapshot. Math remains
+delimited text; citations are numbered or unresolved text markers. Missing,
+blocked and failed images show an accessible alt-text fallback. Destination
+classification is the fixed [`content/markdown` policy](../content/README.md),
+including exclusion of data images. The root binding stays headless; rich math,
+syntax highlighting, citation overlays, custom node registries, legacy migration,
+SSR and hydration remain outside this private feature.

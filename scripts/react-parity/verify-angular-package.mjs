@@ -40,6 +40,11 @@ export function assertAngularChatExports(names) {
   );
 }
 
+export function assertAngularMarkdownExports(names) {
+  assert.ok(names.includes('MarkdownComponent'), 'Angular Markdown missing MarkdownComponent');
+  assert.deepEqual([...names].sort(), ['MarkdownComponent'], 'Angular Markdown has unexpected exports');
+}
+
 /** Real Angular template checking against the installed secondary declarations. */
 function verifyRejectedTranscriptTemplates(consumer) {
   writeFileSync(join(consumer, 'transcript-negative.ts'), `
@@ -119,6 +124,17 @@ export async function verifyAngularPackage(root = process.cwd()) {
     assertAngularChatExports(
       Object.values(chatProbe.metafile.outputs)[0].exports
     );
+    const markdownProbe = buildSync({
+      absWorkingDir: consumer,
+      stdin: { contents: "export * from '@threadplane/angular/markdown';", resolveDir: consumer },
+      bundle: true,
+      platform: 'browser',
+      format: 'esm',
+      write: false,
+      metafile: true,
+      external: ['@angular/core', '@angular/common'],
+    });
+    assertAngularMarkdownExports(Object.values(markdownProbe.metafile.outputs)[0].exports);
     prepareInstalledTypes(root, consumer, 'angular');
     verifyRejectedTranscriptTemplates(consumer);
     const contracts = join(consumer, 'installed-types.ts');

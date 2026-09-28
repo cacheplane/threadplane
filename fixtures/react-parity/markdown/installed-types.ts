@@ -6,6 +6,13 @@ import {
 } from '@threadplane/content/markdown';
 import { useAgent } from '@threadplane/react';
 import { observeAgent } from '@threadplane/angular';
+import {
+  Markdown as ReactMarkdown,
+  type MarkdownProps,
+} from '@threadplane/react/markdown';
+import { MarkdownComponent } from '@threadplane/angular/markdown';
+import type { InputSignal } from '@angular/core';
+import type { MarkdownSnapshot } from '@threadplane/content/markdown';
 
 const initial = {
   generation: 'a',
@@ -14,6 +21,16 @@ const initial = {
 } as const satisfies MarkdownDocument;
 const owner: Markdown = createMarkdown(initial);
 const snapshot = owner.getSnapshot();
+const props: MarkdownProps = { snapshot };
+void ReactMarkdown(props);
+export function angularInput(component: MarkdownComponent) {
+  const required: InputSignal<MarkdownSnapshot> = component.snapshot;
+  // @ts-expect-error Whole snapshot required, not a document alone.
+  const wrong: MarkdownProps = { snapshot: snapshot.document };
+  // @ts-expect-error Readonly snapshot prop.
+  props.snapshot = snapshot;
+  return { required, wrong };
+}
 export function bindings() {
   const react = useAgent(owner),
     angular = observeAgent(owner)();

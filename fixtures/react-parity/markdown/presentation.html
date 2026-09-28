@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Native Markdown presentation</title>
+    <style>
+      body {
+        font: 16px/1.5 system-ui;
+        margin: 2rem;
+        background: #faf8f3;
+        color: #142435;
+      }
+      main {
+        max-width: 1120px;
+        margin: auto;
+      }
+      button {
+        padding: 0.6rem;
+        margin: 0.25rem;
+        border: 1px solid #666;
+        border-radius: 6px;
+      }
+      button:enabled {
+        background: #183d3d;
+        color: white;
+        cursor: pointer;
+      }
+      .panels {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 24px;
+      }
+      .panel {
+        min-width: 0;
+        border: 1px solid #ccc;
+        background: white;
+        padding: 16px;
+        border-radius: 8px;
+      }
+      table {
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        border: 1px solid #aaa;
+        padding: 6px;
+      }
+      #evidence {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        font-size: 12px;
+        background: #eef1ed;
+        padding: 1rem;
+      }
+      section[aria-label$='native Markdown'] {
+        width: 100%;
+      }
+      img {
+        vertical-align: middle;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>One owner, native React and Angular Markdown</h1>
+      <p>
+        Both views receive the same readonly snapshot. The controls own updates
+        and disposal. HTML stays literal; math stays delimited text; citations
+        use accessible markers.
+      </p>
+      <p>
+        <a href="/">Original owner observation</a> ·
+        <a href="/provenance">Installed artifact provenance</a>
+      </p>
+      <section aria-label="Walkthrough">
+        <h2>Presentation controls</h2>
+        <p id="next"></p>
+        <div id="controls"></div>
+      </section>
+      <div class="panels">
+        <div class="panel">
+          <h2>React</h2>
+          <div id="react"></div>
+        </div>
+        <div class="panel">
+          <h2>Angular</h2>
+          <div id="angular"></div>
+        </div>
+      </div>
+      <h2>Ownership evidence</h2>
+      <pre id="evidence"></pre>
+    </main>
+  </body>
+</html>

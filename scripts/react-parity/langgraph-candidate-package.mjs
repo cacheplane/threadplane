@@ -5,14 +5,22 @@ import {
   existsSync,
   lstatSync,
   mkdirSync,
+  mkdtempSync,
   readFileSync,
   readdirSync,
+  realpathSync,
+  rmSync,
   writeFileSync,
 } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
+import { tmpdir } from 'node:os';
 import ts from 'typescript';
 import { satisfies } from 'semver';
-import { installFootprint, runConsumer } from './verify-packages.mjs';
+import {
+  installFootprint,
+  runConsumer,
+  localDependencyProjects,
+} from './verify-packages.mjs';
 
 const entry = 'runtime/create-session';
 const directImports = new Set([
@@ -48,6 +56,74 @@ export function fileHashes(directory) {
     path: relative(directory, path),
     sha256: sha256(readFileSync(path)),
   }));
+}
+
+/** Read the actual selected tarballs, never a registry or workspace substitute. */
+export function localArtifactRecords(tarballs) {
+  const temporary = mkdtempSync(join(tmpdir(), 'candidate-artifacts-'));
+  try {
+    const records = Object.fromEntries(
+      Object.entries(tarballs).map(([name, specifier], index) => {
+        assert.match(
+          specifier,
+          /^file:.*\.tgz$/,
+          `${name} requires a local tarball`
+        );
+        const directory = join(temporary, String(index));
+        mkdirSync(directory);
+        execFileSync('tar', ['-xzf', specifier.slice(5), '-C', directory]);
+        const unpacked = join(directory, 'package');
+        const manifest = JSON.parse(
+          readFileSync(join(unpacked, 'package.json'), 'utf8')
+        );
+        assert.equal(manifest.name, name, 'Selected tarball identity');
+        return [name, { manifest, files: fileHashes(unpacked) }];
+      })
+    );
+    localDependencyProjects(
+      Object.keys(records).map((name) => name.slice('@threadplane/'.length)),
+      (project) => records[`@threadplane/${project}`]?.manifest
+    );
+    return records;
+  } finally {
+    rmSync(temporary, { recursive: true, force: true });
+  }
+}
+
+export function assertInstalledArtifacts(consumer, expected) {
+  for (const [name, files] of Object.entries(expected)) {
+    const directory = join(consumer, 'node_modules', name);
+    assert.ok(existsSync(directory), `Missing installed ${name}`);
+    assert.equal(
+      lstatSync(directory).isSymbolicLink(),
+      false,
+      'Installed package cannot be a link'
+    );
+    assert.deepEqual(
+      fileHashes(directory),
+      files,
+      `Installed ${name} bytes equal its unpacked tarball`
+    );
+  }
+  return expected;
+}
+
+export function assertLocalResolutions(consumer, lock, tarballs) {
+  for (const [path, pkg] of Object.entries(lock.packages ?? {})) {
+    const name = path.split('node_modules/').at(-1);
+    if (!tarballs[name]) continue;
+    assert.equal(pkg.link, undefined, `${name} cannot be a link`);
+    assert.match(
+      pkg.resolved ?? '',
+      /^file:.*\.tgz$/,
+      `${name} must resolve to its local tarball`
+    );
+    assert.equal(
+      realpathSync(resolve(consumer, pkg.resolved.slice(5))),
+      realpathSync(tarballs[name].slice(5)),
+      `${name} must resolve to the selected tarball`
+    );
+  }
 }
 export function candidateManifest(version, coreVersion, sdkVersion) {
   return {
@@ -286,9 +362,18 @@ export function packCandidate(directory, destination) {
 export function lockedVendorGraph(
   lock,
   seeds = ['@langchain/langgraph-sdk', '@langchain/core'],
-  effectiveRanges = {}
+  effectiveRanges = {},
+  localManifests = {}
 ) {
-  const packages = lock.packages;
+  const packages = {
+    ...lock.packages,
+    ...Object.fromEntries(
+      Object.entries(localManifests).map(([name, manifest]) => [
+        `node_modules/${name}`,
+        manifest,
+      ])
+    ),
+  };
   const todo = seeds.map((name) => `node_modules/${name}`),
     seen = new Map();
   const resolveDependency = (owner, name) => {
@@ -324,7 +409,9 @@ export function lockedVendorGraph(
           dependency = packages[target];
         assert.ok(
           satisfies(dependency.version, effectiveRanges[name] ?? range),
-          `Locked ${target}@${dependency.version} must satisfy ${effectiveRanges[name] ?? range}`
+          `Locked ${target}@${dependency.version} must satisfy ${
+            effectiveRanges[name] ?? range
+          }`
         );
         todo.push(target);
         return [name, dependency.version];
@@ -346,6 +433,9 @@ export function candidateInstallViolations(
   localNames = ['@threadplane/core', '@threadplane/langgraph']
 ) {
   const errors = [];
+  for (const name of localNames)
+    if (!lock.packages?.[`node_modules/${name}`])
+      errors.push(`Missing installed local package ${name}`);
   for (const [path, pkg] of Object.entries(lock.packages ?? {})) {
     if (!path.includes('node_modules/')) continue;
     const name = path.split('node_modules/').at(-1);
@@ -365,6 +455,8 @@ export function candidateInstallViolations(
           'rxjs',
           '@types/react',
           '@types/react-dom',
+          '@threadplane/content',
+          '@cacheplane/partial-markdown',
         ].includes(name))
     )
       errors.push(`Node candidate installed framework ${name}`);
@@ -383,7 +475,10 @@ export function candidateInstallViolations(
   }
   return errors;
 }
-export function vendorOverrides(vendors, seeds = ['@langchain/langgraph-sdk', '@langchain/core']) {
+export function vendorOverrides(
+  vendors,
+  seeds = ['@langchain/langgraph-sdk', '@langchain/core']
+) {
   const graph = new Map(vendors.map((v) => [`${v.name}@${v.version}`, v]));
   function pin(name, version, ancestors = []) {
     const key = `${name}@${version}`,
@@ -420,8 +515,32 @@ export function installCandidateConsumer(
   rootLock,
   kind
 ) {
+  const records = localArtifactRecords(tarballs);
+  const localManifests = Object.fromEntries(
+    Object.entries(records).map(([name, record]) => [name, record.manifest])
+  );
+  const localVendors = lockedVendorGraph(
+    rootLock,
+    Object.keys(tarballs),
+    {},
+    localManifests
+  );
+  const externalRoots = [
+    ...new Set(
+      localVendors
+        .filter(({ name }) => name.startsWith('@threadplane/'))
+        .flatMap(({ dependencies }) =>
+          Object.keys(dependencies).filter(
+            (name) => !name.startsWith('@threadplane/')
+          )
+        )
+    ),
+  ];
   const vendors = lockedVendorGraph(rootLock);
-  const overrides = vendorOverrides(vendors);
+  const overrides = {
+    ...vendorOverrides(vendors),
+    ...vendorOverrides(localVendors, externalRoots),
+  };
   const direct = {
     ...manifest.dependencies,
     '@langchain/core':
@@ -459,6 +578,18 @@ export function installCandidateConsumer(
     candidateInstallViolations(lock, kind, Object.keys(tarballs)),
     []
   );
+  assertLocalResolutions(consumer, lock, tarballs);
+  const artifacts = assertInstalledArtifacts(
+    consumer,
+    Object.fromEntries(
+      Object.entries(records).map(([name, record]) => [name, record.files])
+    )
+  );
+  assert.deepEqual(
+    lockedVendorGraph(lock, Object.keys(tarballs)),
+    localVendors,
+    'Installed local package dependency edges preserve the exact locked graph'
+  );
   assert.deepEqual(
     lockedVendorGraph(lock),
     vendors,
@@ -476,6 +607,8 @@ export function installCandidateConsumer(
   }
   return {
     vendors,
+    localVendors,
+    artifacts,
     footprint: installFootprint(consumer, lock),
     versions: Object.fromEntries(
       Object.entries(lock.packages)

@@ -18,9 +18,16 @@ import { buildSync } from 'esbuild';
 import {
   fileHashes,
   sha256,
-  lockedVendorGraph,
-  vendorOverrides,
 } from './langgraph-candidate-package.mjs';
+import {
+  installPresentationConsumer,
+  buildPresentation,
+  readPresentation,
+} from './markdown-presentation-build.mjs';
+import {
+  verifyPresentationBrowser,
+  presentationSequence,
+} from './markdown-presentation-browser.mjs';
 import { assertInstalledInputs } from './ag-ui-candidate-package.mjs';
 import { checkTypes } from './verify-langgraph-candidate.mjs';
 import {
@@ -70,6 +77,10 @@ export function validateMarkdown(root) {
   });
   assert.deepEqual(errors, [], errors.join('\n'));
 }
+export function assertMarkdownFeatureExports(entry) {
+  for (const name of ['createMarkdown', 'markdownUrl']) assert.equal(typeof entry[name], 'function', `Markdown feature missing ${name}`);
+  assert.deepEqual(Object.keys(entry).sort(), ['createMarkdown', 'markdownUrl'], 'Markdown feature has unexpected exports');
+}
 export function assertArtifactFiles(directory, expected) {
   assert.deepEqual(
     fileHashes(directory),
@@ -101,11 +112,20 @@ export function assertFrozen(directory, records) {
     );
   }
 }
+export function retainMarkdownSources(root, retained, paths) {
+  return paths.map((path) => {
+    const target = join(retained, 'sources', path);
+    mkdirSync(dirname(target), { recursive: true });
+    cpSync(join(root, path), target);
+    return { path: 'sources/' + path, sha256: sha256(readFileSync(target)) };
+  });
+}
 export async function serveMarkdown({
   bundle,
   shell = html,
   provenance,
   signal,
+  presentation,
 }) {
   assert.equal(signal?.aborted ?? false, false, 'Review startup aborted');
   const controller = new AbortController();
@@ -118,6 +138,12 @@ export async function serveMarkdown({
             '/app.js': ['text/javascript', bundle],
             '/provenance': ['application/json', JSON.stringify(provenance)],
             '/favicon.ico': ['image/x-icon', ''],
+            ...(presentation
+              ? {
+                  '/presentation': ['text/html', presentation.shell],
+                  ...presentation.assets,
+                }
+              : {}),
           }[route]
         : undefined;
     response.writeHead(entry ? 200 : 404, {
@@ -255,12 +281,14 @@ export async function verifyMarkdownBrowser(
     shell = html,
     launch = async () => (await import('@playwright/test')).chromium.launch(),
     check = verifyBrowser,
+    presentation,
   } = {}
 ) {
   const server = await serveMarkdown({
     bundle,
     shell,
     provenance: { installed: true, bundleSha256: sha256(bundle) },
+    presentation,
   });
   let browser;
   try {
@@ -495,60 +523,9 @@ export async function verifyMarkdown({ retain } = {}) {
     const consumer = join(temporary, 'consumer');
     mkdirSync(consumer);
     const lock = json(join(root, 'package-lock.json'));
-    const names = [
-      '@cacheplane/partial-markdown',
-      '@angular/core',
-      '@angular/common',
-      '@angular/compiler',
-      '@angular/platform-browser',
-      'react',
-      'react-dom',
-      'rxjs',
-      'tslib',
-      '@types/react',
-      '@types/react-dom',
-      '@types/node',
-      'typescript',
-    ];
-    const vendors = lockedVendorGraph(lock, names),
-      vendorNames = vendors.map((vendor) => vendor.name);
-    assert.equal(
-      new Set(vendorNames).size,
-      vendorNames.length,
-      'Review conflicting vendor versions instead of flattening them'
-    );
-    writeJson(join(consumer, 'package.json'), {
-      private: true,
-      type: 'module',
-      dependencies: {
-        ...Object.fromEntries(
-          names.map((name) => [
-            name,
-            lock.packages['node_modules/' + name].version,
-          ])
-        ),
-        ...tarballs,
-      },
-      overrides: {
-        ...vendorOverrides(vendors, vendorNames),
-        ...Object.fromEntries(
-          Object.keys(tarballs).map((name) => [name, '$' + name])
-        ),
-      },
-    });
-    console.log(
-      runConsumer(
-        'npm',
-        ['install', '--ignore-scripts', '--no-audit', '--no-fund'],
-        consumer
-      )
-    );
+    const installation = installPresentationConsumer(consumer, lock, tarballs);
+    const vendors = installation.graph;
     const installedLock = json(join(consumer, 'package-lock.json'));
-    assert.deepEqual(
-      lockedVendorGraph(installedLock, names),
-      vendors,
-      'Exact owner-relative installed vendor graph'
-    );
     for (const [path, pkg] of Object.entries(installedLock.packages))
       if (path.includes('node_modules/@threadplane/'))
         assert.ok(
@@ -592,7 +569,8 @@ const original = globalThis.fetch; let calls = 0;
 globalThis.fetch = () => { calls++; throw new Error('Unexpected content I/O'); };
 try {
   const root = await import('@threadplane/content'); assert.deepEqual(Object.keys(root), []);
-  const feature = await import('@threadplane/content/markdown'); assert.deepEqual(Object.keys(feature), ['createMarkdown']);
+  ${assertMarkdownFeatureExports.toString()}
+  const feature = await import('@threadplane/content/markdown'); assertMarkdownFeatureExports(feature);
   const owner = feature.createMarkdown({generation:'a',phase:'streaming',content:''}); const first = owner.getSnapshot(); assert.equal(first.root,null);
   let notifications=0; const release=owner.subscribe(()=>notifications++); assert.equal(owner.getSnapshot(),first);
   owner.update({generation:'a',phase:'streaming',content:'![alt](/url)'}); const partial=owner.getSnapshot();
@@ -620,6 +598,23 @@ try {
     const rootInputs = Object.keys(rootBundle.metafile.inputs);
     assertMarkdownRootInputs(rootBundle.metafile.inputs);
     const browser = await browserProof(consumer, expected);
+    const presentation = buildPresentation(root, consumer, expected);
+    const presentationFrozen = [
+      ...presentation.outputs,
+      ...presentation.files,
+      ...presentation.inputHashes,
+      ...presentation.types,
+    ].map((record) => ({ ...record, path: 'consumer/' + record.path }));
+    presentation.result = await verifyMarkdownBrowser(
+      readFileSync(join(consumer, 'browser.js')),
+      {
+        presentation: readPresentation(temporary, {
+          presentation,
+          frozen: presentationFrozen,
+        }),
+        check: verifyPresentationBrowser,
+      }
+    );
     const sourcePaths = execFileSync(
       'git',
       [
@@ -629,9 +624,25 @@ try {
         '--others',
         '--exclude-standard',
         '--',
+        'package.json',
+        'package-lock.json',
+        'tsconfig.base.json',
         'libs/content',
+        'libs/core',
+        'libs/react',
+        'libs/angular',
         'fixtures/react-parity/markdown',
         'scripts/react-parity/verify-markdown.mjs',
+        'scripts/react-parity/verify-markdown.spec.mjs',
+        'scripts/react-parity/markdown-presentation-build.mjs',
+        'scripts/react-parity/markdown-presentation-build.spec.mjs',
+        'scripts/react-parity/markdown-presentation-browser.mjs',
+        'scripts/react-parity/markdown-presentation-browser.spec.mjs',
+        'scripts/react-parity/langgraph-candidate-package.mjs',
+        'scripts/react-parity/ag-ui-candidate-package.mjs',
+        'scripts/react-parity/verify-langgraph-candidate.mjs',
+        'scripts/react-parity/verify-packages.mjs',
+        'scripts/react-parity/verify-boundaries.mjs',
       ],
       { cwd: root, encoding: 'utf8' }
     )
@@ -651,6 +662,8 @@ try {
     const frozen = [
       ...new Map(
         [
+          ...retainMarkdownSources(root, temporary, sourcePaths),
+          ...presentationFrozen,
           ...Object.entries(expected).flatMap(([name, files]) =>
             files.map((file) => ({
               path: 'consumer/node_modules/' + name + '/' + file.path,
@@ -697,11 +710,13 @@ try {
         sha256: sha256(readFileSync(join(root, path))),
       })),
       vendors,
+      installation,
       installed: expected,
       types,
       nodeResult,
       rootInputs,
       browser,
+      presentation,
       frozen,
     };
     writeJson(join(temporary, 'provenance.json'), provenance);
@@ -712,6 +727,7 @@ try {
         mode: 'verified-owned-markdown',
         node: nodeResult,
         browser: browser.result,
+        presentation: presentation.result,
         bundleSha256: browser.bundleSha256,
         retained: Boolean(retain),
       })
@@ -741,6 +757,7 @@ export async function reviewMarkdown(directory, signal) {
     shell: readChecked('consumer/index.html'),
     provenance,
     signal,
+    presentation: readPresentation(directory, provenance),
   });
   try {
     console.log(
@@ -748,6 +765,12 @@ export async function reviewMarkdown(directory, signal) {
         mode: 'review-owned-markdown',
         url: server.url,
         sequence,
+        presentationUrl: provenance.presentation
+          ? server.url + '/presentation'
+          : undefined,
+        presentationSequence: provenance.presentation
+          ? presentationSequence
+          : undefined,
         bundleSha256: provenance.browser.bundleSha256,
         shellSha256: provenance.browser.shellSha256,
       })

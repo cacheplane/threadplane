@@ -51,11 +51,28 @@ retains the last snapshot, does not finish, and is terminal. Later subscriptions
 are inert and updates throw. The unchanged generic React/Angular bindings can
 borrow this observer shape; releasing a view does not dispose the owner.
 
-This is preparation for native renderers, not a completed legacy extraction. The
-existing Angular Markdown renderer and lifecycle remain unchanged. No HTML
-rendering, sanitization policy, SSR serialization, hydration or renderer parity is
-provided here. Readonly renderer adaptation and removing the duplicated legacy
-lifecycle require a separate integration.
+Native views accept the whole `MarkdownSnapshot` through the private
+`@threadplane/react/markdown` and `@threadplane/angular/markdown` entries. The app
+owns this object and observes it with `useAgent` or `observeAgent`; the views do
+not parse, update, subscribe to or dispose it. Keep an owner outside rendering and
+release it when its document lifetime ends, independently of a view's lifetime.
+
+The feature also exports the pure `markdownUrl(value, 'link' | 'image')` helper.
+It returns an accepted destination unchanged, or `undefined`. HTTP/HTTPS and
+relative destinations are supported; links also support `mailto:` and `tel:`.
+Empty/malformed values, ASCII control characters, ambiguous raw prefixes and
+other schemes are rejected, including data images. Classification uses a fixed
+HTTPS base, not the page location; that base never appears in the returned value.
+Ordinary relative values such as `./a&b` retain their spelling. The views render
+blocked links as their text and missing, blocked or failed images as an accessible
+alt-text fallback. HTML nodes render literally, not as inserted markup.
+
+The native views include semantic headings, lists, tasks and tables. Math stays
+delimited text and citations use numbered or unresolved text markers; there is no
+math engine, syntax highlighter, citation overlay or node registry. This remains
+a private feature, not a completed legacy extraction. Existing public Angular
+Markdown components and their lifecycle remain unchanged. SSR serialization,
+hydration and full legacy renderer parity are separate work.
 
 Build with `npx nx build content`. Packaging and dependency boundaries are
 verified by the scripts in `scripts/react-parity`. Optional and testing entry

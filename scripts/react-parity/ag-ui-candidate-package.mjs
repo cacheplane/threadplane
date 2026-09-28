@@ -15,6 +15,9 @@ import {
   lockedVendorGraph,
   sha256,
   vendorOverrides,
+  localArtifactRecords,
+  assertInstalledArtifacts,
+  assertLocalResolutions,
 } from './langgraph-candidate-package.mjs';
 import { installFootprint, runConsumer } from './verify-packages.mjs';
 
@@ -307,6 +310,9 @@ export function packCandidate(directory, destination) {
 }
 export function installViolations(lock, localNames, mixed = false) {
   const errors = [];
+  for (const name of localNames)
+    if (!lock.packages?.[`node_modules/${name}`])
+      errors.push(`Missing installed local package ${name}`);
   for (const [path, pkg] of Object.entries(lock.packages ?? {})) {
     if (!path.includes('node_modules/')) continue;
     const name = path.split('node_modules/').at(-1);
@@ -320,9 +326,14 @@ export function installViolations(lock, localNames, mixed = false) {
     if (
       !mixed &&
       (name.startsWith('@angular/') ||
-        ['react', 'react-dom', '@types/react', '@types/react-dom'].includes(
-          name
-        ))
+        [
+          'react',
+          'react-dom',
+          '@types/react',
+          '@types/react-dom',
+          '@threadplane/content',
+          '@cacheplane/partial-markdown',
+        ].includes(name))
     )
       errors.push(`Backend installed framework ${name}`);
     if (
@@ -361,7 +372,12 @@ export function agUiVendorOverrides(vendors) {
     vendors.map(({ name, version }) => [name, pins[`${name}@${version}`]])
   );
 }
-export function consumerVendorGraph(lock, manifest, effectiveRanges = {}) {
+export function consumerVendorGraph(
+  lock,
+  manifest,
+  effectiveRanges = {},
+  localManifests = {}
+) {
   const roots = [
     ...new Set([
       ...seeds,
@@ -369,7 +385,12 @@ export function consumerVendorGraph(lock, manifest, effectiveRanges = {}) {
       ...Object.keys(manifest.devDependencies ?? {}),
     ]),
   ].filter((name) => !name.startsWith('@threadplane/'));
-  return lockedVendorGraph(lock, roots, effectiveRanges);
+  return lockedVendorGraph(
+    lock,
+    [...roots, ...Object.keys(localManifests)],
+    effectiveRanges,
+    localManifests
+  );
 }
 export function installCandidate(
   consumer,
@@ -379,11 +400,16 @@ export function installCandidate(
   mixed = false,
   effectiveRanges = {}
 ) {
+  const records = localArtifactRecords(tarballs);
+  const localManifests = Object.fromEntries(
+    Object.entries(records).map(([name, record]) => [name, record.manifest])
+  );
   const vendors = lockedVendorGraph(rootLock, seeds, effectiveRanges);
   const consumerVendors = consumerVendorGraph(
     rootLock,
     manifest,
-    effectiveRanges
+    effectiveRanges,
+    localManifests
   );
   writeFileSync(
     join(consumer, 'package.json'),
@@ -392,7 +418,11 @@ export function installCandidate(
         ...manifest,
         dependencies: { ...manifest.dependencies, ...tarballs },
         overrides: {
-          ...agUiVendorOverrides(consumerVendors),
+          ...agUiVendorOverrides(
+            consumerVendors.filter(
+              ({ name }) => !name.startsWith('@threadplane/')
+            )
+          ),
           ...Object.fromEntries(
             Object.keys(tarballs).map((name) => [name, `$${name}`])
           ),
@@ -413,19 +443,36 @@ export function installCandidate(
     readFileSync(join(consumer, 'package-lock.json'), 'utf8')
   );
   assert.deepEqual(installViolations(lock, Object.keys(tarballs), mixed), []);
+  assertLocalResolutions(consumer, lock, tarballs);
+  const artifacts = assertInstalledArtifacts(
+    consumer,
+    Object.fromEntries(
+      Object.entries(records).map(([name, record]) => [name, record.files])
+    )
+  );
   assert.deepEqual(
     lockedVendorGraph(lock, seeds, effectiveRanges),
     vendors,
     'Installed owner preserves its exact locked vendor graph'
   );
   assert.deepEqual(
-    consumerVendorGraph(lock, manifest, effectiveRanges),
+    lockedVendorGraph(
+      lock,
+      [
+        ...seeds,
+        ...Object.keys(manifest.dependencies ?? {}),
+        ...Object.keys(manifest.devDependencies ?? {}),
+        ...Object.keys(tarballs),
+      ],
+      effectiveRanges
+    ),
     consumerVendors,
     'Installed framework and type roots preserve their exact locked vendor graph'
   );
   return {
     vendors,
     consumerVendors,
+    artifacts,
     effectiveRanges,
     footprint: installFootprint(consumer, lock),
     versions: Object.entries(lock.packages)

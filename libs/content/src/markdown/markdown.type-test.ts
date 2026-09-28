@@ -1,8 +1,16 @@
 import {
   createMarkdown,
+  markdownUrl,
   type MarkdownDocument,
   type MarkdownNode,
 } from './index.js';
+
+const destination: string | undefined = markdownUrl('/image', 'image');
+void destination;
+// @ts-expect-error Only strings are destinations.
+markdownUrl({}, 'link');
+// @ts-expect-error The rendering context is explicit and fixed.
+markdownUrl('/target', 'video');
 
 const input = {
   generation: 'a',

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {
   mkdirSync,
+  cpSync,
   mkdtempSync,
   readFileSync,
   symlinkSync,
@@ -8,7 +9,8 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
+import { execFileSync } from 'node:child_process';
 import test from 'node:test';
 import ts from 'typescript';
 import {
@@ -19,9 +21,109 @@ import {
   candidateCompilerOptions,
   lockedVendorGraph,
   vendorOverrides,
+  fileHashes,
+  localArtifactRecords,
+  assertLocalResolutions,
 } from './langgraph-candidate-package.mjs';
-import { checkTypes, reviewCandidate } from './verify-langgraph-candidate.mjs';
+import {
+  checkTypes,
+  reviewCandidate,
+  installedMatches,
+} from './verify-langgraph-candidate.mjs';
 import { createHash } from 'node:crypto';
+
+test('local artifact graph retains content and its owner-relative exact parser edge', () => {
+  const local = {
+    '@threadplane/react': {
+      version: '0.0.0',
+      peerDependencies: { '@threadplane/content': '0.0.0' },
+    },
+    '@threadplane/content': {
+      version: '0.0.0',
+      dependencies: { '@cacheplane/partial-markdown': '^0.5.8' },
+    },
+  };
+  const lock = {
+    packages: {
+      'node_modules/@cacheplane/partial-markdown': { version: '0.5.8' },
+    },
+  };
+  const expected = lockedVendorGraph(lock, Object.keys(local), {}, local);
+  assert.deepEqual(
+    expected.find(({ name }) => name === '@threadplane/content').dependencies,
+    { '@cacheplane/partial-markdown': '0.5.8' }
+  );
+  const installed = structuredClone(lock);
+  for (const [name, manifest] of Object.entries(local))
+    installed.packages[`node_modules/${name}`] = structuredClone(manifest);
+  assert.deepEqual(lockedVendorGraph(installed, Object.keys(local)), expected);
+  installed.packages['node_modules/@cacheplane/partial-markdown'].version =
+    '0.5.9';
+  assert.throws(
+    () =>
+      assert.deepEqual(
+        lockedVendorGraph(installed, Object.keys(local)),
+        expected
+      ),
+    /Expected values/
+  );
+  delete installed.packages['node_modules/@threadplane/content'].dependencies;
+  assert.throws(
+    () =>
+      assert.deepEqual(
+        lockedVendorGraph(installed, Object.keys(local)),
+        expected
+      ),
+    /Expected values/
+  );
+  delete lock.packages['node_modules/@cacheplane/partial-markdown'];
+  assert.throws(
+    () => lockedVendorGraph(lock, Object.keys(local), {}, local),
+    /Missing locked dependency.*partial-markdown/
+  );
+});
+
+test('candidate installation requires selected content and isolates the plain Node parser', () => {
+  const names = [
+    '@threadplane/core',
+    '@threadplane/langgraph',
+    '@threadplane/content',
+  ];
+  const packages = Object.fromEntries(
+    names
+      .slice(0, 2)
+      .map((name) => [
+        `node_modules/${name}`,
+        { version: '0.0.0', resolved: `file:/${name.split('/')[1]}.tgz` },
+      ])
+  );
+  assert.ok(
+    candidateInstallViolations({ packages }, 'react', names).some((error) =>
+      /Missing.*content/.test(error)
+    )
+  );
+  packages['node_modules/@cacheplane/partial-markdown'] = { version: '0.5.8' };
+  assert.ok(
+    candidateInstallViolations({ packages }, 'node', names.slice(0, 2)).some(
+      (error) => /Node.*partial-markdown/.test(error)
+    )
+  );
+  for (const substitution of [
+    { resolved: 'https://registry.test/content.tgz' },
+    { link: true },
+    { resolved: 'file:/content.tgz' },
+  ]) {
+    packages['node_modules/@threadplane/content'] = {
+      version: '0.0.0',
+      ...substitution,
+    };
+    const errors = candidateInstallViolations({ packages }, 'react', names);
+    assert.equal(
+      errors.some((error) => /content.*local tarball/.test(error)),
+      !substitution.resolved?.startsWith('file:')
+    );
+  }
+});
 
 function fixture(t, declarationEdge = false) {
   const root = mkdtempSync(join(tmpdir(), 'candidate-policy-'));
@@ -81,6 +183,103 @@ function fixture(t, declarationEdge = false) {
   writeFileSync(join(output, 'package.json'), JSON.stringify(manifest));
   return { output, manifest };
 }
+test('selected tarball records reject missing and incompatible local content before installation', (t) => {
+  const { output } = fixture(t);
+  function pack(name, manifest) {
+    writeFileSync(
+      join(output, 'package.json'),
+      JSON.stringify({ name, version: '0.0.0', ...manifest })
+    );
+    const tarball = join(dirname(output), name.split('/')[1] + '.tgz');
+    execFileSync('tar', ['-czf', tarball, '-C', dirname(output), 'package']);
+    return 'file:' + tarball;
+  }
+  const tarballs = {
+    '@threadplane/react': pack('@threadplane/react', {
+      peerDependencies: { '@threadplane/content': '0.0.0' },
+    }),
+  };
+  assert.throws(
+    () => localArtifactRecords(tarballs),
+    /Missing local artifact manifest for content/
+  );
+  tarballs['@threadplane/content'] = pack('@threadplane/content', {
+    version: '0.0.1',
+  });
+  assert.throws(
+    () => localArtifactRecords(tarballs),
+    /Local @threadplane\/content@0.0.1 does not satisfy/
+  );
+  tarballs['@threadplane/content'] = pack('@threadplane/content', {});
+  assert.deepEqual(
+    Object.keys(localArtifactRecords(tarballs)),
+    Object.keys(tarballs)
+  );
+});
+
+test('selected content lock resolution rejects registry, link and different local tarball substitutes', (t) => {
+  const { output } = fixture(t);
+  const selected = join(output, 'selected.tgz'),
+    substitute = join(output, 'substitute.tgz');
+  writeFileSync(selected, 'selected');
+  writeFileSync(substitute, 'substitute');
+  const tarballs = { '@threadplane/content': 'file:' + selected };
+  const lock = {
+    packages: {
+      'node_modules/@threadplane/content': { resolved: 'file:' + selected },
+    },
+  };
+  assert.doesNotThrow(() => assertLocalResolutions(output, lock, tarballs));
+  for (const pkg of [
+    { resolved: 'https://registry.test/content.tgz' },
+    { link: true, resolved: 'file:' + selected },
+    { resolved: 'file:' + substitute },
+  ]) {
+    lock.packages['node_modules/@threadplane/content'] = pkg;
+    assert.throws(
+      () => assertLocalResolutions(output, lock, tarballs),
+      /local tarball|cannot be a link|selected tarball/
+    );
+  }
+});
+for (const mutation of ['missing', 'tampered', 'linked'])
+  test(`installed closure rejects ${mutation} content even when backend bytes match`, (t) => {
+    const { output } = fixture(t);
+    const candidate = join(dirname(output), 'candidate');
+    cpSync(output, candidate, { recursive: true });
+    const consumer = join(output, 'consumer');
+    const backend = join(consumer, 'node_modules/@threadplane/langgraph');
+    mkdirSync(backend, { recursive: true });
+    cpSync(join(output, 'runtime'), join(backend, 'runtime'), {
+      recursive: true,
+    });
+    cpSync(join(output, 'package.json'), join(backend, 'package.json'));
+    const content = join(consumer, 'node_modules/@threadplane/content');
+    mkdirSync(content);
+    writeFileSync(join(content, 'index.js'), 'export const value = true;');
+    writeFileSync(
+      join(content, 'package.json'),
+      JSON.stringify({ name: '@threadplane/content', version: '0.0.0' })
+    );
+    const expected = {
+      '@threadplane/langgraph': fileHashes(backend),
+      '@threadplane/content': fileHashes(content),
+    };
+    assert.doesNotThrow(() => installedMatches(consumer, candidate, expected));
+    if (mutation === 'missing') rmSync(content, { recursive: true });
+    if (mutation === 'tampered')
+      writeFileSync(join(content, 'index.js'), 'export const value = false;');
+    if (mutation === 'linked') {
+      const substitute = join(output, 'substitute');
+      cpSync(content, substitute, { recursive: true });
+      rmSync(content, { recursive: true });
+      symlinkSync(substitute, content);
+    }
+    assert.throws(
+      () => installedMatches(consumer, candidate, expected),
+      /Missing installed|Installed.*content|cannot.*link/
+    );
+  });
 test('accepts a real compiled module and full declaration graph without built workspace artifacts', (t) => {
   const { output } = fixture(t);
   assert.deepEqual(candidateViolations(output), []);

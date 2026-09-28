@@ -10,7 +10,13 @@ export default defineConfig({
     pool: 'forks',
     environment: 'jsdom',
     setupFiles: ['src/test-setup.ts'],
-    include: ['src/**/*.spec.ts', 'src/**/*.test.ts', 'chat/src/**/*.spec.ts'],
+    include: [
+      'src/**/*.spec.ts',
+      'src/**/*.test.ts',
+      'chat/src/**/*.spec.ts',
+      'markdown/src/**/*.spec.ts',
+      'markdown/src/**/*.test.ts',
+    ],
     passWithNoTests: false,
   },
 });

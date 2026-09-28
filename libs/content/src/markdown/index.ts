@@ -1,4 +1,5 @@
 export { createMarkdown } from './create-markdown.js';
+export { markdownUrl } from './markdown-url.js';
 export type {
   Markdown,
   MarkdownDocument,

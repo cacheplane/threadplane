@@ -6,12 +6,10 @@
     "declaration": true,
     "emitDeclarationOnly": false,
     "module": "ES2022",
-    "target": "ES2022"
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"]
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx"
-  ],
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": [
     "src/**/*.spec.ts",
     "src/**/*.spec.tsx",

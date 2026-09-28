@@ -13973,7 +13973,7 @@
       ],
       "treatment": "shared",
       "status": "in-progress",
-      "reason": "Owned immutable Markdown preparation only; native rendering and legacy lifecycle extraction remain separate."
+      "reason": "Owned immutable Markdown preparation with fixed URL projection for private native views; rich rendering and legacy lifecycle extraction remain separate."
     },
     {
       "id": "export:libs/content/src/markdown/index.ts#CitationDefinition",
@@ -13982,7 +13982,7 @@
       ],
       "treatment": "shared",
       "status": "in-progress",
-      "reason": "Owned immutable Markdown preparation only; native rendering and legacy lifecycle extraction remain separate."
+      "reason": "Owned immutable Markdown preparation with fixed URL projection for private native views; rich rendering and legacy lifecycle extraction remain separate."
     },
     {
       "id": "export:libs/content/src/markdown/index.ts#LinkDefinition",
@@ -13991,7 +13991,7 @@
       ],
       "treatment": "shared",
       "status": "in-progress",
-      "reason": "Owned immutable Markdown preparation only; native rendering and legacy lifecycle extraction remain separate."
+      "reason": "Owned immutable Markdown preparation with fixed URL projection for private native views; rich rendering and legacy lifecycle extraction remain separate."
     },
     {
       "id": "export:libs/content/src/markdown/index.ts#Markdown",
@@ -14000,7 +14000,7 @@
       ],
       "treatment": "shared",
       "status": "in-progress",
-      "reason": "Owned immutable Markdown preparation only; native rendering and legacy lifecycle extraction remain separate."
+      "reason": "Owned immutable Markdown preparation with fixed URL projection for private native views; rich rendering and legacy lifecycle extraction remain separate."
     },
     {
       "id": "export:libs/content/src/markdown/index.ts#MarkdownDocument",
@@ -14009,7 +14009,7 @@
       ],
       "treatment": "shared",
       "status": "in-progress",
-      "reason": "Owned immutable Markdown preparation only; native rendering and legacy lifecycle extraction remain separate."
+      "reason": "Owned immutable Markdown preparation with fixed URL projection for private native views; rich rendering and legacy lifecycle extraction remain separate."
     },
     {
       "id": "export:libs/content/src/markdown/index.ts#MarkdownDocumentNode",
@@ -14018,7 +14018,7 @@
       ],
       "treatment": "shared",
       "status": "in-progress",
-      "reason": "Owned immutable Markdown preparation only; native rendering and legacy lifecycle extraction remain separate."
+      "reason": "Owned immutable Markdown preparation with fixed URL projection for private native views; rich rendering and legacy lifecycle extraction remain separate."
     },
     {
       "id": "export:libs/content/src/markdown/index.ts#MarkdownNode",
@@ -14027,7 +14027,7 @@
       ],
       "treatment": "shared",
       "status": "in-progress",
-      "reason": "Owned immutable Markdown preparation only; native rendering and legacy lifecycle extraction remain separate."
+      "reason": "Owned immutable Markdown preparation with fixed URL projection for private native views; rich rendering and legacy lifecycle extraction remain separate."
     },
     {
       "id": "export:libs/content/src/markdown/index.ts#MarkdownOptions",
@@ -14036,7 +14036,7 @@
       ],
       "treatment": "shared",
       "status": "in-progress",
-      "reason": "Owned immutable Markdown preparation only; native rendering and legacy lifecycle extraction remain separate."
+      "reason": "Owned immutable Markdown preparation with fixed URL projection for private native views; rich rendering and legacy lifecycle extraction remain separate."
     },
     {
       "id": "export:libs/content/src/markdown/index.ts#MarkdownSnapshot",
@@ -14045,7 +14045,7 @@
       ],
       "treatment": "shared",
       "status": "in-progress",
-      "reason": "Owned immutable Markdown preparation only; native rendering and legacy lifecycle extraction remain separate."
+      "reason": "Owned immutable Markdown preparation with fixed URL projection for private native views; rich rendering and legacy lifecycle extraction remain separate."
     },
     {
       "id": "export:libs/content/src/markdown/index.ts#createMarkdown",
@@ -14054,7 +14054,7 @@
       ],
       "treatment": "shared",
       "status": "in-progress",
-      "reason": "Owned immutable Markdown preparation only; native rendering and legacy lifecycle extraction remain separate."
+      "reason": "Owned immutable Markdown preparation with fixed URL projection for private native views; rich rendering and legacy lifecycle extraction remain separate."
     },
     {
       "id": "source:libs/content/src/a2ui/index.ts",
@@ -14093,7 +14093,7 @@
       ],
       "treatment": "shared",
       "status": "in-progress",
-      "reason": "Owned immutable Markdown preparation only; native rendering and legacy lifecycle extraction remain separate."
+      "reason": "Owned immutable Markdown preparation with fixed URL projection for private native views; rich rendering and legacy lifecycle extraction remain separate."
     },
     {
       "id": "source:libs/content/src/markdown/index.ts",
@@ -14102,7 +14102,7 @@
       ],
       "treatment": "shared",
       "status": "in-progress",
-      "reason": "Owned immutable Markdown preparation only; native rendering and legacy lifecycle extraction remain separate."
+      "reason": "Owned immutable Markdown preparation with fixed URL projection for private native views; rich rendering and legacy lifecycle extraction remain separate."
     },
     {
       "id": "source:libs/content/src/markdown/projection.ts",
@@ -14111,7 +14111,7 @@
       ],
       "treatment": "shared",
       "status": "in-progress",
-      "reason": "Owned immutable Markdown preparation only; native rendering and legacy lifecycle extraction remain separate."
+      "reason": "Owned immutable Markdown preparation with fixed URL projection for private native views; rich rendering and legacy lifecycle extraction remain separate."
     },
     {
       "id": "source:libs/content/src/markdown/transition.ts",
@@ -14120,7 +14120,7 @@
       ],
       "treatment": "shared",
       "status": "in-progress",
-      "reason": "Owned immutable Markdown preparation only; native rendering and legacy lifecycle extraction remain separate."
+      "reason": "Owned immutable Markdown preparation with fixed URL projection for private native views; rich rendering and legacy lifecycle extraction remain separate."
     },
     {
       "id": "source:libs/content/src/markdown/types.ts",
@@ -14129,7 +14129,7 @@
       ],
       "treatment": "shared",
       "status": "in-progress",
-      "reason": "Owned immutable Markdown preparation only; native rendering and legacy lifecycle extraction remain separate."
+      "reason": "Owned immutable Markdown preparation with fixed URL projection for private native views; rich rendering and legacy lifecycle extraction remain separate."
     },
     {
       "id": "source:libs/content/src/testing/index.ts",
@@ -14150,6 +14150,196 @@
       "treatment": "infrastructure",
       "status": "in-progress",
       "reason": "Private content package and empty root infrastructure for owned Markdown preparation."
+    },
+    {
+      "id": "asset:libs/angular/markdown/ng-package.json",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Private native snapshot presentation and fixed URL projection; rich rendering and legacy lifecycle migration remain separate.",
+      "note": "Readonly whole snapshots, semantic nodes, literal HTML, raw math/citation fallbacks and local image state. This records a bounded native surface, not full legacy parity or public distribution."
+    },
+    {
+      "id": "component:libs/angular/markdown/src/markdown-image.component.ts#MarkdownImageComponent",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Private native snapshot presentation and fixed URL projection; rich rendering and legacy lifecycle migration remain separate.",
+      "note": "Readonly whole snapshots, semantic nodes, literal HTML, raw math/citation fallbacks and local image state. This records a bounded native surface, not full legacy parity or public distribution."
+    },
+    {
+      "id": "component:libs/angular/markdown/src/markdown-template.directive.ts#MarkdownNodesDirective",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Private native snapshot presentation and fixed URL projection; rich rendering and legacy lifecycle migration remain separate.",
+      "note": "Readonly whole snapshots, semantic nodes, literal HTML, raw math/citation fallbacks and local image state. This records a bounded native surface, not full legacy parity or public distribution."
+    },
+    {
+      "id": "component:libs/angular/markdown/src/markdown-template.directive.ts#MarkdownOutletDirective",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Private native snapshot presentation and fixed URL projection; rich rendering and legacy lifecycle migration remain separate.",
+      "note": "Readonly whole snapshots, semantic nodes, literal HTML, raw math/citation fallbacks and local image state. This records a bounded native surface, not full legacy parity or public distribution."
+    },
+    {
+      "id": "component:libs/angular/markdown/src/markdown.component.ts#MarkdownComponent",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Private native snapshot presentation and fixed URL projection; rich rendering and legacy lifecycle migration remain separate.",
+      "note": "Readonly whole snapshots, semantic nodes, literal HTML, raw math/citation fallbacks and local image state. This records a bounded native surface, not full legacy parity or public distribution."
+    },
+    {
+      "id": "entry:libs/angular/markdown/src/public-api.ts",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Private native snapshot presentation and fixed URL projection; rich rendering and legacy lifecycle migration remain separate.",
+      "note": "Readonly whole snapshots, semantic nodes, literal HTML, raw math/citation fallbacks and local image state. This records a bounded native surface, not full legacy parity or public distribution."
+    },
+    {
+      "id": "entry:libs/react/src/markdown/index.ts",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private native snapshot presentation and fixed URL projection; rich rendering and legacy lifecycle migration remain separate.",
+      "note": "Readonly whole snapshots, semantic nodes, literal HTML, raw math/citation fallbacks and local image state. This records a bounded native surface, not full legacy parity or public distribution."
+    },
+    {
+      "id": "export:libs/angular/markdown/src/public-api.ts#MarkdownComponent",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Private native snapshot presentation and fixed URL projection; rich rendering and legacy lifecycle migration remain separate.",
+      "note": "Readonly whole snapshots, semantic nodes, literal HTML, raw math/citation fallbacks and local image state. This records a bounded native surface, not full legacy parity or public distribution."
+    },
+    {
+      "id": "export:libs/content/src/markdown/index.ts#markdownUrl",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Private native snapshot presentation and fixed URL projection; rich rendering and legacy lifecycle migration remain separate.",
+      "note": "Readonly whole snapshots, semantic nodes, literal HTML, raw math/citation fallbacks and local image state. This records a bounded native surface, not full legacy parity or public distribution."
+    },
+    {
+      "id": "export:libs/react/src/markdown/index.ts#Markdown",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private native snapshot presentation and fixed URL projection; rich rendering and legacy lifecycle migration remain separate.",
+      "note": "Readonly whole snapshots, semantic nodes, literal HTML, raw math/citation fallbacks and local image state. This records a bounded native surface, not full legacy parity or public distribution."
+    },
+    {
+      "id": "export:libs/react/src/markdown/index.ts#MarkdownProps",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private native snapshot presentation and fixed URL projection; rich rendering and legacy lifecycle migration remain separate.",
+      "note": "Readonly whole snapshots, semantic nodes, literal HTML, raw math/citation fallbacks and local image state. This records a bounded native surface, not full legacy parity or public distribution."
+    },
+    {
+      "id": "source:libs/angular/markdown/src/markdown-image.component.ts",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Private native snapshot presentation and fixed URL projection; rich rendering and legacy lifecycle migration remain separate.",
+      "note": "Readonly whole snapshots, semantic nodes, literal HTML, raw math/citation fallbacks and local image state. This records a bounded native surface, not full legacy parity or public distribution."
+    },
+    {
+      "id": "source:libs/angular/markdown/src/markdown-template.directive.ts",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Private native snapshot presentation and fixed URL projection; rich rendering and legacy lifecycle migration remain separate.",
+      "note": "Readonly whole snapshots, semantic nodes, literal HTML, raw math/citation fallbacks and local image state. This records a bounded native surface, not full legacy parity or public distribution."
+    },
+    {
+      "id": "source:libs/angular/markdown/src/markdown.component.ts",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Private native snapshot presentation and fixed URL projection; rich rendering and legacy lifecycle migration remain separate.",
+      "note": "Readonly whole snapshots, semantic nodes, literal HTML, raw math/citation fallbacks and local image state. This records a bounded native surface, not full legacy parity or public distribution."
+    },
+    {
+      "id": "source:libs/angular/markdown/src/public-api.ts",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Private native snapshot presentation and fixed URL projection; rich rendering and legacy lifecycle migration remain separate.",
+      "note": "Readonly whole snapshots, semantic nodes, literal HTML, raw math/citation fallbacks and local image state. This records a bounded native surface, not full legacy parity or public distribution."
+    },
+    {
+      "id": "source:libs/content/src/markdown/markdown-url.ts",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Private native snapshot presentation and fixed URL projection; rich rendering and legacy lifecycle migration remain separate.",
+      "note": "Readonly whole snapshots, semantic nodes, literal HTML, raw math/citation fallbacks and local image state. This records a bounded native surface, not full legacy parity or public distribution."
+    },
+    {
+      "id": "source:libs/react/src/markdown/index.ts",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private native snapshot presentation and fixed URL projection; rich rendering and legacy lifecycle migration remain separate.",
+      "note": "Readonly whole snapshots, semantic nodes, literal HTML, raw math/citation fallbacks and local image state. This records a bounded native surface, not full legacy parity or public distribution."
+    },
+    {
+      "id": "source:libs/react/src/markdown/markdown-image.tsx",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private native snapshot presentation and fixed URL projection; rich rendering and legacy lifecycle migration remain separate.",
+      "note": "Readonly whole snapshots, semantic nodes, literal HTML, raw math/citation fallbacks and local image state. This records a bounded native surface, not full legacy parity or public distribution."
+    },
+    {
+      "id": "source:libs/react/src/markdown/markdown.tsx",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private native snapshot presentation and fixed URL projection; rich rendering and legacy lifecycle migration remain separate.",
+      "note": "Readonly whole snapshots, semantic nodes, literal HTML, raw math/citation fallbacks and local image state. This records a bounded native surface, not full legacy parity or public distribution."
     }
   ]
 }

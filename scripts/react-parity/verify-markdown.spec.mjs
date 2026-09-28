@@ -12,6 +12,7 @@ import test from 'node:test';
 import { execFileSync, spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { fileHashes, sha256 } from './langgraph-candidate-package.mjs';
+import * as markdownVerifier from './verify-markdown.mjs';
 import {
   validateMarkdown,
   assertArtifactFiles,
@@ -21,6 +22,31 @@ import {
   reviewMarkdown,
   assertMarkdownRootInputs,
 } from './verify-markdown.mjs';
+
+test('retains proof source bytes for frozen provenance, including the presentation installer', (t) => {
+  const { retainMarkdownSources } = markdownVerifier;
+  assert.equal(typeof retainMarkdownSources, 'function', 'Source retention helper required');
+  const temporary = mkdtempSync(join(tmpdir(), 'markdown-sources-'));
+  t.after(() => rmSync(temporary, { recursive: true, force: true }));
+  const root = join(temporary, 'root'), retained = join(temporary, 'retained');
+  mkdirSync(join(root, 'scripts/react-parity'), { recursive: true });
+  mkdirSync(retained);
+  const path = 'scripts/react-parity/markdown-presentation-build.mjs';
+  writeFileSync(join(root, path), 'export const proof = true;');
+  const frozen = retainMarkdownSources(root, retained, [path]);
+  assert.deepEqual(frozen, [{ path: 'sources/' + path, sha256: sha256('export const proof = true;') }]);
+  assertFrozen(retained, frozen);
+  writeFileSync(join(retained, 'sources', path), 'tampered');
+  assert.throws(() => assertFrozen(retained, frozen), /Frozen artifact bytes differ/);
+});
+
+test('content Markdown feature exports exactly the owner factory and URL helper', () => {
+  assert.equal(typeof markdownVerifier.assertMarkdownFeatureExports, 'function');
+  assert.throws(() => markdownVerifier.assertMarkdownFeatureExports({ createMarkdown() {} }), /markdownUrl/);
+  assert.throws(() => markdownVerifier.assertMarkdownFeatureExports({ markdownUrl() {} }), /createMarkdown/);
+  assert.throws(() => markdownVerifier.assertMarkdownFeatureExports({ createMarkdown() {}, markdownUrl() {}, extra() {} }), /unexpected/);
+  assert.doesNotThrow(() => markdownVerifier.assertMarkdownFeatureExports({ createMarkdown() {}, markdownUrl() {} }));
+});
 
 test('Markdown root caller rejects actual parser and feature paths in the metafile input map', () => {
   const root = {
@@ -280,6 +306,17 @@ test('import is inert and does not need build artifacts or a browser', () => {
     ],
     { cwd: tmpdir(), timeout: 5000, stdio: 'pipe' }
   );
+});
+
+test('serves the native generated shell and only explicit presentation assets alongside original routes', async () => {
+  const server = await serveMarkdown({ bundle: 'old bundle', shell: 'old shell', provenance: {}, presentation: {
+    shell: 'generated shell', assets: { '/presentation-assets/main-ABC.js': ['text/javascript', 'generated bundle'] },
+  } });
+  try {
+    for (const [route, value] of [['/', 'old shell'], ['/app.js', 'old bundle'], ['/presentation', 'generated shell'], ['/presentation-assets/main-ABC.js', 'generated bundle']])
+      assert.equal(await (await fetch(server.url + route)).text(), value);
+    for (const route of ['/presentation-assets/unlisted.js', '/presentation-assets/%2e%2e/package.json']) assert.equal((await fetch(server.url + route)).status, 404);
+  } finally { await server.close(); }
 });
 
 test(
