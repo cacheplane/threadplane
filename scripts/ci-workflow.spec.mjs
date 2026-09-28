@@ -114,6 +114,16 @@ describe('CI workflow', () => {
     assert.match(job, /node scripts\/react-parity\/verify-angular-package\.mjs/);
     assert.ok(job.indexOf('node --test scripts/react-parity/*.spec.mjs') < candidate);
   });
+  it('requires the real AG-UI candidate after build, Chromium and service setup without replacing source proofs', async () => {
+    const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'library');
+    const candidate = job.indexOf('node scripts/react-parity/verify-ag-ui-candidate.mjs');
+    for (const prerequisite of ['Build and validate private React foundations', 'npx playwright install --with-deps chromium', 'npm ci --prefix deployments/ag-ui-mastra', 'npm test --prefix deployments/ag-ui-mastra']) assert.ok(candidate > job.indexOf(prerequisite));
+    const step = readNamedStep(job, 'Verify real AG-UI candidate package');
+    assert.doesNotMatch(step, /continue-on-error|\|\|\s*true|if:/);
+    assert.match(step, /run: node scripts\/react-parity\/verify-ag-ui-candidate\.mjs\s*$/);
+    for (const command of ['review-native-ag-ui.mjs --verify', 'verify-native-mastra.ts', 'verify-langgraph-candidate.mjs', 'verify-packages.mjs', 'verify-angular-package.mjs']) assert.ok(job.includes(command));
+    assert.ok(job.indexOf('node --test scripts/react-parity/*.spec.mjs') < candidate);
+  });
   it('requires middleware lint, tests, build, and standalone package verification in the library job', async () => {
     const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'library');
     const libraries = job.match(/LIBS: ([^\n]+)/)?.[1].split(',');

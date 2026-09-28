@@ -4,7 +4,7 @@ import type {
   SubagentErrorEvent,
 } from '@ag-ui/client';
 import type { DeepReadonly } from '@threadplane/core';
-import { copyData } from '../lib/internal/copy-data';
+import { copyData } from '../lib/internal/copy-data.js';
 
 export type ChildStart = Pick<
   SubagentStartedEvent,

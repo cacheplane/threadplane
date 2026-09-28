@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { existsSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { existsSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { tmpdir } from 'node:os';
+import { pathToFileURL } from 'node:url';
 import test from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
 import {
@@ -15,6 +18,46 @@ const names = [
   'OPENAI_BASE_URL',
   'AG_UI_MASTRA_DB_PATH',
 ];
+test(
+  'importing the reusable native Mastra runner performs no setup or HTTP',
+  { timeout: 15000 },
+  (t) => {
+    const directory = mkdtempSync(join(tmpdir(), 'native-mastra-import-'));
+    t.after(() => rmSync(directory, { recursive: true, force: true }));
+    const probe = join(directory, 'probe.ts');
+    const script = `
+    import assert from 'node:assert/strict';
+    import http from 'node:http';
+    import { syncBuiltinESMExports } from 'node:module';
+    let calls = 0;
+    http.createServer = () => { calls++; throw new Error('Import must not open a server'); };
+    syncBuiltinESMExports();
+    globalThis.fetch = () => { calls++; throw new Error('Import must not fetch'); };
+    (async () => {
+      const runner = await import(${JSON.stringify(
+        pathToFileURL(resolve('scripts/react-parity/native-mastra-runner.ts'))
+          .href
+      )});
+      assert.equal(typeof runner.runNativeMastra, 'function');
+      await new Promise(resolve => setImmediate(resolve));
+      assert.equal(calls, 0, 'runner import is inert');
+      console.log('inert runner checked');
+    })().catch(error => { console.error(error); process.exitCode = 1; });
+  `;
+    writeFileSync(probe, script);
+    const stdout = execFileSync(
+      process.execPath,
+      [
+        'node_modules/tsx/dist/cli.mjs',
+        '--tsconfig',
+        'tsconfig.base.json',
+        probe,
+      ],
+      { encoding: 'utf8', timeout: 12000, stdio: ['ignore', 'pipe', 'pipe'] }
+    );
+    assert.match(stdout, /inert runner checked/);
+  }
+);
 const snapshot = () =>
   Object.fromEntries(names.map((key) => [key, process.env[key]]));
 function assertRestored(before) {

@@ -1,7 +1,7 @@
 import type { StateDeltaEvent, StateSnapshotEvent } from '@ag-ui/client';
 import type { PlainValue } from '@threadplane/core';
-import { copyData } from '../lib/internal/copy-data';
-import { applyPatch, type JsonPatchOp } from '../lib/internal/apply-patch';
+import { copyData } from '../lib/internal/copy-data.js';
+import { applyPatch, type JsonPatchOp } from '../lib/internal/apply-patch.js';
 
 /** Captures the literal state graph without schema interpretation. */
 export function ownState(value: unknown): PlainValue {

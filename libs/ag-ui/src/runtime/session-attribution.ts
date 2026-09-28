@@ -1,5 +1,5 @@
 import type { AGUIEvent } from '@ag-ui/client';
-import type { Transcript } from './transcript';
+import type { Transcript } from './transcript.js';
 /** The SDK verifier starts fresh for each request and may not see retained
  * history. Check only the entity selected by an incremental event. Authoritative
  * snapshots and opaque encryption follow their helpers' replacement policies. */

@@ -4,8 +4,8 @@ import type {
   DeepReadonly,
   PlainValue,
 } from '@threadplane/core';
-import type { OwnedRootTerminal } from './session-observation';
-import { copyData } from '../lib/internal/copy-data';
+import type { OwnedRootTerminal } from './session-observation.js';
+import { copyData } from '../lib/internal/copy-data.js';
 
 declare const pauseId: unique symbol;
 export type PauseId = string & { readonly [pauseId]: true };

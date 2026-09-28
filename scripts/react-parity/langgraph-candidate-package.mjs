@@ -285,7 +285,8 @@ export function packCandidate(directory, destination) {
 /** Resolve dependencies where the lock actually placed them, including nested SDK vendors. */
 export function lockedVendorGraph(
   lock,
-  seeds = ['@langchain/langgraph-sdk', '@langchain/core']
+  seeds = ['@langchain/langgraph-sdk', '@langchain/core'],
+  effectiveRanges = {}
 ) {
   const packages = lock.packages;
   const todo = seeds.map((name) => `node_modules/${name}`),
@@ -322,8 +323,8 @@ export function lockedVendorGraph(
         const target = resolveDependency(path, name),
           dependency = packages[target];
         assert.ok(
-          satisfies(dependency.version, range),
-          `Locked ${target}@${dependency.version} must satisfy ${range}`
+          satisfies(dependency.version, effectiveRanges[name] ?? range),
+          `Locked ${target}@${dependency.version} must satisfy ${effectiveRanges[name] ?? range}`
         );
         todo.push(target);
         return [name, dependency.version];
@@ -382,7 +383,7 @@ export function candidateInstallViolations(
   }
   return errors;
 }
-export function vendorOverrides(vendors) {
+export function vendorOverrides(vendors, seeds = ['@langchain/langgraph-sdk', '@langchain/core']) {
   const graph = new Map(vendors.map((v) => [`${v.name}@${v.version}`, v]));
   function pin(name, version, ancestors = []) {
     const key = `${name}@${version}`,
@@ -405,7 +406,7 @@ export function vendorOverrides(vendors) {
     };
   }
   return Object.fromEntries(
-    ['@langchain/langgraph-sdk', '@langchain/core'].map((name) => {
+    seeds.map((name) => {
       const vendor = vendors.find((v) => v.name === name);
       assert.ok(vendor, `Missing root vendor ${name}`);
       return [`${name}@${vendor.version}`, pin(name, vendor.version)];

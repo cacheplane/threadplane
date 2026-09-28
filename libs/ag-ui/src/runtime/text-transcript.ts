@@ -1,5 +1,5 @@
 import type { Message } from '@threadplane/core';
-import type { Transcript } from './transcript';
+import type { Transcript } from './transcript.js';
 
 export type TextTranscriptRow = Readonly<
   Pick<Message, 'id' | 'content'> & {

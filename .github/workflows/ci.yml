@@ -162,6 +162,8 @@ jobs:
         run: node scripts/react-parity/review-native-ag-ui.mjs --verify
       - name: Verify real LangGraph candidate package
         run: node scripts/react-parity/verify-langgraph-candidate.mjs
+      - name: Verify real AG-UI candidate package
+        run: node scripts/react-parity/verify-ag-ui-candidate.mjs
       - name: Verify emitted boundaries and isolated packages
         run: |
           node scripts/react-parity/verify-boundaries.mjs --built

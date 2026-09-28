@@ -7,8 +7,8 @@ import {
   type ToolCallEndEvent,
   type ToolCallResultEvent,
 } from '@ag-ui/client';
-import { copyData } from '../lib/internal/copy-data';
-import type { Transcript } from './transcript';
+import { copyData } from '../lib/internal/copy-data.js';
+import type { Transcript } from './transcript.js';
 
 export type ToolMessageEvent =
   | ToolCallStartEvent
