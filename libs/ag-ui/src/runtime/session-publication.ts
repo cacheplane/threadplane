@@ -1,4 +1,4 @@
-import type { SessionSnapshot } from './session-observation';
+import type { SessionSnapshot } from './session-observation.js';
 export function createPublication(initial: SessionSnapshot) {
   let current = initial;
   const listeners = new Set<{ notify: () => void }>();

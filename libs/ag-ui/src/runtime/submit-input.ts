@@ -1,5 +1,5 @@
 import type { PlainValue } from '@threadplane/core';
-import { ownState } from './state';
+import { ownState } from './state.js';
 
 export type ApplicationState = Readonly<Record<string, PlainValue>>;
 export type SubmitInput =

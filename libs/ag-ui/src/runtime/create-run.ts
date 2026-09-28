@@ -8,11 +8,11 @@ import type { CompleteOutcome } from '@threadplane/core';
 import {
   isLegacyInterruptTerminal,
   type InterruptMode,
-} from './interrupt-mode';
+} from './interrupt-mode.js';
 import {
   createHttpRequest,
   type HttpRequestHandle,
-} from './create-http-request';
+} from './create-http-request.js';
 
 type RunOutcome =
   | { outcome: Exclude<CompleteOutcome, 'error'> }

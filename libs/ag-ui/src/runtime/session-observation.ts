@@ -10,21 +10,21 @@ import type {
   DeepReadonly,
   PlainValue,
 } from '@threadplane/core';
-import { ownTranscript, type Transcript } from './transcript';
-import { applySubagent, type Subagents } from './subagents';
-import { ownState, applyState } from './state';
-import { reconcileTranscript } from './reconcile-transcript';
-import { applyTextMessage } from './text-messages';
-import { applyToolMessage } from './tool-messages';
-import { applyActivityMessage } from './activity-messages';
-import { applyEncryptedValue } from './encrypted-messages';
-import { copyData } from '../lib/internal/copy-data';
-import { assertAttribution } from './session-attribution';
-import type { Decision } from './decision';
+import { ownTranscript, type Transcript } from './transcript.js';
+import { applySubagent, type Subagents } from './subagents.js';
+import { ownState, applyState } from './state.js';
+import { reconcileTranscript } from './reconcile-transcript.js';
+import { applyTextMessage } from './text-messages.js';
+import { applyToolMessage } from './tool-messages.js';
+import { applyActivityMessage } from './activity-messages.js';
+import { applyEncryptedValue } from './encrypted-messages.js';
+import { copyData } from '../lib/internal/copy-data.js';
+import { assertAttribution } from './session-attribution.js';
+import type { Decision } from './decision.js';
 import {
   isLegacyInterruptTerminal,
   type InterruptMode,
-} from './interrupt-mode';
+} from './interrupt-mode.js';
 
 export type OwnedLegacyInterrupt = DeepReadonly<
   Pick<CustomEvent, 'type' | 'name' | 'value' | 'timestamp' | 'metadata'>

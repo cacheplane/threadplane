@@ -1,5 +1,9 @@
 # Native AG-UI owner review
 
+This command retains its original private-source composition. The separate
+[candidate package proof](../ag-ui-candidate/README.md) reuses this application
+and oracle with real installed backend and framework tarballs.
+
 This fixture mounts Angular and React in the same document over one actual private
 AG-UI session. A second React view observes an independent session. It uses locally
 compiled framework bindings and bundles private AG-UI source; it is not an

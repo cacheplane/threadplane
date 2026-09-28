@@ -6,16 +6,16 @@ import type {
   ResumeEntry,
 } from '@ag-ui/client';
 import type { CompleteOutcome } from '@threadplane/core';
-import { ownTranscript, requestMessages, type Transcript } from './transcript';
-import { requestState } from './state';
+import { ownTranscript, requestMessages, type Transcript } from './transcript.js';
+import { requestState } from './state.js';
 import {
   applyObservation,
   initialObservation,
   type SessionSnapshot,
-} from './session-observation';
-import { createRun, type RunHandle } from './create-run';
-import { createPublication } from './session-publication';
-import type { InterruptMode } from './interrupt-mode';
+} from './session-observation.js';
+import { createRun, type RunHandle } from './create-run.js';
+import { createPublication } from './session-publication.js';
+import type { InterruptMode } from './interrupt-mode.js';
 import {
   assertResumeEligible,
   captureResponses,
@@ -24,13 +24,13 @@ import {
   settleDecision,
   type NativeResponse,
   type PauseId,
-} from './decision';
-import { copyData } from '../lib/internal/copy-data';
+} from './decision.js';
+import { copyData } from '../lib/internal/copy-data.js';
 import {
   captureSubmit,
   mergeSubmitState,
   type SubmitInput,
-} from './submit-input';
+} from './submit-input.js';
 
 export interface SessionOptions
   extends Pick<HttpAgentConfig, 'url' | 'headers' | 'fetch'> {

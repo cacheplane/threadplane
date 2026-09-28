@@ -1,5 +1,10 @@
 # Private native AG-UI session commands
 
+The test-only [candidate package proof](../../../../fixtures/react-parity/ag-ui-candidate/README.md)
+emits this actual owner and text selector with complete declarations, then runs
+the existing browser and local-provider oracles against installed tarballs. It
+does not change this private API's status or the current published Angular root.
+
 The private `createSession` owner accepts a literal string or
 `{ message, state? }`. `message` is required and is not trimmed. `state` is an
 optional shallow patch whose values use core `PlainValue`:

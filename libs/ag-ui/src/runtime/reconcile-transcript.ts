@@ -1,5 +1,5 @@
 import type { Message } from '@ag-ui/client';
-import { ownTranscript, type Transcript } from './transcript';
+import { ownTranscript, type Transcript } from './transcript.js';
 
 /** Mirrors locked @ag-ui/client 0.0.59 edit-based ordering and role policy.
  * Deliberate differences: reject duplicate IDs, always replace same-ID records,

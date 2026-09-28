@@ -3,7 +3,7 @@
 // move, copy, test. Pure ESM, zero deps. Replaces a CommonJS-only third-party
 // dependency that broke ESM-strict consumers (Vitest, Vite test envs).
 
-import { copyData } from './copy-data';
+import { copyData } from './copy-data.js';
 
 export interface JsonPatchOp {
   readonly op: 'add' | 'replace' | 'remove' | 'move' | 'copy' | 'test';

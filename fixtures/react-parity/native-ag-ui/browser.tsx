@@ -16,13 +16,7 @@ import {
   TextTranscriptComponent,
   ToolObservationComponent,
 } from '@threadplane/angular/chat';
-// eslint-disable-next-line @nx/enforce-module-boundaries -- Private source is composed only into this local review bundle, never a package export.
-import {
-  createSession,
-  type Session,
-} from '../../../libs/ag-ui/src/runtime/create-session';
-// eslint-disable-next-line @nx/enforce-module-boundaries -- Private display selection stays in this review composition, never a package export.
-import { projectTextTranscript } from '../../../libs/ag-ui/src/runtime/text-transcript';
+import { createSession, projectTextTranscript, type Session } from './backend-binding.js';
 
 const sequence = [
   'First',

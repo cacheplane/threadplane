@@ -5,9 +5,9 @@ import {
   type ActivitySnapshotEvent,
   type ActivityDeltaEvent,
 } from '@ag-ui/client';
-import { copyData } from '../lib/internal/copy-data';
-import { applyPatch, type JsonPatchOp } from '../lib/internal/apply-patch';
-import type { Transcript } from './transcript';
+import { copyData } from '../lib/internal/copy-data.js';
+import { applyPatch, type JsonPatchOp } from '../lib/internal/apply-patch.js';
+import type { Transcript } from './transcript.js';
 
 export type ActivityMessageEvent = ActivitySnapshotEvent | ActivityDeltaEvent;
 

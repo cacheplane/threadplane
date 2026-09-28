@@ -1,5 +1,5 @@
 import type { ReasoningEncryptedValueEvent } from '@ag-ui/client';
-import type { Transcript } from './transcript';
+import type { Transcript } from './transcript.js';
 
 type Assistant = Extract<Transcript[number], { role: 'assistant' }>;
 type Calls = NonNullable<Assistant['toolCalls']>;

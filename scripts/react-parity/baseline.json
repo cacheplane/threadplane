@@ -1,35 +1,27 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "48b6eb8d70a2f0c7c46bcef068df64c0b4abf438",
+  "baselineHead": "38e78d4c9946694a092a453d54d265c7185530f0",
   "sourceState": {
     "modified": [
       ".github/workflows/ci.yml",
-      "libs/langgraph/src/lib/client/create-langgraph-client.ts",
-      "libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
-      "libs/langgraph/src/runtime/README.md",
-      "libs/langgraph/src/runtime/checkpoint-authority.ts",
-      "libs/langgraph/src/runtime/checkpoint-history.ts",
-      "libs/langgraph/src/runtime/checkpoint-state.ts",
-      "libs/langgraph/src/runtime/checkpoint-tool-evidence.ts",
-      "libs/langgraph/src/runtime/citation-projection.ts",
-      "libs/langgraph/src/runtime/create-session.ts",
-      "libs/langgraph/src/runtime/function-tools.ts",
-      "libs/langgraph/src/runtime/history-projection.ts",
-      "libs/langgraph/src/runtime/interrupt-projection.ts",
-      "libs/langgraph/src/runtime/message-reducer.ts",
-      "libs/langgraph/src/runtime/ownership.ts",
-      "libs/langgraph/src/runtime/publication.ts",
-      "libs/langgraph/src/runtime/reasoning-projection.ts",
-      "libs/langgraph/src/runtime/run-options.ts",
-      "libs/langgraph/src/runtime/run-recovery.ts",
-      "libs/langgraph/src/runtime/stream-projection.ts",
-      "libs/langgraph/src/runtime/subgraph-projection.ts",
-      "libs/langgraph/src/runtime/submit-input.ts",
-      "libs/langgraph/src/runtime/tool-invocations.ts",
-      "libs/langgraph/src/runtime/tool-persistence.ts",
-      "libs/langgraph/src/runtime/tool-provenance.ts",
-      "libs/langgraph/src/runtime/transport.types.ts",
-      "libs/langgraph/src/runtime/values-projection.ts"
+      "libs/ag-ui/src/lib/internal/apply-patch.ts",
+      "libs/ag-ui/src/runtime/README.md",
+      "libs/ag-ui/src/runtime/activity-messages.ts",
+      "libs/ag-ui/src/runtime/create-run.ts",
+      "libs/ag-ui/src/runtime/create-session.ts",
+      "libs/ag-ui/src/runtime/decision.ts",
+      "libs/ag-ui/src/runtime/encrypted-messages.ts",
+      "libs/ag-ui/src/runtime/reconcile-transcript.ts",
+      "libs/ag-ui/src/runtime/session-attribution.ts",
+      "libs/ag-ui/src/runtime/session-observation.ts",
+      "libs/ag-ui/src/runtime/session-publication.ts",
+      "libs/ag-ui/src/runtime/state.ts",
+      "libs/ag-ui/src/runtime/subagents.ts",
+      "libs/ag-ui/src/runtime/submit-input.ts",
+      "libs/ag-ui/src/runtime/text-messages.ts",
+      "libs/ag-ui/src/runtime/text-transcript.ts",
+      "libs/ag-ui/src/runtime/tool-messages.ts",
+      "libs/ag-ui/src/runtime/transcript.ts"
     ],
     "untracked": []
   },
@@ -242,7 +234,7 @@
       "id": "asset:libs/ag-ui/src/runtime/README.md",
       "kind": "asset",
       "path": "libs/ag-ui/src/runtime/README.md",
-      "sha256": "bd9702a48c2fd3d5e54cba8a00fa1601aad34f026e4271bf515956e2a8c7be59"
+      "sha256": "67e443b1252d7236ad7b6fc69cd6027776d770ac7eb2abfed7e8155c28dc1d5c"
     },
     {
       "id": "asset:libs/ag-ui/tsconfig.json",
@@ -2032,7 +2024,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "0171bee631605ab56fa6d6a5223c018ee03cbdc55414a95db06fde4fd98be2ce"
+      "sha256": "3b52ad89b8a57db82e23d47f1f7b2d43a12d2adf545c1457cfac2ab9766d6ef8"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -10828,7 +10820,7 @@
       "id": "source:libs/ag-ui/src/lib/internal/apply-patch.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/internal/apply-patch.ts",
-      "sha256": "00f2a5789735548f4651fc1ee1fddd24ffbdc4e63266faa89047b1585d468ae6"
+      "sha256": "56cb31916c7967ca0e8c7de361e5df5e44a3f1dfde06c40a2bc8e57412a380de"
     },
     {
       "id": "source:libs/ag-ui/src/lib/internal/copy-data.ts",
@@ -10912,7 +10904,7 @@
       "id": "source:libs/ag-ui/src/runtime/activity-messages.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/activity-messages.ts",
-      "sha256": "eca08290e21f826d68d613a1d09f51d5be24be1442e2b69516138cd494a9a126"
+      "sha256": "0bf7b2198b9d7cf7f36fcdf9efeaa9cbcc68fe87916dd40eb6a18936e71a6eef"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/create-http-request.ts",
@@ -10924,25 +10916,25 @@
       "id": "source:libs/ag-ui/src/runtime/create-run.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/create-run.ts",
-      "sha256": "6807b4b77b34b135befc72c4b80d3df9a0f36d1d1cde01e4498d05911f6b1a05"
+      "sha256": "64dc7f42eef09cfa992fe4d3d5e100cc1e5647b3a39ef28b38da7c2cd2cad612"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/create-session.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/create-session.ts",
-      "sha256": "31f9f5ef06e8a7c1521fc151db1f628bf4cb7561b707f932435467314b709f89"
+      "sha256": "9b22c223eb930ed0bddafbebcbc7073f8023b44a9b11c3e97bf038c96dadd320"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/decision.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/decision.ts",
-      "sha256": "0f8bee2692214552d2ef10d68b56f598779fcd04fa49aba7664f42d580d5cb2d"
+      "sha256": "972bb82d1d5153bf1a5db37dde45a35073949be290a452e05b3a9c2ad891efbf"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/encrypted-messages.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/encrypted-messages.ts",
-      "sha256": "5e0dcee1dcdfa3f360ad1c1e7bb3dff61dc1c6db73e84ff19e3faafd6491862d"
+      "sha256": "2bff2f5a2495ca129e2f1f9e88aebeb69608d9ea16047876f51574afb9f8d9bc"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/interrupt-mode.ts",
@@ -10954,43 +10946,43 @@
       "id": "source:libs/ag-ui/src/runtime/reconcile-transcript.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/reconcile-transcript.ts",
-      "sha256": "c2efbe4561a3d348422b144f7ab09656aa85b85771870fff4d4963880b9c6b74"
+      "sha256": "f4e5656e440e791d116bd977f40f5e0a21e92945504c38b8373fd79f2cc9a688"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/session-attribution.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/session-attribution.ts",
-      "sha256": "19585438111ce137c20c37ec743a8c00f5643da9003a5d3a2b31165eda002e26"
+      "sha256": "57fd813710829cf653a36fe81a9a8e8899cbdc5064162b7aa0a4d910c85f03bf"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/session-observation.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/session-observation.ts",
-      "sha256": "56f96a2d084470c25f62caef84aac10dda8a9ee4c91e28f9803a1294558872cb"
+      "sha256": "7f77502056e8e01b3c5707d5e982aadc8f6d2ac960bb0e041bcf1da8872b3754"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/session-publication.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/session-publication.ts",
-      "sha256": "a09ea3714ceb59a3a7ac2631584df6b884340a226fdef47c14b815c7875ecca7"
+      "sha256": "251075b665d33dfcca8a8ce407205410804c895ddf70d6f758333131e963ce2b"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/state.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/state.ts",
-      "sha256": "fca5833b9a0956c6f11cb8ea7bda6ab82d83bf4acb98d972e1a2082b6f616423"
+      "sha256": "c65d864467bbbc15069232094adef1814bde58f6a2737114cb23e7ec64b663af"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/subagents.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/subagents.ts",
-      "sha256": "488d605df720eb89ef0ebfffbd1600e957bb7a2a6d30f0fb7509d6512b894fc9"
+      "sha256": "6f3c5582b81cd21fc79b874a0420c5771e2ad3f50763dc413bb0b0494da1ea64"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/submit-input.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/submit-input.ts",
-      "sha256": "d246a932974e8ec86951d13d3544caccbbd56b3d019c01baf03be8655ba392b4"
+      "sha256": "d8239602e0eacb8bb9dd11fbe8259f886e8501d90d7093d439cfc811d84ac9c8"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/testing/binding-fixture.ts",
@@ -11002,25 +10994,25 @@
       "id": "source:libs/ag-ui/src/runtime/text-messages.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/text-messages.ts",
-      "sha256": "6751d4b7f53350ccedafa2e1cae808d80c88acc894e8993441e30d60022e625e"
+      "sha256": "a7549e7905f1786b11818ee9e8ec6926e456ce499cff1ef3dcce89eab7a2482b"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/text-transcript.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/text-transcript.ts",
-      "sha256": "0f73bdee71181f14563845acd51523d339d3893ba1a0e23c4568d1ffec50a193"
+      "sha256": "a81d2145cd7a71bd65009579f1cc31daebad0b20ecfd165bf818a01ca3b985e5"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/tool-messages.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/tool-messages.ts",
-      "sha256": "dc3d89fefd80fcbb8197ca329b946ffce2c309252fe3a58d8abf7e1ae9997c3c"
+      "sha256": "cea606d0b52c63e792b35cc737df80dec19858b31bfbecde37e81779c95e12a8"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/transcript.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/transcript.ts",
-      "sha256": "6b7e87e442efbb45d9913c3c6c03cf3bb7a32bcb140ecfa6eb2665962a350eb4"
+      "sha256": "8f3fda16565cbec6d08453fb8ba07f9759462ab400b432aeec3bbd2dcbf4b285"
     },
     {
       "id": "source:libs/ag-ui/src/test-setup.ts",

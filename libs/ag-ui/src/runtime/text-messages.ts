@@ -8,7 +8,7 @@ import {
   type ReasoningMessageContentEvent,
   type ReasoningMessageEndEvent,
 } from '@ag-ui/client';
-import { ownTranscript, type Transcript } from './transcript';
+import { ownTranscript, type Transcript } from './transcript.js';
 
 export type TextMessageEvent =
   | TextMessageStartEvent
