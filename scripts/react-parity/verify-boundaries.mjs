@@ -97,7 +97,7 @@ export function verifyBoundaries({ root = process.cwd(), mode = 'source', projec
     }
     const allFiles = filesIn(mode === 'source' ? join(directory, 'src') : directory);
     // Existing Angular secondary entry points live alongside src.
-    if (mode === 'source' && (project === 'angular' || angularTransitions.includes(project))) allFiles.push(...filesIn(directory).filter((path) => !path.includes('/src/')));
+    if (mode === 'source' && (project === 'angular' || angularTransitions.includes(project))) allFiles.push(...filesIn(directory).filter((path) => !allFiles.includes(path)));
     const manifest = manifestFor(project);
     const roots = mode === 'source' ? [join(directory, sourceEntry(project, angularTransitions))] : emittedEntries(manifest).filter((value) => sourceFile.test(value)).map((value) => join(directory, value));
     const browserEntries = mode === 'built' ? emittedEntries(manifest, './browser').map((value) => join(directory, value)) : [];
@@ -146,6 +146,12 @@ export function verifyBoundaries({ root = process.cwd(), mode = 'source', projec
         if (project === 'core' && (!target || target.includes('/node_modules/')) && !specifier.startsWith('.')) errors.add(`${project}: unreviewed dependency ${trail}`);
         if (rootRuntime && (optional.test(specifier) || ['zod', 'katex'].includes(packageOf(specifier)) || (target && optional.test(relative(directory, target))))) errors.add(`${project}: optional/testing dependency reachable from root: ${trail}`);
         if (project === 'react' && rootRuntime && ((specifier.startsWith('@threadplane/react/') && reactFeature.test(specifier.slice('@threadplane/react/'.length))) || (target && projectOf(target) === 'react' && reactFeature.test(relative(join(directory, 'src'), target))))) errors.add(`${project}: feature dependency reachable from root: ${trail}`);
+        if (['react', 'angular'].includes(project) && rootRuntime && (
+          ['@cacheplane/partial-markdown', '@cacheplane/partial-json', 'marked', 'remark-gfm', 'katex', 'shiki'].includes(packageOf(specifier)) ||
+          /^@threadplane\/(?:content\/markdown|angular\/(?:markdown|chat))(?:\/|$)/.test(specifier) ||
+          targetLocations.some(location => /(?:^|\/)(?:markdown\/|threadplane-angular-(?:markdown|chat)\.(?:mjs|d\.ts)$)/.test(location.replaceAll('\\', '/'))) ||
+          (project === 'angular' && targetLocations.some(location => /^(?:markdown|chat)\//.test(location.replaceAll('\\', '/'))))
+        )) errors.add(`${project}: feature dependency reachable from root: ${trail}`);
         if (project === 'content' && rootRuntime && (
           ['@cacheplane/partial-markdown', '@cacheplane/partial-json', 'marked', 'remark-gfm', 'katex', 'shiki'].includes(packageOf(specifier)) ||
           /^@threadplane\/content\/markdown(?:\/|$)/.test(specifier) ||

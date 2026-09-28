@@ -5,6 +5,44 @@ import { dirname, join } from 'node:path';
 import test from 'node:test';
 import * as packageVerifier from './verify-packages.mjs';
 const { validatePackage } = packageVerifier;
+const reactMarkdown = { types: './src/markdown/index.d.ts', import: './src/markdown/index.js', default: './src/markdown/index.js' };
+
+test('React Markdown exposes exactly its implemented component', () => {
+  assert.throws(() => packageVerifier.assertSupportedExports('react/markdown', {}), /Markdown/);
+  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/markdown', { Markdown() {} }));
+  assert.throws(() => packageVerifier.assertSupportedExports('react/markdown', { Markdown() {}, createMarkdown() {} }), /unexpected/);
+});
+test('React Markdown cannot disappear from package validation or consumer enumeration', (t) => {
+  const exports = { '.': { types: './src/index.d.ts', import: './src/index.js', default: './src/index.js' } };
+  assert.ok(validatePackage(fixture(t, { manifest: { exports }, omitMarkdown: true })).some(error => error.includes('markdown')));
+  assert.throws(() => packageVerifier.consumerSpecifiers({ name: '@threadplane/react', exports }), /markdown/);
+});
+for (const [name, files, diagnostic] of [
+  ['lost client directive', { 'src/markdown/index.js': 'export function Markdown() {}' }, /markdown.*use client/],
+  ['missing declarations', { 'src/markdown/index.d.ts': null }, /markdown.*missing export target/],
+  ['missing runtime', { 'src/markdown/index.js': null }, /markdown.*missing export target/],
+]) test(`React Markdown rejects ${name}`, (t) => {
+  assert.ok(validatePackage(fixture(t, { files })).some(error => diagnostic.test(error)));
+});
+for (const path of [
+  'node_modules/@threadplane/react/src/markdown/markdown.js',
+  'node_modules/@threadplane/angular/fesm2022/threadplane-angular-markdown.mjs',
+  'node_modules/@threadplane/content/src/markdown/index.js',
+]) test(`headless roots reject Markdown input ${path} on both separator styles`, () => {
+  for (const input of [path, path.replaceAll('/', '\\')]) {
+    assert.throws(() => packageVerifier.assertHeadlessInputs({ [input]: {} }), /markdown/i);
+  }
+});
+for (const field of ['dependencies', 'peerDependencies', 'optionalDependencies']) {
+  test(`framework ${field} closure requires compatible local content`, () => {
+    const manifests = { react: { [field]: { '@threadplane/content': '0.0.0' } }, angular: { [field]: { '@threadplane/content': '0.0.0' } }, content: { version: '0.0.0' } };
+    assert.deepEqual(packageVerifier.localDependencyProjects(['react', 'angular'], project => manifests[project]), ['react', 'content', 'angular']);
+    manifests.content.version = '1.0.0';
+    assert.throws(() => packageVerifier.localDependencyProjects(['react'], project => manifests[project]), /does not satisfy/);
+    delete manifests.content;
+    assert.throws(() => packageVerifier.localDependencyProjects(['angular'], project => manifests[project]), /Missing local artifact manifest for content/);
+  });
+}
 
 test('installed native contracts reject the former empty scaffold exports', () => {
   assert.equal(typeof packageVerifier.assertSupportedExports, 'function');
@@ -16,8 +54,10 @@ test('installed native contracts reject the former empty scaffold exports', () =
 function fixture(t, change = {}) {
   const directory = mkdtempSync(join(tmpdir(), 'threadplane-package-'));
   t.after(() => rmSync(directory, { recursive: true, force: true }));
-  const manifest = { name: '@threadplane/react', private: true, type: 'module', license: 'MIT', exports: { '.': { types: './src/index.d.ts', import: './src/index.js', default: './src/index.js' } }, ...change.manifest };
-  const files = { 'package.json': JSON.stringify(manifest), 'README.md': 'Private scaffolding', 'LICENSE.md': 'MIT', 'src/index.js': "'use client';\nexport {};", 'src/index.d.ts': 'export {};', ...change.files };
+  const manifest = { name: '@threadplane/react', private: true, type: 'module', license: 'MIT', exports: { '.': { types: './src/index.d.ts', import: './src/index.js', default: './src/index.js' }, './markdown': reactMarkdown }, ...change.manifest };
+  // Keep unrelated export mutations valid now that Markdown is mandatory.
+  if (manifest.name === '@threadplane/react' && !change.omitMarkdown) manifest.exports = { './markdown': reactMarkdown, ...manifest.exports };
+  const files = { 'package.json': JSON.stringify(manifest), 'README.md': 'Private scaffolding', 'LICENSE.md': 'MIT', 'src/index.js': "'use client';\nexport {};", 'src/index.d.ts': 'export {};', 'src/markdown/index.js': "'use client';\nexport function Markdown() {}", 'src/markdown/index.d.ts': 'export declare function Markdown(): void;', ...change.files };
   for (const [path, text] of Object.entries(files)) if (text !== null) { mkdirSync(dirname(join(directory, path)), { recursive: true }); writeFileSync(join(directory, path), text); }
   return directory;
 }

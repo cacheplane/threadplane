@@ -107,3 +107,41 @@ controls, citations, reasoning, full chat parity, SSR or hydration. The private 
 review uses O(N) pure root-text selection with optional previous-output row reuse
 bounded to current rows. Framework memoization follows immutable transcript
 references and is disposable; it is not another owner or execution controller.
+
+`@threadplane/angular/markdown` is a separate APF entry exporting standalone,
+OnPush `MarkdownComponent`, with a required whole `MarkdownSnapshot` input:
+
+```ts
+import { Component, inject, InjectionToken } from '@angular/core';
+import { observeAgent } from '@threadplane/angular';
+import { MarkdownComponent } from '@threadplane/angular/markdown';
+import type { Markdown } from '@threadplane/content/markdown';
+
+export const ANSWER_MARKDOWN = new InjectionToken<Markdown>('Answer Markdown');
+
+@Component({
+  selector: 'app-answer',
+  imports: [MarkdownComponent],
+  template: '<threadplane-markdown [snapshot]="snapshot()" />',
+})
+export class Answer {
+  readonly snapshot = observeAgent(inject(ANSWER_MARKDOWN));
+}
+```
+
+Provide the app-owned content object for that token. Application composition
+creates, updates and eventually disposes it. The native view only presents the
+snapshot; it does not parse, subscribe or own that lifecycle. `observeAgent`
+releases its subscription when the host is destroyed, independently of the
+owner's lifetime. A document generation change resets local image state;
+replacing an image destination allows recovery after a failed load.
+
+The renderer uses semantic headings, lists, tables and disabled task checkboxes,
+resolves references from the snapshot and presents HTML literally as text. Math
+remains delimited text; citations are numbered or unresolved text markers.
+Missing, blocked and failed images show an accessible alt-text fallback. The
+fixed [`content/markdown` destination policy](../content/README.md) excludes data
+images and preserves accepted URLs without bypassing Angular's sanitizer.
+The root remains headless. Rich math, syntax highlighting, citation overlays,
+custom registries, replacement of the public legacy renderer, SSR and hydration
+remain separate work.

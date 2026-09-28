@@ -26,6 +26,7 @@ function metadataExport(subpath, entry) {
 }
 
 export function consumerSpecifiers(manifest) {
+  if (manifest.name === '@threadplane/react' && !manifest.exports?.['./markdown']) throw new Error('React ./markdown export required');
   return Object.entries(manifest.exports).filter(([subpath, entry]) => !metadataExport(subpath, entry))
     .map(([subpath]) => manifest.name + (subpath === '.' ? '' : subpath.slice(1)));
 }
@@ -41,6 +42,7 @@ export function validatePackage(directory, { angularTransitions = angularTransit
   if (manifest.license !== 'MIT') errors.push('Expected MIT package license.');
   for (const file of ['LICENSE.md', 'README.md']) if (!existsSync(join(directory, file))) errors.push(`Missing ${file}`);
   if (!emittedEntries(manifest).length) errors.push('Missing root export.');
+  if (project === 'react' && !manifest.exports?.['./markdown']) errors.push('Missing ./markdown export.');
   const exports = manifest.exports ?? { '.': { types: manifest.types ?? manifest.typings, default: manifest.module ?? manifest.main } };
   for (const [subpath, entry] of Object.entries(exports)) {
     const conditions = typeof entry === 'string' ? { default: entry } : entry;
@@ -74,6 +76,7 @@ export function localDependencyProjects(projects, readManifest) {
     if (!scanProjects.includes(project)) throw new Error(`No local artifact policy for ${project}`);
     selected.add(project);
     const manifest = readManifest(project);
+    if (!manifest) throw new Error(`Missing local artifact manifest for ${project}`);
     manifests.set(project, manifest);
     for (const field of ['dependencies', 'peerDependencies', 'optionalDependencies']) {
       for (const [name, range] of Object.entries(manifest[field] ?? {})) {
@@ -169,6 +172,8 @@ export function assertHeadlessInputs(inputs) {
   assertParserFreeInputs(inputs);
   const chat = Object.keys(inputs).filter((path) => /@threadplane\/(?:react\/src\/chat\/|angular\/fesm2022\/threadplane-angular-chat\.mjs)/.test(path.replaceAll('\\', '/')));
   if (chat.length) throw new Error(`Headless framework root includes chat components: ${chat.join(', ')}`);
+  const markdown = Object.keys(inputs).filter((path) => /@threadplane\/(?:(?:react|content)\/src\/markdown\/|angular\/fesm2022\/threadplane-angular-markdown\.mjs)/.test(path.replaceAll('\\', '/')));
+  if (markdown.length) throw new Error(`Headless framework root includes Markdown feature: ${markdown.join(', ')}`);
 }
 
 function verifyPlainExports(root, consumer, projects) {
@@ -192,15 +197,16 @@ export function assertSupportedExports(project, entry) {
       ],
       react: ['useAgent'],
       'react/chat': ['TextTranscript', 'ToolObservation'],
+      'react/markdown': ['Markdown'],
     }[project] ?? [];
   for (const name of expected)
     if (typeof entry[name] !== 'function')
       throw new Error(`${project} missing supported contract ${name}`);
   if (
-    project === 'react/chat' &&
+    ['react/chat', 'react/markdown'].includes(project) &&
     Object.keys(entry).some((name) => !expected.includes(name))
   )
-    throw new Error('react/chat has unexpected exports');
+    throw new Error(`${project} has unexpected exports`);
 }
 
 export async function verifyPackedConsumers(root = process.cwd()) {

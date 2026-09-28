@@ -18,6 +18,7 @@ import {
   assertInstalledInputs,
   agUiVendorOverrides,
   consumerVendorGraph,
+  installViolations,
 } from './ag-ui-candidate-package.mjs';
 import {
   lockedVendorGraph,
@@ -28,6 +29,58 @@ import {
 import { reviewCandidate } from './verify-ag-ui-candidate.mjs';
 
 const entry = 'fixtures/react-parity/ag-ui-candidate/entry';
+test('mixed AG-UI graph includes local content parser and rejects a missing or changed edge', () => {
+  const local = {
+    '@threadplane/content': {
+      version: '0.0.0',
+      dependencies: { '@cacheplane/partial-markdown': '^0.5.8' },
+    },
+  };
+  const lock = {
+    packages: {
+      'node_modules/@ag-ui/client': { version: '0.0.59' },
+      'node_modules/@cacheplane/partial-markdown': { version: '0.5.8' },
+    },
+  };
+  const expected = consumerVendorGraph(lock, {}, {}, local);
+  assert.ok(
+    expected.some(
+      ({ name, version }) =>
+        name === '@cacheplane/partial-markdown' && version === '0.5.8'
+    )
+  );
+  lock.packages['node_modules/@cacheplane/partial-markdown'].version = '0.5.9';
+  assert.throws(
+    () => assert.deepEqual(consumerVendorGraph(lock, {}, {}, local), expected),
+    /Expected values/
+  );
+  delete lock.packages['node_modules/@cacheplane/partial-markdown'];
+  assert.throws(
+    () => consumerVendorGraph(lock, {}, {}, local),
+    /Missing locked dependency.*partial-markdown/
+  );
+  assert.deepEqual(consumerVendorGraph(lock, {}), [
+    { name: '@ag-ui/client', version: '0.0.59', dependencies: {} },
+  ]);
+});
+test('AG-UI requires every selected local package and rejects a parser in the backend-only consumer', () => {
+  assert.ok(
+    installViolations({ packages: {} }, ['@threadplane/content'], true).some(
+      (error) => /Missing.*content/.test(error)
+    )
+  );
+  assert.ok(
+    installViolations(
+      {
+        packages: {
+          'node_modules/@cacheplane/partial-markdown': { version: '0.5.8' },
+        },
+      },
+      [],
+      false
+    ).some((error) => /Backend.*partial-markdown/.test(error))
+  );
+});
 test('mixed consumers pin and compare framework and type descendants by owner, not hoist path', () => {
   const manifest = {
     dependencies: { 'react-dom': '19.0.0' },

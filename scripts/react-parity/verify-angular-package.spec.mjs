@@ -3,6 +3,13 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import * as angularVerifier from './verify-angular-package.mjs';
 
+test('Angular Markdown runtime exports exactly MarkdownComponent', () => {
+  assert.equal(typeof angularVerifier.assertAngularMarkdownExports, 'function');
+  assert.throws(() => angularVerifier.assertAngularMarkdownExports([]), /MarkdownComponent/);
+  assert.doesNotThrow(() => angularVerifier.assertAngularMarkdownExports(['MarkdownComponent']));
+  assert.throws(() => angularVerifier.assertAngularMarkdownExports(['MarkdownComponent', 'createMarkdown']), /unexpected/);
+});
+
 const versions = { '@angular/core': '21.1.6', '@angular/common': '21.1.6', '@angular/compiler': '21.1.6', '@angular/platform-browser': '21.1.6', '@angular/compiler-cli': '21.1.6', '@angular/cli': '21.1.5', '@angular/build': '21.1.5', typescript: '5.9.3', rxjs: '7.8.2', tslib: '2.8.1' };
 const lock = () => ({ packages: Object.fromEntries(Object.entries(versions).map(([name, version]) => [`node_modules/${name}`, { version }])) });
 test('Angular chat exports exactly the two supported presentation components', () => {

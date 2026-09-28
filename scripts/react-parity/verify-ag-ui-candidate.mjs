@@ -28,9 +28,17 @@ import {
   projector,
   rootRangeOverrides,
 } from './ag-ui-candidate-package.mjs';
-import { fileHashes, sha256 } from './langgraph-candidate-package.mjs';
+import {
+  fileHashes,
+  sha256,
+  localArtifactRecords,
+  assertInstalledArtifacts,
+} from './langgraph-candidate-package.mjs';
 import { checkTypes } from './verify-langgraph-candidate.mjs';
-import { packLocalArtifacts } from './verify-packages.mjs';
+import {
+  packLocalArtifacts,
+  localDependencyProjects,
+} from './verify-packages.mjs';
 import { createReviewServer } from '../../fixtures/react-parity/native-ag-ui/server.mjs';
 import { verifyBrowser } from './native-ag-ui-browser.mjs';
 import { sequence } from './review-native-ag-ui.mjs';
@@ -40,18 +48,10 @@ const json = (path) => JSON.parse(readFileSync(path, 'utf8'));
 const writeJson = (path, value) =>
   writeFileSync(path, JSON.stringify(value, null, 2) + '\n');
 export const buildCommand =
-  'NX_DAEMON=false NX_TUI=false npx nx run-many -t build -p core,angular,react --skip-nx-cache --outputStyle=stream';
+  'NX_DAEMON=false NX_TUI=false npx nx run-many -t build -p core,content,angular,react --skip-nx-cache --outputStyle=stream';
 
 function artifacts(consumer, expected) {
-  const records = {};
-  for (const [name, files] of Object.entries(expected)) {
-    records[name] = fileHashes(join(consumer, 'node_modules', name));
-    assert.deepEqual(
-      records[name],
-      files,
-      `${name} installed bytes equal its unpacked tarball`
-    );
-  }
+  const records = assertInstalledArtifacts(consumer, expected);
   assert.deepEqual(
     candidateViolations(join(consumer, 'node_modules/@threadplane/ag-ui')),
     []
@@ -363,7 +363,10 @@ console.log(JSON.stringify(result));
 }
 export async function verifyAgUiCandidate({ root = defaultRoot, retain } = {}) {
   root = realpathSync(root);
-  for (const name of ['core', 'react', 'angular'])
+  for (const name of localDependencyProjects(
+    ['core', 'react', 'angular'],
+    (name) => json(join(root, 'libs', name, 'package.json'))
+  ))
     assert.ok(
       existsSync(join(root, 'dist/libs', name, 'package.json')),
       `Missing ${name}; run ${buildCommand}`
@@ -398,15 +401,12 @@ export async function verifyAgUiCandidate({ root = defaultRoot, retain } = {}) {
         'angular',
       ]);
     tarballs['@threadplane/ag-ui'] = 'file:' + packed.tarball;
-    const expected = {
-      '@threadplane/ag-ui': fileHashes(candidate),
-      ...Object.fromEntries(
-        ['core', 'react', 'angular'].map((name) => [
-          `@threadplane/${name}`,
-          fileHashes(join(temporary, `packed-${name}`, 'package')),
-        ])
-      ),
-    };
+    const expected = Object.fromEntries(
+      Object.entries(localArtifactRecords(tarballs)).map(([name, record]) => [
+        name,
+        record.files,
+      ])
+    );
     const lock = json(join(root, 'package-lock.json')),
       ranges = rootRangeOverrides(root);
     const node = join(temporary, 'node');

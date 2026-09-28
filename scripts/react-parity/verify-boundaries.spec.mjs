@@ -7,6 +7,67 @@ import { verifyBoundaries } from './verify-boundaries.mjs';
 
 const finalOptions = { angularTransitions: [], telemetryBrowserTransition: false };
 
+for (const project of ['react', 'angular']) {
+  for (const extension of ['ts', 'js', 'd.ts']) {
+    const mode = extension === 'ts' ? 'source' : 'built';
+    const prefix = `${mode === 'source' ? '' : 'dist/'}libs/${project}`;
+    const entry = project === 'angular' && mode === 'source' ? 'public-api' : 'index';
+    const feature = project === 'angular' ? '../markdown/src/index.js' : './markdown/index.js';
+    for (const dependency of [feature, '@threadplane/content/markdown', '@cacheplane/partial-markdown']) {
+      for (const indirect of [false, true]) {
+        test(`${project} ${extension} root rejects ${indirect ? 'indirect' : 'direct'} ${dependency}`, (t) => {
+          const content = `${mode === 'source' ? '' : 'dist/'}libs/content`;
+          const root = fixture(t, {
+            'tsconfig.base.json': JSON.stringify({ compilerOptions: { paths: { '@threadplane/content/markdown': ['./libs/content/src/markdown/index.ts'] } } }),
+            [`${prefix}/package.json`]: JSON.stringify({ exports: { '.': { [extension === 'd.ts' ? 'types' : 'import']: `./src/${entry}.${extension}` } } }),
+            [`${prefix}/src/${entry}.${extension}`]: `export * from '${indirect ? './bridge.js' : dependency}';`,
+            [`${prefix}/src/bridge.${extension}`]: `export * from '${dependency}';`,
+            [`${prefix}/${project === 'angular' ? 'markdown/src' : 'src/markdown'}/index.${extension}`]: 'export {};',
+            [`${content}/package.json`]: JSON.stringify({ exports: { './markdown': { [extension === 'd.ts' ? 'types' : 'import']: `./src/markdown/index.${extension}` } } }),
+            [`${content}/src/markdown/index.${extension}`]: 'export {};',
+          });
+          const errors = verifyBoundaries({ root, mode, projects: [project], ...finalOptions });
+          assert.ok(errors.some(error => /feature dependency reachable from root/.test(error)), dependency);
+          assert.ok(errors.every(error => !error.includes('unresolved dependency')), errors.join('\n'));
+        });
+      }
+    }
+    test(`${project} ${extension} root may retain own bindings and core`, (t) => {
+      const core = `${mode === 'source' ? '' : 'dist/'}libs/core`;
+      const root = fixture(t, {
+        'tsconfig.base.json': JSON.stringify({ compilerOptions: { paths: { '@threadplane/core': ['./libs/core/src/index.ts'] } } }),
+        [`${prefix}/package.json`]: JSON.stringify({ exports: { '.': { [extension === 'd.ts' ? 'types' : 'import']: `./src/${entry}.${extension}` } } }),
+        [`${prefix}/src/${entry}.${extension}`]: "export * from './binding.js';",
+        [`${prefix}/src/binding.${extension}`]: "export * from '@threadplane/core';",
+        [`${core}/package.json`]: JSON.stringify({ exports: { '.': { [extension === 'd.ts' ? 'types' : 'import']: `./src/index.${extension}` } } }),
+        [`${core}/src/index.${extension}`]: 'export {};',
+      });
+      assert.deepEqual(verifyBoundaries({ root, mode, projects: [project], ...finalOptions }), []);
+    });
+  }
+}
+
+test('Angular scans unreferenced secondary sources for backend SDK imports', (t) => {
+  const root = fixture(t, {
+    'libs/angular/src/public-api.ts': 'export {};',
+    'libs/angular/markdown/src/unused.ts': "import '@langchain/langgraph-sdk';",
+  });
+  assert.ok(verifyBoundaries({ root, projects: ['angular'], ...finalOptions }).some(error => error.includes('forbidden dependency') && error.includes('unused.ts')));
+});
+
+for (const extension of ['mjs', 'd.ts']) {
+  test(`Angular APF ${extension} root rejects an indirect Markdown entry`, (t) => {
+    const path = extension === 'mjs' ? 'fesm2022' : 'types';
+    const root = fixture(t, {
+      'dist/libs/angular/package.json': JSON.stringify({ exports: { '.': { [extension === 'mjs' ? 'default' : 'types']: `./${path}/threadplane-angular.${extension}` } } }),
+      [`dist/libs/angular/${path}/threadplane-angular.${extension}`]: `export * from './bridge.${extension}';`,
+      [`dist/libs/angular/${path}/bridge.${extension}`]: `export * from './threadplane-angular-markdown.${extension}';`,
+      [`dist/libs/angular/${path}/threadplane-angular-markdown.${extension}`]: 'export {};',
+    });
+    assert.ok(verifyBoundaries({ root, mode: 'built', projects: ['angular'], ...finalOptions }).some(error => error.includes('feature dependency reachable from root')));
+  });
+}
+
 for (const extension of ['ts', 'js', 'd.ts']) {
   const mode = extension === 'ts' ? 'source' : 'built';
   const prefix = mode === 'source' ? 'libs/content' : 'dist/libs/content';

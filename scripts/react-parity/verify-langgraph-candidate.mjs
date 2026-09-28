@@ -26,10 +26,13 @@ import {
   installCandidateConsumer,
   packCandidate,
   sha256,
+  localArtifactRecords,
+  assertInstalledArtifacts,
 } from './langgraph-candidate-package.mjs';
 import {
   assertHeadlessInputs,
   packLocalArtifacts,
+  localDependencyProjects,
   runConsumer,
 } from './verify-packages.mjs';
 import {
@@ -182,7 +185,7 @@ function backendGraph(consumer) {
   };
 }
 
-function installedMatches(consumer, candidate) {
+export function installedMatches(consumer, candidate, expected) {
   const directory = join(consumer, 'node_modules/@threadplane/langgraph');
   assert.deepEqual(candidateViolations(directory), []);
   assert.deepEqual(
@@ -190,6 +193,7 @@ function installedMatches(consumer, candidate) {
     fileHashes(candidate),
     'Installed candidate exactly matches emitted package, including all declarations'
   );
+  if (expected) assertInstalledArtifacts(consumer, expected);
 }
 
 async function frameworkConsumer(
@@ -212,11 +216,12 @@ async function frameworkConsumer(
       lock
     );
   } else manifest = lockedReactManifest(lock);
+  const records = localArtifactRecords(tarballs);
   const selected = Object.fromEntries(
-    ['core', kind, 'langgraph'].map((name) => [
-      `@threadplane/${name}`,
-      tarballs[`@threadplane/${name}`],
-    ])
+    localDependencyProjects(
+      ['core', kind, 'langgraph'],
+      (name) => records[`@threadplane/${name}`]?.manifest
+    ).map((name) => [`@threadplane/${name}`, tarballs[`@threadplane/${name}`]])
   );
   const installation = installCandidateConsumer(
     consumer,
@@ -225,7 +230,7 @@ async function frameworkConsumer(
     lock,
     kind
   );
-  installedMatches(consumer, candidate);
+  installedMatches(consumer, candidate, installation.artifacts);
   prepareInstalledTypes(root, consumer, kind);
   prepareRuntimeViews(root, consumer, kind);
   for (const name of [
@@ -329,7 +334,10 @@ export async function verifyLangGraphCandidate({
   retain,
 } = {}) {
   root = resolve(root);
-  for (const name of ['core', 'angular', 'react'])
+  for (const name of localDependencyProjects(
+    ['core', 'angular', 'react'],
+    (name) => readJson(join(root, 'libs', name, 'package.json'))
+  ))
     assert.ok(
       existsSync(join(root, 'dist/libs', name, 'package.json')),
       `Missing ${name}; run ${buildCommand}`
@@ -368,7 +376,7 @@ export async function verifyLangGraphCandidate({
       lock,
       'node'
     );
-    installedMatches(node, candidate);
+    installedMatches(node, candidate, nodeInstallation.artifacts);
     const nodeProof = verifyNode(node),
       types = directTypeProbes(root, node),
       graph = backendGraph(node);
