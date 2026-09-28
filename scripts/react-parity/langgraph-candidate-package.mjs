@@ -395,7 +395,9 @@ export function vendorOverrides(vendors) {
       ...Object.fromEntries(
         Object.entries(vendor.dependencies).map(
           ([dependency, dependencyVersion]) => [
-            dependency,
+            // npm 10 can reuse a same-name descendant across incompatible
+            // owner subtrees unless the override selector includes its version.
+            `${dependency}@${dependencyVersion}`,
             pin(dependency, dependencyVersion, [...ancestors, key]),
           ]
         )
@@ -406,7 +408,7 @@ export function vendorOverrides(vendors) {
     ['@langchain/langgraph-sdk', '@langchain/core'].map((name) => {
       const vendor = vendors.find((v) => v.name === name);
       assert.ok(vendor, `Missing root vendor ${name}`);
-      return [name, pin(name, vendor.version)];
+      return [`${name}@${vendor.version}`, pin(name, vendor.version)];
     })
   );
 }

@@ -211,7 +211,7 @@ test('composition requires the actual installed runtime and declarations and rej
     /framework|path/
   );
 });
-test('vendor pinning follows nested lock resolution and nests descendant overrides under their parent', () => {
+test('vendor pinning scopes every nested override to its locked version', () => {
   const lock = {
     packages: {
       'node_modules/@langchain/langgraph-sdk': {
@@ -239,15 +239,61 @@ test('vendor pinning follows nested lock resolution and nests descendant overrid
     'optional UI peer is not a mandatory backend dependency'
   );
   assert.deepEqual(vendorOverrides(graph), {
-    '@langchain/langgraph-sdk': {
+    '@langchain/langgraph-sdk@1.10.0': {
       '.': '1.10.0',
-      vendor: { '.': '2.0.1', leaf: '3.0.1' },
-      '@langchain/core': { '.': '1.2.9', vendor: '1.0.1' },
+      'vendor@2.0.1': { '.': '2.0.1', 'leaf@3.0.1': '3.0.1' },
+      '@langchain/core@1.2.9': { '.': '1.2.9', 'vendor@1.0.1': '1.0.1' },
     },
-    '@langchain/core': { '.': '1.2.9', vendor: '1.0.1' },
+    '@langchain/core@1.2.9': { '.': '1.2.9', 'vendor@1.0.1': '1.0.1' },
   });
   delete lock.packages['node_modules/leaf'];
   assert.throws(() => lockedVendorGraph(lock), /Missing locked dependency/);
+});
+test('conflicting queue descendants retain distinct version selectors and reject incompatible hoisting', () => {
+  const lock = {
+    packages: {
+      'node_modules/@langchain/langgraph-sdk': {
+        version: '1.10.0',
+        dependencies: { 'p-queue': '^9.0.0' },
+      },
+      'node_modules/@langchain/core': {
+        version: '1.2.9',
+        dependencies: { 'p-queue': '^6.6.2' },
+      },
+      'node_modules/p-queue': {
+        version: '6.6.2',
+        dependencies: { eventemitter3: '^4.0.4', 'p-timeout': '^3.2.0' },
+      },
+      'node_modules/eventemitter3': { version: '4.0.7' },
+      'node_modules/p-timeout': { version: '3.2.0' },
+      'node_modules/@langchain/langgraph-sdk/node_modules/p-queue': {
+        version: '9.1.0',
+        dependencies: { eventemitter3: '^5.0.1', 'p-timeout': '^7.0.0' },
+      },
+      'node_modules/@langchain/langgraph-sdk/node_modules/eventemitter3': {
+        version: '5.0.4',
+      },
+      'node_modules/@langchain/langgraph-sdk/node_modules/p-timeout': {
+        version: '7.0.1',
+      },
+    },
+  };
+  const overrides = vendorOverrides(lockedVendorGraph(lock));
+  assert.deepEqual(overrides['@langchain/core@1.2.9']['p-queue@6.6.2'], {
+    '.': '6.6.2',
+    'eventemitter3@4.0.7': '4.0.7',
+    'p-timeout@3.2.0': '3.2.0',
+  });
+  assert.deepEqual(
+    overrides['@langchain/langgraph-sdk@1.10.0']['p-queue@9.1.0'],
+    {
+      '.': '9.1.0',
+      'eventemitter3@5.0.4': '5.0.4',
+      'p-timeout@7.0.1': '7.0.1',
+    }
+  );
+  lock.packages['node_modules/eventemitter3'].version = '5.0.4';
+  assert.throws(() => lockedVendorGraph(lock), /must satisfy \^4\.0\.4/);
 });
 test('backend import graph permits its actual vendor closure while rejecting framework and source coupling', () => {
   const inputs = [
