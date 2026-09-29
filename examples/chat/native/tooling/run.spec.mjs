@@ -266,6 +266,23 @@ test('Nx target owns preparation without outer dependency builds or unsupported 
     skipInstall: true,
   });
   assert.equal(project.targets.test.executor, 'nx:run-commands');
+  assert.deepEqual(project.targets['provider-test'], {
+    executor: 'nx:run-commands',
+    cache: false,
+    dependsOn: [],
+    options: {
+      cwd: '{workspaceRoot}',
+      parallel: false,
+      commands: [
+        'node node_modules/typescript/bin/tsc -p examples/chat/native/tooling/tsconfig.approval-provider-host.json',
+        'node --import tsx --test examples/chat/native/tooling/approval-provider.spec.ts',
+        'node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.base.json examples/chat/native/tooling/approval-provider.ts',
+        'node node_modules/typescript/bin/tsc -p examples/chat/native/tooling/tsconfig.backup-provider-host.json',
+        'node --import tsx --test examples/chat/native/tooling/backup-provider.spec.ts',
+        'node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.base.json examples/chat/native/tooling/backup-provider.ts',
+      ],
+    },
+  });
   assert.deepEqual(project.targets['summary-provider-test'], {
     executor: 'nx:run-commands',
     cache: false,

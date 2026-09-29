@@ -318,12 +318,27 @@ async function exercise(
   return proof;
 }
 
-type Scenario = 'approval' | 'trip-summary';
+type Scenario = 'approval' | 'trip-summary' | 'backup-effect';
 function selectScenario(scenario: Scenario) {
   assert.ok(
-    scenario === 'approval' || scenario === 'trip-summary',
+    scenario === 'approval' ||
+      scenario === 'trip-summary' ||
+      scenario === 'backup-effect',
     'Unknown or unavailable canonical scenario'
   );
+  if (scenario === 'backup-effect')
+    return {
+      fixture: 'examples/chat/native/tooling/fixtures/backup-effect.json',
+      files: [
+        'backup-provider-consumer.ts',
+        'backup-provider-consumer.spec.ts',
+        'backup-provider-contract.ts',
+        'tsconfig.backup-provider.json',
+      ],
+      configuration: 'tooling/tsconfig.backup-provider.json',
+      entry: 'provider-output/tooling/backup-provider-consumer.js',
+      control: 'provider-output/tooling/backup-provider-consumer.spec.js',
+    } as const;
   if (scenario === 'trip-summary')
     return {
       fixture: 'examples/chat/native/tooling/fixtures/trip-summary.json',
