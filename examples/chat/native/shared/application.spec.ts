@@ -1465,8 +1465,9 @@ for (const reentry of ['abort listener', 'pending publication'] as const) {
           concurrentGroup: 'reentry',
           holdBody: true,
         }),
+        // Refresh and selection requests are independent; only their order within a request is fixed.
         lookup('b', { concurrentGroup: 'reentry' }),
-        history('b'),
+        history('b', { concurrentGroup: 'reentry' }),
       ],
       '?thread=a',
       (options) => ({
