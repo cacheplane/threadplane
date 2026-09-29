@@ -151,6 +151,8 @@ jobs:
         uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57
         with:
           python-version: '3.12'
+          # Isolated provider children do not populate the action's cache.
+          enable-cache: false
       - name: Verify native approval with canonical provider
         timeout-minutes: 10
         run: npx nx run native-conversation-react:provider-test

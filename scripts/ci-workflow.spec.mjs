@@ -98,6 +98,11 @@ describe('CI workflow', () => {
       /uses: astral-sh\/setup-uv@cec208311dfd045dd5311c1add060b2062131d57/
     );
     assert.match(setup, /python-version: ['"]3\.12['"]/);
+    assert.match(
+      setup,
+      /^ {10}enable-cache: false\s*$/m,
+      'isolated provider children do not populate the setup-uv action cache'
+    );
     assert.match(proof, /timeout-minutes: 10/);
     assert.match(
       proof,
