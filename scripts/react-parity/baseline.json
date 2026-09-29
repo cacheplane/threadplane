@@ -1,32 +1,9 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "6021b3407524cf7d0154d4f6608c78345af082d8",
+  "baselineHead": "53f0446a0d4f8d66e7c6856bdb78e0078a86653f",
   "sourceState": {
-    "modified": [
-      "libs/angular/README.md",
-      "libs/angular/package.json",
-      "libs/angular/tsconfig.lib.json",
-      "libs/angular/tsconfig.spec.json",
-      "libs/angular/vite.config.mts",
-      "libs/content/README.md",
-      "libs/content/src/markdown/index.ts",
-      "libs/content/tsconfig.lib.json",
-      "libs/react/README.md",
-      "libs/react/package.json",
-      "package-lock.json",
-      "tsconfig.base.json"
-    ],
-    "untracked": [
-      "libs/angular/markdown/ng-package.json",
-      "libs/angular/markdown/src/markdown-image.component.ts",
-      "libs/angular/markdown/src/markdown-template.directive.ts",
-      "libs/angular/markdown/src/markdown.component.ts",
-      "libs/angular/markdown/src/public-api.ts",
-      "libs/content/src/markdown/markdown-url.ts",
-      "libs/react/src/markdown/index.ts",
-      "libs/react/src/markdown/markdown-image.tsx",
-      "libs/react/src/markdown/markdown.tsx"
-    ]
+    "modified": [],
+    "untracked": []
   },
   "scope": {
     "libraries": [
@@ -2120,7 +2097,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "877ee6b01e286d136a73c5e62e488ac7c81de9dfe61054f1a4bb73492030bf86"
+      "sha256": "ff3d8d3442a3d12c9798047bd4b4f68c139294a488af81ac5eec76196abb4e4e"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",

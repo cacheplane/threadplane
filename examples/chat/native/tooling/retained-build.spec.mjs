@@ -312,6 +312,7 @@ test('HTTP serves only validated exact output routes and owns API forwarding; di
   let calls = 0;
   const backend = http.createServer((req, res) => {
     calls++;
+    res.setHeader('content-type', 'text/plain; charset=utf-8');
     res.end(req.url);
   });
   await new Promise((resolve) => backend.listen(0, '127.0.0.1', resolve));
@@ -370,9 +371,9 @@ test('HTTP serves only validated exact output routes and owns API forwarding; di
     405
   );
   assert.equal(calls, 0);
-  assert.equal(
-    (await request(server.url, '/api/threads?limit=1')).bytes.toString(),
-    '/threads?limit=1'
-  );
+  const forwarded = await request(server.url, '/api/threads?limit=1');
+  assert.equal(forwarded.status, 200);
+  assert.equal(forwarded.headers['content-type'], 'text/plain; charset=utf-8');
+  assert.equal(forwarded.bytes.toString(), '/threads?limit=1');
   assert.equal(calls, 1);
 });

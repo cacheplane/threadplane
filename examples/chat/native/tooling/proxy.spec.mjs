@@ -233,11 +233,15 @@ test('redirects cannot contact another server and safe runtime locations are rel
       location: origin.url + '/base/threads/t/runs/r/stream?cursor=%2f',
       'content-location': '/base/threads/t/runs/r',
       'cache-control': 'no-cache',
-      'set-cookie': 'secret=cookie',
+      'set-cookie': 'secret=cookie; HttpOnly; Secure',
     });
     res.end('event: values\ndata: {"ok":true}\n\n');
   });
   const owned = await proxy(t, origin.url + '/base');
+  const direct = await raw(origin.url, '/base/threads');
+  assert.deepEqual(direct.headers['set-cookie'], [
+    'secret=cookie; HttpOnly; Secure',
+  ]);
   const result = await raw(owned.url, '/api/threads');
   assert.equal(result.headers.location, '/threads/t/runs/r/stream?cursor=%2f');
   assert.equal(result.headers['content-location'], '/threads/t/runs/r');
