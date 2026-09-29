@@ -353,7 +353,7 @@ export async function verifyLangGraphCandidate({
     const emission = emitCandidate(root, candidate);
     assert.equal(
       emission.sources.length,
-      29,
+      30,
       'Complete reviewed backend graph'
     );
     const packed = packCandidate(candidate, temporary);
