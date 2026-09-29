@@ -123,7 +123,8 @@ async function reserve(port = 0) {
 }
 
 // This observer only records and forwards real provider HTTP; it never creates SSE.
-async function observeProvider(target: string) {
+async function observeProvider(port: number) {
+  assert.ok(Number.isInteger(port) && port > 0 && port <= 65535);
   const requests: {
     method: string;
     path: string;
@@ -133,6 +134,17 @@ async function observeProvider(target: string) {
   const pending = new Set<ClientRequest>();
   const sockets = new Set<import('node:net').Socket>();
   const server = createServer(async (incoming, outgoing) => {
+    const path = incoming.url;
+    if (
+      !path?.startsWith('/') ||
+      path.startsWith('//') ||
+      /[\\\s#]/.test(path)
+    ) {
+      incoming.resume();
+      outgoing.writeHead(400);
+      outgoing.end();
+      return;
+    }
     const chunks: Buffer[] = [];
     let size = 0;
     try {
@@ -144,15 +156,18 @@ async function observeProvider(target: string) {
       const bytes = Buffer.concat(chunks);
       const entry = {
         method: incoming.method!,
-        path: incoming.url!,
+        path,
         ...(bytes.length ? { body: JSON.parse(bytes.toString()) } : {}),
       } as (typeof requests)[number];
       requests.push(entry);
       const upstream = request(
-        new URL(incoming.url!, target),
         {
+          // Incoming targets can select a path, never a connection destination.
+          hostname: '127.0.0.1',
+          port,
+          path,
           method: incoming.method,
-          headers: { ...incoming.headers, host: new URL(target).host },
+          headers: { ...incoming.headers, host: `127.0.0.1:${port}` },
         },
         (response) => {
           entry.status = response.statusCode;
@@ -558,7 +573,7 @@ export async function runApprovalProvider(options: Options) {
       })(),
       failed,
     ]);
-    observer = await observeProvider(providerUrl);
+    observer = await observeProvider(context.port);
     active();
     console.log(
       'Canonical approval provider ready; exercising installed session.'

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test, type TestContext } from 'node:test';
-import { createServer } from 'node:http';
+import { createServer, request } from 'node:http';
 import {
   mkdtempSync,
   existsSync,
@@ -38,6 +38,90 @@ const operations = {
   providerCommand: async ({ port }: { port: number }) => server(port),
   exercise: async () => ({ proof: 'lifecycle control only' }),
 };
+
+test('observer rejects destination-changing targets without contacting an owned trap', async (t) => {
+  const temporaryParent = owned(t);
+  const trapped: string[] = [];
+  const trap = createServer((q, r) => {
+    trapped.push(q.url!);
+    r.end('escaped');
+  });
+  await new Promise<void>((yes) => trap.listen(0, '127.0.0.1', yes));
+  t.after(() => new Promise<void>((yes) => trap.close(() => yes())));
+  const address = trap.address();
+  assert.ok(address && typeof address !== 'string');
+  const destination = `127.0.0.1:${address.port}`;
+  const result = await runApprovalProvider({
+    root,
+    temporaryParent,
+    operations: {
+      ...operations,
+      exercise: async ({ url }) => {
+        const observer = new URL(url);
+        const send = (path: string) =>
+          new Promise<{ status: number; body: string }>((yes, no) => {
+            const outgoing = request(
+              {
+                hostname: '127.0.0.1',
+                port: observer.port,
+                path,
+                headers: { host: destination },
+              },
+              (response) => {
+                let body = '';
+                response.setEncoding('utf8');
+                response.on('data', (chunk) => {
+                  body += chunk;
+                });
+                response.once('end', () =>
+                  yes({ status: response.statusCode!, body })
+                );
+                response.once('error', no);
+              }
+            );
+            outgoing.setTimeout(2_000, () =>
+              outgoing.destroy(new Error('Observer request deadline'))
+            );
+            outgoing.once('error', no);
+            outgoing.end();
+          });
+        const invalid = [
+          `http://${destination}/absolute`,
+          `//${destination}/relative`,
+          `/\\${destination}/backslash`,
+          `\\\\${destination}/backslashes`,
+          '/path\\segment',
+          '/path#fragment',
+        ];
+        const replies = [];
+        for (const path of invalid) replies.push(await send(path));
+        assert.deepEqual(
+          trapped,
+          [],
+          'No untrusted target may reach the second owned server'
+        );
+        assert.deepEqual(
+          replies.map((reply) => reply.status),
+          invalid.map(() => 400)
+        );
+        const validPath =
+          '/threads/owned/history?next=http%3A%2F%2F' + destination;
+        const normal = await send(validPath);
+        assert.equal(normal.status, 200);
+        assert.deepEqual(JSON.parse(normal.body), [
+          { graph_id: 'chat', assistant_id: 'chat' },
+        ]);
+        assert.deepEqual(trapped, []);
+        return { validPath };
+      },
+    },
+  });
+  assert.deepEqual(
+    result.requests.map((q) => q.path),
+    [result.proof.validPath]
+  );
+  assert.equal(result.requests[0].status, 200);
+});
 
 test('provider startup failure rejects and removes only its owned files', async (t) => {
   const temporaryParent = owned(t);
