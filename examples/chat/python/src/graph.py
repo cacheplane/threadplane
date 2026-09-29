@@ -26,6 +26,7 @@ from typing import Annotated, Literal, Optional
 from typing_extensions import TypedDict, NotRequired
 
 from langgraph.graph import StateGraph, END
+from langgraph.constants import TAG_NOSTREAM
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode
 from langgraph.types import interrupt
@@ -107,7 +108,8 @@ async def generate_title(state: "State", config: RunnableConfig) -> dict:
         if first_user.lstrip().startswith("{"):
             return {}
 
-        llm = ChatOpenAI(model=_TITLE_MODEL, temperature=0)
+        # This model produces metadata, not a conversation message.
+        llm = ChatOpenAI(model=_TITLE_MODEL, temperature=0, tags=[TAG_NOSTREAM])
         response = await llm.ainvoke([
             SystemMessage(content=_TITLE_PROMPT),
             HumanMessage(content=first_user),
