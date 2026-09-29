@@ -92,11 +92,11 @@ export function localDependencyProjects(projects, readManifest) {
   return [...selected];
 }
 
-export function runConsumer(command, args, cwd) {
+export function runConsumer(command, args, cwd, env = process.env) {
   console.log(`$ ${command} ${args.join(' ')} (cwd: ${cwd})`);
   return execFileSync(command, args, {
     cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'],
-    env: { ...process.env, npm_config_legacy_peer_deps: 'false', NPM_CONFIG_LEGACY_PEER_DEPS: 'false', NG_CLI_ANALYTICS: 'false' },
+    env: { ...env, npm_config_legacy_peer_deps: 'false', NPM_CONFIG_LEGACY_PEER_DEPS: 'false', NG_CLI_ANALYTICS: 'false' },
   });
 }
 

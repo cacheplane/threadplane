@@ -80,6 +80,36 @@ function readNamedStep(job, name) {
 }
 
 describe('CI workflow', () => {
+  it('runs import-safe native example tooling after installation and before foundation builds', async () => {
+    const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'library');
+    const step = readNamedStep(job, 'Verify native conversation tooling');
+    assert.match(step, /run: npx nx run native-conversation-react:tooling-test\s*$/);
+    assert.ok(job.indexOf(step) > job.indexOf('- run: npm ci'));
+    assert.ok(job.indexOf(step) < job.indexOf('Build and validate private React foundations'));
+    assert.doesNotMatch(step, /continue-on-error|\|\|\s*true|set\s+\+e|if:/);
+  });
+  it('requires native example development, production and actual verification CLI after builds and Chromium', async () => {
+    const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+    const job = readJobBlock(workflow, 'library');
+    const step = readNamedStep(job, 'Verify native conversation example');
+    assert.match(step, /^ {10}npx nx e2e native-conversation-react\s*$/m);
+    assert.match(step, /^ {10}node examples\/chat\/native\/tooling\/verify\.mjs\s*$/m);
+    for (const prerequisite of [
+      'Build and validate private React foundations',
+      'run-many -t build --projects=$LIBS',
+      'npx playwright install --with-deps chromium',
+    ]) assert.ok(job.indexOf(prerequisite) >= 0 && job.indexOf(step) > job.indexOf(prerequisite));
+    assert.doesNotMatch(step, /continue-on-error|\|\|\s*true|set\s+\+e|if:|--grep|--test-name-pattern/);
+    assert.doesNotMatch(job, /continue-on-error/);
+    assert.match(readJobFieldBlock(job, 'if'), /needs\.ci-scope\.outputs\.library == 'true'/);
+    const config = await readFile('examples/chat/native/e2e/playwright.config.ts', 'utf8');
+    for (const spec of ['development.spec.ts', 'conversation.spec.ts', 'production.spec.ts']) {
+      assert.ok(config.includes(spec), `native e2e must include ${spec}`);
+    }
+    // Existing runtime, provider, package and Markdown assertions below still apply.
+    const canonical = readJobBlock(workflow, 'examples-chat-e2e');
+    assert.match(canonical, /nx e2e examples-chat-angular --skip-nx-cache -- --shard=/);
+  });
   it('requires exact-lock Mastra installation, service tests and native owner proof after isolated runtimes', async () => {
     const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'library');
     const runtime = job.indexOf('npx nx run ag-ui:runtime-type-tests');

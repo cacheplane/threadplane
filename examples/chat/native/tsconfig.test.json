@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022", "DOM", "DOM.Iterable", "ESNext.Disposable"],
+    "strict": true,
+    "skipLibCheck": false,
+    "types": ["node"],
+    "allowJs": true,
+    "rootDir": ".",
+    "outDir": "test-output",
+    "noEmitOnError": true
+  },
+  "include": ["shared/**/*.spec.ts", "tooling/proof-server.mjs"]
+}

@@ -97,6 +97,7 @@ const parityScope = JSON.parse(
   readFileSync(new URL('./react-parity/baseline.json', import.meta.url), 'utf8')
 ).scope;
 const PARITY_PREFIXES = [
+  'examples/chat/native/',
   'scripts/react-parity/',
   'fixtures/react-parity/',
   `${parityScope.docsRoot}/`,

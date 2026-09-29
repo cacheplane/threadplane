@@ -40,6 +40,26 @@ const POSTHOG_TAGS = ['scope:posthog'];
 const GROWTH_LIFECYCLE_TAGS = ['scope:growth-lifecycle'];
 
 describe('React migration baseline scope', () => {
+  for (const file of [
+    'examples/chat/native/react/src/app.tsx',
+    'examples/chat/native/shared/application.ts',
+    'examples/chat/native/tooling/verify.mjs',
+    'examples/chat/native/react/project.json',
+    'examples/chat/native/react/vite.config.mts',
+    'examples/chat/native/shared/browser-config.json',
+    'examples/chat/native/e2e/playwright.config.ts',
+    'examples/chat/native/tsconfig.test.json',
+    'examples/chat/native/README.md',
+  ]) {
+    it(`requires library gates for ${file} even when Nx finds no tagged owner`, () => {
+      for (const affected of [[], [{ name: 'root', tags: [] }]]) {
+        assert.deepEqual(classifyFromAffected([file], affected), {
+          ...emptyScope(),
+          library: true,
+        });
+      }
+    });
+  }
   it('selects required library checks for the middleware project through its actual tags', async () => {
     const project = JSON.parse(await readFile('libs/middleware/project.json', 'utf8'));
     const scope = classifyFromAffected(['libs/middleware/src/langgraph/index.ts'], [{ name: project.name, tags: project.tags }]);
