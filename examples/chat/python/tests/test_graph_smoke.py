@@ -172,7 +172,9 @@ class TestGenerateTitle:
 
         assert result == {}
         assert updates == [("thread-1", {"title": "Plan Kyoto Trip."})]
-        assert title_model_kwargs == [{"model": "gpt-5-mini", "temperature": 0}]
+        assert title_model_kwargs == [
+            {"model": "gpt-5-mini", "temperature": 0, "tags": ["nostream"]}
+        ]
         assert title_messages[-1].content == "Help me plan a Kyoto trip in April"
 
     def test_skips_when_metadata_title_already_exists(self, monkeypatch):
