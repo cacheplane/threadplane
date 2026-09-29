@@ -15,12 +15,18 @@ import { ownMessage, ownToolCall } from './ownership.js';
 import { record, roleOf, textContent } from './wire-message.js';
 import { projectCitations } from './citation-projection.js';
 import { projectReasoning } from './reasoning-projection.js';
+import {
+  observeResponseIdentity,
+  responseChunkId,
+  type ResponseIdentity,
+} from './response-identity.js';
 
 export { record } from './wire-message.js';
 
 type CanonicalMessage = Extract<MessageEvent, { type: 'message' }>;
 
 export interface StreamProjection {
+  readonly responseIdentity?: ResponseIdentity;
   readonly generation: string;
   /** Anonymous wire identities belong to a physical run, while delivery
    * generations change when that same run is reconnected. */
@@ -69,6 +75,50 @@ export function projectStream(
   const incoming = Array.isArray(messages)
     ? messages.map(record).filter((m): m is Record<string, unknown> => !!m)
     : [];
+  const identity = observeResponseIdentity(
+    projection.responseIdentity,
+    incoming,
+    terminal,
+    projection.baselineIds
+  );
+  const canonicalId = (id: string) => responseChunkId(identity.evidence, id);
+  const projectedId = (raw: Record<string, unknown>, id: string) =>
+    raw['type'] === 'AIMessageChunk' &&
+    record(raw['response_metadata'])?.['model_provider'] === 'openai'
+      ? canonicalId(id)
+      : id;
+  const normalizeIds = (ids: readonly string[]) => [
+    ...new Set(ids.map(canonicalId)),
+  ];
+  projection = {
+    ...projection,
+    responseIdentity: identity.evidence,
+    ...(projection.currentAssistantId
+      ? { currentAssistantId: canonicalId(projection.currentAssistantId) }
+      : {}),
+    canonical: projection.canonical.filter(
+      (candidate) =>
+        !identity.merges.some(
+          (binding) =>
+            binding.from === candidate.message.id ||
+            binding.to === candidate.message.id
+        )
+    ),
+    ...(projection.toolAssistantIds
+      ? { toolAssistantIds: normalizeIds(projection.toolAssistantIds) }
+      : {}),
+    ...(projection.resume
+      ? {
+          resume: {
+            ...projection.resume,
+            turnIds: normalizeIds(projection.resume.turnIds),
+            ...(projection.resume.excludedIds
+              ? { excludedIds: normalizeIds(projection.resume.excludedIds) }
+              : {}),
+          },
+        }
+      : {}),
+  };
   const candidates: CanonicalMessage[] = [];
   const removedToolIds: string[] = [];
   const anchor =
@@ -89,7 +139,7 @@ export function projectStream(
             roleOf(message) === 'assistant'
               ? [
                   typeof message['id'] === 'string'
-                    ? message['id']
+                    ? projectedId(message, message['id'])
                     : `${messageIdPrefix}-assistant`,
                 ]
               : []
@@ -109,9 +159,9 @@ export function projectStream(
     if (!role) continue;
     const wireId =
       typeof raw['id'] === 'string' ? raw['id'] : `${messageIdPrefix}-${role}`;
-    // A shared turn/text does not establish message identity. This protocol
-    // slice preserves wire IDs; cross-ID correlation needs explicit evidence.
-    const id = wireId;
+    // Only a proven provider item binding can replace a wire ID. Equal text,
+    // node/task metadata and adjacent chunks never establish identity.
+    const id = projectedId(raw, wireId);
     const previous = state.messages.find((m) => m.id === id);
     const baseline = projection.baselineIds.includes(id);
     const calls = Array.isArray(raw['tool_calls'])
@@ -169,7 +219,7 @@ export function projectStream(
           content !== previous?.content ||
           previous?.delivery.generation === projection.generation));
     const message: Message = {
-      id: wireId,
+      id,
       role,
       content,
       citations: projectCitations(raw),
@@ -231,11 +281,18 @@ export function projectStream(
           : {}),
       };
     }
-    state = reduceMessages(state, {
-      type: 'message',
-      mode,
-      message,
-    });
+    const binding = identity.merges.find(
+      (entry) =>
+        entry.to === id &&
+        state.messages.some((message) => message.id === entry.from)
+    );
+    state = binding
+      ? reduceMessages(state, {
+          type: 'reconcile-message',
+          provisionalId: binding.from,
+          message,
+        })
+      : reduceMessages(state, { type: 'message', mode, message });
     candidates.push({
       type: 'message',
       mode: 'canonical',

@@ -1,11 +1,14 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "4c13fff74c501360d1fbc62733b98728bf152bd6",
+  "baselineHead": "cd0dcd84af7d45145fec523cd7c4e571fed7cfbc",
   "sourceState": {
     "modified": [
-      ".github/workflows/ci.yml"
+      "libs/langgraph/src/runtime/message-reducer.ts",
+      "libs/langgraph/src/runtime/stream-projection.ts"
     ],
-    "untracked": []
+    "untracked": [
+      "libs/langgraph/src/runtime/response-identity.ts"
+    ]
   },
   "scope": {
     "libraries": [
@@ -13359,7 +13362,7 @@
       "id": "source:libs/langgraph/src/runtime/message-reducer.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/message-reducer.ts",
-      "sha256": "6280dd289ba4ec76b83b8d29eae5f104f6c262e7b52e82184152f61de84300b8"
+      "sha256": "db64a7b366ec6ed27087c326af44067d0b18a1b8a43870eed674959398102406"
     },
     {
       "id": "source:libs/langgraph/src/runtime/operation-errors.ts",
@@ -13386,6 +13389,12 @@
       "sha256": "b184a8d6db21f2e9dcbdd23680dd59bba18832dcb860b5b9f9da0deb9efc6c24"
     },
     {
+      "id": "source:libs/langgraph/src/runtime/response-identity.ts",
+      "kind": "source",
+      "path": "libs/langgraph/src/runtime/response-identity.ts",
+      "sha256": "bf8398d7deccd6c267146f2ab392d7480f3035b2b77fdb66150bfd35e954c192"
+    },
+    {
       "id": "source:libs/langgraph/src/runtime/run-options.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/run-options.ts",
@@ -13401,7 +13410,7 @@
       "id": "source:libs/langgraph/src/runtime/stream-projection.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/stream-projection.ts",
-      "sha256": "232dbb85661a712f7d9faae80b4caaa0683de14eeb6bc7ace2b219dfd7e69021"
+      "sha256": "a52721b6c381039c219eb243326721a52c384b9bd1fd4d6ddec2fd048fd9b3de"
     },
     {
       "id": "source:libs/langgraph/src/runtime/subgraph-projection.ts",

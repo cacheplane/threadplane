@@ -13,6 +13,7 @@ assert.ok(apiUrl && modelUrl && resultPath && ownerCleanupPath);
 const prompt =
   'I want to clean up old database backups older than 90 days. Walk me through what you would delete, and call request_approval before doing anything destructive so I can review your plan.';
 type Message = {
+  id: string;
   type: string;
   content: unknown;
   tool_call_id?: string;
@@ -202,6 +203,13 @@ try {
       signal,
     });
     assert.deepEqual(state.next, []);
+    const liveMessages = application.getSnapshot().runtime!.messages;
+    assert.deepEqual(
+      liveMessages.map((message) => message.id),
+      state.values.messages.map((message) => message.id),
+      'Live transcript must retain exactly the saved canonical message IDs: ' +
+        JSON.stringify(liveMessages)
+    );
     assert.deepEqual(
       state.values.messages
         .filter((m) => m.type === 'human')

@@ -11658,6 +11658,16 @@
       "note": "Retains concrete backend snapshot extensions and publishes values/messages as one immutable aggregate with no-op identity. No public shared store or whole-task completion claim."
     },
     {
+      "id": "source:libs/langgraph/src/runtime/response-identity.ts",
+      "taskIds": [
+        "T09"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private LangGraph runtime response identity reconciliation; no public API or package cutover.",
+      "note": "Exact complete OpenAI text/function output-item evidence within one physical run and namespace; ambiguous, incomplete and unsupported evidence cannot merge messages. Broader T09 migration remains open."
+    },
+    {
       "id": "source:libs/langgraph/src/runtime/run-recovery.ts",
       "taskIds": [
         "T04",
