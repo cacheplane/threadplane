@@ -1,0 +1,59 @@
+{
+  "name": "native-conversation-react",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "examples/chat/native/react/src",
+  "tags": ["scope:example", "type:app", "framework:react"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [],
+      "outputs": ["{workspaceRoot}/dist/examples/chat/native/react"],
+      "defaultConfiguration": "production",
+      "configurations": { "production": {}, "development": {} },
+      "options": {
+        "cwd": "{workspaceRoot}",
+        "command": "node examples/chat/native/tooling/run.mjs build"
+      }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "continuous": true,
+      "cache": false,
+      "dependsOn": [],
+      "defaultConfiguration": "development",
+      "configurations": { "development": {} },
+      "options": {
+        "cwd": "{workspaceRoot}",
+        "command": "node examples/chat/native/tooling/run.mjs serve"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [],
+      "options": {
+        "cwd": "{workspaceRoot}",
+        "command": "node examples/chat/native/tooling/run.mjs test"
+      }
+    },
+    "tooling-test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "cwd": "{workspaceRoot}",
+        "command": "node --test examples/chat/native/tooling/run.spec.mjs examples/chat/native/tooling/consumer.spec.mjs examples/chat/native/tooling/build-workspace.spec.mjs examples/chat/native/tooling/proxy.spec.mjs examples/chat/native/tooling/source-mirror.spec.mjs examples/chat/native/tooling/serve.spec.mjs examples/chat/native/tooling/proof-server.spec.mjs examples/chat/native/tooling/retained-build.spec.mjs examples/chat/native/tooling/verify.spec.mjs"
+      }
+    },
+    "e2e": {
+      "executor": "@nx/playwright:playwright",
+      "cache": false,
+      "dependsOn": [],
+      "options": {
+        "config": "examples/chat/native/e2e/playwright.config.ts",
+        "skipInstall": true
+      }
+    }
+  }
+}

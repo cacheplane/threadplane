@@ -347,12 +347,75 @@ export const presentationSeeds = [
   '@angular/build',
   '@angular/compiler-cli',
 ];
+export const reactLanggraphPresentationSeeds = [
+  '@cacheplane/partial-markdown',
+  '@langchain/langgraph-sdk',
+  'react',
+  'react-dom',
+  '@types/react',
+  '@types/react-dom',
+  '@types/node',
+  'typescript',
+  'vite',
+];
 const localNames = [
   '@threadplane/content',
   '@threadplane/core',
   '@threadplane/react',
   '@threadplane/angular',
 ];
+function presentationLocals(profile) {
+  assert.ok(
+    ['markdown', 'react-langgraph'].includes(profile),
+    `Unknown presentation profile: ${profile}`
+  );
+  return profile === 'react-langgraph'
+    ? [
+        ...localNames.filter((name) => name !== '@threadplane/angular'),
+        '@threadplane/langgraph',
+      ]
+    : localNames;
+}
+
+function assertPresentationPackages(
+  packages,
+  profile,
+  locals,
+  sdkPackages = {}
+) {
+  const sdkNames = new Set(
+    Object.keys(sdkPackages).map((path) => path.split('node_modules/').at(-1))
+  );
+  for (const path of Object.keys(packages)) {
+    if (!path) continue;
+    const name = path.split('node_modules/').at(-1);
+    if (profile === 'react-langgraph')
+      assert.ok(
+        !/^@(?:angular|angular-devkit)\//.test(name) &&
+          ![
+            '@schematics/angular',
+            '@analogjs/vite-plugin-angular',
+            'ng-packagr',
+            '@nx/angular',
+          ].includes(name),
+        `Unexpected Angular package: ${name}`
+      );
+    const backend =
+      /^@(?:langchain|ag-ui)\//.test(name) ||
+      ['langchain', '@mastra/client-js'].includes(name);
+    assert.ok(
+      (!backend ||
+        (profile === 'react-langgraph' &&
+          name.startsWith('@langchain/') &&
+          sdkNames.has(name))) &&
+        (profile !== 'react-langgraph' ||
+          !['openai', '@anthropic-ai/sdk'].includes(name)),
+      `Unexpected backend SDK: ${name}`
+    );
+    if (name.startsWith('@threadplane/'))
+      assert.ok(locals.includes(name), `Unexpected local package: ${name}`);
+  }
+}
 const json = (path) => JSON.parse(readFileSync(path, 'utf8'));
 const integrity = (path) =>
   'sha512-' + createHash('sha512').update(readFileSync(path)).digest('base64');
@@ -428,17 +491,42 @@ export function canonicalVendorGraph(lock, seeds = presentationSeeds) {
 export function derivePresentationConsumer(
   rootLock,
   tarballs,
-  seeds = presentationSeeds
+  seeds = presentationSeeds,
+  profile = 'markdown'
 ) {
+  const locals = presentationLocals(profile);
   assert.deepEqual(
     Object.keys(tarballs).sort(),
-    [...localNames].sort(),
-    'Exactly four Markdown foundation tarballs required'
+    [...locals].sort(),
+    profile === 'markdown'
+      ? 'Exactly four Markdown foundation tarballs required'
+      : 'Exactly React, core, content and LangGraph candidate tarballs required'
   );
   const selected = selectPresentationLock(rootLock, seeds);
+  if (profile === 'react-langgraph') {
+    assertPresentationPackages(
+      selected,
+      profile,
+      locals,
+      selectPresentationLock(rootLock, ['@langchain/langgraph-sdk'])
+    );
+    for (const name of seeds)
+      assert.ok(
+        reactLanggraphPresentationSeeds.includes(name),
+        `Unexpected selected React seed: ${name}`
+      );
+    assert.deepEqual(
+      [...seeds].sort(),
+      [...reactLanggraphPresentationSeeds].sort(),
+      'Exactly nine selected React seeds required'
+    );
+  }
   const artifacts = localArtifactRecords(tarballs);
   const manifest = {
-    name: 'owned-markdown-consumer',
+    name:
+      profile === 'markdown'
+        ? 'owned-markdown-consumer'
+        : 'owned-react-langgraph-consumer',
     version: '0.0.0',
     private: true,
     type: 'module',
@@ -452,7 +540,7 @@ export function derivePresentationConsumer(
       ...tarballs,
     },
   };
-  const locals = Object.fromEntries(
+  const localRecords = Object.fromEntries(
     Object.entries(artifacts).map(([name, { manifest }]) => {
       const record = {
         version: manifest.version,
@@ -480,11 +568,12 @@ export function derivePresentationConsumer(
     version: manifest.version,
     lockfileVersion: 3,
     requires: true,
-    packages: { '': manifest, ...selected, ...locals },
+    packages: { '': manifest, ...selected, ...localRecords },
   };
   // This also checks that actual local manifest dependency and peer ranges fit.
-  const graph = canonicalVendorGraph(lock, [...seeds, ...localNames]);
+  const graph = canonicalVendorGraph(lock, [...seeds, ...locals]);
   return {
+    profile,
     manifest,
     lock,
     seeds: [...seeds],
@@ -530,6 +619,8 @@ function installedPackages(consumer) {
 
 export function assertPresentationInstallation(consumer, derived, tarballs) {
   const { lock, seeds, artifacts } = derived;
+  const profile = derived.profile ?? 'markdown';
+  const locals = presentationLocals(profile);
   assertLocalResolutions(consumer, lock, tarballs);
   for (const [name, specifier] of Object.entries(tarballs)) {
     const record = lock.packages['node_modules/' + name];
@@ -554,22 +645,42 @@ export function assertPresentationInstallation(consumer, derived, tarballs) {
       `Installed root selection: ${name}`
     );
   }
-  for (const path of Object.keys(actual.packages)) {
-    const name = path.split('node_modules/').at(-1);
-    assert.ok(
-      !/^@(?:langchain|ag-ui)\//.test(name) &&
-        !['langchain', '@mastra/client-js'].includes(name),
-      `Unexpected backend SDK: ${name}`
-    );
-    if (name.startsWith('@threadplane/'))
-      assert.ok(localNames.includes(name), `Unexpected local package: ${name}`);
-  }
-  const graph = canonicalVendorGraph(actual, [...seeds, ...localNames]);
+  assertPresentationPackages(
+    actual.packages,
+    profile,
+    locals,
+    profile === 'react-langgraph'
+      ? selectPresentationLock(lock, ['@langchain/langgraph-sdk'])
+      : {}
+  );
+  const graph = canonicalVendorGraph(actual, [...seeds, ...locals]);
   assert.deepEqual(
     graph,
     derived.graph,
     'Actual installed required graph equals complete locked graph'
   );
+  if (profile === 'react-langgraph') {
+    // Include optional platform packages in the allowlist, but do not require
+    // another platform's binaries to be installed. Hoisted duplicates still
+    // have to agree with a complete selected record, including every edge.
+    const allSeeds = (packages) =>
+      Object.keys(packages)
+        .filter(Boolean)
+        .map((path) => path.slice('node_modules/'.length));
+    const allowed = new Set(
+      canonicalVendorGraph(lock, allSeeds(lock.packages)).map((record) =>
+        JSON.stringify(record)
+      )
+    );
+    for (const record of canonicalVendorGraph(
+      actual,
+      allSeeds(actual.packages)
+    ))
+      assert.ok(
+        allowed.has(JSON.stringify(record)),
+        `Unexpected installed record: ${record.name}@${record.version}`
+      );
+  }
   return {
     externalRecords: Object.keys(lock.packages).filter(
       (path) => path && !path.startsWith('node_modules/@threadplane/')
@@ -583,13 +694,23 @@ export function assertPresentationInstallation(consumer, derived, tarballs) {
   };
 }
 
-export function installPresentationConsumer(consumer, rootLock, tarballs) {
+export function installPresentationConsumer(
+  consumer,
+  rootLock,
+  tarballs,
+  { seeds = presentationSeeds, profile = 'markdown', env } = {}
+) {
   assert.equal(
     existsSync(join(consumer, 'node_modules')),
     false,
     'Fresh isolated consumer required'
   );
-  const derived = derivePresentationConsumer(rootLock, tarballs);
+  const derived = derivePresentationConsumer(
+    rootLock,
+    tarballs,
+    seeds,
+    profile
+  );
   for (const [file, value] of [
     ['package.json', derived.manifest],
     ['package-lock.json', derived.lock],
@@ -600,7 +721,8 @@ export function installPresentationConsumer(consumer, rootLock, tarballs) {
     runConsumer(
       'npm',
       ['ci', '--ignore-scripts', '--no-audit', '--no-fund'],
-      consumer
+      consumer,
+      env
     )
   );
   assert.equal(
@@ -611,6 +733,7 @@ export function installPresentationConsumer(consumer, rootLock, tarballs) {
   const proof = assertPresentationInstallation(consumer, derived, tarballs);
   return {
     ...proof,
+    profile: derived.profile,
     seeds: derived.seeds,
     derivedLockSha256: before,
     artifacts: derived.artifacts,

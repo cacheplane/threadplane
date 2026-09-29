@@ -129,6 +129,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Verify native conversation tooling
+        run: npx nx run native-conversation-react:tooling-test
       - run: npx nx run-many -t lint --projects=$LIBS
       - name: React migration baseline and boundaries
         run: |
@@ -158,6 +160,10 @@ jobs:
       - run: npx nx run-many -t build --projects=$LIBS --configuration=production
       - name: Install Chromium for packed runtime consumers
         run: npx playwright install --with-deps chromium
+      - name: Verify native conversation example
+        run: |
+          npx nx e2e native-conversation-react
+          node examples/chat/native/tooling/verify.mjs
       - name: Verify native same-document session bindings
         run: node scripts/react-parity/review-native-ag-ui.mjs --verify
       - name: Verify real LangGraph candidate package

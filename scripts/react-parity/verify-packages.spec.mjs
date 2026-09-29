@@ -5,6 +5,21 @@ import { dirname, join } from 'node:path';
 import test from 'node:test';
 import * as packageVerifier from './verify-packages.mjs';
 const { validatePackage } = packageVerifier;
+test('consumer commands accept an explicit environment without inheriting a backend credential', () => {
+  const previous = process.env.NATIVE_LANGGRAPH_API_KEY;
+  process.env.NATIVE_LANGGRAPH_API_KEY = 'test-only-do-not-forward';
+  try {
+    const result = packageVerifier.runConsumer(process.execPath, ['-e', `
+      if (process.env.NATIVE_LANGGRAPH_API_KEY !== undefined) process.exit(42);
+      process.stdout.write(process.env.EXAMPLE_BUILD_MARKER);
+    `], tmpdir(), { PATH: process.env.PATH, EXAMPLE_BUILD_MARKER: 'sanitized' });
+    assert.equal(result, 'sanitized');
+    assert.equal(packageVerifier.runConsumer(process.execPath, ['-e', 'process.stdout.write(process.env.NATIVE_LANGGRAPH_API_KEY ? "inherited" : "missing")'], tmpdir()), 'inherited');
+  } finally {
+    if (previous === undefined) delete process.env.NATIVE_LANGGRAPH_API_KEY;
+    else process.env.NATIVE_LANGGRAPH_API_KEY = previous;
+  }
+});
 const reactMarkdown = { types: './src/markdown/index.d.ts', import: './src/markdown/index.js', default: './src/markdown/index.js' };
 
 test('React Markdown exposes exactly its implemented component', () => {
