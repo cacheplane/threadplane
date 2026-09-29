@@ -103,7 +103,8 @@ export function developmentCommands(
 
 // Only owned detached process groups reach this function. An exited group leader
 // is insufficient: nested synchronous build/install processes must also be gone.
-function terminate(record, killProcessGroup) {
+/** Close one owned detached group and confirm both descendants and leader exit. */
+export function terminateOwnedProcess(record, killProcessGroup) {
   return (record.termination ??= (async () => {
     let groupGone = !record.child.pid,
       permissionError;
@@ -206,7 +207,9 @@ export function startServe({
         const errors = [];
         // Interrupt nested synchronous preparation before waiting for startup.
         const terminated = await Promise.allSettled(
-          records.map((record) => terminate(record, killProcessGroup))
+          records.map((record) =>
+            terminateOwnedProcess(record, killProcessGroup)
+          )
         );
         for (const result of terminated)
           if (result.status === 'rejected') errors.push(result.reason);
@@ -330,7 +333,7 @@ export function startServe({
         cancelled.promise,
       ]);
       if (result.error) throw result.error;
-      await terminate(preparation, killProcessGroup);
+      await terminateOwnedProcess(preparation, killProcessGroup);
       checkActive();
       const { initialFiles } = JSON.parse(
         readFileSync(join(temporary, 'prepared.json'), 'utf8')

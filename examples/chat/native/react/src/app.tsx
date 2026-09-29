@@ -2,22 +2,16 @@ import { memo, useState } from 'react';
 import { useAgent } from '@threadplane/react';
 import { Markdown } from '@threadplane/react/markdown';
 import { ToolObservation } from '@threadplane/react/chat';
-import type { CompleteOutcome } from '@threadplane/core';
 import type {
   createApplication,
   ApplicationSnapshot,
 } from '../../shared/application';
 import type { MessageContent } from '../../shared/message-content';
 import { filterLoadedTitles } from '../../shared/projection';
+import { submissionStatus } from '../../shared/submission-status';
+import { Approval } from './approval';
 
 type Application = ReturnType<typeof createApplication>;
-const outcomes: Record<CompleteOutcome, string> = {
-  success: 'Response complete.',
-  error: 'The response failed. You can send another message.',
-  aborted: 'Response stopped locally. The server may still be running.',
-  interrupted: 'Response interrupted before completion.',
-  paused: 'Response paused. This example cannot resume it.',
-};
 const literal = (value: unknown) =>
   typeof value === 'string' ? value : JSON.stringify(value, null, 2) ?? '';
 
@@ -64,7 +58,8 @@ function Composer({
   const [draft, setDraft] = useState('');
   const enabled = application.canSubmit();
   const send = () => {
-    if (application.submit(draft)) setDraft('');
+    if (draft.trim() && application.canSubmit() && application.submit(draft))
+      setDraft('');
   };
   return (
     <form
@@ -78,7 +73,9 @@ function Composer({
       <textarea
         id="message"
         value={draft}
-        disabled={!enabled}
+        disabled={
+          snapshot.selection.status !== 'ready' || snapshot.submission.active
+        }
         rows={3}
         placeholder="Write a message…"
         aria-describedby="composer-help"
@@ -112,11 +109,7 @@ function Composer({
         </button>
       </div>
       <p className="submission-status" role="status">
-        {snapshot.submission.active
-          ? 'Response in progress…'
-          : snapshot.submission.outcome
-          ? outcomes[snapshot.submission.outcome]
-          : ''}
+        {submissionStatus(snapshot)}
       </p>
     </form>
   );
@@ -238,6 +231,7 @@ function Conversation({ application }: { application: Application }) {
             )}
           </div>
         )}
+        <Approval application={application} snapshot={snapshot} />
         <Composer
           key={selection.id}
           application={application}

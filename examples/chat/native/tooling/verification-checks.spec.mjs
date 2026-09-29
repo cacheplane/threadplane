@@ -54,6 +54,7 @@ function fixture(framework = 'angular') {
     'A-B-A stream race',
     'list refresh during selection and creation ambiguity',
     'duplicate submit guard, Stop and canonical correction',
+    'canonical approval, repeated pause, preserved draft and uncertain Stop',
   ];
   const results = {
     framework,
@@ -63,7 +64,25 @@ function fixture(framework = 'angular') {
     },
     browser: {
       framework,
-      production: names.map((name) => ({ name, passed: true, requests: [{}] })),
+      production: names.map((name, index) => ({
+        name,
+        passed: true,
+        requests: Array.from({ length: index === 8 ? 8 : 1 }, () => ({})),
+        ...(index === 8
+          ? {
+              evidence: {
+                exactRequestCount: 8,
+                literalReason: true,
+                keyboardDecisions: true,
+                draftPreserved: true,
+                repeatPauseAfterSettlement: true,
+                physicalCloseBeforeCleanup: true,
+                uncertainPauseNotActionable: true,
+                mobileOverflow: false,
+              },
+            }
+          : {}),
+      })),
       view: {
         name:
           framework === 'angular'
@@ -93,6 +112,36 @@ for (const framework of ['react', 'angular'])
       module.assertVerification(f.app, f.view, f.results),
       framework
     );
+  });
+for (const key of [
+  'literalReason',
+  'keyboardDecisions',
+  'draftPreserved',
+  'repeatPauseAfterSettlement',
+  'physicalCloseBeforeCleanup',
+  'uncertainPauseNotActionable',
+  'mobileOverflow',
+  'exactRequestCount',
+]) {
+  for (const mutation of ['missing', 'wrong'])
+    test(`approval evidence rejects ${mutation} ${key}`, () => {
+      const f = fixture();
+      const evidence = f.results.browser.production.at(-1).evidence;
+      if (mutation === 'missing') delete evidence[key];
+      else
+        evidence[key] =
+          key === 'exactRequestCount' ? 7 : key === 'mobileOverflow';
+      assert.throws(() => module.assertVerification(f.app, f.view, f.results));
+    });
+}
+for (const count of [7, 9])
+  test(`approval evidence rejects ${count} physical requests`, () => {
+    const f = fixture();
+    f.results.browser.production.at(-1).requests = Array.from(
+      { length: count },
+      () => ({})
+    );
+    assert.throws(() => module.assertVerification(f.app, f.view, f.results));
   });
 for (const framework of ['react', 'angular'])
   for (const path of Object.keys(fixture(framework).app.tools))
@@ -142,7 +191,11 @@ for (const [name, change] of [
     (f) => (f.results.installed.target = 'native-conversation-react:test'),
   ],
   ['wrong browser framework', (f) => (f.results.browser.framework = 'react')],
-  ['missing production case', (f) => f.results.browser.production.pop()],
+  ['missing approval case', (f) => f.results.browser.production.pop()],
+  [
+    'failed approval case',
+    (f) => (f.results.browser.production.at(-1).passed = false),
+  ],
   [
     'failed production case',
     (f) => (f.results.browser.production[0].passed = false),

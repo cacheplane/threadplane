@@ -80,6 +80,45 @@ function readNamedStep(job, name) {
 }
 
 describe('CI workflow', () => {
+  it('requires one pinned Python canonical native approval proof after runtime prerequisites', async () => {
+    const job = readJobBlock(
+      await readFile('.github/workflows/ci.yml', 'utf8'),
+      'library'
+    );
+    const setup = readNamedStep(
+      job,
+      'Set up pinned Python for native approval proof'
+    );
+    const proof = readNamedStep(
+      job,
+      'Verify native approval with canonical provider'
+    );
+    assert.match(
+      setup,
+      /uses: astral-sh\/setup-uv@cec208311dfd045dd5311c1add060b2062131d57/
+    );
+    assert.match(setup, /python-version: ['"]3\.12['"]/);
+    assert.match(
+      setup,
+      /^ {10}enable-cache: false\s*$/m,
+      'isolated provider children do not populate the setup-uv action cache'
+    );
+    assert.match(proof, /timeout-minutes: 10/);
+    assert.match(
+      proof,
+      /run: npx nx run native-conversation-react:provider-test\s*$/
+    );
+    assert.equal(
+      (job.match(/native-conversation-\w+:provider-test/g) ?? []).length,
+      1
+    );
+    assert.ok(
+      job.indexOf(setup) > job.indexOf('npx nx run ag-ui:runtime-type-tests')
+    );
+    assert.ok(job.indexOf(proof) > job.indexOf(setup));
+    for (const step of [setup, proof])
+      assert.doesNotMatch(step, /continue-on-error|\|\|\s*true|set\s+\+e|if:/);
+  });
   it('runs import-safe native example tooling after installation and before foundation builds', async () => {
     const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'library');
     const step = readNamedStep(job, 'Verify native conversation tooling');

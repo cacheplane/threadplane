@@ -201,6 +201,22 @@ textarea:disabled {
 .tool-observation h3 {
   font-size: 1rem;
 }
+.approval {
+  margin-top: 24px;
+  padding: 20px;
+  border: 1px solid var(--ds-accent-border);
+  border-radius: 8px;
+  background: var(--ds-surface-dim);
+}
+.approval-reason {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.approval-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
 .composer {
   border-top: 1px solid var(--ds-border);
   padding-top: 12px;

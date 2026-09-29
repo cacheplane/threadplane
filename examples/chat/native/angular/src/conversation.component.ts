@@ -10,12 +10,13 @@ import { filterLoadedTitles } from '../../shared/projection';
 import { APPLICATION } from './application.token';
 import { ComposerComponent } from './composer.component';
 import { MessageComponent } from './message.component';
+import { ApprovalComponent } from './approval.component';
 
 @Component({
   selector: 'native-conversation-view',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ComposerComponent, MessageComponent],
+  imports: [ComposerComponent, MessageComponent, ApprovalComponent],
   template: `
     @let state = snapshot(); @let selection = state.selection;
     <div class="conversation-layout">
@@ -119,6 +120,7 @@ import { MessageComponent } from './message.component';
           }
         </div>
         } }
+        <native-approval [application]="application" [snapshot]="state" />
         <native-composer
           [application]="application"
           [snapshot]="state"

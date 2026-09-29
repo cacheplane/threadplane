@@ -114,6 +114,8 @@ test('basic conversation: loaded views, exact submission, honest outcomes and br
         data: { __interrupt__: [{ id: 'question', value: 'Continue?' }] },
       },
     ]),
+    lookup('garden'),
+    history('garden'),
     run('Explain the sunlight.', [
       { event: 'custom', data: { progress: 'Waiting' } },
     ]),
@@ -298,20 +300,53 @@ test('basic conversation: loaded views, exact submission, honest outcomes and br
       .poll(async () => (await server.steps[5].closed).finished)
       .toBe(false);
     for (const [text, outcome] of [
-      [
-        'What about winter?',
-        'The response failed. You can send another message.',
-      ],
-      [
-        'Plan the next step.',
-        'Response paused. This example cannot resume it.',
-      ],
-      ['Explain the sunlight.', 'Response interrupted before completion.'],
+      ['What about winter?', 'The response failed.'],
+      ['Plan the next step.', 'Response paused.'],
     ]) {
       await draft.fill(text);
       await draft.press('Control+Enter');
       await expect(page.getByText(outcome, { exact: true })).toBeVisible();
     }
+    await expect(
+      page.getByText(
+        'This conversation is waiting for a response this example does not support.',
+        { exact: true }
+      )
+    ).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Approve request', exact: true })
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole('button', { name: 'Decline request', exact: true })
+    ).toHaveCount(0);
+    await draft.fill('Keep this draft while reviewing the unsupported pause.');
+    await expect(
+      page.getByRole('button', { name: 'Send', exact: true })
+    ).toBeDisabled();
+    await draft.press('Control+Enter');
+    await draft.press('Meta+Enter');
+    await expect(draft).toHaveValue(
+      'Keep this draft while reviewing the unsupported pause.'
+    );
+    expect(server.requests).toHaveLength(8);
+    await page.goBack();
+    await expect(
+      page.getByText('Select a conversation or start a new one.', {
+        exact: true,
+      })
+    ).toBeVisible();
+    expect(server.requests).toHaveLength(8);
+    await page.goForward();
+    await expect(page.locator('.conversation-id')).toHaveText(
+      'Conversation ID: garden'
+    );
+    await expect(draft).toBeEnabled();
+    await expect(draft).toHaveValue('');
+    await draft.fill('Explain the sunlight.');
+    await draft.press('Control+Enter');
+    await expect(
+      page.getByText('Response interrupted before completion.', { exact: true })
+    ).toBeVisible();
     await page.getByRole('button', { name: 'New', exact: true }).click();
     await expect(
       page.getByText(
@@ -382,14 +417,14 @@ test('basic conversation: loaded views, exact submission, honest outcomes and br
       fullPage: true,
     });
     await page.getByRole('button', { name: 'Refresh', exact: true }).click();
-    await expect.poll(() => server.requests.length).toBe(24);
+    await expect.poll(() => server.requests.length).toBe(26);
     await page.evaluate(() =>
       window.dispatchEvent(
         new PageTransitionEvent('pagehide', { persisted: false })
       )
     );
     await expect
-      .poll(async () => (await server.steps[23].closed).finished)
+      .poll(async () => (await server.steps[25].closed).finished)
       .toBe(false);
     server.verify();
     expect(errors).toEqual([]);
