@@ -17,6 +17,7 @@ import { dirname, isAbsolute, join, relative, sep } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { buildInputRoots } from './build-workspace.mjs';
 import { mirrorDestination, excludedSourcePath } from './source-policy.mjs';
+import { selectedFramework } from './commands.mjs';
 
 const native = 'examples/chat/native/';
 const digest = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -45,7 +46,7 @@ function assertPath(root, path) {
   }
 }
 
-function tree(root) {
+function tree(root, framework) {
   const files = new Map(),
     watchPaths = new Map();
   const addWatchPath = (path, info) =>
@@ -75,13 +76,13 @@ function tree(root) {
       // Direct mutable/root-config watches cover immediate macOS edits using
       // kqueue. Library files use directory events plus the bounded safety scan
       // to avoid consuming one descriptor per installed-library source file.
-      if (mirrorDestination(local) || !local.includes('/'))
+      if (mirrorDestination(local, framework) || !local.includes('/'))
         addWatchPath(path, info);
     }
   }
   // Foundation configuration is frozen; its plain CSS is the one mutable input.
   for (const local of new Set([
-    ...buildInputRoots(root),
+    ...buildInputRoots(root, framework),
     'libs/design-tokens',
   ])) {
     let parent = dirname(join(root, local));
@@ -97,20 +98,22 @@ function tree(root) {
   }
   return { files, watchPaths };
 }
-function frozen(files) {
+function frozen(files, framework) {
   const result = {};
   for (const [local, path] of [...files].sort(([a], [b]) =>
     a.localeCompare(b)
   )) {
-    if (!mirrorDestination(local)) result[local] = digest(readFileSync(path));
+    if (!mirrorDestination(local, framework))
+      result[local] = digest(readFileSync(path));
   }
   return result;
 }
 
 // Capture BEFORE build/pack/install, and pass this exact value to the mirror.
 // Fresh content hashes include additions/deletions, not just previously known files.
-export function frozenInputFingerprint(root) {
-  return frozen(tree(realpathSync(root)).files);
+export function frozenInputFingerprint(root, framework) {
+  selectedFramework(framework);
+  return frozen(tree(realpathSync(root), framework).files, framework);
 }
 async function readSourceFile(path) {
   const file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
@@ -120,9 +123,10 @@ async function readSourceFile(path) {
     await file.close();
   }
 }
-function ownedPath(path) {
+function ownedPath(path, framework) {
   return (
-    path === 'shared/tokens.css' || mirrorDestination(native + path) === path
+    path === 'shared/tokens.css' ||
+    mirrorDestination(native + path, framework) === path
   );
 }
 
@@ -134,12 +138,14 @@ function ownedPath(path) {
 export function startSourceMirror({
   root,
   consumer,
+  framework = 'react',
   initialFrozen,
   initialFiles = {},
   onFailure,
   readSource = readSourceFile,
   watchPath = watch,
 }) {
+  selectedFramework(framework);
   const watchers = new Map(),
     owned = new Map(),
     retained = new Map();
@@ -203,21 +209,21 @@ export function startSourceMirror({
       'Frozen development inputs changed; restart the native example to rebuild and reinstall';
     let current;
     try {
-      current = frozen(files);
+      current = frozen(files, framework);
     } catch (error) {
       throw new Error(guidance, { cause: error });
     }
     assert.ok(isDeepStrictEqual(current, initialFrozen), guidance);
   }
   async function capture() {
-    const scanned = tree(root);
+    const scanned = tree(root, framework);
     register(scanned.watchPaths);
     // Preparation is checked before the first copy and after its final read.
     // Active generations need one fresh frozen hash at the end of each pass.
     if (!readySettled) checkFrozen(scanned.files);
     const sources = new Map();
     for (const [local, path] of scanned.files) {
-      const target = mirrorDestination(local);
+      const target = mirrorDestination(local, framework);
       if (!target) continue;
       assertPath(root, path);
       try {
@@ -231,7 +237,7 @@ export function startSourceMirror({
     return sources;
   }
   function destination(path) {
-    assert.ok(ownedPath(path), `Not an owned mirror path: ${path}`);
+    assert.ok(ownedPath(path, framework), `Not an owned mirror path: ${path}`);
     const target = join(consumer, path);
     assertPath(consumer, target);
     return target;
@@ -281,7 +287,7 @@ export function startSourceMirror({
       if (closed) return;
       // A parent directory can be replaced while source reads are awaiting I/O.
       // Validate the source tree again before any captured bytes reach consumer.
-      const final = tree(root);
+      const final = tree(root, framework);
       apply(before);
       // The last source read is asynchronous: freeze validation must also run
       // after it. This final synchronous snapshot also catches missed source
@@ -289,7 +295,7 @@ export function startSourceMirror({
       register(final.watchPaths);
       const latest = new Map();
       for (const [local, path] of final.files) {
-        const target = mirrorDestination(local);
+        const target = mirrorDestination(local, framework);
         if (!target) continue;
         try {
           latest.set(target, readFileSync(path));
@@ -340,7 +346,7 @@ export function startSourceMirror({
             !path.includes('\\'),
           `Not an owned mirror path: ${path}`
         );
-        if (ownedPath(path)) owned.set(path, hash);
+        if (ownedPath(path, framework)) owned.set(path, hash);
       }
       // fs.watch can drop/coalesce structural events, particularly while the
       // macOS FSEvents stream registers new directories. A bounded safety scan

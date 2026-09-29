@@ -43,7 +43,7 @@
       "cache": false,
       "options": {
         "cwd": "{workspaceRoot}",
-        "command": "node --test examples/chat/native/tooling/run.spec.mjs examples/chat/native/tooling/consumer.spec.mjs examples/chat/native/tooling/build-workspace.spec.mjs examples/chat/native/tooling/proxy.spec.mjs examples/chat/native/tooling/source-mirror.spec.mjs examples/chat/native/tooling/serve.spec.mjs examples/chat/native/tooling/proof-server.spec.mjs examples/chat/native/tooling/retained-build.spec.mjs examples/chat/native/tooling/verify.spec.mjs"
+        "command": "node --test examples/chat/native/tooling/*.spec.mjs"
       }
     },
     "e2e": {

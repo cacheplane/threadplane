@@ -1,0 +1,77 @@
+{
+  "name": "native-conversation-angular",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "examples/chat/native/angular/src",
+  "tags": ["scope:example", "type:app", "framework:angular"],
+  "targets": {
+    "e2e": {
+      "executor": "@nx/playwright:playwright",
+      "cache": false,
+      "dependsOn": [],
+      "options": {
+        "config": "examples/chat/native/angular/playwright.config.ts",
+        "skipInstall": true
+      }
+    },
+    "conversation-e2e": {
+      "executor": "@nx/playwright:playwright",
+      "cache": false,
+      "dependsOn": [],
+      "options": {
+        "config": "examples/chat/native/angular/conversation.playwright.config.ts",
+        "skipInstall": true
+      }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "continuous": true,
+      "cache": false,
+      "dependsOn": [],
+      "defaultConfiguration": "development",
+      "configurations": { "development": {} },
+      "options": {
+        "cwd": "{workspaceRoot}",
+        "command": "node examples/chat/native/tooling/run.mjs serve --framework=angular"
+      }
+    },
+    "development-e2e": {
+      "executor": "@nx/playwright:playwright",
+      "cache": false,
+      "dependsOn": [],
+      "options": {
+        "config": "examples/chat/native/angular/development.playwright.config.ts",
+        "skipInstall": true
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [],
+      "outputs": ["{workspaceRoot}/dist/examples/chat/native/angular"],
+      "defaultConfiguration": "production",
+      "configurations": { "production": {}, "development": {} },
+      "options": {
+        "cwd": "{workspaceRoot}",
+        "command": "node examples/chat/native/tooling/run.mjs build --framework=angular"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [],
+      "options": {
+        "cwd": "{workspaceRoot}",
+        "command": "node examples/chat/native/tooling/run.mjs test --framework=angular"
+      }
+    },
+    "tooling-test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "cwd": "{workspaceRoot}",
+        "command": "node --test examples/chat/native/tooling/*.spec.mjs"
+      }
+    }
+  }
+}

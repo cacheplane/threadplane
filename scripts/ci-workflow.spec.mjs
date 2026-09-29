@@ -87,6 +87,11 @@ describe('CI workflow', () => {
     assert.ok(job.indexOf(step) > job.indexOf('- run: npm ci'));
     assert.ok(job.indexOf(step) < job.indexOf('Build and validate private React foundations'));
     assert.doesNotMatch(step, /continue-on-error|\|\|\s*true|set\s+\+e|if:/);
+    assert.equal((job.match(/npx nx run native-conversation-\w+:tooling-test/g) ?? []).length, 1, 'shared tooling runs once');
+    for (const framework of ['react', 'angular']) {
+      const project = JSON.parse(await readFile(`examples/chat/native/${framework}/project.json`, 'utf8'));
+      assert.equal(project.targets['tooling-test'].options.command, 'node --test examples/chat/native/tooling/*.spec.mjs');
+    }
   });
   it('requires native example development, production and actual verification CLI after builds and Chromium', async () => {
     const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
@@ -94,6 +99,8 @@ describe('CI workflow', () => {
     const step = readNamedStep(job, 'Verify native conversation example');
     assert.match(step, /^ {10}npx nx e2e native-conversation-react\s*$/m);
     assert.match(step, /^ {10}node examples\/chat\/native\/tooling\/verify\.mjs\s*$/m);
+    assert.match(step, /^ {10}npx nx e2e native-conversation-angular\s*$/m);
+    assert.match(step, /^ {10}node examples\/chat\/native\/tooling\/verify\.mjs --framework=angular\s*$/m);
     for (const prerequisite of [
       'Build and validate private React foundations',
       'run-many -t build --projects=$LIBS',
@@ -106,6 +113,13 @@ describe('CI workflow', () => {
     for (const spec of ['development.spec.ts', 'conversation.spec.ts', 'production.spec.ts']) {
       assert.ok(config.includes(spec), `native e2e must include ${spec}`);
     }
+    const angularConfig = await readFile('examples/chat/native/angular/playwright.config.ts', 'utf8');
+    for (const spec of ['**/angular/development.spec.ts', '**/e2e/conversation.spec.ts', '**/e2e/production.spec.ts']) {
+      assert.ok(angularConfig.includes(spec), `Angular e2e must include ${spec}`);
+    }
+    assert.match(angularConfig, /metadata:\s*\{\s*framework: 'angular'\s*\}/);
+    const angularProject = JSON.parse(await readFile('examples/chat/native/angular/project.json', 'utf8'));
+    assert.equal(angularProject.targets.e2e.options.config, 'examples/chat/native/angular/playwright.config.ts');
     // Existing runtime, provider, package and Markdown assertions below still apply.
     const canonical = readJobBlock(workflow, 'examples-chat-e2e');
     assert.match(canonical, /nx e2e examples-chat-angular --skip-nx-cache -- --shard=/);

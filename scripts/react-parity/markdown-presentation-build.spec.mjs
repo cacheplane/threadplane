@@ -333,6 +333,334 @@ const deriveReact = (input) =>
     'react-langgraph'
   );
 
+const angularSeeds = [
+  '@cacheplane/partial-markdown',
+  '@angular/core',
+  '@angular/common',
+  '@angular/compiler',
+  '@angular/platform-browser',
+  'rxjs',
+  'tslib',
+  '@types/node',
+  'typescript',
+  '@angular/cli',
+  '@angular/build',
+  '@angular/compiler-cli',
+  '@langchain/langgraph-sdk',
+];
+const angularRoot = () => {
+  const root = reactRoot();
+  for (const name of reactSeeds.filter((name) => !angularSeeds.includes(name)))
+    delete root.packages['node_modules/' + name];
+  for (const name of angularSeeds)
+    root.packages['node_modules/' + name] ??= pkg();
+  root.packages['node_modules/@angular/build'] = pkg('1.0.0', {
+    dependencies: { a: '^1.0.0' },
+    optionalDependencies: { 'platform-binary': '1.0.0' },
+    peerDependencies: { '@angular/compiler-cli': '^1.0.0' },
+  });
+  return root;
+};
+const angularFixture = (t, changes = {}) =>
+  consumerFixture(t, {
+    projects: ['content', 'core', 'angular', 'langgraph'],
+    root: angularRoot(),
+    manifests: {
+      angular: {
+        dependencies: { '@threadplane/content': '0.0.1' },
+        peerDependencies: { '@angular/core': '^1.0.0' },
+      },
+      langgraph: {
+        dependencies: {
+          '@threadplane/core': '0.0.1',
+          '@langchain/langgraph-sdk': '^1.0.0',
+        },
+      },
+    },
+    ...changes,
+  });
+const deriveAngular = (input) =>
+  derivePresentationConsumer(
+    input.root,
+    input.tarballs,
+    angularSeeds,
+    'angular-langgraph'
+  );
+
+test('selected Angular profile derives the exact local closure, seeds and physical lock records without root mutation', (t) => {
+  const input = angularFixture(t);
+  const before = JSON.stringify(input.root);
+  const derived = deriveAngular(input);
+  assert.deepEqual(
+    presentation.angularLanggraphPresentationSeeds,
+    angularSeeds
+  );
+  assert.equal(derived.profile, 'angular-langgraph');
+  assert.equal(derived.manifest.name, 'owned-angular-langgraph-consumer');
+  assert.deepEqual(
+    Object.keys(derived.manifest.dependencies).sort(),
+    [...angularSeeds, ...Object.keys(input.tarballs)].sort()
+  );
+  assert.equal(derived.manifest.overrides, undefined);
+  for (const [path, record] of Object.entries(
+    selectPresentationLock(input.root, angularSeeds)
+  ))
+    assert.deepEqual(derived.lock.packages[path], record);
+  assert.equal(JSON.stringify(input.root), before);
+  assert.equal(
+    derived.lock.packages['node_modules/@threadplane/react'],
+    undefined
+  );
+  assert.ok(
+    derived.graph.some(
+      (record) => record.name === 'a' && record.version === '1.2.0'
+    )
+  );
+  assertPresentationInstallation(input.consumer, derived, input.tarballs);
+});
+
+test('selected Angular uses the repository-locked Angular toolchain and SDK closure without React', (t) => {
+  const bytes = readFileSync(
+    new URL('../../package-lock.json', import.meta.url)
+  );
+  const root = JSON.parse(bytes);
+  const input = angularFixture(t, {
+    manifests: {
+      content: { dependencies: { '@cacheplane/partial-markdown': '0.5.8' } },
+      angular: { peerDependencies: { '@angular/core': '^21.0.0' } },
+      langgraph: {
+        dependencies: {
+          '@threadplane/core': '0.0.1',
+          '@langchain/langgraph-sdk': '^1.10.0',
+        },
+      },
+    },
+  });
+  const derived = deriveAngular({ ...input, root });
+  for (const name of angularSeeds)
+    assert.equal(
+      derived.manifest.dependencies[name],
+      root.packages['node_modules/' + name].version
+    );
+  assert.equal(
+    Object.keys(selectPresentationLock(root, angularSeeds)).length,
+    653
+  );
+  assert.equal(canonicalVendorGraph(root, angularSeeds).length, 429);
+  assert.ok(
+    Object.keys(derived.lock.packages).some((path) =>
+      path.includes('/node_modules/', 'node_modules/'.length)
+    )
+  );
+  assert.ok(
+    !Object.keys(derived.lock.packages).some((path) =>
+      /node_modules\/(?:react|react-dom|@types\/react|@types\/react-dom)$/.test(
+        path
+      )
+    )
+  );
+  for (const name of ['p-queue', 'p-timeout'])
+    assert.ok(
+      new Set(
+        derived.graph
+          .filter((record) => record.name === name)
+          .map((record) => record.version)
+      ).size > 1,
+      `Keep SDK's conflicting ${name} versions`
+    );
+  assert.deepEqual(
+    readFileSync(new URL('../../package-lock.json', import.meta.url)),
+    bytes
+  );
+});
+
+for (const name of angularSeeds) {
+  test(`selected Angular requires explicit root seed ${name}`, (t) => {
+    const input = angularFixture(t);
+    assert.throws(
+      () =>
+        derivePresentationConsumer(
+          input.root,
+          input.tarballs,
+          angularSeeds.filter((seed) => seed !== name),
+          'angular-langgraph'
+        ),
+      /Exactly thirteen selected Angular seeds required/
+    );
+  });
+}
+
+test('selected Angular rejects duplicate and arbitrary seeds', (t) => {
+  const input = angularFixture(t);
+  assert.throws(
+    () =>
+      derivePresentationConsumer(
+        input.root,
+        input.tarballs,
+        [...angularSeeds, '@angular/build'],
+        'angular-langgraph'
+      ),
+    /Exactly thirteen selected Angular seeds required/
+  );
+  input.root.packages['node_modules/unrelated-server-package'] = pkg();
+  assert.throws(
+    () =>
+      derivePresentationConsumer(
+        input.root,
+        input.tarballs,
+        [...angularSeeds, 'unrelated-server-package'],
+        'angular-langgraph'
+      ),
+    /Unexpected selected Angular seed/
+  );
+});
+
+for (const name of [
+  'react',
+  'react-dom',
+  '@types/react',
+  '@types/react-dom',
+  '@ag-ui/client',
+  '@mastra/client-js',
+  '@langchain/langgraph',
+  'langchain',
+  'openai',
+  '@anthropic-ai/sdk',
+  '@threadplane/react',
+]) {
+  test(`selected Angular rejects transitive and installed unrelated package ${name}`, (t) => {
+    const input = angularFixture(t);
+    const derived = deriveAngular(input);
+    const path = 'node_modules/' + name;
+    input.root.packages[path] = pkg();
+    input.root.packages['node_modules/@angular/build'].dependencies[name] =
+      '^1.0.0';
+    assert.throws(
+      () => deriveAngular(input),
+      /Unexpected (?:React|backend SDK|local package)/
+    );
+    mkdirSync(join(input.consumer, path), { recursive: true });
+    writeJson(join(input.consumer, path, 'package.json'), {
+      name,
+      version: '1.0.0',
+    });
+    assert.throws(
+      () =>
+        assertPresentationInstallation(input.consumer, derived, input.tarballs),
+      /Unexpected (?:React|backend SDK|local package)/
+    );
+  });
+}
+
+test('selected Angular requires exact local tarballs and compatible required local dependencies and peers', (t) => {
+  const input = angularFixture(t);
+  for (const name of Object.keys(input.tarballs)) {
+    const missing = { ...input.tarballs };
+    delete missing[name];
+    assert.throws(
+      () => deriveAngular({ ...input, tarballs: missing }),
+      /tarballs required/
+    );
+  }
+  assert.throws(
+    () =>
+      deriveAngular({
+        ...input,
+        tarballs: {
+          ...input.tarballs,
+          '@threadplane/react': input.tarballs['@threadplane/angular'],
+        },
+      }),
+    /tarballs required/
+  );
+  assert.throws(
+    () => deriveAngular({ ...input, tarballs: reactFixture(t).tarballs }),
+    /tarballs required/
+  );
+  for (const manifests of [
+    { angular: { peerDependencies: { '@angular/core': '^2.0.0' } } },
+    { langgraph: { dependencies: { '@threadplane/core': '^2.0.0' } } },
+    { langgraph: { dependencies: { '@threadplane/missing': '*' } } },
+  ])
+    assert.throws(
+      () => deriveAngular(angularFixture(t, { manifests })),
+      /must satisfy|does not satisfy|No local artifact policy/
+    );
+});
+
+test('selected Angular rejects extra installed records and independent SDK graph drift', (t) => {
+  const input = angularFixture(t);
+  const derived = deriveAngular(input);
+  const path = join(input.consumer, 'node_modules/unselected-vendor');
+  mkdirSync(path);
+  writeJson(join(path, 'package.json'), {
+    name: 'unselected-vendor',
+    version: '1.0.0',
+  });
+  assert.throws(
+    () =>
+      assertPresentationInstallation(input.consumer, derived, input.tarballs),
+    /Unexpected installed record/
+  );
+  rmSync(path, { recursive: true });
+  writeJson(
+    join(input.consumer, 'node_modules/@langchain/protocol/package.json'),
+    { name: '@langchain/protocol', version: '1.1.0' }
+  );
+  assert.throws(
+    () =>
+      assertPresentationInstallation(input.consumer, derived, input.tarballs),
+    /installed.*graph/i
+  );
+});
+
+test('selected Angular rejects packed and installed artifact byte drift', (t) => {
+  const input = angularFixture(t);
+  const derived = deriveAngular(input);
+  const tarball = input.tarballs['@threadplane/angular'].slice(5);
+  const bytes = readFileSync(tarball);
+  writeFileSync(tarball, 'tampered');
+  assert.throws(
+    () =>
+      assertPresentationInstallation(input.consumer, derived, input.tarballs),
+    /integrity/
+  );
+  writeFileSync(tarball, bytes);
+  writeFileSync(
+    join(input.consumer, 'node_modules/@threadplane/angular/index.js'),
+    'tampered'
+  );
+  assert.throws(
+    () =>
+      assertPresentationInstallation(input.consumer, derived, input.tarballs),
+    /bytes equal/
+  );
+});
+
+test('unknown profiles are rejected during derivation and installed verification', (t) => {
+  const input = angularFixture(t);
+  assert.throws(
+    () =>
+      derivePresentationConsumer(
+        input.root,
+        input.tarballs,
+        angularSeeds,
+        'unknown'
+      ),
+    /Unknown presentation profile/
+  );
+  const derived = deriveAngular(input);
+  assert.throws(
+    () =>
+      assertPresentationInstallation(
+        input.consumer,
+        { ...derived, profile: 'unknown' },
+        input.tarballs
+      ),
+    /Unknown presentation profile/
+  );
+});
+
 test('selected React profile derives only its local closure and preserves locked records, conflicts and root bytes', (t) => {
   const input = reactFixture(t);
   const before = JSON.stringify(input.root);
@@ -596,8 +924,8 @@ test('selected React retains independent installed bytes and range-satisfying gr
 
 // A real child executable exercises the install boundary without downloading
 // vendors. It reproduces only npm's filesystem result; real npm ci proof is separate.
-function installerFixture(t, mutateLock = false) {
-  const input = reactFixture(t);
+function installerFixture(t, mutateLock = false, createInput = reactFixture) {
+  const input = createInput(t);
   const prepared = join(input.consumer, 'prepared');
   cpSync(join(input.consumer, 'node_modules'), prepared, { recursive: true });
   rmSync(join(input.consumer, 'node_modules'), { recursive: true });
@@ -667,6 +995,32 @@ test('selected installer rejects child-process lock mutation', (t) => {
           profile: 'react-langgraph',
           env: input.env,
         }
+      ),
+    /preserves derived lock bytes/
+  );
+});
+
+test('installer forwards the Angular profile and seeds through the existing child-process boundary', (t) => {
+  const input = installerFixture(t, false, angularFixture);
+  const proof = presentation.installPresentationConsumer(
+    input.consumer,
+    input.root,
+    input.tarballs,
+    { seeds: angularSeeds, profile: 'angular-langgraph', env: input.env }
+  );
+  assert.deepEqual(proof.seeds, angularSeeds);
+  assert.equal(proof.profile, 'angular-langgraph');
+});
+
+test('selected Angular installer rejects child-process lock mutation', (t) => {
+  const input = installerFixture(t, true, angularFixture);
+  assert.throws(
+    () =>
+      presentation.installPresentationConsumer(
+        input.consumer,
+        input.root,
+        input.tarballs,
+        { seeds: angularSeeds, profile: 'angular-langgraph', env: input.env }
       ),
     /preserves derived lock bytes/
   );

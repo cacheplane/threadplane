@@ -1,7 +1,11 @@
 import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { preparationEnvironment, validateServeOptions } from './commands.mjs';
+import {
+  preparationEnvironment,
+  validateServeOptions,
+  selectedFramework,
+} from './commands.mjs';
 import { readProxyConfiguration } from './proxy.mjs';
 export { preparationEnvironment, foundationCommands } from './commands.mjs';
 
@@ -9,9 +13,15 @@ export function parseOptions(args, env = process.env) {
   const mode = args[0];
   if (!['build', 'serve', 'test'].includes(mode))
     throw new Error('Expected build, serve or test');
-  let explicit, port, testNamePattern;
+  let explicit, port, testNamePattern, framework;
   for (let index = 1; index < args.length; index++) {
     const arg = args[index];
+    if (arg.startsWith('--framework=')) {
+      if (framework !== undefined)
+        throw new Error('Duplicate framework selection');
+      framework = selectedFramework(arg.slice('--framework='.length));
+      continue;
+    }
     if (
       mode === 'test' &&
       (arg === '--test-name-pattern' || arg.startsWith('--test-name-pattern='))
@@ -58,12 +68,14 @@ export function parseOptions(args, env = process.env) {
       );
     // Installed Vite treats zero as its default port; require a strict positive port.
     return validateServeOptions({
+      ...(framework === undefined ? {} : { framework }),
       configuration,
       assistantId,
-      port: port ?? 4301,
+      port: port ?? (framework === 'angular' ? 4302 : 4301),
     });
   }
   return {
+    ...(framework === undefined ? {} : { framework }),
     configuration,
     assistantId,
     ...(testNamePattern === undefined ? {} : { testNamePattern }),

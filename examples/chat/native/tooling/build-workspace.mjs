@@ -11,15 +11,16 @@ import {
 } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { excludedSourcePath } from './source-policy.mjs';
+import { selectedFramework } from './commands.mjs';
 
 // These are real build inputs, not an Nx workspace clone. Telemetry metadata
 // satisfies LangGraph's graph edge; no telemetry task or source is needed.
 // The trace is eagerly read by the imported packaging helper graph.
-export function selectedBuildInputRoots(root) {
+export function selectedBuildInputRoots(root, framework) {
   return [
     'libs/core',
     'libs/content',
-    'libs/react',
+    'libs/' + selectedFramework(framework),
     'libs/langgraph',
     'libs/telemetry/project.json',
     'scripts/react-parity',
@@ -31,10 +32,13 @@ export function selectedBuildInputRoots(root) {
   ];
 }
 
-export function buildInputRoots(root) {
+export function buildInputRoots(root, framework) {
   return [
-    ...selectedBuildInputRoots(root),
-    'examples/chat/native',
+    ...selectedBuildInputRoots(root, framework),
+    'examples/chat/native/' + selectedFramework(framework),
+    'examples/chat/native/shared',
+    'examples/chat/native/tooling',
+    'examples/chat/native/tsconfig.test.json',
     'libs/design-tokens/src/lib/tokens.css',
   ];
 }
@@ -81,8 +85,8 @@ export function inputFingerprint(root, roots = buildInputRoots(root)) {
   );
 }
 
-export function createBuildWorkspace(root, buildRoot) {
-  const roots = selectedBuildInputRoots(root);
+export function createBuildWorkspace(root, buildRoot, framework) {
+  const roots = selectedBuildInputRoots(root, framework);
   for (const local of roots)
     assert.ok(stat(sourcePath(root, local)), `Missing build input: ${local}`);
   const inputs = inputFingerprint(root, roots);
@@ -95,13 +99,16 @@ export function createBuildWorkspace(root, buildRoot) {
     );
   }
   assert.deepEqual(
-    inputFingerprint(root, selectedBuildInputRoots(root)),
+    inputFingerprint(root, selectedBuildInputRoots(root, framework)),
     inputs,
     'Original build inputs changed during copy'
   );
   const unchanged = () =>
     assert.deepEqual(
-      inputFingerprint(buildRoot, selectedBuildInputRoots(buildRoot)),
+      inputFingerprint(
+        buildRoot,
+        selectedBuildInputRoots(buildRoot, framework)
+      ),
       inputs,
       'Owned build inputs changed during preparation'
     );

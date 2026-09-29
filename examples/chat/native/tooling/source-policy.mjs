@@ -1,4 +1,5 @@
 import { extname } from 'node:path';
+import { selectedFramework } from './commands.mjs';
 
 const native = 'examples/chat/native/';
 const tokens = 'libs/design-tokens/src/lib/tokens.css';
@@ -24,7 +25,7 @@ const extensions = new Set([
   '.txt',
 ]);
 const authored = (path) =>
-  /^(?:examples\/chat\/native\/(?:shared|react\/(?:src|public)))(?:\/|$)/.test(
+  /^(?:examples\/chat\/native\/(?:shared|(?:react|angular)\/(?:src|public)))(?:\/|$)/.test(
     path
   );
 export const excludedSourcePath = (path) =>
@@ -49,15 +50,18 @@ export const excludedSourcePath = (path) =>
         /\.(?:pem|key|p12|pfx|tsbuildinfo)$/i.test(part)
     );
 
-export function mirrorDestination(path) {
+export function mirrorDestination(path, framework) {
+  const selected = selectedFramework(framework);
   if (excludedSourcePath(path)) return undefined;
   if (path === tokens) return 'shared/tokens.css';
   if (!path.startsWith(native)) return undefined;
   const local = path.slice(native.length);
-  if (local === 'react/index.html') return local;
+  if (selected === 'react' && local === 'react/index.html') return local;
   if (local === 'shared/browser-config.json' || local === 'shared/tokens.css')
     return undefined;
-  return /^(?:shared\/|react\/(?:src|public)\/)/.test(local) &&
+  return (local.startsWith('shared/') ||
+    local.startsWith(selected + '/src/') ||
+    local.startsWith(selected + '/public/')) &&
     extensions.has(extname(local))
     ? local
     : undefined;

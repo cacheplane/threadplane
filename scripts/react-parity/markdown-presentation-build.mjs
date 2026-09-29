@@ -358,6 +358,21 @@ export const reactLanggraphPresentationSeeds = [
   'typescript',
   'vite',
 ];
+export const angularLanggraphPresentationSeeds = [
+  '@cacheplane/partial-markdown',
+  '@angular/core',
+  '@angular/common',
+  '@angular/compiler',
+  '@angular/platform-browser',
+  'rxjs',
+  'tslib',
+  '@types/node',
+  'typescript',
+  '@angular/cli',
+  '@angular/build',
+  '@angular/compiler-cli',
+  '@langchain/langgraph-sdk',
+];
 const localNames = [
   '@threadplane/content',
   '@threadplane/core',
@@ -366,15 +381,18 @@ const localNames = [
 ];
 function presentationLocals(profile) {
   assert.ok(
-    ['markdown', 'react-langgraph'].includes(profile),
+    ['markdown', 'react-langgraph', 'angular-langgraph'].includes(profile),
     `Unknown presentation profile: ${profile}`
   );
-  return profile === 'react-langgraph'
-    ? [
-        ...localNames.filter((name) => name !== '@threadplane/angular'),
-        '@threadplane/langgraph',
-      ]
-    : localNames;
+  if (profile === 'markdown') return localNames;
+  const excluded =
+    profile === 'react-langgraph'
+      ? '@threadplane/angular'
+      : '@threadplane/react';
+  return [
+    ...localNames.filter((name) => name !== excluded),
+    '@threadplane/langgraph',
+  ];
 }
 
 function assertPresentationPackages(
@@ -400,15 +418,22 @@ function assertPresentationPackages(
           ].includes(name),
         `Unexpected Angular package: ${name}`
       );
+    if (profile === 'angular-langgraph')
+      assert.ok(
+        !['react', 'react-dom', '@types/react', '@types/react-dom'].includes(
+          name
+        ),
+        `Unexpected React package: ${name}`
+      );
     const backend =
       /^@(?:langchain|ag-ui)\//.test(name) ||
       ['langchain', '@mastra/client-js'].includes(name);
     assert.ok(
       (!backend ||
-        (profile === 'react-langgraph' &&
+        (profile !== 'markdown' &&
           name.startsWith('@langchain/') &&
           sdkNames.has(name))) &&
-        (profile !== 'react-langgraph' ||
+        (profile === 'markdown' ||
           !['openai', '@anthropic-ai/sdk'].includes(name)),
       `Unexpected backend SDK: ${name}`
     );
@@ -500,10 +525,17 @@ export function derivePresentationConsumer(
     [...locals].sort(),
     profile === 'markdown'
       ? 'Exactly four Markdown foundation tarballs required'
-      : 'Exactly React, core, content and LangGraph candidate tarballs required'
+      : `Exactly ${
+          profile === 'react-langgraph' ? 'React' : 'Angular'
+        }, core, content and LangGraph candidate tarballs required`
   );
   const selected = selectPresentationLock(rootLock, seeds);
-  if (profile === 'react-langgraph') {
+  if (profile !== 'markdown') {
+    const react = profile === 'react-langgraph';
+    const selectedSeeds = react
+      ? reactLanggraphPresentationSeeds
+      : angularLanggraphPresentationSeeds;
+    const framework = react ? 'React' : 'Angular';
     assertPresentationPackages(
       selected,
       profile,
@@ -512,21 +544,20 @@ export function derivePresentationConsumer(
     );
     for (const name of seeds)
       assert.ok(
-        reactLanggraphPresentationSeeds.includes(name),
-        `Unexpected selected React seed: ${name}`
+        selectedSeeds.includes(name),
+        `Unexpected selected ${framework} seed: ${name}`
       );
     assert.deepEqual(
       [...seeds].sort(),
-      [...reactLanggraphPresentationSeeds].sort(),
-      'Exactly nine selected React seeds required'
+      [...selectedSeeds].sort(),
+      `Exactly ${
+        react ? 'nine' : 'thirteen'
+      } selected ${framework} seeds required`
     );
   }
   const artifacts = localArtifactRecords(tarballs);
   const manifest = {
-    name:
-      profile === 'markdown'
-        ? 'owned-markdown-consumer'
-        : 'owned-react-langgraph-consumer',
+    name: `owned-${profile}-consumer`,
     version: '0.0.0',
     private: true,
     type: 'module',
@@ -649,7 +680,7 @@ export function assertPresentationInstallation(consumer, derived, tarballs) {
     actual.packages,
     profile,
     locals,
-    profile === 'react-langgraph'
+    profile !== 'markdown'
       ? selectPresentationLock(lock, ['@langchain/langgraph-sdk'])
       : {}
   );
@@ -659,7 +690,7 @@ export function assertPresentationInstallation(consumer, derived, tarballs) {
     derived.graph,
     'Actual installed required graph equals complete locked graph'
   );
-  if (profile === 'react-langgraph') {
+  if (profile !== 'markdown') {
     // Include optional platform packages in the allowlist, but do not require
     // another platform's binaries to be installed. Hoisted duplicates still
     // have to agree with a complete selected record, including every edge.

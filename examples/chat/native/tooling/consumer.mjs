@@ -17,9 +17,21 @@ import {
 import { tmpdir } from 'node:os';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { foundationCommands, preparationEnvironment } from './commands.mjs';
+import {
+  foundationCommands,
+  preparationEnvironment,
+  selectedFramework,
+} from './commands.mjs';
 import { mirrorDestination, excludedSourcePath } from './source-policy.mjs';
-import { createBuildWorkspace, inputFingerprint } from './build-workspace.mjs';
+import {
+  buildInputRoots,
+  createBuildWorkspace,
+  inputFingerprint,
+} from './build-workspace.mjs';
+import {
+  compileAngularApplication,
+  bundleAngularApplication,
+} from './angular-build.mjs';
 export { buildInputRoots, inputFingerprint } from './build-workspace.mjs';
 
 const digest = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -46,7 +58,12 @@ function hashes(directory) {
   );
 }
 
-export function copyApplication(root, consumer, { assistantId = '' } = {}) {
+export function copyApplication(
+  root,
+  consumer,
+  { assistantId = '', framework = 'react' } = {}
+) {
+  selectedFramework(framework);
   const native = 'examples/chat/native/';
   function sourcePath(local) {
     let path = root;
@@ -72,23 +89,23 @@ export function copyApplication(root, consumer, { assistantId = '' } = {}) {
         copyAuthored(local + '/' + name);
       return;
     }
-    const target = mirrorDestination(local);
+    const target = mirrorDestination(local, framework);
     if (!target) return;
     assert.ok(info.isFile(), `Only regular source files: ${source}`);
     mkdirSync(dirname(join(consumer, target)), { recursive: true });
     cpSync(source, join(consumer, target));
   }
-  mkdirSync(join(consumer, 'react'), { recursive: true });
+  mkdirSync(join(consumer, framework), { recursive: true });
   for (const name of ['src', 'public', 'index.html'])
-    copyAuthored(native + 'react/' + name);
+    copyAuthored(native + framework + '/' + name);
   for (const name of [
-    'vite.config.mts',
+    framework === 'react' ? 'vite.config.mts' : 'angular.json',
     'tsconfig.json',
     'tsconfig.app.json',
   ]) {
-    const source = sourcePath(native + 'react/' + name);
+    const source = sourcePath(native + framework + '/' + name);
     files(source);
-    cpSync(source, join(consumer, 'react', name));
+    cpSync(source, join(consumer, framework, name));
   }
   mkdirSync(join(consumer, 'shared'), { recursive: true });
   copyAuthored(native + 'shared');
@@ -99,8 +116,8 @@ export function copyApplication(root, consumer, { assistantId = '' } = {}) {
   });
   return {
     ...Object.fromEntries(
-      Object.entries(hashes(join(consumer, 'react'))).map(([path, hash]) => [
-        'react/' + path,
+      Object.entries(hashes(join(consumer, framework))).map(([path, hash]) => [
+        framework + '/' + path,
         hash,
       ])
     ),
@@ -144,7 +161,10 @@ function compiler(consumer, allowFailure = false) {
   );
 }
 
-export function compileApplication({ consumer }) {
+export function compileApplication({ consumer, framework = 'react' }) {
+  selectedFramework(framework);
+  if (framework === 'angular')
+    return compileAngularApplication({ consumer, run });
   const initial = compiler(consumer);
   const inputs = initial.stdout
     .split(/\r?\n/)
@@ -240,7 +260,11 @@ export async function productionOperations(buildRoot) {
   const [
     { emitCandidate, packCandidate },
     { packLocalArtifacts },
-    { installPresentationConsumer, reactLanggraphPresentationSeeds },
+    {
+      installPresentationConsumer,
+      reactLanggraphPresentationSeeds,
+      angularLanggraphPresentationSeeds,
+    },
   ] = await Promise.all([
     import(
       pathToFileURL(
@@ -258,21 +282,26 @@ export async function productionOperations(buildRoot) {
     ),
   ]);
   return {
-    build({ buildRoot }) {
-      for (const { command, args, cwd } of foundationCommands(buildRoot)) {
+    build({ buildRoot, framework }) {
+      for (const { command, args, cwd } of foundationCommands(
+        buildRoot,
+        framework
+      )) {
         console.log(`Building ${args[2]} from frozen inputs`);
         const result = run(command, args, cwd);
         process.stdout.write(result.stdout);
         process.stderr.write(result.stderr);
       }
     },
-    pack({ buildRoot, temporary }) {
+    pack({ buildRoot, temporary, framework }) {
       const candidate = join(temporary, 'candidate');
       mkdirSync(candidate);
       const emission = emitCandidate(buildRoot, candidate);
       const packed = packCandidate(candidate, temporary);
       const tarballs = {
-        ...packLocalArtifacts(buildRoot, temporary, ['react']),
+        ...packLocalArtifacts(buildRoot, temporary, [
+          selectedFramework(framework),
+        ]),
         '@threadplane/langgraph': 'file:' + packed.tarball,
       };
       return {
@@ -286,20 +315,30 @@ export async function productionOperations(buildRoot) {
         ),
       };
     },
-    install({ buildRoot, consumer, packages }) {
+    install({ buildRoot, consumer, packages, framework }) {
       return installPresentationConsumer(
         consumer,
         json(join(buildRoot, 'package-lock.json')),
         packages.tarballs,
         {
-          seeds: reactLanggraphPresentationSeeds,
-          profile: 'react-langgraph',
+          seeds:
+            framework === 'angular'
+              ? angularLanggraphPresentationSeeds
+              : reactLanggraphPresentationSeeds,
+          profile: selectedFramework(framework) + '-langgraph',
           env: preparationEnvironment(),
         }
       );
     },
     compile: compileApplication,
-    bundle({ consumer, configuration, compilation }) {
+    bundle({ consumer, configuration, compilation, framework }) {
+      if (selectedFramework(framework) === 'angular')
+        return bundleAngularApplication({
+          consumer,
+          configuration,
+          compilation,
+          run,
+        });
       const result = run(
         process.execPath,
         [
@@ -335,17 +374,29 @@ export async function productionOperations(buildRoot) {
 export async function prepareConsumer({
   root,
   temporary,
+  framework = 'react',
   configuration = 'development',
   assistantId = '',
   operations,
   unchanged = () => {},
 }) {
+  selectedFramework(framework);
   const consumer = join(temporary, 'consumer');
   mkdirSync(consumer);
-  const initialFiles = copyApplication(root, consumer, { assistantId });
+  const initialFiles = copyApplication(root, consumer, {
+    assistantId,
+    framework,
+  });
   const buildRoot = join(temporary, 'build-workspace');
-  const workspace = createBuildWorkspace(root, buildRoot);
-  const context = { root, buildRoot, temporary, consumer, configuration };
+  const workspace = createBuildWorkspace(root, buildRoot, framework);
+  const context = {
+    root,
+    buildRoot,
+    temporary,
+    consumer,
+    configuration,
+    framework,
+  };
   const stages =
     typeof operations === 'function'
       ? await operations(context)
@@ -373,17 +424,25 @@ export async function prepareConsumer({
 // remains intact through installation, diagnostics and bundle validation.
 export async function buildConsumer({
   root,
+  framework = 'react',
   configuration = 'production',
   assistantId = '',
-  output = join(root, 'dist/examples/chat/native/react'),
+  output = join(
+    root,
+    'dist/examples/chat/native',
+    selectedFramework(framework)
+  ),
   temporaryParent = tmpdir(),
   operations,
   capture,
 }) {
-  const inputs = inputFingerprint(root);
+  selectedFramework(framework);
+  const fingerprint = () =>
+    inputFingerprint(root, buildInputRoots(root, framework));
+  const inputs = fingerprint();
   const unchanged = () =>
     assert.deepEqual(
-      inputFingerprint(root),
+      fingerprint(),
       inputs,
       'Build inputs changed during preparation; retry with stable sources'
     );
@@ -404,6 +463,7 @@ export async function buildConsumer({
     } = await prepareConsumer({
       root,
       temporary,
+      framework,
       configuration,
       assistantId,
       operations,
@@ -413,6 +473,7 @@ export async function buildConsumer({
     const bundle = await stages.bundle({ ...context, compilation });
     unchanged();
     const provenance = {
+      framework,
       configuration,
       inputs,
       buildInputs,
@@ -421,7 +482,18 @@ export async function buildConsumer({
       candidate: packages.emission,
       installation,
       compiler: compilation,
-      bundler: { inputs: bundle.inputs },
+      bundler: {
+        inputs: bundle.inputs,
+        ...(framework === 'angular'
+          ? {
+              virtualInputs: bundle.virtualInputs,
+              executable: bundle.executable,
+              executableSha256: bundle.executableSha256,
+              version: bundle.version,
+              configuration: bundle.configuration,
+            }
+          : {}),
+      },
       outputs: hashes(bundle.output),
     };
     captured = await capture?.({
@@ -434,7 +506,9 @@ export async function buildConsumer({
     });
     unchanged();
     mkdirSync(dirname(output), { recursive: true });
-    staging = mkdtempSync(join(dirname(output), '.native-react-staging-'));
+    staging = mkdtempSync(
+      join(dirname(output), `.native-${framework}-staging-`)
+    );
     cpSync(bundle.output, staging, { recursive: true });
     writeJson(join(staging, 'provenance.json'), provenance);
     unchanged();
@@ -465,14 +539,18 @@ export async function buildConsumer({
 // disposable test graph. Neither test support nor Node types enter the app.
 export async function testConsumer({
   root,
+  framework = 'react',
   configuration,
   assistantId,
   testNamePattern,
 }) {
-  const inputs = inputFingerprint(root);
+  selectedFramework(framework);
+  const fingerprint = () =>
+    inputFingerprint(root, buildInputRoots(root, framework));
+  const inputs = fingerprint();
   const unchanged = () =>
     assert.deepEqual(
-      inputFingerprint(root),
+      fingerprint(),
       inputs,
       'Test inputs changed during preparation; retry with stable sources'
     );
@@ -485,6 +563,7 @@ export async function testConsumer({
     } = await prepareConsumer({
       root,
       temporary,
+      framework,
       configuration,
       assistantId,
       unchanged,

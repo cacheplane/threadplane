@@ -1,8 +1,10 @@
 import { expect, test } from '@playwright/test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import { writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { createHash } from 'node:crypto';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 let threadEnvelope: typeof import('../tooling/proof-server.mjs').threadEnvelope;
 
 const search = (body: unknown = [], extra = {}) => ({
@@ -66,8 +68,10 @@ const answer = [
 
 test('basic conversation: loaded views, exact submission, honest outcomes and browser lifetime', async ({
   page,
-}) => {
+}, testInfo) => {
   const { startServe } = await import('../tooling/serve.mjs');
+  const { selectedFramework } = await import('../tooling/commands.mjs');
+  const framework = selectedFramework(testInfo.project.metadata.framework);
   const proof = await import('../tooling/proof-server.mjs');
   const { startProofServer } = proof;
   threadEnvelope = proof.threadEnvelope;
@@ -146,7 +150,12 @@ test('basic conversation: loaded views, exact submission, honest outcomes and br
   const logs: string[] = [];
   const supervisor = startServe({
     root: resolve(__dirname, '../../../../'),
-    options: { configuration: 'development', assistantId: 'assistant', port },
+    options: {
+      framework,
+      configuration: 'development',
+      assistantId: 'assistant',
+      port,
+    },
     env: { ...process.env, NATIVE_LANGGRAPH_URL: server.origin + '/api' },
     log: (line: string) => logs.push(line),
   });
@@ -208,7 +217,7 @@ test('basic conversation: loaded views, exact submission, honest outcomes and br
       page.getByText('$x+y$ [^source]', { exact: true })
     ).toBeVisible();
     await page.screenshot({
-      path: '/tmp/native-task9-restored.png',
+      path: testInfo.outputPath('restored.png'),
       fullPage: true,
     });
     await page.setViewportSize({ width: 375, height: 812 });
@@ -221,7 +230,7 @@ test('basic conversation: loaded views, exact submission, honest outcomes and br
       )
     ).toBe(true);
     await page.screenshot({
-      path: '/tmp/native-task9-restored-mobile.png',
+      path: testInfo.outputPath('restored-mobile.png'),
       fullPage: true,
     });
     await page.setViewportSize({ width: 1280, height: 720 });
@@ -236,6 +245,8 @@ test('basic conversation: loaded views, exact submission, honest outcomes and br
       page.getByRole('heading', { name: 'Planting plan' })
     ).toBeVisible();
     await filter.fill('');
+    const draft = page.getByRole('textbox', { name: 'Message', exact: true });
+    await draft.fill('Keep this draft while refreshing.');
     await page.getByRole('button', { name: 'Refresh', exact: true }).click();
     await expect(
       page.getByText('No loaded conversations match.')
@@ -243,9 +254,27 @@ test('basic conversation: loaded views, exact submission, honest outcomes and br
     await expect(
       page.getByRole('heading', { name: 'Planting plan' })
     ).toBeVisible();
-    const draft = page.getByRole('textbox', { name: 'Message', exact: true });
-    await draft.fill('  Which herbs grow well?\nKeep it brief.  ');
+    await expect(draft).toHaveValue('Keep this draft while refreshing.');
+    await draft.fill('   \n  ');
+    await expect(
+      page.getByRole('button', { name: 'Send', exact: true })
+    ).toBeDisabled();
     await draft.press('Control+Enter');
+    await expect(draft).toHaveValue('   \n  ');
+    await draft.fill('First line');
+    await draft.press('Enter');
+    await expect(draft).toHaveValue('First line\n');
+    await draft.fill('  Which herbs grow well?\nKeep it brief.  ');
+    await draft.dispatchEvent('keydown', {
+      key: 'Enter',
+      ctrlKey: true,
+      isComposing: true,
+    });
+    await expect(draft).toHaveValue(
+      '  Which herbs grow well?\nKeep it brief.  '
+    );
+    expect(server.requests).toHaveLength(4);
+    await draft.press('Meta+Enter');
     await expect(
       page.getByText('Response complete.', { exact: true })
     ).toBeVisible();
@@ -297,10 +326,12 @@ test('basic conversation: loaded views, exact submission, honest outcomes and br
       page.getByText(/Creation could not be confirmed/)
     ).toBeVisible();
     await page.getByRole('button', { name: 'Refresh', exact: true }).click();
+    await draft.fill('This draft belongs to Garden notes.');
     await page
       .getByRole('button', { name: 'Older notes', exact: true })
       .click();
     await expect(page.getByText('Conversation not found.')).toBeVisible();
+    await expect(draft).toHaveValue('');
     await page.getByRole('button', { name: 'Retry', exact: true }).click();
     await expect(draft).toBeEnabled();
     await page
@@ -337,7 +368,7 @@ test('basic conversation: loaded views, exact submission, honest outcomes and br
         .evaluate((el) => getComputedStyle(el).outlineStyle)
     ).not.toBe('none');
     await page.screenshot({
-      path: '/tmp/native-task9-conversation.png',
+      path: testInfo.outputPath('conversation.png'),
       fullPage: true,
     });
     await page.setViewportSize({ width: 390, height: 844 });
@@ -347,7 +378,7 @@ test('basic conversation: loaded views, exact submission, honest outcomes and br
       )
     ).toBe(true);
     await page.screenshot({
-      path: '/tmp/native-task9-mobile.png',
+      path: testInfo.outputPath('mobile.png'),
       fullPage: true,
     });
     await page.getByRole('button', { name: 'Refresh', exact: true }).click();
@@ -384,6 +415,87 @@ test('basic conversation: loaded views, exact submission, honest outcomes and br
   } finally {
     await supervisor.close();
     await server.close();
-    writeFileSync('/tmp/native-task9-browser-supervisor.log', logs.join('\n'));
+    writeFileSync(testInfo.outputPath('supervisor.log'), logs.join('\n'));
+  }
+});
+
+test('production configuration required: no owner or network without an assistant', async ({
+  page,
+}, testInfo) => {
+  const { selectedFramework } = await import('../tooling/commands.mjs');
+  const { buildConsumer } = await import('../tooling/consumer.mjs');
+  const { startCheckedServer } = await import('../tooling/retained-build.mjs');
+  const { startProofServer } = await import('../tooling/proof-server.mjs');
+  const framework = selectedFramework(testInfo.project.metadata.framework);
+  const owned = mkdtempSync(join(tmpdir(), 'native-unconfigured-'));
+  const backend = await startProofServer([]);
+  let server: Awaited<ReturnType<typeof startCheckedServer>> | undefined;
+  const errors: string[] = [],
+    requests: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  page.on('console', (message) => {
+    if (message.type() === 'error') errors.push(message.text());
+  });
+  page.on('request', (request) => requests.push(request.url()));
+  try {
+    const assets = new Map<string, Buffer>();
+    const built = await buildConsumer({
+      root: resolve(__dirname, '../../../../'),
+      framework,
+      assistantId: '',
+      output: join(owned, 'output'),
+      temporaryParent: owned,
+      capture({ bundle, provenance }: any) {
+        for (const [path, expected] of Object.entries(provenance.outputs)) {
+          const bytes = readFileSync(join(bundle.output, path));
+          assert.equal(
+            createHash('sha256').update(bytes).digest('hex'),
+            expected
+          );
+          assets.set(path, bytes);
+        }
+      },
+    });
+    server = await startCheckedServer({
+      target: backend.origin + '/api',
+      retained: Object.freeze({
+        outputs: Object.freeze([...assets.keys()]),
+        readOutput(path: string) {
+          return Buffer.from(assets.get(path)!);
+        },
+      }),
+    });
+    await page.goto(server.url + '/?thread=must-not-load');
+    await expect(
+      page.getByRole('heading', { name: 'Set up an assistant to begin' })
+    ).toBeVisible();
+    await expect(
+      page.getByRole('textbox', { name: 'Message', exact: true })
+    ).toHaveCount(0);
+    await page.evaluate(() =>
+      window.dispatchEvent(
+        new PageTransitionEvent('pagehide', { persisted: false })
+      )
+    );
+    expect(requests.every((url) => new URL(url).origin === server!.url)).toBe(
+      true
+    );
+    expect(
+      requests.filter((url) => new URL(url).pathname.startsWith('/api'))
+    ).toEqual([]);
+    backend.verify();
+    expect(errors).toEqual([]);
+    await page.screenshot({
+      path: testInfo.outputPath('configuration-required.png'),
+      fullPage: true,
+    });
+    writeFileSync(
+      testInfo.outputPath('production-output-hashes.json'),
+      JSON.stringify(built.provenance.outputs, null, 2)
+    );
+  } finally {
+    await server?.close();
+    await backend.close();
+    rmSync(owned, { recursive: true, force: true });
   }
 });

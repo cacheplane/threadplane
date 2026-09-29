@@ -12,7 +12,10 @@ export async function prepareDevelopment({ root, temporary, ...options }) {
   );
   const unchanged = () =>
     assert.ok(
-      isDeepStrictEqual(initialFrozen, frozenInputFingerprint(root)),
+      isDeepStrictEqual(
+        initialFrozen,
+        frozenInputFingerprint(root, options.framework)
+      ),
       'Frozen development inputs changed; restart the native example to rebuild and reinstall'
     );
   unchanged();

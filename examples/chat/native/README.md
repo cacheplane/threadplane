@@ -1,15 +1,17 @@
 # Native conversation example
 
-This private React example uses the installed native LangGraph runtime with
-Threadplane's React bindings, owned Markdown and plain tool observations. It
-opens saved conversations, restores their history and streams new responses.
-It is a contributor example, not a published package or a replacement for the
-canonical Angular chat example.
+These private React and Angular examples use the installed native LangGraph
+runtime with Threadplane's corresponding bindings, owned Markdown and plain
+tool observations. Both borrow the same application owner to open saved
+conversations, restore history and stream new responses. They are contributor
+examples, not published packages or replacements for the canonical Angular
+chat example. This does not establish general framework or release parity.
 
 ## Setup and commands
 
-Run commands from the repository root using **Node 22 and npm 10**. Install the
-root lockfile without updating dependencies:
+Run commands from the repository root using **Node 22 and npm 10** (locally
+verified with Node 22.23.2 and npm 10.9.8). Install the root lockfile without
+updating dependencies:
 
 ```sh
 npm ci
@@ -26,10 +28,13 @@ starting the development server:
 export NATIVE_LANGGRAPH_URL='http://127.0.0.1:2024'
 export NATIVE_ASSISTANT_ID='your-assistant-id'
 npx nx serve native-conversation-react --configuration=development --port=4301
+npx nx serve native-conversation-angular --configuration=development --port=4302
 ```
 
-Open the ready URL printed by the command, normally
-`http://127.0.0.1:4301/`. The upstream must be an HTTP(S) URL without embedded
+Choose the framework to serve, then open its printed ready URL. The defaults
+are `http://127.0.0.1:4301/` for React and `http://127.0.0.1:4302/` for Angular.
+An occupied requested port fails; neither server silently selects another port.
+The upstream must be an HTTP(S) URL without embedded
 credentials, a query, a fragment or dot segments. If the deployment needs an API
 key, set `NATIVE_LANGGRAPH_API_KEY` in the server environment before serving.
 This optional credential stays **server-only**: do not put it in source,
@@ -46,35 +51,58 @@ same-origin `/api` proxy; the static output does not include an upstream server.
 ```sh
 npx nx run native-conversation-react:tooling-test
 npx nx test native-conversation-react
+npx nx test native-conversation-angular
 npx nx build native-conversation-react --configuration=production
+npx nx build native-conversation-angular --configuration=production
 npx playwright install chromium
 npx nx e2e native-conversation-react
+npx nx e2e native-conversation-angular
 node examples/chat/native/tooling/verify.mjs
+node examples/chat/native/tooling/verify.mjs --framework=angular
 ```
 
-The tooling target runs import-safe Node tests without building or installing
-an app. The test and build targets prepare isolated consumers from locally
+The single tooling target runs the shared import-safe Node tests for both
+frameworks without building or installing an app. The test and build targets
+prepare isolated consumers from locally
 built candidate tarballs and the root lockfile, using exact `npm ci`
 installation. They compile against those installed declarations and runtimes.
-The build publishes to `dist/examples/chat/native/react`, including provenance;
-it replaces previous output only after successful compilation and validation.
+Builds publish to `dist/examples/chat/native/react` or
+`dist/examples/chat/native/angular`, including provenance. They replace previous
+output only after successful compilation and validation.
 Failed preparation preserves the previous valid build and removes owned
 temporary files.
 
-The e2e target runs development, basic conversation and production cases against
-owned local fixtures. The production case contains eight browser scenarios and
-a separate React view removal/remount proof. The actual verification CLI also
-builds production output, runs the installed owner tests, then checks those
-production scenarios and view lifecycle. Neither proof needs remote credentials
-or mutates a live deployment. CI runs the tooling target before builds, then
-the e2e target and actual CLI after foundation builds and Chromium setup.
+Each e2e target runs development, basic conversation, missing-configuration and
+production cases against owned local fixtures. The production case contains
+eight browser scenarios and a separate actual React unmount/remount or Angular
+component destruction/remount proof. The CLI builds the selected production
+app, runs its installed shared-owner tests, then checks those production
+scenarios and the selected view lifecycle. Angular compilation includes strict
+installed TypeScript and Angular template checks; its view proof uses the
+installed Angular application builder. No proof needs remote credentials or
+mutates a live deployment. CI runs the shared tooling once before builds, then
+both e2e targets and actual CLI selections after foundation builds and Chromium
+setup.
+
+The view proof checks that removing the view releases only its subscription,
+the owner still receives a held response while absent, remounting preserves
+snapshot/Markdown identities, and explicit owner disposal physically closes
+the stream. Real Back/Forward navigation and synthetic pagehide checks do not
+claim actual browser BFCache coverage.
 
 ## Working on the example
 
-Each development session builds and installs a fixed set of candidate tarballs
-once. Edits, additions and deletions in `react/src`, `react/public`,
-`react/index.html` and supported `shared` source files are mirrored into that
-installed consumer for Vite updates. Design-token CSS is mirrored too. Generated
+Each development session selects one framework and builds/installs its fixed
+four local candidate packages (core, content, LangGraph and React or Angular)
+once. Source edits use that same installed consumer and derived lockfile; they
+do not reinstall packages. A configured browser document owns its application
+and selected session; framework views borrow that owner.
+
+Edits, additions and deletions in the selected `react/src`, `react/public`,
+`react/index.html` or `angular/src`, `angular/public`, plus supported `shared`
+source files, are mirrored into the owned consumer. React uses Vite; Angular
+uses the installed Angular CLI development server. Design-token CSS is mirrored
+too. Generated
 `shared/browser-config.json` and `shared/tokens.css` are reserved; edit the
 assistant environment or `libs/design-tokens/src/lib/tokens.css` instead.
 
@@ -82,8 +110,20 @@ Library sources, package manifests/lockfiles, build configuration, tooling and
 other frozen inputs require a restart to rebuild and reinstall. A detected
 frozen-input change stops the session with a restart diagnostic. Restart after
 changing the endpoint, assistant or key as well. The installed strict TypeScript
-watcher must be clean before the ready URL appears and reports subsequent type
-errors in the terminal; a Vite refresh alone is not a successful type check.
+watcher for React, or `ngc --watch --noEmit` for Angular, must be clean before
+the ready URL appears. Angular also requires the latest CLI bundle to succeed.
+Subsequent type/template and bundle errors remain visible; a browser refresh
+alone is not a successful compiler check. The Angular checker covers newly
+added source files even when they are not imported by the current entry.
+
+With the pinned Angular toolchain, newly added static assets may remain
+undiscovered, and deleting then recreating an imported module may leave the
+CLI's cached missing-module error after the checker recovers. Restart the
+development command for these cases: the new generation discovers the asset
+and recompiles the restored module. Existing asset edits and rename-back
+recovery are verified live. Treat new static assets and delete/recreate as
+restart boundaries even on platforms where the vendor watcher recovers;
+the proof does not require those vendor failures on every OS.
 
 Ctrl+C or SIGTERM closes the session's proxy, source watchers and owned process
 groups, then removes its temporary consumer. Startup/runtime failures follow
@@ -119,10 +159,15 @@ artifact, choose a **new directory** under an existing real parent directory:
 ```sh
 node examples/chat/native/tooling/verify.mjs --retain /tmp/native-conversation-review
 node examples/chat/native/tooling/verify.mjs --review /tmp/native-conversation-review
+node examples/chat/native/tooling/verify.mjs --framework=angular --retain /tmp/native-angular-review
+node examples/chat/native/tooling/verify.mjs --review /tmp/native-angular-review
 ```
 
-These are the complete CLI forms; do not combine them or add flags. Retention
-never overwrites an existing directory. The existing parent is resolved to its
+Fresh verification and retention accept `--framework=react` or
+`--framework=angular`; omitting it selects React. Review infers the framework
+from the verified artifact and rejects a framework flag. Unknown or duplicate
+flags and combining retain/review are rejected. Retention never overwrites an
+existing directory. The existing parent is resolved to its
 physical path. The target must be new, and retained artifact paths cannot contain
 symlinks. Capture is
 provisional until the build and proofs pass; failures remove the newly owned
@@ -130,7 +175,10 @@ capture. Successful retention preserves checked app assets, source/configuration
 and package evidence, compiler/bundler provenance, results and the separate view
 proof. Temporary installation/build workspaces are still removed.
 
-Review validates the retained inventory and serves its checked bytes. It does
+Review validates complete byte inventories, selected framework/package/compiler
+evidence, app/view input agreement and successful verification results. It
+serves immutable copies of the checked bytes. These hashes establish local
+integrity, not authenticity or a replayable build-tool installation. Review does
 not rebuild or install anything, and it uses a deterministic local fixture,
 not `NATIVE_LANGGRAPH_URL`. Its finite seven-request walkthrough is:
 
