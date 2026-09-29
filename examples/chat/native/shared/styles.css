@@ -217,6 +217,41 @@ textarea:disabled {
   flex-wrap: wrap;
   gap: 10px;
 }
+.trip-summary {
+  margin-block: 16px;
+  padding: 16px;
+  border: 1px solid var(--ds-border);
+  border-radius: 8px;
+  background: var(--ds-surface-dim);
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.trip-summary h4,
+.trip-summary h5 {
+  margin-block: 0 8px;
+}
+.trip-summary h4 {
+  font-size: 1rem;
+}
+.trip-summary h5 {
+  font-size: 0.9rem;
+}
+.trip-summary-counts {
+  color: var(--ds-text-muted);
+  font-size: 0.85rem;
+}
+.trip-summary-days {
+  padding-left: 20px;
+}
+.trip-summary-day {
+  margin-block: 12px;
+}
+.trip-summary ul {
+  padding-left: 20px;
+}
+.trip-summary-note {
+  white-space: pre-wrap;
+}
 .composer {
   border-top: 1px solid var(--ds-border);
   padding-top: 12px;

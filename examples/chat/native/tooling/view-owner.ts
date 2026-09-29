@@ -1,3 +1,4 @@
+import { applicationTools } from '../shared/trip-summary.js';
 import { createMarkdown } from '@threadplane/content/markdown';
 import { createSession } from '@threadplane/langgraph';
 import { createApplication } from '../shared/application';
@@ -32,6 +33,7 @@ export function createViewOwner() {
     sessionFactory(id) {
       counts.sessions++;
       const session = createSession({
+        tools: applicationTools,
         assistantId: 'assistant',
         apiUrl,
         threadId: id,
@@ -102,13 +104,25 @@ export function createViewOwner() {
       inspect() {
         return {
           ...counts,
+          tripSummaryCount: owner
+            .getSnapshot()
+            .messages.reduce(
+              (total, row) => total + row.tripSummaries.length,
+              0
+            ),
           texts: owner.getSnapshot().messages.map((row) => row.message.content),
         };
       },
       compare(name: string) {
         const before = marks.get(name)!,
           after = owner.getSnapshot();
+        const cards = before.messages.flatMap((row) => row.tripSummaries);
+        const current = after.messages.flatMap((row) => row.tripSummaries);
         return {
+          tripSummaries:
+            cards.length > 0 &&
+            cards.length === current.length &&
+            cards.every((card, index) => card === current[index]),
           snapshot: before === after,
           markdown: before.messages.every(
             (row, index) => row.markdown === after.messages[index]?.markdown

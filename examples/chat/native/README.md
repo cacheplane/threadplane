@@ -1,8 +1,8 @@
 # Native conversation example
 
 These private React and Angular examples use the installed native LangGraph
-runtime with Threadplane's corresponding bindings, owned Markdown and plain
-tool observations. Both borrow the same application owner to open saved
+runtime with Threadplane's corresponding bindings, owned Markdown, tool
+observations and a readonly supplied-trip recap. Both borrow the same application owner to open saved
 conversations, restore history and stream new responses. They are contributor
 examples, not published packages or replacements for the canonical Angular
 chat example. This does not establish general framework or release parity.
@@ -74,7 +74,7 @@ temporary files.
 
 Each e2e target runs development, basic conversation, missing-configuration and
 production cases against owned local fixtures. The production case contains
-nine browser scenarios and a separate actual React unmount/remount or Angular
+eleven browser scenarios and a separate actual React unmount/remount or Angular
 component destruction/remount proof. The CLI builds the selected production
 app, runs its installed shared-owner tests, then checks those production
 scenarios and the selected view lifecycle. Angular compilation includes strict
@@ -84,20 +84,23 @@ mutates a live deployment. CI runs the shared tooling once before builds, then
 both e2e targets and actual CLI selections after foundation builds and Chromium
 setup.
 
-The canonical approval provider proof runs once for the shared application,
-separately from either framework's browser verification:
+The canonical approval and trip-summary provider proofs each run once for the
+shared application, separately from either framework's browser verification:
 
 ```sh
 npx nx run native-conversation-react:provider-test
+npx nx run native-conversation-react:summary-provider-test
 ```
 
-It requires `uv` and Python 3.12. The required library CI job installs Python
-with the pinned `astral-sh/setup-uv` action, then runs this target with a ten-minute
-step limit. The runner copies the canonical Python graph and lock into an owned
+They require `uv` and Python 3.12. The required library CI job installs Python
+with the pinned `astral-sh/setup-uv` action and caching disabled, then runs the
+two targets sequentially with a ten-minute limit each. Each runner copies the
+canonical Python graph and lock into an owned
 temporary directory, uses `uv sync --frozen --python 3.12`, and starts the pinned
 LangGraph service with an explicit local model replay fixture. It compiles the
 real application owner against the installed candidate packages and runs it in
-Node without building either UI. It checks approve, decline, loaded approval and
+Node without building either UI. The approval proof checks approve, decline,
+loaded approval and
 a separately labeled raw-session unmatched-ID routing diagnostic. The provider
 proof records exact HTTP requests, associated saved tool results and the model
 journal; browser fixtures alone do not establish this provider behavior. It
@@ -105,10 +108,23 @@ uses owned loopback ports, sanitizes inherited credentials and cleans up only
 its own threads and processes. Unconfirmed creation or cleanup retains the
 owned temporary directory and fails the target.
 
+The summary proof checks the fixed tool catalog, exact supplied arguments,
+one terminal ToolMessage write and no automatic model continuation. A later
+explicit user message sees the saved call/result pair; a fresh application
+loads readable saved text without executing the tool. Separate controlled
+transport cases hold an already committed provider acknowledgement while Stop
+or selection closes the downstream request, and reject a write locally before
+forwarding it. These distinguish committed state from an unforwarded write;
+the injected local 503 is not a provider rejection. The deterministic replay
+proves routing, binding and persistence with the pinned provider, not live-model
+obedience or the ability to plan an itinerary. Both proofs preserve exact
+HTTP/model journals and require confirmed cleanup before accepting evidence.
+
 The view proof checks that removing the view releases only its subscription,
 the owner still receives a held response while absent, remounting preserves
-snapshot/Markdown identities, and explicit owner disposal physically closes
-the stream. Real Back/Forward navigation and synthetic pagehide checks do not
+snapshot/Markdown and two completed summary-card identities without another
+terminal write, and explicit owner disposal physically closes the stream.
+Real Back/Forward navigation and synthetic pagehide checks do not
 claim actual browser BFCache coverage.
 
 ## Working on the example
@@ -187,9 +203,32 @@ servers or reuse another session's directory.
   stale UI actions within this owner; they do not establish cross-client or
   server-side atomicity.
 
-Plain Markdown and tool observations are supported. Generated tools/UI, rich
-rendering, directory mutations beyond create, AG-UI persistence, canonical-mode
-cutover and package retirement remain later work.
+The fixed typed `show_trip_summary` catalog accepts an authored title, ordered
+days and places, and an optional note. It formats a readonly supplied recap;
+it does not plan, validate or change an itinerary. The handler returns readable
+text with `followUp:false` independently of either view. Rendering never executes
+or acknowledges the tool. The typed catalog narrows tool-call observations;
+unknown tools' saved ToolMessage text remains readable as literal text.
+
+There is no argument validator or schema engine. Normal string/array/number
+formatting operations use the authored TypeScript contract; malformed values
+can throw and become ordinary tool errors with no partial card. Metadata may
+describe positive integral days, but formatting does not enforce that domain.
+Completed local calls render one card at their assistant row, including empty
+lists and repeated labels. Pending and failed calls remain ordinary observations.
+
+A locally completed card does not mean its result is saved or the response has
+completed. The composer reports the active, failed or completed operation. If a
+terminal write acknowledgement is lost, the provider may already have committed
+the result. Stop and navigation close local work without promising rollback,
+automatic retry or model continuation. A new application restores saved results
+as readable ToolMessage text, without reconstructing rich cards or executing
+tools. An unresolved saved call may remain a pending observation. An explicit
+new submit can still be refused while the existing session has an unresolved
+terminal write.
+
+Arbitrary generated tools/UI, directory mutations beyond create, AG-UI
+persistence, canonical-mode cutover and package retirement remain later work.
 
 ## Retain and review a verified build
 
@@ -218,9 +257,12 @@ proof. Temporary installation/build workspaces are still removed.
 
 Review validates complete byte inventories, selected framework/package/compiler
 evidence, app/view input agreement and successful verification results. It
-requires all nine production cases, including the eight-request approval case
+requires all eleven production cases, including the eight-request approval case
 and its literal-text, keyboard, draft, repeated-pause, physical-cancellation and
-mobile-layout facts, as well as the separate actual view lifecycle. It serves
+mobile-layout facts. It also requires the nine-request summary persistence and
+restoration proof, the eight-request failed-write proof, and the six-request
+actual view lifecycle with two preserved card identities and exactly one
+terminal write. Missing or contradictory material evidence fails review. It serves
 immutable copies of the checked bytes. These hashes establish local
 integrity, not authenticity or a replayable build-tool installation. Review does
 not rebuild or install anything, and it uses a deterministic local fixture,

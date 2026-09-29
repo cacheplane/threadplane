@@ -156,6 +156,9 @@ jobs:
       - name: Verify native approval with canonical provider
         timeout-minutes: 10
         run: npx nx run native-conversation-react:provider-test
+      - name: Verify native trip summary with canonical provider
+        timeout-minutes: 10
+        run: npx nx run native-conversation-react:summary-provider-test
       - name: Verify native owner with pinned Mastra service
         run: |
           npm ci --prefix deployments/ag-ui-mastra --no-audit --no-fund

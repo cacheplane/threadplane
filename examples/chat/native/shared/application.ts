@@ -1,4 +1,8 @@
 import { createSession, type LangGraphSession } from '@threadplane/langgraph';
+import {
+  applicationTools,
+  type ApplicationToolContracts,
+} from './trip-summary.js';
 import type { CompleteOutcome } from '@threadplane/core';
 import type { createMarkdown } from '@threadplane/content/markdown';
 import {
@@ -8,6 +12,8 @@ import {
 import type { ThreadDirectory, ThreadRow } from './contracts.js';
 import { selectedThread, threadUrl, type BrowserHistory } from './route.js';
 import { projectApproval, type Approval } from './approval.js';
+
+export type ApplicationSession = LangGraphSession<ApplicationToolContracts>;
 
 interface Decision extends Approval {
   readonly token: symbol;
@@ -36,7 +42,7 @@ export interface ApplicationSnapshot {
     id: string | null;
     row?: ThreadRow;
   }>;
-  readonly runtime: ReturnType<LangGraphSession['getSnapshot']> | null;
+  readonly runtime: ReturnType<ApplicationSession['getSnapshot']> | null;
 }
 
 export interface ApplicationOptions {
@@ -45,7 +51,7 @@ export interface ApplicationOptions {
   readonly assistantId: string;
   readonly apiUrl: string;
   // Private composition seam; tests can delay actual runtime completions.
-  readonly sessionFactory?: (id: string) => LangGraphSession;
+  readonly sessionFactory?: (id: string) => ApplicationSession;
   // Private composition seam around the installed Markdown owner.
   readonly markdownFactory?: typeof createMarkdown;
 }
@@ -54,7 +60,7 @@ interface Admission {
   readonly intent: number;
   readonly id: string;
   readonly controller: AbortController;
-  session?: LangGraphSession;
+  session?: ApplicationSession;
   release?: () => void;
   content?: ReturnType<typeof createMessageContent>;
 }
@@ -67,7 +73,7 @@ interface Creation {
 
 interface Submission {
   readonly admission: Admission;
-  readonly session: LangGraphSession;
+  readonly session: ApplicationSession;
   readonly controller: AbortController;
 }
 
@@ -107,6 +113,7 @@ export function createApplication(options: ApplicationOptions) {
     options.sessionFactory ??
     ((id: string) =>
       createSession({
+        tools: applicationTools,
         assistantId: options.assistantId,
         apiUrl: options.apiUrl,
         threadId: id,
@@ -423,7 +430,7 @@ export function createApplication(options: ApplicationOptions) {
   function execute(
     kind: 'text' | 'decision',
     dispatch: (
-      session: LangGraphSession,
+      session: ApplicationSession,
       signal: AbortSignal
     ) => Promise<CompleteOutcome>
   ) {
