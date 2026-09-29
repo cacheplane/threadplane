@@ -106,7 +106,9 @@ const admitted = (snapshot: ApplicationSnapshot) =>
   snapshot.list.status === 'ready' && snapshot.selection.status === 'ready';
 const settled = (snapshot: ApplicationSnapshot) =>
   !snapshot.submission.active && snapshot.submission.outcome !== null;
-function pause(snapshot: NonNullable<ApplicationSnapshot['runtime']>) {
+function pause(
+  snapshot: Pick<NonNullable<ApplicationSnapshot['runtime']>, 'interrupts'>
+) {
   assert.equal(snapshot.interrupts.length, 1);
   const interrupt = snapshot.interrupts[0];
   assert.match(interrupt.id!, /^[0-9a-f]{32}$/);

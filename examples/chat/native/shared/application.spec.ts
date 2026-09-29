@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { test, type TestContext } from 'node:test';
-import { createSession, type LangGraphSession } from '@threadplane/langgraph';
+import { createSession } from '@threadplane/langgraph';
+import type { ApplicationSession } from './application.js';
+import { applicationTools } from './trip-summary.js';
 import type { CompleteOutcome } from '@threadplane/core';
 import { startProofServer, threadEnvelope } from '../tooling/proof-server.mjs';
 import { createApplication, type ApplicationOptions } from './application.js';
@@ -34,6 +36,33 @@ const create = (id: string, extra = {}) => ({
   body: threadEnvelope(id, id),
   ...extra,
 });
+// Independent wire expectation; do not derive this from the authored catalog.
+const expectedClientTools = [
+  {
+    name: 'show_trip_summary',
+    description:
+      'Show a supplied trip recap with days and places. This terminal summary needs no follow-up; it does not plan or change an itinerary.',
+    parameters: {
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        days: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              day: { type: 'integer', minimum: 1 },
+              places: { type: 'array', items: { type: 'string' } },
+            },
+            required: ['day', 'places'],
+          },
+        },
+        note: { type: 'string' },
+      },
+      required: ['title', 'days'],
+    },
+  },
+];
 const run = (id: string, text: string, extra = {}) => ({
   method: 'POST',
   path: `/api/threads/${id}/runs/stream`,
@@ -46,7 +75,10 @@ const run = (id: string, text: string, extra = {}) => ({
     );
     assert.deepEqual(payload, {
       assistant_id: 'assistant',
-      input: { messages: [{ type: 'human', id: message.id, content: text }] },
+      input: {
+        messages: [{ type: 'human', id: message.id, content: text }],
+        client_tools: expectedClientTools,
+      },
       stream_mode: ['values', 'messages-tuple', 'updates', 'custom'],
       stream_subgraphs: true,
       stream_resumable: true,
@@ -150,8 +182,8 @@ async function fixture(
     )
   );
   const nav = navigation(server.origin + '/chat' + route);
-  const sessions: LangGraphSession[] = [];
-  const disposed: LangGraphSession[] = [];
+  const sessions: ApplicationSession[] = [];
+  const disposed: ApplicationSession[] = [];
   const options: ApplicationOptions = {
     history: nav.boundary,
     directory: createThreadDirectory({
@@ -162,6 +194,7 @@ async function fixture(
     assistantId: 'assistant',
     sessionFactory(id) {
       const actual = createSession({
+        tools: applicationTools,
         assistantId: 'assistant',
         threadId: id,
         apiUrl: server.origin + '/api',
@@ -514,8 +547,8 @@ for (const destination of [
       const gate = deferred();
       const settled = deferred();
       const delivered = deferred();
-      let originalSession: LangGraphSession | undefined;
-      const stopped: LangGraphSession[] = [];
+      let originalSession: ApplicationSession | undefined;
+      const stopped: ApplicationSession[] = [];
       const running = destination.endsWith('-running');
       const runStep = destination === 'a-running' ? 8 : 6;
       t.after(() => gate.release());
@@ -1103,7 +1136,7 @@ test(
   'history resolved by actual runtime disposal without accepted history is never ready',
   { timeout: 5000 },
   async (t) => {
-    let current!: LangGraphSession;
+    let current!: ApplicationSession;
     const { app, server } = await fixture(
       t,
       [

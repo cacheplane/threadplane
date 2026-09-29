@@ -80,6 +80,20 @@ function readNamedStep(job, name) {
 }
 
 describe('CI workflow', () => {
+  it('requires one sequential native trip summary provider proof with the existing pinned Python setup', async () => {
+    const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'library');
+    const setup = readNamedStep(job, 'Set up pinned Python for native approval proof');
+    const approval = readNamedStep(job, 'Verify native approval with canonical provider');
+    const summary = readNamedStep(job, 'Verify native trip summary with canonical provider');
+    assert.match(summary, /^ {8}timeout-minutes: 10\s*$/m);
+    assert.match(summary, /run: npx nx run native-conversation-react:summary-provider-test\s*$/);
+    assert.equal((job.match(/native-conversation-\w+:summary-provider-test/g) ?? []).length, 1);
+    assert.equal((job.match(/uses: astral-sh\/setup-uv@/g) ?? []).length, 1);
+    assert.ok(job.indexOf(summary) > job.indexOf(approval));
+    assert.ok(job.indexOf(approval) > job.indexOf(setup));
+    assert.ok(job.indexOf(setup) > job.indexOf('npx nx run ag-ui:runtime-type-tests'));
+    assert.doesNotMatch(summary, /continue-on-error|\|\|\s*true|set\s+\+e|if:|--grep|--test-name-pattern|&\s*$/m);
+  });
   it('requires one pinned Python canonical native approval proof after runtime prerequisites', async () => {
     const job = readJobBlock(
       await readFile('.github/workflows/ci.yml', 'utf8'),

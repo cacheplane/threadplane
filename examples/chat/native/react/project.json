@@ -11,7 +11,10 @@
       "dependsOn": [],
       "outputs": ["{workspaceRoot}/dist/examples/chat/native/react"],
       "defaultConfiguration": "production",
-      "configurations": { "production": {}, "development": {} },
+      "configurations": {
+        "production": {},
+        "development": {}
+      },
       "options": {
         "cwd": "{workspaceRoot}",
         "command": "node examples/chat/native/tooling/run.mjs build"
@@ -23,7 +26,9 @@
       "cache": false,
       "dependsOn": [],
       "defaultConfiguration": "development",
-      "configurations": { "development": {} },
+      "configurations": {
+        "development": {}
+      },
       "options": {
         "cwd": "{workspaceRoot}",
         "command": "node examples/chat/native/tooling/run.mjs serve"
@@ -67,6 +72,20 @@
       "options": {
         "config": "examples/chat/native/e2e/playwright.config.ts",
         "skipInstall": true
+      }
+    },
+    "summary-provider-test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [],
+      "options": {
+        "cwd": "{workspaceRoot}",
+        "parallel": false,
+        "commands": [
+          "node node_modules/typescript/bin/tsc -p examples/chat/native/tooling/tsconfig.trip-summary-provider-host.json",
+          "node --import tsx --test examples/chat/native/tooling/trip-summary-provider.spec.ts",
+          "node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.base.json examples/chat/native/tooling/trip-summary-provider.ts"
+        ]
       }
     }
   }

@@ -45,6 +45,104 @@ const values = (text) => ({
   event: 'values',
   data: { messages: [{ type: 'ai', id: 'answer', content: text }] },
 });
+const summaryTitle = '<img src=x onerror=alert(1)> Supplied recap';
+const summaryPlace = '<script>alert(1)</script> & ' + 'LongPlace'.repeat(24);
+const summaryNote = '<b>Keep this literal</b> & bring water';
+const summaryCalls = [
+  {
+    id: 'summary-one',
+    name: 'show_trip_summary',
+    args: {
+      title: summaryTitle,
+      days: [
+        { day: 1, places: [summaryPlace, summaryPlace] },
+        { day: 1, places: [] },
+      ],
+      note: summaryNote,
+    },
+  },
+  {
+    id: 'summary-empty',
+    name: 'show_trip_summary',
+    args: { title: 'Empty recap', days: [] },
+  },
+];
+const summaryMessage = {
+  type: 'ai',
+  id: 'summary-message',
+  content: '',
+  tool_calls: summaryCalls,
+};
+const summaryTexts = [
+  summaryTitle +
+    '\nDay 1: ' +
+    summaryPlace +
+    ' → ' +
+    summaryPlace +
+    '\nDay 1: No stops\n' +
+    summaryNote,
+  'Empty recap',
+];
+const summaryResults = summaryCalls.map((call, index) => ({
+  id: 'client-tool-result-' + call.id,
+  role: 'tool',
+  type: 'tool',
+  tool_call_id: call.id,
+  content: summaryTexts[index],
+}));
+const summaryEvent = { event: 'values', data: { messages: [summaryMessage] } };
+const singleSummaryMessage = {
+  ...summaryMessage,
+  tool_calls: [
+    {
+      id: 'summary-single',
+      name: 'show_trip_summary',
+      args: {
+        title: 'One supplied day',
+        days: [{ day: 2, places: ['Museum'] }],
+      },
+    },
+  ],
+};
+const summaryWrite = (extra = {}) => ({
+  method: 'POST',
+  path: '/api/threads/a/state',
+  payload: { values: { messages: summaryResults } },
+  body: { checkpoint_id: 'summary-saved' },
+  ...extra,
+});
+const summaryHistory = (complete = true, message = summaryMessage) => {
+  const step = history('a');
+  step.body[0].values.messages = [message, ...(complete ? summaryResults : [])];
+  return step;
+};
+// Independent wire expectation; do not derive this from the authored catalog.
+const expectedClientTools = [
+  {
+    name: 'show_trip_summary',
+    description:
+      'Show a supplied trip recap with days and places. This terminal summary needs no follow-up; it does not plan or change an itinerary.',
+    parameters: {
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        days: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              day: { type: 'integer', minimum: 1 },
+              places: { type: 'array', items: { type: 'string' } },
+            },
+            required: ['day', 'places'],
+          },
+        },
+        note: { type: 'string' },
+      },
+      required: ['title', 'days'],
+    },
+  },
+];
 const run = (id, text, events = [values('A response')], extra = {}) => ({
   method: 'POST',
   path: `/api/threads/${id}/runs/stream`,
@@ -58,7 +156,10 @@ const run = (id, text, events = [values('A response')], extra = {}) => ({
     );
     assert.deepEqual(payload, {
       assistant_id: 'assistant',
-      input: { messages: [{ type: 'human', id: messageId, content: text }] },
+      input: {
+        messages: [{ type: 'human', id: messageId, content: text }],
+        client_tools: expectedClientTools,
+      },
       stream_mode: ['values', 'messages-tuple', 'updates', 'custom'],
       stream_subgraphs: true,
       stream_resumable: true,
@@ -257,10 +358,24 @@ export async function runViewProof(browser, retained) {
     lifecycleName(retained.framework),
     [
       ...initial(),
+      run('a', 'Show the supplied recap.', [summaryEvent]),
+      summaryWrite(),
       run(
         'a',
         'Keep working while the view is absent.',
-        [values('# Updated while absent')],
+        [
+          {
+            event: 'messages',
+            data: [
+              {
+                type: 'AIMessageChunk',
+                id: 'absent-answer',
+                content: '# Updated while absent',
+              },
+              {},
+            ],
+          },
+        ],
         { holdHeaders: true, holdBody: true }
       ),
     ],
@@ -272,12 +387,21 @@ export async function runViewProof(browser, retained) {
           page.evaluate(() => window.nativeViewProof?.inspect().active)
         )
         .toBe(1);
+      await submit(page, 'Show the supplied recap.');
+      await expect(
+        page.getByRole('region', { name: 'Trip summary', exact: true })
+      ).toHaveCount(2);
+      await expect(
+        page.getByText('Response complete.', { exact: true })
+      ).toBeVisible();
+      assert.equal(backend.requests.length, 5);
       await submit(page, 'Keep working while the view is absent.');
-      await deadline(backend.steps[3].received, 'held view request');
+      await deadline(backend.steps[5].received, 'held view request');
       await page.evaluate(() => window.nativeViewProof.mark('mounted'));
       const before = await page.evaluate(() =>
         window.nativeViewProof.inspect()
       );
+      assert.equal(before.tripSummaryCount, 2);
       await page.evaluate(() => window.nativeViewProof.unmount());
       await expect(page.locator('#root')).toBeEmpty();
       const absent = await page.evaluate(() =>
@@ -299,10 +423,10 @@ export async function runViewProof(browser, retained) {
         assert.equal(absent[key], before[key], key);
       assert.deepEqual(
         await page.evaluate(() => window.nativeViewProof.compare('mounted')),
-        { snapshot: true, markdown: true, owner: true }
+        { snapshot: true, markdown: true, owner: true, tripSummaries: true }
       );
       // A successfully delivered response after unmount proves transport survived.
-      backend.steps[3].releaseHeaders();
+      backend.steps[5].releaseHeaders();
       await expect
         .poll(() => page.evaluate(() => window.nativeViewProof.inspect().texts))
         .toContain('# Updated while absent');
@@ -313,10 +437,19 @@ export async function runViewProof(browser, retained) {
       assert.ok(
         updated.parsers + updated.updates > absent.parsers + absent.updates
       );
+      assert.equal(
+        await page.evaluate(
+          () => window.nativeViewProof.compare('mounted').tripSummaries
+        ),
+        true
+      );
       await page.evaluate(() => window.nativeViewProof.mount());
       await expect(
         page.getByRole('heading', { name: 'Updated while absent' })
       ).toBeVisible();
+      await expect(
+        page.getByRole('region', { name: 'Trip summary', exact: true })
+      ).toHaveCount(2);
       const remounted = await page.evaluate(() =>
         window.nativeViewProof.inspect()
       );
@@ -335,10 +468,10 @@ export async function runViewProof(browser, retained) {
         assert.equal(remounted[key], updated[key], key);
       assert.deepEqual(
         await page.evaluate(() => window.nativeViewProof.compare('absent')),
-        { snapshot: true, markdown: true, owner: true }
+        { snapshot: true, markdown: true, owner: true, tripSummaries: true }
       );
       await page.evaluate(() => window.nativeViewProof.dispose());
-      await physicallyClosed(backend.steps[3]);
+      await physicallyClosed(backend.steps[5]);
       const disposed = await page.evaluate(() =>
         window.nativeViewProof.inspect()
       );
@@ -346,6 +479,11 @@ export async function runViewProof(browser, retained) {
       assert.equal(disposed.sessionDisposals, 1);
       assert.equal(disposed.sessionActive, 0);
       assert.ok(disposed.parserDisposals > remounted.parserDisposals);
+      assert.equal(
+        backend.requests.filter((request) => request.path.endsWith('/state'))
+          .length,
+        1
+      );
       return {
         before,
         absent,
@@ -353,6 +491,9 @@ export async function runViewProof(browser, retained) {
         remounted,
         disposed,
         physicalCloseBeforeCleanup: true,
+        tripSummaryIdentity: true,
+        terminalWriteCount: 1,
+        exactRequestCount: 6,
         [retained.framework === 'angular'
           ? 'actualAngularComponentDestroy'
           : 'actualCreateRootUnmount']: true,
@@ -882,6 +1023,202 @@ export async function runProductionProofs(browser, retained) {
           physicalCloseBeforeCleanup: true,
           uncertainPauseNotActionable: true,
           mobileOverflow: false,
+        };
+      }
+    )
+  );
+  results.push(
+    await scenario(
+      browser,
+      retained,
+      'supplied trip summaries, terminal persistence and observational reload',
+      [
+        ...initial(),
+        run('a', 'Show the supplied recap.', [summaryEvent, summaryEvent]),
+        summaryWrite({ holdBody: true }),
+        run('a', 'Continue explicitly.', [
+          {
+            event: 'messages',
+            data: [
+              {
+                type: 'AIMessageChunk',
+                id: 'next-explicit-answer',
+                content: 'Next explicit response.',
+              },
+              {},
+            ],
+          },
+          { event: 'messages/complete', data: [] },
+        ]),
+        search(rows, { concurrentGroup: 'reload' }),
+        lookup('a', { concurrentGroup: 'reload' }),
+        summaryHistory(),
+      ],
+      async ({ page, expect, backend, url }) => {
+        await page.goto(url + '/?thread=a');
+        await ready(page, expect);
+        await submit(page, 'Show the supplied recap.');
+        await deadline(backend.steps[4].received, 'terminal summary write');
+        const cards = page.getByRole('region', {
+          name: 'Trip summary',
+          exact: true,
+        });
+        await expect(cards).toHaveCount(2);
+        await expect(
+          cards.first().getByRole('heading', { level: 4 })
+        ).toHaveText(summaryTitle);
+        await expect(cards.first().locator('.trip-summary-counts')).toHaveText(
+          '2 days · 2 stops'
+        );
+        await expect(cards.first().locator('.trip-summary-day')).toHaveCount(2);
+        await expect(
+          cards.first().getByRole('heading', { level: 5 })
+        ).toHaveText(['Day 1', 'Day 1']);
+        await expect(cards.first().locator('.trip-summary-place')).toHaveText([
+          summaryPlace,
+          summaryPlace,
+        ]);
+        await expect(
+          cards.first().getByText('No stops', { exact: true })
+        ).toBeVisible();
+        await expect(cards.first().locator('.trip-summary-note')).toHaveText(
+          summaryNote
+        );
+        await expect(cards.last().locator('.trip-summary-counts')).toHaveText(
+          '0 days · 0 stops'
+        );
+        await expect(
+          cards.last().getByText('No days supplied.', { exact: true })
+        ).toBeVisible();
+        await expect(cards.locator('img, script, b')).toHaveCount(0);
+        await expect(
+          page
+            .getByRole('article', { name: 'assistant message', exact: true })
+            .locator('.tool-observation')
+        ).toHaveCount(0);
+        await expect(
+          page.getByText('Response in progress…', { exact: true })
+        ).toBeVisible();
+        await expect(
+          page.getByRole('button', { name: 'Stop', exact: true })
+        ).toBeEnabled();
+        await expect(
+          page.getByText('Response complete.', { exact: true })
+        ).toHaveCount(0);
+        assert.equal(backend.requests.length, 5);
+        await page.setViewportSize({ width: 375, height: 812 });
+        assert.equal(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth > innerWidth
+          ),
+          false
+        );
+        backend.steps[4].releaseBody();
+        await expect(
+          page.getByText('Response complete.', { exact: true })
+        ).toBeVisible();
+        assert.equal(backend.requests.length, 5);
+        await submit(page, 'Continue explicitly.');
+        await expect(
+          page.getByText('Next explicit response.', { exact: true }).last()
+        ).toBeVisible();
+        await ready(page, expect);
+        assert.equal(backend.requests.length, 6);
+        await expect(
+          page.getByText('Response complete.', { exact: true })
+        ).toBeVisible();
+        await expect(cards).toHaveCount(2);
+        await page.reload();
+        await ready(page, expect);
+        await expect(cards).toHaveCount(0);
+        const toolRows = page.getByRole('article', {
+          name: 'tool message',
+          exact: true,
+        });
+        await expect(toolRows.locator('pre')).toHaveText(summaryTexts);
+        await expect(toolRows.locator('img, script, b')).toHaveCount(0);
+        assert.equal(backend.requests.length, 9);
+        return {
+          exactRequestCount: 9,
+          exactTerminalPersistence: true,
+          terminalNoAutoContinue: true,
+          nextExplicitSubmit: true,
+          cardsRetainedAfterNextTurn: true,
+          pendingStatus: true,
+          restorationNoReexecute: true,
+          literalSummary: true,
+          duplicateLabels: true,
+          emptyLists: true,
+          mobileOverflow: false,
+        };
+      }
+    )
+  );
+  results.push(
+    await scenario(
+      browser,
+      retained,
+      'trip summary persistence failure remains an error without automatic retry',
+      [
+        ...initial(),
+        run('a', 'Show the supplied recap.', [
+          { event: 'values', data: { messages: [singleSummaryMessage] } },
+        ]),
+        summaryWrite({
+          status: 503,
+          payload: {
+            values: {
+              messages: [
+                {
+                  id: 'client-tool-result-summary-single',
+                  role: 'tool',
+                  type: 'tool',
+                  tool_call_id: 'summary-single',
+                  content: 'One supplied day\nDay 2: Museum',
+                },
+              ],
+            },
+          },
+        }),
+        search(rows, { concurrentGroup: 'reload' }),
+        lookup('a', { concurrentGroup: 'reload' }),
+        summaryHistory(false, singleSummaryMessage),
+      ],
+      async ({ page, expect, backend, url }) => {
+        await page.goto(url + '/?thread=a');
+        await ready(page, expect);
+        await submit(page, 'Show the supplied recap.');
+        await expect(
+          page.getByText('The response failed.', { exact: true })
+        ).toBeVisible();
+        await expect(
+          page.getByRole('region', { name: 'Trip summary', exact: true })
+        ).toHaveCount(1);
+        await expect(page.locator('.trip-summary-counts')).toHaveText(
+          '1 day · 1 stop'
+        );
+        await expect(
+          page.getByText('Response complete.', { exact: true })
+        ).toHaveCount(0);
+        assert.equal(backend.requests.length, 5);
+        await page.reload();
+        await ready(page, expect);
+        await expect(
+          page.getByRole('region', { name: 'Trip summary', exact: true })
+        ).toHaveCount(0);
+        await expect(
+          page.getByRole('article', { name: 'tool message', exact: true })
+        ).toHaveCount(0);
+        await expect(page.locator('.tool-observation .muted')).toHaveText(
+          'Observed tool status: pending'
+        );
+        assert.equal(backend.requests.length, 8);
+        return {
+          exactRequestCount: 8,
+          errorStatus: true,
+          oneWriteAttempt: true,
+          noAutomaticRetry: true,
+          restorationNoReexecute: true,
         };
       }
     )

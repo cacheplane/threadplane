@@ -1,6 +1,35 @@
+// Independent wire expectation; do not derive this from the authored catalog.
+const expectedClientTools = [
+  {
+    name: 'show_trip_summary',
+    description:
+      'Show a supplied trip recap with days and places. This terminal summary needs no follow-up; it does not plan or change an itinerary.',
+    parameters: {
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        days: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              day: { type: 'integer', minimum: 1 },
+              places: { type: 'array', items: { type: 'string' } },
+            },
+            required: ['day', 'places'],
+          },
+        },
+        note: { type: 'string' },
+      },
+      required: ['title', 'days'],
+    },
+  },
+];
 import assert from 'node:assert/strict';
 import { test, type TestContext } from 'node:test';
-import { createSession, type LangGraphSession } from '@threadplane/langgraph';
+import { createSession } from '@threadplane/langgraph';
+import type { ApplicationSession } from './application.js';
+import { applicationTools } from './trip-summary.js';
 import { createMarkdown } from '@threadplane/content/markdown';
 import { createApplication, type ApplicationOptions } from './application.js';
 import { createThreadDirectory } from './directory.js';
@@ -117,7 +146,7 @@ async function fixture(
     )
   );
   let url = server.origin + '/?thread=a';
-  const sessions: LangGraphSession[] = [];
+  const sessions: ApplicationSession[] = [];
   const options: ApplicationOptions = {
     assistantId: 'assistant',
     apiUrl: server.origin + '/api',
@@ -134,6 +163,7 @@ async function fixture(
     },
     sessionFactory(threadId) {
       const actual = createSession({
+        tools: applicationTools,
         assistantId: 'assistant',
         apiUrl: server.origin + '/api',
         threadId,
@@ -365,7 +395,17 @@ test('approval observed during text streaming cannot respond until that text ope
         const message = body.input.messages[0];
         assert.equal(message.content, text);
         assert.equal('command' in body, false);
-        assert.equal(body.input.messages.length, 1);
+        assert.deepEqual(value, {
+          assistant_id: 'assistant',
+          input: {
+            messages: [{ type: 'human', id: message.id, content: text }],
+            client_tools: expectedClientTools,
+          },
+          stream_mode: ['values', 'messages-tuple', 'updates', 'custom'],
+          stream_subgraphs: true,
+          stream_resumable: true,
+          on_disconnect: 'continue',
+        });
       },
     },
     resume('a'),

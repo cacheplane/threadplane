@@ -4,8 +4,9 @@ import {
   createMarkdown,
   type MarkdownDocument,
 } from '@threadplane/content/markdown';
-import type { Message, ToolCall } from '@threadplane/core';
+import type { Message } from '@threadplane/core';
 import { createMessageContent } from './message-content.js';
+import type { ApplicationToolCall } from './trip-summary.js';
 
 function countedMarkdown() {
   const created: MarkdownDocument[] = [];
@@ -96,20 +97,21 @@ test('message content skips equal document values and updates tool observations 
     ...message('Searching', 'complete'),
     toolCallIds: Object.freeze(['call']),
   });
-  const pending: ToolCall = Object.freeze({
+  const pending: ApplicationToolCall = Object.freeze({
     id: 'call',
-    name: 'search',
-    args: Object.freeze({}),
+    name: 'show_trip_summary',
+    args: Object.freeze({ title: 'Found', days: Object.freeze([]) }),
     status: 'pending',
   });
   content.update([input], [pending]);
   const initial = content.getSnapshot();
   assert.equal(initial.length, 1);
+  assert.deepEqual(initial[0].tripSummaries, []);
   for (let i = 0; i < 3; i++)
     content.update([{ ...input, delivery: { ...input.delivery } }], [pending]);
   assert.strictEqual(content.getSnapshot()[0].markdown, initial[0].markdown);
   assert.deepEqual(work.updated, []);
-  const complete: ToolCall = Object.freeze({
+  const complete: ApplicationToolCall = Object.freeze({
     ...pending,
     status: 'complete',
     result: 'Found',
@@ -119,10 +121,14 @@ test('message content skips equal document values and updates tool observations 
   assert.strictEqual(next[0].markdown, initial[0].markdown);
   assert.deepEqual(next[0].toolCalls, [complete]);
   assert.deepEqual(initial[0].toolCalls, [pending]);
+  assert.equal(next[0].tripSummaries[0].text, 'Found');
   assert.deepEqual(work.updated, []);
   assert.equal('update' in next[0], false);
   assert.equal('dispose' in next[0], false);
   assert.strictEqual(next[0].message, input);
+  content.update([input], [{ ...pending, status: 'error', error: 'Failed' }]);
+  assert.deepEqual(content.getSnapshot()[0].tripSummaries, []);
+  assert.equal(next[0].tripSummaries[0].text, 'Found');
   content.dispose();
 });
 
@@ -187,4 +193,58 @@ test('message content removal disposes once and reused IDs and generations get n
     last[0].markdown
   );
   replacement.dispose();
+});
+
+test('summary cards belong only to assistant calls and cache complete object identity across publications', () => {
+  const work = countedMarkdown();
+  const content = createMessageContent(work.factory);
+  const input = Object.freeze({
+    ...message('Summary', 'complete'),
+    toolCallIds: Object.freeze(['one', 'two']),
+  });
+  const tool: Message = Object.freeze({
+    ...message('Readable result', 'complete', 'tool-generation', 'result'),
+    role: 'tool',
+    toolCallId: 'one',
+  });
+  const call: ApplicationToolCall = Object.freeze({
+    id: 'one',
+    name: 'show_trip_summary',
+    args: Object.freeze({ title: ' First ', days: Object.freeze([]) }),
+    status: 'complete',
+    result: 'First',
+  });
+  const second: ApplicationToolCall = Object.freeze({ ...call, id: 'two' });
+  content.update([input, tool], [call, second]);
+  const initial = content.getSnapshot();
+  assert.ok(
+    'tripSummaries' in initial[0],
+    'Assistant row exposes authored summaries'
+  );
+  assert.ok('tripSummaries' in initial[1]);
+  assert.deepEqual(initial[1].tripSummaries, []);
+  assert.equal(initial[0].tripSummaries.length, 2);
+  content.update([input, tool], [call, second]);
+  assert.strictEqual(content.getSnapshot(), initial);
+  content.update([{ ...input }, tool], [call, second]);
+  assert.strictEqual(
+    content.getSnapshot()[0].tripSummaries[0],
+    initial[0].tripSummaries[0]
+  );
+  const replacement: ApplicationToolCall = Object.freeze({
+    ...call,
+    args: Object.freeze({ title: 'Replacement', days: Object.freeze([]) }),
+    result: 'Replacement',
+  });
+  content.update([input, tool], [replacement, second]);
+  const replaced = content.getSnapshot()[0];
+  assert.ok('tripSummaries' in replaced);
+  assert.notStrictEqual(replaced.tripSummaries[0], initial[0].tripSummaries[0]);
+  assert.strictEqual(replaced.markdown, initial[0].markdown);
+  const retained = JSON.stringify(initial);
+  content.update([], []);
+  assert.equal(work.disposed, 2);
+  assert.equal(JSON.stringify(initial), retained);
+  frozen(initial);
+  content.dispose();
 });

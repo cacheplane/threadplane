@@ -4,7 +4,9 @@ import {
   createMarkdown,
   type MarkdownDocument,
 } from '@threadplane/content/markdown';
-import { createSession, type LangGraphSession } from '@threadplane/langgraph';
+import { createSession } from '@threadplane/langgraph';
+import type { ApplicationSession } from './application.js';
+import { applicationTools } from './trip-summary.js';
 import { createApplication } from './application.js';
 import { createThreadDirectory } from './directory.js';
 import { startProofServer, threadEnvelope } from '../tooling/proof-server.mjs';
@@ -135,6 +137,7 @@ test(
       sessionFactory(id) {
         sessions++;
         return createSession({
+          tools: applicationTools,
           assistantId: 'assistant',
           threadId: id,
           apiUrl: server.origin + '/api',
@@ -281,7 +284,7 @@ test(
       history('a', '> History replacement'),
     ]);
     const work = workCounter();
-    let session!: LangGraphSession;
+    let session!: ApplicationSession;
     const app = createApplication({
       assistantId: 'assistant',
       apiUrl: server.origin + '/api',
@@ -297,6 +300,7 @@ test(
       markdownFactory: work.factory,
       sessionFactory(id) {
         session = createSession({
+          tools: applicationTools,
           assistantId: 'assistant',
           threadId: id,
           apiUrl: server.origin + '/api',
@@ -331,17 +335,14 @@ test(
       .messages.find((row) => row.id === 'answer')!;
     assert.equal(answer.markdown.document.content, '# Canonical');
     assert.equal(answer.markdown.document.phase, 'streaming');
-    assert.equal(answer.toolCalls[0].name, 'lookup');
-    assert.equal(answer.toolCalls[0].status, 'complete');
+    assert.deepEqual(answer.toolCalls, []);
+    assert.deepEqual(app.getSnapshot().runtime!.toolCalls, []);
     const result = app
       .getSnapshot()
       .messages.find((row) => row.role === 'tool')!;
     assert.equal(result.message.toolCallId, 'call');
     assert.equal(result.markdown.document.content, 'Found');
-    assert.strictEqual(
-      answer.toolCalls[0],
-      app.getSnapshot().runtime!.toolCalls[0]
-    );
+    assert.deepEqual(result.toolCalls, []);
     assert.ok(
       observed.some((state) =>
         state.messages.some(

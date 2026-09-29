@@ -11,6 +11,8 @@ export const productionCases = [
   'list refresh during selection and creation ambiguity',
   'duplicate submit guard, Stop and canonical correction',
   'canonical approval, repeated pause, preserved draft and uncertain Stop',
+  'supplied trip summaries, terminal persistence and observational reload',
+  'trip summary persistence failure remains an error without automatic retry',
 ];
 export const lifecycleName = (framework) =>
   selectedFramework(framework) === 'angular'
@@ -78,7 +80,11 @@ export function assertVerification(app, view, results) {
     );
   }
   assert.equal(results.browser.view.name, lifecycleName(framework));
-  const approval = results.browser.production.at(-1);
+  const approval = results.browser.production.find(
+    (result) =>
+      result.name ===
+      'canonical approval, repeated pause, preserved draft and uncertain Stop'
+  );
   assert.equal(
     approval.requests.length,
     8,
@@ -99,7 +105,71 @@ export function assertVerification(app, view, results) {
       'Approval evidence required: ' + key
     );
   assert.equal(approval.evidence.mobileOverflow, false);
+  const summary = results.browser.production.find(
+    (result) =>
+      result.name ===
+      'supplied trip summaries, terminal persistence and observational reload'
+  );
+  assert.equal(
+    summary.requests.length,
+    9,
+    'Exact summary request evidence required'
+  );
+  assert.equal(summary.evidence.exactRequestCount, 9);
+  for (const key of [
+    'exactTerminalPersistence',
+    'terminalNoAutoContinue',
+    'nextExplicitSubmit',
+    'cardsRetainedAfterNextTurn',
+    'pendingStatus',
+    'restorationNoReexecute',
+    'literalSummary',
+    'duplicateLabels',
+    'emptyLists',
+  ])
+    assert.equal(
+      summary.evidence[key],
+      true,
+      'Summary evidence required: ' + key
+    );
+  assert.equal(summary.evidence.mobileOverflow, false);
+  const failure = results.browser.production.find(
+    (result) =>
+      result.name ===
+      'trip summary persistence failure remains an error without automatic retry'
+  );
+  assert.equal(
+    failure.requests.length,
+    8,
+    'Exact summary failure request evidence required'
+  );
+  assert.equal(failure.evidence.exactRequestCount, 8);
+  for (const key of [
+    'errorStatus',
+    'oneWriteAttempt',
+    'noAutomaticRetry',
+    'restorationNoReexecute',
+  ])
+    assert.equal(
+      failure.evidence[key],
+      true,
+      'Summary failure evidence required: ' + key
+    );
   const evidence = results.browser.view.evidence;
+  assert.equal(
+    results.browser.view.requests.length,
+    6,
+    'Exact view request evidence required'
+  );
+  assert.equal(evidence.exactRequestCount, 6);
+  assert.equal(evidence.terminalWriteCount, 1);
+  assert.equal(evidence.tripSummaryIdentity, true);
+  for (const phase of ['before', 'absent', 'remounted'])
+    assert.equal(
+      evidence[phase].tripSummaryCount,
+      2,
+      'Nonempty view summary evidence required: ' + phase
+    );
   assert.equal(
     evidence[
       framework === 'angular'

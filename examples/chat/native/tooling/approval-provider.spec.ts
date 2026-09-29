@@ -11,6 +11,8 @@ import {
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { runApprovalProvider } from './approval-provider';
+import * as approval from './approval-provider';
+import { runCanonicalProvider } from './canonical-provider';
 
 const root = resolve(process.cwd());
 const node = (source: string) => ({
@@ -38,6 +40,147 @@ const operations = {
   providerCommand: async ({ port }: { port: number }) => server(port),
   exercise: async () => ({ proof: 'lifecycle control only' }),
 };
+
+test('lifecycle overrides preserve only unaccepted diagnostics after confirmed cleanup', async (t) => {
+  const temporaryParent = owned(t);
+  const evidenceDirectory = join(temporaryParent, 'evidence');
+  const result = await runApprovalProvider({
+    root,
+    temporaryParent,
+    evidenceDirectory,
+    operations,
+  });
+  assert.equal(existsSync(result.temporary), false);
+  assert.equal(existsSync(join(evidenceDirectory, 'evidence.json')), false);
+  const capture = JSON.parse(
+    readFileSync(join(evidenceDirectory, 'capture.json'), 'utf8')
+  );
+  assert.equal(capture.accepted, false);
+  assert.equal(capture.testOperations, true);
+  assert.equal(result.accepted, false);
+  assert.equal(
+    JSON.parse(readFileSync(join(evidenceDirectory, 'cleanup.json'), 'utf8'))
+      .removed,
+    true
+  );
+  assert.equal(typeof approval.acceptApprovalCapture, 'function');
+  assert.throws(
+    () => approval.acceptApprovalCapture(result, evidenceDirectory),
+    /test operations/i
+  );
+  assert.equal(existsSync(join(evidenceDirectory, 'evidence.json')), false);
+});
+
+test('concrete acceptance failure after safe cleanup leaves diagnostics without accepted evidence', async (t) => {
+  const temporaryParent = owned(t);
+  const evidenceDirectory = join(temporaryParent, 'evidence');
+  const result = await runApprovalProvider({
+    root,
+    temporaryParent,
+    evidenceDirectory,
+    operations,
+  });
+  assert.equal(existsSync(result.temporary), false);
+  // A controlled boundary capture, not evidence of actual provider acceptance.
+  assert.equal(result.accepted, false);
+  const invalid = { ...result, testOperations: false, proof: { cases: [] } };
+  assert.equal(typeof approval.acceptApprovalCapture, 'function');
+  assert.throws(
+    () => approval.acceptApprovalCapture(invalid, evidenceDirectory),
+    /directory/i
+  );
+  assert.equal(existsSync(join(evidenceDirectory, 'capture.json')), true);
+  assert.equal(existsSync(join(evidenceDirectory, 'cleanup.json')), true);
+  assert.equal(existsSync(join(evidenceDirectory, 'evidence.json')), false);
+});
+
+test('diagnostic persistence failure still closes owned resources and retains inputs', async (t) => {
+  const temporaryParent = owned(t);
+  const evidenceDirectory = join(temporaryParent, 'not-a-directory');
+  writeFileSync(evidenceDirectory, 'owned blocker');
+  const pids: number[] = [];
+  let temporary = '',
+    url = '';
+  await assert.rejects(
+    runApprovalProvider({
+      root,
+      temporaryParent,
+      evidenceDirectory,
+      onChild: (_name, pid) => pids.push(pid),
+      operations: {
+        ...operations,
+        exercise: async (context) => {
+          temporary = context.temporary;
+          url = context.url;
+          return {};
+        },
+      },
+    }),
+    /cleanup failed; temporary files retained/
+  );
+  assert.ok(pids.length);
+  for (const pid of pids)
+    assert.throws(() => process.kill(-pid, 0), { code: 'ESRCH' });
+  await assert.rejects(fetch(url));
+  assert.equal(existsSync(join(temporary, 'provider/uv.lock')), true);
+});
+
+test('unknown or unavailable concrete scenarios reject before preparation', async (t) => {
+  const temporaryParent = owned(t);
+  for (const scenario of ['unknown', undefined]) {
+    await assert.rejects(
+      Reflect.apply(runCanonicalProvider, undefined, [
+        scenario,
+        {
+          root,
+          temporaryParent,
+          operations: {
+            ...operations,
+            prepare: async () =>
+              assert.fail('must not prepare an unavailable scenario'),
+          },
+        },
+      ]),
+      /Unknown or unavailable canonical scenario/
+    );
+  }
+});
+
+test('exercise failure preserves the final observed requests as unaccepted diagnostics', async (t) => {
+  const temporaryParent = owned(t);
+  const evidenceDirectory = join(temporaryParent, 'evidence');
+  let temporary = '';
+  await assert.rejects(
+    runApprovalProvider({
+      root,
+      temporaryParent,
+      evidenceDirectory,
+      operations: {
+        ...operations,
+        exercise: async (context) => {
+          temporary = context.temporary;
+          const response = await fetch(
+            context.url + '/observed-before-failure'
+          );
+          await response.text();
+          throw new Error('controlled exercise failure');
+        },
+      },
+    }),
+    /controlled exercise failure/
+  );
+  assert.equal(existsSync(temporary), false);
+  const capture = JSON.parse(
+    readFileSync(join(evidenceDirectory, 'capture.json'), 'utf8')
+  );
+  assert.equal(capture.accepted, false);
+  assert.deepEqual(
+    capture.requests.map((q: { path: string }) => q.path),
+    ['/observed-before-failure']
+  );
+  assert.equal(capture.requests[0].status, 200);
+  assert.equal(existsSync(join(evidenceDirectory, 'evidence.json')), false);
+});
 
 test('observer rejects destination-changing targets without contacting an owned trap', async (t) => {
   const temporaryParent = owned(t);
@@ -251,11 +394,13 @@ test('successful provider lifetime closes model and provider without launching a
 
 test('unconfirmed cleanup retains owned inputs even after a successful proof', async (t) => {
   const temporaryParent = owned(t);
+  const evidenceDirectory = join(temporaryParent, 'evidence');
   let temporary = '';
   await assert.rejects(
     runApprovalProvider({
       root,
       temporaryParent,
+      evidenceDirectory,
       operations: {
         ...operations,
         exercise: async (context) => {
@@ -278,6 +423,12 @@ test('unconfirmed cleanup retains owned inputs even after a successful proof', a
     /cleanup failed; temporary files retained/
   );
   assert.equal(existsSync(join(temporary, 'provider/uv.lock')), true);
+  assert.equal(existsSync(join(evidenceDirectory, 'evidence.json')), false);
+  assert.equal(
+    JSON.parse(readFileSync(join(evidenceDirectory, 'capture.json'), 'utf8'))
+      .accepted,
+    false
+  );
 });
 
 test('abort leaves provider and observer alive until the installed owner finishes cleanup', async (t) => {
@@ -285,11 +436,13 @@ test('abort leaves provider and observer alive until the installed owner finishe
     controller = new AbortController();
   const ready = join(temporaryParent, 'ready'),
     cleaned = join(temporaryParent, 'cleaned');
+  const evidenceDirectory = join(temporaryParent, 'evidence');
   await assert.rejects(
     runApprovalProvider({
       root,
       temporaryParent,
       signal: controller.signal,
+      evidenceDirectory,
       operations: {
         ...operations,
         exercise: async (context) => {
@@ -324,6 +477,17 @@ test('abort leaves provider and observer alive until the installed owner finishe
     /abort/i
   );
   assert.equal(readFileSync(cleaned, 'utf8'), 'ok');
+  const capture = JSON.parse(
+    readFileSync(join(evidenceDirectory, 'capture.json'), 'utf8')
+  );
+  assert.equal(capture.accepted, false);
+  assert.deepEqual(
+    capture.requests.map((q: { path: string; status: number }) => [
+      q.path,
+      q.status,
+    ]),
+    [['/cleanup', 200]]
+  );
 });
 
 for (const behavior of ['failed deletion', 'ignored SIGTERM'] as const) {

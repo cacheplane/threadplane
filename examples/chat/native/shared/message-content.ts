@@ -3,14 +3,20 @@ import {
   type Markdown,
   type MarkdownSnapshot,
 } from '@threadplane/content/markdown';
-import type { Message, ToolCall } from '@threadplane/core';
+import type { Message } from '@threadplane/core';
+import { formatTripSummary, type ApplicationToolCall } from './trip-summary.js';
+
+export type TripSummaryCard = ReturnType<typeof formatTripSummary> & {
+  readonly callId: string;
+};
 
 export interface MessageContent {
   readonly id: string;
   readonly role: Message['role'];
   readonly message: Message;
   readonly markdown: MarkdownSnapshot;
-  readonly toolCalls: readonly ToolCall[];
+  readonly toolCalls: readonly ApplicationToolCall[];
+  readonly tripSummaries: readonly TripSummaryCard[];
 }
 
 // Private application composition, not a package API or a view capability.
@@ -18,11 +24,15 @@ export function createMessageContent(
   factory: typeof createMarkdown = createMarkdown
 ) {
   const owners = new Map<string, Markdown>();
+  const cards = new WeakMap<ApplicationToolCall, TripSummaryCard>();
   let snapshot: readonly MessageContent[] = Object.freeze([]);
   let disposed = false;
   return {
     getSnapshot: () => snapshot,
-    update(messages: readonly Message[], toolCalls: readonly ToolCall[]) {
+    update(
+      messages: readonly Message[],
+      toolCalls: readonly ApplicationToolCall[]
+    ) {
       if (disposed) return;
       const present = new Set(messages.map((message) => message.id));
       for (const [id, owner] of owners) {
@@ -64,12 +74,32 @@ export function createMessageContent(
           calls.every((call, index) => call === old.toolCalls[index])
         )
           return old;
+        const tripSummaries =
+          message.role === 'assistant'
+            ? calls.flatMap((call) => {
+                if (
+                  call.status !== 'complete' ||
+                  !message.toolCallIds?.includes(call.id)
+                )
+                  return [];
+                let card = cards.get(call);
+                if (!card) {
+                  card = Object.freeze({
+                    callId: call.id,
+                    ...formatTripSummary(call.args),
+                  });
+                  cards.set(call, card);
+                }
+                return [card];
+              })
+            : [];
         return Object.freeze({
           id: message.id,
           role: message.role,
           message,
           markdown,
           toolCalls: Object.freeze(calls),
+          tripSummaries: Object.freeze(tripSummaries),
         });
       });
       if (

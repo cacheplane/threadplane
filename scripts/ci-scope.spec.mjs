@@ -39,7 +39,7 @@ const EXAMPLES_CHAT_TAGS = [
 const POSTHOG_TAGS = ['scope:posthog'];
 const GROWTH_LIFECYCLE_TAGS = ['scope:growth-lifecycle'];
 
-describe('native approval canonical provider inputs', () => {
+describe('native canonical provider inputs', () => {
   const inputs = [
     'examples/chat/python/src/graph.py',
     'examples/chat/python/src/nested/helper.py',
@@ -48,6 +48,11 @@ describe('native approval canonical provider inputs', () => {
     'examples/chat/python/langgraph.json',
     'examples/chat/angular/e2e/fixtures/interrupt-approval.json',
     'libs/e2e-harness/src/aimock-runner.ts',
+    'examples/chat/native/tooling/fixtures/trip-summary.json',
+    'examples/chat/native/tooling/canonical-provider.ts',
+    'examples/chat/native/tooling/canonical-provider-observer.ts',
+    'examples/chat/native/tooling/trip-summary-provider.ts',
+    'examples/chat/native/tooling/trip-summary-provider-consumer.ts',
   ];
   for (const file of inputs) {
     for (const projects of [[], [{ name: 'root', tags: [] }]])

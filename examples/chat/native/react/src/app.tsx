@@ -10,6 +10,7 @@ import type { MessageContent } from '../../shared/message-content';
 import { filterLoadedTitles } from '../../shared/projection';
 import { submissionStatus } from '../../shared/submission-status';
 import { Approval } from './approval';
+import { TripSummary } from './trip-summary';
 
 type Application = ReturnType<typeof createApplication>;
 const literal = (value: unknown) =>
@@ -27,23 +28,31 @@ const Message = memo(function Message({ row }: { row: MessageContent }) {
       ) : (
         <Markdown snapshot={row.markdown} />
       )}
-      {row.role !== 'tool' &&
-        row.toolCalls.map((call) => (
-          <div className="tool-observation" key={call.id}>
-            <ToolObservation
-              name={call.name}
-              argumentsText={literal(call.args)}
-              resultText={
-                call.status === 'complete'
-                  ? literal(call.result)
-                  : call.status === 'error'
-                  ? call.error
-                  : undefined
-              }
-            />
-            <p className="muted">Observed tool status: {call.status}</p>
-          </div>
+      {row.role === 'assistant' &&
+        row.tripSummaries.map((card) => (
+          <TripSummary key={card.callId} card={card} />
         ))}
+      {row.role !== 'tool' &&
+        row.toolCalls
+          .filter(
+            (call) => !row.tripSummaries.some((card) => card.callId === call.id)
+          )
+          .map((call) => (
+            <div className="tool-observation" key={call.id}>
+              <ToolObservation
+                name={call.name}
+                argumentsText={literal(call.args)}
+                resultText={
+                  call.status === 'complete'
+                    ? literal(call.result)
+                    : call.status === 'error'
+                    ? call.error
+                    : undefined
+                }
+              />
+              <p className="muted">Observed tool status: {call.status}</p>
+            </div>
+          ))}
     </article>
   );
 });

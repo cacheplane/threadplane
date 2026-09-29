@@ -36,6 +36,33 @@ const history = (id: string, messages: unknown[] = []) => ({
     },
   ],
 });
+// Independent wire expectation; do not derive this from the authored catalog.
+const expectedClientTools = [
+  {
+    name: 'show_trip_summary',
+    description:
+      'Show a supplied trip recap with days and places. This terminal summary needs no follow-up; it does not plan or change an itinerary.',
+    parameters: {
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        days: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              day: { type: 'integer', minimum: 1 },
+              places: { type: 'array', items: { type: 'string' } },
+            },
+            required: ['day', 'places'],
+          },
+        },
+        note: { type: 'string' },
+      },
+      required: ['title', 'days'],
+    },
+  },
+];
 const run = (text: string, events: unknown[], extra = {}) => ({
   method: 'POST',
   path: '/api/threads/garden/runs/stream',
@@ -49,7 +76,10 @@ const run = (text: string, events: unknown[], extra = {}) => ({
     );
     assert.deepEqual(payload, {
       assistant_id: 'assistant',
-      input: { messages: [{ type: 'human', id, content: text }] },
+      input: {
+        messages: [{ type: 'human', id, content: text }],
+        client_tools: expectedClientTools,
+      },
       stream_mode: ['values', 'messages-tuple', 'updates', 'custom'],
       stream_subgraphs: true,
       stream_resumable: true,
