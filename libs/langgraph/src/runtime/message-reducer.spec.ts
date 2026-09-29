@@ -661,3 +661,71 @@ describe('pure text and tool transitions', () => {
     });
   });
 });
+
+describe('explicit proven message reconciliation', () => {
+  it.each([true, false])(
+    'installs exact canonical correction with existing target=%s without changing invocation ownership',
+    (existing) => {
+      let state = initialMessageState();
+      for (const id of [
+        'before',
+        ...(existing ? ['canonical'] : []),
+        'middle',
+        'provisional',
+        'after',
+      ])
+        state = reduceMessages(state, {
+          type: 'message',
+          mode: 'canonical',
+          message: message(id, 'Original'),
+        });
+      const before = state;
+      const next = reduceMessages(state, {
+        type: 'reconcile-message',
+        provisionalId: 'provisional',
+        message: message('canonical', ''),
+      });
+      expect(next.messages.map((m) => m.id)).toEqual(
+        existing
+          ? ['before', 'canonical', 'middle', 'after']
+          : ['before', 'middle', 'canonical', 'after']
+      );
+      expect(next.messages.find((m) => m.id === 'canonical')?.content).toBe('');
+      expect(
+        next.messages.find((m) => m.id === 'canonical')?.delivery.phase
+      ).toBe('streaming');
+      expect(next.canonical.some((entry) => entry.id === 'provisional')).toBe(
+        false
+      );
+      expect(next.invocations).toBe(before.invocations);
+      expect(next.toolCalls).toBe(before.toolCalls);
+      expect(next.messages[0]).toBe(before.messages[0]);
+      expect(before.messages.some((m) => m.id === 'provisional')).toBe(true);
+    }
+  );
+});
+
+it('reconciliation clears only the target delivery generation lock', () => {
+  let state = initialMessageState();
+  for (const generation of ['old', 'run-1'])
+    state = reduceMessages(state, {
+      type: 'message',
+      mode: 'canonical',
+      message: {
+        ...message('canonical', 'Before'),
+        delivery: streamingDelivery(generation),
+      },
+    });
+  state = reduceMessages(state, {
+    type: 'message',
+    mode: 'canonical',
+    message: message('provisional', 'Partial'),
+  });
+  const next = reduceMessages(state, {
+    type: 'reconcile-message',
+    provisionalId: 'provisional',
+    message: message('canonical', 'Current'),
+  });
+  expect(next.canonical).toEqual([{ id: 'canonical', generation: 'old' }]);
+  expect(state.canonical).toHaveLength(3);
+});

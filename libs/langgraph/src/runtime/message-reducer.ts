@@ -38,6 +38,11 @@ export interface MessageState {
  * the effect owner must establish its ordering before dispatching it here. */
 export type MessageEvent =
   | {
+      readonly type: 'reconcile-message';
+      readonly provisionalId: string;
+      readonly message: Message;
+    }
+  | {
       readonly type: 'message';
       readonly mode: 'delta' | 'snapshot' | 'canonical';
       readonly message: Message;
@@ -71,6 +76,39 @@ export function reduceMessages(
   state: MessageState,
   event: MessageEvent
 ): MessageState {
+  if (event.type === 'reconcile-message') {
+    const from = state.messages.findIndex((m) => m.id === event.provisionalId);
+    if (from < 0 || event.provisionalId === event.message.id) return state;
+    const existing = state.messages.findIndex((m) => m.id === event.message.id);
+    const messages = state.messages.flatMap((message, index) => {
+      if (index === existing || (existing < 0 && index === from))
+        return [ownMessage(event.message)];
+      return index === from ? [] : [message];
+    });
+    // Identity does not establish turn completion. Install the exact interim
+    // value, leaving finalization and late-delta locks to their existing owner.
+    return Object.freeze({
+      ...state,
+      messages: Object.freeze(messages),
+      canonical: Object.freeze(
+        state.canonical.filter(
+          (entry) =>
+            entry.id !== event.provisionalId &&
+            !(
+              entry.id === event.message.id &&
+              entry.generation === event.message.delivery.generation
+            )
+        )
+      ),
+      aliases: Object.freeze(
+        state.aliases.filter(
+          (entry) =>
+            entry.from !== event.provisionalId &&
+            entry.to !== event.provisionalId
+        )
+      ),
+    });
+  }
   if (event.type === 'tool-conflict') {
     const invocations = conflictInvocation(state.invocations, event.id);
     return invocations === state.invocations
