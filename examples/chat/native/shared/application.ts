@@ -372,6 +372,14 @@ export function createApplication(options: ApplicationOptions) {
 
   function refresh() {
     if (!started || disposed) return;
+    // Capture before abort/publication reentry can replace the admission.
+    const selected =
+      admission &&
+      owns(admission) &&
+      snapshot.selection.status === 'ready' &&
+      snapshot.selection.id === admission.id
+        ? admission
+        : undefined;
     const intent = ++refreshIntent;
     const previous = refreshing;
     const controller = new AbortController();
@@ -391,8 +399,21 @@ export function createApplication(options: ApplicationOptions) {
       try {
         const result = await options.directory.list(controller.signal);
         if (!current()) return;
+        // A matching row renames the same ready selection; omission is not deletion.
+        let selection = snapshot.selection;
+        const row =
+          result.kind === 'ready' &&
+          selected &&
+          owns(selected) &&
+          selection.status === 'ready' &&
+          selection.id === selected.id
+            ? result.value.find((item) => item.id === selected.id)
+            : undefined;
+        if (row && row.title !== selection.row?.title)
+          selection = Object.freeze({ ...selection, row });
         publish({
           ...snapshot,
+          selection,
           list: Object.freeze({
             status: result.kind === 'ready' ? 'ready' : 'error',
             rows: result.kind === 'ready' ? result.value : snapshot.list.rows,

@@ -191,7 +191,7 @@ test('summary held terminal persistence retains active command while local card 
   const { app, server } = await fixture(t, [
     run(),
     write(undefined, { holdBody: true }),
-    search,
+    { ...search, body: [threadEnvelope('a', 'Recap trip')] },
   ]);
   assert.equal(app.submit('Recap'), true);
   await deadline(server.steps[4].received);
@@ -207,6 +207,11 @@ test('summary held terminal persistence retains active command while local card 
   assert.equal(row.tripSummaries[0].text, readable);
   app.refresh();
   await until(() => app.getSnapshot().list.status === 'ready');
+  assert.equal(app.getSnapshot().selection.row?.title, 'Recap trip');
+  assert.deepEqual(app.getSnapshot().submission, {
+    active: true,
+    outcome: null,
+  });
   assert.strictEqual(
     app.getSnapshot().messages.find((item) => item.id === row.id),
     row
@@ -214,6 +219,11 @@ test('summary held terminal persistence retains active command while local card 
   server.steps[4].releaseBody();
   await until(() => app.getSnapshot().submission.outcome === 'success');
   assert.strictEqual(summaries(app)[0], row.tripSummaries[0]);
+  assert.equal(app.getSnapshot().selection.row?.title, 'Recap trip');
+  assert.equal(
+    server.requests.filter((request) => request.path.endsWith('/state')).length,
+    1
+  );
   server.verify();
 });
 

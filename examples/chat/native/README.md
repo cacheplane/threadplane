@@ -194,7 +194,10 @@ servers or reuse another session's directory.
   and loads history before enabling Send.
 - The directory loads at most 50 conversations. The title filter searches only
   those loaded rows; it is not server search or pagination. Use **Refresh** to
-  request a fresh list. **Retry** explicitly retries a failed selection.
+  request a fresh list. If that list includes the ready selected conversation,
+  its heading adopts the returned title; the transcript and draft stay as they
+  are, and a conversation missing from the list stays selected. Titles are not
+  otherwise kept current. **Retry** explicitly retries a failed selection.
 - **Stop** requests local cancellation and closes the local stream. It does not
   guarantee that the server run has stopped.
 - If a creation response is lost, creation is shown as unconfirmed: a server

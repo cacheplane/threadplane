@@ -133,6 +133,7 @@ test('basic conversation: loaded views, exact submission, honest outcomes and br
       },
     ]),
     search([]),
+    search([threadEnvelope('garden', 'Garden harvest')]),
     run('  Which herbs grow well?\nKeep it brief.  ', answer),
     run('Tell me more about watering.', answer, { holdBody: true }),
     run('What about winter?', [
@@ -287,6 +288,22 @@ test('basic conversation: loaded views, exact submission, honest outcomes and br
       page.getByRole('heading', { name: 'Planting plan' })
     ).toBeVisible();
     await expect(draft).toHaveValue('Keep this draft while refreshing.');
+    const selectedUrl = page.url();
+    await page.getByRole('button', { name: 'Refresh', exact: true }).click();
+    await expect(page.locator('h1#conversation-title')).toHaveText(
+      'Garden harvest'
+    );
+    await expect(
+      page.getByRole('button', { name: 'Garden harvest', exact: true })
+    ).toBeVisible();
+    await expect(draft).toHaveValue('Keep this draft while refreshing.');
+    expect(page.url()).toBe(selectedUrl);
+    await expect(
+      page.getByRole('heading', { name: 'Planting plan' })
+    ).toBeVisible();
+    await expect(
+      page.getByText('What should I plant?', { exact: true })
+    ).toBeVisible();
     await draft.fill('   \n  ');
     await expect(
       page.getByRole('button', { name: 'Send', exact: true })
@@ -305,7 +322,7 @@ test('basic conversation: loaded views, exact submission, honest outcomes and br
     await expect(draft).toHaveValue(
       '  Which herbs grow well?\nKeep it brief.  '
     );
-    expect(server.requests).toHaveLength(4);
+    expect(server.requests).toHaveLength(5);
     await draft.press('Meta+Enter');
     await expect(
       page.getByText('Response complete.', { exact: true })
@@ -327,7 +344,7 @@ test('basic conversation: loaded views, exact submission, honest outcomes and br
       )
     ).toBeVisible();
     await expect
-      .poll(async () => (await server.steps[5].closed).finished)
+      .poll(async () => (await server.steps[6].closed).finished)
       .toBe(false);
     for (const [text, outcome] of [
       ['What about winter?', 'The response failed.'],
@@ -358,14 +375,14 @@ test('basic conversation: loaded views, exact submission, honest outcomes and br
     await expect(draft).toHaveValue(
       'Keep this draft while reviewing the unsupported pause.'
     );
-    expect(server.requests).toHaveLength(8);
+    expect(server.requests).toHaveLength(9);
     await page.goBack();
     await expect(
       page.getByText('Select a conversation or start a new one.', {
         exact: true,
       })
     ).toBeVisible();
-    expect(server.requests).toHaveLength(8);
+    expect(server.requests).toHaveLength(9);
     await page.goForward();
     await expect(page.locator('.conversation-id')).toHaveText(
       'Conversation ID: garden'
@@ -447,14 +464,14 @@ test('basic conversation: loaded views, exact submission, honest outcomes and br
       fullPage: true,
     });
     await page.getByRole('button', { name: 'Refresh', exact: true }).click();
-    await expect.poll(() => server.requests.length).toBe(26);
+    await expect.poll(() => server.requests.length).toBe(27);
     await page.evaluate(() =>
       window.dispatchEvent(
         new PageTransitionEvent('pagehide', { persisted: false })
       )
     );
     await expect
-      .poll(async () => (await server.steps[25].closed).finished)
+      .poll(async () => (await server.steps[26].closed).finished)
       .toBe(false);
     server.verify();
     expect(errors).toEqual([]);
