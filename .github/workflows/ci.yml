@@ -164,6 +164,8 @@ jobs:
         run: |
           npx nx e2e native-conversation-react
           node examples/chat/native/tooling/verify.mjs
+          npx nx e2e native-conversation-angular
+          node examples/chat/native/tooling/verify.mjs --framework=angular
       - name: Verify native same-document session bindings
         run: node scripts/react-parity/review-native-ag-ui.mjs --verify
       - name: Verify real LangGraph candidate package

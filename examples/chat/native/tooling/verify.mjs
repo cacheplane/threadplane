@@ -19,17 +19,29 @@ import {
   noLinks,
   file,
 } from './retained-build.mjs';
-import { preparationEnvironment } from './commands.mjs';
+import { preparationEnvironment, selectedFramework } from './commands.mjs';
 import { readViewProof } from './view-proof.mjs';
+import { assertVerification } from './verification-checks.mjs';
 
 export function parseArguments(args) {
-  if (!args.length) return { mode: 'verify' };
+  const flags = args.filter((arg) => arg.startsWith('--framework='));
+  assert.ok(flags.length <= 1, 'Duplicate framework selection');
+  const framework = flags.length
+    ? selectedFramework(flags[0].slice('--framework='.length))
+    : undefined;
+  args = args.filter((arg) => !arg.startsWith('--framework='));
+  assert.ok(
+    !(args.includes('--review') && framework),
+    'Review infers its framework from verified evidence'
+  );
+  const selection = framework ? { framework } : {};
+  if (!args.length) return { mode: 'verify', ...selection };
   assert.ok(
     args.length === 2 &&
       ['--retain', '--review'].includes(args[0]) &&
       args[1] &&
       !args[1].startsWith('--'),
-    'Usage: verify.mjs [--retain NEW_DIRECTORY] | --review RETAINED_DIRECTORY'
+    'Usage: verify.mjs [--framework=react|angular] [--retain NEW_DIRECTORY] | --review RETAINED_DIRECTORY'
   );
   const requested = resolve(args[1]);
   const directory = join(realpathSync(dirname(requested)), basename(requested));
@@ -39,7 +51,7 @@ export function parseArguments(args) {
   else noLinks(directory);
   return args[0] === '--review'
     ? { mode: 'review', directory }
-    : { mode: 'verify', directory, retain: true };
+    : { mode: 'verify', directory, retain: true, ...selection };
 }
 
 export async function captureVerification(directory, context, operations = {}) {
@@ -63,22 +75,31 @@ export async function captureVerification(directory, context, operations = {}) {
 }
 
 export function sealVerification(directory, results) {
+  checkedArtifacts(directory, results);
   writeFileSync(
     join(directory, 'results.json'),
     JSON.stringify(results, null, 2) + '\n'
   );
   writeFileSync(
     join(directory, 'verification.json'),
-    JSON.stringify({ version: 1, files: inventory(directory) }, null, 2) + '\n'
+    JSON.stringify({ version: 2, files: inventory(directory) }, null, 2) + '\n'
   );
 }
 
-export function readVerification(
-  directory,
-  { readApp = readRetainedBuild, readView = readViewProof } = {}
-) {
+function checkedArtifacts(directory, results) {
+  const app = readRetainedBuild(join(directory, 'app'));
+  const view = readViewProof(join(directory, 'view-proof'));
+  const framework = assertVerification(
+    JSON.parse(file(directory, 'app/retained.json')),
+    JSON.parse(file(directory, 'view-proof/view.json')),
+    results
+  );
+  return Object.freeze({ framework, app, view, results });
+}
+
+export function readVerification(directory) {
   const record = JSON.parse(file(directory, 'verification.json'));
-  assert.equal(record.version, 1);
+  assert.equal(record.version, 2);
   const actual = inventory(directory);
   delete actual['verification.json'];
   assert.deepEqual(
@@ -88,19 +109,20 @@ export function readVerification(
   );
   assert.ok(Object.keys(actual).some((path) => path.startsWith('app/')));
   assert.ok(Object.keys(actual).some((path) => path.startsWith('view-proof/')));
-  return {
-    app: readApp(join(directory, 'app')),
-    view: readView(join(directory, 'view-proof')),
-    results: JSON.parse(file(directory, 'results.json')),
-  };
+  return checkedArtifacts(
+    directory,
+    JSON.parse(file(directory, 'results.json'))
+  );
 }
 
 export async function verify({
   root,
   directory,
   retain = false,
+  framework = 'react',
   operations = {},
 }) {
+  selectedFramework(framework);
   if (directory)
     assert.ok(!existsSync(directory), 'Retain target must not exist');
   const work = realpathSync(
@@ -111,6 +133,7 @@ export async function verify({
   try {
     await (operations.build ?? buildConsumer)({
       root,
+      framework,
       assistantId: 'assistant',
       output: join(work, 'production'),
       capture: async (context) => {
@@ -126,27 +149,31 @@ export async function verify({
           [
             join(root, 'node_modules/nx/bin/nx.js'),
             'test',
-            'native-conversation-react',
+            'native-conversation-' + framework,
             '--skip-nx-cache',
             '--outputStyle=stream',
           ],
           { cwd: root, env: preparationEnvironment(), stdio: 'inherit' }
         );
         assert.equal(result.status, 0, 'Installed owner tests must pass');
-        return { target: 'native-conversation-react:test', passed: true };
+        return {
+          target: 'native-conversation-' + framework + ':test',
+          passed: true,
+        };
       });
-    const installedResult = await installed();
+    const installedResult = await installed(framework);
     const browser =
       operations.browser ??
       (await import('./browser-proof.mjs')).runBrowserProofs;
     const results = {
+      framework,
       installed: installedResult,
       browser: await browser(directory),
     };
     sealVerification(directory, results);
-    readVerification(directory, { readView: readViewProof });
+    readVerification(directory);
     console.log(
-      'Verified installed owner tests, production browser cases and React view lifecycle.'
+      `Verified installed owner tests, production browser cases and ${framework} view lifecycle.`
     );
     if (retain) console.log(`Verified artifact: ${directory}`);
     return { directory, results };

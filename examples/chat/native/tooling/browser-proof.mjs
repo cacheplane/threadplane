@@ -7,6 +7,7 @@ import {
   startCheckedServer,
 } from './retained-build.mjs';
 import { readViewProof } from './view-proof.mjs';
+import { lifecycleName } from './verification-checks.mjs';
 
 const row = (id) => threadEnvelope(id, `Conversation ${id.toUpperCase()}`);
 const rows = [row('a'), row('b')];
@@ -99,7 +100,7 @@ const physicallyClosed = async (step) =>
 
 async function scenario(browser, retained, name, expectations, action) {
   const backend = await startProofServer(expectations);
-  let server, context;
+  let server, context, page;
   const errors = [],
     consoleErrors = [],
     failures = [];
@@ -109,7 +110,7 @@ async function scenario(browser, retained, name, expectations, action) {
       target: backend.origin + '/api',
     });
     context = await browser.newContext();
-    const page = await context.newPage();
+    page = await context.newPage();
     page.setDefaultTimeout(10000);
     page.on('pageerror', (error) => errors.push(error.message));
     page.on('console', (message) => {
@@ -160,6 +161,27 @@ async function scenario(browser, retained, name, expectations, action) {
       evidence: evidence ?? {},
       passed: true,
     };
+  } catch (error) {
+    console.error(
+      'Browser proof failed:',
+      JSON.stringify({
+        name,
+        url: page?.url(),
+        dom: await page
+          ?.locator('body')
+          .innerText()
+          .catch(() => null),
+        requests: backend.requests.map(({ method, path, payload }) => ({
+          method,
+          path,
+          payload,
+        })),
+        errors,
+        consoleErrors,
+        failures,
+      })
+    );
+    throw error;
   } finally {
     await context?.close();
     await server?.close();
@@ -167,10 +189,18 @@ async function scenario(browser, retained, name, expectations, action) {
   }
 }
 
-const ready = async (page, expect) =>
-  expect(
+const ready = async (page, expect) => {
+  // Admission belongs to the rendered selection, which may lag the URL until
+  // the framework commits its scheduled render after a click or popstate.
+  const id = new URL(page.url()).searchParams.get('thread');
+  assert.ok(id, 'Ready requires a selected conversation');
+  await expect(page.locator('.conversation-id')).toHaveText(
+    'Conversation ID: ' + id
+  );
+  await expect(
     page.getByRole('textbox', { name: 'Message', exact: true })
   ).toBeEnabled();
+};
 const select = (page, id) =>
   page
     .getByRole('button', {
@@ -188,7 +218,7 @@ export async function runViewProof(browser, retained) {
   return scenario(
     browser,
     retained,
-    'actual React unmount/remount and explicit owner disposal',
+    lifecycleName(retained.framework),
     [
       ...initial(),
       run(
@@ -287,7 +317,9 @@ export async function runViewProof(browser, retained) {
         remounted,
         disposed,
         physicalCloseBeforeCleanup: true,
-        actualCreateRootUnmount: true,
+        [retained.framework === 'angular'
+          ? 'actualAngularComponentDestroy'
+          : 'actualCreateRootUnmount']: true,
       };
     }
   );
@@ -650,7 +682,10 @@ export async function runBrowserProofs(directory) {
     const app = readRetainedBuild(join(directory, 'app'));
     const authored = file(
       directory,
-      'app/source/examples/chat/native/react/index.html'
+      'app/source/examples/chat/native/' +
+        (app.framework === 'angular'
+          ? 'angular/src/index.html'
+          : 'react/index.html')
     ).toString();
     const icon = authored.match(
       /<link\s+rel="icon"\s+type="image\/svg\+xml"\s+href="([^"]+)"\s*\/>/
@@ -661,11 +696,15 @@ export async function runBrowserProofs(directory) {
       'Built favicon must preserve the exact authored data URI'
     );
     const production = await runProductionProofs(browser, app);
-    const view = await runViewProof(
-      browser,
-      readViewProof(join(directory, 'view-proof'))
+    const checkedView = readViewProof(join(directory, 'view-proof'));
+    assert.equal(
+      checkedView.framework,
+      app.framework,
+      'App/view framework mismatch'
     );
+    const view = await runViewProof(browser, checkedView);
     return {
+      framework: app.framework,
       production,
       view,
       coverage: {

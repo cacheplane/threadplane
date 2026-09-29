@@ -10,7 +10,11 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
-import { preparationEnvironment, validateServeOptions } from './commands.mjs';
+import {
+  preparationEnvironment,
+  selectedFramework,
+  validateServeOptions,
+} from './commands.mjs';
 import { readProxyConfiguration, startProxy } from './proxy.mjs';
 import { frozenInputFingerprint, startSourceMirror } from './source-mirror.mjs';
 
@@ -21,6 +25,43 @@ export function developmentCommands(
   env = process.env
 ) {
   options = validateServeOptions(options);
+  if (options.framework === 'angular') {
+    const cwd = join(consumer, 'angular');
+    return [
+      {
+        name: 'Angular CLI',
+        command: process.execPath,
+        args: [
+          join(consumer, 'node_modules/@angular/cli/bin/ng.js'),
+          'serve',
+          'native-conversation-angular',
+          '--configuration=development',
+          '--host=127.0.0.1',
+          '--port=' + options.port,
+          '--no-open',
+          '--proxy-config=.native-proxy.json',
+        ],
+        cwd,
+        env: preparationEnvironment(env),
+      },
+      {
+        name: 'Angular compiler',
+        command: process.execPath,
+        args: [
+          join(
+            consumer,
+            'node_modules/@angular/compiler-cli/bundles/src/bin/ngc.js'
+          ),
+          '-p',
+          'tsconfig.app.json',
+          '--noEmit',
+          '--watch',
+        ],
+        cwd,
+        env: preparationEnvironment(env),
+      },
+    ];
+  }
   const cwd = join(consumer, 'react');
   return [
     {
@@ -126,9 +167,10 @@ export function startServe({
   killProcessGroup = (pid, value) => process.kill(pid, value),
 } = {}) {
   options = validateServeOptions(options);
+  const framework = selectedFramework(options.framework);
   const proxyConfiguration = readProxyConfiguration(env);
   root = realpathSync(root);
-  const initialFrozen = frozenInputFingerprint(root);
+  const initialFrozen = frozenInputFingerprint(root, framework);
   const temporary = realpathSync(
     mkdtempSync(join(temporaryParent, 'native-conversation-serve-'))
   );
@@ -250,7 +292,7 @@ export function startServe({
     () =>
       fail(
         new Error(
-          'Native serve startup timed out before Vite and TypeScript were ready'
+          'Native serve startup timed out before server and compiler were ready'
         )
       ),
     startupTimeout
@@ -273,6 +315,7 @@ export function startServe({
             root,
             temporary,
             JSON.stringify({
+              framework,
               configuration: options.configuration,
               assistantId: options.assistantId,
             }),
@@ -295,6 +338,7 @@ export function startServe({
       mirror = startSourceMirror({
         root,
         consumer,
+        framework,
         initialFrozen,
         initialFiles,
         onFailure: fail,
@@ -303,8 +347,17 @@ export function startServe({
       checkActive();
       proxy = await createProxy({ ...proxyConfiguration, port: 0 });
       checkActive();
+      if (framework === 'angular')
+        writeFileSync(
+          join(consumer, 'angular/.native-proxy.json'),
+          JSON.stringify({
+            '^/api(?:/|\\?|$)': { target: proxy.url, followRedirects: false },
+          }) + '\n',
+          { flag: 'wx' }
+        );
       let cliUpdate = deferred();
       let viteUrl,
+        serverGreen = framework === 'react',
         checkerGreen = false;
       function changed() {
         cliUpdate.resolve();
@@ -318,14 +371,52 @@ export function startServe({
       );
       launch(vite, (line) => {
         const clean = line.replace(/\x1b\[[0-9;]*m/g, '');
+        if (framework === 'angular') {
+          if (
+            /Building\.\.\.|Changes detected\. Rebuilding|Application bundle generation failed/.test(
+              clean
+            )
+          ) {
+            serverGreen = false;
+            changed();
+          } else if (/Application bundle generation complete\./.test(clean)) {
+            serverGreen = true;
+            changed();
+          }
+        }
         const address = clean.match(/Local:\s+(http:\/\/127\.0\.0\.1:\d+\/)/);
         if (address) {
+          if (address[1] !== `http://127.0.0.1:${options.port}/`) {
+            fail(
+              new Error(
+                'Development server announced a different port; refusing fallback'
+              )
+            );
+            return;
+          }
           viteUrl = address[1];
           changed();
         } else if (line.trim()) log(line);
       });
       launch(checker, (line) => {
         if (line.trim()) log(line);
+        const clean = line.replace(/\x1b\[[0-9;]*m/g, '');
+        if (framework === 'angular') {
+          if (
+            /Starting incremental compilation|Compilation failed\.|error (?:TS|NG)\d+/.test(
+              clean
+            )
+          ) {
+            checkerGreen = false;
+            changed();
+          } else if (
+            /Compilation complete\. Watching for file changes\./.test(clean)
+          ) {
+            checkerGreen = true;
+            changed();
+          }
+          return;
+        }
         if (/Starting (?:incremental )?compilation/.test(line)) {
           checkerGreen = false;
           changed();
@@ -338,10 +429,15 @@ export function startServe({
           changed();
         }
       });
-      while (!viteUrl || !checkerGreen)
+      while (!viteUrl || !serverGreen || !checkerGreen)
         await Promise.race([cliUpdate.promise, cancelled.promise]);
       checkActive();
-      if (!isDeepStrictEqual(initialFrozen, frozenInputFingerprint(root)))
+      if (
+        !isDeepStrictEqual(
+          initialFrozen,
+          frozenInputFingerprint(root, framework)
+        )
+      )
         throw new Error(
           'Frozen development inputs changed; restart the native example to rebuild and reinstall'
         );

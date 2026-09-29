@@ -28,6 +28,82 @@ test('build defaults to production and accepts Nx-consumed configuration', () =>
   );
 });
 
+test('closed framework selection propagates through launcher and foundation commands', () => {
+  for (const mode of ['build', 'test']) {
+    assert.equal(
+      parseOptions([mode, '--framework=angular'], {}).framework,
+      'angular'
+    );
+    assert.equal(
+      parseOptions([mode, '--framework=react'], {}).framework,
+      'react'
+    );
+    for (const value of ['vue', '', 'Angular'])
+      assert.throws(
+        () => parseOptions([mode, '--framework=' + value], {}),
+        /framework/i
+      );
+    assert.throws(
+      () =>
+        parseOptions([mode, '--framework=angular', '--framework=react'], {}),
+      /framework/i
+    );
+  }
+  assert.deepEqual(
+    foundationCommands('/owned/root', 'angular').map(({ args }) => args[2]),
+    ['core', 'content', 'angular']
+  );
+  assert.throws(() => foundationCommands('/owned/root', 'vue'), /framework/i);
+  assert.equal(
+    parseOptions(['serve', '--framework=angular'], {
+      NATIVE_LANGGRAPH_URL: 'http://127.0.0.1:1',
+      NATIVE_ASSISTANT_ID: 'owned',
+    }).framework,
+    'angular'
+  );
+});
+
+test('Angular project exposes only implemented selected build and test targets', async () => {
+  const { readFileSync, existsSync } = await import('node:fs');
+  const path = fileURLToPath(
+    new URL('../angular/project.json', import.meta.url)
+  );
+  assert.ok(existsSync(path), 'Authored Angular project required');
+  const project = JSON.parse(readFileSync(path, 'utf8'));
+  assert.equal(project.name, 'native-conversation-angular');
+  assert.deepEqual(Object.keys(project.targets).sort(), [
+    'build',
+    'conversation-e2e',
+    'development-e2e',
+    'e2e',
+    'serve',
+    'test',
+    'tooling-test',
+  ]);
+  for (const target of ['build', 'test']) {
+    assert.equal(project.targets[target].cache, false);
+    assert.deepEqual(project.targets[target].dependsOn, []);
+    assert.equal(
+      project.targets[target].options.command,
+      `node examples/chat/native/tooling/run.mjs ${target} --framework=angular`
+    );
+  }
+  assert.equal(
+    project.targets.serve.options.command,
+    'node examples/chat/native/tooling/run.mjs serve --framework=angular'
+  );
+  assert.equal(project.targets.serve.continuous, true);
+  assert.equal(
+    project.targets['development-e2e'].options.config,
+    'examples/chat/native/angular/development.playwright.config.ts'
+  );
+  assert.equal(
+    project.targets.e2e.options.config,
+    'examples/chat/native/angular/playwright.config.ts'
+  );
+  assert.equal(project.targets.e2e.executor, '@nx/playwright:playwright');
+});
+
 test('rejects unsupported configuration, modes and application arguments', () => {
   for (const args of [
     ['serve'],

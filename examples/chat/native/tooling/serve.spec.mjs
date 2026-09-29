@@ -34,7 +34,9 @@ function fixture(t, behavior = {}) {
     writeFileSync(join(temporary, 'worker-env.json'), JSON.stringify(process.env));
     ${behavior.preparation ?? ''}
     const consumer = join(temporary, 'consumer');
-    mkdirSync(join(consumer, 'react'), { recursive: true });
+    const selected = ${JSON.stringify(behavior.framework ?? 'react')};
+    writeFileSync(join(temporary, 'worker-options.json'), process.argv[5]);
+    mkdirSync(join(consumer, selected), { recursive: true });
     for (const [path, code] of Object.entries(${JSON.stringify({
       'node_modules/vite/bin/vite.js':
         behavior.vite ??
@@ -42,6 +44,12 @@ function fixture(t, behavior = {}) {
       'node_modules/typescript/bin/tsc':
         behavior.checker ??
         "console.log('Found 0 errors. Watching for file changes.'); setInterval(() => {}, 1000)",
+      'node_modules/@angular/cli/bin/ng.js':
+        behavior.vite ??
+        "console.log('Application bundle generation complete.'); console.log('Local: http://127.0.0.1:43219/'); setInterval(() => {}, 1000)",
+      'node_modules/@angular/compiler-cli/bundles/src/bin/ngc.js':
+        behavior.checker ??
+        "console.log('Compilation complete. Watching for file changes.'); setInterval(() => {}, 1000)",
     })})) {
       mkdirSync(join(consumer, path, '..'), { recursive: true });
       writeFileSync(join(consumer, path), code);
@@ -112,6 +120,136 @@ test('serve owns preparation, sanitized child environments, readiness and idempo
   const closing = lifetime.close();
   assert.equal(lifetime.close(), closing);
   await closing;
+  await lifetime.closed;
+  assert.equal(existsSync(lifetime.temporary), false);
+});
+
+test('Angular development selects installed ng serve and ngc with an owned proxy config', () => {
+  const commands = developmentCommands(
+    '/owned/consumer',
+    { ...options, framework: 'angular' },
+    'http://127.0.0.1:43217',
+    env
+  );
+  assert.equal(commands.length, 2);
+  assert.deepEqual(commands[0].args, [
+    '/owned/consumer/node_modules/@angular/cli/bin/ng.js',
+    'serve',
+    'native-conversation-angular',
+    '--configuration=development',
+    '--host=127.0.0.1',
+    '--port=43219',
+    '--no-open',
+    '--proxy-config=.native-proxy.json',
+  ]);
+  assert.deepEqual(commands[1].args, [
+    '/owned/consumer/node_modules/@angular/compiler-cli/bundles/src/bin/ngc.js',
+    '-p',
+    'tsconfig.app.json',
+    '--noEmit',
+    '--watch',
+  ]);
+  for (const command of commands) {
+    assert.equal(command.cwd, '/owned/consumer/angular');
+    assert.equal(command.env.CI, 'true');
+    assert.equal(command.env.NATIVE_LANGGRAPH_API_KEY, '');
+    assert.equal(command.env.NATIVE_PROXY_ORIGIN, undefined);
+  }
+});
+
+test('Angular lifetime propagates selection and writes only local proxy address', async (t) => {
+  const { lifetime } = launch(
+    t,
+    { framework: 'angular' },
+    { options: { ...options, framework: 'angular' } }
+  );
+  const { consumer } = await lifetime.ready;
+  assert.equal(
+    JSON.parse(readFileSync(join(lifetime.temporary, 'worker-options.json')))
+      .framework,
+    'angular'
+  );
+  const config = readFileSync(
+    join(consumer, 'angular/.native-proxy.json'),
+    'utf8'
+  );
+  assert.match(config, /http:\/\/127\.0\.0\.1:\d+/);
+  assert.doesNotMatch(config, /owned-lifetime-secret|43218/);
+  await lifetime.close();
+  await lifetime.closed;
+});
+
+for (const scenario of ['cli-failure', 'checker-failure'])
+  test(`Angular readiness uses latest success after ${scenario}`, async (t) => {
+    const gated = (before, after) =>
+      `const fs = require('node:fs'); const path = require('node:path'); ${before}; console.log('owned waiting for green'); const timer = setInterval(() => { if (fs.existsSync(path.join(process.cwd(), '../..', 'release-green'))) { clearInterval(timer); ${after}; } }, 10); setInterval(() => {}, 1000);`;
+    const { lifetime, output } = launch(
+      t,
+      {
+        framework: 'angular',
+        vite:
+          scenario === 'cli-failure'
+            ? gated(
+                "console.log('Application bundle generation failed.'); console.log('Local: http://127.0.0.1:43219/'); console.log('owned CLI listening')",
+                "console.log('Application bundle generation complete.')"
+              )
+            : "setTimeout(() => { console.log('Application bundle generation complete.'); console.log('Local: http://127.0.0.1:43219/'); console.log('owned CLI listening'); }, 150); setInterval(() => {}, 1000)",
+        checker:
+          scenario === 'checker-failure'
+            ? gated(
+                "console.log('Compilation complete. Watching for file changes.'); console.log('File change detected. Starting incremental compilation.'); console.log('error TS2322: owned diagnostic'); console.log('Compilation failed. Watching for file changes.')",
+                "console.log('Compilation complete. Watching for file changes.')"
+              )
+            : undefined,
+      },
+      { options: { ...options, framework: 'angular' } }
+    );
+    let ready = false;
+    void lifetime.ready.then(() => {
+      ready = true;
+    });
+    await until(
+      () =>
+        output.includes('owned waiting for green') &&
+        output.includes('owned CLI listening')
+    );
+    assert.equal(ready, false);
+    assert.equal(
+      output.some((line) => line.startsWith('Native conversation ready:')),
+      false
+    );
+    writeFileSync(join(lifetime.temporary, 'release-green'), 'yes');
+    await lifetime.ready;
+    if (scenario === 'checker-failure')
+      assert.ok(output.some((line) => line.includes('owned diagnostic')));
+  });
+
+for (const role of ['vite', 'checker'])
+  test(`Angular ${role} child exit closes the generation`, async (t) => {
+    const { lifetime } = launch(
+      t,
+      { framework: 'angular', [role]: 'process.exit(0)' },
+      { options: { ...options, framework: 'angular' } }
+    );
+    await assert.rejects(lifetime.ready, /exited unexpectedly/);
+    await assert.rejects(lifetime.closed, /exited unexpectedly/);
+    assert.equal(existsSync(lifetime.temporary), false);
+  });
+
+test('Angular cancellation interrupts preparation before readiness', async (t) => {
+  const controller = new AbortController();
+  const { lifetime } = launch(
+    t,
+    {
+      framework: 'angular',
+      preparation:
+        "writeFileSync(join(temporary, 'entered'), 'yes'); spawnSync(process.execPath, ['-e', 'setInterval(() => {}, 1000)']);",
+    },
+    { options: { ...options, framework: 'angular' }, signal: controller.signal }
+  );
+  await until(() => existsSync(join(lifetime.temporary, 'entered')));
+  controller.abort();
+  await assert.rejects(lifetime.ready, /aborted/);
   await lifetime.closed;
   assert.equal(existsSync(lifetime.temporary), false);
 });

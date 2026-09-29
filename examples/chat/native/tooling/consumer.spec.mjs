@@ -34,6 +34,7 @@ function fixture(t) {
     'libs/core/src/index.ts',
     'libs/content/src/index.ts',
     'libs/react/src/index.ts',
+    'libs/angular/src/index.ts',
     'libs/langgraph/src/runtime/create-session.ts',
     'libs/langgraph/src/lib/transport/fetch.ts',
     'libs/design-tokens/src/lib/tokens.css',
@@ -57,6 +58,113 @@ function fixture(t) {
     cpSync(app, join(directory, 'examples/chat/native'), { recursive: true });
   return directory;
 }
+
+test('Angular copy admits only selected authored shell with strict independent configuration', (t) => {
+  const root = fixture(t),
+    consumer = join(root, 'consumer');
+  const copied = copyApplication(root, consumer, {
+    framework: 'angular',
+    assistantId: 'configured',
+  });
+  assert.ok(
+    copied['angular/src/app.component.ts'],
+    'Authored Angular shell required'
+  );
+  assert.equal(existsSync(join(consumer, 'react')), false);
+  const config = JSON.parse(
+    readFileSync(join(consumer, 'angular/tsconfig.json'))
+  );
+  assert.equal(config.extends, undefined);
+  assert.equal(config.compilerOptions.paths, undefined);
+  assert.equal(config.compilerOptions.strict, true);
+  assert.equal(config.compilerOptions.skipLibCheck, false);
+  assert.equal(config.angularCompilerOptions.strictTemplates, true);
+  assert.equal(
+    JSON.parse(readFileSync(join(consumer, 'shared/browser-config.json')))
+      .assistantId,
+    'configured'
+  );
+  assert.throws(
+    () => copyApplication(root, join(root, 'bad'), { framework: 'vue' }),
+    /framework/i
+  );
+});
+
+for (const outcome of [
+  'success',
+  'compile-failure',
+  'source-drift',
+  'owned-drift',
+])
+  test(`Angular selected preparation preserves atomic ownership: ${outcome}`, async (t) => {
+    const root = fixture(t),
+      temporaryParent = join(root, 'temporaries');
+    const output = join(root, 'dist/examples/chat/native/angular');
+    mkdirSync(temporaryParent);
+    mkdirSync(output, { recursive: true });
+    writeFileSync(join(output, 'index.html'), 'previous');
+    const stages = {
+      build(context) {
+        assert.equal(context.framework, 'angular');
+        assert.ok(
+          existsSync(join(context.buildRoot, 'libs/angular/src/index.ts'))
+        );
+        assert.equal(existsSync(join(context.buildRoot, 'libs/react')), false);
+        assert.equal(existsSync(join(context.consumer, 'react')), false);
+        if (outcome === 'owned-drift')
+          writeFileSync(
+            join(context.buildRoot, 'libs/angular/src/index.ts'),
+            'drift'
+          );
+      },
+      pack() {
+        return { tarballs: {}, hashes: {}, emission: {} };
+      },
+      install() {
+        return {};
+      },
+      compile() {
+        if (outcome === 'compile-failure') throw new Error('template failed');
+        if (outcome === 'source-drift')
+          writeFileSync(
+            join(root, 'examples/chat/native/angular/src/app.component.ts'),
+            'drift'
+          );
+        return { inputs: {} };
+      },
+      bundle({ consumer }) {
+        const output = join(consumer, 'angular/dist/browser');
+        mkdirSync(output, { recursive: true });
+        writeFileSync(join(output, 'index.html'), 'new');
+        return { output, inputs: {} };
+      },
+    };
+    const result = buildConsumer({
+      root,
+      framework: 'angular',
+      temporaryParent,
+      operations: stages,
+    });
+    if (outcome === 'success') {
+      const built = await result;
+      assert.equal(built.output, output);
+      assert.equal(built.provenance.framework, 'angular');
+      assert.ok(built.provenance.inputs['libs/angular/src/index.ts']);
+      assert.equal(
+        Object.keys(built.provenance.inputs).some(
+          (path) =>
+            path.startsWith('libs/react/') ||
+            path.startsWith('examples/chat/native/react/')
+        ),
+        false
+      );
+    } else await assert.rejects(result, /template failed|inputs changed/i);
+    assert.equal(
+      readFileSync(join(output, 'index.html'), 'utf8'),
+      outcome === 'success' ? 'new' : 'previous'
+    );
+    assert.deepEqual(readdirSync(temporaryParent), []);
+  });
 
 test('preparation builds and packs byte-identical selected sources in its own workspace', async (t) => {
   const root = fixture(t);

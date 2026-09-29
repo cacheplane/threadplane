@@ -1,6 +1,13 @@
 import { join } from 'node:path';
 
+export function selectedFramework(framework = 'react') {
+  if (framework !== 'react' && framework !== 'angular')
+    throw new Error('Unsupported framework selection');
+  return framework;
+}
+
 export function validateServeOptions(options) {
+  selectedFramework(options?.framework);
   if (options?.configuration !== 'development')
     throw new Error('Serve requires development configuration');
   if (
@@ -47,8 +54,8 @@ export function preparationEnvironment(env = process.env) {
   };
 }
 
-export function foundationCommands(root) {
-  return ['core', 'content', 'react'].map((project) => ({
+export function foundationCommands(root, framework) {
+  return ['core', 'content', selectedFramework(framework)].map((project) => ({
     command: process.execPath,
     args: [
       join(root, 'node_modules/nx/bin/nx.js'),

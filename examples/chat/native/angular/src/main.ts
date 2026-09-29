@@ -1,6 +1,6 @@
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
-import { App } from './app';
+import { provideZonelessChangeDetection } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+import { AppComponent } from './app.component';
 import configuration from '../../shared/browser-config.json';
 import {
   bindBrowserLifetime,
@@ -9,11 +9,8 @@ import {
 import { createApplication } from '../../shared/application';
 import { createThreadDirectory } from '../../shared/directory';
 import { browserHistory } from '../../shared/route';
-import '../../shared/tokens.css';
-import '../../shared/styles.css';
+import { APPLICATION } from './application.token';
 
-const root = document.getElementById('root');
-if (!root) throw new Error('Application root is missing');
 const browser = getBrowserConfiguration(configuration);
 const application = browser.configured
   ? createApplication({
@@ -30,8 +27,10 @@ if (application) {
   bindBrowserLifetime(application, window);
   application.start();
 }
-createRoot(root).render(
-  <StrictMode>
-    <App application={application} />
-  </StrictMode>
-);
+
+bootstrapApplication(AppComponent, {
+  providers: [
+    provideZonelessChangeDetection(),
+    { provide: APPLICATION, useValue: application },
+  ],
+}).catch((error: unknown) => console.error(error));

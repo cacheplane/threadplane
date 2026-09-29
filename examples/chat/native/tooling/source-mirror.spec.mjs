@@ -121,6 +121,46 @@ test('copies only authored mutable files, preserving generated and installed fil
     assert.equal(contents(f.consumer, path), undefined, path);
 });
 
+test('Angular mirror selects its mutable roots and freezes Angular configuration and binding', async (t) => {
+  const f = fixture(t);
+  for (const path of [
+    'angular/src/app.component.ts',
+    'angular/src/app.html',
+    'angular/src/app.css',
+    'angular/angular.json',
+    'angular/tsconfig.app.json',
+  ])
+    put(f.root, native + path);
+  put(f.root, 'libs/angular/src/index.ts');
+  const initialFrozen = frozenInputFingerprint(f.root, 'angular');
+  assert.equal(
+    initialFrozen[native + 'angular/src/app.component.ts'],
+    undefined
+  );
+  assert.ok(initialFrozen[native + 'angular/angular.json']);
+  assert.ok(initialFrozen['libs/angular/src/index.ts']);
+  assert.equal(initialFrozen['libs/react/src/index.ts'], undefined);
+  const { failures } = await start(t, f, {
+    framework: 'angular',
+    initialFrozen,
+  });
+  assert.equal(
+    contents(f.consumer, 'angular/src/app.component.ts'),
+    'original'
+  );
+  assert.equal(contents(f.consumer, 'react/src/app.tsx'), undefined);
+  put(f.root, native + 'angular/src/app.html', 'edited template');
+  await until(
+    () => contents(f.consumer, 'angular/src/app.html') === 'edited template'
+  );
+  put(f.root, native + 'angular/angular.json', 'frozen edit');
+  await until(() => failures.length > 0);
+  assert.match(
+    failures[0].message,
+    /Frozen development inputs changed.*restart/
+  );
+});
+
 test('frozen fingerprint excludes explicit mutable source while full build fingerprint retains it', async (t) => {
   const f = fixture(t);
   const frozen = frozenInputFingerprint(f.root),
