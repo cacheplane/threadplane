@@ -46,6 +46,20 @@
         "command": "node --test examples/chat/native/tooling/*.spec.mjs"
       }
     },
+    "provider-test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [],
+      "options": {
+        "cwd": "{workspaceRoot}",
+        "parallel": false,
+        "commands": [
+          "node node_modules/typescript/bin/tsc -p examples/chat/native/tooling/tsconfig.approval-provider-host.json",
+          "node --import tsx --test examples/chat/native/tooling/approval-provider.spec.ts",
+          "node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.base.json examples/chat/native/tooling/approval-provider.ts"
+        ]
+      }
+    },
     "e2e": {
       "executor": "@nx/playwright:playwright",
       "cache": false,

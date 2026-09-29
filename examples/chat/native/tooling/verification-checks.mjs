@@ -10,6 +10,7 @@ export const productionCases = [
   'A-B-A stream race',
   'list refresh during selection and creation ambiguity',
   'duplicate submit guard, Stop and canonical correction',
+  'canonical approval, repeated pause, preserved draft and uncertain Stop',
 ];
 export const lifecycleName = (framework) =>
   selectedFramework(framework) === 'angular'
@@ -77,6 +78,27 @@ export function assertVerification(app, view, results) {
     );
   }
   assert.equal(results.browser.view.name, lifecycleName(framework));
+  const approval = results.browser.production.at(-1);
+  assert.equal(
+    approval.requests.length,
+    8,
+    'Exact approval request evidence required'
+  );
+  assert.equal(approval.evidence.exactRequestCount, 8);
+  for (const key of [
+    'literalReason',
+    'keyboardDecisions',
+    'draftPreserved',
+    'repeatPauseAfterSettlement',
+    'physicalCloseBeforeCleanup',
+    'uncertainPauseNotActionable',
+  ])
+    assert.equal(
+      approval.evidence[key],
+      true,
+      'Approval evidence required: ' + key
+    );
+  assert.equal(approval.evidence.mobileOverflow, false);
   const evidence = results.browser.view.evidence;
   assert.equal(
     evidence[

@@ -178,6 +178,22 @@ export function classifyFromAffected(changedFiles, affectedProjects) {
   if (changedFiles.some(isParityChange)) {
     scope.library = true;
   }
+  // The installed native approval proof copies only these canonical inputs.
+  if (
+    changedFiles.some((file) => {
+      const normalized = normalizePath(file);
+      return (
+        normalized.startsWith('examples/chat/python/src/') ||
+        [
+          'examples/chat/python/pyproject.toml',
+          'examples/chat/python/uv.lock',
+          'examples/chat/python/langgraph.json',
+          'examples/chat/angular/e2e/fixtures/interrupt-approval.json',
+        ].includes(normalized)
+      );
+    })
+  )
+    scope.library = true;
   // The native owner proof uses this service's isolated lock and test fixture,
   // including changes Nx attributes only to the untagged root project.
   if (changedFiles.some((file) => normalizePath(file).startsWith('deployments/ag-ui-mastra/'))) {

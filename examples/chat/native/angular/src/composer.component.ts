@@ -5,8 +5,8 @@ import {
   type OnChanges,
   type SimpleChanges,
 } from '@angular/core';
-import type { CompleteOutcome } from '@threadplane/core';
 import type { ApplicationSnapshot } from '../../shared/application';
+import { submissionStatus } from '../../shared/submission-status';
 import type { Application } from './application.token';
 
 @Component({
@@ -19,7 +19,9 @@ import type { Application } from './application.token';
       <textarea
         id="message"
         [value]="draft"
-        [disabled]="!application.canSubmit()"
+        [disabled]="
+          snapshot.selection.status !== 'ready' || snapshot.submission.active
+        "
         rows="3"
         placeholder="Write a message…"
         aria-describedby="composer-help"
@@ -42,13 +44,7 @@ import type { Application } from './application.token';
         </button>
       </div>
       <p class="submission-status" role="status">
-        {{
-          snapshot.submission.active
-            ? 'Response in progress…'
-            : snapshot.submission.outcome
-            ? outcomes[snapshot.submission.outcome]
-            : ''
-        }}
+        {{ status(snapshot) }}
       </p>
     </form>
   `,
@@ -58,13 +54,7 @@ export class ComposerComponent implements OnChanges {
   @Input({ required: true }) snapshot!: ApplicationSnapshot;
   @Input({ required: true }) selectionId!: string | null;
   draft = '';
-  readonly outcomes: Record<CompleteOutcome, string> = {
-    success: 'Response complete.',
-    error: 'The response failed. You can send another message.',
-    aborted: 'Response stopped locally. The server may still be running.',
-    interrupted: 'Response interrupted before completion.',
-    paused: 'Response paused. This example cannot resume it.',
-  };
+  readonly status = submissionStatus;
   ngOnChanges(changes: SimpleChanges) {
     // Refresh and runtime notifications do not change this primitive input.
     if (changes['selectionId']) this.draft = '';
@@ -87,6 +77,11 @@ export class ComposerComponent implements OnChanges {
     }
   }
   private send() {
-    if (this.application.submit(this.draft)) this.draft = '';
+    if (
+      this.draft.trim() &&
+      this.application.canSubmit() &&
+      this.application.submit(this.draft)
+    )
+      this.draft = '';
   }
 }

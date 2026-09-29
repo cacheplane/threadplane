@@ -237,6 +237,7 @@ test('Nx target owns preparation without outer dependency builds or unsupported 
   assert.deepEqual(Object.keys(project.targets).sort(), [
     'build',
     'e2e',
+    'provider-test',
     'serve',
     'test',
     'tooling-test',

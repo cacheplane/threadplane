@@ -26,7 +26,7 @@ starting the development server:
 
 ```sh
 export NATIVE_LANGGRAPH_URL='http://127.0.0.1:2024'
-export NATIVE_ASSISTANT_ID='your-assistant-id'
+export NATIVE_ASSISTANT_ID='chat'
 npx nx serve native-conversation-react --configuration=development --port=4301
 npx nx serve native-conversation-angular --configuration=development --port=4302
 ```
@@ -74,7 +74,7 @@ temporary files.
 
 Each e2e target runs development, basic conversation, missing-configuration and
 production cases against owned local fixtures. The production case contains
-eight browser scenarios and a separate actual React unmount/remount or Angular
+nine browser scenarios and a separate actual React unmount/remount or Angular
 component destruction/remount proof. The CLI builds the selected production
 app, runs its installed shared-owner tests, then checks those production
 scenarios and the selected view lifecycle. Angular compilation includes strict
@@ -83,6 +83,27 @@ installed Angular application builder. No proof needs remote credentials or
 mutates a live deployment. CI runs the shared tooling once before builds, then
 both e2e targets and actual CLI selections after foundation builds and Chromium
 setup.
+
+The canonical approval provider proof runs once for the shared application,
+separately from either framework's browser verification:
+
+```sh
+npx nx run native-conversation-react:provider-test
+```
+
+It requires `uv` and Python 3.12. The required library CI job installs Python
+with the pinned `astral-sh/setup-uv` action, then runs this target with a ten-minute
+step limit. The runner copies the canonical Python graph and lock into an owned
+temporary directory, uses `uv sync --frozen --python 3.12`, and starts the pinned
+LangGraph service with an explicit local model replay fixture. It compiles the
+real application owner against the installed candidate packages and runs it in
+Node without building either UI. It checks approve, decline, loaded approval and
+a separately labeled raw-session unmatched-ID routing diagnostic. The provider
+proof records exact HTTP requests, associated saved tool results and the model
+journal; browser fixtures alone do not establish this provider behavior. It
+uses owned loopback ports, sanitizes inherited credentials and cleans up only
+its own threads and processes. Unconfirmed creation or cleanup retains the
+owned temporary directory and fails the target.
 
 The view proof checks that removing the view releases only its subscription,
 the owner still receives a held response while absent, remounting preserves
@@ -144,7 +165,27 @@ servers or reuse another session's directory.
 - If a creation response is lost, creation is shown as unconfirmed: a server
   thread may already exist. **Refresh before trying New again** to avoid creating
   another thread unknowingly.
-- Paused responses are shown as paused; resuming them is not supported.
+- A single root `approval_request` with a nonempty reason and a lowercase
+  32-character hexadecimal interrupt ID offers **Approve** and **Decline**.
+  The reason is literal text. These explicit actions send ID-addressed
+  `approved` or `denied` values, without adding a human message. The canonical
+  graph uses assistant ID `chat`; another deployment must expose this same
+  protocol to use these controls.
+- Other pauses remain visible but unsupported. Any root pause blocks Send;
+  selecting another conversation or using New remains possible. There is no
+  generic resume editor, fork or automatic replay.
+- A decision preserves the draft. Sending clears it only after local admission;
+  changing the selected conversation also clears it. Same-ID refresh preserves
+  it. Ctrl/Cmd+Enter sends exact text, except during IME composition; Enter adds
+  a newline.
+- Stop, interruption or an error during a decision leaves its outcome uncertain
+  and consumes that local decision. The server may still be running. Controls
+  do not automatically retry, reload or reinterpret that pause as permission
+  to resend. A newly settled pause can offer a fresh explicit decision.
+- Interrupt IDs are provider task identifiers, not remote compare-and-swap
+  tokens: a task can reuse an ID at a later pause. Local decision tokens prevent
+  stale UI actions within this owner; they do not establish cross-client or
+  server-side atomicity.
 
 Plain Markdown and tool observations are supported. Generated tools/UI, rich
 rendering, directory mutations beyond create, AG-UI persistence, canonical-mode
@@ -177,7 +218,10 @@ proof. Temporary installation/build workspaces are still removed.
 
 Review validates complete byte inventories, selected framework/package/compiler
 evidence, app/view input agreement and successful verification results. It
-serves immutable copies of the checked bytes. These hashes establish local
+requires all nine production cases, including the eight-request approval case
+and its literal-text, keyboard, draft, repeated-pause, physical-cancellation and
+mobile-layout facts, as well as the separate actual view lifecycle. It serves
+immutable copies of the checked bytes. These hashes establish local
 integrity, not authenticity or a replayable build-tool installation. Review does
 not rebuild or install anything, and it uses a deterministic local fixture,
 not `NATIVE_LANGGRAPH_URL`. Its finite seven-request walkthrough is:

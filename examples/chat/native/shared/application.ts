@@ -7,8 +7,17 @@ import {
 } from './message-content.js';
 import type { ThreadDirectory, ThreadRow } from './contracts.js';
 import { selectedThread, threadUrl, type BrowserHistory } from './route.js';
+import { projectApproval, type Approval } from './approval.js';
+
+interface Decision extends Approval {
+  readonly token: symbol;
+  readonly canRespond: boolean;
+}
 
 export interface ApplicationSnapshot {
+  readonly decision: Decision | null;
+  // Retained after settlement so views can describe an uncertain decision.
+  readonly submissionKind: 'text' | 'decision' | null;
   readonly messages: readonly MessageContent[];
   readonly submission: Readonly<{
     active: boolean;
@@ -62,8 +71,19 @@ interface Submission {
   readonly controller: AbortController;
 }
 
+interface DecisionOccurrence {
+  readonly admission: Admission;
+  readonly evidence: NonNullable<ApplicationSnapshot['runtime']>['interrupts'];
+  readonly approval: Approval;
+  readonly token: symbol;
+  consumed: boolean;
+  card?: Decision;
+}
+
 export function createApplication(options: ApplicationOptions) {
   let snapshot: ApplicationSnapshot = Object.freeze({
+    decision: null,
+    submissionKind: null,
     messages: Object.freeze([]),
     submission: Object.freeze({ active: false, outcome: null }),
     creation: Object.freeze({ status: 'idle', id: null }),
@@ -79,6 +99,7 @@ export function createApplication(options: ApplicationOptions) {
   let creating: Creation | undefined;
   let admission: Admission | undefined;
   let submitting: Submission | undefined;
+  let occurrence: DecisionOccurrence | undefined;
   let refreshing: AbortController | undefined;
   let releaseHistory: (() => void) | undefined;
   const listeners = new Set<{ notify: () => void }>();
@@ -93,14 +114,17 @@ export function createApplication(options: ApplicationOptions) {
       }));
 
   function publish(next: ApplicationSnapshot) {
+    if (disposed) return;
+    next = { ...next, decision: projectDecision(next) };
     if (
-      disposed ||
-      (next.list === snapshot.list &&
-        next.selection === snapshot.selection &&
-        next.creation === snapshot.creation &&
-        next.submission === snapshot.submission &&
-        next.messages === snapshot.messages &&
-        next.runtime === snapshot.runtime)
+      next.list === snapshot.list &&
+      next.decision === snapshot.decision &&
+      next.submissionKind === snapshot.submissionKind &&
+      next.selection === snapshot.selection &&
+      next.creation === snapshot.creation &&
+      next.submission === snapshot.submission &&
+      next.messages === snapshot.messages &&
+      next.runtime === snapshot.runtime
     )
       return;
     snapshot = Object.freeze(next);
@@ -123,6 +147,56 @@ export function createApplication(options: ApplicationOptions) {
       selectionIntent === current.intent &&
       !current.controller.signal.aborted
     );
+  }
+
+  function canOperate(next = snapshot) {
+    return !!(
+      started &&
+      admission &&
+      owns(admission) &&
+      admission.session &&
+      next.selection.status === 'ready' &&
+      next.selection.id === admission.id &&
+      admission.session.getSnapshot().history !== undefined &&
+      !submitting
+    );
+  }
+
+  function projectDecision(next: ApplicationSnapshot): Decision | null {
+    const evidence = next.runtime?.interrupts;
+    if (!admission || !owns(admission) || !evidence?.length) {
+      occurrence = undefined;
+      return null;
+    }
+    // Runtime preserves equal root evidence across unrelated notifications and
+    // clears it when an actual attempt begins. IDs alone cannot identify pauses.
+    if (
+      occurrence?.admission !== admission ||
+      occurrence.evidence !== evidence
+    ) {
+      const approval = projectApproval(evidence);
+      occurrence = approval
+        ? {
+            admission,
+            evidence,
+            approval,
+            token: Symbol('approval occurrence'),
+            consumed: false,
+          }
+        : undefined;
+    }
+    if (!occurrence) return null;
+    const canRespond =
+      !occurrence.consumed &&
+      canOperate(next) &&
+      next.runtime?.status === 'idle';
+    if (!occurrence.card || occurrence.card.canRespond !== canRespond)
+      occurrence.card = Object.freeze({
+        ...occurrence.approval,
+        token: occurrence.token,
+        canRespond,
+      });
+    return occurrence.card;
   }
 
   function retire(previous: Admission | undefined) {
@@ -209,6 +283,7 @@ export function createApplication(options: ApplicationOptions) {
         ? undefined
         : { intent, id, controller: new AbortController() };
     admission = current;
+    occurrence = undefined;
     retireSubmission();
     const creation = cancelCreation();
     retire(previous);
@@ -218,6 +293,7 @@ export function createApplication(options: ApplicationOptions) {
       ...snapshot,
       creation,
       submission: Object.freeze({ active: false, outcome: null }),
+      submissionKind: null,
       selection: Object.freeze({
         status: id === null ? 'empty' : 'pending',
         id,
@@ -326,16 +402,7 @@ export function createApplication(options: ApplicationOptions) {
   }
 
   function canSubmit() {
-    return !!(
-      started &&
-      admission &&
-      owns(admission) &&
-      admission.session &&
-      snapshot.selection.status === 'ready' &&
-      snapshot.selection.id === admission.id &&
-      admission.session.getSnapshot().history !== undefined &&
-      !submitting
-    );
+    return canOperate() && !admission!.session!.getSnapshot().interrupts.length;
   }
 
   function ownsSubmission(current: Submission) {
@@ -352,9 +419,14 @@ export function createApplication(options: ApplicationOptions) {
     previous?.controller.abort();
   }
 
-  // True means this command was admitted, not that the run succeeded.
-  function submit(text: string) {
-    if (!canSubmit() || !text.trim()) return false;
+  // Both commands reserve the same slot before notifying any observers.
+  function execute(
+    kind: 'text' | 'decision',
+    dispatch: (
+      session: LangGraphSession,
+      signal: AbortSignal
+    ) => Promise<CompleteOutcome>
+  ) {
     const current: Submission = {
       admission: admission!,
       session: admission!.session!,
@@ -362,9 +434,11 @@ export function createApplication(options: ApplicationOptions) {
     };
     // The application owns admission before observers or runtime code can reenter.
     submitting = current;
+    if (occurrence) occurrence.consumed = true;
     publish({
       ...snapshot,
       submission: Object.freeze({ active: true, outcome: null }),
+      submissionKind: kind,
     });
     if (!ownsSubmission(current)) return false;
     void (async () => {
@@ -372,13 +446,15 @@ export function createApplication(options: ApplicationOptions) {
       try {
         // A Stop from the reservation notification aborts this signal before
         // the runtime starts. Accepted text is otherwise passed through intact.
-        outcome = await current.session.submit(text, {
-          signal: current.controller.signal,
-        });
+        outcome = await dispatch(current.session, current.controller.signal);
       } catch {
         outcome = 'error';
       }
       if (!ownsSubmission(current)) return;
+      // A stream can replace root metadata before failing. That is not fresh
+      // permission to replay an uncertain response, even with another array.
+      if (occurrence && outcome !== 'paused' && outcome !== 'success')
+        occurrence.consumed = true;
       submitting = undefined;
       publish({
         ...snapshot,
@@ -386,6 +462,34 @@ export function createApplication(options: ApplicationOptions) {
       });
     })();
     return true;
+  }
+
+  // True means locally admitted, not that execution succeeded remotely.
+  function submit(text: string) {
+    if (!canSubmit() || !text.trim()) return false;
+    return execute('text', (session, signal) =>
+      session.submit(text, { signal })
+    );
+  }
+
+  function respond(token: symbol, action: 'approve' | 'decline') {
+    if (
+      (action !== 'approve' && action !== 'decline') ||
+      !canOperate() ||
+      !occurrence ||
+      occurrence.consumed ||
+      occurrence.admission !== admission ||
+      occurrence.token !== token ||
+      !snapshot.decision?.canRespond ||
+      admission!.session!.getSnapshot().interrupts !== occurrence.evidence
+    )
+      return false;
+    const response = {
+      [occurrence.approval.id]: action === 'approve' ? 'approved' : 'denied',
+    };
+    return execute('decision', (session, signal) =>
+      session.resume(response, { signal })
+    );
   }
 
   function stop() {
@@ -402,6 +506,7 @@ export function createApplication(options: ApplicationOptions) {
   return Object.freeze({
     canSubmit,
     submit,
+    respond,
     stop,
     getSnapshot: () => snapshot,
     subscribe(notify: () => void) {
@@ -437,6 +542,7 @@ export function createApplication(options: ApplicationOptions) {
       cancelCreation();
       const previous = admission;
       admission = undefined;
+      occurrence = undefined;
       retireSubmission();
       refreshing?.abort();
       releaseHistory?.();

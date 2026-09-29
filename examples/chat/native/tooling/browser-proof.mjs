@@ -73,6 +73,42 @@ const create = (extra = {}) => ({
   body: row('new'),
   ...extra,
 });
+const approvalId = '0123456789abcdef0123456789abcdef';
+const approvalReason =
+  '  <img src=x onerror=alert(1)>\nReview & decide: ' +
+  'literal'.repeat(30) +
+  '  ';
+const approvalInterrupt = (reason = approvalReason) => ({
+  id: approvalId,
+  value: { type: 'approval_request', reason },
+});
+const approvalHistory = (id) => {
+  const step = history(id);
+  step.body[0].tasks = [
+    {
+      id: 'approval-task',
+      name: 'request_approval',
+      interrupts: [approvalInterrupt()],
+    },
+  ];
+  step.body[0].next = ['request_approval'];
+  return step;
+};
+const resume = (id, answer, events, extra = {}) => ({
+  method: 'POST',
+  path: `/api/threads/${id}/runs/stream`,
+  payload: {
+    assistant_id: 'assistant',
+    input: null,
+    command: { resume: { [approvalId]: answer } },
+    stream_mode: ['values', 'messages-tuple', 'updates', 'custom'],
+    stream_subgraphs: true,
+    stream_resumable: true,
+    on_disconnect: 'continue',
+  },
+  events,
+  ...extra,
+});
 const initial = (id = 'a', extra = {}) => [
   search(rows, { concurrentGroup: 'initial', ...extra }),
   lookup(id, { concurrentGroup: 'initial' }),
@@ -668,6 +704,184 @@ export async function runProductionProofs(browser, retained) {
           stopPhysicalCloseBeforeCleanup: true,
           exactRequestCount: 5,
           realNativeMarkdownCorrection: true,
+        };
+      }
+    )
+  );
+  results.push(
+    await scenario(
+      browser,
+      retained,
+      'canonical approval, repeated pause, preserved draft and uncertain Stop',
+      [
+        search(rows, { concurrentGroup: 'initial' }),
+        lookup('a', { concurrentGroup: 'initial' }),
+        approvalHistory('a'),
+        resume(
+          'a',
+          'approved',
+          [
+            {
+              event: 'updates',
+              data: {
+                __interrupt__: [approvalInterrupt('Review this next request.')],
+              },
+            },
+          ],
+          { holdBody: true }
+        ),
+        resume('a', 'denied', [values('Decision response complete.')]),
+        lookup('b'),
+        approvalHistory('b'),
+        resume(
+          'b',
+          'approved',
+          [
+            {
+              event: 'updates',
+              data: {
+                __interrupt__: [
+                  approvalInterrupt('Request observed before Stop.'),
+                ],
+              },
+            },
+          ],
+          { holdBody: true }
+        ),
+      ],
+      async ({ page, expect, backend, url }) => {
+        await page.goto(url + '/?thread=a');
+        const region = page.getByRole('region', {
+          name: 'Approval request',
+          exact: true,
+        });
+        const draft = page.getByRole('textbox', {
+          name: 'Message',
+          exact: true,
+        });
+        const approve = page.getByRole('button', {
+          name: 'Approve request',
+          exact: true,
+        });
+        const decline = page.getByRole('button', {
+          name: 'Decline request',
+          exact: true,
+        });
+        const send = page.getByRole('button', { name: 'Send', exact: true });
+        const stop = page.getByRole('button', { name: 'Stop', exact: true });
+        const text = '  Keep this next-message draft.\nExactly as written.  ';
+        await expect(region).toBeVisible();
+        assert.equal(
+          await region.locator('.approval-reason').textContent(),
+          approvalReason
+        );
+        await expect(region.locator('img, script')).toHaveCount(0);
+        await expect(approve).toBeEnabled();
+        await expect(decline).toBeEnabled();
+        await draft.fill(text);
+        await draft.press('Control+Enter');
+        await draft.press('Meta+Enter');
+        await expect(draft).toHaveValue(text);
+        await expect(send).toBeDisabled();
+        assert.equal(backend.requests.length, 3);
+        await page.setViewportSize({ width: 375, height: 812 });
+        assert.equal(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth
+          ),
+          true
+        );
+        await approve.focus();
+        await expect(approve).toBeFocused();
+        assert.notEqual(
+          await approve.evaluate(
+            (button) => getComputedStyle(button).outlineStyle
+          ),
+          'none'
+        );
+        await approve.press('Enter');
+        await deadline(backend.steps[3].received, 'held approval request');
+        // Replacement evidence can arrive before the operation promise settles.
+        await expect(region.locator('.approval-reason')).toHaveText(
+          'Review this next request.'
+        );
+        await expect(
+          page.getByText('Sending decision…', { exact: true })
+        ).toBeVisible();
+        await expect(approve).toBeDisabled();
+        await expect(decline).toBeDisabled();
+        await expect(send).toBeDisabled();
+        await expect(draft).toBeDisabled();
+        await expect(draft).toHaveValue(text);
+        await expect(stop).toBeEnabled();
+        await page.keyboard.press('Enter');
+        await page.keyboard.press('Control+Enter');
+        assert.equal(backend.requests.length, 4);
+        backend.steps[3].releaseBody();
+        await expect(decline).toBeEnabled();
+        await expect(draft).toBeEnabled();
+        await expect(draft).toHaveValue(text);
+        await expect(send).toBeDisabled();
+        await decline.focus();
+        await decline.press('Space');
+        await expect(
+          page.getByText('Decision response complete.', { exact: true }).last()
+        ).toBeVisible();
+        await expect(region).toHaveCount(0);
+        await expect(send).toBeEnabled();
+        await expect(draft).toHaveValue(text);
+        await expect(
+          page.getByRole('article', { name: 'user message', exact: true })
+        ).toHaveCount(0);
+        assert.equal(backend.requests.length, 5);
+        await select(page, 'b');
+        await expect(page.locator('.conversation-id')).toHaveText(
+          'Conversation ID: b'
+        );
+        await expect(approve).toBeEnabled();
+        await expect(draft).toHaveValue('');
+        await draft.fill('Preserve this while the decision is uncertain.');
+        await approve.click();
+        await expect(region.locator('.approval-reason')).toHaveText(
+          'Request observed before Stop.'
+        );
+        await expect(approve).toBeDisabled();
+        await stop.click();
+        await physicallyClosed(backend.steps[7]);
+        await expect(
+          page.getByText(
+            'Decision completion could not be confirmed. The server may still be running.',
+            { exact: true }
+          )
+        ).toBeVisible();
+        await expect(stop).toHaveCount(0);
+        await expect(approve).toBeDisabled();
+        await expect(decline).toBeDisabled();
+        await expect(send).toBeDisabled();
+        await expect(draft).toBeEnabled();
+        await expect(draft).toHaveValue(
+          'Preserve this while the decision is uncertain.'
+        );
+        await draft.press('Control+Enter');
+        await expect(page.getByRole('button', { name: /retry/i })).toHaveCount(
+          0
+        );
+        assert.equal(backend.requests.length, 8);
+        assert.equal(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth
+          ),
+          true
+        );
+        return {
+          exactRequestCount: 8,
+          literalReason: true,
+          keyboardDecisions: true,
+          draftPreserved: true,
+          repeatPauseAfterSettlement: true,
+          physicalCloseBeforeCleanup: true,
+          uncertainPauseNotActionable: true,
+          mobileOverflow: false,
         };
       }
     )

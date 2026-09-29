@@ -39,6 +39,52 @@ const EXAMPLES_CHAT_TAGS = [
 const POSTHOG_TAGS = ['scope:posthog'];
 const GROWTH_LIFECYCLE_TAGS = ['scope:growth-lifecycle'];
 
+describe('native approval canonical provider inputs', () => {
+  const inputs = [
+    'examples/chat/python/src/graph.py',
+    'examples/chat/python/src/nested/helper.py',
+    'examples/chat/python/pyproject.toml',
+    'examples/chat/python/uv.lock',
+    'examples/chat/python/langgraph.json',
+    'examples/chat/angular/e2e/fixtures/interrupt-approval.json',
+    'libs/e2e-harness/src/aimock-runner.ts',
+  ];
+  for (const file of inputs) {
+    for (const projects of [[], [{ name: 'root', tags: [] }]])
+      it(`requires library for ${file} with ${projects.length} untagged owners`, () => {
+        assert.deepEqual(classifyFromAffected([file], projects), {
+          ...emptyScope(),
+          library: true,
+        });
+      });
+    it(`preserves existing chat tags for ${file}`, () => {
+      assert.deepEqual(
+        classifyFromAffected(
+          [file],
+          [{ name: 'examples-chat-angular', tags: EXAMPLES_CHAT_TAGS }]
+        ),
+        {
+          ...emptyScope(),
+          library: true,
+          angular_compatibility: true,
+          examples_chat: true,
+        }
+      );
+    });
+  }
+  for (const file of [
+    'examples/chat/python/README.md',
+    'examples/chat/python/tests/test_graph.py',
+    'examples/chat/python-other/src/graph.py',
+    'examples/chat/python/src-other/graph.py',
+    'examples/chat/angular/e2e/fixtures/other.json',
+    'cockpit/langgraph/interrupts/python/src/graph.py',
+  ])
+    it(`does not broaden library ownership to ${file}`, () => {
+      assert.equal(classifyFromAffected([file], []).library, false);
+    });
+});
+
 describe('React migration baseline scope', () => {
   for (const file of [
     'examples/chat/native/react/src/app.tsx',
