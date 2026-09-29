@@ -53,6 +53,10 @@ describe('native canonical provider inputs', () => {
     'examples/chat/native/tooling/canonical-provider-observer.ts',
     'examples/chat/native/tooling/trip-summary-provider.ts',
     'examples/chat/native/tooling/trip-summary-provider-consumer.ts',
+    'examples/chat/native/tooling/fixtures/backup-effect.json',
+    'examples/chat/native/tooling/backup-provider.ts',
+    'examples/chat/native/tooling/backup-provider-consumer.ts',
+    'examples/chat/native/tooling/backup-provider-contract.ts',
   ];
   for (const file of inputs) {
     for (const projects of [[], [{ name: 'root', tags: [] }]])

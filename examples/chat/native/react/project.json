@@ -61,7 +61,10 @@
         "commands": [
           "node node_modules/typescript/bin/tsc -p examples/chat/native/tooling/tsconfig.approval-provider-host.json",
           "node --import tsx --test examples/chat/native/tooling/approval-provider.spec.ts",
-          "node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.base.json examples/chat/native/tooling/approval-provider.ts"
+          "node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.base.json examples/chat/native/tooling/approval-provider.ts",
+          "node node_modules/typescript/bin/tsc -p examples/chat/native/tooling/tsconfig.backup-provider-host.json",
+          "node --import tsx --test examples/chat/native/tooling/backup-provider.spec.ts",
+          "node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.base.json examples/chat/native/tooling/backup-provider.ts"
         ]
       }
     },

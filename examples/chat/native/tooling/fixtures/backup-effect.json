@@ -1,0 +1,104 @@
+{
+  "fixtures": [
+    {
+      "match": {
+        "userMessage": "List all remaining backups for the owned empty-inventory proof.",
+        "hasToolResult": true
+      },
+      "response": {
+        "content": "The saved backup inventory is empty."
+      }
+    },
+    {
+      "match": {
+        "userMessage": "List all remaining backups for the owned empty-inventory proof.",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "list_backups",
+            "arguments": {
+              "older_than_days": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "For the owned approval proof, delete only proof-delete. Ask for approval before deleting it.",
+        "hasToolResult": true
+      },
+      "response": {
+        "content": "The checkpoint result above records the human decision."
+      }
+    },
+    {
+      "match": {
+        "userMessage": "For the owned approval proof, delete only proof-delete. Ask for approval before deleting it.",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "delete_backups",
+            "arguments": {
+              "ids": ["proof-delete"]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "For the owned decline proof, delete only proof-delete. Ask for approval before deleting it.",
+        "hasToolResult": true
+      },
+      "response": {
+        "content": "The checkpoint result above records the human decision."
+      }
+    },
+    {
+      "match": {
+        "userMessage": "For the owned decline proof, delete only proof-delete. Ask for approval before deleting it.",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "delete_backups",
+            "arguments": {
+              "ids": ["proof-delete"]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "For the owned empty-inventory proof, delete only proof-delete. Ask for approval before deleting it.",
+        "hasToolResult": true
+      },
+      "response": {
+        "content": "The checkpoint result above records the human decision."
+      }
+    },
+    {
+      "match": {
+        "userMessage": "For the owned empty-inventory proof, delete only proof-delete. Ask for approval before deleting it.",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "delete_backups",
+            "arguments": {
+              "ids": ["proof-delete"]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

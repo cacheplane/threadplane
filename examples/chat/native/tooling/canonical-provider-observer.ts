@@ -27,10 +27,14 @@ interface Observation {
 // concrete summary scenario's authored four terminal-write phases.
 export async function observeProvider(
   port: number,
-  scenario: 'approval' | 'trip-summary' = 'approval'
+  scenario: 'approval' | 'trip-summary' | 'backup-effect' = 'approval'
 ) {
   assert.ok(Number.isInteger(port) && port > 0 && port <= 65535);
-  assert.ok(scenario === 'approval' || scenario === 'trip-summary');
+  assert.ok(
+    scenario === 'approval' ||
+      scenario === 'trip-summary' ||
+      scenario === 'backup-effect'
+  );
   const requests: Observation[] = [];
   const forwardedRequests: Observation[] = [];
   const controls: { method: string; path: string; status: number }[] = [];

@@ -84,8 +84,10 @@ mutates a live deployment. CI runs the shared tooling once before builds, then
 both e2e targets and actual CLI selections after foundation builds and Chromium
 setup.
 
-The canonical approval and trip-summary provider proofs each run once for the
-shared application, separately from either framework's browser verification:
+Three canonical provider proofs run once for the shared application across two
+targets, separately from either framework's browser verification. The first
+target runs approval followed by the backup-effect proof; the second runs the
+trip-summary proof:
 
 ```sh
 npx nx run native-conversation-react:provider-test
@@ -108,6 +110,23 @@ uses owned loopback ports, sanitizes inherited credentials and cleans up only
 its own threads and processes. Unconfirmed creation or cleanup retains the
 owned temporary directory and fails the target.
 
+The backup-effect proof seeds three owned threads through exactly three explicit
+SDK state writes before application admission. The application submits text and
+uses its existing approval token; the canonical Python graph owns the checkpoint
+inventory change and correlated tool result. Approval removes only the selected
+row while preserving unselected and retained rows; decline preserves all rows.
+Deleting the sole row saves an empty inventory, and a later explicit list and
+fresh application both observe that empty state. Fresh owners restore the
+literal saved ToolMessages without reexecuting tools. Setup writes are recorded
+separately from application traffic; no application backup-state write is hidden
+in the proof.
+
+These are demo checkpoint effects, not physical storage deletion. A graph
+Command does not establish external transaction atomicity, safe concurrent
+mutation or cancellation rollback. Cleanup confirms synchronous application
+retirement and completed known-thread deletion while the provider remains alive;
+the application does not expose an awaited browser-disposal API.
+
 The summary proof checks the fixed tool catalog, exact supplied arguments,
 one terminal ToolMessage write and no automatic model continuation. A later
 explicit user message sees the saved call/result pair; a fresh application
@@ -117,7 +136,7 @@ or selection closes the downstream request, and reject a write locally before
 forwarding it. These distinguish committed state from an unforwarded write;
 the injected local 503 is not a provider rejection. The deterministic replay
 proves routing, binding and persistence with the pinned provider, not live-model
-obedience or the ability to plan an itinerary. Both proofs preserve exact
+obedience or the ability to plan an itinerary. All three proofs preserve exact
 HTTP/model journals and require confirmed cleanup before accepting evidence.
 
 The view proof checks that removing the view releases only its subscription,

@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022", "DOM", "DOM.Iterable", "ESNext.Disposable"],
+    "strict": true,
+    "skipLibCheck": false,
+    "types": ["node"],
+    "rootDir": "..",
+    "outDir": "../provider-output",
+    "noEmitOnError": true
+  },
+  "include": ["backup-provider-consumer.ts", "backup-provider-consumer.spec.ts"]
+}
