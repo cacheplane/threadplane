@@ -2,7 +2,6 @@
 // Discriminator strings (e.g. 'RUN_STARTED') match EventType enum members
 // verbatim; the switch cases below use the string literals directly so this
 // file has no runtime dependency on the EventType enum import.
-import { toolResultFromContent, messageContentFromParts } from './internal/content-parts';
 import { signal, type WritableSignal } from '@angular/core';
 import type { Subject } from 'rxjs';
 import {
@@ -18,6 +17,7 @@ import type {
 } from '@threadplane/chat';
 import type { BaseEvent } from '@ag-ui/client';
 import { applyPatch, type JsonPatchOp } from './internal/apply-patch';
+import { toolResultFromContent, messageContentFromParts } from './internal/content-parts';
 import { bridgeCitationsState } from './bridge-citations-state';
 
 /**
