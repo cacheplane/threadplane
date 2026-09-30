@@ -7,6 +7,11 @@ conversations, restore history and stream new responses. They are contributor
 examples, not published packages or replacements for the canonical Angular
 chat example. This does not establish general framework or release parity.
 
+The application owns one `@threadplane/content/messages` projection per selected
+session. It adds authored trip-summary cards to the shared rows while preserving
+their Markdown and tool observations. View removal does not release that content;
+retiring the selection disposes it.
+
 ## Setup and commands
 
 Run commands from the repository root using **Node 22 and npm 10** (locally

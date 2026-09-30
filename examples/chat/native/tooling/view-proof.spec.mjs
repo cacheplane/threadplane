@@ -46,6 +46,7 @@ function fixture(t, framework) {
     'shared/message-content.ts',
     'node_modules/@threadplane/langgraph/runtime/create-session.js',
     'node_modules/@threadplane/content/src/markdown/create-markdown.js',
+    'node_modules/@threadplane/content/src/messages/create-message-content.js',
     ...(angular
       ? [
           'angular/src/application.token.ts',
@@ -67,6 +68,7 @@ function fixture(t, framework) {
     ...runtime.filter((p) => !p.endsWith('.js') && !p.endsWith('.mjs')),
     'node_modules/@threadplane/langgraph/runtime/create-session.d.ts',
     'node_modules/@threadplane/content/src/markdown/create-markdown.d.ts',
+    'node_modules/@threadplane/content/src/messages/create-message-content.d.ts',
     ...(angular
       ? [
           'threadplane-angular',
@@ -322,6 +324,20 @@ for (const framework of ['react', 'angular']) {
       (r) => (r.source.path = 'examples/chat/native/tooling/other.ts'),
     ],
     ['missing helper', (r) => delete r.inputs['view-proof/view-owner.ts']],
+    [
+      'missing shared message projection runtime',
+      (r) =>
+        (r.runtime = r.runtime.filter(
+          (p) => !p.endsWith('messages/create-message-content.js')
+        )),
+    ],
+    [
+      'missing shared message projection declarations',
+      (r) =>
+        (r.compiler.inputs = r.compiler.inputs.filter(
+          (p) => !p.endsWith('messages/create-message-content.d.ts')
+        )),
+    ],
   ])
     test(`${framework} rejects ${name}`, (t) => {
       const f = fixture(t, framework);

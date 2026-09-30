@@ -194,6 +194,16 @@ function selectedInputs(p, selected) {
     for (const path of Object.keys(recordMap(map))) consumerPath(path);
   assert.ok(p.compiler.inputs[entry], 'Selected compiler entry required');
   assert.ok(p.bundler.inputs[entry], 'Selected runtime entry required');
+  const projection =
+    'node_modules/@threadplane/content/src/messages/create-message-content';
+  assert.ok(
+    p.compiler.inputs[projection + '.d.ts'],
+    'Installed message projection declarations required'
+  );
+  assert.ok(
+    p.bundler.inputs[projection + '.js'],
+    'Installed message projection runtime required'
+  );
   return consumerPath;
 }
 
