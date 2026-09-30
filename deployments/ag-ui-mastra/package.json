@@ -13,7 +13,7 @@
     "test": "node --test test/*.test.mjs"
   },
   "dependencies": {
-    "@ag-ui/mastra": "1.1.2",
+    "@ag-ui/mastra": "1.1.5",
     "@mastra/core": "1.63.2",
     "@mastra/libsql": "1.22.2",
     "@mastra/memory": "1.28.1",
@@ -21,6 +21,6 @@
     "zod": "3.25.76"
   },
   "devDependencies": {
-    "@ag-ui/client": "0.0.59"
+    "@ag-ui/client": "1.0.1"
   }
 }
