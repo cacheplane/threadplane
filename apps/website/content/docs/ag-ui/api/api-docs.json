@@ -33,13 +33,13 @@
       },
       {
         "name": "messages",
-        "type": "object | object | object | object | object | object | object[]",
+        "type": "Message[]",
         "description": "",
         "optional": false
       },
       {
         "name": "pendingInterrupts",
-        "type": "object[]",
+        "type": "Interrupt[]",
         "description": "Interrupts emitted by the most recent run that have not yet been resolved.\n Populated when RUN_FINISHED arrives with outcome.type === \"interrupt\".\n Cleared when a subsequent run completes successfully.",
         "optional": false
       },
@@ -71,12 +71,12 @@
       },
       {
         "name": "addMessage",
-        "signature": "addMessage(message: object | object | object | object | object | object | object): void",
+        "signature": "addMessage(message: Message): void",
         "description": "",
         "params": [
           {
             "name": "message",
-            "type": "object | object | object | object | object | object | object",
+            "type": "Message",
             "description": "",
             "optional": false
           }
@@ -84,12 +84,12 @@
       },
       {
         "name": "addMessages",
-        "signature": "addMessages(messages: object | object | object | object | object | object | object[]): void",
+        "signature": "addMessages(messages: Message[]): void",
         "description": "",
         "params": [
           {
             "name": "messages",
-            "type": "object | object | object | object | object | object | object[]",
+            "type": "Message[]",
             "description": "",
             "optional": false
           }
@@ -97,18 +97,18 @@
       },
       {
         "name": "apply",
-        "signature": "apply(input: object, events$: Observable<objectOutputType<object, ZodTypeAny, \"passthrough\">>, subscribers: AgentSubscriber[]): Observable<AgentStateMutation>",
+        "signature": "apply(input: RunAgentInput, events$: Observable<BaseEvent>, subscribers: AgentSubscriber[]): Observable<AgentStateMutation>",
         "description": "",
         "params": [
           {
             "name": "input",
-            "type": "object",
+            "type": "RunAgentInput",
             "description": "",
             "optional": false
           },
           {
             "name": "events$",
-            "type": "Observable<objectOutputType<object, ZodTypeAny, \"passthrough\">>",
+            "type": "Observable<BaseEvent>",
             "description": "",
             "optional": false
           },
@@ -128,12 +128,12 @@
       },
       {
         "name": "connect",
-        "signature": "connect(input: object): Observable<objectOutputType<object, ZodTypeAny, \"passthrough\">>",
+        "signature": "connect(input: RunAgentInput): Observable<BaseEvent>",
         "description": "",
         "params": [
           {
             "name": "input",
-            "type": "object",
+            "type": "RunAgentInput",
             "description": "",
             "optional": false
           }
@@ -166,13 +166,13 @@
       },
       {
         "name": "getCapabilities",
-        "signature": "getCapabilities(): Promise<object>",
+        "signature": "getCapabilities(): Promise<AgentCapabilities>",
         "description": "Returns the agent's current capabilities.\nOptional — subclasses implement this to advertise what they support.",
         "params": []
       },
       {
         "name": "legacy_to_be_removed_runAgentBridged",
-        "signature": "legacy_to_be_removed_runAgentBridged(config: RunAgentParameters<>): Observable<object | object | object | object | object | object | object | object | object | object>",
+        "signature": "legacy_to_be_removed_runAgentBridged(config: RunAgentParameters<>): Observable<LegacyRuntimeProtocolEvent>",
         "description": "",
         "params": [
           {
@@ -185,12 +185,12 @@
       },
       {
         "name": "onError",
-        "signature": "onError(input: object, error: Error, subscribers: AgentSubscriber[]): Observable<AgentStateMutation>",
+        "signature": "onError(input: RunAgentInput, error: Error, subscribers: AgentSubscriber[]): Observable<AgentStateMutation>",
         "description": "",
         "params": [
           {
             "name": "input",
-            "type": "object",
+            "type": "RunAgentInput",
             "description": "",
             "optional": false
           },
@@ -210,12 +210,12 @@
       },
       {
         "name": "onFinalize",
-        "signature": "onFinalize(input: object, subscribers: AgentSubscriber[]): Promise<void>",
+        "signature": "onFinalize(input: RunAgentInput, subscribers: AgentSubscriber[]): Promise<void>",
         "description": "",
         "params": [
           {
             "name": "input",
-            "type": "object",
+            "type": "RunAgentInput",
             "description": "",
             "optional": false
           },
@@ -229,12 +229,12 @@
       },
       {
         "name": "onInitialize",
-        "signature": "onInitialize(input: object, subscribers: AgentSubscriber[]): Promise<void>",
+        "signature": "onInitialize(input: RunAgentInput, subscribers: AgentSubscriber[]): Promise<void>",
         "description": "",
         "params": [
           {
             "name": "input",
-            "type": "object",
+            "type": "RunAgentInput",
             "description": "",
             "optional": false
           },
@@ -248,7 +248,7 @@
       },
       {
         "name": "prepareRunAgentInput",
-        "signature": "prepareRunAgentInput(parameters: RunAgentParameters<>): object",
+        "signature": "prepareRunAgentInput(parameters: RunAgentParameters<>): RunAgentInput",
         "description": "",
         "params": [
           {
@@ -261,12 +261,12 @@
       },
       {
         "name": "processApplyEvents",
-        "signature": "processApplyEvents(input: object, events$: Observable<AgentStateMutation>, subscribers: AgentSubscriber[]): Observable<AgentStateMutation>",
+        "signature": "processApplyEvents(input: RunAgentInput, events$: Observable<AgentStateMutation>, subscribers: AgentSubscriber[]): Observable<AgentStateMutation>",
         "description": "",
         "params": [
           {
             "name": "input",
-            "type": "object",
+            "type": "RunAgentInput",
             "description": "",
             "optional": false
           },
@@ -286,12 +286,12 @@
       },
       {
         "name": "run",
-        "signature": "run(input: object): Observable<objectOutputType<object, ZodTypeAny, \"passthrough\">>",
+        "signature": "run(input: RunAgentInput): Observable<BaseEvent>",
         "description": "",
         "params": [
           {
             "name": "input",
-            "type": "object",
+            "type": "RunAgentInput",
             "description": "",
             "optional": false
           }
@@ -318,12 +318,12 @@
       },
       {
         "name": "setMessages",
-        "signature": "setMessages(messages: object | object | object | object | object | object | object[]): void",
+        "signature": "setMessages(messages: Message[]): void",
         "description": "",
         "params": [
           {
             "name": "messages",
-            "type": "object | object | object | object | object | object | object[]",
+            "type": "Message[]",
             "description": "",
             "optional": false
           }
@@ -532,6 +532,12 @@
         "type": "Signal<ToolCall[]>",
         "description": "",
         "optional": false
+      },
+      {
+        "name": "usage",
+        "type": "Signal<AgentUsage | undefined>",
+        "description": "Optional token usage for the most recent completed or errored run.\nAdapters whose runtime reports usage set it at the run boundary; it is\n`undefined` while a run is in flight and after a run that reported none.",
+        "optional": true
       }
     ],
     "methods": [
@@ -736,7 +742,7 @@
       },
       {
         "name": "interrupts",
-        "type": "object[]",
+        "type": "Interrupt[]",
         "description": "",
         "optional": false
       },
@@ -806,7 +812,7 @@
     "properties": [
       {
         "name": "messages",
-        "type": "object | object | object | object | object | object | object[]",
+        "type": "Message[]",
         "description": "",
         "optional": false
       },

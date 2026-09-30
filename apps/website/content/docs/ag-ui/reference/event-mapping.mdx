@@ -78,6 +78,9 @@ The adapter exposes `messages`, `status`, `isLoading`, `error`, `toolCalls`, `st
 | `RUN_STARTED` | `status`, `isLoading`, `error`, `interrupt`, `interruptSession`, `customEvents`, `subagents` | Sets `status` to `running` and `isLoading` to `true`; clears the error, visible interrupt, custom events, subagents, and unfinished tool-argument buffer. A matching resume becomes `acknowledged`; the claim is retained until a terminal outcome, rather than treated as completed. Ignored when the run id does not match this delivery. |
 | `RUN_FINISHED` (no outcome, or a success outcome) | `status`, `isLoading`, `messages`, `interruptSession` | Settles the run and returns to `idle`. A collected compatibility interrupt becomes pending at this boundary; otherwise the run completes. Ignored on the same run-id gate as `RUN_STARTED`. |
 | `RUN_FINISHED` (outcome `{ type: 'interrupt' }`) | `interrupt`, `interruptSession`, `status`, `isLoading` | Records the full native batch as pending and returns to `idle`. In `auto` or `protocol`, projects `{ id, value: { interrupts, runId }, resumable: true }`; explicit command profiles project the compatibility interrupt. In default `auto` mode the native batch takes precedence over compatibility events in either arrival order. |
+| `RUN_FINISHED` (outcome `{ type: 'cancelled' }`) | `status`, `isLoading`, `messages` | Settles the run as `aborted`, returns to `idle`, and sets no error. The producer stopped the run on request. |
+| `RUN_FINISHED` / `RUN_ERROR` with `usage` | `usage` | Replaces the optional `usage` signal with `{ entries }` for that run; cleared at the next `RUN_STARTED`. |
+| `RUN_FINISHED` (success with `pendingToolCallIds`) | `clientTools.pending` | The listed ids become the authoritative pending set for client tools; absent means derive from the stream as before. |
 | `RUN_ERROR` | `status`, `isLoading`, `error` | Ends the run as failed, sets `status` to `error`, stops loading, and stores the event's `message` as an error (the raw event when no message is present). Ignored on the same run-id gate as `RUN_STARTED`. |
 | `STEP_STARTED`, `STEP_FINISHED` | none | Not reduced. Node boundaries pass through untouched. |
 
@@ -102,7 +105,7 @@ Reasoning and text write to the same message when they share a `messageId`, so o
 | `TOOL_CALL_START` | `toolCalls`, `messages` | Adds a tool call with status `running`; when `parentMessageId` is present, links the call to that assistant message, creating the message slot if the turn produced no text. |
 | `TOOL_CALL_ARGS` | `toolCalls` | Appends `delta` to a per-call buffer, parses the buffer whenever it becomes valid JSON, and keeps the last good args while more fragments arrive. |
 | `TOOL_CALL_END` | `toolCalls` | Parses the accumulated buffer one final time, discards the buffer, and marks the call `complete`. |
-| `TOOL_CALL_RESULT` | `toolCalls` | Stores the result on the matching call, parsing `content` as JSON when it arrives as a string. |
+| `TOOL_CALL_RESULT` | `toolCalls` | Stores the result on the matching call. A string is parsed as JSON when possible. A content-part list concatenates its text parts into `result` and keeps every part under `parts`. |
 
 Argument deltas are fragments of one JSON document, not standalone JSON, which is why the reducer buffers rather than parses each delta. If the buffer never parses, `args` stays at the last good value, or `{}` when there was none.
 

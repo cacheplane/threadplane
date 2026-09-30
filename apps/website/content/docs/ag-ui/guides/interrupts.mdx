@@ -465,7 +465,7 @@ Providers dispose the adapter with their injector. If you create it with `toAgen
 
 ### Migration note
 
-Install `@ag-ui/client` and `@ag-ui/core` at version `0.0.59`. The adapter now declares `^0.0.59` peer dependencies because native interrupt validation uses the protocol schemas provided by that SDK version.
+Install `@ag-ui/client` and `@ag-ui/core` at `1.0.1` or later. The adapter declares `^1.0.1` peer dependencies: native interrupt validation now imports the protocol validators from `@ag-ui/core/schemas`, which the 0.0.x line does not ship. The 1.0 client translates streams from older servers itself, so the backend does not have to move at the same time.
 
 Mixed native and compatibility events now select native transport by default regardless of arrival order. Backends requiring a command format must select the matching explicit profile. Replace bare resume calls with a restored or observed pending batch, answer every native ID, and use `retry()` for a retained decision after a proven pre-dispatch failure. Recovery from an uncertain attempt requires application-provided authoritative reconciliation.
 

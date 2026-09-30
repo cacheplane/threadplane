@@ -8,6 +8,12 @@ description: Highlight releases of @threadplane/chat since 0.0.19 — client too
 This changelog tracks selected highlight releases, not every patch. The published package is at `0.0.66` — the entries below cover the notable changes since `0.0.19`.
 </Callout>
 
+## Next
+
+- Action required for `@threadplane/ag-ui` consumers: the adapter now declares `^1.0.1` peer dependencies on `@ag-ui/client` and `@ag-ui/core`, so install both at `1.0.1` or later. The adapter also declares `protocolVersion` on every run.
+- The neutral agent contract gains an optional `usage` signal, an optional `parts` list on tool calls, and an `authoritativeIds` input to `selectPendingClientToolCalls`.
+- AG-UI cancelled run outcomes now settle as `aborted` without an error, and tool results delivered as content-part lists map to chat content blocks.
+
 ## 0.0.66
 
 ### Install telemetry
