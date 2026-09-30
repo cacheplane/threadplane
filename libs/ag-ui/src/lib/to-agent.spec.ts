@@ -479,6 +479,25 @@ describe('toAgent', () => {
     expect(stub.abortRun).toHaveBeenCalledOnce();
   });
 
+  it('exposes run usage on agent.usage()', async () => {
+    const stub = new StubAgent();
+    const a = toAgent(stub as unknown as AbstractAgent);
+    const usage = [{ provider: 'openai', model: 'gpt-5', inputTokens: 1, outputTokens: 2, totalTokens: 3 }];
+    stub.runAgent.mockImplementationOnce(async () => {
+      stub.emit({ type: 'RUN_STARTED', runId: 'r1' } as BaseEvent);
+      stub.emit({ type: 'RUN_FINISHED', runId: 'r1', usage } as unknown as BaseEvent);
+      return { result: undefined, newMessages: [] };
+    });
+    await a.submit({});
+    expect(a.usage?.()).toEqual({ entries: usage });
+    stub.runAgent.mockImplementationOnce(async () => {
+      stub.emit({ type: 'RUN_STARTED', runId: 'r2' } as BaseEvent);
+      expect(a.usage?.()).toBeUndefined();
+      return { result: undefined, newMessages: [] };
+    });
+    await a.submit({});
+  });
+
   it('events$ emits state_update on CUSTOM with that name', () => {
     const stub = new StubAgent();
     const a = toAgent(stub as unknown as AbstractAgent);

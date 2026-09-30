@@ -1057,23 +1057,23 @@ describe('usage', () => {
     const store = makeStore();
     reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r' } as never, store);
     reduceEvent({ type: 'RUN_FINISHED', threadId: 't', runId: 'r', usage } as never, store);
-    expect(store.usage?.()).toEqual({ entries: usage });
+    expect(store.usage()).toEqual({ entries: usage });
   });
 
   it('records RUN_ERROR usage accrued before the failure', () => {
     const store = makeStore();
     reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r' } as never, store);
     reduceEvent({ type: 'RUN_ERROR', message: 'boom', usage } as never, store);
-    expect(store.usage?.()).toEqual({ entries: usage });
+    expect(store.usage()).toEqual({ entries: usage });
   });
 
   it('clears usage when a new run starts and leaves it undefined when none is reported', () => {
     const store = makeStore();
-    store.usage?.set({ entries: usage });
+    store.usage.set({ entries: usage });
     reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r2' } as never, store);
-    expect(store.usage?.()).toBeUndefined();
+    expect(store.usage()).toBeUndefined();
     reduceEvent({ type: 'RUN_FINISHED', threadId: 't', runId: 'r2' } as never, store);
-    expect(store.usage?.()).toBeUndefined();
+    expect(store.usage()).toBeUndefined();
   });
 });
 
@@ -1111,7 +1111,7 @@ describe('pendingToolCallIds', () => {
     const store = makeStore();
     reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r' } as never, store);
     reduceEvent({ type: 'RUN_FINISHED', threadId: 't', runId: 'r', outcome: { type: 'success', pendingToolCallIds: ['x'] } } as never, store);
-    expect(store.pendingClientToolCallIds?.()).toEqual(new Set(['x']));
+    expect(store.pendingClientToolCallIds()).toEqual(new Set(['x']));
     // The adapter allocates a fresh delivery run per send; the finished one is closed.
     store.deliveryRun = {
       generation: 'run-generation-2',
@@ -1120,16 +1120,47 @@ describe('pendingToolCallIds', () => {
       snapshotReplacementIds: new Set(),
     };
     reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r2' } as never, store);
-    expect(store.pendingClientToolCallIds?.()).toBeUndefined();
+    expect(store.pendingClientToolCallIds()).toBeUndefined();
   });
 
   it('ignores pendingToolCallIds on a RUN_FINISHED that does not finalize the run', () => {
     const store = makeStore();
     reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r' } as never, store);
     reduceEvent({ type: 'RUN_FINISHED', threadId: 't', runId: 'r', outcome: { type: 'success', pendingToolCallIds: ['x'] } } as never, store);
-    expect(store.pendingClientToolCallIds?.()).toEqual(new Set(['x']));
+    expect(store.pendingClientToolCallIds()).toEqual(new Set(['x']));
     // The run is already settled; a duplicate terminal must not rewrite the set.
     reduceEvent({ type: 'RUN_FINISHED', threadId: 't', runId: 'r', outcome: { type: 'success', pendingToolCallIds: ['y'] } } as never, store);
-    expect(store.pendingClientToolCallIds?.()).toEqual(new Set(['x']));
+    expect(store.pendingClientToolCallIds()).toEqual(new Set(['x']));
+  });
+
+  it('an empty declared pending list is authoritative', () => {
+    const store = makeStore();
+    reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r' } as never, store);
+    reduceEvent({ type: 'TOOL_CALL_START', toolCallId: 'c1', toolCallName: 'get_weather' } as never, store);
+    reduceEvent({ type: 'TOOL_CALL_END', toolCallId: 'c1' } as never, store);
+    reduceEvent({ type: 'RUN_FINISHED', threadId: 't', runId: 'r', outcome: { type: 'success', pendingToolCallIds: [] } } as never, store);
+    expect(store.pendingClientToolCallIds()).toEqual(new Set());
+  });
+
+  it('ignores usage on a RUN_FINISHED that does not finalize the run', () => {
+    const store = makeStore();
+    const usageA = [{ provider: 'openai', model: 'gpt-5', inputTokens: 1, outputTokens: 2, totalTokens: 3 }];
+    const usageB = [{ provider: 'openai', model: 'gpt-5', inputTokens: 9, outputTokens: 9, totalTokens: 18 }];
+    reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r' } as never, store);
+    reduceEvent({ type: 'RUN_FINISHED', threadId: 't', runId: 'r', usage: usageA } as never, store);
+    expect(store.usage()).toEqual({ entries: usageA });
+    reduceEvent({ type: 'RUN_FINISHED', threadId: 't', runId: 'r', usage: usageB } as never, store);
+    expect(store.usage()).toEqual({ entries: usageA });
+  });
+
+  it('records usage carried by an interrupt outcome', () => {
+    const store = makeStore();
+    const usage = [{ provider: 'openai', model: 'gpt-5', inputTokens: 1, outputTokens: 2, totalTokens: 3 }];
+    reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r' } as never, store);
+    reduceEvent({
+      type: 'RUN_FINISHED', threadId: 't', runId: 'r', usage,
+      outcome: { type: 'interrupt', interrupts: [{ id: 'i1', reason: 'approval' }] },
+    } as never, store);
+    expect(store.usage()).toEqual({ entries: usage });
   });
 });

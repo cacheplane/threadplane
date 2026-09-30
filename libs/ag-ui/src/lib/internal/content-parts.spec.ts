@@ -10,8 +10,13 @@ describe('toolResultFromContent', () => {
     expect(toolResultFromContent('{"hits":3}')).toEqual({ result: { hits: 3 } });
     expect(toolResultFromContent('plain')).toEqual({ result: 'plain' });
   });
-  it('joins text parts and keeps every part', () => {
+  it('parses a single text part as JSON and keeps every part', () => {
     expect(toolResultFromContent([text, urlImage])).toEqual({ result: { hits: 3 }, parts: [text, urlImage] });
+  });
+  it('keeps several text parts as one joined raw string, unparsed', () => {
+    const a = { type: 'text', text: '{"a":' };
+    const b = { type: 'text', text: '1}' };
+    expect(toolResultFromContent([a, b])).toEqual({ result: '{"a":1}', parts: [a, b] });
   });
   it('yields an empty-string result for an all-media list', () => {
     expect(toolResultFromContent([dataAudio])).toEqual({ result: '', parts: [dataAudio] });

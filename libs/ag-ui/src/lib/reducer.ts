@@ -84,13 +84,12 @@ export interface ReducerStore {
   events$:      Subject<AgentEvent>;
   customEvents: WritableSignal<CustomStreamEvent[]>;
   activities: WritableSignal<Map<string, ActivityEntry>>;
-  /** Token usage for the latest finished/errored run. Optional so test
-   *  stores built before 1.0 keep compiling; the adapter always provides it. */
-  usage?: WritableSignal<AgentUsage | undefined>;
-  /** `outcome.pendingToolCallIds` from the latest successful RUN_FINISHED;
-   *  undefined when the producer named none. Optional for the same reason as
-   *  `usage`. */
-  pendingClientToolCallIds?: WritableSignal<ReadonlySet<string> | undefined>;
+  /** Token usage for the latest finished/errored run. */
+  usage: WritableSignal<AgentUsage | undefined>;
+  /** `outcome.pendingToolCallIds` from the latest successful RUN_FINISHED.
+   *  undefined when the producer declared no list; a declared list, even an
+   *  empty one, is the authority (an empty Set means nothing is pending). */
+  pendingClientToolCallIds: WritableSignal<ReadonlySet<string> | undefined>;
   deliveryRun: ReducerDeliveryRun | null;
   allocateDeliveryGeneration(scope: string): string;
   /** Accumulated raw TOOL_CALL_ARGS text per toolCallId. A live model streams
@@ -149,15 +148,14 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
       // a TOOL_CALL_ARGS fragment whose TOOL_CALL_END never arrived (aborted
       // or errored run) must not prefix a same-id call in the next run.
       store.argsBuffers?.clear();
-      store.usage?.set(undefined);
-      store.pendingClientToolCallIds?.set(undefined);
+      store.usage.set(undefined);
+      store.pendingClientToolCallIds.set(undefined);
       return;
     }
     case 'RUN_FINISHED': {
       const run = currentRunForEvent(event, store);
       if (store.deliveryRun && !run) return;
       const outcome = runFinishedOutcome(event);
-      store.usage?.set(usageFromEvent(event));
       if (outcome?.type === 'interrupt') {
         // Protocol-standard interrupt signal: RUN_FINISHED carrying
         // outcome = { type: 'interrupt', interrupts: [...] }. AWS Strands and
@@ -169,6 +167,7 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
           store.interrupt.set(toOutcomeInterrupt(outcome, eventRunId(event)));
         }
         if (run && finalizeDeliveryRun(store, run, 'paused')) {
+          store.usage.set(usageFromEvent(event));
           store.status.set('idle');
           store.isLoading.set(false);
         }
@@ -178,6 +177,7 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
         // 1.0 RunFinishedCancelledOutcome: the producer stopped the run on
         // request. The neutral contract already has 'aborted' for exactly this.
         if (!run || !finalizeDeliveryRun(store, run, 'aborted')) return;
+        store.usage.set(usageFromEvent(event));
         store.status.set('idle');
         store.isLoading.set(false);
         return;
@@ -187,7 +187,8 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
         ? new Set(declared.filter((id): id is string => typeof id === 'string'))
         : undefined;
       if (!run || !finalizeDeliveryRun(store, run, 'success')) return;
-      store.pendingClientToolCallIds?.set(pendingIds && pendingIds.size > 0 ? pendingIds : undefined);
+      store.usage.set(usageFromEvent(event));
+      store.pendingClientToolCallIds.set(pendingIds);
       store.status.set('idle');
       store.isLoading.set(false);
       return;
@@ -195,7 +196,7 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
     case 'RUN_ERROR': {
       const run = currentRunForEvent(event, store);
       if (!run || !finalizeDeliveryRun(store, run, 'error')) return;
-      store.usage?.set(usageFromEvent(event));
+      store.usage.set(usageFromEvent(event));
       store.status.set('error');
       store.isLoading.set(false);
       const runErrorMsg = (event as { message?: unknown }).message;
@@ -402,7 +403,7 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
             snapshotMessage = {
               ...m,
               content: mapped.content,
-              ...(mapped.extra ? { extra: { ...(isRecord(m['extra']) ? m['extra'] : {}), ...mapped.extra } } : {}),
+              ...(mapped.extra ? { extra: mergeAgUiExtra(m['extra'], mapped.extra) } : {}),
             } as unknown as Omit<Message, 'delivery'>;
           } else {
             snapshotMessage = m as unknown as Omit<Message, 'delivery'>;
@@ -789,6 +790,20 @@ interface RunFinishedOutcome {
   type?: string;
   interrupts?: unknown;
   pendingToolCallIds?: unknown;
+}
+
+/** Merge mapped `extra` into a pre-existing one, keeping any existing
+ *  `extra['ag-ui']` record rather than overwriting it. */
+function mergeAgUiExtra(existing: unknown, mapped: Record<string, unknown>): Record<string, unknown> {
+  const base = isRecord(existing) ? existing : {};
+  return {
+    ...base,
+    ...mapped,
+    'ag-ui': {
+      ...(isRecord(base['ag-ui']) ? base['ag-ui'] : {}),
+      ...(isRecord(mapped['ag-ui']) ? mapped['ag-ui'] : {}),
+    },
+  };
 }
 
 function runFinishedOutcome(event: BaseEvent): RunFinishedOutcome | undefined {

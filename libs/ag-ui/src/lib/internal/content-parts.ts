@@ -18,15 +18,20 @@ function textOf(parts: readonly unknown[]): string {
 /**
  * Normalize a TOOL_CALL_RESULT / ToolMessage `content` (string | ContentPart[]
  * in AG-UI 1.0) into the neutral ToolCall fields. Strings keep the pre-1.0
- * behavior (JSON parse with fallback). Part lists concatenate their text parts
- * into `result` and carry every part verbatim in `parts`; an all-media list
- * yields '' rather than an invented placeholder.
+ * behavior (JSON parse with fallback). Part lists carry every part verbatim in
+ * `parts`; `result` is the text, parsed as JSON only when a single text part
+ * holds valid JSON. Several text parts yield their joined string unparsed, and
+ * an all-media list yields '' rather than an invented placeholder.
  */
 export function toolResultFromContent(content: unknown): { result: unknown; parts?: readonly unknown[] } {
   if (typeof content === 'string') return { result: safeParseJson(content) };
   if (Array.isArray(content)) {
-    const joined = textOf(content);
-    return { result: joined.length > 0 ? safeParseJson(joined) : '', parts: content };
+    const texts = content.filter(
+      (part): part is { type: 'text'; text: string } =>
+        isRecord(part) && part['type'] === 'text' && typeof part['text'] === 'string',
+    );
+    const result = texts.length === 1 ? safeParseJson(texts[0].text) : textOf(content);
+    return { result, parts: content };
   }
   return { result: content };
 }

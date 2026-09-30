@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { signal } from '@angular/core';
 import { Subject } from 'rxjs';
 import { type AgentError } from '@threadplane/chat';
-import type { AgentEvent, AgentStatus, Message, ToolCall } from '@threadplane/chat';
+import type { AgentEvent, AgentStatus, AgentUsage, Message, ToolCall } from '@threadplane/chat';
 import type { ReducerStore, CustomStreamEvent } from './reducer';
 import { createClientToolsCapability as createCapability } from './client-tools';
 
@@ -18,6 +18,7 @@ function makeStore(): ReducerStore {
     interrupt:    signal(undefined),
     events$:      new Subject<AgentEvent>(),
     customEvents: signal<CustomStreamEvent[]>([]),
+    usage: signal<AgentUsage | undefined>(undefined),
     pendingClientToolCallIds: signal<ReadonlySet<string> | undefined>(undefined),
   };
 }
@@ -120,10 +121,20 @@ describe('createClientToolsCapability', () => {
       { id: 'a', name: 'get_weather', args: {}, status: 'complete' },
       { id: 'b', name: 'get_weather', args: {}, status: 'complete' },
     ]);
-    store.pendingClientToolCallIds?.set(new Set(['b']));
+    store.pendingClientToolCallIds.set(new Set(['b']));
     const cap = createClientToolsCapability(source, store);
     cap.setCatalog([WEATHER_SPEC]);
     expect(cap.pending().map((tc) => tc.id)).toEqual(['b']);
+  });
+
+  it('an empty authoritative set leaves nothing pending for a result-less catalog call', () => {
+    const source = makeSource();
+    const store  = makeStore();
+    store.toolCalls.set([{ id: 'a', name: 'get_weather', args: {}, status: 'complete' }]);
+    store.pendingClientToolCallIds.set(new Set());
+    const cap = createClientToolsCapability(source, store);
+    cap.setCatalog([WEATHER_SPEC]);
+    expect(cap.pending()).toEqual([]);
   });
 
   it('pending() is [] when no catalog is set', () => {
