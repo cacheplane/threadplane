@@ -6,7 +6,7 @@ import {
   type ServerResponse,
 } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   EventType,
   HttpAgent,
@@ -836,5 +836,67 @@ describe('private HTTP request owner', () => {
       handle.abort();
       await server.close();
     }
+  });
+});
+
+function sseFetch(frames: unknown[]) {
+  return async () =>
+    new Response(
+      frames.map((frame) => `data: ${JSON.stringify(frame)}\n\n`).join(''),
+      { headers: { 'content-type': 'text/event-stream' } }
+    );
+}
+
+describe('private HTTP request compatibility boundary', () => {
+  let previousSuppression: string | undefined;
+  beforeEach(() => {
+    previousSuppression = process.env['SUPPRESS_TRANSFORMATION_WARNINGS'];
+    process.env['SUPPRESS_TRANSFORMATION_WARNINGS'] = 'true';
+  });
+  afterEach(() => {
+    if (previousSuppression === undefined)
+      delete process.env['SUPPRESS_TRANSFORMATION_WARNINGS'];
+    else process.env['SUPPRESS_TRANSFORMATION_WARNINGS'] = previousSuppression;
+  });
+
+  it('translates a pre-1.0 THINKING stream into REASONING events before verification', async () => {
+    const frames = [
+      { type: 'RUN_STARTED', threadId: 't', runId: 'r' },
+      { type: 'THINKING_START' },
+      { type: 'THINKING_TEXT_MESSAGE_START' },
+      { type: 'THINKING_TEXT_MESSAGE_CONTENT', delta: 'because' },
+      { type: 'THINKING_TEXT_MESSAGE_END' },
+      { type: 'THINKING_END' },
+      { type: 'RUN_FINISHED', threadId: 't', runId: 'r' },
+    ];
+    const seen: string[] = [];
+    const handle = createHttpRequest({
+      url: 'http://agent.test/agent',
+      fetch: sseFetch(frames),
+    }).start(
+      {
+        threadId: 't',
+        runId: 'r',
+        protocolVersion: '1.0',
+        messages: [],
+        tools: [],
+        context: [],
+        forwardedProps: {},
+        state: {},
+      },
+      (event) => {
+        seen.push(event.type as string);
+      }
+    );
+    await expect(bounded(handle.done)).resolves.toEqual({ status: 'closed' });
+    expect(seen).toEqual([
+      'RUN_STARTED',
+      'REASONING_START',
+      'REASONING_MESSAGE_START',
+      'REASONING_MESSAGE_CONTENT',
+      'REASONING_MESSAGE_END',
+      'REASONING_END',
+      'RUN_FINISHED',
+    ]);
   });
 });

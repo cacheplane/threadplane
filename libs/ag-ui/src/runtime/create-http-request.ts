@@ -1,7 +1,10 @@
 import {
+  CompatibilityBoundary,
+  enforceEvents,
   HttpAgent,
   transformChunks,
   verifyEvents,
+  type AbstractAgent,
   type BaseEvent,
   type HttpAgentConfig,
   type RunAgentInput,
@@ -130,9 +133,16 @@ export function createHttpRequest(
           },
         });
         controller = source.abortController;
-        const events = source
-          .run(input)
-          .pipe(transformChunks(), verifyEvents());
+        // Same order as the SDK's own runAgent pipeline: boundary (translate
+        // retired shapes), enforcement (drop/strip the unknown), chunk
+        // expansion, verification. A bare HttpAgent.run() gets none of it.
+        // The boundary only calls next.run(), so a run-only stub suffices.
+        const boundary = new CompatibilityBoundary();
+        const events = boundary
+          .run(input, {
+            run: (admitted: RunAgentInput) => source.run(admitted),
+          } as unknown as AbstractAgent)
+          .pipe(enforceEvents(), transformChunks(), verifyEvents());
         if (!settled) {
           subscription = events.subscribe({
             next: (event) => {
