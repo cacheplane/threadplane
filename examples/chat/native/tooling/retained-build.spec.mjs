@@ -238,6 +238,13 @@ function fixture(t, framework = 'react') {
     const sha256 = put(consumer, path, 'installed projection: ' + extension);
     map[path] = sha256;
     artifacts['@threadplane/content'].push({ path: local, sha256 });
+    if (framework === 'react') {
+      const local = 'src/chat/message-list' + extension;
+      const path = 'node_modules/@threadplane/react/' + local;
+      const sha256 = put(consumer, path, 'installed MessageList: ' + extension);
+      map[path] = sha256;
+      artifacts['@threadplane/react'].push({ path: local, sha256 });
+    }
   }
   const outputs = {
     'index.html': put(
@@ -332,6 +339,18 @@ for (const framework of ['react', 'angular'])
         /message projection/i
       );
     });
+
+for (const [graph, extension] of [
+  ['compiler', '.d.ts'],
+  ['bundler', '.js'],
+])
+  test(`React retention requires installed MessageList ${graph}`, (t) => {
+    const f = fixture(t, 'react');
+    delete f.provenance[graph].inputs[
+      'node_modules/@threadplane/react/src/chat/message-list' + extension
+    ];
+    assert.throws(() => captureRetainedBuild(f.directory, f), /MessageList/);
+  });
 
 for (const framework of ['react', 'angular']) {
   test(`retains closed ${framework} tool/configuration graph and embedded negative evidence after source cleanup`, (t) => {

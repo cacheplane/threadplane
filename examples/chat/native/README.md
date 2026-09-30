@@ -12,6 +12,12 @@ session. It adds authored trip-summary cards to the shared rows while preserving
 their Markdown and tool observations. View removal does not release that content;
 retiring the selection disposes it.
 
+The React view composes `MessageList` with a stable authored row renderer and
+`ChatInput` with the application's existing submit/stop commands. Its bounded
+transcript follows updates only while pinned to the bottom. Conversation changes
+reset the list; a title refresh keeps its DOM and scroll position. The React-only
+production scroll test covers these behaviors against installed candidates.
+
 ## Setup and commands
 
 Run commands from the repository root using **Node 22 and npm 10** (locally

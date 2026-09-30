@@ -99,13 +99,28 @@ describe('MessageList', () => {
     const a = msg('a', 'stable');
     const renders: string[] = [];
     // Stable reference: memoization depends on it.
-    const renderMessage = (row: MessageRow) => {
+    type AuthoredRow = MessageRow & { readonly summary: string };
+    const authored = new WeakMap<MessageRow, AuthoredRow>();
+    const project = (messages: Message[]) =>
+      content.project(snap(messages)).map((row) => {
+        let decorated = authored.get(row);
+        if (!decorated) {
+          decorated = Object.freeze({ ...row, summary: `Summary ${row.id}` });
+          authored.set(row, decorated);
+        }
+        return decorated;
+      });
+    const renderMessage = (row: AuthoredRow) => {
       renders.push(row.id);
-      return <p>{row.message.content}</p>;
+      return (
+        <p>
+          {row.summary}: {row.message.content}
+        </p>
+      );
     };
     const view = render(
       <MessageList
-        rows={content.project(snap([a, msg('b', 'x')]))}
+        rows={project([a, msg('b', 'x')])}
         renderMessage={renderMessage}
       />
     );
@@ -113,12 +128,12 @@ describe('MessageList', () => {
     renders.length = 0;
     view.rerender(
       <MessageList
-        rows={content.project(snap([a, msg('b', 'xy')]))}
+        rows={project([a, msg('b', 'xy')])}
         renderMessage={renderMessage}
       />
     );
     expect(renders).toEqual(['b']);
-    expect(view.getByText('xy')).toBeTruthy();
+    expect(view.getByText('Summary b: xy')).toBeTruthy();
   });
 
   it('follows new content only while pinned to the bottom', () => {

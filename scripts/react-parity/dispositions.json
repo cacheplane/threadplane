@@ -13682,7 +13682,7 @@
       "treatment": "react",
       "status": "in-progress",
       "reason": "Presentational message list (rows in, props only): memoized rows, literal tool text, bottom-pinned scrolling; composed by Chat and styled by the opt-in chat stylesheet.",
-      "note": "Row memoization, Markdown and literal tool rendering, custom renderMessage and scroll pinning are verified with real DOM tests; Chat composition is verified in chat.spec. SSR and publication remain incomplete."
+      "note": "Concrete authored rows and correlated tool contracts pass source and installed declaration checks; unchanged enriched rows stay memoized. Native React production scroll evidence covers pinning, scroll-up, title refresh and selection reset. Chat composition is verified in chat.spec. SSR and publication remain incomplete."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#MessageListProps",
@@ -13693,7 +13693,7 @@
       "treatment": "react",
       "status": "in-progress",
       "reason": "Presentational message list (rows in, props only): memoized rows, literal tool text, bottom-pinned scrolling; composed by Chat and styled by the opt-in chat stylesheet.",
-      "note": "Row memoization, Markdown and literal tool rendering, custom renderMessage and scroll pinning are verified with real DOM tests; Chat composition is verified in chat.spec. SSR and publication remain incomplete."
+      "note": "Concrete authored rows and correlated tool contracts pass source and installed declaration checks; unchanged enriched rows stay memoized. Native React production scroll evidence covers pinning, scroll-up, title refresh and selection reset. Chat composition is verified in chat.spec. SSR and publication remain incomplete."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#TextTranscript",
@@ -13880,7 +13880,7 @@
       "treatment": "react",
       "status": "in-progress",
       "reason": "Presentational message list (rows in, props only): memoized rows, literal tool text, bottom-pinned scrolling; composed by Chat and styled by the opt-in chat stylesheet.",
-      "note": "Row memoization, Markdown and literal tool rendering, custom renderMessage and scroll pinning are verified with real DOM tests; Chat composition is verified in chat.spec. SSR and publication remain incomplete."
+      "note": "Concrete authored rows and correlated tool contracts pass source and installed declaration checks; unchanged enriched rows stay memoized. Native React production scroll evidence covers pinning, scroll-up, title refresh and selection reset. Chat composition is verified in chat.spec. SSR and publication remain incomplete."
     },
     {
       "id": "source:libs/react/src/chat/text-transcript.tsx",

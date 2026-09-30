@@ -204,6 +204,17 @@ function selectedInputs(p, selected) {
     p.bundler.inputs[projection + '.js'],
     'Installed message projection runtime required'
   );
+  if (framework === 'react') {
+    const list = 'node_modules/@threadplane/react/src/chat/message-list';
+    assert.ok(
+      p.compiler.inputs[list + '.d.ts'],
+      'Installed MessageList declarations required'
+    );
+    assert.ok(
+      p.bundler.inputs[list + '.js'],
+      'Installed MessageList runtime required'
+    );
+  }
   return consumerPath;
 }
 

@@ -175,3 +175,10 @@ Chat never disposes app-passed content. The stylesheet is opt-in and scoped to `
 classes, with `--tp-chat-*` custom properties that fall back to `--ds-*` tokens.
 Compose `MessageList` and `ChatInput` directly when your app owns selection or
 rendering.
+
+`MessageList` infers the concrete row type from `rows`, including authored fields
+and typed tool contracts, and passes it to `renderMessage`. Keep that callback
+stable so unchanged rows stay memoized. Give the list a bounded height and
+overflow scrolling in app CSS; it follows row updates while at the bottom and
+preserves the reader's position when scrolled up. Key it by conversation ID when
+a new selection should start at the bottom. Same-ID updates preserve scroll state.

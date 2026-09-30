@@ -1,26 +1,12 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "7a032aae41e018e2e15fce93b23999a684a3baea",
+  "baselineHead": "f54c3aae99768b269c0af94d9061d761a43319be",
   "sourceState": {
     "modified": [
-      "libs/content/package.json",
-      "libs/content/tsconfig.spec.json",
       "libs/react/README.md",
-      "libs/react/package.json",
-      "libs/react/project.json",
-      "libs/react/src/chat/index.ts",
-      "tsconfig.base.json"
+      "libs/react/src/chat/message-list.tsx"
     ],
-    "untracked": [
-      "libs/content/src/messages/create-message-content.ts",
-      "libs/content/src/messages/index.ts",
-      "libs/react/src/chat/chat-input.tsx",
-      "libs/react/src/chat/chat.tsx",
-      "libs/react/src/chat/internal/isomorphic-layout-effect.ts",
-      "libs/react/src/chat/internal/use-message-content.ts",
-      "libs/react/src/chat/message-list.tsx",
-      "libs/react/src/chat/styles.css"
-    ]
+    "untracked": []
   },
   "scope": {
     "libraries": [
@@ -831,7 +817,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "daed974031c910d106e63001c3c6890d7d3b4801f68aab05cd35d144a44185c2"
+      "sha256": "e40c342cdf63f5e82aa75d0444da1aaa26c8067987a6d52eabee698fee60bf5e"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -9786,7 +9772,7 @@
           "path": "libs/react/src/chat/message-list.tsx",
           "symbol": "MessageList",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function MessageList({ rows, renderMessage, label = 'Conversation', className, }: MessageListProps) {\n    const container = useRef<HTMLDivElement>(null);\n    const pinned = useRef(true);\n    useEffect(() => {\n        const el = container.current;\n        if (!el)\n            return;\n        const onScroll = () => {\n            pinned.current =\n                el.scrollHeight - el.scrollTop - el.clientHeight <= PIN_THRESHOLD;\n        };\n        el.addEventListener('scroll', onScroll, { passive: true });\n        return () => el.removeEventListener('scroll', onScroll);\n    }, []);\n    useIsomorphicLayoutEffect(() => {\n        const el = container.current;\n        if (el && pinned.current)\n            el.scrollTop = el.scrollHeight;\n    }, [rows]);\n    return (<div ref={container} role=\"region\" aria-label={label} className={['tp-chat-list', className].filter(Boolean).join(' ')}>\n      {rows.map((row) => (<Row key={row.id} row={row} renderMessage={renderMessage}/>))}\n    </div>);\n}"
+          "signature": "export function MessageList<TRow extends MessageRow = MessageRow>({ rows, renderMessage, label = 'Conversation', className, }: MessageListProps<TRow>) {\n    const container = useRef<HTMLDivElement>(null);\n    const pinned = useRef(true);\n    useEffect(() => {\n        const el = container.current;\n        if (!el)\n            return;\n        const onScroll = () => {\n            pinned.current =\n                el.scrollHeight - el.scrollTop - el.clientHeight <= PIN_THRESHOLD;\n        };\n        el.addEventListener('scroll', onScroll, { passive: true });\n        return () => el.removeEventListener('scroll', onScroll);\n    }, []);\n    useIsomorphicLayoutEffect(() => {\n        const el = container.current;\n        if (el && pinned.current)\n            el.scrollTop = el.scrollHeight;\n    }, [rows]);\n    return (<div ref={container} role=\"region\" aria-label={label} className={['tp-chat-list', className].filter(Boolean).join(' ')}>\n      {rows.map((row) => (<Row key={row.id} row={row} renderMessage={renderMessage}/>))}\n    </div>);\n}"
         }
       ]
     },
@@ -9800,7 +9786,7 @@
           "path": "libs/react/src/chat/message-list.tsx",
           "symbol": "MessageListProps",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface MessageListProps {\n    readonly rows: readonly MessageRow[];\n    readonly renderMessage?: (row: MessageRow) => ReactNode;\n    readonly label?: string;\n    readonly className?: string;\n}"
+          "signature": "export interface MessageListProps<TRow extends MessageRow = MessageRow> {\n    readonly rows: readonly TRow[];\n    readonly renderMessage?: (row: NoInfer<RenderRow<TRow>>) => ReactNode;\n    readonly label?: string;\n    readonly className?: string;\n}"
         }
       ]
     },
@@ -13804,7 +13790,7 @@
       "id": "source:libs/react/src/chat/message-list.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/message-list.tsx",
-      "sha256": "79dbd673e92be43a553cbd6411f4838789eb436ab8da8b55eac13b9f0e293c50"
+      "sha256": "aabe1be304e4b44670bd1aefb553ce6f2ee2bef27b655c88c1c3150c72004041"
     },
     {
       "id": "source:libs/react/src/chat/text-transcript.tsx",
