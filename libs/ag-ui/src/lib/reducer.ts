@@ -163,6 +163,14 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
         }
         return;
       }
+      if (outcome?.type === 'cancelled') {
+        // 1.0 RunFinishedCancelledOutcome: the producer stopped the run on
+        // request. The neutral contract already has 'aborted' for exactly this.
+        if (!run || !finalizeDeliveryRun(store, run, 'aborted')) return;
+        store.status.set('idle');
+        store.isLoading.set(false);
+        return;
+      }
       if (!run || !finalizeDeliveryRun(store, run, 'success')) return;
       store.status.set('idle');
       store.isLoading.set(false);
@@ -748,17 +756,14 @@ function routeSubagentContentEvent(subagentRunId: string, event: BaseEvent, stor
   });  // content-only change → inner signal, no map churn
 }
 
-/** Loosely-typed RUN_FINISHED outcome. @ag-ui/core@0.0.59 ships the strict
- *  RunFinishedInterruptOutcomeSchema / InterruptSchema for this shape, but
- *  the reducer deliberately keeps this tolerant hand-rolled view: a strict
- *  parse would silently DROP an interrupt whose entries deviate from the
- *  schema (extra keys on the strict outcome object, a missing `reason`),
- *  while the contract here is to preserve every entry verbatim under
- *  `value.interrupts` for resume to address. Validation strictness would be
- *  a behavior change, not a simplification. */
+/** Loosely-typed RUN_FINISHED outcome. The 1.0 validators are loose objects,
+ *  but the reducer still keeps its own tolerant view: it must preserve every
+ *  interrupt entry verbatim under `value.interrupts` for resume to address,
+ *  and it must not depend on a validator to route on `type`. */
 interface RunFinishedOutcome {
   type?: string;
   interrupts?: unknown;
+  pendingToolCallIds?: unknown;
 }
 
 function runFinishedOutcome(event: BaseEvent): RunFinishedOutcome | undefined {

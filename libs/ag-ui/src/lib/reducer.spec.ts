@@ -83,6 +83,23 @@ describe('reduceEvent', () => {
     expect(store.messages()[1].delivery).toEqual(completeDelivery('run-generation-1', 'success'));
   });
 
+  it('finalizes a cancelled outcome as aborted without an error', () => {
+    const store = makeStore();
+    reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r' } as never, store);
+    reduceEvent({ type: 'TEXT_MESSAGE_START', messageId: 'm1', role: 'assistant' } as never, store);
+    reduceEvent({ type: 'TEXT_MESSAGE_CONTENT', messageId: 'm1', delta: 'partial' } as never, store);
+    expect(store.isLoading()).toBe(true);
+    reduceEvent(
+      { type: 'RUN_FINISHED', threadId: 't', runId: 'r', outcome: { type: 'cancelled' } } as never,
+      store,
+    );
+    expect(store.deliveryRun?.outcome).toBe('aborted');
+    expect(store.status()).toBe('idle');
+    expect(store.isLoading()).toBe(false);
+    expect(store.error()).toBeUndefined();
+    expect(store.messages()[0]?.delivery).toEqual(completeDelivery('run-generation-1', 'aborted'));
+  });
+
   it('RUN_ERROR finalizes active-generation messages as error', () => {
     const store = makeStore();
     store.messages.set([

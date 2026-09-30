@@ -1047,7 +1047,7 @@ function hasValidFinishedOutcome(event: object): boolean {
   if (outcome == null) return true;
   if (typeof outcome !== 'object' || Array.isArray(outcome)) return false;
   const value = outcome as Record<string, unknown>;
-  if (value['type'] === 'success') return true;
+  if (value['type'] === 'success' || value['type'] === 'cancelled') return true;
   return value['type'] === 'interrupt' && Array.isArray(value['interrupts']);
 }
 

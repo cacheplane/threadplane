@@ -63,6 +63,22 @@ describe('automatic development evidence', () => {
     expect(developmentEvidence.events).not.toContain('thread.persisted');
   });
 
+  it('settles a cancelled run outcome as an abort, not an error', async () => {
+    developmentEvidence.events = [];
+    const stub = new StubAgent();
+    const agent = toAgent(stub as unknown as AbstractAgent);
+    stub.runAgent.mockImplementationOnce(async () => {
+      stub.emit({ type: 'RUN_STARTED', runId: 'r' } as BaseEvent);
+      stub.emit({ type: 'RUN_FINISHED', runId: 'r', outcome: { type: 'cancelled' } } as BaseEvent);
+      return { result: undefined, newMessages: [] };
+    });
+    await agent.submit({});
+    expect(agent.status()).toBe('idle');
+    expect(agent.error()).toBeUndefined();
+    expect(agent.isLoading()).toBe(false);
+    expect(developmentEvidence.events).not.toContain('runtime.first_stream_completed');
+  });
+
   it.each([false, vi.fn()] as const)('suppresses automatic events for an explicit sink %s', async telemetry => {
     developmentEvidence.events = []; developmentEvidence.touches = 0;
     const stub = new StubAgent();
