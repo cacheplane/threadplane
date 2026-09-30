@@ -1,13 +1,25 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "cd0dcd84af7d45145fec523cd7c4e571fed7cfbc",
+  "baselineHead": "7a032aae41e018e2e15fce93b23999a684a3baea",
   "sourceState": {
     "modified": [
-      "libs/langgraph/src/runtime/message-reducer.ts",
-      "libs/langgraph/src/runtime/stream-projection.ts"
+      "libs/content/package.json",
+      "libs/content/tsconfig.spec.json",
+      "libs/react/README.md",
+      "libs/react/package.json",
+      "libs/react/project.json",
+      "libs/react/src/chat/index.ts",
+      "tsconfig.base.json"
     ],
     "untracked": [
-      "libs/langgraph/src/runtime/response-identity.ts"
+      "libs/content/src/messages/create-message-content.ts",
+      "libs/content/src/messages/index.ts",
+      "libs/react/src/chat/chat-input.tsx",
+      "libs/react/src/chat/chat.tsx",
+      "libs/react/src/chat/internal/isomorphic-layout-effect.ts",
+      "libs/react/src/chat/internal/use-message-content.ts",
+      "libs/react/src/chat/message-list.tsx",
+      "libs/react/src/chat/styles.css"
     ]
   },
   "scope": {
@@ -43,6 +55,7 @@
       "libs/chat/testing/public-api.ts",
       "libs/content/src/index.ts",
       "libs/content/src/markdown/index.ts",
+      "libs/content/src/messages/index.ts",
       "libs/langgraph/src/public-api.ts",
       "libs/middleware/src/langgraph/index.ts",
       "libs/react/src/index.ts",
@@ -560,7 +573,7 @@
       "id": "asset:libs/content/package.json",
       "kind": "asset",
       "path": "libs/content/package.json",
-      "sha256": "98a416b3f718a50b0ee656440187c44ea50702d7c76d5d0bc2d0e205872e90b4"
+      "sha256": "18f27ec8bf932fd71dd85b6b20f51cab9cfadbc406151056434a74af157dd2cf"
     },
     {
       "id": "asset:libs/content/project.json",
@@ -584,7 +597,7 @@
       "id": "asset:libs/content/tsconfig.spec.json",
       "kind": "asset",
       "path": "libs/content/tsconfig.spec.json",
-      "sha256": "87fddbd9d9fee3d22ef9dc3053325fc0d6a26492a28e405efbccc91b17b42cca"
+      "sha256": "e14718dc28333d582de85ecc4b6d95569c9b53e5e7f4e04229f81c86c0debe54"
     },
     {
       "id": "asset:libs/design-tokens/package.json",
@@ -818,19 +831,25 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "63083dd85fc688a7e9271ad8bc621f0d4eb71a5bcf10d9a67d7224f70352c1bb"
+      "sha256": "daed974031c910d106e63001c3c6890d7d3b4801f68aab05cd35d144a44185c2"
     },
     {
       "id": "asset:libs/react/package.json",
       "kind": "asset",
       "path": "libs/react/package.json",
-      "sha256": "b6926188a09cda9e29222c3dca6a8560db4a78299d6ba42dc465a65264d8be95"
+      "sha256": "0aaf4412de70b8174bdaebf82e29a85f66aac0a3f8194e26b9e41a85195d0221"
     },
     {
       "id": "asset:libs/react/project.json",
       "kind": "asset",
       "path": "libs/react/project.json",
-      "sha256": "42c1c5b710f0d74648825ad0608db0297029730289881f242a063a88317ba039"
+      "sha256": "c083c71eaa2a0b55f06a41647dd8cfee6d9c741f1f55a6858d209d4c29286f38"
+    },
+    {
+      "id": "asset:libs/react/src/chat/styles.css",
+      "kind": "asset",
+      "path": "libs/react/src/chat/styles.css",
+      "sha256": "09c1c1b64a35bda7aaac87a2330eec5921c2959e2ad60cf582d33b8f26ac2dc2"
     },
     {
       "id": "asset:libs/react/tsconfig.json",
@@ -2192,7 +2211,7 @@
       "id": "config:tsconfig.base.json",
       "kind": "config",
       "path": "tsconfig.base.json",
-      "sha256": "9e0497a503e6b02f9df0954e8998fd8ce04a47e8dc1e79c02f96bd02b5ac3683"
+      "sha256": "1660505e7a1104bb963821fb4738d5021a0d503901b29f3b5e2f85be5fcca862"
     },
     {
       "id": "doc:apps/website/content/docs/a2ui/getting-started/introduction.mdx",
@@ -3011,6 +3030,11 @@
       "id": "entry:libs/content/src/markdown/index.ts",
       "kind": "entry",
       "path": "libs/content/src/markdown/index.ts"
+    },
+    {
+      "id": "entry:libs/content/src/messages/index.ts",
+      "kind": "entry",
+      "path": "libs/content/src/messages/index.ts"
     },
     {
       "id": "entry:libs/langgraph/src/public-api.ts",
@@ -8631,6 +8655,62 @@
       ]
     },
     {
+      "id": "export:libs/content/src/messages/index.ts#MessageContent",
+      "kind": "export",
+      "path": "libs/content/src/messages/index.ts",
+      "symbol": "MessageContent",
+      "declarations": [
+        {
+          "path": "libs/content/src/messages/create-message-content.ts",
+          "symbol": "MessageContent",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface MessageContent<TTools extends {\n    [K in keyof TTools]: ToolContract;\n} = Record<string, ToolContract>> {\n    project(snapshot: AgentSnapshot<TTools>): readonly MessageRow<TTools>[];\n    dispose(): void;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#MessageContentOptions",
+      "kind": "export",
+      "path": "libs/content/src/messages/index.ts",
+      "symbol": "MessageContentOptions",
+      "declarations": [
+        {
+          "path": "libs/content/src/messages/create-message-content.ts",
+          "symbol": "MessageContentOptions",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface MessageContentOptions {\n    readonly markdownFactory?: typeof createMarkdown;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#MessageRow",
+      "kind": "export",
+      "path": "libs/content/src/messages/index.ts",
+      "symbol": "MessageRow",
+      "declarations": [
+        {
+          "path": "libs/content/src/messages/create-message-content.ts",
+          "symbol": "MessageRow",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface MessageRow<TTools extends {\n    [K in keyof TTools]: ToolContract;\n} = Record<string, ToolContract>> {\n    readonly id: string;\n    readonly role: Message['role'];\n    readonly message: Message;\n    readonly markdown: MarkdownSnapshot;\n    readonly toolCalls: readonly ToolCall<TTools>[];\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#createMessageContent",
+      "kind": "export",
+      "path": "libs/content/src/messages/index.ts",
+      "symbol": "createMessageContent",
+      "declarations": [
+        {
+          "path": "libs/content/src/messages/create-message-content.ts",
+          "symbol": "createMessageContent",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function createMessageContent<TTools extends {\n    [K in keyof TTools]: ToolContract;\n} = Record<string, ToolContract>>(options: MessageContentOptions = {}): MessageContent<TTools> {\n    const factory = options.markdownFactory ?? createMarkdown;\n    const owners = new Map<string, Markdown>();\n    let rows: readonly MessageRow<TTools>[] = Object.freeze([]);\n    let messages: readonly Message[] | undefined;\n    let toolCalls: readonly ToolCall<TTools>[] | undefined;\n    let disposed = false;\n    return {\n        project(snapshot) {\n            const next = snapshot as {\n                readonly messages: readonly Message[];\n                readonly toolCalls: readonly ToolCall<TTools>[];\n            };\n            const projectedCalls = next.toolCalls;\n            if (disposed ||\n                (next.messages === messages && next.toolCalls === toolCalls))\n                return rows;\n            const present = new Set(next.messages.map((message) => message.id));\n            for (const [id, owner] of owners) {\n                if (present.has(id))\n                    continue;\n                owner.dispose();\n                owners.delete(id);\n            }\n            const previous = new Map(rows.map((row) => [row.id, row]));\n            const projected = next.messages.map((message): MessageRow<TTools> => {\n                const document = {\n                    generation: message.delivery.generation,\n                    phase: message.delivery.phase,\n                    content: message.content,\n                };\n                let owner = owners.get(message.id);\n                if (!owner) {\n                    owner = factory(document, { violationPolicy: 'rebuild' });\n                    owners.set(message.id, owner);\n                }\n                else {\n                    const accepted = owner.getSnapshot().document;\n                    if (accepted.generation !== document.generation ||\n                        accepted.phase !== document.phase ||\n                        accepted.content !== document.content)\n                        owner.update(document);\n                }\n                const markdown = owner.getSnapshot();\n                const calls = projectedCalls.filter((call) => message.toolCallIds?.includes(call.id) ||\n                    message.toolCallId === call.id);\n                const old = previous.get(message.id);\n                if (old?.message === message &&\n                    old.markdown === markdown &&\n                    old.toolCalls.length === calls.length &&\n                    calls.every((call, index) => call === old.toolCalls[index]))\n                    return old;\n                return Object.freeze({\n                    id: message.id,\n                    role: message.role,\n                    message,\n                    markdown,\n                    toolCalls: Object.freeze(calls),\n                });\n            });\n            if (projected.length !== rows.length ||\n                projected.some((row, index) => row !== rows[index]))\n                rows = Object.freeze(projected);\n            messages = next.messages;\n            toolCalls = next.toolCalls;\n            return rows;\n        },\n        dispose() {\n            if (disposed)\n                return;\n            disposed = true;\n            for (const owner of owners.values())\n                owner.dispose();\n            owners.clear();\n        },\n    };\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/langgraph/src/public-api.ts#AGENT_LIFECYCLE",
       "kind": "export",
       "path": "libs/langgraph/src/public-api.ts",
@@ -9623,6 +9703,104 @@
           "symbol": "routeAfterAgent",
           "syntaxKind": "FunctionDeclaration",
           "signature": "export function routeAfterAgent(state: ClientToolsState, serverToolNames: Iterable<string>, opts?: {\n    toolsNode?: string;\n    end?: string;\n}): string {\n    const toolsNode = opts?.toolsNode ?? 'server_tools';\n    const end = opts?.end ?? '__end__';\n    return hasServerToolCall(state, serverToolNames) ? toolsNode : end;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#Chat",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "Chat",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/chat.tsx",
+          "symbol": "Chat",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function Chat({ session, content, renderMessage, className, ...input }: ChatProps) {\n    const snapshot = useAgent(session);\n    const rows = useMessageContent(snapshot, session, content);\n    return (<div className={['tp-chat', className].filter(Boolean).join(' ')}>\n      <MessageList rows={rows} renderMessage={renderMessage}/>\n      {snapshot.error && (<p role=\"alert\" className=\"tp-chat__error\">\n          {snapshot.error.message}\n        </p>)}\n      <ChatInput key={sessionKey(session)} {...input} busy={snapshot.status === 'running'} onSubmit={(text) => {\n            session.submit(text.trim()).catch(ignore);\n        }} onStop={() => {\n            session.stop().catch(ignore);\n        }}/>\n    </div>);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatInput",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ChatInput",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/chat-input.tsx",
+          "symbol": "ChatInput",
+          "syntaxKind": "VariableDeclaration",
+          "signature": "ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(function ChatInput({ value, defaultValue = '', onValueChange, onSubmit, onStop, busy = false, disabled = false, submitOnEnter = true, label = 'Message', placeholder = 'Write a message…', hint, id, className, }, ref) {\n    const generated = useId();\n    const inputId = id ?? `${generated}-input`;\n    const hintId = `${generated}-hint`;\n    const hasHint = hint != null && hint !== false;\n    const textarea = useRef<HTMLTextAreaElement>(null);\n    const [own, setOwn] = useState(defaultValue);\n    const draft = value ?? own;\n    const setDraft = (next: string) => {\n        if (value === undefined)\n            setOwn(next);\n        onValueChange?.(next);\n    };\n    useImperativeHandle(ref, () => ({ focus: () => textarea.current?.focus() }), []);\n    useIsomorphicLayoutEffect(() => {\n        const el = textarea.current;\n        if (!el)\n            return;\n        el.style.height = 'auto';\n        const cap = Math.min(window.innerHeight * 0.4, 320);\n        el.style.height = `${Math.min(el.scrollHeight, cap)}px`;\n    }, [draft]);\n    const canSend = !busy && !disabled && draft.trim().length > 0;\n    const send = () => {\n        if (!canSend)\n            return;\n        if (onSubmit(draft) === false)\n            return;\n        setDraft('');\n        requestAnimationFrame(() => textarea.current?.focus());\n    };\n    return (<form className={['tp-chat-input', className].filter(Boolean).join(' ')} onSubmit={(event) => {\n            event.preventDefault();\n            send();\n        }}>\n        <label className=\"tp-chat-input__label\" htmlFor={inputId}>\n          {label}\n        </label>\n        <textarea ref={textarea} id={inputId} className=\"tp-chat-input__textarea\" value={draft} rows={1} disabled={disabled} placeholder={placeholder} aria-describedby={hasHint ? hintId : undefined} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => {\n            if (event.key !== 'Enter')\n                return;\n            const native = event.nativeEvent;\n            if (native.isComposing || native.keyCode === 229)\n                return;\n            const modifier = event.ctrlKey || event.metaKey;\n            if (!modifier && (!submitOnEnter || event.shiftKey))\n                return;\n            event.preventDefault();\n            send();\n        }}/>\n        <div className=\"tp-chat-input__actions\">\n          {hasHint && (<p id={hintId} className=\"tp-chat-input__hint\">\n              {hint}\n            </p>)}\n          {busy && onStop && (<button type=\"button\" className=\"tp-chat-input__stop\" onClick={onStop}>\n              Stop\n            </button>)}\n          <button type=\"submit\" className=\"tp-chat-input__send\" disabled={!canSend}>\n            Send\n          </button>\n        </div>\n      </form>);\n})"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatInputHandle",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ChatInputHandle",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/chat-input.tsx",
+          "symbol": "ChatInputHandle",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface ChatInputHandle {\n    focus(): void;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatInputProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ChatInputProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/chat-input.tsx",
+          "symbol": "ChatInputProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface ChatInputProps {\n    readonly value?: string;\n    readonly defaultValue?: string;\n    readonly onValueChange?: (value: string) => void;\n    readonly onSubmit: (text: string) => boolean | void;\n    readonly onStop?: () => void;\n    readonly busy?: boolean;\n    readonly disabled?: boolean;\n    readonly submitOnEnter?: boolean;\n    readonly label?: string;\n    readonly placeholder?: string;\n    readonly hint?: ReactNode;\n    readonly id?: string;\n    readonly className?: string;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ChatProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/chat.tsx",
+          "symbol": "ChatProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface ChatProps extends Pick<ChatInputProps, 'label' | 'placeholder' | 'hint' | 'submitOnEnter'> {\n    readonly session: AgentSession;\n    readonly content?: MessageContent;\n    readonly renderMessage?: (row: MessageRow) => ReactNode;\n    readonly className?: string;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#MessageList",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "MessageList",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/message-list.tsx",
+          "symbol": "MessageList",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function MessageList({ rows, renderMessage, label = 'Conversation', className, }: MessageListProps) {\n    const container = useRef<HTMLDivElement>(null);\n    const pinned = useRef(true);\n    useEffect(() => {\n        const el = container.current;\n        if (!el)\n            return;\n        const onScroll = () => {\n            pinned.current =\n                el.scrollHeight - el.scrollTop - el.clientHeight <= PIN_THRESHOLD;\n        };\n        el.addEventListener('scroll', onScroll, { passive: true });\n        return () => el.removeEventListener('scroll', onScroll);\n    }, []);\n    useIsomorphicLayoutEffect(() => {\n        const el = container.current;\n        if (el && pinned.current)\n            el.scrollTop = el.scrollHeight;\n    }, [rows]);\n    return (<div ref={container} role=\"region\" aria-label={label} className={['tp-chat-list', className].filter(Boolean).join(' ')}>\n      {rows.map((row) => (<Row key={row.id} row={row} renderMessage={renderMessage}/>))}\n    </div>);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#MessageListProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "MessageListProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/message-list.tsx",
+          "symbol": "MessageListProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface MessageListProps {\n    readonly rows: readonly MessageRow[];\n    readonly renderMessage?: (row: MessageRow) => ReactNode;\n    readonly label?: string;\n    readonly className?: string;\n}"
         }
       ]
     },
@@ -12933,6 +13111,18 @@
       "sha256": "ee7f4ce8a6fd0010d2b941ed8f4ba6d77fd12cfbd902c4a5932d9f2c334bcc16"
     },
     {
+      "id": "source:libs/content/src/messages/create-message-content.ts",
+      "kind": "source",
+      "path": "libs/content/src/messages/create-message-content.ts",
+      "sha256": "22469878ce448fbd2d0ad2b863d30fe5a58c2272dce1e7808df56a5cdf149f1f"
+    },
+    {
+      "id": "source:libs/content/src/messages/index.ts",
+      "kind": "source",
+      "path": "libs/content/src/messages/index.ts",
+      "sha256": "1b4e1a12cbed486e134eb53e1bab6cb9eb3af0b9fbc3a2fff9322f91ff2fe59a"
+    },
+    {
       "id": "source:libs/content/src/testing/index.ts",
       "kind": "source",
       "path": "libs/content/src/testing/index.ts",
@@ -13581,10 +13771,40 @@
       "sha256": "56dba6e5f8e0ec195271f37e8de4cbe0eb98c0ad8f04f60749ea7a54e621384d"
     },
     {
+      "id": "source:libs/react/src/chat/chat-input.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/chat-input.tsx",
+      "sha256": "095afe94063f1d259f4c53cb6bad2f5c2c8ac80241ba5920cd725882ce5edc35"
+    },
+    {
+      "id": "source:libs/react/src/chat/chat.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/chat.tsx",
+      "sha256": "1377b4e7bfd1139712d262ec3c70fb08c9a67cab91f4abe845310bddb9030280"
+    },
+    {
       "id": "source:libs/react/src/chat/index.ts",
       "kind": "source",
       "path": "libs/react/src/chat/index.ts",
-      "sha256": "b947123b630825394b7c579ca03713dc0b7b34cbcd859256f71f112751b62afe"
+      "sha256": "3482879e66490cd0bb9821fd7b3c11704c0013b562ecb1c1c6cd35c4236cb8b5"
+    },
+    {
+      "id": "source:libs/react/src/chat/internal/isomorphic-layout-effect.ts",
+      "kind": "source",
+      "path": "libs/react/src/chat/internal/isomorphic-layout-effect.ts",
+      "sha256": "c652282a163fbd885c2ee454f564115909f646cea2077e736e5f21e354198024"
+    },
+    {
+      "id": "source:libs/react/src/chat/internal/use-message-content.ts",
+      "kind": "source",
+      "path": "libs/react/src/chat/internal/use-message-content.ts",
+      "sha256": "9f4ef4e52b618af6d2e28c5be86e6e8a94d235ab2c0d04f483cdb31c86f9802d"
+    },
+    {
+      "id": "source:libs/react/src/chat/message-list.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/message-list.tsx",
+      "sha256": "79dbd673e92be43a553cbd6411f4838789eb436ab8da8b55eac13b9f0e293c50"
     },
     {
       "id": "source:libs/react/src/chat/text-transcript.tsx",

@@ -117,32 +117,19 @@ for (const [name, entry, files] of [
   assert.ok(validatePackage(fixture(t, { manifest, files })).length > 0);
 });
 test('React chat requires its real supported export', () => {
-  assert.throws(
-    () => packageVerifier.assertSupportedExports('react/chat', {}),
-    /TextTranscript/
-  );
-  assert.throws(
-    () =>
-      packageVerifier.assertSupportedExports('react/chat', {
-        TextTranscript() { return undefined; },
-      }),
-    /ToolObservation/
-  );
-  assert.doesNotThrow(() =>
-    packageVerifier.assertSupportedExports('react/chat', {
-      TextTranscript() { return undefined; },
-      ToolObservation() { return undefined; },
-    })
-  );
-  assert.throws(
-    () =>
-      packageVerifier.assertSupportedExports('react/chat', {
-        TextTranscript() { return undefined; },
-        ToolObservation() { return undefined; },
-        execute() { return undefined; },
-      }),
-    /unexpected/
-  );
+  const component = () => undefined;
+  const supported = { Chat: component, ChatInput: component, MessageList: component, TextTranscript: component, ToolObservation: component };
+  assert.throws(() => packageVerifier.assertSupportedExports('react/chat', {}), /Chat/);
+  for (const name of Object.keys(supported)) {
+    const { [name]: _omitted, ...rest } = supported;
+    assert.throws(() => packageVerifier.assertSupportedExports('react/chat', rest), new RegExp(`missing supported contract ${name}$`));
+  }
+  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/chat', supported));
+  assert.throws(() => packageVerifier.assertSupportedExports('react/chat', { ...supported, execute: component }), /unexpected/);
+  const forwarded = { $$typeof: Symbol.for('react.forward_ref'), render: component };
+  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/chat', { ...supported, ChatInput: forwarded }));
+  assert.throws(() => packageVerifier.assertSupportedExports('react/chat', { ...supported, ChatInput: {} }), /ChatInput/);
+  assert.throws(() => packageVerifier.assertSupportedExports('core', { completeDelivery: forwarded }), /completeDelivery/);
 });
 test('React chat still requires import and use client', (t) => {
   for (const entry of [
@@ -192,6 +179,23 @@ for (const project of ['render', 'react']) {
     assert.deepEqual(validatePackage(directory), []);
   });
 }
+const cssRoot = { '.': { types: './src/index.d.ts', import: './src/index.js', default: './src/index.js' } };
+test('stylesheet exports are static assets outside consumer imports', (t) => {
+  for (const entry of ['./src/chat/styles.css', { default: './src/chat/styles.css' }]) {
+    const manifest = { name: '@threadplane/react', exports: { ...cssRoot, './chat/styles.css': entry } };
+    assert.deepEqual(validatePackage(fixture(t, { manifest, files: { 'src/chat/styles.css': '.x{}' } })), []);
+    assert.ok(!packageVerifier.consumerSpecifiers({ ...manifest, exports: { './markdown': reactMarkdown, ...manifest.exports } }).includes('@threadplane/react/chat/styles.css'));
+  }
+});
+test('stylesheet subpaths cannot disguise a JavaScript runtime', (t) => {
+  const manifest = { name: '@threadplane/react', exports: { ...cssRoot, './chat/styles.css': './src/index.js' } };
+  assert.ok(validatePackage(fixture(t, { manifest })).length > 0);
+  assert.ok(packageVerifier.consumerSpecifiers({ ...manifest, exports: { './markdown': reactMarkdown, ...manifest.exports } }).includes('@threadplane/react/chat/styles.css'));
+});
+test('stylesheet exports require their target file', (t) => {
+  const manifest = { name: '@threadplane/react', exports: { ...cssRoot, './chat/styles.css': './src/chat/styles.css' } };
+  assert.ok(validatePackage(fixture(t, { manifest })).some((error) => error.includes('missing export target ./src/chat/styles.css')));
+});
 for (const entry of [null, 42, []]) {
   test(`malformed export ${JSON.stringify(entry)} produces a validation error`, (t) => {
     const directory = fixture(t, { manifest: { name: '@threadplane/render', exports: { '.': entry } } });

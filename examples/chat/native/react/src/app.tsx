@@ -1,7 +1,7 @@
 import { memo, useState } from 'react';
 import { useAgent } from '@threadplane/react';
 import { Markdown } from '@threadplane/react/markdown';
-import { ToolObservation } from '@threadplane/react/chat';
+import { ChatInput, ToolObservation } from '@threadplane/react/chat';
 import type {
   createApplication,
   ApplicationSnapshot,
@@ -64,63 +64,24 @@ function Composer({
   application: Application;
   snapshot: ApplicationSnapshot;
 }) {
-  const [draft, setDraft] = useState('');
-  const enabled = application.canSubmit();
-  const send = () => {
-    if (draft.trim() && application.canSubmit() && application.submit(draft))
-      setDraft('');
-  };
+  const active = snapshot.submission.active;
   return (
-    <form
-      className="composer"
-      onSubmit={(event) => {
-        event.preventDefault();
-        send();
-      }}
-    >
-      <label htmlFor="message">Message</label>
-      <textarea
+    <div className="composer">
+      <ChatInput
         id="message"
-        value={draft}
-        disabled={
-          snapshot.selection.status !== 'ready' || snapshot.submission.active
-        }
-        rows={3}
+        label="Message"
         placeholder="Write a message…"
-        aria-describedby="composer-help"
-        onChange={(event) => setDraft(event.target.value)}
-        onKeyDown={(event) => {
-          if (
-            event.key === 'Enter' &&
-            (event.ctrlKey || event.metaKey) &&
-            !event.nativeEvent.isComposing
-          ) {
-            event.preventDefault();
-            send();
-          }
-        }}
+        hint="Ctrl or ⌘ + Enter to send. Enter adds a line."
+        submitOnEnter={false}
+        disabled={snapshot.selection.status !== 'ready' || active}
+        busy={active || !application.canSubmit()}
+        onStop={active ? () => void application.stop() : undefined}
+        onSubmit={(text) => application.canSubmit() && application.submit(text)}
       />
-      <div className="composer-actions">
-        <p id="composer-help" className="muted">
-          Ctrl or ⌘ + Enter to send. Enter adds a line.
-        </p>
-        {snapshot.submission.active && (
-          <button type="button" onClick={() => application.stop()}>
-            Stop
-          </button>
-        )}
-        <button
-          className="primary"
-          type="submit"
-          disabled={!enabled || !draft.trim()}
-        >
-          Send
-        </button>
-      </div>
       <p className="submission-status" role="status">
         {submissionStatus(snapshot)}
       </p>
-    </form>
+    </div>
   );
 }
 

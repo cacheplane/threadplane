@@ -31,7 +31,12 @@
         "assets": [
           "libs/react/package.json",
           "libs/react/LICENSE.md",
-          "libs/react/README.md"
+          "libs/react/README.md",
+          {
+            "input": "libs/react/src/chat",
+            "glob": "styles.css",
+            "output": "src/chat"
+          }
         ]
       }
     },
