@@ -4965,6 +4965,18 @@
       "status": "planned"
     },
     {
+      "id": "export:libs/chat/src/public-api.ts#AgentUsage",
+      "taskIds": ["T03", "T04"],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#AgentUsageEntry",
+      "taskIds": ["T03", "T04"],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
       "id": "export:libs/chat/src/public-api.ts#AgentSubmitInput",
       "taskIds": [
         "T03",
@@ -8564,6 +8576,13 @@
       "note": "Extracted unchanged capture algorithm from transcript ownership. Preserves own enumerable plain data, undefined, sparse arrays and null prototypes, and rejects nonportable values or cycles."
     },
     {
+      "id": "source:libs/ag-ui/src/lib/internal/content-parts.ts",
+      "taskIds": ["T12"],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Adapter-private normalization of AG-UI 1.0 tool-result content parts into neutral ToolCall fields for the legacy reducer; no public export."
+    },
+    {
       "id": "source:libs/ag-ui/src/lib/interrupt-persistence.ts",
       "taskIds": [
         "T13"
@@ -9319,6 +9338,12 @@
         "T03",
         "T04"
       ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
+      "id": "source:libs/chat/src/lib/agent/agent-usage.ts",
+      "taskIds": ["T03", "T04"],
       "treatment": "shared",
       "status": "planned"
     },
