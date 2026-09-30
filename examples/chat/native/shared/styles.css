@@ -257,23 +257,33 @@ textarea:disabled {
   padding-top: 12px;
   margin-top: 24px;
 }
-.composer-actions {
+.composer-actions,
+.composer .tp-chat-input__actions {
   display: flex;
   align-items: center;
   gap: 10px;
   margin-top: 12px;
   flex-wrap: wrap;
 }
-.composer-actions p {
+.composer-actions p,
+.composer .tp-chat-input__hint {
   margin: 0 auto 0 0;
   font-size: 0.75rem;
 }
-.primary {
+.composer .tp-chat-input__hint {
+  color: var(--ds-text-secondary);
+}
+.composer .tp-chat-input__textarea {
+  min-height: calc(3 * 1.55em + 26px);
+}
+.primary,
+.composer .tp-chat-input__send {
   background: var(--ds-accent);
   color: var(--ds-text-inverted);
   border-color: var(--ds-accent);
 }
-.primary:hover:not(:disabled) {
+.primary:hover:not(:disabled),
+.composer .tp-chat-input__send:hover:not(:disabled) {
   background: var(--ds-accent-hover);
 }
 .submission-status {

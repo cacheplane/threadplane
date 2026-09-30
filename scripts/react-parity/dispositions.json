@@ -13480,6 +13480,17 @@
       "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
     },
     {
+      "id": "asset:libs/react/src/chat/styles.css",
+      "taskIds": [
+        "T22",
+        "T23"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Opt-in chat stylesheet exported as @threadplane/react/chat/styles.css; scoped .tp-chat* classes with --tp-chat-* properties falling back to --ds-* tokens.",
+      "note": "Shipped by the build assets and package exports; verify-packages.mjs validates the stylesheet export as a static asset whose file exists in the packed tarball (it is not imported by the consumer probe). Visual parity with the Angular chat theme is not claimed."
+    },
+    {
       "id": "asset:libs/react/project.json",
       "taskIds": [
         "T02",
@@ -13606,6 +13617,83 @@
       "status": "in-progress",
       "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
       "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#Chat",
+      "taskIds": [
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Chat composition wiring useAgent, an owned or app-passed message projection, MessageList and ChatInput to an app-owned AgentSession, with opt-in scoped styles.",
+      "note": "Streaming Markdown, trimmed submit, swallowed submit/stop rejections, error alert, session-keyed draft reset, owned-projection disposal, StrictMode remount and never disposing app content are verified with real DOM tests. Interrupts, attachments, threads, SSR and publication remain incomplete."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatProps",
+      "taskIds": [
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Chat composition wiring useAgent, an owned or app-passed message projection, MessageList and ChatInput to an app-owned AgentSession, with opt-in scoped styles.",
+      "note": "Streaming Markdown, trimmed submit, swallowed submit/stop rejections, error alert, session-keyed draft reset, owned-projection disposal, StrictMode remount and never disposing app content are verified with real DOM tests. Interrupts, attachments, threads, SSR and publication remain incomplete."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatInput",
+      "taskIds": [
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Presentational chat composer (props only): draft, submit/stop, IME-safe keys; composed by Chat and styled by the opt-in chat stylesheet.",
+      "note": "Draft handling, IME-safe keys, submit/stop/busy gating, focus return and auto-resize are verified with real DOM tests; Chat composition is verified in chat.spec. SSR and publication remain incomplete."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatInputHandle",
+      "taskIds": [
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Presentational chat composer (props only): draft, submit/stop, IME-safe keys; composed by Chat and styled by the opt-in chat stylesheet.",
+      "note": "Draft handling, IME-safe keys, submit/stop/busy gating, focus return and auto-resize are verified with real DOM tests; Chat composition is verified in chat.spec. SSR and publication remain incomplete."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatInputProps",
+      "taskIds": [
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Presentational chat composer (props only): draft, submit/stop, IME-safe keys; composed by Chat and styled by the opt-in chat stylesheet.",
+      "note": "Draft handling, IME-safe keys, submit/stop/busy gating, focus return and auto-resize are verified with real DOM tests; Chat composition is verified in chat.spec. SSR and publication remain incomplete."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#MessageList",
+      "taskIds": [
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Presentational message list (rows in, props only): memoized rows, literal tool text, bottom-pinned scrolling; composed by Chat and styled by the opt-in chat stylesheet.",
+      "note": "Row memoization, Markdown and literal tool rendering, custom renderMessage and scroll pinning are verified with real DOM tests; Chat composition is verified in chat.spec. SSR and publication remain incomplete."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#MessageListProps",
+      "taskIds": [
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Presentational message list (rows in, props only): memoized rows, literal tool text, bottom-pinned scrolling; composed by Chat and styled by the opt-in chat stylesheet.",
+      "note": "Row memoization, Markdown and literal tool rendering, custom renderMessage and scroll pinning are verified with real DOM tests; Chat composition is verified in chat.spec. SSR and publication remain incomplete."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#TextTranscript",
@@ -13738,6 +13826,61 @@
       "status": "in-progress",
       "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
       "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "source:libs/react/src/chat/chat-input.tsx",
+      "taskIds": [
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Presentational chat composer (props only): draft, submit/stop, IME-safe keys; composed by Chat and styled by the opt-in chat stylesheet.",
+      "note": "Draft handling, IME-safe keys, submit/stop/busy gating, focus return and auto-resize are verified with real DOM tests; Chat composition is verified in chat.spec. SSR and publication remain incomplete."
+    },
+    {
+      "id": "source:libs/react/src/chat/chat.tsx",
+      "taskIds": [
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Chat composition wiring useAgent, an owned or app-passed message projection, MessageList and ChatInput to an app-owned AgentSession, with opt-in scoped styles.",
+      "note": "Streaming Markdown, trimmed submit, swallowed submit/stop rejections, error alert, session-keyed draft reset, owned-projection disposal, StrictMode remount and never disposing app content are verified with real DOM tests. Interrupts, attachments, threads, SSR and publication remain incomplete."
+    },
+    {
+      "id": "source:libs/react/src/chat/internal/isomorphic-layout-effect.ts",
+      "taskIds": [
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Internal SSR-safe layout-effect helper shared by chat input and message list; not exported.",
+      "note": "Verified through the chat input and message list DOM tests. Not part of the public surface."
+    },
+    {
+      "id": "source:libs/react/src/chat/internal/use-message-content.ts",
+      "taskIds": [
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Internal hook projecting snapshots through app-passed message content, or owning one projection per session for Chat; not exported.",
+      "note": "Verified through the Chat DOM tests: owned disposal on unmount and session change, StrictMode recreation, and app-passed content never disposed. Not part of the public surface."
+    },
+    {
+      "id": "source:libs/react/src/chat/message-list.tsx",
+      "taskIds": [
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Presentational message list (rows in, props only): memoized rows, literal tool text, bottom-pinned scrolling; composed by Chat and styled by the opt-in chat stylesheet.",
+      "note": "Row memoization, Markdown and literal tool rendering, custom renderMessage and scroll pinning are verified with real DOM tests; Chat composition is verified in chat.spec. SSR and publication remain incomplete."
     },
     {
       "id": "source:libs/react/src/chat/text-transcript.tsx",
@@ -13986,6 +14129,16 @@
       "reason": "Owned immutable Markdown preparation with fixed URL projection for private native views; rich rendering and legacy lifecycle extraction remain separate."
     },
     {
+      "id": "entry:libs/content/src/messages/index.ts",
+      "taskIds": [
+        "T23",
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Framework-neutral message-row projection composing owned Markdown snapshots with tool calls for React chat views; no rendering or lifecycle wiring."
+    },
+    {
       "id": "export:libs/content/src/markdown/index.ts#CitationDefinition",
       "taskIds": [
         "T26"
@@ -14113,6 +14266,26 @@
       "treatment": "shared",
       "status": "in-progress",
       "reason": "Owned immutable Markdown preparation with fixed URL projection for private native views; rich rendering and legacy lifecycle extraction remain separate."
+    },
+    {
+      "id": "source:libs/content/src/messages/create-message-content.ts",
+      "taskIds": [
+        "T23",
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Framework-neutral message-row projection composing owned Markdown snapshots with tool calls for React chat views; no rendering or lifecycle wiring."
+    },
+    {
+      "id": "source:libs/content/src/messages/index.ts",
+      "taskIds": [
+        "T23",
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Framework-neutral message-row projection composing owned Markdown snapshots with tool calls for React chat views; no rendering or lifecycle wiring."
     },
     {
       "id": "source:libs/content/src/markdown/projection.ts",
@@ -14250,6 +14423,46 @@
       "status": "in-progress",
       "reason": "Private native snapshot presentation and fixed URL projection; rich rendering and legacy lifecycle migration remain separate.",
       "note": "Readonly whole snapshots, semantic nodes, literal HTML, raw math/citation fallbacks and local image state. This records a bounded native surface, not full legacy parity or public distribution."
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#MessageContent",
+      "taskIds": [
+        "T23",
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Framework-neutral message-row projection composing owned Markdown snapshots with tool calls for React chat views; no rendering or lifecycle wiring."
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#MessageContentOptions",
+      "taskIds": [
+        "T23",
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Framework-neutral message-row projection composing owned Markdown snapshots with tool calls for React chat views; no rendering or lifecycle wiring."
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#MessageRow",
+      "taskIds": [
+        "T23",
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Framework-neutral message-row projection composing owned Markdown snapshots with tool calls for React chat views; no rendering or lifecycle wiring."
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#createMessageContent",
+      "taskIds": [
+        "T23",
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Framework-neutral message-row projection composing owned Markdown snapshots with tool calls for React chat views; no rendering or lifecycle wiring."
     },
     {
       "id": "export:libs/react/src/markdown/index.ts#Markdown",

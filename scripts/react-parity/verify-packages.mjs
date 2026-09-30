@@ -19,10 +19,19 @@ function clientDirective(path) {
 }
 
 function metadataExport(subpath, entry) {
+  if (stylesheetExport(subpath, entry)) return true;
   if (!/\.(?:md|json)$/.test(subpath)) return false;
   return typeof entry === 'string' ? subpath === entry :
     entry !== null && typeof entry === 'object' && !Array.isArray(entry) &&
     Object.keys(entry).length === 1 && entry.default === subpath;
+}
+// Stylesheets are static assets: a .css subpath whose only target is a .css file.
+function stylesheetExport(subpath, entry) {
+  if (!subpath.endsWith('.css')) return false;
+  const target = typeof entry === 'string' ? entry :
+    entry !== null && typeof entry === 'object' && !Array.isArray(entry) &&
+    Object.keys(entry).length === 1 ? entry.default : undefined;
+  return typeof target === 'string' && target.endsWith('.css');
 }
 
 export function consumerSpecifiers(manifest) {
@@ -196,11 +205,24 @@ export function assertSupportedExports(project, entry) {
         'projectAgentError',
       ],
       react: ['useAgent'],
-      'react/chat': ['TextTranscript', 'ToolObservation'],
+      'react/chat': [
+        'Chat',
+        'ChatInput',
+        'MessageList',
+        'TextTranscript',
+        'ToolObservation',
+      ],
       'react/markdown': ['Markdown'],
     }[project] ?? [];
+  // React entries may export forwardRef/memo components, which are $$typeof objects.
+  const supported = (value) =>
+    typeof value === 'function' ||
+    (project.startsWith('react') &&
+      value !== null &&
+      typeof value === 'object' &&
+      typeof value.$$typeof === 'symbol');
   for (const name of expected)
-    if (typeof entry[name] !== 'function')
+    if (!supported(entry[name]))
       throw new Error(`${project} missing supported contract ${name}`);
   if (
     ['react/chat', 'react/markdown'].includes(project) &&

@@ -4,3 +4,10 @@ export {
   ToolObservation,
   type ToolObservationProps,
 } from './tool-observation.js';
+export {
+  ChatInput,
+  type ChatInputHandle,
+  type ChatInputProps,
+} from './chat-input.js';
+export { MessageList, type MessageListProps } from './message-list.js';
+export { Chat, type ChatProps } from './chat.js';
