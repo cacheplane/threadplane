@@ -20,7 +20,7 @@ installs real core, React, Angular and backend tarballs. The existing APF output
 and framework-only SDK installation ban remain separate required checks. There
 is no output rewrite, source alias, narrowed declaration or backend wrapper.
 
-The pinned AG-UI client 0.0.59 uses real vendor dependencies, including RxJS and
+The pinned AG-UI client 1.0.1 uses real vendor dependencies, including RxJS and
 Zod. The existing root npm override `rxjs: ~7.8.0` selects locked RxJS 7.8.2 despite
 the SDK's raw 7.8.1 dependency declaration. The candidate records that supported
 override, validates its effective range and checks the complete installed graph
