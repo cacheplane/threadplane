@@ -186,8 +186,8 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
       const pendingIds = Array.isArray(declared)
         ? new Set(declared.filter((id): id is string => typeof id === 'string'))
         : undefined;
-      store.pendingClientToolCallIds?.set(pendingIds && pendingIds.size > 0 ? pendingIds : undefined);
       if (!run || !finalizeDeliveryRun(store, run, 'success')) return;
+      store.pendingClientToolCallIds?.set(pendingIds && pendingIds.size > 0 ? pendingIds : undefined);
       store.status.set('idle');
       store.isLoading.set(false);
       return;

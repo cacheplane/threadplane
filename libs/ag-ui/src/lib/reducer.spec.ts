@@ -1122,4 +1122,14 @@ describe('pendingToolCallIds', () => {
     reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r2' } as never, store);
     expect(store.pendingClientToolCallIds?.()).toBeUndefined();
   });
+
+  it('ignores pendingToolCallIds on a RUN_FINISHED that does not finalize the run', () => {
+    const store = makeStore();
+    reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r' } as never, store);
+    reduceEvent({ type: 'RUN_FINISHED', threadId: 't', runId: 'r', outcome: { type: 'success', pendingToolCallIds: ['x'] } } as never, store);
+    expect(store.pendingClientToolCallIds?.()).toEqual(new Set(['x']));
+    // The run is already settled; a duplicate terminal must not rewrite the set.
+    reduceEvent({ type: 'RUN_FINISHED', threadId: 't', runId: 'r', outcome: { type: 'success', pendingToolCallIds: ['y'] } } as never, store);
+    expect(store.pendingClientToolCallIds?.()).toEqual(new Set(['x']));
+  });
 });
