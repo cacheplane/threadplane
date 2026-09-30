@@ -97,20 +97,8 @@ export function createRun(
           capturedInput,
           (event) => {
             if (closed) return;
-            const child = typeof event['subagentRunId'] === 'string';
-            const rootLifecycle =
-              event.type === EventType.RUN_STARTED ||
-              event.type === EventType.RUN_FINISHED ||
-              event.type === EventType.RUN_ERROR;
-            if (child && rootLifecycle) {
-              settle({
-                outcome: 'error',
-                error: new Error(
-                  'Child-attributed RUN_* events are unsupported'
-                ),
-              });
-              return;
-            }
+            // RUN_* events are not attributable in 1.0: the client's
+            // enforcement stage strips any `subagentRunId` before delivery.
             let candidate: RunOutcome | undefined;
             if (
               event.type === EventType.RUN_STARTED ||

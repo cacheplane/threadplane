@@ -461,7 +461,7 @@ describe('private HTTP request owner', () => {
     const server = await serve();
     const received = deferred<void>();
     let signal: AbortSignal | null | undefined;
-    const cancelObserved = deferred<boolean>();
+    const cancelObserved = deferred<void>();
     let readFailure: unknown;
     const factory = createHttpRequest({
       url: server.url,
@@ -482,7 +482,7 @@ describe('private HTTP request owner', () => {
           );
           const cancel = reader.cancel.bind(reader);
           vi.spyOn(reader, 'cancel').mockImplementation((reason) => {
-            cancelObserved.resolve(signal?.aborted === true);
+            cancelObserved.resolve();
             return cancel(reason);
           });
           return reader;
@@ -504,7 +504,11 @@ describe('private HTTP request owner', () => {
         expect(outcome.error).toBeInstanceOf(TypeError);
         expect(outcome.error).toBe(readFailure);
       }
-      expect(await bounded(cancelObserved.promise)).toBe(true);
+      // The 1.0.1 client cancels the reader in its own failure teardown,
+      // before the error reaches this owner, so the source signal is aborted
+      // after (not before) that cancel; the cancel's rejection is contained.
+      await bounded(cancelObserved.promise);
+      expect(signal?.aborted).toBe(true);
       await bounded(exchange.closed);
       handle.abort();
       expect(await done).toBe(outcome);

@@ -226,8 +226,9 @@ describe('native decision owner', () => {
       };
       const done = fixture.session.resume(token, [response], options);
       const exchange = await bounded(fixture.started(1));
-      expect(exchange.body.resume).toEqual([
-        { interruptId: 'approval', status: 'resolved', payload: null },
+      // 1.0 client rule: a whole-optional `payload: null` is sent as absent.
+      expect(exchange.body.resume).toStrictEqual([
+        { interruptId: 'approval', status: 'resolved' },
       ]);
       expect(selected).toHaveBeenCalledTimes(1);
       expect(ignored).not.toHaveBeenCalled();

@@ -134,7 +134,14 @@ describe('correlated native resume over held HTTP', () => {
           { id: first.body.messages[0].id, role: 'user', content: 'First' },
         ],
         state: { setting: 'owned' },
-        resume: responses,
+        // 1.0 client rule: a whole-optional `payload: null` is sent as absent.
+        resume: [
+          {
+            interruptId: 'approval',
+            status: 'resolved',
+            metadata: { origin: 'review' },
+          },
+        ],
         tools: [],
         context: [],
         forwardedProps: {},

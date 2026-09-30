@@ -44,7 +44,7 @@ const responses = () =>
   ]);
 
 describe('captured native response ownership', () => {
-  it('reads only selected fields once, preserves null, and owns nested data without freezing callers', () => {
+  it('reads only selected fields once, drops a null payload, and owns nested data without freezing callers', () => {
     const graph = { values: [1] };
     const reads = {
       id: vi.fn(() => 'a'),
@@ -90,10 +90,14 @@ describe('captured native response ownership', () => {
     expect(Object.isFrozen(graph.values)).toBe(false);
     expect(Object.isFrozen(captured)).toBe(true);
     expect(Object.isFrozen(captured[0].metadata?.['m'])).toBe(true);
-    expect(responses()).toEqual([
-      { interruptId: 'a', status: 'resolved', payload: null },
+    // 1.0 client rule: a whole-optional `payload: null` is absent, so the
+    // captured snapshot matches what the wire carries.
+    const owned = responses();
+    expect(owned).toEqual([
+      { interruptId: 'a', status: 'resolved' },
       { interruptId: 'b', status: 'cancelled' },
     ]);
+    expect(owned[0]).not.toHaveProperty('payload');
     expect(
       captureResponses([
         { interruptId: 'a', status: 'resolved', payload: undefined },

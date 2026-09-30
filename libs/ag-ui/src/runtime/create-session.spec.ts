@@ -412,7 +412,12 @@ describe('private session command owner', () => {
       }
     }
   );
-  it('rechecks ownership after local terminal capture invokes a reentrant getter', async () => {
+  // 1.0 client: the compatibility boundary and enforcement stages read (and
+  // materialize) event getters before the runtime sees the event, so the
+  // reentrant stop fires inside SDK processing rather than local capture. The
+  // guarded behavior is unchanged: the reentrant stop wins and no terminal is
+  // recorded. Only the read count is relaxed; it belongs to the SDK.
+  it('lets a reentrant stop from a RUN_FINISHED getter win over terminal capture', async () => {
     let stop: Promise<void> | undefined;
     let reads = 0;
     const run = vi.spyOn(HttpAgent.prototype, 'run').mockImplementation(
@@ -439,7 +444,7 @@ describe('private session command owner', () => {
     try {
       expect(await bounded(owner.submit('first'))).toBe('aborted');
       await stop;
-      expect(reads).toBe(1);
+      expect(reads).toBeGreaterThanOrEqual(1);
       expect(owner.getSnapshot().run?.terminal).toBeUndefined();
     } finally {
       await owner.dispose();
