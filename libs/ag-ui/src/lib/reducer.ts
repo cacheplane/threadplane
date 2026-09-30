@@ -2,6 +2,7 @@
 // Discriminator strings (e.g. 'RUN_STARTED') match EventType enum members
 // verbatim; the switch cases below use the string literals directly so this
 // file has no runtime dependency on the EventType enum import.
+import { toolResultFromContent, messageContentFromParts } from './internal/content-parts';
 import { signal, type WritableSignal } from '@angular/core';
 import type { Subject } from 'rxjs';
 import {
@@ -33,7 +34,7 @@ interface AgUiSnapshotToolCall {
 interface AgUiSnapshotMessage {
   id: string;
   role: string;
-  content?: string;
+  content?: string | unknown[];
   toolCalls?: AgUiSnapshotToolCall[];
   [key: string]: unknown;
 }
@@ -336,9 +337,9 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
       // ag_ui_langgraph serialises tool results via normalize_tool_content()
       // which always returns a string. Parse it so downstream consumers
       // (chat-tool-views / toToolViewSpec) can spread the object into props.
-      const result = typeof e.content === 'string' ? safeParseJson(e.content) : e.content;
+      const { result, parts } = toolResultFromContent(e.content);
       store.toolCalls.update((prev) =>
-        prev.map((t) => t.id === e.toolCallId ? { ...t, result } : t),
+        prev.map((t) => t.id === e.toolCallId ? { ...t, result, ...(parts ? { parts } : {}) } : t),
       );
       return;
     }
@@ -386,7 +387,16 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
         let delivery = previous?.delivery ?? staticDelivery(m.id);
         let snapshotMessage: Omit<Message, 'delivery'>;
         if (m.role !== 'assistant' || !m.toolCalls || m.toolCalls.length === 0) {
-          snapshotMessage = m as unknown as Omit<Message, 'delivery'>;
+          if (m.role === 'tool' && Array.isArray(m.content)) {
+            const mapped = messageContentFromParts(m.content);
+            snapshotMessage = {
+              ...m,
+              content: mapped.content,
+              ...(mapped.extra ? { extra: { ...(isRecord(m['extra']) ? m['extra'] : {}), ...mapped.extra } } : {}),
+            } as unknown as Omit<Message, 'delivery'>;
+          } else {
+            snapshotMessage = m as unknown as Omit<Message, 'delivery'>;
+          }
         } else {
           const ids: string[] = [];
           for (const tc of m.toolCalls) {
@@ -402,7 +412,7 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
           snapshotMessage = { ...rest, toolCallIds: ids } as unknown as Omit<Message, 'delivery'>;
         }
         if (completedMessage) {
-          const snapshotChanged = completedMessage.content !== snapshotMessage.content
+          const snapshotChanged = !sameContent(completedMessage.content, snapshotMessage.content)
             || !sameStringArray(completedMessage.toolCallIds, snapshotMessage.toolCallIds);
           if (!snapshotChanged) return completedMessage;
 
@@ -752,9 +762,8 @@ function routeSubagentContentEvent(subagentRunId: string, event: BaseEvent, stor
         // ag_ui_langgraph serialises tool results via normalize_tool_content()
         // which always returns a string — parse it the same way the parent
         // TOOL_CALL_RESULT handler does so downstream consumers get an object.
-        const raw = e['content'];
-        const result = typeof raw === 'string' ? safeParseJson(raw) : raw;
-        return { ...c, toolCalls: toolCalls.map((t) => (t['id'] === e['toolCallId'] ? { ...t, result } : t)) };
+        const { result, parts } = toolResultFromContent(e['content']);
+        return { ...c, toolCalls: toolCalls.map((t) => (t['id'] === e['toolCallId'] ? { ...t, result, ...(parts ? { parts } : {}) } : t)) };
       }
       default:
         return c;
@@ -842,6 +851,12 @@ function ownAssistantMessage(store: ReducerStore, id: string) {
   run.ownedMessageIds.add(id);
   run.currentAssistantMessageId = id;
   return streamingDelivery(run.generation);
+}
+
+function sameContent(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (Array.isArray(a) && Array.isArray(b)) return JSON.stringify(a) === JSON.stringify(b);
+  return false;
 }
 
 function sameStringArray(left?: string[], right?: string[]): boolean {

@@ -1075,3 +1075,32 @@ describe('usage', () => {
     expect(store.usage?.()).toBeUndefined();
   });
 });
+
+describe('content-part tool results', () => {
+  const parts = [
+    { type: 'text', text: '{"ok":true}' },
+    { type: 'image', source: { type: 'url', value: 'https://x/y.png' } },
+  ];
+  it('TOOL_CALL_RESULT with parts sets result text and keeps parts', () => {
+    const store = makeStore();
+    reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r' } as never, store);
+    reduceEvent({ type: 'TOOL_CALL_START', toolCallId: 'c', toolCallName: 'look', parentMessageId: 'a' } as never, store);
+    reduceEvent({ type: 'TOOL_CALL_END', toolCallId: 'c' } as never, store);
+    reduceEvent({ type: 'TOOL_CALL_RESULT', messageId: 'tm', toolCallId: 'c', content: parts } as never, store);
+    const call = store.toolCalls().find((t) => t.id === 'c');
+    expect(call?.result).toEqual({ ok: true });
+    expect(call?.parts).toEqual(parts);
+  });
+  it('MESSAGES_SNAPSHOT tool messages with parts become chat content blocks', () => {
+    const store = makeStore();
+    reduceEvent({ type: 'MESSAGES_SNAPSHOT', messages: [
+      { id: 'u', role: 'user', content: 'hi' },
+      { id: 'tm', role: 'tool', toolCallId: 'c', content: parts },
+    ] } as never, store);
+    const tool = store.messages().find((m) => m.id === 'tm');
+    expect(tool?.content).toEqual([
+      { type: 'text', text: '{"ok":true}' },
+      { type: 'image', url: 'https://x/y.png' },
+    ]);
+  });
+});
