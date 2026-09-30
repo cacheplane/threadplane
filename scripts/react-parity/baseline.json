@@ -1,8 +1,11 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "64aa499828e03d8782aa08d77673466ca0193683",
+  "baselineHead": "f54c3aae99768b269c0af94d9061d761a43319be",
   "sourceState": {
-    "modified": [],
+    "modified": [
+      "libs/react/README.md",
+      "libs/react/src/chat/message-list.tsx"
+    ],
     "untracked": []
   },
   "scope": {
@@ -38,6 +41,7 @@
       "libs/chat/testing/public-api.ts",
       "libs/content/src/index.ts",
       "libs/content/src/markdown/index.ts",
+      "libs/content/src/messages/index.ts",
       "libs/langgraph/src/public-api.ts",
       "libs/middleware/src/langgraph/index.ts",
       "libs/react/src/index.ts",
@@ -141,7 +145,7 @@
       "id": "asset:libs/ag-ui/README.md",
       "kind": "asset",
       "path": "libs/ag-ui/README.md",
-      "sha256": "a900db710136999225c3d569bb136d2f365d0337ddfc0409ca3e41f358602650"
+      "sha256": "ff308bf07651a3a6849db1dc841bd39d54bc585a6f882bc6d709b49aba9c5293"
     },
     {
       "id": "asset:libs/ag-ui/fixtures/runtime-transcripts/maf-hitl-interrupt.sse",
@@ -207,7 +211,7 @@
       "id": "asset:libs/ag-ui/package.json",
       "kind": "asset",
       "path": "libs/ag-ui/package.json",
-      "sha256": "378637a9da175428e9735dc0f4a60f42151334bcdc12b0838cc600e2cff753fa"
+      "sha256": "27190919faa732b07c278bc78b68e0663fa39e6c7e96d6ba45fbafc65e2bd3ee"
     },
     {
       "id": "asset:libs/ag-ui/project.json",
@@ -219,7 +223,7 @@
       "id": "asset:libs/ag-ui/src/runtime/README.md",
       "kind": "asset",
       "path": "libs/ag-ui/src/runtime/README.md",
-      "sha256": "eb43b76d97d968a43a62311b3f66b53dc6afcf59fc70525801741a1e75999785"
+      "sha256": "67e443b1252d7236ad7b6fc69cd6027776d770ac7eb2abfed7e8155c28dc1d5c"
     },
     {
       "id": "asset:libs/ag-ui/tsconfig.json",
@@ -555,7 +559,7 @@
       "id": "asset:libs/content/package.json",
       "kind": "asset",
       "path": "libs/content/package.json",
-      "sha256": "98a416b3f718a50b0ee656440187c44ea50702d7c76d5d0bc2d0e205872e90b4"
+      "sha256": "18f27ec8bf932fd71dd85b6b20f51cab9cfadbc406151056434a74af157dd2cf"
     },
     {
       "id": "asset:libs/content/project.json",
@@ -579,7 +583,7 @@
       "id": "asset:libs/content/tsconfig.spec.json",
       "kind": "asset",
       "path": "libs/content/tsconfig.spec.json",
-      "sha256": "87fddbd9d9fee3d22ef9dc3053325fc0d6a26492a28e405efbccc91b17b42cca"
+      "sha256": "e14718dc28333d582de85ecc4b6d95569c9b53e5e7f4e04229f81c86c0debe54"
     },
     {
       "id": "asset:libs/design-tokens/package.json",
@@ -813,19 +817,25 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "63083dd85fc688a7e9271ad8bc621f0d4eb71a5bcf10d9a67d7224f70352c1bb"
+      "sha256": "e40c342cdf63f5e82aa75d0444da1aaa26c8067987a6d52eabee698fee60bf5e"
     },
     {
       "id": "asset:libs/react/package.json",
       "kind": "asset",
       "path": "libs/react/package.json",
-      "sha256": "b6926188a09cda9e29222c3dca6a8560db4a78299d6ba42dc465a65264d8be95"
+      "sha256": "0aaf4412de70b8174bdaebf82e29a85f66aac0a3f8194e26b9e41a85195d0221"
     },
     {
       "id": "asset:libs/react/project.json",
       "kind": "asset",
       "path": "libs/react/project.json",
-      "sha256": "42c1c5b710f0d74648825ad0608db0297029730289881f242a063a88317ba039"
+      "sha256": "c083c71eaa2a0b55f06a41647dd8cfee6d9c741f1f55a6858d209d4c29286f38"
+    },
+    {
+      "id": "asset:libs/react/src/chat/styles.css",
+      "kind": "asset",
+      "path": "libs/react/src/chat/styles.css",
+      "sha256": "09c1c1b64a35bda7aaac87a2330eec5921c2959e2ad60cf582d33b8f26ac2dc2"
     },
     {
       "id": "asset:libs/react/tsconfig.json",
@@ -2151,13 +2161,13 @@
       "id": "config:package-lock.json",
       "kind": "config",
       "path": "package-lock.json",
-      "sha256": "0fe309ca6e90d54702b4bf1c685d5ce8200b8f051520f7337df82d033c85dc08"
+      "sha256": "6a83829aa28ec3690596b22e961708585fc53bbebf828f86e3e5a709bfffd577"
     },
     {
       "id": "config:package.json",
       "kind": "config",
       "path": "package.json",
-      "sha256": "766cd8167219f6c8a2cda9c49e8de319002e70ba07dafa70b83768eed42c996e"
+      "sha256": "1454dd65be7cc56cf85c23eaf83c17953bb3d4b0dc98350cb1bdd392fbdade25"
     },
     {
       "id": "config:scripts/assemble-examples.ts",
@@ -2187,7 +2197,7 @@
       "id": "config:tsconfig.base.json",
       "kind": "config",
       "path": "tsconfig.base.json",
-      "sha256": "9e0497a503e6b02f9df0954e8998fd8ce04a47e8dc1e79c02f96bd02b5ac3683"
+      "sha256": "1660505e7a1104bb963821fb4738d5021a0d503901b29f3b5e2f85be5fcca862"
     },
     {
       "id": "doc:apps/website/content/docs/a2ui/getting-started/introduction.mdx",
@@ -2265,7 +2275,7 @@
       "id": "doc:apps/website/content/docs/ag-ui/getting-started/installation.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/getting-started/installation.mdx",
-      "sha256": "5bcb47604e31b5291203c140070e97b00875f83eb486f8a3ac2d0cb92def700d"
+      "sha256": "52cb1ebf813965cb619990468af2a0affdac41dadf259d682349a92059896cfa"
     },
     {
       "id": "doc:apps/website/content/docs/ag-ui/getting-started/introduction.mdx",
@@ -2313,7 +2323,7 @@
       "id": "doc:apps/website/content/docs/ag-ui/guides/interrupts.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/guides/interrupts.mdx",
-      "sha256": "f41b6bb8d94751fc1f8d1295a46c67dd40593835bad1a05ed3cda7206dfe5ef8"
+      "sha256": "71e8eb9b06a9c8fd72194e69cc8dda066ffea998d3ed5049d2fa802e99a3ecaa"
     },
     {
       "id": "doc:apps/website/content/docs/ag-ui/guides/json-render.mdx",
@@ -2349,7 +2359,7 @@
       "id": "doc:apps/website/content/docs/ag-ui/reference/event-mapping.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/reference/event-mapping.mdx",
-      "sha256": "32129145fc6efc60436bf4afc7f2405409b840305369ebe77e9a441e7ef38dfa"
+      "sha256": "457234cf179d4fdda4acaaca491201c0b79bc1aac2470c836dc4503c07a36c12"
     },
     {
       "id": "doc:apps/website/content/docs/chat/a2ui/catalog.mdx",
@@ -2499,7 +2509,7 @@
       "id": "doc:apps/website/content/docs/chat/getting-started/changelog.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/getting-started/changelog.mdx",
-      "sha256": "2c25717300a70401b2c81318f14a576f34722898c6ddb4e9a03c3907938436e9"
+      "sha256": "41900f462a181319ff4fbc3d1f01fef4dca5c8cc405a834295b18bac753ee61e"
     },
     {
       "id": "doc:apps/website/content/docs/chat/getting-started/coding-agents.mdx",
@@ -3006,6 +3016,11 @@
       "id": "entry:libs/content/src/markdown/index.ts",
       "kind": "entry",
       "path": "libs/content/src/markdown/index.ts"
+    },
+    {
+      "id": "entry:libs/content/src/messages/index.ts",
+      "kind": "entry",
+      "path": "libs/content/src/messages/index.ts"
     },
     {
       "id": "entry:libs/langgraph/src/public-api.ts",
@@ -4981,7 +4996,7 @@
           "path": "libs/chat/src/lib/agent/agent.ts",
           "symbol": "Agent",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface Agent<TState = unknown> {\n    messages: Signal<Message[]>;\n    status: Signal<AgentStatus>;\n    isLoading: Signal<boolean>;\n    isInputBlocked?: Signal<boolean>;\n    error: Signal<AgentError | undefined>;\n    toolCalls: Signal<ToolCall[]>;\n    state: Signal<TState>;\n    submit: (input: AgentSubmitInput, opts?: AgentSubmitOptions) => Promise<void>;\n    stop: () => Promise<void>;\n    retry: () => Promise<void>;\n    regenerate: (assistantMessageIndex: number) => Promise<void>;\n    interrupt?: Signal<AgentInterrupt | undefined>;\n    subagents?: Signal<Map<string, Subagent>>;\n    clientTools?: ClientToolsCapability;\n    usage?: Signal<AgentUsage | undefined>;\n    checkStatus?: () => Promise<void>;\n    events$: Observable<AgentEvent>;\n}"
+          "signature": "export interface Agent<TState = unknown> {\n    messages: Signal<Message[]>;\n    status: Signal<AgentStatus>;\n    isLoading: Signal<boolean>;\n    isInputBlocked?: Signal<boolean>;\n    error: Signal<AgentError | undefined>;\n    toolCalls: Signal<ToolCall[]>;\n    state: Signal<TState>;\n    submit: (input: AgentSubmitInput, opts?: AgentSubmitOptions) => Promise<void>;\n    stop: () => Promise<void>;\n    retry: () => Promise<void>;\n    regenerate: (assistantMessageIndex: number) => Promise<void>;\n    interrupt?: Signal<AgentInterrupt | undefined>;\n    subagents?: Signal<Map<string, Subagent>>;\n    clientTools?: ClientToolsCapability;\n    checkStatus?: () => Promise<void>;\n    events$: Observable<AgentEvent>;\n}"
         }
       ]
     },
@@ -5206,34 +5221,6 @@
           "symbol": "AgentSubmitOptions",
           "syntaxKind": "InterfaceDeclaration",
           "signature": "export interface AgentSubmitOptions {\n    signal?: AbortSignal;\n}"
-        }
-      ]
-    },
-    {
-      "id": "export:libs/chat/src/public-api.ts#AgentUsage",
-      "kind": "export",
-      "path": "libs/chat/src/public-api.ts",
-      "symbol": "AgentUsage",
-      "declarations": [
-        {
-          "path": "libs/chat/src/lib/agent/agent-usage.ts",
-          "symbol": "AgentUsage",
-          "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface AgentUsage {\n    entries: AgentUsageEntry[];\n}"
-        }
-      ]
-    },
-    {
-      "id": "export:libs/chat/src/public-api.ts#AgentUsageEntry",
-      "kind": "export",
-      "path": "libs/chat/src/public-api.ts",
-      "symbol": "AgentUsageEntry",
-      "declarations": [
-        {
-          "path": "libs/chat/src/lib/agent/agent-usage.ts",
-          "symbol": "AgentUsageEntry",
-          "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface AgentUsageEntry {\n    provider?: string;\n    model?: string;\n    inputTokens?: number;\n    outputTokens?: number;\n    totalTokens?: number;\n    reasoningTokens?: number;\n    cachedInputTokens?: number;\n    cacheWriteInputTokens?: number;\n}"
         }
       ]
     },
@@ -7193,7 +7180,7 @@
           "path": "libs/chat/src/lib/client-tools/select-pending-client-tool-calls.ts",
           "symbol": "SelectPendingClientToolCallsInput",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface SelectPendingClientToolCallsInput {\n    isLoading: boolean;\n    toolCalls: readonly ToolCall[];\n    catalogNames: ReadonlySet<string>;\n    resolvedIds: ReadonlySet<string>;\n    authoritativeIds?: ReadonlySet<string>;\n}"
+          "signature": "export interface SelectPendingClientToolCallsInput {\n    isLoading: boolean;\n    toolCalls: readonly ToolCall[];\n    catalogNames: ReadonlySet<string>;\n    resolvedIds: ReadonlySet<string>;\n}"
         }
       ]
     },
@@ -7375,7 +7362,7 @@
           "path": "libs/chat/src/lib/agent/tool-call.ts",
           "symbol": "ToolCall",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface ToolCall {\n    id: string;\n    name: string;\n    args: unknown;\n    status: ToolCallStatus;\n    result?: unknown;\n    error?: unknown;\n    parts?: readonly unknown[];\n}"
+          "signature": "export interface ToolCall {\n    id: string;\n    name: string;\n    args: unknown;\n    status: ToolCallStatus;\n    result?: unknown;\n    error?: unknown;\n}"
         }
       ]
     },
@@ -8117,7 +8104,7 @@
           "path": "libs/chat/src/lib/client-tools/select-pending-client-tool-calls.ts",
           "symbol": "selectPendingClientToolCalls",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function selectPendingClientToolCalls(input: SelectPendingClientToolCallsInput): readonly ToolCall[] {\n    if (input.isLoading)\n        return [];\n    return input.toolCalls.filter((tc) => input.catalogNames.has(tc.name) &&\n        tc.result === undefined &&\n        !input.resolvedIds.has(tc.id) &&\n        (input.authoritativeIds === undefined || input.authoritativeIds.has(tc.id)));\n}"
+          "signature": "export function selectPendingClientToolCalls(input: SelectPendingClientToolCallsInput): readonly ToolCall[] {\n    if (input.isLoading)\n        return [];\n    return input.toolCalls.filter((tc) => input.catalogNames.has(tc.name) &&\n        tc.result === undefined &&\n        !input.resolvedIds.has(tc.id));\n}"
         }
       ]
     },
@@ -8650,6 +8637,62 @@
           "symbol": "markdownUrl",
           "syntaxKind": "FunctionDeclaration",
           "signature": "export function markdownUrl(value: string, kind: 'link' | 'image'): string | undefined {\n    if (!value.trim())\n        return undefined;\n    for (const character of value) {\n        const code = character.charCodeAt(0);\n        if (code < 32 || code === 127)\n            return undefined;\n    }\n    if (!/^(?:[a-z][a-z0-9+.-]*:|[^&:/?#]*(?:[/?#]|$))/i.test(value))\n        return undefined;\n    try {\n        const protocol = new URL(value, 'https://markdown.invalid/').protocol;\n        if (protocol === 'http:' ||\n            protocol === 'https:' ||\n            (kind === 'link' && (protocol === 'mailto:' || protocol === 'tel:')))\n            return value;\n    }\n    catch {\n    }\n    return undefined;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#MessageContent",
+      "kind": "export",
+      "path": "libs/content/src/messages/index.ts",
+      "symbol": "MessageContent",
+      "declarations": [
+        {
+          "path": "libs/content/src/messages/create-message-content.ts",
+          "symbol": "MessageContent",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface MessageContent<TTools extends {\n    [K in keyof TTools]: ToolContract;\n} = Record<string, ToolContract>> {\n    project(snapshot: AgentSnapshot<TTools>): readonly MessageRow<TTools>[];\n    dispose(): void;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#MessageContentOptions",
+      "kind": "export",
+      "path": "libs/content/src/messages/index.ts",
+      "symbol": "MessageContentOptions",
+      "declarations": [
+        {
+          "path": "libs/content/src/messages/create-message-content.ts",
+          "symbol": "MessageContentOptions",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface MessageContentOptions {\n    readonly markdownFactory?: typeof createMarkdown;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#MessageRow",
+      "kind": "export",
+      "path": "libs/content/src/messages/index.ts",
+      "symbol": "MessageRow",
+      "declarations": [
+        {
+          "path": "libs/content/src/messages/create-message-content.ts",
+          "symbol": "MessageRow",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface MessageRow<TTools extends {\n    [K in keyof TTools]: ToolContract;\n} = Record<string, ToolContract>> {\n    readonly id: string;\n    readonly role: Message['role'];\n    readonly message: Message;\n    readonly markdown: MarkdownSnapshot;\n    readonly toolCalls: readonly ToolCall<TTools>[];\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#createMessageContent",
+      "kind": "export",
+      "path": "libs/content/src/messages/index.ts",
+      "symbol": "createMessageContent",
+      "declarations": [
+        {
+          "path": "libs/content/src/messages/create-message-content.ts",
+          "symbol": "createMessageContent",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function createMessageContent<TTools extends {\n    [K in keyof TTools]: ToolContract;\n} = Record<string, ToolContract>>(options: MessageContentOptions = {}): MessageContent<TTools> {\n    const factory = options.markdownFactory ?? createMarkdown;\n    const owners = new Map<string, Markdown>();\n    let rows: readonly MessageRow<TTools>[] = Object.freeze([]);\n    let messages: readonly Message[] | undefined;\n    let toolCalls: readonly ToolCall<TTools>[] | undefined;\n    let disposed = false;\n    return {\n        project(snapshot) {\n            const next = snapshot as {\n                readonly messages: readonly Message[];\n                readonly toolCalls: readonly ToolCall<TTools>[];\n            };\n            const projectedCalls = next.toolCalls;\n            if (disposed ||\n                (next.messages === messages && next.toolCalls === toolCalls))\n                return rows;\n            const present = new Set(next.messages.map((message) => message.id));\n            for (const [id, owner] of owners) {\n                if (present.has(id))\n                    continue;\n                owner.dispose();\n                owners.delete(id);\n            }\n            const previous = new Map(rows.map((row) => [row.id, row]));\n            const projected = next.messages.map((message): MessageRow<TTools> => {\n                const document = {\n                    generation: message.delivery.generation,\n                    phase: message.delivery.phase,\n                    content: message.content,\n                };\n                let owner = owners.get(message.id);\n                if (!owner) {\n                    owner = factory(document, { violationPolicy: 'rebuild' });\n                    owners.set(message.id, owner);\n                }\n                else {\n                    const accepted = owner.getSnapshot().document;\n                    if (accepted.generation !== document.generation ||\n                        accepted.phase !== document.phase ||\n                        accepted.content !== document.content)\n                        owner.update(document);\n                }\n                const markdown = owner.getSnapshot();\n                const calls = projectedCalls.filter((call) => message.toolCallIds?.includes(call.id) ||\n                    message.toolCallId === call.id);\n                const old = previous.get(message.id);\n                if (old?.message === message &&\n                    old.markdown === markdown &&\n                    old.toolCalls.length === calls.length &&\n                    calls.every((call, index) => call === old.toolCalls[index]))\n                    return old;\n                return Object.freeze({\n                    id: message.id,\n                    role: message.role,\n                    message,\n                    markdown,\n                    toolCalls: Object.freeze(calls),\n                });\n            });\n            if (projected.length !== rows.length ||\n                projected.some((row, index) => row !== rows[index]))\n                rows = Object.freeze(projected);\n            messages = next.messages;\n            toolCalls = next.toolCalls;\n            return rows;\n        },\n        dispose() {\n            if (disposed)\n                return;\n            disposed = true;\n            for (const owner of owners.values())\n                owner.dispose();\n            owners.clear();\n        },\n    };\n}"
         }
       ]
     },
@@ -9646,6 +9689,104 @@
           "symbol": "routeAfterAgent",
           "syntaxKind": "FunctionDeclaration",
           "signature": "export function routeAfterAgent(state: ClientToolsState, serverToolNames: Iterable<string>, opts?: {\n    toolsNode?: string;\n    end?: string;\n}): string {\n    const toolsNode = opts?.toolsNode ?? 'server_tools';\n    const end = opts?.end ?? '__end__';\n    return hasServerToolCall(state, serverToolNames) ? toolsNode : end;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#Chat",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "Chat",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/chat.tsx",
+          "symbol": "Chat",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function Chat({ session, content, renderMessage, className, ...input }: ChatProps) {\n    const snapshot = useAgent(session);\n    const rows = useMessageContent(snapshot, session, content);\n    return (<div className={['tp-chat', className].filter(Boolean).join(' ')}>\n      <MessageList rows={rows} renderMessage={renderMessage}/>\n      {snapshot.error && (<p role=\"alert\" className=\"tp-chat__error\">\n          {snapshot.error.message}\n        </p>)}\n      <ChatInput key={sessionKey(session)} {...input} busy={snapshot.status === 'running'} onSubmit={(text) => {\n            session.submit(text.trim()).catch(ignore);\n        }} onStop={() => {\n            session.stop().catch(ignore);\n        }}/>\n    </div>);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatInput",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ChatInput",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/chat-input.tsx",
+          "symbol": "ChatInput",
+          "syntaxKind": "VariableDeclaration",
+          "signature": "ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(function ChatInput({ value, defaultValue = '', onValueChange, onSubmit, onStop, busy = false, disabled = false, submitOnEnter = true, label = 'Message', placeholder = 'Write a message…', hint, id, className, }, ref) {\n    const generated = useId();\n    const inputId = id ?? `${generated}-input`;\n    const hintId = `${generated}-hint`;\n    const hasHint = hint != null && hint !== false;\n    const textarea = useRef<HTMLTextAreaElement>(null);\n    const [own, setOwn] = useState(defaultValue);\n    const draft = value ?? own;\n    const setDraft = (next: string) => {\n        if (value === undefined)\n            setOwn(next);\n        onValueChange?.(next);\n    };\n    useImperativeHandle(ref, () => ({ focus: () => textarea.current?.focus() }), []);\n    useIsomorphicLayoutEffect(() => {\n        const el = textarea.current;\n        if (!el)\n            return;\n        el.style.height = 'auto';\n        const cap = Math.min(window.innerHeight * 0.4, 320);\n        el.style.height = `${Math.min(el.scrollHeight, cap)}px`;\n    }, [draft]);\n    const canSend = !busy && !disabled && draft.trim().length > 0;\n    const send = () => {\n        if (!canSend)\n            return;\n        if (onSubmit(draft) === false)\n            return;\n        setDraft('');\n        requestAnimationFrame(() => textarea.current?.focus());\n    };\n    return (<form className={['tp-chat-input', className].filter(Boolean).join(' ')} onSubmit={(event) => {\n            event.preventDefault();\n            send();\n        }}>\n        <label className=\"tp-chat-input__label\" htmlFor={inputId}>\n          {label}\n        </label>\n        <textarea ref={textarea} id={inputId} className=\"tp-chat-input__textarea\" value={draft} rows={1} disabled={disabled} placeholder={placeholder} aria-describedby={hasHint ? hintId : undefined} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => {\n            if (event.key !== 'Enter')\n                return;\n            const native = event.nativeEvent;\n            if (native.isComposing || native.keyCode === 229)\n                return;\n            const modifier = event.ctrlKey || event.metaKey;\n            if (!modifier && (!submitOnEnter || event.shiftKey))\n                return;\n            event.preventDefault();\n            send();\n        }}/>\n        <div className=\"tp-chat-input__actions\">\n          {hasHint && (<p id={hintId} className=\"tp-chat-input__hint\">\n              {hint}\n            </p>)}\n          {busy && onStop && (<button type=\"button\" className=\"tp-chat-input__stop\" onClick={onStop}>\n              Stop\n            </button>)}\n          <button type=\"submit\" className=\"tp-chat-input__send\" disabled={!canSend}>\n            Send\n          </button>\n        </div>\n      </form>);\n})"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatInputHandle",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ChatInputHandle",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/chat-input.tsx",
+          "symbol": "ChatInputHandle",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface ChatInputHandle {\n    focus(): void;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatInputProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ChatInputProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/chat-input.tsx",
+          "symbol": "ChatInputProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface ChatInputProps {\n    readonly value?: string;\n    readonly defaultValue?: string;\n    readonly onValueChange?: (value: string) => void;\n    readonly onSubmit: (text: string) => boolean | void;\n    readonly onStop?: () => void;\n    readonly busy?: boolean;\n    readonly disabled?: boolean;\n    readonly submitOnEnter?: boolean;\n    readonly label?: string;\n    readonly placeholder?: string;\n    readonly hint?: ReactNode;\n    readonly id?: string;\n    readonly className?: string;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ChatProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/chat.tsx",
+          "symbol": "ChatProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface ChatProps extends Pick<ChatInputProps, 'label' | 'placeholder' | 'hint' | 'submitOnEnter'> {\n    readonly session: AgentSession;\n    readonly content?: MessageContent;\n    readonly renderMessage?: (row: MessageRow) => ReactNode;\n    readonly className?: string;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#MessageList",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "MessageList",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/message-list.tsx",
+          "symbol": "MessageList",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function MessageList<TRow extends MessageRow = MessageRow>({ rows, renderMessage, label = 'Conversation', className, }: MessageListProps<TRow>) {\n    const container = useRef<HTMLDivElement>(null);\n    const pinned = useRef(true);\n    useEffect(() => {\n        const el = container.current;\n        if (!el)\n            return;\n        const onScroll = () => {\n            pinned.current =\n                el.scrollHeight - el.scrollTop - el.clientHeight <= PIN_THRESHOLD;\n        };\n        el.addEventListener('scroll', onScroll, { passive: true });\n        return () => el.removeEventListener('scroll', onScroll);\n    }, []);\n    useIsomorphicLayoutEffect(() => {\n        const el = container.current;\n        if (el && pinned.current)\n            el.scrollTop = el.scrollHeight;\n    }, [rows]);\n    return (<div ref={container} role=\"region\" aria-label={label} className={['tp-chat-list', className].filter(Boolean).join(' ')}>\n      {rows.map((row) => (<Row key={row.id} row={row} renderMessage={renderMessage}/>))}\n    </div>);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#MessageListProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "MessageListProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/message-list.tsx",
+          "symbol": "MessageListProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface MessageListProps<TRow extends MessageRow = MessageRow> {\n    readonly rows: readonly TRow[];\n    readonly renderMessage?: (row: NoInfer<RenderRow<TRow>>) => ReactNode;\n    readonly label?: string;\n    readonly className?: string;\n}"
         }
       ]
     },
@@ -11117,19 +11258,13 @@
       "id": "source:libs/ag-ui/src/lib/client-tools.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/client-tools.ts",
-      "sha256": "a22d13595ef1cd47023811b0711bf3529e49e2e596c4f08a93cb9ed02a97b4ed"
+      "sha256": "63f22ef3f3e1f1dee57cb6adf13135f4a7fc7219bb0858935a993499402e012f"
     },
     {
       "id": "source:libs/ag-ui/src/lib/internal/apply-patch.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/internal/apply-patch.ts",
       "sha256": "56cb31916c7967ca0e8c7de361e5df5e44a3f1dfde06c40a2bc8e57412a380de"
-    },
-    {
-      "id": "source:libs/ag-ui/src/lib/internal/content-parts.ts",
-      "kind": "source",
-      "path": "libs/ag-ui/src/lib/internal/content-parts.ts",
-      "sha256": "484fc51b7918a03d5a4b58353ad34124aa74b9ba235afa37659bf62aac3f1b31"
     },
     {
       "id": "source:libs/ag-ui/src/lib/internal/copy-data.ts",
@@ -11141,13 +11276,13 @@
       "id": "source:libs/ag-ui/src/lib/interrupt-persistence.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/interrupt-persistence.ts",
-      "sha256": "bdb51f04fec35986d3359043e549cfa5312850f5aff94005550919eab2822f49"
+      "sha256": "48c3015c1ea225ae7a9557eb95cfaafb8be86605fff71eac0ee6560dfd74d9ea"
     },
     {
       "id": "source:libs/ag-ui/src/lib/interrupt-session.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/interrupt-session.ts",
-      "sha256": "eb2adc4f9af244d6f35700ed2c7e6816e445d85c72aa0c1c03f08f0e18a2ccd0"
+      "sha256": "88fa95647734a0eb2dd3bc326728e7d4ba7fe29199d7add2ba6603694ea3b3ce"
     },
     {
       "id": "source:libs/ag-ui/src/lib/interrupt-session.types.ts",
@@ -11171,7 +11306,7 @@
       "id": "source:libs/ag-ui/src/lib/reducer.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/reducer.ts",
-      "sha256": "c130eab7c3f75f49aede4959ae325eadc93756e445cea943b7322ac238222209"
+      "sha256": "d9ac6e09a4faa7e1aa4b69a6e1bf1a543b3a2485a699ab2c74ba398952978fde"
     },
     {
       "id": "source:libs/ag-ui/src/lib/run-state-transaction.ts",
@@ -11201,7 +11336,7 @@
       "id": "source:libs/ag-ui/src/lib/to-agent.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/to-agent.ts",
-      "sha256": "7ec69285cad7ef324e7aab8177b9543ff2819e9fe6ab9b95935ae00da1cfdd1d"
+      "sha256": "9c8a34f9ee960311ba26a281bb4726d0436129767ddf7d68f6404ecd037f5bb9"
     },
     {
       "id": "source:libs/ag-ui/src/public-api.ts",
@@ -11219,25 +11354,25 @@
       "id": "source:libs/ag-ui/src/runtime/create-http-request.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/create-http-request.ts",
-      "sha256": "f41d7248e1dee4787efe418b677f0e0cb124b7620f3cf3223a2af8d27f251d73"
+      "sha256": "539e8165b13cccc571ef39e939d598814a2ffe8dad2593a6f5800bca0fbc3121"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/create-run.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/create-run.ts",
-      "sha256": "ee7a3397587f3f469d8d6fc89c08fe30e35c9bf28082e7cc58e058e27295cd2b"
+      "sha256": "64dc7f42eef09cfa992fe4d3d5e100cc1e5647b3a39ef28b38da7c2cd2cad612"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/create-session.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/create-session.ts",
-      "sha256": "76d493ff7eccd6f27503aed42e0282dff8d94862166fb5276cce8efcf804ca98"
+      "sha256": "9b22c223eb930ed0bddafbebcbc7073f8023b44a9b11c3e97bf038c96dadd320"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/decision.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/decision.ts",
-      "sha256": "f45aa785dd11504f565b1e3e9f5231c2f62ca9cb2944cbff9598b445c2f333b5"
+      "sha256": "972bb82d1d5153bf1a5db37dde45a35073949be290a452e05b3a9c2ad891efbf"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/encrypted-messages.ts",
@@ -11255,7 +11390,7 @@
       "id": "source:libs/ag-ui/src/runtime/reconcile-transcript.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/reconcile-transcript.ts",
-      "sha256": "c11180f41d425de9f3f30f1c77f0462b22b316939515566a6f11df3ce4ae9258"
+      "sha256": "f4e5656e440e791d116bd977f40f5e0a21e92945504c38b8373fd79f2cc9a688"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/session-attribution.ts",
@@ -11267,7 +11402,7 @@
       "id": "source:libs/ag-ui/src/runtime/session-observation.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/session-observation.ts",
-      "sha256": "64db60b84d55fc37dcc7e9d959bdda35a4162b59109ecf9d4ad607a32424b636"
+      "sha256": "7f77502056e8e01b3c5707d5e982aadc8f6d2ac960bb0e041bcf1da8872b3754"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/session-publication.ts",
@@ -11297,7 +11432,7 @@
       "id": "source:libs/ag-ui/src/runtime/testing/binding-fixture.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/testing/binding-fixture.ts",
-      "sha256": "6002bd145ff00cb242b4027cc633d3d757445f7d0f80f8b983864f299c1f9a5d"
+      "sha256": "35708870593928befd7fa7a7a51b78befeaaabee025540c81357797ed34bf321"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/text-messages.ts",
@@ -11756,12 +11891,6 @@
       "sha256": "09dcc2b445c1d1951092dc43389ca23cdcc2b5526e6ac5f658b2aba072dfe14a"
     },
     {
-      "id": "source:libs/chat/src/lib/agent/agent-usage.ts",
-      "kind": "source",
-      "path": "libs/chat/src/lib/agent/agent-usage.ts",
-      "sha256": "c69fc89a2c22a41214abaff488ab8892ab2e077e8a87a611de35f7da621cc95c"
-    },
-    {
       "id": "source:libs/chat/src/lib/agent/agent-with-history.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/agent/agent-with-history.ts",
@@ -11771,7 +11900,7 @@
       "id": "source:libs/chat/src/lib/agent/agent.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/agent/agent.ts",
-      "sha256": "ec4b294ebacfc9b6c1656dd12b7de6bf62e68f8ae3d63a380fd121d094663f34"
+      "sha256": "6ee134c17e2395f04aa94a05b7240e113c7236eb1eab7fa0d2a9b0ebbdb3e715"
     },
     {
       "id": "source:libs/chat/src/lib/agent/citation-display.ts",
@@ -11795,7 +11924,7 @@
       "id": "source:libs/chat/src/lib/agent/index.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/agent/index.ts",
-      "sha256": "bf6f23e1ddc42639d3bfc27b829943083b190c8888fb1795331b2f77e165ddde"
+      "sha256": "d72b383a511a3b722c4603ce49e8cc125e2ffc03158f64e060bee870ccd1101c"
     },
     {
       "id": "source:libs/chat/src/lib/agent/message-delivery.ts",
@@ -11831,7 +11960,7 @@
       "id": "source:libs/chat/src/lib/agent/tool-call.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/agent/tool-call.ts",
-      "sha256": "16ffafb9acb1acc467325ff3ddc1d5b5254e4e61f167bfcffc2aedaecd6dad3b"
+      "sha256": "043aa42715145dae39f7594c89aca4fd048f9b31b4acd7330237db40e3d856fc"
     },
     {
       "id": "source:libs/chat/src/lib/chat.types.ts",
@@ -11885,7 +12014,7 @@
       "id": "source:libs/chat/src/lib/client-tools/select-pending-client-tool-calls.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/client-tools/select-pending-client-tool-calls.ts",
-      "sha256": "15e51420b5d651bd8687b22b484a598519f1d9ea7ae22ad8d8ff1ecd7195cd90"
+      "sha256": "300783e156ff80efbdcd4f3de2f9f67dbeefe5b9ca7a099a24ef83803145224b"
     },
     {
       "id": "source:libs/chat/src/lib/client-tools/to-json-schema.ts",
@@ -12623,7 +12752,7 @@
       "id": "source:libs/chat/src/public-api.ts",
       "kind": "source",
       "path": "libs/chat/src/public-api.ts",
-      "sha256": "c4a031588646bdfe6af8d83112b77439b096705e3b8bc1f97180dba06543d4b0"
+      "sha256": "caae3d2c6f5f1d978375f0081e6a85613c4f6a3fabb2ec3a5b232ea3007b7df7"
     },
     {
       "id": "source:libs/chat/src/test-setup.ts",
@@ -12966,6 +13095,18 @@
       "kind": "source",
       "path": "libs/content/src/markdown/types.ts",
       "sha256": "ee7f4ce8a6fd0010d2b941ed8f4ba6d77fd12cfbd902c4a5932d9f2c334bcc16"
+    },
+    {
+      "id": "source:libs/content/src/messages/create-message-content.ts",
+      "kind": "source",
+      "path": "libs/content/src/messages/create-message-content.ts",
+      "sha256": "22469878ce448fbd2d0ad2b863d30fe5a58c2272dce1e7808df56a5cdf149f1f"
+    },
+    {
+      "id": "source:libs/content/src/messages/index.ts",
+      "kind": "source",
+      "path": "libs/content/src/messages/index.ts",
+      "sha256": "1b4e1a12cbed486e134eb53e1bab6cb9eb3af0b9fbc3a2fff9322f91ff2fe59a"
     },
     {
       "id": "source:libs/content/src/testing/index.ts",
@@ -13616,10 +13757,40 @@
       "sha256": "56dba6e5f8e0ec195271f37e8de4cbe0eb98c0ad8f04f60749ea7a54e621384d"
     },
     {
+      "id": "source:libs/react/src/chat/chat-input.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/chat-input.tsx",
+      "sha256": "095afe94063f1d259f4c53cb6bad2f5c2c8ac80241ba5920cd725882ce5edc35"
+    },
+    {
+      "id": "source:libs/react/src/chat/chat.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/chat.tsx",
+      "sha256": "1377b4e7bfd1139712d262ec3c70fb08c9a67cab91f4abe845310bddb9030280"
+    },
+    {
       "id": "source:libs/react/src/chat/index.ts",
       "kind": "source",
       "path": "libs/react/src/chat/index.ts",
-      "sha256": "b947123b630825394b7c579ca03713dc0b7b34cbcd859256f71f112751b62afe"
+      "sha256": "3482879e66490cd0bb9821fd7b3c11704c0013b562ecb1c1c6cd35c4236cb8b5"
+    },
+    {
+      "id": "source:libs/react/src/chat/internal/isomorphic-layout-effect.ts",
+      "kind": "source",
+      "path": "libs/react/src/chat/internal/isomorphic-layout-effect.ts",
+      "sha256": "c652282a163fbd885c2ee454f564115909f646cea2077e736e5f21e354198024"
+    },
+    {
+      "id": "source:libs/react/src/chat/internal/use-message-content.ts",
+      "kind": "source",
+      "path": "libs/react/src/chat/internal/use-message-content.ts",
+      "sha256": "9f4ef4e52b618af6d2e28c5be86e6e8a94d235ab2c0d04f483cdb31c86f9802d"
+    },
+    {
+      "id": "source:libs/react/src/chat/message-list.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/message-list.tsx",
+      "sha256": "aabe1be304e4b44670bd1aefb553ce6f2ee2bef27b655c88c1c3150c72004041"
     },
     {
       "id": "source:libs/react/src/chat/text-transcript.tsx",

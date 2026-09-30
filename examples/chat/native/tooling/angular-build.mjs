@@ -69,6 +69,7 @@ export function assertAngularComposition(types, runtime) {
   for (const path of [
     '@threadplane/langgraph/runtime/create-session',
     '@threadplane/content/src/markdown/create-markdown',
+    '@threadplane/content/src/messages/create-message-content',
   ]) {
     assert.ok(
       types['node_modules/' + path + '.d.ts'],

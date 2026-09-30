@@ -142,3 +142,43 @@ classification is the fixed [`content/markdown` policy](../content/README.md),
 including exclusion of data images. The root binding stays headless; rich math,
 syntax highlighting, citation overlays, custom node registries, legacy migration,
 SSR and hydration remain outside this private feature.
+
+## Chat
+
+```tsx
+import { Chat } from '@threadplane/react/chat';
+import '@threadplane/react/chat/styles.css';
+
+<Chat session={session} />;
+```
+
+`Chat` observes an app-owned `AgentSession`, streams assistant Markdown, shows tool
+calls and the session error, and sends with Enter (Shift+Enter adds a line). It
+submits the trimmed draft and ignores rejected `submit`/`stop` promises; the session
+reports failures through its snapshot. A failed send does not restore the draft.
+Switching sessions resets the draft. Chat never disposes the session.
+
+Without a `content` prop, Chat owns one message projection per session and releases
+it on unmount or session change. To keep the projection across remounts, create it
+once with `createMessageContent()` from `@threadplane/content/messages` and pass it
+as `content`:
+
+```tsx
+// Module scope (or wherever the app keeps its session), not inside render.
+const content = createMessageContent();
+
+<Chat session={session} content={content} />;
+```
+
+The app owns that projection and calls `content.dispose()` when it is done with it;
+Chat never disposes app-passed content. The stylesheet is opt-in and scoped to `.tp-chat*`
+classes, with `--tp-chat-*` custom properties that fall back to `--ds-*` tokens.
+Compose `MessageList` and `ChatInput` directly when your app owns selection or
+rendering.
+
+`MessageList` infers the concrete row type from `rows`, including authored fields
+and typed tool contracts, and passes it to `renderMessage`. Keep that callback
+stable so unchanged rows stay memoized. Give the list a bounded height and
+overflow scrolling in app CSS; it follows row updates while at the bottom and
+preserves the reader's position when scrolled up. Key it by conversation ID when
+a new selection should start at the bottom. Same-ID updates preserve scroll state.

@@ -194,6 +194,27 @@ function selectedInputs(p, selected) {
     for (const path of Object.keys(recordMap(map))) consumerPath(path);
   assert.ok(p.compiler.inputs[entry], 'Selected compiler entry required');
   assert.ok(p.bundler.inputs[entry], 'Selected runtime entry required');
+  const projection =
+    'node_modules/@threadplane/content/src/messages/create-message-content';
+  assert.ok(
+    p.compiler.inputs[projection + '.d.ts'],
+    'Installed message projection declarations required'
+  );
+  assert.ok(
+    p.bundler.inputs[projection + '.js'],
+    'Installed message projection runtime required'
+  );
+  if (framework === 'react') {
+    const list = 'node_modules/@threadplane/react/src/chat/message-list';
+    assert.ok(
+      p.compiler.inputs[list + '.d.ts'],
+      'Installed MessageList declarations required'
+    );
+    assert.ok(
+      p.bundler.inputs[list + '.js'],
+      'Installed MessageList runtime required'
+    );
+  }
   return consumerPath;
 }
 

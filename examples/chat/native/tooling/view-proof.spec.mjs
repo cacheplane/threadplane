@@ -46,6 +46,7 @@ function fixture(t, framework) {
     'shared/message-content.ts',
     'node_modules/@threadplane/langgraph/runtime/create-session.js',
     'node_modules/@threadplane/content/src/markdown/create-markdown.js',
+    'node_modules/@threadplane/content/src/messages/create-message-content.js',
     ...(angular
       ? [
           'angular/src/application.token.ts',
@@ -61,12 +62,14 @@ function fixture(t, framework) {
           'use-agent.js',
           'markdown/markdown.js',
           'chat/tool-observation.js',
+          'chat/message-list.js',
         ].map((n) => 'node_modules/@threadplane/react/src/' + n)),
   ];
   const types = [
     ...runtime.filter((p) => !p.endsWith('.js') && !p.endsWith('.mjs')),
     'node_modules/@threadplane/langgraph/runtime/create-session.d.ts',
     'node_modules/@threadplane/content/src/markdown/create-markdown.d.ts',
+    'node_modules/@threadplane/content/src/messages/create-message-content.d.ts',
     ...(angular
       ? [
           'threadplane-angular',
@@ -322,6 +325,20 @@ for (const framework of ['react', 'angular']) {
       (r) => (r.source.path = 'examples/chat/native/tooling/other.ts'),
     ],
     ['missing helper', (r) => delete r.inputs['view-proof/view-owner.ts']],
+    [
+      'missing shared message projection runtime',
+      (r) =>
+        (r.runtime = r.runtime.filter(
+          (p) => !p.endsWith('messages/create-message-content.js')
+        )),
+    ],
+    [
+      'missing shared message projection declarations',
+      (r) =>
+        (r.compiler.inputs = r.compiler.inputs.filter(
+          (p) => !p.endsWith('messages/create-message-content.d.ts')
+        )),
+    ],
   ])
     test(`${framework} rejects ${name}`, (t) => {
       const f = fixture(t, framework);
@@ -330,6 +347,15 @@ for (const framework of ['react', 'angular']) {
       assert.throws(() => readViewProof(f.root));
     });
 }
+test('React rejects missing installed MessageList runtime', (t) => {
+  const f = fixture(t, 'react');
+  f.record.runtime = f.record.runtime.filter(
+    (p) => !p.endsWith('chat/message-list.js')
+  );
+  f.save();
+  assert.throws(() => readViewProof(f.root), /message-list/);
+});
+
 for (const [name, mutate] of [
   [
     'wrong ngc',

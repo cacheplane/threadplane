@@ -5,7 +5,9 @@
   "description": "Private React binding for observing app-owned agent sessions.",
   "license": "MIT",
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [
+    "**/*.css"
+  ],
   "peerDependencies": {
     "@threadplane/content": "0.0.0",
     "@threadplane/core": "0.0.0",
@@ -21,6 +23,7 @@
     "src/**/*.js",
     "src/**/*.d.ts",
     "src/**/*.d.ts.map",
+    "src/**/*.css",
     "LICENSE.md",
     "README.md"
   ],
@@ -35,6 +38,7 @@
       "import": "./src/chat/index.js",
       "default": "./src/chat/index.js"
     },
+    "./chat/styles.css": "./src/chat/styles.css",
     ".": {
       "types": "./src/index.d.ts",
       "import": "./src/index.js",

@@ -1,7 +1,11 @@
 import { memo, useState } from 'react';
 import { useAgent } from '@threadplane/react';
 import { Markdown } from '@threadplane/react/markdown';
-import { ToolObservation } from '@threadplane/react/chat';
+import {
+  ChatInput,
+  MessageList,
+  ToolObservation,
+} from '@threadplane/react/chat';
 import type {
   createApplication,
   ApplicationSnapshot,
@@ -57,6 +61,8 @@ const Message = memo(function Message({ row }: { row: MessageContent }) {
   );
 });
 
+const renderMessage = (row: MessageContent) => <Message row={row} />;
+
 function Composer({
   application,
   snapshot,
@@ -64,63 +70,24 @@ function Composer({
   application: Application;
   snapshot: ApplicationSnapshot;
 }) {
-  const [draft, setDraft] = useState('');
-  const enabled = application.canSubmit();
-  const send = () => {
-    if (draft.trim() && application.canSubmit() && application.submit(draft))
-      setDraft('');
-  };
+  const active = snapshot.submission.active;
   return (
-    <form
-      className="composer"
-      onSubmit={(event) => {
-        event.preventDefault();
-        send();
-      }}
-    >
-      <label htmlFor="message">Message</label>
-      <textarea
+    <div className="composer">
+      <ChatInput
         id="message"
-        value={draft}
-        disabled={
-          snapshot.selection.status !== 'ready' || snapshot.submission.active
-        }
-        rows={3}
+        label="Message"
         placeholder="Write a message…"
-        aria-describedby="composer-help"
-        onChange={(event) => setDraft(event.target.value)}
-        onKeyDown={(event) => {
-          if (
-            event.key === 'Enter' &&
-            (event.ctrlKey || event.metaKey) &&
-            !event.nativeEvent.isComposing
-          ) {
-            event.preventDefault();
-            send();
-          }
-        }}
+        hint="Ctrl or ⌘ + Enter to send. Enter adds a line."
+        submitOnEnter={false}
+        disabled={snapshot.selection.status !== 'ready' || active}
+        busy={active || !application.canSubmit()}
+        onStop={active ? () => void application.stop() : undefined}
+        onSubmit={(text) => application.canSubmit() && application.submit(text)}
       />
-      <div className="composer-actions">
-        <p id="composer-help" className="muted">
-          Ctrl or ⌘ + Enter to send. Enter adds a line.
-        </p>
-        {snapshot.submission.active && (
-          <button type="button" onClick={() => application.stop()}>
-            Stop
-          </button>
-        )}
-        <button
-          className="primary"
-          type="submit"
-          disabled={!enabled || !draft.trim()}
-        >
-          Send
-        </button>
-      </div>
       <p className="submission-status" role="status">
         {submissionStatus(snapshot)}
       </p>
-    </form>
+    </div>
   );
 }
 
@@ -226,19 +193,20 @@ function Conversation({ application }: { application: Application }) {
           </div>
         )}
         {selection.status === 'ready' && (
-          <div
-            className="transcript"
-            role="region"
-            aria-label="Conversation messages"
-          >
-            {snapshot.messages.length ? (
-              snapshot.messages.map((row) => <Message key={row.id} row={row} />)
-            ) : (
+          <>
+            <MessageList
+              key={selection.id}
+              rows={snapshot.messages}
+              renderMessage={renderMessage}
+              label="Conversation messages"
+              className="transcript"
+            />
+            {snapshot.messages.length === 0 && (
               <p className="empty-state">
                 This conversation has no messages yet.
               </p>
             )}
-          </div>
+          </>
         )}
         <Approval application={application} snapshot={snapshot} />
         <Composer

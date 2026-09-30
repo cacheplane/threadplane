@@ -9,6 +9,9 @@
   "dependencies": {
     "@cacheplane/partial-markdown": "0.5.8"
   },
+  "peerDependencies": {
+    "@threadplane/core": "0.0.0"
+  },
   "files": [
     "src/**/*.js",
     "src/**/*.d.ts",
@@ -26,6 +29,11 @@
       "types": "./src/markdown/index.d.ts",
       "import": "./src/markdown/index.js",
       "default": "./src/markdown/index.js"
+    },
+    "./messages": {
+      "types": "./src/messages/index.d.ts",
+      "import": "./src/messages/index.js",
+      "default": "./src/messages/index.js"
     },
     "./json": {
       "types": "./src/json/index.d.ts",

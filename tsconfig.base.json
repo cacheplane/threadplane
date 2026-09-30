@@ -34,6 +34,7 @@
       "@threadplane/core/testing": ["libs/core/src/testing/index.ts"],
       "@threadplane/content": ["libs/content/src/index.ts"],
       "@threadplane/content/markdown": ["libs/content/src/markdown/index.ts"],
+      "@threadplane/content/messages": ["libs/content/src/messages/index.ts"],
       "@threadplane/content/json": ["libs/content/src/json/index.ts"],
       "@threadplane/content/a2ui": ["libs/content/src/a2ui/index.ts"],
       "@threadplane/content/testing": ["libs/content/src/testing/index.ts"],
