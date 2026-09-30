@@ -187,6 +187,7 @@ function createAgentAdapter(
     customEvents: signal<CustomStreamEvent[]>([]),
     activities:   signal<Map<string, ActivityEntry>>(new Map()),
     usage:        signal<AgentUsage | undefined>(undefined),
+    pendingClientToolCallIds: signal<ReadonlySet<string> | undefined>(undefined),
     deliveryRun: null,
     allocateDeliveryGeneration,
   };

@@ -87,6 +87,10 @@ export interface ReducerStore {
   /** Token usage for the latest finished/errored run. Optional so test
    *  stores built before 1.0 keep compiling; the adapter always provides it. */
   usage?: WritableSignal<AgentUsage | undefined>;
+  /** `outcome.pendingToolCallIds` from the latest successful RUN_FINISHED;
+   *  undefined when the producer named none. Optional for the same reason as
+   *  `usage`. */
+  pendingClientToolCallIds?: WritableSignal<ReadonlySet<string> | undefined>;
   deliveryRun: ReducerDeliveryRun | null;
   allocateDeliveryGeneration(scope: string): string;
   /** Accumulated raw TOOL_CALL_ARGS text per toolCallId. A live model streams
@@ -146,6 +150,7 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
       // or errored run) must not prefix a same-id call in the next run.
       store.argsBuffers?.clear();
       store.usage?.set(undefined);
+      store.pendingClientToolCallIds?.set(undefined);
       return;
     }
     case 'RUN_FINISHED': {
@@ -177,6 +182,11 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
         store.isLoading.set(false);
         return;
       }
+      const declared = outcome?.pendingToolCallIds;
+      const pendingIds = Array.isArray(declared)
+        ? new Set(declared.filter((id): id is string => typeof id === 'string'))
+        : undefined;
+      store.pendingClientToolCallIds?.set(pendingIds && pendingIds.size > 0 ? pendingIds : undefined);
       if (!run || !finalizeDeliveryRun(store, run, 'success')) return;
       store.status.set('idle');
       store.isLoading.set(false);

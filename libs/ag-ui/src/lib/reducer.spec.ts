@@ -44,6 +44,7 @@ function makeStore(generation = 'run-generation-1'): TestStore {
     customEvents: signal<CustomStreamEvent[]>([]),
     activities: signal<Map<string, ActivityEntry>>(new Map()),
     usage: signal<AgentUsage | undefined>(undefined),
+    pendingClientToolCallIds: signal<ReadonlySet<string> | undefined>(undefined),
     deliveryRun: {
       generation,
       baselineMessageIds: new Set(),
@@ -1102,5 +1103,23 @@ describe('content-part tool results', () => {
       { type: 'text', text: '{"ok":true}' },
       { type: 'image', url: 'https://x/y.png' },
     ]);
+  });
+});
+
+describe('pendingToolCallIds', () => {
+  it('records pendingToolCallIds from a success outcome and clears them on the next run', () => {
+    const store = makeStore();
+    reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r' } as never, store);
+    reduceEvent({ type: 'RUN_FINISHED', threadId: 't', runId: 'r', outcome: { type: 'success', pendingToolCallIds: ['x'] } } as never, store);
+    expect(store.pendingClientToolCallIds?.()).toEqual(new Set(['x']));
+    // The adapter allocates a fresh delivery run per send; the finished one is closed.
+    store.deliveryRun = {
+      generation: 'run-generation-2',
+      baselineMessageIds: new Set(),
+      ownedMessageIds: new Set(),
+      snapshotReplacementIds: new Set(),
+    };
+    reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r2' } as never, store);
+    expect(store.pendingClientToolCallIds?.()).toBeUndefined();
   });
 });

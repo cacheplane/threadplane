@@ -121,6 +121,7 @@ export function createClientToolsCapability(
         toolCalls: store.toolCalls(),
         catalogNames: new Set(catalog().map((s) => s.name)),
         resolvedIds: resolvedIds(),
+        authoritativeIds: store.pendingClientToolCallIds?.(),
       });
     }),
 

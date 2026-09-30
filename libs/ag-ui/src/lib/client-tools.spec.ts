@@ -18,6 +18,7 @@ function makeStore(): ReducerStore {
     interrupt:    signal(undefined),
     events$:      new Subject<AgentEvent>(),
     customEvents: signal<CustomStreamEvent[]>([]),
+    pendingClientToolCallIds: signal<ReadonlySet<string> | undefined>(undefined),
   };
 }
 
@@ -110,6 +111,19 @@ describe('createClientToolsCapability', () => {
       { id: 'c3', name: 'get_weather', args: {}, status: 'complete', result: { temp: 72 } },
     ]);
     expect(cap.pending()).toEqual([]);
+  });
+
+  it('limits pending to the ids the run outcome declared', () => {
+    const source = makeSource();
+    const store  = makeStore();
+    store.toolCalls.set([
+      { id: 'a', name: 'get_weather', args: {}, status: 'complete' },
+      { id: 'b', name: 'get_weather', args: {}, status: 'complete' },
+    ]);
+    store.pendingClientToolCallIds?.set(new Set(['b']));
+    const cap = createClientToolsCapability(source, store);
+    cap.setCatalog([WEATHER_SPEC]);
+    expect(cap.pending().map((tc) => tc.id)).toEqual(['b']);
   });
 
   it('pending() is [] when no catalog is set', () => {
