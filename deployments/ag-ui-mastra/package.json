@@ -13,6 +13,7 @@
     "test": "node --test test/*.test.mjs"
   },
   "dependencies": {
+    "@ag-ui/core": "1.0.1",
     "@ag-ui/mastra": "1.1.5",
     "@mastra/core": "1.63.2",
     "@mastra/libsql": "1.22.2",
