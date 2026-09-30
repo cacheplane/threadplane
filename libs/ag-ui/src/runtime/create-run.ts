@@ -28,6 +28,9 @@ function finishedResult(outcome: unknown): RunOutcome {
   if (outcome == null) return { outcome: 'success' };
   if (typeof outcome === 'object' && 'type' in outcome) {
     if (outcome.type === 'success') return { outcome: 'success' };
+    // AG-UI 1.0 reports a deliberate stop as cancelled; the public adapter
+    // surfaces the same terminal as aborted.
+    if (outcome.type === 'cancelled') return { outcome: 'aborted' };
     if (
       outcome.type === 'interrupt' &&
       'interrupts' in outcome &&

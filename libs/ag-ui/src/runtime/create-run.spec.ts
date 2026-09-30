@@ -565,6 +565,14 @@ describe('private run authority', () => {
       outcome: 'error',
       types: ['RUN_STARTED'],
     },
+    // A 1.0 cancelled outcome is a deliberate stop, matching the public
+    // adapter's aborted status rather than an unsupported-outcome error.
+    {
+      name: 'cancelled outcome settles as aborted',
+      wire: [started, { ...finished, outcome: { type: 'cancelled' } }],
+      outcome: 'aborted',
+      types: ['RUN_STARTED', 'RUN_FINISHED'],
+    },
     // 1.0 enforcement strips an unrecognised outcome union member with a
     // warning; the absent outcome then reads as success.
     {
