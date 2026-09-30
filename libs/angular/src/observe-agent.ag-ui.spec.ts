@@ -1,4 +1,3 @@
-import { PROTOCOL_VERSION } from '@ag-ui/core';
 import {
   createEnvironmentInjector,
   EnvironmentInjector,
@@ -8,7 +7,10 @@ import { TestBed } from '@angular/core/testing';
 import { afterEach, describe, expect, it } from 'vitest';
 import { observeAgent } from './public-api';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Only integration tests compose the actual private native owner.
-import { bindingFixture } from '../../ag-ui/src/runtime/testing/binding-fixture';
+import {
+  bindingFixture,
+  PROTOCOL_VERSION,
+} from '../../ag-ui/src/runtime/testing/binding-fixture';
 
 const fixtures: ReturnType<typeof bindingFixture>[] = [];
 const injectors: EnvironmentInjector[] = [];

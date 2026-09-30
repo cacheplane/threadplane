@@ -1,4 +1,4 @@
-import { PROTOCOL_VERSION } from '@ag-ui/core';
+import { PROTOCOL_VERSION } from '@ag-ui/client';
 import { describe, expect, it } from 'vitest';
 import { ownTranscript, type Transcript } from './transcript';
 import { projectTextTranscript } from './text-transcript';

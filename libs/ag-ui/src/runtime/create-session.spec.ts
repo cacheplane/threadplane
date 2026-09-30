@@ -1,4 +1,4 @@
-import { PROTOCOL_VERSION } from '@ag-ui/core';
+import { PROTOCOL_VERSION } from '@ag-ui/client';
 import { ok } from 'node:assert/strict';
 import { describe, expect, it, vi } from 'vitest';
 import {

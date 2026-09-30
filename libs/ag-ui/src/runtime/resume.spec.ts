@@ -1,4 +1,4 @@
-import { PROTOCOL_VERSION } from '@ag-ui/core';
+import { PROTOCOL_VERSION } from '@ag-ui/client';
 import { describe, expect, it, vi } from 'vitest';
 import { bindingFixture } from './testing/binding-fixture';
 import type { NativeResponse, PauseId } from './decision';

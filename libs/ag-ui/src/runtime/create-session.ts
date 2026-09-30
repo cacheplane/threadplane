@@ -1,10 +1,10 @@
-import { PROTOCOL_VERSION } from '@ag-ui/core';
-import type {
-  AGUIEvent,
-  HttpAgentConfig,
-  Message,
-  RunAgentInput,
-  ResumeEntry,
+import {
+  PROTOCOL_VERSION,
+  type AGUIEvent,
+  type HttpAgentConfig,
+  type Message,
+  type RunAgentInput,
+  type ResumeEntry,
 } from '@ag-ui/client';
 import type { CompleteOutcome } from '@threadplane/core';
 import { ownTranscript, requestMessages, type Transcript } from './transcript.js';

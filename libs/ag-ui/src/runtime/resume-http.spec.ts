@@ -1,4 +1,4 @@
-import { PROTOCOL_VERSION } from '@ag-ui/core';
+import { PROTOCOL_VERSION } from '@ag-ui/client';
 import { once } from 'node:events';
 import { readFileSync } from 'node:fs';
 import { createServer, type ServerResponse } from 'node:http';

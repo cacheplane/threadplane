@@ -1,4 +1,4 @@
-import { PROTOCOL_VERSION } from '@ag-ui/core';
+import { PROTOCOL_VERSION } from '@ag-ui/client';
 import { afterEach, describe, expect, it } from 'vitest';
 import { bindingFixture } from './binding-fixture';
 

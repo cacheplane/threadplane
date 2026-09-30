@@ -1,4 +1,4 @@
-import { PROTOCOL_VERSION } from '@ag-ui/core';
+import { PROTOCOL_VERSION } from '@ag-ui/client';
 import { ok } from 'node:assert/strict';
 import { once } from 'node:events';
 import { createServer, type ServerResponse } from 'node:http';

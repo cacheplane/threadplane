@@ -1,9 +1,11 @@
-import { PROTOCOL_VERSION } from '@ag-ui/core';
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { useAgent } from './index';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Only integration tests compose the actual private native owner.
-import { bindingFixture } from '../../ag-ui/src/runtime/testing/binding-fixture';
+import {
+  bindingFixture,
+  PROTOCOL_VERSION,
+} from '../../ag-ui/src/runtime/testing/binding-fixture';
 
 const fixtures: ReturnType<typeof bindingFixture>[] = [];
 function fixture(options?: Parameters<typeof bindingFixture>[0]) {
