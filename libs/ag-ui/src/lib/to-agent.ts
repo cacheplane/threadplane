@@ -730,11 +730,22 @@ function createAgentAdapter(
       if (event.type === 'RUN_FINISHED') {
         run.terminalReceived = true;
         run.finishedReceived = true;
-        if (interrupts.snapshot.phase === 'collecting') interrupts.ready();
-        else if (run.resumeAttempt && run.outcome === 'success') interrupts.complete(run.resumeAttempt.id);
-        publishInterrupt();
-        commitState();
-        void persistCurrent().catch(() => undefined);
+        // A producer-cancelled run is handled like a local abort (see abortRun):
+        // state rolls back and a resume attempt lands in a recoverable phase.
+        // reduceEvent sets the outcome, so re-read it past the guard's narrowing.
+        const settledOutcome: AdapterRun['outcome'] = (run as AdapterRun).outcome;
+        if (settledOutcome === 'aborted') {
+          rollbackState();
+          if (run.resumeAttempt) interrupts.fail(run.resumeAttempt.id, false);
+          publishInterrupt();
+          void persistCurrent().catch(() => undefined);
+        } else {
+          if (interrupts.snapshot.phase === 'collecting') interrupts.ready();
+          else if (run.resumeAttempt && run.outcome === 'success') interrupts.complete(run.resumeAttempt.id);
+          publishInterrupt();
+          commitState();
+          void persistCurrent().catch(() => undefined);
+        }
       }
       if (event.type === 'RUN_ERROR') {
         run.terminalReceived = true;
