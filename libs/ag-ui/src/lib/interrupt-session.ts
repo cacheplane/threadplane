@@ -1,4 +1,5 @@
-import { InterruptSchema, ResumeEntrySchema, type Interrupt, type ResumeEntry } from '@ag-ui/core';
+import { InterruptSchema, ResumeEntrySchema } from '@ag-ui/core/schemas';
+import type { Interrupt, ResumeEntry } from '@ag-ui/core';
 import type { AgentSubmitInput } from '@threadplane/chat';
 import type { InterruptSessionSnapshot, InterruptTransport, ResumeAttempt } from './interrupt-session.types';
 
