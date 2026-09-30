@@ -133,7 +133,7 @@ export function applyObservation(
     case 'RUN_FINISHED':
     case 'RUN_ERROR':
     case 'CUSTOM': {
-      if (!run || attributedRunId(event) !== undefined) break;
+      if (!run || isChildAttributed(event)) break;
       const { type } = event;
       const name = type === 'CUSTOM' ? event.name : undefined;
       if (type === 'CUSTOM' && name !== 'on_interrupt') break;
@@ -197,12 +197,11 @@ export function applyObservation(
 }
 
 /**
- * AG-UI 1.0 types `subagentRunId` only on attributable events (CUSTOM among the
- * terminal candidates), but the loose wire schema lets any event carry it, so a
- * child-attributed RUN_FINISHED/RUN_ERROR is still recognized and excluded.
+ * Defensive: enforcement strips `subagentRunId` from RUN_* events before
+ * delivery (see create-run), so a child-attributed RUN_FINISHED/RUN_ERROR should
+ * not reach here. CUSTOM events are legitimately attributable.
  */
-function attributedRunId(event: AGUIEvent): string | undefined {
-  if (!('subagentRunId' in event)) return undefined;
-  const { subagentRunId } = event;
-  return typeof subagentRunId === 'string' ? subagentRunId : undefined;
+function isChildAttributed(event: AGUIEvent): boolean {
+  if (!('subagentRunId' in event)) return false;
+  return typeof event.subagentRunId === 'string';
 }

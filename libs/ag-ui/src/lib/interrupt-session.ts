@@ -140,15 +140,16 @@ function nativeResponses(resume: unknown, interrupts: Interrupt[]): ResumeEntry[
       const parsed = ResumeEntrySchema.parse({
         interruptId: entry['interruptId'] ?? entry['id'],
         status: entry['status'] === undefined ? 'resolved' : entry['status'],
-        ...(entry['payload'] !== undefined ? { payload: entry['payload'] } : {}),
+        // 1.0 treats a whole-optional null as absent and the client's outgoing sanitizer drops it, so omit it here too.
+        ...(entry['payload'] != null ? { payload: entry['payload'] } : {}),
         ...(entry['metadata'] !== undefined ? { metadata: entry['metadata'] } : {}),
       });
-      if (parsed.status === 'cancelled' && parsed.payload !== undefined) throw new Error('Cancelled responses cannot carry payload');
+      if (parsed.status === 'cancelled' && parsed.payload != null) throw new Error('Cancelled responses cannot carry payload');
       return parsed;
     });
   } else {
     if (interrupts.length !== 1) throw new Error('A response is required for every interrupt');
-    entries = [{ interruptId: interrupts[0].id, status: 'resolved', payload: resume }];
+    entries = [{ interruptId: interrupts[0].id, status: 'resolved', ...(resume != null ? { payload: resume } : {}) }];
   }
   const ids = new Set(entries.map(entry => entry.interruptId));
   if (entries.length !== interrupts.length || ids.size !== entries.length || interrupts.some(entry => !ids.has(entry.id))) throw new Error('Resume must cover each interrupt exactly once');

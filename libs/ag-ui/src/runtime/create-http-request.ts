@@ -163,9 +163,10 @@ export function createHttpRequest(
         // The boundary only calls next.run(), so a run-only stub suffices.
         const boundary = new CompatibilityBoundary();
         const events = boundary
-          .run(input, {
+          // the boundary rewrites `messages` on the input it is given; keep the caller's object intact.
+          .run({ ...input }, ({
             run: (admitted: RunAgentInput) => source.run(admitted),
-          } as unknown as AbstractAgent)
+          } satisfies Pick<AbstractAgent, 'run'>) as unknown as AbstractAgent)
           .pipe(enforceEvents(), transformChunks(), verifyEvents());
         if (!settled) {
           subscription = events.subscribe({

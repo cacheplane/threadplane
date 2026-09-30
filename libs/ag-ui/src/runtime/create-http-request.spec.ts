@@ -458,6 +458,9 @@ describe('private HTTP request owner', () => {
   });
 
   it('contains an abrupt socket failure after SSE delivery without an unhandled reader cleanup rejection', async () => {
+    const unhandled: unknown[] = [];
+    const onUnhandled = (reason: unknown) => { unhandled.push(reason); };
+    process.on('unhandledRejection', onUnhandled);
     const server = await serve();
     const received = deferred<void>();
     let signal: AbortSignal | null | undefined;
@@ -510,6 +513,8 @@ describe('private HTTP request owner', () => {
       await bounded(cancelObserved.promise);
       expect(signal?.aborted).toBe(true);
       await bounded(exchange.closed);
+      // Let any stray reader-cleanup rejection surface before asserting.
+      for (let turn = 0; turn < 3; turn += 1) await new Promise((r) => setTimeout(r, 0));
       handle.abort();
       expect(await done).toBe(outcome);
       fresh = factory.start(input('fresh'), () => undefined);
@@ -523,10 +528,12 @@ describe('private HTTP request owner', () => {
       freshExchange.response.end();
       expect(await bounded(freshDone)).toEqual({ status: 'closed' });
     } finally {
+      process.off('unhandledRejection', onUnhandled);
       handle.abort();
       fresh?.abort();
       await server.close();
     }
+    expect(unhandled).toEqual([]);
   });
 
   it('keeps the first failure and aborts even if subscription cleanup throws', async () => {

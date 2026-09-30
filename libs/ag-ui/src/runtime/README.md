@@ -64,6 +64,8 @@ An explicit `interruptMode: 'legacy-observation'` preserves the legacy conventio
 the root custom notice occupies both evidence fields, selects `paused` and closes
 the response. This option provides observation only, not legacy resume support.
 Neither mode parses JSON strings, executes response schemas or guesses providers.
+An unrecognised `RUN_FINISHED.outcome` type is stripped by the 1.0 client and
+therefore reads as success.
 
 Server evidence and local outcomes are distinct. A terminal callback can stop the
 owner, selecting local `aborted` while retaining the accepted native terminal.
