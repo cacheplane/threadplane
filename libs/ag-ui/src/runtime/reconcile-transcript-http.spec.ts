@@ -163,12 +163,15 @@ const richSnapshot = [
         type: 'document',
         source: { type: 'url', value: 'https://example.test/document' },
       },
+      // AG-UI 1.0 retired the `binary` part; a document data part carries the same bytes.
       {
-        type: 'binary',
-        mimeType: 'application/octet-stream',
-        data: 'YmluYXJ5',
+        type: 'document',
         id: 'binary',
-        filename: 'legacy.bin',
+        source: {
+          type: 'data',
+          value: 'YmluYXJ5',
+          mimeType: 'application/octet-stream',
+        },
       },
     ],
   },

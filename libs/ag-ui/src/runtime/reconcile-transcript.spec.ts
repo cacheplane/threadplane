@@ -62,12 +62,15 @@ function richMessages() {
           type: 'document',
           source: { type: 'url', value: 'https://example.test/document' },
         },
+        // AG-UI 1.0 retired the `binary` part; a document data part carries the same bytes.
         {
-          type: 'binary',
-          data: 'YmluYXJ5',
-          mimeType: 'application/octet-stream',
-          filename: 'file.bin',
+          type: 'document',
           id: 'file',
+          source: {
+            type: 'data',
+            value: 'YmluYXJ5',
+            mimeType: 'application/octet-stream',
+          },
         },
       ],
     },

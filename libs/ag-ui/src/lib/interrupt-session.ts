@@ -136,7 +136,13 @@ function nativeResponses(resume: unknown, interrupts: Interrupt[]): ResumeEntry[
     entries = (resume as unknown[]).map(entry => {
       if (!isRecord(entry)) throw new Error('Invalid resume entry');
       if (entry['id'] !== undefined && entry['interruptId'] !== undefined && entry['id'] !== entry['interruptId']) throw new Error('Conflicting interrupt ids');
-      const parsed = ResumeEntrySchema.parse({ ...entry, interruptId: entry['interruptId'] ?? entry['id'], status: entry['status'] === undefined ? 'resolved' : entry['status'] });
+      // Pick the known ResumeEntry keys explicitly: the 1.0 validators are loose and would pass the legacy `id` through.
+      const parsed = ResumeEntrySchema.parse({
+        interruptId: entry['interruptId'] ?? entry['id'],
+        status: entry['status'] === undefined ? 'resolved' : entry['status'],
+        ...(entry['payload'] !== undefined ? { payload: entry['payload'] } : {}),
+        ...(entry['metadata'] !== undefined ? { metadata: entry['metadata'] } : {}),
+      });
       if (parsed.status === 'cancelled' && parsed.payload !== undefined) throw new Error('Cancelled responses cannot carry payload');
       return parsed;
     });

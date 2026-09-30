@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   EventType,
+  type JsonPatch,
+  type JsonPatchOperation,
   type StateDeltaEvent,
   type StateSnapshotEvent,
 } from '@ag-ui/client';
@@ -175,7 +177,7 @@ describe('private state ownership', () => {
     expect(deltaGetter).toHaveBeenCalledOnce();
     expect(operationGetter).toHaveBeenCalledOnce();
     const failure = { opaque: 'last operation getter' };
-    const broken = [
+    const broken: JsonPatch = [
       { op: 'replace', path: '/missing', value: 1 },
       {
         op: 'add',
@@ -227,10 +229,11 @@ describe('private state ownership', () => {
       },
     };
     expect(() => applyState(previous, snapshot(source))).toThrow(error);
-    for (const invalid of [
+    const invalids: JsonPatchOperation[] = [
       { op: 'replace', path: '/missing', value: 1 },
       { op: 'copy', from: '/missing', path: '/copied' },
-    ]) {
+    ];
+    for (const invalid of invalids) {
       expect(() =>
         applyState(
           previous,
