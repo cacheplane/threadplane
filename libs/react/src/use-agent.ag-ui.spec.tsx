@@ -1,3 +1,4 @@
+import { PROTOCOL_VERSION } from '@ag-ui/core';
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { useAgent } from './index';
@@ -48,6 +49,7 @@ describe('useAgent native AG-UI owner', () => {
     expect(exchange.body).toEqual({
       threadId: 'native-thread',
       runId: f.session.getSnapshot().run?.id,
+      protocolVersion: PROTOCOL_VERSION,
       messages: [
         seed,
         { id: expect.any(String), role: 'user', content: 'Hello' },
@@ -178,6 +180,7 @@ describe('useAgent native AG-UI owner', () => {
     expect(next.body).toEqual({
       threadId: 'native-thread',
       runId: f.session.getSnapshot().run?.id,
+      protocolVersion: PROTOCOL_VERSION,
       messages: [
         seed,
         user,
@@ -249,6 +252,7 @@ describe('useAgent native AG-UI owner', () => {
     expect(b.exchanges[0].body).toEqual({
       threadId: 'b',
       runId: b.session.getSnapshot().run?.id,
+      protocolVersion: PROTOCOL_VERSION,
       messages: [{ id: expect.any(String), role: 'user', content: 'B' }],
       state: { owner: 'b' },
       tools: [],

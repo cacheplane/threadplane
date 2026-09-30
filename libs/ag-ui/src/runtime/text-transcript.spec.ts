@@ -1,3 +1,4 @@
+import { PROTOCOL_VERSION } from '@ag-ui/core';
 import { describe, expect, it } from 'vitest';
 import { ownTranscript, type Transcript } from './transcript';
 import { projectTextTranscript } from './text-transcript';
@@ -152,6 +153,7 @@ describe('projectTextTranscript', () => {
       expect(second.body).toEqual({
         threadId: 'native-thread',
         runId: expect.any(String),
+        protocolVersion: PROTOCOL_VERSION,
         messages: [
           ...rich
             .filter((row) => row.role !== 'activity')

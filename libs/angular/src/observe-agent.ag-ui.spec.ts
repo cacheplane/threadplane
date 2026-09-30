@@ -1,3 +1,4 @@
+import { PROTOCOL_VERSION } from '@ag-ui/core';
 import {
   createEnvironmentInjector,
   EnvironmentInjector,
@@ -61,6 +62,7 @@ describe('observeAgent native AG-UI owner', () => {
     expect(exchange.body).toEqual({
       threadId: 'native-thread',
       runId: f.session.getSnapshot().run?.id,
+      protocolVersion: PROTOCOL_VERSION,
       messages: [
         seed,
         { id: expect.any(String), role: 'user', content: 'Hello' },
@@ -180,6 +182,7 @@ describe('observeAgent native AG-UI owner', () => {
     expect(next.body).toEqual({
       threadId: 'native-thread',
       runId: f.session.getSnapshot().run?.id,
+      protocolVersion: PROTOCOL_VERSION,
       messages: [
         seed,
         user,
@@ -236,6 +239,7 @@ describe('observeAgent native AG-UI owner', () => {
     expect(bExchange.body).toEqual({
       threadId: 'b',
       runId: b.session.getSnapshot().run?.id,
+      protocolVersion: PROTOCOL_VERSION,
       messages: [{ id: expect.any(String), role: 'user', content: 'B' }],
       state: { owner: 'b' },
       tools: [],

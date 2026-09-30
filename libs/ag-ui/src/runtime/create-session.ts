@@ -1,3 +1,4 @@
+import { PROTOCOL_VERSION } from '@ag-ui/core';
 import type {
   AGUIEvent,
   HttpAgentConfig,
@@ -131,6 +132,7 @@ export function createSession(options: SessionOptions): Session {
       input = {
         threadId,
         runId: attempt.id,
+        protocolVersion: PROTOCOL_VERSION,
         messages: requestMessages(value.transcript),
         state: requestState(value.state),
         tools: [],

@@ -1,3 +1,4 @@
+import { PROTOCOL_VERSION } from '@ag-ui/core';
 import { describe, expect, it, vi } from 'vitest';
 import { bindingFixture } from './testing/binding-fixture';
 import type { NativeResponse, PauseId } from './decision';
@@ -396,6 +397,7 @@ describe('native decision owner', () => {
       expect(exchange.body).toStrictEqual({
         threadId: 'native-thread',
         runId: admitted.run?.id,
+        protocolVersion: PROTOCOL_VERSION,
         messages: [
           { id: before.transcript[0].id, role: 'user', content: 'First' },
         ],

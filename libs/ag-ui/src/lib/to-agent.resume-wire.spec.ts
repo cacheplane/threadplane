@@ -26,6 +26,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { HttpAgent } from '@ag-ui/client';
+import { PROTOCOL_VERSION } from '@ag-ui/core';
 import { toAgent } from './to-agent';
 
 const FIXTURES_DIR = join(__dirname, '../../fixtures/runtime-transcripts');
@@ -130,10 +131,13 @@ describe('AWS Strands resume over the wire (0.0.59 top-level resume array)', () 
 
     // Byte-equality on everything except the documented volatile fields.
     const { runId: measuredRunId, messages: measuredMessages, ...measuredRest } = measured;
-    const { runId, messages, ...rest } = body as {
-      runId: unknown; messages: Array<Record<string, unknown>>;
+    const { runId, messages, protocolVersion, ...rest } = body as {
+      runId: unknown; messages: Array<Record<string, unknown>>; protocolVersion: unknown;
     } & Record<string, unknown>;
     expect(rest).toEqual(measuredRest);
+    // protocolVersion: the 1.0 client declares itself in-band; the measured
+    // 0.x capture has no version (a pre-1.0 peer).
+    expect(protocolVersion).toBe(PROTOCOL_VERSION);
     // runId: client-minted uuid per run; the spike driver sent 'run-2'.
     expect(typeof runId).toBe('string');
     expect(runId).not.toBe(measuredRunId);
@@ -198,6 +202,9 @@ describe('Microsoft Agent Framework resume over the wire', () => {
     );
     expect(body['forwardedProps']).toEqual({});
     expect(body['threadId']).toBe(measured['threadId']);
+    // The 1.0 client declares itself in-band; the measured 0.x capture has no
+    // version, which the spec's versioning rules treat as a pre-1.0 peer.
+    expect(body['protocolVersion']).toBe(PROTOCOL_VERSION);
   });
 });
 

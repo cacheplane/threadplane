@@ -1,3 +1,4 @@
+import { PROTOCOL_VERSION } from '@ag-ui/core';
 import { ok } from 'node:assert/strict';
 import { describe, expect, it, vi } from 'vitest';
 import {
@@ -77,6 +78,7 @@ describe('private session command owner', () => {
     expect(bodies[0]).toEqual({
       threadId: 'fixed',
       runId: settled.run?.id,
+      protocolVersion: PROTOCOL_VERSION,
       messages: [
         ...initial.transcript,
         { id: expect.any(String), role: 'user', content: 'hello' },
