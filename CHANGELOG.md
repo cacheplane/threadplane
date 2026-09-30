@@ -1,5 +1,9 @@
 ## Unreleased
 
+### ⚠️  Breaking Changes
+
+- **ag-ui:** the peer range on `@ag-ui/client` and `@ag-ui/core` moves from `^0.0.59` to `^1.0.1`; the adapter imports validators from `@ag-ui/core/schemas`, which the 0.0.x line does not ship
+
 ### 🚀 Features
 
 - **ag-ui:** upgrade to AG-UI 1.0.1; the adapter now declares `^1.0.1` peers on `@ag-ui/client` and `@ag-ui/core`, imports validators from `@ag-ui/core/schemas`, declares `protocolVersion` on every run, and runs the private request path through the 1.0 compatibility boundary
