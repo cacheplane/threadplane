@@ -1302,6 +1302,236 @@ for (const failure of [false, true]) {
   });
 }
 
+const settledList = (app: App) =>
+  until(() => app.getSnapshot().list.status !== 'pending');
+
+test('selection refresh adopts a changed matching ready title with its list and nothing else', async (t) => {
+  const { app, nav, server, sessions, disposed } = await fixture(
+    t,
+    [
+      search(),
+      lookup('a'),
+      history('a'),
+      search([threadEnvelope('b', 'B'), threadEnvelope('a', 'Renamed')]),
+    ],
+    '?thread=a'
+  );
+  app.start();
+  await ready(app, 'a');
+  await listed(app);
+  const before = app.getSnapshot();
+  const pushes = nav.pushes.length;
+  const seen: ReturnType<App['getSnapshot']>[] = [];
+  app.subscribe(() => seen.push(app.getSnapshot()));
+  app.refresh();
+  await settledList(app);
+  const after = app.getSnapshot();
+  assert.equal(after.list.status, 'ready');
+  assert.equal(after.selection.status, 'ready');
+  assert.equal(after.selection.id, 'a');
+  assert.equal(after.selection.row?.title, 'Renamed');
+  assert.strictEqual(after.selection.row, after.list.rows[1]);
+  assert.ok(Object.isFrozen(after.selection));
+  // One atomic publication: no observer sees the new list with the old title.
+  for (const observed of seen)
+    assert.equal(
+      observed.selection.row?.title,
+      observed.list.status === 'ready' ? 'Renamed' : 'a'
+    );
+  assert.equal(seen.filter((s) => s.list.status === 'ready').length, 1);
+  assert.equal(before.selection.row?.title, 'a');
+  for (const key of [
+    'runtime',
+    'messages',
+    'submission',
+    'creation',
+    'decision',
+    'submissionKind',
+  ] as const)
+    assert.strictEqual(after[key], before[key], key);
+  assert.equal(sessions.length, 1);
+  assert.equal(disposed.length, 0);
+  assert.equal(nav.pushes.length, pushes);
+  server.verify();
+});
+
+test('selection refresh preserves same, omitted and failed titles but adopts a changed Untitled', async (t) => {
+  const { app, server } = await fixture(
+    t,
+    [
+      search(),
+      lookup('a'),
+      history('a'),
+      search([threadEnvelope('a', 'a')]),
+      search([threadEnvelope('b', 'B')]),
+      search([threadEnvelope('a', 'Renamed')], { status: 503 }),
+      search([threadEnvelope('a', '  ')]),
+    ],
+    '?thread=a'
+  );
+  app.start();
+  await ready(app, 'a');
+  await listed(app);
+  const before = app.getSnapshot().selection;
+  for (const expected of ['ready', 'ready', 'error'] as const) {
+    app.refresh();
+    await settledList(app);
+    assert.equal(app.getSnapshot().list.status, expected);
+    assert.strictEqual(app.getSnapshot().selection, before);
+  }
+  app.refresh();
+  await settledList(app);
+  assert.equal(app.getSnapshot().selection.row?.title, 'Untitled');
+  assert.equal(app.getSnapshot().selection.id, 'a');
+  server.verify();
+});
+
+test('selection refresh begun during pending admission does not adopt after admission completes', async (t) => {
+  const { app, server } = await fixture(t, [
+    search(),
+    lookup('a', { holdBody: true }),
+    search([threadEnvelope('a', 'Renamed')], { holdBody: true }),
+    history('a'),
+  ]);
+  app.start();
+  await listed(app);
+  app.select('a');
+  await deadline(server.steps[1].headersSent);
+  app.refresh();
+  await deadline(server.steps[2].headersSent);
+  server.steps[1].releaseBody();
+  await ready(app, 'a');
+  const selection = app.getSnapshot().selection;
+  server.steps[2].releaseBody();
+  await settledList(app);
+  assert.equal(app.getSnapshot().list.rows[0]?.title, 'Renamed');
+  assert.strictEqual(app.getSnapshot().selection, selection);
+  assert.equal(selection.row?.title, 'a');
+  server.verify();
+});
+
+for (const back of [false, true]) {
+  test(`selection refresh captured from A does not rename ${
+    back ? 'a replacement A' : 'B'
+  }`, async (t) => {
+    const { app, server } = await fixture(
+      t,
+      [
+        search(),
+        lookup('a'),
+        history('a'),
+        search([threadEnvelope('a', 'A2'), threadEnvelope('b', 'B2')], {
+          holdBody: true,
+        }),
+        lookup('b'),
+        history('b'),
+        ...(back ? [lookup('a'), history('a')] : []),
+      ],
+      '?thread=a'
+    );
+    app.start();
+    await ready(app, 'a');
+    await listed(app);
+    app.refresh();
+    await deadline(server.steps[3].headersSent);
+    app.select('b');
+    await ready(app, 'b');
+    if (back) {
+      app.select('a');
+      await ready(app, 'a');
+    }
+    const selection = app.getSnapshot().selection;
+    server.steps[3].releaseBody();
+    await settledList(app);
+    assert.equal(app.getSnapshot().list.rows.length, 2);
+    assert.strictEqual(app.getSnapshot().selection, selection);
+    server.verify();
+  });
+}
+
+for (const reentry of ['abort listener', 'pending publication'] as const) {
+  test(`selection refresh ignores a selection replaced by ${reentry} reentry`, async (t) => {
+    const signals: AbortSignal[] = [];
+    const { app, server } = await fixture(
+      t,
+      [
+        search(),
+        lookup('a'),
+        history('a'),
+        ...(reentry === 'abort listener'
+          ? [search([threadEnvelope('a', 'Stale')], { holdBody: true })]
+          : []),
+        search([threadEnvelope('a', 'Renamed'), threadEnvelope('b', 'B2')], {
+          concurrentGroup: 'reentry',
+          holdBody: true,
+        }),
+        // Refresh and selection requests are independent; only their order within a request is fixed.
+        lookup('b', { concurrentGroup: 'reentry' }),
+        history('b', { concurrentGroup: 'reentry' }),
+      ],
+      '?thread=a',
+      (options) => ({
+        ...options,
+        directory: {
+          ...options.directory,
+          list(signal) {
+            signals.push(signal);
+            return options.directory.list(signal);
+          },
+        },
+      })
+    );
+    app.start();
+    await ready(app, 'a');
+    await listed(app);
+    if (reentry === 'abort listener') {
+      app.refresh();
+      await deadline(server.steps[3].headersSent);
+      signals.at(-1)!.addEventListener('abort', () => app.select('b'));
+    } else {
+      const release = app.subscribe(() => {
+        if (app.getSnapshot().list.status !== 'pending') return;
+        release();
+        app.select('b');
+      });
+    }
+    app.refresh();
+    const held = server.steps.at(-3)!;
+    await deadline(held.headersSent);
+    await ready(app, 'b');
+    const selection = app.getSnapshot().selection;
+    held.releaseBody();
+    await until(() => app.getSnapshot().list.rows[0]?.title === 'Renamed');
+    assert.strictEqual(app.getSnapshot().selection, selection);
+    assert.equal(selection.row?.title, 'b');
+    server.verify();
+  });
+}
+
+test('selection refresh does not publish after disposal', async (t) => {
+  const { app, server } = await fixture(
+    t,
+    [
+      search(),
+      lookup('a'),
+      history('a'),
+      search([threadEnvelope('a', 'Renamed')], { holdBody: true }),
+    ],
+    '?thread=a'
+  );
+  app.start();
+  await ready(app, 'a');
+  await listed(app);
+  app.refresh();
+  await deadline(server.steps[3].headersSent);
+  const last = app.getSnapshot();
+  app.dispose();
+  server.steps[3].releaseBody();
+  await new Promise<void>((resolve) => setImmediate(resolve));
+  assert.strictEqual(app.getSnapshot(), last);
+  assert.equal(last.selection.row?.title, 'a');
+});
+
 test('selection does not await or adopt late disposal completion of the outgoing actual session', async (t) => {
   const gate = deferred();
   const disposing = deferred();

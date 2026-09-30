@@ -314,7 +314,12 @@ test('approval survives same-ID refresh, borrowed remount and unrelated runtime 
     updated = 0;
   const { app, server, sessions } = await fixture(
     t,
-    [search(), lookup('a'), history('a'), search()],
+    [
+      search(),
+      lookup('a'),
+      history('a'),
+      search({ body: [threadEnvelope('a', 'Reviewed plan')] }),
+    ],
     (o) => ({
       ...o,
       markdownFactory(document, options) {
@@ -346,7 +351,11 @@ test('approval survives same-ID refresh, borrowed remount and unrelated runtime 
   app.refresh();
   assert.strictEqual(decision(app), card);
   await until(() => app.getSnapshot().list.status === 'ready');
+  assert.equal(app.getSnapshot().selection.row?.title, 'Reviewed plan');
+  assert.equal(before.selection.row?.title, 'First conversation');
   assert.strictEqual(decision(app), card);
+  assert.equal(card.canRespond, true);
+  assert.strictEqual(app.getSnapshot().runtime, before.runtime);
   assert.strictEqual(app.getSnapshot().messages, before.messages);
   assert.deepEqual([created, updated], work);
   assert.equal(sessions.length, 1);
