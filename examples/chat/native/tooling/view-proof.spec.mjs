@@ -62,6 +62,7 @@ function fixture(t, framework) {
           'use-agent.js',
           'markdown/markdown.js',
           'chat/tool-observation.js',
+          'chat/message-list.js',
         ].map((n) => 'node_modules/@threadplane/react/src/' + n)),
   ];
   const types = [
@@ -346,6 +347,15 @@ for (const framework of ['react', 'angular']) {
       assert.throws(() => readViewProof(f.root));
     });
 }
+test('React rejects missing installed MessageList runtime', (t) => {
+  const f = fixture(t, 'react');
+  f.record.runtime = f.record.runtime.filter(
+    (p) => !p.endsWith('chat/message-list.js')
+  );
+  f.save();
+  assert.throws(() => readViewProof(f.root), /message-list/);
+});
+
 for (const [name, mutate] of [
   [
     'wrong ngc',

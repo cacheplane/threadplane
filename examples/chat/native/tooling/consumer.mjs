@@ -243,6 +243,7 @@ function assertComposition(consumer, typeInputs, runtimeInputs) {
     '@threadplane/langgraph/runtime/create-session',
     '@threadplane/react/src/use-agent',
     '@threadplane/react/src/markdown/markdown',
+    '@threadplane/react/src/chat/message-list',
     '@threadplane/content/src/markdown/create-markdown',
     '@threadplane/content/src/messages/create-message-content',
   ]) {

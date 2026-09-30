@@ -1,7 +1,11 @@
 import { memo, useState } from 'react';
 import { useAgent } from '@threadplane/react';
 import { Markdown } from '@threadplane/react/markdown';
-import { ChatInput, ToolObservation } from '@threadplane/react/chat';
+import {
+  ChatInput,
+  MessageList,
+  ToolObservation,
+} from '@threadplane/react/chat';
 import type {
   createApplication,
   ApplicationSnapshot,
@@ -56,6 +60,8 @@ const Message = memo(function Message({ row }: { row: MessageContent }) {
     </article>
   );
 });
+
+const renderMessage = (row: MessageContent) => <Message row={row} />;
 
 function Composer({
   application,
@@ -187,19 +193,20 @@ function Conversation({ application }: { application: Application }) {
           </div>
         )}
         {selection.status === 'ready' && (
-          <div
-            className="transcript"
-            role="region"
-            aria-label="Conversation messages"
-          >
-            {snapshot.messages.length ? (
-              snapshot.messages.map((row) => <Message key={row.id} row={row} />)
-            ) : (
+          <>
+            <MessageList
+              key={selection.id}
+              rows={snapshot.messages}
+              renderMessage={renderMessage}
+              label="Conversation messages"
+              className="transcript"
+            />
+            {snapshot.messages.length === 0 && (
               <p className="empty-state">
                 This conversation has no messages yet.
               </p>
             )}
-          </div>
+          </>
         )}
         <Approval application={application} snapshot={snapshot} />
         <Composer

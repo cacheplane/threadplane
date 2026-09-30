@@ -359,9 +359,11 @@ export function prepareInstalledTypes(root, consumer, kind) {
   const fixture = join(root, 'fixtures/react-parity/runtime');
   cpSync(join(fixture, 'scenarios.ts'), join(consumer, 'scenarios.ts'));
   writeFileSync(join(consumer, 'installed-types.ts'), installedTypeSource(readFileSync(join(fixture, 'installed-types.ts'), 'utf8'), kind));
+  if (kind === 'react') cpSync(join(fixture, 'message-list-types.tsx'), join(consumer, 'message-list-types.tsx'));
   writeFileSync(join(consumer, 'tsconfig.contracts.json'), JSON.stringify({ compilerOptions: {
     target: 'ES2022', module: 'ESNext', moduleResolution: 'Bundler', lib: ['ES2022', 'DOM'], types: [], strict: true, skipLibCheck: false, noEmit: true,
-  }, files: ['installed-types.ts'] }, null, 2));
+    ...(kind === 'react' ? { jsx: 'react-jsx' } : {}),
+  }, files: ['installed-types.ts', ...(kind === 'react' ? ['message-list-types.tsx'] : [])] }, null, 2));
 }
 
 /** Typecheck the private source against the *installed* public core declarations,

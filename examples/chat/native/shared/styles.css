@@ -257,6 +257,11 @@ textarea:disabled {
   padding-top: 12px;
   margin-top: 24px;
 }
+.conversation .tp-chat-list {
+  max-height: min(60vh, 640px);
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+}
 .composer-actions,
 .composer .tp-chat-input__actions {
   display: flex;

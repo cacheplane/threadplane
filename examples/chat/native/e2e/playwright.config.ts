@@ -8,6 +8,7 @@ export default defineConfig({
     'development.spec.ts',
     'conversation.spec.ts',
     'production.spec.ts',
+    'message-list.spec.ts',
   ],
   fullyParallel: false,
   workers: 1,
