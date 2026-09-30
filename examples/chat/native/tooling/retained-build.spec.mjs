@@ -229,6 +229,16 @@ function fixture(t, framework = 'react') {
       ),
     },
   };
+  for (const [map, extension] of [
+    [compilation.inputs, '.d.ts'],
+    [bundle.inputs, '.js'],
+  ]) {
+    const local = 'src/messages/create-message-content' + extension;
+    const path = 'node_modules/@threadplane/content/' + local;
+    const sha256 = put(consumer, path, 'installed projection: ' + extension);
+    map[path] = sha256;
+    artifacts['@threadplane/content'].push({ path: local, sha256 });
+  }
   const outputs = {
     'index.html': put(
       output,
@@ -305,6 +315,23 @@ test('retains actual bytes and original lock, verifies after original temporary 
   assert.equal(retained.readOutput('../consumer/package.json'), undefined);
   assert.ok(Object.isFrozen(retained));
 });
+
+for (const framework of ['react', 'angular'])
+  for (const [graph, extension] of [
+    ['compiler', '.d.ts'],
+    ['bundler', '.js'],
+  ])
+    test(`${framework} retention requires installed message projection ${graph}`, (t) => {
+      const f = fixture(t, framework);
+      delete f.provenance[graph].inputs[
+        'node_modules/@threadplane/content/src/messages/create-message-content' +
+          extension
+      ];
+      assert.throws(
+        () => captureRetainedBuild(f.directory, f),
+        /message projection/i
+      );
+    });
 
 for (const framework of ['react', 'angular']) {
   test(`retains closed ${framework} tool/configuration graph and embedded negative evidence after source cleanup`, (t) => {

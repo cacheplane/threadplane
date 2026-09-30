@@ -1,29 +1,33 @@
+import { createMarkdown } from '@threadplane/content/markdown';
 import {
-  createMarkdown,
-  type Markdown,
-  type MarkdownSnapshot,
-} from '@threadplane/content/markdown';
+  createMessageContent as createSharedMessageContent,
+  type MessageRow,
+} from '@threadplane/content/messages';
 import type { Message } from '@threadplane/core';
-import { formatTripSummary, type ApplicationToolCall } from './trip-summary.js';
+import {
+  formatTripSummary,
+  type ApplicationToolCall,
+  type ApplicationToolContracts,
+} from './trip-summary.js';
 
 export type TripSummaryCard = ReturnType<typeof formatTripSummary> & {
   readonly callId: string;
 };
 
-export interface MessageContent {
-  readonly id: string;
-  readonly role: Message['role'];
-  readonly message: Message;
-  readonly markdown: MarkdownSnapshot;
-  readonly toolCalls: readonly ApplicationToolCall[];
+export interface MessageContent extends MessageRow<ApplicationToolContracts> {
   readonly tripSummaries: readonly TripSummaryCard[];
 }
 
 // Private application composition, not a package API or a view capability.
 export function createMessageContent(
-  factory: typeof createMarkdown = createMarkdown
+  factory: typeof createMarkdown = createMarkdown,
+  projectionFactory: typeof createSharedMessageContent<ApplicationToolContracts> = createSharedMessageContent
 ) {
-  const owners = new Map<string, Markdown>();
+  const content = projectionFactory({ markdownFactory: factory });
+  const decorated = new WeakMap<
+    MessageRow<ApplicationToolContracts>,
+    MessageContent
+  >();
   const cards = new WeakMap<ApplicationToolCall, TripSummaryCard>();
   let snapshot: readonly MessageContent[] = Object.freeze([]);
   let disposed = false;
@@ -34,46 +38,12 @@ export function createMessageContent(
       toolCalls: readonly ApplicationToolCall[]
     ) {
       if (disposed) return;
-      const present = new Set(messages.map((message) => message.id));
-      for (const [id, owner] of owners) {
-        if (present.has(id)) continue;
-        owner.dispose();
-        owners.delete(id);
-      }
-      const previous = new Map(snapshot.map((row) => [row.id, row]));
-      const rows = messages.map((message): MessageContent => {
-        const document = {
-          generation: message.delivery.generation,
-          phase: message.delivery.phase,
-          content: message.content,
-        };
-        let owner = owners.get(message.id);
-        if (!owner) {
-          owner = factory(document, { violationPolicy: 'rebuild' });
-          owners.set(message.id, owner);
-        } else {
-          const accepted = owner.getSnapshot().document;
-          if (
-            accepted.generation !== document.generation ||
-            accepted.phase !== document.phase ||
-            accepted.content !== document.content
-          )
-            owner.update(document);
-        }
-        const markdown = owner.getSnapshot();
-        const calls = toolCalls.filter(
-          (call) =>
-            message.toolCallIds?.includes(call.id) ||
-            message.toolCallId === call.id
-        );
-        const old = previous.get(message.id);
-        if (
-          old?.message === message &&
-          old.markdown === markdown &&
-          old.toolCalls.length === calls.length &&
-          calls.every((call, index) => call === old.toolCalls[index])
-        )
-          return old;
+      // Only transcript fields drive the projection; status is not interpreted.
+      const base = content.project({ status: 'idle', messages, toolCalls });
+      const rows = base.map((row): MessageContent => {
+        const old = decorated.get(row);
+        if (old) return old;
+        const { message, toolCalls: calls } = row;
         const tripSummaries =
           message.role === 'assistant'
             ? calls.flatMap((call) => {
@@ -93,14 +63,12 @@ export function createMessageContent(
                 return [card];
               })
             : [];
-        return Object.freeze({
-          id: message.id,
-          role: message.role,
-          message,
-          markdown,
-          toolCalls: Object.freeze(calls),
+        const next = Object.freeze({
+          ...row,
           tripSummaries: Object.freeze(tripSummaries),
         });
+        decorated.set(row, next);
+        return next;
       });
       if (
         rows.length !== snapshot.length ||
@@ -111,8 +79,7 @@ export function createMessageContent(
     dispose() {
       if (disposed) return;
       disposed = true;
-      for (const owner of owners.values()) owner.dispose();
-      owners.clear();
+      content.dispose();
       // Retained rows remain readable, including their frozen Markdown trees.
     },
   };

@@ -72,6 +72,7 @@ function composition(selected, types, runtime) {
   for (const p of [
     '@threadplane/langgraph/runtime/create-session',
     '@threadplane/content/src/markdown/create-markdown',
+    '@threadplane/content/src/messages/create-message-content',
   ]) {
     assert.ok(
       types.includes('node_modules/' + p + '.d.ts'),

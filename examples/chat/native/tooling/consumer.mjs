@@ -244,6 +244,7 @@ function assertComposition(consumer, typeInputs, runtimeInputs) {
     '@threadplane/react/src/use-agent',
     '@threadplane/react/src/markdown/markdown',
     '@threadplane/content/src/markdown/create-markdown',
+    '@threadplane/content/src/messages/create-message-content',
   ]) {
     assert.ok(
       types.includes('node_modules/' + suffix + '.d.ts'),

@@ -7,6 +7,76 @@ import {
 import type { Message } from '@threadplane/core';
 import { createMessageContent } from './message-content.js';
 import type { ApplicationToolCall } from './trip-summary.js';
+import { createMessageContent as createSharedMessageContent } from '@threadplane/content/messages';
+import type { ApplicationToolContracts } from './trip-summary.js';
+
+test('message content delegates to one shared typed projection and retains its row fields', () => {
+  const work = countedMarkdown();
+  let created = 0;
+  let projected = 0;
+  let disposed = 0;
+  const shared = createSharedMessageContent<ApplicationToolContracts>({
+    markdownFactory: work.factory,
+  });
+  const input = Object.freeze({
+    ...message('Summary', 'complete'),
+    toolCallIds: Object.freeze(['call']),
+  });
+  const messages = Object.freeze([input]);
+  const calls: readonly ApplicationToolCall[] = Object.freeze([
+    Object.freeze({
+      id: 'call',
+      name: 'show_trip_summary',
+      args: Object.freeze({ title: 'Supplied', days: Object.freeze([]) }),
+      status: 'complete',
+      result: 'Supplied',
+    }),
+  ]);
+  let expectedMessages = messages;
+  let expectedCalls = calls;
+  const factory: typeof createSharedMessageContent<ApplicationToolContracts> = (
+    options
+  ) => {
+    created++;
+    assert.strictEqual(options?.markdownFactory, work.factory);
+    return {
+      project(snapshot) {
+        projected++;
+        assert.strictEqual(snapshot.messages, expectedMessages);
+        assert.strictEqual(snapshot.toolCalls, expectedCalls);
+        return shared.project(snapshot);
+      },
+      dispose() {
+        disposed++;
+        shared.dispose();
+      },
+    };
+  };
+  const content = createMessageContent(work.factory, factory);
+  assert.equal(created, 1);
+  content.update(messages, calls);
+  const base = shared.project({ status: 'idle', messages, toolCalls: calls });
+  const first = content.getSnapshot();
+  assert.equal(projected, 1);
+  assert.strictEqual(first[0].message, base[0].message);
+  assert.strictEqual(first[0].markdown, base[0].markdown);
+  assert.strictEqual(first[0].toolCalls, base[0].toolCalls);
+  assert.equal(first[0].tripSummaries[0].text, 'Supplied');
+  content.update(messages, calls);
+  assert.strictEqual(content.getSnapshot(), first);
+  expectedMessages = Object.freeze([...messages]);
+  expectedCalls = Object.freeze([...calls]);
+  content.update(expectedMessages, expectedCalls);
+  assert.strictEqual(content.getSnapshot(), first);
+  content.dispose();
+  content.dispose();
+  assert.equal(disposed, 1);
+  const projections = projected;
+  content.update(messages, calls);
+  assert.equal(projected, projections);
+  assert.strictEqual(content.getSnapshot(), first);
+  assert.equal(work.disposed, 1);
+});
 
 function countedMarkdown() {
   const created: MarkdownDocument[] = [];
