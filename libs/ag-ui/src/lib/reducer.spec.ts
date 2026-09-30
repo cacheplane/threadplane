@@ -10,6 +10,7 @@ import {
   type Message,
   type ToolCall,
   type AgentEvent,
+  type AgentUsage,
 } from '@threadplane/chat';
 import { finalizeDeliveryRun, reduceEvent, type ReducerStore, type CustomStreamEvent, type ActivityEntry } from './reducer';
 
@@ -42,6 +43,7 @@ function makeStore(generation = 'run-generation-1'): TestStore {
     events$:   new Subject<AgentEvent>(),
     customEvents: signal<CustomStreamEvent[]>([]),
     activities: signal<Map<string, ActivityEntry>>(new Map()),
+    usage: signal<AgentUsage | undefined>(undefined),
     deliveryRun: {
       generation,
       baselineMessageIds: new Set(),
@@ -1044,5 +1046,32 @@ describe('ACTIVITY events (F5 subagent activities)', () => {
     reduceEvent({ type: 'ACTIVITY_DELTA', messageId: 'tc-1', activityType: 'subagent',
       patch: [{ op: 'replace', path: '/text', value: 'updated' }] } as any, store);
     expect(store.activities().get('tc-1')?.content()['text']).toBe('updated');
+  });
+});
+
+describe('usage', () => {
+  const usage = [{ provider: 'openai', model: 'gpt-5', inputTokens: 12, outputTokens: 3, totalTokens: 15 }];
+
+  it('records RUN_FINISHED usage for the run', () => {
+    const store = makeStore();
+    reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r' } as never, store);
+    reduceEvent({ type: 'RUN_FINISHED', threadId: 't', runId: 'r', usage } as never, store);
+    expect(store.usage?.()).toEqual({ entries: usage });
+  });
+
+  it('records RUN_ERROR usage accrued before the failure', () => {
+    const store = makeStore();
+    reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r' } as never, store);
+    reduceEvent({ type: 'RUN_ERROR', message: 'boom', usage } as never, store);
+    expect(store.usage?.()).toEqual({ entries: usage });
+  });
+
+  it('clears usage when a new run starts and leaves it undefined when none is reported', () => {
+    const store = makeStore();
+    store.usage?.set({ entries: usage });
+    reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r2' } as never, store);
+    expect(store.usage?.()).toBeUndefined();
+    reduceEvent({ type: 'RUN_FINISHED', threadId: 't', runId: 'r2' } as never, store);
+    expect(store.usage?.()).toBeUndefined();
   });
 });

@@ -19,7 +19,7 @@ import {
 } from '@threadplane/chat';
 import type {
   Agent, Message, AgentStatus, ToolCall, AgentEvent,
-  AgentInterrupt,
+  AgentInterrupt, AgentUsage,
   AgentRuntimeTelemetryEvent,
   AgentRuntimeTelemetryProperties,
   AgentRuntimeTelemetrySink,
@@ -186,6 +186,7 @@ function createAgentAdapter(
     events$:      new Subject<AgentEvent>(),
     customEvents: signal<CustomStreamEvent[]>([]),
     activities:   signal<Map<string, ActivityEntry>>(new Map()),
+    usage:        signal<AgentUsage | undefined>(undefined),
     deliveryRun: null,
     allocateDeliveryGeneration,
   };
@@ -878,6 +879,7 @@ function createAgentAdapter(
     error:     store.error,
     toolCalls: store.toolCalls,
     state:     store.state,
+    usage:     store.usage,
     interrupt: store.interrupt,
     events$:      store.events$.asObservable(),
     customEvents: store.customEvents,

@@ -13,7 +13,7 @@ import {
   type CompleteOutcome,
 } from '@threadplane/chat';
 import type {
-  Message, AgentStatus, ToolCall, AgentEvent, AgentInterrupt,
+  Message, AgentStatus, ToolCall, AgentEvent, AgentInterrupt, AgentUsage,
 } from '@threadplane/chat';
 import type { BaseEvent } from '@ag-ui/client';
 import { applyPatch, type JsonPatchOp } from './internal/apply-patch';
@@ -83,6 +83,9 @@ export interface ReducerStore {
   events$:      Subject<AgentEvent>;
   customEvents: WritableSignal<CustomStreamEvent[]>;
   activities: WritableSignal<Map<string, ActivityEntry>>;
+  /** Token usage for the latest finished/errored run. Optional so test
+   *  stores built before 1.0 keep compiling; the adapter always provides it. */
+  usage?: WritableSignal<AgentUsage | undefined>;
   deliveryRun: ReducerDeliveryRun | null;
   allocateDeliveryGeneration(scope: string): string;
   /** Accumulated raw TOOL_CALL_ARGS text per toolCallId. A live model streams
@@ -141,12 +144,14 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
       // a TOOL_CALL_ARGS fragment whose TOOL_CALL_END never arrived (aborted
       // or errored run) must not prefix a same-id call in the next run.
       store.argsBuffers?.clear();
+      store.usage?.set(undefined);
       return;
     }
     case 'RUN_FINISHED': {
       const run = currentRunForEvent(event, store);
       if (store.deliveryRun && !run) return;
       const outcome = runFinishedOutcome(event);
+      store.usage?.set(usageFromEvent(event));
       if (outcome?.type === 'interrupt') {
         // Protocol-standard interrupt signal: RUN_FINISHED carrying
         // outcome = { type: 'interrupt', interrupts: [...] }. AWS Strands and
@@ -179,6 +184,7 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
     case 'RUN_ERROR': {
       const run = currentRunForEvent(event, store);
       if (!run || !finalizeDeliveryRun(store, run, 'error')) return;
+      store.usage?.set(usageFromEvent(event));
       store.status.set('error');
       store.isLoading.set(false);
       const runErrorMsg = (event as { message?: unknown }).message;
@@ -791,6 +797,12 @@ function toOutcomeInterrupt(
     value: { interrupts, ...(runId !== undefined ? { runId } : {}) },
     resumable: true,
   };
+}
+
+function usageFromEvent(event: BaseEvent): AgentUsage | undefined {
+  const usage = (event as { usage?: unknown }).usage;
+  if (!Array.isArray(usage) || usage.length === 0) return undefined;
+  return { entries: usage.filter(isRecord) as AgentUsage['entries'] };
 }
 
 function eventRunId(event: BaseEvent): string | undefined {

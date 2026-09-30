@@ -9,6 +9,7 @@ import type { AgentEvent } from './agent-event';
 import type { AgentSubmitInput, AgentSubmitOptions } from './agent-submit';
 import type { ClientToolsCapability } from '../client-tools/client-tools-capability';
 import type { AgentError } from './agent-error';
+import type { AgentUsage } from './agent-usage';
 
 /**
  * Runtime-neutral contract chat primitives consume.
@@ -69,6 +70,12 @@ export interface Agent<TState = unknown> {
   subagents?: Signal<Map<string, Subagent>>;
   /** Optional: client-declared, client-executed tools (see ClientToolsCapability). */
   clientTools?: ClientToolsCapability;
+  /**
+   * Optional token usage for the most recent completed or errored run.
+   * Adapters whose runtime reports usage set it at the run boundary; it is
+   * `undefined` while a run is in flight and after a run that reported none.
+   */
+  usage?: Signal<AgentUsage | undefined>;
 
   /**
    * Optional read-only reconciliation of an uncertain run outcome, offered when
