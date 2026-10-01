@@ -1,10 +1,9 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "c28a3dee7fb418b9a78e3ac49c43626144fb799d",
+  "baselineHead": "cc3431a610f0cc113224c54dbb731e5b1be7cde4",
   "sourceState": {
     "modified": [
-      "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "libs/cockpit-registry/src/lib/content-descriptors.ts"
+      ".github/workflows/ci.yml"
     ],
     "untracked": []
   },
@@ -2109,7 +2108,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "cb84d0395d83a2f63e5395b745ffc1dc02434789452b473dbd5c022da16cbf2d"
+      "sha256": "cc572f2218efa6027e7e9b68ddfe445d186dcadae168cc4452918087928ebf09"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
