@@ -49,7 +49,8 @@ import type {
   AgentSubmitOptions,
   MessageDelivery,
 } from '@threadplane/chat';
-import { AgentError, staticDelivery } from '@threadplane/chat';
+import { AgentError, staticDelivery, ɵcreateDevtoolsEmitter } from '@threadplane/chat';
+import type { ɵDevtoolsPseudoEvent } from '@threadplane/chat';
 
 import {
   AgentOptions,
@@ -64,6 +65,7 @@ import {
 import type { ThreadState, ToolProgress } from '@langchain/langgraph-sdk';
 import type { MessageMetadata } from '@langchain/langgraph-sdk/ui';
 import { createStreamManagerBridge } from './internals/stream-manager.bridge';
+import { instrumentSubjects } from './internals/devtools';
 import { LANGGRAPH_CLIENT_OPTIONS, resolveClientOptions } from './client/client-options';
 import { buildBranchTree } from './internals/branch-tree';
 import { extractCitations } from './internals/extract-citations';
@@ -203,7 +205,25 @@ export function agent<
   const clientToolStaging: { clear?: () => void } = {};
   let retryableToolMessageBatch: StagedToolMessageBatch | undefined;
 
+  const subjects: StreamSubjects<T, InferBag<T, Bag>> = {
+    status$, values$, messages$, error$,
+    interrupt$, interrupts$, branch$, history$,
+    isThreadLoading$, toolProgress$, toolCalls$, messageMetadata$, subagents$, queue$, custom$,
+  };
+
+  // Development-only (null in production): reports which subjects each event
+  // wrote, by name, for the AG-UI DevTools Signals view. Instrumented before
+  // anything can write so every write is seen.
+  const devtools = ɵcreateDevtoolsEmitter('langgraph');
+  if (devtools) instrumentSubjects(subjects as unknown as Parameters<typeof instrumentSubjects>[0], devtools);
+  const report = <R>(label: ɵDevtoolsPseudoEvent, run: () => R): R =>
+    devtools ? devtools.outside(label, run) : run();
+
   function resetDerivedThreadState(): void {
+    report('reset', resetDerivedThreadStateUnreported);
+  }
+
+  function resetDerivedThreadStateUnreported(): void {
     status$.next(ResourceStatus.Idle);
     error$.next(undefined);
     hasValue$.next(false);
@@ -220,12 +240,6 @@ export function agent<
     if (v != null && Object.keys(v as object).length > 0) hasValue$.next(true);
   });
   messages$.pipe(takeUntil(destroy$)).subscribe(m => { if (m.length > 0) hasValue$.next(true); });
-
-  const subjects: StreamSubjects<T, InferBag<T, Bag>> = {
-    status$, values$, messages$, error$,
-    interrupt$, interrupts$, branch$, history$,
-    isThreadLoading$, toolProgress$, toolCalls$, messageMetadata$, subagents$, queue$, custom$,
-  };
 
   // threadId$ — resolved before bridge creation (injection context required for toObservable)
   const threadId$ = isSignal(options.threadId)
@@ -335,6 +349,7 @@ export function agent<
     subjects,
     threadId$,
     destroy$: destroy$.asObservable(),
+    devtools,
     ...(transport === undefined && reportOperationFailure !== null
       ? { reportOperationFailure }
       : {}),
@@ -554,7 +569,7 @@ export function agent<
 
     retry: async () => {
       if (isLoading()) return;          // no-op while a run is in flight
-      error$.next(undefined);           // clear the error before re-running
+      report('submit', () => error$.next(undefined)); // clear the error before re-running
       await resubmitWithToolRecovery();
     },
 
@@ -586,7 +601,7 @@ export function agent<
       // Truncate local buffer INCLUSIVE of the user message. The computed
       // messagesNeutral signal immediately reflects this — user message is
       // preserved in the UI while the new response streams in.
-      messages$.next(messages$.value.slice(0, userIdx + 1));
+      report('submit', () => messages$.next(messages$.value.slice(0, userIdx + 1)));
 
       // Build RemoveMessage wire-shape instructions for server-side rollback.
       // LangGraph's add_messages reducer recognises `{ type: 'remove', id }`
@@ -649,14 +664,14 @@ export function agent<
     getSubagentsByMessage: (msg) => resolveSubagentsByMessage(msg, subagentsSig()),
     customEvents:    customSig,
     branch:          branchSig,
-    setBranch:       (b) => branch$.next(b),
+    setBranch:       (b) => report('branch', () => branch$.next(b)),
     isThreadLoading: threadLoadSig,
-    switchThread:    (id) => {
+    switchThread:    (id) => report('reset', () => {
       resetDerivedThreadState();
       resetLifecycle();
       seenToolCallStates.clear();
       manager.switchThread(id);
-    },
+    }),
     lifecycle,
     joinStream:          (id, last) => manager.joinStream(id, last),
     getMessagesMetadata: (msg, idx) => {

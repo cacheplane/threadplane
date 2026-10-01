@@ -36,6 +36,9 @@ import {
   toAgentError,
   type CompleteOutcome,
   type MessageDelivery,
+  type ɵDevtoolsEmitter,
+  type ɵDevtoolsPseudoEvent,
+  type ɵLangGraphDevtoolsSignal,
 } from '@threadplane/chat';
 import {
   SubagentTracker,
@@ -124,6 +127,12 @@ export interface StreamManagerBridgeOptions<T, ResolvedBag extends BagTemplate =
   threadId$: Observable<string | null>;
   destroy$:  Observable<void>;
   reportOperationFailure?: (code: 'unauthorized' | 'network_blocked') => void;
+  /**
+   * Development-only devtools emitter (null in production). The subjects are
+   * already instrumented to report their names to it; the bridge only says
+   * which event or pseudo-event each write belongs to.
+   */
+  devtools?: ɵDevtoolsEmitter<ɵLangGraphDevtoolsSignal> | null;
 }
 
 type ResubmitOutcome = CompleteOutcome | 'not-started';
@@ -174,8 +183,13 @@ export interface StreamManagerBridge {
 }
 
 export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = BagTemplate>(
-  { options, subjects, threadId$, destroy$, reportOperationFailure }: StreamManagerBridgeOptions<T, ResolvedBag>
+  { options, subjects, threadId$, destroy$, reportOperationFailure, devtools = null }: StreamManagerBridgeOptions<T, ResolvedBag>
 ): StreamManagerBridge {
+  // Attributes the subject writes inside `run` to a pseudo-event in the
+  // devtools report. A bracket opened inside another joins it, so a helper
+  // called from a protocol event stays part of that event's report.
+  const report = <R>(label: ɵDevtoolsPseudoEvent, run: () => R): R =>
+    devtools ? devtools.outside(label, run) : run();
   const developmentRuntime = createDevelopmentRuntime({
     integration: 'langgraph', packageName: '@threadplane/langgraph', packageVersion,
     installationToken: (typeof ngDevMode === 'undefined' || ngDevMode) && isDevMode() ? installationToken : null,
@@ -353,10 +367,10 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
     // Subgraph children have no tool result to settle them; the run's own
     // terminal outcome is their completion signal. Paused/interrupted runs
     // are excluded — a child can resume with the thread.
-    if (outcome === 'success' || outcome === 'error' || outcome === 'aborted') {
+    if (outcome === 'success' || outcome === 'error' || outcome === 'aborted') report('run:end', () => {
       subagentManager.settleRunningSubgraphs(outcome === 'success' ? 'complete' : 'error');
       publishSubagents();
-    }
+    });
   }
 
   /**
@@ -466,8 +480,10 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
   function publishInterruptionError(): void {
     if (subjects.error$.value) return;
     if (subjects.interrupt$.value || subjects.interrupts$.value.length > 0) return;
-    subjects.error$.next(interruptionError());
-    subjects.status$.next(ResourceStatus.Error);
+    report('run:end', () => {
+      subjects.error$.next(interruptionError());
+      subjects.status$.next(ResourceStatus.Error);
+    });
   }
 
   /**
@@ -551,6 +567,10 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
   }
 
   function resetThreadState(): void {
+    report('reset', resetThreadStateUnreported);
+  }
+
+  function resetThreadStateUnreported(): void {
     historyAbortController?.abort();
     subjects.values$.next({} as T);
     subjects.messages$.next([]);
@@ -561,7 +581,7 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
     subjects.toolCalls$.next([]);
     subjects.messageMetadata$.next(new Map());
     subjects.subagents$.next(new Map());
-    void cancelQueueEntries(takeQueuedRuns()).catch(err => subjects.error$.next(toSafeAgentError(err)));
+    void cancelQueueEntries(takeQueuedRuns()).catch(err => report('queue', () => subjects.error$.next(toSafeAgentError(err))));
     publishQueue();
     subjects.custom$.next([]);
     subjects.isThreadLoading$.next(false);
@@ -642,13 +662,13 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
     const controller = new AbortController();
     historyAbortController = controller;
     const threadId = currentThreadId;
-    subjects.isThreadLoading$.next(true);
+    report('history', () => subjects.isThreadLoading$.next(true));
 
     let applied: ThreadState<T>[] | undefined;
     let failure: AgentError | undefined;
     try {
       const history = await waitForHistory(getHistory(threadId, controller.signal), controller.signal);
-      if (!controller.signal.aborted && currentThreadId === threadId && isRelevant()) {
+      if (!controller.signal.aborted && currentThreadId === threadId && isRelevant()) report('history', () => {
         applied = history as ThreadState<T>[];
         subjects.history$.next(history as ThreadState<T>[]);
 
@@ -689,16 +709,16 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
         // checkpoint's tasks[i].interrupts and must be projected manually
         // so the interrupt panel re-renders on page reload.
         hydrateInterruptsFromHistory(history as ThreadState<T>[], subjects);
-      }
+      });
     } catch (err) {
       if (onFailure !== 'ignore' && !controller.signal.aborted && isRelevant() && !safeIsAbortError(err)) {
         if (onFailure === 'throw') failure = toSafeAgentError(err);
-        else subjects.error$.next(toSafeAgentError(err));
+        else report('history', () => subjects.error$.next(toSafeAgentError(err)));
       }
     } finally {
       if (historyAbortController === controller) {
         historyAbortController = null;
-        subjects.isThreadLoading$.next(false);
+        report('history', () => subjects.isThreadLoading$.next(false));
       }
     }
     if (failure) throw failure;
@@ -735,7 +755,7 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
   }
 
   function publishQueue(): void {
-    subjects.queue$.next(createQueueSnapshot());
+    report('queue', () => subjects.queue$.next(createQueueSnapshot()));
   }
 
   function createQueueSnapshot(): AgentQueue {
@@ -828,10 +848,12 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
     const startedAt = Date.now();
     captureRuntimeRequestTelemetry('join_queued');
     captureAgentRuntimeTelemetry(options.telemetry, 'tplane:stream_started', telemetryProperties);
-    subjects.custom$.next([]);
-    subjects.toolProgress$.next([]);
-    toolProgressMap.clear();
-    subjects.status$.next(ResourceStatus.Loading);
+    report('run:start', () => {
+      subjects.custom$.next([]);
+      subjects.toolProgress$.next([]);
+      toolProgressMap.clear();
+      subjects.status$.next(ResourceStatus.Loading);
+    });
 
     try {
       const iter = transport.joinStream
@@ -848,7 +870,7 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
         // An interruption has already published its own error and status;
         // resolving here would tell the user nothing went wrong.
         if (outcome !== 'error' && outcome !== 'interrupted') {
-          subjects.status$.next(ResourceStatus.Resolved);
+          report('run:end', () => subjects.status$.next(ResourceStatus.Resolved));
         }
         captureAgentRuntimeTelemetry(options.telemetry, 'tplane:stream_ended', {
           ...telemetryProperties,
@@ -859,13 +881,17 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
       if (!isCurrentExecution(controller, attempt)) return;
       if (attempt.terminalOutcome) return;
       if (safeIsAbortError(err) && userAbortedControllers.has(controller)) {
-        finalizeAttempt(attempt, 'aborted');
-        subjects.error$.next(undefined);
-        subjects.status$.next(ResourceStatus.Idle);
+        report('run:end', () => {
+          finalizeAttempt(attempt, 'aborted');
+          subjects.error$.next(undefined);
+          subjects.status$.next(ResourceStatus.Idle);
+        });
       } else {
-        finalizeAttempt(attempt, attempt.sawAssistantChunk ? 'interrupted' : 'error');
-        subjects.error$.next(toSafeAgentError(err));
-        subjects.status$.next(ResourceStatus.Error);
+        report('run:end', () => {
+          finalizeAttempt(attempt, attempt.sawAssistantChunk ? 'interrupted' : 'error');
+          subjects.error$.next(toSafeAgentError(err));
+          subjects.status$.next(ResourceStatus.Error);
+        });
         captureAgentRuntimeTelemetry(options.telemetry, 'tplane:stream_errored', {
           ...telemetryProperties,
           durationMs: Date.now() - startedAt,
@@ -897,45 +923,48 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
     captureRuntimeRequestTelemetry(requestType);
     captureAgentRuntimeTelemetry(options.telemetry, 'tplane:stream_started', telemetryProperties);
 
-    subjects.status$.next(ResourceStatus.Loading);
-    subjects.error$.next(undefined);
-    subjects.custom$.next([]);
-    subjects.toolProgress$.next([]);
-    toolProgressMap.clear();
-    canonicalMessageIds.clear();
-    const hasResume = isRecord(opts?.command) && 'resume' in opts.command;
-    const { signal: _previousSignal, ...retryOptions } = opts ?? {};
-    lastRequest = payload != null || hasResume
-      ? {
-          payload: hasResume ? structuredClone(payload ?? null) : payload,
-          options: hasResume
-            ? { ...retryOptions, command: structuredClone(opts!.command) }
-            : retryOptions,
-        }
-      : undefined;
+    // The writes that open a run are one devtools report.
+    report('run:start', () => {
+      subjects.status$.next(ResourceStatus.Loading);
+      subjects.error$.next(undefined);
+      subjects.custom$.next([]);
+      subjects.toolProgress$.next([]);
+      toolProgressMap.clear();
+      canonicalMessageIds.clear();
+      const hasResume = isRecord(opts?.command) && 'resume' in opts.command;
+      const { signal: _previousSignal, ...retryOptions } = opts ?? {};
+      lastRequest = payload != null || hasResume
+        ? {
+            payload: hasResume ? structuredClone(payload ?? null) : payload,
+            options: hasResume
+              ? { ...retryOptions, command: structuredClone(opts!.command) }
+              : retryOptions,
+          }
+        : undefined;
+
+      // Optimistically inject human messages so they appear immediately
+      // without waiting for the server to echo them back. Assign a stable id
+      // when missing — track-by-id in the chat-message-list relies on stable
+      // ids across re-emissions, otherwise the optimistic message gets torn
+      // down + recreated on every messages$.next() during streaming, which
+      // restarts caret/typing animations and causes visible flicker.
+      const inputMessages = (payload as Record<string, unknown>)?.['messages'];
+      if (Array.isArray(inputMessages) && inputMessages.length > 0) {
+        const stamped = (inputMessages as BaseMessage[]).map((m) => {
+          const raw = m as unknown as Record<string, unknown>;
+          if (typeof raw['id'] === 'string' && raw['id']) return m;
+          const id = `optimistic-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+          return { ...m, id } as BaseMessage;
+        });
+        const existing = subjects.messages$.value;
+        subjects.messages$.next([...existing, ...stamped]);
+      }
+    });
 
     // Tracks whether at least one stream event has been processed this run.
     // Used to distinguish a mid-stream network interruption (kind:'interrupted')
     // from a fresh connect failure (falls through to toAgentError classification).
     let streamingStarted = false;
-
-    // Optimistically inject human messages so they appear immediately
-    // without waiting for the server to echo them back. Assign a stable id
-    // when missing — track-by-id in the chat-message-list relies on stable
-    // ids across re-emissions, otherwise the optimistic message gets torn
-    // down + recreated on every messages$.next() during streaming, which
-    // restarts caret/typing animations and causes visible flicker.
-    const inputMessages = (payload as Record<string, unknown>)?.['messages'];
-    if (Array.isArray(inputMessages) && inputMessages.length > 0) {
-      const stamped = (inputMessages as BaseMessage[]).map((m) => {
-        const raw = m as unknown as Record<string, unknown>;
-        if (typeof raw['id'] === 'string' && raw['id']) return m;
-        const id = `optimistic-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-        return { ...m, id } as BaseMessage;
-      });
-      const existing = subjects.messages$.value;
-      subjects.messages$.next([...existing, ...stamped]);
-    }
 
     try {
       const iter = transport.stream(
@@ -960,7 +989,7 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
         // An interruption has already published its own error and status;
         // resolving here would tell the user nothing went wrong.
         if (outcome !== 'error' && outcome !== 'interrupted') {
-          subjects.status$.next(ResourceStatus.Resolved);
+          report('run:end', () => subjects.status$.next(ResourceStatus.Resolved));
         }
         await drainQueue();
         captureAgentRuntimeTelemetry(options.telemetry, 'tplane:stream_ended', {
@@ -973,39 +1002,45 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
       if (!isCurrentExecution(controller, attempt)) return finishOutcome(attempt);
       if (attempt.terminalOutcome) return attempt.terminalOutcome;
       if (safeIsAbortError(err) && userAbortedControllers.has(controller)) {
-        finalizeAttempt(attempt, 'aborted');
         // User explicitly called stop() — treat as graceful idle, not an error.
-        subjects.error$.next(undefined);
-        subjects.status$.next(ResourceStatus.Idle);
+        report('run:end', () => {
+          finalizeAttempt(attempt, 'aborted');
+          subjects.error$.next(undefined);
+          subjects.status$.next(ResourceStatus.Idle);
+        });
       } else if (safeIsAbortError(err)) {
-        finalizeAttempt(attempt, attempt.sawAssistantChunk ? 'interrupted' : 'error');
-        // A non-user-requested abort: interrupted if a stream had started, else a
-        // connect-phase failure. Never "aborted" (that's reserved for user stop).
-        //
-        // The two halves differ on exactly one question — was the request
-        // dispatched? `streamingStarted` means the server had begun answering,
-        // so that half gets the same non-retryable, recovery-carrying error a
-        // closed stream gets. The connection half genuinely reached nobody, so
-        // re-sending it cannot duplicate anything and stays retryable.
-        const e = streamingStarted
-          ? interruptionError(err)
-          : new AgentError({
-              kind: 'connection',
-              message: AGENT_ERROR_MESSAGES.connection,
-              retryable: true,
-              ...(!redactOperationErrors ? { cause: err } : {}),
-            });
-        subjects.error$.next(e);
-        subjects.status$.next(ResourceStatus.Error);
+        report('run:end', () => {
+          finalizeAttempt(attempt, attempt.sawAssistantChunk ? 'interrupted' : 'error');
+          // A non-user-requested abort: interrupted if a stream had started, else a
+          // connect-phase failure. Never "aborted" (that's reserved for user stop).
+          //
+          // The two halves differ on exactly one question — was the request
+          // dispatched? `streamingStarted` means the server had begun answering,
+          // so that half gets the same non-retryable, recovery-carrying error a
+          // closed stream gets. The connection half genuinely reached nobody, so
+          // re-sending it cannot duplicate anything and stays retryable.
+          const e = streamingStarted
+            ? interruptionError(err)
+            : new AgentError({
+                kind: 'connection',
+                message: AGENT_ERROR_MESSAGES.connection,
+                retryable: true,
+                ...(!redactOperationErrors ? { cause: err } : {}),
+              });
+          subjects.error$.next(e);
+          subjects.status$.next(ResourceStatus.Error);
+        });
         captureAgentRuntimeTelemetry(options.telemetry, 'tplane:stream_errored', {
           ...telemetryProperties,
           durationMs: Date.now() - startedAt,
           errorClass: agentRuntimeTelemetryErrorClass(err),
         });
       } else {
-        finalizeAttempt(attempt, attempt.sawAssistantChunk ? 'interrupted' : 'error');
-        subjects.error$.next(toSafeAgentError(err));
-        subjects.status$.next(ResourceStatus.Error);
+        report('run:end', () => {
+          finalizeAttempt(attempt, attempt.sawAssistantChunk ? 'interrupted' : 'error');
+          subjects.error$.next(toSafeAgentError(err));
+          subjects.status$.next(ResourceStatus.Error);
+        });
         captureAgentRuntimeTelemetry(options.telemetry, 'tplane:stream_errored', {
           ...telemetryProperties,
           durationMs: Date.now() - startedAt,
@@ -1018,7 +1053,19 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
     }
   }
 
+  // Every protocol event is one devtools report: the names of the subjects it
+  // wrote, attributed to its event type. The bracket closes on every return path.
   function processEvent(event: StreamEvent): void {
+    if (!devtools) return processEventUnreported(event);
+    devtools.begin(event.type);
+    try {
+      processEventUnreported(event);
+    } finally {
+      devtools.end();
+    }
+  }
+
+  function processEventUnreported(event: StreamEvent): void {
     const baseType = getBaseEventType(event.type);
     const namespace = getEventNamespace(event);
     if (hasDevelopmentEventPayload(event)) {
@@ -1406,7 +1453,7 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
       // Set Idle synchronously for an active user cancellation. Attempts that
       // already reached a terminal outcome retain their existing status.
       if (shouldAbortAttempt && subjects.status$.value !== ResourceStatus.Idle) {
-        subjects.status$.next(ResourceStatus.Idle);
+        report('run:end', () => subjects.status$.next(ResourceStatus.Idle));
       }
     },
 
@@ -1425,11 +1472,13 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
       const startedAt = Date.now();
       captureRuntimeRequestTelemetry('join');
       captureAgentRuntimeTelemetry(options.telemetry, 'tplane:stream_started', telemetryProperties);
-      subjects.custom$.next([]);
-      subjects.toolProgress$.next([]);
-      toolProgressMap.clear();
-      subjects.status$.next(ResourceStatus.Loading);
-      subjects.error$.next(undefined);
+      report('run:start', () => {
+        subjects.custom$.next([]);
+        subjects.toolProgress$.next([]);
+        toolProgressMap.clear();
+        subjects.status$.next(ResourceStatus.Loading);
+        subjects.error$.next(undefined);
+      });
       try {
         const iter = transport.joinStream
           ? transport.joinStream(threadId, runId, lastEventId, controller.signal)
@@ -1445,7 +1494,7 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
           // An interruption has already published its own error and status;
           // resolving here would tell the user nothing went wrong.
           if (outcome !== 'error' && outcome !== 'interrupted') {
-            subjects.status$.next(ResourceStatus.Resolved);
+            report('run:end', () => subjects.status$.next(ResourceStatus.Resolved));
           }
           captureAgentRuntimeTelemetry(options.telemetry, 'tplane:stream_ended', {
             ...telemetryProperties,
@@ -1456,13 +1505,17 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
         if (!isCurrentExecution(controller, attempt)) return;
         if (attempt.terminalOutcome) return;
         if (safeIsAbortError(err) && userAbortedControllers.has(controller)) {
-          finalizeAttempt(attempt, 'aborted');
-          subjects.error$.next(undefined);
-          subjects.status$.next(ResourceStatus.Idle);
+          report('run:end', () => {
+            finalizeAttempt(attempt, 'aborted');
+            subjects.error$.next(undefined);
+            subjects.status$.next(ResourceStatus.Idle);
+          });
         } else {
-          finalizeAttempt(attempt, attempt.sawAssistantChunk ? 'interrupted' : 'error');
-          subjects.error$.next(toSafeAgentError(err));
-          subjects.status$.next(ResourceStatus.Error);
+          report('run:end', () => {
+            finalizeAttempt(attempt, attempt.sawAssistantChunk ? 'interrupted' : 'error');
+            subjects.error$.next(toSafeAgentError(err));
+            subjects.status$.next(ResourceStatus.Error);
+          });
           captureAgentRuntimeTelemetry(options.telemetry, 'tplane:stream_errored', {
             ...telemetryProperties,
             durationMs: Date.now() - startedAt,
@@ -1519,8 +1572,10 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
             const finished = collectHistoryInterrupts(refreshed).length > 0
               || subjects.messages$.value.length > messageCountBeforeRefresh;
             if (!finished) return;
-            subjects.error$.next(undefined);
-            subjects.status$.next(ResourceStatus.Idle);
+            report('history', () => {
+              subjects.error$.next(undefined);
+              subjects.status$.next(ResourceStatus.Idle);
+            });
           },
         }
       : {}),
