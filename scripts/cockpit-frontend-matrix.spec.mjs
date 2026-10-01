@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { deriveCockpitCaps, selectCockpitCaps } from './cockpit-matrix.mjs';
 
-test('React cockpit configuration accepts only the two authored topics', async () => {
+test('React cockpit configuration accepts only the three authored topics', async () => {
   const { reactCockpitConfiguration } = await import(
     './react-cockpit/configuration.mjs'
   );
@@ -17,6 +17,13 @@ test('React cockpit configuration accepts only the two authored topics', async (
     base: '/langgraph/interrupts/react/',
     port: 4601,
     project: 'cockpit-langgraph-interrupts-react',
+  });
+  assert.deepEqual(reactCockpitConfiguration('memory'), {
+    topic: 'memory',
+    appPath: 'cockpit/langgraph/memory/react',
+    base: '/langgraph/memory/react/',
+    port: 4602,
+    project: 'cockpit-langgraph-memory-react',
   });
   for (const topic of [
     'unknown',
@@ -31,10 +38,10 @@ test('React cockpit configuration accepts only the two authored topics', async (
     );
 });
 
-test('CI discovers both React topics with their existing Python backends', (t) => {
+test('CI discovers all three React topics with their existing Python backends', (t) => {
   const root = mkdtempSync(join(tmpdir(), 'cockpit-react-topics-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
-  for (const topic of ['streaming', 'interrupts']) {
+  for (const topic of ['streaming', 'interrupts', 'memory']) {
     for (const frontend of ['angular', 'react', 'python']) {
       const directory = join(root, 'cockpit/langgraph', topic, frontend);
       mkdirSync(directory, { recursive: true });
@@ -48,8 +55,8 @@ test('CI discovers both React topics with their existing Python backends', (t) =
     }
   }
   const caps = deriveCockpitCaps(root);
-  assert.equal(caps.length, 4);
-  for (const topic of ['streaming', 'interrupts']) {
+  assert.equal(caps.length, 6);
+  for (const topic of ['streaming', 'interrupts', 'memory']) {
     const selected = selectCockpitCaps(
       caps,
       new Set([`cockpit-langgraph-${topic}-python`]),

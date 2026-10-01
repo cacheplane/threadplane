@@ -190,7 +190,7 @@ export const createWebsitePlaywrightConfig = (
             ? [
                 {
                   command:
-                    'npx nx run-many -t build --projects=cockpit-langgraph-streaming-react,cockpit-langgraph-interrupts-react --parallel=2 && node scripts/react-cockpit/serve.mjs',
+                    'npx nx run-many -t build --projects=cockpit-langgraph-streaming-react,cockpit-langgraph-interrupts-react,cockpit-langgraph-memory-react --parallel=3 && node scripts/react-cockpit/serve.mjs',
                   cwd: '../..',
                   url: 'http://127.0.0.1:4600',
                   reuseExistingServer,
@@ -201,6 +201,13 @@ export const createWebsitePlaywrightConfig = (
                     'node scripts/react-cockpit/serve.mjs interrupts --no-parent',
                   cwd: '../..',
                   url: 'http://127.0.0.1:4601',
+                  reuseExistingServer,
+                  timeout: 180_000,
+                },
+                {
+                  command: 'node scripts/react-cockpit/serve.mjs memory --no-parent',
+                  cwd: '../..',
+                  url: 'http://127.0.0.1:4602',
                   reuseExistingServer,
                   timeout: 180_000,
                 },

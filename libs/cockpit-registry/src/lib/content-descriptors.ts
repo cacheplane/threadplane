@@ -1001,6 +1001,7 @@ export const capabilityModules: readonly RegisteredCapabilityModule[] =
 const reactPreviews = [
   { topic: 'streaming', title: 'LangGraph Streaming (React preview)' },
   { topic: 'interrupts', title: 'LangGraph Interrupts (React preview)' },
+  { topic: 'memory', title: 'LangGraph Memory (React preview)' },
 ] as const;
 
 export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =

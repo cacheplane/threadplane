@@ -16,6 +16,40 @@ const streaming: CockpitManifestIdentity = {
 };
 
 describe('registered React public previews', () => {
+  it('resolves memory with literal React sources and the existing Python graph and prompt', () => {
+    const react = getFrontendCapabilityDescriptor(
+      { ...streaming, topic: 'memory' },
+      'react'
+    );
+    expect(react?.runtimeUrl).toBe('langgraph/memory/react');
+    expect(react?.devPort).toBe(4602);
+    expect(react?.manifestIdentity).toEqual({ ...streaming, topic: 'memory' });
+    expect(react?.codeAssetPaths).toEqual(
+      ['app.tsx', 'application.ts', 'connection.ts', 'main.tsx'].map(
+        (file) => `cockpit/langgraph/memory/react/src/${file}`
+      )
+    );
+    expect(react?.backendAssetPaths).toEqual([
+      'cockpit/langgraph/memory/python/src/graph.py',
+    ]);
+    expect(react?.promptAssetPaths).toEqual([
+      'cockpit/langgraph/memory/python/prompts/memory.md',
+    ]);
+    for (const asset of [
+      ...(react?.codeAssetPaths ?? []),
+      ...(react?.backendAssetPaths ?? []),
+      ...(react?.promptAssetPaths ?? []),
+    ])
+      expect(existsSync(new URL('../../../../' + asset, import.meta.url))).toBe(
+        true
+      );
+    expect(
+      getFrontendCapabilityDescriptor(
+        { ...streaming, topic: 'memory' },
+        'angular'
+      )?.runtimeUrl
+    ).toBe('langgraph/memory');
+  });
   it('resolves the interrupts preview with its actual sources and shared Python backend', () => {
     const react = getFrontendCapabilityDescriptor(
       { ...streaming, topic: 'interrupts' },
@@ -89,11 +123,21 @@ describe('registered React public previews', () => {
 
   it('enumerates deployable frontend identities with distinct paths and projects', () => {
     const frontends = getCockpitFrontends();
-    expect(frontends).toHaveLength(43);
-    expect(new Set(frontends.map((entry) => entry.runtimePath)).size).toBe(43);
-    expect(new Set(frontends.map((entry) => entry.project)).size).toBe(43);
-    expect(new Set(frontends.map((entry) => entry.port)).size).toBe(43);
-    expect(new Set(frontends.map((entry) => entry.buildOutput)).size).toBe(43);
+    expect(frontends).toHaveLength(44);
+    expect(new Set(frontends.map((entry) => entry.runtimePath)).size).toBe(44);
+    expect(new Set(frontends.map((entry) => entry.project)).size).toBe(44);
+    expect(new Set(frontends.map((entry) => entry.port)).size).toBe(44);
+    expect(new Set(frontends.map((entry) => entry.buildOutput)).size).toBe(44);
+    expect(
+      frontends.find(
+        (entry) => entry.project === 'cockpit-langgraph-memory-react'
+      )
+    ).toMatchObject({
+      frontend: 'react',
+      port: 4602,
+      runtimePath: 'langgraph/memory/react',
+      buildOutput: 'dist/cockpit/langgraph/memory/react',
+    });
     expect(
       frontends.find(
         (entry) => entry.project === 'cockpit-langgraph-interrupts-react'
