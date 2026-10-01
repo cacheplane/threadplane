@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
 import {
   cpSync,
   mkdirSync,
@@ -22,31 +21,16 @@ import {
   reactLanggraphPresentationSeeds,
 } from '../react-parity/markdown-presentation-build.mjs';
 import { checkTypes } from '../react-parity/verify-langgraph-candidate.mjs';
+import { reactCockpitConfiguration } from './configuration.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const appPath = 'cockpit/langgraph/streaming/react';
+const { appPath, base } = reactCockpitConfiguration(process.argv[2]);
 const output = join(root, 'dist', appPath);
 const temporary = realpathSync(
   mkdtempSync(join(tmpdir(), 'threadplane-react-cockpit-'))
 );
 try {
-  execFileSync(
-    'node',
-    [
-      join(root, 'node_modules/nx/bin/nx.js'),
-      'run-many',
-      '-t',
-      'build',
-      '-p',
-      'core,content,react',
-      '--skip-nx-cache',
-    ],
-    {
-      cwd: root,
-      stdio: 'inherit',
-      env: { ...process.env, NX_DAEMON: 'false' },
-    }
-  );
+  // Nx app targets prepare shared packages once before parallel isolated builds.
   const candidate = join(temporary, 'candidate');
   mkdirSync(candidate);
   const emission = emitCandidate(root, candidate);
@@ -105,7 +89,7 @@ try {
   const result = await build({
     configFile: false,
     root: app,
-    base: '/langgraph/streaming/react/',
+    base,
     esbuild: { jsx: 'automatic' },
     build: { outDir: output, emptyOutDir: true, sourcemap: false },
   });

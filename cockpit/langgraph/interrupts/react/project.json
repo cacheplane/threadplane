@@ -1,7 +1,7 @@
 {
-  "name": "cockpit-langgraph-streaming-react",
+  "name": "cockpit-langgraph-interrupts-react",
   "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "cockpit/langgraph/streaming/react/src",
+  "sourceRoot": "cockpit/langgraph/interrupts/react/src",
   "projectType": "application",
   "tags": ["scope:cockpit-examples", "scope:cockpit-e2e", "framework:react"],
   "targets": {
@@ -11,13 +11,15 @@
       "dependsOn": [
         { "target": "build", "projects": ["core", "content", "react"] }
       ],
-      "outputs": ["{workspaceRoot}/dist/cockpit/langgraph/streaming/react"],
-      "options": { "command": "node scripts/react-cockpit/build.mjs" }
+      "outputs": ["{workspaceRoot}/dist/cockpit/langgraph/interrupts/react"],
+      "options": {
+        "command": "node scripts/react-cockpit/build.mjs interrupts"
+      }
     },
     "test": {
       "executor": "@nx/vitest:test",
       "options": {
-        "configFile": "cockpit/langgraph/streaming/react/vite.config.mts"
+        "configFile": "cockpit/langgraph/interrupts/react/vite.config.mts"
       }
     },
     "lint": { "executor": "@nx/eslint:lint" },
@@ -26,7 +28,7 @@
       "cache": false,
       "dependsOn": ["build"],
       "options": {
-        "config": "cockpit/langgraph/streaming/react/e2e/playwright.config.ts",
+        "config": "cockpit/langgraph/interrupts/react/e2e/playwright.config.ts",
         "skipInstall": true
       }
     }

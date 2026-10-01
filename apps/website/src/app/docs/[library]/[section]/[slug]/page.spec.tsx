@@ -5,12 +5,15 @@ import { LibraryMark } from '../../../../../components/docs/LibraryMark';
 import { DocsSearchFooter } from '../../../../../components/docs/DocsSearchFooter';
 import { DocsTOC } from '../../../../../components/docs/DocsTOC';
 import { MdxRenderer } from '../../../../../components/docs/MdxRenderer';
+import { ReactStreamingPreview } from '../../../../../components/docs/ReactStreamingPreview';
+import { ReactInterruptsPreview } from '../../../../../components/docs/ReactInterruptsPreview';
 import { WebsiteWorkspace } from '../../../../../components/workspace/WebsiteWorkspace';
 import DocsPage, { generateMetadata } from './page';
 
 interface ElementProps {
   children?: ReactNode;
   docsSlot?: ReactNode;
+  reactDocsSlot?: ReactNode;
   requestedMode?: string | null;
   resolution?: { kind?: string; identity?: { availableModes?: string[] } };
   contentBundle?: {
@@ -49,6 +52,35 @@ const route = (library: string, section: string, slug: string, mode?: string) =>
   } as never);
 
 describe('unified docs workspace route', () => {
+  it.each([
+    ['streaming', ReactStreamingPreview],
+    ['interrupts', ReactInterruptsPreview],
+  ] as const)(
+    'selects topic-specific authored React Docs for %s',
+    async (slug, component) => {
+      const tree = await route('langgraph', 'guides', slug);
+      const workspace = findElement(
+        tree,
+        WebsiteWorkspace as ComponentType<never>
+      );
+      const article = findElement(
+        workspace?.props.reactDocsSlot,
+        component as ComponentType<never>
+      );
+      expect(article).not.toBeNull();
+      expect(article?.props.exampleCode?.assetPaths).toContain(
+        `cockpit/langgraph/${slug}/react/src/app.tsx`
+      );
+      expect(
+        findElement(
+          workspace?.props.reactDocsSlot,
+          (slug === 'streaming'
+            ? ReactInterruptsPreview
+            : ReactStreamingPreview) as ComponentType<never>
+        )
+      ).toBeNull();
+    }
+  );
   it('passes mapped descriptor-backed content and the requested mode to the client boundary', async () => {
     const tree = await route('langgraph', 'guides', 'streaming', 'code');
     const workspace = findElement(

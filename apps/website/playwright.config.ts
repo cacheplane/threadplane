@@ -186,13 +186,26 @@ export const createWebsitePlaywrightConfig = (
             url: 'http://127.0.0.1:4399/health',
             reuseExistingServer,
           },
-          ...(!bfcacheRuntimeTest ? [{
-            command: 'npx nx build cockpit-langgraph-streaming-react && node scripts/react-cockpit/serve.mjs',
-            cwd: '../..',
-            url: 'http://127.0.0.1:4600',
-            reuseExistingServer,
-            timeout: 180_000,
-          }] : []),
+          ...(!bfcacheRuntimeTest
+            ? [
+                {
+                  command:
+                    'npx nx run-many -t build --projects=cockpit-langgraph-streaming-react,cockpit-langgraph-interrupts-react --parallel=2 && node scripts/react-cockpit/serve.mjs',
+                  cwd: '../..',
+                  url: 'http://127.0.0.1:4600',
+                  reuseExistingServer,
+                  timeout: 180_000,
+                },
+                {
+                  command:
+                    'node scripts/react-cockpit/serve.mjs interrupts --no-parent',
+                  cwd: '../..',
+                  url: 'http://127.0.0.1:4601',
+                  reuseExistingServer,
+                  timeout: 180_000,
+                },
+              ]
+            : []),
         ]
       : undefined,
   });

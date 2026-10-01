@@ -3,7 +3,7 @@ import type { ExampleCodeContext } from '../../lib/example-code';
 
 const source = `# React streaming preview
 
-This experimental example uses React with the same Python LangGraph streaming graph as the Angular example. Only streaming is available in this preview. The React, core, content, and framework-neutral LangGraph packages are private source-build packages; they are not published npm packages.
+This experimental example uses React with the same Python LangGraph streaming graph as the Angular example. This preview covers streaming; interrupts also has an authored React preview. The React, core, content, and framework-neutral LangGraph packages are private source-build packages; they are not published npm packages.
 
 ## Try the example
 
