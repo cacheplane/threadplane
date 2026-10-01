@@ -4,6 +4,7 @@ import type {
   RuntimeAdapter,
   WorkspaceMode,
 } from './manifest.types';
+import { getCockpitFrontends } from './capability-registry';
 
 /** Serializable capability content owned by the Cockpit registry. */
 export interface RegisteredCapabilityModule {
@@ -996,6 +997,35 @@ const freezeCapabilityDescriptor = (
 export const capabilityModules: readonly RegisteredCapabilityModule[] =
   Object.freeze(capabilityModuleData.map(freezeCapabilityDescriptor));
 
+/** Frontend variants are separate from the canonical Angular catalog. */
+const streamingAngular = capabilityModules.find(
+  (descriptor) => descriptor.id === 'langgraph-streaming-python'
+);
+const streamingReact = getCockpitFrontends().find(
+  (frontend) => frontend.project === 'cockpit-langgraph-streaming-react'
+);
+if (!streamingAngular || !streamingReact)
+  throw new Error('Streaming frontend registration is missing');
+
+export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
+  Object.freeze([
+    ...capabilityModules,
+    freezeCapabilityDescriptor({
+      ...streamingAngular,
+      id: 'langgraph-streaming-python-react',
+      frontend: 'react',
+      title: 'LangGraph Streaming (React preview)',
+      codeAssetPaths: [
+        'cockpit/langgraph/streaming/react/src/app.tsx',
+        'cockpit/langgraph/streaming/react/src/application.ts',
+        'cockpit/langgraph/streaming/react/src/connection.ts',
+        'cockpit/langgraph/streaming/react/src/main.tsx',
+      ],
+      runtimeUrl: streamingReact.runtimePath,
+      devPort: streamingReact.port,
+    }),
+  ]);
+
 const matchesIdentity = (
   descriptor: RegisteredCapabilityModule,
   identity: CockpitManifestIdentity
@@ -1010,7 +1040,7 @@ const matchesIdentity = (
 export const getFrontendCapabilityDescriptor = (
   identity: CockpitManifestIdentity,
   frontend: CockpitFrontend,
-  descriptors: readonly RegisteredCapabilityModule[] = capabilityModules
+  descriptors: readonly RegisteredCapabilityModule[] = frontendCapabilityModules
 ): RegisteredCapabilityModule | undefined =>
   descriptors.find(
     (descriptor) =>

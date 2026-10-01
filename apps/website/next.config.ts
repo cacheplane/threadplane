@@ -15,6 +15,7 @@ export const nextConfig: WithNxOptions = {
       '../../cockpit/**/*.md',
       '../../cockpit/**/*.py',
       '../../cockpit/**/*.ts',
+      '../../cockpit/**/*.tsx',
       '../../deployments/ag-ui-mastra/*.mjs',
       '../../nx.json',
       // The docs search route reads these at request time. Unlike

@@ -48,10 +48,12 @@ export function DocsContextContent({
   mobile = false,
   onNavigate,
   onSearchHandoff,
+  resolveHref,
 }: DocsControlPlaneProps & {
   mobile?: boolean;
   onNavigate?: () => void;
   onSearchHandoff?: () => void;
+  resolveHref?: (href: string) => string;
 }) {
   const preferences = useControlPlanePreferences('docs');
   const library = activeLibrary ? getLibraryConfig(activeLibrary) : undefined;
@@ -94,6 +96,7 @@ export function DocsContextContent({
           expanded={preferences.expanded}
           onExpandedChange={preferences.setExpanded}
           onNavigate={onNavigate}
+          resolveHref={resolveHref}
         />
       </ControlPlaneSection>
 

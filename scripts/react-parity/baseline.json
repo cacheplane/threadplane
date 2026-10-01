@@ -1,9 +1,14 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "7c943951938e90423714d3e58416ce0283c21aa5",
+  "baselineHead": "09711ebf42356c6b645779e17c3f75464896021f",
   "sourceState": {
     "modified": [
-      ".github/workflows/ci.yml"
+      "libs/cockpit-registry/project.json",
+      "libs/cockpit-registry/src/lib/capability-registry.ts",
+      "libs/cockpit-registry/src/lib/content-descriptors.ts",
+      "libs/cockpit-shell/project.json",
+      "libs/cockpit-shell/src/lib/workspace-presentation.ts",
+      "scripts/assemble-examples.ts"
     ],
     "untracked": []
   },
@@ -440,7 +445,7 @@
       "id": "asset:libs/cockpit-registry/project.json",
       "kind": "asset",
       "path": "libs/cockpit-registry/project.json",
-      "sha256": "147ddacc5a66c7afbab40bdfcfde83d4d56848ce184ac40ec904f340a28c5982"
+      "sha256": "ed12ce136c1bac914e325a2af8f92eacbb1a63d93aa96ffd752f1e741bd56317"
     },
     {
       "id": "asset:libs/cockpit-registry/tsconfig.json",
@@ -488,7 +493,7 @@
       "id": "asset:libs/cockpit-shell/project.json",
       "kind": "asset",
       "path": "libs/cockpit-shell/project.json",
-      "sha256": "7c7dcdb56030f53c03cc1df21ff8b88894ab574a02f59727ad4cf4823a2a7d36"
+      "sha256": "fb536ef421c2d10e3b36155b2d83c4a15ec6afbfc48ee7ff7635290539b88cc4"
     },
     {
       "id": "asset:libs/cockpit-shell/tsconfig.json",
@@ -2174,7 +2179,7 @@
       "id": "config:scripts/assemble-examples.ts",
       "kind": "config",
       "path": "scripts/assemble-examples.ts",
-      "sha256": "6c4a3b46e95afab201ba18c2621db3840973387170decaa14407e22e3b9c880e"
+      "sha256": "716b9f117633cef929496f405fbe670d97b6dd5561043669942b2a0ce37e1674"
     },
     {
       "id": "config:scripts/cockpit-matrix.mjs",
@@ -13225,13 +13230,13 @@
       "id": "source:libs/cockpit-registry/src/lib/capability-registry.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "sha256": "25e248c19db7679f0efb0c9cb53fe38806294956a94a4161a8ce0ceb0809bf28"
+      "sha256": "46746b77e2d350aa1760e4b8a8ee6ce0db7c4a32d0fa3dcff1082c28bb84ccf2"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/content-descriptors.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/content-descriptors.ts",
-      "sha256": "4e152da1fc0cbd9b32f1f1850ac53ae954314fb47963901f452ec50b5b547db9"
+      "sha256": "9f54ac4b1b24a0a9c2605570c6f5efb39945f407a4c7d4e83849baa00b15d21d"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/docs-links.ts",
@@ -13357,7 +13362,7 @@
       "id": "source:libs/cockpit-shell/src/lib/workspace-presentation.ts",
       "kind": "source",
       "path": "libs/cockpit-shell/src/lib/workspace-presentation.ts",
-      "sha256": "325d72b4d087f1b995600527c0665b91fa4ce61b192d0c8e46f8337ebcee7a62"
+      "sha256": "fc3221c39af39c4be0a81f2d84f13e35f08680c01a7cbbf1091746af36500559"
     },
     {
       "id": "source:libs/cockpit-shell/vite.config.mts",

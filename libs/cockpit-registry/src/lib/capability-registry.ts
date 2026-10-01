@@ -1,4 +1,4 @@
-import type { RuntimeAdapter } from './manifest.types';
+import type { CockpitFrontend, RuntimeAdapter } from './manifest.types';
 
 /**
  * Single source of truth for all cockpit capability examples.
@@ -32,6 +32,8 @@ export interface Capability {
   topic: string;
   angularProject: string;
   port: number;
+  /** Additional frontend implementations share this capability's backend. */
+  react?: { project: string; port: number };
   pythonPort?: number;
   /** Optional — AG-UI caps run in-process via FakeAgent and have no Python backend. */
   pythonDir?: string;
@@ -45,7 +47,7 @@ export interface Capability {
 // includes this file — see the deploy-gate hazard note in
 // scripts/assemble-examples.ts before assuming a green main run deployed them.
 export const capabilities: readonly Capability[] = [
-  { id: 'streaming', runtimeAdapter: 'langgraph', product: 'langgraph', topic: 'streaming', angularProject: 'cockpit-langgraph-streaming-angular', port: 4300, pythonPort: 5300, pythonDir: 'cockpit/langgraph/streaming/python', graphName: 'streaming' },
+  { id: 'streaming', runtimeAdapter: 'langgraph', product: 'langgraph', topic: 'streaming', angularProject: 'cockpit-langgraph-streaming-angular', port: 4300, react: { project: 'cockpit-langgraph-streaming-react', port: 4600 }, pythonPort: 5300, pythonDir: 'cockpit/langgraph/streaming/python', graphName: 'streaming' },
   { id: 'persistence', runtimeAdapter: 'langgraph', product: 'langgraph', topic: 'persistence', angularProject: 'cockpit-langgraph-persistence-angular', port: 4301, pythonPort: 5301, pythonDir: 'cockpit/langgraph/persistence/python', graphName: 'persistence' },
   { id: 'interrupts', runtimeAdapter: 'langgraph', product: 'langgraph', topic: 'interrupts', angularProject: 'cockpit-langgraph-interrupts-angular', port: 4302, pythonPort: 5302, pythonDir: 'cockpit/langgraph/interrupts/python', graphName: 'interrupts' },
   { id: 'memory', runtimeAdapter: 'langgraph', product: 'langgraph', topic: 'memory', angularProject: 'cockpit-langgraph-memory-angular', port: 4303, pythonPort: 5303, pythonDir: 'cockpit/langgraph/memory/python', graphName: 'memory' },
@@ -102,4 +104,31 @@ export function findCapability(id: string): Capability | undefined {
 
 export function allAngularProjects(): string[] {
   return capabilities.map((c) => c.angularProject);
+}
+
+export interface CockpitFrontendDeployment {
+  frontend: CockpitFrontend;
+  project: string;
+  port: number;
+  product: Capability['product'];
+  topic: string;
+  runtimePath: string;
+  buildOutput: string;
+}
+
+/** Enumerate frontend assets without creating duplicate backend capabilities. */
+export function getCockpitFrontends(): CockpitFrontendDeployment[] {
+  return capabilities.flatMap((capability) => {
+    const path = `${capability.product}/${capability.topic}`;
+    const angular: CockpitFrontendDeployment = {
+      frontend: 'angular', project: capability.angularProject, port: capability.port,
+      product: capability.product, topic: capability.topic, runtimePath: path,
+      buildOutput: `dist/cockpit/${path}/angular`,
+    };
+    return capability.react ? [angular, {
+      frontend: 'react' as const, project: capability.react.project, port: capability.react.port,
+      product: capability.product, topic: capability.topic, runtimePath: `${path}/react`,
+      buildOutput: `dist/cockpit/${path}/react`,
+    }] : [angular];
+  });
 }

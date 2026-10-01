@@ -4,6 +4,9 @@ Production-ready chat, thread/history/branch UI, interrupts, subagents, planning
 
 Supported Angular majors: 20, 21, and 22.
 
+## React streaming preview
+An experimental React example is available at https://threadplane.ai/docs/langgraph/guides/streaming?frontend=react. The Example UI selector switches its documentation, source, and runtime together. Only streaming is available; other React topics show an availability notice. React, core, content, and the neutral LangGraph candidate remain private source-build packages, with no npm installation instructions or full catalog parity claim. Build from the repository with `npx nx build cockpit-langgraph-streaming-react`; verify with `npx nx e2e cockpit-langgraph-streaming-react`. It shares the existing Python streaming backend.
+
 ## License and deployment boundary
 - Every Threadplane package is MIT-licensed and free for commercial and noncommercial use.
 - Threadplane runs inside the customer's Angular application. Agent runtime, models, storage, checkpointing, retention, authorization, and hosting remain customer-operated.
