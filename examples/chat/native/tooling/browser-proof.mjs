@@ -1100,6 +1100,8 @@ export async function runProductionProofs(browser, retained) {
           exact: true,
         });
         await expect(cards).toHaveCount(2);
+        const mountedCard = await cards.first().elementHandle();
+        assert.ok(mountedCard);
         await expect(
           cards.first().getByRole('heading', { level: 4 })
         ).toHaveText(summaryTitle);
@@ -1164,6 +1166,7 @@ export async function runProductionProofs(browser, retained) {
           page.getByText('Response complete.', { exact: true })
         ).toBeVisible();
         await expect(cards).toHaveCount(2);
+        assert.equal(await mountedCard.evaluate((el) => el.isConnected), true);
         await page.reload();
         await ready(page, expect);
         await expect(cards).toHaveCount(0);
@@ -1180,6 +1183,7 @@ export async function runProductionProofs(browser, retained) {
           terminalNoAutoContinue: true,
           nextExplicitSubmit: true,
           cardsRetainedAfterNextTurn: true,
+          mountedCardRetainedAfterNextTurn: true,
           pendingStatus: true,
           restorationNoReexecute: true,
           literalSummary: true,

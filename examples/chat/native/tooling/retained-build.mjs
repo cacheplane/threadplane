@@ -205,6 +205,15 @@ function selectedInputs(p, selected) {
     'Installed message projection runtime required'
   );
   if (framework === 'react') {
+    const render = 'node_modules/@threadplane/react/src/render/render-spec';
+    assert.ok(
+      p.compiler.inputs[render + '.d.ts'],
+      'Installed RenderSpec declarations required'
+    );
+    assert.ok(
+      p.bundler.inputs[render + '.js'],
+      'Installed RenderSpec runtime required'
+    );
     for (const [name, title] of [
       ['message-list', 'MessageList'],
       ['reasoning', 'Reasoning'],

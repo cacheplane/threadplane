@@ -5,6 +5,10 @@ import {
 } from '@threadplane/content/messages';
 import type { Message } from '@threadplane/core';
 import {
+  prepareTripSummaryRender,
+  type TripSummaryRender,
+} from './trip-summary-render.js';
+import {
   formatTripSummary,
   type ApplicationToolCall,
   type ApplicationToolContracts,
@@ -16,6 +20,7 @@ export type TripSummaryCard = ReturnType<typeof formatTripSummary> & {
 
 export interface MessageContent extends MessageRow<ApplicationToolContracts> {
   readonly tripSummaries: readonly TripSummaryCard[];
+  readonly tripSummaryRenders: readonly TripSummaryRender[];
 }
 
 // Private application composition, not a package API or a view capability.
@@ -29,6 +34,7 @@ export function createMessageContent(
     MessageContent
   >();
   const cards = new WeakMap<ApplicationToolCall, TripSummaryCard>();
+  const renderEntries = new WeakMap<TripSummaryCard, TripSummaryRender>();
   let snapshot: readonly MessageContent[] = Object.freeze([]);
   let disposed = false;
   return {
@@ -66,6 +72,16 @@ export function createMessageContent(
         const next = Object.freeze({
           ...row,
           tripSummaries: Object.freeze(tripSummaries),
+          tripSummaryRenders: Object.freeze(
+            tripSummaries.map((card) => {
+              let prepared = renderEntries.get(card);
+              if (!prepared) {
+                prepared = prepareTripSummaryRender(card);
+                renderEntries.set(card, prepared);
+              }
+              return prepared;
+            })
+          ),
         });
         decorated.set(row, next);
         return next;

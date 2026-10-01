@@ -229,3 +229,50 @@ stable so unchanged rows stay memoized. Give the list a bounded height and
 overflow scrolling in app CSS; it follows row updates while at the bottom and
 preserves the reader's position when scrolled up. Key it by conversation ID when
 a new selection should start at the bottom. Same-ID updates preserve scroll state.
+
+## Read-only render trees
+
+The private `@threadplane/react/render` client entry exports `RenderSpec`.
+Prepare and validate a plain-data tree in application composition, then supply
+an authored registry and explicit immutable state:
+
+```tsx
+import { RenderSpec, type ReactRenderRegistry } from '@threadplane/react/render';
+
+const registry: ReactRenderRegistry = {
+  Title: ({ props }) => <h2>{String(props['text'] ?? '')}</h2>,
+};
+const spec = {
+  root: 'title',
+  elements: { title: { type: 'Title', props: { text: { $state: '/title' } } } },
+} as const;
+<RenderSpec spec={spec} state={{ title: 'Trip recap' }} registry={registry} />;
+```
+
+`RenderSpecData`, `RenderElementData`, `RenderSpecProps`, `RenderViewProps`,
+`ReactRenderRegistry` and `RenderValue` describe readonly inputs and view values.
+Views receive owned, recursively frozen `props` and `bindings`, ordered children,
+`elementKey` and `loading`. Missing expressions can resolve to `undefined`.
+Caller data is never frozen or mutated. Null specs, missing roots, hidden elements
+and unknown types without a supplied `fallback` render nothing. Element and
+registry lookup uses own keys; cyclic child paths are cut off. Duplicate sibling
+IDs or repeat identities throw a contract error.
+
+The adapter reuses the pinned `@json-render/core` expression, visibility and binding
+resolvers. Repeat containers render their children per array item, with `$item`,
+`$index` and absolute nested state paths. An own string or finite-number repeat
+key preserves mounted identity across reorder; absent or unsupported keys use the
+item index. String, number and index identities have separate namespaces.
+
+State and resolved values must be finite, acyclic plain data. Functions, symbols,
+accessors and non-plain objects are rejected. Raw props also reject `undefined`
+and own `__proto__` keys because the upstream raw-prop resolver cannot preserve
+that key; state-bound objects preserve empty and special own keys. These guards
+are not application-schema validation. Validate untrusted trees before rendering.
+
+The view does not parse JSON, observe owners, create a store, execute actions,
+evaluate watch effects or manage disposal. It omits forms, action providers,
+automatic schema validation, A2UI, telemetry, SSR and hydration. Native React
+dogfoods this bounded feature by preparing the existing typed terminal trip
+recap outside rendering. This is not arbitrary streamed JSON rendering or full
+render parity. The root entry stays headless.

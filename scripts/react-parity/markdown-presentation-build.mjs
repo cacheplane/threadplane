@@ -330,6 +330,7 @@ export function readPresentation(directory, provenance) {
 }
 
 export const presentationSeeds = [
+  '@json-render/core',
   '@cacheplane/json-stream',
   '@cacheplane/partial-markdown',
   '@angular/core',
@@ -349,6 +350,7 @@ export const presentationSeeds = [
   '@angular/compiler-cli',
 ];
 export const reactLanggraphPresentationSeeds = [
+  '@json-render/core',
   '@cacheplane/json-stream',
   '@cacheplane/partial-markdown',
   '@langchain/langgraph-sdk',
@@ -554,7 +556,7 @@ export function derivePresentationConsumer(
       [...seeds].sort(),
       [...selectedSeeds].sort(),
       `Exactly ${
-        react ? 'ten' : 'fourteen'
+        react ? 'eleven' : 'fourteen'
       } selected ${framework} seeds required`
     );
   }

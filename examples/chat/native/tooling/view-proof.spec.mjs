@@ -66,6 +66,7 @@ function fixture(t, framework) {
           'chat/reasoning.js',
           'chat/approval-card.js',
           'chat/message-actions.js',
+          'render/render-spec.js',
         ].map((n) => 'node_modules/@threadplane/react/src/' + n)),
   ];
   const types = [
@@ -79,7 +80,7 @@ function fixture(t, framework) {
           'threadplane-angular-markdown',
           'threadplane-angular-chat',
         ].map((n) => 'node_modules/@threadplane/angular/types/' + n + '.d.ts')
-      : []),
+      : ['node_modules/@threadplane/react/src/render/render-spec.d.ts']),
   ];
   const configs = ['view-proof/tsconfig.json', framework + '/tsconfig.json'];
   const buildConfig =
@@ -350,6 +351,26 @@ for (const framework of ['react', 'angular']) {
       assert.throws(() => readViewProof(f.root));
     });
 }
+for (const [graph, extension] of [
+  ['runtime', '.js'],
+  ['types', '.d.ts'],
+])
+  test(`React rejects missing installed RenderSpec ${graph}`, (t) => {
+    const f = fixture(t, 'react');
+    const path =
+      'node_modules/@threadplane/react/src/render/render-spec' + extension;
+    if (graph === 'runtime')
+      f.record.runtime = f.record.runtime.filter((p) => p !== path);
+    else
+      f.record.compiler.inputs = f.record.compiler.inputs.filter(
+        (p) => p !== path
+      );
+    delete f.record.inputs[path];
+    rmSync(join(f.root, 'inputs', path));
+    f.save();
+    assert.throws(() => readViewProof(f.root), /render-spec/);
+  });
+
 test('React rejects missing installed MessageList runtime', (t) => {
   const f = fixture(t, 'react');
   f.record.runtime = f.record.runtime.filter(

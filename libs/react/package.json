@@ -8,6 +8,9 @@
   "sideEffects": [
     "**/*.css"
   ],
+  "dependencies": {
+    "@json-render/core": "0.16.0"
+  },
   "peerDependencies": {
     "@threadplane/content": "0.0.0",
     "@threadplane/core": "0.0.0",
@@ -28,6 +31,11 @@
     "README.md"
   ],
   "exports": {
+    "./render": {
+      "types": "./src/render/index.d.ts",
+      "import": "./src/render/index.js",
+      "default": "./src/render/index.js"
+    },
     "./markdown": {
       "types": "./src/markdown/index.d.ts",
       "import": "./src/markdown/index.js",

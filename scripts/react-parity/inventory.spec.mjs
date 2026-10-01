@@ -42,6 +42,19 @@ function ownership(inventory) {
 
 test('inventory API exists', () => assert.equal(typeof collectInventory, 'function'));
 
+test('read-only React render entry resolves its real view and data types', t => {
+  const entry = 'libs/react/src/render/index.ts';
+  assert.ok(DEFAULT_SCOPE.entryPoints.includes(entry));
+  const { root, put } = fixture(t);
+  put(entry, "'use client'; export { RenderSpec } from './render-spec.js'; export type { RenderSpecData } from './types.js';");
+  put('libs/react/src/render/render-spec.tsx', 'export function RenderSpec() { return null; }');
+  put('libs/react/src/render/types.ts', 'export interface RenderSpecData { readonly root: string; }');
+  const actual = collectInventory(root, { ...scope, libraries: ['react'], entryPoints: [entry] });
+  for (const [symbol, path] of [['RenderSpec', 'render-spec.tsx'], ['RenderSpecData', 'types.ts']]) {
+    assert.equal(actual.rows.find(row => row.id === `export:${entry}#${symbol}`).declarations[0].path, 'libs/react/src/render/' + path);
+  }
+});
+
 test('owned content features are scoped separately from renderer parity', t => {
   assert.ok(DEFAULT_SCOPE.libraries.includes('content'));
   for (const entry of ['libs/content/src/index.ts', 'libs/content/src/markdown/index.ts', 'libs/content/src/json/index.ts']) assert.ok(DEFAULT_SCOPE.entryPoints.includes(entry));

@@ -239,6 +239,18 @@ function fixture(t, framework = 'react') {
     map[path] = sha256;
     artifacts['@threadplane/content'].push({ path: local, sha256 });
     if (framework === 'react') {
+      const render = 'src/render/render-spec' + extension;
+      const renderPath = 'node_modules/@threadplane/react/' + render;
+      const renderHash = put(
+        consumer,
+        renderPath,
+        'installed RenderSpec: ' + extension
+      );
+      map[renderPath] = renderHash;
+      artifacts['@threadplane/react'].push({
+        path: render,
+        sha256: renderHash,
+      });
       for (const name of [
         'message-list',
         'reasoning',
@@ -387,6 +399,18 @@ for (const [graph, extension] of [
       'node_modules/@threadplane/react/src/chat/message-actions' + extension
     ];
     assert.throws(() => captureRetainedBuild(f.directory, f), /MessageActions/);
+  });
+
+for (const [graph, extension] of [
+  ['compiler', '.d.ts'],
+  ['bundler', '.js'],
+])
+  test(`React retention requires installed RenderSpec ${graph}`, (t) => {
+    const f = fixture(t, 'react');
+    delete f.provenance[graph].inputs[
+      'node_modules/@threadplane/react/src/render/render-spec' + extension
+    ];
+    assert.throws(() => captureRetainedBuild(f.directory, f), /RenderSpec/);
   });
 
 for (const framework of ['react', 'angular']) {
