@@ -131,6 +131,8 @@ jobs:
       - run: npm ci
       - name: Verify native conversation tooling
         run: npx nx run native-conversation-react:tooling-test
+      - name: Verify native React copy behavior
+        run: npx nx run native-conversation-react:copy-test
       - run: npx nx run-many -t lint --projects=$LIBS
       - name: React migration baseline and boundaries
         run: |

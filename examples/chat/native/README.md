@@ -329,3 +329,16 @@ Start a fresh `--review` process for each browser walkthrough. Closing review
 stops only its owned servers and leaves the retained directory intact. Keep or
 remove that directory yourself after review; use development serving above for
 an interactive session against a live endpoint.
+
+## React message actions
+
+Assistant answers expose the installed private `MessageActions` view. Copy writes
+the exact answer text through the browser Clipboard API only after explicit
+activation; reasoning and tool cards are excluded. The application owns pending,
+success and failure feedback. Pending blocks repeats, including while the source
+changes; completed feedback applies only to the captured text and generation.
+Unavailable or rejected clipboard access reports failure without a legacy fallback.
+`native-conversation-react:copy-test` covers source replacement and late settlement;
+the installed production browser proof stubs every clipboard write and checks
+keyboard use, remounts, preserved drafts and no extra conversation requests.
+Ratings and regeneration remain separate application capabilities.

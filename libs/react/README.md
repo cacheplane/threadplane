@@ -158,6 +158,22 @@ SSR and hydration remain outside this private feature.
 
 ## Chat
 
+`MessageActions` renders a named group of explicitly authored native buttons.
+Supply readonly actions with unique `id`, string `label`, argumentless `onSelect`
+and optional `disabled`. Root `disabled`, `label` and `className` are optional;
+empty actions render nothing. The app owns clipboard writes, async feedback,
+ratings and regeneration commands. Mounting or updating the view invokes no action.
+Callbacks may return promises; the app must handle their completion and errors.
+
+```tsx
+import { MessageActions } from '@threadplane/react/chat';
+
+<MessageActions
+  actions={[{ id: 'copy', label: 'Copy answer', onSelect: () => void copyAnswer() }]}
+  disabled={copyPending}
+/>;
+```
+
 `ApprovalCard` is an inline, named region with an app-authored body and explicit
 actions. Each action has a unique `id`, `label`, `onSelect` callback and optional
 `disabled` flag. The card's `disabled` flag disables all actions. Clicking does
