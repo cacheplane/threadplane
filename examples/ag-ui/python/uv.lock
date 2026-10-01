@@ -4,16 +4,16 @@ requires-python = ">=3.12"
 
 [[package]]
 name = "ag-ui-a2ui-toolkit"
-version = "0.0.2"
+version = "0.0.4"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/fc/1e/82ce4d32e7710be30cb942c7a3ea13386b1c8e50fff4c642eef399d7f21c/ag_ui_a2ui_toolkit-0.0.2.tar.gz", hash = "sha256:5908fa7a9cf474fa26d8821ac15b135bdca2c1cfddce0b7c580c6382d1f0bfd9", size = 10379, upload-time = "2026-06-05T15:56:43.259Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f0/ce/85f3960a83d962e5690bc0f27a3baf3bf1602edc2b0603085928c964ea14/ag_ui_a2ui_toolkit-0.0.4.tar.gz", hash = "sha256:172e2724e53df8173685a3fb896a6e5175eea06e1dc166c715db110ba4beba76", size = 18960, upload-time = "2026-06-17T13:34:28.695Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8d/bb/f8c6fb7b0fae34f802fcf9af8fe66e193137245dfc888fd8d9c119146cfd/ag_ui_a2ui_toolkit-0.0.2-py3-none-any.whl", hash = "sha256:028e497dfa2c9ca716143248dee14712d5c1055615a1bd91efa95f85e0a467ef", size = 12479, upload-time = "2026-06-05T15:56:42.404Z" },
+    { url = "https://files.pythonhosted.org/packages/47/7a/acf85b01cd996bd011b71e181fd9f3daff5396fc3b7d78ba9445bfc08ecf/ag_ui_a2ui_toolkit-0.0.4-py3-none-any.whl", hash = "sha256:236fc511e1ec2399bcda0c14a109b3fb0a0c3e3988c18ef1918745b1c1535e30", size = 21315, upload-time = "2026-06-17T13:34:29.505Z" },
 ]
 
 [[package]]
 name = "ag-ui-langgraph"
-version = "0.0.40"
+version = "0.0.45"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "ag-ui-a2ui-toolkit" },
@@ -23,21 +23,21 @@ dependencies = [
     { name = "langgraph" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/8e/5a/bedbbe6441b81aaf68a4e4c50d3cad77a24761cbba9c426fdaae7b16434d/ag_ui_langgraph-0.0.40.tar.gz", hash = "sha256:11b009920b79fe97162f53777ecd7860c8a0999479d55f5d85d8da979d5be28f", size = 437997, upload-time = "2026-06-05T15:57:23.826Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/cf/f8/4c3addf0b8153bf5fce1fe65e8e533db17f3c156f4af5155d98b30867602/ag_ui_langgraph-0.0.45.tar.gz", hash = "sha256:a275fec2a8f03bebd3c729504199159e8864aadd04abf315024f2152f2f25f51", size = 375447, upload-time = "2026-09-09T15:22:31.921Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c4/81/238d7442b280cbf9f77842b3128d8bed2f8a8adc8a011127b28e1fed4ad9/ag_ui_langgraph-0.0.40-py3-none-any.whl", hash = "sha256:ee5e06a47ea267c082f746c9cdab4b0ac2dcc4f8e3a26d750d6dd82d0a0a07f1", size = 33296, upload-time = "2026-06-05T15:57:22.426Z" },
+    { url = "https://files.pythonhosted.org/packages/b3/a0/75149ab9c9f21a9e8f620cd10db0d7672d52e184becae605356bf2e0947e/ag_ui_langgraph-0.0.45-py3-none-any.whl", hash = "sha256:f3db2b1a0b33916deafd5383f337a945b234f4bf72eb34a94b08270e30cc1be4", size = 113812, upload-time = "2026-09-09T15:22:30.558Z" },
 ]
 
 [[package]]
 name = "ag-ui-protocol"
-version = "0.1.22"
+version = "1.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e8/f7/9bf788e7d3608725d022a248a58427040f4f930ab87ddb54bd29ee4d9a51/ag_ui_protocol-0.1.22.tar.gz", hash = "sha256:d21f265284a50d9fc87ad7bcbd58f737b4b16eef7b5375f13a6e925117b52046", size = 18110, upload-time = "2026-08-31T18:20:04.334Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/57/92/d88fdc7f4648dc38d3d54c595066bb3e63a4c091884ffb2f98272c33eef8/ag_ui_protocol-1.0.0.tar.gz", hash = "sha256:cfebecef2e7bc942cc8a52d908a4ea86a98f631d2ffdc6ec5812bb843eac74fb", size = 30759, upload-time = "2026-09-17T18:31:19.448Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/be/6c/af3d577e68c9474c99600e65b2c6283772aae187edca6f0f2f5cbd9f565a/ag_ui_protocol-0.1.22-py3-none-any.whl", hash = "sha256:fca13ee7820f8f53e869c19e09ddd75826c1799b27c2adb6f2e567295433c704", size = 22068, upload-time = "2026-08-31T18:20:03.43Z" },
+    { url = "https://files.pythonhosted.org/packages/82/b0/850be4576e6443dc575daa54188d8136ae2b2eca3f19e098e7a088fc9ebc/ag_ui_protocol-1.0.0-py3-none-any.whl", hash = "sha256:0058eaf0522201089d444e430fc35180bc8ad0222cae39e8568b313e8105d9e6", size = 36842, upload-time = "2026-09-17T18:31:18.471Z" },
 ]
 
 [[package]]
@@ -206,8 +206,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "ag-ui-langgraph", specifier = ">=0.0.37" },
-    { name = "ag-ui-protocol", specifier = ">=0.1.22" },
+    { name = "ag-ui-langgraph", specifier = ">=0.0.45" },
+    { name = "ag-ui-protocol", specifier = ">=1.0.0" },
     { name = "fastapi", specifier = ">=0.115" },
     { name = "langchain-openai", specifier = ">=0.3" },
     { name = "langgraph", specifier = ">=0.3" },

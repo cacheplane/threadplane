@@ -5,8 +5,8 @@ requires-python = ">=3.12"
 dependencies = [
     "langgraph>=0.3",
     "langchain-openai>=0.3",
-    "ag-ui-langgraph>=0.0.37",
-    "ag-ui-protocol>=0.1.22",
+    "ag-ui-langgraph>=0.0.45",
+    "ag-ui-protocol>=1.0.0",
     "fastapi>=0.115",
     "uvicorn>=0.30",
     "python-dotenv>=1.0",
