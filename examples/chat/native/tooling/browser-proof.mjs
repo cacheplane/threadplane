@@ -45,6 +45,40 @@ const values = (text) => ({
   event: 'values',
   data: { messages: [{ type: 'ai', id: 'answer', content: text }] },
 });
+const citationSnippet =
+  '<img src=x>\nLiteral evidence ' + 'Evidence'.repeat(100);
+const citationMetadata = (title = '<b>Supplied source</b>') => [
+  {
+    id: '__proto__',
+    index: 7,
+    title,
+    url: 'https://sources.invalid/article',
+    snippet: citationSnippet,
+    sourceType: 'Authored',
+    iconUrl: 'https://images.invalid/icon',
+  },
+  {
+    id: 'blocked',
+    index: 2,
+    title: 'Blocked source',
+    url: 'javascript:alert(1)',
+  },
+  { id: '', index: 3, title: '', snippet: '' },
+];
+const citedValues = (text, title) => {
+  const event = values(text);
+  event.data.messages[0].additional_kwargs = {
+    citations: citationMetadata(title),
+  };
+  return event;
+};
+const citedInitial = () => {
+  const steps = initial();
+  steps[2].body[0].values.messages[0].additional_kwargs = {
+    citations: citationMetadata(),
+  };
+  return steps;
+};
 const summaryTitle = '<img src=x onerror=alert(1)> Supplied recap';
 const summaryPlace = '<script>alert(1)</script> & ' + 'LongPlace'.repeat(24);
 const summaryNote = '<b>Keep this literal</b> & bring water';
@@ -544,8 +578,8 @@ export async function runProductionProofs(browser, retained) {
       retained,
       'deep link, reload, Back and Forward',
       [
-        ...initial(),
-        ...initial(),
+        ...citedInitial(),
+        ...citedInitial(),
         lookup('b'),
         history('b'),
         lookup('a'),
@@ -556,6 +590,48 @@ export async function runProductionProofs(browser, retained) {
       async ({ page, expect, url }) => {
         await page.goto(url + '/?thread=a');
         await ready(page, expect);
+        const assertSources = async () => {
+          if (retained.framework !== 'react') return;
+          const sources = page.getByRole('region', {
+            name: 'Sources',
+            exact: true,
+          });
+          await expect(sources.getByRole('listitem')).toHaveCount(3);
+          await expect(sources.getByRole('link')).toHaveCount(1);
+          await expect(sources.getByRole('link')).toHaveAttribute(
+            'href',
+            'https://sources.invalid/article'
+          );
+          await expect(sources.getByRole('link')).toHaveText(
+            '<b>Supplied source</b>'
+          );
+          await expect(sources.getByRole('link')).toHaveAttribute(
+            'rel',
+            'noopener noreferrer'
+          );
+          await expect(
+            sources.getByText('Blocked source', { exact: true })
+          ).toBeVisible();
+          await expect(sources.locator('img, script, b')).toHaveCount(0);
+          await expect(
+            sources.locator('.tp-citations__snippet').first()
+          ).toHaveText(citationSnippet);
+          assert.equal(
+            await sources
+              .locator('.tp-citations__snippet')
+              .first()
+              .evaluate((el) => getComputedStyle(el).whiteSpace),
+            'pre-wrap'
+          );
+          await page.setViewportSize({ width: 375, height: 812 });
+          assert.equal(
+            await page.evaluate(
+              () => document.documentElement.scrollWidth > innerWidth
+            ),
+            false
+          );
+        };
+        await assertSources();
         const icon = page.locator('link[rel="icon"]');
         await expect(icon).toHaveCount(1);
         await expect(icon).toHaveAttribute('type', 'image/svg+xml');
@@ -590,6 +666,7 @@ export async function runProductionProofs(browser, retained) {
         );
         await page.reload();
         await ready(page, expect);
+        await assertSources();
         await select(page, 'a');
         await select(page, 'b');
         await ready(page, expect);
@@ -831,18 +908,34 @@ export async function runProductionProofs(browser, retained) {
       'duplicate submit guard, Stop and canonical correction',
       [
         ...initial(),
-        run('a', '  Exact text\nSecond line.  ', [values('Partial answer')], {
-          holdBody: true,
-        }),
+        run(
+          'a',
+          '  Exact text\nSecond line.  ',
+          [citedValues('Partial answer')],
+          {
+            holdBody: true,
+          }
+        ),
         run('a', 'Correct it.', [
-          values('Draft obsolete words'),
-          values('# Canonical answer\n\n- Corrected item'),
+          citedValues('Draft obsolete words'),
+          citedValues(
+            '# Canonical answer\n\n- Corrected item',
+            'Corrected source'
+          ),
         ]),
       ],
       async ({ page, expect, backend, url }) => {
         await page.goto(url + '/?thread=a');
         await ready(page, expect);
         await submit(page, '  Exact text\nSecond line.  ');
+        const sourceItem =
+          retained.framework === 'react'
+            ? await page
+                .getByRole('region', { name: 'Sources', exact: true })
+                .getByRole('listitem')
+                .first()
+                .elementHandle()
+            : undefined;
         await expect(
           page.getByRole('button', { name: 'Stop', exact: true })
         ).toBeEnabled();
@@ -875,6 +968,15 @@ export async function runProductionProofs(browser, retained) {
         await expect(
           page.getByText('Draft obsolete words', { exact: true })
         ).toHaveCount(0);
+        if (retained.framework === 'react') {
+          assert.ok(sourceItem);
+          assert.equal(await sourceItem.evaluate((el) => el.isConnected), true);
+          await expect(
+            page
+              .getByRole('region', { name: 'Sources', exact: true })
+              .getByRole('link')
+          ).toHaveText('Corrected source');
+        }
         return {
           stopPhysicalCloseBeforeCleanup: true,
           exactRequestCount: 5,

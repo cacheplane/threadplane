@@ -5,6 +5,7 @@ import { Markdown } from '../markdown/markdown.js';
 import { useIsomorphicLayoutEffect } from './internal/isomorphic-layout-effect.js';
 import { ToolObservation } from './tool-observation.js';
 import { Reasoning } from './reasoning.js';
+import { Citations } from './citations.js';
 
 type RenderRow<TRow extends MessageRow> = [TRow] extends [never]
   ? MessageRow
@@ -44,6 +45,9 @@ function RowView<TRow extends MessageRow>({
         <pre className="tp-chat-message__literal">{row.message.content}</pre>
       ) : (
         <Markdown snapshot={row.markdown} />
+      )}
+      {row.role === 'assistant' && row.message.citations && (
+        <Citations citations={row.message.citations} />
       )}
       {row.role !== 'tool' &&
         row.toolCalls.map((call) => (

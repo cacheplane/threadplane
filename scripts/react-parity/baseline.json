@@ -1,18 +1,15 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "1484d708e9b4504655a039277b5602f6e47c7f26",
+  "baselineHead": "4659e06d86cc5adfc60ea38982269179ba715aad",
   "sourceState": {
     "modified": [
       "libs/react/README.md",
-      "libs/react/package.json",
-      "package-lock.json",
-      "tsconfig.base.json"
+      "libs/react/src/chat/index.ts",
+      "libs/react/src/chat/message-list.tsx",
+      "libs/react/src/chat/styles.css"
     ],
     "untracked": [
-      "libs/react/src/render/index.ts",
-      "libs/react/src/render/render-spec.tsx",
-      "libs/react/src/render/types.ts",
-      "libs/react/src/render/values.ts"
+      "libs/react/src/chat/citations.tsx"
     ]
   },
   "scope": {
@@ -826,7 +823,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "d699f9770a2de67603228437dd1a73f080db02e0f2da75a9c0221be176f91f33"
+      "sha256": "9c520728b80b6411e774c42d414fcdb275db8335727bc55a05cec858624c152a"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -844,7 +841,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "22f790a9b581a7c9a7ac39ad95bbbc6510b521b4b8267f154530ff46e99921c1"
+      "sha256": "17714e42237ffd1b5efb67521f1bcbae16eec3357d383ba5fa9ef8ca5e11a15f"
     },
     {
       "id": "asset:libs/react/tsconfig.json",
@@ -9964,6 +9961,34 @@
       ]
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#Citations",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "Citations",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/citations.tsx",
+          "symbol": "Citations",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function Citations({ citations, label = 'Sources', className, }: CitationsProps) {\n    if (!citations.length)\n        return null;\n    if (new Set(citations.map((citation) => citation.id)).size !== citations.length)\n        throw new TypeError('Duplicate citation IDs in Sources.');\n    return (<section aria-label={label} className={['tp-citations', className].filter(Boolean).join(' ')}>\n      <h4 className=\"tp-citations__heading\">{label}</h4>\n      <ul className=\"tp-citations__list\">\n        {citations.map((citation) => {\n            const title = citation.title ?? citation.url ?? `Source ${citation.index}`;\n            const href = citation.url === undefined\n                ? undefined\n                : markdownUrl(citation.url, 'link');\n            return (<li key={citation.id} className=\"tp-citations__item\">\n              <span className=\"tp-citations__index\">[{citation.index}] </span>\n              {href === undefined ? (<span className=\"tp-citations__title\">{title}</span>) : (<a className=\"tp-citations__title\" href={href} target=\"_blank\" rel=\"noopener noreferrer\">\n                  {title}\n                </a>)}\n              {citation.sourceType !== undefined && (<span className=\"tp-citations__type\">\n                  {citation.sourceType}\n                </span>)}\n              {citation.snippet !== undefined && (<p className=\"tp-citations__snippet\">{citation.snippet}</p>)}\n            </li>);\n        })}\n      </ul>\n    </section>);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#CitationsProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "CitationsProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/citations.tsx",
+          "symbol": "CitationsProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface CitationsProps {\n    readonly citations: readonly Citation[];\n    readonly label?: string;\n    readonly className?: string;\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/react/src/chat/index.ts#MessageAction",
       "kind": "export",
       "path": "libs/react/src/chat/index.ts",
@@ -14180,10 +14205,16 @@
       "sha256": "1377b4e7bfd1139712d262ec3c70fb08c9a67cab91f4abe845310bddb9030280"
     },
     {
+      "id": "source:libs/react/src/chat/citations.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/citations.tsx",
+      "sha256": "926e77bc7ee058451ff8d7e0df0ff26f2e92419949c72fa4b97dabb569ccde7f"
+    },
+    {
       "id": "source:libs/react/src/chat/index.ts",
       "kind": "source",
       "path": "libs/react/src/chat/index.ts",
-      "sha256": "3a06a6e3a809c9817518ce36e62069633375dea23ddc57bd07ed08e1ce9ff880"
+      "sha256": "689e0593fd5ecb092dde99cfa86f5ea7210e72263da6d08a82b687d0743ff965"
     },
     {
       "id": "source:libs/react/src/chat/internal/isomorphic-layout-effect.ts",
@@ -14207,7 +14238,7 @@
       "id": "source:libs/react/src/chat/message-list.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/message-list.tsx",
-      "sha256": "d5299f7987b1424de7d61ae5d1648397ae1593f1283c48d92404c329295d34cb"
+      "sha256": "042eae25111ae62c13998a2d57791fa3e26c2b12a5038e509b75c0885b3a03a2"
     },
     {
       "id": "source:libs/react/src/chat/reasoning.tsx",

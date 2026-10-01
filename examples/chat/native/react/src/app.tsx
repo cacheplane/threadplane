@@ -3,6 +3,7 @@ import { useAgent } from '@threadplane/react';
 import { Markdown } from '@threadplane/react/markdown';
 import {
   ChatInput,
+  Citations,
   MessageList,
   Reasoning,
   ToolObservation,
@@ -36,6 +37,9 @@ const Message = memo(function Message({ row }: { row: MessageContent }) {
         <pre>{row.message.content}</pre>
       ) : (
         <Markdown snapshot={row.markdown} />
+      )}
+      {row.role === 'assistant' && row.message.citations && (
+        <Citations citations={row.message.citations} />
       )}
       {row.role === 'assistant' &&
         row.tripSummaryRenders.map((prepared) => (
