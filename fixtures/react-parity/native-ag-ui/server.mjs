@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
+import { PROTOCOL_VERSION } from '@ag-ui/client';
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const order = [
@@ -66,6 +67,7 @@ function expectedInput(reviewId, role, command, runId, userId, review) {
     tools: [],
     context: [],
     forwardedProps: {},
+    protocolVersion: PROTOCOL_VERSION,
     ...(command === 'Resume' && {
       resume: [
         {

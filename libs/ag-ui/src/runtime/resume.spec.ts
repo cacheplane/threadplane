@@ -1,3 +1,4 @@
+import { PROTOCOL_VERSION } from '@ag-ui/client';
 import { describe, expect, it, vi } from 'vitest';
 import { bindingFixture } from './testing/binding-fixture';
 import type { NativeResponse, PauseId } from './decision';
@@ -225,8 +226,9 @@ describe('native decision owner', () => {
       };
       const done = fixture.session.resume(token, [response], options);
       const exchange = await bounded(fixture.started(1));
-      expect(exchange.body.resume).toEqual([
-        { interruptId: 'approval', status: 'resolved', payload: null },
+      // 1.0 client rule: a whole-optional `payload: null` is sent as absent.
+      expect(exchange.body.resume).toStrictEqual([
+        { interruptId: 'approval', status: 'resolved' },
       ]);
       expect(selected).toHaveBeenCalledTimes(1);
       expect(ignored).not.toHaveBeenCalled();
@@ -396,6 +398,7 @@ describe('native decision owner', () => {
       expect(exchange.body).toStrictEqual({
         threadId: 'native-thread',
         runId: admitted.run?.id,
+        protocolVersion: PROTOCOL_VERSION,
         messages: [
           { id: before.transcript[0].id, role: 'user', content: 'First' },
         ],

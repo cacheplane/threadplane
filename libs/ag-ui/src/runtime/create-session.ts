@@ -1,9 +1,10 @@
-import type {
-  AGUIEvent,
-  HttpAgentConfig,
-  Message,
-  RunAgentInput,
-  ResumeEntry,
+import {
+  PROTOCOL_VERSION,
+  type AGUIEvent,
+  type HttpAgentConfig,
+  type Message,
+  type RunAgentInput,
+  type ResumeEntry,
 } from '@ag-ui/client';
 import type { CompleteOutcome } from '@threadplane/core';
 import { ownTranscript, requestMessages, type Transcript } from './transcript.js';
@@ -131,6 +132,7 @@ export function createSession(options: SessionOptions): Session {
       input = {
         threadId,
         runId: attempt.id,
+        protocolVersion: PROTOCOL_VERSION,
         messages: requestMessages(value.transcript),
         state: requestState(value.state),
         tools: [],

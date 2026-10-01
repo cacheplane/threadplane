@@ -210,7 +210,8 @@ describe('private session observation', () => {
           ...event,
           rawEvent: new Error('raw'),
           extension: () => undefined,
-        } as AGUIEvent,
+          // Deliberately off-protocol: non-portable extras must not reach the owned terminal.
+        } as unknown as AGUIEvent,
         'legacy-observation'
       );
       expect(value.run?.terminal).toEqual(event);

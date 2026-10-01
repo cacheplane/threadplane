@@ -6079,6 +6079,12 @@
         "type": "Signal<ToolCall[]>",
         "description": "",
         "optional": false
+      },
+      {
+        "name": "usage",
+        "type": "Signal<AgentUsage | undefined>",
+        "description": "Optional token usage for the most recent completed or errored run.\nAdapters whose runtime reports usage set it at the run boundary; it is\n`undefined` while a run is in flight and after a run that reported none.",
+        "optional": true
       }
     ],
     "examples": []
@@ -6306,6 +6312,76 @@
     "examples": []
   },
   {
+    "name": "AgentUsage",
+    "kind": "interface",
+    "description": "Usage for the most recent finished or errored run, one entry per provider and model.",
+    "properties": [
+      {
+        "name": "entries",
+        "type": "AgentUsageEntry[]",
+        "description": "",
+        "optional": false
+      }
+    ],
+    "examples": []
+  },
+  {
+    "name": "AgentUsageEntry",
+    "kind": "interface",
+    "description": "Token accounting for one run, as the runtime reported it. Every count is\noptional: absent means the provider did not report it, which is distinct\nfrom zero. Reasoning, cached, and cache-write counts are parts of the\ninput/output totals, never additions to them.",
+    "properties": [
+      {
+        "name": "cachedInputTokens",
+        "type": "number",
+        "description": "",
+        "optional": true
+      },
+      {
+        "name": "cacheWriteInputTokens",
+        "type": "number",
+        "description": "",
+        "optional": true
+      },
+      {
+        "name": "inputTokens",
+        "type": "number",
+        "description": "",
+        "optional": true
+      },
+      {
+        "name": "model",
+        "type": "string",
+        "description": "",
+        "optional": true
+      },
+      {
+        "name": "outputTokens",
+        "type": "number",
+        "description": "",
+        "optional": true
+      },
+      {
+        "name": "provider",
+        "type": "string",
+        "description": "",
+        "optional": true
+      },
+      {
+        "name": "reasoningTokens",
+        "type": "number",
+        "description": "",
+        "optional": true
+      },
+      {
+        "name": "totalTokens",
+        "type": "number",
+        "description": "",
+        "optional": true
+      }
+    ],
+    "examples": []
+  },
+  {
     "name": "AgentWithHistory",
     "kind": "interface",
     "description": "Extension of Agent that exposes checkpoint history for time-travel UIs.\n\nConcrete adapters that record per-node checkpoints (e.g. LangGraph) should\nimplement this. Pure request/response runtimes that don't have checkpoints\nshould implement plain Agent.",
@@ -6417,6 +6493,12 @@
         "type": "Signal<ToolCall[]>",
         "description": "",
         "optional": false
+      },
+      {
+        "name": "usage",
+        "type": "Signal<AgentUsage | undefined>",
+        "description": "Optional token usage for the most recent completed or errored run.\nAdapters whose runtime reports usage set it at the run boundary; it is\n`undefined` while a run is in flight and after a run that reported none.",
+        "optional": true
       }
     ],
     "examples": []
@@ -7621,6 +7703,12 @@
         "type": "WritableSignal<ToolCall[]>",
         "description": "",
         "optional": false
+      },
+      {
+        "name": "usage",
+        "type": "Signal<AgentUsage | undefined>",
+        "description": "Optional token usage for the most recent completed or errored run.\nAdapters whose runtime reports usage set it at the run boundary; it is\n`undefined` while a run is in flight and after a run that reported none.",
+        "optional": true
       }
     ],
     "examples": []
@@ -7906,6 +7994,12 @@
     "kind": "interface",
     "description": "Inputs for selectPendingClientToolCalls.",
     "properties": [
+      {
+        "name": "authoritativeIds",
+        "type": "ReadonlySet<string>",
+        "description": "Tool-call ids the runtime itself declared unanswered at the end of the\nrun (AG-UI 1.0 `outcome.pendingToolCallIds`). When present it is the\nauthority: a call outside it is not pending even if it has no result.",
+        "optional": true
+      },
       {
         "name": "catalogNames",
         "type": "ReadonlySet<string>",
@@ -8240,6 +8334,12 @@
         "type": "string",
         "description": "",
         "optional": false
+      },
+      {
+        "name": "parts",
+        "type": "readonly unknown[]",
+        "description": "Structured result parts when the runtime returned them (AG-UI 1.0\n`ContentPart[]`). `result` then holds the text, parsed as JSON only when a\nsingle text part holds valid JSON (several text parts are joined\nunparsed); it may be empty for an all-media result. Runtime-specific shape.",
+        "optional": true
       },
       {
         "name": "result",

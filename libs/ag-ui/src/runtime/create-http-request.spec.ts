@@ -6,7 +6,7 @@ import {
   type ServerResponse,
 } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   EventType,
   HttpAgent,
@@ -458,10 +458,13 @@ describe('private HTTP request owner', () => {
   });
 
   it('contains an abrupt socket failure after SSE delivery without an unhandled reader cleanup rejection', async () => {
+    const unhandled: unknown[] = [];
+    const onUnhandled = (reason: unknown) => { unhandled.push(reason); };
+    process.on('unhandledRejection', onUnhandled);
     const server = await serve();
     const received = deferred<void>();
     let signal: AbortSignal | null | undefined;
-    const cancelObserved = deferred<boolean>();
+    const cancelObserved = deferred<void>();
     let readFailure: unknown;
     const factory = createHttpRequest({
       url: server.url,
@@ -482,7 +485,7 @@ describe('private HTTP request owner', () => {
           );
           const cancel = reader.cancel.bind(reader);
           vi.spyOn(reader, 'cancel').mockImplementation((reason) => {
-            cancelObserved.resolve(signal?.aborted === true);
+            cancelObserved.resolve();
             return cancel(reason);
           });
           return reader;
@@ -504,8 +507,14 @@ describe('private HTTP request owner', () => {
         expect(outcome.error).toBeInstanceOf(TypeError);
         expect(outcome.error).toBe(readFailure);
       }
-      expect(await bounded(cancelObserved.promise)).toBe(true);
+      // The 1.0.1 client cancels the reader in its own failure teardown,
+      // before the error reaches this owner, so the source signal is aborted
+      // after (not before) that cancel; the cancel's rejection is contained.
+      await bounded(cancelObserved.promise);
+      expect(signal?.aborted).toBe(true);
       await bounded(exchange.closed);
+      // Let any stray reader-cleanup rejection surface before asserting.
+      for (let turn = 0; turn < 3; turn += 1) await new Promise((r) => setTimeout(r, 0));
       handle.abort();
       expect(await done).toBe(outcome);
       fresh = factory.start(input('fresh'), () => undefined);
@@ -519,10 +528,12 @@ describe('private HTTP request owner', () => {
       freshExchange.response.end();
       expect(await bounded(freshDone)).toEqual({ status: 'closed' });
     } finally {
+      process.off('unhandledRejection', onUnhandled);
       handle.abort();
       fresh?.abort();
       await server.close();
     }
+    expect(unhandled).toEqual([]);
   });
 
   it('keeps the first failure and aborts even if subscription cleanup throws', async () => {
@@ -836,5 +847,67 @@ describe('private HTTP request owner', () => {
       handle.abort();
       await server.close();
     }
+  });
+});
+
+function sseFetch(frames: unknown[]) {
+  return async () =>
+    new Response(
+      frames.map((frame) => `data: ${JSON.stringify(frame)}\n\n`).join(''),
+      { headers: { 'content-type': 'text/event-stream' } }
+    );
+}
+
+describe('private HTTP request compatibility boundary', () => {
+  let previousSuppression: string | undefined;
+  beforeEach(() => {
+    previousSuppression = process.env['SUPPRESS_TRANSFORMATION_WARNINGS'];
+    process.env['SUPPRESS_TRANSFORMATION_WARNINGS'] = 'true';
+  });
+  afterEach(() => {
+    if (previousSuppression === undefined)
+      delete process.env['SUPPRESS_TRANSFORMATION_WARNINGS'];
+    else process.env['SUPPRESS_TRANSFORMATION_WARNINGS'] = previousSuppression;
+  });
+
+  it('translates a pre-1.0 THINKING stream into REASONING events before verification', async () => {
+    const frames = [
+      { type: 'RUN_STARTED', threadId: 't', runId: 'r' },
+      { type: 'THINKING_START' },
+      { type: 'THINKING_TEXT_MESSAGE_START' },
+      { type: 'THINKING_TEXT_MESSAGE_CONTENT', delta: 'because' },
+      { type: 'THINKING_TEXT_MESSAGE_END' },
+      { type: 'THINKING_END' },
+      { type: 'RUN_FINISHED', threadId: 't', runId: 'r' },
+    ];
+    const seen: string[] = [];
+    const handle = createHttpRequest({
+      url: 'http://agent.test/agent',
+      fetch: sseFetch(frames),
+    }).start(
+      {
+        threadId: 't',
+        runId: 'r',
+        protocolVersion: '1.0',
+        messages: [],
+        tools: [],
+        context: [],
+        forwardedProps: {},
+        state: {},
+      },
+      (event) => {
+        seen.push(event.type as string);
+      }
+    );
+    await expect(bounded(handle.done)).resolves.toEqual({ status: 'closed' });
+    expect(seen).toEqual([
+      'RUN_STARTED',
+      'REASONING_START',
+      'REASONING_MESSAGE_START',
+      'REASONING_MESSAGE_CONTENT',
+      'REASONING_MESSAGE_END',
+      'REASONING_END',
+      'RUN_FINISHED',
+    ]);
   });
 });

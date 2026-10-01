@@ -1,3 +1,4 @@
+import { PROTOCOL_VERSION } from '@ag-ui/client';
 import { afterEach, describe, expect, it } from 'vitest';
 import { bindingFixture } from './binding-fixture';
 
@@ -21,6 +22,7 @@ describe('native binding wire fixture', () => {
     expect(exchange.body).toEqual({
       threadId: 'native-thread',
       runId: fixture.session.getSnapshot().run?.id,
+      protocolVersion: PROTOCOL_VERSION,
       messages: [{ id: expect.any(String), role: 'user', content: 'Hello' }],
       state: {},
       tools: [],

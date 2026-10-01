@@ -7,6 +7,7 @@ import {
   type Message,
   type ToolCall,
   type AgentEvent,
+  type AgentUsage,
 } from '@threadplane/chat';
 import type { BaseEvent } from '@ag-ui/core';
 import { reduceEvent, type ReducerStore, type CustomStreamEvent, type ActivityEntry } from './reducer';
@@ -41,6 +42,8 @@ function makeStore(generation = 'run-generation-1'): TestStore {
     events$:   new Subject<AgentEvent>(),
     customEvents: signal<CustomStreamEvent[]>([]),
     activities: signal<Map<string, ActivityEntry>>(new Map()),
+    usage: signal<AgentUsage | undefined>(undefined),
+    pendingClientToolCallIds: signal<ReadonlySet<string> | undefined>(undefined),
     deliveryRun: {
       generation,
       baselineMessageIds: new Set(),
@@ -385,5 +388,19 @@ describe('reduceEvent SUBAGENT_* lifecycle', () => {
     reduceEvent(ev({ type: 'TEXT_MESSAGE_CONTENT', messageId: 'm-1', delta: 'hello' }), store);
     expect(store.messages().find((m) => m.id === 'm-1')?.content).toBe('hello');
     expect(store.activities().size).toBe(0);
+  });
+
+  it('TOOL_CALL_RESULT with content parts sets result text and keeps parts on the activity', () => {
+    const store = makeStore();
+    const parts = [
+      { type: 'text', text: '{"ok":true}' },
+      { type: 'image', source: { type: 'url', value: 'https://x/y.png' } },
+    ];
+    reduceEvent(ev({ type: 'SUBAGENT_STARTED', subagentRunId: 'child', name: 'researcher' }), store);
+    reduceEvent(ev({ type: 'TOOL_CALL_START', subagentRunId: 'child', toolCallId: 'c', toolCallName: 'look', parentMessageId: 'm' }), store);
+    reduceEvent(ev({ type: 'TOOL_CALL_END', subagentRunId: 'child', toolCallId: 'c' }), store);
+    reduceEvent(ev({ type: 'TOOL_CALL_RESULT', subagentRunId: 'child', messageId: 'tm', toolCallId: 'c', content: parts }), store);
+    const calls = store.activities().get('child')!.content()['toolCalls'] as Record<string, unknown>[];
+    expect(calls.find((t) => t['id'] === 'c')).toMatchObject({ result: { ok: true }, parts });
   });
 });

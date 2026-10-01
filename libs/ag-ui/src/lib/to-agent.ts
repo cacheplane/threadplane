@@ -19,7 +19,7 @@ import {
 } from '@threadplane/chat';
 import type {
   Agent, Message, AgentStatus, ToolCall, AgentEvent,
-  AgentInterrupt,
+  AgentInterrupt, AgentUsage,
   AgentRuntimeTelemetryEvent,
   AgentRuntimeTelemetryProperties,
   AgentRuntimeTelemetrySink,
@@ -186,6 +186,8 @@ function createAgentAdapter(
     events$:      new Subject<AgentEvent>(),
     customEvents: signal<CustomStreamEvent[]>([]),
     activities:   signal<Map<string, ActivityEntry>>(new Map()),
+    usage:        signal<AgentUsage | undefined>(undefined),
+    pendingClientToolCallIds: signal<ReadonlySet<string> | undefined>(undefined),
     deliveryRun: null,
     allocateDeliveryGeneration,
   };
@@ -729,11 +731,22 @@ function createAgentAdapter(
       if (event.type === 'RUN_FINISHED') {
         run.terminalReceived = true;
         run.finishedReceived = true;
-        if (interrupts.snapshot.phase === 'collecting') interrupts.ready();
-        else if (run.resumeAttempt && run.outcome === 'success') interrupts.complete(run.resumeAttempt.id);
-        publishInterrupt();
-        commitState();
-        void persistCurrent().catch(() => undefined);
+        // A producer-cancelled run is handled like a local abort (see abortRun):
+        // state rolls back and a resume attempt lands in a recoverable phase.
+        // reduceEvent sets the outcome, so re-read it past the guard's narrowing.
+        const settledOutcome: AdapterRun['outcome'] = (run as AdapterRun).outcome;
+        if (settledOutcome === 'aborted') {
+          rollbackState();
+          if (run.resumeAttempt) interrupts.fail(run.resumeAttempt.id, false);
+          publishInterrupt();
+          void persistCurrent().catch(() => undefined);
+        } else {
+          if (interrupts.snapshot.phase === 'collecting') interrupts.ready();
+          else if (run.resumeAttempt && run.outcome === 'success') interrupts.complete(run.resumeAttempt.id);
+          publishInterrupt();
+          commitState();
+          void persistCurrent().catch(() => undefined);
+        }
       }
       if (event.type === 'RUN_ERROR') {
         run.terminalReceived = true;
@@ -878,6 +891,7 @@ function createAgentAdapter(
     error:     store.error,
     toolCalls: store.toolCalls,
     state:     store.state,
+    usage:     store.usage,
     interrupt: store.interrupt,
     events$:      store.events$.asObservable(),
     customEvents: store.customEvents,
@@ -1047,7 +1061,7 @@ function hasValidFinishedOutcome(event: object): boolean {
   if (outcome == null) return true;
   if (typeof outcome !== 'object' || Array.isArray(outcome)) return false;
   const value = outcome as Record<string, unknown>;
-  if (value['type'] === 'success') return true;
+  if (value['type'] === 'success' || value['type'] === 'cancelled') return true;
   return value['type'] === 'interrupt' && Array.isArray(value['interrupts']);
 }
 

@@ -1,3 +1,4 @@
+import { PROTOCOL_VERSION } from '@ag-ui/client';
 import { once } from 'node:events';
 import { createServer, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
@@ -119,6 +120,7 @@ describe('application input over physical HTTP', () => {
       expect(one.body).toStrictEqual({
         threadId: 'a',
         runId: a.getSnapshot().run?.id,
+        protocolVersion: PROTOCOL_VERSION,
         messages: [{ id: userId, role: 'user', content: 'First' }],
         state: {
           keep: { stable: true },
@@ -170,6 +172,7 @@ describe('application input over physical HTTP', () => {
       expect(two.body).toStrictEqual({
         threadId: 'a',
         runId: a.getSnapshot().run?.id,
+        protocolVersion: PROTOCOL_VERSION,
         messages: [
           { id: userId, role: 'user', content: 'First' },
           {
@@ -226,6 +229,7 @@ describe('application input over physical HTTP', () => {
       expect(three.body).toStrictEqual({
         threadId: 'b',
         runId: b.getSnapshot().run?.id,
+        protocolVersion: PROTOCOL_VERSION,
         messages: [
           {
             id: b.getSnapshot().transcript[0].id,
