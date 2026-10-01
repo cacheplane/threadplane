@@ -514,7 +514,8 @@ describe('private text and reasoning accumulation', () => {
     });
     const result = applyTextMessage(
       ownTranscript([{ id: 'm', role: 'assistant', content: 'yes' }]),
-      event as TextMessageEvent
+      // Deliberately built from getters so each field read is counted.
+      event as unknown as TextMessageEvent
     );
     expect(result[0].content).toBe('yes!');
     expect(reads).toEqual({ type: 1, messageId: 1, delta: 1, metadata: 1 });

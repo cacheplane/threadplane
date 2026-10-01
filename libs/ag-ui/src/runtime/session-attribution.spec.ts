@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { EventType as E, type AGUIEvent } from '@ag-ui/client';
+import {
+  EventType as E,
+  type AGUIEvent,
+  type Attributable,
+} from '@ag-ui/client';
 import { ownTranscript } from './transcript';
 import { assertAttribution } from './session-attribution';
 import { applyObservation, initialObservation } from './session-observation';
@@ -31,7 +35,8 @@ const history = ownTranscript([
   },
 ]);
 describe('retained attribution admission', () => {
-  const selected: AGUIEvent[] = [
+  // Only attributable events can carry subagentRunId in the 1.0 types.
+  const selected: Extract<AGUIEvent, Attributable>[] = [
     { type: E.TEXT_MESSAGE_START, messageId: 'a', role: 'assistant' },
     { type: E.TEXT_MESSAGE_CONTENT, messageId: 'a', delta: 'x' },
     { type: E.TEXT_MESSAGE_END, messageId: 'a' },

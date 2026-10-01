@@ -69,8 +69,15 @@ function workerWeather(snapshot: Snapshot) {
   return {
     name: call.function.name,
     argumentsText: call.function.arguments,
-    ...(results.length === 1 && { resultText: results[0].content }),
+    ...(results.length === 1 && { resultText: literalResult(results[0]) }),
   };
+}
+// AG-UI 1.0 tool messages may carry content parts; this service only ever
+// returns a literal string, so anything else is a fixture failure.
+function literalResult(result: { content: unknown }) {
+  if (typeof result.content !== 'string')
+    throw new Error('Expected a literal worker weather result');
+  return result.content;
 }
 const records: { owner: string; text: string; outcome?: string }[] = [];
 const saved: { value: Snapshot; json: string }[] = [];

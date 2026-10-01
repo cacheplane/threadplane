@@ -103,7 +103,7 @@ test('real Angular APF secondary entries use types/default conditions too', (t) 
   assert.deepEqual(packageVerifier.consumerSpecifiers(manifest), ['@threadplane/angular', '@threadplane/angular/chat']);
 });
 test('APF secondary support does not admit backend SDK dependencies', (t) => {
-  const manifest = { ...angularManifest, exports: { ...angularManifest.exports, './chat': angularChat }, dependencies: { '@ag-ui/client': '0.0.59' } };
+  const manifest = { ...angularManifest, exports: { ...angularManifest.exports, './chat': angularChat }, dependencies: { '@ag-ui/client': '1.0.1' } };
   assert.ok(validatePackage(fixture(t, { manifest, files: angularChatFiles })).some(error => error.includes('forbidden dependencies entry @ag-ui/client')));
 });
 for (const [name, entry, files] of [

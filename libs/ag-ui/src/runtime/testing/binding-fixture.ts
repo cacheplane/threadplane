@@ -2,6 +2,9 @@ import type { RunAgentInput } from '@ag-ui/client';
 import { createSession, type SessionOptions } from '../create-session';
 import type { SessionSnapshot } from '../session-observation';
 
+// Consumer specs assert the declared protocol version without depending on @ag-ui/* directly.
+export { PROTOCOL_VERSION } from '@ag-ui/client';
+
 function deferred<T>() {
   let resolve!: (value: T) => void;
   const promise = new Promise<T>((done) => {

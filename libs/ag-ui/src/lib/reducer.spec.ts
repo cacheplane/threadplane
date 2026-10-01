@@ -10,6 +10,7 @@ import {
   type Message,
   type ToolCall,
   type AgentEvent,
+  type AgentUsage,
 } from '@threadplane/chat';
 import { finalizeDeliveryRun, reduceEvent, type ReducerStore, type CustomStreamEvent, type ActivityEntry } from './reducer';
 
@@ -42,6 +43,8 @@ function makeStore(generation = 'run-generation-1'): TestStore {
     events$:   new Subject<AgentEvent>(),
     customEvents: signal<CustomStreamEvent[]>([]),
     activities: signal<Map<string, ActivityEntry>>(new Map()),
+    usage: signal<AgentUsage | undefined>(undefined),
+    pendingClientToolCallIds: signal<ReadonlySet<string> | undefined>(undefined),
     deliveryRun: {
       generation,
       baselineMessageIds: new Set(),
@@ -81,6 +84,23 @@ describe('reduceEvent', () => {
     expect(store.isLoading()).toBe(false);
     expect(store.messages()[0].delivery).toEqual(staticDelivery('historical'));
     expect(store.messages()[1].delivery).toEqual(completeDelivery('run-generation-1', 'success'));
+  });
+
+  it('finalizes a cancelled outcome as aborted without an error', () => {
+    const store = makeStore();
+    reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r' } as never, store);
+    reduceEvent({ type: 'TEXT_MESSAGE_START', messageId: 'm1', role: 'assistant' } as never, store);
+    reduceEvent({ type: 'TEXT_MESSAGE_CONTENT', messageId: 'm1', delta: 'partial' } as never, store);
+    expect(store.isLoading()).toBe(true);
+    reduceEvent(
+      { type: 'RUN_FINISHED', threadId: 't', runId: 'r', outcome: { type: 'cancelled' } } as never,
+      store,
+    );
+    expect(store.deliveryRun?.outcome).toBe('aborted');
+    expect(store.status()).toBe('idle');
+    expect(store.isLoading()).toBe(false);
+    expect(store.error()).toBeUndefined();
+    expect(store.messages()[0]?.delivery).toEqual(completeDelivery('run-generation-1', 'aborted'));
   });
 
   it('RUN_ERROR finalizes active-generation messages as error', () => {
@@ -1027,5 +1047,120 @@ describe('ACTIVITY events (F5 subagent activities)', () => {
     reduceEvent({ type: 'ACTIVITY_DELTA', messageId: 'tc-1', activityType: 'subagent',
       patch: [{ op: 'replace', path: '/text', value: 'updated' }] } as any, store);
     expect(store.activities().get('tc-1')?.content()['text']).toBe('updated');
+  });
+});
+
+describe('usage', () => {
+  const usage = [{ provider: 'openai', model: 'gpt-5', inputTokens: 12, outputTokens: 3, totalTokens: 15 }];
+
+  it('records RUN_FINISHED usage for the run', () => {
+    const store = makeStore();
+    reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r' } as never, store);
+    reduceEvent({ type: 'RUN_FINISHED', threadId: 't', runId: 'r', usage } as never, store);
+    expect(store.usage()).toEqual({ entries: usage });
+  });
+
+  it('records RUN_ERROR usage accrued before the failure', () => {
+    const store = makeStore();
+    reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r' } as never, store);
+    reduceEvent({ type: 'RUN_ERROR', message: 'boom', usage } as never, store);
+    expect(store.usage()).toEqual({ entries: usage });
+  });
+
+  it('clears usage when a new run starts and leaves it undefined when none is reported', () => {
+    const store = makeStore();
+    store.usage.set({ entries: usage });
+    reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r2' } as never, store);
+    expect(store.usage()).toBeUndefined();
+    reduceEvent({ type: 'RUN_FINISHED', threadId: 't', runId: 'r2' } as never, store);
+    expect(store.usage()).toBeUndefined();
+  });
+});
+
+describe('content-part tool results', () => {
+  const parts = [
+    { type: 'text', text: '{"ok":true}' },
+    { type: 'image', source: { type: 'url', value: 'https://x/y.png' } },
+  ];
+  it('TOOL_CALL_RESULT with parts sets result text and keeps parts', () => {
+    const store = makeStore();
+    reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r' } as never, store);
+    reduceEvent({ type: 'TOOL_CALL_START', toolCallId: 'c', toolCallName: 'look', parentMessageId: 'a' } as never, store);
+    reduceEvent({ type: 'TOOL_CALL_END', toolCallId: 'c' } as never, store);
+    reduceEvent({ type: 'TOOL_CALL_RESULT', messageId: 'tm', toolCallId: 'c', content: parts } as never, store);
+    const call = store.toolCalls().find((t) => t.id === 'c');
+    expect(call?.result).toEqual({ ok: true });
+    expect(call?.parts).toEqual(parts);
+  });
+  it('MESSAGES_SNAPSHOT tool messages with parts become chat content blocks', () => {
+    const store = makeStore();
+    reduceEvent({ type: 'MESSAGES_SNAPSHOT', messages: [
+      { id: 'u', role: 'user', content: 'hi' },
+      { id: 'tm', role: 'tool', toolCallId: 'c', content: parts },
+    ] } as never, store);
+    const tool = store.messages().find((m) => m.id === 'tm');
+    expect(tool?.content).toEqual([
+      { type: 'text', text: '{"ok":true}' },
+      { type: 'image', url: 'https://x/y.png' },
+    ]);
+  });
+});
+
+describe('pendingToolCallIds', () => {
+  it('records pendingToolCallIds from a success outcome and clears them on the next run', () => {
+    const store = makeStore();
+    reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r' } as never, store);
+    reduceEvent({ type: 'RUN_FINISHED', threadId: 't', runId: 'r', outcome: { type: 'success', pendingToolCallIds: ['x'] } } as never, store);
+    expect(store.pendingClientToolCallIds()).toEqual(new Set(['x']));
+    // The adapter allocates a fresh delivery run per send; the finished one is closed.
+    store.deliveryRun = {
+      generation: 'run-generation-2',
+      baselineMessageIds: new Set(),
+      ownedMessageIds: new Set(),
+      snapshotReplacementIds: new Set(),
+    };
+    reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r2' } as never, store);
+    expect(store.pendingClientToolCallIds()).toBeUndefined();
+  });
+
+  it('ignores pendingToolCallIds on a RUN_FINISHED that does not finalize the run', () => {
+    const store = makeStore();
+    reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r' } as never, store);
+    reduceEvent({ type: 'RUN_FINISHED', threadId: 't', runId: 'r', outcome: { type: 'success', pendingToolCallIds: ['x'] } } as never, store);
+    expect(store.pendingClientToolCallIds()).toEqual(new Set(['x']));
+    // The run is already settled; a duplicate terminal must not rewrite the set.
+    reduceEvent({ type: 'RUN_FINISHED', threadId: 't', runId: 'r', outcome: { type: 'success', pendingToolCallIds: ['y'] } } as never, store);
+    expect(store.pendingClientToolCallIds()).toEqual(new Set(['x']));
+  });
+
+  it('an empty declared pending list is authoritative', () => {
+    const store = makeStore();
+    reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r' } as never, store);
+    reduceEvent({ type: 'TOOL_CALL_START', toolCallId: 'c1', toolCallName: 'get_weather' } as never, store);
+    reduceEvent({ type: 'TOOL_CALL_END', toolCallId: 'c1' } as never, store);
+    reduceEvent({ type: 'RUN_FINISHED', threadId: 't', runId: 'r', outcome: { type: 'success', pendingToolCallIds: [] } } as never, store);
+    expect(store.pendingClientToolCallIds()).toEqual(new Set());
+  });
+
+  it('ignores usage on a RUN_FINISHED that does not finalize the run', () => {
+    const store = makeStore();
+    const usageA = [{ provider: 'openai', model: 'gpt-5', inputTokens: 1, outputTokens: 2, totalTokens: 3 }];
+    const usageB = [{ provider: 'openai', model: 'gpt-5', inputTokens: 9, outputTokens: 9, totalTokens: 18 }];
+    reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r' } as never, store);
+    reduceEvent({ type: 'RUN_FINISHED', threadId: 't', runId: 'r', usage: usageA } as never, store);
+    expect(store.usage()).toEqual({ entries: usageA });
+    reduceEvent({ type: 'RUN_FINISHED', threadId: 't', runId: 'r', usage: usageB } as never, store);
+    expect(store.usage()).toEqual({ entries: usageA });
+  });
+
+  it('records usage carried by an interrupt outcome', () => {
+    const store = makeStore();
+    const usage = [{ provider: 'openai', model: 'gpt-5', inputTokens: 1, outputTokens: 2, totalTokens: 3 }];
+    reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r' } as never, store);
+    reduceEvent({
+      type: 'RUN_FINISHED', threadId: 't', runId: 'r', usage,
+      outcome: { type: 'interrupt', interrupts: [{ id: 'i1', reason: 'approval' }] },
+    } as never, store);
+    expect(store.usage()).toEqual({ entries: usage });
   });
 });

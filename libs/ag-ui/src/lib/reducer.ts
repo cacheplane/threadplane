@@ -13,10 +13,11 @@ import {
   type CompleteOutcome,
 } from '@threadplane/chat';
 import type {
-  Message, AgentStatus, ToolCall, AgentEvent, AgentInterrupt,
+  Message, AgentStatus, ToolCall, AgentEvent, AgentInterrupt, AgentUsage,
 } from '@threadplane/chat';
 import type { BaseEvent } from '@ag-ui/client';
 import { applyPatch, type JsonPatchOp } from './internal/apply-patch';
+import { toolResultFromContent, messageContentFromParts } from './internal/content-parts';
 import { bridgeCitationsState } from './bridge-citations-state';
 
 /**
@@ -33,7 +34,7 @@ interface AgUiSnapshotToolCall {
 interface AgUiSnapshotMessage {
   id: string;
   role: string;
-  content?: string;
+  content?: string | unknown[];
   toolCalls?: AgUiSnapshotToolCall[];
   [key: string]: unknown;
 }
@@ -83,6 +84,12 @@ export interface ReducerStore {
   events$:      Subject<AgentEvent>;
   customEvents: WritableSignal<CustomStreamEvent[]>;
   activities: WritableSignal<Map<string, ActivityEntry>>;
+  /** Token usage for the latest finished/errored run. */
+  usage: WritableSignal<AgentUsage | undefined>;
+  /** `outcome.pendingToolCallIds` from the latest successful RUN_FINISHED.
+   *  undefined when the producer declared no list; a declared list, even an
+   *  empty one, is the authority (an empty Set means nothing is pending). */
+  pendingClientToolCallIds: WritableSignal<ReadonlySet<string> | undefined>;
   deliveryRun: ReducerDeliveryRun | null;
   allocateDeliveryGeneration(scope: string): string;
   /** Accumulated raw TOOL_CALL_ARGS text per toolCallId. A live model streams
@@ -141,6 +148,8 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
       // a TOOL_CALL_ARGS fragment whose TOOL_CALL_END never arrived (aborted
       // or errored run) must not prefix a same-id call in the next run.
       store.argsBuffers?.clear();
+      store.usage.set(undefined);
+      store.pendingClientToolCallIds.set(undefined);
       return;
     }
     case 'RUN_FINISHED': {
@@ -158,12 +167,28 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
           store.interrupt.set(toOutcomeInterrupt(outcome, eventRunId(event)));
         }
         if (run && finalizeDeliveryRun(store, run, 'paused')) {
+          store.usage.set(usageFromEvent(event));
           store.status.set('idle');
           store.isLoading.set(false);
         }
         return;
       }
+      if (outcome?.type === 'cancelled') {
+        // 1.0 RunFinishedCancelledOutcome: the producer stopped the run on
+        // request. The neutral contract already has 'aborted' for exactly this.
+        if (!run || !finalizeDeliveryRun(store, run, 'aborted')) return;
+        store.usage.set(usageFromEvent(event));
+        store.status.set('idle');
+        store.isLoading.set(false);
+        return;
+      }
+      const declared = outcome?.pendingToolCallIds;
+      const pendingIds = Array.isArray(declared)
+        ? new Set(declared.filter((id): id is string => typeof id === 'string'))
+        : undefined;
       if (!run || !finalizeDeliveryRun(store, run, 'success')) return;
+      store.usage.set(usageFromEvent(event));
+      store.pendingClientToolCallIds.set(pendingIds);
       store.status.set('idle');
       store.isLoading.set(false);
       return;
@@ -171,6 +196,7 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
     case 'RUN_ERROR': {
       const run = currentRunForEvent(event, store);
       if (!run || !finalizeDeliveryRun(store, run, 'error')) return;
+      store.usage.set(usageFromEvent(event));
       store.status.set('error');
       store.isLoading.set(false);
       const runErrorMsg = (event as { message?: unknown }).message;
@@ -322,9 +348,9 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
       // ag_ui_langgraph serialises tool results via normalize_tool_content()
       // which always returns a string. Parse it so downstream consumers
       // (chat-tool-views / toToolViewSpec) can spread the object into props.
-      const result = typeof e.content === 'string' ? safeParseJson(e.content) : e.content;
+      const { result, parts } = toolResultFromContent(e.content);
       store.toolCalls.update((prev) =>
-        prev.map((t) => t.id === e.toolCallId ? { ...t, result } : t),
+        prev.map((t) => t.id === e.toolCallId ? { ...t, result, ...(parts ? { parts } : {}) } : t),
       );
       return;
     }
@@ -372,7 +398,16 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
         let delivery = previous?.delivery ?? staticDelivery(m.id);
         let snapshotMessage: Omit<Message, 'delivery'>;
         if (m.role !== 'assistant' || !m.toolCalls || m.toolCalls.length === 0) {
-          snapshotMessage = m as unknown as Omit<Message, 'delivery'>;
+          if (m.role === 'tool' && Array.isArray(m.content)) {
+            const mapped = messageContentFromParts(m.content);
+            snapshotMessage = {
+              ...m,
+              content: mapped.content,
+              ...(mapped.extra ? { extra: mergeAgUiExtra(m['extra'], mapped.extra) } : {}),
+            } as unknown as Omit<Message, 'delivery'>;
+          } else {
+            snapshotMessage = m as unknown as Omit<Message, 'delivery'>;
+          }
         } else {
           const ids: string[] = [];
           for (const tc of m.toolCalls) {
@@ -388,7 +423,7 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
           snapshotMessage = { ...rest, toolCallIds: ids } as unknown as Omit<Message, 'delivery'>;
         }
         if (completedMessage) {
-          const snapshotChanged = completedMessage.content !== snapshotMessage.content
+          const snapshotChanged = !sameContent(completedMessage.content, snapshotMessage.content)
             || !sameStringArray(completedMessage.toolCallIds, snapshotMessage.toolCallIds);
           if (!snapshotChanged) return completedMessage;
 
@@ -738,9 +773,8 @@ function routeSubagentContentEvent(subagentRunId: string, event: BaseEvent, stor
         // ag_ui_langgraph serialises tool results via normalize_tool_content()
         // which always returns a string — parse it the same way the parent
         // TOOL_CALL_RESULT handler does so downstream consumers get an object.
-        const raw = e['content'];
-        const result = typeof raw === 'string' ? safeParseJson(raw) : raw;
-        return { ...c, toolCalls: toolCalls.map((t) => (t['id'] === e['toolCallId'] ? { ...t, result } : t)) };
+        const { result, parts } = toolResultFromContent(e['content']);
+        return { ...c, toolCalls: toolCalls.map((t) => (t['id'] === e['toolCallId'] ? { ...t, result, ...(parts ? { parts } : {}) } : t)) };
       }
       default:
         return c;
@@ -748,17 +782,28 @@ function routeSubagentContentEvent(subagentRunId: string, event: BaseEvent, stor
   });  // content-only change → inner signal, no map churn
 }
 
-/** Loosely-typed RUN_FINISHED outcome. @ag-ui/core@0.0.59 ships the strict
- *  RunFinishedInterruptOutcomeSchema / InterruptSchema for this shape, but
- *  the reducer deliberately keeps this tolerant hand-rolled view: a strict
- *  parse would silently DROP an interrupt whose entries deviate from the
- *  schema (extra keys on the strict outcome object, a missing `reason`),
- *  while the contract here is to preserve every entry verbatim under
- *  `value.interrupts` for resume to address. Validation strictness would be
- *  a behavior change, not a simplification. */
+/** Loosely-typed RUN_FINISHED outcome. The 1.0 validators are loose objects,
+ *  but the reducer still keeps its own tolerant view: it must preserve every
+ *  interrupt entry verbatim under `value.interrupts` for resume to address,
+ *  and it must not depend on a validator to route on `type`. */
 interface RunFinishedOutcome {
   type?: string;
   interrupts?: unknown;
+  pendingToolCallIds?: unknown;
+}
+
+/** Merge mapped `extra` into a pre-existing one, keeping any existing
+ *  `extra['ag-ui']` record rather than overwriting it. */
+function mergeAgUiExtra(existing: unknown, mapped: Record<string, unknown>): Record<string, unknown> {
+  const base = isRecord(existing) ? existing : {};
+  return {
+    ...base,
+    ...mapped,
+    'ag-ui': {
+      ...(isRecord(base['ag-ui']) ? base['ag-ui'] : {}),
+      ...(isRecord(mapped['ag-ui']) ? mapped['ag-ui'] : {}),
+    },
+  };
 }
 
 function runFinishedOutcome(event: BaseEvent): RunFinishedOutcome | undefined {
@@ -786,6 +831,12 @@ function toOutcomeInterrupt(
     value: { interrupts, ...(runId !== undefined ? { runId } : {}) },
     resumable: true,
   };
+}
+
+function usageFromEvent(event: BaseEvent): AgentUsage | undefined {
+  const usage = (event as { usage?: unknown }).usage;
+  if (!Array.isArray(usage) || usage.length === 0) return undefined;
+  return { entries: usage.filter(isRecord) as AgentUsage['entries'] };
 }
 
 function eventRunId(event: BaseEvent): string | undefined {
@@ -825,6 +876,12 @@ function ownAssistantMessage(store: ReducerStore, id: string) {
   run.ownedMessageIds.add(id);
   run.currentAssistantMessageId = id;
   return streamingDelivery(run.generation);
+}
+
+function sameContent(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (Array.isArray(a) && Array.isArray(b)) return JSON.stringify(a) === JSON.stringify(b);
+  return false;
 }
 
 function sameStringArray(left?: string[], right?: string[]): boolean {

@@ -1,3 +1,4 @@
+import { PROTOCOL_VERSION } from '@ag-ui/client';
 import { once } from 'node:events';
 import { readFileSync } from 'node:fs';
 import { createServer, type ServerResponse } from 'node:http';
@@ -167,6 +168,7 @@ describe('owned interrupt evidence over held HTTP', () => {
           expect(exchange.body).toStrictEqual({
             threadId: 'thread',
             runId: owner.getSnapshot().run?.id,
+            protocolVersion: PROTOCOL_VERSION,
             messages: [
               {
                 id: owner.getSnapshot().transcript[0].id,
@@ -353,6 +355,7 @@ describe('owned interrupt evidence over held HTTP', () => {
         expect(second.body).toStrictEqual({
           threadId: 'thread',
           runId: current.run?.id,
+          protocolVersion: PROTOCOL_VERSION,
           messages: [
             { id: prior.transcript[0].id, role: 'user', content: 'First' },
             { id: current.transcript[1].id, role: 'user', content: 'Second' },

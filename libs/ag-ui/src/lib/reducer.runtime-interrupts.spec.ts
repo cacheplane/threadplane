@@ -23,6 +23,7 @@ import {
   type Message,
   type ToolCall,
   type AgentEvent,
+  type AgentUsage,
 } from '@threadplane/chat';
 import { reduceEvent, type ReducerStore, type CustomStreamEvent, type ActivityEntry } from './reducer';
 import { toAgent } from './to-agent';
@@ -57,6 +58,8 @@ function makeStore(generation = 'run-generation-1'): ReducerStore {
     events$:   new Subject<AgentEvent>(),
     customEvents: signal<CustomStreamEvent[]>([]),
     activities: signal<Map<string, ActivityEntry>>(new Map()),
+    usage: signal<AgentUsage | undefined>(undefined),
+    pendingClientToolCallIds: signal<ReadonlySet<string> | undefined>(undefined),
     deliveryRun: {
       generation,
       baselineMessageIds: new Set<string>(),

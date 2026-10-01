@@ -6,7 +6,7 @@ import {
   type ClientRequest,
   type Server,
 } from 'node:http';
-import type { RunAgentInput } from '@ag-ui/client';
+import { PROTOCOL_VERSION, type RunAgentInput } from '@ag-ui/client';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Explicit fixture binding preserves the source or installed owner.
 import { createSession } from '../../fixtures/react-parity/native-ag-ui/mastra-backend.js';
 type NativeResponse = Parameters<
@@ -77,6 +77,7 @@ function expectedInput(
     tools: [],
     context: [],
     forwardedProps: {},
+    protocolVersion: PROTOCOL_VERSION,
     ...(scenario.exchanges.length && { resume: [scenario.response] }),
   };
   assert.deepEqual(input, expected, 'independent complete native envelope');

@@ -27,8 +27,10 @@ still changes the local document, although JSON can omit that key on the wire.
 Both supplied patches and the current document must be plain records (ordinary
 or null-prototype objects). A patch against a scalar, null or array returns
 `error` before cancelling active work or publishing. Omitted or undefined state
-preserves every literal current state. This is a portable-data ownership and
-merge precondition, not model-argument validation. Interfaces without an index
+preserves every literal current state. A literal `null` current state stays
+local; the AG-UI 1.0 client omits a whole-optional `null` state from the
+request. This is a portable-data ownership and merge precondition, not
+model-argument validation. Interfaces without an index
 signature may need an explicit plain-record projection to satisfy `PlainValue`.
 
 Only message, state and the existing options signal are selected. Extra runtime
@@ -62,6 +64,10 @@ An explicit `interruptMode: 'legacy-observation'` preserves the legacy conventio
 the root custom notice occupies both evidence fields, selects `paused` and closes
 the response. This option provides observation only, not legacy resume support.
 Neither mode parses JSON strings, executes response schemas or guesses providers.
+`RUN_FINISHED.outcome` maps `success` (or no outcome) to `success`, a native
+`interrupt` batch to `paused` and `cancelled` to `aborted`, matching the public
+adapter. An unrecognised outcome type is stripped by the 1.0 client and
+therefore reads as success.
 
 Server evidence and local outcomes are distinct. A terminal callback can stop the
 owner, selecting local `aborted` while retaining the accepted native terminal.
@@ -88,13 +94,14 @@ if (
   snapshot.run?.outcome
 ) {
   await session.resume(snapshot.decision.id, [
-    { interruptId: 'approval', status: 'resolved', payload: null },
+    { interruptId: 'approval', status: 'resolved', payload: { approved: true } },
   ]);
 }
 ```
 
 Every observed interrupt needs exactly one response with its exact ID. Resolved
-responses may omit payload; `null` is meaningful. Cancelled responses use
+responses may omit payload; a `null` payload is treated as absent (the AG-UI 1.0
+client omits whole-optional nulls on the wire). Cancelled responses use
 `{ interruptId, status: 'cancelled' }` and cannot contain a defined payload.
 Optional metadata must be a plain record. Responses and the options signal are
 captured once before queueing; nested data is copied and frozen without freezing

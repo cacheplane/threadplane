@@ -28,6 +28,9 @@ function finishedResult(outcome: unknown): RunOutcome {
   if (outcome == null) return { outcome: 'success' };
   if (typeof outcome === 'object' && 'type' in outcome) {
     if (outcome.type === 'success') return { outcome: 'success' };
+    // AG-UI 1.0 reports a deliberate stop as cancelled; the public adapter
+    // surfaces the same terminal as aborted.
+    if (outcome.type === 'cancelled') return { outcome: 'aborted' };
     if (
       outcome.type === 'interrupt' &&
       'interrupts' in outcome &&
@@ -97,20 +100,8 @@ export function createRun(
           capturedInput,
           (event) => {
             if (closed) return;
-            const child = typeof event['subagentRunId'] === 'string';
-            const rootLifecycle =
-              event.type === EventType.RUN_STARTED ||
-              event.type === EventType.RUN_FINISHED ||
-              event.type === EventType.RUN_ERROR;
-            if (child && rootLifecycle) {
-              settle({
-                outcome: 'error',
-                error: new Error(
-                  'Child-attributed RUN_* events are unsupported'
-                ),
-              });
-              return;
-            }
+            // RUN_* events are not attributable in 1.0: the client's
+            // enforcement stage strips any `subagentRunId` before delivery.
             let candidate: RunOutcome | undefined;
             if (
               event.type === EventType.RUN_STARTED ||

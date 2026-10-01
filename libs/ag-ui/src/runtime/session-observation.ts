@@ -133,7 +133,7 @@ export function applyObservation(
     case 'RUN_FINISHED':
     case 'RUN_ERROR':
     case 'CUSTOM': {
-      if (!run || typeof event.subagentRunId === 'string') break;
+      if (!run || isChildAttributed(event)) break;
       const { type } = event;
       const name = type === 'CUSTOM' ? event.name : undefined;
       if (type === 'CUSTOM' && name !== 'on_interrupt') break;
@@ -194,4 +194,14 @@ export function applyObservation(
     subagents,
     ...(run && { run }),
   });
+}
+
+/**
+ * Defensive: enforcement strips `subagentRunId` from RUN_* events before
+ * delivery (see create-run), so a child-attributed RUN_FINISHED/RUN_ERROR should
+ * not reach here. CUSTOM events are legitimately attributable.
+ */
+function isChildAttributed(event: AGUIEvent): boolean {
+  if (!('subagentRunId' in event)) return false;
+  return typeof event.subagentRunId === 'string';
 }

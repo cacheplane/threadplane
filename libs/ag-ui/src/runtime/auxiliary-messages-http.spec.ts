@@ -216,10 +216,10 @@ describe('private auxiliary observation over actual held HTTP', () => {
       });
       await milestone(snapshotSeen.promise);
       expect(latest).toStrictEqual([user, activity]);
-      expect(events[1]).toMatchObject({
-        type: EventType.ACTIVITY_SNAPSHOT,
-        replace: true,
-      });
+      // 1.0 schema: `replace` is optional with no default, so an omitted
+      // flag stays absent and the runtime applies it as a replacement.
+      expect(events[1]).toMatchObject({ type: EventType.ACTIVITY_SNAPSHOT });
+      expect(events[1]).not.toHaveProperty('replace');
       expect(Object.isFrozen(latest[1].content)).toBe(true);
       expect(settled).toBe(false);
       const firstActivity = latest[1];

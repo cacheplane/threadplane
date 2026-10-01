@@ -63,6 +63,49 @@ describe('automatic development evidence', () => {
     expect(developmentEvidence.events).not.toContain('thread.persisted');
   });
 
+  it('settles a cancelled run outcome as an abort, not an error', async () => {
+    developmentEvidence.events = [];
+    const stub = new StubAgent();
+    const agent = toAgent(stub as unknown as AbstractAgent);
+    stub.runAgent.mockImplementationOnce(async () => {
+      stub.emit({ type: 'RUN_STARTED', runId: 'r' } as BaseEvent);
+      stub.emit({ type: 'RUN_FINISHED', runId: 'r', outcome: { type: 'cancelled' } } as BaseEvent);
+      return { result: undefined, newMessages: [] };
+    });
+    await agent.submit({});
+    expect(agent.status()).toBe('idle');
+    expect(agent.error()).toBeUndefined();
+    expect(agent.isLoading()).toBe(false);
+    expect(developmentEvidence.events).not.toContain('runtime.first_stream_completed');
+  });
+
+  it('lands a producer-cancelled resume in a recoverable interrupt phase with state rolled back', async () => {
+    const stub = new StubAgent();
+    const agent = toAgent(stub as unknown as AbstractAgent);
+    stub.runAgent.mockImplementationOnce(async () => {
+      stub.emit({ type: 'RUN_STARTED', runId: 'paused' } as BaseEvent);
+      stub.emit({ type: 'STATE_SNAPSHOT', snapshot: { step: 'paused' } } as BaseEvent);
+      stub.emit({ type: 'RUN_FINISHED', runId: 'paused', outcome: { type: 'interrupt', interrupts: [{ id: 'i', value: {} }] } } as BaseEvent);
+      return { result: undefined, newMessages: [] };
+    });
+    await agent.submit({});
+    expect(agent.interruptSession().phase).toBe('pending');
+    const before = structuredClone(agent.state());
+    stub.runAgent.mockImplementationOnce(async () => {
+      const runId = (stub.runAgent.mock.calls.at(-1) as unknown as [{ runId: string }])[0].runId;
+      stub.emit({ type: 'RUN_STARTED', runId } as BaseEvent);
+      stub.emit({ type: 'STATE_SNAPSHOT', snapshot: { step: 'partial' } } as BaseEvent);
+      expect(agent.state()).toEqual({ step: 'partial' });
+      stub.emit({ type: 'RUN_FINISHED', runId, outcome: { type: 'cancelled' } } as BaseEvent);
+      return { result: undefined, newMessages: [] };
+    });
+    await agent.submit({ resume: true });
+    expect(agent.interruptSession().phase).toBe('recovery-required');
+    expect(agent.status()).toBe('idle');
+    expect(agent.error()).toBeUndefined();
+    expect(agent.state()).toEqual(before);
+  });
+
   it.each([false, vi.fn()] as const)('suppresses automatic events for an explicit sink %s', async telemetry => {
     developmentEvidence.events = []; developmentEvidence.touches = 0;
     const stub = new StubAgent();
@@ -434,6 +477,25 @@ describe('toAgent', () => {
     const a = toAgent(stub as unknown as AbstractAgent);
     await a.stop();
     expect(stub.abortRun).toHaveBeenCalledOnce();
+  });
+
+  it('exposes run usage on agent.usage()', async () => {
+    const stub = new StubAgent();
+    const a = toAgent(stub as unknown as AbstractAgent);
+    const usage = [{ provider: 'openai', model: 'gpt-5', inputTokens: 1, outputTokens: 2, totalTokens: 3 }];
+    stub.runAgent.mockImplementationOnce(async () => {
+      stub.emit({ type: 'RUN_STARTED', runId: 'r1' } as BaseEvent);
+      stub.emit({ type: 'RUN_FINISHED', runId: 'r1', usage } as unknown as BaseEvent);
+      return { result: undefined, newMessages: [] };
+    });
+    await a.submit({});
+    expect(a.usage?.()).toEqual({ entries: usage });
+    stub.runAgent.mockImplementationOnce(async () => {
+      stub.emit({ type: 'RUN_STARTED', runId: 'r2' } as BaseEvent);
+      expect(a.usage?.()).toBeUndefined();
+      return { result: undefined, newMessages: [] };
+    });
+    await a.submit({});
   });
 
   it('events$ emits state_update on CUSTOM with that name', () => {

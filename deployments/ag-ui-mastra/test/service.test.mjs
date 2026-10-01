@@ -6,7 +6,7 @@
 // model is a scripted OpenAI responses-API mock (the endpoint Mastra's model
 // router actually calls), so text differs from the live captures but the
 // event grammar must match. The interrupt→resume round trip is additionally
-// driven through the REAL @ag-ui/client 0.0.59 HttpAgent — the same client
+// driven through the REAL @ag-ui/client 1.0.1 HttpAgent — the same client
 // the Angular adapter uses — so every frame must parse and verify.
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
@@ -157,14 +157,21 @@ test('resume: command.interruptEvent{toolCallId,runId} completes the run (spike 
     },
   };
   const { events } = await runAgent(input);
-  assert.deepEqual(grammar(events), ['RUN_STARTED', 'TOOL_CALL_RESULT', 'TEXT_MESSAGE_CHUNK', 'RUN_FINISHED']);
+  // @ag-ui/mastra 1.1.5 re-declares the suspended call (START/ARGS/END, same
+  // toolCallId) before its RESULT so a 1.0 client never sees a result for an
+  // undeclared tool call; 1.1.2 emitted the bare RESULT.
+  assert.deepEqual(grammar(events), [
+    'RUN_STARTED', 'TOOL_CALL_START', 'TOOL_CALL_ARGS', 'TOOL_CALL_END',
+    'TOOL_CALL_RESULT', 'TEXT_MESSAGE_CHUNK', 'RUN_FINISHED',
+  ]);
+  assert.equal(events.find((e) => e.type === 'TOOL_CALL_START').toolCallId, pending.toolCallId);
   const result = events.find((e) => e.type === 'TOOL_CALL_RESULT');
   assert.equal(result.toolCallId, pending.toolCallId);
   assert.ok(result.content.includes('North Pines'));
   assert.equal(events.at(-1).outcome, undefined);
 });
 
-// ── the REAL client: every frame must parse + verify on @ag-ui/client 0.0.59 ─
+// ── the REAL client: every frame must parse + verify on @ag-ui/client 1.0.1 ─
 test('interrupt → resume round trip through @ag-ui/client HttpAgent', async () => {
   const { HttpAgent } = await import('@ag-ui/client');
   const agent = new HttpAgent({
@@ -190,7 +197,7 @@ test('interrupt → resume round trip through @ag-ui/client HttpAgent', async ()
   assert.deepEqual(seen, ['RUN_STARTED', 'CUSTOM', 'RUN_FINISHED']);
 
   seen.length = 0;
-  // @ag-ui/client 0.0.59 records the RUN_FINISHED interrupt outcome on
+  // @ag-ui/client 1.0.1 records the RUN_FINISHED interrupt outcome on
   // `pendingInterrupts` and refuses runAgent() unless a top-level `resume`
   // addresses it. Mastra's measured wire shape carries the resume in
   // forwardedProps instead, so the Threadplane adapter clears the ledger
