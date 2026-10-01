@@ -81,7 +81,7 @@ execSync(`npx esbuild scripts/ag-ui-demo-middleware.ts --bundle --format=cjs --p
 });
 
 writeFileSync(resolve(funcDir, '.vc-config.json'), JSON.stringify({
-  runtime: 'nodejs20.x',
+  runtime: 'nodejs22.x',
   handler: 'index.js',
   launcherType: 'Nodejs',
   shouldAddHelpers: true,

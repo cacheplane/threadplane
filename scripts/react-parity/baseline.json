@@ -1,10 +1,9 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "f54c3aae99768b269c0af94d9061d761a43319be",
+  "baselineHead": "9740832adbc165b0884f6868d1ad916ad8ab0b69",
   "sourceState": {
     "modified": [
-      "libs/react/README.md",
-      "libs/react/src/chat/message-list.tsx"
+      "scripts/assemble-examples.ts"
     ],
     "untracked": []
   },
@@ -2173,7 +2172,7 @@
       "id": "config:scripts/assemble-examples.ts",
       "kind": "config",
       "path": "scripts/assemble-examples.ts",
-      "sha256": "5c6dc435027c37cbb771bf3aefd7eebfdafb71244a3aa4d694905e0445a47e0f"
+      "sha256": "6c4a3b46e95afab201ba18c2621db3840973387170decaa14407e22e3b9c880e"
     },
     {
       "id": "config:scripts/cockpit-matrix.mjs",
