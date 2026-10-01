@@ -51,6 +51,12 @@
         "command": "node --test examples/chat/native/tooling/*.spec.mjs"
       }
     },
+    "copy-test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node node_modules/vitest/vitest.mjs run --config examples/chat/native/react/vitest.config.mts"
+      }
+    },
     "provider-test": {
       "executor": "nx:run-commands",
       "cache": false,

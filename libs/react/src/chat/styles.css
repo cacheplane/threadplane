@@ -54,6 +54,18 @@
   min-height: 0;
   overflow-y: auto;
 }
+.tp-message-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-block-start: 0.5rem;
+}
+.tp-message-actions__action {
+  font: inherit;
+}
+.tp-message-actions__action:disabled {
+  cursor: not-allowed;
+}
 .tp-chat-message {
   padding-block: 0.75rem;
   border-bottom: 1px solid var(--tp-chat-border);

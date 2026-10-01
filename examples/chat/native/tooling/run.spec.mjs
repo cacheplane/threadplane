@@ -236,6 +236,7 @@ test('Nx target owns preparation without outer dependency builds or unsupported 
   assert.equal(project.name, 'native-conversation-react');
   assert.deepEqual(Object.keys(project.targets).sort(), [
     'build',
+    'copy-test',
     'e2e',
     'provider-test',
     'serve',
