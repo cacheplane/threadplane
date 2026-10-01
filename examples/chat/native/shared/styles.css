@@ -212,7 +212,8 @@ textarea:disabled {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
-.approval-actions {
+.approval-actions,
+.approval .tp-approval-card__actions {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;

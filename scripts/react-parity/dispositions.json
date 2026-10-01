@@ -1538,9 +1538,9 @@
         "T28"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/approval-card.tsx",
-      "reason": "Native component. Decision UI tied to attempt/run identity; submitting/uncertain/recovery states."
+      "reason": "Private inline ApprovalCard presentation is dogfooded with app-owned decision tokens and pending/uncertain states; legacy modal/template and automatic close behavior remain separate."
     },
     {
       "id": "component:libs/chat/src/lib/compositions/chat-interrupt-panel/chat-interrupt-panel.component.ts#ChatInterruptPanelComponent",
@@ -14597,6 +14597,36 @@
       "status": "in-progress",
       "reason": "Pure private reasoning disclosure borrows an owned snapshot and owns only local expansion state.",
       "note": "Generation/reopening reset, manual choice persistence, safe Markdown and native installed remount proof; no parser, subscriptions, commands or disposal in the view. SSR/publication remain separate."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ApprovalCard",
+      "taskIds": ["T28"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private inline decision presentation composed by the native React example; actions and body belong to the application.",
+      "note": "Installed browser approval/decline, pending and uncertain-state proofs. No interrupt matching, command ownership, modal behavior or automatic consumption."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ApprovalCardAction",
+      "taskIds": ["T28"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly explicitly authored actions with unique IDs, labels, callbacks and disabled state."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ApprovalCardProps",
+      "taskIds": ["T28"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly body/action presentation props; application supplies disabled state and handles callback errors."
+    },
+    {
+      "id": "source:libs/react/src/chat/approval-card.tsx",
+      "taskIds": ["T28"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Pure named inline card with native buttons, required body/actions and stable unique heading IDs.",
+      "note": "No parser, subscriptions, timing, command dispatch, pending state or disposal; SSR and public distribution remain separate."
     }
   ]
 }

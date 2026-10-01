@@ -1,15 +1,14 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "1008c5efe672b1b084e88f9a32f7b8032aa3eaba",
+  "baselineHead": "5e8971e04c4b903f23b90aa9cdc0b5cc69d78ff0",
   "sourceState": {
     "modified": [
       "libs/react/README.md",
       "libs/react/src/chat/index.ts",
-      "libs/react/src/chat/message-list.tsx",
       "libs/react/src/chat/styles.css"
     ],
     "untracked": [
-      "libs/react/src/chat/reasoning.tsx"
+      "libs/react/src/chat/approval-card.tsx"
     ]
   },
   "scope": {
@@ -821,7 +820,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "9bc5bab8f6da1f8e5f4b799e6b90a42b7d5053ed75a57a88fbdeee3ae6e960c0"
+      "sha256": "8e7125882298f8f6ec437bfac82e57049e4da51946fc0abc025f8498ea9b612b"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -839,7 +838,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "0440c7a7b074d4858487057b9f714a9c1d0f2a692c6b1703631f923470abedd8"
+      "sha256": "984944ee0209fad002769306879abae5b0f999eb19f285e59d28e9041e9d2776"
     },
     {
       "id": "asset:libs/react/tsconfig.json",
@@ -9697,6 +9696,48 @@
       ]
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#ApprovalCard",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ApprovalCard",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/approval-card.tsx",
+          "symbol": "ApprovalCard",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function ApprovalCard({ children, actions, title = 'Approval request', disabled = false, className, }: ApprovalCardProps) {\n    const heading = useId();\n    return (<section className={['tp-approval-card', className].filter(Boolean).join(' ')} aria-labelledby={heading}>\n      <h2 id={heading} className=\"tp-approval-card__title\">\n        {title}\n      </h2>\n      <div className=\"tp-approval-card__body\">{children}</div>\n      <div className=\"tp-approval-card__actions\">\n        {actions.map((action) => (<button key={action.id} type=\"button\" className=\"tp-approval-card__action\" disabled={disabled || action.disabled} onClick={() => {\n                if (!disabled && !action.disabled)\n                    action.onSelect();\n            }}>\n            {action.label}\n          </button>))}\n      </div>\n    </section>);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ApprovalCardAction",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ApprovalCardAction",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/approval-card.tsx",
+          "symbol": "ApprovalCardAction",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface ApprovalCardAction {\n    readonly id: string;\n    readonly label: string;\n    readonly onSelect: () => void;\n    readonly disabled?: boolean;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ApprovalCardProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ApprovalCardProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/approval-card.tsx",
+          "symbol": "ApprovalCardProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface ApprovalCardProps {\n    readonly children: ReactNode;\n    readonly actions: readonly ApprovalCardAction[];\n    readonly title?: string;\n    readonly disabled?: boolean;\n    readonly className?: string;\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/react/src/chat/index.ts#Chat",
       "kind": "export",
       "path": "libs/react/src/chat/index.ts",
@@ -13789,6 +13830,12 @@
       "sha256": "56dba6e5f8e0ec195271f37e8de4cbe0eb98c0ad8f04f60749ea7a54e621384d"
     },
     {
+      "id": "source:libs/react/src/chat/approval-card.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/approval-card.tsx",
+      "sha256": "c574f85986e72342b50900c21413eee55ebfac135b2c0d23c3a16dcccbdfea78"
+    },
+    {
       "id": "source:libs/react/src/chat/chat-input.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/chat-input.tsx",
@@ -13804,7 +13851,7 @@
       "id": "source:libs/react/src/chat/index.ts",
       "kind": "source",
       "path": "libs/react/src/chat/index.ts",
-      "sha256": "125f02eeaf4e9204b5a73ccee121e4ff376c89dafed4cd3eb004ea86dcd97fae"
+      "sha256": "ee835d4436185fe57d509b019075902b2c4895034ca0d6e8ed8295a8a58f02b6"
     },
     {
       "id": "source:libs/react/src/chat/internal/isomorphic-layout-effect.ts",

@@ -26,6 +26,29 @@
   min-height: 0;
   font-family: inherit;
 }
+.tp-approval-card {
+  padding: 1rem;
+  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  border-radius: 0.5rem;
+  color: var(--tp-chat-text, var(--ds-text-primary, CanvasText));
+}
+.tp-approval-card__title {
+  margin-block: 0 0.75rem;
+  font: inherit;
+  font-weight: 600;
+}
+.tp-approval-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-block-start: 0.75rem;
+}
+.tp-approval-card__action {
+  font: inherit;
+}
+.tp-approval-card__action:disabled {
+  cursor: not-allowed;
+}
 .tp-chat-list {
   flex: 1 1 auto;
   min-height: 0;

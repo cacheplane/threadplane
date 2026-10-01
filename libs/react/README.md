@@ -158,6 +158,24 @@ SSR and hydration remain outside this private feature.
 
 ## Chat
 
+`ApprovalCard` is an inline, named region with an app-authored body and explicit
+actions. Each action has a unique `id`, `label`, `onSelect` callback and optional
+`disabled` flag. The card's `disabled` flag disables all actions. Clicking does
+not hide or consume the card; the app owns interrupt matching, decision tokens,
+pending/error state and command handling. Async callbacks must handle their own
+rejections. The card adds no modal, focus management, timer or session lifecycle.
+
+```tsx
+import { ApprovalCard } from '@threadplane/react/chat';
+
+<ApprovalCard
+  disabled={!canRespond}
+  actions={[{ id: 'approve', label: 'Approve', onSelect: respond }]}
+>
+  <p>{reason}</p>
+</ApprovalCard>;
+```
+
 ```tsx
 import { Chat } from '@threadplane/react/chat';
 import '@threadplane/react/chat/styles.css';

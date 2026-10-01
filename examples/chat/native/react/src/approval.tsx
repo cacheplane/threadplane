@@ -1,3 +1,4 @@
+import { ApprovalCard } from '@threadplane/react/chat';
 import type {
   ApplicationSnapshot,
   createApplication,
@@ -21,25 +22,23 @@ export function Approval({
     ) : null;
   const { token, reason, canRespond } = decision;
   return (
-    <section className="approval" aria-labelledby="approval-title">
-      <h2 id="approval-title">Approval request</h2>
+    <ApprovalCard
+      className="approval"
+      disabled={!canRespond}
+      actions={[
+        {
+          id: 'approve',
+          label: 'Approve request',
+          onSelect: () => application.respond(token, 'approve'),
+        },
+        {
+          id: 'decline',
+          label: 'Decline request',
+          onSelect: () => application.respond(token, 'decline'),
+        },
+      ]}
+    >
       <p className="approval-reason">{reason}</p>
-      <div className="approval-actions">
-        <button
-          type="button"
-          disabled={!canRespond}
-          onClick={() => application.respond(token, 'approve')}
-        >
-          Approve request
-        </button>
-        <button
-          type="button"
-          disabled={!canRespond}
-          onClick={() => application.respond(token, 'decline')}
-        >
-          Decline request
-        </button>
-      </div>
-    </section>
+    </ApprovalCard>
   );
 }

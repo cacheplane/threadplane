@@ -946,6 +946,8 @@ export async function runProductionProofs(browser, retained) {
         const stop = page.getByRole('button', { name: 'Stop', exact: true });
         const text = '  Keep this next-message draft.\nExactly as written.  ';
         await expect(region).toBeVisible();
+        if (retained.framework === 'react')
+          await expect(region).toHaveClass(/tp-approval-card/);
         assert.equal(
           await region.locator('.approval-reason').textContent(),
           approvalReason

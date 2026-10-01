@@ -239,7 +239,7 @@ function fixture(t, framework = 'react') {
     map[path] = sha256;
     artifacts['@threadplane/content'].push({ path: local, sha256 });
     if (framework === 'react') {
-      for (const name of ['message-list', 'reasoning']) {
+      for (const name of ['message-list', 'reasoning', 'approval-card']) {
         const local = 'src/chat/' + name + extension;
         const path = 'node_modules/@threadplane/react/' + local;
         const sha256 = put(
@@ -358,6 +358,18 @@ for (const [graph, extension] of [
       'node_modules/@threadplane/react/src/chat/message-list' + extension
     ];
     assert.throws(() => captureRetainedBuild(f.directory, f), /MessageList/);
+  });
+
+for (const [graph, extension] of [
+  ['compiler', '.d.ts'],
+  ['bundler', '.js'],
+])
+  test(`React retention requires installed ApprovalCard ${graph}`, (t) => {
+    const f = fixture(t, 'react');
+    delete f.provenance[graph].inputs[
+      'node_modules/@threadplane/react/src/chat/approval-card' + extension
+    ];
+    assert.throws(() => captureRetainedBuild(f.directory, f), /ApprovalCard/);
   });
 
 for (const framework of ['react', 'angular']) {

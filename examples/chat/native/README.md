@@ -28,6 +28,14 @@ fresh responses, literal unsafe content and fresh-history selection; same-row
 generation/reopening reset is covered by real-owner source component tests. The
 separate view proof retains reasoning through absent-view streaming and remount.
 
+The React decision adapter composes the installed `ApprovalCard` as an inline
+named region with the existing reason and Approve/Decline actions. The application
+still matches interrupts, captures occurrence tokens, gates repeated/stale actions,
+and owns pending, consumed and uncertain states. The card never hides itself or
+dispatches a command implicitly. Production tests exercise keyboard decisions,
+disabled pending actions, retained uncertain decisions and exact resume payloads;
+provenance requires the installed card's runtime and declarations.
+
 ## Setup and commands
 
 Run commands from the repository root using **Node 22 and npm 10** (locally
