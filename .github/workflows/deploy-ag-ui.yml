@@ -49,8 +49,14 @@ jobs:
 
       - name: Drift check — committed artifacts must match regeneration
         run: |
-          if ! git diff --exit-code -- deployments/${{ matrix.deployment.dir }}/; then
-            echo "::error::deployments/${{ matrix.deployment.dir }}/ is out of sync. Run 'npx tsx scripts/generate-ag-ui-deployment-config.ts' locally and commit the result."
+          # `git status --porcelain` rather than `git diff`: an ignored or
+          # untracked generated file (deps/ under a new deployment dir) is
+          # invisible to diff, passes this gate, and is then missing from the
+          # image because `railway up` honours .gitignore. Seen 2026-10-01:
+          # ag-ui-maf shipped without deps/ and answered 502 on every request.
+          if [ -n "$(git status --porcelain --ignored=matching -- deployments/${{ matrix.deployment.dir }}/)" ]; then
+            git status --short --ignored=matching -- deployments/${{ matrix.deployment.dir }}/
+            echo "::error::deployments/${{ matrix.deployment.dir }}/ is out of sync or carries untracked/ignored generated files. Run 'npx tsx scripts/generate-ag-ui-deployment-config.ts' locally, check .gitignore, and commit the result."
             exit 1
           fi
 
