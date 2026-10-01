@@ -194,6 +194,53 @@ test('installed React transcript follows only while pinned and resets on selecti
       .toBeGreaterThan(1000);
     await expect(list).toHaveClass(/tp-chat-list/);
     await bottom(list);
+    const initialViewport = page.viewportSize();
+    assert.ok(initialViewport);
+    const beforeResize = await geometry(list);
+    const regionBeforeResize = await list.elementHandle();
+    const rowBeforeResize = await list
+      .getByRole('article')
+      .first()
+      .elementHandle();
+    assert.ok(regionBeforeResize);
+    assert.ok(rowBeforeResize);
+    await page.setViewportSize({
+      ...initialViewport,
+      height: initialViewport.height - 200,
+    });
+    await expect
+      .poll(async () => (await geometry(list)).viewport)
+      .toBeLessThan(beforeResize.viewport - 32);
+    expect((await geometry(list)).height).toBe(beforeResize.height);
+    await bottom(list);
+    await page.setViewportSize(initialViewport);
+    await bottom(list);
+    await list.evaluate((el) => {
+      el.scrollTop = 100;
+      el.dispatchEvent(new Event('scroll'));
+    });
+    for (const height of [
+      initialViewport.height - 200,
+      initialViewport.height,
+    ]) {
+      await page.setViewportSize({ ...initialViewport, height });
+      await list.evaluate(
+        () =>
+          new Promise<void>((resolve) =>
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+          )
+      );
+      expect((await geometry(list)).top).toBe(100);
+      expect(await regionBeforeResize.evaluate((el) => el.isConnected)).toBe(
+        true
+      );
+      expect(await rowBeforeResize.evaluate((el) => el.isConnected)).toBe(true);
+    }
+    await list.evaluate((el) => {
+      el.scrollTop = el.scrollHeight;
+      el.dispatchEvent(new Event('scroll'));
+    });
+    await bottom(list);
     const disclosure = list.getByRole('button', {
       name: 'Show reasoning',
       exact: true,

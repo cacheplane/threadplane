@@ -62,7 +62,7 @@ describe('MessageList', () => {
     expect(top).toBe(900);
     content.dispose();
   });
-  it('follows unchanged-row height growth only while pinned and releases its observer', () => {
+  it('follows content and viewport resizing only while pinned and releases its observer', () => {
     let notify: () => void = () => {
       throw new Error('Resize observer was not installed');
     };
@@ -84,10 +84,11 @@ describe('MessageList', () => {
     const view = render(<MessageList rows={rows} />);
     const list = view.getByRole('region', { name: 'Conversation' });
     let height = 1000;
+    let viewport = 200;
     let top = 800;
     Object.defineProperties(list, {
       scrollHeight: { configurable: true, get: () => height },
-      clientHeight: { configurable: true, get: () => 200 },
+      clientHeight: { configurable: true, get: () => viewport },
       scrollTop: {
         configurable: true,
         get: () => top,
@@ -100,12 +101,21 @@ describe('MessageList', () => {
     act(notify);
     expect(top).toBe(1400);
     expect(observe).toHaveBeenCalledWith(list.firstElementChild);
+    expect(observe).toHaveBeenCalledWith(list);
+    expect(observe).toHaveBeenCalledTimes(2);
+    top = height - viewport;
+    viewport = 100;
+    act(notify);
+    expect(top).toBe(height);
     top = 100;
     fireEvent.scroll(list);
     height = 1800;
     act(notify);
     expect(top).toBe(100);
-    top = 1600;
+    viewport = 300;
+    act(notify);
+    expect(top).toBe(100);
+    top = height - viewport;
     fireEvent.scroll(list);
     height = 2000;
     act(notify);
