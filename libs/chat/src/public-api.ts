@@ -296,3 +296,13 @@ export type { MockAgent, MockAgentOptions } from './lib/testing/mock-agent';
 
 // Conformance helpers ship from the secondary entry point @threadplane/chat/testing
 // (they import vitest at module level; keeping them out of the main bundle).
+
+// Development-only devtools hook: the adapters report which signals each event
+// wrote (names and timing, never values). Private (ɵ) — an adapter seam, not API.
+export { ɵcreateDevtoolsEmitter } from './lib/devtools/devtools-emitter';
+export type {
+  DevtoolsEmitter as ɵDevtoolsEmitter,
+  DevtoolsPseudoEvent as ɵDevtoolsPseudoEvent,
+  LangGraphDevtoolsSignal as ɵLangGraphDevtoolsSignal,
+  AgUiDevtoolsSignal as ɵAgUiDevtoolsSignal,
+} from './lib/devtools/devtools-emitter';

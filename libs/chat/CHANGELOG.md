@@ -15,6 +15,7 @@
 
 ### Added
 
+- **A development-only devtools hook for the runtime adapters.** `@threadplane/langgraph` and `@threadplane/ag-ui` now report, per event, the names of the signals it wrote as a `threadplane:devtools` `CustomEvent` on `window` (names and timing only — never values), for the AG-UI DevTools extension's Signals tab. The emitter ships here as the private `ɵcreateDevtoolsEmitter`; production builds strip it, and `window.__THREADPLANE_DEVTOOLS_DISABLED__ = true` turns it off in development.
 - **`--tplane-chat-launcher-offset-x` / `--tplane-chat-launcher-offset-y`** (both `1rem`) position the `<chat-popup>` launcher, replacing hard-coded corner offsets. The popup window reads the horizontal one too, so it stays aligned when you move the launcher clear of a bottom bar or a consent banner.
 
 ### Changed
