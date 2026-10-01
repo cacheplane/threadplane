@@ -118,8 +118,8 @@ for (const [name, entry, files] of [
 });
 test('React chat requires its real supported export', () => {
   const component = () => undefined;
-  const supported = { Chat: component, ChatInput: component, MessageList: component, TextTranscript: component, ToolObservation: component };
-  assert.throws(() => packageVerifier.assertSupportedExports('react/chat', {}), /Chat/);
+  const supported = { ApprovalCard: component, Chat: component, ChatInput: component, MessageList: component, Reasoning: component, TextTranscript: component, ToolObservation: component };
+  assert.throws(() => packageVerifier.assertSupportedExports('react/chat', {}), /ApprovalCard/);
   for (const name of Object.keys(supported)) {
     const { [name]: _omitted, ...rest } = supported;
     assert.throws(() => packageVerifier.assertSupportedExports('react/chat', rest), new RegExp(`missing supported contract ${name}$`));

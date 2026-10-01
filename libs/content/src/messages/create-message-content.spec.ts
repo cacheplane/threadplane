@@ -54,6 +54,193 @@ function counting() {
 }
 
 describe('createMessageContent', () => {
+  it.each(['assistant', 'user', 'system', 'tool'] as const)(
+    'owns supplied reasoning separately for the %s role',
+    (role) => {
+      const content = createMessageContent();
+      const input = snapshot([
+        message('a', 'Answer', { role, reasoning: '**Why**' }),
+      ]);
+      const rows = content.project(input);
+      expect(rows[0].reasoning?.document).toEqual({
+        generation: 'g1:reasoning',
+        phase: 'streaming',
+        content: '**Why**',
+      });
+      expect(rows[0].reasoning?.root).not.toBeNull();
+      expect(rows[0].reasoning).not.toBe(rows[0].markdown);
+      expect(rows[0].markdown.document.content).toBe('Answer');
+      expect(Object.isFrozen(rows[0].reasoning)).toBe(true);
+      expect(content.project(input)).toBe(rows);
+      expect(content.project(snapshot(input.messages))).toBe(rows);
+      content.dispose();
+    }
+  );
+
+  it('omits absent and empty reasoning while preserving whitespace', () => {
+    const { factory, created } = counting();
+    const content = createMessageContent({ markdownFactory: factory });
+    const rows = content.project(
+      snapshot([
+        message('a', 'A'),
+        message('b', 'B', { reasoning: '' }),
+        message('c', 'C', { reasoning: ' ' }),
+      ])
+    );
+    expect(rows[0]).not.toHaveProperty('reasoning');
+    expect(rows[1]).not.toHaveProperty('reasoning');
+    expect(rows[2].reasoning?.document.content).toBe(' ');
+    expect(created).toEqual(['A', 'B', 'C', ' ']);
+    content.dispose();
+  });
+
+  it('preserves answer and sibling identities through reasoning append and correction', () => {
+    const content = createMessageContent();
+    const stable = message('a', 'Stable', { reasoning: 'Saved' });
+    const first = content.project(
+      snapshot([stable, message('b', 'Answer', { reasoning: 'Plan' })])
+    );
+    for (const reasoning of ['Plan more', 'Corrected']) {
+      const rows = content.project(
+        snapshot([stable, message('b', 'Answer', { reasoning })])
+      );
+      expect(rows[0]).toBe(first[0]);
+      expect(rows[1].markdown).toBe(first[1].markdown);
+      expect(rows[1].reasoning?.document.content).toBe(reasoning);
+      expect(rows[1].reasoning).not.toBe(first[1].reasoning);
+    }
+    expect(first[1].reasoning?.document.content).toBe('Plan');
+    content.dispose();
+  });
+
+  it('preserves the reasoning snapshot through an answer-only update', () => {
+    const content = createMessageContent();
+    const first = content.project(
+      snapshot([message('a', 'Answer', { reasoning: 'Why' })])
+    );
+    const next = content.project(
+      snapshot([message('a', 'Answer more', { reasoning: 'Why' })])
+    );
+    expect(next[0].reasoning).toBe(first[0].reasoning);
+    expect(next[0].markdown).not.toBe(first[0].markdown);
+    content.dispose();
+  });
+
+  it('updates reasoning delivery independently of text and accepts a replacement generation', () => {
+    const factory = vi.fn(createMarkdown);
+    const content = createMessageContent({ markdownFactory: factory });
+    content.project(snapshot([message('a', 'Answer', { reasoning: 'Why' })]));
+    const complete = content.project(
+      snapshot([
+        message('a', 'Answer', {
+          reasoning: 'Why',
+          delivery: completeDelivery('g1', 'paused'),
+        }),
+      ])
+    );
+    expect(complete[0].reasoning?.document.phase).toBe('complete');
+    const next = content.project(
+      snapshot([
+        message('a', 'Answer', {
+          reasoning: 'New',
+          delivery: streamingDelivery('g2'),
+        }),
+      ])
+    );
+    expect(next[0].reasoning?.document).toEqual({
+      generation: 'g2:reasoning',
+      phase: 'streaming',
+      content: 'New',
+    });
+    expect(factory).toHaveBeenCalledTimes(2);
+    expect(
+      factory.mock.calls.every(
+        ([, options]) => options?.violationPolicy === 'rebuild'
+      )
+    ).toBe(true);
+    content.dispose();
+  });
+
+  it('creates late reasoning and releases disappeared, empty and removed owners once', () => {
+    const { factory, created, disposed } = counting();
+    const content = createMessageContent({ markdownFactory: factory });
+    const first = content.project(snapshot([message('a', 'Answer')]));
+    const late = content.project(
+      snapshot([message('a', 'Answer', { reasoning: 'Late' })])
+    );
+    expect(late[0].markdown).toBe(first[0].markdown);
+    content.project(snapshot([message('a', 'Answer')]));
+    content.project(snapshot([message('a', 'Answer', { reasoning: 'Again' })]));
+    content.project(snapshot([message('a', 'Answer', { reasoning: '' })]));
+    const retained = content.project(
+      snapshot([message('a', 'Answer', { reasoning: 'Last' })])
+    );
+    content.project(snapshot([]));
+    content.dispose();
+    content.dispose();
+    expect(created).toEqual(['Answer', 'Late', 'Again', 'Last']);
+    expect(disposed).toEqual(['Late', 'Again', 'Answer', 'Last']);
+    expect(retained[0].reasoning?.document.content).toBe('Last');
+    expect(late[0].reasoning?.document.content).toBe('Late');
+  });
+
+  it('keeps retained reasoning readable and the disposed projection inert', () => {
+    const { factory, disposed } = counting();
+    const content = createMessageContent({ markdownFactory: factory });
+    const rows = content.project(
+      snapshot([message('a', 'Answer', { reasoning: 'Keep' })])
+    );
+    content.dispose();
+    content.dispose();
+    expect(disposed).toEqual(['Answer', 'Keep']);
+    expect(rows[0].reasoning?.root).not.toBeNull();
+    expect(
+      content.project(snapshot([message('b', 'New', { reasoning: 'Late' })]))
+    ).toBe(rows);
+  });
+
+  it.each(['factory', 'update'] as const)(
+    'retries identical input after a reasoning %s failure',
+    (failure) => {
+      let fail = true;
+      const factory: typeof createMarkdown = (document, options) => {
+        if (failure === 'factory' && document.content === 'New' && fail) {
+          fail = false;
+          throw new Error('reasoning failure');
+        }
+        const owner = createMarkdown(document, options);
+        return {
+          ...owner,
+          update(next) {
+            if (failure === 'update' && next.content === 'New' && fail) {
+              fail = false;
+              throw new Error('reasoning failure');
+            }
+            owner.update(next);
+          },
+        };
+      };
+      const content = createMessageContent({ markdownFactory: factory });
+      const before = content.project(
+        snapshot([
+          message('a', 'Answer', {
+            reasoning: failure === 'update' ? 'Old' : undefined,
+          }),
+        ])
+      );
+      const input = snapshot([message('a', 'Answer', { reasoning: 'New' })]);
+      expect(() => content.project(input)).toThrow('reasoning failure');
+      expect(before[0].reasoning?.document.content).toBe(
+        failure === 'update' ? 'Old' : undefined
+      );
+      const rows = content.project(input);
+      expect(rows[0].reasoning?.document.content).toBe('New');
+      expect(rows[0].markdown).toBe(before[0].markdown);
+      expect(content.project(input)).toBe(rows);
+      content.dispose();
+    }
+  );
+
   it('projects rows with Markdown snapshots and frozen results', () => {
     const content = createMessageContent();
     const rows = content.project(snapshot([message('a', '# Hi')]));

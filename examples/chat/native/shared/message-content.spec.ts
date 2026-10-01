@@ -20,6 +20,7 @@ test('message content delegates to one shared typed projection and retains its r
   });
   const input = Object.freeze({
     ...message('Summary', 'complete'),
+    reasoning: 'Saved **reasoning**',
     toolCallIds: Object.freeze(['call']),
   });
   const messages = Object.freeze([input]);
@@ -60,6 +61,12 @@ test('message content delegates to one shared typed projection and retains its r
   assert.equal(projected, 1);
   assert.strictEqual(first[0].message, base[0].message);
   assert.strictEqual(first[0].markdown, base[0].markdown);
+  assert.strictEqual(first[0].reasoning, base[0].reasoning);
+  assert.deepEqual(first[0].reasoning?.document, {
+    generation: 'exact-runtime-generation:reasoning',
+    phase: 'complete',
+    content: 'Saved **reasoning**',
+  });
   assert.strictEqual(first[0].toolCalls, base[0].toolCalls);
   assert.equal(first[0].tripSummaries[0].text, 'Supplied');
   content.update(messages, calls);
@@ -75,7 +82,8 @@ test('message content delegates to one shared typed projection and retains its r
   content.update(messages, calls);
   assert.equal(projected, projections);
   assert.strictEqual(content.getSnapshot(), first);
-  assert.equal(work.disposed, 1);
+  assert.equal(work.disposed, 2);
+  assert.equal(first[0].reasoning?.document.content, 'Saved **reasoning**');
 });
 
 function countedMarkdown() {

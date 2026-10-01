@@ -4,6 +4,7 @@ import type { MessageRow } from '@threadplane/content/messages';
 import { Markdown } from '../markdown/markdown.js';
 import { useIsomorphicLayoutEffect } from './internal/isomorphic-layout-effect.js';
 import { ToolObservation } from './tool-observation.js';
+import { Reasoning } from './reasoning.js';
 
 type RenderRow<TRow extends MessageRow> = [TRow] extends [never]
   ? MessageRow
@@ -36,6 +37,9 @@ function RowView<TRow extends MessageRow>({
   return (
     <article className={`tp-chat-message tp-chat-message--${row.role}`}>
       <p className="tp-chat-message__role">{row.role}</p>
+      {row.role === 'assistant' && row.reasoning && (
+        <Reasoning snapshot={row.reasoning} />
+      )}
       {row.role === 'tool' ? (
         <pre className="tp-chat-message__literal">{row.message.content}</pre>
       ) : (

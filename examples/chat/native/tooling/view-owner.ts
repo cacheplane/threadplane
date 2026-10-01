@@ -111,6 +111,11 @@ export function createViewOwner() {
               0
             ),
           texts: owner.getSnapshot().messages.map((row) => row.message.content),
+          reasoning: owner
+            .getSnapshot()
+            .messages.flatMap((row) =>
+              row.reasoning ? [row.reasoning.document.content] : []
+            ),
         };
       },
       compare(name: string) {
@@ -126,6 +131,9 @@ export function createViewOwner() {
           snapshot: before === after,
           markdown: before.messages.every(
             (row, index) => row.markdown === after.messages[index]?.markdown
+          ),
+          reasoning: before.messages.every(
+            (row, index) => row.reasoning === after.messages[index]?.reasoning
           ),
           owner: application.getSnapshot === owner.getSnapshot,
         };

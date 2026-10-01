@@ -212,7 +212,8 @@ textarea:disabled {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
-.approval-actions {
+.approval-actions,
+.approval .tp-approval-card__actions {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
@@ -326,4 +327,24 @@ textarea:disabled {
     max-width: 95px;
     text-align: right;
   }
+}
+.conversation .tp-reasoning {
+  margin-block: 0.5rem;
+}
+.conversation .tp-reasoning__toggle {
+  border: 0;
+  padding: 0.25rem 0;
+  background: transparent;
+  color: var(--ds-text-secondary);
+  font: inherit;
+  cursor: pointer;
+}
+.conversation .tp-reasoning__toggle:focus-visible {
+  outline: 2px solid var(--ds-accent);
+  outline-offset: 3px;
+}
+.conversation .tp-reasoning__body {
+  margin-block-start: 0.5rem;
+  padding-inline-start: 0.75rem;
+  border-inline-start: 2px solid var(--ds-border);
 }

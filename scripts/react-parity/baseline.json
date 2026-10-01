@@ -1,8 +1,38 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "90bb6ea4fbb449cf01306187a300f2abe0c94f1d",
+  "baselineHead": "271c46c005a91980ffeed4fa91b69562d705011b",
   "sourceState": {
-    "modified": [],
+    "modified": [
+      "apps/website/content/docs/ag-ui/getting-started/installation.mdx",
+      "apps/website/content/docs/ag-ui/guides/interrupts.mdx",
+      "apps/website/content/docs/ag-ui/reference/event-mapping.mdx",
+      "apps/website/content/docs/chat/getting-started/changelog.mdx",
+      "libs/ag-ui/README.md",
+      "libs/ag-ui/package.json",
+      "libs/ag-ui/src/lib/client-tools.ts",
+      "libs/ag-ui/src/lib/internal/content-parts.ts",
+      "libs/ag-ui/src/lib/interrupt-persistence.ts",
+      "libs/ag-ui/src/lib/interrupt-session.ts",
+      "libs/ag-ui/src/lib/reducer.ts",
+      "libs/ag-ui/src/lib/to-agent.ts",
+      "libs/ag-ui/src/runtime/README.md",
+      "libs/ag-ui/src/runtime/create-http-request.ts",
+      "libs/ag-ui/src/runtime/create-run.ts",
+      "libs/ag-ui/src/runtime/create-session.ts",
+      "libs/ag-ui/src/runtime/decision.ts",
+      "libs/ag-ui/src/runtime/reconcile-transcript.ts",
+      "libs/ag-ui/src/runtime/session-observation.ts",
+      "libs/ag-ui/src/runtime/testing/binding-fixture.ts",
+      "libs/chat/src/lib/agent/agent-usage.ts",
+      "libs/chat/src/lib/agent/agent.ts",
+      "libs/chat/src/lib/agent/index.ts",
+      "libs/chat/src/lib/agent/tool-call.ts",
+      "libs/chat/src/lib/client-tools/select-pending-client-tool-calls.ts",
+      "libs/chat/src/public-api.ts",
+      "package-lock.json",
+      "package.json",
+      "scripts/assemble-examples.ts"
+    ],
     "untracked": []
   },
   "scope": {
@@ -550,7 +580,7 @@
       "id": "asset:libs/content/README.md",
       "kind": "asset",
       "path": "libs/content/README.md",
-      "sha256": "d4a002420478a0b267bd06e8ae8b479aa71a318572a2d148c96adbf6eae47d6a"
+      "sha256": "2adca49d3431c64cd53e33b442a1e4c227f8f128226456a3549873df7a1c66a8"
     },
     {
       "id": "asset:libs/content/package.json",
@@ -814,7 +844,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "e40c342cdf63f5e82aa75d0444da1aaa26c8067987a6d52eabee698fee60bf5e"
+      "sha256": "8e7125882298f8f6ec437bfac82e57049e4da51946fc0abc025f8498ea9b612b"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -832,7 +862,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "09c1c1b64a35bda7aaac87a2330eec5921c2959e2ad60cf582d33b8f26ac2dc2"
+      "sha256": "984944ee0209fad002769306879abae5b0f999eb19f285e59d28e9041e9d2776"
     },
     {
       "id": "asset:libs/react/tsconfig.json",
@@ -8703,7 +8733,7 @@
           "path": "libs/content/src/messages/create-message-content.ts",
           "symbol": "MessageRow",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface MessageRow<TTools extends {\n    [K in keyof TTools]: ToolContract;\n} = Record<string, ToolContract>> {\n    readonly id: string;\n    readonly role: Message['role'];\n    readonly message: Message;\n    readonly markdown: MarkdownSnapshot;\n    readonly toolCalls: readonly ToolCall<TTools>[];\n}"
+          "signature": "export interface MessageRow<TTools extends {\n    [K in keyof TTools]: ToolContract;\n} = Record<string, ToolContract>> {\n    readonly id: string;\n    readonly role: Message['role'];\n    readonly message: Message;\n    readonly markdown: MarkdownSnapshot;\n    readonly reasoning?: MarkdownSnapshot;\n    readonly toolCalls: readonly ToolCall<TTools>[];\n}"
         }
       ]
     },
@@ -8717,7 +8747,7 @@
           "path": "libs/content/src/messages/create-message-content.ts",
           "symbol": "createMessageContent",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function createMessageContent<TTools extends {\n    [K in keyof TTools]: ToolContract;\n} = Record<string, ToolContract>>(options: MessageContentOptions = {}): MessageContent<TTools> {\n    const factory = options.markdownFactory ?? createMarkdown;\n    const owners = new Map<string, Markdown>();\n    let rows: readonly MessageRow<TTools>[] = Object.freeze([]);\n    let messages: readonly Message[] | undefined;\n    let toolCalls: readonly ToolCall<TTools>[] | undefined;\n    let disposed = false;\n    return {\n        project(snapshot) {\n            const next = snapshot as {\n                readonly messages: readonly Message[];\n                readonly toolCalls: readonly ToolCall<TTools>[];\n            };\n            const projectedCalls = next.toolCalls;\n            if (disposed ||\n                (next.messages === messages && next.toolCalls === toolCalls))\n                return rows;\n            const present = new Set(next.messages.map((message) => message.id));\n            for (const [id, owner] of owners) {\n                if (present.has(id))\n                    continue;\n                owner.dispose();\n                owners.delete(id);\n            }\n            const previous = new Map(rows.map((row) => [row.id, row]));\n            const projected = next.messages.map((message): MessageRow<TTools> => {\n                const document = {\n                    generation: message.delivery.generation,\n                    phase: message.delivery.phase,\n                    content: message.content,\n                };\n                let owner = owners.get(message.id);\n                if (!owner) {\n                    owner = factory(document, { violationPolicy: 'rebuild' });\n                    owners.set(message.id, owner);\n                }\n                else {\n                    const accepted = owner.getSnapshot().document;\n                    if (accepted.generation !== document.generation ||\n                        accepted.phase !== document.phase ||\n                        accepted.content !== document.content)\n                        owner.update(document);\n                }\n                const markdown = owner.getSnapshot();\n                const calls = projectedCalls.filter((call) => message.toolCallIds?.includes(call.id) ||\n                    message.toolCallId === call.id);\n                const old = previous.get(message.id);\n                if (old?.message === message &&\n                    old.markdown === markdown &&\n                    old.toolCalls.length === calls.length &&\n                    calls.every((call, index) => call === old.toolCalls[index]))\n                    return old;\n                return Object.freeze({\n                    id: message.id,\n                    role: message.role,\n                    message,\n                    markdown,\n                    toolCalls: Object.freeze(calls),\n                });\n            });\n            if (projected.length !== rows.length ||\n                projected.some((row, index) => row !== rows[index]))\n                rows = Object.freeze(projected);\n            messages = next.messages;\n            toolCalls = next.toolCalls;\n            return rows;\n        },\n        dispose() {\n            if (disposed)\n                return;\n            disposed = true;\n            for (const owner of owners.values())\n                owner.dispose();\n            owners.clear();\n        },\n    };\n}"
+          "signature": "export function createMessageContent<TTools extends {\n    [K in keyof TTools]: ToolContract;\n} = Record<string, ToolContract>>(options: MessageContentOptions = {}): MessageContent<TTools> {\n    const factory = options.markdownFactory ?? createMarkdown;\n    const owners = new Map<string, Markdown>();\n    const reasoningOwners = new Map<string, Markdown>();\n    const projectMarkdown = (collection: Map<string, Markdown>, id: string, document: MarkdownDocument): MarkdownSnapshot => {\n        let owner = collection.get(id);\n        if (!owner) {\n            owner = factory(document, { violationPolicy: 'rebuild' });\n            collection.set(id, owner);\n        }\n        else {\n            const accepted = owner.getSnapshot().document;\n            if (accepted.generation !== document.generation ||\n                accepted.phase !== document.phase ||\n                accepted.content !== document.content)\n                owner.update(document);\n        }\n        return owner.getSnapshot();\n    };\n    let rows: readonly MessageRow<TTools>[] = Object.freeze([]);\n    let messages: readonly Message[] | undefined;\n    let toolCalls: readonly ToolCall<TTools>[] | undefined;\n    let disposed = false;\n    return {\n        project(snapshot) {\n            const next = snapshot as {\n                readonly messages: readonly Message[];\n                readonly toolCalls: readonly ToolCall<TTools>[];\n            };\n            const projectedCalls = next.toolCalls;\n            if (disposed ||\n                (next.messages === messages && next.toolCalls === toolCalls))\n                return rows;\n            const present = new Set(next.messages.map((message) => message.id));\n            for (const collection of [owners, reasoningOwners]) {\n                for (const [id, owner] of collection) {\n                    if (present.has(id))\n                        continue;\n                    owner.dispose();\n                    collection.delete(id);\n                }\n            }\n            const previous = new Map(rows.map((row) => [row.id, row]));\n            const projected = next.messages.map((message): MessageRow<TTools> => {\n                const document = {\n                    generation: message.delivery.generation,\n                    phase: message.delivery.phase,\n                    content: message.content,\n                };\n                const markdown = projectMarkdown(owners, message.id, document);\n                let reasoning: MarkdownSnapshot | undefined;\n                if (message.reasoning !== undefined && message.reasoning.length > 0) {\n                    reasoning = projectMarkdown(reasoningOwners, message.id, {\n                        generation: `${message.delivery.generation}:reasoning`,\n                        phase: message.delivery.phase,\n                        content: message.reasoning,\n                    });\n                }\n                else {\n                    reasoningOwners.get(message.id)?.dispose();\n                    reasoningOwners.delete(message.id);\n                }\n                const calls = projectedCalls.filter((call) => message.toolCallIds?.includes(call.id) ||\n                    message.toolCallId === call.id);\n                const old = previous.get(message.id);\n                if (old?.message === message &&\n                    old.markdown === markdown &&\n                    old.reasoning === reasoning &&\n                    old.toolCalls.length === calls.length &&\n                    calls.every((call, index) => call === old.toolCalls[index]))\n                    return old;\n                return Object.freeze({\n                    id: message.id,\n                    role: message.role,\n                    message,\n                    markdown,\n                    ...(reasoning === undefined ? {} : { reasoning }),\n                    toolCalls: Object.freeze(calls),\n                });\n            });\n            if (projected.length !== rows.length ||\n                projected.some((row, index) => row !== rows[index]))\n                rows = Object.freeze(projected);\n            messages = next.messages;\n            toolCalls = next.toolCalls;\n            return rows;\n        },\n        dispose() {\n            if (disposed)\n                return;\n            disposed = true;\n            for (const collection of [owners, reasoningOwners]) {\n                for (const owner of collection.values())\n                    owner.dispose();\n                collection.clear();\n            }\n        },\n    };\n}"
         }
       ]
     },
@@ -9718,6 +9748,48 @@
       ]
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#ApprovalCard",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ApprovalCard",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/approval-card.tsx",
+          "symbol": "ApprovalCard",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function ApprovalCard({ children, actions, title = 'Approval request', disabled = false, className, }: ApprovalCardProps) {\n    const heading = useId();\n    return (<section className={['tp-approval-card', className].filter(Boolean).join(' ')} aria-labelledby={heading}>\n      <h2 id={heading} className=\"tp-approval-card__title\">\n        {title}\n      </h2>\n      <div className=\"tp-approval-card__body\">{children}</div>\n      <div className=\"tp-approval-card__actions\">\n        {actions.map((action) => (<button key={action.id} type=\"button\" className=\"tp-approval-card__action\" disabled={disabled || action.disabled} onClick={() => {\n                if (!disabled && !action.disabled)\n                    action.onSelect();\n            }}>\n            {action.label}\n          </button>))}\n      </div>\n    </section>);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ApprovalCardAction",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ApprovalCardAction",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/approval-card.tsx",
+          "symbol": "ApprovalCardAction",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface ApprovalCardAction {\n    readonly id: string;\n    readonly label: string;\n    readonly onSelect: () => void;\n    readonly disabled?: boolean;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ApprovalCardProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ApprovalCardProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/approval-card.tsx",
+          "symbol": "ApprovalCardProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface ApprovalCardProps {\n    readonly children: ReactNode;\n    readonly actions: readonly ApprovalCardAction[];\n    readonly title?: string;\n    readonly disabled?: boolean;\n    readonly className?: string;\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/react/src/chat/index.ts#Chat",
       "kind": "export",
       "path": "libs/react/src/chat/index.ts",
@@ -9812,6 +9884,34 @@
           "symbol": "MessageListProps",
           "syntaxKind": "InterfaceDeclaration",
           "signature": "export interface MessageListProps<TRow extends MessageRow = MessageRow> {\n    readonly rows: readonly TRow[];\n    readonly renderMessage?: (row: NoInfer<RenderRow<TRow>>) => ReactNode;\n    readonly label?: string;\n    readonly className?: string;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#Reasoning",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "Reasoning",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/reasoning.tsx",
+          "symbol": "Reasoning",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function Reasoning({ snapshot, durationMs, label, defaultExpanded = false, className, }: ReasoningProps) {\n    const { generation, phase, content } = snapshot.document;\n    const streaming = phase === 'streaming';\n    const id = useId();\n    const [choice, setChoice] = useState({\n        generation,\n        phase,\n        expanded: null as boolean | null,\n    });\n    let current = choice;\n    if (choice.generation !== generation || choice.phase !== phase) {\n        current = {\n            generation,\n            phase,\n            expanded: choice.generation !== generation || streaming ? null : choice.expanded,\n        };\n        setChoice(current);\n    }\n    if (content.length === 0)\n        return null;\n    const expanded = current.expanded ?? (streaming || defaultExpanded);\n    const text = label ||\n        (streaming\n            ? 'Thinking…'\n            : durationMs === undefined\n                ? 'Show reasoning'\n                : `Thought for ${formatDuration(durationMs)}`);\n    return (<div className={['tp-reasoning', className].filter(Boolean).join(' ')}>\n      <button id={`${id}-toggle`} type=\"button\" className=\"tp-reasoning__toggle\" aria-expanded={expanded} aria-controls={`${id}-body`} onClick={() => setChoice({ ...current, expanded: !expanded })}>\n        <span aria-hidden=\"true\">{expanded ? '▾' : '▸'}</span> {text}\n      </button>\n      <div id={`${id}-body`} role=\"region\" aria-label=\"Reasoning\" hidden={!expanded} className=\"tp-reasoning__body\">\n        <Markdown snapshot={snapshot}/>\n      </div>\n    </div>);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ReasoningProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ReasoningProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/reasoning.tsx",
+          "symbol": "ReasoningProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface ReasoningProps {\n    readonly snapshot: MarkdownSnapshot;\n    readonly durationMs?: number;\n    readonly label?: string;\n    readonly defaultExpanded?: boolean;\n    readonly className?: string;\n}"
         }
       ]
     },
@@ -13137,7 +13237,7 @@
       "id": "source:libs/content/src/messages/create-message-content.ts",
       "kind": "source",
       "path": "libs/content/src/messages/create-message-content.ts",
-      "sha256": "22469878ce448fbd2d0ad2b863d30fe5a58c2272dce1e7808df56a5cdf149f1f"
+      "sha256": "d8b8b049266f42292c1cfe0578b7626a9b8e117263d558438e1f0575f826ede1"
     },
     {
       "id": "source:libs/content/src/messages/index.ts",
@@ -13794,6 +13894,12 @@
       "sha256": "56dba6e5f8e0ec195271f37e8de4cbe0eb98c0ad8f04f60749ea7a54e621384d"
     },
     {
+      "id": "source:libs/react/src/chat/approval-card.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/approval-card.tsx",
+      "sha256": "c574f85986e72342b50900c21413eee55ebfac135b2c0d23c3a16dcccbdfea78"
+    },
+    {
       "id": "source:libs/react/src/chat/chat-input.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/chat-input.tsx",
@@ -13809,7 +13915,7 @@
       "id": "source:libs/react/src/chat/index.ts",
       "kind": "source",
       "path": "libs/react/src/chat/index.ts",
-      "sha256": "3482879e66490cd0bb9821fd7b3c11704c0013b562ecb1c1c6cd35c4236cb8b5"
+      "sha256": "ee835d4436185fe57d509b019075902b2c4895034ca0d6e8ed8295a8a58f02b6"
     },
     {
       "id": "source:libs/react/src/chat/internal/isomorphic-layout-effect.ts",
@@ -13827,7 +13933,13 @@
       "id": "source:libs/react/src/chat/message-list.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/message-list.tsx",
-      "sha256": "aabe1be304e4b44670bd1aefb553ce6f2ee2bef27b655c88c1c3150c72004041"
+      "sha256": "d5299f7987b1424de7d61ae5d1648397ae1593f1283c48d92404c329295d34cb"
+    },
+    {
+      "id": "source:libs/react/src/chat/reasoning.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/reasoning.tsx",
+      "sha256": "bfaa8cc507e536d1edc87e0070af6b2996b1216fabea72a226eee03e06cf405f"
     },
     {
       "id": "source:libs/react/src/chat/text-transcript.tsx",

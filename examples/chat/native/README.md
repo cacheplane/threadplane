@@ -18,6 +18,24 @@ transcript follows updates only while pinned to the bottom. Conversation changes
 reset the list; a title refresh keeps its DOM and scroll position. The React-only
 production scroll test covers these behaviors against installed candidates.
 
+React assistant rows also compose `Reasoning` using independently owned reasoning
+Markdown snapshots. Saved reasoning starts collapsed; streamed reasoning starts
+expanded. Manual choices persist through completion and reset for a new response
+generation. The application supplies no elapsed timing. User/system/tool reasoning
+is preserved by content ownership but not displayed here. Angular reasoning display
+is outside this React slice. Installed production tests cover keyboard disclosure,
+fresh responses, literal unsafe content and fresh-history selection; same-row
+generation/reopening reset is covered by real-owner source component tests. The
+separate view proof retains reasoning through absent-view streaming and remount.
+
+The React decision adapter composes the installed `ApprovalCard` as an inline
+named region with the existing reason and Approve/Decline actions. The application
+still matches interrupts, captures occurrence tokens, gates repeated/stale actions,
+and owns pending, consumed and uncertain states. The card never hides itself or
+dispatches a command implicitly. Production tests exercise keyboard decisions,
+disabled pending actions, retained uncertain decisions and exact resume payloads;
+provenance requires the installed card's runtime and declarations.
+
 ## Setup and commands
 
 Run commands from the repository root using **Node 22 and npm 10** (locally

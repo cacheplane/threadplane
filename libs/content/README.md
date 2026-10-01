@@ -4,6 +4,20 @@ Private, unpublished content preparation. `/markdown` owns an incremental docume
 using the locked `@cacheplane/partial-markdown` 0.5.8 parser. The root stays empty;
 `/json`, `/a2ui` and `/testing` remain reserved stubs.
 
+`/messages` exports `createMessageContent`, which projects immutable agent
+snapshots into cached transcript rows. Each row owns answer `markdown` and, when
+the backend supplies a nonempty `Message.reasoning`, a separate optional
+`reasoning` Markdown snapshot. Reasoning uses `${delivery.generation}:reasoning`
+and the same delivery phase. Empty and omitted reasoning release its owner;
+whitespace stays intact. All roles preserve explicit reasoning; views decide
+which roles to display. No answer text or timing is inferred as reasoning.
+
+Unchanged documents and rows retain identity. Reasoning-only updates preserve
+the answer snapshot and unrelated rows. Removed messages release both owners;
+disposing the projection releases all owners once and makes later projections
+inert. Previously returned rows remain readable. Keep this owner outside views
+and dispose it at the application transcript lifetime boundary.
+
 ```ts
 import { createMarkdown } from '@threadplane/content/markdown';
 

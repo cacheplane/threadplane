@@ -10,4 +10,10 @@ export {
   type ChatInputProps,
 } from './chat-input.js';
 export { MessageList, type MessageListProps } from './message-list.js';
+export { Reasoning, type ReasoningProps } from './reasoning.js';
+export {
+  ApprovalCard,
+  type ApprovalCardAction,
+  type ApprovalCardProps,
+} from './approval-card.js';
 export { Chat, type ChatProps } from './chat.js';

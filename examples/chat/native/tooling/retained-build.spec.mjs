@@ -239,11 +239,17 @@ function fixture(t, framework = 'react') {
     map[path] = sha256;
     artifacts['@threadplane/content'].push({ path: local, sha256 });
     if (framework === 'react') {
-      const local = 'src/chat/message-list' + extension;
-      const path = 'node_modules/@threadplane/react/' + local;
-      const sha256 = put(consumer, path, 'installed MessageList: ' + extension);
-      map[path] = sha256;
-      artifacts['@threadplane/react'].push({ path: local, sha256 });
+      for (const name of ['message-list', 'reasoning', 'approval-card']) {
+        const local = 'src/chat/' + name + extension;
+        const path = 'node_modules/@threadplane/react/' + local;
+        const sha256 = put(
+          consumer,
+          path,
+          'installed MessageList: ' + extension
+        );
+        map[path] = sha256;
+        artifacts['@threadplane/react'].push({ path: local, sha256 });
+      }
     }
   }
   const outputs = {
@@ -257,6 +263,8 @@ function fixture(t, framework = 'react') {
   };
   if (framework === 'angular')
     outputs['stats.json'] = put(output, 'stats.json', '{"inputs":{}}');
+  for (const files of Object.values(artifacts))
+    files.sort((a, b) => a.path.localeCompare(b.path));
   const installation = { artifacts, derivedLockSha256 };
   const provenance = {
     framework,
@@ -352,7 +360,32 @@ for (const [graph, extension] of [
     assert.throws(() => captureRetainedBuild(f.directory, f), /MessageList/);
   });
 
+for (const [graph, extension] of [
+  ['compiler', '.d.ts'],
+  ['bundler', '.js'],
+])
+  test(`React retention requires installed ApprovalCard ${graph}`, (t) => {
+    const f = fixture(t, 'react');
+    delete f.provenance[graph].inputs[
+      'node_modules/@threadplane/react/src/chat/approval-card' + extension
+    ];
+    assert.throws(() => captureRetainedBuild(f.directory, f), /ApprovalCard/);
+  });
+
 for (const framework of ['react', 'angular']) {
+  if (framework === 'react')
+    for (const [graph, extension] of [
+      ['compiler', '.d.ts'],
+      ['bundler', '.js'],
+    ]) {
+      test(`React retention requires installed Reasoning ${graph}`, (t) => {
+        const f = fixture(t, 'react');
+        delete f.provenance[graph].inputs[
+          'node_modules/@threadplane/react/src/chat/reasoning' + extension
+        ];
+        assert.throws(() => captureRetainedBuild(f.directory, f), /Reasoning/);
+      });
+    }
   test(`retains closed ${framework} tool/configuration graph and embedded negative evidence after source cleanup`, (t) => {
     const f = fixture(t, framework);
     captureRetainedBuild(f.directory, f);

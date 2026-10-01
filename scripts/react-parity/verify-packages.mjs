@@ -206,9 +206,11 @@ export function assertSupportedExports(project, entry) {
       ],
       react: ['useAgent'],
       'react/chat': [
+        'ApprovalCard',
         'Chat',
         'ChatInput',
         'MessageList',
+        'Reasoning',
         'TextTranscript',
         'ToolObservation',
       ],
