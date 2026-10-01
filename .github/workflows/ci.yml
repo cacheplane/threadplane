@@ -57,7 +57,7 @@ jobs:
       # classifier walk.
       - run: npm ci
       - name: Test CI scope classifier
-        run: node --test scripts/ci-scope.spec.mjs scripts/cockpit-matrix.spec.mjs scripts/cockpit-ports.spec.mjs scripts/cockpit-runtime-bridge-coverage.spec.mjs
+        run: node --test scripts/ci-scope.spec.mjs scripts/cockpit-matrix.spec.mjs scripts/cockpit-frontend-matrix.spec.mjs scripts/cockpit-ports.spec.mjs scripts/cockpit-runtime-bridge-coverage.spec.mjs
       - name: Detect changed CI surfaces
         id: scope
         run: |
