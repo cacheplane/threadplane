@@ -79,6 +79,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   className,
 }: MessageListProps<TRow>) {
   const container = useRef<HTMLDivElement>(null);
+  const content = useRef<HTMLDivElement>(null);
   const pinned = useRef(true);
   useEffect(() => {
     const el = container.current;
@@ -92,6 +93,20 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   }, []);
   useIsomorphicLayoutEffect(() => {
     const el = container.current;
+    const body = content.current;
+    if (!el || !body || typeof ResizeObserver === 'undefined') return;
+    let active = true;
+    const observer = new ResizeObserver(() => {
+      if (active && pinned.current) el.scrollTop = el.scrollHeight;
+    });
+    observer.observe(body);
+    return () => {
+      active = false;
+      observer.disconnect();
+    };
+  }, []);
+  useIsomorphicLayoutEffect(() => {
+    const el = container.current;
     if (el && pinned.current) el.scrollTop = el.scrollHeight;
   }, [rows]);
   return (
@@ -101,9 +116,11 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
       aria-label={label}
       className={['tp-chat-list', className].filter(Boolean).join(' ')}
     >
-      {rows.map((row) => (
-        <Row key={row.id} row={row} renderMessage={renderMessage} />
-      ))}
+      <div ref={content}>
+        {rows.map((row) => (
+          <Row key={row.id} row={row} renderMessage={renderMessage} />
+        ))}
+      </div>
     </div>
   );
 }

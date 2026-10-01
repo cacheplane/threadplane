@@ -250,6 +250,11 @@ stable so unchanged rows stay memoized. Give the list a bounded height and
 overflow scrolling in app CSS; it follows row updates while at the bottom and
 preserves the reader's position when scrolled up. Key it by conversation ID when
 a new selection should start at the bottom. Same-ID updates preserve scroll state.
+Where `ResizeObserver` is available, the list also follows height changes inside
+unchanged rows, including image loads and disclosure expansion, while pinned.
+Reading above the bottom preserves position. The observer disconnects on unmount;
+without it, row-update following remains available. The list uses one unstyled
+content wrapper inside its existing scroll region.
 
 ## Read-only render trees
 

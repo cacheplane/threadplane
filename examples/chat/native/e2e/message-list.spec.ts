@@ -20,9 +20,15 @@ test('installed React transcript follows only while pinned and resets on selecti
   const saved = Array.from({ length: 24 }, (_, i) => ({
     id: `saved-${i}`,
     type: 'ai',
-    content: `Saved paragraph ${i}.\n\n${'A restored conversation needs room to read. '.repeat(
-      12
-    )}`,
+    content:
+      i === 23
+        ? 'Final saved answer.'
+        : `Saved paragraph ${i}.\n\n${'A restored conversation needs room to read. '.repeat(
+            12
+          )}`,
+    ...(i === 23
+      ? { reasoning: 'A long retained explanation.\n\n'.repeat(30) }
+      : {}),
   }));
   const rows = [
     threadEnvelope('a', 'Conversation A'),
@@ -187,6 +193,36 @@ test('installed React transcript follows only while pinned and resets on selecti
       })
       .toBeGreaterThan(1000);
     await expect(list).toHaveClass(/tp-chat-list/);
+    await bottom(list);
+    const disclosure = list.getByRole('button', {
+      name: 'Show reasoning',
+      exact: true,
+    });
+    await disclosure.click();
+    await bottom(list);
+    await list
+      .getByRole('button', { name: 'Show reasoning', exact: true })
+      .evaluate((el) => (el as HTMLButtonElement).click());
+    await bottom(list);
+    await list.evaluate((el) => {
+      el.scrollTop = 100;
+      el.dispatchEvent(new Event('scroll'));
+    });
+    await disclosure.evaluate((el) => (el as HTMLButtonElement).click());
+    await list.evaluate(
+      () =>
+        new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+        )
+    );
+    expect((await geometry(list)).top).toBe(100);
+    await list
+      .getByRole('button', { name: 'Show reasoning', exact: true })
+      .evaluate((el) => (el as HTMLButtonElement).click());
+    await list.evaluate((el) => {
+      el.scrollTop = el.scrollHeight;
+      el.dispatchEvent(new Event('scroll'));
+    });
     await bottom(list);
     const original = await list.elementHandle();
     const first = await list.getByRole('article').first().elementHandle();
