@@ -138,6 +138,10 @@ const server = createServer(async (request, response) => {
     return json(response, {});
   }
   if (pathname === '/') {
+    if (request.headers.host?.endsWith(':4600')) {
+      response.writeHead(302, { location: '/langgraph/streaming/react/' });
+      return response.end();
+    }
     response.writeHead(200);
     return response.end('React cockpit proof server');
   }

@@ -78,10 +78,29 @@ body:has([data-website-workspace-host]) {
   height: 100dvh;
   padding-top: var(--nav-h);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.website-workspace-frontend {
+  flex: none;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+  font-size: 0.875rem;
+}
+
+.website-workspace-frontend select {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 0.25rem;
+  background: white;
+  color: inherit;
 }
 
 .website-workspace-host .workspace-shell {
-  height: calc(100dvh - var(--nav-h));
+  flex: 1;
+  min-height: 0;
+  height: auto;
 }
 
 /* Detail docs render the unified workspace navigation. Below the desktop
