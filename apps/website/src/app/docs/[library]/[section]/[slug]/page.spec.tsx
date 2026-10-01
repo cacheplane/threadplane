@@ -7,6 +7,7 @@ import { DocsTOC } from '../../../../../components/docs/DocsTOC';
 import { MdxRenderer } from '../../../../../components/docs/MdxRenderer';
 import { ReactStreamingPreview } from '../../../../../components/docs/ReactStreamingPreview';
 import { ReactInterruptsPreview } from '../../../../../components/docs/ReactInterruptsPreview';
+import { ReactMemoryPreview } from '../../../../../components/docs/ReactMemoryPreview';
 import { WebsiteWorkspace } from '../../../../../components/workspace/WebsiteWorkspace';
 import DocsPage, { generateMetadata } from './page';
 
@@ -55,6 +56,7 @@ describe('unified docs workspace route', () => {
   it.each([
     ['streaming', ReactStreamingPreview],
     ['interrupts', ReactInterruptsPreview],
+    ['memory', ReactMemoryPreview],
   ] as const)(
     'selects topic-specific authored React Docs for %s',
     async (slug, component) => {

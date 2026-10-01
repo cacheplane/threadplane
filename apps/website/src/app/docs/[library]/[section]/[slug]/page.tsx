@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { MdxRenderer } from '../../../../../components/docs/MdxRenderer';
 import { ReactStreamingPreview } from '../../../../../components/docs/ReactStreamingPreview';
 import { ReactInterruptsPreview } from '../../../../../components/docs/ReactInterruptsPreview';
+import { ReactMemoryPreview } from '../../../../../components/docs/ReactMemoryPreview';
 import { DocsSearch } from '../../../../../components/docs/DocsSearch';
 import { DocsPageHeader } from '../../../../../components/docs/DocsPageHeader';
 import { LibraryMark } from '../../../../../components/docs/LibraryMark';
@@ -263,6 +264,12 @@ export default async function DocsPage({ params }: DocsRouteProps) {
               />
             ) : slug === 'interrupts' ? (
               <ReactInterruptsPreview
+                exampleCode={getExampleCodeContext(
+                  workspacePage.frontendVariants.react
+                )}
+              />
+            ) : slug === 'memory' ? (
+              <ReactMemoryPreview
                 exampleCode={getExampleCodeContext(
                   workspacePage.frontendVariants.react
                 )}

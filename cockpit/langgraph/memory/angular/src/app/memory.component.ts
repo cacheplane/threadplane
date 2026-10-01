@@ -4,11 +4,12 @@ import { injectAgent } from '@threadplane/langgraph';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 
 /**
- * MemoryComponent demonstrates cross-thread persistent context with `injectAgent()`.
+ * MemoryComponent demonstrates thread-scoped persistent context with `injectAgent()`.
  *
  * This example shows how an agent can learn and remember facts about the user
- * across separate conversations. The graph maintains a `memory` dict in its
+ * within the same conversation. The graph maintains a `memory` dict in its
  * state that is updated as new facts are extracted from the conversation.
+ * Memory shared across threads would require the separate LangGraph Store API.
  *
  * Key integration points:
  * - `stream.value()` exposes the full graph state, including the `memory` field
