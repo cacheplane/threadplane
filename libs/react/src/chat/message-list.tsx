@@ -100,6 +100,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
       if (active && pinned.current) el.scrollTop = el.scrollHeight;
     });
     observer.observe(body);
+    observer.observe(el);
     return () => {
       active = false;
       observer.disconnect();
