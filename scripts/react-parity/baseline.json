@@ -1,9 +1,23 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "a00f889a80f18b9367169844903206993e977d78",
+  "baselineHead": "a7e432cf463bb84a1af66fbab603ad247f368e1d",
   "sourceState": {
-    "modified": [],
-    "untracked": []
+    "modified": [
+      "libs/ag-ui/README.md",
+      "libs/ag-ui/src/lib/internal/devtools.ts",
+      "libs/ag-ui/src/lib/to-agent.ts",
+      "libs/chat/CHANGELOG.md",
+      "libs/chat/eslint.config.mjs",
+      "libs/chat/scripts/verify-devtools-bundle.mjs",
+      "libs/chat/src/public-api.ts",
+      "libs/langgraph/README.md",
+      "libs/langgraph/src/lib/agent.fn.ts",
+      "libs/langgraph/src/lib/internals/stream-manager.bridge.ts",
+      "libs/langgraph/src/lib/transport/fetch-stream.transport.ts"
+    ],
+    "untracked": [
+      "libs/chat/src/lib/devtools/devtools-scripted-runs.ts"
+    ]
   },
   "scope": {
     "libraries": [
@@ -142,7 +156,7 @@
       "id": "asset:libs/ag-ui/README.md",
       "kind": "asset",
       "path": "libs/ag-ui/README.md",
-      "sha256": "8a54ffc58d40bb33dab6b1f203cb5d47b099639c984f610e1696d5fea222a09e"
+      "sha256": "15bc404739afbd5113e5f7c2e3c03964d4cd2c734ab0842ca26879840a25028b"
     },
     {
       "id": "asset:libs/ag-ui/fixtures/runtime-transcripts/maf-hitl-interrupt.sse",
@@ -322,7 +336,7 @@
       "id": "asset:libs/chat/CHANGELOG.md",
       "kind": "asset",
       "path": "libs/chat/CHANGELOG.md",
-      "sha256": "ef8ebf1f99a66ee128aebd7ab20bf1262b061a30286187427c626879488949cd"
+      "sha256": "5064e9218dc7bc2b2fb1d36a58fee02061b944e99868eedda8e330ffba182180"
     },
     {
       "id": "asset:libs/chat/LICENSE.md",
@@ -700,7 +714,7 @@
       "id": "asset:libs/langgraph/README.md",
       "kind": "asset",
       "path": "libs/langgraph/README.md",
-      "sha256": "d0e2dace696e31fd4e84f2432ac071c890eb2b19fa3daaad0c8e56d96cb0ba4f"
+      "sha256": "0e62717bd1562c3a9ab5c7649a11fb6f10c5e85ba5c826314deb10cfa4d4a0ef"
     },
     {
       "id": "asset:libs/langgraph/ng-package.json",
@@ -8358,6 +8372,20 @@
       ]
     },
     {
+      "id": "export:libs/chat/src/public-api.ts#ɵAgUiScriptedRun",
+      "kind": "export",
+      "path": "libs/chat/src/public-api.ts",
+      "symbol": "ɵAgUiScriptedRun",
+      "declarations": [
+        {
+          "path": "libs/chat/src/lib/devtools/devtools-scripted-runs.ts",
+          "symbol": "AgUiScriptedRun",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface AgUiScriptedRun {\n    events: {\n        type: string;\n        [key: string]: unknown;\n    }[];\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/chat/src/public-api.ts#ɵDevtoolsEmitter",
       "kind": "export",
       "path": "libs/chat/src/public-api.ts",
@@ -8386,6 +8414,20 @@
       ]
     },
     {
+      "id": "export:libs/chat/src/public-api.ts#ɵDevtoolsScriptedRuns",
+      "kind": "export",
+      "path": "libs/chat/src/public-api.ts",
+      "symbol": "ɵDevtoolsScriptedRuns",
+      "declarations": [
+        {
+          "path": "libs/chat/src/lib/devtools/devtools-scripted-runs.ts",
+          "symbol": "DevtoolsScriptedRuns",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface DevtoolsScriptedRuns<A extends DevtoolsAdapter = DevtoolsAdapter> {\n    take(): ScriptedRunFor<A> | null;\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/chat/src/public-api.ts#ɵLangGraphDevtoolsSignal",
       "kind": "export",
       "path": "libs/chat/src/public-api.ts",
@@ -8400,6 +8442,20 @@
       ]
     },
     {
+      "id": "export:libs/chat/src/public-api.ts#ɵLangGraphScriptedRun",
+      "kind": "export",
+      "path": "libs/chat/src/public-api.ts",
+      "symbol": "ɵLangGraphScriptedRun",
+      "declarations": [
+        {
+          "path": "libs/chat/src/lib/devtools/devtools-scripted-runs.ts",
+          "symbol": "LangGraphScriptedRun",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface LangGraphScriptedRun {\n    frames: {\n        event: string;\n        data: unknown;\n    }[];\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/chat/src/public-api.ts#ɵcreateDevtoolsEmitter",
       "kind": "export",
       "path": "libs/chat/src/public-api.ts",
@@ -8410,6 +8466,20 @@
           "symbol": "ɵcreateDevtoolsEmitter",
           "syntaxKind": "FunctionDeclaration",
           "signature": "export function ɵcreateDevtoolsEmitter<A extends DevtoolsAdapter>(adapter: A): EmitterFor<A> | null {\n    if ((typeof ngDevMode === 'undefined' || ngDevMode) && isDevMode()) {\n        return createDevelopmentEmitter(adapter) as EmitterFor<A> | null;\n    }\n    return null;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ɵdevtoolsScriptedRuns",
+      "kind": "export",
+      "path": "libs/chat/src/public-api.ts",
+      "symbol": "ɵdevtoolsScriptedRuns",
+      "declarations": [
+        {
+          "path": "libs/chat/src/lib/devtools/devtools-scripted-runs.ts",
+          "symbol": "ɵdevtoolsScriptedRuns",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function ɵdevtoolsScriptedRuns<A extends DevtoolsAdapter>(adapter: A): DevtoolsScriptedRuns<A> | null {\n    if ((typeof ngDevMode === 'undefined' || ngDevMode) && isDevMode()) {\n        return developmentScriptedRuns(adapter) as DevtoolsScriptedRuns<A> | null;\n    }\n    return null;\n}"
         }
       ]
     },
@@ -11447,7 +11517,7 @@
       "id": "source:libs/ag-ui/src/lib/internal/devtools.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/internal/devtools.ts",
-      "sha256": "55abab807540e57f17bcdb649301f85d15c7be87f03a37b1ee809e90a5148deb"
+      "sha256": "f502305d0732bcfa8f3e73a9140c3928e78d9f08481475b4f4a7cc2c7952b131"
     },
     {
       "id": "source:libs/ag-ui/src/lib/interrupt-persistence.ts",
@@ -11513,7 +11583,7 @@
       "id": "source:libs/ag-ui/src/lib/to-agent.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/to-agent.ts",
-      "sha256": "74caedc4950fac5e3429faab50303647d79cabb18442d279bf278ec257f6d98a"
+      "sha256": "fe6b186a754d201b8363cc54438f9e4fd7fbe8c5aef9af3dd0b77c618be452dd"
     },
     {
       "id": "source:libs/ag-ui/src/public-api.ts",
@@ -11831,7 +11901,7 @@
       "id": "source:libs/chat/scripts/verify-devtools-bundle.mjs",
       "kind": "source",
       "path": "libs/chat/scripts/verify-devtools-bundle.mjs",
-      "sha256": "83b9655689bb5ecd082874ff9230388c098ba3b60af5a4987e4ce03f78fab4e2"
+      "sha256": "7ef21aaef5d059a13128132c4716b8a71c08596d1309d7298e2dafd14ad3666a"
     },
     {
       "id": "source:libs/chat/src/index.ts",
@@ -12300,6 +12370,12 @@
       "kind": "source",
       "path": "libs/chat/src/lib/devtools/devtools-emitter.ts",
       "sha256": "8cfa6d0f3d52bbcc6b8eb7dd3c217619174178eecdd9a36ac294ac26fb137669"
+    },
+    {
+      "id": "source:libs/chat/src/lib/devtools/devtools-scripted-runs.ts",
+      "kind": "source",
+      "path": "libs/chat/src/lib/devtools/devtools-scripted-runs.ts",
+      "sha256": "2c27f62837013f6112231ca963e517c4f51606a44ebf6fed4824788ccb1ee950"
     },
     {
       "id": "source:libs/chat/src/lib/internals/prettify.ts",
@@ -12947,7 +13023,7 @@
       "id": "source:libs/chat/src/public-api.ts",
       "kind": "source",
       "path": "libs/chat/src/public-api.ts",
-      "sha256": "ebeaa04b460764c8ef7e21b0f87ef9b839e300c4f6abbbb58067219464052e5d"
+      "sha256": "33dd3f162b05648ec3fb248803c3ae87f6cd81faff51a842905b22b5c63fc302"
     },
     {
       "id": "source:libs/chat/src/test-setup.ts",
@@ -13529,7 +13605,7 @@
       "id": "source:libs/langgraph/src/lib/agent.fn.ts",
       "kind": "source",
       "path": "libs/langgraph/src/lib/agent.fn.ts",
-      "sha256": "4be1665e1865c4332916a1c7f5027cc4e52bf1ce9982cfde9b8c907554874c85"
+      "sha256": "923e541fe5365584bfa67e1c047d67046fa8427ad83fe4618648233be85cdbd6"
     },
     {
       "id": "source:libs/langgraph/src/lib/agent.provider.ts",
@@ -13589,7 +13665,7 @@
       "id": "source:libs/langgraph/src/lib/internals/stream-manager.bridge.ts",
       "kind": "source",
       "path": "libs/langgraph/src/lib/internals/stream-manager.bridge.ts",
-      "sha256": "9fe9066a42fceccf947832aa322a40285261b30980b50c16a2ed9314705a6b7b"
+      "sha256": "37aa5408f1c89e34bc96b5a53946ecf06d4fa223f589096cc9601afd25d2b8e2"
     },
     {
       "id": "source:libs/langgraph/src/lib/internals/subagent-tracker.ts",
@@ -13655,7 +13731,7 @@
       "id": "source:libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
       "kind": "source",
       "path": "libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
-      "sha256": "9b71dace18869a16fc0518c899be23db627ca5582a54e81bebedd5ec3ee62cbe"
+      "sha256": "1ca71980a8e0782e796bedc555e82401c62760a21fc0ab9c75fab72807163ea1"
     },
     {
       "id": "source:libs/langgraph/src/lib/transport/mock-stream.transport.ts",

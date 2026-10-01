@@ -3,8 +3,9 @@
 // Bundles a consumer of the built packages the way an application build does —
 // the adapters' providers plus the chat emitter they call, with Angular's
 // production constant `ngDevMode = false` — and asserts that nothing of the
-// hook survives: not its event name, not its opt-out flag. The same bundle with
-// `ngDevMode` left to the runtime must contain both, so the check cannot pass by
+// hook survives: not its report event, not the scripted-run arm/disarm/ack
+// events, not its opt-out flag. The same bundle with
+// `ngDevMode` left to the runtime must contain them all, so the check cannot pass by
 // bundling the wrong thing. Run after building chat, langgraph and ag-ui.
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
@@ -24,7 +25,7 @@ for (const file of Object.values(local)) {
 const entry = `
   export { provideAgent as provideLangGraphAgent } from '@threadplane/langgraph';
   export { provideAgent as provideAgUiAgent, toAgent } from '@threadplane/ag-ui';
-  export { ɵcreateDevtoolsEmitter } from '@threadplane/chat';
+  export { ɵcreateDevtoolsEmitter, ɵdevtoolsScriptedRuns } from '@threadplane/chat';
 `;
 
 /** The Threadplane packages come from dist; every other import stays external, as a CDN would leave it. */
@@ -52,7 +53,15 @@ async function bundle(define) {
   return result.outputFiles[0].text;
 }
 
-const markers = ['threadplane:devtools', '__THREADPLANE_DEVTOOLS_DISABLED__'];
+// `threadplane:devtools` alone would also match the scripted-run events; they
+// are listed so a failure names the one that survived.
+const markers = [
+  'threadplane:devtools',
+  'threadplane:devtools:arm',
+  'threadplane:devtools:disarm',
+  'threadplane:devtools:ack',
+  '__THREADPLANE_DEVTOOLS_DISABLED__',
+];
 
 const development = await bundle({});
 for (const marker of markers) {
