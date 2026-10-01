@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { MdxRenderer } from '../../../../../components/docs/MdxRenderer';
 import { ReactStreamingPreview } from '../../../../../components/docs/ReactStreamingPreview';
+import { ReactInterruptsPreview } from '../../../../../components/docs/ReactInterruptsPreview';
 import { DocsSearch } from '../../../../../components/docs/DocsSearch';
 import { DocsPageHeader } from '../../../../../components/docs/DocsPageHeader';
 import { LibraryMark } from '../../../../../components/docs/LibraryMark';
@@ -239,11 +240,36 @@ export default async function DocsPage({ params }: DocsRouteProps) {
         // highlighted `codeFiles`, so shipping them again would only add dead
         // weight to this client boundary's RSC payload.
         contentBundle={{ ...workspacePage.contentBundle, codeSources: {} }}
-        frontendVariants={workspacePage.frontendVariants?.react ? { react: {
-          ...workspacePage.frontendVariants.react,
-          contentBundle: { ...workspacePage.frontendVariants.react.contentBundle, codeSources: {} },
-        } } : undefined}
-        reactDocsSlot={workspacePage.frontendVariants?.react ? <ReactStreamingPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} /> : undefined}
+        frontendVariants={
+          workspacePage.frontendVariants?.react
+            ? {
+                react: {
+                  ...workspacePage.frontendVariants.react,
+                  contentBundle: {
+                    ...workspacePage.frontendVariants.react.contentBundle,
+                    codeSources: {},
+                  },
+                },
+              }
+            : undefined
+        }
+        reactDocsSlot={
+          workspacePage.frontendVariants?.react && library === 'langgraph' ? (
+            slug === 'streaming' ? (
+              <ReactStreamingPreview
+                exampleCode={getExampleCodeContext(
+                  workspacePage.frontendVariants.react
+                )}
+              />
+            ) : slug === 'interrupts' ? (
+              <ReactInterruptsPreview
+                exampleCode={getExampleCodeContext(
+                  workspacePage.frontendVariants.react
+                )}
+              />
+            ) : undefined
+          ) : undefined
+        }
         navigationTree={workspacePage.navigationTree}
         routePath={pathname}
         docsSlot={docsSlot}

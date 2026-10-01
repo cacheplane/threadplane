@@ -3,10 +3,16 @@ import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
 import { dirname, extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { reactCockpitConfiguration } from './configuration.mjs';
+import { createInterruptsFixture } from './interrupts-fixture.mjs';
+
+const configuration = reactCockpitConfiguration(process.argv[2]);
+const interruptsFixture =
+  configuration.topic === 'interrupts' ? createInterruptsFixture() : null;
 
 const root = resolve(
   dirname(fileURLToPath(import.meta.url)),
-  '../../dist/cockpit/langgraph/streaming/react'
+  '../../dist/' + configuration.appPath
 );
 let requests = [];
 let held;
@@ -32,6 +38,11 @@ const release = () => {
 };
 const server = createServer(async (request, response) => {
   const pathname = new URL(request.url, 'http://localhost').pathname;
+  if (
+    interruptsFixture &&
+    (await interruptsFixture(request, response, pathname))
+  )
+    return;
   if (pathname === '/__reset') {
     held?.end();
     held = undefined;
@@ -138,14 +149,14 @@ const server = createServer(async (request, response) => {
     return json(response, {});
   }
   if (pathname === '/') {
-    if (request.headers.host?.endsWith(':4600')) {
-      response.writeHead(302, { location: '/langgraph/streaming/react/' });
+    if (request.headers.host?.endsWith(':' + configuration.port)) {
+      response.writeHead(302, { location: configuration.base });
       return response.end();
     }
     response.writeHead(200);
     return response.end('React cockpit proof server');
   }
-  const prefix = '/langgraph/streaming/react/';
+  const prefix = configuration.base;
   if (!pathname.startsWith(prefix)) {
     response.writeHead(404);
     return response.end();
@@ -171,5 +182,6 @@ const server = createServer(async (request, response) => {
     response.end();
   }
 });
-server.listen(4600, '127.0.0.1');
-createServer(server.listeners('request')[0]).listen(3000, '127.0.0.1');
+server.listen(configuration.port, '127.0.0.1');
+if (!process.argv.includes('--no-parent'))
+  createServer(server.listeners('request')[0]).listen(3000, '127.0.0.1');

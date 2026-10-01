@@ -998,31 +998,23 @@ export const capabilityModules: readonly RegisteredCapabilityModule[] =
   Object.freeze(capabilityModuleData.map(freezeCapabilityDescriptor));
 
 /** Frontend variants are separate from the canonical Angular catalog. */
-const streamingAngular = capabilityModules.find(
-  (descriptor) => descriptor.id === 'langgraph-streaming-python'
-);
-const streamingReact = getCockpitFrontends().find(
-  (frontend) => frontend.project === 'cockpit-langgraph-streaming-react'
-);
-if (!streamingAngular || !streamingReact)
-  throw new Error('Streaming frontend registration is missing');
+const reactPreviews = [
+  { topic: 'streaming', title: 'LangGraph Streaming (React preview)' },
+  { topic: 'interrupts', title: 'LangGraph Interrupts (React preview)' },
+] as const;
 
 export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
   Object.freeze([
     ...capabilityModules,
-    freezeCapabilityDescriptor({
-      ...streamingAngular,
-      id: 'langgraph-streaming-python-react',
-      frontend: 'react',
-      title: 'LangGraph Streaming (React preview)',
-      codeAssetPaths: [
-        'cockpit/langgraph/streaming/react/src/app.tsx',
-        'cockpit/langgraph/streaming/react/src/application.ts',
-        'cockpit/langgraph/streaming/react/src/connection.ts',
-        'cockpit/langgraph/streaming/react/src/main.tsx',
-      ],
-      runtimeUrl: streamingReact.runtimePath,
-      devPort: streamingReact.port,
+    ...reactPreviews.map(({ topic, title }) => {
+      const canonical = capabilityModules.find((descriptor) => descriptor.id === `langgraph-${topic}-python`);
+      const frontend = getCockpitFrontends().find((entry) => entry.project === `cockpit-langgraph-${topic}-react`);
+      if (!canonical || !frontend) throw new Error(`${topic} frontend registration is missing`);
+      return freezeCapabilityDescriptor({
+        ...canonical, id: `langgraph-${topic}-python-react`, frontend: 'react', title,
+        codeAssetPaths: ['app.tsx', 'application.ts', 'connection.ts', 'main.tsx'].map((file) => `cockpit/langgraph/${topic}/react/src/${file}`),
+        runtimeUrl: frontend.runtimePath, devPort: frontend.port,
+      });
     }),
   ]);
 

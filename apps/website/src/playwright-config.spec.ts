@@ -190,8 +190,14 @@ describe('Website Playwright configuration', () => {
         url: 'http://127.0.0.1:4399/health',
       }),
       expect.objectContaining({
-        command: expect.stringContaining('cockpit-langgraph-streaming-react'),
+        command: expect.stringContaining(
+          'nx run-many -t build --projects=cockpit-langgraph-streaming-react,cockpit-langgraph-interrupts-react --parallel=2'
+        ),
         url: 'http://127.0.0.1:4600',
+      }),
+      expect.objectContaining({
+        command: 'node scripts/react-cockpit/serve.mjs interrupts --no-parent',
+        url: 'http://127.0.0.1:4601',
       }),
     ]);
     expect(config.testIgnore).toEqual([
