@@ -7062,6 +7062,42 @@
       "reason": "Development-only \u0275 devtools seam shared by the Angular adapters; not a public API and no React surface is promised."
     },
     {
+      "id": "export:libs/chat/src/public-api.ts#\u0275RenderDevtoolsReport",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only \u0275 devtools seam between @threadplane/render and the AG-UI DevTools render report; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#\u0275RenderDevtoolsReporter",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only \u0275 devtools seam between @threadplane/render and the AG-UI DevTools render report; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#\u0275createRenderDevtoolsReporter",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only \u0275 devtools seam between @threadplane/render and the AG-UI DevTools render report; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#\u0275provideRenderDevtools",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only \u0275 devtools seam between @threadplane/render and the AG-UI DevTools render report; not a public API and no React surface is promised."
+    },
+    {
       "id": "export:libs/chat/testing/public-api.ts#AbstractEvent",
       "taskIds": [
         "T05",
@@ -8093,6 +8129,51 @@
       ],
       "treatment": "shared",
       "status": "planned"
+    },
+    {
+      "id": "export:libs/render/src/public-api.ts#\u0275RENDER_DEVTOOLS",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only \u0275 devtools seam between @threadplane/render and the AG-UI DevTools render report; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/render/src/public-api.ts#\u0275RenderDevtoolsHook",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only \u0275 devtools seam between @threadplane/render and the AG-UI DevTools render report; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/render/src/public-api.ts#\u0275RenderElementState",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only \u0275 devtools seam between @threadplane/render and the AG-UI DevTools render report; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/render/src/public-api.ts#\u0275RenderResolution",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only \u0275 devtools seam between @threadplane/render and the AG-UI DevTools render report; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/render/src/public-api.ts#\u0275RenderResolvedElement",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only \u0275 devtools seam between @threadplane/render and the AG-UI DevTools render report; not a public API and no React surface is promised."
     },
     {
       "id": "export:libs/telemetry/src/browser/public-api.ts#CaptureConfig",
@@ -9742,6 +9823,15 @@
       "treatment": "internal",
       "status": "planned",
       "reason": "Development-only devtools emitter (names and timing, never values); stripped from production builds."
+    },
+    {
+      "id": "source:libs/chat/src/lib/devtools/devtools-render-report.ts",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only render report for the AG-UI DevTools UI tab (names, keys, types and states; never props); stripped from production builds."
     },
     {
       "id": "source:libs/chat/src/lib/devtools/devtools-scripted-runs.ts",
@@ -12183,6 +12273,15 @@
       ],
       "treatment": "shared",
       "status": "planned"
+    },
+    {
+      "id": "source:libs/render/src/lib/devtools/render-devtools.ts",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only element-state tracker behind the render report (names and states; never props); stripped from production builds."
     },
     {
       "id": "source:libs/render/src/lib/internals/element-readiness.ts",
