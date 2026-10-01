@@ -133,9 +133,10 @@ an Angular fix or dependency update changes the migration baseline.
 | `@threadplane/angular` | Native Angular binding and presentation |
 | `@threadplane/react` | Native React binding, rendering and presentation |
 
-All four remain private version `0.0.0`. Core contracts and the native observation
-bindings are populated; content and presentation entries remain scaffolds. Core,
-content and React use plain ESM packaging; Angular uses Angular Package Format (APF).
+All four remain private version `0.0.0`. Core contracts, native observation bindings
+and bounded content/presentation slices are populated; the task index below
+describes the broader migration scope. Core, content and React use plain ESM
+packaging; Angular uses Angular Package Format (APF).
 The source/declaration verifier follows
 module edges, including type-only imports, aliases and re-exports. It blocks
 framework dependencies in neutral layers, UI dependencies in backend layers,
