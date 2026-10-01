@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync, readFileSync, readdirSync, statSync } from 'fs';
 import { tmpdir } from 'os';
-import { join, resolve } from 'path';
+import { basename, join, resolve } from 'path';
 import {
   buildRequirementsTxt,
   buildServerPy,
@@ -125,7 +125,10 @@ describe('generateAgUiDeployment', () => {
       // The deploy-ag-ui workflow regenerates and fails on `git diff` drift.
       // This is the same guarantee, runnable locally without touching the
       // committed artifacts.
-      generateAgUiDeployment({ repoRoot: REPO_ROOT, outDir, frameworks });
+      // The server title derives from the output dir's name, so generate into
+      // a dir named like the committed one.
+      const genDir = join(outDir, basename(dir));
+      generateAgUiDeployment({ repoRoot: REPO_ROOT, outDir: genDir, frameworks });
       const committedDir = join(REPO_ROOT, dir);
       for (const file of ['server.py', 'requirements.txt']) {
         const committed = join(committedDir, file);
@@ -134,21 +137,23 @@ describe('generateAgUiDeployment', () => {
             `${dir}/${file} is not committed yet; run \`npx tsx scripts/generate-ag-ui-deployment-config.ts\``,
           );
         }
-        expect(readFileSync(join(outDir, file), 'utf8')).toBe(readFileSync(committed, 'utf8'));
+        expect(readFileSync(join(genDir, file), 'utf8')).toBe(readFileSync(committed, 'utf8'));
       }
     });
   }
 
   it('writes a MAF-only deployment when filtered to microsoft-agent-framework', () => {
-    generateAgUiDeployment({ repoRoot: REPO_ROOT, outDir, frameworks: ['microsoft-agent-framework'] });
-    const server = readFileSync(join(outDir, 'server.py'), 'utf8');
+    const mafDir = join(outDir, 'ag-ui-maf');
+    generateAgUiDeployment({ repoRoot: REPO_ROOT, outDir: mafDir, frameworks: ['microsoft-agent-framework'] });
+    const server = readFileSync(join(mafDir, 'server.py'), 'utf8');
     expect(server).toContain('from agent_framework_ag_ui import add_agent_framework_fastapi_endpoint');
     expect(server).not.toContain('from ag_ui_langgraph import');
     expect(server).not.toContain('from ag_ui_strands import');
-    const reqs = readFileSync(join(outDir, 'requirements.txt'), 'utf8');
+    expect(server).toContain('FastAPI(title="ag-ui-maf")');
+    const reqs = readFileSync(join(mafDir, 'requirements.txt'), 'utf8');
     expect(reqs).toContain('agent-framework-ag-ui==');
     expect(reqs).not.toContain('ag-ui-langgraph==');
-    expect(readdirSync(join(outDir, 'deps'))).toEqual(['microsoft_agent_framework']);
+    expect(readdirSync(join(mafDir, 'deps'))).toEqual(['microsoft_agent_framework']);
   });
 
   it('excludes microsoft-agent-framework from the shared deployment', () => {
@@ -181,6 +186,11 @@ describe('buildServerPy framework adapters', () => {
     topic,
     pythonDir: `x/${topic}/python`,
     framework: 'microsoft-agent-framework',
+  });
+
+  it('defaults the FastAPI title to ag-ui-dev and honours an override', () => {
+    expect(buildServerPy([lg('interrupts')])).toContain('FastAPI(title="ag-ui-dev")');
+    expect(buildServerPy([lg('interrupts')], { title: 'other' })).toContain('FastAPI(title="other")');
   });
 
   it('langgraph topics import graph and mount via LangGraphAgent, with no MAF bridge import', () => {

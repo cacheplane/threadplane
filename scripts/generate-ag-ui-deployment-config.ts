@@ -1,5 +1,5 @@
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
-import { resolve } from 'path';
+import { basename, resolve } from 'path';
 import { capabilities, type CapabilityFramework } from '@threadplane/cockpit-registry';
 
 /**
@@ -215,7 +215,8 @@ function stageDeps(repoRoot: string, outDir: string, topics: AgUiTopic[]): void 
   }
 }
 
-export function buildServerPy(topics: AgUiTopic[]): string {
+export function buildServerPy(topics: AgUiTopic[], options: { title?: string } = {}): string {
+  const title = options.title ?? 'ag-ui-dev';
   const usedFrameworks = (Object.keys(FRAMEWORK_ADAPTERS) as CapabilityFramework[]).filter(
     (framework) => topics.some((t) => t.framework === framework),
   );
@@ -242,7 +243,7 @@ ${imports}
 
 AG_UI_INTERNAL_TOKEN = os.environ["AG_UI_INTERNAL_TOKEN"]
 
-app = FastAPI(title="ag-ui-dev")
+app = FastAPI(title="${title}")
 
 
 @app.middleware("http")
@@ -442,7 +443,7 @@ export function generateAgUiDeployment(options: GenerateOptions): void {
   mkdirSync(options.outDir, { recursive: true });
   // stageDeps clears deps/ first, so topics that left the deployment disappear.
   stageDeps(options.repoRoot, options.outDir, topics);
-  writeFileSync(resolve(options.outDir, 'server.py'), buildServerPy(topics));
+  writeFileSync(resolve(options.outDir, 'server.py'), buildServerPy(topics, { title: basename(options.outDir) }));
   writeFileSync(
     resolve(options.outDir, 'requirements.txt'),
     buildRequirementsTxt(options.repoRoot, topics, { caps: capsFor(topics) }),

@@ -12,7 +12,7 @@ from deps.microsoft_agent_framework.src.agent import agent as microsoft_agent_fr
 
 AG_UI_INTERNAL_TOKEN = os.environ["AG_UI_INTERNAL_TOKEN"]
 
-app = FastAPI(title="ag-ui-dev")
+app = FastAPI(title="ag-ui-maf")
 
 
 @app.middleware("http")
