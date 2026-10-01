@@ -145,6 +145,34 @@ const activeWorkspaceMode = (): string | undefined =>
     .workspaceMode;
 
 describe('WebsiteWorkspace', () => {
+  it('keeps the frontend selector off ordinary Angular documentation pages', () => {
+    renderWorkspace();
+    expect(screen.queryByLabelText('Example UI')).toBeNull();
+  });
+  it('selects the React identity and runtime together from a public URL', async () => {
+    const resolution = mappedResolution('streaming', 'streaming', ['Docs', 'Run', 'Code']);
+    const reactResolution = mappedResolution('streaming:react', 'streaming', ['Docs', 'Run', 'Code']);
+    window.history.replaceState({}, '', '/docs/langgraph/guides/streaming?mode=code&frontend=react#ownership');
+    renderWorkspace({ resolution, presentation: mappedPresentation(resolution), routePath: '/docs/langgraph/guides/streaming',
+      frontendVariants: { react: { resolution: reactResolution, presentation: mappedPresentation(reactResolution), contentBundle: { ...emptyContent, runtimeUrl: 'https://examples.threadplane.ai/langgraph/streaming/react' } } },
+      reactDocsSlot: <article>React ownership</article> });
+    await waitFor(() => expect(mocks.latestProviderProps?.resolution).toEqual(reactResolution));
+    expect(mocks.latestProviderProps?.contentBundle.runtimeUrl).toContain('/streaming/react');
+    act(() => mocks.latestProviderProps?.pushMode?.('Run'));
+    expect(mocks.push).toHaveBeenLastCalledWith('/docs/langgraph/guides/streaming?mode=run&frontend=react#ownership');
+    fireEvent.change(screen.getByLabelText('Example UI'), { target: { value: 'angular' } });
+    await waitFor(() => expect(mocks.latestProviderProps?.resolution).toEqual(resolution));
+  });
+
+  it('does not expose Angular code or runtime for an unsupported React URL', async () => {
+    const resolution = mappedResolution('persistence', 'persistence', ['Docs', 'Run', 'Code']);
+    window.history.replaceState({}, '', '/docs/langgraph/guides/persistence?frontend=react&mode=run');
+    renderWorkspace({ resolution, presentation: mappedPresentation(resolution), routePath: '/docs/langgraph/guides/persistence' });
+    await waitFor(() => expect(screen.getByText(/React preview is not available for this topic/)).toBeTruthy());
+    expect(mocks.latestProviderProps?.presentation.kind).toBe('docs-only');
+    expect(mocks.latestProviderProps?.contentBundle.runtimeUrl).toBeNull();
+    expect(mocks.latestProviderProps?.contentBundle.codeFiles).toEqual({});
+  });
   beforeEach(() => {
     window.localStorage.clear();
     window.sessionStorage.clear();

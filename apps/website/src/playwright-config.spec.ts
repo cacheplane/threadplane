@@ -189,6 +189,10 @@ describe('Website Playwright configuration', () => {
         command: expect.stringContaining('custom-runtime-server.ts'),
         url: 'http://127.0.0.1:4399/health',
       }),
+      expect.objectContaining({
+        command: expect.stringContaining('cockpit-langgraph-streaming-react'),
+        url: 'http://127.0.0.1:4600',
+      }),
     ]);
     expect(config.testIgnore).toEqual([
       '**/platform-production-smoke.spec.ts',

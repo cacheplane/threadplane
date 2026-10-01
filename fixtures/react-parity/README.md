@@ -306,10 +306,10 @@ This bounded runtime proof does not establish complete migration parity.
 | T29 | Implement thread/project/search/history/timeline/debug surfaces |
 | T30 | Implement popup, sidebar and sidenav compositions |
 | T31 | Create canonical React applications and public testing utilities |
-| T32 | Add frontend identity to registry and runtime bridge |
-| T33 | Build React cockpit host and all 41 scenario variants |
-| T34 | Make docs routes, navigation and search framework-aware |
-| T35 | Author and generate React documentation and agent context |
+| T32 | In progress: separate frontend descriptors and streaming runtime identity; existing bridge reused |
+| T33 | In progress: installed React streaming pilot; remaining 40 scenario variants pending |
+| T34 | In progress: public streaming selector and frontend URL state; broader navigation/search parity pending |
+| T35 | In progress: bounded streaming preview documentation and public agent guidance; full React docs pending |
 | T36 | Expand CI and packed consumer compatibility |
 | T37 | Prepare prerelease, publishing, provenance and rollback |
 | T38 | Measure and optimize streaming, bundles and retention |

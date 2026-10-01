@@ -6,6 +6,7 @@
   "implicitDependencies": [
     "workspace-react",
     "cockpit-langgraph-streaming-angular",
+    "cockpit-langgraph-streaming-react",
     "cockpit-ag-ui-streaming-angular",
     "cockpit-chat-threads-angular"
   ],

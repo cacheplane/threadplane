@@ -40,6 +40,7 @@ export interface DocsNavigationProps {
   expanded?: Record<string, boolean>;
   onExpandedChange?: (key: string, open: boolean) => void;
   onNavigate?: () => void;
+  resolveHref?: (href: string) => string;
 }
 
 /**
@@ -62,9 +63,11 @@ const LIBRARY_GROUPS: { id: LibraryGroup; label: string }[] = [
 function LibraryDropdown({
   activeLibrary,
   onNavigate,
+  resolveHref = href => href,
 }: {
   activeLibrary: LibraryId | null;
   onNavigate?: () => void;
+  resolveHref?: (href: string) => string;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -222,7 +225,7 @@ function LibraryDropdown({
                       aria-checked={isActive}
                       tabIndex={-1}
                       key={library.id}
-                      href={libraryIntroPath(library.id)}
+                      href={resolveHref(libraryIntroPath(library.id))}
                       data-workspace-navigation-link
                       onClick={() => {
                         closeMenu();
@@ -279,6 +282,7 @@ function SectionGroup({
   open,
   onOpenChange,
   onNavigate,
+  resolveHref = href => href,
 }: {
   section: DocsSection;
   activeLibrary: LibraryId;
@@ -287,6 +291,7 @@ function SectionGroup({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onNavigate?: () => void;
+  resolveHref?: (href: string) => string;
 }) {
   const SectionIcon = SECTION_ICONS[section.id] ?? Circle;
   const contentId = useId();
@@ -325,7 +330,7 @@ function SectionGroup({
             return (
               <Link
                 key={`${page.section}/${page.slug}`}
-                href={`/docs/${activeLibrary}/${page.section}/${page.slug}`}
+                href={resolveHref(`/docs/${activeLibrary}/${page.section}/${page.slug}`)}
                 onClick={onNavigate}
                 data-docs-navlink
                 data-workspace-navigation-link
@@ -350,6 +355,7 @@ export function DocsNavigation({
   expanded = {},
   onExpandedChange,
   onNavigate,
+  resolveHref = href => href,
 }: DocsNavigationProps) {
   const library = activeLibrary ? getLibraryConfig(activeLibrary) : undefined;
   const pathname = usePathname();
@@ -363,7 +369,7 @@ export function DocsNavigation({
         {specialDocsPages.map((page) => (
           <Link
             key={page.path}
-            href={page.path}
+            href={resolveHref(page.path)}
             onClick={onNavigate}
             data-docs-navlink
             data-workspace-navigation-link
@@ -376,7 +382,7 @@ export function DocsNavigation({
         ))}
       </nav>
 
-      <LibraryDropdown activeLibrary={activeLibrary} onNavigate={onNavigate} />
+      <LibraryDropdown activeLibrary={activeLibrary} onNavigate={onNavigate} resolveHref={resolveHref} />
 
       {/* No library means no section tree. Narrowing on `activeLibrary` rather
        * than `library` keeps SectionGroup's non-null contract honest. */}
@@ -393,6 +399,7 @@ export function DocsNavigation({
                 open={expanded[key] ?? true}
                 onOpenChange={(open) => onExpandedChange?.(key, open)}
                 onNavigate={onNavigate}
+                resolveHref={resolveHref}
               />
             );
           })

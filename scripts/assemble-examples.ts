@@ -1,6 +1,6 @@
 #!/usr/bin/env npx tsx
 /**
- * Build all Angular example apps and assemble them into the Vercel deploy directory.
+ * Build registered frontend example apps and assemble them for Vercel.
  *
  * Output: deploy/examples/{product}/{topic}/ with index.html, main.js, styles.css
  *
@@ -18,7 +18,7 @@ import {
   readFileSync,
 } from 'fs';
 import { resolve } from 'path';
-import { capabilities as registryCapabilities } from '@threadplane/cockpit-registry';
+import { getCockpitFrontends } from '@threadplane/cockpit-registry';
 import { prepareExampleHtml } from './prepare-example-html';
 import {
   GENERATED_RUNTIME_PARENT_ORIGINS_MODULE,
@@ -56,21 +56,18 @@ writeFileSync(
 );
 
 // Derive the staged-example list from the capability registry — the single
-// source of truth (every entry has an `angularProject` that builds to
-// `dist/cockpit/<product>/<topic>/angular`). Hardcoding it previously let new
+// source of truth for each frontend's project, output and runtime path.
+// Hardcoding it previously let new
 // caps (tool-views, json-render, a2ui) silently 404 in production because they
 // were added to the registry but never to this list. The Railway deploy
 // generator already derives from the registry; this keeps the frontend deploy
 // in lockstep so a registry cap can never be missed again.
-const capabilities = registryCapabilities.map((c) => ({
-  product: c.product,
-  topic: c.topic,
-}));
+const capabilities = getCockpitFrontends();
 
 if (!skipBuild) {
-  console.log(`Building all ${capabilities.length} Angular apps...`);
+  console.log(`Building all ${capabilities.length} frontend apps...`);
   execSync(
-    "npx nx run-many -t build --projects='cockpit-*-angular' --skip-nx-cache",
+    `npx nx run-many -t build --projects='${capabilities.map(cap => cap.project).join(',')}' --skip-nx-cache`,
     {
       cwd: root,
       stdio: 'inherit',
@@ -81,8 +78,8 @@ if (!skipBuild) {
 if (existsSync(deployDir)) rmSync(deployDir, { recursive: true });
 
 for (const cap of capabilities) {
-  const src = resolve(root, `dist/cockpit/${cap.product}/${cap.topic}/angular`);
-  const dest = resolve(deployDir, `${cap.product}/${cap.topic}`);
+  const src = resolve(root, cap.buildOutput);
+  const dest = resolve(deployDir, cap.runtimePath);
 
   if (!existsSync(src)) {
     console.error(`❌ Missing build output: ${src}`);
@@ -90,19 +87,19 @@ for (const cap of capabilities) {
   }
 
   mkdirSync(dest, { recursive: true });
-  cpSync(src, dest, { recursive: true });
+  cpSync(src, dest, { recursive: true, filter: path => !path.endsWith('/build-proof.json') });
 
   // Fix <base href="/"> to point to the correct subpath so assets resolve correctly.
   // Without this, main.js/styles.css/chunks load from the root (/) instead of
   // /{product}/{topic}/ and return 404 in production.
   const indexPath = resolve(dest, 'index.html');
-  if (existsSync(indexPath)) {
+  if (cap.frontend === 'angular' && existsSync(indexPath)) {
     const html = readFileSync(indexPath, 'utf-8');
     const fixed = prepareExampleHtml(html, cap.product, cap.topic);
     writeFileSync(indexPath, fixed);
   }
 
-  console.log(`✅ ${cap.product}/${cap.topic}`);
+  console.log(`✅ ${cap.runtimePath}`);
 }
 
 // Create Vercel Build Output API structure for the serverless proxy
@@ -121,8 +118,8 @@ const agUiFuncDir = resolve(
 // Copy static files to the output directory
 mkdirSync(staticDir, { recursive: true });
 for (const cap of capabilities) {
-  const src = resolve(deployDir, `${cap.product}/${cap.topic}`);
-  const dest = resolve(staticDir, `${cap.product}/${cap.topic}`);
+  const src = resolve(deployDir, cap.runtimePath);
+  const dest = resolve(staticDir, cap.runtimePath);
   cpSync(src, dest, { recursive: true });
 }
 
@@ -213,6 +210,11 @@ writeFileSync(
           src: '^/(langgraph|deep-agents|render|chat|ag-ui|runtimes)/([^/]+)/(.+\\..+)$',
           dest: '/$1/$2/$3',
         },
+        ...capabilities.filter(cap => cap.frontend === 'react').map(cap => ({
+          src: `^/${cap.runtimePath}(/.*)?$`,
+          dest: `/${cap.runtimePath}/index.html`,
+        })),
+        { src: '^/(langgraph|deep-agents|render|chat|ag-ui|runtimes)/([^/]+)/react(/.*)?$', status: 404 },
         {
           src: '^/(langgraph|deep-agents|render|chat|ag-ui|runtimes)/([^/]+)(/.*)?$',
           dest: '/$1/$2/index.html',

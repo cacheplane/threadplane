@@ -47,7 +47,7 @@ describe('frontend capability resolution', () => {
   });
 
   it('never falls back to Angular for an unsupported React capability', () => {
-    expect(getFrontendCapabilityDescriptor(identity, 'react')).toBeUndefined();
+    expect(getFrontendCapabilityDescriptor({ ...identity, topic: 'persistence' }, 'react')).toBeUndefined();
     expect(
       getFrontendCapabilityDescriptor(identity, 'react', [angular])
     ).toBeUndefined();

@@ -14,6 +14,33 @@ const workspaceRoot = process.cwd().endsWith('/apps/website')
   : process.cwd();
 
 describe('getWebsiteWorkspacePage', () => {
+  it('loads a bounded React variant with matching source and runtime', async () => {
+    const page = await getWebsiteWorkspacePage({
+      docsPath: '/docs/langgraph/guides/streaming',
+      title: 'Streaming',
+    });
+    const react = page.frontendVariants?.react;
+    expect(react?.resolution).toMatchObject({
+      kind: 'mapped',
+      identity: { id: expect.stringMatching(/:react$/), language: 'python' },
+    });
+    expect(react?.presentation).toMatchObject({
+      runtimeUrl: 'langgraph/streaming/react',
+    });
+    expect(Object.keys(react?.contentBundle.codeFiles ?? {})).toContain(
+      'cockpit/langgraph/streaming/react/src/app.tsx'
+    );
+    expect(
+      Object.keys(react?.contentBundle.codeFiles ?? {}).some((path) =>
+        path.includes('/angular/')
+      )
+    ).toBe(false);
+    const unsupported = await getWebsiteWorkspacePage({
+      docsPath: '/docs/langgraph/guides/persistence',
+      title: 'Persistence',
+    });
+    expect(unsupported.frontendVariants?.react).toBeUndefined();
+  });
   it('loads descriptor-backed content for a mapped LangGraph docs page', async () => {
     const page = await getWebsiteWorkspacePage({
       docsPath: '/docs/langgraph/guides/streaming',
@@ -34,7 +61,9 @@ describe('getWebsiteWorkspacePage', () => {
         'cockpit/langgraph/streaming/angular/src/app/streaming.component.ts',
       ]),
     });
-    expect(page.contentBundle.runtimeUrl).toMatch(/(?:langgraph\/streaming|localhost:4300)$/);
+    expect(page.contentBundle.runtimeUrl).toMatch(
+      /(?:langgraph\/streaming|localhost:4300)$/
+    );
     expect(Object.keys(page.contentBundle.codeFiles)).toEqual(
       expect.arrayContaining([
         'cockpit/langgraph/streaming/angular/src/app/streaming.component.ts',
