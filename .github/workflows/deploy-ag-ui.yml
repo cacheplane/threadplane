@@ -49,8 +49,23 @@ jobs:
 
       - name: Drift check — committed artifacts must match regeneration
         run: |
-          if ! git diff --exit-code -- deployments/${{ matrix.deployment.dir }}/; then
-            echo "::error::deployments/${{ matrix.deployment.dir }}/ is out of sync. Run 'npx tsx scripts/generate-ag-ui-deployment-config.ts' locally and commit the result."
+          dir="deployments/${{ matrix.deployment.dir }}"
+          # Three checks, because `git diff` alone cannot see the failure that
+          # shipped on 2026-10-01: ag-ui-maf's generated deps/ was caught by the
+          # .gitignore rule `deployments/*/deps/`, so it was neither tracked nor
+          # uploaded (`railway up` honours .gitignore), the diff gate passed,
+          # and the image answered 502 on every request.
+          if [ -n "$(git status --porcelain -- "$dir/")" ]; then
+            git status --short -- "$dir/"
+            echo "::error::$dir/ is out of sync. Run 'npx tsx scripts/generate-ag-ui-deployment-config.ts' locally and commit the result."
+            exit 1
+          fi
+          if git check-ignore -q "$dir/deps"; then
+            echo "::error::$dir/deps/ is ignored by .gitignore, so it is never committed or uploaded. Add a negation for it next to the ag-ui-dev one."
+            exit 1
+          fi
+          if [ -z "$(git ls-files -- "$dir/deps")" ]; then
+            echo "::error::$dir/deps/ has no tracked files; the image would start without its runtimes."
             exit 1
           fi
 
