@@ -274,7 +274,29 @@ ${mounts}
  * one example's resolved transitive could be a higher version than what the
  * other example's direct dep accepted. Stripping to direct deps avoids that.
  */
-function buildRequirementsTxt(repoRoot: string, topics: AgUiTopic[]): string {
+export interface UnionConstraints {
+  /** Package upper bounds a topic's own dependency carries that the union
+   *  cannot see (a transitive requirement such as agent-framework-ag-ui's
+   *  `ag-ui-protocol<0.2`). Keyed by package; value is `<X.Y` form. */
+  caps?: Record<string, string>;
+}
+
+const KNOWN_CAPS: Record<PythonHostedFramework, Record<string, string>> = {
+  langgraph: {},
+  'aws-strands': {},
+  // agent-framework-ag-ui 1.4.0 declares ag-ui-protocol>=0.1.19,<0.2.
+  'microsoft-agent-framework': { 'ag-ui-protocol': '<0.2' },
+};
+
+function capsFor(topics: AgUiTopic[]): Record<string, string> {
+  return Object.assign({}, ...topics.map((t) => KNOWN_CAPS[t.framework]));
+}
+
+export function buildRequirementsTxt(
+  repoRoot: string,
+  topics: AgUiTopic[],
+  constraints: UnionConstraints = {},
+): string {
   const directVersions = new Map<string, string>();
   const directUrls = new Map<string, string>();
   for (const topic of topics) {
@@ -303,6 +325,15 @@ function buildRequirementsTxt(repoRoot: string, topics: AgUiTopic[]): string {
       throw new Error(
         `${name} is pinned as a direct URL by one example and as ==${directVersions.get(name)} by another. ` +
           'Align the examples on one source before regenerating.',
+      );
+    }
+  }
+  for (const [name, cap] of Object.entries(constraints.caps ?? {})) {
+    const chosen = directVersions.get(name);
+    if (chosen !== undefined && compareVersions(chosen, cap.replace(/^</, '')) >= 0) {
+      throw new Error(
+        `${name}==${chosen} is in the union but a topic requires ${name}${cap}. ` +
+          'Split that topic into its own deployment (see deployments/ag-ui-maf) before regenerating.',
       );
     }
   }
@@ -403,7 +434,7 @@ export function generateAgUiDeployment(options: GenerateOptions): void {
   mkdirSync(options.outDir, { recursive: true });
   stageDeps(options.repoRoot, options.outDir, topics);
   writeFileSync(resolve(options.outDir, 'server.py'), buildServerPy(topics));
-  writeFileSync(resolve(options.outDir, 'requirements.txt'), buildRequirementsTxt(options.repoRoot, topics));
+  writeFileSync(resolve(options.outDir, 'requirements.txt'), buildRequirementsTxt(options.repoRoot, topics, { caps: capsFor(topics) }));
 }
 
 if (require.main === module) {
