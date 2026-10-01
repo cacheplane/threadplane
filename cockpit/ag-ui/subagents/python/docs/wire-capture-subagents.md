@@ -50,10 +50,8 @@ Scrubbed capture — line numbers are event indices (1-based) in the SSE
 stream; `rawEvent` mirrors are dropped from every line and repetitive runs
 are elided with `# [elided: ...]`. No keys or org ids appeared in the stream.
 
-The `protocolVersion` field was added to this capture by hand when the runtimes moved to 1.0; re-run the capture command to refresh the frame.
-
 ```
-1    {"type":"RUN_STARTED","threadId":"capture-thread-2","runId":"capture-run-2","protocolVersion":"1.0"}
+1    {"type":"RUN_STARTED","threadId":"capture-thread-2","runId":"capture-run-2"}
 3    {"type":"STEP_STARTED","stepName":"orchestrator"}
 7    {"type":"TOOL_CALL_START","toolCallId":"call_KUdUz8CR6t3X2NEb1ucXbntO","toolCallName":"task","parentMessageId":"lc_run--01a06367-6022-77a3-938b-65acb68640d4"}
 9    {"type":"TOOL_CALL_ARGS","toolCallId":"call_KUdUz8CR6t3X2NEb1ucXbntO","delta":"{\""}

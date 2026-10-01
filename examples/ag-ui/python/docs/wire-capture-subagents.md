@@ -57,10 +57,8 @@ Scrubbed capture — line numbers are event indices (1-based) in the SSE
 stream; `rawEvent` mirrors are dropped from every line and repetitive runs
 are elided with `# [elided: ...]`. No keys or org ids appeared in the stream.
 
-The `protocolVersion` field was added to this capture by hand when the runtimes moved to 1.0; re-run the capture command to refresh the frame.
-
 ```
-1     {"type":"RUN_STARTED","threadId":"capture-thread-2","runId":"capture-thread-2-run","protocolVersion":"1.0"}
+1     {"type":"RUN_STARTED","threadId":"capture-thread-2","runId":"capture-thread-2-run"}
 3     {"type":"STEP_STARTED","stepName":"generate"}
 9     {"type":"TOOL_CALL_START","toolCallId":"call_9n4N3xc350eeejpCUahSoH4v","toolCallName":"research","parentMessageId":"lc_run--01a063d9-03e5-7521-90c4-cc6e84ddf9fa"}
       # [elided: 29 TOOL_CALL_ARGS deltas spelling {"topic":"Angular signals: history, motivation, ...","subagent_type":"research"}]
