@@ -13,7 +13,7 @@ The shared runtime uses the existing Threadplane example backend. A developer La
 
 ## Ownership and rendering
 
-The application creates its session and message-content owner outside React rendering. React observes their snapshots through useAgent; the application controls conversation creation, cancellation, replacement, and disposal. Leaving the example releases the session and prevents late results from updating its UI.
+A stable application owner controls the session and message-content lifetime. The session is created only after conversation creation is confirmed. React observes the application's snapshots through useAgent; the application controls conversation creation, cancellation, replacement, and disposal. Leaving the example releases the session and prevents late results from updating its UI.
 
 <ExampleCode file="cockpit/langgraph/streaming/react/src/app.tsx" />
 
