@@ -5,6 +5,17 @@ import { join } from 'node:path';
 import test from 'node:test';
 import * as runtime from './runtime-consumer.mjs';
 
+test('installed React contract includes owned JSON types without adding them to core', (t) => {
+  for (const kind of ['react', 'core']) {
+    const consumer = mkdtempSync(join(tmpdir(), 'json-type-contract-'));
+    t.after(() => rmSync(consumer, { recursive: true, force: true }));
+    runtime.prepareInstalledTypes(process.cwd(), consumer, kind);
+    const config = JSON.parse(readFileSync(join(consumer, 'tsconfig.contracts.json'), 'utf8'));
+    assert.equal(config.files.includes('json-types.ts'), kind === 'react');
+    assert.equal(existsSync(join(consumer, 'json-types.ts')), kind === 'react');
+  }
+});
+
 test('shared view preparation copies the complete views without composing a private backend or declaration', (t) => {
   const consumer = mkdtempSync(join(tmpdir(), 'candidate-view-copy-'));
   t.after(() => rmSync(consumer, { recursive: true, force: true }));

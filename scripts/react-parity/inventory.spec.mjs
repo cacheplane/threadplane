@@ -42,16 +42,20 @@ function ownership(inventory) {
 
 test('inventory API exists', () => assert.equal(typeof collectInventory, 'function'));
 
-test('owned content and its Markdown feature are scoped separately from renderer parity', t => {
+test('owned content features are scoped separately from renderer parity', t => {
   assert.ok(DEFAULT_SCOPE.libraries.includes('content'));
-  for (const entry of ['libs/content/src/index.ts', 'libs/content/src/markdown/index.ts']) assert.ok(DEFAULT_SCOPE.entryPoints.includes(entry));
+  for (const entry of ['libs/content/src/index.ts', 'libs/content/src/markdown/index.ts', 'libs/content/src/json/index.ts']) assert.ok(DEFAULT_SCOPE.entryPoints.includes(entry));
   const { root, put } = fixture(t);
   put('libs/content/src/index.ts', 'export {};');
+  put('libs/content/src/messages/index.ts', 'export {};');
   put('libs/content/src/markdown/index.ts', "export { createMarkdown } from './create-markdown.js';");
   put('libs/content/src/markdown/create-markdown.ts', 'export function createMarkdown() { return {}; }');
-  const actual = collectInventory(root, { ...scope, libraries: ['content'], entryPoints: ['libs/content/src/index.ts', 'libs/content/src/markdown/index.ts'] });
+  put('libs/content/src/json/index.ts', "export { createJson } from './create-json.js';");
+  put('libs/content/src/json/create-json.ts', 'export function createJson() { return {}; }');
+  const actual = collectInventory(root, { ...scope, libraries: ['content'], entryPoints: DEFAULT_SCOPE.entryPoints.filter(path => path.startsWith('libs/content/')) });
   assert.ok(actual.rows.some(row => row.id === 'source:libs/content/src/markdown/create-markdown.ts'));
   assert.ok(actual.rows.some(row => row.id === 'export:libs/content/src/markdown/index.ts#createMarkdown'));
+  assert.ok(actual.rows.some(row => row.id === 'export:libs/content/src/json/index.ts#createJson'));
   assert.equal(actual.rows.filter(row => row.kind === 'component').length, 0);
 });
 

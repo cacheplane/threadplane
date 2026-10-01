@@ -1,15 +1,19 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "ccfe5b1f0f24807a74a8dc2d9c40d2897e59be92",
+  "baselineHead": "ac6d626151f5269dfa96f9deebc714289d4664c0",
   "sourceState": {
     "modified": [
-      ".github/workflows/ci.yml",
-      "libs/react/README.md",
-      "libs/react/src/chat/index.ts",
-      "libs/react/src/chat/styles.css"
+      "libs/content/README.md",
+      "libs/content/package.json",
+      "libs/content/src/json/index.ts",
+      "package-lock.json",
+      "package.json"
     ],
     "untracked": [
-      "libs/react/src/chat/message-actions.tsx"
+      "libs/content/src/json/create-json.ts",
+      "libs/content/src/json/projection.ts",
+      "libs/content/src/json/transition.ts",
+      "libs/content/src/json/types.ts"
     ]
   },
   "scope": {
@@ -44,6 +48,7 @@
       "libs/chat/debug/public-api.ts",
       "libs/chat/testing/public-api.ts",
       "libs/content/src/index.ts",
+      "libs/content/src/json/index.ts",
       "libs/content/src/markdown/index.ts",
       "libs/content/src/messages/index.ts",
       "libs/langgraph/src/public-api.ts",
@@ -557,13 +562,13 @@
       "id": "asset:libs/content/README.md",
       "kind": "asset",
       "path": "libs/content/README.md",
-      "sha256": "2adca49d3431c64cd53e33b442a1e4c227f8f128226456a3549873df7a1c66a8"
+      "sha256": "2c0549ea146a9e6dab2d8b137807c4377bc763331a62174a183e1d3e203507dd"
     },
     {
       "id": "asset:libs/content/package.json",
       "kind": "asset",
       "path": "libs/content/package.json",
-      "sha256": "18f27ec8bf932fd71dd85b6b20f51cab9cfadbc406151056434a74af157dd2cf"
+      "sha256": "5592aa4c53a4c986d5a6cf458724356c25af18bb2f4f950c97181dc05db58787"
     },
     {
       "id": "asset:libs/content/project.json",
@@ -2165,13 +2170,13 @@
       "id": "config:package-lock.json",
       "kind": "config",
       "path": "package-lock.json",
-      "sha256": "0fe309ca6e90d54702b4bf1c685d5ce8200b8f051520f7337df82d033c85dc08"
+      "sha256": "0804f66cbbfb3d99b4ddede64593065d0f3fdf150b8028731f8e90c75e3d9e0e"
     },
     {
       "id": "config:package.json",
       "kind": "config",
       "path": "package.json",
-      "sha256": "766cd8167219f6c8a2cda9c49e8de319002e70ba07dafa70b83768eed42c996e"
+      "sha256": "7d531492a56457bc62f70d4789ae1c8927213abc2751cd01a14cf1171007df27"
     },
     {
       "id": "config:scripts/assemble-examples.ts",
@@ -3015,6 +3020,11 @@
       "id": "entry:libs/content/src/index.ts",
       "kind": "entry",
       "path": "libs/content/src/index.ts"
+    },
+    {
+      "id": "entry:libs/content/src/json/index.ts",
+      "kind": "entry",
+      "path": "libs/content/src/json/index.ts"
     },
     {
       "id": "entry:libs/content/src/markdown/index.ts",
@@ -8533,6 +8543,118 @@
       ]
     },
     {
+      "id": "export:libs/content/src/json/index.ts#Json",
+      "kind": "export",
+      "path": "libs/content/src/json/index.ts",
+      "symbol": "Json",
+      "declarations": [
+        {
+          "path": "libs/content/src/json/types.ts",
+          "symbol": "Json",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface Json {\n    readonly getSnapshot: () => JsonSnapshot;\n    readonly subscribe: (notify: () => void) => () => void;\n    readonly update: (document: JsonDocument) => void;\n    readonly dispose: () => void;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/json/index.ts#JsonDocument",
+      "kind": "export",
+      "path": "libs/content/src/json/index.ts",
+      "symbol": "JsonDocument",
+      "declarations": [
+        {
+          "path": "libs/content/src/json/types.ts",
+          "symbol": "JsonDocument",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface JsonDocument {\n    readonly generation: string;\n    readonly phase: 'streaming' | 'complete';\n    readonly content: string;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/json/index.ts#JsonError",
+      "kind": "export",
+      "path": "libs/content/src/json/index.ts",
+      "symbol": "JsonError",
+      "declarations": [
+        {
+          "path": "libs/content/src/json/types.ts",
+          "symbol": "JsonError",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface JsonError {\n    readonly code: 'INVALID_SYNTAX' | 'UNEXPECTED_END' | 'TRAILING_CONTENT';\n    readonly message: string;\n    readonly index: number;\n    readonly line: number;\n    readonly column: number;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/json/index.ts#JsonNode",
+      "kind": "export",
+      "path": "libs/content/src/json/index.ts",
+      "symbol": "JsonNode",
+      "declarations": [
+        {
+          "path": "libs/content/src/json/types.ts",
+          "symbol": "JsonNode",
+          "syntaxKind": "TypeAliasDeclaration",
+          "signature": "export type JsonNode = JsonNodeBase & ({\n    readonly kind: 'null';\n    readonly value: null | undefined;\n} | {\n    readonly kind: 'boolean';\n    readonly value: boolean | undefined;\n} | {\n    readonly kind: 'number';\n    readonly value: number | undefined;\n    readonly buffer: string;\n} | {\n    readonly kind: 'string';\n    readonly value: string | undefined;\n    readonly buffer: string;\n} | {\n    readonly kind: 'array';\n    readonly value: readonly JsonPartialValue[];\n    readonly children: readonly JsonNode[];\n} | {\n    readonly kind: 'object';\n    readonly value: Readonly<Record<string, JsonPartialValue>>;\n    readonly children: Readonly<Record<string, JsonNode>>;\n});"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/json/index.ts#JsonOptions",
+      "kind": "export",
+      "path": "libs/content/src/json/index.ts",
+      "symbol": "JsonOptions",
+      "declarations": [
+        {
+          "path": "libs/content/src/json/types.ts",
+          "symbol": "JsonOptions",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface JsonOptions {\n    readonly violationPolicy?: 'throw' | 'rebuild';\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/json/index.ts#JsonPartialValue",
+      "kind": "export",
+      "path": "libs/content/src/json/index.ts",
+      "symbol": "JsonPartialValue",
+      "declarations": [
+        {
+          "path": "libs/content/src/json/types.ts",
+          "symbol": "JsonPartialValue",
+          "syntaxKind": "TypeAliasDeclaration",
+          "signature": "export type JsonPartialValue = undefined | null | boolean | number | string | readonly JsonPartialValue[] | {\n    readonly [key: string]: JsonPartialValue;\n};"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/json/index.ts#JsonSnapshot",
+      "kind": "export",
+      "path": "libs/content/src/json/index.ts",
+      "symbol": "JsonSnapshot",
+      "declarations": [
+        {
+          "path": "libs/content/src/json/types.ts",
+          "symbol": "JsonSnapshot",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface JsonSnapshot {\n    readonly document: JsonDocument;\n    readonly root: JsonNode | null;\n    readonly complete: boolean;\n    readonly error: JsonError | null;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/json/index.ts#createJson",
+      "kind": "export",
+      "path": "libs/content/src/json/index.ts",
+      "symbol": "createJson",
+      "declarations": [
+        {
+          "path": "libs/content/src/json/create-json.ts",
+          "symbol": "createJson",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function createJson(initial: JsonDocument, options: JsonOptions = {}): Json {\n    return createJsonOwner(initial, options, {\n        create,\n        push,\n        finish,\n        createProjection,\n    });\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/content/src/markdown/index.ts#CitationDefinition",
       "kind": "export",
       "path": "libs/content/src/markdown/index.ts",
@@ -13211,10 +13333,34 @@
       "sha256": "2023e7c300e5129f80a87f3c5edea0213e5283fc55ae9a96fcb403024e63f783"
     },
     {
+      "id": "source:libs/content/src/json/create-json.ts",
+      "kind": "source",
+      "path": "libs/content/src/json/create-json.ts",
+      "sha256": "825bcbfed28b7350a588fa09f51a827bc72ec3e119dd21e694bcc0d9da682afb"
+    },
+    {
       "id": "source:libs/content/src/json/index.ts",
       "kind": "source",
       "path": "libs/content/src/json/index.ts",
-      "sha256": "2023e7c300e5129f80a87f3c5edea0213e5283fc55ae9a96fcb403024e63f783"
+      "sha256": "d38b63dd8f424720a41a49c4080a1cb6185799b42e2bcba5470fc8707e997e94"
+    },
+    {
+      "id": "source:libs/content/src/json/projection.ts",
+      "kind": "source",
+      "path": "libs/content/src/json/projection.ts",
+      "sha256": "d290de37f06919e3e1cecead9df6cf484e3d575789aafe9461b5e9668db4d564"
+    },
+    {
+      "id": "source:libs/content/src/json/transition.ts",
+      "kind": "source",
+      "path": "libs/content/src/json/transition.ts",
+      "sha256": "dc6bfc51d475e86570b44c6224cf328976fa277a85f8b2244f5ad3ad6d09dca0"
+    },
+    {
+      "id": "source:libs/content/src/json/types.ts",
+      "kind": "source",
+      "path": "libs/content/src/json/types.ts",
+      "sha256": "8db40f6ad8f80d36019f3a1591c7c382b8bbc2322e7dc7d139b139ba277cf0d0"
     },
     {
       "id": "source:libs/content/src/markdown/create-markdown.ts",

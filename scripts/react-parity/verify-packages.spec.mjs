@@ -3,6 +3,12 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
+
+test('JSON feature exposes only its owned factory', () => {
+  assert.throws(() => packageVerifier.assertSupportedExports('content/json', {}), /createJson/);
+  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('content/json', { createJson() {} }));
+  assert.throws(() => packageVerifier.assertSupportedExports('content/json', { createJson() {}, createJsonOwner() {} }), /unexpected/);
+});
 import * as packageVerifier from './verify-packages.mjs';
 const { validatePackage } = packageVerifier;
 test('consumer commands accept an explicit environment without inheriting a backend credential', () => {
@@ -236,7 +242,7 @@ test('consumer graph refuses registry Threadplane resolutions even when nested',
 test('root bundle evidence rejects parser inputs, not parser strings in generated code', () => {
   assert.equal(typeof packageVerifier.assertParserFreeInputs, 'function');
   assert.doesNotThrow(() => packageVerifier.assertParserFreeInputs({ 'node_modules/@threadplane/react/src/index.js': {} }));
-  for (const name of ['marked', '@cacheplane/partial-json', '@cacheplane/partial-markdown', 'remark-gfm', 'katex', 'shiki']) assert.throws(() => packageVerifier.assertParserFreeInputs({ [`node_modules/${name}/index.js`]: {} }), /parser/);
+  for (const name of ['marked', '@cacheplane/json-stream', '@cacheplane/partial-json', '@cacheplane/partial-markdown', 'remark-gfm', 'katex', 'shiki']) assert.throws(() => packageVerifier.assertParserFreeInputs({ [`node_modules/${name}/index.js`]: {} }), /parser/);
   assert.throws(() => packageVerifier.assertParserFreeInputs(undefined), /inputs/);
 });
 test('packing selects only actual local Threadplane dependency closure', () => {
