@@ -2,7 +2,53 @@
 
 Private, unpublished content preparation. `/markdown` owns an incremental document
 using the locked `@cacheplane/partial-markdown` 0.5.8 parser. The root stays empty;
-`/json`, `/a2ui` and `/testing` remain reserved stubs.
+`/a2ui` and `/testing` remain reserved stubs.
+
+`/json` exports `createJson`, an application-owned incremental JSON document using
+the exact `@cacheplane/json-stream` 0.1.1 kernel. It follows the Markdown document
+contract: explicit generation, source phase and content; suffix-only updates;
+cached immutable snapshots; subscriptions; terminal disposal outside views.
+
+```ts
+import { createJson } from '@threadplane/content/json';
+
+const json = createJson({
+  generation: 'spec-1', phase: 'streaming', content: '{"title":"Hel',
+});
+json.update({
+  generation: 'spec-1', phase: 'complete', content: '{"title":"Hello"}',
+});
+const snapshot = json.getSnapshot();
+// snapshot.root?.value is owned partial data, not an inferred or validated Spec.
+json.dispose();
+```
+
+JSON snapshots expose `document`, `root`, `complete` and `error`. Nodes carry
+generation-local IDs, kind, status (`incomplete` or `complete`), partial value,
+scalar buffers where relevant, and readonly children. Object children are records
+and array children are arrays; no parent pointers or vendor objects escape.
+Object keys, including empty and `__proto__` keys, are own data properties on
+ordinary frozen objects. Duplicate keys retain their last value. Pending literals
+and unfinished numbers have undefined values; partial strings expose arrived text.
+All nested nodes and values are owned and frozen, with unchanged subtrees and plain
+values sharing identity. Projection traverses the current graph on accepted updates;
+sharing does not imply constant-time processing.
+
+`complete` means complete JSON syntax without an error, independently of delivery
+phase. A complete root can arrive while the source is still streaming; trailing
+content can subsequently invalidate it. Syntax diagnostics are accepted snapshots
+with code, message and source position, not thrown document-contract errors.
+Finalized empty or unfinished input reports `UNEXPECTED_END`; malformed syntax
+reports `INVALID_SYNTAX`, and extra root content reports `TRAILING_CONTENT`.
+Error states are terminal for suffix updates; a new generation or explicit rebuild
+can replace them. The partial root stays available for diagnostics. Callers decide
+whether data is suitable for rendering and validate any application schema.
+
+JSON reads, no-ops, listener notifications, exception rollback/replay and disposal
+use the ownership semantics described below for Markdown. Disposal does not finish
+the parser. The generic React/Angular observer bindings can borrow a JSON owner;
+views unsubscribe without disposing it. This remains a private content foundation;
+automatic classification, RenderSpec views, SSR and public release are separate.
 
 `/messages` exports `createMessageContent`, which projects immutable agent
 snapshots into cached transcript rows. Each row owns answer `markdown` and, when

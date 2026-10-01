@@ -14271,12 +14271,11 @@
     {
       "id": "source:libs/content/src/json/index.ts",
       "taskIds": [
-        "T02",
-        "T26"
+        "T18"
       ],
-      "treatment": "infrastructure",
-      "status": "planned",
-      "reason": "Unchanged reserved content entry; no renderer capability claimed."
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Private owned JSON snapshots with structured syntax diagnostics; automatic classification and React rendering remain separate."
     },
     {
       "id": "source:libs/content/src/markdown/create-markdown.ts",
@@ -14672,6 +14671,71 @@
       "id": "source:libs/react/src/chat/message-actions.tsx",
       "taskIds": ["T23"], "treatment": "react", "status": "in-progress",
       "reason": "Pure native button group with explicit activation and controlled disabled state; no clipboard, timers, session ownership or local rating state."
+    },
+    {
+      "id": "entry:libs/content/src/json/index.ts",
+      "taskIds": ["T02", "T18"], "treatment": "infrastructure", "status": "in-progress",
+      "reason": "Private feature entry for application-owned JSON preparation; the content root remains empty."
+    },
+    {
+      "id": "export:libs/content/src/json/index.ts#Json",
+      "taskIds": ["T18"], "treatment": "shared", "status": "in-progress",
+      "reason": "Application-owned JSON observer and explicit document commands; views borrow subscriptions."
+    },
+    {
+      "id": "export:libs/content/src/json/index.ts#JsonDocument",
+      "taskIds": ["T18"], "treatment": "shared", "status": "in-progress",
+      "reason": "Explicit readonly generation, source phase and JSON text."
+    },
+    {
+      "id": "export:libs/content/src/json/index.ts#JsonError",
+      "taskIds": ["T18"], "treatment": "shared", "status": "in-progress",
+      "reason": "Owned immutable syntax diagnostic with structured code and source position."
+    },
+    {
+      "id": "export:libs/content/src/json/index.ts#JsonNode",
+      "taskIds": ["T18"], "treatment": "shared", "status": "in-progress",
+      "reason": "Owned immutable discriminated nodes, generation-local identity and readonly children without parser parent links."
+    },
+    {
+      "id": "export:libs/content/src/json/index.ts#JsonOptions",
+      "taskIds": ["T18"], "treatment": "shared", "status": "in-progress",
+      "reason": "Explicit contract violation policy; no parser, backend or schema inference settings."
+    },
+    {
+      "id": "export:libs/content/src/json/index.ts#JsonPartialValue",
+      "taskIds": ["T18"], "treatment": "shared", "status": "in-progress",
+      "reason": "Deeply readonly partial data with undefined unresolved primitives; no assumed render-spec validity."
+    },
+    {
+      "id": "export:libs/content/src/json/index.ts#JsonSnapshot",
+      "taskIds": ["T18"], "treatment": "shared", "status": "in-progress",
+      "reason": "Cached owned root and diagnostics; JSON syntax completion is independent of source delivery phase."
+    },
+    {
+      "id": "export:libs/content/src/json/index.ts#createJson",
+      "taskIds": ["T18"], "treatment": "shared", "status": "in-progress",
+      "reason": "Private incremental content factory on published json-stream 0.1.1; classification, rendering and SSR remain separate."
+    },
+    {
+      "id": "source:libs/content/src/json/create-json.ts",
+      "taskIds": ["T18"], "treatment": "shared", "status": "in-progress",
+      "reason": "Owned document transitions, suffix-only parsing, accepted diagnostics, observer invalidations, rollback/replay and terminal disposal."
+    },
+    {
+      "id": "source:libs/content/src/json/projection.ts",
+      "taskIds": ["T18"], "treatment": "shared", "status": "in-progress",
+      "reason": "Recursive owned JSON graph with safe keys, immutable values and sharing across descendant completion."
+    },
+    {
+      "id": "source:libs/content/src/json/transition.ts",
+      "taskIds": ["T18"], "treatment": "shared", "status": "in-progress",
+      "reason": "JSON document generation/phase/content contract classification before parser work."
+    },
+    {
+      "id": "source:libs/content/src/json/types.ts",
+      "taskIds": ["T18"], "treatment": "shared", "status": "in-progress",
+      "reason": "Readonly owned JSON contracts without vendor parser objects or automatic schema typing."
     }
   ]
 }

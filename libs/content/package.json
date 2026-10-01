@@ -2,11 +2,12 @@
   "name": "@threadplane/content",
   "version": "0.0.0",
   "private": true,
-  "description": "Private content preparation with owned incremental Markdown documents.",
+  "description": "Private content preparation with owned incremental Markdown and JSON documents.",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
   "dependencies": {
+    "@cacheplane/json-stream": "0.1.1",
     "@cacheplane/partial-markdown": "0.5.8"
   },
   "peerDependencies": {

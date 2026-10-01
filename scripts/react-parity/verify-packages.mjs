@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, lstatSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, lstatSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -172,7 +172,7 @@ export function installFootprint(consumer, lock) {
 
 export function assertParserFreeInputs(inputs) {
   if (!inputs || typeof inputs !== 'object' || !Object.keys(inputs).length) throw new Error('Missing bundler inputs evidence');
-  const parser = /(?:^|\/)node_modules\/(?:@cacheplane\/(?:partial-json|partial-markdown)|marked|remark-gfm|katex|shiki)(?:\/|$)/;
+  const parser = /(?:^|\/)node_modules\/(?:@cacheplane\/(?:json-stream|partial-json|partial-markdown)|marked|remark-gfm|katex|shiki)(?:\/|$)/;
   const found = Object.keys(inputs).filter((path) => parser.test(path.replaceAll('\\', '/')));
   if (found.length) throw new Error(`Framework root includes content parser inputs: ${found.join(', ')}`);
 }
@@ -216,6 +216,7 @@ export function assertSupportedExports(project, entry) {
         'ToolObservation',
       ],
       'react/markdown': ['Markdown'],
+      'content/json': ['createJson'],
     }[project] ?? [];
   // React entries may export forwardRef/memo components, which are $$typeof objects.
   const supported = (value) =>
@@ -228,7 +229,7 @@ export function assertSupportedExports(project, entry) {
     if (!supported(entry[name]))
       throw new Error(`${project} missing supported contract ${name}`);
   if (
-    ['react/chat', 'react/markdown'].includes(project) &&
+    ['react/chat', 'react/markdown', 'content/json'].includes(project) &&
     Object.keys(entry).some((name) => !expected.includes(name))
   )
     throw new Error(`${project} has unexpected exports`);
@@ -250,6 +251,8 @@ export async function verifyPackedConsumers(root = process.cwd()) {
     mkdirSync(plain);
     installConsumer(plain, lockedReactManifest(JSON.parse(readFileSync(join(root, 'package-lock.json'), 'utf8'))), tarballs, 'plain');
     const count = verifyPlainExports(root, plain, Object.keys(tarballs).map((name) => name.slice('@threadplane/'.length)));
+    cpSync(join(root, 'fixtures/react-parity/runtime/json-runtime.mjs'), join(plain, 'json-runtime.mjs'));
+    console.log(runConsumer(process.execPath, ['json-runtime.mjs'], plain));
     writeFileSync(join(plain, 'react-root.mjs'), "import * as react from '@threadplane/react';\nconsole.log(Object.keys(react));\n");
     const bundle = buildSync({ absWorkingDir: plain, entryPoints: [join(plain, 'react-root.mjs')], bundle: true, platform: 'browser', format: 'esm', write: false, metafile: true });
     assertHeadlessInputs(bundle.metafile.inputs);

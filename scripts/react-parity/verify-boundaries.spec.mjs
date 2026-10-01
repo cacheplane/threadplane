@@ -7,6 +7,29 @@ import { verifyBoundaries } from './verify-boundaries.mjs';
 
 const finalOptions = { angularTransitions: [], telemetryBrowserTransition: false };
 
+for (const project of ['content', 'react', 'angular']) {
+  for (const extension of ['ts', 'js', 'd.ts']) {
+    const mode = extension === 'ts' ? 'source' : 'built';
+    const prefix = `${mode === 'source' ? '' : 'dist/'}libs/${project}`;
+    const content = `${mode === 'source' ? '' : 'dist/'}libs/content`;
+    const entry = project === 'angular' && mode === 'source' ? 'public-api' : 'index';
+    for (const dependency of ['@cacheplane/json-stream', '@threadplane/content/json']) {
+      test(`${project} ${extension} root rejects indirect ${dependency}`, (t) => {
+        const root = fixture(t, {
+          'tsconfig.base.json': JSON.stringify({ compilerOptions: { paths: { '@threadplane/content/json': ['./libs/content/src/json/index.ts'] } } }),
+          [`${content}/package.json`]: JSON.stringify({ exports: { './json': { types: './src/json/index.d.ts', import: './src/json/index.js' }, ...(project === 'content' ? { '.': { [extension === 'd.ts' ? 'types' : 'import']: `./src/index.${extension}` } } : {}) } }),
+          ...(project === 'content' ? {} : { [`${prefix}/package.json`]: JSON.stringify({ exports: { '.': { [extension === 'd.ts' ? 'types' : 'import']: `./src/${entry}.${extension}` } } }) }),
+          [`${prefix}/src/${entry}.${extension}`]: "export * from './bridge.js';",
+          [`${prefix}/src/bridge.${extension}`]: `export * from '${dependency}';`,
+          [`${content}/src/json/index.${extension}`]: 'export {};',
+        });
+        const label = project === 'content' ? 'content root dependency' : 'feature dependency reachable from root';
+        assert.ok(verifyBoundaries({ root, mode, projects: [project], ...finalOptions }).some(error => error.includes(label)));
+      });
+    }
+  }
+}
+
 for (const project of ['react', 'angular']) {
   for (const extension of ['ts', 'js', 'd.ts']) {
     const mode = extension === 'ts' ? 'source' : 'built';
