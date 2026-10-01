@@ -22,6 +22,7 @@ export default defineConfig({
       'ci-workflow.spec.mjs',
       'verify-claude-review.spec.mjs',
       'cockpit-matrix.spec.mjs',
+      'cockpit-frontend-matrix.spec.mjs',
       'cockpit-ports.spec.mjs',
       'cockpit-runtime-bridge-coverage.spec.mjs',
       'verify-angular-support.spec.mjs',
