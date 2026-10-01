@@ -16,6 +16,7 @@ import type { MessageContent } from '../../shared/message-content';
 import { filterLoadedTitles } from '../../shared/projection';
 import { submissionStatus } from '../../shared/submission-status';
 import { Approval } from './approval';
+import { BackgroundActivity } from './background-activity';
 import { CopyAnswer } from './copy-answer';
 import { TripSummary } from './trip-summary';
 
@@ -221,6 +222,9 @@ function Conversation({ application }: { application: Application }) {
                 This conversation has no messages yet.
               </p>
             )}
+            <BackgroundActivity
+              observations={snapshot.runtime?.subgraphs ?? []}
+            />
           </>
         )}
         <Approval application={application} snapshot={snapshot} />

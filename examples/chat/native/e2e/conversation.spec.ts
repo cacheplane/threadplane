@@ -135,7 +135,54 @@ test('basic conversation: loaded views, exact submission, honest outcomes and br
     search([]),
     search([threadEnvelope('garden', 'Garden harvest')]),
     run('  Which herbs grow well?\nKeep it brief.  ', answer),
-    run('Tell me more about watering.', answer, { holdBody: true }),
+    run(
+      'Tell me more about watering.',
+      [
+        ...answer,
+        {
+          event: 'values|research:one',
+          data: {
+            messages: [
+              {
+                type: 'ai',
+                id: 'answer',
+                content: '<script>Background literal</script>',
+                tool_calls: [
+                  {
+                    id: 'child-only',
+                    name: 'show_trip_summary',
+                    args: { title: 'Child must not execute', days: [] },
+                    type: 'tool_call',
+                  },
+                ],
+              },
+            ],
+          },
+        },
+        {
+          event: 'values|research:two|writer:nested',
+          data: {
+            messages: [
+              { type: 'ai', id: 'answer', content: 'Nested background.' },
+            ],
+          },
+        },
+        {
+          event: 'values|research:pending',
+          data: {
+            __interrupt__: [{ id: 'child-response', value: 'Respond?' }],
+          },
+        },
+        {
+          event: 'error|research:failed',
+          data: {
+            error: 'ChildFailure',
+            message: 'PRIVATE background diagnostic',
+          },
+        },
+      ],
+      { holdBody: true }
+    ),
     run('What about winter?', [
       { event: 'error', data: { message: 'hostile-body-secret' } },
     ]),
@@ -336,6 +383,54 @@ test('basic conversation: loaded views, exact submission, honest outcomes and br
     await expect(
       page.getByRole('button', { name: 'Send', exact: true })
     ).toBeDisabled();
+    if (framework === 'react') {
+      const background = page.getByRole('region', {
+        name: 'Background activity',
+        exact: true,
+      });
+      await expect(background).toBeVisible();
+      await background.locator('summary').first().click();
+      await expect(
+        background.getByText('<script>Background literal</script>', {
+          exact: true,
+        })
+      ).toBeVisible();
+      expect(
+        await page
+          .getByRole('region', { name: 'Conversation messages', exact: true })
+          .textContent()
+      ).not.toContain('Background literal');
+      await expect(
+        page.getByText('Child must not execute', { exact: true })
+      ).toHaveCount(0);
+      await background.locator('summary').nth(1).click();
+      await expect(
+        background.getByText('Nested background.', { exact: true })
+      ).toBeVisible();
+      await background.locator('summary').nth(2).click();
+      await expect(
+        background.getByText(
+          'Background work has requested a response. This example cannot respond here.',
+          { exact: true }
+        )
+      ).toBeVisible();
+      await expect(background.getByRole('button')).toHaveCount(0);
+      await background.locator('summary').nth(3).click();
+      await expect(
+        background
+          .locator('details')
+          .nth(3)
+          .getByText('The LangGraph request failed.', { exact: true })
+      ).toBeVisible();
+      expect(await page.locator('body').textContent()).not.toContain(
+        'PRIVATE background diagnostic'
+      );
+      await page.evaluate(() => {
+        const row = document.querySelector('.background-activity li');
+        (window as unknown as { backgroundRow: Element | null }).backgroundRow =
+          row;
+      });
+    }
     await page.getByRole('button', { name: 'Stop', exact: true }).click();
     await expect(
       page.getByText(
@@ -346,6 +441,19 @@ test('basic conversation: loaded views, exact submission, honest outcomes and br
     await expect
       .poll(async () => (await server.steps[6].closed).finished)
       .toBe(false);
+    if (framework === 'react') {
+      await expect(
+        page.getByText('<script>Background literal</script>', { exact: true })
+      ).toBeVisible();
+      expect(
+        await page.evaluate(
+          () =>
+            document.querySelector('.background-activity li') ===
+            (window as unknown as { backgroundRow: Element | null })
+              .backgroundRow
+        )
+      ).toBe(true);
+    }
     for (const [text, outcome] of [
       ['What about winter?', 'The response failed.'],
       ['Plan the next step.', 'Response paused.'],
@@ -353,6 +461,11 @@ test('basic conversation: loaded views, exact submission, honest outcomes and br
       await draft.fill(text);
       await draft.press('Control+Enter');
       await expect(page.getByText(outcome, { exact: true })).toBeVisible();
+      if (framework === 'react') {
+        await expect(
+          page.getByRole('region', { name: 'Background activity', exact: true })
+        ).toHaveCount(0);
+      }
     }
     await expect(
       page.getByText(

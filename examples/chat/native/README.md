@@ -24,6 +24,14 @@ text; links use the shared Markdown URL policy. The view does not fetch metadata
 or icons. Installed production checks cover restored sources, same-ID metadata
 updates, unsafe URLs, literal text and narrow-screen wrapping.
 
+The React view also composes `TextTranscript` in app-authored background activity
+disclosures for supplied child observations. Full namespace tuples identify
+disclosures internally; visible labels use ordinals. Child messages remain literal
+text in their own transcript, with supplied response-request and protected error
+notices. These observations offer no child response or tool commands and infer no
+child lifecycle status. Installed checks cover root isolation, local stop retaining
+observations, and a new independent submission clearing them.
+
 The React view composes `MessageList` with a stable authored row renderer and
 `ChatInput` with the application's existing submit/stop commands. Its bounded
 transcript follows updates only while pinned to the bottom. Conversation changes

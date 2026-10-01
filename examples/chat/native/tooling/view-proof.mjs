@@ -75,6 +75,9 @@ function composition(selected, types, runtime) {
     '@threadplane/content/src/messages/create-message-content',
     ...(!selected.angular ? ['@threadplane/react/src/render/render-spec'] : []),
     ...(!selected.angular ? ['@threadplane/react/src/chat/citations'] : []),
+    ...(!selected.angular
+      ? ['@threadplane/react/src/chat/text-transcript']
+      : []),
   ]) {
     assert.ok(
       types.includes('node_modules/' + p + '.d.ts'),
