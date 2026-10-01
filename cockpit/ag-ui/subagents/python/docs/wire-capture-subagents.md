@@ -20,7 +20,7 @@ $ uv run python -c "from ag_ui.core import SubagentStartedEvent, TextMessageCont
 annotation=Union[str, NoneType] required=False default=None alias='subagentRunId' alias_priority=1
 ```
 
-`ag-ui-protocol 0.1.22` ships `SubagentStartedEvent` (`subagent_run_id`,
+`ag-ui-protocol` 1.0.0 ships the `SUBAGENT_*` events and the `RUN_STARTED.protocolVersion` field. The `ag-ui-langgraph` 0.0.45 bridge opens the run without a version; `SubagentEmittingAgent` stamps `"1.0"` on its way out, so the capture below carries it. The protocol defines `SubagentStartedEvent` (`subagent_run_id`,
 `name`, `description`, `parent_subagent_run_id`, `parent_tool_call_id`,
 `parent_message_id`), `SubagentFinishedEvent` (`subagent_run_id`, `result`,
 `outcome` = `SubagentFinishedSuccessOutcome | SubagentFinishedSuspendedOutcome`)
@@ -50,8 +50,10 @@ Scrubbed capture — line numbers are event indices (1-based) in the SSE
 stream; `rawEvent` mirrors are dropped from every line and repetitive runs
 are elided with `# [elided: ...]`. No keys or org ids appeared in the stream.
 
+The `protocolVersion` field was added to this capture by hand when the runtimes moved to 1.0; re-run the capture command to refresh the frame.
+
 ```
-1    {"type":"RUN_STARTED","threadId":"capture-thread-2","runId":"capture-run-2"}
+1    {"type":"RUN_STARTED","threadId":"capture-thread-2","runId":"capture-run-2","protocolVersion":"1.0"}
 3    {"type":"STEP_STARTED","stepName":"orchestrator"}
 7    {"type":"TOOL_CALL_START","toolCallId":"call_KUdUz8CR6t3X2NEb1ucXbntO","toolCallName":"task","parentMessageId":"lc_run--01a06367-6022-77a3-938b-65acb68640d4"}
 9    {"type":"TOOL_CALL_ARGS","toolCallId":"call_KUdUz8CR6t3X2NEb1ucXbntO","delta":"{\""}
@@ -165,7 +167,7 @@ delegated three times again (research → booking → itinerary); the first roun
 is shown, the other two are shape-identical.
 
 ```
-1    {"type":"RUN_STARTED","threadId":"capture-thread-2","runId":"capture-run-2"}
+1    {"type":"RUN_STARTED","threadId":"capture-thread-2","runId":"capture-run-2","protocolVersion":"1.0"}
 3    {"type":"STEP_STARTED","stepName":"orchestrator"}
 7    {"type":"TOOL_CALL_START","toolCallId":"call_CN5GEDy9byHqg18I9dAhnUDB","toolCallName":"task","parentMessageId":"lc_run--01a06373-7a61-7cb2-a616-3b1e3ee01e57"}
 9    {"type":"TOOL_CALL_ARGS","toolCallId":"call_CN5GEDy9byHqg18I9dAhnUDB","delta":"{\""}
