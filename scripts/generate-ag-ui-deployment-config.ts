@@ -28,17 +28,19 @@ import { capabilities, type CapabilityFramework } from '@threadplane/cockpit-reg
 
 const GENERATED_HEADER = '# GENERATED — do not edit. Source: scripts/generate-ag-ui-deployment-config.ts';
 
-export interface GenerateOptions {
-  repoRoot: string;
-  outDir: string;
-}
-
 /**
- * Frameworks hosted by the aggregated Python deployment. 'mastra' is
+ * Frameworks hosted by the aggregated Python deployments. 'mastra' is
  * excluded: it is the Node hosting lane (deployments/ag-ui-mastra) and by
  * construction has no pythonDir, so it never reaches this generator.
  */
 export type PythonHostedFramework = Exclude<CapabilityFramework, 'mastra'>;
+
+export interface GenerateOptions {
+  repoRoot: string;
+  outDir: string;
+  /** Frameworks this deployment hosts. Omitted means every Python-hosted framework. */
+  frameworks?: readonly PythonHostedFramework[];
+}
 
 /**
  * A `LangGraphAgent` subclass the topic mounts instead of the stock wrapper.
@@ -430,16 +432,36 @@ function compareVersions(a: string, b: string): number {
 }
 
 export function generateAgUiDeployment(options: GenerateOptions): void {
-  const topics = collectTopics(options.repoRoot);
+  const all = collectTopics(options.repoRoot);
+  const topics = options.frameworks
+    ? all.filter((t) => options.frameworks!.includes(t.framework))
+    : all;
+  if (topics.length === 0) {
+    throw new Error(`No topics match frameworks ${JSON.stringify(options.frameworks)}`);
+  }
   mkdirSync(options.outDir, { recursive: true });
+  // stageDeps clears deps/ first, so topics that left the deployment disappear.
   stageDeps(options.repoRoot, options.outDir, topics);
   writeFileSync(resolve(options.outDir, 'server.py'), buildServerPy(topics));
-  writeFileSync(resolve(options.outDir, 'requirements.txt'), buildRequirementsTxt(options.repoRoot, topics, { caps: capsFor(topics) }));
+  writeFileSync(
+    resolve(options.outDir, 'requirements.txt'),
+    buildRequirementsTxt(options.repoRoot, topics, { caps: capsFor(topics) }),
+  );
 }
+
+/**
+ * The deployments the repo ships. MAF is alone because its bridge caps
+ * ag-ui-protocol below 1.0 while every other Python runtime is on 1.0.
+ */
+export const DEPLOYMENTS: ReadonlyArray<{ dir: string; frameworks: readonly PythonHostedFramework[] }> = [
+  { dir: 'deployments/ag-ui-dev', frameworks: ['langgraph', 'aws-strands'] },
+  { dir: 'deployments/ag-ui-maf', frameworks: ['microsoft-agent-framework'] },
+];
 
 if (require.main === module) {
   const repoRoot = resolve(__dirname, '..');
-  const outDir = resolve(repoRoot, 'deployments/ag-ui-dev');
-  generateAgUiDeployment({ repoRoot, outDir });
-  console.log('Generated deployments/ag-ui-dev/{server.py,requirements.txt,deps/}');
+  for (const { dir, frameworks } of DEPLOYMENTS) {
+    generateAgUiDeployment({ repoRoot, outDir: resolve(repoRoot, dir), frameworks });
+    console.log(`Generated ${dir}/{server.py,requirements.txt,deps/}`);
+  }
 }

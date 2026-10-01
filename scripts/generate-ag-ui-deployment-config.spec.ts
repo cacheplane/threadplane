@@ -1,16 +1,18 @@
 import { describe, expect, it, beforeEach } from 'vitest';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync, readFileSync, statSync } from 'fs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync, readFileSync, readdirSync, statSync } from 'fs';
 import { tmpdir } from 'os';
 import { join, resolve } from 'path';
 import {
   buildRequirementsTxt,
   buildServerPy,
+  DEPLOYMENTS,
   detectBridgeAgent,
   generateAgUiDeployment,
   type AgUiTopic,
 } from './generate-ag-ui-deployment-config';
 
 const REPO_ROOT = resolve(__dirname, '..');
+const DEV_FRAMEWORKS = DEPLOYMENTS[0].frameworks;
 
 describe('generateAgUiDeployment', () => {
   let outDir: string;
@@ -20,13 +22,13 @@ describe('generateAgUiDeployment', () => {
   });
 
   it('stages each AG-UI python tree under deps/<topic>/', () => {
-    generateAgUiDeployment({ repoRoot: REPO_ROOT, outDir });
+    generateAgUiDeployment({ repoRoot: REPO_ROOT, outDir, frameworks: DEV_FRAMEWORKS });
     expect(statSync(join(outDir, 'deps/interrupts/src/graph.py')).isFile()).toBe(true);
     expect(statSync(join(outDir, 'deps/streaming/src/graph.py')).isFile()).toBe(true);
   });
 
   it('writes server.py with GENERATED header and one endpoint per topic', () => {
-    generateAgUiDeployment({ repoRoot: REPO_ROOT, outDir });
+    generateAgUiDeployment({ repoRoot: REPO_ROOT, outDir, frameworks: DEV_FRAMEWORKS });
     const server = readFileSync(join(outDir, 'server.py'), 'utf8');
     expect(server).toMatch(/^# GENERATED/);
     expect(server).toContain('from deps.interrupts.src.graph import graph as interrupts_graph');
@@ -43,7 +45,7 @@ describe('generateAgUiDeployment', () => {
     // underscores, while keeping the hyphenated `/agent/<topic>` route. A
     // hyphen in a `from deps.<...>` line is a SyntaxError and breaks the
     // whole server (which is what shipped before this fix).
-    generateAgUiDeployment({ repoRoot: REPO_ROOT, outDir });
+    generateAgUiDeployment({ repoRoot: REPO_ROOT, outDir, frameworks: DEV_FRAMEWORKS });
     const server = readFileSync(join(outDir, 'server.py'), 'utf8');
     expect(server).toContain('from deps.json_render.src.graph import graph as json_render_graph');
     expect(server).toContain('from deps.tool_views.src.graph import graph as tool_views_graph');
@@ -65,7 +67,7 @@ describe('generateAgUiDeployment', () => {
     // subclass that expands `subagent_activity` CUSTOM events into standard
     // SUBAGENT_* events). The aggregated Railway server must mount the same
     // class or production serves raw CUSTOM events and no subagent cards.
-    generateAgUiDeployment({ repoRoot: REPO_ROOT, outDir });
+    generateAgUiDeployment({ repoRoot: REPO_ROOT, outDir, frameworks: DEV_FRAMEWORKS });
     const server = readFileSync(join(outDir, 'server.py'), 'utf8');
     expect(server).toContain(
       'from deps.subagents.src.streaming.subagent_emitting_agent import SubagentEmittingAgent',
@@ -81,7 +83,7 @@ describe('generateAgUiDeployment', () => {
   });
 
   it('server.py enforces X-Internal-Token on /agent/*', () => {
-    generateAgUiDeployment({ repoRoot: REPO_ROOT, outDir });
+    generateAgUiDeployment({ repoRoot: REPO_ROOT, outDir, frameworks: DEV_FRAMEWORKS });
     const server = readFileSync(join(outDir, 'server.py'), 'utf8');
     expect(server).toContain('AG_UI_INTERNAL_TOKEN');
     expect(server).toContain('x-internal-token');
@@ -89,7 +91,7 @@ describe('generateAgUiDeployment', () => {
   });
 
   it('writes requirements.txt with GENERATED header and union of example deps', () => {
-    generateAgUiDeployment({ repoRoot: REPO_ROOT, outDir });
+    generateAgUiDeployment({ repoRoot: REPO_ROOT, outDir, frameworks: DEV_FRAMEWORKS });
     const reqs = readFileSync(join(outDir, 'requirements.txt'), 'utf8');
     expect(reqs).toMatch(/^# GENERATED/);
     expect(reqs).toContain('ag-ui-langgraph==');
@@ -118,24 +120,56 @@ describe('generateAgUiDeployment', () => {
     expect(reqs).not.toContain('pkg==');
   });
 
-  it('matches the committed deployments/ag-ui-dev artifacts byte-for-byte (drift check)', () => {
-    // The deploy-ag-ui workflow regenerates and fails on `git diff` drift.
-    // This is the same guarantee, runnable locally without touching the
-    // committed artifacts.
-    generateAgUiDeployment({ repoRoot: REPO_ROOT, outDir });
-    const committedDir = join(REPO_ROOT, 'deployments/ag-ui-dev');
-    for (const file of ['server.py', 'requirements.txt']) {
-      expect(readFileSync(join(outDir, file), 'utf8')).toBe(
-        readFileSync(join(committedDir, file), 'utf8'),
-      );
-    }
+  for (const { dir, frameworks } of DEPLOYMENTS) {
+    it(`matches the committed ${dir} artifacts byte-for-byte (drift check)`, () => {
+      // The deploy-ag-ui workflow regenerates and fails on `git diff` drift.
+      // This is the same guarantee, runnable locally without touching the
+      // committed artifacts.
+      generateAgUiDeployment({ repoRoot: REPO_ROOT, outDir, frameworks });
+      const committedDir = join(REPO_ROOT, dir);
+      for (const file of ['server.py', 'requirements.txt']) {
+        const committed = join(committedDir, file);
+        if (!existsSync(committed)) {
+          throw new Error(
+            `${dir}/${file} is not committed yet; run \`npx tsx scripts/generate-ag-ui-deployment-config.ts\``,
+          );
+        }
+        expect(readFileSync(join(outDir, file), 'utf8')).toBe(readFileSync(committed, 'utf8'));
+      }
+    });
+  }
+
+  it('writes a MAF-only deployment when filtered to microsoft-agent-framework', () => {
+    generateAgUiDeployment({ repoRoot: REPO_ROOT, outDir, frameworks: ['microsoft-agent-framework'] });
+    const server = readFileSync(join(outDir, 'server.py'), 'utf8');
+    expect(server).toContain('from agent_framework_ag_ui import add_agent_framework_fastapi_endpoint');
+    expect(server).not.toContain('from ag_ui_langgraph import');
+    expect(server).not.toContain('from ag_ui_strands import');
+    const reqs = readFileSync(join(outDir, 'requirements.txt'), 'utf8');
+    expect(reqs).toContain('agent-framework-ag-ui==');
+    expect(reqs).not.toContain('ag-ui-langgraph==');
+    expect(readdirSync(join(outDir, 'deps'))).toEqual(['microsoft_agent_framework']);
+  });
+
+  it('excludes microsoft-agent-framework from the shared deployment', () => {
+    generateAgUiDeployment({ repoRoot: REPO_ROOT, outDir, frameworks: ['langgraph', 'aws-strands'] });
+    const server = readFileSync(join(outDir, 'server.py'), 'utf8');
+    expect(server).not.toContain('agent_framework_ag_ui');
+    expect(readdirSync(join(outDir, 'deps'))).not.toContain('microsoft_agent_framework');
+  });
+
+  it('removes staged deps that no longer belong to the deployment', () => {
+    generateAgUiDeployment({ repoRoot: REPO_ROOT, outDir, frameworks: ['microsoft-agent-framework'] });
+    expect(readdirSync(join(outDir, 'deps'))).toContain('microsoft_agent_framework');
+    generateAgUiDeployment({ repoRoot: REPO_ROOT, outDir, frameworks: ['langgraph', 'aws-strands'] });
+    expect(readdirSync(join(outDir, 'deps'))).not.toContain('microsoft_agent_framework');
   });
 
   it('produces byte-identical output across runs (idempotent)', () => {
-    generateAgUiDeployment({ repoRoot: REPO_ROOT, outDir });
+    generateAgUiDeployment({ repoRoot: REPO_ROOT, outDir, frameworks: DEV_FRAMEWORKS });
     const firstServer = readFileSync(join(outDir, 'server.py'), 'utf8');
     const firstReqs = readFileSync(join(outDir, 'requirements.txt'), 'utf8');
-    generateAgUiDeployment({ repoRoot: REPO_ROOT, outDir });
+    generateAgUiDeployment({ repoRoot: REPO_ROOT, outDir, frameworks: DEV_FRAMEWORKS });
     expect(readFileSync(join(outDir, 'server.py'), 'utf8')).toBe(firstServer);
     expect(readFileSync(join(outDir, 'requirements.txt'), 'utf8')).toBe(firstReqs);
   });
