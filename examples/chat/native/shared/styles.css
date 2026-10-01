@@ -367,3 +367,21 @@ textarea:disabled {
   margin-inline-start: 0.5rem;
   color: var(--ds-text-secondary);
 }
+.background-activity {
+  min-width: 0;
+  margin-block: 1rem;
+}
+.background-activity details {
+  border: 1px solid var(--ds-border, #d9e1e8);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  margin-block: 0.5rem;
+}
+.background-activity summary {
+  cursor: pointer;
+}
+.background-observation {
+  max-height: 18rem;
+  overflow: auto;
+  overflow-wrap: anywhere;
+}

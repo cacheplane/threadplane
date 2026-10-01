@@ -220,6 +220,7 @@ function selectedInputs(p, selected) {
       ['approval-card', 'ApprovalCard'],
       ['message-actions', 'MessageActions'],
       ['citations', 'Citations'],
+      ['text-transcript', 'TextTranscript'],
     ]) {
       const list = 'node_modules/@threadplane/react/src/chat/' + name;
       assert.ok(
