@@ -287,7 +287,10 @@ export interface UnionConstraints {
 const KNOWN_CAPS: Record<PythonHostedFramework, Record<string, string>> = {
   langgraph: {},
   'aws-strands': {},
-  // agent-framework-ag-ui 1.4.0 declares ag-ui-protocol>=0.1.19,<0.2.
+  // `agent-framework-ag-ui` 1.2.1 (the pinned release; 1.4.0 still caps the same way)
+  // declares ag-ui-protocol>=0.1.19,<0.2.
+  // Only the caps listed here are enforced; a new transitive cap elsewhere surfaces at the
+  // deploy workflow's pip boot gate instead.
   'microsoft-agent-framework': { 'ag-ui-protocol': '<0.2' },
 };
 

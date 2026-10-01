@@ -173,6 +173,8 @@ org ids appeared in the stream; only repetitive delta runs,
 `STATE_SNAPSHOT`s and the bridge's RAW mirrors are elided, marked with
 `# [elided: ...]`.
 
+The `protocolVersion` field in this frame was added by hand when the runtimes moved to 1.0; re-run the capture command to refresh it.
+
 ```
 1     {"type":"RUN_STARTED","threadId":"capture-thread-3","runId":"capture-thread-3-run","protocolVersion":"1.0"}
 3     {"type":"STEP_STARTED","stepName":"generate"}

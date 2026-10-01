@@ -14,6 +14,11 @@
  * `/ok` cannot catch this — a stale image answers it happily. The only signal
  * that distinguishes image vintage is whether each topic's route is registered.
  *
+ * The `microsoft-agent-framework` topic is served by the separate `ag-ui-maf`
+ * service through the same proxy (`AG_UI_MAF_URL`), not by the deployed Railway
+ * image, so a MAF probe failing right after a deploy can mean the examples
+ * promote carrying the new proxy route has not landed yet.
+ *
  * Probing goes through the public Vercel proxy rather than Railway directly:
  * the FastAPI middleware requires X-Internal-Token, which lives on Railway and
  * Vercel but is deliberately not a CI secret. The proxy injects it.

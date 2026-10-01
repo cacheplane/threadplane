@@ -164,6 +164,8 @@ bridge's RAW mirrors are elided, marked with `# [elided: ...]`. The model
 delegated three times again (research → booking → itinerary); the first round
 is shown, the other two are shape-identical.
 
+The `protocolVersion` field in this frame was added by hand when the runtimes moved to 1.0; re-run the capture command to refresh it.
+
 ```
 1    {"type":"RUN_STARTED","threadId":"capture-thread-2","runId":"capture-run-2","protocolVersion":"1.0"}
 3    {"type":"STEP_STARTED","stepName":"orchestrator"}

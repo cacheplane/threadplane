@@ -3,7 +3,8 @@
 FastAPI app hosting the Microsoft Agent Framework runtime on Railway, separately
 from `ag-ui-dev`.
 
-Why separate: `agent-framework-ag-ui` 1.4.0 declares `ag-ui-protocol>=0.1.19,<0.2`,
+Why separate: `agent-framework-ag-ui` 1.2.1 (the pinned release; 1.4.0 still caps the same way)
+declares `ag-ui-protocol>=0.1.19,<0.2`,
 while every LangGraph and Strands runtime is on `ag-ui-protocol` 1.0.0. One Python
 process cannot import both, so the generator (`scripts/generate-ag-ui-deployment-config.ts`)
 writes this directory from the `microsoft-agent-framework` topic alone. When
