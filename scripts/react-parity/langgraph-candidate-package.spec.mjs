@@ -411,6 +411,8 @@ test('composition requires the actual installed runtime and declarations and rej
   );
 });
 test('vendor pinning scopes every nested override to its locked version', () => {
+  const versions = [{ name: 'zod', version: '3.25.76', dependencies: {} }, { name: 'zod', version: '4.3.6', dependencies: {} }];
+  assert.deepEqual(vendorOverrides(versions, ['zod@3.25.76', 'zod@4.3.6']), { 'zod@3.25.76': '3.25.76', 'zod@4.3.6': '4.3.6' });
   const lock = {
     packages: {
       'node_modules/@langchain/langgraph-sdk': {

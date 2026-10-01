@@ -314,14 +314,16 @@ test('AG-UI resolves and pins its nested RxJS/Zod graph independently of LangGra
     },
   });
   assert.equal(agUiVendorOverrides(vendors).zod, '3.25.76');
-  assert.throws(
-    () =>
-      agUiVendorOverrides([
-        ...vendors,
-        { name: 'zod', version: '3.24.0', dependencies: {} },
-      ]),
-    /multiple versions/
-  );
+  const mixed = agUiVendorOverrides([
+    ...vendors,
+    { name: '@json-render/core', version: '0.16.0', dependencies: { zod: '4.3.6' } },
+    { name: 'zod', version: '4.3.6', dependencies: {} },
+  ]);
+  assert.equal(mixed['zod@3.25.76'], '3.25.76');
+  assert.equal(mixed['zod@4.3.6'], '4.3.6');
+  assert.equal(mixed.zod, undefined, 'Do not flatten incompatible schema versions');
+  assert.equal(mixed['@ag-ui/client']['zod@3.25.76'], '3.25.76');
+  assert.equal(mixed['@json-render/core']['zod@4.3.6'], '4.3.6');
   lock.packages['node_modules/@ag-ui/client/node_modules/zod'].version =
     '4.0.0';
   assert.throws(
