@@ -23,6 +23,8 @@ export type {
   AgentStateUpdateEvent,
   AgentCustomEvent,
   AgentCheckpoint,
+  AgentUsage,
+  AgentUsageEntry,
   AgentRuntimeTelemetryEvent,
   AgentRuntimeTelemetryPayload,
   AgentRuntimeTelemetryProperties,

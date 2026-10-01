@@ -38,7 +38,7 @@ test('mixed AG-UI graph includes local content parser and rejects a missing or c
   };
   const lock = {
     packages: {
-      'node_modules/@ag-ui/client': { version: '0.0.59' },
+      'node_modules/@ag-ui/client': { version: '1.0.1' },
       'node_modules/@cacheplane/partial-markdown': { version: '0.5.8' },
     },
   };
@@ -60,7 +60,7 @@ test('mixed AG-UI graph includes local content parser and rejects a missing or c
     /Missing locked dependency.*partial-markdown/
   );
   assert.deepEqual(consumerVendorGraph(lock, {}), [
-    { name: '@ag-ui/client', version: '0.0.59', dependencies: {} },
+    { name: '@ag-ui/client', version: '1.0.1', dependencies: {} },
   ]);
 });
 test('AG-UI requires every selected local package and rejects a parser in the backend-only consumer', () => {
@@ -88,7 +88,7 @@ test('mixed consumers pin and compare framework and type descendants by owner, n
   };
   const lock = {
     packages: {
-      'node_modules/@ag-ui/client': { version: '0.0.59' },
+      'node_modules/@ag-ui/client': { version: '1.0.1' },
       'node_modules/react-dom': {
         version: '19.0.0',
         dependencies: { scheduler: '^0.25.0' },
@@ -177,7 +177,7 @@ function fixture(t) {
       'libs/ag-ui/src/**/*.js',
       'libs/ag-ui/src/**/*.d.ts',
     ],
-    dependencies: { '@threadplane/core': '0.0.0', '@ag-ui/client': '0.0.59' },
+    dependencies: { '@threadplane/core': '0.0.0', '@ag-ui/client': '1.0.1' },
   };
   writeFileSync(join(output, 'package.json'), JSON.stringify(manifest));
   return { output, manifest };
@@ -297,7 +297,7 @@ test('AG-UI resolves and pins its nested RxJS/Zod graph independently of LangGra
   const lock = {
     packages: {
       'node_modules/@ag-ui/client': {
-        version: '0.0.59',
+        version: '1.0.1',
         dependencies: { rxjs: '^7.8.0', zod: '^3.25.0' },
       },
       'node_modules/@ag-ui/client/node_modules/zod': { version: '3.25.76' },
@@ -307,8 +307,8 @@ test('AG-UI resolves and pins its nested RxJS/Zod graph independently of LangGra
   };
   const vendors = lockedVendorGraph(lock, ['@ag-ui/client']);
   assert.deepEqual(vendorOverrides(vendors, ['@ag-ui/client']), {
-    '@ag-ui/client@0.0.59': {
-      '.': '0.0.59',
+    '@ag-ui/client@1.0.1': {
+      '.': '1.0.1',
       'rxjs@7.8.2': '7.8.2',
       'zod@3.25.76': '3.25.76',
     },
@@ -333,7 +333,7 @@ test('only an explicit existing effective range permits the overridden SDK depen
   const lock = {
     packages: {
       'node_modules/@ag-ui/client': {
-        version: '0.0.59',
+        version: '1.0.1',
         dependencies: { rxjs: '7.8.1' },
       },
       'node_modules/rxjs': { version: '7.8.2' },
@@ -370,17 +370,17 @@ test('shared descendants receive a top-level pin as well as both recursive paths
   const vendors = [
     {
       name: '@ag-ui/client',
-      version: '0.0.59',
-      dependencies: { '@ag-ui/encoder': '0.0.59', '@ag-ui/proto': '0.0.59' },
+      version: '1.0.1',
+      dependencies: { '@ag-ui/encoder': '1.0.1', '@ag-ui/proto': '1.0.1' },
     },
     {
       name: '@ag-ui/encoder',
-      version: '0.0.59',
-      dependencies: { '@ag-ui/proto': '0.0.59' },
+      version: '1.0.1',
+      dependencies: { '@ag-ui/proto': '1.0.1' },
     },
     {
       name: '@ag-ui/proto',
-      version: '0.0.59',
+      version: '1.0.1',
       dependencies: { '@bufbuild/protobuf': '2.11.0' },
     },
     { name: '@bufbuild/protobuf', version: '2.11.0', dependencies: {} },
@@ -388,11 +388,11 @@ test('shared descendants receive a top-level pin as well as both recursive paths
   const pins = agUiVendorOverrides(vendors);
   assert.equal(pins['@bufbuild/protobuf'], '2.11.0');
   assert.equal(
-    pins['@ag-ui/client']['@ag-ui/proto@0.0.59']['@bufbuild/protobuf@2.11.0'],
+    pins['@ag-ui/client']['@ag-ui/proto@1.0.1']['@bufbuild/protobuf@2.11.0'],
     '2.11.0'
   );
   assert.equal(
-    pins['@ag-ui/client']['@ag-ui/encoder@0.0.59']['@ag-ui/proto@0.0.59'][
+    pins['@ag-ui/client']['@ag-ui/encoder@1.0.1']['@ag-ui/proto@1.0.1'][
       '@bufbuild/protobuf@2.11.0'
     ],
     '2.11.0'

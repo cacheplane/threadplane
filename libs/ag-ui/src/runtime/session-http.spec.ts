@@ -1,3 +1,4 @@
+import { PROTOCOL_VERSION } from '@ag-ui/client';
 import { ok } from 'node:assert/strict';
 import { once } from 'node:events';
 import { createServer, type ServerResponse } from 'node:http';
@@ -91,6 +92,7 @@ function envelope(
   return {
     threadId,
     runId: value.run?.id,
+    protocolVersion: PROTOCOL_VERSION,
     state,
     messages: [
       ...previous,
@@ -301,6 +303,7 @@ describe('composed private session over held HTTP', () => {
       expect(next.body).toStrictEqual({
         threadId: 'thread',
         runId: owner.getSnapshot().run?.id,
+        protocolVersion: PROTOCOL_VERSION,
         state: { count: 2 },
         messages: settled.transcript.filter((m) => m.role !== 'activity'),
         resume: [

@@ -2,6 +2,7 @@ import {
   EventType,
   type ActivitySnapshotEvent,
   type ActivityDeltaEvent,
+  type JsonPatch,
 } from '@ag-ui/client';
 import { describe, expect, it } from 'vitest';
 import { applyActivityMessage } from './activity-messages';
@@ -20,7 +21,7 @@ function snapshot(
   } as unknown as ActivitySnapshotEvent;
 }
 function delta(
-  patch: unknown[] = [],
+  patch: JsonPatch = [],
   overrides: Record<string, unknown> = {}
 ): ActivityDeltaEvent {
   return {
@@ -434,7 +435,7 @@ describe('private activity observation', () => {
     frozen(next);
   });
 
-  it.each([
+  it.each<{ patch: JsonPatch }>([
     { patch: [] },
     { patch: [{ op: 'test', path: '/value', value: 1 }] },
   ])(

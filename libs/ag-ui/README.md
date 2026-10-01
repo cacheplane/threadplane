@@ -35,7 +35,7 @@ Part of [Threadplane](https://github.com/cacheplane/threadplane).
 npm install @threadplane/chat @threadplane/ag-ui @ag-ui/client @ag-ui/core marked
 ```
 
-**Peer dependencies:** `@threadplane/chat: *`, `@angular/core: ^20.0.0 || ^21.0.0 || ^22.0.0`, `@ag-ui/client: *`, `@ag-ui/core: *`, `rxjs: ~7.8.0`
+**Peer dependencies:** `@threadplane/chat: *`, `@angular/core: ^20.0.0 || ^21.0.0 || ^22.0.0`, `@ag-ui/client: ^1.0.1`, `@ag-ui/core: ^1.0.1`, `rxjs: ~7.8.0`
 
 `marked` is the required markdown parser peer used by `@threadplane/chat` when you render assistant messages through `<chat>`.
 

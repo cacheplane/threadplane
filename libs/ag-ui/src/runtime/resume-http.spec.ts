@@ -1,3 +1,4 @@
+import { PROTOCOL_VERSION } from '@ag-ui/client';
 import { once } from 'node:events';
 import { readFileSync } from 'node:fs';
 import { createServer, type ServerResponse } from 'node:http';
@@ -128,11 +129,19 @@ describe('correlated native resume over held HTTP', () => {
       expect(second.body).toStrictEqual({
         threadId: 'thread',
         runId: owner.getSnapshot().run?.id,
+        protocolVersion: PROTOCOL_VERSION,
         messages: [
           { id: first.body.messages[0].id, role: 'user', content: 'First' },
         ],
         state: { setting: 'owned' },
-        resume: responses,
+        // 1.0 client rule: a whole-optional `payload: null` is sent as absent.
+        resume: [
+          {
+            interruptId: 'approval',
+            status: 'resolved',
+            metadata: { origin: 'review' },
+          },
+        ],
         tools: [],
         context: [],
         forwardedProps: {},
@@ -168,6 +177,7 @@ describe('correlated native resume over held HTTP', () => {
       expect(third.body).toStrictEqual({
         threadId: 'thread',
         runId: owner.getSnapshot().run?.id,
+        protocolVersion: PROTOCOL_VERSION,
         messages: [
           { id: first.body.messages[0].id, role: 'user', content: 'First' },
         ],
@@ -408,6 +418,7 @@ describe('correlated native resume over held HTTP', () => {
       expect(resumed.body).toStrictEqual({
         threadId: 'th-int-555800',
         runId: owner.getSnapshot().run?.id,
+        protocolVersion: PROTOCOL_VERSION,
         messages: [
           {
             id: 'u-b176b0c0',

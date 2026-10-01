@@ -64,8 +64,8 @@ marked                     ^15.0.0 || ^16.0.0              # @threadplane/chat
 rxjs                       ~7.8.0                          # @threadplane/chat and both adapters
 @langchain/core            ^1.1.33                         # @threadplane/langgraph
 @langchain/langgraph-sdk   ^1.7.4                          # @threadplane/langgraph
-@ag-ui/client              *                               # @threadplane/ag-ui
-@ag-ui/core                *                               # @threadplane/ag-ui
+@ag-ui/client              ^1.0.1                          # @threadplane/ag-ui
+@ag-ui/core                ^1.0.1                          # @threadplane/ag-ui
 ```
 
 Each package README lists that package's full peer set.

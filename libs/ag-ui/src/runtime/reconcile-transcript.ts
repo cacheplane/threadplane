@@ -1,9 +1,13 @@
 import type { Message } from '@ag-ui/client';
 import { ownTranscript, type Transcript } from './transcript.js';
 
-/** Mirrors locked @ag-ui/client 0.0.59 edit-based ordering and role policy.
+/** Mirrors @ag-ui/client 1.0.1 MESSAGES_SNAPSHOT ordering and role policy:
+ * surviving IDs keep their previous position and take the snapshot record,
+ * local activity/reasoning records survive only when the snapshot carries no
+ * message of that role, and new IDs are appended in snapshot order.
  * Deliberate differences: reject duplicate IDs, always replace same-ID records,
- * and leave null-attribution sanitation to request egress. */
+ * leave null-attribution sanitation to request egress, and do not read the
+ * client's `authoritativeActivityTypes` snapshot metadata. */
 export function reconcileTranscript(
   previous: Transcript,
   snapshot: readonly Message[] | Transcript

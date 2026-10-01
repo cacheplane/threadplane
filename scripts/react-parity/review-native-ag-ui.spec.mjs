@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import test from 'node:test';
+import { PROTOCOL_VERSION } from '@ag-ui/client';
 import {
   mkdtempSync,
   mkdirSync,
@@ -55,6 +56,7 @@ const body = (reviewId, role = 'a', command = 'First') => ({
   tools: [],
   context: [],
   forwardedProps: {},
+  protocolVersion: PROTOCOL_VERSION,
 });
 const agent = (server, reviewId, value, role = 'a', signal) =>
   fetch(`${server.url}/agent?review=${reviewId}&owner=${role}`, {

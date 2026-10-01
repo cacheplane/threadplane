@@ -10,6 +10,12 @@ export interface SelectPendingClientToolCallsInput {
   catalogNames: ReadonlySet<string>;
   /** Tool-call ids already resolved by the local client instance. */
   resolvedIds: ReadonlySet<string>;
+  /**
+   * Tool-call ids the runtime itself declared unanswered at the end of the
+   * run (AG-UI 1.0 `outcome.pendingToolCallIds`). When present it is the
+   * authority: a call outside it is not pending even if it has no result.
+   */
+  authoritativeIds?: ReadonlySet<string>;
 }
 
 /** Select client tool calls that are ready for browser-side resolution. */
@@ -21,6 +27,7 @@ export function selectPendingClientToolCalls(
     (tc) =>
       input.catalogNames.has(tc.name) &&
       tc.result === undefined &&
-      !input.resolvedIds.has(tc.id),
+      !input.resolvedIds.has(tc.id) &&
+      (input.authoritativeIds === undefined || input.authoritativeIds.has(tc.id)),
   );
 }

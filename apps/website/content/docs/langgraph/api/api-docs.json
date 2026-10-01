@@ -1747,6 +1747,12 @@
         "optional": false
       },
       {
+        "name": "usage",
+        "type": "Signal<AgentUsage | undefined>",
+        "description": "Optional token usage for the most recent completed or errored run.\nAdapters whose runtime reports usage set it at the run boundary; it is\n`undefined` while a run is in flight and after a run that reported none.",
+        "optional": true
+      },
+      {
         "name": "value",
         "type": "Signal<T>",
         "description": "Current agent state values (raw, typed per the type parameter T).",
@@ -2203,6 +2209,12 @@
         "type": "WritableSignal<ToolProgress[]>",
         "description": "Progress updates for currently executing tools.",
         "optional": false
+      },
+      {
+        "name": "usage",
+        "type": "Signal<AgentUsage | undefined>",
+        "description": "Optional token usage for the most recent completed or errored run.\nAdapters whose runtime reports usage set it at the run boundary; it is\n`undefined` while a run is in flight and after a run that reported none.",
+        "optional": true
       },
       {
         "name": "value",

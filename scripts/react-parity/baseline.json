@@ -1,10 +1,8 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "9740832adbc165b0884f6868d1ad916ad8ab0b69",
+  "baselineHead": "90bb6ea4fbb449cf01306187a300f2abe0c94f1d",
   "sourceState": {
-    "modified": [
-      "scripts/assemble-examples.ts"
-    ],
+    "modified": [],
     "untracked": []
   },
   "scope": {
@@ -144,7 +142,7 @@
       "id": "asset:libs/ag-ui/README.md",
       "kind": "asset",
       "path": "libs/ag-ui/README.md",
-      "sha256": "ff308bf07651a3a6849db1dc841bd39d54bc585a6f882bc6d709b49aba9c5293"
+      "sha256": "a900db710136999225c3d569bb136d2f365d0337ddfc0409ca3e41f358602650"
     },
     {
       "id": "asset:libs/ag-ui/fixtures/runtime-transcripts/maf-hitl-interrupt.sse",
@@ -210,7 +208,7 @@
       "id": "asset:libs/ag-ui/package.json",
       "kind": "asset",
       "path": "libs/ag-ui/package.json",
-      "sha256": "27190919faa732b07c278bc78b68e0663fa39e6c7e96d6ba45fbafc65e2bd3ee"
+      "sha256": "378637a9da175428e9735dc0f4a60f42151334bcdc12b0838cc600e2cff753fa"
     },
     {
       "id": "asset:libs/ag-ui/project.json",
@@ -222,7 +220,7 @@
       "id": "asset:libs/ag-ui/src/runtime/README.md",
       "kind": "asset",
       "path": "libs/ag-ui/src/runtime/README.md",
-      "sha256": "67e443b1252d7236ad7b6fc69cd6027776d770ac7eb2abfed7e8155c28dc1d5c"
+      "sha256": "eb43b76d97d968a43a62311b3f66b53dc6afcf59fc70525801741a1e75999785"
     },
     {
       "id": "asset:libs/ag-ui/tsconfig.json",
@@ -2160,13 +2158,13 @@
       "id": "config:package-lock.json",
       "kind": "config",
       "path": "package-lock.json",
-      "sha256": "6a83829aa28ec3690596b22e961708585fc53bbebf828f86e3e5a709bfffd577"
+      "sha256": "0fe309ca6e90d54702b4bf1c685d5ce8200b8f051520f7337df82d033c85dc08"
     },
     {
       "id": "config:package.json",
       "kind": "config",
       "path": "package.json",
-      "sha256": "1454dd65be7cc56cf85c23eaf83c17953bb3d4b0dc98350cb1bdd392fbdade25"
+      "sha256": "766cd8167219f6c8a2cda9c49e8de319002e70ba07dafa70b83768eed42c996e"
     },
     {
       "id": "config:scripts/assemble-examples.ts",
@@ -2274,7 +2272,7 @@
       "id": "doc:apps/website/content/docs/ag-ui/getting-started/installation.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/getting-started/installation.mdx",
-      "sha256": "52cb1ebf813965cb619990468af2a0affdac41dadf259d682349a92059896cfa"
+      "sha256": "5bcb47604e31b5291203c140070e97b00875f83eb486f8a3ac2d0cb92def700d"
     },
     {
       "id": "doc:apps/website/content/docs/ag-ui/getting-started/introduction.mdx",
@@ -2322,7 +2320,7 @@
       "id": "doc:apps/website/content/docs/ag-ui/guides/interrupts.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/guides/interrupts.mdx",
-      "sha256": "71e8eb9b06a9c8fd72194e69cc8dda066ffea998d3ed5049d2fa802e99a3ecaa"
+      "sha256": "f41b6bb8d94751fc1f8d1295a46c67dd40593835bad1a05ed3cda7206dfe5ef8"
     },
     {
       "id": "doc:apps/website/content/docs/ag-ui/guides/json-render.mdx",
@@ -2358,7 +2356,7 @@
       "id": "doc:apps/website/content/docs/ag-ui/reference/event-mapping.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/reference/event-mapping.mdx",
-      "sha256": "457234cf179d4fdda4acaaca491201c0b79bc1aac2470c836dc4503c07a36c12"
+      "sha256": "32129145fc6efc60436bf4afc7f2405409b840305369ebe77e9a441e7ef38dfa"
     },
     {
       "id": "doc:apps/website/content/docs/chat/a2ui/catalog.mdx",
@@ -2508,7 +2506,7 @@
       "id": "doc:apps/website/content/docs/chat/getting-started/changelog.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/getting-started/changelog.mdx",
-      "sha256": "41900f462a181319ff4fbc3d1f01fef4dca5c8cc405a834295b18bac753ee61e"
+      "sha256": "2c25717300a70401b2c81318f14a576f34722898c6ddb4e9a03c3907938436e9"
     },
     {
       "id": "doc:apps/website/content/docs/chat/getting-started/coding-agents.mdx",
@@ -4995,7 +4993,7 @@
           "path": "libs/chat/src/lib/agent/agent.ts",
           "symbol": "Agent",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface Agent<TState = unknown> {\n    messages: Signal<Message[]>;\n    status: Signal<AgentStatus>;\n    isLoading: Signal<boolean>;\n    isInputBlocked?: Signal<boolean>;\n    error: Signal<AgentError | undefined>;\n    toolCalls: Signal<ToolCall[]>;\n    state: Signal<TState>;\n    submit: (input: AgentSubmitInput, opts?: AgentSubmitOptions) => Promise<void>;\n    stop: () => Promise<void>;\n    retry: () => Promise<void>;\n    regenerate: (assistantMessageIndex: number) => Promise<void>;\n    interrupt?: Signal<AgentInterrupt | undefined>;\n    subagents?: Signal<Map<string, Subagent>>;\n    clientTools?: ClientToolsCapability;\n    checkStatus?: () => Promise<void>;\n    events$: Observable<AgentEvent>;\n}"
+          "signature": "export interface Agent<TState = unknown> {\n    messages: Signal<Message[]>;\n    status: Signal<AgentStatus>;\n    isLoading: Signal<boolean>;\n    isInputBlocked?: Signal<boolean>;\n    error: Signal<AgentError | undefined>;\n    toolCalls: Signal<ToolCall[]>;\n    state: Signal<TState>;\n    submit: (input: AgentSubmitInput, opts?: AgentSubmitOptions) => Promise<void>;\n    stop: () => Promise<void>;\n    retry: () => Promise<void>;\n    regenerate: (assistantMessageIndex: number) => Promise<void>;\n    interrupt?: Signal<AgentInterrupt | undefined>;\n    subagents?: Signal<Map<string, Subagent>>;\n    clientTools?: ClientToolsCapability;\n    usage?: Signal<AgentUsage | undefined>;\n    checkStatus?: () => Promise<void>;\n    events$: Observable<AgentEvent>;\n}"
         }
       ]
     },
@@ -5220,6 +5218,34 @@
           "symbol": "AgentSubmitOptions",
           "syntaxKind": "InterfaceDeclaration",
           "signature": "export interface AgentSubmitOptions {\n    signal?: AbortSignal;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#AgentUsage",
+      "kind": "export",
+      "path": "libs/chat/src/public-api.ts",
+      "symbol": "AgentUsage",
+      "declarations": [
+        {
+          "path": "libs/chat/src/lib/agent/agent-usage.ts",
+          "symbol": "AgentUsage",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface AgentUsage {\n    entries: AgentUsageEntry[];\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#AgentUsageEntry",
+      "kind": "export",
+      "path": "libs/chat/src/public-api.ts",
+      "symbol": "AgentUsageEntry",
+      "declarations": [
+        {
+          "path": "libs/chat/src/lib/agent/agent-usage.ts",
+          "symbol": "AgentUsageEntry",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface AgentUsageEntry {\n    provider?: string;\n    model?: string;\n    inputTokens?: number;\n    outputTokens?: number;\n    totalTokens?: number;\n    reasoningTokens?: number;\n    cachedInputTokens?: number;\n    cacheWriteInputTokens?: number;\n}"
         }
       ]
     },
@@ -7179,7 +7205,7 @@
           "path": "libs/chat/src/lib/client-tools/select-pending-client-tool-calls.ts",
           "symbol": "SelectPendingClientToolCallsInput",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface SelectPendingClientToolCallsInput {\n    isLoading: boolean;\n    toolCalls: readonly ToolCall[];\n    catalogNames: ReadonlySet<string>;\n    resolvedIds: ReadonlySet<string>;\n}"
+          "signature": "export interface SelectPendingClientToolCallsInput {\n    isLoading: boolean;\n    toolCalls: readonly ToolCall[];\n    catalogNames: ReadonlySet<string>;\n    resolvedIds: ReadonlySet<string>;\n    authoritativeIds?: ReadonlySet<string>;\n}"
         }
       ]
     },
@@ -7361,7 +7387,7 @@
           "path": "libs/chat/src/lib/agent/tool-call.ts",
           "symbol": "ToolCall",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface ToolCall {\n    id: string;\n    name: string;\n    args: unknown;\n    status: ToolCallStatus;\n    result?: unknown;\n    error?: unknown;\n}"
+          "signature": "export interface ToolCall {\n    id: string;\n    name: string;\n    args: unknown;\n    status: ToolCallStatus;\n    result?: unknown;\n    error?: unknown;\n    parts?: readonly unknown[];\n}"
         }
       ]
     },
@@ -8103,7 +8129,7 @@
           "path": "libs/chat/src/lib/client-tools/select-pending-client-tool-calls.ts",
           "symbol": "selectPendingClientToolCalls",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function selectPendingClientToolCalls(input: SelectPendingClientToolCallsInput): readonly ToolCall[] {\n    if (input.isLoading)\n        return [];\n    return input.toolCalls.filter((tc) => input.catalogNames.has(tc.name) &&\n        tc.result === undefined &&\n        !input.resolvedIds.has(tc.id));\n}"
+          "signature": "export function selectPendingClientToolCalls(input: SelectPendingClientToolCallsInput): readonly ToolCall[] {\n    if (input.isLoading)\n        return [];\n    return input.toolCalls.filter((tc) => input.catalogNames.has(tc.name) &&\n        tc.result === undefined &&\n        !input.resolvedIds.has(tc.id) &&\n        (input.authoritativeIds === undefined || input.authoritativeIds.has(tc.id)));\n}"
         }
       ]
     },
@@ -11257,13 +11283,19 @@
       "id": "source:libs/ag-ui/src/lib/client-tools.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/client-tools.ts",
-      "sha256": "63f22ef3f3e1f1dee57cb6adf13135f4a7fc7219bb0858935a993499402e012f"
+      "sha256": "a22d13595ef1cd47023811b0711bf3529e49e2e596c4f08a93cb9ed02a97b4ed"
     },
     {
       "id": "source:libs/ag-ui/src/lib/internal/apply-patch.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/internal/apply-patch.ts",
       "sha256": "56cb31916c7967ca0e8c7de361e5df5e44a3f1dfde06c40a2bc8e57412a380de"
+    },
+    {
+      "id": "source:libs/ag-ui/src/lib/internal/content-parts.ts",
+      "kind": "source",
+      "path": "libs/ag-ui/src/lib/internal/content-parts.ts",
+      "sha256": "484fc51b7918a03d5a4b58353ad34124aa74b9ba235afa37659bf62aac3f1b31"
     },
     {
       "id": "source:libs/ag-ui/src/lib/internal/copy-data.ts",
@@ -11275,13 +11307,13 @@
       "id": "source:libs/ag-ui/src/lib/interrupt-persistence.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/interrupt-persistence.ts",
-      "sha256": "48c3015c1ea225ae7a9557eb95cfaafb8be86605fff71eac0ee6560dfd74d9ea"
+      "sha256": "bdb51f04fec35986d3359043e549cfa5312850f5aff94005550919eab2822f49"
     },
     {
       "id": "source:libs/ag-ui/src/lib/interrupt-session.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/interrupt-session.ts",
-      "sha256": "88fa95647734a0eb2dd3bc326728e7d4ba7fe29199d7add2ba6603694ea3b3ce"
+      "sha256": "eb2adc4f9af244d6f35700ed2c7e6816e445d85c72aa0c1c03f08f0e18a2ccd0"
     },
     {
       "id": "source:libs/ag-ui/src/lib/interrupt-session.types.ts",
@@ -11305,7 +11337,7 @@
       "id": "source:libs/ag-ui/src/lib/reducer.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/reducer.ts",
-      "sha256": "d9ac6e09a4faa7e1aa4b69a6e1bf1a543b3a2485a699ab2c74ba398952978fde"
+      "sha256": "c130eab7c3f75f49aede4959ae325eadc93756e445cea943b7322ac238222209"
     },
     {
       "id": "source:libs/ag-ui/src/lib/run-state-transaction.ts",
@@ -11335,7 +11367,7 @@
       "id": "source:libs/ag-ui/src/lib/to-agent.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/to-agent.ts",
-      "sha256": "9c8a34f9ee960311ba26a281bb4726d0436129767ddf7d68f6404ecd037f5bb9"
+      "sha256": "7ec69285cad7ef324e7aab8177b9543ff2819e9fe6ab9b95935ae00da1cfdd1d"
     },
     {
       "id": "source:libs/ag-ui/src/public-api.ts",
@@ -11353,25 +11385,25 @@
       "id": "source:libs/ag-ui/src/runtime/create-http-request.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/create-http-request.ts",
-      "sha256": "539e8165b13cccc571ef39e939d598814a2ffe8dad2593a6f5800bca0fbc3121"
+      "sha256": "f41d7248e1dee4787efe418b677f0e0cb124b7620f3cf3223a2af8d27f251d73"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/create-run.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/create-run.ts",
-      "sha256": "64dc7f42eef09cfa992fe4d3d5e100cc1e5647b3a39ef28b38da7c2cd2cad612"
+      "sha256": "ee7a3397587f3f469d8d6fc89c08fe30e35c9bf28082e7cc58e058e27295cd2b"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/create-session.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/create-session.ts",
-      "sha256": "9b22c223eb930ed0bddafbebcbc7073f8023b44a9b11c3e97bf038c96dadd320"
+      "sha256": "76d493ff7eccd6f27503aed42e0282dff8d94862166fb5276cce8efcf804ca98"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/decision.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/decision.ts",
-      "sha256": "972bb82d1d5153bf1a5db37dde45a35073949be290a452e05b3a9c2ad891efbf"
+      "sha256": "f45aa785dd11504f565b1e3e9f5231c2f62ca9cb2944cbff9598b445c2f333b5"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/encrypted-messages.ts",
@@ -11389,7 +11421,7 @@
       "id": "source:libs/ag-ui/src/runtime/reconcile-transcript.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/reconcile-transcript.ts",
-      "sha256": "f4e5656e440e791d116bd977f40f5e0a21e92945504c38b8373fd79f2cc9a688"
+      "sha256": "c11180f41d425de9f3f30f1c77f0462b22b316939515566a6f11df3ce4ae9258"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/session-attribution.ts",
@@ -11401,7 +11433,7 @@
       "id": "source:libs/ag-ui/src/runtime/session-observation.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/session-observation.ts",
-      "sha256": "7f77502056e8e01b3c5707d5e982aadc8f6d2ac960bb0e041bcf1da8872b3754"
+      "sha256": "64db60b84d55fc37dcc7e9d959bdda35a4162b59109ecf9d4ad607a32424b636"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/session-publication.ts",
@@ -11431,7 +11463,7 @@
       "id": "source:libs/ag-ui/src/runtime/testing/binding-fixture.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/testing/binding-fixture.ts",
-      "sha256": "35708870593928befd7fa7a7a51b78befeaaabee025540c81357797ed34bf321"
+      "sha256": "6002bd145ff00cb242b4027cc633d3d757445f7d0f80f8b983864f299c1f9a5d"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/text-messages.ts",
@@ -11890,6 +11922,12 @@
       "sha256": "09dcc2b445c1d1951092dc43389ca23cdcc2b5526e6ac5f658b2aba072dfe14a"
     },
     {
+      "id": "source:libs/chat/src/lib/agent/agent-usage.ts",
+      "kind": "source",
+      "path": "libs/chat/src/lib/agent/agent-usage.ts",
+      "sha256": "c69fc89a2c22a41214abaff488ab8892ab2e077e8a87a611de35f7da621cc95c"
+    },
+    {
       "id": "source:libs/chat/src/lib/agent/agent-with-history.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/agent/agent-with-history.ts",
@@ -11899,7 +11937,7 @@
       "id": "source:libs/chat/src/lib/agent/agent.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/agent/agent.ts",
-      "sha256": "6ee134c17e2395f04aa94a05b7240e113c7236eb1eab7fa0d2a9b0ebbdb3e715"
+      "sha256": "ec4b294ebacfc9b6c1656dd12b7de6bf62e68f8ae3d63a380fd121d094663f34"
     },
     {
       "id": "source:libs/chat/src/lib/agent/citation-display.ts",
@@ -11923,7 +11961,7 @@
       "id": "source:libs/chat/src/lib/agent/index.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/agent/index.ts",
-      "sha256": "d72b383a511a3b722c4603ce49e8cc125e2ffc03158f64e060bee870ccd1101c"
+      "sha256": "bf6f23e1ddc42639d3bfc27b829943083b190c8888fb1795331b2f77e165ddde"
     },
     {
       "id": "source:libs/chat/src/lib/agent/message-delivery.ts",
@@ -11959,7 +11997,7 @@
       "id": "source:libs/chat/src/lib/agent/tool-call.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/agent/tool-call.ts",
-      "sha256": "043aa42715145dae39f7594c89aca4fd048f9b31b4acd7330237db40e3d856fc"
+      "sha256": "16ffafb9acb1acc467325ff3ddc1d5b5254e4e61f167bfcffc2aedaecd6dad3b"
     },
     {
       "id": "source:libs/chat/src/lib/chat.types.ts",
@@ -12013,7 +12051,7 @@
       "id": "source:libs/chat/src/lib/client-tools/select-pending-client-tool-calls.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/client-tools/select-pending-client-tool-calls.ts",
-      "sha256": "300783e156ff80efbdcd4f3de2f9f67dbeefe5b9ca7a099a24ef83803145224b"
+      "sha256": "15e51420b5d651bd8687b22b484a598519f1d9ea7ae22ad8d8ff1ecd7195cd90"
     },
     {
       "id": "source:libs/chat/src/lib/client-tools/to-json-schema.ts",
@@ -12751,7 +12789,7 @@
       "id": "source:libs/chat/src/public-api.ts",
       "kind": "source",
       "path": "libs/chat/src/public-api.ts",
-      "sha256": "caae3d2c6f5f1d978375f0081e6a85613c4f6a3fabb2ec3a5b232ea3007b7df7"
+      "sha256": "c4a031588646bdfe6af8d83112b77439b096705e3b8bc1f97180dba06543d4b0"
     },
     {
       "id": "source:libs/chat/src/test-setup.ts",

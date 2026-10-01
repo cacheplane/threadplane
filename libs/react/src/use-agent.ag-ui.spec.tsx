@@ -2,7 +2,10 @@ import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { useAgent } from './index';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Only integration tests compose the actual private native owner.
-import { bindingFixture } from '../../ag-ui/src/runtime/testing/binding-fixture';
+import {
+  bindingFixture,
+  PROTOCOL_VERSION,
+} from '../../ag-ui/src/runtime/testing/binding-fixture';
 
 const fixtures: ReturnType<typeof bindingFixture>[] = [];
 function fixture(options?: Parameters<typeof bindingFixture>[0]) {
@@ -48,6 +51,7 @@ describe('useAgent native AG-UI owner', () => {
     expect(exchange.body).toEqual({
       threadId: 'native-thread',
       runId: f.session.getSnapshot().run?.id,
+      protocolVersion: PROTOCOL_VERSION,
       messages: [
         seed,
         { id: expect.any(String), role: 'user', content: 'Hello' },
@@ -178,6 +182,7 @@ describe('useAgent native AG-UI owner', () => {
     expect(next.body).toEqual({
       threadId: 'native-thread',
       runId: f.session.getSnapshot().run?.id,
+      protocolVersion: PROTOCOL_VERSION,
       messages: [
         seed,
         user,
@@ -249,6 +254,7 @@ describe('useAgent native AG-UI owner', () => {
     expect(b.exchanges[0].body).toEqual({
       threadId: 'b',
       runId: b.session.getSnapshot().run?.id,
+      protocolVersion: PROTOCOL_VERSION,
       messages: [{ id: expect.any(String), role: 'user', content: 'B' }],
       state: { owner: 'b' },
       tools: [],

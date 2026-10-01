@@ -565,11 +565,22 @@ describe('private run authority', () => {
       outcome: 'error',
       types: ['RUN_STARTED'],
     },
+    // A 1.0 cancelled outcome is a deliberate stop, matching the public
+    // adapter's aborted status rather than an unsupported-outcome error.
+    {
+      name: 'cancelled outcome settles as aborted',
+      wire: [started, { ...finished, outcome: { type: 'cancelled' } }],
+      outcome: 'aborted',
+      types: ['RUN_STARTED', 'RUN_FINISHED'],
+    },
+    // 1.0 enforcement strips an unrecognised outcome union member with a
+    // warning; the absent outcome then reads as success.
     {
       name: 'unknown finished outcome',
       wire: [started, { ...finished, outcome: { type: 'future' } }],
-      outcome: 'error',
-      types: ['RUN_STARTED'],
+      outcome: 'success',
+      types: ['RUN_STARTED', 'RUN_FINISHED'],
+      warns: true,
     },
     {
       name: 'empty native interrupts rejected by SDK',
@@ -615,6 +626,10 @@ describe('private run authority', () => {
       const remove = vi.spyOn(external.signal, 'removeEventListener');
       let physicalSignal: AbortSignal | null | undefined;
       const events: BaseEvent[] = [];
+      const warn =
+        'warns' in scenario
+          ? vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+          : undefined;
       const handle = createRun({
         url: server.url,
         fetch: (url, init) => {
@@ -641,6 +656,12 @@ describe('private run authority', () => {
             type: 'interrupt',
             interrupts: [{ id: 'pause', reason: 'confirm' }],
           });
+        if (warn) {
+          expect(events[1]).not.toHaveProperty('outcome');
+          expect(warn).toHaveBeenCalledWith(
+            expect.stringContaining('[ag-ui][enforce]')
+          );
+        }
         if (scenario.name.startsWith('error')) {
           expect(result.outcome).toBe('error');
           if (result.outcome === 'error')
@@ -650,6 +671,7 @@ describe('private run authority', () => {
         handle.abort();
         expect(await handle.done).toBe(result);
       } finally {
+        warn?.mockRestore();
         handle.abort();
         await server.close();
       }
@@ -708,11 +730,21 @@ describe('private run authority', () => {
               value: 'child pause',
               subagentRunId: childId,
             },
-            {
-              type: childTerminal,
-              subagentRunId: childId,
-              message: 'child failure',
-            },
+            // 1.0 shapes: failure detail lives only on SUBAGENT_ERROR, while
+            // SUBAGENT_FINISHED carries result/outcome (a suspended child
+            // must still not pause the root).
+            childTerminal === 'SUBAGENT_ERROR'
+              ? {
+                  type: childTerminal,
+                  subagentRunId: childId,
+                  message: 'child failure',
+                }
+              : {
+                  type: childTerminal,
+                  subagentRunId: childId,
+                  result: 'child result',
+                  outcome: { type: 'suspended' },
+                },
           ];
           exchange.send(...wire);
           await bounded(childSeen.promise);
@@ -730,12 +762,18 @@ describe('private run authority', () => {
         }
       });
     }
+    // 1.0 enforcement strips `subagentRunId` from non-attributable RUN_*
+    // events (with a warning), so a child tag never reaches the runtime and
+    // the event is applied as the root's own lifecycle event.
     for (const terminal of [started, finished, failure]) {
-      it(`rejects SSE ${terminal.type} tagged with ${JSON.stringify(
-        childId
-      )}, including matching root IDs`, async () => {
+      it(`strips a ${JSON.stringify(childId)} child tag from SSE ${
+        terminal.type
+      } and applies it as the root's`, async () => {
         const server = await serve();
         const events: BaseEvent[] = [];
+        const warn = vi
+          .spyOn(console, 'warn')
+          .mockImplementation(() => undefined);
         const handle = createRun({ url: server.url }).start(input(), (event) =>
           events.push(event)
         );
@@ -743,12 +781,26 @@ describe('private run authority', () => {
           const exchange = await server.next();
           if (terminal.type !== EventType.RUN_STARTED) exchange.send(started);
           exchange.send({ ...terminal, subagentRunId: childId }, finished);
-          expect((await bounded(handle.done)).outcome).toBe('error');
-          expect(events).toEqual(
-            terminal.type === EventType.RUN_STARTED ? [] : [started]
+          const result = await bounded(handle.done);
+          if (terminal === failure) {
+            expect(result).toEqual({
+              outcome: 'error',
+              error: new Error('provider failure'),
+              fetchInvoked: true,
+            });
+            expect(events).toEqual([started, failure]);
+          } else {
+            expect(result).toEqual({ outcome: 'success', fetchInvoked: true });
+            expect(events).toEqual([started, finished]);
+          }
+          for (const event of events)
+            expect(event).not.toHaveProperty('subagentRunId');
+          expect(warn).toHaveBeenCalledWith(
+            expect.stringMatching(/\[ag-ui\]\[enforce\].*subagentRunId/)
           );
           await bounded(exchange.closed);
         } finally {
+          warn.mockRestore();
           handle.abort();
           await server.close();
         }

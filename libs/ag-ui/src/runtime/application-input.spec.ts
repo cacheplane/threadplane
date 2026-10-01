@@ -287,7 +287,8 @@ describe('application input admission on the actual owner', () => {
         expect(exchange.aborts).toBe(0);
         const next = submit(fixture.session, { message: '', state: undefined });
         const second = await bounded(fixture.started(1));
-        expect(second.body.state).toEqual(value);
+        // 1.0 client rule: a whole-optional `state: null` is sent as absent.
+        expect(second.body.state).toEqual(value === null ? undefined : value);
         expect(second.body.messages.at(-1)?.content).toBe('');
         expect(await bounded(active)).toBe('aborted');
         await fixture.session.stop();

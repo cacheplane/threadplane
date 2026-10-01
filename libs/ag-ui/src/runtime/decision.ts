@@ -73,7 +73,9 @@ export function captureResponses(
         {
           interruptId,
           status,
-          ...(payload !== undefined && { payload }),
+          // The 1.0 client sends a whole-optional `payload: null` as absent;
+          // normalize here so the owned snapshot matches the wire.
+          ...(payload !== undefined && payload !== null && { payload }),
           ...(metadata !== undefined && { metadata }),
         },
         true

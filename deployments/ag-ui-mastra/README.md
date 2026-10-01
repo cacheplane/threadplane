@@ -62,7 +62,7 @@ Do NOT `source` the repo root `.env` — export only what you need. (A stray
 
 `npm test` runs transcript-shape tests: every surface's SSE event grammar is
 asserted against the measured 2026-08-31 spike captures, and the
-interrupt→resume round trip is driven through the real `@ag-ui/client` 0.0.59
+interrupt→resume round trip is driven through the real `@ag-ui/client` 1.0.1
 (`devDependencies`) — the same client the Angular adapter wraps. The model is
 a scripted OpenAI responses-API mock over owned loopback HTTP; no hosted model
 or real key is used.
