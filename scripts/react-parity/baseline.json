@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "5265c0c235c2e24fb4e6929eb1237c179050da94",
+  "baselineHead": "90bb6ea4fbb449cf01306187a300f2abe0c94f1d",
   "sourceState": {
     "modified": [],
     "untracked": []
@@ -2170,7 +2170,7 @@
       "id": "config:scripts/assemble-examples.ts",
       "kind": "config",
       "path": "scripts/assemble-examples.ts",
-      "sha256": "5c6dc435027c37cbb771bf3aefd7eebfdafb71244a3aa4d694905e0445a47e0f"
+      "sha256": "6c4a3b46e95afab201ba18c2621db3840973387170decaa14407e22e3b9c880e"
     },
     {
       "id": "config:scripts/cockpit-matrix.mjs",
