@@ -1,5 +1,6 @@
-import { cleanup, fireEvent, render } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { act, cleanup, fireEvent, render } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { StrictMode } from 'react';
 import {
   streamingDelivery,
   type AgentSnapshot,
@@ -11,7 +12,10 @@ import {
 } from '@threadplane/content/messages';
 import { MessageList } from './index';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 const msg = (
   id: string,
@@ -32,6 +36,133 @@ const snap = (
   Object.freeze({ status: 'idle', messages, toolCalls }) as AgentSnapshot;
 
 describe('MessageList', () => {
+  it('retains row-update following when ResizeObserver is unavailable', () => {
+    vi.stubGlobal('ResizeObserver', undefined);
+    const content = createMessageContent();
+    const view = render(
+      <MessageList rows={content.project(snap([msg('a', 'A')]))} />
+    );
+    const list = view.getByRole('region', { name: 'Conversation' });
+    let top = 0;
+    Object.defineProperties(list, {
+      scrollHeight: { configurable: true, get: () => 900 },
+      scrollTop: {
+        configurable: true,
+        get: () => top,
+        set: (value) => {
+          top = value;
+        },
+      },
+    });
+    view.rerender(
+      <MessageList
+        rows={content.project(snap([msg('a', 'A'), msg('b', 'B')]))}
+      />
+    );
+    expect(top).toBe(900);
+    content.dispose();
+  });
+  it('follows unchanged-row height growth only while pinned and releases its observer', () => {
+    let notify: () => void = () => {
+      throw new Error('Resize observer was not installed');
+    };
+    const observe = vi.fn();
+    const disconnect = vi.fn();
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(callback: ResizeObserverCallback) {
+          notify = () => callback([], this as unknown as ResizeObserver);
+        }
+        observe = observe;
+        unobserve = vi.fn();
+        disconnect = disconnect;
+      }
+    );
+    const content = createMessageContent();
+    const rows = content.project(snap([msg('a', 'Unchanged')]));
+    const view = render(<MessageList rows={rows} />);
+    const list = view.getByRole('region', { name: 'Conversation' });
+    let height = 1000;
+    let top = 800;
+    Object.defineProperties(list, {
+      scrollHeight: { configurable: true, get: () => height },
+      clientHeight: { configurable: true, get: () => 200 },
+      scrollTop: {
+        configurable: true,
+        get: () => top,
+        set: (value) => {
+          top = value;
+        },
+      },
+    });
+    height = 1400;
+    act(notify);
+    expect(top).toBe(1400);
+    expect(observe).toHaveBeenCalledWith(list.firstElementChild);
+    top = 100;
+    fireEvent.scroll(list);
+    height = 1800;
+    act(notify);
+    expect(top).toBe(100);
+    top = 1600;
+    fireEvent.scroll(list);
+    height = 2000;
+    act(notify);
+    expect(top).toBe(2000);
+    expect(view.getByText('Unchanged').textContent).toBe('Unchanged');
+    view.unmount();
+    expect(disconnect).toHaveBeenCalledTimes(1);
+    height = 2500;
+    act(notify);
+    expect(top).toBe(2000);
+    content.dispose();
+  });
+  it('disconnects replayed observers and ignores their stale callbacks in StrictMode', () => {
+    const notifications: (() => void)[] = [];
+    const disconnects: ReturnType<typeof vi.fn>[] = [];
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(callback: ResizeObserverCallback) {
+          notifications.push(() =>
+            callback([], this as unknown as ResizeObserver)
+          );
+          disconnects.push(this.disconnect);
+        }
+        observe = vi.fn();
+        unobserve = vi.fn();
+        disconnect = vi.fn();
+      }
+    );
+    const content = createMessageContent();
+    const view = render(
+      <StrictMode>
+        <MessageList rows={content.project(snap([msg('a', 'Text')]))} />
+      </StrictMode>
+    );
+    const list = view.getByRole('region', { name: 'Conversation' });
+    let top = 0;
+    Object.defineProperties(list, {
+      scrollHeight: { configurable: true, get: () => 1000 },
+      scrollTop: {
+        configurable: true,
+        get: () => top,
+        set: (value) => {
+          top = value;
+        },
+      },
+    });
+    expect(notifications).toHaveLength(2);
+    expect(disconnects[0]).toHaveBeenCalledTimes(1);
+    act(notifications[0]);
+    expect(top).toBe(0);
+    act(notifications[1]);
+    expect(top).toBe(1000);
+    view.unmount();
+    expect(disconnects[1]).toHaveBeenCalledTimes(1);
+    content.dispose();
+  });
   it('shows supplied citations only on default assistant rows and respects custom rendering', () => {
     const content = createMessageContent();
     const citations = [{ id: 'c', index: 1, title: 'Owned source' }] as const;

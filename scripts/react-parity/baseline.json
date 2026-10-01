@@ -1,16 +1,12 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "4659e06d86cc5adfc60ea38982269179ba715aad",
+  "baselineHead": "d7d82deff59f7ca4090d771a99f72ab75282179c",
   "sourceState": {
     "modified": [
       "libs/react/README.md",
-      "libs/react/src/chat/index.ts",
-      "libs/react/src/chat/message-list.tsx",
-      "libs/react/src/chat/styles.css"
+      "libs/react/src/chat/message-list.tsx"
     ],
-    "untracked": [
-      "libs/react/src/chat/citations.tsx"
-    ]
+    "untracked": []
   },
   "scope": {
     "libraries": [
@@ -823,7 +819,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "9c520728b80b6411e774c42d414fcdb275db8335727bc55a05cec858624c152a"
+      "sha256": "fd818de598ac581bab277d0948b641ab9a682d5382f527cd2d5c9e79f5f92e69"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -10040,7 +10036,7 @@
           "path": "libs/react/src/chat/message-list.tsx",
           "symbol": "MessageList",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function MessageList<TRow extends MessageRow = MessageRow>({ rows, renderMessage, label = 'Conversation', className, }: MessageListProps<TRow>) {\n    const container = useRef<HTMLDivElement>(null);\n    const pinned = useRef(true);\n    useEffect(() => {\n        const el = container.current;\n        if (!el)\n            return;\n        const onScroll = () => {\n            pinned.current =\n                el.scrollHeight - el.scrollTop - el.clientHeight <= PIN_THRESHOLD;\n        };\n        el.addEventListener('scroll', onScroll, { passive: true });\n        return () => el.removeEventListener('scroll', onScroll);\n    }, []);\n    useIsomorphicLayoutEffect(() => {\n        const el = container.current;\n        if (el && pinned.current)\n            el.scrollTop = el.scrollHeight;\n    }, [rows]);\n    return (<div ref={container} role=\"region\" aria-label={label} className={['tp-chat-list', className].filter(Boolean).join(' ')}>\n      {rows.map((row) => (<Row key={row.id} row={row} renderMessage={renderMessage}/>))}\n    </div>);\n}"
+          "signature": "export function MessageList<TRow extends MessageRow = MessageRow>({ rows, renderMessage, label = 'Conversation', className, }: MessageListProps<TRow>) {\n    const container = useRef<HTMLDivElement>(null);\n    const content = useRef<HTMLDivElement>(null);\n    const pinned = useRef(true);\n    useEffect(() => {\n        const el = container.current;\n        if (!el)\n            return;\n        const onScroll = () => {\n            pinned.current =\n                el.scrollHeight - el.scrollTop - el.clientHeight <= PIN_THRESHOLD;\n        };\n        el.addEventListener('scroll', onScroll, { passive: true });\n        return () => el.removeEventListener('scroll', onScroll);\n    }, []);\n    useIsomorphicLayoutEffect(() => {\n        const el = container.current;\n        const body = content.current;\n        if (!el || !body || typeof ResizeObserver === 'undefined')\n            return;\n        let active = true;\n        const observer = new ResizeObserver(() => {\n            if (active && pinned.current)\n                el.scrollTop = el.scrollHeight;\n        });\n        observer.observe(body);\n        return () => {\n            active = false;\n            observer.disconnect();\n        };\n    }, []);\n    useIsomorphicLayoutEffect(() => {\n        const el = container.current;\n        if (el && pinned.current)\n            el.scrollTop = el.scrollHeight;\n    }, [rows]);\n    return (<div ref={container} role=\"region\" aria-label={label} className={['tp-chat-list', className].filter(Boolean).join(' ')}>\n      <div ref={content}>\n        {rows.map((row) => (<Row key={row.id} row={row} renderMessage={renderMessage}/>))}\n      </div>\n    </div>);\n}"
         }
       ]
     },
@@ -14238,7 +14234,7 @@
       "id": "source:libs/react/src/chat/message-list.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/message-list.tsx",
-      "sha256": "042eae25111ae62c13998a2d57791fa3e26c2b12a5038e509b75c0885b3a03a2"
+      "sha256": "b73aa94bad2a07adf7339317d6d1f5749dbaf98d15d4de635dcea1e56f8be524"
     },
     {
       "id": "source:libs/react/src/chat/reasoning.tsx",
