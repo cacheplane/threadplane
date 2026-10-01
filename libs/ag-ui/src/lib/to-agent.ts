@@ -16,7 +16,10 @@ import {
   AGENT_ERROR_MESSAGES,
   AGENT_RECOVERY_MESSAGES,
   AGENT_RECOVERY_DETAILS,
+  ɵcreateDevtoolsEmitter,
 } from '@threadplane/chat';
+import type { ɵDevtoolsPseudoEvent } from '@threadplane/chat';
+import { instrumentSignals } from './internal/devtools';
 import type {
   Agent, Message, AgentStatus, ToolCall, AgentEvent,
   AgentInterrupt, AgentUsage,
@@ -193,6 +196,30 @@ function createAgentAdapter(
   };
   const interrupts = new InterruptSession(options.interruptTransport);
   const interruptSession = signal(interrupts.snapshot);
+  // Development-only (null in production): reports which signals each event
+  // wrote, by name, for the AG-UI DevTools Signals view. Instrumented before
+  // anything can write so every write is seen.
+  const devtools = ɵcreateDevtoolsEmitter('ag-ui');
+  if (devtools) {
+    const { messages, status, isLoading, error, toolCalls, state, interrupt, customEvents, activities } = store;
+    instrumentSignals({
+      messages, status, isLoading, error, toolCalls, state, interrupt, customEvents, activities, interruptSession,
+    } as unknown as Parameters<typeof instrumentSignals>[0], devtools);
+  }
+  // Attributes the writes inside `run` to a pseudo-event in the devtools
+  // report. A bracket opened inside another joins it, so a helper called from a
+  // protocol event stays part of that event's report.
+  const report = <R>(label: ɵDevtoolsPseudoEvent, run: () => R): R =>
+    devtools ? devtools.outside(label, run) : run();
+  const reportEvent = <R>(eventType: string, run: () => R): R => {
+    if (!devtools) return run();
+    devtools.begin(eventType);
+    try {
+      return run();
+    } finally {
+      devtools.end();
+    }
+  };
   const transaction = new RunStateTransaction({ state: source.state ?? {}, messages: source.messages ?? [] });
   let disposed = false;
   let resumeInput: { state: Record<string, unknown>; messages: typeof source.messages; localMessages?: Message[] } | undefined;
@@ -203,10 +230,10 @@ function createAgentAdapter(
   let persistenceWrites: Promise<void> = Promise.resolve();
   function storageError(error: unknown): void {
     persistenceFault = error;
-    if (!disposed) {
+    if (!disposed) report('run:end', () => {
       store.error.set(options.protectOperationErrors ? protectedAgentError() : projectAgentError(error));
       store.status.set('error'); store.isLoading.set(false);
-    }
+    });
   }
   function persistCurrent(): Promise<void> {
     if (!persistence) return Promise.resolve();
@@ -221,6 +248,9 @@ function createAgentAdapter(
   }
   function hydrate(record: AgUiThreadRecord): void {
     if (disposed) return;
+    report('history', () => hydrateUnreported(record));
+  }
+  function hydrateUnreported(record: AgUiThreadRecord): void {
     transaction.commit(record.committed);
     source.state = structuredClone(record.committed.state);
     source.messages = structuredClone(record.committed.messages);
@@ -237,6 +267,9 @@ function createAgentAdapter(
     : Promise.resolve();
   void ready.catch(() => undefined);
   function publishInterrupt(): void {
+    report('submit', publishInterruptUnreported);
+  }
+  function publishInterruptUnreported(): void {
     const snapshot = interrupts.snapshot;
     interruptSession.set(snapshot);
     if (snapshot.phase === 'none' || snapshot.phase === 'acknowledged') {
@@ -264,7 +297,7 @@ function createAgentAdapter(
     const committed = transaction.rollback();
     source.state = committed.state;
     source.messages = committed.messages;
-    store.state.set(committed.state);
+    report('run:end', () => store.state.set(committed.state));
   }
   function commitState(): void {
     transaction.commit({ state: store.state(), messages: source.messages ?? [] });
@@ -328,7 +361,7 @@ function createAgentAdapter(
   const applyStatePatch = (patch: Record<string, unknown> | undefined): void => {
     if (!patch || Object.keys(patch).length === 0) return;
     source.state = { ...((source.state as Record<string, unknown>) ?? {}), ...patch };
-    store.state.update((prev) => ({ ...prev, ...patch }));
+    report('submit', () => store.state.update((prev) => ({ ...prev, ...patch })));
   };
 
   captureAgentRuntimeTelemetry(
@@ -338,6 +371,9 @@ function createAgentAdapter(
   );
 
   function beginRun(requestType: AdapterRequestType, allowBaselineTail = false, resumedInterrupt = false): AdapterRun {
+    return report('run:start', () => beginRunUnreported(requestType, allowBaselineTail, resumedInterrupt));
+  }
+  function beginRunUnreported(requestType: AdapterRequestType, allowBaselineTail: boolean, resumedInterrupt: boolean): AdapterRun {
     developmentRuntime.touch();
     if (activeRun && activeRun.outcome === undefined) {
       const supersededRun = activeRun;
@@ -390,6 +426,9 @@ function createAgentAdapter(
   }
 
   function failRun(run: AdapterRun, error: unknown): void {
+    report('run:end', () => failRunUnreported(run, error));
+  }
+  function failRunUnreported(run: AdapterRun, error: unknown): void {
     if (disposed || (run.outcome !== undefined && !(run.outcome === 'paused' && !run.terminalReceived && interrupts.snapshot.phase === 'collecting'))) return;
     run.terminalReceived = true;
     finalizeDeliveryRun(store, run, 'error');
@@ -522,14 +561,19 @@ function createAgentAdapter(
     const phase = record.session.phase;
     if (phase !== 'none' && phase !== 'pending') return;
 
-    adoptRecord(record);
-    store.status.set('idle');
-    // Already false on both entry paths; set for symmetry with the pair around it.
-    store.isLoading.set(false);
-    store.error.set(undefined);
+    report('history', () => {
+      adoptRecord(record);
+      store.status.set('idle');
+      // Already false on both entry paths; set for symmetry with the pair around it.
+      store.isLoading.set(false);
+      store.error.set(undefined);
+    });
   }
 
   function settleTransportClose(run: AdapterRun): void {
+    report('run:end', () => settleTransportCloseUnreported(run));
+  }
+  function settleTransportCloseUnreported(run: AdapterRun): void {
     if (run.outcome === undefined) {
       if (run.finishedReceived) {
         // The server sent RUN_FINISHED and `onEvent` attributed it to this run,
@@ -579,6 +623,9 @@ function createAgentAdapter(
   }
 
   function abortRun(run: AdapterRun): void {
+    report('run:end', () => abortRunUnreported(run));
+  }
+  function abortRunUnreported(run: AdapterRun): void {
     if (run.outcome !== undefined) return;
     rollbackState();
     if (run.resumeAttempt) {
@@ -643,8 +690,10 @@ function createAgentAdapter(
       if (disposed || activeRun !== run || run.outcome !== undefined) return;
       await source.runAgent(runParameters);
       if (disposed || activeRun !== run) return;
-      if (interrupts.snapshot.phase === 'collecting' && !run.terminalReceived) { interrupts.ready(); publishInterrupt(); commitState(); void persistCurrent().catch(() => undefined); }
-      settleTransportClose(run);
+      report('run:end', () => {
+        if (interrupts.snapshot.phase === 'collecting' && !run.terminalReceived) { interrupts.ready(); publishInterrupt(); commitState(); void persistCurrent().catch(() => undefined); }
+        settleTransportClose(run);
+      });
       await persistenceWrites;
     } catch (err) {
       if (run.outcome === 'aborted' && safeIsAbortError(err)) return;
@@ -670,117 +719,123 @@ function createAgentAdapter(
       resolveCallbackRun(input.runId);
     },
     onEvent({ event, input }): void | { stopPropagation: boolean } {
-      if (disposed) return { stopPropagation: true };
-      const callbackRunId = input?.runId ?? (event as { runId?: string }).runId;
-      const run = resolveCallbackRun(callbackRunId);
-      if (!run) {
-        if (!callbackRunId) {
-          reduceEvent(event, store);
-          if (event.type === 'CUSTOM' && (event as { name?: string }).name === 'on_interrupt') {
-            interrupts.observeLegacy(store.interrupt()?.value);
-            interrupts.ready(); publishInterrupt();
+      // Each protocol event is one devtools report: every signal written while
+      // handling it, including interrupt-session and rollback writes.
+      return reportEvent(event.type, (): void | { stopPropagation: boolean } => {
+        if (disposed) return { stopPropagation: true };
+        const callbackRunId = input?.runId ?? (event as { runId?: string }).runId;
+        const run = resolveCallbackRun(callbackRunId);
+        if (!run) {
+          if (!callbackRunId) {
+            reduceEvent(event, store);
+            if (event.type === 'CUSTOM' && (event as { name?: string }).name === 'on_interrupt') {
+              interrupts.observeLegacy(store.interrupt()?.value);
+              interrupts.ready(); publishInterrupt();
+            }
           }
+          return;
         }
-        return;
-      }
-      if (run !== activeRun) {
-        if (event.type === 'RUN_FINISHED') finalizeDeliveryRun(store, run, 'success');
-        else if (event.type === 'RUN_ERROR') finalizeDeliveryRun(store, run, 'error');
-        return { stopPropagation: true };
-      }
-      // Before the outcome guards on purpose: every event the adapter attributes
-      // to this run counts as proof something reached the server, including ones
-      // a guard below suppresses. Events arriving after the run settles also set
-      // it, which is harmless — by then `outcome` is defined, so the classifier
-      // this feeds is already unreachable for that run.
-      run.sawAnyEvent = true;
-      if (run.outcome === 'aborted' || run.outcome === 'error' || run.outcome === 'interrupted') return { stopPropagation: true };
-      if (run.terminalReceived && (run.outcome !== 'paused' || (event.type !== 'CUSTOM' && event.type !== 'RUN_FINISHED'))) return { stopPropagation: true };
-      const hasDevelopmentEvidence = event.type !== 'RUN_FINISHED' || hasValidFinishedOutcome(event);
-      if (run.outcome === undefined && hasDevelopmentEvidence && supportedDevelopmentEventTypes.has(event.type)) {
-        developmentRuntime.milestone('transport.connected');
-      }
-      if (event.type === 'RUN_ERROR' && options.protectOperationErrors) {
-        failRun(run, undefined);
-        return;
-      }
-      if (event.type === 'RUN_FINISHED') {
-        const outcome = (event as unknown as { outcome?: { type: string; interrupts?: unknown[] } }).outcome;
-        try {
-          if (!hasValidFinishedOutcome(event)) throw new Error('Invalid run outcome');
-          if (outcome?.type === 'interrupt') interrupts.observeNative(outcome.interrupts ?? [], run.protocolRunId);
-        } catch (error) {
-          failRun(run, error);
+        if (run !== activeRun) {
+          if (event.type === 'RUN_FINISHED') finalizeDeliveryRun(store, run, 'success');
+          else if (event.type === 'RUN_ERROR') finalizeDeliveryRun(store, run, 'error');
           return { stopPropagation: true };
         }
-      }
-      const wasPending = run.outcome === undefined;
-      reduceEvent(event, store);
-      if (event.type === 'RUN_STARTED' && run.resumeAttempt && run.outcome === undefined
-        && (!(event as { runId?: string }).runId || (event as { runId?: string }).runId === run.protocolRunId)) {
-        interrupts.acknowledge(run.resumeAttempt.id); publishInterrupt();
-        void persistCurrent().catch(() => undefined);
-      }
-      if (event.type === 'CUSTOM' && (event as { name?: string }).name === 'on_interrupt') {
-        const value = (event as unknown as { value: unknown }).value;
-        let parsed = value;
-        if (typeof value === 'string') { try { parsed = JSON.parse(value); } catch { /* Keep opaque compatibility values. */ } }
-        interrupts.observeLegacy(parsed, run.protocolRunId);
-        publishInterrupt();
-      }
-      if (event.type === 'RUN_FINISHED') {
-        run.terminalReceived = true;
-        run.finishedReceived = true;
-        // A producer-cancelled run is handled like a local abort (see abortRun):
-        // state rolls back and a resume attempt lands in a recoverable phase.
-        // reduceEvent sets the outcome, so re-read it past the guard's narrowing.
-        const settledOutcome: AdapterRun['outcome'] = (run as AdapterRun).outcome;
-        if (settledOutcome === 'aborted') {
+        // Before the outcome guards on purpose: every event the adapter attributes
+        // to this run counts as proof something reached the server, including ones
+        // a guard below suppresses. Events arriving after the run settles also set
+        // it, which is harmless — by then `outcome` is defined, so the classifier
+        // this feeds is already unreachable for that run.
+        run.sawAnyEvent = true;
+        if (run.outcome === 'aborted' || run.outcome === 'error' || run.outcome === 'interrupted') return { stopPropagation: true };
+        if (run.terminalReceived && (run.outcome !== 'paused' || (event.type !== 'CUSTOM' && event.type !== 'RUN_FINISHED'))) return { stopPropagation: true };
+        const hasDevelopmentEvidence = event.type !== 'RUN_FINISHED' || hasValidFinishedOutcome(event);
+        if (run.outcome === undefined && hasDevelopmentEvidence && supportedDevelopmentEventTypes.has(event.type)) {
+          developmentRuntime.milestone('transport.connected');
+        }
+        if (event.type === 'RUN_ERROR' && options.protectOperationErrors) {
+          failRun(run, undefined);
+          return;
+        }
+        if (event.type === 'RUN_FINISHED') {
+          const outcome = (event as unknown as { outcome?: { type: string; interrupts?: unknown[] } }).outcome;
+          try {
+            if (!hasValidFinishedOutcome(event)) throw new Error('Invalid run outcome');
+            if (outcome?.type === 'interrupt') interrupts.observeNative(outcome.interrupts ?? [], run.protocolRunId);
+          } catch (error) {
+            failRun(run, error);
+            return { stopPropagation: true };
+          }
+        }
+        const wasPending = run.outcome === undefined;
+        reduceEvent(event, store);
+        if (event.type === 'RUN_STARTED' && run.resumeAttempt && run.outcome === undefined
+          && (!(event as { runId?: string }).runId || (event as { runId?: string }).runId === run.protocolRunId)) {
+          interrupts.acknowledge(run.resumeAttempt.id); publishInterrupt();
+          void persistCurrent().catch(() => undefined);
+        }
+        if (event.type === 'CUSTOM' && (event as { name?: string }).name === 'on_interrupt') {
+          const value = (event as unknown as { value: unknown }).value;
+          let parsed = value;
+          if (typeof value === 'string') { try { parsed = JSON.parse(value); } catch { /* Keep opaque compatibility values. */ } }
+          interrupts.observeLegacy(parsed, run.protocolRunId);
+          publishInterrupt();
+        }
+        if (event.type === 'RUN_FINISHED') {
+          run.terminalReceived = true;
+          run.finishedReceived = true;
+          // A producer-cancelled run is handled like a local abort (see abortRun):
+          // state rolls back and a resume attempt lands in a recoverable phase.
+          // reduceEvent sets the outcome, so re-read it past the guard's narrowing.
+          const settledOutcome: AdapterRun['outcome'] = (run as AdapterRun).outcome;
+          if (settledOutcome === 'aborted') {
+            rollbackState();
+            if (run.resumeAttempt) interrupts.fail(run.resumeAttempt.id, false);
+            publishInterrupt();
+            void persistCurrent().catch(() => undefined);
+          } else {
+            if (interrupts.snapshot.phase === 'collecting') interrupts.ready();
+            else if (run.resumeAttempt && run.outcome === 'success') interrupts.complete(run.resumeAttempt.id);
+            publishInterrupt();
+            commitState();
+            void persistCurrent().catch(() => undefined);
+          }
+        }
+        if (event.type === 'RUN_ERROR') {
+          run.terminalReceived = true;
+          if (run.resumeAttempt) { interrupts.fail(run.resumeAttempt.id, false); publishInterrupt(); }
           rollbackState();
-          if (run.resumeAttempt) interrupts.fail(run.resumeAttempt.id, false);
-          publishInterrupt();
-          void persistCurrent().catch(() => undefined);
-        } else {
-          if (interrupts.snapshot.phase === 'collecting') interrupts.ready();
-          else if (run.resumeAttempt && run.outcome === 'success') interrupts.complete(run.resumeAttempt.id);
-          publishInterrupt();
-          commitState();
           void persistCurrent().catch(() => undefined);
         }
-      }
-      if (event.type === 'RUN_ERROR') {
-        run.terminalReceived = true;
-        if (run.resumeAttempt) { interrupts.fail(run.resumeAttempt.id, false); publishInterrupt(); }
-        rollbackState();
-        void persistCurrent().catch(() => undefined);
-      }
-      if (run && event.type === 'RUN_FINISHED' && run.outcome === 'success') {
-        if (wasPending && hasDevelopmentEvidence && !store.interrupt() && !store.error()) {
-          developmentRuntime.milestone('runtime.first_stream_completed', Date.now() - run.startedAt);
-          if (run.resumedInterrupt) developmentRuntime.milestone('interrupt.handled');
+        if (run && event.type === 'RUN_FINISHED' && run.outcome === 'success') {
+          if (wasPending && hasDevelopmentEvidence && !store.interrupt() && !store.error()) {
+            developmentRuntime.milestone('runtime.first_stream_completed', Date.now() - run.startedAt);
+            if (run.resumedInterrupt) developmentRuntime.milestone('interrupt.handled');
+          }
+          finishRunTelemetry(run);
+        } else if (event.type === 'RUN_ERROR') {
+          failRunTelemetry((event as { message?: unknown }).message ?? event, run);
         }
-        finishRunTelemetry(run);
-      } else if (event.type === 'RUN_ERROR') {
-        failRunTelemetry((event as { message?: unknown }).message ?? event, run);
-      }
+      });
     },
     onRunFailed({ error, input }) {
-      if (disposed) return;
-      const run = resolveCallbackRun(input?.runId);
-      if (run) {
-        if (run.outcome === 'aborted' && safeIsAbortError(error)) {
+      return report('run:end', () => {
+        if (disposed) return;
+        const run = resolveCallbackRun(input?.runId);
+        if (run) {
+          if (run.outcome === 'aborted' && safeIsAbortError(error)) {
+            return options.protectOperationErrors ? ({ stopPropagation: true } as never) : undefined;
+          }
+          failRun(run, error);
           return options.protectOperationErrors ? ({ stopPropagation: true } as never) : undefined;
         }
-        failRun(run, error);
+        if (input?.runId) {
+          return options.protectOperationErrors ? ({ stopPropagation: true } as never) : undefined;
+        }
+        store.status.set('error');
+        store.isLoading.set(false);
+        store.error.set(options.protectOperationErrors ? protectedAgentError() : projectAgentError(error));
         return options.protectOperationErrors ? ({ stopPropagation: true } as never) : undefined;
-      }
-      if (input?.runId) {
-        return options.protectOperationErrors ? ({ stopPropagation: true } as never) : undefined;
-      }
-      store.status.set('error');
-      store.isLoading.set(false);
-      store.error.set(options.protectOperationErrors ? protectedAgentError() : projectAgentError(error));
-      return options.protectOperationErrors ? ({ stopPropagation: true } as never) : undefined;
+      });
     },
   });
 
@@ -845,8 +900,10 @@ function createAgentAdapter(
       if (!persistence) throw new Error('Interrupt recovery requires a persistence reconciler');
       const record = await reconcileOnce();
       if (disposed) return;
-      adoptRecord(record);
-      hydrated.set(true); store.error.set(undefined); store.status.set('idle');
+      report('history', () => {
+        adoptRecord(record);
+        hydrated.set(true); store.error.set(undefined); store.status.set('idle');
+      });
     },
     // Only a configured reconciler can answer authoritatively; without one
     // InterruptPersistence.reconcile() throws outright, so offering the control
@@ -879,7 +936,8 @@ function createAgentAdapter(
     dispose: () => {
       if (disposed) return;
       disposed = true;
-      if (activeRun) abortRun(activeRun);
+      const run = activeRun;
+      if (run) report('reset', () => abortRun(run));
       subscription.unsubscribe();
       source.abortRun();
       developmentRuntime.dispose();
@@ -917,14 +975,17 @@ function createAgentAdapter(
         if (opts?.interruptGeneration !== undefined && opts.interruptGeneration !== interrupts.snapshot.generation) {
           throw new Error('Stale interrupt generation: refresh the decision before submitting');
         }
-        const attempt = interrupts.claim(input, randomId(), randomId());
-        publishInterrupt();
-        applyStatePatch(input.state);
-        const userMsg = buildUserMessage(input);
-        if (userMsg) {
-          store.messages.update(prev => [...prev, userMsg]);
-          source.addMessage(userMsg as Parameters<typeof source.addMessage>[0]);
-        }
+        const attempt = report('submit', () => {
+          const claimed = interrupts.claim(input, randomId(), randomId());
+          publishInterrupt();
+          applyStatePatch(input.state);
+          const userMsg = buildUserMessage(input);
+          if (userMsg) {
+            store.messages.update(prev => [...prev, userMsg]);
+            source.addMessage(userMsg as Parameters<typeof source.addMessage>[0]);
+          }
+          return claimed;
+        });
         resumeInput = structuredClone({ state: source.state ?? {}, messages: source.messages ?? [], localMessages: store.messages() });
         await executeRun(
           'resume',
@@ -936,16 +997,18 @@ function createAgentAdapter(
       }
 
       assertNoInterrupt();
-      applyStatePatch(input.state);
+      report('submit', () => {
+        applyStatePatch(input.state);
 
-      // Optimistic append of user message to our signals and to the source
-      // agent's own message list so runAgent() sees the new message.
-      const userMsg = buildUserMessage(input);
-      if (userMsg) {
-        store.messages.update((prev) => [...prev, userMsg]);
-        // Sync to AG-UI source so it's included in the next run's input.
-        source.addMessage(userMsg as Parameters<typeof source.addMessage>[0]);
-      }
+        // Optimistic append of user message to our signals and to the source
+        // agent's own message list so runAgent() sees the new message.
+        const userMsg = buildUserMessage(input);
+        if (userMsg) {
+          store.messages.update((prev) => [...prev, userMsg]);
+          // Sync to AG-UI source so it's included in the next run's input.
+          source.addMessage(userMsg as Parameters<typeof source.addMessage>[0]);
+        }
+      });
 
       // Record the input so retry() can re-run it without re-appending the
       // user message (the message is already in the list by this point).
@@ -958,31 +1021,36 @@ function createAgentAdapter(
       if (!hydrated()) await ready;
       assertAvailable();
       if (interrupts.snapshot.attempt) {
-        const attempt = interrupts.retry();
-        publishInterrupt();
-        if (resumeInput) {
-          const restored = structuredClone(resumeInput);
-          source.state = restored.state; source.messages = restored.messages;
-          store.state.set(restored.state);
-          if (restored.localMessages) store.messages.set(restored.localMessages);
-          else {
-            store.deliveryRun = null;
-            reduceEvent({ type: 'MESSAGES_SNAPSHOT', messages: restored.messages } as never, store);
+        const attempt = report('submit', () => {
+          const retried = interrupts.retry();
+          publishInterrupt();
+          if (resumeInput) {
+            const restored = structuredClone(resumeInput);
+            source.state = restored.state; source.messages = restored.messages;
+            store.state.set(restored.state);
+            if (restored.localMessages) store.messages.set(restored.localMessages);
+            else {
+              store.deliveryRun = null;
+              reduceEvent({ type: 'MESSAGES_SNAPSHOT', messages: restored.messages } as never, store);
+            }
           }
-        }
-        store.error.set(undefined);
+          store.error.set(undefined);
+          return retried;
+        });
         await executeRun('resume', { ...attempt.parameters, runId: attempt.runId }, true, true, attempt);
         return;
       }
       if (store.isLoading()) return;   // no-op while a run is in flight
       if (lastInput === undefined) return; // nothing to retry
       assertNoInterrupt();
-      store.error.set(undefined);
-      if (lastRunInput) {
-        const restored = structuredClone(lastRunInput);
-        source.state = restored.state; source.messages = restored.messages;
-        store.state.set(restored.state); store.messages.set(restored.localMessages ?? []);
-      }
+      report('submit', () => {
+        store.error.set(undefined);
+        if (lastRunInput) {
+          const restored = structuredClone(lastRunInput);
+          source.state = restored.state; source.messages = restored.messages;
+          store.state.set(restored.state); store.messages.set(restored.localMessages ?? []);
+        }
+      });
       // Re-run the same message list against the source without appending a
       // duplicate user message — the message is already in store.messages and
       // source's internal list from the original submit().
@@ -1023,7 +1091,7 @@ function createAgentAdapter(
       // new assistant response streams in. The trailing user message becomes
       // the active prompt for the next run — we must NOT re-add it.
       const trimmed = msgs.slice(0, userIdx + 1);
-      store.messages.set(trimmed);
+      report('submit', () => store.messages.set(trimmed));
 
       // Sync the trimmed list back to the source agent so its internal state
       // matches what we're about to re-run. source.setMessages() replaces the
