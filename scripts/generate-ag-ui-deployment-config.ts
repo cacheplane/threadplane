@@ -205,7 +205,7 @@ function stageDeps(repoRoot: string, outDir: string, topics: AgUiTopic[]): void 
       // Exclude virtualenvs / bytecode, plus repo-metadata files (nx project.json,
       // tsconfig*) that would create cross-tree duplicates if mirrored into deps/.
       filter: (s) => {
-        if (s.includes('.venv') || s.includes('__pycache__') || s.endsWith('.pyc')) return false;
+        if (s.includes('.venv') || s.includes('__pycache__') || s.includes('.pytest_cache') || s.endsWith('.pyc')) return false;
         const basename = s.split('/').pop() ?? '';
         if (basename === 'project.json') return false;
         if (basename.startsWith('tsconfig') && basename.endsWith('.json')) return false;
