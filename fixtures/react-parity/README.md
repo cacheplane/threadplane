@@ -59,10 +59,13 @@ published LangGraph package or full React component parity. See
 and [runtime/evidence.json](./runtime/evidence.json) for fresh verification,
 source/artifact identities and limitations.
 
-The current inventory has **1,459 records**: the historical 1,438 plus sixteen
+The foundation/runtime increment recorded **1,459 records**: the historical 1,438 plus sixteen
 private runtime production sources, three testing helpers, a runtime Vitest
-config and its type-test config asset. Public export occurrences remain 550 with
-514 distinct local definitions. Existing task assignments are preserved;
+config and its type-test config asset. That increment recorded 550 export
+occurrences with 514 distinct local definitions. Current facts live in
+[`baseline.json`](../../scripts/react-parity/baseline.json); run
+`node scripts/react-parity/inventory.mjs --check` to verify them against source.
+Existing task assignments are preserved;
 implementation subsets remain in progress, not whole-task completion. Core and
 native package contracts are checked separately by their tests and package gates.
 
@@ -130,9 +133,10 @@ an Angular fix or dependency update changes the migration baseline.
 | `@threadplane/angular` | Native Angular binding and presentation |
 | `@threadplane/react` | Native React binding, rendering and presentation |
 
-All four remain private version `0.0.0`. Core contracts and the native observation
-bindings are populated; content and presentation entries remain scaffolds. Core,
-content and React use plain ESM packaging; Angular uses Angular Package Format (APF).
+All four remain private version `0.0.0`. Core contracts, native observation bindings
+and bounded content/presentation slices are populated; the task index below
+describes the broader migration scope. Core, content and React use plain ESM
+packaging; Angular uses Angular Package Format (APF).
 The source/declaration verifier follows
 module edges, including type-only imports, aliases and re-exports. It blocks
 framework dependencies in neutral layers, UI dependencies in backend layers,
@@ -178,13 +182,14 @@ node scripts/react-parity/verify-packages.mjs
 node scripts/react-parity/verify-angular-package.mjs
 ```
 
-The plain packaging check packs core, content and React, validates their nine export
+The plain packaging check packs core, content and React, validates their thirteen export
 paths, README/license inclusion and production exclusions, then imports and
 type-checks the tarballs outside workspace aliases with `skipLibCheck: false`.
 Its core-only consumer checks all three core exports and rejects extra dependencies.
 The separate Angular check packs the one Angular APF entry and proves CLI
 compilation/linking with `skipLibCheck: false`. Both frameworks now run installed
-production browser apps with the fifteen shared scenarios. Inferred native contract
+production browser apps with the shared runtime, thread and checkpoint scenarios;
+the installed React check currently verifies 27 scenarios. Inferred native contract
 probes reject invalid tool names/arguments/results and deep mutations. The private
 runtime's narrow declaration is compiler-generated against installed core declarations,
 never hand-written; the staged SDK bundle is fixture-only. Both inspect consumer
@@ -260,7 +265,12 @@ to shared LangGraph text streaming and fixed function-tool execution with borrow
 Angular and React bindings: the runtime owns execution while each binding observes
 it. Explicit history loading, application values, interrupt observation/resume,
 owned-run reconnect, application input and child observation cover further subsets of T08–T10.
-Renderer reuse and SSR are deferred gates, alongside the broader T01–T39 map.
+The private read-only `RenderSpec` adapter reuses the pinned render data resolvers
+and is dogfooded by the native React trip recap. Native React also borrows owned
+Markdown/reasoning snapshots and presents supplied citations, approvals and
+message actions. See the [native example guide](../../examples/chat/native/README.md)
+for composition and installed proof commands. Render actions, the broader catalog
+and SSR remain future work, alongside the broader T01–T39 map.
 This bounded runtime proof does not establish complete migration parity.
 
 | Task | Scope |

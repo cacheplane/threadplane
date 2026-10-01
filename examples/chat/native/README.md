@@ -12,11 +12,28 @@ session. It adds authored trip-summary cards to the shared rows while preserving
 their Markdown and tool observations. View removal does not release that content;
 retiring the selection disposes it.
 
+React trip recaps compose the private `@threadplane/react/render` `RenderSpec`.
+Application composition prepares and caches a readonly tree and explicit state;
+an authored registry presents the supplied title, day/place repeats, counts and
+optional note. The view does not parse tool arguments or own render state,
+actions or effects. Angular retains its existing supplied-card presentation.
+
+React assistant rows compose `Citations` from explicitly supplied message
+metadata. Sources preserve their order, indices and literal title/snippet/type
+text; links use the shared Markdown URL policy. The view does not fetch metadata
+or icons. Installed production checks cover restored sources, same-ID metadata
+updates, unsafe URLs, literal text and narrow-screen wrapping.
+
 The React view composes `MessageList` with a stable authored row renderer and
 `ChatInput` with the application's existing submit/stop commands. Its bounded
 transcript follows updates only while pinned to the bottom. Conversation changes
 reset the list; a title refresh keeps its DOM and scroll position. The React-only
 production scroll test covers these behaviors against installed candidates.
+Where `ResizeObserver` is available, one observer watches the content wrapper and
+scroll region to follow disclosure growth and viewport resizing while pinned.
+Readers above the bottom keep their position; without the observer, row-update
+following remains available. The installed proof checks both resize directions,
+repinning, and retained region/row identity.
 
 React assistant rows also compose `Reasoning` using independently owned reasoning
 Markdown snapshots. Saved reasoning starts collapsed; streamed reasoning starts
