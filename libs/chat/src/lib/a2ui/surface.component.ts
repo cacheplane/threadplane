@@ -1,5 +1,5 @@
 import {
-  Component, computed, effect, input, output, untracked, ChangeDetectionStrategy, Type,
+  Component, computed, effect, inject, input, output, untracked, ChangeDetectionStrategy, Type,
 } from '@angular/core';
 import { NgComponentOutlet } from '@angular/common';
 import type { A2uiSurface, A2uiActionMessage, A2uiErrorMessage, A2uiCheck } from '@threadplane/a2ui';
@@ -13,6 +13,7 @@ import { buildA2uiActionMessage } from './build-action-message';
 import { A2uiDefaultFallbackComponent } from './a2ui-default-fallback.component';
 import type { A2uiSurfaceState } from './surface-store';
 import type { A2uiViews } from './views';
+import { ɵprovideRenderDevtools } from '../devtools/devtools-render-report';
 
 @Component({
   selector: 'a2ui-surface',
@@ -23,6 +24,13 @@ import type { A2uiViews } from './views';
     NgComponentOutlet,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // Development only: the AG-UI DevTools render report, keyed by surfaceId.
+  viewProviders: [
+    ɵprovideRenderDevtools(() => {
+      const host = inject(A2uiSurfaceComponent);
+      return () => (host.state()?.surface ?? host.surface())?.surfaceId;
+    }),
+  ],
   // The host applies the agent-set surface theme (`createSurface.theme`)
   // as inline CSS custom properties. Catalog components consume
   // `--a2ui-primary` for accents (buttons, sliders, focus, etc.).
