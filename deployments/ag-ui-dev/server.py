@@ -7,7 +7,6 @@ import os
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from ag_ui_langgraph import add_langgraph_fastapi_endpoint, LangGraphAgent
-from agent_framework_ag_ui import add_agent_framework_fastapi_endpoint
 from ag_ui_strands import add_strands_fastapi_endpoint
 
 from deps.a2ui.src.graph import graph as a2ui_graph
@@ -15,7 +14,6 @@ from deps.aws_strands.src.agent import agent as aws_strands_agent
 from deps.client_tools.src.graph import graph as client_tools_graph
 from deps.interrupts.src.graph import graph as interrupts_graph
 from deps.json_render.src.graph import graph as json_render_graph
-from deps.microsoft_agent_framework.src.agent import agent as microsoft_agent_framework_agent
 from deps.streaming.src.graph import graph as streaming_graph
 from deps.subagents.src.graph import graph as subagents_graph
 from deps.subagents.src.streaming.subagent_emitting_agent import SubagentEmittingAgent
@@ -67,11 +65,6 @@ add_langgraph_fastapi_endpoint(
     app,
     LangGraphAgent(name="json-render", graph=json_render_graph),
     path="/agent/json-render",
-)
-add_agent_framework_fastapi_endpoint(
-    app,
-    microsoft_agent_framework_agent,
-    path="/agent/microsoft-agent-framework",
 )
 add_langgraph_fastapi_endpoint(
     app,

@@ -20,7 +20,7 @@ $ uv run python -c "from ag_ui.core import SubagentStartedEvent, TextMessageCont
 annotation=Union[str, NoneType] required=False default=None alias='subagentRunId' alias_priority=1
 ```
 
-`ag-ui-protocol 0.1.22` ships `SubagentStartedEvent` (`subagent_run_id`,
+`ag-ui-protocol` 1.0.0 ships the `SUBAGENT_*` events and the `RUN_STARTED.protocolVersion` field. The `ag-ui-langgraph` 0.0.45 bridge opens the run without a version; `SubagentEmittingAgent` stamps `"1.0"` on its way out, so the capture below carries it. The protocol defines `SubagentStartedEvent` (`subagent_run_id`,
 `name`, `description`, `parent_subagent_run_id`, `parent_tool_call_id`,
 `parent_message_id`), `SubagentFinishedEvent` (`subagent_run_id`, `result`,
 `outcome` = `SubagentFinishedSuccessOutcome | SubagentFinishedSuspendedOutcome`)
@@ -165,7 +165,7 @@ delegated three times again (research → booking → itinerary); the first roun
 is shown, the other two are shape-identical.
 
 ```
-1    {"type":"RUN_STARTED","threadId":"capture-thread-2","runId":"capture-run-2"}
+1    {"type":"RUN_STARTED","threadId":"capture-thread-2","runId":"capture-run-2","protocolVersion":"1.0"}
 3    {"type":"STEP_STARTED","stepName":"orchestrator"}
 7    {"type":"TOOL_CALL_START","toolCallId":"call_CN5GEDy9byHqg18I9dAhnUDB","toolCallName":"task","parentMessageId":"lc_run--01a06373-7a61-7cb2-a616-3b1e3ee01e57"}
 9    {"type":"TOOL_CALL_ARGS","toolCallId":"call_CN5GEDy9byHqg18I9dAhnUDB","delta":"{\""}

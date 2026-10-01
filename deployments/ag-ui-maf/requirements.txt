@@ -1,0 +1,6 @@
+# GENERATED — do not edit. Source: scripts/generate-ag-ui-deployment-config.ts
+agent-framework-ag-ui==1.2.1
+agent-framework-core==1.16.0
+agent-framework-openai==1.14.1
+fastapi==0.139.2
+uvicorn==0.52.4
