@@ -5,7 +5,11 @@ import type {
   ToolContract,
 } from '@threadplane/core';
 import { createMarkdown } from '../markdown/create-markdown.js';
-import type { Markdown, MarkdownSnapshot } from '../markdown/types.js';
+import type {
+  Markdown,
+  MarkdownDocument,
+  MarkdownSnapshot,
+} from '../markdown/types.js';
 
 /** One transcript row. Unchanged rows keep their identity across projections. */
 export interface MessageRow<
@@ -18,6 +22,8 @@ export interface MessageRow<
   readonly role: Message['role'];
   readonly message: Message;
   readonly markdown: MarkdownSnapshot;
+  /** Independently owned backend reasoning; absent for omitted or empty text. */
+  readonly reasoning?: MarkdownSnapshot;
   readonly toolCalls: readonly ToolCall<TTools>[];
 }
 
@@ -46,6 +52,27 @@ export function createMessageContent<
 >(options: MessageContentOptions = {}): MessageContent<TTools> {
   const factory = options.markdownFactory ?? createMarkdown;
   const owners = new Map<string, Markdown>();
+  const reasoningOwners = new Map<string, Markdown>();
+  const projectMarkdown = (
+    collection: Map<string, Markdown>,
+    id: string,
+    document: MarkdownDocument
+  ): MarkdownSnapshot => {
+    let owner = collection.get(id);
+    if (!owner) {
+      owner = factory(document, { violationPolicy: 'rebuild' });
+      collection.set(id, owner);
+    } else {
+      const accepted = owner.getSnapshot().document;
+      if (
+        accepted.generation !== document.generation ||
+        accepted.phase !== document.phase ||
+        accepted.content !== document.content
+      )
+        owner.update(document);
+    }
+    return owner.getSnapshot();
+  };
   let rows: readonly MessageRow<TTools>[] = Object.freeze([]);
   let messages: readonly Message[] | undefined;
   let toolCalls: readonly ToolCall<TTools>[] | undefined;
@@ -63,10 +90,12 @@ export function createMessageContent<
       )
         return rows;
       const present = new Set(next.messages.map((message) => message.id));
-      for (const [id, owner] of owners) {
-        if (present.has(id)) continue;
-        owner.dispose();
-        owners.delete(id);
+      for (const collection of [owners, reasoningOwners]) {
+        for (const [id, owner] of collection) {
+          if (present.has(id)) continue;
+          owner.dispose();
+          collection.delete(id);
+        }
       }
       const previous = new Map(rows.map((row) => [row.id, row]));
       const projected = next.messages.map((message): MessageRow<TTools> => {
@@ -75,20 +104,18 @@ export function createMessageContent<
           phase: message.delivery.phase,
           content: message.content,
         };
-        let owner = owners.get(message.id);
-        if (!owner) {
-          owner = factory(document, { violationPolicy: 'rebuild' });
-          owners.set(message.id, owner);
+        const markdown = projectMarkdown(owners, message.id, document);
+        let reasoning: MarkdownSnapshot | undefined;
+        if (message.reasoning !== undefined && message.reasoning.length > 0) {
+          reasoning = projectMarkdown(reasoningOwners, message.id, {
+            generation: `${message.delivery.generation}:reasoning`,
+            phase: message.delivery.phase,
+            content: message.reasoning,
+          });
         } else {
-          const accepted = owner.getSnapshot().document;
-          if (
-            accepted.generation !== document.generation ||
-            accepted.phase !== document.phase ||
-            accepted.content !== document.content
-          )
-            owner.update(document);
+          reasoningOwners.get(message.id)?.dispose();
+          reasoningOwners.delete(message.id);
         }
-        const markdown = owner.getSnapshot();
         const calls = projectedCalls.filter(
           (call) =>
             message.toolCallIds?.includes(call.id) ||
@@ -98,6 +125,7 @@ export function createMessageContent<
         if (
           old?.message === message &&
           old.markdown === markdown &&
+          old.reasoning === reasoning &&
           old.toolCalls.length === calls.length &&
           calls.every((call, index) => call === old.toolCalls[index])
         )
@@ -107,6 +135,7 @@ export function createMessageContent<
           role: message.role,
           message,
           markdown,
+          ...(reasoning === undefined ? {} : { reasoning }),
           toolCalls: Object.freeze(calls),
         });
       });
@@ -122,8 +151,10 @@ export function createMessageContent<
     dispose() {
       if (disposed) return;
       disposed = true;
-      for (const owner of owners.values()) owner.dispose();
-      owners.clear();
+      for (const collection of [owners, reasoningOwners]) {
+        for (const owner of collection.values()) owner.dispose();
+        collection.clear();
+      }
     },
   };
 }

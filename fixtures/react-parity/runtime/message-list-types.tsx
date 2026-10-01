@@ -1,5 +1,6 @@
 import { MessageList, type MessageListProps } from '@threadplane/react/chat';
 import type { MessageRow } from '@threadplane/content/messages';
+import type { MarkdownSnapshot } from '@threadplane/content/markdown';
 
 interface Tools {
   weather: { args: { city: string }; result: { temperature: number } };
@@ -17,6 +18,13 @@ const props: MessageListProps<WeatherRow> = {
 <MessageList
   rows={rows}
   renderMessage={(row) => {
+    const reasoning: MarkdownSnapshot | undefined = row.reasoning;
+    // @ts-expect-error Projected reasoning is readonly.
+    row.reasoning = undefined;
+    if (reasoning) {
+      // @ts-expect-error Reasoning document text is readonly.
+      reasoning.document.content = 'changed';
+    }
     const summary: string = row.summary;
     // @ts-expect-error Authored rows retain their readonly fields.
     row.summary = 'changed';
