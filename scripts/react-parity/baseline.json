@@ -1,11 +1,8 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "4c98d70b62f2cb753e0898a4f424ad72b063ec77",
+  "baselineHead": "0e561251cb474ebb0d75a711207380f2bc04d2f5",
   "sourceState": {
-    "modified": [
-      "libs/react/README.md",
-      "libs/react/src/chat/message-list.tsx"
-    ],
+    "modified": [],
     "untracked": []
   },
   "scope": {
@@ -13232,7 +13229,7 @@
       "id": "source:libs/cockpit-registry/src/lib/content-descriptors.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/content-descriptors.ts",
-      "sha256": "38ec3c863ecc0dd2e09364e0d140224b7ef4d2ceb11a6954259a3bd1e40cd90f"
+      "sha256": "4e152da1fc0cbd9b32f1f1850ac53ae954314fb47963901f452ec50b5b547db9"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/docs-links.ts",
@@ -13250,7 +13247,7 @@
       "id": "source:libs/cockpit-registry/src/lib/manifest.types.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/manifest.types.ts",
-      "sha256": "e3083cfb19daa04c698f3a86d3e73c0b2e45607cd866a90a78643741c623e902"
+      "sha256": "821c287857d46ce8c5ffc94fca88ea5704fabc12be541aa06ff37eb18695e08a"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/resolve-language.ts",
