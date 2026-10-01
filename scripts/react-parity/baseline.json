@@ -1,12 +1,16 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "9740832adbc165b0884f6868d1ad916ad8ab0b69",
+  "baselineHead": "1008c5efe672b1b084e88f9a32f7b8032aa3eaba",
   "sourceState": {
     "modified": [
-      "libs/content/README.md",
-      "libs/content/src/messages/create-message-content.ts"
+      "libs/react/README.md",
+      "libs/react/src/chat/index.ts",
+      "libs/react/src/chat/message-list.tsx",
+      "libs/react/src/chat/styles.css"
     ],
-    "untracked": []
+    "untracked": [
+      "libs/react/src/chat/reasoning.tsx"
+    ]
   },
   "scope": {
     "libraries": [
@@ -817,7 +821,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "e40c342cdf63f5e82aa75d0444da1aaa26c8067987a6d52eabee698fee60bf5e"
+      "sha256": "9bc5bab8f6da1f8e5f4b799e6b90a42b7d5053ed75a57a88fbdeee3ae6e960c0"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -835,7 +839,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "09c1c1b64a35bda7aaac87a2330eec5921c2959e2ad60cf582d33b8f26ac2dc2"
+      "sha256": "0440c7a7b074d4858487057b9f714a9c1d0f2a692c6b1703631f923470abedd8"
     },
     {
       "id": "asset:libs/react/tsconfig.json",
@@ -9791,6 +9795,34 @@
       ]
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#Reasoning",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "Reasoning",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/reasoning.tsx",
+          "symbol": "Reasoning",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function Reasoning({ snapshot, durationMs, label, defaultExpanded = false, className, }: ReasoningProps) {\n    const { generation, phase, content } = snapshot.document;\n    const streaming = phase === 'streaming';\n    const id = useId();\n    const [choice, setChoice] = useState({\n        generation,\n        phase,\n        expanded: null as boolean | null,\n    });\n    let current = choice;\n    if (choice.generation !== generation || choice.phase !== phase) {\n        current = {\n            generation,\n            phase,\n            expanded: choice.generation !== generation || streaming ? null : choice.expanded,\n        };\n        setChoice(current);\n    }\n    if (content.length === 0)\n        return null;\n    const expanded = current.expanded ?? (streaming || defaultExpanded);\n    const text = label ||\n        (streaming\n            ? 'Thinking…'\n            : durationMs === undefined\n                ? 'Show reasoning'\n                : `Thought for ${formatDuration(durationMs)}`);\n    return (<div className={['tp-reasoning', className].filter(Boolean).join(' ')}>\n      <button id={`${id}-toggle`} type=\"button\" className=\"tp-reasoning__toggle\" aria-expanded={expanded} aria-controls={`${id}-body`} onClick={() => setChoice({ ...current, expanded: !expanded })}>\n        <span aria-hidden=\"true\">{expanded ? '▾' : '▸'}</span> {text}\n      </button>\n      <div id={`${id}-body`} role=\"region\" aria-label=\"Reasoning\" hidden={!expanded} className=\"tp-reasoning__body\">\n        <Markdown snapshot={snapshot}/>\n      </div>\n    </div>);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ReasoningProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ReasoningProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/reasoning.tsx",
+          "symbol": "ReasoningProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface ReasoningProps {\n    readonly snapshot: MarkdownSnapshot;\n    readonly durationMs?: number;\n    readonly label?: string;\n    readonly defaultExpanded?: boolean;\n    readonly className?: string;\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/react/src/chat/index.ts#TextTranscript",
       "kind": "export",
       "path": "libs/react/src/chat/index.ts",
@@ -13772,7 +13804,7 @@
       "id": "source:libs/react/src/chat/index.ts",
       "kind": "source",
       "path": "libs/react/src/chat/index.ts",
-      "sha256": "3482879e66490cd0bb9821fd7b3c11704c0013b562ecb1c1c6cd35c4236cb8b5"
+      "sha256": "125f02eeaf4e9204b5a73ccee121e4ff376c89dafed4cd3eb004ea86dcd97fae"
     },
     {
       "id": "source:libs/react/src/chat/internal/isomorphic-layout-effect.ts",
@@ -13790,7 +13822,13 @@
       "id": "source:libs/react/src/chat/message-list.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/message-list.tsx",
-      "sha256": "aabe1be304e4b44670bd1aefb553ce6f2ee2bef27b655c88c1c3150c72004041"
+      "sha256": "d5299f7987b1424de7d61ae5d1648397ae1593f1283c48d92404c329295d34cb"
+    },
+    {
+      "id": "source:libs/react/src/chat/reasoning.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/reasoning.tsx",
+      "sha256": "bfaa8cc507e536d1edc87e0070af6b2996b1216fabea72a226eee03e06cf405f"
     },
     {
       "id": "source:libs/react/src/chat/text-transcript.tsx",

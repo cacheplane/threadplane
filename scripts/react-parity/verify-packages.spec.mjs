@@ -118,7 +118,7 @@ for (const [name, entry, files] of [
 });
 test('React chat requires its real supported export', () => {
   const component = () => undefined;
-  const supported = { Chat: component, ChatInput: component, MessageList: component, TextTranscript: component, ToolObservation: component };
+  const supported = { Chat: component, ChatInput: component, MessageList: component, Reasoning: component, TextTranscript: component, ToolObservation: component };
   assert.throws(() => packageVerifier.assertSupportedExports('react/chat', {}), /Chat/);
   for (const name of Object.keys(supported)) {
     const { [name]: _omitted, ...rest } = supported;

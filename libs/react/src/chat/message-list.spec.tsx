@@ -1,4 +1,4 @@
-import { cleanup, render } from '@testing-library/react';
+import { cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   streamingDelivery,
@@ -32,6 +32,49 @@ const snap = (
   Object.freeze({ status: 'idle', messages, toolCalls }) as AgentSnapshot;
 
 describe('MessageList', () => {
+  it('renders reasoning only for assistants and resets disclosure after removal', () => {
+    const content = createMessageContent();
+    const other = ['user', 'system', 'tool'].map((role) =>
+      msg(role, role, {
+        role: role as Message['role'],
+        reasoning: `Hidden ${role}`,
+      })
+    );
+    const assistant = msg('a', 'Answer', { reasoning: '**Why**' });
+    const view = render(
+      <MessageList rows={content.project(snap([...other, assistant]))} />
+    );
+    expect(view.getAllByRole('button', { name: 'Thinking…' })).toHaveLength(1);
+    expect(view.getByRole('region', { name: 'Reasoning' }).textContent).toBe(
+      'Why'
+    );
+    fireEvent.click(view.getByRole('button', { name: 'Thinking…' }));
+    view.rerender(
+      <MessageList
+        rows={content.project(snap([...other, msg('a', 'Answer')]))}
+      />
+    );
+    expect(view.queryByRole('button')).toBeNull();
+    view.rerender(
+      <MessageList rows={content.project(snap([...other, assistant]))} />
+    );
+    expect(view.getByRole('button').getAttribute('aria-expanded')).toBe('true');
+    content.dispose();
+  });
+
+  it('leaves reasoning presentation to a custom renderer', () => {
+    const content = createMessageContent();
+    const view = render(
+      <MessageList
+        rows={content.project(snap([msg('a', 'Answer', { reasoning: 'Why' })]))}
+        renderMessage={(row) => <p>{row.message.content}</p>}
+      />
+    );
+    expect(view.getByText('Answer')).toBeTruthy();
+    expect(view.queryByRole('button')).toBeNull();
+    content.dispose();
+  });
+
   it('renders Markdown for text roles, literal text for tool role and tool observations', () => {
     const rows = createMessageContent().project(
       snap(

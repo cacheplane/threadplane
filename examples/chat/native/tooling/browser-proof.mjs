@@ -358,7 +358,16 @@ export async function runViewProof(browser, retained) {
     lifecycleName(retained.framework),
     [
       ...initial(),
-      run('a', 'Show the supplied recap.', [summaryEvent]),
+      run('a', 'Show the supplied recap.', [
+        {
+          event: 'values',
+          data: {
+            messages: [
+              { ...summaryMessage, reasoning: 'Saved recap reasoning' },
+            ],
+          },
+        },
+      ]),
       summaryWrite(),
       run(
         'a',
@@ -371,6 +380,7 @@ export async function runViewProof(browser, retained) {
                 type: 'AIMessageChunk',
                 id: 'absent-answer',
                 content: '# Updated while absent',
+                reasoning: '**Reasoning updated while absent**',
               },
               {},
             ],
@@ -402,6 +412,7 @@ export async function runViewProof(browser, retained) {
         window.nativeViewProof.inspect()
       );
       assert.equal(before.tripSummaryCount, 2);
+      assert.ok(before.reasoning.includes('Saved recap reasoning'));
       await page.evaluate(() => window.nativeViewProof.unmount());
       await expect(page.locator('#root')).toBeEmpty();
       const absent = await page.evaluate(() =>
@@ -423,7 +434,13 @@ export async function runViewProof(browser, retained) {
         assert.equal(absent[key], before[key], key);
       assert.deepEqual(
         await page.evaluate(() => window.nativeViewProof.compare('mounted')),
-        { snapshot: true, markdown: true, owner: true, tripSummaries: true }
+        {
+          snapshot: true,
+          markdown: true,
+          reasoning: true,
+          owner: true,
+          tripSummaries: true,
+        }
       );
       // A successfully delivered response after unmount proves transport survived.
       backend.steps[5].releaseHeaders();
@@ -434,6 +451,9 @@ export async function runViewProof(browser, retained) {
         window.nativeViewProof.mark('absent');
         return window.nativeViewProof.inspect();
       });
+      assert.ok(
+        updated.reasoning.includes('**Reasoning updated while absent**')
+      );
       assert.ok(
         updated.parsers + updated.updates > absent.parsers + absent.updates
       );
@@ -447,6 +467,14 @@ export async function runViewProof(browser, retained) {
       await expect(
         page.getByRole('heading', { name: 'Updated while absent' })
       ).toBeVisible();
+      if (retained.framework === 'react') {
+        await expect(
+          page.getByRole('region', { name: 'Reasoning' }).last()
+        ).toHaveText('Reasoning updated while absent');
+        await expect(
+          page.getByRole('button', { name: 'Thinking…' })
+        ).toHaveAttribute('aria-expanded', 'true');
+      }
       await expect(
         page.getByRole('region', { name: 'Trip summary', exact: true })
       ).toHaveCount(2);
@@ -468,7 +496,13 @@ export async function runViewProof(browser, retained) {
         assert.equal(remounted[key], updated[key], key);
       assert.deepEqual(
         await page.evaluate(() => window.nativeViewProof.compare('absent')),
-        { snapshot: true, markdown: true, owner: true, tripSummaries: true }
+        {
+          snapshot: true,
+          markdown: true,
+          reasoning: true,
+          owner: true,
+          tripSummaries: true,
+        }
       );
       await page.evaluate(() => window.nativeViewProof.dispose());
       await physicallyClosed(backend.steps[5]);

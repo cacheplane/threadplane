@@ -63,6 +63,7 @@ function fixture(t, framework) {
           'markdown/markdown.js',
           'chat/tool-observation.js',
           'chat/message-list.js',
+          'chat/reasoning.js',
         ].map((n) => 'node_modules/@threadplane/react/src/' + n)),
   ];
   const types = [
@@ -354,6 +355,16 @@ test('React rejects missing installed MessageList runtime', (t) => {
   );
   f.save();
   assert.throws(() => readViewProof(f.root), /message-list/);
+});
+
+test('React rejects missing installed Reasoning runtime', (t) => {
+  const f = fixture(t, 'react');
+  const path = 'node_modules/@threadplane/react/src/chat/reasoning.js';
+  f.record.runtime = f.record.runtime.filter((p) => p !== path);
+  delete f.record.inputs[path];
+  rmSync(join(f.root, 'inputs', path));
+  f.save();
+  assert.throws(() => readViewProof(f.root), /reasoning/);
 });
 
 for (const [name, mutate] of [

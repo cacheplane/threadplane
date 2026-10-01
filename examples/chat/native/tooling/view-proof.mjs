@@ -108,6 +108,7 @@ function composition(selected, types, runtime) {
       'markdown/markdown.js',
       'chat/tool-observation.js',
       'chat/message-list.js',
+      'chat/reasoning.js',
     ])
       assert.ok(
         runtime.includes('node_modules/@threadplane/react/src/' + p),

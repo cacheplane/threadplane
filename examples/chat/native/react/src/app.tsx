@@ -4,6 +4,7 @@ import { Markdown } from '@threadplane/react/markdown';
 import {
   ChatInput,
   MessageList,
+  Reasoning,
   ToolObservation,
 } from '@threadplane/react/chat';
 import type {
@@ -27,6 +28,9 @@ const Message = memo(function Message({ row }: { row: MessageContent }) {
       aria-label={`${row.role} message`}
     >
       <h3 className="role-label">{row.role}</h3>
+      {row.role === 'assistant' && row.reasoning && (
+        <Reasoning snapshot={row.reasoning} />
+      )}
       {row.role === 'tool' ? (
         <pre>{row.message.content}</pre>
       ) : (

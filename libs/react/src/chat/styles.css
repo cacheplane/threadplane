@@ -48,6 +48,27 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+.tp-reasoning {
+  margin-block: 0.5rem;
+}
+.tp-reasoning__toggle {
+  border: 0;
+  padding: 0.25rem 0;
+  background: transparent;
+  color: var(--tp-chat-muted, var(--ds-text-secondary, GrayText));
+  font: inherit;
+  cursor: pointer;
+}
+.tp-reasoning__toggle:focus-visible {
+  outline: 2px solid var(--tp-chat-accent, var(--ds-accent, Highlight));
+  outline-offset: 3px;
+}
+.tp-reasoning__body {
+  margin-block-start: 0.5rem;
+  padding-inline-start: 0.75rem;
+  border-inline-start: 2px solid
+    var(--tp-chat-border, var(--ds-border, GrayText));
+}
 .tp-chat__error {
   margin: 0;
   color: var(--tp-chat-danger);

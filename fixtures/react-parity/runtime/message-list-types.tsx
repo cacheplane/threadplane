@@ -1,4 +1,9 @@
-import { MessageList, type MessageListProps } from '@threadplane/react/chat';
+import {
+  MessageList,
+  Reasoning,
+  type MessageListProps,
+  type ReasoningProps,
+} from '@threadplane/react/chat';
 import type { MessageRow } from '@threadplane/content/messages';
 import type { MarkdownSnapshot } from '@threadplane/content/markdown';
 
@@ -10,6 +15,17 @@ interface WeatherRow extends MessageRow<Tools> {
   readonly summary: string;
 }
 declare const rows: readonly WeatherRow[];
+declare const reasoningSnapshot: MarkdownSnapshot;
+const reasoningProps: ReasoningProps = {
+  snapshot: reasoningSnapshot,
+  durationMs: 1000,
+  defaultExpanded: true,
+};
+<Reasoning {...reasoningProps} />;
+// @ts-expect-error Installed view requires an owned snapshot.
+<Reasoning snapshot="reasoning" />;
+// @ts-expect-error Installed props are readonly.
+reasoningProps.snapshot = reasoningSnapshot;
 const props: MessageListProps<WeatherRow> = {
   rows,
   renderMessage: (row) => row.summary,

@@ -209,6 +209,7 @@ export function assertSupportedExports(project, entry) {
         'Chat',
         'ChatInput',
         'MessageList',
+        'Reasoning',
         'TextTranscript',
         'ToolObservation',
       ],

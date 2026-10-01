@@ -106,11 +106,24 @@ The component does not parse arguments, infer execution status, subscribe or
 execute tools. Updating text preserves its mounted section and arguments DOM;
 remounting creates new DOM.
 
-The root remains headless. These text views do not provide Markdown, execution
+The root remains headless. `TextTranscript` and `ToolObservation` do not provide Markdown, execution
 controls, citations, reasoning, rich chat parity, SSR or hydration support. The private
 AG-UI review uses an O(N) pure root-text selection; previous-output row reuse is an
 optional bounded current-row optimization. React composition memoizes by the actual
 owner and immutable transcript reference without advancing a mutable render cache.
+
+`Reasoning` borrows a required owned `MarkdownSnapshot`, typically
+`row.reasoning` from `@threadplane/content/messages`. It renders the existing
+Markdown view inside an accessible disclosure. Streaming defaults open with
+“Thinking…”; completed content defaults collapsed with “Show reasoning”. Empty
+documents hide the disclosure. Optional `label`, `defaultExpanded`, `className`
+and app-supplied `durationMs` customize presentation; no timing is inferred.
+
+Manual expansion choices persist through updates and completion within a
+generation. A new generation or completed document reopening resets the choice.
+The view never parses, subscribes, runs commands or disposes its snapshot. Default
+`MessageList` shows reasoning before assistant answers; custom renderers select
+their own presentation. Styles remain opt-in through `/chat/styles.css`.
 
 `@threadplane/react/markdown` exports the client component `Markdown` and readonly
 `MarkdownProps`. It accepts a required, whole `MarkdownSnapshot` from an app-owned

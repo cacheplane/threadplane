@@ -2058,9 +2058,10 @@
         "T28"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/reasoning.tsx",
-      "reason": "Native component. Streaming duration and disclosure without losing manual choice; stable timing."
+      "reason": "Private React disclosure borrows owned reasoning Markdown and preserves manual choices within a response.",
+      "note": "Source state/accessibility, installed native browser and absent-view lifetime proofs. Timing is app supplied; no inferred elapsed time, SSR or public distribution."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-scroll-bubble/chat-scroll-bubble.component.ts#ChatScrollBubbleComponent",
@@ -5278,9 +5279,10 @@
         "T28"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/reasoning.tsx",
-      "reason": "Native component. Streaming duration and disclosure without losing manual choice; stable timing."
+      "reason": "Private React disclosure borrows owned reasoning Markdown and preserves manual choices within a response.",
+      "note": "Source state/accessibility, installed native browser and absent-view lifetime proofs. Timing is app supplied; no inferred elapsed time, SSR or public distribution."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatRenderEvent",
@@ -10042,7 +10044,9 @@
         "T28"
       ],
       "treatment": "react",
-      "status": "planned"
+      "status": "in-progress",
+      "reason": "Private React disclosure borrows owned reasoning Markdown and preserves manual choices within a response.",
+      "note": "Source state/accessibility, installed native browser and absent-view lifetime proofs. Timing is app supplied; no inferred elapsed time, SSR or public distribution."
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-scroll-bubble/chat-scroll-bubble.component.ts",
@@ -14563,6 +14567,36 @@
       "status": "in-progress",
       "reason": "Private native snapshot presentation and fixed URL projection; rich rendering and legacy lifecycle migration remain separate.",
       "note": "Readonly whole snapshots, semantic nodes, literal HTML, raw math/citation fallbacks and local image state. This records a bounded native surface, not full legacy parity or public distribution."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#Reasoning",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private borrowed reasoning Markdown disclosure, composed by default assistant rows and the native React example.",
+      "note": "Scoped browser, state, accessibility, installed declaration and absent-view lifetime proofs; no inferred timing, execution ownership, SSR or publication claim."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ReasoningProps",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly presentation props for an application-owned reasoning MarkdownSnapshot.",
+      "note": "Owned snapshot required; duration is supplied by the application. Raw strings and mutations fail source/installed type contracts."
+    },
+    {
+      "id": "source:libs/react/src/chat/reasoning.tsx",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Pure private reasoning disclosure borrows an owned snapshot and owns only local expansion state.",
+      "note": "Generation/reopening reset, manual choice persistence, safe Markdown and native installed remount proof; no parser, subscriptions, commands or disposal in the view. SSR/publication remain separate."
     }
   ]
 }
