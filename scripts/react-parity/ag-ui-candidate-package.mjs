@@ -357,19 +357,17 @@ export function rootRangeOverrides(root) {
   return overrides;
 }
 export function agUiVendorOverrides(vendors) {
-  const names = vendors.map((vendor) => vendor.name);
-  assert.equal(
-    new Set(names).size,
-    names.length,
-    'Review multiple versions of an AG-UI vendor before pinning'
-  );
+  const counts = new Map();
+  for (const { name } of vendors) counts.set(name, (counts.get(name) ?? 0) + 1);
   // Pin shared vendors at every root as well as below their declared parents.
   // npm can otherwise hoist a shared proto dependency outside a seed-only pin.
   // Keep these unique-version root pins unqualified so the existing RxJS
   // override also applies to the SDK's original, different exact request.
-  const pins = vendorOverrides(vendors, names);
+  // Mixed React consumers require both AG-UI's Zod 3 and render's Zod 4.
+  // Qualify only multi-version roots; keep the supported unique RxJS pin.
+  const pins = vendorOverrides(vendors, vendors.map(({ name, version }) => `${name}@${version}`));
   return Object.fromEntries(
-    vendors.map(({ name, version }) => [name, pins[`${name}@${version}`]])
+    vendors.map(({ name, version }) => [counts.get(name) === 1 ? name : `${name}@${version}`, pins[`${name}@${version}`]])
   );
 }
 export function consumerVendorGraph(
