@@ -188,6 +188,7 @@ describe('React migration baseline scope', () => {
     'cockpit/chat/messages/angular/src/index.ts',
     'cockpit/chat/new-topic/angular/project.json',
     'scripts/verify-release-versions.mjs',
+    'deployments/ag-ui-maf/README.md',
   ]) {
     it(`runs library gates for ${file} even without Nx ownership`, () => {
       assert.equal(classifyFromAffected([file], []).library, true);

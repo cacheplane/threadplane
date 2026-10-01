@@ -9,6 +9,7 @@ on:
       - 'libs/cockpit-registry/src/lib/capability-registry.ts'
       - 'scripts/generate-ag-ui-deployment-config.ts'
       - 'deployments/ag-ui-dev/**'
+      - 'deployments/ag-ui-maf/**'
   workflow_dispatch:
 
 concurrency:
@@ -23,7 +24,66 @@ env:
 
 jobs:
   deploy:
-    name: Deploy ag-ui-dev to Railway
+    name: Deploy ${{ matrix.deployment.dir }} to Railway
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        deployment:
+          - { dir: ag-ui-dev, service: ag-ui-dev }
+          - { dir: ag-ui-maf, service: ag-ui-maf }
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # The generator writes both deployments/ag-ui-dev and deployments/ag-ui-maf;
+      # the drift check below runs per matrix dir.
+      - name: Regenerate deployment artifacts
+        run: npx tsx scripts/generate-ag-ui-deployment-config.ts
+
+      - name: Drift check — committed artifacts must match regeneration
+        run: |
+          if ! git diff --exit-code -- deployments/${{ matrix.deployment.dir }}/; then
+            echo "::error::deployments/${{ matrix.deployment.dir }}/ is out of sync. Run 'npx tsx scripts/generate-ag-ui-deployment-config.ts' locally and commit the result."
+            exit 1
+          fi
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.12'
+
+      - name: Boot gate — the server must import with the pinned deps
+        # `railway up --detach` reports success at upload time, so a build or
+        # boot failure on Railway is invisible to CI and the last good image
+        # keeps serving. That hid a broken deploy for 2.5 months (subagents
+        # topic 404 in prod since 2026-06-16; see blove/fix-ag-ui-deploy-boot).
+        # Importing server.py against the exact requirements union reproduces
+        # the container's boot locally and fails the workflow instead.
+        working-directory: deployments/${{ matrix.deployment.dir }}
+        run: |
+          python -m venv /tmp/bootgate-venv
+          /tmp/bootgate-venv/bin/pip install --quiet -r requirements.txt
+          AG_UI_INTERNAL_TOKEN=bootgate OPENAI_API_KEY=sk-bootgate \
+            /tmp/bootgate-venv/bin/python -c "import server; print('boot ok:', len(server.app.routes), 'routes')"
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli@4.68.0
+
+      - name: Deploy
+        working-directory: deployments/${{ matrix.deployment.dir }}
+        run: railway up --service ${{ matrix.deployment.service }} --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+  verify:
+    name: Verify the deployed runtime
+    needs: deploy
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -35,44 +95,7 @@ jobs:
 
       - run: npm ci
 
-      - name: Regenerate deployment artifacts
-        run: npx tsx scripts/generate-ag-ui-deployment-config.ts
-
-      - name: Drift check — committed artifacts must match regeneration
-        run: |
-          if ! git diff --exit-code -- deployments/ag-ui-dev/; then
-            echo "::error::deployments/ag-ui-dev/ is out of sync. Run 'npx tsx scripts/generate-ag-ui-deployment-config.ts' locally and commit the result."
-            exit 1
-          fi
-
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
-        with:
-          python-version: '3.12'
-
-      - name: Boot gate — the aggregated server must import with the pinned deps
-        # `railway up --detach` reports success at upload time, so a build or
-        # boot failure on Railway is invisible to CI and the last good image
-        # keeps serving. That hid a broken deploy for 2.5 months (subagents
-        # topic 404 in prod since 2026-06-16; see blove/fix-ag-ui-deploy-boot).
-        # Importing server.py against the exact requirements union reproduces
-        # the container's boot locally and fails the workflow instead.
-        working-directory: deployments/ag-ui-dev
-        run: |
-          python -m venv /tmp/bootgate-venv
-          /tmp/bootgate-venv/bin/pip install --quiet -r requirements.txt
-          AG_UI_INTERNAL_TOKEN=bootgate OPENAI_API_KEY=sk-bootgate \
-            /tmp/bootgate-venv/bin/python -c "import server; print('boot ok:', len(server.app.routes), 'routes')"
-
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli@4.68.0
-
-      - name: Deploy
-        working-directory: deployments/ag-ui-dev
-        run: railway up --service ag-ui-dev --detach
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-
-      # The boot gate above proves the aggregated server IMPORTS. It cannot
+      # The boot gate above proves the server IMPORTS. It cannot
       # prove the rollout took: `railway up --detach` returns at upload time,
       # and when a new image fails to start Railway keeps serving the last good
       # one — so a broken deploy looks identical to a healthy one from CI.

@@ -1,5 +1,5 @@
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
-import { resolve } from 'path';
+import { basename, resolve } from 'path';
 import { capabilities, type CapabilityFramework } from '@threadplane/cockpit-registry';
 
 /**
@@ -28,17 +28,19 @@ import { capabilities, type CapabilityFramework } from '@threadplane/cockpit-reg
 
 const GENERATED_HEADER = '# GENERATED — do not edit. Source: scripts/generate-ag-ui-deployment-config.ts';
 
-export interface GenerateOptions {
-  repoRoot: string;
-  outDir: string;
-}
-
 /**
- * Frameworks hosted by the aggregated Python deployment. 'mastra' is
+ * Frameworks hosted by the aggregated Python deployments. 'mastra' is
  * excluded: it is the Node hosting lane (deployments/ag-ui-mastra) and by
  * construction has no pythonDir, so it never reaches this generator.
  */
 export type PythonHostedFramework = Exclude<CapabilityFramework, 'mastra'>;
+
+export interface GenerateOptions {
+  repoRoot: string;
+  outDir: string;
+  /** Frameworks this deployment hosts. Omitted means every Python-hosted framework. */
+  frameworks?: readonly PythonHostedFramework[];
+}
 
 /**
  * A `LangGraphAgent` subclass the topic mounts instead of the stock wrapper.
@@ -213,7 +215,8 @@ function stageDeps(repoRoot: string, outDir: string, topics: AgUiTopic[]): void 
   }
 }
 
-export function buildServerPy(topics: AgUiTopic[]): string {
+export function buildServerPy(topics: AgUiTopic[], options: { title?: string } = {}): string {
+  const title = options.title ?? 'ag-ui-dev';
   const usedFrameworks = (Object.keys(FRAMEWORK_ADAPTERS) as CapabilityFramework[]).filter(
     (framework) => topics.some((t) => t.framework === framework),
   );
@@ -240,7 +243,7 @@ ${imports}
 
 AG_UI_INTERNAL_TOKEN = os.environ["AG_UI_INTERNAL_TOKEN"]
 
-app = FastAPI(title="ag-ui-dev")
+app = FastAPI(title="${title}")
 
 
 @app.middleware("http")
@@ -274,7 +277,32 @@ ${mounts}
  * one example's resolved transitive could be a higher version than what the
  * other example's direct dep accepted. Stripping to direct deps avoids that.
  */
-function buildRequirementsTxt(repoRoot: string, topics: AgUiTopic[]): string {
+export interface UnionConstraints {
+  /** Package upper bounds a topic's own dependency carries that the union
+   *  cannot see (a transitive requirement such as agent-framework-ag-ui's
+   *  `ag-ui-protocol<0.2`). Keyed by package; value is `<X.Y` form. */
+  caps?: Record<string, string>;
+}
+
+const KNOWN_CAPS: Record<PythonHostedFramework, Record<string, string>> = {
+  langgraph: {},
+  'aws-strands': {},
+  // `agent-framework-ag-ui` 1.2.1 (the pinned release; 1.4.0 still caps the same way)
+  // declares ag-ui-protocol>=0.1.19,<0.2.
+  // Only the caps listed here are enforced; a new transitive cap elsewhere surfaces at the
+  // deploy workflow's pip boot gate instead.
+  'microsoft-agent-framework': { 'ag-ui-protocol': '<0.2' },
+};
+
+function capsFor(topics: AgUiTopic[]): Record<string, string> {
+  return Object.assign({}, ...topics.map((t) => KNOWN_CAPS[t.framework]));
+}
+
+export function buildRequirementsTxt(
+  repoRoot: string,
+  topics: AgUiTopic[],
+  constraints: UnionConstraints = {},
+): string {
   const directVersions = new Map<string, string>();
   const directUrls = new Map<string, string>();
   for (const topic of topics) {
@@ -303,6 +331,15 @@ function buildRequirementsTxt(repoRoot: string, topics: AgUiTopic[]): string {
       throw new Error(
         `${name} is pinned as a direct URL by one example and as ==${directVersions.get(name)} by another. ` +
           'Align the examples on one source before regenerating.',
+      );
+    }
+  }
+  for (const [name, cap] of Object.entries(constraints.caps ?? {})) {
+    const chosen = directVersions.get(name);
+    if (chosen !== undefined && compareVersions(chosen, cap.replace(/^</, '')) >= 0) {
+      throw new Error(
+        `${name}==${chosen} is in the union but a topic requires ${name}${cap}. ` +
+          'Split that topic into its own deployment (see deployments/ag-ui-maf) before regenerating.',
       );
     }
   }
@@ -399,16 +436,36 @@ function compareVersions(a: string, b: string): number {
 }
 
 export function generateAgUiDeployment(options: GenerateOptions): void {
-  const topics = collectTopics(options.repoRoot);
+  const all = collectTopics(options.repoRoot);
+  const topics = options.frameworks
+    ? all.filter((t) => options.frameworks!.includes(t.framework))
+    : all;
+  if (topics.length === 0) {
+    throw new Error(`No topics match frameworks ${JSON.stringify(options.frameworks)}`);
+  }
   mkdirSync(options.outDir, { recursive: true });
+  // stageDeps clears deps/ first, so topics that left the deployment disappear.
   stageDeps(options.repoRoot, options.outDir, topics);
-  writeFileSync(resolve(options.outDir, 'server.py'), buildServerPy(topics));
-  writeFileSync(resolve(options.outDir, 'requirements.txt'), buildRequirementsTxt(options.repoRoot, topics));
+  writeFileSync(resolve(options.outDir, 'server.py'), buildServerPy(topics, { title: basename(options.outDir) }));
+  writeFileSync(
+    resolve(options.outDir, 'requirements.txt'),
+    buildRequirementsTxt(options.repoRoot, topics, { caps: capsFor(topics) }),
+  );
 }
+
+/**
+ * The deployments the repo ships. MAF is alone because its bridge caps
+ * ag-ui-protocol below 1.0 while every other Python runtime is on 1.0.
+ */
+export const DEPLOYMENTS: ReadonlyArray<{ dir: string; frameworks: readonly PythonHostedFramework[] }> = [
+  { dir: 'deployments/ag-ui-dev', frameworks: ['langgraph', 'aws-strands'] },
+  { dir: 'deployments/ag-ui-maf', frameworks: ['microsoft-agent-framework'] },
+];
 
 if (require.main === module) {
   const repoRoot = resolve(__dirname, '..');
-  const outDir = resolve(repoRoot, 'deployments/ag-ui-dev');
-  generateAgUiDeployment({ repoRoot, outDir });
-  console.log('Generated deployments/ag-ui-dev/{server.py,requirements.txt,deps/}');
+  for (const { dir, frameworks } of DEPLOYMENTS) {
+    generateAgUiDeployment({ repoRoot, outDir: resolve(repoRoot, dir), frameworks });
+    console.log(`Generated ${dir}/{server.py,requirements.txt,deps/}`);
+  }
 }

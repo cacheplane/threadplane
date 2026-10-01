@@ -17,6 +17,8 @@ cockpit variant has one turn and no tools). The cockpit capture lives at
 `cockpit/ag-ui/subagents/python/docs/wire-capture-subagents.md`; this doc
 records only what differs.
 
+`ag-ui-protocol` 1.0.0 ships the `SUBAGENT_*` events and the `RUN_STARTED.protocolVersion` field. The `ag-ui-langgraph` 0.0.45 bridge opens the run without a version; `SubagentEmittingAgent` stamps `"1.0"` on its way out, so the capture below carries it.
+
 Bridge citations are into the installed venv source:
 `.venv/lib/python3.12/site-packages/ag_ui_langgraph/agent.py` and
 `.venv/lib/python3.12/site-packages/ag_ui/core/events.py`.
@@ -171,8 +173,10 @@ org ids appeared in the stream; only repetitive delta runs,
 `STATE_SNAPSHOT`s and the bridge's RAW mirrors are elided, marked with
 `# [elided: ...]`.
 
+The `protocolVersion` field in this frame was added by hand when the runtimes moved to 1.0; re-run the capture command to refresh it.
+
 ```
-1     {"type":"RUN_STARTED","threadId":"capture-thread-3","runId":"capture-thread-3-run"}
+1     {"type":"RUN_STARTED","threadId":"capture-thread-3","runId":"capture-thread-3-run","protocolVersion":"1.0"}
 3     {"type":"STEP_STARTED","stepName":"generate"}
 9     {"type":"TOOL_CALL_START","toolCallId":"call_Ax1IOxHNk2UEIdCaKlDvCLtc","toolCallName":"research","parentMessageId":"lc_run--01a063e0-aa28-7850-97bc-8118cdc8749b"}
       # [elided: 48 TOOL_CALL_ARGS deltas spelling {"topic":"...","subagent_type":"research"}]

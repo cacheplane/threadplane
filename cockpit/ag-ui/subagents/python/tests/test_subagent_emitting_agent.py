@@ -354,3 +354,20 @@ def test_server_mounts_the_emitting_agent(monkeypatch):
     from src import server
 
     assert isinstance(server.agent, SubagentEmittingAgent)
+
+
+async def test_run_started_declares_the_protocol_version(monkeypatch):
+    from ag_ui.core import PROTOCOL_VERSION
+
+    events = await _collect(monkeypatch, [_run_started()])
+    started = events[0]
+    assert started.type == EventType.RUN_STARTED
+    assert started.protocol_version == PROTOCOL_VERSION
+
+
+async def test_run_started_keeps_an_explicit_protocol_version(monkeypatch):
+    started_in = RunStartedEvent(
+        type=EventType.RUN_STARTED, thread_id="t", run_id="r", protocol_version="1.0"
+    )
+    events = await _collect(monkeypatch, [started_in])
+    assert events[0].protocol_version == "1.0"

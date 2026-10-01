@@ -3,9 +3,11 @@
 -e .
 ag-ui-a2ui-toolkit==0.0.4
     # via ag-ui-strands
-ag-ui-protocol==0.1.22
-    # via ag-ui-strands
-ag-ui-strands @ git+https://github.com/ag-ui-protocol/ag-ui.git@363d3878e30887e88c1fd5ca1916ec3a5962b6be#subdirectory=integrations/aws-strands/python
+ag-ui-protocol==1.0.0
+    # via
+    #   ag-ui-strands
+    #   cockpit-runtimes-aws-strands
+ag-ui-strands==0.4.1
     # via cockpit-runtimes-aws-strands
 annotated-doc==0.0.5
     # via fastapi

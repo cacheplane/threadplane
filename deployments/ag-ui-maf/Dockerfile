@@ -1,4 +1,4 @@
-# Multi-stage build for the ag-ui-dev FastAPI runtime.
+# Multi-stage build for the ag-ui-maf FastAPI runtime.
 # Stage 1 installs Python deps into a user-site so we can copy them
 # into a slim runner without build tooling.
 FROM python:3.12-slim@sha256:d764629ce0ddd8c71fd371e9901efb324a95789d2315a47db7e4d27e78f1b0e9 AS builder

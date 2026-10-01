@@ -195,8 +195,10 @@ export function classifyFromAffected(changedFiles, affectedProjects) {
   )
     scope.library = true;
   // The native owner proof uses this service's isolated lock and test fixture,
-  // including changes Nx attributes only to the untagged root project.
-  if (changedFiles.some((file) => normalizePath(file).startsWith('deployments/ag-ui-mastra/'))) {
+  // including changes Nx attributes only to the untagged root project. MAF is
+  // included so its deployment changes are not left ungated, even though the
+  // library lane's native-owner proof covers Mastra only.
+  if (changedFiles.some((file) => /^deployments\/ag-ui-(mastra|maf)\//.test(normalizePath(file)))) {
     scope.library = true;
   }
   return scope;
