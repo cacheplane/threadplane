@@ -73,6 +73,7 @@ function composition(selected, types, runtime) {
     '@threadplane/langgraph/runtime/create-session',
     '@threadplane/content/src/markdown/create-markdown',
     '@threadplane/content/src/messages/create-message-content',
+    ...(!selected.angular ? ['@threadplane/react/src/render/render-spec'] : []),
   ]) {
     assert.ok(
       types.includes('node_modules/' + p + '.d.ts'),

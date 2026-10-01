@@ -137,6 +137,16 @@ test('React chat requires its real supported export', () => {
   assert.throws(() => packageVerifier.assertSupportedExports('react/chat', { ...supported, ChatInput: {} }), /ChatInput/);
   assert.throws(() => packageVerifier.assertSupportedExports('core', { completeDelivery: forwarded }), /completeDelivery/);
 });
+test('React render requires exactly the pure RenderSpec runtime export', () => {
+  const RenderSpec = () => null;
+  assert.throws(() => packageVerifier.assertSupportedExports('react/render', {}), /RenderSpec/);
+  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/render', { RenderSpec }));
+  assert.throws(() => packageVerifier.assertSupportedExports('react/render', { RenderSpec, createStateStore: () => ({}) }), /unexpected/);
+});
+test('headless framework root rejects the render adapter and engine', () => {
+  assert.throws(() => packageVerifier.assertHeadlessInputs({ 'node_modules/@threadplane/react/src/render/render-spec.js': {} }), /render/i);
+  assert.throws(() => packageVerifier.assertHeadlessInputs({ 'node_modules/@json-render/core/dist/index.mjs': {} }), /render/i);
+});
 test('React chat still requires import and use client', (t) => {
   for (const entry of [
     { types: './src/index.d.ts', default: './src/index.js' },

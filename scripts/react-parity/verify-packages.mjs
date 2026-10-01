@@ -179,6 +179,8 @@ export function assertParserFreeInputs(inputs) {
 
 export function assertHeadlessInputs(inputs) {
   assertParserFreeInputs(inputs);
+  const render = Object.keys(inputs).filter((path) => /(?:@threadplane\/react\/src\/render\/|node_modules\/@json-render\/)/.test(path.replaceAll('\\', '/')));
+  if (render.length) throw new Error(`Headless framework root includes render feature: ${render.join(', ')}`);
   const chat = Object.keys(inputs).filter((path) => /@threadplane\/(?:react\/src\/chat\/|angular\/fesm2022\/threadplane-angular-chat\.mjs)/.test(path.replaceAll('\\', '/')));
   if (chat.length) throw new Error(`Headless framework root includes chat components: ${chat.join(', ')}`);
   const markdown = Object.keys(inputs).filter((path) => /@threadplane\/(?:(?:react|content)\/src\/markdown\/|angular\/fesm2022\/threadplane-angular-markdown\.mjs)/.test(path.replaceAll('\\', '/')));
@@ -216,6 +218,7 @@ export function assertSupportedExports(project, entry) {
         'ToolObservation',
       ],
       'react/markdown': ['Markdown'],
+      'react/render': ['RenderSpec'],
       'content/json': ['createJson'],
     }[project] ?? [];
   // React entries may export forwardRef/memo components, which are $$typeof objects.
@@ -229,7 +232,7 @@ export function assertSupportedExports(project, entry) {
     if (!supported(entry[name]))
       throw new Error(`${project} missing supported contract ${name}`);
   if (
-    ['react/chat', 'react/markdown', 'content/json'].includes(project) &&
+    ['react/chat', 'react/markdown', 'react/render', 'content/json'].includes(project) &&
     Object.keys(entry).some((name) => !expected.includes(name))
   )
     throw new Error(`${project} has unexpected exports`);
@@ -253,6 +256,8 @@ export async function verifyPackedConsumers(root = process.cwd()) {
     const count = verifyPlainExports(root, plain, Object.keys(tarballs).map((name) => name.slice('@threadplane/'.length)));
     cpSync(join(root, 'fixtures/react-parity/runtime/json-runtime.mjs'), join(plain, 'json-runtime.mjs'));
     console.log(runConsumer(process.execPath, ['json-runtime.mjs'], plain));
+    cpSync(join(root, 'fixtures/react-parity/runtime/render-runtime.mjs'), join(plain, 'render-runtime.mjs'));
+    console.log(runConsumer(process.execPath, ['render-runtime.mjs'], plain));
     writeFileSync(join(plain, 'react-root.mjs'), "import * as react from '@threadplane/react';\nconsole.log(Object.keys(react));\n");
     const bundle = buildSync({ absWorkingDir: plain, entryPoints: [join(plain, 'react-root.mjs')], bundle: true, platform: 'browser', format: 'esm', write: false, metafile: true });
     assertHeadlessInputs(bundle.metafile.inputs);

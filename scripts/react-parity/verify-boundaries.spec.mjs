@@ -13,7 +13,7 @@ for (const project of ['content', 'react', 'angular']) {
     const prefix = `${mode === 'source' ? '' : 'dist/'}libs/${project}`;
     const content = `${mode === 'source' ? '' : 'dist/'}libs/content`;
     const entry = project === 'angular' && mode === 'source' ? 'public-api' : 'index';
-    for (const dependency of ['@cacheplane/json-stream', '@threadplane/content/json']) {
+    for (const dependency of ['@cacheplane/json-stream', '@threadplane/content/json', '@json-render/core']) {
       test(`${project} ${extension} root rejects indirect ${dependency}`, (t) => {
         const root = fixture(t, {
           'tsconfig.base.json': JSON.stringify({ compilerOptions: { paths: { '@threadplane/content/json': ['./libs/content/src/json/index.ts'] } } }),

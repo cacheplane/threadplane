@@ -502,9 +502,11 @@ export function vendorOverrides(
   }
   return Object.fromEntries(
     seeds.map((name) => {
-      const vendor = vendors.find((v) => v.name === name);
+      // A qualified root selects one reviewed version when a consumer needs
+      // incompatible versions of the same vendor in separate subtrees.
+      const vendor = graph.get(name) ?? vendors.find((v) => v.name === name);
       assert.ok(vendor, `Missing root vendor ${name}`);
-      return [`${name}@${vendor.version}`, pin(name, vendor.version)];
+      return [`${vendor.name}@${vendor.version}`, pin(vendor.name, vendor.version)];
     })
   );
 }

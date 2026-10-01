@@ -62,7 +62,7 @@ export function forbiddenDependency(project, specifier, { angularTransitions = [
   const backend = pkg.startsWith('@langchain/') || pkg.startsWith('@ag-ui/');
   if (backend && !['langgraph', 'ag-ui'].includes(role)) return true;
   const parser = ['@cacheplane/json-stream', '@cacheplane/partial-json', '@cacheplane/partial-markdown', 'marked', 'remark-gfm', 'katex', 'shiki'].includes(pkg);
-  return (role === 'core' && (parser || pkg === 'zod')) ||
+  return (role === 'core' && (parser || pkg === 'zod' || pkg === '@json-render/core')) ||
     (['core', 'content', 'render', 'a2ui', 'telemetry'].includes(role) && pkg === 'rxjs');
 }
 

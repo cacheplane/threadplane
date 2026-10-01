@@ -278,6 +278,7 @@ function consumerFixture(
 }
 
 const reactSeeds = [
+  '@json-render/core',
   '@cacheplane/json-stream',
   '@cacheplane/partial-markdown',
   '@langchain/langgraph-sdk',
@@ -430,6 +431,53 @@ for (const framework of ['react', 'angular']) {
       derived.graph.find(({ name }) => name === '@threadplane/content')
         .dependencies['@cacheplane/json-stream'],
       '0.1.1'
+    );
+  });
+}
+
+for (const profile of ['markdown', 'react-langgraph']) {
+  test(`${profile} consumer retains the current React render engine dependency`, (t) => {
+    const root = JSON.parse(
+      readFileSync(new URL('../../package-lock.json', import.meta.url))
+    );
+    const react = JSON.parse(
+      readFileSync(new URL('../../libs/react/package.json', import.meta.url))
+    );
+    const content = JSON.parse(
+      readFileSync(new URL('../../libs/content/package.json', import.meta.url))
+    );
+    const input = (profile === 'markdown' ? consumerFixture : reactFixture)(t, {
+      manifests: {
+        content: { dependencies: content.dependencies },
+        react: {
+          dependencies: react.dependencies,
+          peerDependencies: { react: '^19.2.4' },
+        },
+        angular: { peerDependencies: { '@angular/core': '^21.0.0' } },
+        langgraph: {
+          dependencies: {
+            '@threadplane/core': '0.0.1',
+            '@langchain/langgraph-sdk': '^1.10.0',
+          },
+        },
+      },
+    });
+    const derived = derivePresentationConsumer(
+      root,
+      input.tarballs,
+      profile === 'markdown'
+        ? presentation.presentationSeeds
+        : presentation.reactLanggraphPresentationSeeds,
+      profile
+    );
+    assert.deepEqual(
+      derived.lock.packages['node_modules/@json-render/core'],
+      root.packages['node_modules/@json-render/core']
+    );
+    assert.equal(
+      derived.graph.find(({ name }) => name === '@threadplane/react')
+        .dependencies['@json-render/core'],
+      '0.16.0'
     );
   });
 }
@@ -809,7 +857,7 @@ for (const name of reactSeeds) {
           reactSeeds.filter((seed) => seed !== name),
           'react-langgraph'
         ),
-      /Exactly ten selected React seeds required/
+      /Exactly eleven selected React seeds required/
     );
   });
 }
@@ -824,7 +872,7 @@ test('selected React rejects duplicate root seeds', (t) => {
         [...reactSeeds, 'vite'],
         'react-langgraph'
       ),
-    /Exactly ten selected React seeds required/
+    /Exactly eleven selected React seeds required/
   );
 });
 

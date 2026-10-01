@@ -13,6 +13,8 @@ test('installed React contract includes owned JSON types without adding them to 
     const config = JSON.parse(readFileSync(join(consumer, 'tsconfig.contracts.json'), 'utf8'));
     assert.equal(config.files.includes('json-types.ts'), kind === 'react');
     assert.equal(existsSync(join(consumer, 'json-types.ts')), kind === 'react');
+    assert.equal(config.files.includes('render-types.tsx'), kind === 'react');
+    assert.equal(existsSync(join(consumer, 'render-types.tsx')), kind === 'react');
   }
 });
 

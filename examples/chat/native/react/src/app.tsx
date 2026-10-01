@@ -38,8 +38,8 @@ const Message = memo(function Message({ row }: { row: MessageContent }) {
         <Markdown snapshot={row.markdown} />
       )}
       {row.role === 'assistant' &&
-        row.tripSummaries.map((card) => (
-          <TripSummary key={card.callId} card={card} />
+        row.tripSummaryRenders.map((prepared) => (
+          <TripSummary key={prepared.callId} prepared={prepared} />
         ))}
       {row.role !== 'tool' &&
         row.toolCalls

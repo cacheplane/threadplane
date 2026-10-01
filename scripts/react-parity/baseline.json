@@ -1,19 +1,18 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "ac6d626151f5269dfa96f9deebc714289d4664c0",
+  "baselineHead": "1484d708e9b4504655a039277b5602f6e47c7f26",
   "sourceState": {
     "modified": [
-      "libs/content/README.md",
-      "libs/content/package.json",
-      "libs/content/src/json/index.ts",
+      "libs/react/README.md",
+      "libs/react/package.json",
       "package-lock.json",
-      "package.json"
+      "tsconfig.base.json"
     ],
     "untracked": [
-      "libs/content/src/json/create-json.ts",
-      "libs/content/src/json/projection.ts",
-      "libs/content/src/json/transition.ts",
-      "libs/content/src/json/types.ts"
+      "libs/react/src/render/index.ts",
+      "libs/react/src/render/render-spec.tsx",
+      "libs/react/src/render/types.ts",
+      "libs/react/src/render/values.ts"
     ]
   },
   "scope": {
@@ -41,11 +40,11 @@
     "entryPoints": [
       "libs/a2ui/src/index.ts",
       "libs/ag-ui/src/public-api.ts",
-      "libs/angular/src/public-api.ts",
       "libs/angular/chat/src/public-api.ts",
       "libs/angular/markdown/src/public-api.ts",
-      "libs/chat/src/public-api.ts",
+      "libs/angular/src/public-api.ts",
       "libs/chat/debug/public-api.ts",
+      "libs/chat/src/public-api.ts",
       "libs/chat/testing/public-api.ts",
       "libs/content/src/index.ts",
       "libs/content/src/json/index.ts",
@@ -53,12 +52,13 @@
       "libs/content/src/messages/index.ts",
       "libs/langgraph/src/public-api.ts",
       "libs/middleware/src/langgraph/index.ts",
-      "libs/react/src/index.ts",
       "libs/react/src/chat/index.ts",
+      "libs/react/src/index.ts",
       "libs/react/src/markdown/index.ts",
+      "libs/react/src/render/index.ts",
       "libs/render/src/public-api.ts",
-      "libs/telemetry/src/index.ts",
       "libs/telemetry/src/browser/public-api.ts",
+      "libs/telemetry/src/index.ts",
       "libs/telemetry/src/node/index.ts",
       "libs/telemetry/src/shared/public-api.ts"
     ],
@@ -826,13 +826,13 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "0564284eed74765a808573b9f55e53896c889f6cbed46f5efef5434b7315685d"
+      "sha256": "d699f9770a2de67603228437dd1a73f080db02e0f2da75a9c0221be176f91f33"
     },
     {
       "id": "asset:libs/react/package.json",
       "kind": "asset",
       "path": "libs/react/package.json",
-      "sha256": "0aaf4412de70b8174bdaebf82e29a85f66aac0a3f8194e26b9e41a85195d0221"
+      "sha256": "5e290a4fd60c9e1eb88d7f88156df7bba991434d5016d8644033735688cc0a65"
     },
     {
       "id": "asset:libs/react/project.json",
@@ -2170,7 +2170,7 @@
       "id": "config:package-lock.json",
       "kind": "config",
       "path": "package-lock.json",
-      "sha256": "0804f66cbbfb3d99b4ddede64593065d0f3fdf150b8028731f8e90c75e3d9e0e"
+      "sha256": "3d803c2e1a217fd3e173fe52891def4528433a65e69f3c7ac5af13068793371c"
     },
     {
       "id": "config:package.json",
@@ -2206,7 +2206,7 @@
       "id": "config:tsconfig.base.json",
       "kind": "config",
       "path": "tsconfig.base.json",
-      "sha256": "1660505e7a1104bb963821fb4738d5021a0d503901b29f3b5e2f85be5fcca862"
+      "sha256": "31a6d9e25f5c5a77b9ec2ef1aebcabf17879f3b0cb4e0c4dab04da25957ee571"
     },
     {
       "id": "doc:apps/website/content/docs/a2ui/getting-started/introduction.mdx",
@@ -3060,6 +3060,11 @@
       "id": "entry:libs/react/src/markdown/index.ts",
       "kind": "entry",
       "path": "libs/react/src/markdown/index.ts"
+    },
+    {
+      "id": "entry:libs/react/src/render/index.ts",
+      "kind": "entry",
+      "path": "libs/react/src/render/index.ts"
     },
     {
       "id": "entry:libs/render/src/public-api.ts",
@@ -10155,6 +10160,104 @@
       ]
     },
     {
+      "id": "export:libs/react/src/render/index.ts#ReactRenderRegistry",
+      "kind": "export",
+      "path": "libs/react/src/render/index.ts",
+      "symbol": "ReactRenderRegistry",
+      "declarations": [
+        {
+          "path": "libs/react/src/render/types.ts",
+          "symbol": "ReactRenderRegistry",
+          "syntaxKind": "TypeAliasDeclaration",
+          "signature": "export type ReactRenderRegistry = Readonly<Record<string, ComponentType<RenderViewProps>>>;"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/render/index.ts#RenderElementData",
+      "kind": "export",
+      "path": "libs/react/src/render/index.ts",
+      "symbol": "RenderElementData",
+      "declarations": [
+        {
+          "path": "libs/react/src/render/types.ts",
+          "symbol": "RenderElementData",
+          "syntaxKind": "TypeAliasDeclaration",
+          "signature": "export type RenderElementData = DeepReadonly<Pick<UIElement, 'type' | 'props' | 'children' | 'visible' | 'repeat'>>;"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/render/index.ts#RenderSpec",
+      "kind": "export",
+      "path": "libs/react/src/render/index.ts",
+      "symbol": "RenderSpec",
+      "declarations": [
+        {
+          "path": "libs/react/src/render/render-spec.tsx",
+          "symbol": "RenderSpec",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function RenderSpec({ spec, registry, state = EMPTY_STATE, loading, fallback, }: RenderSpecProps) {\n    if (!spec)\n        return null;\n    const stateModel = ownRenderValue(state) as Record<string, unknown>;\n    return (<Element spec={spec} elementKey={spec.root} registry={registry} loading={loading} fallback={fallback} context={{ stateModel }} ancestors={new Set()}/>);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/render/index.ts#RenderSpecData",
+      "kind": "export",
+      "path": "libs/react/src/render/index.ts",
+      "symbol": "RenderSpecData",
+      "declarations": [
+        {
+          "path": "libs/react/src/render/types.ts",
+          "symbol": "RenderSpecData",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface RenderSpecData {\n    readonly root: string;\n    readonly elements: Readonly<Record<string, RenderElementData>>;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/render/index.ts#RenderSpecProps",
+      "kind": "export",
+      "path": "libs/react/src/render/index.ts",
+      "symbol": "RenderSpecProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/render/types.ts",
+          "symbol": "RenderSpecProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface RenderSpecProps {\n    readonly spec: RenderSpecData | null;\n    readonly registry: ReactRenderRegistry;\n    readonly state?: DeepReadonly<Record<string, unknown>>;\n    readonly loading?: boolean;\n    readonly fallback?: ComponentType<RenderViewProps>;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/render/index.ts#RenderValue",
+      "kind": "export",
+      "path": "libs/react/src/render/index.ts",
+      "symbol": "RenderValue",
+      "declarations": [
+        {
+          "path": "libs/react/src/render/types.ts",
+          "symbol": "RenderValue",
+          "syntaxKind": "TypeAliasDeclaration",
+          "signature": "export type RenderValue = undefined | null | boolean | number | string | readonly RenderValue[] | {\n    readonly [key: string]: RenderValue;\n};"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/render/index.ts#RenderViewProps",
+      "kind": "export",
+      "path": "libs/react/src/render/index.ts",
+      "symbol": "RenderViewProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/render/types.ts",
+          "symbol": "RenderViewProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface RenderViewProps {\n    readonly props: Readonly<Record<string, RenderValue>>;\n    readonly bindings?: Readonly<Record<string, string>>;\n    readonly children?: ReactNode;\n    readonly elementKey: string;\n    readonly loading?: boolean;\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/render/src/public-api.ts#AngularComponentInputs",
       "kind": "export",
       "path": "libs/render/src/public-api.ts",
@@ -14147,6 +14250,30 @@
       "kind": "source",
       "path": "libs/react/src/markdown/markdown.tsx",
       "sha256": "d088f04778a7b7742c786edcc9ef1e76285a90935999fe49df733a5dedc59461"
+    },
+    {
+      "id": "source:libs/react/src/render/index.ts",
+      "kind": "source",
+      "path": "libs/react/src/render/index.ts",
+      "sha256": "8cbeaf0da4865d7d43f8f6f4ba484eb98b7d9056a75ee09fc3460600df61d954"
+    },
+    {
+      "id": "source:libs/react/src/render/render-spec.tsx",
+      "kind": "source",
+      "path": "libs/react/src/render/render-spec.tsx",
+      "sha256": "87e23b5d09d144d09361ae0dc67d5e400159c62451fec969c40986be1f8ec9ab"
+    },
+    {
+      "id": "source:libs/react/src/render/types.ts",
+      "kind": "source",
+      "path": "libs/react/src/render/types.ts",
+      "sha256": "a9d5551560824b97f0de7405845f1595f7c0067be28217cbcb3c6b367fd0e4a5"
+    },
+    {
+      "id": "source:libs/react/src/render/values.ts",
+      "kind": "source",
+      "path": "libs/react/src/render/values.ts",
+      "sha256": "534b56172886316462fb9b01b2f8a1b83535c581eb5de8a6b1854114731a838d"
     },
     {
       "id": "source:libs/react/src/use-agent.ts",

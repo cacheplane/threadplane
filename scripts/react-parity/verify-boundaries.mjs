@@ -147,12 +147,14 @@ export function verifyBoundaries({ root = process.cwd(), mode = 'source', projec
         if (rootRuntime && (optional.test(specifier) || ['zod', 'katex'].includes(packageOf(specifier)) || (target && optional.test(relative(directory, target))))) errors.add(`${project}: optional/testing dependency reachable from root: ${trail}`);
         if (project === 'react' && rootRuntime && ((specifier.startsWith('@threadplane/react/') && reactFeature.test(specifier.slice('@threadplane/react/'.length))) || (target && projectOf(target) === 'react' && reactFeature.test(relative(join(directory, 'src'), target))))) errors.add(`${project}: feature dependency reachable from root: ${trail}`);
         if (['react', 'angular'].includes(project) && rootRuntime && (
+          packageOf(specifier) === '@json-render/core' ||
           ['@cacheplane/json-stream', '@cacheplane/partial-markdown', '@cacheplane/partial-json', 'marked', 'remark-gfm', 'katex', 'shiki'].includes(packageOf(specifier)) ||
           /^@threadplane\/(?:content\/(?:markdown|json)|angular\/(?:markdown|chat))(?:\/|$)/.test(specifier) ||
           targetLocations.some(location => /(?:^|\/)(?:(?:markdown|json)\/|threadplane-angular-(?:markdown|chat)\.(?:mjs|d\.ts)$)/.test(location.replaceAll('\\', '/'))) ||
           (project === 'angular' && targetLocations.some(location => /^(?:markdown|chat)\//.test(location.replaceAll('\\', '/'))))
         )) errors.add(`${project}: feature dependency reachable from root: ${trail}`);
         if (project === 'content' && rootRuntime && (
+          packageOf(specifier) === '@json-render/core' ||
           ['@cacheplane/json-stream', '@cacheplane/partial-markdown', '@cacheplane/partial-json', 'marked', 'remark-gfm', 'katex', 'shiki'].includes(packageOf(specifier)) ||
           /^@threadplane\/content\/(?:markdown|json)(?:\/|$)/.test(specifier) ||
           targetLocations.some(location => /(?:^|\/)(?:markdown|json)(?:\/|$)/.test(location))

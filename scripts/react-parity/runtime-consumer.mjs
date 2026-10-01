@@ -362,11 +362,12 @@ export function prepareInstalledTypes(root, consumer, kind) {
   if (kind === 'react') {
     cpSync(join(fixture, 'message-list-types.tsx'), join(consumer, 'message-list-types.tsx'));
     cpSync(join(fixture, 'json-types.ts'), join(consumer, 'json-types.ts'));
+    cpSync(join(fixture, 'render-types.tsx'), join(consumer, 'render-types.tsx'));
   }
   writeFileSync(join(consumer, 'tsconfig.contracts.json'), JSON.stringify({ compilerOptions: {
     target: 'ES2022', module: 'ESNext', moduleResolution: 'Bundler', lib: ['ES2022', 'DOM'], types: [], strict: true, skipLibCheck: false, noEmit: true,
     ...(kind === 'react' ? { jsx: 'react-jsx' } : {}),
-  }, files: ['installed-types.ts', ...(kind === 'react' ? ['message-list-types.tsx', 'json-types.ts'] : [])] }, null, 2));
+  }, files: ['installed-types.ts', ...(kind === 'react' ? ['message-list-types.tsx', 'json-types.ts', 'render-types.tsx'] : [])] }, null, 2));
 }
 
 /** Typecheck the private source against the *installed* public core declarations,
