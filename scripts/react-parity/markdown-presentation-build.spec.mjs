@@ -278,6 +278,7 @@ function consumerFixture(
 }
 
 const reactSeeds = [
+  '@cacheplane/json-stream',
   '@cacheplane/partial-markdown',
   '@langchain/langgraph-sdk',
   'react',
@@ -334,6 +335,7 @@ const deriveReact = (input) =>
   );
 
 const angularSeeds = [
+  '@cacheplane/json-stream',
   '@cacheplane/partial-markdown',
   '@angular/core',
   '@angular/common',
@@ -386,6 +388,51 @@ const deriveAngular = (input) =>
     angularSeeds,
     'angular-langgraph'
   );
+
+for (const framework of ['react', 'angular']) {
+  test(`selected ${framework} consumer retains the current content JSON parser dependency`, (t) => {
+    const root = JSON.parse(
+      readFileSync(new URL('../../package-lock.json', import.meta.url))
+    );
+    const content = JSON.parse(
+      readFileSync(new URL('../../libs/content/package.json', import.meta.url))
+    );
+    const input = (framework === 'react' ? reactFixture : angularFixture)(t, {
+      manifests: {
+        content: { dependencies: content.dependencies },
+        [framework]: {
+          peerDependencies:
+            framework === 'react'
+              ? { react: '^19.2.4' }
+              : { '@angular/core': '^21.0.0' },
+        },
+        langgraph: {
+          dependencies: {
+            '@threadplane/core': '0.0.1',
+            '@langchain/langgraph-sdk': '^1.10.0',
+          },
+        },
+      },
+    });
+    const derived = derivePresentationConsumer(
+      root,
+      input.tarballs,
+      framework === 'react'
+        ? presentation.reactLanggraphPresentationSeeds
+        : presentation.angularLanggraphPresentationSeeds,
+      `${framework}-langgraph`
+    );
+    assert.deepEqual(
+      derived.lock.packages['node_modules/@cacheplane/json-stream'],
+      root.packages['node_modules/@cacheplane/json-stream']
+    );
+    assert.equal(
+      derived.graph.find(({ name }) => name === '@threadplane/content')
+        .dependencies['@cacheplane/json-stream'],
+      '0.1.1'
+    );
+  });
+}
 
 test('selected Angular profile derives the exact local closure, seeds and physical lock records without root mutation', (t) => {
   const input = angularFixture(t);
@@ -444,9 +491,9 @@ test('selected Angular uses the repository-locked Angular toolchain and SDK clos
     );
   assert.equal(
     Object.keys(selectPresentationLock(root, angularSeeds)).length,
-    653
+    654
   );
-  assert.equal(canonicalVendorGraph(root, angularSeeds).length, 429);
+  assert.equal(canonicalVendorGraph(root, angularSeeds).length, 430);
   assert.ok(
     Object.keys(derived.lock.packages).some((path) =>
       path.includes('/node_modules/', 'node_modules/'.length)
@@ -485,7 +532,7 @@ for (const name of angularSeeds) {
           angularSeeds.filter((seed) => seed !== name),
           'angular-langgraph'
         ),
-      /Exactly thirteen selected Angular seeds required/
+      /Exactly fourteen selected Angular seeds required/
     );
   });
 }
@@ -500,7 +547,7 @@ test('selected Angular rejects duplicate and arbitrary seeds', (t) => {
         [...angularSeeds, '@angular/build'],
         'angular-langgraph'
       ),
-    /Exactly thirteen selected Angular seeds required/
+    /Exactly fourteen selected Angular seeds required/
   );
   input.root.packages['node_modules/unrelated-server-package'] = pkg();
   assert.throws(
@@ -762,7 +809,7 @@ for (const name of reactSeeds) {
           reactSeeds.filter((seed) => seed !== name),
           'react-langgraph'
         ),
-      /Exactly nine selected React seeds required/
+      /Exactly ten selected React seeds required/
     );
   });
 }
@@ -777,7 +824,7 @@ test('selected React rejects duplicate root seeds', (t) => {
         [...reactSeeds, 'vite'],
         'react-langgraph'
       ),
-    /Exactly nine selected React seeds required/
+    /Exactly ten selected React seeds required/
   );
 });
 
