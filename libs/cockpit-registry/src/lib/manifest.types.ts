@@ -21,6 +21,9 @@ export type CockpitPageId =
 
 export type CockpitLanguage = 'python' | 'typescript';
 
+/** UI implementation, independent of backend language and runtime adapter. */
+export type CockpitFrontend = 'angular' | 'react';
+
 export type RuntimeAdapter = 'langgraph' | 'ag-ui' | 'none';
 
 export type WorkspaceMode = 'Docs' | 'Run' | 'Code' | 'API';

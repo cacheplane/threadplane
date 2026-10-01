@@ -1,4 +1,5 @@
 import type {
+  CockpitFrontend,
   CockpitManifestIdentity,
   RuntimeAdapter,
   WorkspaceMode,
@@ -7,6 +8,8 @@ import type {
 /** Serializable capability content owned by the Cockpit registry. */
 export interface RegisteredCapabilityModule {
   readonly id: string;
+  /** Legacy descriptors omit this field and resolve as Angular. */
+  readonly frontend?: CockpitFrontend;
   readonly runtimeAdapter: RuntimeAdapter;
   readonly manifestIdentity: {
     readonly product: string;
@@ -1002,15 +1005,30 @@ const matchesIdentity = (
   descriptor.manifestIdentity.topic === identity.topic &&
   descriptor.manifestIdentity.page === identity.page;
 
+/** Select code and runtime from one frontend before resolving backend language.
+ * An unsupported frontend never borrows another frontend's descriptor. */
+export const getFrontendCapabilityDescriptor = (
+  identity: CockpitManifestIdentity,
+  frontend: CockpitFrontend,
+  descriptors: readonly RegisteredCapabilityModule[] = capabilityModules
+): RegisteredCapabilityModule | undefined =>
+  descriptors.find(
+    (descriptor) =>
+      matchesIdentity(descriptor, identity) &&
+      (descriptor.frontend ?? 'angular') === frontend &&
+      descriptor.manifestIdentity.language === identity.language
+  ) ??
+  descriptors.find(
+    (descriptor) =>
+      matchesIdentity(descriptor, identity) &&
+      (descriptor.frontend ?? 'angular') === frontend
+  );
+
+/** Existing callers retain the canonical Angular frontend. */
 export const getCapabilityDescriptor = (
   identity: CockpitManifestIdentity
 ): RegisteredCapabilityModule | undefined =>
-  capabilityModules.find(
-    (descriptor) =>
-      matchesIdentity(descriptor, identity) &&
-      descriptor.manifestIdentity.language === identity.language
-  ) ??
-  capabilityModules.find((descriptor) => matchesIdentity(descriptor, identity));
+  getFrontendCapabilityDescriptor(identity, 'angular');
 
 const isApiExtractable = (path: string): boolean =>
   /\.(?:ts|tsx|js|jsx|mjs|py)$/.test(path);
