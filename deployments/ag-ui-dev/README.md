@@ -16,6 +16,8 @@ stages each into `deps/<topic>/`, and writes one framework-appropriate mount
 `add_strands_fastapi_endpoint`, per the entry's `framework`) at
 `/agent/<topic>` in `server.py`.
 
+The `microsoft-agent-framework` runtime is generated into `deployments/ag-ui-maf/` instead (see its README): its bridge caps `ag-ui-protocol` below 1.0.
+
 `requirements.txt` is a union of each example's direct deps. The aws-strands
 example pins its bridge to a git ref (the PyPI wheel is stale), so the union
 carries a `git+https://...#subdirectory=...` line — which is why the

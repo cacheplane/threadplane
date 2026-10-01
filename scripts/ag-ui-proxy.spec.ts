@@ -48,6 +48,7 @@ describe('AG-UI proxy', () => {
     process.env['AG_UI_INTERNAL_TOKEN'] = 'test-token';
     delete process.env['AG_UI_RAILWAY_URL'];
     delete process.env['AG_UI_MASTRA_URL'];
+    delete process.env['AG_UI_MAF_URL'];
     delete process.env['UPSTASH_REDIS_REST_URL'];
     delete process.env['UPSTASH_REDIS_REST_TOKEN'];
     vi.restoreAllMocks();
@@ -75,7 +76,6 @@ describe('AG-UI proxy', () => {
       'client-tools',
       'a2ui',
       'subagents',
-      'microsoft-agent-framework',
       'aws-strands',
     ];
     for (const topic of existingTopics) {
@@ -94,9 +94,31 @@ describe('AG-UI proxy', () => {
   it('routes /runtimes/<python-lane topic>/agent to the default Railway upstream', async () => {
     const fetchMock = mockUpstream();
     const res = makeRes();
-    await handler(makeReq('/runtimes/microsoft-agent-framework/agent'), res as never);
+    await handler(makeReq('/runtimes/aws-strands/agent'), res as never);
     const [url] = fetchMock.mock.calls[0] as [string];
-    expect(url).toBe(`${RAILWAY_DEFAULT}/agent/microsoft-agent-framework`);
+    expect(url).toBe(`${RAILWAY_DEFAULT}/agent/aws-strands`);
+  });
+
+  it('routes the microsoft-agent-framework topic to AG_UI_MAF_URL', async () => {
+    process.env['AG_UI_MAF_URL'] = 'https://maf.test';
+    const fetchMock = mockUpstream();
+    const res = makeRes();
+    await handler(makeReq('/runtimes/microsoft-agent-framework/agent'), res as never);
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('https://maf.test/agent/microsoft-agent-framework');
+    expect((init.headers as Record<string, string>)['x-internal-token']).toBe('test-token');
+  });
+
+  it('returns a clear 500 for the MAF topic when AG_UI_MAF_URL is unset', async () => {
+    const fetchMock = mockUpstream();
+    const res = makeRes();
+    await handler(makeReq('/runtimes/microsoft-agent-framework/agent'), res as never);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(res._status).toBe(500);
+    expect(res.json).toHaveBeenCalledWith({
+      error: 'misconfigured',
+      detail: 'no upstream configured for topic microsoft-agent-framework',
+    });
   });
 
   it('routes the mastra topic to AG_UI_MASTRA_URL', async () => {
