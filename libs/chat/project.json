@@ -54,6 +54,13 @@
       },
       "dependsOn": ["prepare-install"]
     },
+    "test-devtools-bundle": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "node libs/chat/scripts/verify-devtools-bundle.mjs"
+      }
+    },
     "type-tests": {
       "executor": "nx:run-commands",
       "options": {

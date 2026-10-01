@@ -192,6 +192,31 @@ Need to hand-script exact wire events (tool calls, interrupts, multi-batch
 lifecycles)? `MockAgentTransport` is the advanced escape hatch — swap the
 transport, never mock `injectAgent()` itself.
 
+## DevTools signals (development only)
+
+In Angular development mode, each agent reports which of its signals every
+event wrote, so the AG-UI DevTools Chrome extension's Signals tab can show
+them beside the wire traffic. After handling an event, the agent dispatches
+
+```ts
+window.dispatchEvent(new CustomEvent('threadplane:devtools', {
+  detail: { v: 1, agent, adapter: 'langgraph', seq, eventType, wrote, tMs },
+}));
+```
+
+- `agent` is a random id per agent instance and `seq` counts its reports from 1.
+- `eventType` is the protocol event type, or for writes no event caused one of
+  `run:start`, `run:end`, `history`, `reset`, `submit`, `queue`, `branch`.
+- `wrote` lists the signals written, in order, by name only: `status`, `values`, `messages`, `error`, `interrupt`, `interrupts`, `branch`, `history`, `isThreadLoading`, `toolProgress`, `toolCalls`, `messageMetadata`, `subagents`, `queue`, `custom`.
+- `tMs` is `performance.now()` when the event began.
+
+Signal values are never read or sent: the report carries names and timing,
+nothing from the conversation. Dispatch is fire-and-forget, so the page cannot
+tell whether anything listens, and an event that wrote nothing is not reported.
+Production builds remove the hook entirely (CI verifies the bundle). To turn it
+off in development, set `window.__THREADPLANE_DEVTOOLS_DISABLED__ = true`
+before creating agents.
+
 ## Reliability
 
 **Runtime-neutral contract.** `LangGraphAgent` implements the `Agent` contract from `@threadplane/chat`. Components that depend only on that contract are portable across adapters (`@threadplane/ag-ui`, future adapters) without modification.

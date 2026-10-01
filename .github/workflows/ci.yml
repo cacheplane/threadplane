@@ -170,6 +170,8 @@ jobs:
         run: node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.base.json scripts/react-parity/verify-tool-claims.ts
       - run: npx nx run-many -t test --projects=chat,ag-ui,render,a2ui,telemetry,middleware --coverage --parallel=1 --maxWorkers=2
       - run: npx nx run-many -t build --projects=$LIBS --configuration=production
+      - name: Verify production builds strip the devtools hook
+        run: npx nx run chat:test-devtools-bundle
       - name: Install Chromium for packed runtime consumers
         run: npx playwright install --with-deps chromium
       - name: Verify native conversation example

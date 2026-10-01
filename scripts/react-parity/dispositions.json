@@ -6981,6 +6981,51 @@
       "status": "planned"
     },
     {
+      "id": "export:libs/chat/src/public-api.ts#\u0275AgUiDevtoolsSignal",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only \u0275 devtools seam shared by the Angular adapters; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#\u0275DevtoolsEmitter",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only \u0275 devtools seam shared by the Angular adapters; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#\u0275DevtoolsPseudoEvent",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only \u0275 devtools seam shared by the Angular adapters; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#\u0275LangGraphDevtoolsSignal",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only \u0275 devtools seam shared by the Angular adapters; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#\u0275createDevtoolsEmitter",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only \u0275 devtools seam shared by the Angular adapters; not a public API and no React surface is promised."
+    },
+    {
       "id": "export:libs/chat/testing/public-api.ts#AbstractEvent",
       "taskIds": [
         "T05",
@@ -8578,6 +8623,15 @@
       "note": "Extracted unchanged capture algorithm from transcript ownership. Preserves own enumerable plain data, undefined, sparse arrays and null prototypes, and rejects nonportable values or cycles."
     },
     {
+      "id": "source:libs/ag-ui/src/lib/internal/devtools.ts",
+      "taskIds": [
+        "T12"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only signal instrumentation for the devtools emitter; carries names only."
+    },
+    {
       "id": "source:libs/ag-ui/src/lib/internal/content-parts.ts",
       "taskIds": ["T12"],
       "treatment": "internal",
@@ -8983,6 +9037,14 @@
         "T02",
         "T36",
         "T37"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned"
+    },
+    {
+      "id": "source:libs/chat/scripts/verify-devtools-bundle.mjs",
+      "taskIds": [
+        "T17"
       ],
       "treatment": "infrastructure",
       "status": "planned"
@@ -9635,6 +9697,15 @@
       ],
       "treatment": "shared",
       "status": "planned"
+    },
+    {
+      "id": "source:libs/chat/src/lib/devtools/devtools-emitter.ts",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only devtools emitter (names and timing, never values); stripped from production builds."
     },
     {
       "id": "source:libs/chat/src/lib/internals/prettify.ts",
@@ -11380,6 +11451,15 @@
       ],
       "treatment": "shared",
       "status": "planned"
+    },
+    {
+      "id": "source:libs/langgraph/src/lib/internals/devtools.ts",
+      "taskIds": [
+        "T09"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only subject instrumentation for the devtools emitter; carries names only."
     },
     {
       "id": "source:libs/langgraph/src/lib/internals/extract-citations.ts",
