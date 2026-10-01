@@ -686,6 +686,9 @@ jobs:
           restore-keys: |
             playwright-${{ runner.os }}-
       - run: npx playwright install --with-deps chromium
+      - name: Verify React cockpit source
+        if: endsWith(matrix.cap.angular, '-react')
+        run: npx nx run-many -t test,lint -p "${{ matrix.cap.angular }}" --skip-nx-cache
       - name: nx e2e ${{ matrix.cap.angular }}
         run: npx nx e2e "${{ matrix.cap.angular }}" --skip-nx-cache
       - name: Upload Playwright trace on failure
@@ -695,6 +698,8 @@ jobs:
           name: cockpit-e2e-trace-${{ matrix.cap.angular }}
           path: |
             cockpit/**/angular/e2e/test-results/
+            cockpit/**/react/e2e/test-results/
+            test-results/
           retention-days: 7
 
   cockpit-e2e-summary:
