@@ -9,7 +9,8 @@ export default [
       '@nx/dependency-checks': [
         'error',
         {
-          ignoredFiles: ['{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}'],
+          // scripts/ holds CI tooling (the devtools bundle check) that never ships.
+          ignoredFiles: ['{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}', '{projectRoot}/scripts/**'],
           ignoredDependencies: ['vite', '@nx/vite', 'vitest', '@analogjs/vite-plugin-angular'],
         },
       ],
