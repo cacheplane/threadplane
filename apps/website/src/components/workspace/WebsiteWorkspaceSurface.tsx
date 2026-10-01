@@ -404,33 +404,36 @@ export function WebsiteWorkspaceSurface({
   return (
     <ThemeProvider theme="light">
       <div className="website-workspace-host" data-website-workspace-host="">
-        <div className="website-workspace-frontend">
-          <label>
-            Example UI{' '}
-            <select
-              aria-label="Example UI"
-              value={frontend}
-              onChange={(event) => {
-                const next =
-                  event.target.value === 'react' ? 'react' : 'angular';
-                const url = new URL(window.location.href);
-                if (next === 'react') url.searchParams.set('frontend', 'react');
-                else url.searchParams.delete('frontend');
-                setDiscoveredRouteMode({
-                  routePath,
-                  mode: routeMode,
-                  frontend: next,
-                });
-                routerRef.current.push(
-                  `${url.pathname}${url.search}${url.hash}`
-                );
-              }}
-            >
-              <option value="angular">Angular</option>
-              <option value="react">React preview</option>
-            </select>
-          </label>
-        </div>
+        {(Boolean(frontendVariants?.react) || frontend === 'react') && (
+          <div className="website-workspace-frontend">
+            <label>
+              Example UI{' '}
+              <select
+                aria-label="Example UI"
+                value={frontend}
+                onChange={(event) => {
+                  const next =
+                    event.target.value === 'react' ? 'react' : 'angular';
+                  const url = new URL(window.location.href);
+                  if (next === 'react')
+                    url.searchParams.set('frontend', 'react');
+                  else url.searchParams.delete('frontend');
+                  setDiscoveredRouteMode({
+                    routePath,
+                    mode: routeMode,
+                    frontend: next,
+                  });
+                  routerRef.current.push(
+                    `${url.pathname}${url.search}${url.hash}`
+                  );
+                }}
+              >
+                <option value="angular">Angular</option>
+                <option value="react">React preview</option>
+              </select>
+            </label>
+          </div>
+        )}
         <WorkspaceProvider
           key={frontend}
           resolution={selectedResolution}

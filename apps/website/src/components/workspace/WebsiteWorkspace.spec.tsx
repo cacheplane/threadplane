@@ -145,6 +145,10 @@ const activeWorkspaceMode = (): string | undefined =>
     .workspaceMode;
 
 describe('WebsiteWorkspace', () => {
+  it('keeps the frontend selector off ordinary Angular documentation pages', () => {
+    renderWorkspace();
+    expect(screen.queryByLabelText('Example UI')).toBeNull();
+  });
   it('selects the React identity and runtime together from a public URL', async () => {
     const resolution = mappedResolution('streaming', 'streaming', ['Docs', 'Run', 'Code']);
     const reactResolution = mappedResolution('streaming:react', 'streaming', ['Docs', 'Run', 'Code']);
