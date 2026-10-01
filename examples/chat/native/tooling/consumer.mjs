@@ -246,6 +246,7 @@ function assertComposition(consumer, typeInputs, runtimeInputs) {
     '@threadplane/react/src/chat/message-list',
     '@threadplane/react/src/chat/reasoning',
     '@threadplane/react/src/chat/approval-card',
+    '@threadplane/react/src/chat/message-actions',
     '@threadplane/content/src/markdown/create-markdown',
     '@threadplane/content/src/messages/create-message-content',
   ]) {

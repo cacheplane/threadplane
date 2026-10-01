@@ -1,5 +1,8 @@
 import {
   MessageList,
+  MessageActions,
+  type MessageAction,
+  type MessageActionsProps,
   ApprovalCard,
   type ApprovalCardProps,
   type ApprovalCardAction,
@@ -18,6 +21,26 @@ interface WeatherRow extends MessageRow<Tools> {
   readonly summary: string;
 }
 declare const rows: readonly WeatherRow[];
+const messageAction: MessageAction = {
+  id: 'copy',
+  label: 'Copy',
+  onSelect: () => {},
+};
+const messageActionsProps: MessageActionsProps = { actions: [messageAction] };
+<MessageActions {...messageActionsProps} />;
+// @ts-expect-error Installed actions are required.
+<MessageActions />;
+// @ts-expect-error Installed collections are readonly.
+messageActionsProps.actions.push(messageAction);
+// @ts-expect-error Installed callbacks remain readonly.
+messageAction.onSelect = () => {};
+const invalidMessageAction: MessageAction = {
+  id: 'invalid',
+  label: 'Invalid',
+  // @ts-expect-error Installed callbacks receive no inferred message.
+  onSelect: (message: string) => message,
+};
+void invalidMessageAction;
 const approvalAction: ApprovalCardAction = {
   id: 'approve',
   label: 'Approve',

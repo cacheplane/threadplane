@@ -1998,9 +1998,9 @@
         "T23"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/message-actions.tsx",
-      "reason": "Native component. Copy/rate/regenerate target identity, clipboard outcome and custom action slots."
+      "reason": "Private authored MessageActions group dogfooded through app-owned copy with exact answer text, pending and clipboard outcome. Ratings, regeneration and full legacy parity remain separate."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-message-list/chat-message-list.component.ts#ChatMessageListComponent",
@@ -14652,6 +14652,26 @@
       "status": "in-progress",
       "reason": "Pure named inline card with native buttons, required body/actions and stable unique heading IDs.",
       "note": "No parser, subscriptions, timing, command dispatch, pending state or disposal; SSR and public distribution remain separate."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#MessageActions",
+      "taskIds": ["T23"], "treatment": "react", "status": "in-progress",
+      "reason": "Private authored action group with installed native copy dogfood; callbacks and clipboard feedback belong to the app."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#MessageAction",
+      "taskIds": ["T23"], "treatment": "react", "status": "in-progress",
+      "reason": "Readonly explicit action IDs, string labels, argumentless callbacks and authoritative disabled state."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#MessageActionsProps",
+      "taskIds": ["T23"], "treatment": "react", "status": "in-progress",
+      "reason": "Readonly authored collection and group presentation props; no inferred backend commands."
+    },
+    {
+      "id": "source:libs/react/src/chat/message-actions.tsx",
+      "taskIds": ["T23"], "treatment": "react", "status": "in-progress",
+      "reason": "Pure native button group with explicit activation and controlled disabled state; no clipboard, timers, session ownership or local rating state."
     }
   ]
 }

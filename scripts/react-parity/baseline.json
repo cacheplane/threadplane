@@ -1,39 +1,16 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "271c46c005a91980ffeed4fa91b69562d705011b",
+  "baselineHead": "ccfe5b1f0f24807a74a8dc2d9c40d2897e59be92",
   "sourceState": {
     "modified": [
-      "apps/website/content/docs/ag-ui/getting-started/installation.mdx",
-      "apps/website/content/docs/ag-ui/guides/interrupts.mdx",
-      "apps/website/content/docs/ag-ui/reference/event-mapping.mdx",
-      "apps/website/content/docs/chat/getting-started/changelog.mdx",
-      "libs/ag-ui/README.md",
-      "libs/ag-ui/package.json",
-      "libs/ag-ui/src/lib/client-tools.ts",
-      "libs/ag-ui/src/lib/internal/content-parts.ts",
-      "libs/ag-ui/src/lib/interrupt-persistence.ts",
-      "libs/ag-ui/src/lib/interrupt-session.ts",
-      "libs/ag-ui/src/lib/reducer.ts",
-      "libs/ag-ui/src/lib/to-agent.ts",
-      "libs/ag-ui/src/runtime/README.md",
-      "libs/ag-ui/src/runtime/create-http-request.ts",
-      "libs/ag-ui/src/runtime/create-run.ts",
-      "libs/ag-ui/src/runtime/create-session.ts",
-      "libs/ag-ui/src/runtime/decision.ts",
-      "libs/ag-ui/src/runtime/reconcile-transcript.ts",
-      "libs/ag-ui/src/runtime/session-observation.ts",
-      "libs/ag-ui/src/runtime/testing/binding-fixture.ts",
-      "libs/chat/src/lib/agent/agent-usage.ts",
-      "libs/chat/src/lib/agent/agent.ts",
-      "libs/chat/src/lib/agent/index.ts",
-      "libs/chat/src/lib/agent/tool-call.ts",
-      "libs/chat/src/lib/client-tools/select-pending-client-tool-calls.ts",
-      "libs/chat/src/public-api.ts",
-      "package-lock.json",
-      "package.json",
-      "scripts/assemble-examples.ts"
+      ".github/workflows/ci.yml",
+      "libs/react/README.md",
+      "libs/react/src/chat/index.ts",
+      "libs/react/src/chat/styles.css"
     ],
-    "untracked": []
+    "untracked": [
+      "libs/react/src/chat/message-actions.tsx"
+    ]
   },
   "scope": {
     "libraries": [
@@ -844,7 +821,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "8e7125882298f8f6ec437bfac82e57049e4da51946fc0abc025f8498ea9b612b"
+      "sha256": "0564284eed74765a808573b9f55e53896c889f6cbed46f5efef5434b7315685d"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -862,7 +839,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "984944ee0209fad002769306879abae5b0f999eb19f285e59d28e9041e9d2776"
+      "sha256": "22f790a9b581a7c9a7ac39ad95bbbc6510b521b4b8267f154530ff46e99921c1"
     },
     {
       "id": "asset:libs/react/tsconfig.json",
@@ -2134,7 +2111,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "b1a019140d5dd8f9a8b02b4b03b7ec2fc7f0efdfe7a57c7389c47bceb92b4e3c"
+      "sha256": "aff56b27d72d7f0b0c4652b68e5aa26cbefc3c2238d0660d72b6eeea4ab149fb"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -9860,6 +9837,48 @@
       ]
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#MessageAction",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "MessageAction",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/message-actions.tsx",
+          "symbol": "MessageAction",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface MessageAction {\n    readonly id: string;\n    readonly label: string;\n    readonly onSelect: () => void;\n    readonly disabled?: boolean;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#MessageActions",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "MessageActions",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/message-actions.tsx",
+          "symbol": "MessageActions",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function MessageActions({ actions, disabled = false, label = 'Message actions', className, }: MessageActionsProps) {\n    if (!actions.length)\n        return null;\n    return (<div role=\"group\" aria-label={label} className={['tp-message-actions', className].filter(Boolean).join(' ')}>\n      {actions.map((action) => (<button key={action.id} type=\"button\" className=\"tp-message-actions__action\" disabled={disabled || action.disabled} onClick={() => {\n                if (!disabled && !action.disabled)\n                    action.onSelect();\n            }}>\n          {action.label}\n        </button>))}\n    </div>);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#MessageActionsProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "MessageActionsProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/message-actions.tsx",
+          "symbol": "MessageActionsProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface MessageActionsProps {\n    readonly actions: readonly MessageAction[];\n    readonly disabled?: boolean;\n    readonly label?: string;\n    readonly className?: string;\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/react/src/chat/index.ts#MessageList",
       "kind": "export",
       "path": "libs/react/src/chat/index.ts",
@@ -13915,7 +13934,7 @@
       "id": "source:libs/react/src/chat/index.ts",
       "kind": "source",
       "path": "libs/react/src/chat/index.ts",
-      "sha256": "ee835d4436185fe57d509b019075902b2c4895034ca0d6e8ed8295a8a58f02b6"
+      "sha256": "3a06a6e3a809c9817518ce36e62069633375dea23ddc57bd07ed08e1ce9ff880"
     },
     {
       "id": "source:libs/react/src/chat/internal/isomorphic-layout-effect.ts",
@@ -13928,6 +13947,12 @@
       "kind": "source",
       "path": "libs/react/src/chat/internal/use-message-content.ts",
       "sha256": "9f4ef4e52b618af6d2e28c5be86e6e8a94d235ab2c0d04f483cdb31c86f9802d"
+    },
+    {
+      "id": "source:libs/react/src/chat/message-actions.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/message-actions.tsx",
+      "sha256": "1245a597dfb6e64fcff730426160262036dfb5ffc93cfd85b59c9f4dae1c49a2"
     },
     {
       "id": "source:libs/react/src/chat/message-list.tsx",

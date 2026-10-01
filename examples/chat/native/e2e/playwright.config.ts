@@ -10,6 +10,7 @@ export default defineConfig({
     'production.spec.ts',
     'message-list.spec.ts',
     'reasoning.spec.ts',
+    'message-actions.spec.ts',
   ],
   fullyParallel: false,
   workers: 1,

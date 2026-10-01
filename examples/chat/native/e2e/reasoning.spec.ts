@@ -188,7 +188,9 @@ test('installed React reasoning borrows snapshots and preserves response disclos
     const second = list
       .getByRole('article', { name: 'assistant message' })
       .nth(1);
-    await second.getByRole('button').click();
+    await second
+      .getByRole('button', { name: 'Show reasoning', exact: true })
+      .click();
     await expect(
       second.getByRole('region', { name: 'Reasoning' })
     ).toContainText('<script>bad()</script>');
@@ -228,7 +230,7 @@ test('installed React reasoning borrows snapshots and preserves response disclos
       list
         .getByRole('article', { name: 'assistant message' })
         .last()
-        .getByRole('button')
+        .getByRole('button', { name: /^(Show|Hide) reasoning$/ })
     ).toHaveAttribute('aria-expanded', 'false');
     expect(await savedNode.evaluate((el) => el.isConnected)).toBe(true);
     await send(2);
@@ -236,7 +238,7 @@ test('installed React reasoning borrows snapshots and preserves response disclos
       list
         .getByRole('article', { name: 'assistant message' })
         .nth(2)
-        .getByRole('button')
+        .getByRole('button', { name: /^(Show|Hide) reasoning$/ })
     ).toHaveAttribute('aria-expanded', 'false');
     await list.getByRole('button', { name: 'Thinking…' }).click();
     await list.getByRole('button', { name: 'Thinking…' }).click();
@@ -247,7 +249,7 @@ test('installed React reasoning borrows snapshots and preserves response disclos
       list
         .getByRole('article', { name: 'assistant message' })
         .last()
-        .getByRole('button')
+        .getByRole('button', { name: /^(Show|Hide) reasoning$/ })
     ).toHaveAttribute('aria-expanded', 'true');
     // A fresh selection owns fresh history and a fresh disclosure, without a run.
     await page.evaluate(() => {

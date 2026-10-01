@@ -15,6 +15,7 @@ import type { MessageContent } from '../../shared/message-content';
 import { filterLoadedTitles } from '../../shared/projection';
 import { submissionStatus } from '../../shared/submission-status';
 import { Approval } from './approval';
+import { CopyAnswer } from './copy-answer';
 import { TripSummary } from './trip-summary';
 
 type Application = ReturnType<typeof createApplication>;
@@ -61,6 +62,12 @@ const Message = memo(function Message({ row }: { row: MessageContent }) {
               <p className="muted">Observed tool status: {call.status}</p>
             </div>
           ))}
+      {row.role === 'assistant' && (
+        <CopyAnswer
+          text={row.message.content}
+          generation={row.message.delivery.generation}
+        />
+      )}
     </article>
   );
 });

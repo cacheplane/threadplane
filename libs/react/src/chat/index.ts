@@ -12,6 +12,11 @@ export {
 export { MessageList, type MessageListProps } from './message-list.js';
 export { Reasoning, type ReasoningProps } from './reasoning.js';
 export {
+  MessageActions,
+  type MessageAction,
+  type MessageActionsProps,
+} from './message-actions.js';
+export {
   ApprovalCard,
   type ApprovalCardAction,
   type ApprovalCardProps,
