@@ -57,7 +57,7 @@ jobs:
       # classifier walk.
       - run: npm ci
       - name: Test CI scope classifier
-        run: node --test scripts/ci-scope.spec.mjs scripts/cockpit-matrix.spec.mjs scripts/cockpit-ports.spec.mjs scripts/cockpit-runtime-bridge-coverage.spec.mjs
+        run: node --test scripts/ci-scope.spec.mjs scripts/cockpit-matrix.spec.mjs scripts/cockpit-frontend-matrix.spec.mjs scripts/cockpit-ports.spec.mjs scripts/cockpit-runtime-bridge-coverage.spec.mjs
       - name: Detect changed CI surfaces
         id: scope
         run: |
@@ -686,6 +686,9 @@ jobs:
           restore-keys: |
             playwright-${{ runner.os }}-
       - run: npx playwright install --with-deps chromium
+      - name: Verify React cockpit source
+        if: endsWith(matrix.cap.angular, '-react')
+        run: npx nx run-many -t test,lint -p "${{ matrix.cap.angular }}" --skip-nx-cache
       - name: nx e2e ${{ matrix.cap.angular }}
         run: npx nx e2e "${{ matrix.cap.angular }}" --skip-nx-cache
       - name: Upload Playwright trace on failure
@@ -695,6 +698,8 @@ jobs:
           name: cockpit-e2e-trace-${{ matrix.cap.angular }}
           path: |
             cockpit/**/angular/e2e/test-results/
+            cockpit/**/react/e2e/test-results/
+            test-results/
           retention-days: 7
 
   cockpit-e2e-summary:
