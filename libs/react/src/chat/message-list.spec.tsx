@@ -32,6 +32,25 @@ const snap = (
   Object.freeze({ status: 'idle', messages, toolCalls }) as AgentSnapshot;
 
 describe('MessageList', () => {
+  it('shows supplied citations only on default assistant rows and respects custom rendering', () => {
+    const content = createMessageContent();
+    const citations = [{ id: 'c', index: 1, title: 'Owned source' }] as const;
+    const rows = content.project(
+      snap(
+        ['assistant', 'user', 'tool'].map((role) =>
+          msg(role, 'Answer', { role: role as Message['role'], citations })
+        )
+      )
+    );
+    const view = render(<MessageList rows={rows} />);
+    expect(view.getAllByRole('region', { name: 'Sources' })).toHaveLength(1);
+    expect(view.getAllByText('Owned source')).toHaveLength(1);
+    view.rerender(
+      <MessageList rows={rows} renderMessage={(row) => <p>{row.id}</p>} />
+    );
+    expect(view.queryByRole('region', { name: 'Sources' })).toBeNull();
+    content.dispose();
+  });
   it('renders reasoning only for assistants and resets disclosure after removal', () => {
     const content = createMessageContent();
     const other = ['user', 'system', 'tool'].map((role) =>

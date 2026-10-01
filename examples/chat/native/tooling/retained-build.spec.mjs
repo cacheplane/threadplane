@@ -256,6 +256,7 @@ function fixture(t, framework = 'react') {
         'reasoning',
         'approval-card',
         'message-actions',
+        'citations',
       ]) {
         const local = 'src/chat/' + name + extension;
         const path = 'node_modules/@threadplane/react/' + local;
@@ -411,6 +412,18 @@ for (const [graph, extension] of [
       'node_modules/@threadplane/react/src/render/render-spec' + extension
     ];
     assert.throws(() => captureRetainedBuild(f.directory, f), /RenderSpec/);
+  });
+
+for (const [graph, extension] of [
+  ['compiler', '.d.ts'],
+  ['bundler', '.js'],
+])
+  test(`React retention requires installed Citations ${graph}`, (t) => {
+    const f = fixture(t, 'react');
+    delete f.provenance[graph].inputs[
+      'node_modules/@threadplane/react/src/chat/citations' + extension
+    ];
+    assert.throws(() => captureRetainedBuild(f.directory, f), /Citations/);
   });
 
 for (const framework of ['react', 'angular']) {

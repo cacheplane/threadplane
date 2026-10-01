@@ -14844,6 +14844,33 @@
       ],
       "treatment": "react",
       "status": "in-progress"
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#Citations",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Bounded readonly source metadata view; no legacy overlays, source fetching or full citation parity."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#CitationsProps",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Bounded readonly source metadata view; no legacy overlays, source fetching or full citation parity."
+    },
+    {
+      "id": "source:libs/react/src/chat/citations.tsx",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Bounded readonly source metadata view; no legacy overlays, source fetching or full citation parity."
     }
   ]
 }

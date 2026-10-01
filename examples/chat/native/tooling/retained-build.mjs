@@ -219,6 +219,7 @@ function selectedInputs(p, selected) {
       ['reasoning', 'Reasoning'],
       ['approval-card', 'ApprovalCard'],
       ['message-actions', 'MessageActions'],
+      ['citations', 'Citations'],
     ]) {
       const list = 'node_modules/@threadplane/react/src/chat/' + name;
       assert.ok(

@@ -158,6 +158,27 @@ SSR and hydration remain outside this private feature.
 
 ## Chat
 
+`Citations` presents an explicit readonly `Citation[]` from `@threadplane/core`
+as a named Sources section. Empty input renders nothing. It preserves supplied
+order, index, title, snippet and source-type text; IDs must be unique. Optional
+`label` and `className` customize the section. Same-ID updates preserve mounted
+source items. An absent title falls back to the supplied URL or `Source <index>`;
+intentionally empty fields remain empty.
+
+```tsx
+import { Citations } from '@threadplane/react/chat';
+
+<Citations citations={message.citations ?? []} />;
+```
+
+Allowed URLs use the existing content/Markdown link policy, with a native new-tab
+link and `noopener noreferrer`. Missing or blocked URLs display text. The view
+does not fetch icons, previews or metadata, parse snippets, merge Markdown
+sidecars, infer dates/types, subscribe or dispose anything. Default MessageList
+shows supplied sources after assistant answers; custom row rendering selects its
+own presentation. Styles are opt-in through `/chat/styles.css`. This bounded
+Sources view does not provide the legacy citation overlays or full citation parity.
+
 `MessageActions` renders a named group of explicitly authored native buttons.
 Supply readonly actions with unique `id`, string `label`, argumentless `onSelect`
 and optional `disabled`. Root `disabled`, `label` and `className` are optional;

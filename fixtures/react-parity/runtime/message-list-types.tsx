@@ -1,5 +1,7 @@
 import {
   MessageList,
+  Citations,
+  type CitationsProps,
   MessageActions,
   type MessageAction,
   type MessageActionsProps,
@@ -21,6 +23,14 @@ interface WeatherRow extends MessageRow<Tools> {
   readonly summary: string;
 }
 declare const rows: readonly WeatherRow[];
+const citationProps: CitationsProps = { citations: [{ id: 'a', index: 1 }] };
+<Citations {...citationProps} />;
+// @ts-expect-error Installed citation collections are readonly.
+citationProps.citations.push({ id: 'b', index: 2 });
+// @ts-expect-error Installed citation fields are readonly.
+citationProps.citations[0].title = 'Changed';
+// @ts-expect-error Presentation cannot execute commands.
+<Citations {...citationProps} onSelect={() => undefined} />;
 const messageAction: MessageAction = {
   id: 'copy',
   label: 'Copy',

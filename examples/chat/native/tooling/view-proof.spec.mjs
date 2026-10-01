@@ -66,6 +66,7 @@ function fixture(t, framework) {
           'chat/reasoning.js',
           'chat/approval-card.js',
           'chat/message-actions.js',
+          'chat/citations.js',
           'render/render-spec.js',
         ].map((n) => 'node_modules/@threadplane/react/src/' + n)),
   ];
@@ -80,7 +81,10 @@ function fixture(t, framework) {
           'threadplane-angular-markdown',
           'threadplane-angular-chat',
         ].map((n) => 'node_modules/@threadplane/angular/types/' + n + '.d.ts')
-      : ['node_modules/@threadplane/react/src/render/render-spec.d.ts']),
+      : [
+          'node_modules/@threadplane/react/src/render/render-spec.d.ts',
+          'node_modules/@threadplane/react/src/chat/citations.d.ts',
+        ]),
   ];
   const configs = ['view-proof/tsconfig.json', framework + '/tsconfig.json'];
   const buildConfig =
@@ -369,6 +373,26 @@ for (const [graph, extension] of [
     rmSync(join(f.root, 'inputs', path));
     f.save();
     assert.throws(() => readViewProof(f.root), /render-spec/);
+  });
+
+for (const [graph, extension] of [
+  ['runtime', '.js'],
+  ['types', '.d.ts'],
+])
+  test(`React rejects missing installed Citations ${graph}`, (t) => {
+    const f = fixture(t, 'react');
+    const path =
+      'node_modules/@threadplane/react/src/chat/citations' + extension;
+    if (graph === 'runtime')
+      f.record.runtime = f.record.runtime.filter((p) => p !== path);
+    else
+      f.record.compiler.inputs = f.record.compiler.inputs.filter(
+        (p) => p !== path
+      );
+    delete f.record.inputs[path];
+    rmSync(join(f.root, 'inputs', path));
+    f.save();
+    assert.throws(() => readViewProof(f.root), /citations/);
   });
 
 test('React rejects missing installed MessageList runtime', (t) => {
