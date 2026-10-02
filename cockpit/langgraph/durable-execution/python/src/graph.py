@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import NotRequired, TypedDict
 from langgraph.graph import StateGraph, END
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import SystemMessage, convert_to_messages
 
 PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
 
@@ -83,7 +83,7 @@ def build_durable_execution_graph():
         # Keep the user's original question (the newest human message) alongside
         # the final answer; the intermediate analyze/plan drafts are dropped.
         question = next(
-            (m for m in reversed(state["messages"]) if getattr(m, "type", None) == "human"),
+            (m for m in reversed(convert_to_messages(state["messages"])) if m.type == "human"),
             None,
         )
         result = {
