@@ -49,7 +49,7 @@ import type {
   AgentSubmitOptions,
   MessageDelivery,
 } from '@threadplane/chat';
-import { AgentError, staticDelivery, ɵcreateDevtoolsEmitter } from '@threadplane/chat';
+import { AgentError, staticDelivery, ɵcreateDevtoolsEmitter, ɵdevtoolsScriptedRuns } from '@threadplane/chat';
 import type { ɵDevtoolsPseudoEvent } from '@threadplane/chat';
 
 import {
@@ -350,6 +350,7 @@ export function agent<
     threadId$,
     destroy$: destroy$.asObservable(),
     devtools,
+    scriptedRuns: ɵdevtoolsScriptedRuns('langgraph'),
     ...(transport === undefined && reportOperationFailure !== null
       ? { reportOperationFailure }
       : {}),

@@ -306,3 +306,12 @@ export type {
   LangGraphDevtoolsSignal as ɵLangGraphDevtoolsSignal,
   AgUiDevtoolsSignal as ɵAgUiDevtoolsSignal,
 } from './lib/devtools/devtools-emitter';
+// Development-only scripted runs: the AG-UI DevTools run simulator arms the
+// next run(s) of an adapter with protocol events in place of the network.
+// Private (ɵ) — an adapter seam, not API.
+export { ɵdevtoolsScriptedRuns } from './lib/devtools/devtools-scripted-runs';
+export type {
+  DevtoolsScriptedRuns as ɵDevtoolsScriptedRuns,
+  LangGraphScriptedRun as ɵLangGraphScriptedRun,
+  AgUiScriptedRun as ɵAgUiScriptedRun,
+} from './lib/devtools/devtools-scripted-runs';

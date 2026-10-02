@@ -7026,6 +7026,42 @@
       "reason": "Development-only \u0275 devtools seam shared by the Angular adapters; not a public API and no React surface is promised."
     },
     {
+      "id": "export:libs/chat/src/public-api.ts#\u0275AgUiScriptedRun",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only \u0275 devtools seam shared by the Angular adapters; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#\u0275DevtoolsScriptedRuns",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only \u0275 devtools seam shared by the Angular adapters; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#\u0275LangGraphScriptedRun",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only \u0275 devtools seam shared by the Angular adapters; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#\u0275devtoolsScriptedRuns",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only \u0275 devtools seam shared by the Angular adapters; not a public API and no React surface is promised."
+    },
+    {
       "id": "export:libs/chat/testing/public-api.ts#AbstractEvent",
       "taskIds": [
         "T05",
@@ -8629,7 +8665,7 @@
       ],
       "treatment": "internal",
       "status": "planned",
-      "reason": "Development-only signal instrumentation for the devtools emitter; carries names only."
+      "reason": "Development-only devtools seam: signal instrumentation (names only) and the scripted-run substitution of source.run."
     },
     {
       "id": "source:libs/ag-ui/src/lib/internal/content-parts.ts",
@@ -9706,6 +9742,15 @@
       "treatment": "internal",
       "status": "planned",
       "reason": "Development-only devtools emitter (names and timing, never values); stripped from production builds."
+    },
+    {
+      "id": "source:libs/chat/src/lib/devtools/devtools-scripted-runs.ts",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only scripted runs for the AG-UI DevTools run simulator (arm, disarm, ack); stripped from production builds."
     },
     {
       "id": "source:libs/chat/src/lib/internals/prettify.ts",

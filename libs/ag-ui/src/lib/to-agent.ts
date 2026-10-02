@@ -17,9 +17,10 @@ import {
   AGENT_RECOVERY_MESSAGES,
   AGENT_RECOVERY_DETAILS,
   ɵcreateDevtoolsEmitter,
+  ɵdevtoolsScriptedRuns,
 } from '@threadplane/chat';
 import type { ɵDevtoolsPseudoEvent } from '@threadplane/chat';
-import { instrumentSignals } from './internal/devtools';
+import { instrumentSignals, scriptNextRun } from './internal/devtools';
 import type {
   Agent, Message, AgentStatus, ToolCall, AgentEvent,
   AgentInterrupt, AgentUsage,
@@ -220,6 +221,9 @@ function createAgentAdapter(
       devtools.end();
     }
   };
+  // Development-only (null in production): runs the AG-UI DevTools run
+  // simulator armed, served in place of the network.
+  const scriptedRuns = ɵdevtoolsScriptedRuns('ag-ui');
   const transaction = new RunStateTransaction({ state: source.state ?? {}, messages: source.messages ?? [] });
   let disposed = false;
   let resumeInput: { state: Record<string, unknown>; messages: typeof source.messages; localMessages?: Message[] } | undefined;
@@ -688,7 +692,15 @@ function createAgentAdapter(
         if (persistence) await persistCurrent();
       }
       if (disposed || activeRun !== run || run.outcome !== undefined) return;
-      await source.runAgent(runParameters);
+      // Development only: an armed scripted run replaces `source.run` for this
+      // one call, so runAgent and every subscriber handle it as a real run.
+      const scripted = scriptedRuns?.take() ?? null;
+      const restoreRun = scripted ? scriptNextRun(source, scripted) : undefined;
+      try {
+        await source.runAgent(runParameters);
+      } finally {
+        restoreRun?.();
+      }
       if (disposed || activeRun !== run) return;
       report('run:end', () => {
         if (interrupts.snapshot.phase === 'collecting' && !run.terminalReceived) { interrupts.ready(); publishInterrupt(); commitState(); void persistCurrent().catch(() => undefined); }

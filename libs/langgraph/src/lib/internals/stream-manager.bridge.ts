@@ -16,7 +16,7 @@ import {
   AgentQueueEntry,
   LangGraphSubmitOptions,
 } from '../agent.types';
-import { FetchStreamTransport } from '../transport/fetch-stream.transport';
+import { FetchStreamTransport, normalizeSdkEvent } from '../transport/fetch-stream.transport';
 import { BagTemplate } from '@langchain/langgraph-sdk';
 import { getToolCallsWithResults } from '@langchain/langgraph-sdk/utils';
 import type {
@@ -38,7 +38,9 @@ import {
   type MessageDelivery,
   type ɵDevtoolsEmitter,
   type ɵDevtoolsPseudoEvent,
+  type ɵDevtoolsScriptedRuns,
   type ɵLangGraphDevtoolsSignal,
+  type ɵLangGraphScriptedRun,
 } from '@threadplane/chat';
 import {
   SubagentTracker,
@@ -133,6 +135,12 @@ export interface StreamManagerBridgeOptions<T, ResolvedBag extends BagTemplate =
    * which event or pseudo-event each write belongs to.
    */
   devtools?: ɵDevtoolsEmitter<ɵLangGraphDevtoolsSignal> | null;
+  /**
+   * Development-only scripted runs (null in production). When the AG-UI
+   * DevTools run simulator has armed a run, the next `submit` streams its
+   * frames instead of calling the transport.
+   */
+  scriptedRuns?: ɵDevtoolsScriptedRuns<'langgraph'> | null;
 }
 
 type ResubmitOutcome = CompleteOutcome | 'not-started';
@@ -183,7 +191,7 @@ export interface StreamManagerBridge {
 }
 
 export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = BagTemplate>(
-  { options, subjects, threadId$, destroy$, reportOperationFailure, devtools = null }: StreamManagerBridgeOptions<T, ResolvedBag>
+  { options, subjects, threadId$, destroy$, reportOperationFailure, devtools = null, scriptedRuns = null }: StreamManagerBridgeOptions<T, ResolvedBag>
 ): StreamManagerBridge {
   // Attributes the subject writes inside `run` to a pseudo-event in the
   // devtools report. A bracket opened inside another joins it, so a helper
@@ -259,6 +267,8 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
     currentStepHasTerminalEvidence: boolean;
     awaitingFinalSync: boolean;
     terminalOutcome?: CompleteOutcome;
+    /** Streamed from a development-only scripted run; the server never saw it. */
+    scripted?: boolean;
   };
   let activeAttempt: DeliveryAttempt | null = null;
   const subagentManager = new SubagentTracker({
@@ -403,21 +413,25 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
     // way to see that is that the refresh brought back more messages than were
     // here before it.
     const messageCountBeforeRefresh = subjects.messages$.value.length;
-    attempt.awaitingFinalSync = true;
     let refreshed: ThreadState<T>[] | undefined;
-    try {
-      refreshed = await refreshHistory({
-        force: true,
-        isRelevant: () => isCurrentExecution(controller, attempt) && !attempt.terminalOutcome,
-        // On an already-interrupted close the refresh is a diagnostic read, not
-        // the operation the user asked for, so its own failure must not be
-        // reported as the cause — the interruption is the story, and the
-        // `interrupted` error published below says so with an honest recovery.
-        // Any other close keeps the default, so a real sync failure still shows.
-        onFailure: evidenceOutcome === 'interrupted' ? 'ignore' : 'publish',
-      });
-    } finally {
-      attempt.awaitingFinalSync = false;
+    // A scripted run never reached the server, so the server's thread has
+    // nothing to say about it — and reading it would overwrite the script.
+    if (!attempt.scripted) {
+      attempt.awaitingFinalSync = true;
+      try {
+        refreshed = await refreshHistory({
+          force: true,
+          isRelevant: () => isCurrentExecution(controller, attempt) && !attempt.terminalOutcome,
+          // On an already-interrupted close the refresh is a diagnostic read, not
+          // the operation the user asked for, so its own failure must not be
+          // reported as the cause — the interruption is the story, and the
+          // `interrupted` error published below says so with an honest recovery.
+          // Any other close keeps the default, so a real sync failure still shows.
+          onFailure: evidenceOutcome === 'interrupted' ? 'ignore' : 'publish',
+        });
+      } finally {
+        attempt.awaitingFinalSync = false;
+      }
     }
 
     if (!isCurrentExecution(controller, attempt)) return null;
@@ -967,13 +981,18 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
     let streamingStarted = false;
 
     try {
-      const iter = transport.stream(
-        options.assistantId,
-        currentThreadId,
-        payload,
-        opts?.signal ?? controller.signal,
-        opts,
-      );
+      // Development only: an armed scripted run stands in for the network.
+      const scripted = scriptedRuns?.take() ?? null;
+      if (scripted) attempt.scripted = true;
+      const iter = scripted
+        ? streamScriptedRun(scripted, opts?.signal ?? controller.signal)
+        : transport.stream(
+            options.assistantId,
+            currentThreadId,
+            payload,
+            opts?.signal ?? controller.signal,
+            opts,
+          );
 
       for await (const event of iter) {
         if (controller.signal.aborted || !isCurrentExecution(controller, attempt)) break;
@@ -1051,6 +1070,23 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
     } finally {
       if (abortController === controller) abortController = null;
     }
+  }
+
+  // The frames of a scripted run, normalized exactly as FetchStreamTransport
+  // normalizes the SDK's. Async so each frame is processed as a streamed one
+  // would be, and an aborted signal ends it the way it ends a fetch.
+  async function* streamScriptedRun(run: ɵLangGraphScriptedRun, signal: AbortSignal): AsyncIterable<StreamEvent> {
+    for (const frame of run.frames) {
+      await Promise.resolve();
+      if (signal.aborted) throw createScriptAbortError();
+      yield normalizeSdkEvent(frame.event as StreamEvent['type'], frame.data);
+    }
+  }
+
+  function createScriptAbortError(): Error {
+    const error = new Error('Scripted run aborted.');
+    error.name = 'AbortError';
+    return error;
   }
 
   // Every protocol event is one devtools report: the names of the subjects it

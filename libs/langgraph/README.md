@@ -217,6 +217,59 @@ Production builds remove the hook entirely (CI verifies the bundle). To turn it
 off in development, set `window.__THREADPLANE_DEVTOOLS_DISABLED__ = true`
 before creating agents.
 
+## Scripted runs (development only)
+
+The AG-UI DevTools run simulator can make the next runs of an agent come
+from a script instead of the network, to exercise an interrupt, a subagent
+handoff or a malformed event without a model call:
+
+```ts
+window.dispatchEvent(new CustomEvent('threadplane:devtools:arm', {
+  detail: {
+    v: 1,
+    armId: 'any-id',
+    adapter: 'langgraph',
+    runs: [
+      { frames: [{ event: 'values', data: { messages: [/* … */], __interrupt__: [/* … */] } }] },
+      { frames: [{ event: 'values', data: { messages: [/* … */] } }] },
+    ],
+  },
+}));
+```
+
+- The next run any LangGraph agent on the page streams — `submit()`,
+  `retry()`, `regenerate()` — takes `runs[0]`; the one after, `runs[1]`, for
+  instance the `submit({ resume })` that answers the interrupt.
+- Each frame is `{ event, data }` exactly as the LangGraph SDK yields it. It
+  goes through the same normalization as `FetchStreamTransport`, then the
+  agent's real event handling. `transport.stream()` is not called, and the
+  thread-history read that normally follows a run is skipped: the server
+  never saw this run. Joining an existing run (`joinStream`, queued runs) is
+  never scripted.
+
+- `runs` holds 1 to 8 runs of at most 5,000 frames each, and the whole arm
+  serializes to at most 2 MB. An arm breaking a limit, or of the wrong shape,
+  is ignored and acknowledged `rejected` with a short `reason`.
+- Each adapter has at most one pending arm. A new arm replaces it (the old
+  one is acknowledged `disarmed`), and
+  `window.dispatchEvent(new CustomEvent('threadplane:devtools:disarm', { detail: { v: 1, armId } }))`
+  cancels it. An arm not fully used within 10 minutes is dropped and
+  acknowledged `expired`.
+- Every step is answered with a `threadplane:devtools:ack` `CustomEvent`
+  whose detail is `{ v: 1, armId, state, run?, reason? }`, `state` one of
+  `armed`, `consumed` (with `run`, the 0-based index served), `expired`,
+  `disarmed` or `rejected` (with `reason`). An arm without a usable `armId`
+  (a string of 1 to 128 characters) is ignored without an answer.
+
+The listeners exist only where the signals report does — development mode,
+not opted out, once an agent has been created — and production builds
+contain none of these event names (the same CI bundle check). The extension
+adds its own lock, a per-site Developer mode switch, but the page cannot
+tell who dispatched an arm: any script already running on a development
+page can script your agent's next run, just as it could already drive your
+agent directly. The locks guard against accidents, not against code already
+in the page.
+
 ## Reliability
 
 **Runtime-neutral contract.** `LangGraphAgent` implements the `Agent` contract from `@threadplane/chat`. Components that depend only on that contract are portable across adapters (`@threadplane/ag-ui`, future adapters) without modification.

@@ -203,6 +203,58 @@ Production builds remove the hook entirely (CI verifies the bundle). To turn it
 off in development, set `window.__THREADPLANE_DEVTOOLS_DISABLED__ = true`
 before creating agents.
 
+## Scripted runs (development only)
+
+The AG-UI DevTools run simulator can make the next runs of an agent come
+from a script instead of the network, to exercise an interrupt, a subagent
+handoff or a malformed event without a model call:
+
+```ts
+window.dispatchEvent(new CustomEvent('threadplane:devtools:arm', {
+  detail: {
+    v: 1,
+    armId: 'any-id',
+    adapter: 'ag-ui',
+    runs: [
+      { events: [{ type: 'RUN_STARTED' }, /* … */ { type: 'RUN_FINISHED', outcome: { type: 'interrupt', interrupts: [/* … */] } }] },
+      { events: [{ type: 'RUN_STARTED' }, /* … */ { type: 'RUN_FINISHED', outcome: { type: 'success' } }] },
+    ],
+  },
+}));
+```
+
+- The next run of any agent wrapped by `toAgent()` on the page — `submit()`,
+  `submit({ resume })`, `retry()`, `regenerate()` or a client-tool
+  continuation — takes `runs[0]`; the one after, `runs[1]`.
+- For that one call the source agent's `run(input)` returns the scripted
+  events instead of reaching its backend; `runAgent()`, any middleware, the
+  client's event verification and the adapter's `onEvent` handling all run
+  as usual. `RUN_STARTED` and `RUN_FINISHED` take the run input's `threadId`
+  and `runId`, since the script stands in for this run.
+
+- `runs` holds 1 to 8 runs of at most 5,000 events each, and the whole arm
+  serializes to at most 2 MB. An arm breaking a limit, or of the wrong shape,
+  is ignored and acknowledged `rejected` with a short `reason`.
+- Each adapter has at most one pending arm. A new arm replaces it (the old
+  one is acknowledged `disarmed`), and
+  `window.dispatchEvent(new CustomEvent('threadplane:devtools:disarm', { detail: { v: 1, armId } }))`
+  cancels it. An arm not fully used within 10 minutes is dropped and
+  acknowledged `expired`.
+- Every step is answered with a `threadplane:devtools:ack` `CustomEvent`
+  whose detail is `{ v: 1, armId, state, run?, reason? }`, `state` one of
+  `armed`, `consumed` (with `run`, the 0-based index served), `expired`,
+  `disarmed` or `rejected` (with `reason`). An arm without a usable `armId`
+  (a string of 1 to 128 characters) is ignored without an answer.
+
+The listeners exist only where the signals report does — development mode,
+not opted out, once an agent has been created — and production builds
+contain none of these event names (the same CI bundle check). The extension
+adds its own lock, a per-site Developer mode switch, but the page cannot
+tell who dispatched an arm: any script already running on a development
+page can script your agent's next run, just as it could already drive your
+agent directly. The locks guard against accidents, not against code already
+in the page.
+
 ---
 
 ## Reliability

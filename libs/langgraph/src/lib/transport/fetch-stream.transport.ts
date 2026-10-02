@@ -343,7 +343,12 @@ function defaultStreamMode(): StreamMode[] {
   return ['values', 'messages-tuple', 'updates', 'custom'];
 }
 
-function normalizeSdkEvent(type: StreamEvent['type'], data: unknown): StreamEvent {
+/**
+ * Turns one LangGraph SDK frame (`{ event, data }`) into the adapter's
+ * `StreamEvent`. Exported for the bridge's development-only scripted runs,
+ * which must normalize exactly as this transport does; not public API.
+ */
+export function normalizeSdkEvent(type: StreamEvent['type'], data: unknown): StreamEvent {
   const namespace = extractNamespace(type);
   const baseType = getBaseEventType(type);
 

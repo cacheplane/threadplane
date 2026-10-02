@@ -15,6 +15,7 @@
 
 ### Added
 
+- **Development-only scripted runs for the AG-UI DevTools run simulator.** A `threadplane:devtools:arm` `CustomEvent` (`{ v: 1, armId, adapter, runs }`) makes the next runs of that adapter's agents stream the scripted LangGraph frames or AG-UI events through the adapter's real event handling instead of the network; `threadplane:devtools:disarm` cancels, and every step is answered with a `threadplane:devtools:ack`. At most 8 runs of 5,000 frames or events and 2 MB per arm, one pending arm per adapter, expiring after 10 minutes. The store ships here as the private `ɵdevtoolsScriptedRuns`, behind the same development-only gate and opt-out as the signals report; production builds strip it.
 - **A development-only devtools hook for the runtime adapters.** `@threadplane/langgraph` and `@threadplane/ag-ui` now report, per event, the names of the signals it wrote as a `threadplane:devtools` `CustomEvent` on `window` (names and timing only — never values), for the AG-UI DevTools extension's Signals tab. The emitter ships here as the private `ɵcreateDevtoolsEmitter`; production builds strip it, and `window.__THREADPLANE_DEVTOOLS_DISABLED__ = true` turns it off in development.
 - **`--tplane-chat-launcher-offset-x` / `--tplane-chat-launcher-offset-y`** (both `1rem`) position the `<chat-popup>` launcher, replacing hard-coded corner offsets. The popup window reads the horizontal one too, so it stays aligned when you move the launcher clear of a bottom bar or a consent banner.
 
