@@ -1010,9 +1010,22 @@ const reactPreviews = [
   { topic: 'deployment-runtime', title: 'LangGraph Deployment Runtime (React preview)' },
 ] as const;
 
+const agUiStreamingReact = (() => {
+  const canonical = capabilityModules.find((descriptor) => descriptor.id === 'ag-ui-streaming-python');
+  const frontend = getCockpitFrontends().find((entry) => entry.project === 'cockpit-ag-ui-streaming-react');
+  if (!canonical || !frontend) throw new Error('AG-UI Streaming frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical, id: 'ag-ui-streaming-python-react', frontend: 'react',
+    title: 'AG-UI Streaming (React preview)',
+    codeAssetPaths: ['app.tsx', 'application.ts', 'canonical-transcript.ts', 'connection.ts', 'main.tsx'].map(file => `cockpit/ag-ui/streaming/react/src/${file}`),
+    runtimeUrl: frontend.runtimePath, devPort: frontend.port,
+  });
+})();
+
 export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
   Object.freeze([
     ...capabilityModules,
+    agUiStreamingReact,
     ...reactPreviews.map(({ topic, title }) => {
       const canonical = capabilityModules.find((descriptor) => descriptor.id === `langgraph-${topic}-python`);
       const frontend = getCockpitFrontends().find((entry) => entry.project === `cockpit-langgraph-${topic}-react`);

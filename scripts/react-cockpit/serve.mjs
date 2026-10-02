@@ -12,8 +12,11 @@ import { createDurableFixture } from './durable-fixture.mjs';
 import { createSubgraphsFixture } from './subgraphs-fixture.mjs';
 import { createTimeTravelFixture } from './time-travel-fixture.mjs';
 import { createDeploymentRuntimeFixture } from './deployment-runtime-fixture.mjs';
+import { createAgUiStreamingFixture } from './ag-ui-streaming-fixture.mjs';
 
 const configuration = reactCockpitConfiguration(process.argv[2]);
+const agUiStreamingFixture =
+  configuration.adapter === 'ag-ui' ? createAgUiStreamingFixture() : null;
 const deploymentRuntimeFixture =
   configuration.topic === 'deployment-runtime'
     ? createDeploymentRuntimeFixture()
@@ -61,6 +64,11 @@ const release = () => {
 };
 const server = createServer(async (request, response) => {
   const pathname = new URL(request.url, 'http://localhost').pathname;
+  if (
+    agUiStreamingFixture &&
+    (await agUiStreamingFixture(request, response, pathname))
+  )
+    return;
   if (
     deploymentRuntimeFixture &&
     (await deploymentRuntimeFixture(request, response, pathname))

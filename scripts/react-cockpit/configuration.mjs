@@ -1,5 +1,14 @@
 /** Closed authored frontend selection; callers cannot supply filesystem paths. */
 export function reactCockpitConfiguration(topic = 'streaming') {
+  if (topic === 'ag-ui-streaming')
+    return Object.freeze({
+      topic: 'streaming',
+      adapter: 'ag-ui',
+      appPath: 'cockpit/ag-ui/streaming/react',
+      base: '/ag-ui/streaming/react/',
+      port: 4609,
+      project: 'cockpit-ag-ui-streaming-react',
+    });
   if (
     ![
       'streaming',

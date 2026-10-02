@@ -5,6 +5,33 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { deriveCockpitCaps, selectCockpitCaps } from './cockpit-matrix.mjs';
 
+test('AG-UI Streaming has a closed React identity distinct from LangGraph Streaming', async () => {
+  const { reactCockpitConfiguration } = await import(
+    './react-cockpit/configuration.mjs'
+  );
+  assert.deepEqual(reactCockpitConfiguration('ag-ui-streaming'), {
+    topic: 'streaming',
+    adapter: 'ag-ui',
+    appPath: 'cockpit/ag-ui/streaming/react',
+    base: '/ag-ui/streaming/react/',
+    port: 4609,
+    project: 'cockpit-ag-ui-streaming-react',
+  });
+  assert.equal(
+    reactCockpitConfiguration('streaming').appPath,
+    'cockpit/langgraph/streaming/react'
+  );
+  for (const key of [
+    'ag-ui/streaming',
+    'ag-ui-interrupts',
+    '../ag-ui-streaming',
+  ])
+    assert.throws(
+      () => reactCockpitConfiguration(key),
+      /Unsupported React cockpit topic/
+    );
+});
+
 test('React cockpit configuration accepts only the nine authored topics', async () => {
   const { reactCockpitConfiguration } = await import(
     './react-cockpit/configuration.mjs'
@@ -80,7 +107,7 @@ test('React cockpit configuration accepts only the nine authored topics', async 
     );
 });
 
-test('CI discovers all nine React topics with their existing Python backends', (t) => {
+test('CI discovers ten React previews across both protocols with their own Python backends', (t) => {
   const root = mkdtempSync(join(tmpdir(), 'cockpit-react-topics-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   for (const topic of [
@@ -106,8 +133,20 @@ test('CI discovers all nine React topics with their existing Python backends', (
       );
     }
   }
+  for (const frontend of ['angular', 'react', 'python']) {
+    const directory = join(root, 'cockpit/ag-ui/streaming', frontend);
+    mkdirSync(directory, { recursive: true });
+    writeFileSync(join(directory, 'project.json'), JSON.stringify({
+      name: `cockpit-ag-ui-streaming-${frontend}`,
+      targets: frontend === 'python' ? {} : { e2e: {} },
+    }));
+  }
   const caps = deriveCockpitCaps(root);
-  assert.equal(caps.length, 18);
+  assert.equal(caps.length, 20);
+  const agUi = selectCockpitCaps(caps, new Set(['cockpit-ag-ui-streaming-python']), { fullFleet: false });
+  assert.equal(agUi.length, 2);
+  assert.ok(agUi.every(cap => cap.python === 'cockpit/ag-ui/streaming/python'));
+  assert.ok(agUi.some(cap => cap.angular === 'cockpit-ag-ui-streaming-react'));
   for (const topic of [
     'streaming',
     'interrupts',
