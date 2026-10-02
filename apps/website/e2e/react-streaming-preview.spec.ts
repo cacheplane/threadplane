@@ -54,13 +54,13 @@ test('public React selection keeps docs, code, runtime and history consistent', 
   await page.locator('[data-workspace-desktop-navigation]').getByRole('button', { name: 'Docs', exact: true }).click();
   await page.locator('[data-docs-control-plane-context]').getByRole('link', { name: 'Persistence', exact: true }).click();
   await expect(page).toHaveURL(/persistence\?frontend=react/);
-  await expect(page.getByText(/React preview is not available for this topic/)).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'React persistence preview', exact: true })).toBeVisible();
 });
 
 test('unsupported React topics show availability without an Angular frame', async ({
   page,
 }, testInfo) => {
-  await page.goto('/docs/langgraph/guides/persistence?frontend=react&mode=run');
+  await page.goto('/docs/langgraph/guides/durable-execution?frontend=react&mode=run');
   await expect(
     page.getByText(/React preview is not available for this topic/)
   ).toBeVisible();

@@ -7,12 +7,17 @@ import { reactCockpitConfiguration } from './configuration.mjs';
 import { createInterruptsFixture } from './interrupts-fixture.mjs';
 import { createMemoryFixture } from './memory-fixture.mjs';
 import { createClientToolsFixture } from './client-tools-fixture.mjs';
+import { createPersistenceFixture } from './persistence-fixture.mjs';
 
 const configuration = reactCockpitConfiguration(process.argv[2]);
+const persistenceFixture =
+  configuration.topic === 'persistence' ? createPersistenceFixture() : null;
 const interruptsFixture =
   configuration.topic === 'interrupts' ? createInterruptsFixture() : null;
-const memoryFixture = configuration.topic === 'memory' ? createMemoryFixture() : null;
-const clientToolsFixture = configuration.topic === 'client-tools' ? createClientToolsFixture() : null;
+const memoryFixture =
+  configuration.topic === 'memory' ? createMemoryFixture() : null;
+const clientToolsFixture =
+  configuration.topic === 'client-tools' ? createClientToolsFixture() : null;
 
 const root = resolve(
   dirname(fileURLToPath(import.meta.url)),
@@ -42,8 +47,18 @@ const release = () => {
 };
 const server = createServer(async (request, response) => {
   const pathname = new URL(request.url, 'http://localhost').pathname;
-  if (clientToolsFixture && (await clientToolsFixture(request, response, pathname))) return;
-  if (memoryFixture && (await memoryFixture(request, response, pathname))) return;
+  if (
+    persistenceFixture &&
+    (await persistenceFixture(request, response, pathname))
+  )
+    return;
+  if (
+    clientToolsFixture &&
+    (await clientToolsFixture(request, response, pathname))
+  )
+    return;
+  if (memoryFixture && (await memoryFixture(request, response, pathname)))
+    return;
   if (
     interruptsFixture &&
     (await interruptsFixture(request, response, pathname))

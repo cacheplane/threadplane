@@ -9,6 +9,7 @@ import { ReactStreamingPreview } from '../../../../../components/docs/ReactStrea
 import { ReactInterruptsPreview } from '../../../../../components/docs/ReactInterruptsPreview';
 import { ReactMemoryPreview } from '../../../../../components/docs/ReactMemoryPreview';
 import { ReactClientToolsPreview } from '../../../../../components/docs/ReactClientToolsPreview';
+import { ReactPersistencePreview } from '../../../../../components/docs/ReactPersistencePreview';
 import { WebsiteWorkspace } from '../../../../../components/workspace/WebsiteWorkspace';
 import DocsPage, { generateMetadata } from './page';
 
@@ -56,16 +57,27 @@ const route = (library: string, section: string, slug: string, mode?: string) =>
 describe('unified docs workspace route', () => {
   it('selects the authored client-tools preview on the canonical Chat route', async () => {
     const tree = await route('chat', 'guides', 'client-tools');
-    const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
-    const article = findElement(workspace?.props.reactDocsSlot, ReactClientToolsPreview as ComponentType<never>);
+    const workspace = findElement(
+      tree,
+      WebsiteWorkspace as ComponentType<never>
+    );
+    const article = findElement(
+      workspace?.props.reactDocsSlot,
+      ReactClientToolsPreview as ComponentType<never>
+    );
     expect(article).not.toBeNull();
-    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/langgraph/client-tools/react/src/tools.ts');
-    expect(workspace?.props.contentBundle?.runtimeUrl).toMatch(/langgraph\/client-tools/);
+    expect(article?.props.exampleCode?.assetPaths).toContain(
+      'cockpit/langgraph/client-tools/react/src/tools.ts'
+    );
+    expect(workspace?.props.contentBundle?.runtimeUrl).toMatch(
+      /langgraph\/client-tools/
+    );
   });
   it.each([
     ['streaming', ReactStreamingPreview],
     ['interrupts', ReactInterruptsPreview],
     ['memory', ReactMemoryPreview],
+    ['persistence', ReactPersistencePreview],
   ] as const)(
     'selects topic-specific authored React Docs for %s',
     async (slug, component) => {

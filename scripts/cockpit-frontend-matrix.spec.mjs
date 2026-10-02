@@ -5,12 +5,19 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { deriveCockpitCaps, selectCockpitCaps } from './cockpit-matrix.mjs';
 
-test('React cockpit configuration accepts only the four authored topics', async () => {
+test('React cockpit configuration accepts only the five authored topics', async () => {
   const { reactCockpitConfiguration } = await import(
     './react-cockpit/configuration.mjs'
   );
   assert.equal(reactCockpitConfiguration().topic, 'streaming');
   assert.equal(reactCockpitConfiguration().port, 4600);
+  assert.deepEqual(reactCockpitConfiguration('persistence'), {
+    topic: 'persistence',
+    appPath: 'cockpit/langgraph/persistence/react',
+    base: '/langgraph/persistence/react/',
+    port: 4604,
+    project: 'cockpit-langgraph-persistence-react',
+  });
   assert.deepEqual(reactCockpitConfiguration('interrupts'), {
     topic: 'interrupts',
     appPath: 'cockpit/langgraph/interrupts/react',
@@ -45,10 +52,16 @@ test('React cockpit configuration accepts only the four authored topics', async 
     );
 });
 
-test('CI discovers all four React topics with their existing Python backends', (t) => {
+test('CI discovers all five React topics with their existing Python backends', (t) => {
   const root = mkdtempSync(join(tmpdir(), 'cockpit-react-topics-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
-  for (const topic of ['streaming', 'interrupts', 'memory', 'client-tools']) {
+  for (const topic of [
+    'streaming',
+    'interrupts',
+    'memory',
+    'client-tools',
+    'persistence',
+  ]) {
     for (const frontend of ['angular', 'react', 'python']) {
       const directory = join(root, 'cockpit/langgraph', topic, frontend);
       mkdirSync(directory, { recursive: true });
@@ -62,8 +75,14 @@ test('CI discovers all four React topics with their existing Python backends', (
     }
   }
   const caps = deriveCockpitCaps(root);
-  assert.equal(caps.length, 8);
-  for (const topic of ['streaming', 'interrupts', 'memory', 'client-tools']) {
+  assert.equal(caps.length, 10);
+  for (const topic of [
+    'streaming',
+    'interrupts',
+    'memory',
+    'client-tools',
+    'persistence',
+  ]) {
     const selected = selectCockpitCaps(
       caps,
       new Set([`cockpit-langgraph-${topic}-python`]),

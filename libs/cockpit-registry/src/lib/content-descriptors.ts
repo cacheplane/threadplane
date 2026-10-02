@@ -1003,6 +1003,7 @@ const reactPreviews = [
   { topic: 'interrupts', title: 'LangGraph Interrupts (React preview)' },
   { topic: 'memory', title: 'LangGraph Memory (React preview)' },
   { topic: 'client-tools', title: 'LangGraph Client Tools (React preview)' },
+  { topic: 'persistence', title: 'LangGraph Persistence (React preview)' },
 ] as const;
 
 export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =

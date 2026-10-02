@@ -21,10 +21,25 @@ describe('frontend-specific workspace presentation', () => {
     });
   });
 
-  it('does not lend an Angular runtime to an unsupported React topic', () => {
+  it('selects the supported Persistence React runtime and source', () => {
     const resolution = resolveDocsWorkspace(
       '/docs/langgraph/guides/persistence',
       'Persistence'
+    );
+    expect(getWorkspacePresentation(resolution, 'react')).toMatchObject({
+      kind: 'capability',
+      runtimeUrl: 'langgraph/persistence/react',
+      codeAssetPaths: expect.arrayContaining([
+        'cockpit/langgraph/persistence/react/src/app.tsx',
+      ]),
+      runnable: true,
+    });
+  });
+
+  it('does not lend an Angular runtime to an unsupported React topic', () => {
+    const resolution = resolveDocsWorkspace(
+      '/docs/langgraph/guides/time-travel',
+      'Time Travel'
     );
     expect(getWorkspacePresentation(resolution, 'react')).toMatchObject({
       kind: 'docs-only',
