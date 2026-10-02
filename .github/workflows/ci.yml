@@ -421,6 +421,11 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Set up Python for graph streaming regressions
+        uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57
+        with:
+          python-version: '3.12'
+          enable-cache: false
       - run: npx nx run-many -t smoke --projects=cockpit-ag-ui-interrupts-python,cockpit-ag-ui-streaming-python,cockpit-deep-agents-planning-python,cockpit-deep-agents-filesystem-python,cockpit-deep-agents-subagents-python,cockpit-deep-agents-memory-python,cockpit-deep-agents-skills-python,cockpit-langgraph-persistence-python,cockpit-langgraph-durable-execution-python,cockpit-langgraph-streaming-python,cockpit-langgraph-interrupts-python,cockpit-langgraph-memory-python,cockpit-langgraph-subgraphs-python,cockpit-langgraph-time-travel-python,cockpit-langgraph-deployment-runtime-python,cockpit-chat-messages-python,cockpit-render-spec-rendering-python,cockpit-runtimes-microsoft-agent-framework-python,cockpit-runtimes-aws-strands-python --skip-nx-cache
 
   examples-chat-smoke:

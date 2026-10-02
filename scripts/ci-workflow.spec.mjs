@@ -80,6 +80,25 @@ function readNamedStep(job, name) {
 }
 
 describe('CI workflow', () => {
+  it('runs both graph streaming regressions with locked Python before cockpit smoke can pass', async () => {
+    const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'cockpit-smoke');
+    const setup = readNamedStep(job, 'Set up Python for graph streaming regressions');
+    assert.match(setup, /uses: astral-sh\/setup-uv@cec208311dfd045dd5311c1add060b2062131d57/);
+    assert.match(setup, /python-version: ['"]3\.12['"]/);
+    assert.ok(job.indexOf(setup) < job.indexOf('npx nx run-many -t smoke'));
+    assert.doesNotMatch(setup, /continue-on-error|\|\|\s*true|if:/);
+    for (const topic of ['interrupts', 'memory']) {
+      const project = JSON.parse(await readFile(`cockpit/langgraph/${topic}/python/project.json`, 'utf8'));
+      const smoke = project.targets.smoke;
+      assert.equal(smoke.cache, false);
+      assert.equal(smoke.options.cwd, `cockpit/langgraph/${topic}/python`);
+      assert.equal(smoke.options.parallel, false);
+      assert.equal(smoke.options.commands.length, 2);
+      assert.match(smoke.options.commands[0], /npx tsx -e/);
+      assert.equal(smoke.options.commands[1], 'uv run --frozen --python 3.12 python -m unittest discover -s tests');
+      assert.match(job, new RegExp(`cockpit-langgraph-${topic}-python`));
+    }
+  });
   it('requires one sequential native trip summary provider proof with the existing pinned Python setup', async () => {
     const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'library');
     const setup = readNamedStep(job, 'Set up pinned Python for native approval proof');
