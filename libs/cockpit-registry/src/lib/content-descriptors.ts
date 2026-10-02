@@ -1060,6 +1060,18 @@ const agUiJsonRenderReact = (() => {
   });
 })();
 
+const agUiSubagentsReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'ag-ui-subagents-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-ag-ui-subagents-react');
+  if (!canonical || !frontend) throw new Error('AG-UI Subagents frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical, id: 'ag-ui-subagents-python-react', frontend: 'react', title: 'AG-UI Subagents (React preview)',
+    codeAssetPaths: ['app.tsx','application.ts','children.ts','policy.ts','connection.ts','main.tsx'].map(file => `cockpit/ag-ui/subagents/react/src/${file}`),
+    backendAssetPaths: ['graph.py','server.py','streaming/subagent_emitting_agent.py','streaming/subagent_stream_handler.py'].map(file => `cockpit/ag-ui/subagents/python/src/${file}`),
+    runtimeUrl: frontend.runtimePath, devPort: frontend.port,
+  });
+})();
+
 export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
   Object.freeze([
     ...capabilityModules,
@@ -1067,6 +1079,7 @@ export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
     agUiInterruptsReact,
     agUiToolViewsReact,
     agUiJsonRenderReact,
+    agUiSubagentsReact,
     ...reactPreviews.map(({ topic, title }) => {
       const canonical = capabilityModules.find((descriptor) => descriptor.id === `langgraph-${topic}-python`);
       const frontend = getCockpitFrontends().find((entry) => entry.project === `cockpit-langgraph-${topic}-react`);

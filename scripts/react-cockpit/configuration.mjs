@@ -1,5 +1,14 @@
 /** Closed authored frontend selection; callers cannot supply filesystem paths. */
 export function reactCockpitConfiguration(topic = 'streaming') {
+  if (topic === 'ag-ui-subagents')
+    return Object.freeze({
+      topic: 'subagents',
+      adapter: 'ag-ui',
+      appPath: 'cockpit/ag-ui/subagents/react',
+      base: '/ag-ui/subagents/react/',
+      port: 4613,
+      project: 'cockpit-ag-ui-subagents-react',
+    });
   if (topic === 'ag-ui-json-render')
     return Object.freeze({
       topic: 'json-render',

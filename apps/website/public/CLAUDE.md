@@ -93,3 +93,7 @@ If this file is stale, fetch the latest: https://threadplane.ai/llms-full.txt
 Build AG-UI Tool Views with `npx nx build cockpit-ag-ui-tool-views-react` and verify with `npx nx e2e cockpit-ag-ui-tool-views-react`; its shared server-tool route is `/ag-ui/tool-views/agent`.
 
 Build AG-UI JSON Render with `npx nx build cockpit-ag-ui-json-render-react` and verify with `npx nx e2e cockpit-ag-ui-json-render-react`; its existing shared route is `/ag-ui/json-render/agent`. The browser proof uses the actual compiled graph with frozen providers.
+
+AG-UI Subagents has an experimental React preview at https://threadplane.ai/docs/ag-ui/guides/subagents?frontend=react. Native child observations stay under their exact parent task and original assistant. Captured child text remains read-only when final root snapshots remove it; requests retain complete native parent history. Only confirmed current root success with all causal child completions permits a follow-up. New clears cards lazily; Stop labels incomplete observations stopped. Unknown attribution, orphan text and uncertain outcomes require New, without replay or child execution controls. Provider errors stay out of the display.
+
+Build with `npx nx build cockpit-ag-ui-subagents-react` and verify with `npx nx e2e cockpit-ag-ui-subagents-react`; the existing shared route is `/ag-ui/subagents/agent`. Browser proofs use the actual compiled graph and child bridge with frozen providers.

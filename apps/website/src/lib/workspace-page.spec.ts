@@ -14,6 +14,16 @@ const workspaceRoot = process.cwd().endsWith('/apps/website')
   : process.cwd();
 
 describe('getWebsiteWorkspacePage', () => {
+  it('loads the canonical Subagents React code and child bridge with the same native runtime', async () => {
+    const page = await getWebsiteWorkspacePage({ docsPath: '/docs/ag-ui/guides/subagents', title: 'Subagents' });
+    const react = page.frontendVariants?.react;
+    expect(react?.presentation.runtimeUrl).toBe('ag-ui/subagents/react');
+    const files = Object.keys(react?.contentBundle.codeFiles ?? {});
+    expect(files).toContain('cockpit/ag-ui/subagents/react/src/children.ts');
+    expect(files).toContain('cockpit/ag-ui/subagents/python/src/streaming/subagent_emitting_agent.py');
+    expect(files.some(file => file.includes('/langgraph/') || file.includes('/angular/'))).toBe(false);
+    expect(page.presentation.runtimeUrl).toBe('ag-ui/subagents');
+  });
   it('loads AG-UI Streaming React from Event Mapping with its own native source and backend', async () => {
     const page = await getWebsiteWorkspacePage({ docsPath:'/docs/ag-ui/reference/event-mapping',title:'Event Mapping' });
     const react = page.frontendVariants?.react;

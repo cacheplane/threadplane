@@ -6,9 +6,7 @@
   "targets": {
     "build": {
       "executor": "@nx/js:tsc",
-      "outputs": [
-        "{workspaceRoot}/dist/cockpit/ag-ui/subagents/python"
-      ],
+      "outputs": ["{workspaceRoot}/dist/cockpit/ag-ui/subagents/python"],
       "options": {
         "outputPath": "dist/cockpit/ag-ui/subagents/python",
         "main": "cockpit/ag-ui/subagents/python/src/index.ts",
@@ -19,14 +17,19 @@
       "executor": "nx:run-commands",
       "options": {
         "cwd": "cockpit/ag-ui/subagents/python",
-        "command": "npx tsx -e \"import { agUiSubagentsPythonModule } from './src/index.ts'; const module = agUiSubagentsPythonModule; if (module.id !== 'ag-ui-subagents-python' || module.title !== 'AG-UI Subagents (Python)') { throw new Error('Unexpected module shape for ' + module.id); }\""
-      }
+        "commands": [
+          "npx tsx -e \"import { agUiSubagentsPythonModule } from './src/index.ts'; const module = agUiSubagentsPythonModule; if (module.id !== 'ag-ui-subagents-python' || module.title !== 'AG-UI Subagents (Python)') { throw new Error('Unexpected module shape for ' + module.id); }\"",
+          "uv run --frozen --python 3.12 pytest tests -q"
+        ],
+        "parallel": false
+      },
+      "cache": false
     },
     "test": {
       "executor": "nx:run-commands",
       "options": {
         "cwd": "cockpit/ag-ui/subagents/python",
-        "command": "uv run pytest -q"
+        "command": "uv run --frozen --python 3.12 pytest tests -q"
       }
     },
     "serve": {
@@ -37,9 +40,5 @@
       }
     }
   },
-  "tags": [
-    "scope:cockpit-e2e",
-    "scope:cockpit-examples",
-    "scope:cockpit-smoke"
-  ]
+  "tags": ["scope:cockpit-e2e", "scope:cockpit-examples", "scope:cockpit-smoke"]
 }

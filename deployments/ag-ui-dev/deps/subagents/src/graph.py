@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Annotated, Literal
 
 from langchain_core.callbacks import adispatch_custom_event
-from langchain_core.messages import SystemMessage, HumanMessage
+from langchain_core.messages import SystemMessage, HumanMessage, ToolMessage
 from langchain_core.tools import tool, InjectedToolCallId
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
@@ -147,7 +147,7 @@ async def task(
     role: Literal["research", "booking", "itinerary"],
     task_description: str,
     tool_call_id: Annotated[str, InjectedToolCallId],
-) -> str:
+) -> ToolMessage:
     """Delegate a subtask to a specialized subagent.
 
     Roles:
@@ -162,7 +162,7 @@ async def task(
             "Find morning flights from LAX to JFK").
 
     Returns:
-        The subagent's final answer as a string.
+        A stable tool message containing the subagent's final answer.
 
     The subagent run is surfaced to the UI as the protocol's standard
     subagent events: SUBAGENT_STARTED → attributed TEXT_MESSAGE_* per token →
@@ -196,7 +196,12 @@ async def task(
         await _emit({"phase": "error", "message": f"{type(exc).__name__}: {exc}"})
         raise
     await _emit({"phase": "finished", "status": "complete"})
-    return result
+    return ToolMessage(
+        id=tool_call_id,
+        tool_call_id=tool_call_id,
+        name="task",
+        content=result,
+    )
 # endregion
 
 
