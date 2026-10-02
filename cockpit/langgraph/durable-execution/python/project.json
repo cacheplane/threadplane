@@ -17,9 +17,14 @@
     },
     "smoke": {
       "executor": "nx:run-commands",
+      "cache": false,
       "options": {
         "cwd": "cockpit/langgraph/durable-execution/python",
-        "command": "npx tsx -e \"import { langgraphDurableExecutionPythonModule } from './src/index.ts'; const module = langgraphDurableExecutionPythonModule; if (module.id !== 'langgraph-durable-execution-python' || module.title !== 'LangGraph Durable Execution (Python)') { throw new Error('Unexpected module shape for ' + module.id); }\""
+        "parallel": false,
+        "commands": [
+          "npx tsx -e \"import { langgraphDurableExecutionPythonModule } from './src/index.ts'; const module = langgraphDurableExecutionPythonModule; if (module.id !== 'langgraph-durable-execution-python' || module.title !== 'LangGraph Durable Execution (Python)') { throw new Error('Unexpected module shape for ' + module.id); }\"",
+          "uv run --frozen --python 3.12 python -m unittest discover -s tests"
+        ]
       }
     }
   },

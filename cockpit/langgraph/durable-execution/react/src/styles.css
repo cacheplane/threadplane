@@ -1,0 +1,89 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color: #202832;
+  background: #fafafa;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+.durable-demo {
+  max-width: 56rem;
+  margin: auto;
+  padding: 1.5rem;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.durable-demo header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+.durable-demo h1 {
+  font-size: 1.5rem;
+  margin: 0;
+}
+.durable-demo p {
+  margin: 0;
+}
+.eyebrow {
+  color: #606b76;
+  font-size: 0.8rem;
+  margin-bottom: 0.4rem !important;
+}
+.durable-demo button,
+.durable-demo input {
+  font: inherit;
+}
+.durable-demo button {
+  cursor: pointer;
+}
+.durable-demo button:disabled {
+  cursor: default;
+}
+.durable-demo .tp-chat-list {
+  flex: 1;
+  min-height: 8rem;
+  max-height: 40dvh;
+}
+[role='alert'] {
+  color: #a52323;
+}
+[role='status'] {
+  font-size: 0.85rem;
+  color: #606b76;
+}
+@media (max-width: 32rem) {
+  .durable-demo {
+    padding: 1rem;
+  }
+  .durable-demo header {
+    align-items: flex-start;
+  }
+}
+
+.saved-checkpoints {
+  padding: 1rem;
+  border: 1px solid #dce1e6;
+  border-radius: 0.5rem;
+  overflow-wrap: anywhere;
+}
+.saved-checkpoints h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+}
+.saved-checkpoints ol {
+  margin: 0 0 0.75rem;
+  padding-left: 1.5rem;
+}
+.saved-checkpoints li {
+  margin-bottom: 0.35rem;
+}
+.saved-checkpoints p + p {
+  margin-top: 0.5rem;
+}

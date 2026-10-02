@@ -36,7 +36,7 @@ describe('getWebsiteWorkspacePage', () => {
       )
     ).toBe(false);
     const unsupported = await getWebsiteWorkspacePage({
-      docsPath: '/docs/langgraph/guides/durable-execution',
+      docsPath: '/docs/langgraph/guides/subgraphs',
       title: 'Durable execution',
     });
     expect(unsupported.frontendVariants?.react).toBeUndefined();

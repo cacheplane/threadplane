@@ -5,12 +5,19 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { deriveCockpitCaps, selectCockpitCaps } from './cockpit-matrix.mjs';
 
-test('React cockpit configuration accepts only the five authored topics', async () => {
+test('React cockpit configuration accepts only the six authored topics', async () => {
   const { reactCockpitConfiguration } = await import(
     './react-cockpit/configuration.mjs'
   );
   assert.equal(reactCockpitConfiguration().topic, 'streaming');
   assert.equal(reactCockpitConfiguration().port, 4600);
+  assert.deepEqual(reactCockpitConfiguration('durable-execution'), {
+    topic: 'durable-execution',
+    appPath: 'cockpit/langgraph/durable-execution/react',
+    base: '/langgraph/durable-execution/react/',
+    port: 4605,
+    project: 'cockpit-langgraph-durable-execution-react',
+  });
   assert.deepEqual(reactCockpitConfiguration('persistence'), {
     topic: 'persistence',
     appPath: 'cockpit/langgraph/persistence/react',
@@ -52,7 +59,7 @@ test('React cockpit configuration accepts only the five authored topics', async 
     );
 });
 
-test('CI discovers all five React topics with their existing Python backends', (t) => {
+test('CI discovers all six React topics with their existing Python backends', (t) => {
   const root = mkdtempSync(join(tmpdir(), 'cockpit-react-topics-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   for (const topic of [
@@ -61,6 +68,7 @@ test('CI discovers all five React topics with their existing Python backends', (
     'memory',
     'client-tools',
     'persistence',
+    'durable-execution',
   ]) {
     for (const frontend of ['angular', 'react', 'python']) {
       const directory = join(root, 'cockpit/langgraph', topic, frontend);
@@ -75,13 +83,14 @@ test('CI discovers all five React topics with their existing Python backends', (
     }
   }
   const caps = deriveCockpitCaps(root);
-  assert.equal(caps.length, 10);
+  assert.equal(caps.length, 12);
   for (const topic of [
     'streaming',
     'interrupts',
     'memory',
     'client-tools',
     'persistence',
+    'durable-execution',
   ]) {
     const selected = selectCockpitCaps(
       caps,

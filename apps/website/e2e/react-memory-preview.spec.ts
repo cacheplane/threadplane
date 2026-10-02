@@ -108,7 +108,7 @@ test('switching away releases held React extraction and returning starts empty',
 test('unsupported React topics retain an availability notice', async ({
   page,
 }) => {
-  await page.goto('/docs/langgraph/guides/durable-execution?frontend=react&mode=run');
+  await page.goto('/docs/langgraph/guides/subgraphs?frontend=react&mode=run');
   await expect(page.getByLabel('Example UI')).toHaveValue('react');
   await expect(
     page.getByText(/React preview is not available for this topic/)

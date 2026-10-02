@@ -11,7 +11,7 @@ enabling durable persistence across server restarts.
 """
 
 from pathlib import Path
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 from langgraph.graph import StateGraph, END
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage
@@ -22,7 +22,9 @@ PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
 # region state
 class DurableState(TypedDict):
     messages: list
-    step: str  # Current execution step name
+    step: str  # Most recently completed node
+    completed_turn_id: NotRequired[str]  # Written only by the final node
+    completed_answer_id: NotRequired[str]  # Paired with the final human identity
 # endregion
 
 
@@ -84,10 +86,20 @@ def build_durable_execution_graph():
             (m for m in reversed(state["messages"]) if getattr(m, "type", None) == "human"),
             None,
         )
-        return {
+        result = {
             "messages": ([question] if question is not None else []) + [response],
             "step": "generate",
         }
+        question_id = getattr(question, "id", None)
+        answer_id = getattr(response, "id", None)
+        if (
+            isinstance(question_id, str) and question_id
+            and isinstance(answer_id, str) and answer_id
+            and question_id != answer_id
+        ):
+            result["completed_turn_id"] = question_id
+            result["completed_answer_id"] = answer_id
+        return result
     # endregion
 
     # region graph

@@ -36,7 +36,7 @@ npx nx build cockpit-langgraph-persistence-react
 npx nx e2e cockpit-langgraph-persistence-react
 ~~~
 
-The isolated build installs local candidate packages and checks strict declarations and emitted browser modules. Browser tests use real SDK HTTP and SSE against a local fixture. Docs, Code, and Run select this same React implementation. Streaming, interrupts, memory, and client tools also have public React previews; other topics remain pending.
+The isolated build installs local candidate packages and checks strict declarations and emitted browser modules. Browser tests use real SDK HTTP and SSE against a local fixture. Docs, Code, and Run select this same React implementation. Public React previews cover streaming, interrupts, memory, client tools, persistence, and durable execution; other topics remain pending.
 `;
 
 export function ReactPersistencePreview({

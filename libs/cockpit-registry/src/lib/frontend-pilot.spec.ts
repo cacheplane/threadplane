@@ -16,6 +16,17 @@ const streaming: CockpitManifestIdentity = {
 };
 
 describe('registered React public previews', () => {
+  it('resolves durable execution with explicit checkpoint and final-answer sources', () => {
+    const react = getFrontendCapabilityDescriptor({ ...streaming, topic: 'durable-execution' }, 'react');
+    expect(react?.docsPath).toBe('/docs/langgraph/guides/durable-execution');
+    expect(react?.runtimeUrl).toBe('langgraph/durable-execution/react');
+    expect(react?.devPort).toBe(4605);
+    expect(react?.codeAssetPaths).toEqual(['app.tsx', 'application.ts', 'connection.ts', 'main.tsx'].map(file => `cockpit/langgraph/durable-execution/react/src/${file}`));
+    expect(react?.backendAssetPaths).toContain('cockpit/langgraph/durable-execution/python/src/graph.py');
+    for (const asset of [...(react?.codeAssetPaths ?? []), ...(react?.backendAssetPaths ?? []), ...(react?.promptAssetPaths ?? [])])
+      expect(existsSync(new URL('../../../../' + asset, import.meta.url))).toBe(true);
+    expect(getFrontendCapabilityDescriptor({ ...streaming, topic: 'durable-execution' }, 'angular')?.runtimeUrl).toBe('langgraph/durable-execution');
+  });
   it('resolves persistence with the page-local picker and shared checkpoint backend', () => {
     const react = getFrontendCapabilityDescriptor(
       { ...streaming, topic: 'persistence' },
@@ -181,7 +192,7 @@ describe('registered React public previews', () => {
     ).toBe('langgraph/streaming');
     expect(
       getFrontendCapabilityDescriptor(
-        { ...streaming, topic: 'durable-execution' },
+        { ...streaming, topic: 'subgraphs' },
         'react'
       )
     ).toBeUndefined();
@@ -189,11 +200,11 @@ describe('registered React public previews', () => {
 
   it('enumerates deployable frontend identities with distinct paths and projects', () => {
     const frontends = getCockpitFrontends();
-    expect(frontends).toHaveLength(46);
-    expect(new Set(frontends.map((entry) => entry.runtimePath)).size).toBe(46);
-    expect(new Set(frontends.map((entry) => entry.project)).size).toBe(46);
-    expect(new Set(frontends.map((entry) => entry.port)).size).toBe(46);
-    expect(new Set(frontends.map((entry) => entry.buildOutput)).size).toBe(46);
+    expect(frontends).toHaveLength(47);
+    expect(new Set(frontends.map((entry) => entry.runtimePath)).size).toBe(47);
+    expect(new Set(frontends.map((entry) => entry.project)).size).toBe(47);
+    expect(new Set(frontends.map((entry) => entry.port)).size).toBe(47);
+    expect(new Set(frontends.map((entry) => entry.buildOutput)).size).toBe(47);
     expect(
       frontends.find(
         (entry) => entry.project === 'cockpit-langgraph-memory-react'
