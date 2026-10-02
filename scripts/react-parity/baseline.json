@@ -1,23 +1,9 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "a7e432cf463bb84a1af66fbab603ad247f368e1d",
+  "baselineHead": "3812c5178a331ddf1c084c5341231564f6ccc6fb",
   "sourceState": {
-    "modified": [
-      "libs/ag-ui/README.md",
-      "libs/ag-ui/src/lib/internal/devtools.ts",
-      "libs/ag-ui/src/lib/to-agent.ts",
-      "libs/chat/CHANGELOG.md",
-      "libs/chat/eslint.config.mjs",
-      "libs/chat/scripts/verify-devtools-bundle.mjs",
-      "libs/chat/src/public-api.ts",
-      "libs/langgraph/README.md",
-      "libs/langgraph/src/lib/agent.fn.ts",
-      "libs/langgraph/src/lib/internals/stream-manager.bridge.ts",
-      "libs/langgraph/src/lib/transport/fetch-stream.transport.ts"
-    ],
-    "untracked": [
-      "libs/chat/src/lib/devtools/devtools-scripted-runs.ts"
-    ]
+    "modified": [],
+    "untracked": []
   },
   "scope": {
     "libraries": [
