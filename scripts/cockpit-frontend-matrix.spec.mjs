@@ -5,15 +5,24 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { deriveCockpitCaps, selectCockpitCaps } from './cockpit-matrix.mjs';
 
-test('React cockpit configuration accepts only the eight authored topics', async () => {
+test('React cockpit configuration accepts only the nine authored topics', async () => {
   const { reactCockpitConfiguration } = await import(
     './react-cockpit/configuration.mjs'
   );
   assert.equal(reactCockpitConfiguration().topic, 'streaming');
   assert.equal(reactCockpitConfiguration().port, 4600);
+  assert.deepEqual(reactCockpitConfiguration('deployment-runtime'), {
+    topic: 'deployment-runtime',
+    appPath: 'cockpit/langgraph/deployment-runtime/react',
+    base: '/langgraph/deployment-runtime/react/',
+    port: 4608,
+    project: 'cockpit-langgraph-deployment-runtime-react',
+  });
   assert.deepEqual(reactCockpitConfiguration('time-travel'), {
-    topic: 'time-travel', appPath: 'cockpit/langgraph/time-travel/react',
-    base: '/langgraph/time-travel/react/', port: 4607,
+    topic: 'time-travel',
+    appPath: 'cockpit/langgraph/time-travel/react',
+    base: '/langgraph/time-travel/react/',
+    port: 4607,
     project: 'cockpit-langgraph-time-travel-react',
   });
   assert.deepEqual(reactCockpitConfiguration('subgraphs'), {
@@ -71,7 +80,7 @@ test('React cockpit configuration accepts only the eight authored topics', async
     );
 });
 
-test('CI discovers all eight React topics with their existing Python backends', (t) => {
+test('CI discovers all nine React topics with their existing Python backends', (t) => {
   const root = mkdtempSync(join(tmpdir(), 'cockpit-react-topics-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   for (const topic of [
@@ -83,6 +92,7 @@ test('CI discovers all eight React topics with their existing Python backends', 
     'durable-execution',
     'subgraphs',
     'time-travel',
+    'deployment-runtime',
   ]) {
     for (const frontend of ['angular', 'react', 'python']) {
       const directory = join(root, 'cockpit/langgraph', topic, frontend);
@@ -97,7 +107,7 @@ test('CI discovers all eight React topics with their existing Python backends', 
     }
   }
   const caps = deriveCockpitCaps(root);
-  assert.equal(caps.length, 16);
+  assert.equal(caps.length, 18);
   for (const topic of [
     'streaming',
     'interrupts',
@@ -107,6 +117,7 @@ test('CI discovers all eight React topics with their existing Python backends', 
     'durable-execution',
     'subgraphs',
     'time-travel',
+    'deployment-runtime',
   ]) {
     const selected = selectCockpitCaps(
       caps,

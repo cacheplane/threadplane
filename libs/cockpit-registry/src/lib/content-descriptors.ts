@@ -1007,6 +1007,7 @@ const reactPreviews = [
   { topic: 'durable-execution', title: 'LangGraph Durable Execution (React preview)' },
   { topic: 'subgraphs', title: 'LangGraph Subgraphs (React preview)' },
   { topic: 'time-travel', title: 'LangGraph Time Travel (React preview)' },
+  { topic: 'deployment-runtime', title: 'LangGraph Deployment Runtime (React preview)' },
 ] as const;
 
 export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
@@ -1018,7 +1019,7 @@ export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
       if (!canonical || !frontend) throw new Error(`${topic} frontend registration is missing`);
       return freezeCapabilityDescriptor({
         ...canonical, id: `langgraph-${topic}-python-react`, frontend: 'react', title,
-        codeAssetPaths: ['app.tsx', 'application.ts', ...(topic === 'client-tools' ? ['tools.ts'] : []), ...(topic === 'time-travel' ? ['checkpoint-history.ts', 'canonical-history.ts'] : []), 'connection.ts', 'main.tsx'].map((file) => `cockpit/langgraph/${topic}/react/src/${file}`),
+        codeAssetPaths: ['app.tsx', 'application.ts', ...(topic === 'client-tools' ? ['tools.ts'] : []), ...(topic === 'time-travel' ? ['checkpoint-history.ts'] : []), ...(['time-travel', 'deployment-runtime'].includes(topic) ? ['canonical-history.ts'] : []), 'connection.ts', 'main.tsx'].map((file) => `cockpit/langgraph/${topic}/react/src/${file}`),
         runtimeUrl: frontend.runtimePath, devPort: frontend.port,
       });
     }),

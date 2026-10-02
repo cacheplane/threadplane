@@ -3,7 +3,7 @@ import type { ExampleCodeContext } from '../../lib/example-code';
 
 const source = `# React streaming preview
 
-This experimental example uses React with the same Python LangGraph streaming graph as the Angular example. This preview covers streaming; interrupts, thread-scoped memory, client tools, persistence, durable execution, and subgraphs also have authored React previews. The React, core, content, and framework-neutral LangGraph packages are private source-build packages; they are not published npm packages.
+This experimental example uses React with the same Python LangGraph streaming graph as the Angular example. This preview covers streaming; interrupts, thread-scoped memory, client tools, persistence, durable execution, subgraphs, time travel, and deployment runtime also have authored React previews. The React, core, content, and framework-neutral LangGraph packages are private source-build packages; they are not published npm packages.
 
 ## Try the example
 
@@ -30,7 +30,7 @@ npx nx build cockpit-langgraph-streaming-react
 npx nx e2e cockpit-langgraph-streaming-react
 ~~~
 
-The build installs local candidate packages in an isolated consumer and checks that the browser bundle uses those packages. The browser tests exercise real SDK requests against a local fixture. Run and Code on this page show the same React implementation. Streaming, interrupts, memory, client tools, persistence, durable execution, subgraphs, and time travel have public React previews; other topics remain pending.
+The build installs local candidate packages in an isolated consumer and checks that the browser bundle uses those packages. The browser tests exercise real SDK requests against a local fixture. Run and Code on this page show the same React implementation. Streaming, interrupts, memory, client tools, persistence, durable execution, subgraphs, time travel, and deployment runtime have public React previews; other topics remain pending.
 `;
 
 export function ReactStreamingPreview({

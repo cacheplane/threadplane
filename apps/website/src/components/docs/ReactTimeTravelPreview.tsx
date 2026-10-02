@@ -43,7 +43,7 @@ npx nx build cockpit-langgraph-time-travel-react
 npx nx e2e cockpit-langgraph-time-travel-react
 ~~~
 
-The isolated build installs local candidate packages and checks strict declarations and browser modules. Tests exercise the real SDK against a local checkpoint fixture, including exact source reads, physical runs, retained continuation despite a competing tip, cancellation and canonical history. Docs, Code and Run select this same React implementation. Streaming, interrupts, memory, client tools, persistence, durable execution and subgraphs also have public React previews; other topics remain pending.
+The isolated build installs local candidate packages and checks strict declarations and browser modules. Tests exercise the real SDK against a local checkpoint fixture, including exact source reads, physical runs, retained continuation despite a competing tip, cancellation and canonical history. Docs, Code and Run select this same React implementation. Streaming, interrupts, memory, client tools, persistence, durable execution subgraphs, time travel and deployment runtime also have public React previews; other topics remain pending.
 `;
 export function ReactTimeTravelPreview({
   exampleCode,

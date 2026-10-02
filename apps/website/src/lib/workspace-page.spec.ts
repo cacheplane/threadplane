@@ -14,6 +14,32 @@ const workspaceRoot = process.cwd().endsWith('/apps/website')
   : process.cwd();
 
 describe('getWebsiteWorkspacePage', () => {
+  it('loads Deployment Runtime React from the canonical deployment slug without Angular source fallback', async () => {
+    const page = await getWebsiteWorkspacePage({
+      docsPath: '/docs/langgraph/guides/deployment',
+      title: 'Deployment',
+    });
+    const react = page.frontendVariants?.react;
+    expect(react?.presentation.runtimeUrl).toBe(
+      'langgraph/deployment-runtime/react'
+    );
+    const files = Object.keys(react?.contentBundle.codeFiles ?? {});
+    for (const file of [
+      'app.tsx',
+      'application.ts',
+      'canonical-history.ts',
+      'connection.ts',
+      'main.tsx',
+    ])
+      expect(files).toContain(
+        `cockpit/langgraph/deployment-runtime/react/src/${file}`
+      );
+    expect(files).toContain(
+      'cockpit/langgraph/deployment-runtime/python/src/graph.py'
+    );
+    expect(files.some((path) => path.includes('/angular/'))).toBe(false);
+    expect(page.presentation.runtimeUrl).toBe('langgraph/deployment-runtime');
+  });
   it('loads a bounded React variant with matching source and runtime', async () => {
     const page = await getWebsiteWorkspacePage({
       docsPath: '/docs/langgraph/guides/streaming',
