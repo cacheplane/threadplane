@@ -640,6 +640,36 @@ describe('CI workflow', () => {
     );
   });
 
+  it('reassembles and deploys child policy whenever an indirect dependency rebuilds the Website preview', async () => {
+    const job = await readDeployJob();
+    const evaluate = (expression, values) => {
+      const resolved = expression.replace(
+        /steps\.(?:freshness|examples_changed|affected)\.outputs\.(?:stale|changed|website)/g,
+        (token) => JSON.stringify(values[token])
+      );
+      assert.match(resolved, /^[\s()=!&|'"truefals]+$/);
+      return Function(`return (${resolved});`)();
+    };
+    for (const name of ['Build and assemble Angular examples', 'Deploy Angular examples to Vercel (production)']) {
+      const step = readNamedStep(job, name);
+      const condition = step.match(/^ {8}if:\s*(.+)$/m)?.[1];
+      assert.ok(condition, `${name} must have an explicit gate`);
+      for (const stale of [false, true]) {
+        for (const examplesChanged of [false, true]) {
+          for (const websiteChanged of [false, true]) {
+            const actual = evaluate(condition, {
+              'steps.freshness.outputs.stale': String(stale),
+              'steps.examples_changed.outputs.changed': String(examplesChanged),
+              'steps.affected.outputs.website': String(websiteChanged),
+            });
+            assert.equal(actual, !stale && (examplesChanged || websiteChanged),
+              `${name}: stale=${stale}, examples=${examplesChanged}, Website=${websiteChanged}`);
+          }
+        }
+      }
+    }
+  });
+
   it('verifies every protected immutable preview with its own automation bypass', async () => {
     // Vercel deployment protection answers every path on an unaliased
     // deployment with 302 -> vercel.com/sso-api. A missing bypass secret must

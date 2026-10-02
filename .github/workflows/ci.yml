@@ -1264,12 +1264,12 @@ jobs:
           echo "deployment_url=$preview_origin" >> "$GITHUB_OUTPUT"
           echo "preview_origin=$preview_origin" >> "$GITHUB_OUTPUT"
       - name: Build and assemble Angular examples
-        if: steps.freshness.outputs.stale != 'true' && steps.examples_changed.outputs.changed == 'true'
+        if: steps.freshness.outputs.stale != 'true' && (steps.examples_changed.outputs.changed == 'true' || steps.affected.outputs.website == 'true')
         run: npx tsx scripts/assemble-examples.ts
         env:
           RUNTIME_PARENT_PREVIEW_ORIGINS: ${{ steps.deploy_website.outputs.preview_origin }}
       - name: Deploy Angular examples to Vercel (production)
-        if: steps.freshness.outputs.stale != 'true' && steps.examples_changed.outputs.changed == 'true'
+        if: steps.freshness.outputs.stale != 'true' && (steps.examples_changed.outputs.changed == 'true' || steps.affected.outputs.website == 'true')
         working-directory: deploy/examples
         run: |
           mkdir -p .vercel
