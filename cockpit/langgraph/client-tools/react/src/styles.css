@@ -94,7 +94,7 @@ section h2 {
   margin: 0 0 0.5rem;
   font-size: 1.1rem;
 }
-section dl {
+.client-tools-demo section dl {
   display: block;
   margin-bottom: 0;
 }

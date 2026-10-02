@@ -145,6 +145,7 @@ test('literal weather and booking panels fit a narrow screen', async ({ page }) 
   await page.setViewportSize({ width: 390, height: 844 });
   await send(page, 'Card');
   await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.getByRole('region', { name: 'Weather panels' }).locator('dl')).toHaveCSS('display', 'block');
   await send(page, 'Bookings', false);
   await expect(page.getByRole('button', { name: 'Confirm booking' })).toHaveCount(2);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);

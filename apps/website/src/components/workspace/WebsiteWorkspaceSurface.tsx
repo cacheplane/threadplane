@@ -415,17 +415,25 @@ export function WebsiteWorkspaceSurface({
                   const next =
                     event.target.value === 'react' ? 'react' : 'angular';
                   const url = new URL(window.location.href);
+                  // Mode selection is optimistic while a router response is
+                  // pending. Commit the displayed mode with the frontend so a
+                  // delayed response cannot restore the previous selection.
+                  if (routeMode !== null) url.searchParams.set('mode', routeMode);
                   if (next === 'react')
                     url.searchParams.set('frontend', 'react');
                   else url.searchParams.delete('frontend');
+                  // Both frontend variants are already loaded. Next integrates
+                  // native history for query-only view changes and Back/Forward.
+                  window.history.pushState(
+                    null,
+                    '',
+                    `${url.pathname}${url.search}${url.hash}`
+                  );
                   setDiscoveredRouteMode({
                     routePath,
                     mode: routeMode,
                     frontend: next,
                   });
-                  routerRef.current.push(
-                    `${url.pathname}${url.search}${url.hash}`
-                  );
                 }}
               >
                 <option value="angular">Angular</option>
