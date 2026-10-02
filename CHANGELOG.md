@@ -6,6 +6,7 @@
 
 ### 🚀 Features
 
+- **render, chat:** in development, A2UI surfaces and json-render specs report which elements mounted, showed a fallback, did not resolve against the registry, or did not render, as a `threadplane:devtools` `CustomEvent` with `kind: 'render'` — names and states only, never props; stripped from production builds; same opt-out
 - **langgraph, ag-ui:** in development, the AG-UI DevTools run simulator can script an agent's next runs with `threadplane:devtools:arm` / `:disarm` / `:ack` `CustomEvent`s on `window`; the scripted frames or events go through the adapter's real event handling with no network call; stripped from production builds; same opt-out
 - **langgraph, ag-ui:** in development, each agent reports which signals every event wrote as a `threadplane:devtools` `CustomEvent` on `window` — names and timing only, never values; stripped from production builds; opt out with `window.__THREADPLANE_DEVTOOLS_DISABLED__ = true`
 - **ag-ui:** upgrade to AG-UI 1.0.1; the adapter now declares `^1.0.1` peers on `@ag-ui/client` and `@ag-ui/core`, imports validators from `@ag-ui/core/schemas`, declares `protocolVersion` on every run, and runs the private request path through the 1.0 compatibility boundary

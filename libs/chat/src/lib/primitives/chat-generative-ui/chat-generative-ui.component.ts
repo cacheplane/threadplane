@@ -14,6 +14,7 @@ import { RenderSpecComponent } from '@threadplane/render';
 import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
 import { CHAT_GENERATIVE_UI_STYLES } from '../../styles/chat-generative-ui.styles';
 import { normalizeJsonRenderSpec } from './normalize-json-render-spec';
+import { ɵprovideRenderDevtools } from '../../devtools/devtools-render-report';
 
 @Component({
   selector: 'chat-generative-ui',
@@ -21,6 +22,8 @@ import { normalizeJsonRenderSpec } from './normalize-json-render-spec';
   imports: [RenderSpecComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [CHAT_HOST_TOKENS, CHAT_GENERATIVE_UI_STYLES],
+  // Development only: the AG-UI DevTools render report, as 'spec:' + root key.
+  viewProviders: [ɵprovideRenderDevtools()],
   template: `
     @if (normalizedSpec()) {
       <render-spec
