@@ -10,6 +10,7 @@ import { ReactInterruptsPreview } from '../../../../../components/docs/ReactInte
 import { ReactMemoryPreview } from '../../../../../components/docs/ReactMemoryPreview';
 import { ReactClientToolsPreview } from '../../../../../components/docs/ReactClientToolsPreview';
 import { ReactPersistencePreview } from '../../../../../components/docs/ReactPersistencePreview';
+import { ReactDurableExecutionPreview } from '../../../../../components/docs/ReactDurableExecutionPreview';
 import { WebsiteWorkspace } from '../../../../../components/workspace/WebsiteWorkspace';
 import DocsPage, { generateMetadata } from './page';
 
@@ -78,6 +79,7 @@ describe('unified docs workspace route', () => {
     ['interrupts', ReactInterruptsPreview],
     ['memory', ReactMemoryPreview],
     ['persistence', ReactPersistencePreview],
+    ['durable-execution', ReactDurableExecutionPreview],
   ] as const)(
     'selects topic-specific authored React Docs for %s',
     async (slug, component) => {

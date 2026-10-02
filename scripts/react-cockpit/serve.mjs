@@ -8,8 +8,10 @@ import { createInterruptsFixture } from './interrupts-fixture.mjs';
 import { createMemoryFixture } from './memory-fixture.mjs';
 import { createClientToolsFixture } from './client-tools-fixture.mjs';
 import { createPersistenceFixture } from './persistence-fixture.mjs';
+import { createDurableFixture } from './durable-fixture.mjs';
 
 const configuration = reactCockpitConfiguration(process.argv[2]);
+const durableFixture = configuration.topic === 'durable-execution' ? createDurableFixture() : null;
 const persistenceFixture =
   configuration.topic === 'persistence' ? createPersistenceFixture() : null;
 const interruptsFixture =
@@ -47,6 +49,7 @@ const release = () => {
 };
 const server = createServer(async (request, response) => {
   const pathname = new URL(request.url, 'http://localhost').pathname;
+  if (durableFixture && await durableFixture(request, response, pathname)) return;
   if (
     persistenceFixture &&
     (await persistenceFixture(request, response, pathname))
