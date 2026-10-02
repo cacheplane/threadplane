@@ -12,6 +12,7 @@ import { ReactClientToolsPreview } from '../../../../../components/docs/ReactCli
 import { ReactPersistencePreview } from '../../../../../components/docs/ReactPersistencePreview';
 import { ReactDurableExecutionPreview } from '../../../../../components/docs/ReactDurableExecutionPreview';
 import { ReactSubgraphsPreview } from '../../../../../components/docs/ReactSubgraphsPreview';
+import { ReactDeploymentRuntimePreview } from '../../../../../components/docs/ReactDeploymentRuntimePreview';
 import { ReactTimeTravelPreview } from '../../../../../components/docs/ReactTimeTravelPreview';
 import { WebsiteWorkspace } from '../../../../../components/workspace/WebsiteWorkspace';
 import DocsPage, { generateMetadata } from './page';
@@ -84,6 +85,7 @@ describe('unified docs workspace route', () => {
     ['durable-execution', ReactDurableExecutionPreview],
     ['subgraphs', ReactSubgraphsPreview],
     ['time-travel', ReactTimeTravelPreview],
+    ['deployment', ReactDeploymentRuntimePreview],
   ] as const)(
     'selects topic-specific authored React Docs for %s',
     async (slug, component) => {
@@ -98,7 +100,9 @@ describe('unified docs workspace route', () => {
       );
       expect(article).not.toBeNull();
       expect(article?.props.exampleCode?.assetPaths).toContain(
-        `cockpit/langgraph/${slug}/react/src/app.tsx`
+        `cockpit/langgraph/${
+          slug === 'deployment' ? 'deployment-runtime' : slug
+        }/react/src/app.tsx`
       );
       expect(
         findElement(

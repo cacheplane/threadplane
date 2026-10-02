@@ -11,8 +11,13 @@ import { createPersistenceFixture } from './persistence-fixture.mjs';
 import { createDurableFixture } from './durable-fixture.mjs';
 import { createSubgraphsFixture } from './subgraphs-fixture.mjs';
 import { createTimeTravelFixture } from './time-travel-fixture.mjs';
+import { createDeploymentRuntimeFixture } from './deployment-runtime-fixture.mjs';
 
 const configuration = reactCockpitConfiguration(process.argv[2]);
+const deploymentRuntimeFixture =
+  configuration.topic === 'deployment-runtime'
+    ? createDeploymentRuntimeFixture()
+    : null;
 const timeTravelFixture =
   configuration.topic === 'time-travel' ? createTimeTravelFixture() : null;
 const subgraphsFixture =
@@ -56,6 +61,11 @@ const release = () => {
 };
 const server = createServer(async (request, response) => {
   const pathname = new URL(request.url, 'http://localhost').pathname;
+  if (
+    deploymentRuntimeFixture &&
+    (await deploymentRuntimeFixture(request, response, pathname))
+  )
+    return;
   if (
     timeTravelFixture &&
     (await timeTravelFixture(request, response, pathname))

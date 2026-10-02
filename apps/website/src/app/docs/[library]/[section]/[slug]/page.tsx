@@ -9,6 +9,7 @@ import { ReactPersistencePreview } from '../../../../../components/docs/ReactPer
 import { ReactDurableExecutionPreview } from '../../../../../components/docs/ReactDurableExecutionPreview';
 import { ReactSubgraphsPreview } from '../../../../../components/docs/ReactSubgraphsPreview';
 import { ReactTimeTravelPreview } from '../../../../../components/docs/ReactTimeTravelPreview';
+import { ReactDeploymentRuntimePreview } from '../../../../../components/docs/ReactDeploymentRuntimePreview';
 import { DocsSearch } from '../../../../../components/docs/DocsSearch';
 import { DocsPageHeader } from '../../../../../components/docs/DocsPageHeader';
 import { LibraryMark } from '../../../../../components/docs/LibraryMark';
@@ -307,6 +308,12 @@ export default async function DocsPage({ params }: DocsRouteProps) {
               />
             ) : slug === 'time-travel' ? (
               <ReactTimeTravelPreview
+                exampleCode={getExampleCodeContext(
+                  workspacePage.frontendVariants.react
+                )}
+              />
+            ) : slug === 'deployment' ? (
+              <ReactDeploymentRuntimePreview
                 exampleCode={getExampleCodeContext(
                   workspacePage.frontendVariants.react
                 )}
