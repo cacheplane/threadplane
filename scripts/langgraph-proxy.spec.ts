@@ -1,6 +1,7 @@
 // scripts/langgraph-proxy.spec.ts
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createProxyHandler } from './langgraph-proxy';
+import { Client } from '@langchain/langgraph-sdk';
 
 type MockRes = {
   setHeader: ReturnType<typeof vi.fn>;
@@ -201,6 +202,46 @@ describe('createProxyHandler', () => {
     expect(res.setHeader).toHaveBeenCalledWith('content-type', 'text/event-stream');
     expect(res.write).toHaveBeenCalledTimes(2);
     expect(res.end).toHaveBeenCalledTimes(1);
+  });
+
+  it('preserves upstream physical-run location and exposes it to browser SDKs', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValue(new Response('event: end\ndata: {}\n\n', {
+      headers: {
+        'content-type': 'text/event-stream',
+        'content-location': '/threads/thread-1/runs/run-1',
+        'set-cookie': 'private-upstream-cookie',
+      },
+    }));
+    const handler = createProxyHandler({ backendUrl: DEFAULT_BACKEND, allowedOrigins: ['https://threadplane.ai'] });
+    const res = makeRes();
+    await handler({method:'POST',headers:{host:'examples.threadplane.ai',origin:'https://threadplane.ai'},body:{},url:'/api/threads/thread-1/runs/stream',query:{}} as never,res as never);
+    expect(res.setHeader).toHaveBeenCalledWith('content-location','/threads/thread-1/runs/run-1');
+    expect(res.setHeader).toHaveBeenCalledWith('access-control-expose-headers','content-location');
+    expect(res.setHeader).not.toHaveBeenCalledWith('set-cookie',expect.anything());
+  });
+
+  it.each([true,false])('the actual installed SDK observes only an upstream run location (present=%s)', async present => {
+    const stream = 'event: metadata\ndata: {"run_id":"run-1","thread_id":"thread-1"}\n\nevent: end\ndata: {}\n\n';
+    const upstream = vi.spyOn(global,'fetch').mockResolvedValue(new Response(stream,{
+      headers:{'content-type':'text/event-stream',...(present ? {'content-location':'/threads/thread-1/runs/run-1'} : {})},
+    }));
+    const handler = createProxyHandler({backendUrl:DEFAULT_BACKEND});
+    const physical = vi.fn();
+    const client = new Client({apiUrl:'https://examples.threadplane.ai/api',apiKey:null,callerOptions:{maxRetries:0,
+      fetch:async (input: string | URL | Request,init: RequestInit) => {
+        const res = makeRes(),headers = new Headers();
+        res.setHeader.mockImplementation((name:string,value:string)=>headers.set(name,value));
+        const url = new URL(String(input));
+        await handler({method:init.method,headers:{host:url.host,'content-type':'application/json'},body:JSON.parse(String(init.body)),url:url.pathname+url.search,query:{}} as never,res as never);
+        return new Response(res.write.mock.calls.map(call=>call[0]).join(''),{status:res._status,headers});
+      },
+    }});
+    const events = [];
+    for await (const event of client.runs.stream('thread-1','time-travel',{input:{messages:[]},onRunCreated:physical})) events.push(event);
+    expect(upstream).toHaveBeenCalledTimes(1);
+    expect(events.some(event=>event.event==='metadata')).toBe(true);
+    if (present) expect(physical).toHaveBeenCalledExactlyOnceWith({run_id:'run-1',thread_id:'thread-1'});
+    else expect(physical).not.toHaveBeenCalled();
   });
 
   it('returns 502 on upstream fetch error', async () => {

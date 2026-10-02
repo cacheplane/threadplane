@@ -209,6 +209,13 @@ export function createProxyHandler(config: ProxyConfig = {}): (req: VercelReques
       res.status(response.status);
 
       if (contentType.includes('text/event-stream')) {
+        // The SDK captures physical run identity from this upstream header.
+        // Keep it available before streaming without forwarding other headers.
+        const location = response.headers.get('content-location');
+        if (location) {
+          res.setHeader('content-location', location);
+          res.setHeader('access-control-expose-headers', 'content-location');
+        }
         const reader = response.body?.getReader();
         if (reader) {
           const decoder = new TextDecoder();
