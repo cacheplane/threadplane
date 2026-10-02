@@ -21,6 +21,33 @@ def graph_for_test(model=None):
 
 
 class DurableCompletionTests(unittest.IsolatedAsyncioTestCase):
+    async def test_json_wire_input_keeps_current_human_and_final_identity_across_two_runs(self):
+        graph = graph_for_test()
+        config = {'configurable': {'thread_id': 'durable-wire-two-turns'}}
+        for turn in ['first', 'second']:
+            events = [state async for state in graph.astream(
+                {'messages': [{'type': 'human', 'id': 'wire-human-' + turn, 'content': 'Fictional ' + turn}]},
+                config, stream_mode='values',
+            )]
+            self.assertEqual(events[0]['messages'][0]['id'], 'wire-human-' + turn)
+            self.assertEqual([state['step'] for state in events if state.get('step') in ['analyze', 'plan']][-2:], ['analyze', 'plan'])
+            final = events[-1]
+            self.assertEqual(final['step'], 'generate')
+            self.assertEqual(final['completed_turn_id'], 'wire-human-' + turn)
+            self.assertEqual(final['completed_answer_id'], final['messages'][-1].id)
+            self.assertEqual([message.content for message in final['messages']], ['Fictional ' + turn, 'Final answer'])
+            self.assertEqual(final['messages'][0].id, 'wire-human-' + turn)
+
+    async def test_json_wire_input_without_identity_cannot_fabricate_authority(self):
+        for identity in [None, '']:
+            question = {'type': 'human', 'content': 'Fictional request without identity'}
+            if identity is not None:
+                question['id'] = identity
+            graph = graph_for_test()
+            final = await graph.ainvoke({'messages': [question]}, {'configurable': {'thread_id': 'durable-wire-missing-' + str(identity)}})
+            self.assertFalse(final.get('completed_turn_id'))
+            self.assertFalse(final.get('completed_answer_id'))
+
     async def test_completion_marker_identifies_only_the_current_final_checkpoint(self):
         graph = graph_for_test()
         config = {'configurable': {'thread_id': 'durable-two-turns'}}
