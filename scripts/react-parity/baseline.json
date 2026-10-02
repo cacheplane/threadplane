@@ -2109,7 +2109,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "42226928cc7b699bb0dab6b6f68bc2e71cd1082710b2a2a47b88422afa273ab3"
+      "sha256": "48224c9263f989f42d4dba45cb1e53806d98a1ac8b96c0d89405c562a52e46db"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -2331,7 +2331,7 @@
       "id": "doc:apps/website/content/docs/ag-ui/guides/json-render.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/guides/json-render.mdx",
-      "sha256": "8adf10a8abbf0235079ce4560e7276a57dc0d941374c12dafc3f74fcf3747cc6"
+      "sha256": "163792710b59c96efa9ff74d410dbf195773c6b687e2f232aad91798aa9f09b2"
     },
     {
       "id": "doc:apps/website/content/docs/ag-ui/guides/subagents.mdx",
@@ -13226,13 +13226,13 @@
       "id": "source:libs/cockpit-registry/src/lib/capability-registry.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "sha256": "bf84cd92a6e136a211506e2ade2fc2085a9a306132ac2e6fccc7a009c100fcee"
+      "sha256": "33f6e87ddd96f4f9e622351833b521b1b524f1b52023a7b77b511f523ff0989c"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/content-descriptors.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/content-descriptors.ts",
-      "sha256": "ca83c65971d13e48de6621b16a69f4c659d930b0138e0c7fc58b9c33a848cbb0"
+      "sha256": "2b2148437c494cc8edce6f71a17c14f423a156d6fa9e784f094860949ff7dc1a"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/docs-links.ts",

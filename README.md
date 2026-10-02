@@ -42,6 +42,12 @@ system components you already own.
 
 `MIT · Angular 20–22 · no account, no cloud`
 
+Experimental native React previews are available through the docs' **Example UI**
+selector. The [AG-UI JSON Render preview](https://threadplane.ai/docs/ag-ui/guides/json-render?frontend=react)
+uses the existing airline agent, six authored read-only views and native shared
+state. These React packages remain private source builds; from a checkout, run
+`npx nx build cockpit-ag-ui-json-render-react` and the matching `npx nx e2e` target.
+
 ---
 
 ## Install

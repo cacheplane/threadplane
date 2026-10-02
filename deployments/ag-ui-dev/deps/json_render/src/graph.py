@@ -28,7 +28,7 @@ from pathlib import Path
 from typing import Literal, Optional
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
-from langchain_core.tools import tool
+from langchain_core.tools import tool, InjectedToolCallId
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import StateGraph, END
@@ -65,7 +65,7 @@ class DashboardState(TypedDict):
 
 # region render-spec-tool
 @tool
-async def render_spec(elements: dict, root: str) -> str:
+async def render_spec(elements: dict, root: str, tool_call_id: Annotated[str, InjectedToolCallId]) -> ToolMessage:
     """Render an interactive dashboard layout.
 
     Use this tool to author or update the dashboard layout. See the system
@@ -81,11 +81,17 @@ async def render_spec(elements: dict, root: str) -> str:
         root: The id of the top-level component (must be a key in `elements`).
 
     Returns:
-        The spec serialized as JSON. A post-process node (wrap_spec_into_ai)
+        A stable tool message containing the spec serialized as JSON.
+        A post-process node (wrap_spec_into_ai)
         wraps this payload into the AI message content where the
         chat-lib's content-classifier picks it up.
     """
-    return json.dumps({"elements": elements, "root": root})
+    return ToolMessage(
+        id=tool_call_id,
+        tool_call_id=tool_call_id,
+        name="render_spec",
+        content=json.dumps({"elements": elements, "root": root}),
+    )
 # endregion
 
 
