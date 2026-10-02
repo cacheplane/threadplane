@@ -15,16 +15,27 @@ import {
   emitCandidate,
   packCandidate,
 } from '../react-parity/langgraph-candidate-package.mjs';
+import {
+  emitCandidate as emitAgUiCandidate,
+  packCandidate as packAgUiCandidate,
+  rootRangeOverrides,
+} from '../react-parity/ag-ui-candidate-package.mjs';
 import { packLocalArtifacts } from '../react-parity/verify-packages.mjs';
 import {
   installPresentationConsumer,
   reactLanggraphPresentationSeeds,
+  reactAgUiPresentationSeeds,
 } from '../react-parity/markdown-presentation-build.mjs';
 import { checkTypes } from '../react-parity/verify-langgraph-candidate.mjs';
 import { reactCockpitConfiguration } from './configuration.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const { appPath, base } = reactCockpitConfiguration(process.argv[2]);
+const { appPath, base, adapter } = reactCockpitConfiguration(process.argv[2]);
+const nativeAgUi = adapter === 'ag-ui';
+if (nativeAgUi) rootRangeOverrides(root);
+const runtimePackage = nativeAgUi
+  ? '@threadplane/ag-ui'
+  : '@threadplane/langgraph';
 const output = join(root, 'dist', appPath);
 const temporary = realpathSync(
   mkdtempSync(join(tmpdir(), 'threadplane-react-cockpit-'))
@@ -33,11 +44,17 @@ try {
   // Nx app targets prepare shared packages once before parallel isolated builds.
   const candidate = join(temporary, 'candidate');
   mkdirSync(candidate);
-  const emission = emitCandidate(root, candidate);
-  const packed = packCandidate(candidate, temporary);
+  const emission = (nativeAgUi ? emitAgUiCandidate : emitCandidate)(
+    root,
+    candidate
+  );
+  const packed = (nativeAgUi ? packAgUiCandidate : packCandidate)(
+    candidate,
+    temporary
+  );
   const tarballs = {
     ...packLocalArtifacts(root, temporary, ['react']),
-    '@threadplane/langgraph': 'file:' + packed.tarball,
+    [runtimePackage]: 'file:' + packed.tarball,
   };
   const consumer = join(temporary, 'consumer');
   mkdirSync(consumer);
@@ -46,8 +63,10 @@ try {
     JSON.parse(readFileSync(join(root, 'package-lock.json'), 'utf8')),
     tarballs,
     {
-      seeds: reactLanggraphPresentationSeeds,
-      profile: 'react-langgraph',
+      seeds: nativeAgUi
+        ? reactAgUiPresentationSeeds
+        : reactLanggraphPresentationSeeds,
+      profile: nativeAgUi ? 'react-ag-ui' : 'react-langgraph',
     }
   );
   const app = join(consumer, appPath);
@@ -102,21 +121,41 @@ try {
   );
   assert.ok(
     modules.some((path) =>
-      path.includes('/node_modules/@threadplane/langgraph/')
+      path.includes('/node_modules/' + runtimePackage + '/')
     ),
     'Installed neutral runtime required'
   );
+  if (nativeAgUi) {
+    assert.ok(
+      modules.some((path) =>
+        path.includes(
+          '/node_modules/@threadplane/ag-ui/libs/ag-ui/src/runtime/session-publication.js'
+        )
+      ),
+      'Installed native AG-UI publication required'
+    );
+    assert.ok(
+      modules.some((path) => path.includes('/node_modules/@ag-ui/client/')),
+      'Installed AG-UI client required'
+    );
+  } else
+    assert.ok(
+      modules.some((path) =>
+        path.includes('/node_modules/@threadplane/content/')
+      ),
+      'Installed content required'
+    );
   assert.ok(
-    modules.some((path) =>
-      path.includes('/node_modules/@threadplane/content/')
-    ),
-    'Installed content required'
-  );
-  assert.ok(
-    !modules.some((path) =>
-      /\/node_modules\/@angular\/|\/libs\/(?:core|react|content|langgraph)\//.test(
-        path
-      )
+    !modules.some(
+      (path) =>
+        /\/node_modules\/@angular\/|\/libs\/(?:core|react|content|langgraph)\//.test(
+          path
+        ) ||
+        (/\/libs\/ag-ui\//.test(path) &&
+          !(
+            nativeAgUi &&
+            path.includes('/node_modules/@threadplane/ag-ui/libs/ag-ui/')
+          ))
     ),
     'No Angular or workspace implementation in runtime'
   );

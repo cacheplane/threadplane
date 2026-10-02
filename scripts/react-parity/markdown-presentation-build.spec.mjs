@@ -335,6 +335,153 @@ const deriveReact = (input) =>
     'react-langgraph'
   );
 
+const agUiReactSeeds = reactSeeds.map((name) =>
+  name === '@langchain/langgraph-sdk' ? '@ag-ui/client' : name
+);
+const agUiReactRoot = () => {
+  const root = reactRoot();
+  for (const path of Object.keys(root.packages))
+    if (path.startsWith('node_modules/@langchain/')) delete root.packages[path];
+  root.packages['node_modules/@ag-ui/client'] = pkg('1.0.1', {
+    dependencies: { '@ag-ui/core': '1.0.1', rxjs: '7.8.1' },
+  });
+  root.packages['node_modules/@ag-ui/core'] = pkg('1.0.1');
+  root.packages['node_modules/rxjs'] = pkg('7.8.2');
+  return root;
+};
+const agUiReactFixture = (t, changes = {}) =>
+  consumerFixture(t, {
+    projects: ['content', 'core', 'react', 'ag-ui'],
+    root: agUiReactRoot(),
+    manifests: {
+      'ag-ui': {
+        dependencies: {
+          '@threadplane/core': '0.0.1',
+          '@ag-ui/client': '1.0.1',
+        },
+      },
+    },
+    ...changes,
+  });
+const deriveAgUiReact = (input, seeds = agUiReactSeeds) =>
+  derivePresentationConsumer(input.root, input.tarballs, seeds, 'react-ag-ui');
+
+test('selected React AG-UI preserves exact native SDK and locked platform graph without Angular or LangGraph', (t) => {
+  const input = agUiReactFixture(t);
+  const before = JSON.stringify(input.root);
+  const derived = deriveAgUiReact(input);
+  assert.equal(derived.profile, 'react-ag-ui');
+  assert.deepEqual(presentation.reactAgUiPresentationSeeds, agUiReactSeeds);
+  assert.deepEqual(
+    Object.keys(derived.manifest.dependencies).sort(),
+    [...agUiReactSeeds, ...Object.keys(input.tarballs)].sort()
+  );
+  assert.deepEqual(derived.manifest.overrides, { rxjs: '~7.8.0' });
+  for (const [path, record] of Object.entries(
+    selectPresentationLock(input.root, agUiReactSeeds, { rxjs: '~7.8.0' })
+  ))
+    assert.deepEqual(derived.lock.packages[path], record);
+  assert.equal(JSON.stringify(input.root), before);
+  assertPresentationInstallation(input.consumer, derived, input.tarballs);
+  assert.equal(
+    derived.lock.packages['node_modules/@threadplane/angular'],
+    undefined
+  );
+  assert.equal(
+    derived.lock.packages['node_modules/@threadplane/langgraph'],
+    undefined
+  );
+  assert.ok(
+    derived.graph.some(
+      (record) => record.name === '@ag-ui/client' && record.version === '1.0.1'
+    )
+  );
+});
+
+test('React AG-UI retains only the existing RxJS override and rejects an incompatible locked version', (t) => {
+  const input = agUiReactFixture(t);
+  input.root.packages['node_modules/rxjs'].version = '7.9.0';
+  assert.throws(() => deriveAgUiReact(input), /must satisfy ~7.8.0/);
+});
+
+test('selected React AG-UI rejects missing or extra local artifacts and changed seed selection', (t) => {
+  const input = agUiReactFixture(t);
+  const missing = { ...input, tarballs: { ...input.tarballs } };
+  delete missing.tarballs['@threadplane/ag-ui'];
+  assert.throws(() => deriveAgUiReact(missing), /tarballs required/);
+  assert.throws(
+    () =>
+      deriveAgUiReact(
+        input,
+        agUiReactSeeds.filter((name) => name !== '@ag-ui/client')
+      ),
+    /selected React seeds required/
+  );
+  const extra = {
+    ...input,
+    tarballs: {
+      ...input.tarballs,
+      '@threadplane/langgraph': input.tarballs['@threadplane/ag-ui'],
+    },
+  };
+  assert.throws(() => deriveAgUiReact(extra), /tarballs required/);
+});
+
+test('selected React AG-UI rejects unrelated backend and Angular dependency graphs', (t) => {
+  for (const name of ['@langchain/langgraph-sdk', 'openai', '@angular/core']) {
+    const root = agUiReactRoot();
+    root.packages['node_modules/' + name] = pkg();
+    root.packages['node_modules/@ag-ui/client'].dependencies[name] = '1.0.0';
+    const input = agUiReactFixture(t, { root });
+    assert.throws(
+      () => deriveAgUiReact(input),
+      /Unexpected (backend SDK|Angular package)/
+    );
+  }
+});
+
+test('selected React AG-UI rejects actual installed vendor and artifact byte drift', (t) => {
+  const input = agUiReactFixture(t);
+  const derived = deriveAgUiReact(input);
+  const client = join(
+    input.consumer,
+    'node_modules/@ag-ui/client/package.json'
+  );
+  const original = readFileSync(client);
+  writeJson(client, { name: '@ag-ui/client', version: '1.0.2' });
+  assert.throws(
+    () =>
+      assertPresentationInstallation(input.consumer, derived, input.tarballs),
+    /Installed root selection/
+  );
+  writeFileSync(client, original);
+  writeFileSync(
+    join(input.consumer, 'node_modules/@threadplane/ag-ui/index.js'),
+    'tampered'
+  );
+  assert.throws(
+    () =>
+      assertPresentationInstallation(input.consumer, derived, input.tarballs),
+    /bytes equal/
+  );
+});
+
+test('selected React AG-UI rejects extra installed packages outside its exact vendor graph', (t) => {
+  const input = agUiReactFixture(t);
+  const derived = deriveAgUiReact(input);
+  const path = join(input.consumer, 'node_modules/unselected-vendor');
+  mkdirSync(path);
+  writeJson(join(path, 'package.json'), {
+    name: 'unselected-vendor',
+    version: '1.0.0',
+  });
+  assert.throws(
+    () =>
+      assertPresentationInstallation(input.consumer, derived, input.tarballs),
+    /Unexpected installed record/
+  );
+});
+
 const angularSeeds = [
   '@cacheplane/json-stream',
   '@cacheplane/partial-markdown',
@@ -1116,6 +1263,36 @@ test('selected Angular installer rejects child-process lock mutation', (t) => {
         input.root,
         input.tarballs,
         { seeds: angularSeeds, profile: 'angular-langgraph', env: input.env }
+      ),
+    /preserves derived lock bytes/
+  );
+});
+
+test('installer preserves the AG-UI profile, exact lock and supported RxJS policy through the child boundary', (t) => {
+  const input = installerFixture(t, false, agUiReactFixture);
+  const proof = presentation.installPresentationConsumer(
+    input.consumer,
+    input.root,
+    input.tarballs,
+    { seeds: agUiReactSeeds, profile: 'react-ag-ui', env: input.env }
+  );
+  assert.deepEqual(proof.seeds, agUiReactSeeds);
+  assert.equal(proof.profile, 'react-ag-ui');
+  assert.deepEqual(
+    JSON.parse(readFileSync(join(input.consumer, 'package.json'))).overrides,
+    { rxjs: '~7.8.0' }
+  );
+});
+
+test('selected AG-UI installer rejects child-process lock mutation', (t) => {
+  const input = installerFixture(t, true, agUiReactFixture);
+  assert.throws(
+    () =>
+      presentation.installPresentationConsumer(
+        input.consumer,
+        input.root,
+        input.tarballs,
+        { seeds: agUiReactSeeds, profile: 'react-ag-ui', env: input.env }
       ),
     /preserves derived lock bytes/
   );

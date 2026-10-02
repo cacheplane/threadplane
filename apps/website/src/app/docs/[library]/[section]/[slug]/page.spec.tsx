@@ -6,6 +6,7 @@ import { DocsSearchFooter } from '../../../../../components/docs/DocsSearchFoote
 import { DocsTOC } from '../../../../../components/docs/DocsTOC';
 import { MdxRenderer } from '../../../../../components/docs/MdxRenderer';
 import { ReactStreamingPreview } from '../../../../../components/docs/ReactStreamingPreview';
+import { ReactAgUiStreamingPreview } from '../../../../../components/docs/ReactAgUiStreamingPreview';
 import { ReactInterruptsPreview } from '../../../../../components/docs/ReactInterruptsPreview';
 import { ReactMemoryPreview } from '../../../../../components/docs/ReactMemoryPreview';
 import { ReactClientToolsPreview } from '../../../../../components/docs/ReactClientToolsPreview';
@@ -59,6 +60,14 @@ const route = (library: string, section: string, slug: string, mode?: string) =>
   } as never);
 
 describe('unified docs workspace route', () => {
+  it('selects the authored AG-UI Streaming Docs on Event Mapping without selecting LangGraph Streaming', async () => {
+    const tree = await route('ag-ui','reference','event-mapping');
+    const workspace = findElement(tree,WebsiteWorkspace as ComponentType<never>);
+    const article = findElement(workspace?.props.reactDocsSlot,ReactAgUiStreamingPreview as ComponentType<never>);
+    expect(article).not.toBeNull();
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/ag-ui/streaming/react/src/app.tsx');
+    expect(findElement(workspace?.props.reactDocsSlot,ReactStreamingPreview as ComponentType<never>)).toBeNull();
+  });
   it('selects the authored client-tools preview on the canonical Chat route', async () => {
     const tree = await route('chat', 'guides', 'client-tools');
     const workspace = findElement(

@@ -362,6 +362,9 @@ export const reactLanggraphPresentationSeeds = [
   'typescript',
   'vite',
 ];
+export const reactAgUiPresentationSeeds = reactLanggraphPresentationSeeds.map(
+  (name) => (name === '@langchain/langgraph-sdk' ? '@ag-ui/client' : name)
+);
 export const angularLanggraphPresentationSeeds = [
   '@cacheplane/json-stream',
   '@cacheplane/partial-markdown',
@@ -386,17 +389,22 @@ const localNames = [
 ];
 function presentationLocals(profile) {
   assert.ok(
-    ['markdown', 'react-langgraph', 'angular-langgraph'].includes(profile),
+    [
+      'markdown',
+      'react-langgraph',
+      'angular-langgraph',
+      'react-ag-ui',
+    ].includes(profile),
     `Unknown presentation profile: ${profile}`
   );
   if (profile === 'markdown') return localNames;
   const excluded =
-    profile === 'react-langgraph'
+    profile === 'react-langgraph' || profile === 'react-ag-ui'
       ? '@threadplane/angular'
       : '@threadplane/react';
   return [
     ...localNames.filter((name) => name !== excluded),
-    '@threadplane/langgraph',
+    profile === 'react-ag-ui' ? '@threadplane/ag-ui' : '@threadplane/langgraph',
   ];
 }
 
@@ -412,7 +420,7 @@ function assertPresentationPackages(
   for (const path of Object.keys(packages)) {
     if (!path) continue;
     const name = path.split('node_modules/').at(-1);
-    if (profile === 'react-langgraph')
+    if (profile === 'react-langgraph' || profile === 'react-ag-ui')
       assert.ok(
         !/^@(?:angular|angular-devkit)\//.test(name) &&
           ![
@@ -436,7 +444,9 @@ function assertPresentationPackages(
     assert.ok(
       (!backend ||
         (profile !== 'markdown' &&
-          name.startsWith('@langchain/') &&
+          name.startsWith(
+            profile === 'react-ag-ui' ? '@ag-ui/' : '@langchain/'
+          ) &&
           sdkNames.has(name))) &&
         (profile === 'markdown' ||
           !['openai', '@anthropic-ai/sdk'].includes(name)),
@@ -452,7 +462,11 @@ const integrity = (path) =>
 
 // Selection only: npm owns installation. Keep the original physical records,
 // including optional binaries for other platforms; never flatten or re-resolve.
-export function selectPresentationLock(lock, seeds = presentationSeeds) {
+export function selectPresentationLock(
+  lock,
+  seeds = presentationSeeds,
+  effectiveRanges = {}
+) {
   assert.equal(lock.lockfileVersion, 3, 'Root lock v3 required');
   const packages = lock.packages,
     selected = {};
@@ -495,8 +509,10 @@ export function selectPresentationLock(lock, seeds = presentationSeeds) {
         continue;
       assert.ok(target, `Missing locked dependency ${name} of ${path}`);
       assert.ok(
-        satisfies(packages[target].version, range),
-        `Locked ${target}@${packages[target].version} must satisfy ${range}`
+        satisfies(packages[target].version, effectiveRanges[name] ?? range),
+        `Locked ${target}@${packages[target].version} must satisfy ${
+          effectiveRanges[name] ?? range
+        }`
       );
       todo.push(target);
     }
@@ -506,13 +522,21 @@ export function selectPresentationLock(lock, seeds = presentationSeeds) {
 
 // Physical duplicates/hoisting are irrelevant only when the whole record agrees.
 // Keep same-name/version records with different edges distinct, including cycles.
-export function canonicalVendorGraph(lock, seeds = presentationSeeds) {
-  const records = lockedVendorGraph(lock, seeds).map((record) => ({
-    ...record,
-    dependencies: Object.fromEntries(
-      Object.entries(record.dependencies).sort(([a], [b]) => a.localeCompare(b))
-    ),
-  }));
+export function canonicalVendorGraph(
+  lock,
+  seeds = presentationSeeds,
+  effectiveRanges = {}
+) {
+  const records = lockedVendorGraph(lock, seeds, effectiveRanges).map(
+    (record) => ({
+      ...record,
+      dependencies: Object.fromEntries(
+        Object.entries(record.dependencies).sort(([a], [b]) =>
+          a.localeCompare(b)
+        )
+      ),
+    })
+  );
   return [...new Set(records.map((record) => JSON.stringify(record)))]
     .sort()
     .map((record) => JSON.parse(record));
@@ -531,21 +555,38 @@ export function derivePresentationConsumer(
     profile === 'markdown'
       ? 'Exactly four Markdown foundation tarballs required'
       : `Exactly ${
-          profile === 'react-langgraph' ? 'React' : 'Angular'
-        }, core, content and LangGraph candidate tarballs required`
+          profile === 'react-langgraph' || profile === 'react-ag-ui'
+            ? 'React'
+            : 'Angular'
+        }, core, content and ${
+          profile === 'react-ag-ui' ? 'AG-UI' : 'LangGraph'
+        } candidate tarballs required`
   );
-  const selected = selectPresentationLock(rootLock, seeds);
+  // AG-UI's pinned client is installed under the repository's reviewed RxJS policy.
+  const effectiveRanges = profile === 'react-ag-ui' ? { rxjs: '~7.8.0' } : {};
+  const selected = selectPresentationLock(rootLock, seeds, effectiveRanges);
   if (profile !== 'markdown') {
-    const react = profile === 'react-langgraph';
-    const selectedSeeds = react
-      ? reactLanggraphPresentationSeeds
-      : angularLanggraphPresentationSeeds;
+    const react = profile === 'react-langgraph' || profile === 'react-ag-ui';
+    const selectedSeeds =
+      profile === 'react-ag-ui'
+        ? reactAgUiPresentationSeeds
+        : react
+        ? reactLanggraphPresentationSeeds
+        : angularLanggraphPresentationSeeds;
     const framework = react ? 'React' : 'Angular';
     assertPresentationPackages(
       selected,
       profile,
       locals,
-      selectPresentationLock(rootLock, ['@langchain/langgraph-sdk'])
+      selectPresentationLock(
+        rootLock,
+        [
+          profile === 'react-ag-ui'
+            ? '@ag-ui/client'
+            : '@langchain/langgraph-sdk',
+        ],
+        effectiveRanges
+      )
     );
     for (const name of seeds)
       assert.ok(
@@ -566,6 +607,7 @@ export function derivePresentationConsumer(
     version: '0.0.0',
     private: true,
     type: 'module',
+    ...(profile === 'react-ag-ui' ? { overrides: effectiveRanges } : {}),
     dependencies: {
       ...Object.fromEntries(
         seeds.map((name) => [
@@ -607,7 +649,11 @@ export function derivePresentationConsumer(
     packages: { '': manifest, ...selected, ...localRecords },
   };
   // This also checks that actual local manifest dependency and peer ranges fit.
-  const graph = canonicalVendorGraph(lock, [...seeds, ...locals]);
+  const graph = canonicalVendorGraph(
+    lock,
+    [...seeds, ...locals],
+    effectiveRanges
+  );
   return {
     profile,
     manifest,
@@ -656,6 +702,9 @@ function installedPackages(consumer) {
 export function assertPresentationInstallation(consumer, derived, tarballs) {
   const { lock, seeds, artifacts } = derived;
   const profile = derived.profile ?? 'markdown';
+  const effectiveRanges = profile === 'react-ag-ui' ? { rxjs: '~7.8.0' } : {};
+  if (profile === 'react-ag-ui')
+    assert.deepEqual(derived.manifest.overrides, effectiveRanges);
   const locals = presentationLocals(profile);
   assertLocalResolutions(consumer, lock, tarballs);
   for (const [name, specifier] of Object.entries(tarballs)) {
@@ -686,10 +735,22 @@ export function assertPresentationInstallation(consumer, derived, tarballs) {
     profile,
     locals,
     profile !== 'markdown'
-      ? selectPresentationLock(lock, ['@langchain/langgraph-sdk'])
+      ? selectPresentationLock(
+          lock,
+          [
+            profile === 'react-ag-ui'
+              ? '@ag-ui/client'
+              : '@langchain/langgraph-sdk',
+          ],
+          effectiveRanges
+        )
       : {}
   );
-  const graph = canonicalVendorGraph(actual, [...seeds, ...locals]);
+  const graph = canonicalVendorGraph(
+    actual,
+    [...seeds, ...locals],
+    effectiveRanges
+  );
   assert.deepEqual(
     graph,
     derived.graph,
@@ -704,13 +765,14 @@ export function assertPresentationInstallation(consumer, derived, tarballs) {
         .filter(Boolean)
         .map((path) => path.slice('node_modules/'.length));
     const allowed = new Set(
-      canonicalVendorGraph(lock, allSeeds(lock.packages)).map((record) =>
-        JSON.stringify(record)
+      canonicalVendorGraph(lock, allSeeds(lock.packages), effectiveRanges).map(
+        (record) => JSON.stringify(record)
       )
     );
     for (const record of canonicalVendorGraph(
       actual,
-      allSeeds(actual.packages)
+      allSeeds(actual.packages),
+      effectiveRanges
     ))
       assert.ok(
         allowed.has(JSON.stringify(record)),
@@ -724,8 +786,13 @@ export function assertPresentationInstallation(consumer, derived, tarballs) {
     optionalRecords: Object.values(lock.packages).filter(
       (record) => record.optional
     ).length,
-    requiredPhysicalRecords: lockedVendorGraph(actual, seeds).length,
-    requiredCanonicalRecords: canonicalVendorGraph(actual, seeds).length,
+    requiredPhysicalRecords: lockedVendorGraph(actual, seeds, effectiveRanges)
+      .length,
+    requiredCanonicalRecords: canonicalVendorGraph(
+      actual,
+      seeds,
+      effectiveRanges
+    ).length,
     graph,
   };
 }

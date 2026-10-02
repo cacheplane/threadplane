@@ -1,0 +1,53 @@
+{
+  "name": "cockpit-ag-ui-streaming-react",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "cockpit/ag-ui/streaming/react/src",
+  "projectType": "application",
+  "tags": [
+    "scope:cockpit-examples",
+    "scope:cockpit-e2e",
+    "framework:react"
+  ],
+  "targets": {
+    "test": {
+      "executor": "@nx/vitest:test",
+      "options": {
+        "configFile": "cockpit/ag-ui/streaming/react/vite.config.mts"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [
+        {
+          "target": "build",
+          "projects": [
+            "core",
+            "content",
+            "react"
+          ]
+        }
+      ],
+      "outputs": [
+        "{workspaceRoot}/dist/cockpit/ag-ui/streaming/react"
+      ],
+      "options": {
+        "command": "node scripts/react-cockpit/build.mjs ag-ui-streaming"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "e2e": {
+      "executor": "@nx/playwright:playwright",
+      "cache": false,
+      "dependsOn": [
+        "build"
+      ],
+      "options": {
+        "config": "cockpit/ag-ui/streaming/react/e2e/playwright.config.ts",
+        "skipInstall": true
+      }
+    }
+  }
+}

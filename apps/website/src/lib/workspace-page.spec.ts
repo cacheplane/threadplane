@@ -14,6 +14,16 @@ const workspaceRoot = process.cwd().endsWith('/apps/website')
   : process.cwd();
 
 describe('getWebsiteWorkspacePage', () => {
+  it('loads AG-UI Streaming React from Event Mapping with its own native source and backend', async () => {
+    const page = await getWebsiteWorkspacePage({ docsPath:'/docs/ag-ui/reference/event-mapping',title:'Event Mapping' });
+    const react = page.frontendVariants?.react;
+    expect(react?.presentation.runtimeUrl).toBe('ag-ui/streaming/react');
+    const files = Object.keys(react?.contentBundle.codeFiles ?? {});
+    expect(files).toContain('cockpit/ag-ui/streaming/react/src/canonical-transcript.ts');
+    expect(files).toContain('cockpit/ag-ui/streaming/python/src/server.py');
+    expect(files.some(x=>x.includes('/langgraph/')||x.includes('/angular/'))).toBe(false);
+    expect(page.presentation.runtimeUrl).toBe('ag-ui/streaming');
+  });
   it('loads Deployment Runtime React from the canonical deployment slug without Angular source fallback', async () => {
     const page = await getWebsiteWorkspacePage({
       docsPath: '/docs/langgraph/guides/deployment',
