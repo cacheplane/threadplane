@@ -17,9 +17,14 @@
     },
     "smoke": {
       "executor": "nx:run-commands",
+      "cache": false,
       "options": {
         "cwd": "cockpit/langgraph/subgraphs/python",
-        "command": "npx tsx -e \"import { langgraphSubgraphsPythonModule } from './src/index.ts'; const module = langgraphSubgraphsPythonModule; if (module.id !== 'langgraph-subgraphs-python' || module.title !== 'LangGraph Subgraphs (Python)') { throw new Error('Unexpected module shape for ' + module.id); }\""
+        "parallel": false,
+        "commands": [
+          "npx tsx -e \"import { langgraphSubgraphsPythonModule } from './src/index.ts'; const module = langgraphSubgraphsPythonModule; if (module.id !== 'langgraph-subgraphs-python' || module.title !== 'LangGraph Subgraphs (Python)') { throw new Error('Unexpected module shape for ' + module.id); }\"",
+          "uv run --frozen --python 3.12 python -m unittest discover -s tests"
+        ]
       }
     }
   },

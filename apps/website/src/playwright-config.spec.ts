@@ -191,7 +191,7 @@ describe('Website Playwright configuration', () => {
       }),
       expect.objectContaining({
         command: expect.stringContaining(
-          'nx run-many -t build --projects=cockpit-langgraph-streaming-react,cockpit-langgraph-interrupts-react,cockpit-langgraph-memory-react,cockpit-langgraph-client-tools-react,cockpit-langgraph-persistence-react,cockpit-langgraph-durable-execution-react --parallel=3'
+          'nx run-many -t build --projects=cockpit-langgraph-streaming-react,cockpit-langgraph-interrupts-react,cockpit-langgraph-memory-react,cockpit-langgraph-client-tools-react,cockpit-langgraph-persistence-react,cockpit-langgraph-durable-execution-react,cockpit-langgraph-subgraphs-react --parallel=3'
         ),
         url: 'http://127.0.0.1:4600',
       }),
@@ -213,8 +213,13 @@ describe('Website Playwright configuration', () => {
         url: 'http://127.0.0.1:4604',
       }),
       expect.objectContaining({
-        command: 'node scripts/react-cockpit/serve.mjs durable-execution --no-parent',
+        command:
+          'node scripts/react-cockpit/serve.mjs durable-execution --no-parent',
         url: 'http://127.0.0.1:4605',
+      }),
+      expect.objectContaining({
+        command: 'node scripts/react-cockpit/serve.mjs subgraphs --no-parent',
+        url: 'http://127.0.0.1:4606',
       }),
     ]);
     expect(config.testIgnore).toEqual([

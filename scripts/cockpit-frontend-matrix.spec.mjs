@@ -5,12 +5,19 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { deriveCockpitCaps, selectCockpitCaps } from './cockpit-matrix.mjs';
 
-test('React cockpit configuration accepts only the six authored topics', async () => {
+test('React cockpit configuration accepts only the seven authored topics', async () => {
   const { reactCockpitConfiguration } = await import(
     './react-cockpit/configuration.mjs'
   );
   assert.equal(reactCockpitConfiguration().topic, 'streaming');
   assert.equal(reactCockpitConfiguration().port, 4600);
+  assert.deepEqual(reactCockpitConfiguration('subgraphs'), {
+    topic: 'subgraphs',
+    appPath: 'cockpit/langgraph/subgraphs/react',
+    base: '/langgraph/subgraphs/react/',
+    port: 4606,
+    project: 'cockpit-langgraph-subgraphs-react',
+  });
   assert.deepEqual(reactCockpitConfiguration('durable-execution'), {
     topic: 'durable-execution',
     appPath: 'cockpit/langgraph/durable-execution/react',
@@ -59,7 +66,7 @@ test('React cockpit configuration accepts only the six authored topics', async (
     );
 });
 
-test('CI discovers all six React topics with their existing Python backends', (t) => {
+test('CI discovers all seven React topics with their existing Python backends', (t) => {
   const root = mkdtempSync(join(tmpdir(), 'cockpit-react-topics-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   for (const topic of [
@@ -69,6 +76,7 @@ test('CI discovers all six React topics with their existing Python backends', (t
     'client-tools',
     'persistence',
     'durable-execution',
+    'subgraphs',
   ]) {
     for (const frontend of ['angular', 'react', 'python']) {
       const directory = join(root, 'cockpit/langgraph', topic, frontend);
@@ -83,7 +91,7 @@ test('CI discovers all six React topics with their existing Python backends', (t
     }
   }
   const caps = deriveCockpitCaps(root);
-  assert.equal(caps.length, 12);
+  assert.equal(caps.length, 14);
   for (const topic of [
     'streaming',
     'interrupts',
@@ -91,6 +99,7 @@ test('CI discovers all six React topics with their existing Python backends', (t
     'client-tools',
     'persistence',
     'durable-execution',
+    'subgraphs',
   ]) {
     const selected = selectCockpitCaps(
       caps,
