@@ -1,20 +1,9 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "13df343b1bf12da61e0aac36f9b8254ae86eacef",
+  "baselineHead": "88907ac679531cdd672089bf7aa4ec51e9abd424",
   "sourceState": {
-    "modified": [
-      "libs/chat/scripts/verify-devtools-bundle.mjs",
-      "libs/chat/src/lib/a2ui/surface.component.ts",
-      "libs/chat/src/lib/primitives/chat-generative-ui/chat-generative-ui.component.ts",
-      "libs/chat/src/public-api.ts",
-      "libs/render/src/lib/render-element.component.ts",
-      "libs/render/src/lib/render-spec.component.ts",
-      "libs/render/src/public-api.ts"
-    ],
-    "untracked": [
-      "libs/chat/src/lib/devtools/devtools-render-report.ts",
-      "libs/render/src/lib/devtools/render-devtools.ts"
-    ]
+    "modified": [],
+    "untracked": []
   },
   "scope": {
     "libraries": [
@@ -333,7 +322,7 @@
       "id": "asset:libs/chat/CHANGELOG.md",
       "kind": "asset",
       "path": "libs/chat/CHANGELOG.md",
-      "sha256": "5064e9218dc7bc2b2fb1d36a58fee02061b944e99868eedda8e330ffba182180"
+      "sha256": "a23829655512c233d4cc8b3bb2392ff213a92073a74f17893afcf20515ab2df5"
     },
     {
       "id": "asset:libs/chat/LICENSE.md",
@@ -873,7 +862,7 @@
       "id": "asset:libs/render/README.md",
       "kind": "asset",
       "path": "libs/render/README.md",
-      "sha256": "8c1ffd36a69279746e310e7e81414a461960bd53b7859b010e008739469727f6"
+      "sha256": "4c929d80bb74411338dcdb9e798e599ef2f3cb04930834f63d9bae4bb184e52d"
     },
     {
       "id": "asset:libs/render/ng-package.json",
@@ -14382,7 +14371,7 @@
       "id": "source:libs/render/src/lib/render-spec.component.ts",
       "kind": "source",
       "path": "libs/render/src/lib/render-spec.component.ts",
-      "sha256": "8ab0c5fee075c07f2e46120a61e0f6e58848452b960194167cd1790c9a658aac"
+      "sha256": "4fc6abe46b903aa064501b7e915cf4f53b38fc1b2484880f15c88ce8c5391a39"
     },
     {
       "id": "source:libs/render/src/lib/render.types.ts",
