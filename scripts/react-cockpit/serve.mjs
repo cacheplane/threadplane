@@ -6,11 +6,13 @@ import { fileURLToPath } from 'node:url';
 import { reactCockpitConfiguration } from './configuration.mjs';
 import { createInterruptsFixture } from './interrupts-fixture.mjs';
 import { createMemoryFixture } from './memory-fixture.mjs';
+import { createClientToolsFixture } from './client-tools-fixture.mjs';
 
 const configuration = reactCockpitConfiguration(process.argv[2]);
 const interruptsFixture =
   configuration.topic === 'interrupts' ? createInterruptsFixture() : null;
 const memoryFixture = configuration.topic === 'memory' ? createMemoryFixture() : null;
+const clientToolsFixture = configuration.topic === 'client-tools' ? createClientToolsFixture() : null;
 
 const root = resolve(
   dirname(fileURLToPath(import.meta.url)),
@@ -40,6 +42,7 @@ const release = () => {
 };
 const server = createServer(async (request, response) => {
   const pathname = new URL(request.url, 'http://localhost').pathname;
+  if (clientToolsFixture && (await clientToolsFixture(request, response, pathname))) return;
   if (memoryFixture && (await memoryFixture(request, response, pathname))) return;
   if (
     interruptsFixture &&

@@ -4,6 +4,7 @@ import { MdxRenderer } from '../../../../../components/docs/MdxRenderer';
 import { ReactStreamingPreview } from '../../../../../components/docs/ReactStreamingPreview';
 import { ReactInterruptsPreview } from '../../../../../components/docs/ReactInterruptsPreview';
 import { ReactMemoryPreview } from '../../../../../components/docs/ReactMemoryPreview';
+import { ReactClientToolsPreview } from '../../../../../components/docs/ReactClientToolsPreview';
 import { DocsSearch } from '../../../../../components/docs/DocsSearch';
 import { DocsPageHeader } from '../../../../../components/docs/DocsPageHeader';
 import { LibraryMark } from '../../../../../components/docs/LibraryMark';
@@ -255,8 +256,10 @@ export default async function DocsPage({ params }: DocsRouteProps) {
             : undefined
         }
         reactDocsSlot={
-          workspacePage.frontendVariants?.react && library === 'langgraph' ? (
-            slug === 'streaming' ? (
+          workspacePage.frontendVariants?.react && (library === 'langgraph' || (library === 'chat' && slug === 'client-tools')) ? (
+            library === 'chat' && slug === 'client-tools' ? (
+              <ReactClientToolsPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />
+            ) : slug === 'streaming' ? (
               <ReactStreamingPreview
                 exampleCode={getExampleCodeContext(
                   workspacePage.frontendVariants.react

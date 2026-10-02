@@ -16,6 +16,17 @@ const streaming: CockpitManifestIdentity = {
 };
 
 describe('registered React public previews', () => {
+  it('resolves client tools from the canonical Chat guide with all authored source contracts', () => {
+    const react = getFrontendCapabilityDescriptor({ ...streaming, topic: 'client-tools' }, 'react');
+    expect(react?.docsPath).toBe('/docs/chat/guides/client-tools');
+    expect(react?.runtimeUrl).toBe('langgraph/client-tools/react');
+    expect(react?.devPort).toBe(4603);
+    expect(react?.codeAssetPaths).toEqual(['app.tsx', 'application.ts', 'tools.ts', 'connection.ts', 'main.tsx'].map((file) => `cockpit/langgraph/client-tools/react/src/${file}`));
+    expect(react?.backendAssetPaths).toContain('cockpit/langgraph/client-tools/python/src/graph.py');
+    for (const asset of [...(react?.codeAssetPaths ?? []), ...(react?.backendAssetPaths ?? []), ...(react?.promptAssetPaths ?? [])])
+      expect(existsSync(new URL('../../../../' + asset, import.meta.url))).toBe(true);
+    expect(getFrontendCapabilityDescriptor({ ...streaming, topic: 'client-tools' }, 'angular')?.runtimeUrl).toBe('langgraph/client-tools');
+  });
   it('resolves memory with literal React sources and the existing Python graph and prompt', () => {
     const react = getFrontendCapabilityDescriptor(
       { ...streaming, topic: 'memory' },
@@ -123,11 +134,11 @@ describe('registered React public previews', () => {
 
   it('enumerates deployable frontend identities with distinct paths and projects', () => {
     const frontends = getCockpitFrontends();
-    expect(frontends).toHaveLength(44);
-    expect(new Set(frontends.map((entry) => entry.runtimePath)).size).toBe(44);
-    expect(new Set(frontends.map((entry) => entry.project)).size).toBe(44);
-    expect(new Set(frontends.map((entry) => entry.port)).size).toBe(44);
-    expect(new Set(frontends.map((entry) => entry.buildOutput)).size).toBe(44);
+    expect(frontends).toHaveLength(45);
+    expect(new Set(frontends.map((entry) => entry.runtimePath)).size).toBe(45);
+    expect(new Set(frontends.map((entry) => entry.project)).size).toBe(45);
+    expect(new Set(frontends.map((entry) => entry.port)).size).toBe(45);
+    expect(new Set(frontends.map((entry) => entry.buildOutput)).size).toBe(45);
     expect(
       frontends.find(
         (entry) => entry.project === 'cockpit-langgraph-memory-react'
