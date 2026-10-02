@@ -8,6 +8,7 @@ import { MdxRenderer } from '../../../../../components/docs/MdxRenderer';
 import { ReactStreamingPreview } from '../../../../../components/docs/ReactStreamingPreview';
 import { ReactAgUiStreamingPreview } from '../../../../../components/docs/ReactAgUiStreamingPreview';
 import { ReactAgUiInterruptsPreview } from '../../../../../components/docs/ReactAgUiInterruptsPreview';
+import { ReactAgUiToolViewsPreview } from '../../../../../components/docs/ReactAgUiToolViewsPreview';
 import { ReactInterruptsPreview } from '../../../../../components/docs/ReactInterruptsPreview';
 import { ReactMemoryPreview } from '../../../../../components/docs/ReactMemoryPreview';
 import { ReactClientToolsPreview } from '../../../../../components/docs/ReactClientToolsPreview';
@@ -61,6 +62,16 @@ const route = (library: string, section: string, slug: string, mode?: string) =>
   } as never);
 
 describe('unified docs workspace route', () => {
+  it('selects the authored native weather guide and server sources on AG-UI Tool Views', async () => {
+    const tree = await route('ag-ui','guides','tool-views');
+    const workspace = findElement(tree,WebsiteWorkspace as ComponentType<never>);
+    const article = findElement(workspace?.props.reactDocsSlot,ReactAgUiToolViewsPreview as ComponentType<never>);
+    expect(article).not.toBeNull();
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/ag-ui/tool-views/react/src/tool-view-policy.ts');
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/ag-ui/tool-views/python/src/graph.py');
+    expect(findElement(workspace?.props.reactDocsSlot,ReactAgUiStreamingPreview as ComponentType<never>)).toBeNull();
+    expect(findElement(workspace?.props.reactDocsSlot,ReactAgUiInterruptsPreview as ComponentType<never>)).toBeNull();
+  });
   it('selects native AG-UI approval Docs on the canonical Interrupts guide without borrowing LangGraph', async () => {
     const tree = await route('ag-ui', 'guides', 'interrupts');
     const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);

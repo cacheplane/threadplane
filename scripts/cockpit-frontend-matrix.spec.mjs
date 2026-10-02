@@ -5,6 +5,23 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { deriveCockpitCaps, selectCockpitCaps } from './cockpit-matrix.mjs';
 
+test('AG-UI Tool Views has a closed twelfth identity with no overlapping runtime', async () => {
+  const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
+  assert.deepEqual(reactCockpitConfiguration('ag-ui-tool-views'), {
+    topic: 'tool-views', adapter: 'ag-ui', appPath: 'cockpit/ag-ui/tool-views/react',
+    base: '/ag-ui/tool-views/react/', port: 4611, project: 'cockpit-ag-ui-tool-views-react',
+  });
+  const configurations = [
+    'streaming', 'interrupts', 'memory', 'client-tools', 'persistence',
+    'durable-execution', 'subgraphs', 'time-travel', 'deployment-runtime',
+    'ag-ui-streaming', 'ag-ui-interrupts', 'ag-ui-tool-views',
+  ].map(reactCockpitConfiguration);
+  for (const field of ['appPath', 'base', 'port', 'project'])
+    assert.equal(new Set(configurations.map(configuration => configuration[field])).size, 12);
+  for (const key of ['ag-ui/tool-views', '../ag-ui-tool-views', 'tool-views'])
+    assert.throws(() => reactCockpitConfiguration(key), /Unsupported React cockpit topic/);
+});
+
 test('AG-UI Streaming has a closed React identity distinct from LangGraph Streaming', async () => {
   const { reactCockpitConfiguration } = await import(
     './react-cockpit/configuration.mjs'
@@ -152,7 +169,7 @@ test('React cockpit configuration accepts only the nine authored topics', async 
     );
 });
 
-test('CI discovers eleven React previews across both protocols with their own Python backends', (t) => {
+test('CI discovers twelve React previews across both protocols with their own Python backends', (t) => {
   const root = mkdtempSync(join(tmpdir(), 'cockpit-react-topics-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   for (const topic of [
@@ -178,7 +195,7 @@ test('CI discovers eleven React previews across both protocols with their own Py
       );
     }
   }
-  for (const topic of ['streaming', 'interrupts']) for (const frontend of ['angular', 'react', 'python']) {
+  for (const topic of ['streaming', 'interrupts', 'tool-views']) for (const frontend of ['angular', 'react', 'python']) {
     const directory = join(root, 'cockpit/ag-ui', topic, frontend);
     mkdirSync(directory, { recursive: true });
     writeFileSync(
@@ -190,7 +207,7 @@ test('CI discovers eleven React previews across both protocols with their own Py
     );
   }
   const caps = deriveCockpitCaps(root);
-  assert.equal(caps.length, 22);
+  assert.equal(caps.length, 24);
   const agUi = selectCockpitCaps(
     caps,
     new Set(['cockpit-ag-ui-streaming-python']),
@@ -207,6 +224,10 @@ test('CI discovers eleven React previews across both protocols with their own Py
   assert.equal(interrupts.length, 2);
   assert.ok(interrupts.every(cap => cap.python === 'cockpit/ag-ui/interrupts/python'));
   assert.ok(interrupts.some(cap => cap.angular === 'cockpit-ag-ui-interrupts-react'));
+  const toolViews = selectCockpitCaps(caps, new Set(['cockpit-ag-ui-tool-views-python']), { fullFleet: false });
+  assert.equal(toolViews.length, 2);
+  assert.ok(toolViews.every(cap => cap.python === 'cockpit/ag-ui/tool-views/python'));
+  assert.ok(toolViews.some(cap => cap.angular === 'cockpit-ag-ui-tool-views-react'));
   for (const topic of [
     'streaming',
     'interrupts',

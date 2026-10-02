@@ -35,7 +35,7 @@ npx nx build cockpit-langgraph-deployment-runtime-react
 npx nx e2e cockpit-langgraph-deployment-runtime-react
 ~~~
 
-The isolated build installs local candidate packages and checks strict declarations and browser modules. Tests exercise the real SDK against a local HTTP/SSE fixture, including retained history, distinct physical runs, protected outcomes, credential headers and cancellation. Docs, Code and Run select this same React implementation. Streaming, interrupts, memory, client tools, persistence, durable execution, subgraphs and time travel also have public React previews; AG-UI Streaming and Interrupts also have React previews on Event Mapping and the Interrupts guide; other topics remain pending.
+The isolated build installs local candidate packages and checks strict declarations and browser modules. Tests exercise the real SDK against a local HTTP/SSE fixture, including retained history, distinct physical runs, protected outcomes, credential headers and cancellation. Docs, Code and Run select this same React implementation. Streaming, interrupts, memory, client tools, persistence, durable execution, subgraphs and time travel also have public React previews; AG-UI Streaming, Interrupts and Tool Views also have React previews on Event Mapping and the Interrupts and Tool Views guides; other topics remain pending.
 `;
 export function ReactDeploymentRuntimePreview({
   exampleCode,

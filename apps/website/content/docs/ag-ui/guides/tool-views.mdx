@@ -16,11 +16,11 @@ Five files carry the feature: a graph whose one tool returns plain JSON, the ser
 
 ### The tool returns data, not markup
 
-The tool is an ordinary LangGraph tool. It takes a location and returns a dictionary, and the values are fixed so the recorded end-to-end fixtures stay stable.
+The tool is an ordinary LangGraph tool. It takes a location and returns a tool message containing plain JSON, and the values are fixed so the recorded end-to-end fixtures stay stable. The runtime injects the call identifier without adding it to the model's tool schema. Using that identifier as the result message ID keeps the streamed result and final snapshot aligned, preserving tool history before the agent's final answer.
 
 <ExampleCode file="graph.py" region="weather-tool" title="graph.py — the tool" />
 
-Every key in that dictionary is a name the card declares as an input, which is the only contract between the two sides.
+Every key in that JSON object is a name the card declares as an input, which is the only presentation contract between the two sides.
 
 ### The graph runs the tool itself
 

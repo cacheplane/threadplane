@@ -45,7 +45,7 @@ npx nx build cockpit-ag-ui-interrupts-react
 npx nx e2e cockpit-ag-ui-interrupts-react
 ~~~
 
-The isolated build installs local candidate artifacts with locked dependencies and strict types. Python tests exercise the actual compiled graph and bridge with frozen model responses. Browser tests use the installed AG-UI SDK over local HTTP/SSE, covering approve, edit, cancel, canonical history, protected outcomes, developer routing and cancellation of held streams. Docs, Code and Run select this same React implementation. AG-UI Streaming and nine LangGraph topics also have React previews; other topics remain pending.
+The isolated build installs local candidate artifacts with locked dependencies and strict types. Python tests exercise the actual compiled graph and bridge with frozen model responses. Browser tests use the installed AG-UI SDK over local HTTP/SSE, covering approve, edit, cancel, canonical history, protected outcomes, developer routing and cancellation of held streams. Docs, Code and Run select this same React implementation. AG-UI Streaming, AG-UI Tool Views and nine LangGraph topics also have React previews; other topics remain pending.
 `;
 export function ReactAgUiInterruptsPreview({ exampleCode }: {
   readonly exampleCode: ExampleCodeContext | null;
