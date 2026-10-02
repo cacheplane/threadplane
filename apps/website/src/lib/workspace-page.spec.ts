@@ -36,10 +36,32 @@ describe('getWebsiteWorkspacePage', () => {
       )
     ).toBe(false);
     const unsupported = await getWebsiteWorkspacePage({
-      docsPath: '/docs/langgraph/guides/time-travel',
-      title: 'Time travel',
+      docsPath: '/docs/langgraph/guides/testing',
+      title: 'Testing',
     });
     expect(unsupported.frontendVariants?.react).toBeUndefined();
+  });
+  it('loads Time Travel canonical history and full checkpoint source helpers with the exact React runtime', async () => {
+    const page = await getWebsiteWorkspacePage({
+      docsPath: '/docs/langgraph/guides/time-travel',
+      title: 'Time Travel',
+    });
+    const react = page.frontendVariants?.react;
+    expect(react?.presentation.runtimeUrl).toBe('langgraph/time-travel/react');
+    const files = Object.keys(react?.contentBundle.codeFiles ?? {});
+    for (const file of [
+      'application.ts',
+      'checkpoint-history.ts',
+      'canonical-history.ts',
+    ])
+      expect(files).toContain(
+        `cockpit/langgraph/time-travel/react/src/${file}`
+      );
+    expect(files).toContain(
+      'cockpit/langgraph/time-travel/python/src/graph.py'
+    );
+    expect(files.some((path) => path.includes('/angular/'))).toBe(false);
+    expect(page.presentation.runtimeUrl).toBe('langgraph/time-travel');
   });
   it('loads the Subgraphs parent owner and exact frontend runtime together', async () => {
     const page = await getWebsiteWorkspacePage({

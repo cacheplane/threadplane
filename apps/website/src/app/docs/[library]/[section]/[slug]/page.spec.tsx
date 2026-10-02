@@ -12,6 +12,7 @@ import { ReactClientToolsPreview } from '../../../../../components/docs/ReactCli
 import { ReactPersistencePreview } from '../../../../../components/docs/ReactPersistencePreview';
 import { ReactDurableExecutionPreview } from '../../../../../components/docs/ReactDurableExecutionPreview';
 import { ReactSubgraphsPreview } from '../../../../../components/docs/ReactSubgraphsPreview';
+import { ReactTimeTravelPreview } from '../../../../../components/docs/ReactTimeTravelPreview';
 import { WebsiteWorkspace } from '../../../../../components/workspace/WebsiteWorkspace';
 import DocsPage, { generateMetadata } from './page';
 
@@ -82,6 +83,7 @@ describe('unified docs workspace route', () => {
     ['persistence', ReactPersistencePreview],
     ['durable-execution', ReactDurableExecutionPreview],
     ['subgraphs', ReactSubgraphsPreview],
+    ['time-travel', ReactTimeTravelPreview],
   ] as const)(
     'selects topic-specific authored React Docs for %s',
     async (slug, component) => {

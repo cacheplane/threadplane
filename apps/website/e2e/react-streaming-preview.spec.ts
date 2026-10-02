@@ -60,7 +60,7 @@ test('public React selection keeps docs, code, runtime and history consistent', 
 test('unsupported React topics show availability without an Angular frame', async ({
   page,
 }, testInfo) => {
-  await page.goto('/docs/langgraph/guides/time-travel?frontend=react&mode=run');
+  await page.goto('/docs/langgraph/guides/testing?frontend=react&mode=run');
   await expect(
     page.getByText(/React preview is not available for this topic/)
   ).toBeVisible();

@@ -306,10 +306,10 @@ This bounded runtime proof does not establish complete migration parity.
 | T29 | Implement thread/project/search/history/timeline/debug surfaces |
 | T30 | Implement popup, sidebar and sidenav compositions |
 | T31 | Create canonical React applications and public testing utilities |
-| T32 | In progress: separate streaming, interrupts, memory, client-tools, persistence, durable-execution and subgraphs frontend/runtime identities; existing bridge reused |
-| T33 | In progress: installed React streaming, approval, memory, client-tools, persistence, durable-execution and subgraphs previews; remaining 34 scenario variants pending |
-| T34 | In progress: public streaming/interrupts/memory/client-tools/persistence/durable-execution/subgraphs selectors and frontend URL state; broader navigation/search parity pending |
-| T35 | In progress: authored streaming/interrupts/memory/client-tools/persistence/durable-execution/subgraphs preview docs and public agent guidance; full React docs pending |
+| T32 | In progress: separate streaming, interrupts, memory, client-tools, persistence, durable-execution, subgraphs and time-travel frontend/runtime identities; existing bridge reused |
+| T33 | In progress: installed React streaming, approval, memory, client-tools, persistence, durable-execution, subgraphs and time-travel previews; remaining 33 scenario variants pending |
+| T34 | In progress: public streaming/interrupts/memory/client-tools/persistence/durable-execution/subgraphs/time-travel selectors and frontend URL state; broader navigation/search parity pending |
+| T35 | In progress: authored streaming/interrupts/memory/client-tools/persistence/durable-execution/subgraphs/time-travel preview docs and public agent guidance; full React docs pending |
 | T36 | Expand CI and packed consumer compatibility |
 | T37 | Prepare prerelease, publishing, provenance and rollback |
 | T38 | Measure and optimize streaming, bundles and retention |
