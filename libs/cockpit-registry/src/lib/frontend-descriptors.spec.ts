@@ -47,7 +47,7 @@ describe('frontend capability resolution', () => {
   });
 
   it('never falls back to Angular for an unsupported React capability', () => {
-    expect(getFrontendCapabilityDescriptor({ ...identity, topic: 'persistence' }, 'react')).toBeUndefined();
+    expect(getFrontendCapabilityDescriptor({ ...identity, topic: 'durable-execution' }, 'react')).toBeUndefined();
     expect(
       getFrontendCapabilityDescriptor(identity, 'react', [angular])
     ).toBeUndefined();
@@ -85,7 +85,7 @@ describe('frontend capability resolution', () => {
   it.each([
     { product: 'chat' as const },
     { section: 'getting-started' as const },
-    { topic: 'persistence' },
+    { topic: 'durable-execution' },
     { page: 'code' as const },
   ])(
     'does not borrow a React descriptor from another capability: %j',
