@@ -1,24 +1,9 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "ccfe5b1f0f24807a74a8dc2d9c40d2897e59be92",
+  "baselineHead": "a00f889a80f18b9367169844903206993e977d78",
   "sourceState": {
-    "modified": [
-      ".github/workflows/ci.yml",
-      "libs/ag-ui/README.md",
-      "libs/ag-ui/src/lib/to-agent.ts",
-      "libs/chat/CHANGELOG.md",
-      "libs/chat/project.json",
-      "libs/chat/src/public-api.ts",
-      "libs/langgraph/README.md",
-      "libs/langgraph/src/lib/agent.fn.ts",
-      "libs/langgraph/src/lib/internals/stream-manager.bridge.ts"
-    ],
-    "untracked": [
-      "libs/ag-ui/src/lib/internal/devtools.ts",
-      "libs/chat/scripts/verify-devtools-bundle.mjs",
-      "libs/chat/src/lib/devtools/devtools-emitter.ts",
-      "libs/langgraph/src/lib/internals/devtools.ts"
-    ]
+    "modified": [],
+    "untracked": []
   },
   "scope": {
     "libraries": [
@@ -11834,7 +11819,7 @@
       "id": "source:libs/chat/eslint.config.mjs",
       "kind": "source",
       "path": "libs/chat/eslint.config.mjs",
-      "sha256": "7184c5abb14bb875fab1a3e4cf71c36e5356567efe0d5fc14df7895e943bea6b"
+      "sha256": "89a0b9cbd0fe0e345f9e7d01ee9d70536035738f12011385f9a399d32a12f6b7"
     },
     {
       "id": "source:libs/chat/install/postinstall.cjs",
