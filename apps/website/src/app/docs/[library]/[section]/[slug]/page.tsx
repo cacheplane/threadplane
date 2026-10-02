@@ -8,6 +8,7 @@ import { ReactClientToolsPreview } from '../../../../../components/docs/ReactCli
 import { ReactPersistencePreview } from '../../../../../components/docs/ReactPersistencePreview';
 import { ReactDurableExecutionPreview } from '../../../../../components/docs/ReactDurableExecutionPreview';
 import { ReactSubgraphsPreview } from '../../../../../components/docs/ReactSubgraphsPreview';
+import { ReactTimeTravelPreview } from '../../../../../components/docs/ReactTimeTravelPreview';
 import { DocsSearch } from '../../../../../components/docs/DocsSearch';
 import { DocsPageHeader } from '../../../../../components/docs/DocsPageHeader';
 import { LibraryMark } from '../../../../../components/docs/LibraryMark';
@@ -300,6 +301,12 @@ export default async function DocsPage({ params }: DocsRouteProps) {
               />
             ) : slug === 'subgraphs' ? (
               <ReactSubgraphsPreview
+                exampleCode={getExampleCodeContext(
+                  workspacePage.frontendVariants.react
+                )}
+              />
+            ) : slug === 'time-travel' ? (
+              <ReactTimeTravelPreview
                 exampleCode={getExampleCodeContext(
                   workspacePage.frontendVariants.react
                 )}

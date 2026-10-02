@@ -41,7 +41,7 @@ npx nx build cockpit-langgraph-subgraphs-react
 npx nx e2e cockpit-langgraph-subgraphs-react
 ~~~
 
-The isolated build installs local candidate packages and checks strict declarations and emitted browser modules. Browser tests exercise real SDK HTTP and SSE against a local fixture, including conditional routing, namespace isolation, and cancellation. Docs, Code, and Run select this same React implementation. Streaming, interrupts, memory, client tools, persistence, and durable execution also have public React previews; other topics remain pending.
+The isolated build installs local candidate packages and checks strict declarations and emitted browser modules. Browser tests exercise real SDK HTTP and SSE against a local fixture, including conditional routing, namespace isolation, and cancellation. Docs, Code, and Run select this same React implementation. Streaming, interrupts, memory, client tools, persistence, durable execution, and time travel also have public React previews; other topics remain pending.
 `;
 export function ReactSubgraphsPreview({
   exampleCode,

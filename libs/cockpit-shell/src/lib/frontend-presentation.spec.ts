@@ -38,8 +38,8 @@ describe('frontend-specific workspace presentation', () => {
 
   it('does not lend an Angular runtime to an unsupported React topic', () => {
     const resolution = resolveDocsWorkspace(
-      '/docs/langgraph/guides/time-travel',
-      'Time Travel'
+      '/docs/langgraph/guides/testing',
+      'Testing'
     );
     expect(getWorkspacePresentation(resolution, 'react')).toMatchObject({
       kind: 'docs-only',

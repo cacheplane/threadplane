@@ -9,6 +9,7 @@ export function reactCockpitConfiguration(topic = 'streaming') {
       'persistence',
       'durable-execution',
       'subgraphs',
+      'time-travel',
     ].includes(topic)
   )
     throw new Error(`Unsupported React cockpit topic: ${topic}`);
@@ -24,6 +25,7 @@ export function reactCockpitConfiguration(topic = 'streaming') {
       persistence: 4604,
       'durable-execution': 4605,
       subgraphs: 4606,
+      'time-travel': 4607,
     }[topic],
     project: `cockpit-langgraph-${topic}-react`,
   });
