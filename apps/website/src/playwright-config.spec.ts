@@ -4,6 +4,19 @@ import { resolve } from 'node:path';
 import { createWebsitePlaywrightConfig } from '../playwright.config';
 
 describe('Website Playwright configuration', () => {
+  it('starts eleven owned React servers behind one exact fresh build barrier', () => {
+    const config = createWebsitePlaywrightConfig({ CI: 'true' });
+    const servers = Array.isArray(config.webServer) ? config.webServer : [];
+    const reactServers = servers.filter(server => /^http:\/\/127\.0\.0\.1:46(?:0\d|10)$/.test(server.url ?? ''));
+    expect(reactServers).toHaveLength(11);
+    expect(reactServers.every(server => server.reuseExistingServer === false)).toBe(true);
+    expect(reactServers.find(server => server.url === 'http://127.0.0.1:4610')?.command).toBe('node scripts/react-cockpit/serve.mjs ag-ui-interrupts --no-parent');
+    const barrier = reactServers.find(server => server.url === 'http://127.0.0.1:4600')?.command ?? '';
+    const projects = /--projects=([^ ]+)/.exec(barrier)?.[1].split(',') ?? [];
+    expect(projects).toHaveLength(11);
+    expect(new Set(projects).size).toBe(11);
+    expect(projects).toContain('cockpit-ag-ui-interrupts-react');
+  });
   it('sends the Vercel automation bypass only when CI supplies it', () => {
     const withoutSecret = createWebsitePlaywrightConfig({});
     expect(withoutSecret.use?.extraHTTPHeaders).toBeUndefined();
@@ -181,6 +194,12 @@ describe('Website Playwright configuration', () => {
       }),
       expect.objectContaining({
         command: expect.stringContaining(
+          'cockpit-ag-ui-interrupts-angular:serve:cockpit'
+        ),
+        url: 'http://localhost:4320',
+      }),
+      expect.objectContaining({
+        command: expect.stringContaining(
           'cockpit-chat-threads-angular:serve:cockpit'
         ),
         url: 'http://localhost:4506',
@@ -191,7 +210,7 @@ describe('Website Playwright configuration', () => {
       }),
       expect.objectContaining({
         command: expect.stringContaining(
-          'nx run-many -t build --projects=cockpit-langgraph-streaming-react,cockpit-langgraph-interrupts-react,cockpit-langgraph-memory-react,cockpit-langgraph-client-tools-react,cockpit-langgraph-persistence-react,cockpit-langgraph-durable-execution-react,cockpit-langgraph-subgraphs-react,cockpit-langgraph-time-travel-react,cockpit-langgraph-deployment-runtime-react,cockpit-ag-ui-streaming-react --parallel=3'
+          'nx run-many -t build --projects=cockpit-langgraph-streaming-react,cockpit-langgraph-interrupts-react,cockpit-langgraph-memory-react,cockpit-langgraph-client-tools-react,cockpit-langgraph-persistence-react,cockpit-langgraph-durable-execution-react,cockpit-langgraph-subgraphs-react,cockpit-langgraph-time-travel-react,cockpit-langgraph-deployment-runtime-react,cockpit-ag-ui-streaming-react,cockpit-ag-ui-interrupts-react --parallel=3'
         ),
         url: 'http://127.0.0.1:4600',
       }),
@@ -233,6 +252,10 @@ describe('Website Playwright configuration', () => {
       expect.objectContaining({
         command: 'node scripts/react-cockpit/serve.mjs ag-ui-streaming --no-parent',
         url: 'http://127.0.0.1:4609',
+      }),
+      expect.objectContaining({
+        command: 'node scripts/react-cockpit/serve.mjs ag-ui-interrupts --no-parent',
+        url: 'http://127.0.0.1:4610',
       }),
     ]);
     expect(config.testIgnore).toEqual([

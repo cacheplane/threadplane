@@ -13,10 +13,17 @@ import { createSubgraphsFixture } from './subgraphs-fixture.mjs';
 import { createTimeTravelFixture } from './time-travel-fixture.mjs';
 import { createDeploymentRuntimeFixture } from './deployment-runtime-fixture.mjs';
 import { createAgUiStreamingFixture } from './ag-ui-streaming-fixture.mjs';
+import { createAgUiInterruptsFixture } from './ag-ui-interrupts-fixture.mjs';
 
 const configuration = reactCockpitConfiguration(process.argv[2]);
 const agUiStreamingFixture =
-  configuration.adapter === 'ag-ui' ? createAgUiStreamingFixture() : null;
+  configuration.adapter === 'ag-ui' && configuration.topic === 'streaming'
+    ? createAgUiStreamingFixture()
+    : null;
+const agUiInterruptsFixture =
+  configuration.adapter === 'ag-ui' && configuration.topic === 'interrupts'
+    ? createAgUiInterruptsFixture()
+    : null;
 const deploymentRuntimeFixture =
   configuration.topic === 'deployment-runtime'
     ? createDeploymentRuntimeFixture()
@@ -30,7 +37,9 @@ const durableFixture =
 const persistenceFixture =
   configuration.topic === 'persistence' ? createPersistenceFixture() : null;
 const interruptsFixture =
-  configuration.topic === 'interrupts' ? createInterruptsFixture() : null;
+  configuration.adapter !== 'ag-ui' && configuration.topic === 'interrupts'
+    ? createInterruptsFixture()
+    : null;
 const memoryFixture =
   configuration.topic === 'memory' ? createMemoryFixture() : null;
 const clientToolsFixture =
@@ -64,6 +73,11 @@ const release = () => {
 };
 const server = createServer(async (request, response) => {
   const pathname = new URL(request.url, 'http://localhost').pathname;
+  if (
+    agUiInterruptsFixture &&
+    (await agUiInterruptsFixture(request, response, pathname))
+  )
+    return;
   if (
     agUiStreamingFixture &&
     (await agUiStreamingFixture(request, response, pathname))

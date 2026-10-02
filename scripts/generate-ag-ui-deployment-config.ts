@@ -1,6 +1,16 @@
-import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'fs';
 import { basename, resolve } from 'path';
-import { capabilities, type CapabilityFramework } from '@threadplane/cockpit-registry';
+import {
+  capabilities,
+  type CapabilityFramework,
+} from '@threadplane/cockpit-registry';
 
 /**
  * Bridge-agent detection (langgraph topics only).
@@ -24,9 +34,16 @@ import { capabilities, type CapabilityFramework } from '@threadplane/cockpit-reg
  * (no `agent = ...` line) keeps the plain `LangGraphAgent`. A subclass that is
  * mounted but not imported package-relatively is a generation error, because
  * the aggregated server could not re-import it from the staged deps tree.
+ *
+ * An optional `native_agent = <Cls>(...)` declaration, with the same relative
+ * import convention, adds a counterpart at `/agent/<topic>/native`. It must
+ * name a subclass whose defaults preserve native flags through endpoint
+ * cloning. The ordinary endpoint remains unchanged; stock constructors and
+ * ambiguous native declarations are rejected instead of dropping flags.
  */
 
-const GENERATED_HEADER = '# GENERATED — do not edit. Source: scripts/generate-ag-ui-deployment-config.ts';
+const GENERATED_HEADER =
+  '# GENERATED — do not edit. Source: scripts/generate-ag-ui-deployment-config.ts';
 
 /**
  * Frameworks hosted by the aggregated Python deployments. 'mastra' is
@@ -58,6 +75,8 @@ export interface AgUiTopic {
   framework: PythonHostedFramework;
   /** langgraph only; undefined means mount the plain `LangGraphAgent`. */
   bridgeAgent?: BridgeAgent;
+  /** Explicit source-declared native counterpart at /agent/<topic>/native. */
+  nativeBridgeAgent?: BridgeAgent;
 }
 
 const STOCK_LANGGRAPH_AGENT = 'LangGraphAgent';
@@ -67,18 +86,55 @@ const STOCK_LANGGRAPH_AGENT = 'LangGraphAgent';
  * See the header comment for the convention. Exported for unit tests.
  */
 export function detectBridgeAgent(serverPy: string): BridgeAgent | undefined {
-  const assignment = serverPy.match(/^agent\s*=\s*([A-Za-z_]\w*)\s*\(/m);
+  return detectAssignedBridgeAgent(serverPy, 'agent');
+}
+
+export function detectNativeBridgeAgent(
+  serverPy: string
+): BridgeAgent | undefined {
+  return detectAssignedBridgeAgent(serverPy, 'native_agent');
+}
+
+function detectAssignedBridgeAgent(
+  serverPy: string,
+  name: 'agent' | 'native_agent'
+): BridgeAgent | undefined {
+  const assignments = [
+    ...serverPy.matchAll(
+      new RegExp(`^${name}\\s*=\\s*([A-Za-z_]\\w*)\\s*\\(`, 'gm')
+    ),
+  ];
+  if (name === 'native_agent' && assignments.length > 1)
+    throw new Error('Ambiguous native_agent assignments in server.py');
+  const assignment = assignments[0];
   if (!assignment) return undefined;
   const cls = assignment[1];
-  if (cls === STOCK_LANGGRAPH_AGENT) return undefined;
-  const importRe = /^from\s+\.([\w.]+)\s+import\s+([^\n]+)$/gm;
-  for (const m of serverPy.matchAll(importRe)) {
-    const names = m[2].split(',').map((n) => n.trim().split(/\s+as\s+/)[0]);
-    if (names.includes(cls)) return { module: m[1], cls };
+  if (cls === STOCK_LANGGRAPH_AGENT) {
+    if (name === 'native_agent')
+      throw new Error(
+        'native_agent requires a package-relative subclass; stock constructor flags cannot be preserved'
+      );
+    return undefined;
   }
+  const importRe = /^from\s+\.([\w.]+)\s+import\s+([^\n]+)$/gm;
+  const imports: BridgeAgent[] = [];
+  for (const m of serverPy.matchAll(importRe)) {
+    const names = m[2]
+      .split(',')
+      .map((n) =>
+        name === 'native_agent' ? n.trim() : n.trim().split(/\s+as\s+/)[0]
+      );
+    if (names.includes(cls)) {
+      if (name === 'agent') return { module: m[1], cls };
+      imports.push({ module: m[1], cls });
+    }
+  }
+  if (imports.length > 1)
+    throw new Error(`Ambiguous native_agent import for ${cls}`);
+  if (imports.length === 1) return imports[0];
   throw new Error(
-    `server.py mounts \`agent = ${cls}(...)\` but does not import ${cls} package-relatively ` +
-      `(\`from .<module> import ${cls}\`); the aggregated server cannot re-import it from deps/.`,
+    `server.py mounts \`${name} = ${cls}(...)\` but does not import ${cls} package-relatively ` +
+      `(\`from .<module> import ${cls}\`); the aggregated server cannot re-import it from deps/.`
   );
 }
 
@@ -115,22 +171,46 @@ interface FrameworkAdapter {
  */
 const FRAMEWORK_ADAPTERS: Record<PythonHostedFramework, FrameworkAdapter> = {
   langgraph: {
-    bridgeImport: 'from ag_ui_langgraph import add_langgraph_fastapi_endpoint, LangGraphAgent',
+    bridgeImport:
+      'from ag_ui_langgraph import add_langgraph_fastapi_endpoint, LangGraphAgent',
     topicImport: (mod, t) => {
       const graphImport = `from deps.${mod}.src.graph import graph as ${mod}_graph`;
-      if (!t.bridgeAgent) return graphImport;
-      return `${graphImport}\nfrom deps.${mod}.src.${t.bridgeAgent.module} import ${t.bridgeAgent.cls}`;
+      const agents = [t.bridgeAgent, t.nativeBridgeAgent].filter(
+        (agent): agent is BridgeAgent => !!agent
+      );
+      return [
+        graphImport,
+        ...agents.map(
+          (agent) => `from deps.${mod}.src.${agent.module} import ${agent.cls}`
+        ),
+      ].join('\n');
     },
-    mount: (topic, mod, t) =>
-      `add_langgraph_fastapi_endpoint(\n` +
-      `    app,\n` +
-      `    ${t.bridgeAgent?.cls ?? STOCK_LANGGRAPH_AGENT}(name="${topic}", graph=${mod}_graph),\n` +
-      `    path="/agent/${topic}",\n` +
-      `)`,
+    mount: (topic, mod, t) => {
+      const ordinary =
+        `add_langgraph_fastapi_endpoint(\n` +
+        `    app,\n` +
+        `    ${
+          t.bridgeAgent?.cls ?? STOCK_LANGGRAPH_AGENT
+        }(name="${topic}", graph=${mod}_graph),\n` +
+        `    path="/agent/${topic}",\n` +
+        `)`;
+      if (!t.nativeBridgeAgent) return ordinary;
+      return (
+        ordinary +
+        '\n\n' +
+        `add_langgraph_fastapi_endpoint(\n` +
+        `    app,\n` +
+        `    ${t.nativeBridgeAgent.cls}(name="${topic}", graph=${mod}_graph),\n` +
+        `    path="/agent/${topic}/native",\n` +
+        `)`
+      );
+    },
   },
   'microsoft-agent-framework': {
-    bridgeImport: 'from agent_framework_ag_ui import add_agent_framework_fastapi_endpoint',
-    topicImport: (mod) => `from deps.${mod}.src.agent import agent as ${mod}_agent`,
+    bridgeImport:
+      'from agent_framework_ag_ui import add_agent_framework_fastapi_endpoint',
+    topicImport: (mod) =>
+      `from deps.${mod}.src.agent import agent as ${mod}_agent`,
     mount: (topic, mod) =>
       `add_agent_framework_fastapi_endpoint(\n` +
       `    app,\n` +
@@ -140,7 +220,8 @@ const FRAMEWORK_ADAPTERS: Record<PythonHostedFramework, FrameworkAdapter> = {
   },
   'aws-strands': {
     bridgeImport: 'from ag_ui_strands import add_strands_fastapi_endpoint',
-    topicImport: (mod) => `from deps.${mod}.src.agent import agent as ${mod}_agent`,
+    topicImport: (mod) =>
+      `from deps.${mod}.src.agent import agent as ${mod}_agent`,
     // path is positional in add_strands_fastapi_endpoint(app, agent, path).
     mount: (topic, mod) =>
       `add_strands_fastapi_endpoint(\n` +
@@ -166,34 +247,53 @@ function collectTopics(repoRoot: string): AgUiTopic[] {
   const topics = capabilities
     // 'ag-ui' and 'runtimes' products are both AG-UI-served FastAPI backends
     // aggregated into the single ag-ui-dev deployment.
-    .filter((c) => (c.product === 'ag-ui' || c.product === 'runtimes') && c.pythonDir)
+    .filter(
+      (c) => (c.product === 'ag-ui' || c.product === 'runtimes') && c.pythonDir
+    )
     .map<AgUiTopic>((c) => {
       if (c.framework === 'mastra') {
         // Node hosting lane: a mastra capability must not declare a
         // pythonDir — its backend is deployments/ag-ui-mastra.
-        throw new Error(`Capability ${c.id} declares framework 'mastra' with a pythonDir; mastra topics are Node-hosted.`);
+        throw new Error(
+          `Capability ${c.id} declares framework 'mastra' with a pythonDir; mastra topics are Node-hosted.`
+        );
       }
       const framework = c.framework ?? 'langgraph';
       const serverPy = resolve(repoRoot, c.pythonDir!, 'src/server.py');
-      const bridgeAgent =
+      const serverSource =
         framework === 'langgraph' && existsSync(serverPy)
-          ? detectBridgeAgent(readFileSync(serverPy, 'utf8'))
+          ? readFileSync(serverPy, 'utf8')
+          : undefined;
+      const bridgeAgent =
+        serverSource !== undefined
+          ? detectBridgeAgent(serverSource)
+          : undefined;
+      const nativeBridgeAgent =
+        serverSource !== undefined
+          ? detectNativeBridgeAgent(serverSource)
           : undefined;
       return {
         topic: c.topic,
         pythonDir: c.pythonDir!,
         framework,
         ...(bridgeAgent ? { bridgeAgent } : {}),
+        ...(nativeBridgeAgent ? { nativeBridgeAgent } : {}),
       };
     });
   topics.sort((a, b) => a.topic.localeCompare(b.topic));
   if (topics.length === 0) {
-    throw new Error('No AG-UI topics with pythonDir found in capability registry');
+    throw new Error(
+      'No AG-UI topics with pythonDir found in capability registry'
+    );
   }
   return topics;
 }
 
-function stageDeps(repoRoot: string, outDir: string, topics: AgUiTopic[]): void {
+function stageDeps(
+  repoRoot: string,
+  outDir: string,
+  topics: AgUiTopic[]
+): void {
   const depsDir = resolve(outDir, 'deps');
   rmSync(depsDir, { recursive: true, force: true });
   mkdirSync(depsDir, { recursive: true });
@@ -205,29 +305,43 @@ function stageDeps(repoRoot: string, outDir: string, topics: AgUiTopic[]): void 
       // Exclude virtualenvs / bytecode, plus repo-metadata files (nx project.json,
       // tsconfig*) that would create cross-tree duplicates if mirrored into deps/.
       filter: (s) => {
-        if (s.includes('.venv') || s.includes('__pycache__') || s.includes('.pytest_cache') || s.endsWith('.pyc')) return false;
+        if (
+          s.includes('.venv') ||
+          s.includes('__pycache__') ||
+          s.includes('.pytest_cache') ||
+          s.endsWith('.pyc')
+        )
+          return false;
         const basename = s.split('/').pop() ?? '';
         if (basename === 'project.json') return false;
-        if (basename.startsWith('tsconfig') && basename.endsWith('.json')) return false;
+        if (basename.startsWith('tsconfig') && basename.endsWith('.json'))
+          return false;
         return true;
       },
     });
   }
 }
 
-export function buildServerPy(topics: AgUiTopic[], options: { title?: string } = {}): string {
+export function buildServerPy(
+  topics: AgUiTopic[],
+  options: { title?: string } = {}
+): string {
   const title = options.title ?? 'ag-ui-dev';
-  const usedFrameworks = (Object.keys(FRAMEWORK_ADAPTERS) as CapabilityFramework[]).filter(
-    (framework) => topics.some((t) => t.framework === framework),
-  );
+  const usedFrameworks = (
+    Object.keys(FRAMEWORK_ADAPTERS) as CapabilityFramework[]
+  ).filter((framework) => topics.some((t) => t.framework === framework));
   const bridgeImports = usedFrameworks
     .map((framework) => FRAMEWORK_ADAPTERS[framework].bridgeImport)
     .join('\n');
   const imports = topics
-    .map((t) => FRAMEWORK_ADAPTERS[t.framework].topicImport(pyModule(t.topic), t))
+    .map((t) =>
+      FRAMEWORK_ADAPTERS[t.framework].topicImport(pyModule(t.topic), t)
+    )
     .join('\n');
   const mounts = topics
-    .map((t) => FRAMEWORK_ADAPTERS[t.framework].mount(t.topic, pyModule(t.topic), t))
+    .map((t) =>
+      FRAMEWORK_ADAPTERS[t.framework].mount(t.topic, pyModule(t.topic), t)
+    )
     .join('\n');
   return `${GENERATED_HEADER}
 # Multi-topic AG-UI FastAPI server. Aggregates each AG-UI-served python topic
@@ -301,7 +415,7 @@ function capsFor(topics: AgUiTopic[]): Record<string, string> {
 export function buildRequirementsTxt(
   repoRoot: string,
   topics: AgUiTopic[],
-  constraints: UnionConstraints = {},
+  constraints: UnionConstraints = {}
 ): string {
   const directVersions = new Map<string, string>();
   const directUrls = new Map<string, string>();
@@ -314,7 +428,7 @@ export function buildRequirementsTxt(
         if (existingUrl !== undefined && existingUrl !== pkg.url) {
           throw new Error(
             `Conflicting direct-URL pins for ${pkg.name}:\n  ${existingUrl}\n  ${pkg.url}\n` +
-              'Align the examples on one ref before regenerating.',
+              'Align the examples on one ref before regenerating.'
           );
         }
         directUrls.set(pkg.name, pkg.url);
@@ -329,23 +443,32 @@ export function buildRequirementsTxt(
   for (const name of directUrls.keys()) {
     if (directVersions.has(name)) {
       throw new Error(
-        `${name} is pinned as a direct URL by one example and as ==${directVersions.get(name)} by another. ` +
-          'Align the examples on one source before regenerating.',
+        `${name} is pinned as a direct URL by one example and as ==${directVersions.get(
+          name
+        )} by another. ` +
+          'Align the examples on one source before regenerating.'
       );
     }
   }
   for (const [name, cap] of Object.entries(constraints.caps ?? {})) {
     const chosen = directVersions.get(name);
-    if (chosen !== undefined && compareVersions(chosen, cap.replace(/^</, '')) >= 0) {
+    if (
+      chosen !== undefined &&
+      compareVersions(chosen, cap.replace(/^</, '')) >= 0
+    ) {
       throw new Error(
         `${name}==${chosen} is in the union but a topic requires ${name}${cap}. ` +
-          'Split that topic into its own deployment (see deployments/ag-ui-maf) before regenerating.',
+          'Split that topic into its own deployment (see deployments/ag-ui-maf) before regenerating.'
       );
     }
   }
-  const sortedNames = [...new Set([...directVersions.keys(), ...directUrls.keys()])].sort();
+  const sortedNames = [
+    ...new Set([...directVersions.keys(), ...directUrls.keys()]),
+  ].sort();
   const lines = sortedNames.map((n) =>
-    directUrls.has(n) ? `${n} @ ${directUrls.get(n)}` : `${n}==${directVersions.get(n)}`,
+    directUrls.has(n)
+      ? `${n} @ ${directUrls.get(n)}`
+      : `${n}==${directVersions.get(n)}`
   );
   return `${GENERATED_HEADER}\n${lines.join('\n')}\n`;
 }
@@ -398,7 +521,9 @@ function parseDirectDeps(content: string): DirectDep[] {
       if (!line) continue;
       const semi = line.indexOf(';');
       const beforeMarker = semi >= 0 ? line.slice(0, semi).trim() : line;
-      const match = beforeMarker.match(/^([A-Za-z0-9_.-]+)==([A-Za-z0-9_.+-]+)$/);
+      const match = beforeMarker.match(
+        /^([A-Za-z0-9_.-]+)==([A-Za-z0-9_.+-]+)$/
+      );
       if (match) {
         current = { name: match[1], version: match[2] };
         continue;
@@ -441,15 +566,20 @@ export function generateAgUiDeployment(options: GenerateOptions): void {
     ? all.filter((t) => options.frameworks!.includes(t.framework))
     : all;
   if (topics.length === 0) {
-    throw new Error(`No topics match frameworks ${JSON.stringify(options.frameworks)}`);
+    throw new Error(
+      `No topics match frameworks ${JSON.stringify(options.frameworks)}`
+    );
   }
   mkdirSync(options.outDir, { recursive: true });
   // stageDeps clears deps/ first, so topics that left the deployment disappear.
   stageDeps(options.repoRoot, options.outDir, topics);
-  writeFileSync(resolve(options.outDir, 'server.py'), buildServerPy(topics, { title: basename(options.outDir) }));
+  writeFileSync(
+    resolve(options.outDir, 'server.py'),
+    buildServerPy(topics, { title: basename(options.outDir) })
+  );
   writeFileSync(
     resolve(options.outDir, 'requirements.txt'),
-    buildRequirementsTxt(options.repoRoot, topics, { caps: capsFor(topics) }),
+    buildRequirementsTxt(options.repoRoot, topics, { caps: capsFor(topics) })
   );
 }
 
@@ -457,7 +587,10 @@ export function generateAgUiDeployment(options: GenerateOptions): void {
  * The deployments the repo ships. MAF is alone because its bridge caps
  * ag-ui-protocol below 1.0 while every other Python runtime is on 1.0.
  */
-export const DEPLOYMENTS: ReadonlyArray<{ dir: string; frameworks: readonly PythonHostedFramework[] }> = [
+export const DEPLOYMENTS: ReadonlyArray<{
+  dir: string;
+  frameworks: readonly PythonHostedFramework[];
+}> = [
   { dir: 'deployments/ag-ui-dev', frameworks: ['langgraph', 'aws-strands'] },
   { dir: 'deployments/ag-ui-maf', frameworks: ['microsoft-agent-framework'] },
 ];
@@ -465,7 +598,11 @@ export const DEPLOYMENTS: ReadonlyArray<{ dir: string; frameworks: readonly Pyth
 if (require.main === module) {
   const repoRoot = resolve(__dirname, '..');
   for (const { dir, frameworks } of DEPLOYMENTS) {
-    generateAgUiDeployment({ repoRoot, outDir: resolve(repoRoot, dir), frameworks });
+    generateAgUiDeployment({
+      repoRoot,
+      outDir: resolve(repoRoot, dir),
+      frameworks,
+    });
     console.log(`Generated ${dir}/{server.py,requirements.txt,deps/}`);
   }
 }

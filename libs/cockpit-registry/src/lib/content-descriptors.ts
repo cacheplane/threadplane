@@ -1022,10 +1022,24 @@ const agUiStreamingReact = (() => {
   });
 })();
 
+const agUiInterruptsReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'ag-ui-interrupts-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-ag-ui-interrupts-react');
+  if (!canonical || !frontend) throw new Error('AG-UI Interrupts frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical, id: 'ag-ui-interrupts-python-react', frontend: 'react',
+    title: 'AG-UI Interrupts (React preview)',
+    codeAssetPaths: ['app.tsx', 'application.ts', 'approval-policy.ts', 'connection.ts', 'main.tsx'].map(file => `cockpit/ag-ui/interrupts/react/src/${file}`),
+    backendAssetPaths: ['graph.py', 'native_agent.py', 'server.py'].map(file => `cockpit/ag-ui/interrupts/python/src/${file}`),
+    runtimeUrl: frontend.runtimePath, devPort: frontend.port,
+  });
+})();
+
 export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
   Object.freeze([
     ...capabilityModules,
     agUiStreamingReact,
+    agUiInterruptsReact,
     ...reactPreviews.map(({ topic, title }) => {
       const canonical = capabilityModules.find((descriptor) => descriptor.id === `langgraph-${topic}-python`);
       const frontend = getCockpitFrontends().find((entry) => entry.project === `cockpit-langgraph-${topic}-react`);

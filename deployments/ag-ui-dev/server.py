@@ -13,6 +13,7 @@ from deps.a2ui.src.graph import graph as a2ui_graph
 from deps.aws_strands.src.agent import agent as aws_strands_agent
 from deps.client_tools.src.graph import graph as client_tools_graph
 from deps.interrupts.src.graph import graph as interrupts_graph
+from deps.interrupts.src.native_agent import NativeRefundAgent
 from deps.json_render.src.graph import graph as json_render_graph
 from deps.streaming.src.graph import graph as streaming_graph
 from deps.subagents.src.graph import graph as subagents_graph
@@ -60,6 +61,12 @@ add_langgraph_fastapi_endpoint(
     app,
     LangGraphAgent(name="interrupts", graph=interrupts_graph),
     path="/agent/interrupts",
+)
+
+add_langgraph_fastapi_endpoint(
+    app,
+    NativeRefundAgent(name="interrupts", graph=interrupts_graph),
+    path="/agent/interrupts/native",
 )
 add_langgraph_fastapi_endpoint(
     app,

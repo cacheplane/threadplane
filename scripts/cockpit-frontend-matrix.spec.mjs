@@ -23,8 +23,53 @@ test('AG-UI Streaming has a closed React identity distinct from LangGraph Stream
   );
   for (const key of [
     'ag-ui/streaming',
-    'ag-ui-interrupts',
+    'ag-ui/interrupts',
     '../ag-ui-streaming',
+  ])
+    assert.throws(
+      () => reactCockpitConfiguration(key),
+      /Unsupported React cockpit topic/
+    );
+});
+
+test('AG-UI Interrupts has a closed identity and all eleven React previews remain unique', async () => {
+  const { reactCockpitConfiguration } = await import(
+    './react-cockpit/configuration.mjs'
+  );
+  assert.deepEqual(reactCockpitConfiguration('ag-ui-interrupts'), {
+    topic: 'interrupts',
+    adapter: 'ag-ui',
+    appPath: 'cockpit/ag-ui/interrupts/react',
+    base: '/ag-ui/interrupts/react/',
+    port: 4610,
+    project: 'cockpit-ag-ui-interrupts-react',
+  });
+  assert.equal(
+    reactCockpitConfiguration('interrupts').appPath,
+    'cockpit/langgraph/interrupts/react'
+  );
+  const configurations = [
+    'streaming',
+    'interrupts',
+    'memory',
+    'client-tools',
+    'persistence',
+    'durable-execution',
+    'subgraphs',
+    'time-travel',
+    'deployment-runtime',
+    'ag-ui-streaming',
+    'ag-ui-interrupts',
+  ].map(reactCockpitConfiguration);
+  for (const field of ['appPath', 'base', 'port', 'project'])
+    assert.equal(
+      new Set(configurations.map((configuration) => configuration[field])).size,
+      11
+    );
+  for (const key of [
+    'ag-ui/interrupts',
+    '../ag-ui-interrupts',
+    'ag-ui-unknown',
   ])
     assert.throws(
       () => reactCockpitConfiguration(key),
@@ -107,7 +152,7 @@ test('React cockpit configuration accepts only the nine authored topics', async 
     );
 });
 
-test('CI discovers ten React previews across both protocols with their own Python backends', (t) => {
+test('CI discovers eleven React previews across both protocols with their own Python backends', (t) => {
   const root = mkdtempSync(join(tmpdir(), 'cockpit-react-topics-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   for (const topic of [
@@ -133,20 +178,35 @@ test('CI discovers ten React previews across both protocols with their own Pytho
       );
     }
   }
-  for (const frontend of ['angular', 'react', 'python']) {
-    const directory = join(root, 'cockpit/ag-ui/streaming', frontend);
+  for (const topic of ['streaming', 'interrupts']) for (const frontend of ['angular', 'react', 'python']) {
+    const directory = join(root, 'cockpit/ag-ui', topic, frontend);
     mkdirSync(directory, { recursive: true });
-    writeFileSync(join(directory, 'project.json'), JSON.stringify({
-      name: `cockpit-ag-ui-streaming-${frontend}`,
-      targets: frontend === 'python' ? {} : { e2e: {} },
-    }));
+    writeFileSync(
+      join(directory, 'project.json'),
+      JSON.stringify({
+        name: `cockpit-ag-ui-${topic}-${frontend}`,
+        targets: frontend === 'python' ? {} : { e2e: {} },
+      })
+    );
   }
   const caps = deriveCockpitCaps(root);
-  assert.equal(caps.length, 20);
-  const agUi = selectCockpitCaps(caps, new Set(['cockpit-ag-ui-streaming-python']), { fullFleet: false });
+  assert.equal(caps.length, 22);
+  const agUi = selectCockpitCaps(
+    caps,
+    new Set(['cockpit-ag-ui-streaming-python']),
+    { fullFleet: false }
+  );
   assert.equal(agUi.length, 2);
-  assert.ok(agUi.every(cap => cap.python === 'cockpit/ag-ui/streaming/python'));
-  assert.ok(agUi.some(cap => cap.angular === 'cockpit-ag-ui-streaming-react'));
+  assert.ok(
+    agUi.every((cap) => cap.python === 'cockpit/ag-ui/streaming/python')
+  );
+  assert.ok(
+    agUi.some((cap) => cap.angular === 'cockpit-ag-ui-streaming-react')
+  );
+  const interrupts = selectCockpitCaps(caps, new Set(['cockpit-ag-ui-interrupts-python']), { fullFleet: false });
+  assert.equal(interrupts.length, 2);
+  assert.ok(interrupts.every(cap => cap.python === 'cockpit/ag-ui/interrupts/python'));
+  assert.ok(interrupts.some(cap => cap.angular === 'cockpit-ag-ui-interrupts-react'));
   for (const topic of [
     'streaming',
     'interrupts',

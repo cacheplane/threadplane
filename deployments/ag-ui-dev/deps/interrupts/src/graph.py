@@ -59,7 +59,8 @@ def build_interrupts_graph():
             [
                 SystemMessage(content="Extract the refund fields from the conversation."),
                 *state["messages"],
-            ]
+            ],
+            config={"metadata": {"emit-messages": False, "emit-tool-calls": False}},
         )
 
         response = await llm.ainvoke([SystemMessage(content=system_prompt)] + state["messages"])
