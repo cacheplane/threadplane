@@ -13226,13 +13226,13 @@
       "id": "source:libs/cockpit-registry/src/lib/capability-registry.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "sha256": "9124d6d2ced2029ebd281f2b3a7ed2503809ca364827c79829e0d9babfa8f037"
+      "sha256": "02c6398e63ade78454bed3bb720eb76cb17021906dd61218a36ffa74142e7509"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/content-descriptors.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/content-descriptors.ts",
-      "sha256": "0db002b25b96a6ee3ba8a83b8f2092baaa564bebcada66239977df397bdd5e63"
+      "sha256": "3438ff3fdadc4078233035be219aa0b67195f78ae89cf92906119539990786ff"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/docs-links.ts",

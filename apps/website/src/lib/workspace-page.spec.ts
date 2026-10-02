@@ -36,10 +36,25 @@ describe('getWebsiteWorkspacePage', () => {
       )
     ).toBe(false);
     const unsupported = await getWebsiteWorkspacePage({
-      docsPath: '/docs/langgraph/guides/subgraphs',
-      title: 'Durable execution',
+      docsPath: '/docs/langgraph/guides/time-travel',
+      title: 'Time travel',
     });
     expect(unsupported.frontendVariants?.react).toBeUndefined();
+  });
+  it('loads the Subgraphs parent owner and exact frontend runtime together', async () => {
+    const page = await getWebsiteWorkspacePage({
+      docsPath: '/docs/langgraph/guides/subgraphs',
+      title: 'Subgraphs',
+    });
+    const react = page.frontendVariants?.react;
+    expect(react?.presentation.runtimeUrl).toBe('langgraph/subgraphs/react');
+    const files = Object.keys(react?.contentBundle.codeFiles ?? {});
+    expect(files).toContain(
+      'cockpit/langgraph/subgraphs/react/src/application.ts'
+    );
+    expect(files).toContain('cockpit/langgraph/subgraphs/python/src/graph.py');
+    expect(files.some((path) => path.includes('/angular/'))).toBe(false);
+    expect(page.presentation.runtimeUrl).toBe('langgraph/subgraphs');
   });
   it('loads descriptor-backed content for a mapped LangGraph docs page', async () => {
     const page = await getWebsiteWorkspacePage({

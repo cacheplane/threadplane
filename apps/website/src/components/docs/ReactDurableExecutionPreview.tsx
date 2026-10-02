@@ -41,7 +41,7 @@ npx nx build cockpit-langgraph-durable-execution-react
 npx nx e2e cockpit-langgraph-durable-execution-react
 ~~~
 
-The isolated build installs local candidate packages and checks strict declarations and emitted browser modules. Browser tests exercise real SDK HTTP and SSE against a local fixture, including uncertain outcomes and cancellation. Docs, Code, and Run select this same React implementation. Streaming, interrupts, memory, client tools, and persistence also have public React previews; other topics remain pending.
+The isolated build installs local candidate packages and checks strict declarations and emitted browser modules. Browser tests exercise real SDK HTTP and SSE against a local fixture, including uncertain outcomes and cancellation. Docs, Code, and Run select this same React implementation. Streaming, interrupts, memory, client tools, persistence, and subgraphs also have public React previews; other topics remain pending.
 `;
 export function ReactDurableExecutionPreview({
   exampleCode,
