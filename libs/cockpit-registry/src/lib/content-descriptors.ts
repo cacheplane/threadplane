@@ -1002,6 +1002,7 @@ const reactPreviews = [
   { topic: 'streaming', title: 'LangGraph Streaming (React preview)' },
   { topic: 'interrupts', title: 'LangGraph Interrupts (React preview)' },
   { topic: 'memory', title: 'LangGraph Memory (React preview)' },
+  { topic: 'client-tools', title: 'LangGraph Client Tools (React preview)' },
 ] as const;
 
 export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
@@ -1013,7 +1014,7 @@ export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
       if (!canonical || !frontend) throw new Error(`${topic} frontend registration is missing`);
       return freezeCapabilityDescriptor({
         ...canonical, id: `langgraph-${topic}-python-react`, frontend: 'react', title,
-        codeAssetPaths: ['app.tsx', 'application.ts', 'connection.ts', 'main.tsx'].map((file) => `cockpit/langgraph/${topic}/react/src/${file}`),
+        codeAssetPaths: ['app.tsx', 'application.ts', ...(topic === 'client-tools' ? ['tools.ts'] : []), 'connection.ts', 'main.tsx'].map((file) => `cockpit/langgraph/${topic}/react/src/${file}`),
         runtimeUrl: frontend.runtimePath, devPort: frontend.port,
       });
     }),

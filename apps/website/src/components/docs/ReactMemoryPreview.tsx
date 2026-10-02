@@ -36,7 +36,7 @@ npx nx build cockpit-langgraph-memory-react
 npx nx e2e cockpit-langgraph-memory-react
 ~~~
 
-The isolated build installs local candidate packages and checks strict declarations and emitted browser modules. Browser tests use real SDK HTTP and SSE against a local fixture. Docs, Code, and Run select this same React implementation. Streaming and interrupts also have public React previews; other topics remain pending.
+The isolated build installs local candidate packages and checks strict declarations and emitted browser modules. Browser tests use real SDK HTTP and SSE against a local fixture. Docs, Code, and Run select this same React implementation. Streaming, interrupts, and client tools also have public React previews; other topics remain pending.
 `;
 
 export function ReactMemoryPreview({

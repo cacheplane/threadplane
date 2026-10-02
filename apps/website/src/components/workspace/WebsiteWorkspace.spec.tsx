@@ -164,6 +164,22 @@ describe('WebsiteWorkspace', () => {
     await waitFor(() => expect(mocks.latestProviderProps?.resolution).toEqual(resolution));
   });
 
+  it('commits a frontend switch and its current mode without waiting for a route response', async () => {
+    const resolution = mappedResolution('streaming', 'streaming', ['Docs', 'Run', 'Code']);
+    const reactResolution = mappedResolution('streaming:react', 'streaming', ['Docs', 'Run', 'Code']);
+    window.history.replaceState({}, '', '/docs/langgraph/guides/streaming?frontend=react#ownership');
+    renderWorkspace({ resolution, presentation: mappedPresentation(resolution), routePath: '/docs/langgraph/guides/streaming',
+      frontendVariants: { react: { resolution: reactResolution, presentation: mappedPresentation(reactResolution), contentBundle: emptyContent } },
+      reactDocsSlot: <article>React ownership</article> });
+    await waitFor(() => expect(mocks.latestProviderProps?.resolution).toEqual(reactResolution));
+    act(() => mocks.latestProviderProps?.pushMode('Run'));
+    fireEvent.change(screen.getByLabelText('Example UI'), { target: { value: 'angular' } });
+    expect(window.location.search).not.toContain('frontend=react');
+    expect(window.location.search).toContain('mode=run');
+    expect(window.location.hash).toBe('#ownership');
+    await waitFor(() => expect(mocks.latestProviderProps?.resolution).toEqual(resolution));
+  });
+
   it('does not expose Angular code or runtime for an unsupported React URL', async () => {
     const resolution = mappedResolution('persistence', 'persistence', ['Docs', 'Run', 'Code']);
     window.history.replaceState({}, '', '/docs/langgraph/guides/persistence?frontend=react&mode=run');

@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { deriveCockpitCaps, selectCockpitCaps } from './cockpit-matrix.mjs';
 
-test('React cockpit configuration accepts only the three authored topics', async () => {
+test('React cockpit configuration accepts only the four authored topics', async () => {
   const { reactCockpitConfiguration } = await import(
     './react-cockpit/configuration.mjs'
   );
@@ -25,6 +25,13 @@ test('React cockpit configuration accepts only the three authored topics', async
     port: 4602,
     project: 'cockpit-langgraph-memory-react',
   });
+  assert.deepEqual(reactCockpitConfiguration('client-tools'), {
+    topic: 'client-tools',
+    appPath: 'cockpit/langgraph/client-tools/react',
+    base: '/langgraph/client-tools/react/',
+    port: 4603,
+    project: 'cockpit-langgraph-client-tools-react',
+  });
   for (const topic of [
     'unknown',
     '../streaming',
@@ -38,10 +45,10 @@ test('React cockpit configuration accepts only the three authored topics', async
     );
 });
 
-test('CI discovers all three React topics with their existing Python backends', (t) => {
+test('CI discovers all four React topics with their existing Python backends', (t) => {
   const root = mkdtempSync(join(tmpdir(), 'cockpit-react-topics-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
-  for (const topic of ['streaming', 'interrupts', 'memory']) {
+  for (const topic of ['streaming', 'interrupts', 'memory', 'client-tools']) {
     for (const frontend of ['angular', 'react', 'python']) {
       const directory = join(root, 'cockpit/langgraph', topic, frontend);
       mkdirSync(directory, { recursive: true });
@@ -55,8 +62,8 @@ test('CI discovers all three React topics with their existing Python backends', 
     }
   }
   const caps = deriveCockpitCaps(root);
-  assert.equal(caps.length, 6);
-  for (const topic of ['streaming', 'interrupts', 'memory']) {
+  assert.equal(caps.length, 8);
+  for (const topic of ['streaming', 'interrupts', 'memory', 'client-tools']) {
     const selected = selectCockpitCaps(
       caps,
       new Set([`cockpit-langgraph-${topic}-python`]),

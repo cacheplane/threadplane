@@ -1,9 +1,10 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "cc3431a610f0cc113224c54dbb731e5b1be7cde4",
+  "baselineHead": "c3d20ab978223f82a0c8f1868104c97590fb1e27",
   "sourceState": {
     "modified": [
-      ".github/workflows/ci.yml"
+      "libs/cockpit-registry/src/lib/capability-registry.ts",
+      "libs/cockpit-registry/src/lib/content-descriptors.ts"
     ],
     "untracked": []
   },
@@ -13225,13 +13226,13 @@
       "id": "source:libs/cockpit-registry/src/lib/capability-registry.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "sha256": "8bb1cc7529d379b819b0260caeead3ef69282cfeaf679984949f99e7c3e90517"
+      "sha256": "e533cd11f7aa9816b09b23d1e585e65e339ee3307577924386cdc34f82fbba7e"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/content-descriptors.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/content-descriptors.ts",
-      "sha256": "5e03e3a1e176b27b680e5f339df3dcd383d48e4f5c1b8c585ab46aad2c7030d1"
+      "sha256": "9be704dc7ccc1cc2b65ea93c0c63ecc84e0078904c2517cc622b2bd0a2613728"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/docs-links.ts",
