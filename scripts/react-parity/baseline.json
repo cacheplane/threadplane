@@ -1,10 +1,12 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "d0a5ba63aaa393996107618304e01e9f988452e0",
+  "baselineHead": "ae41e04ab127b9f73a38a93005ffebd8e3910200",
   "sourceState": {
     "modified": [
       "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "libs/cockpit-registry/src/lib/content-descriptors.ts"
+      "libs/cockpit-registry/src/lib/content-descriptors.ts",
+      "package-lock.json",
+      "package.json"
     ],
     "untracked": []
   },
@@ -2163,13 +2165,13 @@
       "id": "config:package-lock.json",
       "kind": "config",
       "path": "package-lock.json",
-      "sha256": "3d803c2e1a217fd3e173fe52891def4528433a65e69f3c7ac5af13068793371c"
+      "sha256": "549aaebc3e71ccb53f30d5311f784f510fa8ccf67ab7b795e071157f0ed1942f"
     },
     {
       "id": "config:package.json",
       "kind": "config",
       "path": "package.json",
-      "sha256": "7d531492a56457bc62f70d4789ae1c8927213abc2751cd01a14cf1171007df27"
+      "sha256": "dffcbe850f6a8d578ed96fe75659cdcaf9299bc9cfd0a4ad6d9f30d842941320"
     },
     {
       "id": "config:scripts/assemble-examples.ts",
