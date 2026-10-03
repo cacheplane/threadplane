@@ -16,6 +16,24 @@ const streaming: CockpitManifestIdentity = {
 };
 
 describe('registered React public previews', () => {
+  it('resolves native AG-UI Interrupts on its canonical guide with exact React and native backend sources', () => {
+    const identity = { ...streaming, product: 'ag-ui' as const, topic: 'interrupts' };
+    const react = getFrontendCapabilityDescriptor(identity, 'react');
+    expect(react?.docsPath).toBe('/docs/ag-ui/guides/interrupts');
+    expect(react?.runtimeAdapter).toBe('ag-ui');
+    expect(react?.runtimeUrl).toBe('ag-ui/interrupts/react');
+    expect(react?.devPort).toBe(4610);
+    expect(react?.codeAssetPaths).toEqual(['app.tsx', 'application.ts', 'approval-policy.ts', 'connection.ts', 'main.tsx'].map(file => `cockpit/ag-ui/interrupts/react/src/${file}`));
+    expect(react?.backendAssetPaths).toEqual(['graph.py', 'native_agent.py', 'server.py'].map(file => `cockpit/ag-ui/interrupts/python/src/${file}`));
+    expect(getFrontendCapabilityDescriptor(identity, 'angular')?.runtimeUrl).toBe('ag-ui/interrupts');
+    expect(getFrontendCapabilityDescriptor({ ...identity, product: 'langgraph' }, 'react')?.runtimeUrl).toBe('langgraph/interrupts/react');
+    const frontends = getCockpitFrontends();
+    expect(frontends.filter(frontend => frontend.frontend === 'react')).toHaveLength(11);
+    expect(frontends).toHaveLength(52);
+    expect(new Set(frontends.map(frontend => frontend.project)).size).toBe(52);
+    for (const asset of [...(react?.codeAssetPaths ?? []), ...(react?.backendAssetPaths ?? [])])
+      expect(existsSync(new URL('../../../../' + asset, import.meta.url))).toBe(true);
+  });
   it('resolves AG-UI Streaming on its existing Event Mapping reference without borrowing LangGraph', () => {
     const identity = { ...streaming, product: 'ag-ui' as const };
     const react = getFrontendCapabilityDescriptor(identity, 'react');
@@ -27,8 +45,8 @@ describe('registered React public previews', () => {
     expect(react?.backendAssetPaths).toContain('cockpit/ag-ui/streaming/python/src/server.py');
     expect(getFrontendCapabilityDescriptor(identity,'angular')?.runtimeUrl).toBe('ag-ui/streaming');
     expect(getFrontendCapabilityDescriptor(streaming,'react')?.runtimeUrl).toBe('langgraph/streaming/react');
-    expect(getCockpitFrontends().filter(x=>x.frontend==='react')).toHaveLength(10);
-    expect(getCockpitFrontends()).toHaveLength(51);
+    expect(getCockpitFrontends().filter(x=>x.frontend==='react')).toHaveLength(11);
+    expect(getCockpitFrontends()).toHaveLength(52);
   });
   it('maps the canonical Deployment guide to the exact Deployment Runtime React sources', () => {
     const identity = { ...streaming, topic: 'deployment-runtime' };
@@ -56,8 +74,8 @@ describe('registered React public previews', () => {
     ).toBe('langgraph/deployment-runtime');
     expect(
       getCockpitFrontends().filter((frontend) => frontend.frontend === 'react')
-    ).toHaveLength(10);
-    expect(getCockpitFrontends()).toHaveLength(51);
+    ).toHaveLength(11);
+    expect(getCockpitFrontends()).toHaveLength(52);
   });
   it('resolves Time Travel with exact owner, checkpoint eligibility and canonical identity sources', () => {
     const identity = { ...streaming, topic: 'time-travel' };
@@ -317,11 +335,11 @@ describe('registered React public previews', () => {
 
   it('enumerates deployable frontend identities with distinct paths and projects', () => {
     const frontends = getCockpitFrontends();
-    expect(frontends).toHaveLength(51);
-    expect(new Set(frontends.map((entry) => entry.runtimePath)).size).toBe(51);
-    expect(new Set(frontends.map((entry) => entry.project)).size).toBe(51);
-    expect(new Set(frontends.map((entry) => entry.port)).size).toBe(51);
-    expect(new Set(frontends.map((entry) => entry.buildOutput)).size).toBe(51);
+    expect(frontends).toHaveLength(52);
+    expect(new Set(frontends.map((entry) => entry.runtimePath)).size).toBe(52);
+    expect(new Set(frontends.map((entry) => entry.project)).size).toBe(52);
+    expect(new Set(frontends.map((entry) => entry.port)).size).toBe(52);
+    expect(new Set(frontends.map((entry) => entry.buildOutput)).size).toBe(52);
     expect(
       frontends.find(
         (entry) => entry.project === 'cockpit-langgraph-memory-react'

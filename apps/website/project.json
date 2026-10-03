@@ -8,6 +8,7 @@
     "cockpit-langgraph-streaming-angular",
     "cockpit-langgraph-streaming-react",
     "cockpit-ag-ui-streaming-angular",
+    "cockpit-ag-ui-interrupts-angular",
     "cockpit-chat-threads-angular"
   ],
   "tags": ["scope:website", "scope:website-e2e", "type:app"],

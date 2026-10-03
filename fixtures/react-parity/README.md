@@ -69,6 +69,23 @@ Existing task assignments are preserved;
 implementation subsets remain in progress, not whole-task completion. Core and
 native package contracts are checked separately by their tests and package gates.
 
+## Native AG-UI cockpit previews
+
+AG-UI Streaming and Interrupts have private installed native React previews.
+They reuse the reviewed `react-ag-ui` dependency profile and the existing shared
+AG-UI deployment. Interrupts observes one settled native refund pause and sends
+an explicitly addressed approve, edited approval or cancellation through the
+native session. It requires the full paused transcript plus a current final
+assistant message before admitting another Send. The original Angular route
+retains its legacy wire contract. Internal refund extraction is excluded from
+conversation events while visible acknowledgement still streams.
+
+Frozen compiled-graph tests verify native and legacy bridge behavior. Actual
+installed-SDK browser tests cover canonical history, malformed pauses, protected
+results, developer endpoint routing and cancellation of held HTTP streams.
+These bounded previews do not establish public package availability, saved
+conversation restoration or complete AG-UI migration.
+
 ## Reviewed baseline
 
 The historical foundation facts were generated from the uncommitted working tree at
@@ -306,10 +323,10 @@ This bounded runtime proof does not establish complete migration parity.
 | T29 | Implement thread/project/search/history/timeline/debug surfaces |
 | T30 | Implement popup, sidebar and sidenav compositions |
 | T31 | Create canonical React applications and public testing utilities |
-| T32 | In progress: separate streaming, interrupts, memory, client-tools, persistence, durable-execution, subgraphs, time-travel and deployment-runtime frontend/runtime identities; existing bridge reused |
-| T33 | In progress: installed React streaming, approval, memory, client-tools, persistence, durable-execution, subgraphs, time-travel and deployment-runtime previews; remaining 32 scenario variants pending |
-| T34 | In progress: public streaming/interrupts/memory/client-tools/persistence/durable-execution/subgraphs/time-travel/deployment-runtime selectors and frontend URL state; broader navigation/search parity pending |
-| T35 | In progress: authored streaming/interrupts/memory/client-tools/persistence/durable-execution/subgraphs/time-travel/deployment-runtime preview docs and public agent guidance; full React docs pending |
+| T32 | In progress: nine LangGraph and native AG-UI Streaming/Interrupts frontend/runtime identities; existing bridges reused |
+| T33 | In progress: eleven installed React previews across LangGraph and AG-UI; remaining 30 topic frontends pending |
+| T34 | In progress: public selectors and frontend URL state for nine LangGraph and two AG-UI previews; broader navigation/search parity pending |
+| T35 | In progress: authored docs and public agent guidance for eleven React previews; full React docs pending |
 | T36 | Expand CI and packed consumer compatibility |
 | T37 | Prepare prerelease, publishing, provenance and rollback |
 | T38 | Measure and optimize streaming, bundles and retention |

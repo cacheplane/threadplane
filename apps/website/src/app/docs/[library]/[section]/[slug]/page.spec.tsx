@@ -7,6 +7,7 @@ import { DocsTOC } from '../../../../../components/docs/DocsTOC';
 import { MdxRenderer } from '../../../../../components/docs/MdxRenderer';
 import { ReactStreamingPreview } from '../../../../../components/docs/ReactStreamingPreview';
 import { ReactAgUiStreamingPreview } from '../../../../../components/docs/ReactAgUiStreamingPreview';
+import { ReactAgUiInterruptsPreview } from '../../../../../components/docs/ReactAgUiInterruptsPreview';
 import { ReactInterruptsPreview } from '../../../../../components/docs/ReactInterruptsPreview';
 import { ReactMemoryPreview } from '../../../../../components/docs/ReactMemoryPreview';
 import { ReactClientToolsPreview } from '../../../../../components/docs/ReactClientToolsPreview';
@@ -60,6 +61,16 @@ const route = (library: string, section: string, slug: string, mode?: string) =>
   } as never);
 
 describe('unified docs workspace route', () => {
+  it('selects native AG-UI approval Docs on the canonical Interrupts guide without borrowing LangGraph', async () => {
+    const tree = await route('ag-ui', 'guides', 'interrupts');
+    const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
+    const article = findElement(workspace?.props.reactDocsSlot, ReactAgUiInterruptsPreview as ComponentType<never>);
+    expect(article).not.toBeNull();
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/ag-ui/interrupts/react/src/approval-policy.ts');
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/ag-ui/interrupts/python/src/native_agent.py');
+    expect(findElement(workspace?.props.reactDocsSlot, ReactInterruptsPreview as ComponentType<never>)).toBeNull();
+    expect(findElement(workspace?.props.reactDocsSlot, ReactAgUiStreamingPreview as ComponentType<never>)).toBeNull();
+  });
   it('selects the authored AG-UI Streaming Docs on Event Mapping without selecting LangGraph Streaming', async () => {
     const tree = await route('ag-ui','reference','event-mapping');
     const workspace = findElement(tree,WebsiteWorkspace as ComponentType<never>);

@@ -1,5 +1,14 @@
 /** Closed authored frontend selection; callers cannot supply filesystem paths. */
 export function reactCockpitConfiguration(topic = 'streaming') {
+  if (topic === 'ag-ui-interrupts')
+    return Object.freeze({
+      topic: 'interrupts',
+      adapter: 'ag-ui',
+      appPath: 'cockpit/ag-ui/interrupts/react',
+      base: '/ag-ui/interrupts/react/',
+      port: 4610,
+      project: 'cockpit-ag-ui-interrupts-react',
+    });
   if (topic === 'ag-ui-streaming')
     return Object.freeze({
       topic: 'streaming',
