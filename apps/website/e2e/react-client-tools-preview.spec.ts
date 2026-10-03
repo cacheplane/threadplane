@@ -27,18 +27,17 @@ test('frontend switching keeps the selected mode and URL aligned while route res
   await expect(page.getByLabel('Example UI')).toHaveValue('react');
   let release!: () => void;
   const held = new Promise<void>(resolve => { release = resolve; });
-  let heldCount = 0, pendingResponses = 0;
+  let heldCount = 0;
   await page.route('**/docs/chat/guides/client-tools?*', async route => {
     if (!new URL(route.request().url()).searchParams.has('_rsc')) {
       await route.continue(); return;
     }
-    heldCount++; pendingResponses++;
+    heldCount++;
     try {
       await held;
       await route.continue();
       await (await route.request().response())?.finished();
     } catch { /* The superseded navigation may be cancelled by the router. */ }
-    finally { pendingResponses--; }
   });
   try {
     await page.locator('[data-workspace-desktop-navigation]').getByRole('button', { name: /^Run(?:,|$)/ }).click();
@@ -49,7 +48,7 @@ test('frontend switching keeps the selected mode and URL aligned while route res
     await expect(page).toHaveURL(/mode=run/);
     await expect(page.getByLabel('Example UI')).toHaveValue('angular');
     release();
-    await expect.poll(() => pendingResponses).toBe(0);
+    await page.unrouteAll({ behavior: 'wait' });
     await expect(page).not.toHaveURL(/frontend=react/);
     await expect(page).toHaveURL(/mode=run.*#ownership$/);
     await expect(page.getByLabel('Example UI')).toHaveValue('angular');
