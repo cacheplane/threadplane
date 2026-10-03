@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { sparkline, formatDeltaCell, renderReport, insightReportRows, generateReport } from './report.js';
+import { sparkline, formatDeltaCell, renderReport, insightReportRows, generateReport, BREAKDOWN_TOTAL_SUFFIX } from './report.js';
 
 const asOf = new Date('2026-09-07T17:45:00Z');
 const dayMs = 86_400_000;
@@ -152,4 +152,87 @@ test('renderReport: produces stable markdown structure', () => {
   assert(out.includes('| X '));
   assert(out.includes('Last 7 complete UTC days'));
   assert(out.includes('Preceding 7 UTC days'));
+});
+
+const breakdownSource = { kind: 'TrendsQuery', interval: 'day', series: [{ math: 'total' }], breakdownFilter: { breakdown_type: 'event', breakdown: 'cta_id', breakdown_limit: 15 } };
+
+function dashboardClient(insight: any, extra: Record<string, unknown> = {}) {
+  return { async GET(path: string, options: any) {
+    if (path === '/dashboards/') return { data: { results: [{ id: 10, name: 'Managed', tags: ['gtm'] }], next: null } };
+    if (path === '/dashboards/{id}/') return { data: { id: 10, name: 'Managed', tiles: [{ insight: { id: 7 } }] } };
+    assert.equal(path, '/insights/{id}/');
+    assert.equal(options.params.query.refresh, 'blocking');
+    return { data: insight };
+  }, ...extra };
+}
+
+test('report fetches insights with a refresh that recomputes a stale cache', async () => {
+  const refreshes: string[] = [];
+  const client = { async GET(path: string, options: any) {
+    if (path === '/dashboards/') return { data: { results: [{ id: 10, name: 'Managed' }], next: null } };
+    if (path === '/dashboards/{id}/') return { data: { id: 10, name: 'Managed', tiles: [{ insight: 7 }] } };
+    refreshes.push(options.params.query.refresh);
+    return { data: { id: 7, name: 'Accepted', query: { source: dailySource }, result: [{ days, data: Array(28).fill(1) }] } };
+  } };
+  const report = await generateReport({ client, asOf, dashboardIds: [10] });
+  assert.deepEqual(refreshes, ['blocking']);
+  assert.match(report.markdown, /\| Accepted \| 7 \| 7/);
+});
+
+test('report totals a breakdown insight by re-running the query without the breakdown', async () => {
+  const bodies: any[] = [];
+  const client = dashboardClient(
+    { id: 7, name: 'Install clicks', query: { source: breakdownSource }, result: [{ days, data: Array(28).fill(1), label: 'hero_install' }] },
+    { async POST(path: string, options: any) {
+      assert.equal(path, '/query/');
+      bodies.push(options.body);
+      return { data: { results: [{ days, data: Array(28).fill(3) }] } };
+    } },
+  );
+  const report = await generateReport({ client, asOf, dashboardIds: [10] });
+  assert.equal(bodies.length, 1);
+  assert.equal(bodies[0].refresh, 'blocking');
+  assert.equal(bodies[0].query.kind, 'TrendsQuery');
+  assert.equal(bodies[0].query.breakdownFilter, undefined);
+  assert.match(report.markdown, new RegExp(`Install clicks${BREAKDOWN_TOTAL_SUFFIX} \\| 21 \\| 21`));
+  assert.doesNotMatch(report.markdown, /Unavailable/);
+});
+
+test('report still refuses non-daily, non-trends and non-additive insights', () => {
+  const cases: Array<[any, RegExp]> = [
+    [{ id: 1, name: 'Weekly', query: { source: { ...dailySource, interval: 'week' } }, result: [{ days, data: Array(28).fill(1) }] }, /daily/i],
+    [{ id: 2, name: 'Funnel', query: { source: { kind: 'FunnelsQuery' } }, result: [] }, /unsupported/i],
+    [{ id: 3, name: 'Uniques', query: { source: { ...dailySource, series: [{ math: 'dau' }] } }, result: [{ days, data: Array(28).fill(1) }] }, /unique/i],
+  ];
+  for (const [insight, reason] of cases) {
+    const rows = insightReportRows(insight, asOf);
+    assert.equal(rows[0].thisWeek, null);
+    assert.match(rows[0].unavailable ?? '', reason);
+  }
+});
+
+test('report refuses a breakdown total whose recomputed series is short or missing', async () => {
+  for (const data of [undefined, { results: [{ days: days.slice(0, 10), data: Array(10).fill(1) }] }]) {
+    const client = dashboardClient(
+      { id: 7, name: 'Install clicks', query: { source: breakdownSource }, result: [] },
+      { async POST() { return { data: data ?? { results: [] } }; } },
+    );
+    const report = await generateReport({ client, asOf, dashboardIds: [10] });
+    assert.match(report.markdown, /Unavailable/);
+  }
+});
+
+test('report polls a bounded number of times when PostHog answers with a pending query status', async () => {
+  const waits: number[] = [];
+  let calls = 0;
+  const client = { async GET(path: string) {
+    if (path === '/dashboards/') return { data: { results: [{ id: 10, name: 'Managed' }], next: null } };
+    if (path === '/dashboards/{id}/') return { data: { id: 10, name: 'Managed', tiles: [{ insight: 7 }] } };
+    calls += 1;
+    return { data: { id: 7, name: 'Pending', query: { source: dailySource }, query_status: { complete: false } } };
+  } };
+  const report = await generateReport({ client, asOf, dashboardIds: [10], sleep: async (ms: number) => { waits.push(ms); } });
+  assert.equal(calls, 11);
+  assert.equal(waits.length, 10);
+  assert.match(report.markdown, /Pending \| Unavailable/);
 });
