@@ -1072,6 +1072,18 @@ const agUiSubagentsReact = (() => {
   });
 })();
 
+const renderSpecReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'render-spec-rendering-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-render-spec-rendering-react');
+  if (!canonical || !frontend) throw new Error('Render Spec frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical, id: 'render-spec-rendering-python-react', frontend: 'react', title: 'Render Spec (React preview)',
+    promptAssetPaths: [], backendAssetPaths: [],
+    codeAssetPaths: ['app.tsx','playback.ts','projection.ts','specs.ts','views.tsx','main.tsx','styles.css'].map(file => `cockpit/render/spec-rendering/react/src/${file}`),
+    runtimeUrl: frontend.runtimePath, devPort: frontend.port,
+  });
+})();
+
 export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
   Object.freeze([
     ...capabilityModules,
@@ -1080,6 +1092,7 @@ export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
     agUiToolViewsReact,
     agUiJsonRenderReact,
     agUiSubagentsReact,
+    renderSpecReact,
     ...reactPreviews.map(({ topic, title }) => {
       const canonical = capabilityModules.find((descriptor) => descriptor.id === `langgraph-${topic}-python`);
       const frontend = getCockpitFrontends().find((entry) => entry.project === `cockpit-langgraph-${topic}-react`);

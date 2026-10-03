@@ -88,6 +88,20 @@ const release = () => {
 };
 const server = createServer(async (request, response) => {
   const pathname = new URL(request.url, 'http://localhost').pathname;
+  if (configuration.adapter === 'none') {
+    if (!['GET', 'HEAD'].includes(request.method)) {
+      response.writeHead(405, { allow: 'GET, HEAD' });
+      return response.end();
+    }
+    if (
+      pathname.startsWith('/api/') ||
+      pathname.startsWith('/developer-api/') ||
+      pathname.startsWith('/__')
+    ) {
+      response.writeHead(404);
+      return response.end();
+    }
+  }
   if (
     agUiSubagentsFixture &&
     (await agUiSubagentsFixture(request, response, pathname))

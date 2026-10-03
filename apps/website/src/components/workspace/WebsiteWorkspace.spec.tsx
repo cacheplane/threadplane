@@ -426,15 +426,17 @@ describe('WebsiteWorkspace', () => {
       '',
       '/docs/langgraph/guides/testing?mode=run&keep=1'
     );
+    const historyLength = window.history.length;
     renderWorkspace();
 
     await waitFor(() => {
       expect(activeWorkspaceMode()).toBe('Docs');
-      expect(mocks.replace).toHaveBeenCalledWith(
+      expect(window.location.pathname + window.location.search).toBe(
         '/docs/langgraph/guides/testing'
       );
     });
-    expect(mocks.replace.mock.calls[0]?.[0]).not.toContain('runtime');
+    expect(window.history.length).toBe(historyLength);
+    expect(mocks.replace).not.toHaveBeenCalled();
   });
 
   it('treats repeated mode values as invalid on initial discovery', async () => {
@@ -456,10 +458,59 @@ describe('WebsiteWorkspace', () => {
 
     await waitFor(() => {
       expect(activeWorkspaceMode()).toBe('Docs');
-      expect(mocks.replace).toHaveBeenCalledWith(
+      expect(window.location.pathname + window.location.search).toBe(
         '/docs/langgraph/guides/streaming'
       );
     });
+    expect(mocks.replace).not.toHaveBeenCalled();
+  });
+
+  it('normalizes React mode queries without dropping the frontend or fragment', async () => {
+    const resolution = mappedResolution('streaming', 'streaming', [
+      'Docs', 'Run', 'Code',
+    ]);
+    const reactResolution = mappedResolution('streaming:react', 'streaming', [
+      'Docs', 'Run', 'Code',
+    ]);
+    window.history.replaceState(
+      {}, '',
+      '/docs/langgraph/guides/streaming?mode=invalid&frontend=react#ownership'
+    );
+    const historyLength = window.history.length;
+    renderWorkspace({
+      resolution,
+      presentation: mappedPresentation(resolution),
+      routePath: '/docs/langgraph/guides/streaming',
+      frontendVariants: {
+        react: {
+          resolution: reactResolution,
+          presentation: mappedPresentation(reactResolution),
+          contentBundle: emptyContent,
+        },
+      },
+      reactDocsSlot: <article>React ownership</article>,
+    });
+    await waitFor(() => {
+      expect(
+        window.location.pathname + window.location.search + window.location.hash
+      ).toBe('/docs/langgraph/guides/streaming?frontend=react#ownership');
+      expect(mocks.latestProviderProps?.resolution).toEqual(reactResolution);
+      expect(activeWorkspaceMode()).toBe('Docs');
+    });
+    expect(window.history.length).toBe(historyLength);
+    expect(mocks.replace).not.toHaveBeenCalled();
+  });
+
+  it('keeps router replacement when canonical Docs belongs to a different path', () => {
+    window.history.replaceState(
+      {}, '', '/docs/langgraph/guides/streaming?mode=invalid'
+    );
+    renderWorkspace();
+    act(() => mocks.latestProviderProps?.replaceMode('Docs'));
+    expect(mocks.replace).toHaveBeenCalledWith('/docs/langgraph/guides/testing');
+    expect(window.location.pathname + window.location.search).toBe(
+      '/docs/langgraph/guides/streaming?mode=invalid'
+    );
   });
 
   it('keeps mode navigation on the canonical docs path without adding runtime state', () => {
@@ -822,14 +873,15 @@ describe('WebsiteWorkspace', () => {
       '',
       '/docs/langgraph/guides/durable-execution?mode=api&mode=docs&keep=1'
     );
+    const replaceHistory = vi.spyOn(window.history, 'replaceState');
     act(() => window.dispatchEvent(new PopStateEvent('popstate')));
 
     await waitFor(() => {
       expect(activeWorkspaceMode()).toBe('Docs');
-      expect(mocks.replace).toHaveBeenCalledOnce();
+      expect(replaceHistory).toHaveBeenCalledOnce();
     });
     const replacement = new URL(
-      String(mocks.replace.mock.calls[0]?.[0]),
+      window.location.href,
       window.location.origin
     );
     expect(replacement.pathname).toBe(
@@ -837,6 +889,8 @@ describe('WebsiteWorkspace', () => {
     );
     expect(replacement.searchParams.getAll('mode')).toEqual([]);
     expect(replacement.searchParams.has('keep')).toBe(false);
+    expect(mocks.replace).not.toHaveBeenCalled();
+    replaceHistory.mockRestore();
   });
 
   it('uses the Website same-origin ingest proxy for the real runtime iframe', async () => {

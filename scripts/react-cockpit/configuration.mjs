@@ -1,5 +1,14 @@
 /** Closed authored frontend selection; callers cannot supply filesystem paths. */
 export function reactCockpitConfiguration(topic = 'streaming') {
+  if (topic === 'render-spec-rendering')
+    return Object.freeze({
+      topic: 'spec-rendering',
+      adapter: 'none',
+      appPath: 'cockpit/render/spec-rendering/react',
+      base: '/render/spec-rendering/react/',
+      port: 4614,
+      project: 'cockpit-render-spec-rendering-react',
+    });
   if (topic === 'ag-ui-subagents')
     return Object.freeze({
       topic: 'subagents',

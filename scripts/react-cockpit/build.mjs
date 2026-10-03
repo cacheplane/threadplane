@@ -25,6 +25,7 @@ import {
   installPresentationConsumer,
   reactLanggraphPresentationSeeds,
   reactAgUiPresentationSeeds,
+  reactRenderPresentationSeeds,
 } from '../react-parity/markdown-presentation-build.mjs';
 import { checkTypes } from '../react-parity/verify-langgraph-candidate.mjs';
 import { reactCockpitConfiguration } from './configuration.mjs';
@@ -32,6 +33,7 @@ import { reactCockpitConfiguration } from './configuration.mjs';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const { appPath, base, adapter } = reactCockpitConfiguration(process.argv[2]);
 const nativeAgUi = adapter === 'ag-ui';
+const staticRender = adapter === 'none';
 if (nativeAgUi) rootRangeOverrides(root);
 const runtimePackage = nativeAgUi
   ? '@threadplane/ag-ui'
@@ -42,20 +44,15 @@ const temporary = realpathSync(
 );
 try {
   // Nx app targets prepare shared packages once before parallel isolated builds.
-  const candidate = join(temporary, 'candidate');
-  mkdirSync(candidate);
-  const emission = (nativeAgUi ? emitAgUiCandidate : emitCandidate)(
-    root,
-    candidate
-  );
-  const packed = (nativeAgUi ? packAgUiCandidate : packCandidate)(
-    candidate,
-    temporary
-  );
-  const tarballs = {
-    ...packLocalArtifacts(root, temporary, ['react']),
-    [runtimePackage]: 'file:' + packed.tarball,
-  };
+  let emission = { sources: [] };
+  const tarballs = packLocalArtifacts(root, temporary, ['react']);
+  if (!staticRender) {
+    const candidate = join(temporary, 'candidate');
+    mkdirSync(candidate);
+    emission = (nativeAgUi ? emitAgUiCandidate : emitCandidate)(root, candidate);
+    const packed = (nativeAgUi ? packAgUiCandidate : packCandidate)(candidate, temporary);
+    tarballs[runtimePackage] = 'file:' + packed.tarball;
+  }
   const consumer = join(temporary, 'consumer');
   mkdirSync(consumer);
   const installed = installPresentationConsumer(
@@ -63,10 +60,10 @@ try {
     JSON.parse(readFileSync(join(root, 'package-lock.json'), 'utf8')),
     tarballs,
     {
-      seeds: nativeAgUi
+      seeds: staticRender ? reactRenderPresentationSeeds : nativeAgUi
         ? reactAgUiPresentationSeeds
         : reactLanggraphPresentationSeeds,
-      profile: nativeAgUi ? 'react-ag-ui' : 'react-langgraph',
+      profile: staticRender ? 'react-render' : nativeAgUi ? 'react-ag-ui' : 'react-langgraph',
     }
   );
   const app = join(consumer, appPath);
@@ -119,13 +116,17 @@ try {
     modules.some((path) => path.includes('/node_modules/@threadplane/react/')),
     'Installed React required'
   );
-  assert.ok(
+  if (!staticRender) assert.ok(
     modules.some((path) =>
       path.includes('/node_modules/' + runtimePackage + '/')
     ),
     'Installed neutral runtime required'
   );
-  if (nativeAgUi) {
+  if (staticRender) {
+    assert.ok(modules.some(path => /\/node_modules\/@threadplane\/react\/.*render-spec/.test(path)), 'Installed RenderSpec required');
+    assert.ok(modules.some(path => path.includes('/node_modules/@cacheplane/partial-json/')), 'Installed partial JSON parser required');
+    assert.ok(!modules.some(path => /\/node_modules\/(?:@threadplane\/(?:ag-ui|langgraph)|@ag-ui\/|@langchain\/|@mastra\/|openai\/|@anthropic-ai\/)/.test(path)), 'Static render has no backend runtime');
+  } else if (nativeAgUi) {
     assert.ok(
       modules.some((path) =>
         path.includes(

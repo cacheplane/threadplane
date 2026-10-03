@@ -11,6 +11,7 @@ import { ReactAgUiInterruptsPreview } from '../../../../../components/docs/React
 import { ReactAgUiToolViewsPreview } from '../../../../../components/docs/ReactAgUiToolViewsPreview';
 import { ReactAgUiJsonRenderPreview } from '../../../../../components/docs/ReactAgUiJsonRenderPreview';
 import { ReactAgUiSubagentsPreview } from '../../../../../components/docs/ReactAgUiSubagentsPreview';
+import { ReactRenderSpecPreview } from '../../../../../components/docs/ReactRenderSpecPreview';
 import { ReactInterruptsPreview } from '../../../../../components/docs/ReactInterruptsPreview';
 import { ReactMemoryPreview } from '../../../../../components/docs/ReactMemoryPreview';
 import { ReactClientToolsPreview } from '../../../../../components/docs/ReactClientToolsPreview';
@@ -64,6 +65,15 @@ const route = (library: string, section: string, slug: string, mode?: string) =>
   } as never);
 
 describe('unified docs workspace route', () => {
+  it('selects the local React Render Spec guide and owned renderer sources without Python assets', async () => {
+    const tree = await route('render', 'guides', 'specs');
+    const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
+    const article = findElement(workspace?.props.reactDocsSlot, ReactRenderSpecPreview as ComponentType<never>);
+    expect(article).not.toBeNull();
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/render/spec-rendering/react/src/playback.ts');
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/render/spec-rendering/react/src/views.tsx');
+    expect(article?.props.exampleCode?.assetPaths?.some(path => path.includes('/python/'))).toBe(false);
+  });
   it('selects the native trip specialists Docs with exact child policy and bridge sources', async () => {
     const tree=await route('ag-ui','guides','subagents');
     const workspace=findElement(tree,WebsiteWorkspace as ComponentType<never>);

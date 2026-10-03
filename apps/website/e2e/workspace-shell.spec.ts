@@ -295,6 +295,12 @@ test.describe('workspace shell', () => {
       await page.goto(`${streamingDocsPath}?${query}`);
       await expect(page).toHaveURL(streamingDocsPath);
       await expectMode(page, 'Docs');
+      await modeButton(page, 'Code').click();
+      await expect(page).toHaveURL(`${streamingDocsPath}?mode=code`);
+      await expectMode(page, 'Code');
+      await page.goBack({ waitUntil: 'domcontentloaded' });
+      await expect(page).toHaveURL(streamingDocsPath);
+      await expectMode(page, 'Docs');
     });
   }
 

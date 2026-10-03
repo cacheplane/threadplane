@@ -4,6 +4,17 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { deriveCockpitCaps, selectCockpitCaps } from './cockpit-matrix.mjs';
+test('Spec Rendering has a closed local fifteenth React identity', async () => {
+  const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
+  assert.deepEqual(reactCockpitConfiguration('render-spec-rendering'), {
+    topic: 'spec-rendering', adapter: 'none',
+    appPath: 'cockpit/render/spec-rendering/react',
+    base: '/render/spec-rendering/react/', port: 4614,
+    project: 'cockpit-render-spec-rendering-react',
+  });
+  for (const key of ['spec-rendering', 'render/spec-rendering', '../render-spec-rendering'])
+    assert.throws(() => reactCockpitConfiguration(key), /Unsupported React cockpit topic/);
+});
 test('Subagents has a closed fourteenth React identity', async () => {
   const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
   assert.deepEqual(reactCockpitConfiguration('ag-ui-subagents'), { topic: 'subagents', adapter: 'ag-ui', appPath: 'cockpit/ag-ui/subagents/react', base: '/ag-ui/subagents/react/', port: 4613, project: 'cockpit-ag-ui-subagents-react' });

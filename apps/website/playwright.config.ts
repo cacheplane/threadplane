@@ -217,7 +217,7 @@ export const createWebsitePlaywrightConfig = (
             ? [
                 {
                   command:
-                    'npx nx run-many -t build --projects=cockpit-langgraph-streaming-react,cockpit-langgraph-interrupts-react,cockpit-langgraph-memory-react,cockpit-langgraph-client-tools-react,cockpit-langgraph-persistence-react,cockpit-langgraph-durable-execution-react,cockpit-langgraph-subgraphs-react,cockpit-langgraph-time-travel-react,cockpit-langgraph-deployment-runtime-react,cockpit-ag-ui-streaming-react,cockpit-ag-ui-interrupts-react,cockpit-ag-ui-tool-views-react,cockpit-ag-ui-json-render-react,cockpit-ag-ui-subagents-react --parallel=3 && node scripts/react-cockpit/serve.mjs',
+                    'npx nx run-many -t build --projects=cockpit-langgraph-streaming-react,cockpit-langgraph-interrupts-react,cockpit-langgraph-memory-react,cockpit-langgraph-client-tools-react,cockpit-langgraph-persistence-react,cockpit-langgraph-durable-execution-react,cockpit-langgraph-subgraphs-react,cockpit-langgraph-time-travel-react,cockpit-langgraph-deployment-runtime-react,cockpit-ag-ui-streaming-react,cockpit-ag-ui-interrupts-react,cockpit-ag-ui-tool-views-react,cockpit-ag-ui-json-render-react,cockpit-ag-ui-subagents-react,cockpit-render-spec-rendering-react --parallel=3 && node scripts/react-cockpit/serve.mjs',
                   cwd: '../..',
                   url: 'http://127.0.0.1:4600',
                   reuseExistingServer,
@@ -319,6 +319,13 @@ export const createWebsitePlaywrightConfig = (
                   command: 'npx nx run cockpit-ag-ui-subagents-python:smoke && node scripts/react-cockpit/serve.mjs ag-ui-subagents --no-parent',
                   cwd: '../..',
                   url: 'http://127.0.0.1:4613',
+                  reuseExistingServer,
+                  timeout: 180_000,
+                },
+                {
+                  command: 'node scripts/react-cockpit/serve.mjs render-spec-rendering --no-parent',
+                  cwd: '../..',
+                  url: 'http://127.0.0.1:4614',
                   reuseExistingServer,
                   timeout: 180_000,
                 },

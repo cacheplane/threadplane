@@ -323,6 +323,16 @@ export function WebsiteWorkspaceSurface({
           new URL(href, window.location.origin).searchParams
         )
       );
+      if (
+        mode === 'Docs' &&
+        new URL(href, window.location.origin).pathname ===
+          window.location.pathname
+      ) {
+        // This corrects the current view's query without navigating through a
+        // cached static route that can retain the original invalid query.
+        window.history.replaceState(null, '', href);
+        return;
+      }
       routerRef.current.replace(href);
     },
     [selectedResolution, synchronizeRouteMode, frontendHref]
