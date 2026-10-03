@@ -1,5 +1,14 @@
 /** Closed authored frontend selection; callers cannot supply filesystem paths. */
 export function reactCockpitConfiguration(topic = 'streaming') {
+  if (topic === 'render-state-management')
+    return Object.freeze({
+      topic: 'state-management',
+      adapter: 'none',
+      appPath: 'cockpit/render/state-management/react',
+      base: '/render/state-management/react/',
+      port: 4615,
+      project: 'cockpit-render-state-management-react',
+    });
   if (topic === 'render-spec-rendering')
     return Object.freeze({
       topic: 'spec-rendering',

@@ -16,6 +16,7 @@ import { ReactAgUiToolViewsPreview } from '../../../../../components/docs/ReactA
 import { ReactAgUiJsonRenderPreview } from '../../../../../components/docs/ReactAgUiJsonRenderPreview';
 import { ReactAgUiSubagentsPreview } from '../../../../../components/docs/ReactAgUiSubagentsPreview';
 import { ReactRenderSpecPreview } from '../../../../../components/docs/ReactRenderSpecPreview';
+import { ReactStateManagementPreview } from '../../../../../components/docs/ReactStateManagementPreview';
 import { DocsSearch } from '../../../../../components/docs/DocsSearch';
 import { DocsPageHeader } from '../../../../../components/docs/DocsPageHeader';
 import { LibraryMark } from '../../../../../components/docs/LibraryMark';
@@ -269,10 +270,11 @@ export default async function DocsPage({ params }: DocsRouteProps) {
         reactDocsSlot={
           workspacePage.frontendVariants?.react &&
           (library === 'langgraph' ||
-            (library === 'render' && section === 'guides' && slug === 'specs') ||
+            (library === 'render' && section === 'guides' && ['specs','state-store'].includes(slug)) ||
             (library === 'ag-ui' && ((section === 'reference' && slug === 'event-mapping') || (section === 'guides' && ['interrupts','tool-views','json-render','subagents'].includes(slug)))) ||
             (library === 'chat' && slug === 'client-tools')) ? (
             library === 'render' ? (
+              slug === 'state-store' ? <ReactStateManagementPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} /> :
               <ReactRenderSpecPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />
             ) : library === 'ag-ui' ? (
               slug === 'subagents' ? <ReactAgUiSubagentsPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} /> :
