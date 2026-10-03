@@ -12,6 +12,7 @@ import { ReactAgUiToolViewsPreview } from '../../../../../components/docs/ReactA
 import { ReactAgUiJsonRenderPreview } from '../../../../../components/docs/ReactAgUiJsonRenderPreview';
 import { ReactAgUiSubagentsPreview } from '../../../../../components/docs/ReactAgUiSubagentsPreview';
 import { ReactRenderSpecPreview } from '../../../../../components/docs/ReactRenderSpecPreview';
+import { ReactElementRenderingPreview } from '../../../../../components/docs/ReactElementRenderingPreview';
 import { ReactRegistryPreview } from '../../../../../components/docs/ReactRegistryPreview';
 import { ReactRepeatLoopsPreview } from '../../../../../components/docs/ReactRepeatLoopsPreview';
 import { ReactStateManagementPreview } from '../../../../../components/docs/ReactStateManagementPreview';
@@ -68,6 +69,35 @@ const route = (library: string, section: string, slug: string, mode?: string) =>
   } as never);
 
 describe('unified docs workspace route', () => {
+  it('selects React Element Rendering Docs with owned state and readonly view sources', async () => {
+    const tree = await route('render', 'api', 'render-spec-component');
+    const workspace = findElement(
+      tree,
+      WebsiteWorkspace as ComponentType<never>
+    );
+    const article = findElement(
+      workspace?.props.reactDocsSlot,
+      ReactElementRenderingPreview as ComponentType<never>
+    );
+    expect(article).not.toBeNull();
+    expect(article?.props.exampleCode?.assetPaths).toContain(
+      'cockpit/render/element-rendering/react/src/app.tsx'
+    );
+    expect(article?.props.exampleCode?.assetPaths).toContain(
+      'cockpit/render/element-rendering/react/src/views.tsx'
+    );
+    expect(
+      article?.props.exampleCode?.assetPaths?.some((path) =>
+        path.includes('/python/')
+      )
+    ).toBe(false);
+    expect(
+      findElement(
+        workspace?.props.reactDocsSlot,
+        ReactRenderSpecPreview as ComponentType<never>
+      )
+    ).toBeNull();
+  });
   it('selects React Component Registry Docs with owned state and readonly view sources', async () => {
     const tree = await route('render', 'guides', 'registry');
     const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);

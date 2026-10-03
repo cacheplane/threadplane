@@ -4,6 +4,28 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { deriveCockpitCaps, selectCockpitCaps } from './cockpit-matrix.mjs';
+test('Element Rendering has a closed local nineteenth React identity', async () => {
+  const { reactCockpitConfiguration } = await import(
+    './react-cockpit/configuration.mjs'
+  );
+  assert.deepEqual(reactCockpitConfiguration('render-element-rendering'), {
+    topic: 'element-rendering',
+    adapter: 'none',
+    appPath: 'cockpit/render/element-rendering/react',
+    base: '/render/element-rendering/react/',
+    port: 4618,
+    project: 'cockpit-render-element-rendering-react',
+  });
+  for (const key of [
+    'element-rendering',
+    'render/element-rendering',
+    '../render-element-rendering',
+  ])
+    assert.throws(
+      () => reactCockpitConfiguration(key),
+      /Unsupported React cockpit topic/
+    );
+});
 test('Registry has a closed local eighteenth React identity', async () => {
   const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
   assert.deepEqual(reactCockpitConfiguration('render-registry'), {

@@ -1,5 +1,14 @@
 /** Closed authored frontend selection; callers cannot supply filesystem paths. */
 export function reactCockpitConfiguration(topic = 'streaming') {
+  if (topic === 'render-element-rendering')
+    return Object.freeze({
+      topic: 'element-rendering',
+      adapter: 'none',
+      appPath: 'cockpit/render/element-rendering/react',
+      base: '/render/element-rendering/react/',
+      port: 4618,
+      project: 'cockpit-render-element-rendering-react',
+    });
   if (topic === 'render-registry')
     return Object.freeze({
       topic: 'registry', adapter: 'none', appPath: 'cockpit/render/registry/react',
