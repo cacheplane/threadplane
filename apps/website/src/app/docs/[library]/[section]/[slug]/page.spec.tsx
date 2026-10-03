@@ -9,6 +9,7 @@ import { ReactStreamingPreview } from '../../../../../components/docs/ReactStrea
 import { ReactAgUiStreamingPreview } from '../../../../../components/docs/ReactAgUiStreamingPreview';
 import { ReactAgUiInterruptsPreview } from '../../../../../components/docs/ReactAgUiInterruptsPreview';
 import { ReactAgUiToolViewsPreview } from '../../../../../components/docs/ReactAgUiToolViewsPreview';
+import { ReactAgUiJsonRenderPreview } from '../../../../../components/docs/ReactAgUiJsonRenderPreview';
 import { ReactInterruptsPreview } from '../../../../../components/docs/ReactInterruptsPreview';
 import { ReactMemoryPreview } from '../../../../../components/docs/ReactMemoryPreview';
 import { ReactClientToolsPreview } from '../../../../../components/docs/ReactClientToolsPreview';
@@ -62,6 +63,16 @@ const route = (library: string, section: string, slug: string, mode?: string) =>
   } as never);
 
 describe('unified docs workspace route', () => {
+  it('selects native JSON Render Docs with the exact dashboard policy, views and data tools', async () => {
+    const tree=await route('ag-ui','guides','json-render');
+    const workspace=findElement(tree,WebsiteWorkspace as ComponentType<never>);
+    const article=findElement(workspace?.props.reactDocsSlot,ReactAgUiJsonRenderPreview as ComponentType<never>);
+    expect(article).not.toBeNull();
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/ag-ui/json-render/react/src/dashboard-policy.ts');
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/ag-ui/json-render/react/src/dashboard-views.tsx');
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/ag-ui/json-render/python/src/dashboard_tools.py');
+    expect(findElement(workspace?.props.reactDocsSlot,ReactAgUiToolViewsPreview as ComponentType<never>)).toBeNull();
+  });
   it('selects the authored native weather guide and server sources on AG-UI Tool Views', async () => {
     const tree = await route('ag-ui','guides','tool-views');
     const workspace = findElement(tree,WebsiteWorkspace as ComponentType<never>);

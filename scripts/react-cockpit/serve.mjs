@@ -15,8 +15,13 @@ import { createDeploymentRuntimeFixture } from './deployment-runtime-fixture.mjs
 import { createAgUiStreamingFixture } from './ag-ui-streaming-fixture.mjs';
 import { createAgUiInterruptsFixture } from './ag-ui-interrupts-fixture.mjs';
 import { createAgUiToolViewsFixture } from './ag-ui-tool-views-fixture.mjs';
+import { createAgUiJsonRenderFixture } from './ag-ui-json-render-fixture.mjs';
 
 const configuration = reactCockpitConfiguration(process.argv[2]);
+const agUiJsonRenderFixture =
+  configuration.adapter === 'ag-ui' && configuration.topic === 'json-render'
+    ? createAgUiJsonRenderFixture()
+    : null;
 const agUiToolViewsFixture =
   configuration.adapter === 'ag-ui' && configuration.topic === 'tool-views'
     ? createAgUiToolViewsFixture()
@@ -78,7 +83,16 @@ const release = () => {
 };
 const server = createServer(async (request, response) => {
   const pathname = new URL(request.url, 'http://localhost').pathname;
-  if (agUiToolViewsFixture && (await agUiToolViewsFixture(request, response, pathname))) return;
+  if (
+    agUiJsonRenderFixture &&
+    (await agUiJsonRenderFixture(request, response, pathname))
+  )
+    return;
+  if (
+    agUiToolViewsFixture &&
+    (await agUiToolViewsFixture(request, response, pathname))
+  )
+    return;
   if (
     agUiInterruptsFixture &&
     (await agUiInterruptsFixture(request, response, pathname))

@@ -733,6 +733,10 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Prepare frozen dashboard browser producer
+        uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57
+        with:
+          python-version: '3.12'
       - name: Cache Playwright browsers
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:

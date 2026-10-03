@@ -5,6 +5,16 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { deriveCockpitCaps, selectCockpitCaps } from './cockpit-matrix.mjs';
 
+test('JSON Render has a closed thirteenth React identity and all routes remain unique',async()=>{
+  const {reactCockpitConfiguration}=await import('./react-cockpit/configuration.mjs');
+  assert.deepEqual(reactCockpitConfiguration('ag-ui-json-render'),{
+    topic:'json-render',adapter:'ag-ui',appPath:'cockpit/ag-ui/json-render/react',base:'/ag-ui/json-render/react/',port:4612,project:'cockpit-ag-ui-json-render-react',
+  });
+  const configurations=['streaming','interrupts','memory','client-tools','persistence','durable-execution','subgraphs','time-travel','deployment-runtime','ag-ui-streaming','ag-ui-interrupts','ag-ui-tool-views','ag-ui-json-render'].map(reactCockpitConfiguration);
+  for(const field of ['appPath','base','port','project'])assert.equal(new Set(configurations.map(configuration=>configuration[field])).size,13);
+  for(const key of ['json-render','ag-ui/json-render','../ag-ui-json-render'])assert.throws(()=>reactCockpitConfiguration(key),/Unsupported React cockpit topic/);
+});
+
 test('AG-UI Tool Views has a closed twelfth identity with no overlapping runtime', async () => {
   const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
   assert.deepEqual(reactCockpitConfiguration('ag-ui-tool-views'), {
@@ -195,7 +205,7 @@ test('CI discovers twelve React previews across both protocols with their own Py
       );
     }
   }
-  for (const topic of ['streaming', 'interrupts', 'tool-views']) for (const frontend of ['angular', 'react', 'python']) {
+  for (const topic of ['streaming', 'interrupts', 'tool-views','json-render']) for (const frontend of ['angular', 'react', 'python']) {
     const directory = join(root, 'cockpit/ag-ui', topic, frontend);
     mkdirSync(directory, { recursive: true });
     writeFileSync(
@@ -207,7 +217,7 @@ test('CI discovers twelve React previews across both protocols with their own Py
     );
   }
   const caps = deriveCockpitCaps(root);
-  assert.equal(caps.length, 24);
+  assert.equal(caps.length, 26);
   const agUi = selectCockpitCaps(
     caps,
     new Set(['cockpit-ag-ui-streaming-python']),
@@ -228,6 +238,10 @@ test('CI discovers twelve React previews across both protocols with their own Py
   assert.equal(toolViews.length, 2);
   assert.ok(toolViews.every(cap => cap.python === 'cockpit/ag-ui/tool-views/python'));
   assert.ok(toolViews.some(cap => cap.angular === 'cockpit-ag-ui-tool-views-react'));
+  const jsonRender=selectCockpitCaps(caps,new Set(['cockpit-ag-ui-json-render-python']),{fullFleet:false});
+  assert.equal(jsonRender.length,2);
+  assert.ok(jsonRender.every(cap=>cap.python==='cockpit/ag-ui/json-render/python'));
+  assert.ok(jsonRender.some(cap=>cap.angular==='cockpit-ag-ui-json-render-react'));
   for (const topic of [
     'streaming',
     'interrupts',

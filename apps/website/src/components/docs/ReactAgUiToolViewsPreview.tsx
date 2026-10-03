@@ -45,7 +45,7 @@ npx nx build cockpit-ag-ui-tool-views-react
 npx nx e2e cockpit-ag-ui-tool-views-react
 ~~~
 
-The isolated build installs locked candidate artifacts with strict types. Python checks exercise the actual graph and bridge with frozen model responses. Browser checks use the installed SDK over HTTP/SSE for tool rounds, retained history, partial results, cancellation and protected outcomes. Docs, Code and Run select this same implementation. AG-UI Streaming, AG-UI Interrupts and nine LangGraph topics also have React previews; other topics remain pending.
+The isolated build installs locked candidate artifacts with strict types. Python checks exercise the actual graph and bridge with frozen model responses. Browser checks use the installed SDK over HTTP/SSE for tool rounds, retained history, partial results, cancellation and protected outcomes. Docs, Code and Run select this same implementation. AG-UI Streaming, Interrupts, JSON Render and nine LangGraph topics also have React previews; other topics remain pending.
 `;
 export function ReactAgUiToolViewsPreview({
   exampleCode,

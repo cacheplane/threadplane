@@ -1048,12 +1048,25 @@ const agUiToolViewsReact = (() => {
   });
 })();
 
+const agUiJsonRenderReact = (() => {
+  const canonical=capabilityModules.find(descriptor=>descriptor.id==='ag-ui-json-render-python');
+  const frontend=getCockpitFrontends().find(entry=>entry.project==='cockpit-ag-ui-json-render-react');
+  if(!canonical||!frontend)throw new Error('AG-UI JSON Render frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical,id:'ag-ui-json-render-python-react',frontend:'react',title:'AG-UI JSON Render (React preview)',
+    codeAssetPaths:['app.tsx','application.ts','dashboard-policy.ts','dashboard-data.ts','dashboard-spec.ts','dashboard-views.tsx','connection.ts','main.tsx'].map(file=>`cockpit/ag-ui/json-render/react/src/${file}`),
+    backendAssetPaths:['graph.py','dashboard_tools.py','server.py'].map(file=>`cockpit/ag-ui/json-render/python/src/${file}`),
+    runtimeUrl:frontend.runtimePath,devPort:frontend.port,
+  });
+})();
+
 export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
   Object.freeze([
     ...capabilityModules,
     agUiStreamingReact,
     agUiInterruptsReact,
     agUiToolViewsReact,
+    agUiJsonRenderReact,
     ...reactPreviews.map(({ topic, title }) => {
       const canonical = capabilityModules.find((descriptor) => descriptor.id === `langgraph-${topic}-python`);
       const frontend = getCockpitFrontends().find((entry) => entry.project === `cockpit-langgraph-${topic}-react`);
