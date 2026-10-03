@@ -14,6 +14,14 @@ const topics = [
       /(?:localhost:4609(?:[/?#]|$)|\/ag-ui\/streaming\/react\/?(?:[?#]|$))/,
     angular: /(?:localhost:4321(?:[/?#]|$)|\/ag-ui\/streaming\/?(?:[?#]|$))/,
   },
+  {
+    path: '/docs/chat/guides/client-tools',
+    hash: '#ownership',
+    react:
+      /(?:localhost:4603(?:[/?#]|$)|\/langgraph\/client-tools\/react\/?(?:[?#]|$))/,
+    angular:
+      /(?:localhost:4308(?:[/?#]|$)|\/langgraph\/client-tools\/?(?:[?#]|$))/,
+  },
 ];
 
 for (const topic of topics) {
@@ -33,7 +41,8 @@ for (const topic of topics) {
         writes.push(request.url());
       }
     });
-    await page.goto(`${topic.path}?frontend=react`);
+    const hash = topic.hash ?? '';
+    await page.goto(`${topic.path}?frontend=react${hash}`);
     await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
       'data-hydrated',
       'true'
@@ -91,7 +100,7 @@ for (const topic of topics) {
       release();
       await page.unrouteAll({ behavior: 'wait' });
 
-      await expect(page).toHaveURL(`${topic.path}?mode=run`);
+      await expect(page).toHaveURL(`${topic.path}?mode=run${hash}`);
       await expect(page.getByLabel('Example UI')).toHaveValue('angular');
       await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
         'data-workspace-mode',
@@ -106,7 +115,9 @@ for (const topic of topics) {
       expect(documentRequests).toEqual([]);
 
       await page.goBack({ waitUntil: 'domcontentloaded' });
-      await expect(page).toHaveURL(`${topic.path}?mode=run&frontend=react`);
+      await expect(page).toHaveURL(
+        `${topic.path}?mode=run&frontend=react${hash}`
+      );
       await expect(page.getByLabel('Example UI')).toHaveValue('react');
       await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
         'data-workspace-mode',
@@ -117,7 +128,9 @@ for (const topic of topics) {
       expect(documentRequests).toEqual([]);
 
       await page.reload({ waitUntil: 'domcontentloaded' });
-      await expect(page).toHaveURL(`${topic.path}?mode=run&frontend=react`);
+      await expect(page).toHaveURL(
+        `${topic.path}?mode=run&frontend=react${hash}`
+      );
       await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
         'data-workspace-mode',
         'Run'
