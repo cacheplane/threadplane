@@ -14,8 +14,13 @@ import { createTimeTravelFixture } from './time-travel-fixture.mjs';
 import { createDeploymentRuntimeFixture } from './deployment-runtime-fixture.mjs';
 import { createAgUiStreamingFixture } from './ag-ui-streaming-fixture.mjs';
 import { createAgUiInterruptsFixture } from './ag-ui-interrupts-fixture.mjs';
+import { createAgUiToolViewsFixture } from './ag-ui-tool-views-fixture.mjs';
 
 const configuration = reactCockpitConfiguration(process.argv[2]);
+const agUiToolViewsFixture =
+  configuration.adapter === 'ag-ui' && configuration.topic === 'tool-views'
+    ? createAgUiToolViewsFixture()
+    : null;
 const agUiStreamingFixture =
   configuration.adapter === 'ag-ui' && configuration.topic === 'streaming'
     ? createAgUiStreamingFixture()
@@ -73,6 +78,7 @@ const release = () => {
 };
 const server = createServer(async (request, response) => {
   const pathname = new URL(request.url, 'http://localhost').pathname;
+  if (agUiToolViewsFixture && (await agUiToolViewsFixture(request, response, pathname))) return;
   if (
     agUiInterruptsFixture &&
     (await agUiInterruptsFixture(request, response, pathname))

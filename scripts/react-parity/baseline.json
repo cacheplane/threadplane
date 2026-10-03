@@ -2349,7 +2349,7 @@
       "id": "doc:apps/website/content/docs/ag-ui/guides/tool-views.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/guides/tool-views.mdx",
-      "sha256": "e3fc5eaff940235980637304f5916913ba6de9716052182530a4cf6995e636f8"
+      "sha256": "903569df654da40bde49b699524f3d0f9afbd9f25bcfe88e6a6324d9f4e7e1d1"
     },
     {
       "id": "doc:apps/website/content/docs/ag-ui/guides/troubleshooting.mdx",
@@ -13226,13 +13226,13 @@
       "id": "source:libs/cockpit-registry/src/lib/capability-registry.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "sha256": "bca6bcd88cebd7c2b3103d4333c025d30094be80f97795bfed032c7b663a5c2c"
+      "sha256": "bf84cd92a6e136a211506e2ade2fc2085a9a306132ac2e6fccc7a009c100fcee"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/content-descriptors.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/content-descriptors.ts",
-      "sha256": "99c298edd93f05b35a193002a5ec54e1b8a46f14ec4dfb752746046237bfdfd9"
+      "sha256": "ca83c65971d13e48de6621b16a69f4c659d930b0138e0c7fc58b9c33a848cbb0"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/docs-links.ts",

@@ -1035,11 +1035,25 @@ const agUiInterruptsReact = (() => {
   });
 })();
 
+const agUiToolViewsReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'ag-ui-tool-views-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-ag-ui-tool-views-react');
+  if (!canonical || !frontend) throw new Error('AG-UI Tool Views frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical, id: 'ag-ui-tool-views-python-react', frontend: 'react',
+    title: 'AG-UI Tool Views (React preview)',
+    codeAssetPaths: ['app.tsx','application.ts','tool-view-policy.ts','weather-card.tsx','connection.ts','main.tsx'].map(file => `cockpit/ag-ui/tool-views/react/src/${file}`),
+    backendAssetPaths: ['graph.py','server.py'].map(file => `cockpit/ag-ui/tool-views/python/src/${file}`),
+    runtimeUrl: frontend.runtimePath, devPort: frontend.port,
+  });
+})();
+
 export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
   Object.freeze([
     ...capabilityModules,
     agUiStreamingReact,
     agUiInterruptsReact,
+    agUiToolViewsReact,
     ...reactPreviews.map(({ topic, title }) => {
       const canonical = capabilityModules.find((descriptor) => descriptor.id === `langgraph-${topic}-python`);
       const frontend = getCockpitFrontends().find((entry) => entry.project === `cockpit-langgraph-${topic}-react`);

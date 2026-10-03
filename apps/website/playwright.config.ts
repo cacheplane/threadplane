@@ -178,6 +178,12 @@ export const createWebsitePlaywrightConfig = (
                   reuseExistingServer,
                 },
                 {
+                  command: 'npx nx run cockpit-ag-ui-tool-views-angular:serve:cockpit --port 4322',
+                  cwd: '../..',
+                  url: 'http://localhost:4322',
+                  reuseExistingServer,
+                },
+                {
                   command:
                     'npx nx run cockpit-chat-threads-angular:serve:cockpit --port 4506',
                   cwd: '../..',
@@ -197,7 +203,7 @@ export const createWebsitePlaywrightConfig = (
             ? [
                 {
                   command:
-                    'npx nx run-many -t build --projects=cockpit-langgraph-streaming-react,cockpit-langgraph-interrupts-react,cockpit-langgraph-memory-react,cockpit-langgraph-client-tools-react,cockpit-langgraph-persistence-react,cockpit-langgraph-durable-execution-react,cockpit-langgraph-subgraphs-react,cockpit-langgraph-time-travel-react,cockpit-langgraph-deployment-runtime-react,cockpit-ag-ui-streaming-react,cockpit-ag-ui-interrupts-react --parallel=3 && node scripts/react-cockpit/serve.mjs',
+                    'npx nx run-many -t build --projects=cockpit-langgraph-streaming-react,cockpit-langgraph-interrupts-react,cockpit-langgraph-memory-react,cockpit-langgraph-client-tools-react,cockpit-langgraph-persistence-react,cockpit-langgraph-durable-execution-react,cockpit-langgraph-subgraphs-react,cockpit-langgraph-time-travel-react,cockpit-langgraph-deployment-runtime-react,cockpit-ag-ui-streaming-react,cockpit-ag-ui-interrupts-react,cockpit-ag-ui-tool-views-react --parallel=3 && node scripts/react-cockpit/serve.mjs',
                   cwd: '../..',
                   url: 'http://127.0.0.1:4600',
                   reuseExistingServer,
@@ -278,6 +284,13 @@ export const createWebsitePlaywrightConfig = (
                   command: 'node scripts/react-cockpit/serve.mjs ag-ui-interrupts --no-parent',
                   cwd: '../..',
                   url: 'http://127.0.0.1:4610',
+                  reuseExistingServer,
+                  timeout: 180_000,
+                },
+                {
+                  command: 'node scripts/react-cockpit/serve.mjs ag-ui-tool-views --no-parent',
+                  cwd: '../..',
+                  url: 'http://127.0.0.1:4611',
                   reuseExistingServer,
                   timeout: 180_000,
                 },
