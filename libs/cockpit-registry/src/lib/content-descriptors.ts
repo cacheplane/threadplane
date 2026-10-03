@@ -1108,6 +1108,18 @@ const renderRepeatReact = (() => {
   });
 })();
 
+const renderRegistryReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'render-registry-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-render-registry-react');
+  if (!canonical || !frontend) throw new Error('Component Registry frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical, id: 'render-registry-python-react', frontend: 'react', title: 'Component Registry (React preview)',
+    promptAssetPaths: [], backendAssetPaths: [],
+    codeAssetPaths: ['app.tsx','playback.ts','projection.ts','specs.ts','views.tsx','main.tsx','styles.css'].map(file => `cockpit/render/registry/react/src/${file}`),
+    runtimeUrl: frontend.runtimePath, devPort: frontend.port,
+  });
+})();
+
 export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
   Object.freeze([
     ...capabilityModules,
@@ -1119,6 +1131,7 @@ export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
     renderSpecReact,
     renderStateReact,
     renderRepeatReact,
+    renderRegistryReact,
     ...reactPreviews.map(({ topic, title }) => {
       const canonical = capabilityModules.find((descriptor) => descriptor.id === `langgraph-${topic}-python`);
       const frontend = getCockpitFrontends().find((entry) => entry.project === `cockpit-langgraph-${topic}-react`);

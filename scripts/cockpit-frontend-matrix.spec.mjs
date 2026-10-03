@@ -4,6 +4,15 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { deriveCockpitCaps, selectCockpitCaps } from './cockpit-matrix.mjs';
+test('Registry has a closed local eighteenth React identity', async () => {
+  const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
+  assert.deepEqual(reactCockpitConfiguration('render-registry'), {
+    topic: 'registry', adapter: 'none', appPath: 'cockpit/render/registry/react',
+    base: '/render/registry/react/', port: 4617, project: 'cockpit-render-registry-react',
+  });
+  for (const key of ['registry', 'render/registry', '../render-registry'])
+    assert.throws(() => reactCockpitConfiguration(key), /Unsupported React cockpit topic/);
+});
 test('Repeat Loops has a closed local seventeenth React identity', async () => {
   const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
   assert.deepEqual(reactCockpitConfiguration('render-repeat-loops'), {
