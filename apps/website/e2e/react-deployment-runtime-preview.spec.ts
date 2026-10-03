@@ -26,20 +26,33 @@ test('public React deployment runtime keep topic docs, sources, runtime, and his
     .locator('[data-workspace-desktop-navigation]')
     .getByRole('button', { name: 'Code', exact: true })
     .click();
-  await expect(page).toHaveURL(/frontend=react/);
+  await expect(page).toHaveURL(
+    '/docs/langgraph/guides/deployment?mode=code&frontend=react'
+  );
   await page
     .locator('[data-workspace-desktop-navigation]')
     .getByRole('button', { name: /^Run(?:,|$)/ })
     .click();
+  await expect(page).toHaveURL(
+    '/docs/langgraph/guides/deployment?mode=run&frontend=react'
+  );
+  await expect(page.locator('iframe')).toBeVisible();
   await expect(page.locator('iframe')).toHaveAttribute(
     'src',
     /(?:localhost:4608|langgraph\/deployment-runtime\/react)/
   );
   await page.getByLabel('Example UI').selectOption('angular');
-  await expect(page).not.toHaveURL(/frontend=react/);
-  await page.goBack();
+  await expect(page).toHaveURL('/docs/langgraph/guides/deployment?mode=run');
+  await page.goBack({ waitUntil: 'domcontentloaded' });
+  await expect(page).toHaveURL(
+    '/docs/langgraph/guides/deployment?mode=run&frontend=react'
+  );
   await expect(page.getByLabel('Example UI')).toHaveValue('react');
-  await page.reload();
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await expect(page).toHaveURL(
+    '/docs/langgraph/guides/deployment?mode=run&frontend=react'
+  );
+  await expect(page.locator('iframe')).toBeVisible();
   await expect(page.locator('iframe')).toHaveAttribute(
     'src',
     /(?:localhost:4608|langgraph\/deployment-runtime\/react)/

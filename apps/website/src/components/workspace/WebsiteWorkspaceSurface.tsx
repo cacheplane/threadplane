@@ -307,9 +307,19 @@ export function WebsiteWorkspaceSurface({
           new URL(href, window.location.origin).searchParams
         )
       );
+      if (
+        requestedMode === undefined &&
+        new URL(href, window.location.origin).pathname ===
+        window.location.pathname
+      ) {
+        // Mode views are already loaded. A server navigation can outlive the
+        // visitor's next frontend selection and restore an older destination.
+        window.history.pushState(null, '', href);
+        return;
+      }
       routerRef.current.push(href);
     },
-    [selectedResolution, synchronizeRouteMode, frontendHref]
+    [selectedResolution, synchronizeRouteMode, frontendHref, requestedMode]
   );
 
   const replaceMode = useCallback(
