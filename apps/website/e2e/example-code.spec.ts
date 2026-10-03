@@ -40,8 +40,15 @@ test.describe('ExampleCode on a docs page', () => {
     );
     await expect(pre).toContainText('export class StreamingComponent');
 
-    // Copy: the button copies the code, not the title bar.
+    // Copy after hydration, then read only once the button acknowledges it.
+    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
+      'data-hydrated',
+      'true'
+    );
     await block.locator('button[aria-label="Copy code"]').click();
+    await expect(
+      block.getByRole('button', { name: 'Copied', exact: true })
+    ).toBeVisible();
     const copied = await page.evaluate(() => navigator.clipboard.readText());
     expect(copied).toContain('export class StreamingComponent');
     expect(copied).toBe(await pre.textContent());
