@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
     paths:
+      - '.github/workflows/deploy-langgraph.yml'
       - 'cockpit/langgraph/**/python/**'
       - 'cockpit/deep-agents/**/python/**'
       - 'examples/chat/python/**'
@@ -29,7 +30,7 @@ env:
 
 jobs:
   deploy:
-    name: Deploy shared cockpit-dev to LangGraph Cloud
+    name: Update shared cockpit-dev-free on LangGraph Cloud
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -59,8 +60,10 @@ jobs:
           mkdir -p deployments/shared-dev
           echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" > deployments/shared-dev/.env
 
-      - name: Deploy cockpit-dev
+      # An explicit ID fails closed if the free deployment is missing. Name
+      # lookup can create a paid replacement, so never use --name here.
+      - name: Update existing cockpit-dev-free
         working-directory: deployments/shared-dev
-        run: uv run --with langgraph-cli langgraph deploy --config langgraph.json --name cockpit-dev --no-wait
+        run: uv run --with langgraph-cli==0.4.21 langgraph deploy --config langgraph.json --deployment-id 6d350054-14ea-4031-8463-010ec27f9059 --no-wait
         env:
           LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}

@@ -117,10 +117,13 @@ async function fetchJson(url: string, init?: RequestInit) {
   }
 }
 
-async function verifyHealth(url: string) {
+export async function verifyHealth(url: string) {
   const data = await fetchJson(`${url}/ok`, {
     headers: authHeaders(),
-    signal: AbortSignal.timeout(10000),
+    // The shared free deployment can sleep between visits; its measured
+    // cold start takes about 32 seconds. Only this read-only readiness request
+    // gets a larger budget. Thread creation and model streams are unchanged.
+    signal: AbortSignal.timeout(60000),
   });
 
   if (!data || typeof data !== 'object' || (data as { ok?: unknown }).ok !== true) {
