@@ -1096,6 +1096,18 @@ const renderStateReact = (() => {
   });
 })();
 
+const renderRepeatReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'render-repeat-loops-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-render-repeat-loops-react');
+  if (!canonical || !frontend) throw new Error('Repeat Loops frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical, id: 'render-repeat-loops-python-react', frontend: 'react', title: 'Repeat Loops (React preview)',
+    promptAssetPaths: [], backendAssetPaths: [],
+    codeAssetPaths: ['app.tsx','items.ts','playback.ts','projection.ts','specs.ts','views.tsx','main.tsx','styles.css'].map(file => `cockpit/render/repeat-loops/react/src/${file}`),
+    runtimeUrl: frontend.runtimePath, devPort: frontend.port,
+  });
+})();
+
 export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
   Object.freeze([
     ...capabilityModules,
@@ -1106,6 +1118,7 @@ export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
     agUiSubagentsReact,
     renderSpecReact,
     renderStateReact,
+    renderRepeatReact,
     ...reactPreviews.map(({ topic, title }) => {
       const canonical = capabilityModules.find((descriptor) => descriptor.id === `langgraph-${topic}-python`);
       const frontend = getCockpitFrontends().find((entry) => entry.project === `cockpit-langgraph-${topic}-react`);

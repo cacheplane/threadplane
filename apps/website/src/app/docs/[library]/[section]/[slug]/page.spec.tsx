@@ -12,6 +12,7 @@ import { ReactAgUiToolViewsPreview } from '../../../../../components/docs/ReactA
 import { ReactAgUiJsonRenderPreview } from '../../../../../components/docs/ReactAgUiJsonRenderPreview';
 import { ReactAgUiSubagentsPreview } from '../../../../../components/docs/ReactAgUiSubagentsPreview';
 import { ReactRenderSpecPreview } from '../../../../../components/docs/ReactRenderSpecPreview';
+import { ReactRepeatLoopsPreview } from '../../../../../components/docs/ReactRepeatLoopsPreview';
 import { ReactStateManagementPreview } from '../../../../../components/docs/ReactStateManagementPreview';
 import { ReactInterruptsPreview } from '../../../../../components/docs/ReactInterruptsPreview';
 import { ReactMemoryPreview } from '../../../../../components/docs/ReactMemoryPreview';
@@ -66,6 +67,16 @@ const route = (library: string, section: string, slug: string, mode?: string) =>
   } as never);
 
 describe('unified docs workspace route', () => {
+  it('selects React Repeat Loops Docs with owned state and readonly view sources', async () => {
+    const tree = await route('render', 'guides', 'repeat-loops');
+    const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
+    const article = findElement(workspace?.props.reactDocsSlot, ReactRepeatLoopsPreview as ComponentType<never>);
+    expect(article).not.toBeNull();
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/render/repeat-loops/react/src/items.ts');
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/render/repeat-loops/react/src/views.tsx');
+    expect(article?.props.exampleCode?.assetPaths?.some(path => path.includes('/python/'))).toBe(false);
+    expect(findElement(workspace?.props.reactDocsSlot, ReactRenderSpecPreview as ComponentType<never>)).toBeNull();
+  });
   it('selects React State Management Docs with owned state and readonly view sources', async () => {
     const tree = await route('render', 'guides', 'state-store');
     const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
