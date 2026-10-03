@@ -4,14 +4,19 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { deriveCockpitCaps, selectCockpitCaps } from './cockpit-matrix.mjs';
+test('Subagents has a closed fourteenth React identity', async () => {
+  const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
+  assert.deepEqual(reactCockpitConfiguration('ag-ui-subagents'), { topic: 'subagents', adapter: 'ag-ui', appPath: 'cockpit/ag-ui/subagents/react', base: '/ag-ui/subagents/react/', port: 4613, project: 'cockpit-ag-ui-subagents-react' });
+  for (const key of ['subagents', 'ag-ui/subagents', '../ag-ui-subagents']) assert.throws(() => reactCockpitConfiguration(key), /Unsupported React cockpit topic/);
+});
 
 test('JSON Render has a closed thirteenth React identity and all routes remain unique',async()=>{
   const {reactCockpitConfiguration}=await import('./react-cockpit/configuration.mjs');
   assert.deepEqual(reactCockpitConfiguration('ag-ui-json-render'),{
     topic:'json-render',adapter:'ag-ui',appPath:'cockpit/ag-ui/json-render/react',base:'/ag-ui/json-render/react/',port:4612,project:'cockpit-ag-ui-json-render-react',
   });
-  const configurations=['streaming','interrupts','memory','client-tools','persistence','durable-execution','subgraphs','time-travel','deployment-runtime','ag-ui-streaming','ag-ui-interrupts','ag-ui-tool-views','ag-ui-json-render'].map(reactCockpitConfiguration);
-  for(const field of ['appPath','base','port','project'])assert.equal(new Set(configurations.map(configuration=>configuration[field])).size,13);
+  const configurations=['streaming','interrupts','memory','client-tools','persistence','durable-execution','subgraphs','time-travel','deployment-runtime','ag-ui-streaming','ag-ui-interrupts','ag-ui-tool-views','ag-ui-json-render','ag-ui-subagents'].map(reactCockpitConfiguration);
+  for(const field of ['appPath','base','port','project'])assert.equal(new Set(configurations.map(configuration=>configuration[field])).size,14);
   for(const key of ['json-render','ag-ui/json-render','../ag-ui-json-render'])assert.throws(()=>reactCockpitConfiguration(key),/Unsupported React cockpit topic/);
 });
 
@@ -205,7 +210,7 @@ test('CI discovers twelve React previews across both protocols with their own Py
       );
     }
   }
-  for (const topic of ['streaming', 'interrupts', 'tool-views','json-render']) for (const frontend of ['angular', 'react', 'python']) {
+  for (const topic of ['streaming', 'interrupts', 'tool-views','json-render','subagents']) for (const frontend of ['angular', 'react', 'python']) {
     const directory = join(root, 'cockpit/ag-ui', topic, frontend);
     mkdirSync(directory, { recursive: true });
     writeFileSync(
@@ -217,7 +222,7 @@ test('CI discovers twelve React previews across both protocols with their own Py
     );
   }
   const caps = deriveCockpitCaps(root);
-  assert.equal(caps.length, 26);
+  assert.equal(caps.length, 28);
   const agUi = selectCockpitCaps(
     caps,
     new Set(['cockpit-ag-ui-streaming-python']),

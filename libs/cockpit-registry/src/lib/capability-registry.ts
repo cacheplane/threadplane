@@ -87,7 +87,7 @@ export const capabilities: readonly Capability[] = [
   { id: 'ag-ui-json-render', runtimeAdapter: 'ag-ui', product: 'ag-ui', topic: 'json-render', angularProject: 'cockpit-ag-ui-json-render-angular', port: 4323, react: { project: 'cockpit-ag-ui-json-render-react', port: 4612 }, pythonPort: 5323, pythonDir: 'cockpit/ag-ui/json-render/python' },
   { id: 'ag-ui-client-tools', runtimeAdapter: 'ag-ui', product: 'ag-ui', topic: 'client-tools', angularProject: 'cockpit-ag-ui-client-tools-angular', port: 4325, pythonPort: 5325, pythonDir: 'cockpit/ag-ui/client-tools/python' },
   { id: 'ag-ui-a2ui', runtimeAdapter: 'ag-ui', product: 'ag-ui', topic: 'a2ui', angularProject: 'cockpit-ag-ui-a2ui-angular', port: 4324, pythonPort: 5324, pythonDir: 'cockpit/ag-ui/a2ui/python' },
-  { id: 'ag-ui-subagents', runtimeAdapter: 'ag-ui', product: 'ag-ui', topic: 'subagents', angularProject: 'cockpit-ag-ui-subagents-angular', port: 4326, pythonPort: 5326, pythonDir: 'cockpit/ag-ui/subagents/python' },
+  { id: 'ag-ui-subagents', runtimeAdapter: 'ag-ui', product: 'ag-ui', topic: 'subagents', angularProject: 'cockpit-ag-ui-subagents-angular', port: 4326, react: { project: 'cockpit-ag-ui-subagents-react', port: 4613 }, pythonPort: 5326, pythonDir: 'cockpit/ag-ui/subagents/python' },
   // Runtime-portability examples (one capability, many runtimes; AG-UI-served
   // like the AG-UI caps, but the backend is genuinely non-LangGraph)
   { id: 'rt-maf', runtimeAdapter: 'ag-ui', product: 'runtimes', topic: 'microsoft-agent-framework', angularProject: 'cockpit-runtimes-microsoft-agent-framework-angular', port: 4330, pythonPort: 5330, pythonDir: 'cockpit/runtimes/microsoft-agent-framework/python', framework: 'microsoft-agent-framework' },

@@ -30,7 +30,7 @@ npx nx build cockpit-langgraph-streaming-react
 npx nx e2e cockpit-langgraph-streaming-react
 ~~~
 
-The build installs local candidate packages in an isolated consumer and checks that the browser bundle uses those packages. The browser tests exercise real SDK requests against a local fixture. Run and Code on this page show the same React implementation. Streaming, interrupts, memory, client tools, persistence, durable execution, subgraphs, time travel, and deployment runtime have public React previews; AG-UI Streaming, Interrupts, Tool Views and JSON Render also have React previews on Event Mapping and their canonical guides; other topics remain pending.
+The build installs local candidate packages in an isolated consumer and checks that the browser bundle uses those packages. The browser tests exercise real SDK requests against a local fixture. Run and Code on this page show the same React implementation. Streaming, interrupts, memory, client tools, persistence, durable execution, subgraphs, time travel, and deployment runtime have public React previews; AG-UI Streaming, Interrupts, Tool Views and JSON Render and Subagents also have React previews on Event Mapping and their canonical guides; other topics remain pending.
 `;
 
 export function ReactStreamingPreview({

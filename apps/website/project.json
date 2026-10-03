@@ -11,6 +11,7 @@
     "cockpit-ag-ui-interrupts-angular",
     "cockpit-ag-ui-tool-views-angular",
     "cockpit-ag-ui-json-render-angular",
+    "cockpit-ag-ui-subagents-angular",
     "cockpit-chat-threads-angular"
   ],
   "tags": ["scope:website", "scope:website-e2e", "type:app"],

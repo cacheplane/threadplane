@@ -37,7 +37,7 @@ npx nx build cockpit-ag-ui-streaming-react
 npx nx e2e cockpit-ag-ui-streaming-react
 ~~~
 
-The isolated build installs the local candidate packages and checks strict types, the complete locked dependency graph and browser modules. Tests exercise the actual installed AG-UI client against local HTTP/SSE responses, including partial text, retained history, protected outcomes, developer endpoints and stream cancellation. Docs, Code and Run select this same React implementation. AG-UI Interrupts, Tool Views, JSON Render and nine LangGraph topics also have public React previews; other topics remain pending.
+The isolated build installs the local candidate packages and checks strict types, the complete locked dependency graph and browser modules. Tests exercise the actual installed AG-UI client against local HTTP/SSE responses, including partial text, retained history, protected outcomes, developer endpoints and stream cancellation. Docs, Code and Run select this same React implementation. AG-UI Interrupts, Tool Views, JSON Render and Subagents and nine LangGraph topics also have public React previews; other topics remain pending.
 `;
 export function ReactAgUiStreamingPreview({
   exampleCode,

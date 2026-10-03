@@ -59,7 +59,7 @@ npx nx build cockpit-ag-ui-json-render-react
 npx nx e2e cockpit-ag-ui-json-render-react
 ~~~
 
-The isolated build installs locked private artifacts with strict types. Browser checks run the actual compiled graph and AG-UI bridge with frozen providers, covering layout changes, shared-state updates, tool rounds, retained native history, cancellation and protected outcomes. Docs, Code and Run select this same implementation. AG-UI Streaming, Interrupts and Tool Views and nine LangGraph topics also have React previews; other topics remain pending.
+The isolated build installs locked private artifacts with strict types. Browser checks run the actual compiled graph and AG-UI bridge with frozen providers, covering layout changes, shared-state updates, tool rounds, retained native history, cancellation and protected outcomes. Docs, Code and Run select this same implementation. AG-UI Streaming, Interrupts and Tool Views and Subagents and nine LangGraph topics also have React previews; other topics remain pending.
 `;
 export function ReactAgUiJsonRenderPreview({
   exampleCode,

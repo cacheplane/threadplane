@@ -1,7 +1,15 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type APIRequestContext } from '@playwright/test';
 
 // These cases own one local producer's request log and held response.
 test.describe.configure({ mode: 'default' });
+
+const localRequestCount = async (
+  request: APIRequestContext
+): Promise<number | undefined> =>
+  process.env['BASE_URL']
+    ? undefined
+    : (await (await request.get('http://127.0.0.1:4612/__requests')).json())
+        .length;
 
 test('canonical JSON Render Run keeps a retained layout bound to current native shared data', async ({
   page,
@@ -46,14 +54,11 @@ test('canonical JSON Render Run keeps a retained layout bound to current native 
   ).toBe(true);
 });
 
-test('public React AG-UI json-render keep topic docs, sources, runtime, and history aligned', async ({
+test('public React AG-UI JSON Render keeps Docs, Code, and Run aligned', async ({
   page,
   request,
 }, testInfo) => {
-  const origin = 'http://127.0.0.1:4612';
-  const requestsBefore = process.env['BASE_URL']
-    ? undefined
-    : await (await request.get(origin + '/__requests')).json();
+  const requestsBefore = await localRequestCount(request);
   await page.goto('/docs/ag-ui/guides/json-render?frontend=react');
   await expect(page.getByLabel('Example UI')).toHaveValue('react');
   await expect(
@@ -91,13 +96,27 @@ test('public React AG-UI json-render keep topic docs, sources, runtime, and hist
   );
   const frame = page.frameLocator('iframe');
   await expect(frame.getByRole('status')).toHaveText('Ready.');
+  expect(await localRequestCount(request)).toBe(requestsBefore);
+});
+
+test('public React AG-UI JSON Render restores its runtime through frontend history', async ({
+  page,
+  request,
+}) => {
+  const requestsBefore = await localRequestCount(request);
+  await page.goto('/docs/ag-ui/guides/json-render?frontend=react&mode=run');
+  const frame = page.frameLocator('iframe');
+  await expect(frame.getByRole('status')).toHaveText('Ready.');
   await page.getByLabel('Example UI').selectOption('angular');
+  await expect(page.getByLabel('Example UI')).toHaveValue('angular');
   await expect(page).not.toHaveURL(/frontend=react/);
+  await expect(page.locator('iframe')).toHaveAttribute(
+    'src',
+    /(?:localhost:4323(?:[/?#]|$)|\/ag-ui\/json-render\/?(?:[?#]|$))/
+  );
   await page.goBack();
   await expect(page.getByLabel('Example UI')).toHaveValue('react');
-  await expect(frame.getByRole('status')).toHaveText('Ready.');
-  await page.reload({ waitUntil: 'domcontentloaded' });
-  await expect(page.getByLabel('Example UI')).toHaveValue('react');
+  await expect(page).toHaveURL(/frontend=react/);
   await expect(page.locator('iframe')).toHaveAttribute(
     'src',
     /(?:localhost:4612|ag-ui\/json-render\/react)/
@@ -105,12 +124,31 @@ test('public React AG-UI json-render keep topic docs, sources, runtime, and hist
   await expect(frame.getByRole('status')).toHaveText('Ready.');
   await expect(frame.locator('[data-dashboard-message]')).toHaveCount(0);
   await expect(frame.getByLabel('Message', { exact: true })).toHaveValue('');
-  if (requestsBefore !== undefined) {
-    const requestsAfter = await (
-      await request.get(origin + '/__requests')
-    ).json();
-    expect(requestsAfter).toHaveLength(requestsBefore.length);
-  }
+  expect(await localRequestCount(request)).toBe(requestsBefore);
+});
+
+test('public React AG-UI JSON Render reloads an empty native runtime and fits mobile', async ({
+  page,
+  request,
+}, testInfo) => {
+  const requestsBefore = await localRequestCount(request);
+  await page.goto('/docs/ag-ui/guides/json-render?frontend=react&mode=run');
+  const frame = page.frameLocator('iframe');
+  await expect(frame.getByRole('status')).toHaveText('Ready.');
+  await frame.getByLabel('Message', { exact: true }).fill('Unsent local draft');
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await expect(page.getByLabel('Example UI')).toHaveValue('react');
+  await expect(page.locator('iframe')).toHaveAttribute(
+    'src',
+    /(?:localhost:4612|ag-ui\/json-render\/react)/
+  );
+  await expect(frame.getByRole('status')).toHaveText('Ready.');
+  const url = new URL(page.url());
+  expect(url.pathname).toBe('/docs/ag-ui/guides/json-render');
+  expect(url.searchParams.get('frontend')).toBe('react');
+  await expect(frame.locator('[data-dashboard-message]')).toHaveCount(0);
+  await expect(frame.getByLabel('Message', { exact: true })).toHaveValue('');
+  expect(await localRequestCount(request)).toBe(requestsBefore);
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.getByLabel('Example UI')).toBeVisible();
   expect(

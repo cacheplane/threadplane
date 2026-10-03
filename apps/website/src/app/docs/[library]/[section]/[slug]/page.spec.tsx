@@ -10,6 +10,7 @@ import { ReactAgUiStreamingPreview } from '../../../../../components/docs/ReactA
 import { ReactAgUiInterruptsPreview } from '../../../../../components/docs/ReactAgUiInterruptsPreview';
 import { ReactAgUiToolViewsPreview } from '../../../../../components/docs/ReactAgUiToolViewsPreview';
 import { ReactAgUiJsonRenderPreview } from '../../../../../components/docs/ReactAgUiJsonRenderPreview';
+import { ReactAgUiSubagentsPreview } from '../../../../../components/docs/ReactAgUiSubagentsPreview';
 import { ReactInterruptsPreview } from '../../../../../components/docs/ReactInterruptsPreview';
 import { ReactMemoryPreview } from '../../../../../components/docs/ReactMemoryPreview';
 import { ReactClientToolsPreview } from '../../../../../components/docs/ReactClientToolsPreview';
@@ -63,6 +64,15 @@ const route = (library: string, section: string, slug: string, mode?: string) =>
   } as never);
 
 describe('unified docs workspace route', () => {
+  it('selects the native trip specialists Docs with exact child policy and bridge sources', async () => {
+    const tree=await route('ag-ui','guides','subagents');
+    const workspace=findElement(tree,WebsiteWorkspace as ComponentType<never>);
+    const article=findElement(workspace?.props.reactDocsSlot,ReactAgUiSubagentsPreview as ComponentType<never>);
+    expect(article).not.toBeNull();
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/ag-ui/subagents/react/src/children.ts');
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/ag-ui/subagents/python/src/streaming/subagent_emitting_agent.py');
+    expect(findElement(workspace?.props.reactDocsSlot,ReactAgUiJsonRenderPreview as ComponentType<never>)).toBeNull();
+  });
   it('selects native JSON Render Docs with the exact dashboard policy, views and data tools', async () => {
     const tree=await route('ag-ui','guides','json-render');
     const workspace=findElement(tree,WebsiteWorkspace as ComponentType<never>);

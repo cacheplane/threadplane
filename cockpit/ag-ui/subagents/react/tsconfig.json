@@ -1,0 +1,14 @@
+{
+  "extends": "../../../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM", "DOM.Iterable", "ESNext.Disposable"],
+    "declarationMap": false,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "composite": false,
+    "emitDeclarationOnly": false
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
+}
