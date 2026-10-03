@@ -245,6 +245,10 @@ test.describe('a2ui docs', () => {
 test.describe('Docs search', () => {
   test('Cmd+K opens the search modal', async ({ page, browserName }) => {
     await page.goto('/docs/langgraph/getting-started/introduction');
+    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
+      'data-hydrated',
+      'true'
+    );
     // Mac uses Meta; other platforms emulate the same shortcut via keydown.
     const modifier = browserName === 'webkit' ? 'Meta' : 'Control';
     await page.keyboard.press(`${modifier}+KeyK`);
@@ -254,6 +258,10 @@ test.describe('Docs search', () => {
 
   test('matches docs pages when query omits small connector words', async ({ page, browserName }) => {
     await page.goto('/docs/langgraph/getting-started/introduction');
+    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
+      'data-hydrated',
+      'true'
+    );
     const modifier = browserName === 'webkit' ? 'Meta' : 'Control';
     await page.keyboard.press(`${modifier}+KeyK`);
 
