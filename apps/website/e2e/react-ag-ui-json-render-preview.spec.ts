@@ -18,7 +18,16 @@ test('canonical JSON Render Run keeps a retained layout bound to current native 
   await expect(frame.getByRole('status')).toHaveText('Ready.');
   for (const mode of ['full', 'filter']) {
     await frame.getByLabel('Message', { exact: true }).fill(mode);
+    const response = page.waitForResponse(
+      (candidate) =>
+        new URL(candidate.url()).pathname === '/ag-ui/json-render/agent' &&
+        candidate.request().method() === 'POST' &&
+        candidate.request().postDataJSON().messages.at(-1)?.content === mode
+    );
     await frame.getByRole('button', { name: 'Send', exact: true }).click();
+    const received = await response;
+    expect(received.status()).toBe(200);
+    expect(received.headers()['content-type']).toContain('text/event-stream');
     await expect(frame.getByRole('status')).toHaveText('Response complete.');
   }
   await expect(frame.locator('[data-dashboard-spec-owner]')).toHaveCount(1);
@@ -39,7 +48,12 @@ test('canonical JSON Render Run keeps a retained layout bound to current native 
 
 test('public React AG-UI json-render keep topic docs, sources, runtime, and history aligned', async ({
   page,
+  request,
 }, testInfo) => {
+  const origin = 'http://127.0.0.1:4612';
+  const requestsBefore = process.env['BASE_URL']
+    ? undefined
+    : await (await request.get(origin + '/__requests')).json();
   await page.goto('/docs/ag-ui/guides/json-render?frontend=react');
   await expect(page.getByLabel('Example UI')).toHaveValue('react');
   await expect(
@@ -75,15 +89,28 @@ test('public React AG-UI json-render keep topic docs, sources, runtime, and hist
     'src',
     /(?:localhost:4612|ag-ui\/json-render\/react)/
   );
+  const frame = page.frameLocator('iframe');
+  await expect(frame.getByRole('status')).toHaveText('Ready.');
   await page.getByLabel('Example UI').selectOption('angular');
   await expect(page).not.toHaveURL(/frontend=react/);
   await page.goBack();
   await expect(page.getByLabel('Example UI')).toHaveValue('react');
-  await page.reload();
+  await expect(frame.getByRole('status')).toHaveText('Ready.');
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await expect(page.getByLabel('Example UI')).toHaveValue('react');
   await expect(page.locator('iframe')).toHaveAttribute(
     'src',
     /(?:localhost:4612|ag-ui\/json-render\/react)/
   );
+  await expect(frame.getByRole('status')).toHaveText('Ready.');
+  await expect(frame.locator('[data-dashboard-message]')).toHaveCount(0);
+  await expect(frame.getByLabel('Message', { exact: true })).toHaveValue('');
+  if (requestsBefore !== undefined) {
+    const requestsAfter = await (
+      await request.get(origin + '/__requests')
+    ).json();
+    expect(requestsAfter).toHaveLength(requestsBefore.length);
+  }
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.getByLabel('Example UI')).toBeVisible();
   expect(
@@ -111,7 +138,16 @@ test('switching away disposes a held server-tool stream and returning stays lazy
   await expect(frame.getByRole('status')).toHaveText('Ready.');
   await request.post(origin + '/__hold/result');
   await frame.getByLabel('Message', { exact: true }).fill('full');
+  const response = page.waitForResponse(
+    (candidate) =>
+      new URL(candidate.url()).pathname === '/ag-ui/json-render/agent' &&
+      candidate.request().method() === 'POST' &&
+      candidate.request().postDataJSON().messages.at(-1)?.content === 'full'
+  );
   await frame.getByRole('button', { name: 'Send', exact: true }).click();
+  const received = await response;
+  expect(received.status()).toBe(200);
+  expect(received.headers()['content-type']).toContain('text/event-stream');
   await expect
     .poll(
       async () =>
