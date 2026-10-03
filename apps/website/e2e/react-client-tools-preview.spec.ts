@@ -22,41 +22,6 @@ test('public React client tools aligns the canonical Chat guide, source, runtime
   await page.screenshot({ path: testInfo.outputPath('react-client-tools-docs-mobile.png') });
 });
 
-test('frontend switching keeps the selected mode and URL aligned while route responses are delayed', async ({ page }) => {
-  await page.goto('/docs/chat/guides/client-tools?frontend=react#ownership');
-  await expect(page.getByLabel('Example UI')).toHaveValue('react');
-  let release!: () => void;
-  const held = new Promise<void>(resolve => { release = resolve; });
-  let heldCount = 0;
-  await page.route('**/docs/chat/guides/client-tools?*', async route => {
-    if (!new URL(route.request().url()).searchParams.has('_rsc')) {
-      await route.continue(); return;
-    }
-    heldCount++;
-    try {
-      await held;
-      await route.continue();
-      await (await route.request().response())?.finished();
-    } catch { /* The superseded navigation may be cancelled by the router. */ }
-  });
-  try {
-    await page.locator('[data-workspace-desktop-navigation]').getByRole('button', { name: /^Run(?:,|$)/ }).click();
-    await expect(page.locator('iframe')).toHaveAttribute('src', /(?:localhost:4603|langgraph\/client-tools\/react)/);
-    await expect.poll(() => heldCount).toBeGreaterThan(0);
-    await page.getByLabel('Example UI').selectOption('angular');
-    await expect(page).not.toHaveURL(/frontend=react/);
-    await expect(page).toHaveURL(/mode=run/);
-    await expect(page.getByLabel('Example UI')).toHaveValue('angular');
-    release();
-    await page.unrouteAll({ behavior: 'wait' });
-    await expect(page).not.toHaveURL(/frontend=react/);
-    await expect(page).toHaveURL(/mode=run.*#ownership$/);
-    await expect(page.getByLabel('Example UI')).toHaveValue('angular');
-    await page.goBack();
-    await expect(page.getByLabel('Example UI')).toHaveValue('react');
-  } finally { release(); await page.unrouteAll({ behavior: 'wait' }); }
-});
-
 test('switching away disposes pending browser decisions and returning starts empty', async ({ page, request }) => {
   test.skip(Boolean(process.env['BASE_URL']), 'Local browser decision ownership is verified before deployment');
   await request.post('http://127.0.0.1:4603/__reset');

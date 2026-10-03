@@ -26,20 +26,33 @@ test('public React AG-UI streaming keep topic docs, sources, runtime, and histor
     .locator('[data-workspace-desktop-navigation]')
     .getByRole('button', { name: 'Code', exact: true })
     .click();
-  await expect(page).toHaveURL(/frontend=react/);
+  await expect(page).toHaveURL(
+    '/docs/ag-ui/reference/event-mapping?mode=code&frontend=react'
+  );
   await page
     .locator('[data-workspace-desktop-navigation]')
     .getByRole('button', { name: /^Run(?:,|$)/ })
     .click();
+  await expect(page).toHaveURL(
+    '/docs/ag-ui/reference/event-mapping?mode=run&frontend=react'
+  );
+  await expect(page.locator('iframe')).toBeVisible();
   await expect(page.locator('iframe')).toHaveAttribute(
     'src',
     /(?:localhost:4609|ag-ui\/streaming\/react)/
   );
   await page.getByLabel('Example UI').selectOption('angular');
-  await expect(page).not.toHaveURL(/frontend=react/);
-  await page.goBack();
+  await expect(page).toHaveURL('/docs/ag-ui/reference/event-mapping?mode=run');
+  await page.goBack({ waitUntil: 'domcontentloaded' });
+  await expect(page).toHaveURL(
+    '/docs/ag-ui/reference/event-mapping?mode=run&frontend=react'
+  );
   await expect(page.getByLabel('Example UI')).toHaveValue('react');
-  await page.reload();
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await expect(page).toHaveURL(
+    '/docs/ag-ui/reference/event-mapping?mode=run&frontend=react'
+  );
+  await expect(page.locator('iframe')).toBeVisible();
   await expect(page.locator('iframe')).toHaveAttribute(
     'src',
     /(?:localhost:4609|ag-ui\/streaming\/react)/
