@@ -365,6 +365,10 @@ export const reactLanggraphPresentationSeeds = [
 export const reactAgUiPresentationSeeds = reactLanggraphPresentationSeeds.map(
   (name) => (name === '@langchain/langgraph-sdk' ? '@ag-ui/client' : name)
 );
+export const reactRenderPresentationSeeds = reactLanggraphPresentationSeeds.map(
+  (name) =>
+    name === '@langchain/langgraph-sdk' ? '@cacheplane/partial-json' : name
+);
 export const angularLanggraphPresentationSeeds = [
   '@cacheplane/json-stream',
   '@cacheplane/partial-markdown',
@@ -394,10 +398,13 @@ function presentationLocals(profile) {
       'react-langgraph',
       'angular-langgraph',
       'react-ag-ui',
+      'react-render',
     ].includes(profile),
     `Unknown presentation profile: ${profile}`
   );
   if (profile === 'markdown') return localNames;
+  if (profile === 'react-render')
+    return localNames.filter((name) => name !== '@threadplane/angular');
   const excluded =
     profile === 'react-langgraph' || profile === 'react-ag-ui'
       ? '@threadplane/angular'
@@ -420,7 +427,7 @@ function assertPresentationPackages(
   for (const path of Object.keys(packages)) {
     if (!path) continue;
     const name = path.split('node_modules/').at(-1);
-    if (profile === 'react-langgraph' || profile === 'react-ag-ui')
+    if (['react-langgraph', 'react-ag-ui', 'react-render'].includes(profile))
       assert.ok(
         !/^@(?:angular|angular-devkit)\//.test(name) &&
           ![
@@ -443,7 +450,7 @@ function assertPresentationPackages(
       ['langchain', '@mastra/client-js'].includes(name);
     assert.ok(
       (!backend ||
-        (profile !== 'markdown' &&
+        (profile !== 'markdown' && profile !== 'react-render' &&
           name.startsWith(
             profile === 'react-ag-ui' ? '@ag-ui/' : '@langchain/'
           ) &&
@@ -554,6 +561,8 @@ export function derivePresentationConsumer(
     [...locals].sort(),
     profile === 'markdown'
       ? 'Exactly four Markdown foundation tarballs required'
+      : profile === 'react-render'
+      ? 'Exactly React, core and content static tarballs required'
       : `Exactly ${
           profile === 'react-langgraph' || profile === 'react-ag-ui'
             ? 'React'
@@ -566,9 +575,11 @@ export function derivePresentationConsumer(
   const effectiveRanges = profile === 'react-ag-ui' ? { rxjs: '~7.8.0' } : {};
   const selected = selectPresentationLock(rootLock, seeds, effectiveRanges);
   if (profile !== 'markdown') {
-    const react = profile === 'react-langgraph' || profile === 'react-ag-ui';
+    const react = ['react-langgraph', 'react-ag-ui', 'react-render'].includes(profile);
     const selectedSeeds =
-      profile === 'react-ag-ui'
+      profile === 'react-render'
+        ? reactRenderPresentationSeeds
+        : profile === 'react-ag-ui'
         ? reactAgUiPresentationSeeds
         : react
         ? reactLanggraphPresentationSeeds
@@ -578,7 +589,7 @@ export function derivePresentationConsumer(
       selected,
       profile,
       locals,
-      selectPresentationLock(
+      profile === 'react-render' ? {} : selectPresentationLock(
         rootLock,
         [
           profile === 'react-ag-ui'
@@ -734,7 +745,7 @@ export function assertPresentationInstallation(consumer, derived, tarballs) {
     actual.packages,
     profile,
     locals,
-    profile !== 'markdown'
+    profile !== 'markdown' && profile !== 'react-render'
       ? selectPresentationLock(
           lock,
           [

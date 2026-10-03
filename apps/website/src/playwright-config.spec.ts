@@ -12,21 +12,23 @@ describe('Website Playwright configuration', () => {
     const project = JSON.parse(readFileSync(resolve(import.meta.dirname,'../project.json'),'utf8'));
     expect(project.implicitDependencies).toContain('cockpit-ag-ui-tool-views-angular');
   });
-  it('starts fourteen owned React servers behind one exact fresh build barrier', () => {
+  it('starts fifteen owned React servers behind one exact fresh build barrier', () => {
     const config = createWebsitePlaywrightConfig({ CI: 'true' });
     const servers = Array.isArray(config.webServer) ? config.webServer : [];
-    const reactServers = servers.filter(server => /^http:\/\/127\.0\.0\.1:46(?:0\d|1[0123])$/.test(server.url ?? ''));
-    expect(reactServers).toHaveLength(14);
+    const reactServers = servers.filter(server => /^http:\/\/127\.0\.0\.1:46(?:0\d|1[01234])$/.test(server.url ?? ''));
+    expect(reactServers).toHaveLength(15);
     expect(reactServers.every(server => server.reuseExistingServer === false)).toBe(true);
     expect(reactServers.find(server => server.url === 'http://127.0.0.1:4610')?.command).toBe('node scripts/react-cockpit/serve.mjs ag-ui-interrupts --no-parent');
     const barrier = reactServers.find(server => server.url === 'http://127.0.0.1:4600')?.command ?? '';
     const projects = /--projects=([^ ]+)/.exec(barrier)?.[1].split(',') ?? [];
-    expect(projects).toHaveLength(14);
-    expect(new Set(projects).size).toBe(14);
+    expect(projects).toHaveLength(15);
+    expect(new Set(projects).size).toBe(15);
     expect(projects).toContain('cockpit-ag-ui-interrupts-react');
     expect(projects).toContain('cockpit-ag-ui-tool-views-react');
     expect(projects).toContain('cockpit-ag-ui-json-render-react');
     expect(projects).toContain('cockpit-ag-ui-subagents-react');
+    expect(projects).toContain('cockpit-render-spec-rendering-react');
+    expect(reactServers.find(server => server.url === 'http://127.0.0.1:4614')?.command).toBe('node scripts/react-cockpit/serve.mjs render-spec-rendering --no-parent');
     expect(reactServers.find(server => server.url === 'http://127.0.0.1:4613')?.command).toBe('npx nx run cockpit-ag-ui-subagents-python:smoke && node scripts/react-cockpit/serve.mjs ag-ui-subagents --no-parent');
     expect(reactServers.find(server=>server.url==='http://127.0.0.1:4612')?.command).toBe('npx nx run cockpit-ag-ui-json-render-python:smoke && node scripts/react-cockpit/serve.mjs ag-ui-json-render --no-parent');
   });
@@ -235,7 +237,7 @@ describe('Website Playwright configuration', () => {
       }),
       expect.objectContaining({
         command: expect.stringContaining(
-          'nx run-many -t build --projects=cockpit-langgraph-streaming-react,cockpit-langgraph-interrupts-react,cockpit-langgraph-memory-react,cockpit-langgraph-client-tools-react,cockpit-langgraph-persistence-react,cockpit-langgraph-durable-execution-react,cockpit-langgraph-subgraphs-react,cockpit-langgraph-time-travel-react,cockpit-langgraph-deployment-runtime-react,cockpit-ag-ui-streaming-react,cockpit-ag-ui-interrupts-react,cockpit-ag-ui-tool-views-react,cockpit-ag-ui-json-render-react,cockpit-ag-ui-subagents-react --parallel=3'
+          'nx run-many -t build --projects=cockpit-langgraph-streaming-react,cockpit-langgraph-interrupts-react,cockpit-langgraph-memory-react,cockpit-langgraph-client-tools-react,cockpit-langgraph-persistence-react,cockpit-langgraph-durable-execution-react,cockpit-langgraph-subgraphs-react,cockpit-langgraph-time-travel-react,cockpit-langgraph-deployment-runtime-react,cockpit-ag-ui-streaming-react,cockpit-ag-ui-interrupts-react,cockpit-ag-ui-tool-views-react,cockpit-ag-ui-json-render-react,cockpit-ag-ui-subagents-react,cockpit-render-spec-rendering-react --parallel=3'
         ),
         url: 'http://127.0.0.1:4600',
       }),
@@ -288,6 +290,7 @@ describe('Website Playwright configuration', () => {
       }),
       expect.objectContaining({command:'npx nx run cockpit-ag-ui-json-render-python:smoke && node scripts/react-cockpit/serve.mjs ag-ui-json-render --no-parent',url:'http://127.0.0.1:4612'}),
       expect.objectContaining({command:'npx nx run cockpit-ag-ui-subagents-python:smoke && node scripts/react-cockpit/serve.mjs ag-ui-subagents --no-parent',url:'http://127.0.0.1:4613'}),
+      expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs render-spec-rendering --no-parent',url:'http://127.0.0.1:4614'}),
     ]);
     expect(config.testIgnore).toEqual([
       '**/platform-production-smoke.spec.ts',

@@ -335,6 +335,85 @@ const deriveReact = (input) =>
     'react-langgraph'
   );
 
+const renderReactSeeds = reactSeeds.map((name) =>
+  name === '@langchain/langgraph-sdk' ? '@cacheplane/partial-json' : name
+);
+const renderReactRoot = () => {
+  const root = reactRoot();
+  for (const path of Object.keys(root.packages))
+    if (path.startsWith('node_modules/@langchain/')) delete root.packages[path];
+  root.packages['node_modules/@cacheplane/partial-json'] = pkg();
+  return root;
+};
+const renderReactFixture = (t, changes = {}) =>
+  consumerFixture(t, {
+    projects: ['content', 'core', 'react'],
+    root: renderReactRoot(),
+    ...changes,
+  });
+const deriveRenderReact = (input, seeds = renderReactSeeds) =>
+  derivePresentationConsumer(input.root, input.tarballs, seeds, 'react-render');
+
+test('static React rendering selects three foundations and the exact parser/toolchain closure', (t) => {
+  const input = renderReactFixture(t);
+  const before = JSON.stringify(input.root);
+  const derived = deriveRenderReact(input);
+  assert.deepEqual(presentation.reactRenderPresentationSeeds, renderReactSeeds);
+  assert.equal(derived.profile, 'react-render');
+  assert.equal(derived.manifest.overrides, undefined);
+  assert.deepEqual(Object.keys(derived.manifest.dependencies).sort(),
+    [...renderReactSeeds, '@threadplane/core', '@threadplane/content', '@threadplane/react'].sort());
+  for (const [path, record] of Object.entries(selectPresentationLock(input.root, renderReactSeeds)))
+    assert.deepEqual(derived.lock.packages[path], record);
+  assert.equal(JSON.stringify(input.root), before);
+  assertPresentationInstallation(input.consumer, derived, input.tarballs);
+  assert.ok(!Object.keys(derived.lock.packages).some(path => /@(?:angular|langchain|ag-ui)\//.test(path)));
+});
+
+test('static React rendering rejects changed foundation or seed selections', (t) => {
+  const input = renderReactFixture(t);
+  for (const name of Object.keys(input.tarballs)) {
+    const tarballs = { ...input.tarballs }; delete tarballs[name];
+    assert.throws(() => deriveRenderReact({ ...input, tarballs }), /tarballs required/);
+  }
+  for (const name of ['@threadplane/angular', '@threadplane/langgraph', '@threadplane/ag-ui'])
+    assert.throws(() => deriveRenderReact({ ...input, tarballs: {
+      ...input.tarballs, [name]: input.tarballs['@threadplane/react'],
+    }}), /tarballs required/);
+  for (const name of renderReactSeeds)
+    assert.throws(() => deriveRenderReact(input, renderReactSeeds.filter(seed => seed !== name)), /selected React seeds required/);
+  assert.throws(() => deriveRenderReact(input, [...renderReactSeeds, 'vite']), /selected React seeds required/);
+  assert.throws(() => derivePresentationConsumer(input.root, input.tarballs, renderReactSeeds, 'render-arbitrary'), /Unknown presentation profile/);
+});
+
+for (const name of ['@angular/core', '@angular/build', '@angular-devkit/core', 'ng-packagr', '@langchain/langgraph-sdk', '@ag-ui/client', '@mastra/client-js', 'openai', '@anthropic-ai/sdk', '@threadplane/langgraph']) {
+  test(`static React rendering rejects selected or installed execution package ${name}`, (t) => {
+    const input = renderReactFixture(t);
+    const derived = deriveRenderReact(input);
+    input.root.packages['node_modules/' + name] = pkg();
+    input.root.packages['node_modules/vite'].dependencies[name] = '1.0.0';
+    assert.throws(() => deriveRenderReact(input), /Unexpected (?:Angular|backend SDK|local package)/);
+    const installed = join(input.consumer, 'node_modules', name);
+    mkdirSync(installed, { recursive: true });
+    writeJson(join(installed, 'package.json'), { name, version: '1.0.0' });
+    assert.throws(() => assertPresentationInstallation(input.consumer, derived, input.tarballs), /Unexpected (?:Angular|backend SDK|local package)/);
+  });
+}
+
+test('static React rendering verifies installed bytes and rejects additional vendor records', (t) => {
+  const input = renderReactFixture(t);
+  const derived = deriveRenderReact(input);
+  const module = join(input.consumer, 'node_modules/@threadplane/react/index.js');
+  const original = readFileSync(module);
+  writeFileSync(module, 'tampered');
+  assert.throws(() => assertPresentationInstallation(input.consumer, derived, input.tarballs), /bytes equal/);
+  writeFileSync(module, original);
+  const extra = join(input.consumer, 'node_modules/unselected-vendor');
+  mkdirSync(extra);
+  writeJson(join(extra, 'package.json'), { name: 'unselected-vendor', version: '1.0.0' });
+  assert.throws(() => assertPresentationInstallation(input.consumer, derived, input.tarballs), /Unexpected installed record/);
+});
+
 const agUiReactSeeds = reactSeeds.map((name) =>
   name === '@langchain/langgraph-sdk' ? '@ag-ui/client' : name
 );
