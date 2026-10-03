@@ -521,4 +521,45 @@ describe('Dawn Growth job orchestration', () => {
     expect(deps.recordCleanupAbsence).toHaveBeenCalled();
     expect(deps.finishCleanup).not.toHaveBeenCalled();
   });
+
+  // Production defect: every runaway job had no research_attempt in its payload,
+  // so the expiresAt deadline never applied and the job deferred every fifteen
+  // seconds indefinitely (four jobs reached ~2,400 attempts over six days).
+  const reconciling = (attempts: number) => {
+    const f = fixture();
+    f.deps.readDomain.mockRejectedValue(new Error('offline'));
+    return {
+      ...f,
+      run: () => f.handlers.enrich(db, { ...job, payload: {}, attempts }, {}),
+    };
+  };
+  const deferredDelay = (deps: { defer: ReturnType<typeof vi.fn> }) =>
+    (
+      deps.defer.mock.calls.at(-1)?.[1] as { availableAt: Date }
+    ).availableAt.getTime() - now.getTime();
+  it('backs reconciliation off exponentially when the payload carries no attempt deadline', async () => {
+    const first = reconciling(0);
+    expect(await first.run()).toBe('deferred');
+    expect(first.deps.fail).not.toHaveBeenCalled();
+    const second = reconciling(3);
+    expect(await second.run()).toBe('deferred');
+    const ceiling = reconciling(9);
+    expect(await ceiling.run()).toBe('deferred');
+    const a = deferredDelay(first.deps),
+      b = deferredDelay(second.deps),
+      c = deferredDelay(ceiling.deps);
+    expect(a).toBe(15000);
+    expect(b).toBeGreaterThan(a);
+    expect(c).toBeGreaterThan(b);
+    expect(c).toBeLessThanOrEqual(15 * 60000);
+  });
+  it('fails reconciliation for manual review once the attempt cap is reached', async () => {
+    const capped = reconciling(20);
+    expect(await capped.run()).toBe('failed');
+    expect(capped.deps.defer).not.toHaveBeenCalled();
+    expect(capped.deps.fail).toHaveBeenCalledWith(
+      db,
+      expect.objectContaining({ errorCode: 'dawn_reconciliation_exhausted' })
+    );
+  });
 });
