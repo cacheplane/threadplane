@@ -404,14 +404,24 @@ test.describe('workspace shell', () => {
       'href',
       '/docs/langgraph/guides/streaming?mode=run'
     );
-    // Prove the destination actually resolves rather than 404ing.
+    // Match the destination document; hydration can also update history.
     const [response] = await Promise.all([
-      page.waitForNavigation(),
+      page.waitForResponse(
+        (response) =>
+          response.request().isNavigationRequest() &&
+          response.request().frame() === page.mainFrame() &&
+          response.url() ===
+            new URL(
+              '/docs/langgraph/guides/streaming?mode=run',
+              page.url()
+            ).href
+      ),
       run.click(),
     ]);
-    expect(response?.status()).toBe(200);
+    expect(response.status()).toBe(200);
     await expect(page).toHaveURL('/docs/langgraph/guides/streaming?mode=run');
-    await expect(page.locator('[data-workspace-shell]')).toBeVisible();
+    await expectMode(page, 'Run');
+    await expect(page.locator('iframe')).toBeVisible();
   });
 
   test('serves the formerly workspace-only capabilities as docs pages with Run available', async ({
