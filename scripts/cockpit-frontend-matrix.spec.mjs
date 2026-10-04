@@ -4,6 +4,17 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { deriveCockpitCaps, selectCockpitCaps } from './cockpit-matrix.mjs';
+test('State Management has a closed local sixteenth React identity', async () => {
+  const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
+  assert.deepEqual(reactCockpitConfiguration('render-state-management'), {
+    topic: 'state-management', adapter: 'none',
+    appPath: 'cockpit/render/state-management/react',
+    base: '/render/state-management/react/', port: 4615,
+    project: 'cockpit-render-state-management-react',
+  });
+  for (const key of ['state-management', 'render/state-management', '../render-state-management'])
+    assert.throws(() => reactCockpitConfiguration(key), /Unsupported React cockpit topic/);
+});
 test('Spec Rendering has a closed local fifteenth React identity', async () => {
   const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
   assert.deepEqual(reactCockpitConfiguration('render-spec-rendering'), {

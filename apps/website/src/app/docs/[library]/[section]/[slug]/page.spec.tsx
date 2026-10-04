@@ -12,6 +12,7 @@ import { ReactAgUiToolViewsPreview } from '../../../../../components/docs/ReactA
 import { ReactAgUiJsonRenderPreview } from '../../../../../components/docs/ReactAgUiJsonRenderPreview';
 import { ReactAgUiSubagentsPreview } from '../../../../../components/docs/ReactAgUiSubagentsPreview';
 import { ReactRenderSpecPreview } from '../../../../../components/docs/ReactRenderSpecPreview';
+import { ReactStateManagementPreview } from '../../../../../components/docs/ReactStateManagementPreview';
 import { ReactInterruptsPreview } from '../../../../../components/docs/ReactInterruptsPreview';
 import { ReactMemoryPreview } from '../../../../../components/docs/ReactMemoryPreview';
 import { ReactClientToolsPreview } from '../../../../../components/docs/ReactClientToolsPreview';
@@ -65,6 +66,16 @@ const route = (library: string, section: string, slug: string, mode?: string) =>
   } as never);
 
 describe('unified docs workspace route', () => {
+  it('selects React State Management Docs with owned state and readonly view sources', async () => {
+    const tree = await route('render', 'guides', 'state-store');
+    const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
+    const article = findElement(workspace?.props.reactDocsSlot, ReactStateManagementPreview as ComponentType<never>);
+    expect(article).not.toBeNull();
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/render/state-management/react/src/state.ts');
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/render/state-management/react/src/views.tsx');
+    expect(article?.props.exampleCode?.assetPaths?.some(path => path.includes('/python/'))).toBe(false);
+    expect(findElement(workspace?.props.reactDocsSlot, ReactRenderSpecPreview as ComponentType<never>)).toBeNull();
+  });
   it('selects the local React Render Spec guide and owned renderer sources without Python assets', async () => {
     const tree = await route('render', 'guides', 'specs');
     const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
