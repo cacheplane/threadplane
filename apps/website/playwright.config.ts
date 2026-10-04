@@ -353,6 +353,13 @@ export const createWebsitePlaywrightConfig = (
                   reuseExistingServer,
                   timeout: 180_000,
                 },
+                {
+                  command: 'node scripts/react-cockpit/serve.mjs render-element-rendering --no-parent',
+                  cwd: '../..',
+                  url: 'http://127.0.0.1:4618',
+                  reuseExistingServer,
+                  timeout: 180_000,
+                },
               ]
             : []),
         ]
