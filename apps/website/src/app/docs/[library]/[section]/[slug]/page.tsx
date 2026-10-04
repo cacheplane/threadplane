@@ -20,6 +20,7 @@ import { ReactElementRenderingPreview } from '../../../../../components/docs/Rea
 import { ReactRegistryPreview } from '../../../../../components/docs/ReactRegistryPreview';
 import { ReactRepeatLoopsPreview } from '../../../../../components/docs/ReactRepeatLoopsPreview';
 import { ReactStateManagementPreview } from '../../../../../components/docs/ReactStateManagementPreview';
+import { ReactComputedFunctionsPreview } from '../../../../../components/docs/ReactComputedFunctionsPreview';
 import { DocsSearch } from '../../../../../components/docs/DocsSearch';
 import { DocsPageHeader } from '../../../../../components/docs/DocsPageHeader';
 import { LibraryMark } from '../../../../../components/docs/LibraryMark';
@@ -273,10 +274,11 @@ export default async function DocsPage({ params }: DocsRouteProps) {
         reactDocsSlot={
           workspacePage.frontendVariants?.react &&
           (library === 'langgraph' ||
-            (library === 'render' && ((section === 'guides' && ['specs','state-store','repeat-loops','registry'].includes(slug)) || (section === 'api' && slug === 'render-spec-component'))) ||
+            (library === 'render' && ((section === 'guides' && ['specs','state-store','repeat-loops','registry'].includes(slug)) || (section === 'api' && ['render-spec-component','provide-render'].includes(slug)))) ||
             (library === 'ag-ui' && ((section === 'reference' && slug === 'event-mapping') || (section === 'guides' && ['interrupts','tool-views','json-render','subagents'].includes(slug)))) ||
             (library === 'chat' && slug === 'client-tools')) ? (
             library === 'render' ? (
+              slug === 'provide-render' ? <ReactComputedFunctionsPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} /> :
               slug === 'render-spec-component' ? <ReactElementRenderingPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} /> :
               slug === 'registry' ? <ReactRegistryPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} /> :
               slug === 'repeat-loops' ? <ReactRepeatLoopsPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} /> :

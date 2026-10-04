@@ -16,6 +16,7 @@ import { ReactElementRenderingPreview } from '../../../../../components/docs/Rea
 import { ReactRegistryPreview } from '../../../../../components/docs/ReactRegistryPreview';
 import { ReactRepeatLoopsPreview } from '../../../../../components/docs/ReactRepeatLoopsPreview';
 import { ReactStateManagementPreview } from '../../../../../components/docs/ReactStateManagementPreview';
+import { ReactComputedFunctionsPreview } from '../../../../../components/docs/ReactComputedFunctionsPreview';
 import { ReactInterruptsPreview } from '../../../../../components/docs/ReactInterruptsPreview';
 import { ReactMemoryPreview } from '../../../../../components/docs/ReactMemoryPreview';
 import { ReactClientToolsPreview } from '../../../../../components/docs/ReactClientToolsPreview';
@@ -128,6 +129,17 @@ describe('unified docs workspace route', () => {
     expect(article?.props.exampleCode?.assetPaths?.some(path => path.includes('/python/'))).toBe(false);
     expect(findElement(workspace?.props.reactDocsSlot, ReactRenderSpecPreview as ComponentType<never>)).toBeNull();
   });
+  it('selects native Computed Functions Docs on canonical provide-render with owned pure callback sources', async () => {
+    const tree = await route('render', 'api', 'provide-render');
+    const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
+    const article = findElement(workspace?.props.reactDocsSlot, ReactComputedFunctionsPreview as ComponentType<never>);
+    expect(article).not.toBeNull();
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/render/computed-functions/react/src/functions.ts');
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/render/computed-functions/react/src/projection.ts');
+    expect(article?.props.exampleCode?.assetPaths?.some(path => path.includes('/python/'))).toBe(false);
+    expect(findElement(workspace?.props.reactDocsSlot, ReactRenderSpecPreview as ComponentType<never>)).toBeNull();
+  });
+
   it('selects the local React Render Spec guide and owned renderer sources without Python assets', async () => {
     const tree = await route('render', 'guides', 'specs');
     const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);

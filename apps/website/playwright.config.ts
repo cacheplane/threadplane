@@ -204,6 +204,13 @@ export const createWebsitePlaywrightConfig = (
                   url: 'http://localhost:4506',
                   reuseExistingServer,
                 },
+                {
+                  command: 'npx nx run cockpit-render-computed-functions-angular:serve:cockpit --port 4406',
+                  cwd: '../..',
+                  url: 'http://localhost:4406',
+                  reuseExistingServer,
+                  timeout: 180_000,
+                },
               ]
             : []),
           {
@@ -357,6 +364,13 @@ export const createWebsitePlaywrightConfig = (
                   command: 'node scripts/react-cockpit/serve.mjs render-element-rendering --no-parent',
                   cwd: '../..',
                   url: 'http://127.0.0.1:4618',
+                  reuseExistingServer,
+                  timeout: 180_000,
+                },
+                {
+                  command: 'node scripts/react-cockpit/serve.mjs render-computed-functions --no-parent',
+                  cwd: '../..',
+                  url: 'http://127.0.0.1:4619',
                   reuseExistingServer,
                   timeout: 180_000,
                 },
