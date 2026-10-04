@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "5b97ec482ffbf68f33d227eecb6c6aefd98e73b3",
+  "baselineHead": "53d9aea0a775c132ad26572f9e8d2d96822d1f0a",
   "sourceState": {
     "modified": [
       "libs/cockpit-registry/src/lib/capability-registry.ts",
