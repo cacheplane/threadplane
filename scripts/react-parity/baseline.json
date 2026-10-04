@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "d5cfeda2bf272e1cd8d64bf06fbfffc8f9d36d30",
+  "baselineHead": "ab7e31b7f9f1a0ba46cee25864a44b28b3bd8627",
   "sourceState": {
     "modified": [
-      "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "libs/cockpit-registry/src/lib/content-descriptors.ts"
+      "libs/workspace-react/src/lib/components/control-plane/cockpit-control-plane.tsx",
+      "libs/workspace-react/src/lib/runtime/runtime-target-session.ts"
     ],
     "untracked": []
   },
@@ -14856,7 +14856,7 @@
       "id": "source:libs/workspace-react/src/lib/components/control-plane/cockpit-control-plane.tsx",
       "kind": "source",
       "path": "libs/workspace-react/src/lib/components/control-plane/cockpit-control-plane.tsx",
-      "sha256": "d0d5c4df2aebae45458d1189a75611c7e6ef464803023c30d3cb99d71d5732f8"
+      "sha256": "94e32e4d8bf094dbea43f824b7fde099fccaa623a0f8d84b4965ad340beea2c8"
     },
     {
       "id": "source:libs/workspace-react/src/lib/components/control-plane/control-plane-overflow-menu.tsx",
@@ -14964,7 +14964,7 @@
       "id": "source:libs/workspace-react/src/lib/runtime/runtime-target-session.ts",
       "kind": "source",
       "path": "libs/workspace-react/src/lib/runtime/runtime-target-session.ts",
-      "sha256": "060496aa25b3226f8d900c3b24743d4e85fade3ec13199953b42b00d51184102"
+      "sha256": "afe1fec9bd1c3b43cb7f30ea5b46acb2f459c94f3db99078d9cad0b34f551abb"
     },
     {
       "id": "source:libs/workspace-react/src/lib/runtime/session-activity.ts",

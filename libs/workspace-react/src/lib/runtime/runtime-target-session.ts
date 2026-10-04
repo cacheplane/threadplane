@@ -252,7 +252,10 @@ export const getSanitizedRuntimeTargetDisplay = (
   if (target === null) {
     return {
       kind: 'none',
-      label: 'Runtime target unavailable',
+      label:
+        effectiveTarget.adapter === 'none'
+          ? 'Runs in your browser'
+          : 'Runtime target unavailable',
       origin: null,
       pathname: null,
       location: null,
