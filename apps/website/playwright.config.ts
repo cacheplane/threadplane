@@ -217,7 +217,10 @@ export const createWebsitePlaywrightConfig = (
             ? [
                 {
                   command:
-                    'npx nx run-many -t build --projects=cockpit-langgraph-streaming-react,cockpit-langgraph-interrupts-react,cockpit-langgraph-memory-react,cockpit-langgraph-client-tools-react,cockpit-langgraph-persistence-react,cockpit-langgraph-durable-execution-react,cockpit-langgraph-subgraphs-react,cockpit-langgraph-time-travel-react,cockpit-langgraph-deployment-runtime-react,cockpit-ag-ui-streaming-react,cockpit-ag-ui-interrupts-react,cockpit-ag-ui-tool-views-react,cockpit-ag-ui-json-render-react,cockpit-ag-ui-subagents-react,cockpit-render-spec-rendering-react,cockpit-render-state-management-react,cockpit-render-repeat-loops-react --parallel=3 && node scripts/react-cockpit/serve.mjs',
+                    // website:e2e builds every installed React example first,
+                    // outside the server-readiness budget. Direct local
+                    // Playwright runs require those build outputs too.
+                    'node scripts/react-cockpit/serve.mjs',
                   cwd: '../..',
                   url: 'http://127.0.0.1:4600',
                   reuseExistingServer,

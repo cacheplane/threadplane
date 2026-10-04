@@ -1,9 +1,34 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { getCockpitFrontends } from '@threadplane/cockpit-registry';
 import { createWebsitePlaywrightConfig } from '../playwright.config';
 
 describe('Website Playwright configuration', () => {
+  it('builds every native React example before starting server readiness clocks', () => {
+    const project = JSON.parse(
+      readFileSync(resolve(import.meta.dirname, '../project.json'), 'utf8')
+    );
+    const prerequisites = project.targets.e2e.dependsOn?.find(
+      (dependency: { target?: string }) => dependency.target === 'build'
+    )?.projects ?? [];
+    expect(prerequisites).toHaveLength(17);
+    expect(new Set(prerequisites).size).toBe(17);
+    expect([...prerequisites].sort()).toEqual(
+      getCockpitFrontends()
+        .filter(frontend => frontend.frontend === 'react')
+        .map(frontend => frontend.project)
+        .sort()
+    );
+    const config = createWebsitePlaywrightConfig({ CI: 'true' });
+    const servers = Array.isArray(config.webServer) ? config.webServer : [];
+    const nativeServer = servers.find(
+      server => server.url === 'http://127.0.0.1:4600'
+    );
+    expect(nativeServer?.command).toBe('node scripts/react-cockpit/serve.mjs');
+    expect(nativeServer?.timeout).toBe(180_000);
+    expect(nativeServer?.reuseExistingServer).toBe(false);
+  });
   it('owns the Tool Views Angular counterpart and twelfth installed React server', () => {
     const config = createWebsitePlaywrightConfig({CI:'true'});
     const servers = Array.isArray(config.webServer) ? config.webServer : [];
@@ -12,15 +37,17 @@ describe('Website Playwright configuration', () => {
     const project = JSON.parse(readFileSync(resolve(import.meta.dirname,'../project.json'),'utf8'));
     expect(project.implicitDependencies).toContain('cockpit-ag-ui-tool-views-angular');
   });
-  it('starts seventeen owned React servers behind one exact fresh build barrier', () => {
+  it('starts seventeen owned React servers after exact fresh Nx prerequisites', () => {
     const config = createWebsitePlaywrightConfig({ CI: 'true' });
     const servers = Array.isArray(config.webServer) ? config.webServer : [];
     const reactServers = servers.filter(server => /^http:\/\/127\.0\.0\.1:46(?:0\d|1[0123456])$/.test(server.url ?? ''));
     expect(reactServers).toHaveLength(17);
     expect(reactServers.every(server => server.reuseExistingServer === false)).toBe(true);
     expect(reactServers.find(server => server.url === 'http://127.0.0.1:4610')?.command).toBe('node scripts/react-cockpit/serve.mjs ag-ui-interrupts --no-parent');
-    const barrier = reactServers.find(server => server.url === 'http://127.0.0.1:4600')?.command ?? '';
-    const projects = /--projects=([^ ]+)/.exec(barrier)?.[1].split(',') ?? [];
+    const project = JSON.parse(readFileSync(resolve(import.meta.dirname, '../project.json'), 'utf8'));
+    const projects = project.targets.e2e.dependsOn.find(
+      (dependency: { target?: string }) => dependency.target === 'build'
+    ).projects;
     expect(projects).toHaveLength(17);
     expect(new Set(projects).size).toBe(17);
     expect(projects).toContain('cockpit-render-state-management-react');
@@ -240,9 +267,7 @@ describe('Website Playwright configuration', () => {
         url: 'http://127.0.0.1:4399/health',
       }),
       expect.objectContaining({
-        command: expect.stringContaining(
-          'nx run-many -t build --projects=cockpit-langgraph-streaming-react,cockpit-langgraph-interrupts-react,cockpit-langgraph-memory-react,cockpit-langgraph-client-tools-react,cockpit-langgraph-persistence-react,cockpit-langgraph-durable-execution-react,cockpit-langgraph-subgraphs-react,cockpit-langgraph-time-travel-react,cockpit-langgraph-deployment-runtime-react,cockpit-ag-ui-streaming-react,cockpit-ag-ui-interrupts-react,cockpit-ag-ui-tool-views-react,cockpit-ag-ui-json-render-react,cockpit-ag-ui-subagents-react,cockpit-render-spec-rendering-react,cockpit-render-state-management-react,cockpit-render-repeat-loops-react --parallel=3'
-        ),
+        command: 'node scripts/react-cockpit/serve.mjs',
         url: 'http://127.0.0.1:4600',
       }),
       expect.objectContaining({
