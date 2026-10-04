@@ -12,7 +12,8 @@
     "cockpit-ag-ui-tool-views-angular",
     "cockpit-ag-ui-json-render-angular",
     "cockpit-ag-ui-subagents-angular",
-    "cockpit-chat-threads-angular"
+    "cockpit-chat-threads-angular",
+    "cockpit-render-computed-functions-angular"
   ],
   "tags": ["scope:website", "scope:website-e2e", "type:app"],
   "targets": {
@@ -92,7 +93,8 @@
             "cockpit-render-state-management-react",
             "cockpit-render-repeat-loops-react",
             "cockpit-render-registry-react",
-            "cockpit-render-element-rendering-react"
+            "cockpit-render-element-rendering-react",
+            "cockpit-render-computed-functions-react"
           ]
         }
       ],

@@ -1150,6 +1150,18 @@ const renderElementReact = (() => {
   });
 })();
 
+const computedFunctionsReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'render-computed-functions-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-render-computed-functions-react');
+  if (!canonical || !frontend) throw new Error('Computed Functions frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical, id: 'render-computed-functions-python-react', frontend: 'react', title: 'Computed Functions (React preview)',
+    promptAssetPaths: [], backendAssetPaths: [],
+    codeAssetPaths: ['app.tsx','functions.ts','playback.ts','projection.ts','specs.ts','views.tsx','main.tsx','styles.css'].map(file => `cockpit/render/computed-functions/react/src/${file}`),
+    runtimeUrl: frontend.runtimePath, devPort: frontend.port,
+  });
+})();
+
 export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
   Object.freeze([
     ...capabilityModules,
@@ -1163,6 +1175,7 @@ export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
     renderRepeatReact,
     renderRegistryReact,
     renderElementReact,
+    computedFunctionsReact,
     ...reactPreviews.map(({ topic, title }) => {
       const canonical = capabilityModules.find((descriptor) => descriptor.id === `langgraph-${topic}-python`);
       const frontend = getCockpitFrontends().find((entry) => entry.project === `cockpit-langgraph-${topic}-react`);

@@ -1,5 +1,12 @@
 /** Closed authored frontend selection; callers cannot supply filesystem paths. */
 export function reactCockpitConfiguration(topic = 'streaming') {
+  if (topic === 'render-computed-functions')
+    return Object.freeze({
+      topic: 'computed-functions', adapter: 'none',
+      appPath: 'cockpit/render/computed-functions/react',
+      base: '/render/computed-functions/react/', port: 4619,
+      project: 'cockpit-render-computed-functions-react',
+    });
   if (topic === 'render-element-rendering')
     return Object.freeze({
       topic: 'element-rendering',
