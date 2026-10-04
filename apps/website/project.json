@@ -91,7 +91,8 @@
             "cockpit-render-spec-rendering-react",
             "cockpit-render-state-management-react",
             "cockpit-render-repeat-loops-react",
-            "cockpit-render-registry-react"
+            "cockpit-render-registry-react",
+            "cockpit-render-element-rendering-react"
           ]
         }
       ],
