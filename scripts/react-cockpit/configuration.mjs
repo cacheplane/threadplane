@@ -1,5 +1,14 @@
 /** Closed authored frontend selection; callers cannot supply filesystem paths. */
 export function reactCockpitConfiguration(topic = 'streaming') {
+  if (topic === 'chat-messages')
+    return Object.freeze({
+      topic: 'messages',
+      adapter: 'langgraph',
+      appPath: 'cockpit/chat/messages/react',
+      base: '/chat/messages/react/',
+      port: 4620,
+      project: 'cockpit-chat-messages-react',
+    });
   if (topic === 'render-computed-functions')
     return Object.freeze({
       topic: 'computed-functions', adapter: 'none',

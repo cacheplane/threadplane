@@ -1021,6 +1021,16 @@ const agUiStreamingReact = (() => {
     runtimeUrl: frontend.runtimePath, devPort: frontend.port,
   });
 })();
+const chatMessagesReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'chat-messages-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-chat-messages-react');
+  if (!canonical || !frontend) throw new Error('Chat Messages frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical, id: 'chat-messages-python-react', frontend: 'react', title: 'Chat Messages (React preview)',
+    codeAssetPaths: ['app.tsx', 'application.ts', 'connection.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/chat/messages/react/src/${file}`),
+    runtimeUrl: frontend.runtimePath, devPort: frontend.port,
+  });
+})();
 
 const agUiInterruptsReact = (() => {
   const canonical = capabilityModules.find(descriptor => descriptor.id === 'ag-ui-interrupts-python');
@@ -1165,6 +1175,7 @@ const computedFunctionsReact = (() => {
 export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
   Object.freeze([
     ...capabilityModules,
+    chatMessagesReact,
     agUiStreamingReact,
     agUiInterruptsReact,
     agUiToolViewsReact,

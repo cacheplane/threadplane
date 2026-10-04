@@ -16,6 +16,7 @@ import { ReactElementRenderingPreview } from '../../../../../components/docs/Rea
 import { ReactRegistryPreview } from '../../../../../components/docs/ReactRegistryPreview';
 import { ReactRepeatLoopsPreview } from '../../../../../components/docs/ReactRepeatLoopsPreview';
 import { ReactStateManagementPreview } from '../../../../../components/docs/ReactStateManagementPreview';
+import { ReactChatMessagesPreview } from '../../../../../components/docs/ReactChatMessagesPreview';
 import { ReactComputedFunctionsPreview } from '../../../../../components/docs/ReactComputedFunctionsPreview';
 import { ReactInterruptsPreview } from '../../../../../components/docs/ReactInterruptsPreview';
 import { ReactMemoryPreview } from '../../../../../components/docs/ReactMemoryPreview';
@@ -70,6 +71,15 @@ const route = (library: string, section: string, slug: string, mode?: string) =>
   } as never);
 
 describe('unified docs workspace route', () => {
+  it('selects a native Chat Messages article on its canonical concept page', async () => {
+    const tree=await route('chat','concepts','message-model');
+    const workspace=findElement(tree,WebsiteWorkspace as ComponentType<never>);
+    const article=findElement(workspace?.props.reactDocsSlot,ReactChatMessagesPreview as ComponentType<never>);
+    expect(article).not.toBeNull();
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/chat/messages/react/src/application.ts');
+    expect(findElement(workspace?.props.reactDocsSlot,ReactStreamingPreview as ComponentType<never>)).toBeNull();
+    expect(findElement(workspace?.props.reactDocsSlot,ReactClientToolsPreview as ComponentType<never>)).toBeNull();
+  });
   it('selects React Element Rendering Docs with owned state and readonly view sources', async () => {
     const tree = await route('render', 'api', 'render-spec-component');
     const workspace = findElement(
