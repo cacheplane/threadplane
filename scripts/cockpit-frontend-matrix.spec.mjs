@@ -4,6 +4,15 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { deriveCockpitCaps, selectCockpitCaps } from './cockpit-matrix.mjs';
+test('Repeat Loops has a closed local seventeenth React identity', async () => {
+  const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
+  assert.deepEqual(reactCockpitConfiguration('render-repeat-loops'), {
+    topic: 'repeat-loops', adapter: 'none', appPath: 'cockpit/render/repeat-loops/react',
+    base: '/render/repeat-loops/react/', port: 4616, project: 'cockpit-render-repeat-loops-react',
+  });
+  for (const key of ['repeat-loops', 'render/repeat-loops', '../render-repeat-loops'])
+    assert.throws(() => reactCockpitConfiguration(key), /Unsupported React cockpit topic/);
+});
 test('State Management has a closed local sixteenth React identity', async () => {
   const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
   assert.deepEqual(reactCockpitConfiguration('render-state-management'), {

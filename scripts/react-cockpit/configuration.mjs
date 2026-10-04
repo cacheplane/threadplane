@@ -1,5 +1,10 @@
 /** Closed authored frontend selection; callers cannot supply filesystem paths. */
 export function reactCockpitConfiguration(topic = 'streaming') {
+  if (topic === 'render-repeat-loops')
+    return Object.freeze({
+      topic: 'repeat-loops', adapter: 'none', appPath: 'cockpit/render/repeat-loops/react',
+      base: '/render/repeat-loops/react/', port: 4616, project: 'cockpit-render-repeat-loops-react',
+    });
   if (topic === 'render-state-management')
     return Object.freeze({
       topic: 'state-management',
