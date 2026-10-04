@@ -16,6 +16,7 @@ import { ReactAgUiToolViewsPreview } from '../../../../../components/docs/ReactA
 import { ReactAgUiJsonRenderPreview } from '../../../../../components/docs/ReactAgUiJsonRenderPreview';
 import { ReactAgUiSubagentsPreview } from '../../../../../components/docs/ReactAgUiSubagentsPreview';
 import { ReactRenderSpecPreview } from '../../../../../components/docs/ReactRenderSpecPreview';
+import { ReactRegistryPreview } from '../../../../../components/docs/ReactRegistryPreview';
 import { ReactRepeatLoopsPreview } from '../../../../../components/docs/ReactRepeatLoopsPreview';
 import { ReactStateManagementPreview } from '../../../../../components/docs/ReactStateManagementPreview';
 import { DocsSearch } from '../../../../../components/docs/DocsSearch';
@@ -271,10 +272,11 @@ export default async function DocsPage({ params }: DocsRouteProps) {
         reactDocsSlot={
           workspacePage.frontendVariants?.react &&
           (library === 'langgraph' ||
-            (library === 'render' && section === 'guides' && ['specs','state-store','repeat-loops'].includes(slug)) ||
+            (library === 'render' && section === 'guides' && ['specs','state-store','repeat-loops','registry'].includes(slug)) ||
             (library === 'ag-ui' && ((section === 'reference' && slug === 'event-mapping') || (section === 'guides' && ['interrupts','tool-views','json-render','subagents'].includes(slug)))) ||
             (library === 'chat' && slug === 'client-tools')) ? (
             library === 'render' ? (
+              slug === 'registry' ? <ReactRegistryPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} /> :
               slug === 'repeat-loops' ? <ReactRepeatLoopsPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} /> :
               slug === 'state-store' ? <ReactStateManagementPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} /> :
               <ReactRenderSpecPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />

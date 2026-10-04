@@ -90,7 +90,8 @@
             "cockpit-ag-ui-subagents-react",
             "cockpit-render-spec-rendering-react",
             "cockpit-render-state-management-react",
-            "cockpit-render-repeat-loops-react"
+            "cockpit-render-repeat-loops-react",
+            "cockpit-render-registry-react"
           ]
         }
       ],

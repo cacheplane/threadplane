@@ -1,5 +1,10 @@
 /** Closed authored frontend selection; callers cannot supply filesystem paths. */
 export function reactCockpitConfiguration(topic = 'streaming') {
+  if (topic === 'render-registry')
+    return Object.freeze({
+      topic: 'registry', adapter: 'none', appPath: 'cockpit/render/registry/react',
+      base: '/render/registry/react/', port: 4617, project: 'cockpit-render-registry-react',
+    });
   if (topic === 'render-repeat-loops')
     return Object.freeze({
       topic: 'repeat-loops', adapter: 'none', appPath: 'cockpit/render/repeat-loops/react',
