@@ -160,7 +160,12 @@ export function CockpitControlPlane({
   const product = entry
     ? PRODUCT_LABELS[entry.product] ?? entry.product
     : 'Documentation';
-  const language = entry?.language === 'typescript' ? 'TypeScript' : 'Python';
+  const language =
+    entry?.runtimeAdapter === 'none'
+      ? 'Browser'
+      : entry?.language === 'typescript'
+      ? 'TypeScript'
+      : 'Python';
   const currentCapability = entry?.topic ?? resolutionTitle ?? 'Documentation';
 
   const closeUtility = (

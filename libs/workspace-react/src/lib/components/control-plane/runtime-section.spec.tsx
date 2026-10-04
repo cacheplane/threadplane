@@ -18,6 +18,7 @@ import {
   type RuntimeSnapshot,
 } from '../../runtime/runtime-state';
 import { RuntimeSection } from './runtime-section';
+import { getSanitizedRuntimeTargetDisplay } from '../../runtime/runtime-target-session';
 
 const workspaceRoot = process.cwd().endsWith('/libs/workspace-react')
   ? resolve(process.cwd(), '../..')
@@ -216,18 +217,16 @@ describe('RuntimeSection', () => {
     expect(document.body.textContent).not.toContain('test-key-redact-me');
   });
 
-  it('shows unavailable target metadata for static adapters', () => {
+  it('shows browser execution metadata for static adapters', () => {
     renderSection('ready', {
-      runtimeTargetView: {
-        kind: 'none',
-        label: 'Runtime target unavailable',
-        origin: null,
-        pathname: null,
-        location: null,
-      },
+      runtimeTargetView: getSanitizedRuntimeTargetDisplay({
+        adapter: 'none',
+        target: null,
+      }),
     });
 
-    expect(screen.getByText('Runtime target unavailable')).toBeTruthy();
+    expect(screen.getByText('Runs in your browser')).toBeTruthy();
+    expect(screen.queryByText('Runtime target unavailable')).toBeNull();
     expect(screen.queryByText('Shared development')).toBeNull();
   });
 
