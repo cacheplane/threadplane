@@ -693,7 +693,9 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - name: Verify React cockpit source
         if: endsWith(matrix.cap.angular, '-react')
-        run: npx nx run-many -t test,lint -p "${{ matrix.cap.angular }}" --skip-nx-cache
+        run: |
+          npx nx test "${{ matrix.cap.angular }}" --reporters=default --skip-nx-cache
+          npx nx lint "${{ matrix.cap.angular }}" --skip-nx-cache
       - name: nx e2e ${{ matrix.cap.angular }}
         run: npx nx e2e "${{ matrix.cap.angular }}" --skip-nx-cache
       - name: Upload Playwright trace on failure
