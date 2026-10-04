@@ -54,4 +54,75 @@ assert.equal(
   renderToStaticMarkup(createElement(RenderSpec, { spec: null, registry })),
   ''
 );
+const produced = { list: [{ value: 42 }] };
+const functions = Object.create(null);
+Object.defineProperty(functions, 'inner', { value: () => produced });
+functions.outer = (args) => {
+  assert.equal(Object.isFrozen(args), true);
+  assert.equal(Object.isFrozen(args.value), true);
+  assert.equal(Object.isFrozen(args.value.list), true);
+  assert.notEqual(args.value, produced);
+  return String(args.value.list[0].value);
+};
+functions.rowLabel = (args) => `${args.value}/${args.index}`;
+functions.constructor = () => 'own constructor';
+const computed = {
+  root: 'root',
+  elements: {
+    root: { type: 'Box', props: {}, children: ['value', 'rows', 'named'] },
+    value: {
+      type: 'Text',
+      props: {
+        text: { $computed: 'outer', args: { value: { $computed: 'inner' } } },
+      },
+    },
+    rows: {
+      type: 'Box',
+      props: {},
+      children: ['row'],
+      repeat: { statePath: '/rows', key: 'id' },
+    },
+    row: {
+      type: 'Text',
+      props: {
+        text: {
+          $computed: 'rowLabel',
+          args: { value: { $item: 'text' }, index: { $index: true } },
+        },
+      },
+    },
+    named: { type: 'Text', props: { text: { $computed: 'constructor' } } },
+  },
+};
+const computedHtml = renderToStaticMarkup(
+  createElement(RenderSpec, { spec: computed, registry, state, functions })
+);
+assert.match(computedHtml, /<p>42<\/p>/);
+assert.match(computedHtml, /<p>A\/0<\/p><p>B\/1<\/p>/);
+assert.match(computedHtml, /<p>own constructor<\/p>/);
+assert.equal(Object.isFrozen(produced), false);
+assert.equal(Object.isFrozen(produced.list), false);
+for (const label of [
+  () => Promise.resolve('later'),
+  () => new Date(0),
+  () => Infinity,
+]) {
+  assert.throws(
+    () =>
+      renderToStaticMarkup(
+        createElement(RenderSpec, {
+          spec: {
+            root: 'text',
+            elements: {
+              text: { type: 'Text', props: { text: { $computed: 'label' } } },
+            },
+          },
+          registry,
+          functions: { label },
+        })
+      ),
+    TypeError
+  );
+}
 console.log('Installed read-only RenderSpec runtime contracts passed.');
+console.log('Installed pure computed RenderSpec contracts passed.');

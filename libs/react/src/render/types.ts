@@ -27,10 +27,18 @@ export interface RenderViewProps {
 export type ReactRenderRegistry = Readonly<
   Record<string, ComponentType<RenderViewProps>>
 >;
+/** A pure synchronous calculation; arguments are owned and recursively frozen. */
+export type RenderComputedFunction = (
+  args: Readonly<Record<string, RenderValue>>
+) => RenderValue;
+export type ReactRenderFunctions = Readonly<
+  Record<string, RenderComputedFunction>
+>;
 export interface RenderSpecProps {
   readonly spec: RenderSpecData | null;
   readonly registry: ReactRenderRegistry;
   readonly state?: DeepReadonly<Record<string, unknown>>;
+  readonly functions?: ReactRenderFunctions;
   readonly loading?: boolean;
   readonly fallback?: ComponentType<RenderViewProps>;
 }

@@ -292,6 +292,42 @@ resolvers. Repeat containers render their children per array item, with `$item`,
 key preserves mounted identity across reorder; absent or unsupported keys use the
 item index. String, number and index identities have separate namespaces.
 
+Supply an optional `functions` map for authored `$computed` expressions:
+
+```tsx
+import type { ReactRenderFunctions } from '@threadplane/react/render';
+
+const functions: ReactRenderFunctions = {
+  uppercase: ({ value }) => String(value).toUpperCase(),
+};
+const computedSpec = {
+  root: 'title',
+  elements: {
+    title: {
+      type: 'Title',
+      props: { text: { $computed: 'uppercase', args: { value: { $state: '/title' } } } },
+    },
+  },
+} as const;
+<RenderSpec spec={computedSpec} state={{ title: 'Trip recap' }} registry={registry} functions={functions} />;
+```
+
+`RenderComputedFunction` receives an owned, recursively frozen argument record
+and synchronously returns `RenderValue`. Literal, state, item, index and nested
+computed arguments use the existing resolver. Function results cross the same
+plain-data ownership boundary as other resolved values. Promises, executable
+callbacks and non-plain results are rejected. Calculations must be pure: React
+can evaluate them repeatedly during rendering, and no call count, caching or
+effect behavior is promised. Callback errors propagate as render errors.
+
+Function maps must be plain records or null-prototype records. Every own
+string-keyed callable data property is registered, including non-enumerable
+entries; inherited names are unavailable. Accessors, symbol keys and non-callable
+entries are rejected without invoking getters. The caller's map and data remain
+unfrozen and unmodified. Unknown function names resolve to `undefined` with the
+upstream warning behavior. This optional host map does not permit executable
+callbacks in raw specs or add actions, watchers or state ownership.
+
 State and resolved values must be finite, acyclic plain data. Functions, symbols,
 accessors and non-plain objects are rejected. Raw props also reject `undefined`
 and own `__proto__` keys because the upstream raw-prop resolver cannot preserve

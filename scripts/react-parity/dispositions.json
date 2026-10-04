@@ -14756,6 +14756,24 @@
       "status": "in-progress"
     },
     {
+      "id": "export:libs/react/src/render/index.ts#ReactRenderFunctions",
+      "taskIds": [
+        "T07",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress"
+    },
+    {
+      "id": "export:libs/react/src/render/index.ts#RenderComputedFunction",
+      "taskIds": [
+        "T07",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress"
+    },
+    {
       "id": "export:libs/react/src/render/index.ts#RenderElementData",
       "taskIds": [
         "T07",
@@ -14802,6 +14820,15 @@
     },
     {
       "id": "export:libs/react/src/render/index.ts#RenderViewProps",
+      "taskIds": [
+        "T07",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress"
+    },
+    {
+      "id": "source:libs/react/src/render/functions.ts",
       "taskIds": [
         "T07",
         "T24"
