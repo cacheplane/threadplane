@@ -11,9 +11,11 @@ import type {
 } from '@json-render/core';
 import type { RenderSpecProps, RenderValue } from './types.js';
 import { ownRenderValue } from './values.js';
+import { ownRenderFunctions } from './functions.js';
 
 const EMPTY_STATE = Object.freeze({});
-interface ElementProps extends Omit<RenderSpecProps, 'spec' | 'state'> {
+interface ElementProps
+  extends Omit<RenderSpecProps, 'spec' | 'state' | 'functions'> {
   readonly spec: NonNullable<RenderSpecProps['spec']>;
   readonly elementKey: string;
   readonly context: PropResolutionContext;
@@ -134,6 +136,7 @@ export function RenderSpec({
   spec,
   registry,
   state = EMPTY_STATE,
+  functions,
   loading,
   fallback,
 }: RenderSpecProps) {
@@ -147,7 +150,7 @@ export function RenderSpec({
       registry={registry}
       loading={loading}
       fallback={fallback}
-      context={{ stateModel }}
+      context={{ stateModel, functions: ownRenderFunctions(functions) }}
       ancestors={new Set()}
     />
   );

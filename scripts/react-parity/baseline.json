@@ -1,10 +1,13 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "74693837495fd24b6076ba0eae5c2516e2ba853e",
+  "baselineHead": "fa92535fc296e5f29d173a2c1ff5a9d37ec7bfdc",
   "sourceState": {
     "modified": [
-      "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "libs/cockpit-registry/src/lib/content-descriptors.ts"
+      "libs/react/README.md",
+      "libs/react/src/render/functions.ts",
+      "libs/react/src/render/index.ts",
+      "libs/react/src/render/render-spec.tsx",
+      "libs/react/src/render/types.ts"
     ],
     "untracked": []
   },
@@ -819,7 +822,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "e6d31ddb6e7c5d0229f908875562b3db2f8ba2dfcf24ee6fb7fb499028c1dee7"
+      "sha256": "609ad2fbda10ecbbdd8f1f00a44f47593b55da46438f2e38f8550f18b261455e"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -10181,6 +10184,20 @@
       ]
     },
     {
+      "id": "export:libs/react/src/render/index.ts#ReactRenderFunctions",
+      "kind": "export",
+      "path": "libs/react/src/render/index.ts",
+      "symbol": "ReactRenderFunctions",
+      "declarations": [
+        {
+          "path": "libs/react/src/render/types.ts",
+          "symbol": "ReactRenderFunctions",
+          "syntaxKind": "TypeAliasDeclaration",
+          "signature": "export type ReactRenderFunctions = Readonly<Record<string, RenderComputedFunction>>;"
+        }
+      ]
+    },
+    {
       "id": "export:libs/react/src/render/index.ts#ReactRenderRegistry",
       "kind": "export",
       "path": "libs/react/src/render/index.ts",
@@ -10191,6 +10208,20 @@
           "symbol": "ReactRenderRegistry",
           "syntaxKind": "TypeAliasDeclaration",
           "signature": "export type ReactRenderRegistry = Readonly<Record<string, ComponentType<RenderViewProps>>>;"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/render/index.ts#RenderComputedFunction",
+      "kind": "export",
+      "path": "libs/react/src/render/index.ts",
+      "symbol": "RenderComputedFunction",
+      "declarations": [
+        {
+          "path": "libs/react/src/render/types.ts",
+          "symbol": "RenderComputedFunction",
+          "syntaxKind": "TypeAliasDeclaration",
+          "signature": "export type RenderComputedFunction = (args: Readonly<Record<string, RenderValue>>) => RenderValue;"
         }
       ]
     },
@@ -10218,7 +10249,7 @@
           "path": "libs/react/src/render/render-spec.tsx",
           "symbol": "RenderSpec",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function RenderSpec({ spec, registry, state = EMPTY_STATE, loading, fallback, }: RenderSpecProps) {\n    if (!spec)\n        return null;\n    const stateModel = ownRenderValue(state) as Record<string, unknown>;\n    return (<Element spec={spec} elementKey={spec.root} registry={registry} loading={loading} fallback={fallback} context={{ stateModel }} ancestors={new Set()}/>);\n}"
+          "signature": "export function RenderSpec({ spec, registry, state = EMPTY_STATE, functions, loading, fallback, }: RenderSpecProps) {\n    if (!spec)\n        return null;\n    const stateModel = ownRenderValue(state) as Record<string, unknown>;\n    return (<Element spec={spec} elementKey={spec.root} registry={registry} loading={loading} fallback={fallback} context={{ stateModel, functions: ownRenderFunctions(functions) }} ancestors={new Set()}/>);\n}"
         }
       ]
     },
@@ -10246,7 +10277,7 @@
           "path": "libs/react/src/render/types.ts",
           "symbol": "RenderSpecProps",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface RenderSpecProps {\n    readonly spec: RenderSpecData | null;\n    readonly registry: ReactRenderRegistry;\n    readonly state?: DeepReadonly<Record<string, unknown>>;\n    readonly loading?: boolean;\n    readonly fallback?: ComponentType<RenderViewProps>;\n}"
+          "signature": "export interface RenderSpecProps {\n    readonly spec: RenderSpecData | null;\n    readonly registry: ReactRenderRegistry;\n    readonly state?: DeepReadonly<Record<string, unknown>>;\n    readonly functions?: ReactRenderFunctions;\n    readonly loading?: boolean;\n    readonly fallback?: ComponentType<RenderViewProps>;\n}"
         }
       ]
     },
@@ -14279,22 +14310,28 @@
       "sha256": "d088f04778a7b7742c786edcc9ef1e76285a90935999fe49df733a5dedc59461"
     },
     {
+      "id": "source:libs/react/src/render/functions.ts",
+      "kind": "source",
+      "path": "libs/react/src/render/functions.ts",
+      "sha256": "dad6ad2025822edf7d6e5e48a8ca51dc10082d60bf4ebba52176650ad7adc508"
+    },
+    {
       "id": "source:libs/react/src/render/index.ts",
       "kind": "source",
       "path": "libs/react/src/render/index.ts",
-      "sha256": "8cbeaf0da4865d7d43f8f6f4ba484eb98b7d9056a75ee09fc3460600df61d954"
+      "sha256": "14799a4b304ac4d54d3123c20145bc4681b45887e83b09773cd3bc1b6d3af4b5"
     },
     {
       "id": "source:libs/react/src/render/render-spec.tsx",
       "kind": "source",
       "path": "libs/react/src/render/render-spec.tsx",
-      "sha256": "87e23b5d09d144d09361ae0dc67d5e400159c62451fec969c40986be1f8ec9ab"
+      "sha256": "bed5b36a934b0faa3668ccdd3c17059ad86184c54389e7de27fc0b4253348d5b"
     },
     {
       "id": "source:libs/react/src/render/types.ts",
       "kind": "source",
       "path": "libs/react/src/render/types.ts",
-      "sha256": "a9d5551560824b97f0de7405845f1595f7c0067be28217cbcb3c6b367fd0e4a5"
+      "sha256": "a4d3ea12396351eeac40993aaf4edd66a2dd68796fccb30a6eb77ac8a21163f2"
     },
     {
       "id": "source:libs/react/src/render/values.ts",
