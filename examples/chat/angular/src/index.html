@@ -2,9 +2,45 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Threadplane chat — canonical demo</title>
+    <title>LangGraph chat demo — Threadplane</title>
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Copy below is mirrored from apps/website/src/lib/demo-meta.ts; its spec reads this file. -->
+    <meta
+      name="description"
+      content="Live Angular chat on LangGraph: streaming, durable threads, human approvals, tool progress, and generative UI. Embed, popup, and sidebar layouts."
+    />
+    <link rel="canonical" href="https://demo.threadplane.ai/" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0f1116" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Threadplane" />
+    <meta property="og:url" content="https://demo.threadplane.ai/" />
+    <meta property="og:title" content="LangGraph chat demo — Threadplane" />
+    <meta
+      property="og:description"
+      content="Live Angular chat on LangGraph: streaming, durable threads, human approvals, tool progress, and generative UI. Embed, popup, and sidebar layouts."
+    />
+    <meta property="og:image" content="https://demo.threadplane.ai/social-card.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="LangGraph chat demo — Threadplane. Beside the title, a browser frame at demo.threadplane.ai shows an agent proposing to delete three backups and pausing for Approve or Decline."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@threadplane" />
+    <meta name="twitter:creator" content="@blovedev" />
+    <meta name="twitter:title" content="LangGraph chat demo — Threadplane" />
+    <meta
+      name="twitter:description"
+      content="Live Angular chat on LangGraph: streaming, durable threads, human approvals, tool progress, and generative UI. Embed, popup, and sidebar layouts."
+    />
+    <meta name="twitter:image" content="https://demo.threadplane.ai/social-card.png" />
+    <meta
+      name="twitter:image:alt"
+      content="LangGraph chat demo — Threadplane. Beside the title, a browser frame at demo.threadplane.ai shows an agent proposing to delete three backups and pausing for Approve or Decline."
+    />
     <!-- A2UI Icon component renders Material Symbols by ligature name. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -33,7 +69,8 @@
         } catch (e) { /* localStorage blocked — defaults apply */ }
       })();
     </script>
-    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <link rel="icon" href="favicon.ico" sizes="32x32" />
+    <link rel="icon" type="image/svg+xml" href="icon.svg" />
   </head>
   <body>
     <app-root></app-root>
