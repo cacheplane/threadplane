@@ -1,7 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { Fragment, useCallback, useEffect, useId, useRef, useState } from 'react';
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from 'react';
 import { ChevronDown } from 'lucide-react';
 import {
   trackCtaClick,
@@ -75,104 +82,111 @@ export function NavDesktop() {
 
   return (
     <div
-      className="hidden lg:flex items-center gap-8 nav-desktop"
+      className="hidden lg:flex items-center nav-desktop"
       onMouseLeave={scheduleClose}
     >
-      {NAV_TRIGGERS.map((trigger) =>
-        trigger.kind === 'link' ? (
-          <Link
-            key={trigger.id}
-            href={trigger.href}
-            onMouseEnter={() => {
-              clearTimers();
-              setOpenId(null);
-            }}
-            onClick={() =>
-              trackCtaClick({
-                surface: 'nav',
-                destination_url: trigger.href,
-                cta_id: `nav_${trigger.ctaId}`,
-                cta_text: trigger.label,
-              })
-            }
-            className="text-sm font-mono transition-colors nav-link"
-          >
-            {trigger.label}
-          </Link>
-        ) : (
-          <Fragment key={trigger.id}>
-            <button
-              type="button"
-              ref={(node) => {
-                if (node) triggerRefs.current.set(trigger.id, node);
-                else triggerRefs.current.delete(trigger.id);
-              }}
-              onMouseEnter={() => scheduleOpen(trigger.id)}
-              onClick={() => {
+      {/* Triggers follow the logo; actions sit at the row's far edge. Both
+       * groups stay unpositioned so a trigger's offsetLeft keeps measuring
+       * from `.nav-bar > div`, which is what the panel positioning reads. */}
+      <div className="flex items-center gap-8 nav-desktop-primary">
+        {NAV_TRIGGERS.map((trigger) =>
+          trigger.kind === 'link' ? (
+            <Link
+              key={trigger.id}
+              href={trigger.href}
+              onMouseEnter={() => {
                 clearTimers();
-                setOpenId((current) =>
-                  current === trigger.id ? null : trigger.id
-                );
+                setOpenId(null);
               }}
-              aria-expanded={openId === trigger.id}
-              aria-controls={
-                openId === trigger.id ? panelId(trigger.id) : undefined
+              onClick={() =>
+                trackCtaClick({
+                  surface: 'nav',
+                  destination_url: trigger.href,
+                  cta_id: `nav_${trigger.ctaId}`,
+                  cta_text: trigger.label,
+                })
               }
-              className="text-sm font-mono transition-colors nav-link nav-trigger"
+              className="text-sm font-mono transition-colors nav-link"
             >
               {trigger.label}
-              <ChevronDown
-                size={14}
-                strokeWidth={2}
-                aria-hidden="true"
-                data-open={openId === trigger.id || undefined}
-                className="nav-trigger-caret"
-              />
-            </button>
-            {openId === trigger.id ? (
-              <div
-                className="nav-panel-shell"
-                onMouseEnter={clearTimers}
-                onMouseLeave={scheduleClose}
+            </Link>
+          ) : (
+            <Fragment key={trigger.id}>
+              <button
+                type="button"
+                ref={(node) => {
+                  if (node) triggerRefs.current.set(trigger.id, node);
+                  else triggerRefs.current.delete(trigger.id);
+                }}
+                onMouseEnter={() => scheduleOpen(trigger.id)}
+                onClick={() => {
+                  clearTimers();
+                  setOpenId((current) =>
+                    current === trigger.id ? null : trigger.id
+                  );
+                }}
+                aria-expanded={openId === trigger.id}
+                aria-controls={
+                  openId === trigger.id ? panelId(trigger.id) : undefined
+                }
+                className="text-sm font-mono transition-colors nav-link nav-trigger"
               >
-                <Panel panel={trigger.panel} id={panelId(trigger.id)} />
-              </div>
-            ) : null}
-          </Fragment>
-        )
-      )}
+                {trigger.label}
+                <ChevronDown
+                  size={14}
+                  strokeWidth={2}
+                  aria-hidden="true"
+                  data-open={openId === trigger.id || undefined}
+                  className="nav-trigger-caret"
+                />
+              </button>
+              {openId === trigger.id ? (
+                <div
+                  className="nav-panel-shell"
+                  onMouseEnter={clearTimers}
+                  onMouseLeave={scheduleClose}
+                >
+                  <Panel panel={trigger.panel} id={panelId(trigger.id)} />
+                </div>
+              ) : null}
+            </Fragment>
+          )
+        )}
+      </div>
 
-      <a
-        href={GITHUB_REPO_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={() =>
-          trackExternalLinkClick(GITHUB_REPO_URL, {
-            surface: 'nav',
-            cta_id: 'nav_github',
-            cta_text: 'GitHub',
-          })
-        }
-        className="transition-colors nav-link"
-        aria-label="GitHub repository"
-      >
-        <GitHubIcon />
-      </a>
-      <Button
-        variant="primary"
-        size="md"
-        href="/contact"
-        onClick={() =>
-          trackCtaClick({
-            surface: 'nav',
-            destination_url: '/contact',
-            cta_id: 'nav_talk_to_us',
-            cta_text: 'Talk to Us',
-          })
-        }
-      >
-        Talk to Us
-      </Button>
+      <div className="flex items-center gap-8 nav-desktop-actions">
+        <a
+          href={GITHUB_REPO_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() =>
+            trackExternalLinkClick(GITHUB_REPO_URL, {
+              surface: 'nav',
+              cta_id: 'nav_github',
+              cta_text: 'GitHub',
+            })
+          }
+          className="transition-colors nav-link"
+          aria-label="GitHub repository"
+        >
+          <GitHubIcon />
+        </a>
+        <Button
+          variant="primary"
+          size="md"
+          href="/contact"
+          onClick={() =>
+            trackCtaClick({
+              surface: 'nav',
+              destination_url: '/contact',
+              cta_id: 'nav_talk_to_us',
+              cta_text: 'Talk to Us',
+            })
+          }
+        >
+          Talk to Us
+        </Button>
+      </div>
     </div>
   );
 }

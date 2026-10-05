@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 /**
  * jsdom has no layout engine, so the unit tests cannot see a panel that renders
@@ -146,5 +146,72 @@ test.describe('desktop nav panels', () => {
     );
     await page.waitForTimeout(400);
     await expect(page.locator('.nav-panel')).toBeVisible();
+  });
+});
+
+/**
+ * The row's content box: its padding box minus the horizontal padding
+ * Tailwind's px-6 / md:px-8 puts on it. Panels and triggers are positioned
+ * against this box, so the assertions below are phrased in its terms.
+ */
+async function rowContentBox(page: Page) {
+  const row = page.locator('.nav-bar > div');
+  const box = await row.boundingBox();
+  if (!box) throw new Error('Nav row has no box');
+  const [padLeft, padRight] = await row.evaluate((el) => {
+    const style = getComputedStyle(el);
+    return [parseFloat(style.paddingLeft), parseFloat(style.paddingRight)];
+  });
+  return { left: box.x + padLeft, right: box.x + box.width - padRight };
+}
+
+test.describe('desktop nav row on a wide screen', () => {
+  test('shares the page container and puts the triggers beside the logo', async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 1000 });
+    await page.goto('/');
+
+    const content = await rowContentBox(page);
+    const logo = await page.locator('.nav-logo-link').boundingBox();
+    // The hero's content box, from the shared Container primitive (data-ui)
+    // every section centres: --container-page wide, inset by the
+    // --spacing-container-x gutter. At 1920 that is 1200px at x=360 with a
+    // 40px gutter, so the text edge is x=400.
+    const container = page
+      .locator("main [data-ui='container'][data-size='default']")
+      .first();
+    const containerBox = await container.boundingBox();
+    const [containerPadLeft, containerPadRight] = await container.evaluate((el) => {
+      const style = getComputedStyle(el);
+      return [parseFloat(style.paddingLeft), parseFloat(style.paddingRight)];
+    });
+    const libraries = await page.getByRole('button', { name: 'Libraries' }).boundingBox();
+    const cta = await page.getByRole('link', { name: 'Talk to Us' }).boundingBox();
+    if (!logo || !containerBox || !libraries || !cta) throw new Error('Nav row has no box');
+    const textLeft = containerBox.x + containerPadLeft;
+    const textRight = containerBox.x + containerBox.width - containerPadRight;
+
+    // The bar's content box is the sections' text box. Before this the logo
+    // sat at x=32.
+    expect(Math.abs(logo.x - textLeft)).toBeLessThanOrEqual(1);
+    expect(Math.abs(content.left - textLeft)).toBeLessThanOrEqual(1);
+    expect(Math.abs(content.right - textRight)).toBeLessThanOrEqual(1);
+
+    // The first trigger follows the logo after a 40px lead, not a 1200px one.
+    expect(libraries.x - (logo.x + logo.width)).toBeGreaterThanOrEqual(38);
+    expect(libraries.x - (logo.x + logo.width)).toBeLessThanOrEqual(42);
+
+    // The CTA still closes the row at the content box's right edge.
+    expect(Math.abs(cta.x + cta.width - content.right)).toBeLessThanOrEqual(1);
+  });
+
+  test('stays full-bleed on docs, where the shell is full-bleed too', async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 1000 });
+    await page.goto('/docs');
+
+    const row = await page.locator('.nav-bar > div').boundingBox();
+    const logo = await page.locator('.nav-logo-link').boundingBox();
+    if (!row || !logo) throw new Error('Nav row has no box');
+    expect(row.width).toBe(1920);
+    expect(logo.x).toBeLessThan(48);
   });
 });

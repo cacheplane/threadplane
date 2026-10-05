@@ -187,6 +187,22 @@
   padding-top: 16px;
   padding-bottom: 16px;
 }
+/* Marketing rows share the page's container. Every section centres the
+ * Container primitive (ui.css): --container-page wide with a
+ * --spacing-container-x gutter. The bar used to span the viewport, which on
+ * a 1920px screen put the logo at x=32 and the links at x=1315 with nothing
+ * between. Using the same two tokens here, not a copied number, puts the
+ * logo's left edge on the sections' text edge and keeps it there if the
+ * container ever changes. Scoped to lg, where the desktop row exists; the
+ * phone and tablet bars keep their px-6 / md:px-8. Docs stays full-bleed:
+ * its shell is full-bleed (rail at x=56) and the logo sits over the rail. */
+@media (min-width: 1024px) {
+  .nav-bar[data-route='marketing'] > div {
+    max-width: var(--container-page);
+    padding-inline: var(--spacing-container-x);
+    margin-inline: auto;
+  }
+}
 .nav-bar[data-route='docs'] [data-ui='button'][data-variant='primary'] {
   background: none;
   color: var(--color-accent);
@@ -540,6 +556,14 @@
    * the 40px CTA already made this box the full content height, so there
    * stretching is a no-op. */
   align-self: stretch;
+  /* Fill the row so .nav-desktop-actions can reach its right edge. */
+  flex: 1 1 auto;
+}
+.nav-desktop-primary {
+  margin-left: 40px;
+}
+.nav-desktop-actions {
+  margin-left: auto;
 }
 .nav-bar > div {
   position: relative;
