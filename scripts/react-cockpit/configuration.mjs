@@ -1,5 +1,10 @@
 /** Closed authored frontend selection; callers cannot supply filesystem paths. */
 export function reactCockpitConfiguration(topic = 'streaming') {
+  if (topic === 'chat-tool-calls')
+    return Object.freeze({
+      topic: 'tool-calls', library: 'chat', adapter: 'langgraph', appPath: 'cockpit/chat/tool-calls/react',
+      base: '/chat/tool-calls/react/', port: 4623, project: 'cockpit-chat-tool-calls-react',
+    });
   if (topic === 'chat-interrupts')
     return Object.freeze({
       topic: 'interrupts', library: 'chat', adapter: 'langgraph', appPath: 'cockpit/chat/interrupts/react',

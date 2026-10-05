@@ -15,6 +15,7 @@ import { createDeploymentRuntimeFixture } from './deployment-runtime-fixture.mjs
 import { createChatMessagesFixture } from './chat-messages-fixture.mjs';
 import { createChatInputFixture } from './chat-input-fixture.mjs';
 import { createChatInterruptsFixture } from './chat-interrupts-fixture.mjs';
+import { createChatToolCallsFixture } from './chat-tool-calls-fixture.mjs';
 import { createAgUiStreamingFixture } from './ag-ui-streaming-fixture.mjs';
 import { createAgUiInterruptsFixture } from './ag-ui-interrupts-fixture.mjs';
 import { createAgUiToolViewsFixture } from './ag-ui-tool-views-fixture.mjs';
@@ -22,6 +23,7 @@ import { createAgUiJsonRenderFixture } from './ag-ui-json-render-fixture.mjs';
 import { createAgUiSubagentsFixture } from './ag-ui-subagents-fixture.mjs';
 
 const configuration = reactCockpitConfiguration(process.argv[2]);
+const chatToolCallsFixture = configuration.library === 'chat' && configuration.topic === 'tool-calls' ? createChatToolCallsFixture() : null;
 const chatInterruptsFixture = configuration.library === 'chat' && configuration.topic === 'interrupts' ? createChatInterruptsFixture() : null;
 const chatMessagesFixture = configuration.topic === 'messages' ? createChatMessagesFixture() : null;
 const chatInputFixture = configuration.topic === 'input' ? createChatInputFixture() : null;
@@ -94,6 +96,7 @@ const release = () => {
 };
 const server = createServer(async (request, response) => {
   const pathname = new URL(request.url, 'http://localhost').pathname;
+  if (chatToolCallsFixture && (await chatToolCallsFixture(request, response, pathname))) return;
   if (chatInterruptsFixture && (await chatInterruptsFixture(request, response, pathname))) return;
   if (chatMessagesFixture && (await chatMessagesFixture(request, response, pathname))) return;
   if (chatInputFixture && (await chatInputFixture(request, response, pathname))) return;
@@ -309,11 +312,11 @@ const server = createServer(async (request, response) => {
 server.listen(configuration.port, '127.0.0.1');
 const parentServer = !process.argv.includes('--no-parent')
   ? createServer(server.listeners('request')[0]).listen(3000, '127.0.0.1') : null;
-if (chatInterruptsFixture) {
+if (chatInterruptsFixture || chatToolCallsFixture) {
   let closing;
   const shutdown = (code = 0) => {
     closing ??= (async () => {
-      await chatInterruptsFixture.close();
+      await (chatInterruptsFixture ?? chatToolCallsFixture).close();
       await Promise.all([server, parentServer].filter(Boolean).map((owned) => new Promise((resolve) => {
         owned.close(resolve);
         owned.closeAllConnections();
