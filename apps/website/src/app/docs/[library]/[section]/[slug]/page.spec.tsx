@@ -17,6 +17,7 @@ import { ReactRegistryPreview } from '../../../../../components/docs/ReactRegist
 import { ReactRepeatLoopsPreview } from '../../../../../components/docs/ReactRepeatLoopsPreview';
 import { ReactStateManagementPreview } from '../../../../../components/docs/ReactStateManagementPreview';
 import { ReactChatMessagesPreview } from '../../../../../components/docs/ReactChatMessagesPreview';
+import { ReactChatToolCallsPreview } from '../../../../../components/docs/ReactChatToolCallsPreview';
 import { ReactChatInterruptsPreview } from '../../../../../components/docs/ReactChatInterruptsPreview';
 import { ReactChatInputPreview } from '../../../../../components/docs/ReactChatInputPreview';
 import { ReactComputedFunctionsPreview } from '../../../../../components/docs/ReactComputedFunctionsPreview';
@@ -73,6 +74,15 @@ const route = (library: string, section: string, slug: string, mode?: string) =>
   } as never);
 
 describe('unified docs workspace route', () => {
+  it('selects a native Chat Tool Calls article on its canonical component page', async () => {
+    const tree=await route('chat','components','chat-tool-calls');
+    const workspace=findElement(tree,WebsiteWorkspace as ComponentType<never>);
+    const article=findElement(workspace?.props.reactDocsSlot,ReactChatToolCallsPreview as ComponentType<never>);
+    expect(article).not.toBeNull();
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/chat/tool-calls/react/src/authority.ts');
+    expect(findElement(workspace?.props.reactDocsSlot,ReactStreamingPreview as ComponentType<never>)).toBeNull();
+    expect(findElement(workspace?.props.reactDocsSlot,ReactClientToolsPreview as ComponentType<never>)).toBeNull();
+  });
   it('selects a native Chat Interrupts article on its canonical component page', async () => {
     const tree=await route('chat','components','chat-interrupt-panel');
     const workspace=findElement(tree,WebsiteWorkspace as ComponentType<never>);

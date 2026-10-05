@@ -11,6 +11,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, MessagesState, END
 from langgraph.prebuilt import ToolNode
+from langgraph.constants import TAG_NOSTREAM
 from langgraph_sdk import get_client
 
 from src.aviation_tools import ALL_TOOLS as AVIATION_TOOLS
@@ -51,7 +52,7 @@ async def generate_title(state: MessagesState, config) -> dict:
             return {}
         if first_user.content.lstrip().startswith("{"):
             return {}
-        llm = ChatOpenAI(model=_TITLE_MODEL, temperature=0)
+        llm = ChatOpenAI(model=_TITLE_MODEL, temperature=0, tags=[TAG_NOSTREAM])
         response = await llm.ainvoke([
             SystemMessage(content=_TITLE_PROMPT),
             HumanMessage(content=first_user.content),
