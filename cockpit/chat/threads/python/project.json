@@ -21,10 +21,30 @@
         "cwd": "cockpit/chat/threads/python",
         "command": "uv run langgraph dev --port 5506 --no-browser"
       }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "cwd": "cockpit/chat/threads/python",
+        "command": "uv run --frozen --python 3.12 python -m unittest discover -s tests"
+      }
+    },
+    "smoke": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [
+        "test"
+      ],
+      "options": {
+        "cwd": "cockpit/chat/threads/python",
+        "command": "npx tsx -e \"import { chatThreadsPythonModule } from './src/index.ts'; const module = chatThreadsPythonModule; if (module.id !== 'chat-threads-python' || module.title !== 'Chat Threads (Python)') { throw new Error('Unexpected module shape for ' + module.id); }\""
+      }
     }
   },
   "tags": [
     "scope:cockpit-e2e",
-    "scope:cockpit-examples"
+    "scope:cockpit-examples",
+    "scope:cockpit-smoke"
   ]
 }

@@ -1,0 +1,54 @@
+{
+  "name": "cockpit-chat-threads-react",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "cockpit/chat/threads/react/src",
+  "projectType": "application",
+  "tags": ["scope:cockpit-examples", "scope:cockpit-e2e", "framework:react"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [
+        {
+          "target": "build",
+          "projects": ["core", "content", "react"]
+        }
+      ],
+      "outputs": ["{workspaceRoot}/dist/cockpit/chat/threads/react"],
+      "options": {
+        "command": "node scripts/react-cockpit/build.mjs chat-threads"
+      }
+    },
+    "test": {
+      "executor": "@nx/vitest:test",
+      "options": {
+        "configFile": "cockpit/chat/threads/react/vite.config.mts"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "e2e": {
+      "executor": "@nx/playwright:playwright",
+      "cache": false,
+      "dependsOn": ["build", "fixture-test"],
+      "options": {
+        "config": "cockpit/chat/threads/react/e2e/playwright.config.ts",
+        "skipInstall": true
+      }
+    },
+    "fixture-test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [
+        {
+          "target": "test",
+          "projects": ["cockpit-chat-threads-python"]
+        }
+      ],
+      "options": {
+        "command": "node --test scripts/react-cockpit/chat-threads-fixture.spec.mjs"
+      }
+    }
+  }
+}

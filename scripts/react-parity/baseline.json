@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "b1c8cb44b318285dd056b69e132f2992809d4ce9",
+  "baselineHead": "283ee0abf1f51e9c0b15d6dc586f34a5427f90bf",
   "sourceState": {
     "modified": [
       "libs/cockpit-registry/src/lib/capability-registry.ts",
@@ -13254,13 +13254,13 @@
       "id": "source:libs/cockpit-registry/src/lib/capability-registry.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "sha256": "a7ac2684671f9e49a843c7b10a34f6fa4aaa0e4f250e179bd33e5b7d94555c71"
+      "sha256": "a3ea90f5f9d792a1ef5ed0f8cad62844fce63056edb22a9f32afe0240c5bc925"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/content-descriptors.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/content-descriptors.ts",
-      "sha256": "e0289c45d357bfbe077a2671f986e65e944cca202bafadd36329a84b20eb4852"
+      "sha256": "f0139003d322bed1ef7ae67a89a83967c3a841eee8cfa478cc1ed68f3783614b"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/docs-links.ts",
