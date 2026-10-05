@@ -4,6 +4,15 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { deriveCockpitCaps, selectCockpitCaps } from './cockpit-matrix.mjs';
+test('Chat Messages owns a closed native React identity', async () => {
+  const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
+  assert.deepEqual(reactCockpitConfiguration('chat-messages'), {
+    topic: 'messages', adapter: 'langgraph', appPath: 'cockpit/chat/messages/react',
+    base: '/chat/messages/react/', port: 4620, project: 'cockpit-chat-messages-react',
+  });
+  for (const key of ['messages', 'chat/messages', '../chat-messages'])
+    assert.throws(() => reactCockpitConfiguration(key), /Unsupported React cockpit topic/);
+});
 test('Computed Functions owns a closed static React identity', async () => {
   const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
   assert.deepEqual(reactCockpitConfiguration('render-computed-functions'), {

@@ -42,8 +42,17 @@ import { runtimesAwsStrandsPythonModule } from '../../../../cockpit/runtimes/aws
 import { runtimesMastraAngularModule } from '../../../../cockpit/runtimes/mastra/angular/src/index';
 import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
-import { capabilityModules } from './content-descriptors';
+import { capabilityModules, getFrontendCapabilityDescriptor } from './content-descriptors';
 import { cockpitManifest } from './manifest';
+it('keeps native Chat Messages attached to the original backend descriptor assets', () => {
+  const canonical=capabilityModules.find(entry=>entry.id==='chat-messages-python');
+  if (!canonical) throw new Error('Missing canonical Chat Messages');
+  const react=getFrontendCapabilityDescriptor(canonical.manifestIdentity as never,'react');
+  expect(react?.backendAssetPaths).toEqual(chatMessagesPythonModule.backendAssetPaths);
+  expect(react?.promptAssetPaths).toEqual(chatMessagesPythonModule.promptAssetPaths);
+  expect(react?.manifestIdentity).toEqual(canonical.manifestIdentity);
+  expect(Object.isFrozen(react)).toBe(true);
+});
 
 const EXPECTED_DESCRIPTOR_IDS = [
   'langgraph-streaming-python',
