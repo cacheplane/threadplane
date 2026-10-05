@@ -4,6 +4,16 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { deriveCockpitCaps, selectCockpitCaps } from './cockpit-matrix.mjs';
+test('Chat Interrupts owns an explicit native React identity separate from LangGraph', async () => {
+  const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
+  assert.deepEqual(reactCockpitConfiguration('chat-interrupts'), {
+    topic: 'interrupts', library: 'chat', adapter: 'langgraph', appPath: 'cockpit/chat/interrupts/react',
+    base: '/chat/interrupts/react/', port: 4622, project: 'cockpit-chat-interrupts-react',
+  });
+  assert.equal(reactCockpitConfiguration('interrupts').appPath, 'cockpit/langgraph/interrupts/react');
+  for (const key of ['chat/interrupts', '../chat-interrupts'])
+    assert.throws(() => reactCockpitConfiguration(key), /Unsupported React cockpit topic/);
+});
 test('Chat Input owns a closed native React identity', async () => {
   const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
   assert.deepEqual(reactCockpitConfiguration('chat-input'), {
