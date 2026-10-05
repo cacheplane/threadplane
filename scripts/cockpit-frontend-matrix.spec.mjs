@@ -4,6 +4,16 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { deriveCockpitCaps, selectCockpitCaps } from './cockpit-matrix.mjs';
+test('Chat Subagents owns an exact native React identity', async () => {
+  const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
+  assert.deepEqual(reactCockpitConfiguration('chat-subagents'), {
+    topic: 'subagents', library: 'chat', adapter: 'langgraph', appPath: 'cockpit/chat/subagents/react',
+    base: '/chat/subagents/react/', port: 4624, project: 'cockpit-chat-subagents-react',
+  });
+  for (const key of ['subagents', 'chat/subagents', '../chat-subagents'])
+    assert.throws(() => reactCockpitConfiguration(key), /Unsupported React cockpit topic/);
+  assert.equal(reactCockpitConfiguration('client-tools').appPath, 'cockpit/langgraph/client-tools/react');
+});
 test('Chat Tool Calls owns an exact native React identity', async () => {
   const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
   assert.deepEqual(reactCockpitConfiguration('chat-tool-calls'), {
