@@ -44,6 +44,15 @@ import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { capabilityModules, getFrontendCapabilityDescriptor } from './content-descriptors';
 import { cockpitManifest } from './manifest';
+it('keeps native Chat Subagents attached to the original backend descriptor assets', () => {
+  const canonical=capabilityModules.find(entry=>entry.id==='chat-subagents-python');
+  if (!canonical) throw new Error('Missing canonical Chat Subagents');
+  const react=getFrontendCapabilityDescriptor(canonical.manifestIdentity as never,'react');
+  expect(react?.backendAssetPaths).toEqual(chatSubagentsPythonModule.backendAssetPaths);
+  expect(react?.promptAssetPaths).toEqual(chatSubagentsPythonModule.promptAssetPaths);
+  expect(react?.manifestIdentity).toEqual(canonical.manifestIdentity);
+  expect(Object.isFrozen(react)).toBe(true);
+});
 it('keeps native Chat Tool Calls attached to the original backend descriptor assets', () => {
   const canonical=capabilityModules.find(entry=>entry.id==='chat-tool-calls-python');
   if (!canonical) throw new Error('Missing canonical Chat Tool Calls');

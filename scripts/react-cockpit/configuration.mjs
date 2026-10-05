@@ -1,5 +1,10 @@
 /** Closed authored frontend selection; callers cannot supply filesystem paths. */
 export function reactCockpitConfiguration(topic = 'streaming') {
+  if (topic === 'chat-subagents')
+    return Object.freeze({
+      topic: 'subagents', library: 'chat', adapter: 'langgraph', appPath: 'cockpit/chat/subagents/react',
+      base: '/chat/subagents/react/', port: 4624, project: 'cockpit-chat-subagents-react',
+    });
   if (topic === 'chat-tool-calls')
     return Object.freeze({
       topic: 'tool-calls', library: 'chat', adapter: 'langgraph', appPath: 'cockpit/chat/tool-calls/react',
