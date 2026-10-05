@@ -381,6 +381,13 @@ export const createWebsitePlaywrightConfig = (
                   reuseExistingServer,
                   timeout: 180_000,
                 },
+                {
+                  command: 'npx nx run cockpit-chat-input-python:smoke && node scripts/react-cockpit/serve.mjs chat-input --no-parent',
+                  cwd: '../..',
+                  url: 'http://127.0.0.1:4621',
+                  reuseExistingServer,
+                  timeout: 180_000,
+                },
               ]
             : []),
         ]

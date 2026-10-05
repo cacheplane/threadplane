@@ -4,6 +4,15 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { deriveCockpitCaps, selectCockpitCaps } from './cockpit-matrix.mjs';
+test('Chat Input owns a closed native React identity', async () => {
+  const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
+  assert.deepEqual(reactCockpitConfiguration('chat-input'), {
+    topic: 'input', adapter: 'langgraph', appPath: 'cockpit/chat/input/react',
+    base: '/chat/input/react/', port: 4621, project: 'cockpit-chat-input-react',
+  });
+  for (const key of ['input', 'chat/input', '../chat-input'])
+    assert.throws(() => reactCockpitConfiguration(key), /Unsupported React cockpit topic/);
+});
 test('Chat Messages owns a closed native React identity', async () => {
   const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
   assert.deepEqual(reactCockpitConfiguration('chat-messages'), {

@@ -13,6 +13,7 @@ import { createSubgraphsFixture } from './subgraphs-fixture.mjs';
 import { createTimeTravelFixture } from './time-travel-fixture.mjs';
 import { createDeploymentRuntimeFixture } from './deployment-runtime-fixture.mjs';
 import { createChatMessagesFixture } from './chat-messages-fixture.mjs';
+import { createChatInputFixture } from './chat-input-fixture.mjs';
 import { createAgUiStreamingFixture } from './ag-ui-streaming-fixture.mjs';
 import { createAgUiInterruptsFixture } from './ag-ui-interrupts-fixture.mjs';
 import { createAgUiToolViewsFixture } from './ag-ui-tool-views-fixture.mjs';
@@ -21,6 +22,7 @@ import { createAgUiSubagentsFixture } from './ag-ui-subagents-fixture.mjs';
 
 const configuration = reactCockpitConfiguration(process.argv[2]);
 const chatMessagesFixture = configuration.topic === 'messages' ? createChatMessagesFixture() : null;
+const chatInputFixture = configuration.topic === 'input' ? createChatInputFixture() : null;
 const agUiSubagentsFixture =
   configuration.adapter === 'ag-ui' && configuration.topic === 'subagents'
     ? createAgUiSubagentsFixture()
@@ -91,6 +93,7 @@ const release = () => {
 const server = createServer(async (request, response) => {
   const pathname = new URL(request.url, 'http://localhost').pathname;
   if (chatMessagesFixture && (await chatMessagesFixture(request, response, pathname))) return;
+  if (chatInputFixture && (await chatInputFixture(request, response, pathname))) return;
   if (configuration.adapter === 'none') {
     if (!['GET', 'HEAD'].includes(request.method)) {
       response.writeHead(405, { allow: 'GET, HEAD' });

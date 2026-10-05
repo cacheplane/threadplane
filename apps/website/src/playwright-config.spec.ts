@@ -12,8 +12,8 @@ describe('Website Playwright configuration', () => {
     const prerequisites = project.targets.e2e.dependsOn?.find(
       (dependency: { target?: string }) => dependency.target === 'build'
     )?.projects ?? [];
-    expect(prerequisites).toHaveLength(21);
-    expect(new Set(prerequisites).size).toBe(21);
+    expect(prerequisites).toHaveLength(22);
+    expect(new Set(prerequisites).size).toBe(22);
     expect([...prerequisites].sort()).toEqual(
       getCockpitFrontends()
         .filter(frontend => frontend.frontend === 'react')
@@ -59,19 +59,19 @@ describe('Website Playwright configuration', () => {
     const project = JSON.parse(readFileSync(resolve(import.meta.dirname,'../project.json'),'utf8'));
     expect(project.implicitDependencies).toContain('cockpit-ag-ui-tool-views-angular');
   });
-  it('starts twenty-one owned React servers after exact fresh Nx prerequisites', () => {
+  it('starts twenty-two owned React servers after exact fresh Nx prerequisites', () => {
     const config = createWebsitePlaywrightConfig({ CI: 'true' });
     const servers = Array.isArray(config.webServer) ? config.webServer : [];
-    const reactServers = servers.filter(server => /^http:\/\/127\.0\.0\.1:46(?:0\d|1[0123456789]|20)$/.test(server.url ?? ''));
-    expect(reactServers).toHaveLength(21);
+    const reactServers = servers.filter(server => /^http:\/\/127\.0\.0\.1:46(?:0\d|1[0123456789]|2[01])$/.test(server.url ?? ''));
+    expect(reactServers).toHaveLength(22);
     expect(reactServers.every(server => server.reuseExistingServer === false)).toBe(true);
     expect(reactServers.find(server => server.url === 'http://127.0.0.1:4610')?.command).toBe('node scripts/react-cockpit/serve.mjs ag-ui-interrupts --no-parent');
     const project = JSON.parse(readFileSync(resolve(import.meta.dirname, '../project.json'), 'utf8'));
     const projects = project.targets.e2e.dependsOn.find(
       (dependency: { target?: string }) => dependency.target === 'build'
     ).projects;
-    expect(projects).toHaveLength(21);
-    expect(new Set(projects).size).toBe(21);
+    expect(projects).toHaveLength(22);
+    expect(new Set(projects).size).toBe(22);
     expect(projects).toContain('cockpit-render-state-management-react');
     expect(projects).toContain('cockpit-render-repeat-loops-react');
     expect(projects).toContain('cockpit-render-registry-react');
@@ -85,7 +85,9 @@ describe('Website Playwright configuration', () => {
     expect(projects).toContain('cockpit-render-spec-rendering-react');
     expect(projects).toContain('cockpit-render-computed-functions-react');
     expect(projects).toContain('cockpit-chat-messages-react');
+    expect(projects).toContain('cockpit-chat-input-react');
     expect(reactServers.find(server => server.url === 'http://127.0.0.1:4620')?.command).toBe('npx nx run cockpit-chat-messages-python:smoke && node scripts/react-cockpit/serve.mjs chat-messages --no-parent');
+    expect(reactServers.find(server => server.url === 'http://127.0.0.1:4621')?.command).toBe('npx nx run cockpit-chat-input-python:smoke && node scripts/react-cockpit/serve.mjs chat-input --no-parent');
     expect(reactServers.find(server => server.url === 'http://127.0.0.1:4619')?.command).toBe('node scripts/react-cockpit/serve.mjs render-computed-functions --no-parent');
     expect(reactServers.find(server => server.url === 'http://127.0.0.1:4614')?.command).toBe('node scripts/react-cockpit/serve.mjs render-spec-rendering --no-parent');
     expect(reactServers.find(server => server.url === 'http://127.0.0.1:4613')?.command).toBe('npx nx run cockpit-ag-ui-subagents-python:smoke && node scripts/react-cockpit/serve.mjs ag-ui-subagents --no-parent');
@@ -355,6 +357,7 @@ describe('Website Playwright configuration', () => {
       expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs render-element-rendering --no-parent',url:'http://127.0.0.1:4618'}),
       expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs render-computed-functions --no-parent',url:'http://127.0.0.1:4619'}),
       expect.objectContaining({command:'npx nx run cockpit-chat-messages-python:smoke && node scripts/react-cockpit/serve.mjs chat-messages --no-parent',url:'http://127.0.0.1:4620'}),
+      expect.objectContaining({command:'npx nx run cockpit-chat-input-python:smoke && node scripts/react-cockpit/serve.mjs chat-input --no-parent',url:'http://127.0.0.1:4621'}),
     ]);
     expect(config.testIgnore).toEqual([
       '**/platform-production-smoke.spec.ts',
