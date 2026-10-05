@@ -22,6 +22,7 @@ import { ReactRepeatLoopsPreview } from '../../../../../components/docs/ReactRep
 import { ReactStateManagementPreview } from '../../../../../components/docs/ReactStateManagementPreview';
 import { ReactComputedFunctionsPreview } from '../../../../../components/docs/ReactComputedFunctionsPreview';
 import { ReactChatMessagesPreview } from '../../../../../components/docs/ReactChatMessagesPreview';
+import { ReactChatInputPreview } from '../../../../../components/docs/ReactChatInputPreview';
 import { DocsSearch } from '../../../../../components/docs/DocsSearch';
 import { DocsPageHeader } from '../../../../../components/docs/DocsPageHeader';
 import { LibraryMark } from '../../../../../components/docs/LibraryMark';
@@ -277,7 +278,7 @@ export default async function DocsPage({ params }: DocsRouteProps) {
           (library === 'langgraph' ||
             (library === 'render' && ((section === 'guides' && ['specs','state-store','repeat-loops','registry'].includes(slug)) || (section === 'api' && ['render-spec-component','provide-render'].includes(slug)))) ||
             (library === 'ag-ui' && ((section === 'reference' && slug === 'event-mapping') || (section === 'guides' && ['interrupts','tool-views','json-render','subagents'].includes(slug)))) ||
-            (library === 'chat' && (slug === 'client-tools' || (section === 'concepts' && slug === 'message-model')))) ? (
+            (library === 'chat' && (slug === 'client-tools' || (section === 'concepts' && slug === 'message-model') || (section === 'components' && slug === 'chat-input')))) ? (
             library === 'render' ? (
               slug === 'provide-render' ? <ReactComputedFunctionsPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} /> :
               slug === 'render-spec-component' ? <ReactElementRenderingPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} /> :
@@ -291,6 +292,8 @@ export default async function DocsPage({ params }: DocsRouteProps) {
               slug === 'tool-views' ? <ReactAgUiToolViewsPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} /> :
               slug === 'interrupts' ? <ReactAgUiInterruptsPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} /> :
               <ReactAgUiStreamingPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />
+            ) : library === 'chat' && section === 'components' && slug === 'chat-input' ? (
+              <ReactChatInputPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />
             ) : library === 'chat' && section === 'concepts' && slug === 'message-model' ? (
               <ReactChatMessagesPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />
             ) : library === 'chat' && slug === 'client-tools' ? (
