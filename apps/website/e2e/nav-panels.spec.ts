@@ -215,3 +215,94 @@ test.describe('desktop nav row on a wide screen', () => {
     expect(logo.x).toBeLessThan(48);
   });
 });
+
+/** Opens a panel, waits for its entrance animation, measures, and closes it. */
+async function openAndMeasure(page: Page, name: string) {
+  const trigger = page.getByRole('button', { name });
+  await trigger.click();
+  const panel = page.locator('.nav-panel');
+  await expect(panel).toBeVisible();
+  await panel.evaluate((el) =>
+    Promise.all(el.getAnimations().map((animation) => animation.finished)),
+  );
+  const triggerBox = await trigger.boundingBox();
+  const panelBox = await panel.boundingBox();
+  if (!triggerBox || !panelBox) throw new Error(`${name} has no box`);
+  await page.keyboard.press('Escape');
+  await expect(panel).toHaveCount(0);
+  return { triggerBox, panelBox };
+}
+
+test.describe('desktop nav panels sit under their triggers', () => {
+  test('at 1440 every panel opens at its trigger, or flush to the row when it would not fit', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+    const content = await rowContentBox(page);
+
+    // The row's content box here is 1120px (the 1200px container minus two
+    // 40px gutters). Docs (~790px) and Solutions (~580px) have room and sit at
+    // their trigger; Libraries (~1080px) is wider than the room right of its
+    // trigger and ends flush with the content box instead. One invariant
+    // covers all three: the left edge is the trigger's, pulled back only as
+    // far as the content box needs.
+    for (const name of ['Libraries', 'Docs', 'Solutions']) {
+      const { triggerBox, panelBox } = await openAndMeasure(page, name);
+      const expectedLeft = Math.max(
+        content.left,
+        Math.min(triggerBox.x, content.right - panelBox.width),
+      );
+      expect(Math.abs(panelBox.x - expectedLeft)).toBeLessThanOrEqual(2);
+      expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(content.right + 1);
+      // Intrinsic width: nowhere near the 1440px sheet this used to be.
+      expect(panelBox.width).toBeLessThan(1150);
+    }
+
+    for (const name of ['Docs', 'Solutions']) {
+      const { triggerBox, panelBox } = await openAndMeasure(page, name);
+      expect(Math.abs(panelBox.x - triggerBox.x)).toBeLessThanOrEqual(2);
+    }
+    const libraries = await openAndMeasure(page, 'Libraries');
+    expect(libraries.panelBox.x).toBeLessThan(libraries.triggerBox.x);
+    expect(Math.abs(libraries.panelBox.x + libraries.panelBox.width - content.right)).toBeLessThanOrEqual(1);
+  });
+
+  test('at 1024 the Docs panel still fits inside the viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 1024, height: 800 });
+    await page.goto('/');
+    const content = await rowContentBox(page);
+
+    const { triggerBox, panelBox } = await openAndMeasure(page, 'Docs');
+    expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(content.right + 1);
+    expect(panelBox.x).toBeGreaterThanOrEqual(content.left - 1);
+    expect(panelBox.x).toBeLessThanOrEqual(triggerBox.x);
+  });
+
+  test('at 1920 a panel is narrower than the viewport and starts at its trigger', async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 1000 });
+    await page.goto('/');
+
+    const { triggerBox, panelBox } = await openAndMeasure(page, 'Solutions');
+    expect(Math.abs(panelBox.x - triggerBox.x)).toBeLessThanOrEqual(2);
+    expect(panelBox.width).toBeLessThan(800);
+  });
+
+  test('below 1200 the four library cards fall into two rows of two', async ({ page }) => {
+    await page.setViewportSize({ width: 1100, height: 800 });
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Libraries' }).click();
+    const items = page.locator('.nav-panel .nav-panel-col .nav-panel-item');
+    await expect(items).toHaveCount(4);
+    await page.locator('.nav-panel').evaluate((el) =>
+      Promise.all(el.getAnimations().map((animation) => animation.finished)),
+    );
+    const boxes = [];
+    for (let index = 0; index < 4; index += 1) {
+      const box = await items.nth(index).boundingBox();
+      if (!box) throw new Error(`Library item ${index} has no box`);
+      boxes.push(box);
+    }
+    expect(Math.abs(boxes[1].y - boxes[0].y)).toBeLessThanOrEqual(2);
+    expect(boxes[2].y).toBeGreaterThan(boxes[0].y);
+    expect(Math.abs(boxes[2].x - boxes[0].x)).toBeLessThanOrEqual(2);
+  });
+});

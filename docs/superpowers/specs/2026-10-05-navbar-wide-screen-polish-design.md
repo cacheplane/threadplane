@@ -68,11 +68,21 @@ Rejected, and why:
 container plus its own horizontal padding, centered:
 
 ```css
-.nav-bar[data-route='marketing'] > div {
-  max-width: calc(1200px + 2 * 32px); /* content box lines up with the sections */
-  margin-inline: auto;
+@media (min-width: 1024px) {
+  .nav-bar[data-route='marketing'] > div {
+    max-width: var(--container-page); /* 1200px, from libs/design-tokens */
+    padding-inline: var(--spacing-container-x); /* clamp(20px, 4vw, 40px) */
+    margin-inline: auto;
+  }
 }
 ```
+
+The sections render the shared Container primitive, whose 1200px is a border box
+inset by a `clamp(20px, 4vw, 40px)` gutter, so at a wide viewport the sections' text
+starts 40px inside the 1200px. The row reuses both tokens rather than copying the
+numbers, which is what puts the logo on the text edge (x=400 at 1920) and keeps it
+there if the container ever changes. Below 1024px the phone and tablet bars keep
+their own padding.
 
 The docs row keeps its existing flat padding and full width.
 
@@ -110,21 +120,27 @@ A layout effect runs before paint, so the panel never flashes at `left: 0` first
 
 ### Panel sizing
 
-- `.nav-panel-cols`: `grid-auto-columns: 16.5rem` (264px) and a 20px column gap. Longer
-  descriptions wrap to a second line; no description today needs more than two.
-- Libraries (`data-columns='1'`): the four cards are 16.5rem tracks too. Below 1200px
-  (`@media (max-width: 1199px)`) the card grid becomes `grid-template-columns: 1fr 1fr`
-  with `grid-auto-flow: row`.
+- `.nav-panel-cols`: `grid-auto-columns: max-content` with a 20px column gap, and
+  `.nav-panel-item { max-width: 16.5rem }` (264px). Each column is as wide as its
+  widest item and never wider than 264px, so a short column stays short. The longest
+  descriptions wrap to a second line; none needs more than two.
+- Libraries (`data-columns='1'`): the four cards are max-content tracks too. Below
+  1200px (`@media (max-width: 1199px)`) the card grid becomes
+  `grid-template-columns: repeat(2, max-content)` with `grid-auto-flow: row`.
 - `.nav-panel`: `max-width: calc(100vw - 48px)` as a last-resort guard.
 
-Resulting panel widths (padding included). At 1440px the row's content box runs from
-x=120 to x=1320 and the Docs trigger sits at x≈423, so 423 + 880 = 1303 stays inside:
+Equal 264px tracks were tried first and rejected: Docs came out 880px, and because the
+container caps at 1200px the Docs trigger sits a fixed 817px from the row's content edge
+at every wide viewport, so that panel could never open flush under its trigger.
+
+Resulting panel widths (padding included). At 1440px the row's content box is 1120px
+wide (x=160 to x=1280) and the Docs trigger sits at x≈463:
 
 | Panel | Width | Notes |
 | --- | --- | --- |
-| Libraries | ~1122px | Spans most of the 1200px container; clamps to its right edge at 1440px |
-| Docs | ~880px | Opens under the Docs trigger at 1440px and up; clamped to the content box below that |
-| Solutions | ~596px | Opens under the Solutions trigger at every width from 1024px up |
+| Libraries | ~1080px | Wider than the room right of its trigger at every width; ends flush with the content box |
+| Docs | ~790px | Opens under the Docs trigger from ~1264px up; clamped to the content box below that |
+| Solutions | ~580px | Opens under the Solutions trigger at every width from 1024px up |
 
 ### What does not change
 
@@ -143,9 +159,10 @@ Unit (vitest, jsdom):
 
 Browser (`apps/website/e2e/nav-panels.spec.ts`, Playwright):
 
-- At 1440px, each panel's left edge sits within 2px of its trigger's left edge
-  (Docs, Solutions) or at the row's right-edge clamp (Libraries), and no panel's right
-  edge passes the row's content box.
+- At 1440px, each panel's left edge is its trigger's left edge, pulled back only as far
+  as the row's content box needs (the clamp invariant, re-derived in the test), and no
+  panel's right edge passes the content box. Docs and Solutions sit at their trigger;
+  Libraries ends flush with the content box.
 - At 1920px, the panel is narrower than the viewport, and the logo's left edge equals
   the first homepage section's content left edge (both 360px).
 - At 1024px, the Docs panel still fits inside the viewport.
