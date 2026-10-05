@@ -391,7 +391,8 @@ test('title modes exercise optional metadata independently of canonical messages
     if (mode === 'wrong-thread') assert.notEqual(data.thread_id, id);
     if (mode === 'invalid')
       assert.notEqual(typeof data.metadata.title, 'string');
-    if (mode === 'literal') assert.match(data.metadata.title, /<script>/);
+    if (mode === 'literal')
+      assert.equal(data.metadata.title, '<script>alert("title")</script>');
     if (mode === 'long') assert(data.metadata.title.length > 80);
   }
   assert.equal((await f.history(id))[0].values.messages.length, 2);
