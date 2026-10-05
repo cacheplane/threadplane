@@ -52,3 +52,33 @@ Then check the real thing, because X and LinkedIn cache aggressively:
 
 - <https://cards-dev.twitter.com/validator>
 - <https://www.linkedin.com/post-inspector/>
+
+## Demo social cards
+
+`examples/chat/angular/public/social-card.png` and
+`examples/ag-ui/angular/public/social-card.png` are the `og:image` for
+demo.threadplane.ai and ag-ui.threadplane.ai. They are rendered by
+`/demo-card/langgraph` and `/demo-card/ag-ui` on the website from the copy in
+`apps/website/src/lib/demo-meta.ts`, and committed because the demos are
+static sites on their own Vercel projects and must serve the file themselves.
+
+### When to redo them
+
+Any change to `apps/website/src/app/card/`, to `demo-meta.ts`, or to the brand
+palette. The demos redeploy on their own change gates, so a regenerated PNG
+ships with the next merge.
+
+### Regenerating
+
+```bash
+npm run card:demos                                    # from production
+npm run card:demos -- --origin http://localhost:3000  # from a local serve
+```
+
+The script refuses to write anything that is not a 1200x630 PNG. **Look at
+both PNGs before committing**: a missing bundled font still renders a valid
+PNG in the fallback face, and only your eye catches that.
+
+Titles and descriptions live in two places by necessity — `demo-meta.ts` and
+each demo's `src/index.html` — and `demo-meta.spec.ts` fails when they
+disagree. Edit the module first, then the HTML.
