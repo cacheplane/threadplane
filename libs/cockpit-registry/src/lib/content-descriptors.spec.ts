@@ -44,6 +44,15 @@ import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { capabilityModules, getFrontendCapabilityDescriptor } from './content-descriptors';
 import { cockpitManifest } from './manifest';
+it('keeps native Chat Interrupts attached to the original backend descriptor assets', () => {
+  const canonical=capabilityModules.find(entry=>entry.id==='chat-interrupts-python');
+  if (!canonical) throw new Error('Missing canonical Chat Interrupts');
+  const react=getFrontendCapabilityDescriptor(canonical.manifestIdentity as never,'react');
+  expect(react?.backendAssetPaths).toEqual(chatInterruptsPythonModule.backendAssetPaths);
+  expect(react?.promptAssetPaths).toEqual(chatInterruptsPythonModule.promptAssetPaths);
+  expect(react?.manifestIdentity).toEqual(canonical.manifestIdentity);
+  expect(Object.isFrozen(react)).toBe(true);
+});
 it('keeps native Chat Input attached to the original backend descriptor assets', () => {
   const canonical=capabilityModules.find(entry=>entry.id==='chat-input-python');
   if (!canonical) throw new Error('Missing canonical Chat Input');

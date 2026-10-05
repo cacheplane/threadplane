@@ -96,7 +96,8 @@
             "cockpit-render-element-rendering-react",
             "cockpit-render-computed-functions-react",
             "cockpit-chat-messages-react",
-            "cockpit-chat-input-react"
+            "cockpit-chat-input-react",
+            "cockpit-chat-interrupts-react"
           ]
         }
       ],

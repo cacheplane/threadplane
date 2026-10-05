@@ -21,10 +21,30 @@
         "cwd": "cockpit/chat/interrupts/python",
         "command": "uv run langgraph dev --port 5503 --no-browser"
       }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "cwd": "cockpit/chat/interrupts/python",
+        "command": "uv run --frozen --python 3.12 python -m unittest discover -s tests"
+      }
+    },
+    "smoke": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [
+        "test"
+      ],
+      "options": {
+        "cwd": "cockpit/chat/interrupts/python",
+        "command": "npx tsx -e \"import { chatInterruptsPythonModule } from './src/index.ts'; const module = chatInterruptsPythonModule; if (module.id !== 'chat-interrupts-python' || module.title !== 'Chat Interrupts (Python)') { throw new Error('Unexpected module shape for ' + module.id); }\""
+      }
     }
   },
   "tags": [
     "scope:cockpit-e2e",
-    "scope:cockpit-examples"
+    "scope:cockpit-examples",
+    "scope:cockpit-smoke"
   ]
 }
