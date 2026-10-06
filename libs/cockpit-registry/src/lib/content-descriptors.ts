@@ -1021,6 +1021,17 @@ const agUiStreamingReact = (() => {
     runtimeUrl: frontend.runtimePath, devPort: frontend.port,
   });
 })();
+const chatThreadsReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'chat-threads-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-chat-threads-react');
+  if (!canonical || !frontend) throw new Error('Chat Threads frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical, id: 'chat-threads-python-react', frontend: 'react', title: 'Chat Threads (React preview)',
+    codeAssetPaths: ['app.tsx', 'application.ts', 'authority.ts', 'records.ts', 'titles.ts', 'connection.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/chat/threads/react/src/${file}`),
+    runtimeUrl: frontend.runtimePath, devPort: frontend.port,
+  });
+})();
+
 const chatSubagentsReact = (() => {
   const canonical = capabilityModules.find(descriptor => descriptor.id === 'chat-subagents-python');
   const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-chat-subagents-react');
@@ -1219,6 +1230,7 @@ const computedFunctionsReact = (() => {
 export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
   Object.freeze([
     ...capabilityModules,
+    chatThreadsReact,
     chatSubagentsReact,
     chatToolCallsReact,
     chatInterruptsReact,
