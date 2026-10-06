@@ -1,11 +1,8 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "283ee0abf1f51e9c0b15d6dc586f34a5427f90bf",
+  "baselineHead": "666f3b24c4f03c59702fc3f88adccf7b48d1a8de",
   "sourceState": {
-    "modified": [
-      "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "libs/cockpit-registry/src/lib/content-descriptors.ts"
-    ],
+    "modified": [],
     "untracked": []
   },
   "scope": {
@@ -2109,7 +2106,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "1590f17b97172809fe54a48e4470379236843a34fe29dc224b7a3c99e9285119"
+      "sha256": "e267321eb5a1e8a4c88a5cbd2b4c5a20551a2dcde270389a16048ffc887d6d2a"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -2169,7 +2166,7 @@
       "id": "config:package.json",
       "kind": "config",
       "path": "package.json",
-      "sha256": "dffcbe850f6a8d578ed96fe75659cdcaf9299bc9cfd0a4ad6d9f30d842941320"
+      "sha256": "57a704e340fa62a1e0bb57d73be20a6ca6e590c772dd0b5e8635c46569ea83ba"
     },
     {
       "id": "config:scripts/assemble-examples.ts",
