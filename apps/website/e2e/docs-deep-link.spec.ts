@@ -63,6 +63,21 @@ async function findDeepLinkTarget(
     );
   }
   await expect(page.locator('.docs-toc-link').first()).toBeVisible();
+  // The rail is not the article. Under `next dev` the article streams in
+  // after the shell (see `MdxRenderer`), first into a hidden holding element,
+  // so measure only once every rail link resolves to a laid-out heading.
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        [...document.querySelectorAll('.docs-toc-link')].every((link) => {
+          const href = link.getAttribute('href');
+          if (!href?.startsWith('#')) return true;
+          const heading = document.getElementById(href.slice(1));
+          return Boolean(heading && heading.getClientRects().length > 0);
+        })
+      )
+    )
+    .toBe(true);
 
   const target = await page.evaluate((selector) => {
     const root = selector
@@ -128,7 +143,11 @@ test.describe('docs deep links', () => {
       page.evaluate((id) => {
         const heading = document.getElementById(id);
         const nav = document.querySelector('[data-site-navigation]');
-        if (!heading || !nav) return null;
+        // A heading still in React's hidden streaming holder has no boxes and
+        // reads as top 0, which would pass the poll before anything scrolled.
+        if (!heading || !nav || heading.getClientRects().length === 0) {
+          return null;
+        }
         return Math.round(
           heading.getBoundingClientRect().top -
             nav.getBoundingClientRect().bottom

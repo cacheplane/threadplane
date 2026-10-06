@@ -118,6 +118,19 @@
 /* Nav */
 .nav-logo-link {
   text-decoration: none;
+  /* The link is a flex item, so it is blockified; left alone its height came
+   * from a 24px line box with the 18px inline-flex LogoMark sitting on that
+   * line's baseline — top-aligned, its centre 3.5px above the links, the
+   * GitHub mark, and the CTA. Centre the mark inside the box instead.
+   *
+   * The 25px is that same box, kept on purpose: on docs and on phones the
+   * logo is the tallest thing in the row, so it sets the bar's measured
+   * height (16 + 25 + 16 + 1 = 58), which --nav-h and e2e/nav-height.spec.ts
+   * pin. Collapsing it to the mark's 18px would shrink the bar to 51px and
+   * leave every --nav-h offset 7px too deep. */
+  display: flex;
+  align-items: center;
+  min-height: 25px;
 }
 .nav-link {
   color: var(--color-text-secondary);
@@ -186,6 +199,22 @@
 .nav-bar[data-route='docs'] > div {
   padding-top: 16px;
   padding-bottom: 16px;
+}
+/* Marketing rows share the page's container. Every section centres the
+ * Container primitive (ui.css): --container-page wide with a
+ * --spacing-container-x gutter. The bar used to span the viewport, which on
+ * a 1920px screen put the logo at x=32 and the links at x=1315 with nothing
+ * between. Using the same two tokens here, not a copied number, puts the
+ * logo's left edge on the sections' text edge and keeps it there if the
+ * container ever changes. Scoped to lg, where the desktop row exists; the
+ * phone and tablet bars keep their px-6 / md:px-8. Docs stays full-bleed:
+ * its shell is full-bleed (rail at x=56) and the logo sits over the rail. */
+@media (min-width: 1024px) {
+  .nav-bar[data-route='marketing'] > div {
+    max-width: var(--container-page);
+    padding-inline: var(--spacing-container-x);
+    margin-inline: auto;
+  }
 }
 .nav-bar[data-route='docs'] [data-ui='button'][data-variant='primary'] {
   background: none;
@@ -415,8 +444,11 @@
    * does not move. e2e/nav-panels.spec.ts drives this with a stepped move. */
   top: calc(100% - var(--nav-row-pad));
   padding-top: var(--nav-row-pad);
-  left: 0;
-  right: 0;
+  /* The left edge is written by NavDesktop's layout effect: the trigger's
+   * offsetLeft, pulled left only when the panel would otherwise leave the
+   * row's content box (clampPanelLeft). No `right`, so the shell shrinks to
+   * the panel instead of spanning the row. */
+  left: var(--nav-panel-left, 0);
   z-index: 60;
 }
 .nav-panel {
@@ -424,6 +456,10 @@
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(10, 10, 10, 0.08), 0 8px 24px rgba(10, 10, 10, 0.06);
   padding: 28px 24px 24px;
+  /* As wide as its columns, never the bar. The max-width is a last resort for
+   * a panel wider than the viewport itself; clampPanelLeft handles the rest. */
+  width: max-content;
+  max-width: calc(100vw - 48px);
   animation: nav-panel-in 140ms ease-out;
 }
 @keyframes nav-panel-in {
@@ -439,9 +475,16 @@
 }
 .nav-panel-cols {
   display: grid;
-  gap: 26px;
+  gap: 20px;
   grid-auto-flow: column;
-  grid-auto-columns: 1fr;
+  /* Each column is as wide as its widest item, and no item is wider than
+   * 16.5rem (.nav-panel-item below), so a column is 264px at most and a
+   * short column stays short. Equal tracks were tried first: at 264px the
+   * Docs panel came out 880px, and with the container capped at 1200px the
+   * Docs trigger is a fixed 817px from the row's content edge at every wide
+   * viewport, so that panel could never sit flush under its trigger. Sized
+   * to content it is ~790px and does. */
+  grid-auto-columns: max-content;
 }
 /* The Libraries panel is one column of four items that must sit side by side,
  * not three columns of stacked items like Docs and Solutions. The tracks
@@ -454,8 +497,18 @@
 .nav-panel[data-columns='1'] .nav-panel-col {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: 1fr;
+  grid-auto-columns: max-content;
   gap: 6px;
+}
+/* Four cards across is ~1080px, which is more than the row's content box
+ * below ~1160px. Two rows of two keeps the cards readable there;
+ * e2e/nav-panels.spec.ts pins four-across at 1440 and two-by-two at 1100. */
+@media (max-width: 1199px) {
+  .nav-panel[data-columns='1'] .nav-panel-col {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(2, max-content);
+    grid-auto-columns: auto;
+  }
 }
 .nav-panel-col-head {
   display: block;
@@ -471,6 +524,9 @@
   display: flex;
   gap: 11px;
   align-items: flex-start;
+  /* Caps the column it sits in (see .nav-panel-cols). Most descriptions fit
+   * on one line inside it; the longest wrap to two. */
+  max-width: 16.5rem;
   padding: 12px 13px;
   border-radius: 10px;
   text-decoration: none;
@@ -525,7 +581,9 @@
 }
 /* Not a no-op: unlayered author CSS beats Tailwind's @layer utilities, so this
  * pins the element's position and defeats any future `relative` utility added
- * here — keeping .nav-panel-shell's containing block on .nav-bar > div below. */
+ * here — keeping .nav-panel-shell's containing block on .nav-bar > div below,
+ * which is also the offsetParent the triggers' offsetLeft is measured from.
+ * NavDesktop's layout effect relies on both being the same box. */
 .nav-desktop {
   position: static;
   /* The row is `items-center`, so this box would otherwise shrink to its own
@@ -540,6 +598,14 @@
    * the 40px CTA already made this box the full content height, so there
    * stretching is a no-op. */
   align-self: stretch;
+  /* Fill the row so .nav-desktop-actions can reach its right edge. */
+  flex: 1 1 auto;
+}
+.nav-desktop-primary {
+  margin-left: 40px;
+}
+.nav-desktop-actions {
+  margin-left: auto;
 }
 .nav-bar > div {
   position: relative;
