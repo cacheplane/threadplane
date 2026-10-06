@@ -306,3 +306,41 @@ test.describe('desktop nav panels sit under their triggers', () => {
     expect(Math.abs(boxes[2].x - boxes[0].x)).toBeLessThanOrEqual(2);
   });
 });
+
+/**
+ * Vertical centre of an element's visible box. For the logo this is the
+ * LogoMark itself, not its link: the link's box is a 25px line box that holds
+ * --nav-h steady, so it can look centred while the mark inside it is not.
+ */
+async function centerY(page: Page, selector: string) {
+  const box = await page.locator(selector).first().boundingBox();
+  if (!box) throw new Error(`${selector} has no box`);
+  return box.y + box.height / 2;
+}
+
+test.describe('nav row vertical alignment', () => {
+  for (const route of ['/', '/docs']) {
+    test(`centres the logo on the same line as the links and actions on ${route}`, async ({ page }) => {
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.goto(route);
+
+      const logo = await centerY(page, ".nav-logo-link [data-ui='logo-mark']");
+      const trigger = await centerY(page, '.nav-desktop-primary > button');
+      const github = await centerY(page, '.nav-desktop-actions a[aria-label="GitHub repository"]');
+      const cta = await centerY(page, ".nav-desktop-actions [data-ui='button']");
+
+      for (const other of [trigger, github, cta]) {
+        expect(Math.abs(logo - other)).toBeLessThanOrEqual(0.5);
+      }
+    });
+  }
+
+  test('centres the logo with the menu button on a phone', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 800 });
+    await page.goto('/');
+
+    const logo = await centerY(page, ".nav-logo-link [data-ui='logo-mark']");
+    const menu = await centerY(page, 'button[aria-label="Open menu"] svg');
+    expect(Math.abs(logo - menu)).toBeLessThanOrEqual(0.5);
+  });
+});

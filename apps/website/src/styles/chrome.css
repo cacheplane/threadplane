@@ -118,6 +118,19 @@
 /* Nav */
 .nav-logo-link {
   text-decoration: none;
+  /* The link is a flex item, so it is blockified; left alone its height came
+   * from a 24px line box with the 18px inline-flex LogoMark sitting on that
+   * line's baseline — top-aligned, its centre 3.5px above the links, the
+   * GitHub mark, and the CTA. Centre the mark inside the box instead.
+   *
+   * The 25px is that same box, kept on purpose: on docs and on phones the
+   * logo is the tallest thing in the row, so it sets the bar's measured
+   * height (16 + 25 + 16 + 1 = 58), which --nav-h and e2e/nav-height.spec.ts
+   * pin. Collapsing it to the mark's 18px would shrink the bar to 51px and
+   * leave every --nav-h offset 7px too deep. */
+  display: flex;
+  align-items: center;
+  min-height: 25px;
 }
 .nav-link {
   color: var(--color-text-secondary);
