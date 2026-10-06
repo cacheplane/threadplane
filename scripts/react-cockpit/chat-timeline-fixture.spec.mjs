@@ -649,7 +649,7 @@ test('read-only full checkpoint selection forks actual A+D and keeps later tip i
     })
   ).text();
   const d = (await f.history(id))[0];
-  assert.equal(typeof d.metadata.run_id, 'string');
+  assert.equal(Object.hasOwn(d.metadata, 'run_id'), false);
   const runEvents = frames(
     await (
       await f.request(`/api/threads/${id}/runs/stream`, {

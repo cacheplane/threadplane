@@ -13,6 +13,74 @@ import {
 } from './testing/checkpoint-fixture';
 
 describe('checkpoint execution', () => {
+  it.each([
+    'success',
+    'running',
+    'pending',
+    'interrupted',
+    'error',
+    'timeout',
+  ] as const)(
+    'requires exact successful run inspection with production-shaped saved metadata (%s)',
+    async (status) => {
+      const f = fixture();
+      const checkpoint = {
+        thread_id: 'thread',
+        checkpoint_ns: '',
+        checkpoint_id: 'd',
+      };
+      const result = saved('d', [], {
+        checkpoint,
+        metadata: { source: 'loop', step: 2 },
+      });
+      f.states.set('d', result);
+      f.transport.getRunStatus = vi.fn(async () => status);
+      f.transport.stream = vi.fn(async function* (_a, _t, input, _s, options) {
+        result.values = {
+          messages: [
+            ...(f.source.values as { messages: unknown[] }).messages,
+            ...(input as { messages: unknown[] }).messages,
+            { type: 'ai', id: 'd-answer', content: 'Answer D' },
+          ],
+        };
+        options?.onRunCreated?.({ run_id: 'physical-d', thread_id: 'thread' });
+        yield {
+          type: 'checkpoints' as const,
+          data: {
+            config: { configurable: { ...checkpoint, run_id: 'physical-d' } },
+            values: result.values,
+            next: [],
+            tasks: [],
+          },
+        };
+      });
+      const session = createSession({
+        assistantId: 'agent',
+        threadId: 'thread',
+        transport: f.transport,
+      });
+      expect(await session.fork(position('a'), 'Fork D')).toBe(
+        status === 'success' ? 'success' : 'interrupted'
+      );
+      expect(f.transport.getRunStatus).toHaveBeenCalledWith(
+        'thread',
+        'physical-d',
+        expect.any(AbortSignal)
+      );
+      if (status === 'success') {
+        expect(f.transport.getState).toHaveBeenLastCalledWith(
+          'thread',
+          position('d'),
+          expect.any(AbortSignal)
+        );
+        expect(
+          session.getSnapshot().messages.map((message) => message.content)
+        ).toEqual(['Source A', 'Answer A', 'Fork D', 'Answer D']);
+      } else {
+        expect(f.transport.getState).toHaveBeenCalledTimes(1);
+      }
+    }
+  );
   it('acknowledges a confirmed tool-result follow-up that pauses so its owned interrupt can resume', async () => {
     const f = fixture();
     const tools = saved('tools', [
