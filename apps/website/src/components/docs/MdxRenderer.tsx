@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import { Callout } from './mdx/Callout';
 import { CalloutAction, CalloutActions } from './mdx/CalloutActions';
@@ -20,6 +21,7 @@ import {
 } from './diagrams';
 import { mdxCompileOptions } from './mdx-options';
 import { createExampleCode } from './mdx/ExampleCode';
+import { StreamedFragmentScroll } from './StreamedFragmentScroll';
 import type { ExampleCodeContext } from '../../lib/example-code';
 
 /**
@@ -100,16 +102,39 @@ export function MdxRenderer({
   exampleCode = null,
   docsPath,
 }: MdxRendererProps) {
+  const content = (
+    <MDXRemote
+      source={source}
+      components={{
+        ...mdxComponents,
+        ExampleCode: createExampleCode(exampleCode, docsPath),
+      }}
+      options={mdxCompileOptions}
+    />
+  );
+
+  // Development only: works around a React hydration bug (react/react#37584).
+  // Flight splits a large element, such as a highlighted <code>, into deferred
+  // rows, and `next dev` streams them while React is already hydrating. A host
+  // element that suspends on one after claiming its DOM node is replayed
+  // without rewinding the hydration cursor, so it is claimed against its own
+  // first child and hydration fails on an identical tree. Inside a boundary
+  // the suspension unwinds and the boundary retries from its own start.
+  //
+  // The boundary makes the article stream after the shell, so a fragment
+  // scroll on a hard load can miss its heading; `StreamedFragmentScroll`
+  // re-applies it. Production keeps the article inline: its prerender ships
+  // every row before hydration starts, so the bug does not occur there.
   return (
     <div className="docs-prose">
-      <MDXRemote
-        source={source}
-        components={{
-          ...mdxComponents,
-          ExampleCode: createExampleCode(exampleCode, docsPath),
-        }}
-        options={mdxCompileOptions}
-      />
+      {process.env.NODE_ENV === 'development' ? (
+        <Suspense>
+          {content}
+          <StreamedFragmentScroll />
+        </Suspense>
+      ) : (
+        content
+      )}
     </div>
   );
 }
