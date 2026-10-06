@@ -1,8 +1,11 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "2fe2b35bf7bc08303626fa4b2dce46efbfe1e8b1",
+  "baselineHead": "283ee0abf1f51e9c0b15d6dc586f34a5427f90bf",
   "sourceState": {
-    "modified": [],
+    "modified": [
+      "libs/cockpit-registry/src/lib/capability-registry.ts",
+      "libs/cockpit-registry/src/lib/content-descriptors.ts"
+    ],
     "untracked": []
   },
   "scope": {
@@ -2106,7 +2109,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "e267321eb5a1e8a4c88a5cbd2b4c5a20551a2dcde270389a16048ffc887d6d2a"
+      "sha256": "1590f17b97172809fe54a48e4470379236843a34fe29dc224b7a3c99e9285119"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -2166,7 +2169,7 @@
       "id": "config:package.json",
       "kind": "config",
       "path": "package.json",
-      "sha256": "57a704e340fa62a1e0bb57d73be20a6ca6e590c772dd0b5e8635c46569ea83ba"
+      "sha256": "dffcbe850f6a8d578ed96fe75659cdcaf9299bc9cfd0a4ad6d9f30d842941320"
     },
     {
       "id": "config:scripts/assemble-examples.ts",
@@ -13251,13 +13254,13 @@
       "id": "source:libs/cockpit-registry/src/lib/capability-registry.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "sha256": "a7ac2684671f9e49a843c7b10a34f6fa4aaa0e4f250e179bd33e5b7d94555c71"
+      "sha256": "a3ea90f5f9d792a1ef5ed0f8cad62844fce63056edb22a9f32afe0240c5bc925"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/content-descriptors.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/content-descriptors.ts",
-      "sha256": "e0289c45d357bfbe077a2671f986e65e944cca202bafadd36329a84b20eb4852"
+      "sha256": "f0139003d322bed1ef7ae67a89a83967c3a841eee8cfa478cc1ed68f3783614b"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/docs-links.ts",

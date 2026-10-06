@@ -3,7 +3,28 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { deriveCockpitCaps, selectCockpitCaps } from './cockpit-matrix.mjs';
+test('Threads backend changes select both canonical frontends registered by the website', () => {
+  const root = fileURLToPath(new URL('..', import.meta.url));
+  const selected = selectCockpitCaps(deriveCockpitCaps(root), new Set(['cockpit-chat-threads-python']), { fullFleet: false });
+  assert.deepEqual(selected.map(cap => cap.angular).sort(), ['cockpit-chat-threads-angular', 'cockpit-chat-threads-react']);
+  assert.ok(selected.every(cap => cap.python === 'cockpit/chat/threads/python'));
+  const frontends = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', 'const module = await import("./libs/cockpit-registry/src/lib/capability-registry.ts"); console.log(JSON.stringify((module.default ?? module).getCockpitFrontends()));'], { cwd: root, encoding: 'utf8', env: { ...process.env, TSX_TSCONFIG_PATH: 'tsconfig.base.json' } }));
+  assert.equal(frontends.length, 67);
+  assert.deepEqual(frontends.filter(frontend => frontend.project.startsWith('cockpit-chat-threads-')).map(frontend => frontend.project).sort(), selected.map(cap => cap.angular).sort());
+});
+test('Chat Threads owns an exact native React identity', async () => {
+  const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
+  assert.deepEqual(reactCockpitConfiguration('chat-threads'), {
+    topic: 'threads', library: 'chat', adapter: 'langgraph', appPath: 'cockpit/chat/threads/react',
+    base: '/chat/threads/react/', port: 4625, project: 'cockpit-chat-threads-react',
+  });
+  for (const key of ['threads', 'chat/threads', '../chat-threads'])
+    assert.throws(() => reactCockpitConfiguration(key), /Unsupported React cockpit topic/);
+  assert.equal(reactCockpitConfiguration('client-tools').appPath, 'cockpit/langgraph/client-tools/react');
+});
 test('Chat Subagents owns an exact native React identity', async () => {
   const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
   assert.deepEqual(reactCockpitConfiguration('chat-subagents'), {

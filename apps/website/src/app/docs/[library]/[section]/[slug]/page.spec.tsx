@@ -75,6 +75,18 @@ const route = (library: string, section: string, slug: string, mode?: string) =>
   } as never);
 
 describe('unified docs workspace route', () => {
+  it('selects the native Threads article and source assets on the canonical guide', async () => {
+    const tree = await route('chat', 'guides', 'thread-routing');
+    const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
+    expect(workspace?.props.reactDocsSlot).toBeTruthy();
+    const slot = workspace?.props.reactDocsSlot;
+    expect(isValidElement<ElementProps>(slot) && slot.props.exampleCode?.assetPaths).toEqual(
+      expect.arrayContaining(['app.tsx', 'application.ts', 'authority.ts', 'records.ts', 'titles.ts', 'connection.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/chat/threads/react/src/${file}`))
+    );
+    expect(isValidElement(slot) && typeof slot.type === 'function' && slot.type.name).toBe('ReactChatThreadsPreview');
+    expect(findElement(slot, ReactChatSubagentsPreview as ComponentType<never>)).toBeNull();
+  });
+
   it('selects a native Chat Subagents article on its canonical component page', async () => {
     const tree=await route('chat','components','chat-subagent-card');
     const workspace=findElement(tree,WebsiteWorkspace as ComponentType<never>);

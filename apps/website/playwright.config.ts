@@ -403,6 +403,13 @@ export const createWebsitePlaywrightConfig = (
                   timeout: 180_000,
                 },
                 {
+                  command: 'npx nx run cockpit-chat-threads-python:smoke && node scripts/react-cockpit/serve.mjs chat-threads --no-parent',
+                  cwd: '../..',
+                  url: 'http://127.0.0.1:4625',
+                  reuseExistingServer,
+                  timeout: 180_000,
+                },
+                {
                   command: 'npx nx run cockpit-chat-subagents-python:smoke && node scripts/react-cockpit/serve.mjs chat-subagents --no-parent',
                   cwd: '../..',
                   url: 'http://127.0.0.1:4624',
