@@ -1,5 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
+import { fromPageOrReactPreview } from './fixtures/react-preview-requests';
 const route = '/docs/chat/concepts/message-model';
+const reactFrame = /(?:localhost:4620|chat\/messages\/react)/;
 const observations = new WeakMap<
   Page,
   { requests: string[]; errors: string[] }
@@ -8,7 +10,10 @@ test.beforeEach(async ({ page }) => {
   const observed = { requests: [] as string[], errors: [] as string[] };
   observations.set(page, observed);
   page.on('request', (request) => {
-    if (/\/threads(?:\/|$)/.test(new URL(request.url()).pathname))
+    if (
+      /\/threads(?:\/|$)/.test(new URL(request.url()).pathname) &&
+      fromPageOrReactPreview(request, reactFrame)
+    )
       observed.requests.push(request.method());
   });
   page.on('pageerror', (error) => observed.errors.push(error.message));
@@ -34,7 +39,7 @@ async function emptyRun(page: Page, draft = '') {
   await expect(page.locator('iframe')).toBeVisible();
   await expect(page.locator('iframe')).toHaveAttribute(
     'src',
-    /(?:localhost:4620|chat\/messages\/react)/
+    reactFrame
   );
   const frame = page.frameLocator('iframe');
   await expect(frame.getByRole('status')).toHaveText('Ready.');
