@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page, type Request } from '@playwright/test';
 const route = '/docs/chat/guides/thread-routing';
 const observations = new WeakMap<
   Page,
@@ -10,12 +10,33 @@ test.beforeEach(async ({ page }) => {
   page.on('request', (request) => {
     if (
       ['fetch', 'xhr'].includes(request.resourceType()) &&
-      /\/threads(?:\/|$)/.test(new URL(request.url()).pathname)
+      /\/threads(?:\/|$)/.test(new URL(request.url()).pathname) &&
+      fromPageOrReactPreview(request)
     )
       observed.requests.push(request.method());
   });
   page.on('pageerror', (error) => observed.errors.push(error.message));
 });
+/**
+ * The guard is about the React preview: it must never create or search
+ * threads on its own. The canonical guide also embeds the Angular Chat Threads
+ * example, whose whole job is listing threads, so it POSTs /threads/search as
+ * soon as its iframe loads — even in Docs mode, where the Run frame is already
+ * mounted. Counting that request failed the Angular-default test whenever the
+ * iframe loaded before the test finished. Only requests from the page itself
+ * or from the React preview's own frame count.
+ */
+function fromPageOrReactPreview(request: Request): boolean {
+  let frame;
+  try {
+    frame = request.frame();
+  } catch {
+    // Service-worker requests have no frame; they are not the preview's.
+    return false;
+  }
+  if (frame === frame.page().mainFrame()) return true;
+  return /(?:localhost:4625|chat\/threads\/react)/.test(frame.url());
+}
 test.afterEach(async ({ page }) => {
   expect(observations.get(page)?.requests).toEqual([]);
   expect(observations.get(page)?.errors).toEqual([]);
