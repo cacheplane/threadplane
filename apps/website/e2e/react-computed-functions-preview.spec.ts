@@ -1,6 +1,9 @@
 import { test, expect, type Page } from '@playwright/test';
+import { fromPageOrReactPreview } from './fixtures/react-preview-requests';
 
 const route = '/docs/render/api/provide-render';
+const reactFrame =
+  /(?:localhost:4619(?:[/?#]|$)|\/render\/computed-functions\/react\/?(?:[?#]|$))/;
 const iframe = (page: Page) =>
   page.locator(
     'iframe[title="Computed Functions (React preview) live example"]'
@@ -15,7 +18,8 @@ test.beforeEach(async ({ page }) => {
       !['GET', 'HEAD'].includes(request.method()) &&
       /\/agent(?:\/|$)|\/api\/native(?:\/|$)|\/api\/threads(?:\/|$)|\/threads(?:\/|$)/.test(
         new URL(request.url()).pathname
-      )
+      ) &&
+      fromPageOrReactPreview(request, reactFrame)
     )
       executions.push(request.url());
   });
@@ -52,7 +56,7 @@ async function expectFreshRun(page: Page) {
   );
   await expect(iframe(page)).toHaveAttribute(
     'src',
-    /(?:localhost:4619(?:[/?#]|$)|\/render\/computed-functions\/react\/?(?:[?#]|$))/
+    reactFrame
   );
   const example = frame(page);
   await expect(example.getByRole('status')).toHaveText('Paused · 0 characters');
