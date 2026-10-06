@@ -7,12 +7,22 @@ is managed by the agent() ref on the frontend side.
 
 import os
 from pathlib import Path
+from typing import NotRequired
+from langgraph.constants import TAG_NOSTREAM
 from langgraph.graph import StateGraph, MessagesState, END
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph_sdk import get_client
 
 PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
+
+
+class TimelineState(MessagesState):
+    """Canonical final identities let clients verify adopted history."""
+
+    completed_turn_id: NotRequired[str]
+    completed_answer_id: NotRequired[str]
+    completed_message_ids: NotRequired[list[str]]
 
 # ── generate_title node (inline; matches Pattern D from spec
 #     2026-05-19-llm-generated-labels-design.md) ──────────────────────────────
@@ -48,7 +58,7 @@ async def generate_title(state: MessagesState, config) -> dict:
             return {}
         if first_user.content.lstrip().startswith("{"):
             return {}
-        llm = ChatOpenAI(model=_TITLE_MODEL, temperature=0)
+        llm = ChatOpenAI(model=_TITLE_MODEL, temperature=0, tags=[TAG_NOSTREAM])
         response = await llm.ainvoke([
             SystemMessage(content=_TITLE_PROMPT),
             HumanMessage(content=first_user.content),
@@ -73,13 +83,26 @@ def build_timeline_graph():
     """
     llm = ChatOpenAI(model="gpt-5-mini", streaming=True)
 
-    async def generate(state: MessagesState) -> dict:
+    async def generate(state: TimelineState) -> dict:
         system_prompt = (PROMPTS_DIR / "timeline.md").read_text()
         messages = [SystemMessage(content=system_prompt)] + state["messages"]
         response = await llm.ainvoke(messages)
-        return {"messages": [response]}
+        canonical = [*state["messages"], response]
+        ids = [getattr(message, "id", None) for message in canonical]
+        completion = {}
+        if (len(canonical) >= 2
+                and getattr(canonical[-2], "type", None) == "human"
+                and getattr(response, "type", None) == "ai"
+                and all(isinstance(identity, str) and identity for identity in ids)
+                and len(ids) == len(set(ids))):
+            completion = {
+                "completed_turn_id": ids[-2],
+                "completed_answer_id": ids[-1],
+                "completed_message_ids": ids,
+            }
+        return {"messages": [response], **completion}
 
-    graph = StateGraph(MessagesState)
+    graph = StateGraph(TimelineState)
     graph.add_node("generate", generate)
     graph.add_node("generate_title", generate_title)
     graph.set_entry_point("generate")
