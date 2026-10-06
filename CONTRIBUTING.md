@@ -10,8 +10,8 @@ Threadplane is MIT-licensed and developed in the open. Contributions are welcome
 2. **Code changes:** fork the repository (or create a topic branch if you have
    access), make your change on a branch, and open a pull request against `main`.
    Keep pull requests focused on a single concern.
-3. Every pull request runs CI (lint, test, build) and receives an automated code
-   review; the maintainer reviews and merges.
+3. Every pull request runs CI (lint, test, build); the maintainer reviews and
+   merges.
 4. **Security issues:** do not open a public issue — see [SECURITY.md](SECURITY.md)
    for the private vulnerability-reporting process.
 
@@ -112,9 +112,6 @@ Nothing else is required. In particular:
   was failing on that same commit, deliberately not allowed to block website
   work. It would also re-introduce the vendor-string dependency described
   below.
-- **`approve` is not a quality gate and must never become one.** It comes from
-  `.github/workflows/auto-approve.yml` and exists only so OSSF Scorecard's
-  Code-Review check has a review to read (see [Code review](#code-review)).
 
 ### Why the gate is a job we own, not a vendor status string
 
@@ -253,22 +250,5 @@ list in the same change.
 
 ## Code review
 
-Every PR gets a genuine advisory AI code review
-(`.github/workflows/claude-review.yml`) that posts findings as comments — it is
-not a required check and never blocks a merge. A second workflow
-(`.github/workflows/auto-approve.yml`) then submits a formal approval as
-`github-actions[bot]` — an identity distinct from the PR author — which OSSF
-Scorecard's Code-Review check reads from the reviews API. The maintainer still
-merges every PR.
-
-Because the review is advisory, **handling its comments is a convention, not a
-gate**: before arming auto-merge, the author reads each AI comment and either
-addresses it in a follow-up commit or replies on the thread with the reason for
-deferring/declining. Don't merge past unread review comments — the check going
-green (or red) says nothing about whether the comments were considered.
-
-This credits Code-Review via automation rather than peer review, because the
-project is currently single-maintainer. OSSF documentation suggests
-automated/AI reviews may not be intended to count toward this check; the current
-setup does credit them, and a future Scorecard release could change that.
-Removing `auto-approve.yml` cleanly reverts the check with no other impact.
+The maintainer reviews and merges every PR. CI does not run automated AI code
+reviews or submit automatic approvals.
