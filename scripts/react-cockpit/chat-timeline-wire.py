@@ -97,7 +97,6 @@ async def main():
                         options["mapped"] = request.get("mapped", options["mapped"])
                         result = {}
                     elif request["op"] == "submit":
-                        config["metadata"] = {"run_id": request["runId"]}
                         events = []
                         terminal_config = config
                         failure = False
