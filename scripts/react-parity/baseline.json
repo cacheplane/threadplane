@@ -1,11 +1,8 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "283ee0abf1f51e9c0b15d6dc586f34a5427f90bf",
+  "baselineHead": "c7c9a3746cb87ee62d4cdcc29c37661f3af1d09d",
   "sourceState": {
-    "modified": [
-      "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "libs/cockpit-registry/src/lib/content-descriptors.ts"
-    ],
+    "modified": [],
     "untracked": []
   },
   "scope": {
@@ -13932,7 +13929,7 @@
       "id": "source:libs/langgraph/src/runtime/checkpoint-authority.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/checkpoint-authority.ts",
-      "sha256": "15376594a46d113766c9910204a4cd330faf12f21993080b9e5816b7b6e8c86f"
+      "sha256": "09827d1e0311727a2e054e50d52dece202f395c627a14b58c289fae676008833"
     },
     {
       "id": "source:libs/langgraph/src/runtime/checkpoint-history.ts",
