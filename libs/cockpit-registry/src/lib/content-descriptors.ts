@@ -1021,6 +1021,17 @@ const agUiStreamingReact = (() => {
     runtimeUrl: frontend.runtimePath, devPort: frontend.port,
   });
 })();
+const chatTimelineReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'chat-timeline-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-chat-timeline-react');
+  if (!canonical || !frontend) throw new Error('Chat Timeline frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical, id: 'chat-timeline-python-react', frontend: 'react', title: 'Chat Timeline (React preview)',
+    codeAssetPaths: ['app.tsx', 'application.ts', 'checkpoints.ts', 'preview.ts', 'authority.ts', 'connection.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/chat/timeline/react/src/${file}`),
+    runtimeUrl: frontend.runtimePath, devPort: frontend.port,
+  });
+})();
+
 const chatThreadsReact = (() => {
   const canonical = capabilityModules.find(descriptor => descriptor.id === 'chat-threads-python');
   const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-chat-threads-react');
@@ -1231,6 +1242,7 @@ export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
   Object.freeze([
     ...capabilityModules,
     chatThreadsReact,
+    chatTimelineReact,
     chatSubagentsReact,
     chatToolCallsReact,
     chatInterruptsReact,

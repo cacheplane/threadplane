@@ -1,5 +1,10 @@
 /** Closed authored frontend selection; callers cannot supply filesystem paths. */
 export function reactCockpitConfiguration(topic = 'streaming') {
+  if (topic === 'chat-timeline')
+    return Object.freeze({
+      topic: 'timeline', library: 'chat', adapter: 'langgraph', appPath: 'cockpit/chat/timeline/react',
+      base: '/chat/timeline/react/', port: 4626, project: 'cockpit-chat-timeline-react',
+    });
   if (topic === 'chat-threads')
     return Object.freeze({
       topic: 'threads', library: 'chat', adapter: 'langgraph', appPath: 'cockpit/chat/threads/react',

@@ -6,17 +6,24 @@ import { randomUUID, createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { PassThrough } from 'node:stream';
 import { test } from 'node:test';
-const { createChatThreadsFixture } = await import(
-  './chat-threads-fixture.mjs'
+const sdkRun = (body) => ({
+  stream_mode: ['values', 'messages-tuple', 'updates', 'custom'],
+  stream_subgraphs: true,
+  stream_resumable: true,
+  on_disconnect: 'continue',
+  ...body,
+});
+const { createChatTimelineFixture } = await import(
+  './chat-timeline-fixture.mjs'
 ).catch(() => ({}));
 
 async function fixture(t, options) {
   assert.equal(
-    typeof createChatThreadsFixture,
+    typeof createChatTimelineFixture,
     'function',
-    'Threads fixture is available'
+    'Timeline fixture is available'
   );
-  const handle = createChatThreadsFixture(options);
+  const handle = createChatTimelineFixture(options);
   const closedResponses = [];
   const server = createServer(async (req, res) => {
     res.on('close', () => closedResponses.push(req.url));
@@ -42,7 +49,13 @@ async function fixture(t, options) {
   ) =>
     fetch(`http://127.0.0.1:${server.address().port}${path}`, {
       method,
-      ...(method !== 'GET' ? { body: JSON.stringify(body ?? {}) } : {}),
+      ...(method !== 'GET'
+        ? {
+            body: JSON.stringify(
+              path.endsWith('/runs/stream') ? sdkRun(body) : body ?? {}
+            ),
+          }
+        : {}),
       headers: { 'content-type': 'application/json' },
       signal,
     });
@@ -61,11 +74,10 @@ async function fixture(t, options) {
   };
   const submit = (id, text = 'Hello', humanId = randomUUID()) =>
     request(`/api/threads/${id}/runs/stream`, {
-      assistant_id: 'c-threads',
+      assistant_id: 'c-timeline',
       input: { messages: [{ type: 'human', content: text, id: humanId }] },
     });
   const history = (id) => json(`/api/threads/${id}/history`, { limit: 10 });
-  const title = (id) => json(`/api/threads/${id}`, undefined, 'GET');
   const wait = async (key) => {
     for (let n = 0; n < 500; n++) {
       const state = await json('/__lifetime');
@@ -81,7 +93,6 @@ async function fixture(t, options) {
     create,
     submit,
     history,
-    title,
     wait,
     closedResponses,
   };
@@ -96,7 +107,7 @@ function frames(text) {
     });
 }
 
-for (const kind of ['history', 'title'])
+for (const kind of ['history'])
   test(`aborted ${kind} before worker completion does not install a hold`, async (t) => {
     let release;
     let ready;
@@ -113,9 +124,9 @@ for (const kind of ['history', 'title'])
             '--python',
             '3.12',
             '--project',
-            'cockpit/chat/threads/python',
+            'cockpit/chat/timeline/python',
             'python',
-            'scripts/react-cockpit/chat-threads-wire.py',
+            'scripts/react-cockpit/chat-timeline-wire.py',
           ],
           { stdio: ['pipe', 'pipe', 'pipe'] }
         );
@@ -136,10 +147,10 @@ for (const kind of ['history', 'title'])
     });
     const id = await f.create();
     await f.json('/__hold-' + kind);
-    const path = `/api/threads/${id}${kind === 'history' ? '/history' : ''}`;
+    const path = `/api/threads/${id}/history`;
     const controller = new AbortController();
     const pending = f
-      .request(path, {}, kind === 'history' ? 'POST' : 'GET', controller.signal)
+      .request(path, { limit: 10 }, 'POST', controller.signal)
       .catch(() => null);
     await workerReady;
     controller.abort();
@@ -159,10 +170,7 @@ for (const kind of ['history', 'title'])
       await new Promise((resolve) => setTimeout(resolve, 10));
     const state = await f.json('/__lifetime');
     assert.equal(state.pendingOperations, 0);
-    assert.equal(
-      state[kind === 'history' ? 'activeHistory' : 'activeTitle'],
-      false
-    );
+    assert.equal(state['activeHistory'], false);
     assert.deepEqual(await f.json('/__injections'), []);
     assert.equal((await f.json('/__graph-proof')).length, 1);
   });
@@ -200,7 +208,7 @@ test('replacing a held stream interrupts its exact run and lets the replacement 
   );
 });
 
-test('actual compiled graph retains separate canonical histories, title metadata and unique answers', async (t) => {
+test('actual compiled graph retains separate canonical histories and unique answers', async (t) => {
   const f = await fixture(t),
     a = await f.create(),
     b = await f.create();
@@ -226,10 +234,6 @@ test('actual compiled graph retains separate canonical histories, title metadata
   assert.deepEqual(after.next, []);
   assert.deepEqual(after.tasks, []);
   assert.equal(after.checkpoint.thread_id, a);
-  assert.equal(
-    (await f.title(a)).metadata.title,
-    'Authored conversation title'
-  );
   const run = first.find(([kind]) => kind === 'metadata')[1].run_id;
   assert.equal(
     (await f.json(`/api/threads/${a}/runs/${run}`, undefined, 'GET')).status,
@@ -240,7 +244,7 @@ test('actual compiled graph retains separate canonical histories, title metadata
     404
   );
   const proofs = await f.json('/__graph-proof');
-  assert(proofs.length >= 7);
+  assert.equal(proofs.length, 6);
   for (const proof of proofs) {
     assert.equal(proof.actualCompiledGraph, true);
     assert.equal(proof.networkConnectAttempts, 0);
@@ -252,7 +256,7 @@ test('actual compiled graph retains separate canonical histories, title metadata
       assert.equal(
         proof[key],
         createHash('sha256')
-          .update(readFileSync('cockpit/chat/threads/python/' + path))
+          .update(readFileSync('cockpit/chat/timeline/python/' + path))
           .digest('hex')
       );
   }
@@ -312,7 +316,6 @@ test('only confirmed UUID creation and exact supported routes are admitted', asy
     [`/api/threads/${id}`, 'PATCH', {}],
     [`/api/threads/${id}/runs/x/cancel`, 'POST', {}],
     [`/api/threads/${id}/runs/x/stream`, 'GET'],
-    [`/api/threads/${id}/state`, 'GET'],
     [
       `/api/threads/${id}/runs/stream`,
       'POST',
@@ -321,13 +324,13 @@ test('only confirmed UUID creation and exact supported routes are admitted', asy
     [
       `/api/threads/${id}/runs/stream`,
       'POST',
-      { assistant_id: 'c-threads', command: { resume: true } },
+      { assistant_id: 'c-timeline', command: { resume: true } },
     ],
     [
       `/api/threads/${id}/runs/stream`,
       'POST',
       {
-        assistant_id: 'c-threads',
+        assistant_id: 'c-timeline',
         checkpoint_id: 'replay',
         input: { messages: [{ type: 'human', content: 'Hi', id: 'h' }] },
       },
@@ -368,40 +371,6 @@ test('history injections preserve separate actual proof and restore real saved d
   );
 });
 
-test('title modes exercise optional metadata independently of canonical messages', async (t) => {
-  const f = await fixture(t),
-    id = await f.create();
-  await (await f.submit(id)).text();
-  for (const mode of [
-    'missing',
-    'wrong-thread',
-    'invalid',
-    'titlefailure',
-    'literal',
-    'long',
-  ]) {
-    await f.json('/__title/' + mode);
-    const response = await f.request(`/api/threads/${id}`, undefined, 'GET');
-    if (mode === 'titlefailure') {
-      assert.equal(response.status, 500);
-      continue;
-    }
-    const data = await response.json();
-    if (mode === 'missing') assert.equal(data.metadata.title, undefined);
-    if (mode === 'wrong-thread') assert.notEqual(data.thread_id, id);
-    if (mode === 'invalid')
-      assert.notEqual(typeof data.metadata.title, 'string');
-    if (mode === 'literal')
-      assert.equal(data.metadata.title, '<script>alert("title")</script>');
-    if (mode === 'long') assert(data.metadata.title.length > 80);
-  }
-  assert.equal((await f.history(id))[0].values.messages.length, 2);
-  assert.equal(
-    (await f.json('/__injections')).filter((i) => i.kind === 'title').length,
-    6
-  );
-});
-
 test('applied one-shot and persistent holds are recorded once beside actual graph proof', async (t) => {
   const f = await fixture(t),
     id = await f.create(),
@@ -416,14 +385,14 @@ test('applied one-shot and persistent holds are recorded once beside actual grap
   await f.json('/__release');
   await stream;
   assert.deepEqual(await f.json('/__graph-proof'), streamProof);
-  for (const kind of ['history', 'title']) {
+  for (const kind of ['history']) {
     await f.json('/__hold-' + kind);
     for (let attempt = 0; attempt < 3; attempt++) {
       if (attempt === 1) await f.json(`/__${kind}/hold`);
       // One-shot plus persistent hold must still record a single applied hold.
       if (attempt === 2) await f.json('/__hold-' + kind);
-      const pending = kind === 'history' ? f.history(id) : f.title(id);
-      await f.wait(kind === 'history' ? 'activeHistory' : 'activeTitle');
+      const pending = f.history(id);
+      await f.wait('activeHistory');
       expected.push({ kind, mode: 'hold', threadId: id });
       assert.deepEqual(await f.json('/__injections'), expected);
       const proof = await f.json('/__graph-proof');
@@ -439,48 +408,40 @@ test('applied one-shot and persistent holds are recorded once beside actual grap
   }
 });
 
-test('held stream, history and title release and disconnect without retaining responses', async (t) => {
+test('held stream, history release and disconnect without retaining responses', async (t) => {
   const f = await fixture(t),
     id = await f.create();
   await f.json('/__hold-stream');
   const streamed = f.submit(id).then((r) => r.text());
   await f.wait('activeStream');
   await f.json('/__release');
-  assert.match(await streamed, /Authored/);
-  for (const kind of ['history', 'title']) {
+  assert.match(await streamed, /Answer/);
+  for (const kind of ['history']) {
     await f.json('/__hold-' + kind);
-    const pending = kind === 'history' ? f.history(id) : f.title(id);
-    await f.wait(kind === 'history' ? 'activeHistory' : 'activeTitle');
+    const pending = f.history(id);
+    await f.wait('activeHistory');
     await f.json('/__release-' + kind);
     await pending;
     await f.json('/__hold-' + kind);
     const controller = new AbortController();
     const request = f
       .request(
-        `/api/threads/${id}${kind === 'history' ? '/history' : ''}`,
-        {},
-        kind === 'history' ? 'POST' : 'GET',
+        `/api/threads/${id}/history`,
+        { limit: 10 },
+        'POST',
         controller.signal
       )
       .catch(() => null);
-    await f.wait(kind === 'history' ? 'activeHistory' : 'activeTitle');
+    await f.wait('activeHistory');
     controller.abort();
     await request;
     for (
       let i = 0;
-      i < 100 &&
-      (await f.json('/__lifetime'))[
-        kind === 'history' ? 'activeHistory' : 'activeTitle'
-      ];
+      i < 100 && (await f.json('/__lifetime'))['activeHistory'];
       i++
     )
       await new Promise((r) => setTimeout(r, 10));
-    assert.equal(
-      (await f.json('/__lifetime'))[
-        kind === 'history' ? 'activeHistory' : 'activeTitle'
-      ],
-      false
-    );
+    assert.equal((await f.json('/__lifetime'))['activeHistory'], false);
   }
 });
 
@@ -555,9 +516,9 @@ test('close rejects queued worker operations and reset admits a fresh epoch', as
               '--python',
               '3.12',
               '--project',
-              'cockpit/chat/threads/python',
+              'cockpit/chat/timeline/python',
               'python',
-              'scripts/react-cockpit/chat-threads-wire.py',
+              'scripts/react-cockpit/chat-timeline-wire.py',
             ],
             { stdio: ['pipe', 'pipe', 'pipe'] }
           ),
@@ -593,27 +554,27 @@ test('actual graph failure streams partial evidence, records failed run and reta
   assert.deepEqual(await f.json('/__injections'), []);
 });
 
-test('closed chat-threads selection has its own build and server dispatch', async () => {
+test('closed chat-timeline selection has its own build and server dispatch', async () => {
   const { reactCockpitConfiguration } = await import('./configuration.mjs');
-  assert.deepEqual(reactCockpitConfiguration('chat-threads'), {
-    topic: 'threads',
+  assert.deepEqual(reactCockpitConfiguration('chat-timeline'), {
+    topic: 'timeline',
     library: 'chat',
     adapter: 'langgraph',
-    appPath: 'cockpit/chat/threads/react',
-    base: '/chat/threads/react/',
-    port: 4625,
-    project: 'cockpit-chat-threads-react',
+    appPath: 'cockpit/chat/timeline/react',
+    base: '/chat/timeline/react/',
+    port: 4626,
+    project: 'cockpit-chat-timeline-react',
   });
-  assert.throws(() => reactCockpitConfiguration('../chat-threads'));
+  assert.throws(() => reactCockpitConfiguration('../chat-timeline'));
   const server = readFileSync('scripts/react-cockpit/serve.mjs', 'utf8');
-  assert.match(server, /createChatThreadsFixture/);
+  assert.match(server, /createChatTimelineFixture/);
   assert.match(
     server,
-    /await chatThreadsFixture\(request, response, pathname\)/
+    /await chatTimelineFixture\(request, response, pathname\)/
   );
   assert.match(
     server,
-    /await\s*\(\s*(?:\w+\s*\?\?\s*)*chatThreadsFixture(?:\s*\?\?\s*\w+)*\s*\)\.close\(\)/
+    /await\s*\(\s*(?:\w+\s*\?\?\s*)*chatTimelineFixture(?:\s*\?\?\s*\w+)*\s*\)\.close\(\)/
   );
 });
 
@@ -657,5 +618,454 @@ test('creation and worker failure controls fail privately and reset permits reco
   assert.equal((await f.submit(id)).status, 500);
   await f.json('/__reset');
   await f.create(id);
-  assert.match(await (await f.submit(id)).text(), /Authored/);
+  assert.match(await (await f.submit(id)).text(), /Answer/);
+});
+
+test('read-only full checkpoint selection forks actual A+D and keeps later tip immutable', async (t) => {
+  const f = await fixture(t),
+    id = await f.create();
+  await (await f.submit(id, 'A', 'human-a')).text();
+  const a = (await f.history(id))[0];
+  await (await f.submit(id, 'B', 'human-b')).text();
+  const b = (await f.history(id))[0];
+  const source = a.checkpoint;
+  const before = (await f.json('/__graph-proof')).filter(
+    (p) => p.op === 'submit'
+  ).length;
+  const selected = await f.json(`/api/threads/${id}/state/checkpoint`, {
+    checkpoint: source,
+  });
+  assert.deepEqual(selected.values, a.values);
+  assert.deepEqual((await f.history(id))[0].values, b.values);
+  assert.equal(
+    (await f.json('/__graph-proof')).filter((p) => p.op === 'submit').length,
+    before
+  );
+  await (
+    await f.request(`/api/threads/${id}/runs/stream`, {
+      assistant_id: 'c-timeline',
+      checkpoint: source,
+      input: { messages: [{ type: 'human', id: 'human-d', content: 'D' }] },
+    })
+  ).text();
+  const d = (await f.history(id))[0];
+  assert.equal(typeof d.metadata.run_id, 'string');
+  const runEvents = frames(
+    await (
+      await f.request(`/api/threads/${id}/runs/stream`, {
+        assistant_id: 'c-timeline',
+        checkpoint: d.checkpoint,
+        input: {
+          messages: [
+            { type: 'human', id: 'checkpoint-probe', content: 'Probe' },
+          ],
+        },
+        stream_mode: ['values', 'messages-tuple', 'updates', 'checkpoints'],
+      })
+    ).text()
+  );
+  const checkpoints = runEvents.filter(([kind]) => kind === 'checkpoints');
+  assert(
+    checkpoints.length > 0,
+    'actual compiled checkpoint events are streamed'
+  );
+  assert.equal(
+    checkpoints.at(-1)[1].config.configurable.run_id,
+    runEvents[0][1].run_id
+  );
+
+  assert.deepEqual(
+    d.values.messages.map((m) => m.id),
+    ['human-a', 'answer-human-a', 'human-d', 'answer-human-d']
+  );
+  assert.deepEqual(d.values.messages.slice(0, 2), a.values.messages);
+  assert.deepEqual(
+    d.values.completed_message_ids,
+    d.values.messages.map((m) => m.id)
+  );
+  assert.deepEqual(
+    (
+      await f.json(`/api/threads/${id}/state/checkpoint`, {
+        checkpoint: b.checkpoint,
+      })
+    ).values,
+    b.values
+  );
+  await (
+    await f.request(`/api/threads/${id}/runs/stream`, {
+      assistant_id: 'c-timeline',
+      checkpoint: d.checkpoint,
+      input: { messages: [{ type: 'human', id: 'human-e', content: 'E' }] },
+    })
+  ).text();
+  assert.deepEqual(
+    (await f.history(id))[0].values.messages
+      .filter((m) => m.type === 'human')
+      .map((m) => m.content),
+    ['A', 'D', 'E']
+  );
+  for (const checkpoint of [
+    { ...source, thread_id: randomUUID() },
+    { ...source, checkpoint_id: randomUUID() },
+    { ...source, checkpoint_ns: 'foreign' },
+    { ...source, checkpoint_map: { '': randomUUID() } },
+  ]) {
+    assert.equal(
+      (await f.request(`/api/threads/${id}/state/checkpoint`, { checkpoint }))
+        .status,
+      400
+    );
+  }
+});
+
+test('worker fork result names its actual terminal checkpoint rather than the original source', async (t) => {
+  const { createInterface } = await import('node:readline');
+  const child = spawn(
+    'uv',
+    [
+      'run',
+      '--frozen',
+      '--python',
+      '3.12',
+      '--project',
+      'cockpit/chat/timeline/python',
+      'python',
+      'scripts/react-cockpit/chat-timeline-wire.py',
+    ],
+    { stdio: ['pipe', 'pipe', 'pipe'] }
+  );
+  child.stderr.resume();
+  const lines = createInterface({ input: child.stdout });
+  const replies = lines[Symbol.asyncIterator]();
+  t.after(() => {
+    lines.close();
+    child.stdin.end();
+    child.kill();
+  });
+  let requestId = 0;
+  async function call(value) {
+    child.stdin.write(
+      JSON.stringify({ ...value, requestId: ++requestId }) + '\n'
+    );
+    return JSON.parse((await replies.next()).value);
+  }
+  const threadId = randomUUID();
+  const a = await call({
+    op: 'submit',
+    threadId,
+    runId: randomUUID(),
+    messages: [{ type: 'human', id: 'a', content: 'A' }],
+  });
+  const b = await call({
+    op: 'submit',
+    threadId,
+    runId: randomUUID(),
+    messages: [{ type: 'human', id: 'b', content: 'B' }],
+  });
+  const d = await call({
+    op: 'submit',
+    threadId,
+    runId: randomUUID(),
+    checkpoint: a.state.checkpoint,
+    messages: [{ type: 'human', id: 'd', content: 'D' }],
+  });
+  assert.notEqual(
+    d.state.checkpoint.checkpoint_id,
+    a.state.checkpoint.checkpoint_id
+  );
+  assert.notEqual(
+    d.state.checkpoint.checkpoint_id,
+    b.state.checkpoint.checkpoint_id
+  );
+  assert.deepEqual(
+    d.state.values.messages.map((m) => m.id),
+    ['a', 'answer-a', 'd', 'answer-d']
+  );
+  assert.equal(
+    d.state.checkpoint.checkpoint_id,
+    d.events.filter(([kind]) => kind === 'checkpoints').at(-1)[1].config
+      .configurable.checkpoint_id
+  );
+});
+
+test('mapped HTTP representation preserves genuine checkpoint IDs and rejects map mutation', async (t) => {
+  const f = await fixture(t),
+    id = await f.create();
+  await f.json('/__mapped-checkpoints');
+  await (await f.submit(id, 'A', 'a')).text();
+  const a = (await f.history(id))[0],
+    source = a.checkpoint;
+  assert.deepEqual(source.checkpoint_map, { '': source.checkpoint_id });
+  assert.deepEqual(
+    (
+      await f.json(`/api/threads/${id}/state/checkpoint`, {
+        checkpoint: source,
+      })
+    ).checkpoint,
+    source
+  );
+  for (const checkpoint of [
+    { ...source, checkpoint_map: undefined },
+    { ...source, checkpoint_map: {} },
+    { ...source, checkpoint_map: { '': 'wrong' } },
+    {
+      ...source,
+      checkpoint_map: { '': source.checkpoint_id, child: 'unexpected' },
+    },
+  ]) {
+    assert.equal(
+      (await f.request(`/api/threads/${id}/state/checkpoint`, { checkpoint }))
+        .status,
+      400
+    );
+    assert.equal(
+      (
+        await f.request(`/api/threads/${id}/runs/stream`, {
+          assistant_id: 'c-timeline',
+          checkpoint,
+          input: { messages: [{ type: 'human', id: 'bad', content: 'Bad' }] },
+        })
+      ).status,
+      400
+    );
+  }
+  const events = frames(
+    await (
+      await f.request(`/api/threads/${id}/runs/stream`, {
+        assistant_id: 'c-timeline',
+        checkpoint: source,
+        input: { messages: [{ type: 'human', id: 'd', content: 'D' }] },
+        stream_mode: [
+          'values',
+          'messages-tuple',
+          'updates',
+          'custom',
+          'checkpoints',
+        ],
+      })
+    ).text()
+  );
+  const terminal = events.filter(([kind]) => kind === 'checkpoints').at(-1)[1]
+    .config.configurable;
+  assert.deepEqual(terminal.checkpoint_map, { '': terminal.checkpoint_id });
+  const state = await f.json(`/api/threads/${id}/state/checkpoint`, {
+    checkpoint: {
+      thread_id: id,
+      checkpoint_ns: '',
+      checkpoint_id: terminal.checkpoint_id,
+      checkpoint_map: terminal.checkpoint_map,
+    },
+  });
+  assert.deepEqual(
+    state.values.messages.map((m) => m.id),
+    ['a', 'answer-a', 'd', 'answer-d']
+  );
+  assert.equal(
+    (await f.json('/__graph-proof')).filter((p) => p.op === 'submit').length,
+    2
+  );
+});
+
+for (const field of ['sourceSha256', 'lockSha256'])
+  test(`worker proof with wrong ${field} fails closed`, async (t) => {
+    const expected = Object.fromEntries(
+      [
+        ['sourceSha256', 'src/graph.py'],
+        ['lockSha256', 'uv.lock'],
+      ].map(([key, path]) => [
+        key,
+        createHash('sha256')
+          .update(readFileSync('cockpit/chat/timeline/python/' + path))
+          .digest('hex'),
+      ])
+    );
+    expected[field] = 'wrong';
+    const f = await fixture(t, {
+      spawnWorker: () =>
+        spawn(
+          process.execPath,
+          [
+            '-e',
+            `process.stdin.on('data',line=>{const q=JSON.parse(line);process.stdout.write(JSON.stringify({requestId:q.requestId,history:[],proof:{actualCompiledGraph:true,...${JSON.stringify(
+              expected
+            )},op:q.op,threadId:q.threadId,networkConnectAttempts:0,titleMessageCallbacks:0}})+String.fromCharCode(10))})`,
+          ],
+          { stdio: ['pipe', 'pipe', 'pipe'] }
+        ),
+    });
+    const id = await f.create();
+    assert.equal(
+      (await f.request(`/api/threads/${id}/history`, { limit: 10 })).status,
+      500
+    );
+    assert.deepEqual(await f.json('/__graph-proof'), []);
+  });
+
+test('fixture instances isolate fault controls, workers, and checkpoint ownership', async (t) => {
+  const a = await fixture(t),
+    b = await fixture(t),
+    id = await a.create();
+  await b.create(id);
+  await a.json('/__history/failure');
+  await Promise.all([
+    (async () => {
+      await (await a.submit(id, 'A', 'a')).text();
+    })(),
+    (async () => {
+      await (await b.submit(id, 'B', 'b')).text();
+    })(),
+  ]);
+  assert.equal(
+    (await a.request(`/api/threads/${id}/history`, { limit: 10 })).status,
+    500
+  );
+  assert.deepEqual(
+    (await b.history(id))[0].values.messages.map((m) => m.id),
+    ['b', 'answer-b']
+  );
+  assert.notEqual(
+    (await a.json('/__lifetime')).workerPid,
+    (await b.json('/__lifetime')).workerPid
+  );
+  await a.handle.close();
+  await (await b.submit(id, 'C', 'c')).text();
+  assert.deepEqual(
+    (await b.history(id))[0].values.messages.map((m) => m.id),
+    ['b', 'answer-b', 'c', 'answer-c']
+  );
+});
+
+test('history honors bounded limits and rejects unimplemented routing fields', async (t) => {
+  const f = await fixture(t),
+    id = await f.create();
+  await (await f.submit(id, 'A')).text();
+  await (await f.submit(id, 'B')).text();
+  const all = await f.history(id);
+  assert(all.length > 1);
+  assert.equal(
+    (await f.json(`/api/threads/${id}/history`, { limit: 1 })).length,
+    1
+  );
+  for (const body of [
+    {},
+    { limit: 0 },
+    { limit: -1 },
+    { limit: 101 },
+    { limit: 1.5 },
+    { limit: '10' },
+    { limit: 10, filter: {} },
+    { limit: 10, before: {} },
+    { limit: 10, checkpoint: {} },
+  ])
+    assert.equal(
+      (await f.request(`/api/threads/${id}/history`, body)).status,
+      400,
+      JSON.stringify(body)
+    );
+});
+
+test('checkpoint reads reject extra top-level state mutation and routing fields', async (t) => {
+  const f = await fixture(t),
+    id = await f.create();
+  await (await f.submit(id)).text();
+  const checkpoint = (await f.history(id))[0].checkpoint;
+  for (const extra of [
+    { values: {} },
+    { checkpoint_id: checkpoint.checkpoint_id },
+    { subgraphs: true },
+    { unknown: true },
+  ])
+    assert.equal(
+      (
+        await f.request(`/api/threads/${id}/state/checkpoint`, {
+          checkpoint,
+          ...extra,
+        })
+      ).status,
+      400
+    );
+});
+
+test('run admission rejects unsupported SDK fields, malformed inputs, and mode controls before execution', async (t) => {
+  const f = await fixture(t),
+    id = await f.create();
+  const input = {
+      messages: [{ type: 'human', id: 'authored', content: 'Hello' }],
+    },
+    base = { assistant_id: 'c-timeline', input };
+  const bad = [
+    { config: {} },
+    { interrupt_before: ['generate'] },
+    { interrupt_after: [] },
+    { metadata: {} },
+    { stream_subgraphs: false },
+    { stream_subgraphs: undefined },
+    { stream_resumable: false },
+    { stream_resumable: undefined },
+    { on_disconnect: 'cancel' },
+    { on_disconnect: undefined },
+    { stream_mode: undefined },
+    { stream_mode: [] },
+    { stream_mode: ['messages'] },
+    { stream_mode: ['values', 'values'] },
+    { stream_mode: 'values' },
+    { stream_mode: ['debug'] },
+    { input: { ...input, other: 1 } },
+    { input: { messages: [{ ...input.messages[0], id: ' ' }] } },
+    { input: { messages: [{ ...input.messages[0], name: 'extra' }] } },
+    { input: { messages: [{ ...input.messages[0], content: 3 }] } },
+  ];
+  for (const delta of bad)
+    assert.equal(
+      (await f.request(`/api/threads/${id}/runs/stream`, { ...base, ...delta }))
+        .status,
+      400,
+      JSON.stringify(delta)
+    );
+  assert.equal(
+    (await f.json('/__graph-proof')).filter((p) => p.op === 'submit').length,
+    0
+  );
+});
+
+test('SSE emits only requested modes while real internal checkpoints still determine terminal state', async (t) => {
+  const f = await fixture(t),
+    id = await f.create();
+  const ordinary = frames(await (await f.submit(id, 'A', 'a')).text());
+  assert(!ordinary.some(([kind]) => kind === 'checkpoints'));
+  assert(ordinary.some(([kind]) => kind === 'messages'));
+  const a = (await f.history(id))[0];
+  const branch = frames(
+    await (
+      await f.request(`/api/threads/${id}/runs/stream`, {
+        assistant_id: 'c-timeline',
+        checkpoint: a.checkpoint,
+        input: { messages: [{ type: 'human', id: 'd', content: 'D' }] },
+        stream_mode: ['values', 'checkpoints'],
+      })
+    ).text()
+  );
+  assert(branch.some(([kind]) => kind === 'checkpoints'));
+  assert(
+    !branch.some(([kind]) => ['messages', 'updates', 'custom'].includes(kind))
+  );
+  assert.deepEqual(
+    (await f.history(id))[0].values.messages.map((m) => m.id),
+    ['a', 'answer-a', 'd', 'answer-d']
+  );
+  const failed = frames(
+    await (
+      await f.request(`/api/threads/${id}/runs/stream`, {
+        assistant_id: 'c-timeline',
+        input: {
+          messages: [{ type: 'human', id: 'failure', content: 'fail-stream' }],
+        },
+        stream_mode: ['values'],
+      })
+    ).text()
+  );
+  assert(failed.some(([kind]) => kind === 'error'));
+  assert(
+    !failed.some(([kind]) => kind === 'messages' || kind === 'checkpoints')
+  );
 });
