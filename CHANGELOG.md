@@ -10,6 +10,7 @@
 - **chat:** `Agent.usage`, `ToolCall.parts`, and an `authoritativeIds` input to `selectPendingClientToolCalls`
 - **ag-ui:** cancelled run outcomes settle as `aborted`; content-part tool results map to chat content blocks
 - **chat:** `chatActivityTemplate`, a per-message activity slot on `<chat>` that replaces the reasoning pill and tool-call region of each assistant message ([#1253](https://github.com/cacheplane/threadplane/issues/1253))
+- **chat:** the `zod` peer range widens to `^3.25.0 || ^4.0.0`; the library imports only the `zod/v4` entry point, which both lines ship
 
 ## 0.2.0 (2026-09-18)
 
