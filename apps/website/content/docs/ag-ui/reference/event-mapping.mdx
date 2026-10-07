@@ -69,7 +69,7 @@ One prompt against this graph produces the following sequence. The order is the 
 
 ## Event reference
 
-The adapter exposes `messages`, `status`, `isLoading`, `error`, `toolCalls`, `state`, `interrupt`, `interruptSession`, `subagents`, and `customEvents` as Signals, `events$` as an Observable, and `clientTools` as a capability. Alongside `submit`, `retry`, `stop`, and `regenerate`, it provides the hydration Promise `ready`, `reconcileInterrupt()`, and `dispose()`. The tables below name the surface each event writes to.
+The adapter exposes `messages`, `status`, `isLoading`, `error`, `toolCalls`, `state`, `interrupt`, `interruptSession`, `subagents`, and `customEvents` as Signals, `events$` and `rawEvents$` as Observables, and `clientTools` as a capability. Alongside `submit`, `retry`, `stop`, and `regenerate`, it provides the hydration Promise `ready`, `reconcileInterrupt()`, and `dispose()`. The tables below name the surface each event writes to. Every event that reaches the reducer is also emitted, unchanged, on `rawEvents$`; see [`toAgent()`](/docs/ag-ui/api/to-agent#raw-event-stream).
 
 ### Run lifecycle
 
