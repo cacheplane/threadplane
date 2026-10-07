@@ -17,6 +17,10 @@ const LIGHT_TOKENS = `
   --tplane-chat-warning-bg: #fffbeb;
   --tplane-chat-warning-text: #b45309;
   --tplane-chat-success: #16a34a;
+  /* Success color for small text (status pills). The base success green
+     is 3.3:1 on white, enough for icons but not for text; this one is
+     4.5:1 or better on the light surfaces. */
+  --tplane-chat-success-text: #15803d;
   --tplane-chat-shadow-sm: 0 1px 2px rgba(0,0,0,.05);
   --tplane-chat-shadow-md: 0 4px 6px -1px rgba(0,0,0,.10), 0 2px 4px -1px rgba(0,0,0,.06);
   --tplane-chat-shadow-lg: 0 10px 15px -3px rgba(0,0,0,.10), 0 4px 6px -2px rgba(0,0,0,.05);
@@ -84,6 +88,7 @@ const DARK_TOKENS = `
   --tplane-chat-warning-bg: rgb(45, 35, 21);
   --tplane-chat-warning-text: #fbbf24;
   --tplane-chat-success: #4ade80;
+  --tplane-chat-success-text: #4ade80;
 
   /* --a2ui-* dark variant (preserves current chat.css values) */
   --a2ui-primary: #4f8df5;

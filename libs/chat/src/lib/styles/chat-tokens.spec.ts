@@ -236,6 +236,23 @@ describe('ROOT_TOKEN_STYLES — citation tokens', () => {
   });
 });
 
+describe('ROOT_TOKEN_STYLES — success colors', () => {
+  it('keeps the icon success color and adds a separate text success color', () => {
+    expect(ROOT_TOKEN_STYLES).toContain('--tplane-chat-success: #16a34a;');
+    expect(ROOT_TOKEN_STYLES).toContain('--tplane-chat-success-text: #15803d;');
+    expect(ROOT_TOKEN_STYLES).toContain('--tplane-chat-success-text: #4ade80;');
+  });
+
+  it.each([
+    ['light surface', '#15803d', '#ffffff'],
+    ['light surface-alt', '#15803d', '#fbfbfb'],
+    ['dark surface', '#4ade80', '#1c1c1c'],
+    ['dark surface-alt', '#4ade80', '#2c2c2c'],
+  ])('success text meets AA contrast on the %s', (_surface, fg, bg) => {
+    expect(contrastRatio(fg, bg)).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
 function relativeLuminance(hex: string): number {
   const [r, g, b] = hex
     .replace('#', '')
