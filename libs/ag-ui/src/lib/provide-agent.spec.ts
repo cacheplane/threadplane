@@ -354,3 +354,46 @@ describe('provideAgent', () => {
     });
   });
 });
+
+describe('provideAgent — rawEvents$', () => {
+  it.each([
+    ['unprotected', false],
+    ['protected', true],
+  ] as const)('emits a server RUN_ERROR exactly once after error() and status() settle (%s)', async (_mode, protectedErrors) => {
+    const events = [
+      { type: 'RUN_STARTED', threadId: 't', runId: 'r' },
+      { type: 'RUN_ERROR', message: 'server failure' },
+    ];
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(
+      events.map(event => `data: ${JSON.stringify(event)}\n\n`).join(''),
+      { headers: { 'content-type': 'text/event-stream' } },
+    )));
+    TestBed.configureTestingModule({
+      providers: [
+        provideAgent({ url: 'https://agent.example/run', telemetry: false }),
+        ...(protectedErrors ? [{ provide: ɵAG_UI_RUNTIME_OPERATION_REPORTER, useValue: vi.fn() }] : []),
+      ],
+    });
+    const agent = TestBed.runInInjectionContext(() => injectAgent());
+    const seen: Array<{ type: string; status: string; hasError: boolean }> = [];
+    let completed = false;
+    agent.rawEvents$.subscribe({
+      next: event => seen.push({ type: event.type, status: agent.status(), hasError: agent.error() !== undefined }),
+      complete: () => { completed = true; },
+    });
+
+    await agent.submit({ message: 'hello' });
+
+    expect(seen).toEqual([
+      expect.objectContaining({ type: 'RUN_STARTED' }),
+      { type: 'RUN_ERROR', status: 'error', hasError: true },
+    ]);
+    if (protectedErrors) {
+      expect(agent.error()).toMatchObject({ message: 'The server ran into an error. You can try again.' });
+    }
+    TestBed.resetTestingModule();
+    expect(completed).toBe(true);
+    expect(seen).toHaveLength(2);
+    vi.unstubAllGlobals();
+  });
+});

@@ -132,8 +132,12 @@ export interface AgUiAgent<TState = Record<string, unknown>> extends Agent<TStat
    *
    * Emits exactly the events the signals saw: events from a superseded run,
    * events after a run was stopped or failed, and events after a terminal
-   * outcome are suppressed here too. Hot and unbuffered — subscribe before
-   * submitting to see a whole run. Completes on `dispose()`.
+   * outcome are suppressed here too. Each event is emitted after the signals
+   * are updated for it. A run's terminal `RUN_ERROR` is always emitted once,
+   * after `error()` and `status()` settle — including under `provideAgent()`,
+   * where `error()` carries a generic message but the emitted event is the
+   * server's, unchanged. Hot and unbuffered — subscribe before submitting to
+   * see a whole run. Completes on `dispose()`.
    *
    * Hydration from `persistence` restores a committed snapshot rather than
    * replaying protocol events, so nothing is emitted for it; read the hydrated
@@ -724,6 +728,11 @@ function createAgentAdapter(
       }
       if (event.type === 'RUN_ERROR' && options.protectOperationErrors) {
         failRun(run, undefined);
+        // Not reduced (the protected error replaces the server's), but a host
+        // folding raw events still needs the terminal event to settle its view.
+        // Emitted once, after error()/status() are set, only when failRun
+        // accepted it as this run's terminal event.
+        if ((run as AdapterRun).outcome === 'error') rawEvents$.next(event);
         return;
       }
       if (event.type === 'RUN_FINISHED') {
