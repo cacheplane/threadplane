@@ -96,6 +96,7 @@ agent.rawEvents$.subscribe((event) => {
 ```
 
 - **What the signals saw.** Each event is emitted right after it is reduced, so the signals already reflect it. Events the adapter suppresses are not emitted: events from a run superseded by a newer request, events arriving after `stop()` or a failure, and events after a run's terminal event.
+- **Run failures settle the stream.** A run's terminal `RUN_ERROR` is emitted exactly once, after `error()` and `status()` are already set, and nothing from that run follows it. This holds under `provideAgent()` too, where `error()` is replaced with a generic message: the emitted `RUN_ERROR` is the server's event, unchanged, so do not render its `message` where you rely on that protection. A run that ends without a protocol terminal event — a transport failure, or a stream that closes early — emits nothing more; `status()` and `error()` report it.
 - **Hot and unbuffered.** Subscribe before calling `submit()` to see a whole run; nothing is replayed to late subscribers.
 - **Hydration is a snapshot, not a replay.** With `persistence` configured, `ready` restores the committed messages and state directly. No protocol events are emitted for it, so read the hydrated `messages()` and `state()` to seed a host view model, then fold `rawEvents$` from there.
 - **Completes on `dispose()`.**

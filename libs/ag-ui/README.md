@@ -88,7 +88,7 @@ Both `@threadplane/langgraph` and `@threadplane/ag-ui` expose `provideAgent`/`in
 | `customEvents()` | Non-`on_interrupt` `CUSTOM` events for live a2ui and app-specific side effects |
 | `subagents()` | `ACTIVITY_*` entries with `activityType: 'subagent'`, projected to the neutral subagent contract |
 | `clientTools` | Browser client-tool catalog, pending calls, and result resolution used by `<chat [clientTools]>` |
-| `rawEvents$` | `Observable<BaseEvent>` of every protocol event the adapter reduced, in order, for hosts that fold the full stream themselves. Suppressed events are not emitted; persisted hydration restores a snapshot and emits nothing. Completes on `dispose()` |
+| `rawEvents$` | `Observable<BaseEvent>` of every protocol event the adapter reduced, in order, for hosts that fold the full stream themselves. Suppressed events are not emitted; a run's terminal `RUN_ERROR` is emitted once, after `error()` and `status()` settle; persisted hydration restores a snapshot and emits nothing. Completes on `dispose()` |
 
 Which capabilities populate depends on the events the AG-UI backend emits. `submit()`, `stop()`, and `regenerate()` are supported.
 
