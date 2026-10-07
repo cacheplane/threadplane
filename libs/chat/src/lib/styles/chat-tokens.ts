@@ -267,15 +267,40 @@ export const CHAT_HOST_TOKENS = `
 // references in component styles (which Angular leaves untouched).
 
 /**
+ * Elements that loop an animation indefinitely. Under reduced motion each
+ * one gets `animation: none` plus a static, fully visible state, because
+ * the universal `iteration-count: 1` rule alone would freeze it mid-loop,
+ * which reads as a bug.
+ *
+ * Every entry must target a class that a chat component actually renders
+ * with an infinite animation; `chat-tokens.spec.ts` scans the component
+ * styles and fails if this list misses one or names a class that no
+ * longer exists.
+ */
+export const REDUCED_MOTION_LOOP_SELECTORS: readonly string[] = [
+  '.tcc__pill[data-status="running"] svg',
+  '.chat-typing__dot',
+  '.chat-scroll-bubble__dot',
+  '.chat-message__caret',
+  '.chat-reasoning__pulse',
+  '.chat-trace__label',
+  '.chat-genui-skeleton__row',
+  '.a2ui-default-fallback__row',
+  '.chat-history-search-palette__skeleton-row',
+  '.chat-sidenav__debug-dot--streaming',
+  '.chat-welcome__beacon',
+  'chat-debug .launcher__dot--streaming',
+];
+
+/**
  * WCAG 2.3.3 — honor the OS-level "Reduce Motion" preference. Collapses
  * every transition/animation in the chat lib (and the a2ui catalog,
  * which renders in the same document) to instant. The `!important`
  * flag intentionally overrides any inline `style="transition: ..."`
  * applied by future code — accessibility wins.
  *
- * Infinite-loop indicators (spinner, typing dots, caret, etc.) need
- * explicit `animation: none` because `iteration-count: 1` alone would
- * freeze them mid-loop, which reads as a bug.
+ * Infinite-loop indicators (see `REDUCED_MOTION_LOOP_SELECTORS`) get
+ * explicit `animation: none`.
  */
 const REDUCED_MOTION_STYLES = `
 @media (prefers-reduced-motion: reduce) {
@@ -286,12 +311,7 @@ const REDUCED_MOTION_STYLES = `
     scroll-behavior: auto !important;
   }
 
-  .tcc__pill[data-status="running"] svg,
-  .tplane-chat-typing-dot,
-  .tplane-chat-caret,
-  .tplane-chat-welcome__pulse,
-  .chat-genui-skeleton,
-  .chat-debug__pill--active {
+  ${REDUCED_MOTION_LOOP_SELECTORS.join(',\n  ')} {
     animation: none !important;
     opacity: 1 !important;
   }
