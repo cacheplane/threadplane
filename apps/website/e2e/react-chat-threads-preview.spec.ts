@@ -1,5 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
+import { fromPageOrReactPreview } from './fixtures/react-preview-requests';
 const route = '/docs/chat/guides/thread-routing';
+const reactFrame = /(?:localhost:4625|chat\/threads\/react)/;
 const observations = new WeakMap<
   Page,
   { requests: string[]; errors: string[] }
@@ -10,7 +12,8 @@ test.beforeEach(async ({ page }) => {
   page.on('request', (request) => {
     if (
       ['fetch', 'xhr'].includes(request.resourceType()) &&
-      /\/threads(?:\/|$)/.test(new URL(request.url()).pathname)
+      /\/threads(?:\/|$)/.test(new URL(request.url()).pathname) &&
+      fromPageOrReactPreview(request, reactFrame)
     )
       observed.requests.push(request.method());
   });
@@ -37,7 +40,7 @@ async function emptyRun(page: Page, draft = '') {
   await expect(page.locator('iframe')).toBeVisible();
   await expect(page.locator('iframe')).toHaveAttribute(
     'src',
-    /(?:localhost:4625|chat\/threads\/react)/
+    reactFrame
   );
   const frame = page.frameLocator('iframe');
   await expect(frame.getByRole('status')).toHaveText('Ready.');

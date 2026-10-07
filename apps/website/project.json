@@ -100,7 +100,8 @@
             "cockpit-chat-interrupts-react",
             "cockpit-chat-tool-calls-react",
             "cockpit-chat-subagents-react",
-            "cockpit-chat-threads-react"
+            "cockpit-chat-threads-react",
+            "cockpit-chat-timeline-react"
           ]
         }
       ],

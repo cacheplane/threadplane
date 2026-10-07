@@ -1,6 +1,9 @@
 import { test, expect, type Page } from '@playwright/test';
+import { fromPageOrReactPreview } from './fixtures/react-preview-requests';
 
 const route = '/docs/render/guides/registry';
+const reactFrame =
+  /(?:localhost:4617(?:[/?#]|$)|\/render\/registry\/react\/?(?:[?#]|$))/;
 const iframe = (page: Page) =>
   page.locator(
     'iframe[title="Component Registry (React preview) live example"]'
@@ -15,7 +18,8 @@ test.beforeEach(async ({ page }) => {
       !['GET', 'HEAD'].includes(request.method()) &&
       /\/agent(?:\/|$)|\/api\/native(?:\/|$)|\/api\/threads(?:\/|$)|\/threads(?:\/|$)/.test(
         new URL(request.url()).pathname
-      )
+      ) &&
+      fromPageOrReactPreview(request, reactFrame)
     )
       executions.push(request.url());
   });
@@ -52,7 +56,7 @@ async function expectFreshRun(page: Page) {
   );
   await expect(iframe(page)).toHaveAttribute(
     'src',
-    /(?:localhost:4617(?:[/?#]|$)|\/render\/registry\/react\/?(?:[?#]|$))/
+    reactFrame
   );
   const example = frame(page);
   await expect(
