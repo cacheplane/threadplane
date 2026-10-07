@@ -4916,6 +4916,19 @@
     ],
     "methods": [
       {
+        "name": "groupBodyId",
+        "signature": "groupBodyId(index: number): string",
+        "description": "",
+        "params": [
+          {
+            "name": "index",
+            "type": "number",
+            "description": "",
+            "optional": false
+          }
+        ]
+      },
+      {
         "name": "summarize",
         "signature": "summarize(name: string, count: number): string",
         "description": "",

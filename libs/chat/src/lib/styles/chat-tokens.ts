@@ -17,6 +17,10 @@ const LIGHT_TOKENS = `
   --tplane-chat-warning-bg: #fffbeb;
   --tplane-chat-warning-text: #b45309;
   --tplane-chat-success: #16a34a;
+  /* Success color for small text (status pills). The base success green
+     is 3.3:1 on white, enough for icons but not for text; this one is
+     4.5:1 or better on the light surfaces. */
+  --tplane-chat-success-text: #15803d;
   --tplane-chat-shadow-sm: 0 1px 2px rgba(0,0,0,.05);
   --tplane-chat-shadow-md: 0 4px 6px -1px rgba(0,0,0,.10), 0 2px 4px -1px rgba(0,0,0,.06);
   --tplane-chat-shadow-lg: 0 10px 15px -3px rgba(0,0,0,.10), 0 4px 6px -2px rgba(0,0,0,.05);
@@ -84,6 +88,7 @@ const DARK_TOKENS = `
   --tplane-chat-warning-bg: rgb(45, 35, 21);
   --tplane-chat-warning-text: #fbbf24;
   --tplane-chat-success: #4ade80;
+  --tplane-chat-success-text: #4ade80;
 
   /* --a2ui-* dark variant (preserves current chat.css values) */
   --a2ui-primary: #4f8df5;
@@ -267,15 +272,40 @@ export const CHAT_HOST_TOKENS = `
 // references in component styles (which Angular leaves untouched).
 
 /**
+ * Elements that loop an animation indefinitely. Under reduced motion each
+ * one gets `animation: none` plus a static, fully visible state, because
+ * the universal `iteration-count: 1` rule alone would freeze it mid-loop,
+ * which reads as a bug.
+ *
+ * Every entry must target a class that a chat component actually renders
+ * with an infinite animation; `chat-tokens.spec.ts` scans the component
+ * styles and fails if this list misses one or names a class that no
+ * longer exists.
+ */
+export const REDUCED_MOTION_LOOP_SELECTORS: readonly string[] = [
+  '.tcc__pill[data-status="running"] svg',
+  '.chat-typing__dot',
+  '.chat-scroll-bubble__dot',
+  '.chat-message__caret',
+  '.chat-reasoning__pulse',
+  '.chat-trace__label',
+  '.chat-genui-skeleton__row',
+  '.a2ui-default-fallback__row',
+  '.chat-history-search-palette__skeleton-row',
+  '.chat-sidenav__debug-dot--streaming',
+  '.chat-welcome__beacon',
+  'chat-debug .launcher__dot--streaming',
+];
+
+/**
  * WCAG 2.3.3 — honor the OS-level "Reduce Motion" preference. Collapses
  * every transition/animation in the chat lib (and the a2ui catalog,
  * which renders in the same document) to instant. The `!important`
  * flag intentionally overrides any inline `style="transition: ..."`
  * applied by future code — accessibility wins.
  *
- * Infinite-loop indicators (spinner, typing dots, caret, etc.) need
- * explicit `animation: none` because `iteration-count: 1` alone would
- * freeze them mid-loop, which reads as a bug.
+ * Infinite-loop indicators (see `REDUCED_MOTION_LOOP_SELECTORS`) get
+ * explicit `animation: none`.
  */
 const REDUCED_MOTION_STYLES = `
 @media (prefers-reduced-motion: reduce) {
@@ -286,12 +316,7 @@ const REDUCED_MOTION_STYLES = `
     scroll-behavior: auto !important;
   }
 
-  .tcc__pill[data-status="running"] svg,
-  .tplane-chat-typing-dot,
-  .tplane-chat-caret,
-  .tplane-chat-welcome__pulse,
-  .chat-genui-skeleton,
-  .chat-debug__pill--active {
+  ${REDUCED_MOTION_LOOP_SELECTORS.join(',\n  ')} {
     animation: none !important;
     opacity: 1 !important;
   }
