@@ -82,7 +82,7 @@ The AG-UI adapter extends the neutral `Agent` contract with AG-UI-specific proto
 | `reconcileInterrupt()` | `Promise<void>` | Applies authoritative recovery using the application-provided persistence reconciler. |
 | `dispose()` | `void` | Stops local work; providers call it on injector destruction. Does not cancel backend checkpoints. |
 | `subagents()` | `Map<string, Subagent>` | Subagent runs from `SUBAGENT_*` events, keyed by `subagentRunId`, plus the `ACTIVITY_*` convention (`activityType: 'subagent'`, keyed by `messageId`), projected to the neutral subagent contract. |
-| `rawEvents$` | `Observable<BaseEvent>` | Every AG-UI protocol event the adapter reduced into its signals, in arrival order. Suppressed (stale, stopped, post-terminal) events are not emitted, a run's terminal `RUN_ERROR` is emitted once after `error()` and `status()` settle, and persisted hydration emits nothing. Completes on `dispose()`. See [`toAgent()`](/docs/ag-ui/api/to-agent#raw-event-stream). |
+| `rawEvents$` | `Observable<BaseEvent>` | Every AG-UI protocol event the adapter reduced into its signals, in arrival order. Suppressed (stale, stopped, post-terminal) events are not emitted, a run's terminal `RUN_ERROR` is emitted once after `error()` and `status()` settle (redacted exactly as `error()` is when errors are protected), and persisted hydration emits nothing. Completes on `dispose()`. See [`toAgent()`](/docs/ag-ui/api/to-agent#raw-event-stream). |
 
 `injectAgent()` returns the `AgUiAgent` type — the neutral `Agent` contract plus these AG-UI-specific fields — so they are reachable directly, no cast required:
 
