@@ -1,8 +1,33 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "f6143cc51f125822e8dd8b3626339e3b9fc3fb6b",
+  "baselineHead": "ef7ec9be3ec062bb8a0786969faee76ef561d93c",
   "sourceState": {
-    "modified": [],
+    "modified": [
+      "apps/website/content/docs/ag-ui/api/inject-agent.mdx",
+      "apps/website/content/docs/ag-ui/api/to-agent.mdx",
+      "apps/website/content/docs/ag-ui/guides/testing.mdx",
+      "apps/website/content/docs/ag-ui/reference/event-mapping.mdx",
+      "apps/website/content/docs/chat/components/chat-activity-template.mdx",
+      "apps/website/content/docs/chat/components/chat-subagent-card.mdx",
+      "apps/website/content/docs/chat/components/chat-tool-call-template.mdx",
+      "apps/website/content/docs/chat/components/chat.mdx",
+      "apps/website/content/docs/chat/getting-started/installation.mdx",
+      "apps/website/content/docs/chat/guides/client-tools.mdx",
+      "apps/website/content/docs/chat/guides/theming.mdx",
+      "libs/ag-ui/README.md",
+      "libs/ag-ui/src/lib/testing/provide-fake-agent.ts",
+      "libs/ag-ui/src/lib/to-agent.ts",
+      "libs/chat/README.md",
+      "libs/chat/package.json",
+      "libs/chat/src/lib/compositions/chat-subagent-card/chat-subagent-card.component.ts",
+      "libs/chat/src/lib/compositions/chat/chat-activity-template.directive.ts",
+      "libs/chat/src/lib/compositions/chat/chat.component.ts",
+      "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
+      "libs/chat/src/lib/styles/chat-reasoning.styles.ts",
+      "libs/chat/src/lib/styles/chat-tokens.ts",
+      "libs/chat/src/lib/styles/chat-trace.styles.ts",
+      "libs/chat/src/public-api.ts"
+    ],
     "untracked": []
   },
   "scope": {
@@ -2116,7 +2141,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "1590f17b97172809fe54a48e4470379236843a34fe29dc224b7a3c99e9285119"
+      "sha256": "e267321eb5a1e8a4c88a5cbd2b4c5a20551a2dcde270389a16048ffc887d6d2a"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -2176,7 +2201,7 @@
       "id": "config:package.json",
       "kind": "config",
       "path": "package.json",
-      "sha256": "dffcbe850f6a8d578ed96fe75659cdcaf9299bc9cfd0a4ad6d9f30d842941320"
+      "sha256": "57a704e340fa62a1e0bb57d73be20a6ca6e590c772dd0b5e8635c46569ea83ba"
     },
     {
       "id": "config:scripts/assemble-examples.ts",

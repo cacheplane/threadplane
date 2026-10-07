@@ -98,7 +98,16 @@ export function Pills({ runtimes }: { runtimes: string }) {
   );
 }
 
-export function Frame({ width, children }: { width: number; children: React.ReactNode }) {
+export function Frame({
+  width,
+  url = 'demo.threadplane.ai',
+  children,
+}: {
+  width: number;
+  /** Text in the mono address pill. Defaults to the canonical demo host. */
+  url?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div
       style={{
@@ -138,7 +147,7 @@ export function Frame({ width, children }: { width: number; children: React.Reac
             color: CARD.inkMuted,
           }}
         >
-          demo.threadplane.ai
+          {url}
         </div>
       </div>
       {children}
@@ -175,6 +184,51 @@ export function Conversation() {
         <div style={{ display: 'flex', padding: '10px 22px', borderRadius: 10, background: CARD.canvas, border: `1px solid ${CARD.borderStrong}`, fontSize: 20, fontWeight: 600, color: CARD.inkSecondary }}>
           Decline
         </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * What the AG-UI card's frame holds: one ask, three days the agent filled in.
+ *
+ * Drawn for the same reason as `Conversation`: the real App-mode screenshot
+ * is a map with a side panel, which at feed scale is a grey rectangle. Three
+ * short rows read at 0.42x; nothing here is below MIN_READABLE_PX.
+ */
+export function Itinerary() {
+  const days: ReadonlyArray<readonly [string, string]> = [
+    ['Day 1', 'Santa Monica Pier at sunset'],
+    ['Day 2', 'Griffith Observatory, then tacos'],
+    ['Day 3', 'Getty Center, red-eye to JFK'],
+  ];
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', padding: '26px 26px 28px', gap: 18 }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <div style={{ display: 'flex', padding: '12px 18px', borderRadius: 14, background: CARD.dim, fontSize: 22, color: CARD.ink }}>
+          Plan three days in LA.
+        </div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {days.map(([day, plan]) => (
+          <div
+            key={day}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 14,
+              padding: '10px 14px',
+              borderRadius: 10,
+              border: `1px solid ${CARD.border}`,
+              background: CARD.canvas,
+            }}
+          >
+            <div style={{ display: 'flex', fontFamily: 'JetBrains Mono', fontSize: 18, fontWeight: 700, color: CARD.accent }}>
+              {day}
+            </div>
+            <div style={{ display: 'flex', fontSize: 20, lineHeight: 1.3, color: CARD.ink }}>{plan}</div>
+          </div>
+        ))}
       </div>
     </div>
   );

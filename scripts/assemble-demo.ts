@@ -20,6 +20,7 @@
 import { execSync } from 'child_process';
 import { cpSync, mkdirSync, rmSync, existsSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
+import { demoRoutes } from './demo-routes';
 
 const root = resolve(__dirname, '..');
 const deployDir = resolve(root, 'deploy/demo');
@@ -89,11 +90,7 @@ writeFileSync(resolve(funcDir, '.vc-config.json'), JSON.stringify({
 
 writeFileSync(resolve(outputDir, 'config.json'), JSON.stringify({
   version: 3,
-  routes: [
-    { src: '^/api/(.*)', dest: '/api/[[...path]]', check: true },
-    { handle: 'filesystem' },
-    { src: '.*', dest: '/index.html' },
-  ],
+  routes: demoRoutes('^/api/(.*)'),
 }, null, 2));
 
 console.log('✅ .vercel/output/ (Build Output API with serverless proxy)');

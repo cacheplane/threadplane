@@ -1163,7 +1163,7 @@ jobs:
 
           changed_files="$(git diff --name-only "$base_sha" "$head_sha")"
           deploy_relevant=false
-          if printf '%s\n' "$changed_files" | grep -E '^(\.github/workflows/ci\.yml|runtime-parent-origins\.json|vercel\.(json|examples\.json)|apps/website/.*|cockpit/.*|examples/chat/.*|libs/.*|scripts/(assemble-examples|prepare-example-html|demo-middleware|generate-runtime-parent-origins|langgraph-proxy|rate-limit)\.ts|scripts/assemble-demo\.ts)$' >/dev/null; then
+          if printf '%s\n' "$changed_files" | grep -E '^(\.github/workflows/ci\.yml|runtime-parent-origins\.json|vercel\.(json|examples\.json)|apps/website/.*|cockpit/.*|examples/chat/.*|libs/.*|scripts/(assemble-examples|prepare-example-html|demo-middleware|generate-runtime-parent-origins|langgraph-proxy|rate-limit)\.ts|scripts/assemble-demo\.ts|scripts/demo-routes\.ts)$' >/dev/null; then
             deploy_relevant=true
           fi
 
@@ -1516,7 +1516,7 @@ jobs:
           head_sha="${{ github.sha }}"
           changed_files="$(git diff --name-only "$base_sha" "$head_sha")"
           ag_ui_changed=false
-          if printf '%s\n' "$changed_files" | grep -E '^(examples/ag-ui/.*|scripts/(ag-ui-demo-middleware|assemble-ag-ui-demo)\.ts)$' >/dev/null; then
+          if printf '%s\n' "$changed_files" | grep -E '^(examples/ag-ui/.*|scripts/(ag-ui-demo-middleware|assemble-ag-ui-demo|demo-routes)\.ts)$' >/dev/null; then
             ag_ui_changed=true
           fi
           echo "changed=$ag_ui_changed" >> "$GITHUB_OUTPUT"
