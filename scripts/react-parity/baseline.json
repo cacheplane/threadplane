@@ -1,16 +1,8 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "beac2320b4c9339ea268bc2653c77328afa8cece",
+  "baselineHead": "512ab688a4048b87713ef26b97a0ac136c8c50d1",
   "sourceState": {
-    "modified": [
-      "apps/website/content/docs/chat/components/chat-subagent-card.mdx",
-      "apps/website/content/docs/chat/guides/theming.mdx",
-      "libs/chat/src/lib/compositions/chat-subagent-card/chat-subagent-card.component.ts",
-      "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-      "libs/chat/src/lib/styles/chat-reasoning.styles.ts",
-      "libs/chat/src/lib/styles/chat-tokens.ts",
-      "libs/chat/src/lib/styles/chat-trace.styles.ts"
-    ],
+    "modified": [],
     "untracked": []
   },
   "scope": {
@@ -152,7 +144,7 @@
       "id": "asset:libs/ag-ui/README.md",
       "kind": "asset",
       "path": "libs/ag-ui/README.md",
-      "sha256": "a900db710136999225c3d569bb136d2f365d0337ddfc0409ca3e41f358602650"
+      "sha256": "cb35525bfa5dc5b0c0dbdc6a3d288df9dacb48875427a1e53a96cc6564ed0804"
     },
     {
       "id": "asset:libs/ag-ui/fixtures/runtime-transcripts/maf-hitl-interrupt.sse",
@@ -2258,7 +2250,7 @@
       "id": "doc:apps/website/content/docs/ag-ui/api/inject-agent.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/api/inject-agent.mdx",
-      "sha256": "3b234ef854158a8f9e01c46e1a21544caea9b4db610d903364b7b840298ad7d7"
+      "sha256": "201c9188b2ca16824297509f6d430240ea14992dd780efa22a36ffed34bbcdb4"
     },
     {
       "id": "doc:apps/website/content/docs/ag-ui/api/provide-agent.mdx",
@@ -2270,7 +2262,7 @@
       "id": "doc:apps/website/content/docs/ag-ui/api/to-agent.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/api/to-agent.mdx",
-      "sha256": "43bd676f8f9a73256dd516ad3f9dd9b5146845607491860d9aaf7d73f592563d"
+      "sha256": "898fb760e88951f7dc3c1fa116ade13d0bb9a7a6dab4f32cb4bacd646bb7f096"
     },
     {
       "id": "doc:apps/website/content/docs/ag-ui/concepts/architecture.mdx",
@@ -2348,7 +2340,7 @@
       "id": "doc:apps/website/content/docs/ag-ui/guides/testing.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/guides/testing.mdx",
-      "sha256": "810ab379ea409a7c1c55bb0d88730572266d7c1fda9dbdeb1e4e2b57315b1f02"
+      "sha256": "7eead5098a5d1b9901de9a1133846d9749572a6d89f58be26075a8cf25df959d"
     },
     {
       "id": "doc:apps/website/content/docs/ag-ui/guides/tool-views.mdx",
@@ -2366,7 +2358,7 @@
       "id": "doc:apps/website/content/docs/ag-ui/reference/event-mapping.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/reference/event-mapping.mdx",
-      "sha256": "32129145fc6efc60436bf4afc7f2405409b840305369ebe77e9a441e7ef38dfa"
+      "sha256": "080e7de4a03c8453d938258c9bb1c5358c84ec0427173eade0b2d9cd26e12fe7"
     },
     {
       "id": "doc:apps/website/content/docs/chat/a2ui/catalog.mdx",
@@ -3953,7 +3945,7 @@
           "path": "libs/ag-ui/src/lib/to-agent.ts",
           "symbol": "AgUiAgent",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface AgUiAgent<TState = Record<string, unknown>> extends Agent<TState> {\n    submit(input: AgentSubmitInput, opts?: AgUiSubmitOptions): Promise<void>;\n    ready: Promise<void>;\n    reconcileInterrupt(): Promise<void>;\n    interruptSession: Signal<InterruptSessionSnapshot>;\n    dispose(): void;\n    customEvents: Signal<CustomStreamEvent[]>;\n    clientTools: ClientToolsCapability;\n    subagents: Signal<Map<string, Subagent>>;\n}"
+          "signature": "export interface AgUiAgent<TState = Record<string, unknown>> extends Agent<TState> {\n    submit(input: AgentSubmitInput, opts?: AgUiSubmitOptions): Promise<void>;\n    ready: Promise<void>;\n    reconcileInterrupt(): Promise<void>;\n    interruptSession: Signal<InterruptSessionSnapshot>;\n    dispose(): void;\n    customEvents: Signal<CustomStreamEvent[]>;\n    clientTools: ClientToolsCapability;\n    subagents: Signal<Map<string, Subagent>>;\n    rawEvents$: Observable<BaseEvent>;\n}"
         }
       ]
     },
@@ -11759,13 +11751,13 @@
       "id": "source:libs/ag-ui/src/lib/testing/provide-fake-agent.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/testing/provide-fake-agent.ts",
-      "sha256": "0e44dd51a422c266b45e86866b4bbc6a6a5deb1a675c149587c5612cfa3a672a"
+      "sha256": "2dab4efd87dd5896b73e7d992f65598617485292a5eaa1dcd4b3ce3ab90831d2"
     },
     {
       "id": "source:libs/ag-ui/src/lib/to-agent.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/to-agent.ts",
-      "sha256": "7ec69285cad7ef324e7aab8177b9543ff2819e9fe6ab9b95935ae00da1cfdd1d"
+      "sha256": "63a38acb9425211d5f714bc8c637ce62c1cb71db8ac9f834847883fb08e28956"
     },
     {
       "id": "source:libs/ag-ui/src/public-api.ts",
