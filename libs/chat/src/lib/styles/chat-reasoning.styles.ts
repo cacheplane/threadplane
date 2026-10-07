@@ -22,8 +22,14 @@ export const CHAT_REASONING_STYLES = `
     font-family: inherit;
     cursor: pointer;
     line-height: 1.2;
+    min-height: 24px;
+    box-sizing: border-box;
   }
   .chat-reasoning__header:hover { color: var(--tplane-chat-text); }
+  .chat-reasoning__header:focus-visible {
+    outline: 2px solid var(--tplane-chat-primary);
+    outline-offset: 2px;
+  }
 
   .chat-reasoning__chevron {
     width: 10px;

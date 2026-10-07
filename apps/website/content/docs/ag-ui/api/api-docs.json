@@ -486,6 +486,12 @@
         "optional": false
       },
       {
+        "name": "rawEvents$",
+        "type": "Observable<BaseEvent>",
+        "description": "Every AG-UI protocol event the adapter reduced into its signals, in arrival\norder, for hosts that fold the full stream into their own view model.\n\nEmits exactly the events the signals saw: events from a superseded run,\nevents after a run was stopped or failed, and events after a terminal\noutcome are suppressed here too. Each event is emitted after the signals\nare updated for it. A run's terminal `RUN_ERROR` is always emitted once,\nafter `error()` and `status()` settle. Where `provideAgent()` protects\noperation errors, the emitted `RUN_ERROR` honours the same protection as\n`error()`: it carries only the generic message, with the server's message,\ncode and payload dropped. Hot and unbuffered — subscribe before submitting to\nsee a whole run. Completes on `dispose()`.\n\nHydration from `persistence` restores a committed snapshot rather than\nreplaying protocol events, so nothing is emitted for it; read the hydrated\n`messages()` and `state()` instead.",
+        "optional": false
+      },
+      {
         "name": "ready",
         "type": "Promise<void>",
         "description": "Resolves after persisted thread state is hydrated; actions wait for it.",
@@ -949,7 +955,7 @@
   {
     "name": "provideFakeAgent",
     "kind": "function",
-    "description": "Registers an in-process FakeAgent under AGENT.\n\nUse for offline demos and development. Drop-in replacement for\nprovideAgent({ url }) when no real backend is available.\n\nPass `script` to stream exact AG-UI events instead of the canned token\nreply — the adapter reduces them into `toolCalls()`, `state()`,\n`customEvents()`, and `interrupt()` exactly as it would real wire events.",
+    "description": "Registers an in-process FakeAgent under AGENT.\n\nUse for offline demos and development. Drop-in replacement for\nprovideAgent({ url }) when no real backend is available.\n\nPass `script` to stream exact AG-UI events instead of the canned token\nreply — the adapter reduces them into `toolCalls()`, `state()`,\n`customEvents()`, and `interrupt()` exactly as it would real wire events,\nand emits each one on `rawEvents$`.",
     "signature": "provideFakeAgent(config: AgUiFakeAgentConfig): Provider[]",
     "params": [
       {

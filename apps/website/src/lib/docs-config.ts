@@ -369,6 +369,11 @@ export const docsConfig: DocsLibrary[] = [
             section: 'components',
           },
           {
+            title: 'chatActivityTemplate',
+            slug: 'chat-activity-template',
+            section: 'components',
+          },
+          {
             title: 'ChatToolCallCard',
             slug: 'chat-tool-call-card',
             section: 'components',

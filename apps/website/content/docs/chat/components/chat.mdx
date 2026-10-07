@@ -116,13 +116,14 @@ Every input, output, and projection slot below is declared on `ChatComponent` it
 
 ### Projection slots
 
-`<chat>` accepts content on four named slots.
+`<chat>` accepts content on five named slots.
 
 | Selector | Where it lands |
 |---|---|
 | `[chatWelcomeSuggestions]` | Suggestion chips under the welcome composer. Rendered only while the conversation is empty. |
 | `[chatHeader]` | The header row above the message scroller. |
 | `[chatToolCallTemplate]` | Forwarded into the inner `<chat-tool-calls>` so an `<ng-template chatToolCallTemplate="…">` replaces the default card for one tool name. |
+| `ng-template[chatActivityTemplate]` | A per-message activity renderer that replaces the reasoning pill and tool-call region of every assistant message. Takes precedence over `chatToolCallTemplate`. |
 | `[chatInputModelSelect]` | The model-picker slot in the conversation composer. Used only when the auto-rendered picker is off, that is when `modelOptions` is empty or `showModelPicker` is `false`. |
 
 ### Thread Type
@@ -335,3 +336,17 @@ Project a `<ng-template chatToolCallTemplate="…">` directly into `<chat>` to r
 ```
 
 A `chatToolCallTemplate="*"` wildcard catches any unmapped tool name. See [chatToolCallTemplate](/docs/chat/components/chat-tool-call-template) for the directive reference.
+
+## Activity template
+
+To render a message's activity as one unit instead of per tool call, project an `<ng-template chatActivityTemplate>`. It replaces the reasoning pill and the tool-call region of every assistant message and receives the message, its index, its tool calls, its subagents, and the agent. Markdown, tool views, generative UI, and message actions still render.
+
+```html
+<chat [agent]="agent">
+  <ng-template chatActivityTemplate let-message let-toolCalls="toolCalls" let-subagents="subagents">
+    <my-turn-activity [message]="message" [steps]="toolCalls" [subagents]="subagents" />
+  </ng-template>
+</chat>
+```
+
+The activity template takes precedence over any projected `chatToolCallTemplate`. See [chatActivityTemplate](/docs/chat/components/chat-activity-template) for the context reference.

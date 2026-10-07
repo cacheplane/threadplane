@@ -19,6 +19,9 @@ interface Group {
   subagent?: Subagent;
 }
 
+// Unique per instance, so each group body id is unique on the page.
+let nextChatToolCallsId = 0;
+
 @Component({
   selector: 'chat-tool-calls',
   standalone: true,
@@ -36,6 +39,7 @@ interface Group {
       align-items: center;
       gap: 0.5rem;
       width: 100%;
+      min-height: 24px;
       padding: 8px 12px;
       background: transparent;
       border: 0;
@@ -43,6 +47,11 @@ interface Group {
       color: var(--tplane-chat-text);
       cursor: pointer;
       text-align: left;
+    }
+    .ctc__group-header:focus-visible {
+      outline: 2px solid var(--tplane-chat-primary);
+      outline-offset: 2px;
+      border-radius: var(--tplane-chat-radius-card);
     }
     .ctc__group-chevron {
       width: 10px; height: 10px;
@@ -62,14 +71,20 @@ interface Group {
         <!-- Default grouped strip -->
         @let expanded = expandedGroups().has($index);
         <div class="ctc__group" [attr.data-group]="true" [attr.data-expanded]="expanded">
-          <button type="button" class="ctc__group-header" (click)="toggleGroup($index)">
+          <button
+            type="button"
+            class="ctc__group-header"
+            [attr.aria-expanded]="expanded"
+            [attr.aria-controls]="expanded ? groupBodyId($index) : null"
+            (click)="toggleGroup($index)"
+          >
             <svg class="ctc__group-chevron" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M4 2l4 4-4 4"/>
             </svg>
             <span>{{ summarize(group.name, group.calls.length) }}</span>
           </button>
           @if (expanded) {
-            <div class="ctc__group-body">
+            <div class="ctc__group-body" [id]="groupBodyId($index)">
               @for (tc of group.calls; track tc.id) {
                 <chat-tool-call-card [toolCall]="toToolCallInfo(tc)" />
               }
@@ -168,6 +183,12 @@ export class ChatToolCallsComponent {
       if (next.has(index)) next.delete(index); else next.add(index);
       return next;
     });
+  }
+
+  private readonly instanceId = nextChatToolCallsId++;
+
+  protected groupBodyId(index: number): string {
+    return `chat-tool-calls-${this.instanceId}-group-${index}`;
   }
 
   protected summarize(name: string, count: number): string {

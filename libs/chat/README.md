@@ -42,7 +42,7 @@ npm install @threadplane/chat @threadplane/langgraph @langchain/core @langchain/
 @langchain/core            ^1.1.33
 rxjs                       ~7.8.0
 marked                     ^15.0.0 || ^16.0.0
-zod                        ^3.25.0
+zod                        ^3.25.0 || ^4.0.0
 katex                      ^0.16.0 || ^0.17.0 (optional)
 ```
 

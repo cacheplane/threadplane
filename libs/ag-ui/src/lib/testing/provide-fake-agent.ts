@@ -23,7 +23,8 @@ export interface AgUiFakeAgentConfig extends FakeAgentConfig {
  *
  * Pass `script` to stream exact AG-UI events instead of the canned token
  * reply — the adapter reduces them into `toolCalls()`, `state()`,
- * `customEvents()`, and `interrupt()` exactly as it would real wire events.
+ * `customEvents()`, and `interrupt()` exactly as it would real wire events,
+ * and emits each one on `rawEvents$`.
  *
  * @example
  * ```ts

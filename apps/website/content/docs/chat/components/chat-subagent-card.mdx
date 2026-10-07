@@ -143,7 +143,7 @@ The pill is styled through a `data-status` attribute and CSS selectors. The expo
 |--------|-----------|------------|
 | `pending` | `--tplane-chat-surface-alt` | `--tplane-chat-text-muted` |
 | `running` | `--tplane-chat-warning-bg` | `--tplane-chat-warning-text` |
-| `complete` | (none) | `--tplane-chat-success` |
+| `complete` | (none) | `--tplane-chat-success-text` |
 | `error` | `--tplane-chat-error-bg` | `--tplane-chat-error-text` |
 
 ## Cards outside the transcript
@@ -172,7 +172,7 @@ The card reads these CSS custom properties:
 | `--tplane-chat-separator` | Divider between successive transcript messages |
 | `--tplane-chat-surface-alt` | `pending` pill background |
 | `--tplane-chat-warning-bg` / `--tplane-chat-warning-text` | `running` status pill |
-| `--tplane-chat-success` | `complete` status pill |
+| `--tplane-chat-success-text` | `complete` status pill |
 | `--tplane-chat-error-bg` / `--tplane-chat-error-text` | `error` status pill |
 
 The card draws no background, border, or radius of its own. The only border anywhere in this pairing is the left rule on the expanded body, drawn by [`<chat-trace>`](/docs/chat/components/chat-trace); any surrounding chrome comes from the host that places the card.

@@ -354,3 +354,58 @@ describe('provideAgent', () => {
     });
   });
 });
+
+describe('provideAgent — rawEvents$', () => {
+  it.each([
+    ['unprotected', false],
+    ['protected', true],
+  ] as const)('emits a server RUN_ERROR exactly once after error() and status() settle (%s)', async (_mode, protectedErrors) => {
+    const events = [
+      { type: 'RUN_STARTED', threadId: 't', runId: 'r' },
+      { type: 'RUN_ERROR', message: 'server failure test-key-redact-me', code: 'test-key-redact-me-code' },
+    ];
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(
+      events.map(event => `data: ${JSON.stringify(event)}\n\n`).join(''),
+      { headers: { 'content-type': 'text/event-stream' } },
+    )));
+    TestBed.configureTestingModule({
+      providers: [
+        provideAgent({ url: 'https://agent.example/run', telemetry: false }),
+        ...(protectedErrors ? [{ provide: ɵAG_UI_RUNTIME_OPERATION_REPORTER, useValue: vi.fn() }] : []),
+      ],
+    });
+    const agent = TestBed.runInInjectionContext(() => injectAgent());
+    const seen: Array<{ type: string; status: string; hasError: boolean }> = [];
+    const runErrors: BaseEvent[] = [];
+    let completed = false;
+    agent.rawEvents$.subscribe({
+      next: event => {
+        seen.push({ type: event.type, status: agent.status(), hasError: agent.error() !== undefined });
+        if (event.type === 'RUN_ERROR') runErrors.push(event);
+      },
+      complete: () => { completed = true; },
+    });
+
+    await agent.submit({ message: 'hello' });
+
+    expect(seen).toEqual([
+      expect.objectContaining({ type: 'RUN_STARTED' }),
+      { type: 'RUN_ERROR', status: 'error', hasError: true },
+    ]);
+    if (protectedErrors) {
+      const generic = 'The server ran into an error. You can try again.';
+      expect(agent.error()).toMatchObject({ message: generic });
+      // rawEvents$ honours the protection: only the generic message survives.
+      expect(runErrors).toEqual([{ type: 'RUN_ERROR', message: generic }]);
+      expect(JSON.stringify(runErrors)).not.toContain('test-key-redact-me');
+    } else {
+      expect(runErrors).toEqual([
+        expect.objectContaining({ message: 'server failure test-key-redact-me', code: 'test-key-redact-me-code' }),
+      ]);
+    }
+    TestBed.resetTestingModule();
+    expect(completed).toBe(true);
+    expect(seen).toHaveLength(2);
+    vi.unstubAllGlobals();
+  });
+});

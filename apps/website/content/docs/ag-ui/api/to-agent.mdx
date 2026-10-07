@@ -42,6 +42,7 @@ const agent = toAgent(source, { telemetry: myTelemetrySink });
 | `customEvents()` | `Signal<CustomStreamEvent[]>` | Custom events accumulated during a run. Resets at the start of each new run. |
 | `clientTools` | `ClientToolsCapability` | Browser client-tool catalog, pending calls, and result resolution. The chat composition uses this when you pass `<chat [clientTools]>`. |
 | `subagents()` | `Signal<Map<string, Subagent>>` | Subagent runs from `SUBAGENT_*` events, keyed by `subagentRunId`, plus the `ACTIVITY_*` convention (`activityType: 'subagent'`, keyed by `messageId`), projected to the neutral subagent contract. |
+| `rawEvents$` | `Observable<BaseEvent>` | Every AG-UI protocol event the adapter reduced into its signals, in arrival order. See [Raw event stream](#raw-event-stream). |
 
 The standard `Agent` signals (`messages`, `status`, `isLoading`, `error`, `toolCalls`, `state`, `interrupt`) and actions (`submit`, `retry`, `stop`, `regenerate`) are all present.
 
@@ -77,6 +78,30 @@ effect(() => {
   }
 });
 ```
+
+## Raw event stream
+
+`rawEvents$` is a tap on the protocol stream for hosts that fold every AG-UI event into their own view model — turn summaries, nested subagent turns, approvals attached to steps — without constructing a second `AbstractAgent` and bypassing persistence and telemetry wiring.
+
+```ts
+import { HttpAgent } from '@ag-ui/client';
+import { toAgent } from '@threadplane/ag-ui';
+
+const agent = toAgent(new HttpAgent({ url: '/api/agent' }));
+
+agent.rawEvents$.subscribe((event) => {
+  // event is the AG-UI BaseEvent, already reduced into the signals.
+  myViewModel.fold(event);
+});
+```
+
+- **What the signals saw.** Each event is emitted right after it is reduced, so the signals already reflect it. Events the adapter suppresses are not emitted: events from a run superseded by a newer request, events arriving after `stop()` or a failure, and events after a run's terminal event.
+- **Run failures settle the stream.** A run's terminal `RUN_ERROR` is emitted exactly once, after `error()` and `status()` are already set, and nothing from that run follows it. `rawEvents$` honours the same error protection as `error()`: where `provideAgent()` replaces a server error with a generic message, the emitted `RUN_ERROR` carries only that generic `message`, and the server's message, `code`, and payload are dropped, so rendering a failed turn from it is safe. A run that ends without a protocol terminal event — a transport failure, or a stream that closes early — emits nothing more; `status()` and `error()` report it.
+- **Hot and unbuffered.** Subscribe before calling `submit()` to see a whole run; nothing is replayed to late subscribers.
+- **Hydration is a snapshot, not a replay.** With `persistence` configured, `ready` restores the committed messages and state directly. No protocol events are emitted for it, so read the hydrated `messages()` and `state()` to seed a host view model, then fold `rawEvents$` from there.
+- **Completes on `dispose()`.**
+
+`rawEvents$` is AG-UI-specific. The neutral `events$` is unchanged and still carries only `state_update` and `custom` events.
 
 ## Lifecycle note
 

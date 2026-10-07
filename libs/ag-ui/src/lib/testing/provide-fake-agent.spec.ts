@@ -121,6 +121,49 @@ describe('provideFakeAgent — script', () => {
     expect(agent.interrupt()?.value).toEqual({ kind: 'approval', amount: 42 });
   });
 
+  it('emits the scripted run on rawEvents$ in order and completes on destroy', async () => {
+    TestBed.configureTestingModule({
+      providers: provideFakeAgent({
+        delayMs: 0,
+        script: [
+          {
+            when: 'initial',
+            events: [
+              {
+                type: EventType.STATE_SNAPSHOT,
+                snapshot: { topic: 'billing' },
+              } as BaseEvent,
+              {
+                type: EventType.CUSTOM,
+                name: 'analysis_progress',
+                value: { pct: 100 },
+              } as BaseEvent,
+            ],
+          },
+        ],
+      }),
+    });
+
+    const agent = TestBed.runInInjectionContext(() => injectAgent());
+    const types: string[] = [];
+    let completed = false;
+    agent.rawEvents$.subscribe({
+      next: (event) => types.push(event.type),
+      complete: () => { completed = true; },
+    });
+    await agent.submit({ message: 'find docs' });
+
+    expect(types).toEqual([
+      EventType.RUN_STARTED,
+      EventType.STATE_SNAPSHOT,
+      EventType.CUSTOM,
+      EventType.RUN_FINISHED,
+    ]);
+
+    TestBed.resetTestingModule();
+    expect(completed).toBe(true);
+  });
+
   it('runs the { toolMessageFor } branch on the follow-up carrying the tool result', async () => {
     TestBed.configureTestingModule({
       providers: provideFakeAgent({

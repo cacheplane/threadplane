@@ -70,6 +70,8 @@ Each registered template receives:
 </chat>
 ```
 
+When a [`chatActivityTemplate`](/docs/chat/components/chat-activity-template) is also projected into `<chat>`, it owns the whole tool-call region and these templates are not used.
+
 ## Dispatch order
 
 1. Per-tool template whose `name` exactly matches `tc.name`.

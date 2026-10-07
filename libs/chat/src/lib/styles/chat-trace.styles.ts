@@ -12,8 +12,14 @@ export const CHAT_TRACE_STYLES = `
     border: 0;
     padding: 0;
     width: 100%;
+    min-height: 24px;
     text-align: left;
     font: inherit;
+  }
+  .chat-trace__header:focus-visible {
+    outline: 2px solid var(--tplane-chat-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
   }
   .chat-trace__chevron {
     width: 12px;

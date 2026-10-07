@@ -19,7 +19,7 @@
   },
   "peerDependencies": {
     "@threadplane/telemetry": "^0.2.0",
-    "zod": "^3.25.0",
+    "zod": "^3.25.0 || ^4.0.0",
     "@angular/core": "^20.0.0 || ^21.0.0 || ^22.0.0",
     "@angular/common": "^20.0.0 || ^21.0.0 || ^22.0.0",
     "@angular/platform-browser": "^20.0.0 || ^21.0.0 || ^22.0.0",
