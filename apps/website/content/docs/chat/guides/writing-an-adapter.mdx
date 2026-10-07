@@ -346,18 +346,18 @@ Want to distribute your adapter as an npm package? Keep the following in mind.
 {
   "peerDependencies": {
     "@angular/core": "^20.0.0 || ^21.0.0 || ^22.0.0",
-    "@threadplane/chat": ">=0.0.66 <0.1.0",
+    "@threadplane/chat": ">=0.3.0 <0.4.0",
     "rxjs": "^7.0.0"
   },
   "devDependencies": {
-    "@threadplane/chat": "0.0.66"
+    "@threadplane/chat": "0.3.0"
   }
 }
 ```
 
 The `@threadplane/chat/testing` entry point is part of the same package as the main entry point, so there is nothing extra to install for the conformance tests.
 
-While `@threadplane/chat` is pre-1.0, every patch release can carry a breaking change, so `^0.0.x` matches only that one exact version. Use an explicit range instead, and widen it as you verify newer releases. The adapters in this repository pin the exact version they were built against.
+While `@threadplane/chat` is pre-1.0, every minor release can carry a breaking change. Use an explicit range that stops before the next minor, and widen it as you verify newer releases. The adapters in this repository pin the exact version they were built against.
 
 **Naming convention:** `@your-org/your-backend-agent` works well (e.g., `@acme/supabase-realtime-agent`). The `-agent` suffix signals that the package satisfies the `Agent` contract.
 

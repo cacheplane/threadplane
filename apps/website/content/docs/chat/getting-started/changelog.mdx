@@ -1,18 +1,45 @@
 ---
-description: Highlight releases of @threadplane/chat since 0.0.19 — client tools, A2UI v0.9.1, citations, streaming tables, math, the MIT relicense and Angular 22 support.
+description: Highlight releases of @threadplane/chat since 0.0.19, from client tools and A2UI v0.9.1 to the AG-UI 1.0 upgrade and the per-message activity slot.
 ---
 
 # Changelog
 
 <Callout type="info" title="Highlight releases only">
-This changelog tracks selected highlight releases, not every patch. The published package is at `0.0.66` — the entries below cover the notable changes since `0.0.19`.
+This changelog tracks selected highlight releases, not every release. The published package is at `0.3.0`. The entries below cover the notable changes since `0.0.19`.
 </Callout>
 
-## Next
+## 0.3.0
+
+### AG-UI 1.0
 
 - Breaking change, action required for `@threadplane/ag-ui` consumers: the peer range on `@ag-ui/client` and `@ag-ui/core` moves from `^0.0.59` to `^1.0.1`, so install both at `1.0.1` or later. The adapter imports validators from `@ag-ui/core/schemas`, which the 0.0.x line does not ship. The adapter also declares `protocolVersion` on every run.
 - The neutral agent contract gains an optional `usage` signal, an optional `parts` list on tool calls, and an `authoritativeIds` input to `selectPendingClientToolCalls`.
 - AG-UI cancelled run outcomes now settle as `aborted` without an error, and tool results delivered as content-part lists map to chat content blocks.
+- `@threadplane/ag-ui` exposes the raw protocol event stream as `rawEvents$`.
+
+### Chat
+
+- `chatActivityTemplate` is a per-message activity slot on `<chat>`. It replaces the reasoning pill and tool-call region of each assistant message with your own renderer. See [ChatActivityTemplate](/docs/chat/components/chat-activity-template).
+- The `zod` peer range widens to `^3.25.0 || ^4.0.0`. The library imports only the `zod/v4` entry point, which both lines ship.
+- Reduced-motion support, disclosure semantics, and contrast fixes across the chat components.
+
+## 0.2.0
+
+### Interrupted streams
+
+- A stream that closes without terminal evidence is reported as an interruption rather than a completed turn, and only the recovery the adapter can prove is safe is offered. `retryable` on an interrupted `AgentError` is true only when the recovery is `retry`. See [Error Handling](/docs/chat/guides/error-handling).
+
+### Adapter breaking changes
+
+- `@threadplane/langgraph`: `LangGraphClientOptions.apiKey` is removed and `defaultHeaders` is added. Send a per-user session token with `clientOptions.defaultHeaders`, and keep deployment credentials on an endpoint you own.
+- `@threadplane/ag-ui`: resume requires a pending interrupt batch and answers each native ID exactly once, and uncertain resumes require reconciliation before retry.
+
+## 0.1.0
+
+### First minor release
+
+- Releases move from patch-only bumps to minor bumps, and the six packages version in lockstep.
+- `provideChat()` is removed, app-level markdown registry overrides are fixed, and `ChatComponent` gains a public `scrollToBottom()`.
 
 ## 0.0.66
 

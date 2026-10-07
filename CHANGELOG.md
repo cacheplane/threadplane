@@ -147,6 +147,14 @@
 
 ## 0.2.0 (2026-09-18)
 
+### ⚠️  Breaking Changes
+
+- **langgraph:** `LangGraphClientOptions.apiKey` is removed and `defaultHeaders` is added. The SDK client is always constructed with `apiKey: null`, so the adapter never attaches a deployment key and never reads one from the environment. Send a per-user session token with `clientOptions.defaultHeaders` for LangGraph custom auth, and keep deployment credentials on an endpoint you own.
+- **cockpit-telemetry:** the LangSmith runtime target forwards its key as `clientOptions.defaultHeaders['x-api-key']` instead of `clientOptions.apiKey`.
+- **ag-ui:** native batches take precedence over compatibility events in `auto` mode. Select `legacy-command` or `mastra-command` explicitly for backends requiring command transport.
+- **ag-ui:** resume requires a pending batch and each native ID exactly once; scalar responses apply only to single-entry batches. New messages, regeneration, and client-tool continuation cannot abandon an unresolved interrupt.
+- **ag-ui:** uncertain resumes require authoritative reconciliation before retry. Durable client claims require an application-provided atomic store; backend duplicate-effect protection requires server idempotency.
+
 ### 🚀 Features
 
 - detect unexpectedly closed streams and offer only safe recovery ([#1103](https://github.com/cacheplane/threadplane/pull/1103))
@@ -154,7 +162,7 @@
 - **growth:** founder install digest with one-click approve links ([#1102](https://github.com/cacheplane/threadplane/pull/1102))
 - **lifecycle:** attach the whitepaper PDF to the fulfillment email ([#1092](https://github.com/cacheplane/threadplane/pull/1092))
 - **sdk:** report a development session when an integration is created ([#1101](https://github.com/cacheplane/threadplane/pull/1101))
-- **website:** the reliability band becomes a preflight checklist ([#1067](https://github.com/cacheplane/threadplane/pull/1067), [#1058](https://github.com/cacheplane/threadplane/issues/1058), [#181818](https://github.com/cacheplane/threadplane/issues/181818), [#0](https://github.com/cacheplane/threadplane/issues/0), [#15253](https://github.com/cacheplane/threadplane/issues/15253))
+- **website:** the reliability band becomes a preflight checklist ([#1067](https://github.com/cacheplane/threadplane/pull/1067), [#1058](https://github.com/cacheplane/threadplane/issues/1058))
 - **website:** the open-source strip becomes the Fork us band ([#1073](https://github.com/cacheplane/threadplane/pull/1073))
 - **website:** five-beat interactive homepage stage ([#1075](https://github.com/cacheplane/threadplane/pull/1075))
 - **website:** the compatibility band becomes an airport diagram ([#1080](https://github.com/cacheplane/threadplane/pull/1080))
@@ -163,6 +171,7 @@
 - **website:** rebuild the navbar as four triggers with hover panels, a transparent hero surface, and a mobile drill-in stack ([#1083](https://github.com/cacheplane/threadplane/pull/1083), [#1084](https://github.com/cacheplane/threadplane/issues/1084))
 - **website:** homepage sequencing, plate trim, and diagram scaling ([#1089](https://github.com/cacheplane/threadplane/pull/1089), [#1067](https://github.com/cacheplane/threadplane/issues/1067))
 - **website:** the trust band keeps only third-party proof, and a No-runtime band lands after the architecture diagram ([#1096](https://github.com/cacheplane/threadplane/pull/1096), [#8](https://github.com/cacheplane/threadplane/issues/8), [#11](https://github.com/cacheplane/threadplane/issues/11))
+- **ag-ui:** expose complete interrupt sessions, optional atomic persistence and authoritative recovery, and provider lifetime cleanup.
 
 ### 🩹 Fixes
 
@@ -176,29 +185,12 @@
 - **tsconfig:** stop four library tsconfigs from shadowing the workspace baseUrl ([#1071](https://github.com/cacheplane/threadplane/pull/1071))
 - **website:** keep the heading fragment on a hard-loaded docs deep link ([#1079](https://github.com/cacheplane/threadplane/pull/1079))
 - **website:** bridge the dead zone between a nav trigger and its panel ([#1087](https://github.com/cacheplane/threadplane/pull/1087))
+- **langgraph:** retain null-payload resume commands and combined message/state input for intentional retry without reusing an aborted signal.
+- **ag-ui:** retain exact resume decisions, roll failed state back to committed boundaries, and reject stale callbacks and concurrent recovery actions.
 
 ### 🔥 Performance
 
 - **chat:** parse cumulative A2UI arguments incrementally ([#1078](https://github.com/cacheplane/threadplane/pull/1078))
-
-## Unreleased
-
-### Features
-
-- **ag-ui:** expose complete interrupt sessions, optional atomic persistence and authoritative recovery, and provider lifetime cleanup.
-
-### Fixes
-
-- **langgraph:** retain null-payload resume commands and combined message/state input for intentional retry without reusing an aborted signal.
-- **ag-ui:** retain exact resume decisions, roll failed state back to committed boundaries, and reject stale callbacks and concurrent recovery actions.
-
-### Breaking changes
-
-- **langgraph:** `LangGraphClientOptions.apiKey` is removed and `defaultHeaders` is added. The SDK client is always constructed with `apiKey: null`, so the adapter never attaches a deployment key and never reads one from the environment. Send a per-user session token with `clientOptions.defaultHeaders` for LangGraph custom auth, and keep deployment credentials on an endpoint you own.
-- **cockpit-telemetry:** the LangSmith runtime target forwards its key as `clientOptions.defaultHeaders['x-api-key']` instead of `clientOptions.apiKey`.
-- **ag-ui:** native batches take precedence over compatibility events in `auto` mode. Select `legacy-command` or `mastra-command` explicitly for backends requiring command transport.
-- **ag-ui:** resume requires a pending batch and each native ID exactly once; scalar responses apply only to single-entry batches. New messages, regeneration, and client-tool continuation cannot abandon an unresolved interrupt.
-- **ag-ui:** uncertain resumes require authoritative reconciliation before retry. Durable client claims require an application-provided atomic store; backend duplicate-effect protection requires server idempotency.
 
 ## 0.1.0 (2026-09-08)
 
