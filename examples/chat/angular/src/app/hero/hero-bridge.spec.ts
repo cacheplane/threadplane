@@ -77,6 +77,8 @@ describe('createHeroBridge', () => {
     expect(HERO_PARENT_ORIGINS).toContain('https://www.threadplane.ai');
     expect(HERO_PARENT_ORIGINS).toContain('http://localhost:3000');
     expect(HERO_PARENT_ORIGINS).toContain('http://127.0.0.1:4308');
+    expect(HERO_PARENT_ORIGINS).toContain('https://liveloveapp.com');
+    expect(HERO_PARENT_ORIGINS).toContain('https://www.liveloveapp.com');
   });
 });
 
@@ -84,12 +86,16 @@ describe('isAllowedParentOrigin', () => {
   it('accepts allowlisted and Vercel preview origins', () => {
     expect(isAllowedParentOrigin('https://threadplane.ai')).toBe(true);
     expect(isAllowedParentOrigin('https://website-abc123.vercel.app')).toBe(true);
+    expect(isAllowedParentOrigin('https://liveloveapp.com')).toBe(true);
+    expect(isAllowedParentOrigin('https://www.liveloveapp.com')).toBe(true);
   });
   it('rejects look-alike and non-preview origins', () => {
     expect(isAllowedParentOrigin('https://evil.vercel.app.example')).toBe(false);
     expect(isAllowedParentOrigin('http://foo.vercel.app')).toBe(false);
     expect(isAllowedParentOrigin('https://sub.foo.vercel.app')).toBe(false);
     expect(isAllowedParentOrigin('https://evil.example')).toBe(false);
+    expect(isAllowedParentOrigin('http://liveloveapp.com')).toBe(false);
+    expect(isAllowedParentOrigin('https://liveloveapp.com.evil.example')).toBe(false);
   });
   it('learns the parent origin from the first allowlisted message when the referrer is empty, and replays the last state', () => {
     const post = vi.fn();

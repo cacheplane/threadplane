@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
-import { HeroMode } from './hero-mode.component';
+import { HeroMode, isReplayOnly } from './hero-mode.component';
 import { TYPE_DELAY_MS } from './hero-script';
 import { HeroReplayTransport } from './hero-replay.transport';
 import type { HeroBridge } from './hero-bridge';
@@ -371,5 +371,113 @@ describe('HeroMode embedded ready re-announcement', () => {
     const settled = readyCount();
     await sleep(1200);
     expect(readyCount()).toBe(settled);
+  });
+});
+
+describe('HeroMode ?replay=only (third-party embeds)', () => {
+  let fx: ComponentFixture<HeroMode>;
+  let states: string[];
+  let originalUrl: string;
+
+  async function mount(load: () => Promise<HeroRecording>): Promise<void> {
+    HeroMode.disableAutoBootForTests();
+    TestBed.configureTestingModule({ imports: [HeroMode] });
+    TestBed.overrideComponent(HeroMode, {
+      set: { providers: HeroMode.providersForTest(new HeroReplayTransport({ sleep: async () => void 0 }, load)) },
+    });
+    fx = TestBed.createComponent(HeroMode);
+    states = [];
+    fx.componentInstance.bridge = { postState: (s) => states.push(s), onVisibility: () => () => void 0 };
+    fx.detectChanges();
+    await fx.whenStable();
+  }
+
+  function liveAgentOf(c: HeroMode): { submit: (...a: unknown[]) => unknown } {
+    return (c as unknown as { liveAgent: { submit: (...a: unknown[]) => unknown } }).liveAgent;
+  }
+
+  beforeEach(() => {
+    originalUrl = location.href;
+    history.replaceState(null, '', '/hero?replay=only');
+  });
+
+  afterEach(() => {
+    (fx?.nativeElement as HTMLElement | undefined)?.remove();
+    fx?.destroy();
+    HeroMode.enableAutoBoot();
+    history.replaceState(null, '', originalUrl);
+  });
+
+  it('reads the opt-in from the query string, and only for the exact value', () => {
+    expect(isReplayOnly()).toBe(true);
+    history.replaceState(null, '', '/hero?replay=1');
+    expect(isReplayOnly()).toBe(false);
+    history.replaceState(null, '', '/hero');
+    expect(isReplayOnly()).toBe(false);
+  });
+
+  it('hides Take control and marks the frame replay-only', async () => {
+    await mount(async () => recording);
+    const el = fx.nativeElement as HTMLElement;
+    expect(fx.componentInstance.replayOnly).toBe(true);
+    expect(el.querySelector('button[data-hero-take-control]')).toBeNull();
+    expect(el.querySelector('[data-replay-only]')).toBeTruthy();
+    expect(el.querySelector('[data-hero-pill]')?.textContent).toMatch(/recorded LangGraph run/i);
+  });
+
+  it('pointerdown, focusin and takeControl() never switch to the live agent', async () => {
+    await mount(async () => recording);
+    const c = fx.componentInstance;
+    const submit = vi.spyOn(liveAgentOf(c), 'submit');
+    const replayAgent = c.activeAgent();
+    const surface = (fx.nativeElement as HTMLElement).querySelector('[data-hero-surface]') as HTMLElement;
+    surface.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    surface.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+    c.takeControl();
+    fx.detectChanges();
+    expect(c.mode()).toBe('replay');
+    expect(c.activeAgent()).toBe(replayAgent);
+    expect((fx.nativeElement as HTMLElement).querySelector('[data-hero-banner]')).toBeNull();
+    expect(states).not.toContain('live');
+    expect(submit).not.toHaveBeenCalled();
+  });
+
+  it('blurs a visitor focusing the composer instead of letting them type into the replay', async () => {
+    await mount(async () => recording);
+    const textarea = (fx.nativeElement as HTMLElement).querySelector('textarea') as HTMLTextAreaElement;
+    expect(textarea).toBeTruthy();
+    document.body.appendChild(fx.nativeElement);
+    textarea.focus();
+    expect(document.activeElement).not.toBe(textarea);
+    expect(fx.componentInstance.mode()).toBe('replay');
+  });
+
+  it('also blurs a visitor who tabs in while the script is typing', async () => {
+    await mount(async () => recording);
+    const c = fx.componentInstance;
+    const textarea = (fx.nativeElement as HTMLElement).querySelector('textarea') as HTMLTextAreaElement;
+    document.body.appendChild(fx.nativeElement);
+    c.reducedMotion = false;
+    const typing = c.typeInto('hello');
+    textarea.focus();
+    expect(document.activeElement).not.toBe(textarea);
+    await typing;
+    expect(c.mode()).toBe('replay');
+  });
+
+  it('stays in replay (no live fallback) when the recording cannot load', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => void 0);
+    await mount(async () => {
+      throw new Error('404');
+    });
+    const c = fx.componentInstance;
+    const submit = vi.spyOn(liveAgentOf(c), 'submit');
+    await c.boot();
+    fx.detectChanges();
+    expect(c.mode()).toBe('replay');
+    expect(states).toContain('ready');
+    expect(states).not.toContain('live');
+    expect(submit).not.toHaveBeenCalled();
+    error.mockRestore();
   });
 });

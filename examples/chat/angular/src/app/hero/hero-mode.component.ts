@@ -81,6 +81,16 @@ function isRecordMode(): boolean {
 }
 
 /**
+ * `?replay=only` is the opt-in for third-party embeds: the frame plays the
+ * recorded run and never offers — or falls back to — the live agent. Record
+ * mode wins, since it exists to drive the live agent.
+ */
+export function isReplayOnly(): boolean {
+  if (isRecordMode() || typeof location === 'undefined') return false;
+  return new URLSearchParams(location.search).get('replay') === 'only';
+}
+
+/**
  * `provideAgent()` registers the shared AGENT token and aliases the ref to it,
  * so two calls in ONE providers array collapse into a single agent (last one
  * wins). The hero needs two live-at-once agents, so each gets its own child
@@ -146,7 +156,7 @@ function heroProviders(replay?: HeroReplayTransport): Provider[] {
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: heroProviders(),
   template: `
-    <div class="hero" [attr.data-mode]="mode()">
+    <div class="hero" [attr.data-mode]="mode()" [attr.data-replay-only]="replayOnly || null">
       <div class="hero__bar">
         <span class="hero__url">demo.threadplane.ai</span>
         <span class="hero__pill" data-hero-pill [attr.data-live]="mode() === 'live'">
@@ -158,7 +168,7 @@ function heroProviders(replay?: HeroReplayTransport): Provider[] {
           }
         </span>
       </div>
-      <div class="hero__surface" data-hero-surface (pointerdown)="takeControl()" (focusin)="onFocusIn()">
+      <div class="hero__surface" data-hero-surface (pointerdown)="takeControl()" (focusin)="onFocusIn($event)">
         @if (mode() === 'live') {
           <p class="hero__banner" data-hero-banner role="status">
             You are live on a new LangGraph thread. The walkthrough was a recording.
@@ -179,7 +189,7 @@ function heroProviders(replay?: HeroReplayTransport): Provider[] {
         </chat>
         <hero-cursor [x]="cursorX()" [y]="cursorY()" [visible]="cursorVisible()" [pressed]="cursorPressed()" />
       </div>
-      @if (mode() === 'replay') {
+      @if (mode() === 'replay' && !replayOnly) {
         <button type="button" class="hero__take" data-hero-take-control (click)="takeControl()">
           Take control ↗
         </button>
@@ -197,6 +207,7 @@ function heroProviders(replay?: HeroReplayTransport): Provider[] {
       .hero__dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
       .hero__surface { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
       .hero__surface > chat { flex: 1; min-height: 0; }
+      .hero[data-replay-only] .hero__surface { pointer-events: none; }
       .hero__interrupt { padding: 8px 12px 0; }
       .hero__banner { margin: 0; padding: 8px 12px; font: 13px/1.4 system-ui, sans-serif; background: rgba(47,111,79,.08); border-bottom: 1px solid rgba(47,111,79,.3); }
       .hero__link { margin-left: 8px; background: none; border: 0; padding: 0; color: inherit; text-decoration: underline; cursor: pointer; font: inherit; }
@@ -236,6 +247,8 @@ export class HeroMode implements HeroScriptHost {
   private readonly replayAgent = injectAgent(HERO_REPLAY_REF) as LangGraphAgent;
   private readonly liveAgent = injectAgent(HERO_LIVE_REF) as LangGraphAgent;
 
+  /** Read once: the query string cannot change under a mounted frame. */
+  readonly replayOnly = isReplayOnly();
   readonly mode = signal<HeroModeKind>(isRecordMode() ? 'live' : 'replay');
   readonly activeAgent = computed<LangGraphAgent>(() =>
     this.mode() === 'live' ? this.liveAgent : this.replayAgent,
@@ -313,6 +326,11 @@ export class HeroMode implements HeroScriptHost {
       try {
         await this.replayTransport.ready();
       } catch (err) {
+        if (this.replayOnly) {
+          console.error('hero recording unavailable; replay-only, so not going live', err);
+          this.announceReady();
+          return;
+        }
         console.error('hero recording unavailable; staying live', err);
         this.mode.set('live');
         this.announceReady();
@@ -321,6 +339,10 @@ export class HeroMode implements HeroScriptHost {
       this.announceReady();
       this.startWhenUnembedded();
     } catch (err) {
+      if (this.replayOnly) {
+        console.error('hero boot failed; replay-only, so not going live', err);
+        return;
+      }
       console.error('hero boot failed; staying live', err);
       this.mode.set('live');
     }
@@ -386,13 +408,21 @@ export class HeroMode implements HeroScriptHost {
    * Focus moving into the surface is a takeover signal — unless WE moved it.
    * Pointerdown and the pill are never gated: a real click must always win.
    */
-  onFocusIn(): void {
+  onFocusIn(event?: FocusEvent): void {
+    if (this.replayOnly) {
+      // pointer-events: none stops clicks, but Tab can still reach the
+      // composer; a visitor's keystrokes must not land in the recorded run.
+      // Checked before `scriptDriving` (a visitor can Tab in mid-typing), and
+      // blurring the composer's own post-submit refocus is harmless here.
+      (event?.target as HTMLElement | null)?.blur?.();
+      return;
+    }
     if (this.scriptDriving) return;
     this.takeControl();
   }
 
   takeControl(): void {
-    if (this.mode() === 'live') return;
+    if (this.replayOnly || this.mode() === 'live') return;
     this.runner?.stop();
     this.runner = null;
     this.replayAgent.stop().catch((err) => console.warn('[hero] replay stop failed', err));
@@ -423,6 +453,7 @@ export class HeroMode implements HeroScriptHost {
   }
 
   protected sendLive(text: string): void {
+    if (this.replayOnly) return;
     void this.liveAgent.submit({ message: text });
   }
 
