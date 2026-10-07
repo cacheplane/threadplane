@@ -1548,6 +1548,42 @@
     "methods": []
   },
   {
+    "name": "ChatActivityTemplateDirective",
+    "kind": "class",
+    "description": "Registers a per-message activity renderer on `<chat>`. When present, the\ntemplate replaces the reasoning pill and the tool-call region\n(`<chat-reasoning>` + `<chat-tool-calls>`) of every assistant message.\nMarkdown, tool views, generative UI and message actions still render.\n\nThe template renders at message level, so tall activity (nested subagent\nturns, approval cards) is never clipped by a trace body.\n\nPrecedence: the activity template owns the whole region, so any\n`chatToolCallTemplate` projected into `<chat>` is not used while an\nactivity template is present. Render `<chat-tool-calls>` inside the\nactivity template to keep per-tool templates.\n\nUsage:\n\n  <chat [agent]=\"agent\">\n    <ng-template chatActivityTemplate let-message let-toolCalls=\"toolCalls\" let-subagents=\"subagents\">\n      <my-activity-summary [message]=\"message\" [calls]=\"toolCalls\" [subagents]=\"subagents\" />\n    </ng-template>\n  </chat>",
+    "params": [],
+    "examples": [],
+    "properties": [
+      {
+        "name": "templateRef",
+        "type": "TemplateRef<ChatActivityTemplateContext>",
+        "description": "",
+        "optional": false
+      }
+    ],
+    "methods": [
+      {
+        "name": "ngTemplateContextGuard",
+        "signature": "ngTemplateContextGuard(_directive: ChatActivityTemplateDirective<>, context: unknown): context is ChatActivityTemplateContext",
+        "description": "",
+        "params": [
+          {
+            "name": "_directive",
+            "type": "ChatActivityTemplateDirective<>",
+            "description": "",
+            "optional": false
+          },
+          {
+            "name": "context",
+            "type": "unknown",
+            "description": "",
+            "optional": false
+          }
+        ]
+      }
+    ]
+  },
+  {
     "name": "ChatApprovalCardComponent",
     "kind": "class",
     "description": "",
@@ -1870,6 +1906,12 @@
         "optional": false
       },
       {
+        "name": "activityTemplate",
+        "type": "Signal<ChatActivityTemplateDirective<> | undefined>",
+        "description": "Optional per-message activity renderer projected as\n`<ng-template chatActivityTemplate>`. When present it replaces the\nreasoning pill and the tool-call region of every assistant message, and\ntakes precedence over any projected `chatToolCallTemplate`.",
+        "optional": false
+      },
+      {
         "name": "agent",
         "type": "InputSignal<Agent<unknown>>",
         "description": "",
@@ -2051,6 +2093,25 @@
       }
     ],
     "methods": [
+      {
+        "name": "activityContextFor",
+        "signature": "activityContextFor(message: Message, index: number): ChatActivityTemplateContext",
+        "description": "Builds the activity template context for one assistant message. Tool\ncalls are scoped to the message (same resolution as `<chat-tool-calls>`,\nminus excluded dispatcher/view tool names); subagents are anchored by\n`Subagent.toolCallId` to the message's calls. The previous context is\nreused when nothing changed, so the embedded view keeps stable inputs.",
+        "params": [
+          {
+            "name": "message",
+            "type": "Message",
+            "description": "",
+            "optional": false
+          },
+          {
+            "name": "index",
+            "type": "number",
+            "description": "",
+            "optional": false
+          }
+        ]
+      },
       {
         "name": "classifyMessage",
         "signature": "classifyMessage(content: string, message: Pick<Message, \"id\" | \"delivery\">): ContentClassifier",
@@ -6593,6 +6654,44 @@
         "name": "schema",
         "type": "S",
         "description": "",
+        "optional": false
+      }
+    ],
+    "examples": []
+  },
+  {
+    "name": "ChatActivityTemplateContext",
+    "kind": "interface",
+    "description": "Template context for a per-message activity template projected into\n`<chat>`. One context is built for every assistant message.",
+    "properties": [
+      {
+        "name": "$implicit",
+        "type": "Message",
+        "description": "The assistant message the activity belongs to (`let-message`).",
+        "optional": false
+      },
+      {
+        "name": "agent",
+        "type": "Agent<>",
+        "description": "The agent bound to `<chat>` (`let-agent=\"agent\"`).",
+        "optional": false
+      },
+      {
+        "name": "index",
+        "type": "number",
+        "description": "Index of the message in `agent.messages()` (`let-i=\"index\"`).",
+        "optional": false
+      },
+      {
+        "name": "subagents",
+        "type": "Subagent[]",
+        "description": "Subagents spawned by this message's tool calls, anchored by\n`Subagent.toolCallId` and ordered like the spawning calls\n(`let-subagents=\"subagents\"`).",
+        "optional": false
+      },
+      {
+        "name": "toolCalls",
+        "type": "ToolCall[]",
+        "description": "The tool calls this message emitted, in emission order, excluding the\ngenerative-UI dispatcher and view-backed tool names that `<chat>` never\nrenders as cards (`let-toolCalls=\"toolCalls\"`).",
         "optional": false
       }
     ],

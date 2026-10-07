@@ -1,12 +1,12 @@
 // libs/chat/src/lib/compositions/chat/chat.component.ts
 import {
-  Component, ChangeDetectionStrategy, input, model, output, computed, effect, signal, untracked, viewChild, ElementRef,
-  DestroyRef, inject, Injector, runInInjectionContext,
+  Component, ChangeDetectionStrategy, input, model, output, computed, contentChild, effect, signal, untracked, viewChild,
+  ElementRef, DestroyRef, inject, Injector, runInInjectionContext,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DEVELOPMENT_COLLECTION_POLICY, isDevelopmentRuntimeEnabled } from '@threadplane/telemetry/browser';
-import { KeyValuePipe } from '@angular/common';
-import type { Agent, Message, MessageDelivery } from '../../agent';
+import { KeyValuePipe, NgTemplateOutlet } from '@angular/common';
+import type { Agent, Message, MessageDelivery, Subagent } from '../../agent';
 import { ChatReasoningComponent } from '../../primitives/chat-reasoning/chat-reasoning.component';
 import type { ViewRegistry, RenderEvent } from '@threadplane/render';
 import type { A2uiActionMessage } from '@threadplane/a2ui';
@@ -35,6 +35,7 @@ import {
   type StreamingMarkdownDocument,
 } from '../../streaming/streaming-markdown.component';
 import { ChatToolCallsComponent } from '../../primitives/chat-tool-calls/chat-tool-calls.component';
+import { resolveMessageToolCalls } from '../../primitives/chat-tool-calls/resolve-message-tool-calls';
 import { ChatMessageActionsComponent } from '../../primitives/chat-message-actions/chat-message-actions.component';
 import { ChatWelcomeComponent } from '../../primitives/chat-welcome/chat-welcome.component';
 import { ChatSelectComponent, type ChatSelectOption } from '../../primitives/chat-select/chat-select.component';
@@ -48,6 +49,7 @@ import { messageContent } from '../shared/message-utils';
 import { formatDuration } from '../../utils/format-duration';
 import { CHAT_HOST_TOKENS, ensureChatRootStyles } from '../../styles/chat-tokens';
 import type { ChatRenderEvent } from './chat-render-event';
+import { ChatActivityTemplateDirective, type ChatActivityTemplateContext } from './chat-activity-template.directive';
 import { CHAT_LIFECYCLE, type ChatLifecycle } from '../../lifecycle';
 
 /**
@@ -78,6 +80,10 @@ function createChatLifecycle(): ChatLifecycleInternal {
   };
 }
 
+function sameItems<T>(a: readonly T[], b: readonly T[]): boolean {
+  return a.length === b.length && a.every((item, i) => item === b[i]);
+}
+
 /**
  * Returns true when the scroll position is within `tolerance` px of the bottom.
  * Pure helper extracted for unit testing.
@@ -95,7 +101,7 @@ export function isPinned(
   selector: 'chat',
   standalone: true,
   imports: [
-    KeyValuePipe,
+    KeyValuePipe, NgTemplateOutlet,
     ChatWindowComponent, ChatMessageListComponent, MessageTemplateDirective, ChatMessageComponent,
     ChatInputComponent, ChatTypingIndicatorComponent, ChatErrorComponent,
     ChatThreadListComponent, ChatGenerativeUiComponent,
@@ -214,26 +220,36 @@ export function isPinned(
                   [streaming]="message.delivery.phase === 'streaming'"
                   [current]="i === agent().messages().length - 1"
                 >
-                  <!-- Reasoning is merged across a run of consecutive (tool-
-                       separated) reasoning steps and rendered ONCE at the run's
-                       first step as "Thought for {total} · {N} steps", so a
-                       multi-step agent shows one compact pill instead of a
-                       stack of "Thought for 1s" chips. Single-step turns render
-                       a normal "Thought for {duration}" pill. -->
-                  @if (message.reasoning && reasoningRunStart(i)) {
-                    @let run = reasoningRun(i);
-                    <chat-reasoning
-                      [content]="run.content"
-                      [delivery]="run.delivery"
-                      [durationMs]="run.durationMs"
-                      [label]="run.label"
+                  <!-- A projected chatActivityTemplate owns the reasoning +
+                       tool-call region for this message. It renders at
+                       message level (never inside a clipped trace body). -->
+                  @if (activityTemplate(); as activity) {
+                    <ng-container
+                      [ngTemplateOutlet]="activity.templateRef"
+                      [ngTemplateOutletContext]="activityContextFor(message, i)"
                     />
+                  } @else {
+                    <!-- Reasoning is merged across a run of consecutive (tool-
+                         separated) reasoning steps and rendered ONCE at the run's
+                         first step as "Thought for {total} · {N} steps", so a
+                         multi-step agent shows one compact pill instead of a
+                         stack of "Thought for 1s" chips. Single-step turns render
+                         a normal "Thought for {duration}" pill. -->
+                    @if (message.reasoning && reasoningRunStart(i)) {
+                      @let run = reasoningRun(i);
+                      <chat-reasoning
+                        [content]="run.content"
+                        [delivery]="run.delivery"
+                        [durationMs]="run.durationMs"
+                        [label]="run.label"
+                      />
+                    }
+                    <chat-tool-calls [agent]="agent()" [message]="message" [excludeToolNames]="excludedToolNames()">
+                      <ng-container ngProjectAs="[chatToolCallTemplate]">
+                        <ng-content select="[chatToolCallTemplate]" />
+                      </ng-container>
+                    </chat-tool-calls>
                   }
-                  <chat-tool-calls [agent]="agent()" [message]="message" [excludeToolNames]="excludedToolNames()">
-                    <ng-container ngProjectAs="[chatToolCallTemplate]">
-                      <ng-content select="[chatToolCallTemplate]" />
-                    </ng-container>
-                  </chat-tool-calls>
                   <chat-tool-views
                     [agent]="agent()"
                     [message]="message"
@@ -467,6 +483,50 @@ export class ChatComponent {
   ]);
 
   readonly messageContent = messageContent;
+
+  /**
+   * Optional per-message activity renderer projected as
+   * `<ng-template chatActivityTemplate>`. When present it replaces the
+   * reasoning pill and the tool-call region of every assistant message, and
+   * takes precedence over any projected `chatToolCallTemplate`.
+   */
+  readonly activityTemplate = contentChild(ChatActivityTemplateDirective);
+
+  private readonly activityContexts = new Map<string, ChatActivityTemplateContext>();
+
+  /**
+   * Builds the activity template context for one assistant message. Tool
+   * calls are scoped to the message (same resolution as `<chat-tool-calls>`,
+   * minus excluded dispatcher/view tool names); subagents are anchored by
+   * `Subagent.toolCallId` to the message's calls. The previous context is
+   * reused when nothing changed, so the embedded view keeps stable inputs.
+   */
+  protected activityContextFor(message: Message, index: number): ChatActivityTemplateContext {
+    const agent = this.agent();
+    const excluded = new Set(this.excludedToolNames());
+    const toolCalls = resolveMessageToolCalls(agent, message).filter((tc) => !excluded.has(tc.name));
+    const byCallId = new Map<string, Subagent>();
+    agent.subagents?.().forEach((sa) => byCallId.set(sa.toolCallId, sa));
+    const subagents: Subagent[] = [];
+    for (const tc of toolCalls) {
+      const sa = byCallId.get(tc.id);
+      if (sa) subagents.push(sa);
+    }
+    const prior = this.activityContexts.get(message.id);
+    if (
+      prior &&
+      prior.$implicit === message &&
+      prior.index === index &&
+      prior.agent === agent &&
+      sameItems(prior.toolCalls, toolCalls) &&
+      sameItems(prior.subagents, subagents)
+    ) {
+      return prior;
+    }
+    const context: ChatActivityTemplateContext = { $implicit: message, index, toolCalls, subagents, agent };
+    this.activityContexts.set(message.id, context);
+    return context;
+  }
 
   /**
    * Renderable content for a human-role message bubble. Most human
@@ -780,6 +840,9 @@ export class ChatComponent {
       for (const key of [...this.markdownDocuments.keys()]) {
         if (!liveIds.has(key)) this.markdownDocuments.delete(key);
       }
+      for (const key of [...this.activityContexts.keys()]) {
+        if (!liveIds.has(key)) this.activityContexts.delete(key);
+      }
     });
   }
 
@@ -1010,6 +1073,7 @@ export class ChatComponent {
     }
     this.classifiers.clear();
     this.markdownDocuments.clear();
+    this.activityContexts.clear();
   }
 
   onSpecEvent(event: RenderEvent, messageIndex: number): void {

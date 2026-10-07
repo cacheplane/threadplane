@@ -1,0 +1,77 @@
+---
+description: The ChatActivityTemplateDirective that replaces the reasoning pill and tool-call region of every assistant message in chat with your own per-message activity renderer.
+---
+
+# ChatActivityTemplateDirective
+
+`ChatActivityTemplateDirective` registers one per-message activity renderer on `<chat>`. When it is present, the template replaces the reasoning pill and the tool-call region (`<chat-reasoning>` + `<chat-tool-calls>`) of every assistant message. Markdown, tool views, generative UI, and message actions still render around it.
+
+Use it when activity reads better per turn than per tool call: one summary line with plain-language steps, nested subagent turns, or approval cards attached to the gated step.
+
+**Selector:** `ng-template[chatActivityTemplate]`
+
+**Import:**
+
+```typescript
+import { ChatActivityTemplateDirective, type ChatActivityTemplateContext } from '@threadplane/chat';
+```
+
+## Template context
+
+The template renders once for each assistant message and receives:
+
+| Variable | Type | Description |
+|---|---|---|
+| `let-message` (`$implicit`) | `Message` | The assistant message. Reasoning is on `message.reasoning` and `message.reasoningDurationMs`. |
+| `let-i="index"` | `number` | The message's index in `agent.messages()`. |
+| `let-toolCalls="toolCalls"` | `ToolCall[]` | The tool calls this message emitted, in order. Generative-UI dispatcher tools (`genuiToolNames`) and tools with a registered view are left out, as they are from the default tool-call cards. |
+| `let-subagents="subagents"` | `Subagent[]` | Subagents spawned by this message's tool calls, matched by `Subagent.toolCallId` and ordered like the calls. |
+| `let-agent="agent"` | `Agent` | The agent bound to `<chat>`. |
+
+The context object is reused while the message, its tool calls and its subagents are unchanged, so components inside the template keep stable inputs during streaming.
+
+## Example
+
+```html
+<chat [agent]="agent">
+  <ng-template
+    chatActivityTemplate
+    let-message
+    let-toolCalls="toolCalls"
+    let-subagents="subagents"
+  >
+    @if (message.reasoning || toolCalls.length > 0) {
+      <my-turn-activity
+        [reasoning]="message.reasoning"
+        [steps]="toolCalls"
+        [subagents]="subagents"
+      />
+    }
+  </ng-template>
+</chat>
+```
+
+The template renders for every assistant message, including ones with no reasoning and no tool calls. Guard on the context when an empty message should render nothing.
+
+## Placement
+
+The template renders at message level, inside the assistant bubble and above the markdown. It is not placed inside a [`<chat-trace>`](/docs/chat/components/chat-trace) body, so tall activity is never clipped by the trace's maximum height.
+
+## Precedence over tool-call templates
+
+The activity template owns the whole reasoning and tool-call region. While it is present, `<chat>` does not render `<chat-tool-calls>`, so a [`chatToolCallTemplate`](/docs/chat/components/chat-tool-call-template) projected into `<chat>` is not used. To keep per-tool templates, render `<chat-tool-calls>` yourself inside the activity template:
+
+```html
+<chat [agent]="agent">
+  <ng-template chatActivityTemplate let-message let-ctxAgent="agent">
+    <my-turn-summary [message]="message" />
+    <chat-tool-calls [agent]="ctxAgent" [message]="message">
+      <ng-template chatToolCallTemplate="search_web" let-call>
+        <my-search-card [call]="call" />
+      </ng-template>
+    </chat-tool-calls>
+  </ng-template>
+</chat>
+```
+
+Without an activity template, `<chat>` renders exactly as before.
