@@ -4,8 +4,8 @@ import { installationToken } from '#development-install';
 declare const ngDevMode: boolean;
 import { createDevelopmentRuntime, registerDevelopmentRuntimePolicy } from '@threadplane/telemetry/browser';
 import { THREADPLANE_PACKAGE_VERSION as packageVersion } from './package-version';
-import { Subject } from 'rxjs';
-import type { AbstractAgent } from '@ag-ui/client';
+import { Subject, type Observable } from 'rxjs';
+import type { AbstractAgent, BaseEvent } from '@ag-ui/client';
 import {
   completeDelivery,
   staticDelivery,
@@ -126,6 +126,20 @@ export interface AgUiAgent<TState = Record<string, unknown>> extends Agent<TStat
    *  Subagent contract, keyed by messageId. Narrows the base Agent's optional
    *  `subagents?` to a concrete signal for AG-UI consumers. */
   subagents: Signal<Map<string, Subagent>>;
+  /**
+   * Every AG-UI protocol event the adapter reduced into its signals, in arrival
+   * order, for hosts that fold the full stream into their own view model.
+   *
+   * Emits exactly the events the signals saw: events from a superseded run,
+   * events after a run was stopped or failed, and events after a terminal
+   * outcome are suppressed here too. Hot and unbuffered — subscribe before
+   * submitting to see a whole run. Completes on `dispose()`.
+   *
+   * Hydration from `persistence` restores a committed snapshot rather than
+   * replaying protocol events, so nothing is emitted for it; read the hydrated
+   * `messages()` and `state()` instead.
+   */
+  rawEvents$: Observable<BaseEvent>;
 }
 
 /**
@@ -191,6 +205,14 @@ function createAgentAdapter(
     deliveryRun: null,
     allocateDeliveryGeneration,
   };
+  // Fed only where a live protocol event reaches reduceEvent, so the tap shows
+  // exactly what the signals saw. Synthetic snapshots (hydration, retry
+  // restore) are deliberately not emitted.
+  const rawEvents$ = new Subject<BaseEvent>();
+  function reduceLiveEvent(event: BaseEvent): void {
+    reduceEvent(event, store);
+    rawEvents$.next(event);
+  }
   const interrupts = new InterruptSession(options.interruptTransport);
   const interruptSession = signal(interrupts.snapshot);
   const transaction = new RunStateTransaction({ state: source.state ?? {}, messages: source.messages ?? [] });
@@ -675,7 +697,7 @@ function createAgentAdapter(
       const run = resolveCallbackRun(callbackRunId);
       if (!run) {
         if (!callbackRunId) {
-          reduceEvent(event, store);
+          reduceLiveEvent(event);
           if (event.type === 'CUSTOM' && (event as { name?: string }).name === 'on_interrupt') {
             interrupts.observeLegacy(store.interrupt()?.value);
             interrupts.ready(); publishInterrupt();
@@ -715,7 +737,7 @@ function createAgentAdapter(
         }
       }
       const wasPending = run.outcome === undefined;
-      reduceEvent(event, store);
+      reduceLiveEvent(event);
       if (event.type === 'RUN_STARTED' && run.resumeAttempt && run.outcome === undefined
         && (!(event as { runId?: string }).runId || (event as { runId?: string }).runId === run.protocolRunId)) {
         interrupts.acknowledge(run.resumeAttempt.id); publishInterrupt();
@@ -884,6 +906,7 @@ function createAgentAdapter(
       source.abortRun();
       developmentRuntime.dispose();
       store.events$.complete();
+      rawEvents$.complete();
     },
     messages:  store.messages,
     status:    store.status,
@@ -894,6 +917,7 @@ function createAgentAdapter(
     usage:     store.usage,
     interrupt: store.interrupt,
     events$:      store.events$.asObservable(),
+    rawEvents$:   rawEvents$.asObservable(),
     customEvents: store.customEvents,
     subagents: computed<Map<string, Subagent>>(() => {
       const out = new Map<string, Subagent>();
