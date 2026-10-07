@@ -113,6 +113,8 @@ export type { ChatLifecycle } from './lib/lifecycle';
 // Compositions
 export { ChatComponent } from './lib/compositions/chat/chat.component';
 export type { ChatRenderEvent } from './lib/compositions/chat/chat-render-event';
+export { ChatActivityTemplateDirective } from './lib/compositions/chat/chat-activity-template.directive';
+export type { ChatActivityTemplateContext } from './lib/compositions/chat/chat-activity-template.directive';
 export { ChatPopupComponent } from './lib/compositions/chat-popup/chat-popup.component';
 export { ChatSidebarComponent } from './lib/compositions/chat-sidebar/chat-sidebar.component';
 export { ChatTimelineSliderComponent } from './lib/compositions/chat-timeline-slider/chat-timeline-slider.component';
