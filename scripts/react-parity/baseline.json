@@ -1,11 +1,8 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "283ee0abf1f51e9c0b15d6dc586f34a5427f90bf",
+  "baselineHead": "c7c9a3746cb87ee62d4cdcc29c37661f3af1d09d",
   "sourceState": {
-    "modified": [
-      "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "libs/cockpit-registry/src/lib/content-descriptors.ts"
-    ],
+    "modified": [],
     "untracked": []
   },
   "scope": {
@@ -13254,13 +13251,13 @@
       "id": "source:libs/cockpit-registry/src/lib/capability-registry.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "sha256": "a3ea90f5f9d792a1ef5ed0f8cad62844fce63056edb22a9f32afe0240c5bc925"
+      "sha256": "22699a554c51476b82553afbff99f692d9610e765f36a5fb255c90076050773c"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/content-descriptors.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/content-descriptors.ts",
-      "sha256": "f0139003d322bed1ef7ae67a89a83967c3a841eee8cfa478cc1ed68f3783614b"
+      "sha256": "dacd030ddae2409c204d03230daa9fd9a826a961d49817eefcda03cc07bcd414"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/docs-links.ts",
@@ -13932,7 +13929,7 @@
       "id": "source:libs/langgraph/src/runtime/checkpoint-authority.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/checkpoint-authority.ts",
-      "sha256": "15376594a46d113766c9910204a4cd330faf12f21993080b9e5816b7b6e8c86f"
+      "sha256": "09827d1e0311727a2e054e50d52dece202f395c627a14b58c289fae676008833"
     },
     {
       "id": "source:libs/langgraph/src/runtime/checkpoint-history.ts",

@@ -44,6 +44,15 @@ import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { capabilityModules, getFrontendCapabilityDescriptor } from './content-descriptors';
 import { cockpitManifest } from './manifest';
+it('keeps native Chat Timeline attached to the original backend descriptor assets', () => {
+  const canonical=capabilityModules.find(entry=>entry.id==='chat-timeline-python');
+  if (!canonical) throw new Error('Missing canonical Chat Timeline');
+  const react=getFrontendCapabilityDescriptor(canonical.manifestIdentity as never,'react');
+  expect(react?.backendAssetPaths).toEqual(chatTimelinePythonModule.backendAssetPaths);
+  expect(react?.promptAssetPaths).toEqual(chatTimelinePythonModule.promptAssetPaths);
+  expect(react?.manifestIdentity).toEqual(canonical.manifestIdentity);
+  expect(Object.isFrozen(react)).toBe(true);
+});
 it('keeps native Chat Threads attached to the original backend descriptor assets', () => {
   const canonical=capabilityModules.find(entry=>entry.id==='chat-threads-python');
   if (!canonical) throw new Error('Missing canonical Chat Threads');

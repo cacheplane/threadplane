@@ -611,7 +611,10 @@ test('closed chat-threads selection has its own build and server dispatch', asyn
     server,
     /await chatThreadsFixture\(request, response, pathname\)/
   );
-  assert.match(server, /chatThreadsFixture\)\.close\(\)/);
+  assert.match(
+    server,
+    /await\s*\(\s*(?:\w+\s*\?\?\s*)*chatThreadsFixture(?:\s*\?\?\s*\w+)*\s*\)\.close\(\)/
+  );
 });
 
 test('dispose rejects active and queued stalled work and kills its owned child', async (t) => {

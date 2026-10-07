@@ -189,7 +189,8 @@ export function confirmCheckpoint(
   if (!candidate || candidate.runId !== runId) throw unavailable();
   const state = captureCheckpointState(value, candidate.position);
   if (
-    state.metadata?.['run_id'] !== runId ||
+    (Object.hasOwn(state.metadata ?? {}, 'run_id') &&
+      state.metadata?.['run_id'] !== runId) ||
     !sameOwnedValue(state.values as PlainValue, candidate.values) ||
     !sameOwnedValue(state.next, candidate.next) ||
     !sameOwnedValue(
