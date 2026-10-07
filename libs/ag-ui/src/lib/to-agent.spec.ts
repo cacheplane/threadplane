@@ -1560,3 +1560,117 @@ describe('SUBAGENT_* lifecycle projection', () => {
     expect(after?.messages()[0]).toMatchObject({ id: 'm-1', content: 'early' });
   });
 });
+
+describe('rawEvents$', () => {
+  function collect(agent: { rawEvents$: Observable<BaseEvent> }): { types: string[]; completed: () => boolean } {
+    const types: string[] = [];
+    let done = false;
+    agent.rawEvents$.subscribe({ next: event => types.push(event.type), complete: () => { done = true; } });
+    return { types, completed: () => done };
+  }
+
+  it('emits every reduced event of a live run in arrival order', async () => {
+    const stub = new StubAgent();
+    const agent = toAgent(stub as unknown as AbstractAgent);
+    const tap = collect(agent);
+    stub.runAgent.mockImplementationOnce(async () => {
+      stub.emit({ type: 'RUN_STARTED', runId: 'r' } as BaseEvent);
+      stub.emit({ type: 'TEXT_MESSAGE_START', messageId: 'm', role: 'assistant' } as BaseEvent);
+      stub.emit({ type: 'TEXT_MESSAGE_CONTENT', messageId: 'm', delta: 'hi' } as BaseEvent);
+      stub.emit({ type: 'TEXT_MESSAGE_END', messageId: 'm' } as BaseEvent);
+      stub.emit({ type: 'CUSTOM', name: 'progress', value: 1 } as BaseEvent);
+      stub.emit({ type: 'RUN_FINISHED', runId: 'r' } as BaseEvent);
+      return { result: undefined, newMessages: [] };
+    });
+
+    await agent.submit({ message: 'hello' });
+
+    expect(tap.types).toEqual([
+      'RUN_STARTED', 'TEXT_MESSAGE_START', 'TEXT_MESSAGE_CONTENT', 'TEXT_MESSAGE_END', 'CUSTOM', 'RUN_FINISHED',
+    ]);
+  });
+
+  it('emits after the signals have reduced the event', async () => {
+    const stub = new StubAgent();
+    const agent = toAgent(stub as unknown as AbstractAgent);
+    const seen: string[] = [];
+    agent.rawEvents$.subscribe(event => {
+      if (event.type === 'TEXT_MESSAGE_CONTENT') seen.push(String(agent.messages().at(-1)?.content));
+    });
+    stub.runAgent.mockImplementationOnce(async () => {
+      stub.emit({ type: 'RUN_STARTED', runId: 'r' } as BaseEvent);
+      stub.emit({ type: 'TEXT_MESSAGE_START', messageId: 'm', role: 'assistant' } as BaseEvent);
+      stub.emit({ type: 'TEXT_MESSAGE_CONTENT', messageId: 'm', delta: 'hi' } as BaseEvent);
+      stub.emit({ type: 'RUN_FINISHED', runId: 'r' } as BaseEvent);
+      return { result: undefined, newMessages: [] };
+    });
+
+    await agent.submit({ message: 'hello' });
+
+    expect(seen).toEqual(['hi']);
+  });
+
+  it('does not emit events from a superseded run', async () => {
+    const stub = new StubAgent();
+    const agent = toAgent(stub as unknown as AbstractAgent);
+    const tap = collect(agent);
+    const runA = deferNextRun(stub);
+    const pendingA = agent.submit({ message: 'first' });
+    stub.initializeRun('stale-a');
+    stub.emit({ type: 'RUN_STARTED' } as BaseEvent, 'stale-a');
+
+    const runB = deferNextRun(stub);
+    const pendingB = agent.submit({ message: 'second' });
+    stub.initializeRun('stale-b');
+    stub.emit({ type: 'RUN_STARTED' } as BaseEvent, 'stale-b');
+    stub.emit({ type: 'TEXT_MESSAGE_START', messageId: 'stale', role: 'assistant' } as BaseEvent, 'stale-a');
+    stub.emit({ type: 'RUN_FINISHED' } as BaseEvent, 'stale-a');
+    stub.emit({ type: 'RUN_FINISHED' } as BaseEvent, 'stale-b');
+    runA.resolve();
+    runB.resolve();
+    await Promise.all([pendingA, pendingB]);
+
+    expect(tap.types).toEqual(['RUN_STARTED', 'RUN_STARTED', 'RUN_FINISHED']);
+  });
+
+  it('does not emit events that arrive after a stop', async () => {
+    const stub = new StubAgent();
+    const agent = toAgent(stub as unknown as AbstractAgent);
+    const tap = collect(agent);
+    const run = deferNextRun(stub);
+    const pending = agent.submit({ message: 'hello' });
+    stub.initializeRun('aborted');
+    stub.emit({ type: 'RUN_STARTED' } as BaseEvent, 'aborted');
+    await agent.stop();
+    stub.emit({ type: 'TEXT_MESSAGE_START', messageId: 'late', role: 'assistant' } as BaseEvent, 'aborted');
+    stub.emit({ type: 'RUN_FINISHED' } as BaseEvent, 'aborted');
+    run.resolve();
+    await pending;
+
+    expect(tap.types).toEqual(['RUN_STARTED']);
+  });
+
+  it('does not emit events that arrive after a terminal event', async () => {
+    const stub = new StubAgent();
+    const agent = toAgent(stub as unknown as AbstractAgent);
+    const tap = collect(agent);
+    stub.runAgent.mockImplementationOnce(async () => {
+      stub.emit({ type: 'RUN_STARTED', runId: 'done' } as BaseEvent, 'done');
+      stub.emit({ type: 'RUN_FINISHED', runId: 'done' } as BaseEvent, 'done');
+      stub.emit({ type: 'TEXT_MESSAGE_START', messageId: 'late', role: 'assistant' } as BaseEvent, 'done');
+      stub.emit({ type: 'STATE_SNAPSHOT', snapshot: { late: true } } as BaseEvent, 'done');
+      return { result: undefined, newMessages: [] };
+    });
+
+    await agent.submit({ message: 'hello' });
+
+    expect(tap.types).toEqual(['RUN_STARTED', 'RUN_FINISHED']);
+  });
+
+  it('completes on dispose', () => {
+    const agent = toAgent(new StubAgent() as unknown as AbstractAgent);
+    const tap = collect(agent);
+    agent.dispose();
+    expect(tap.completed()).toBe(true);
+  });
+});

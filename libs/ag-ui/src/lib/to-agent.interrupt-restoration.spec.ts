@@ -163,3 +163,22 @@ it('requires reconciliation after a lost acknowledgement and replays the exact s
   expect(replay.runId).toBe(failedRequest.runId);
   second.dispose();
 });
+
+it('taps the live run on rawEvents$ but emits nothing for hydration, which restores a snapshot', async () => {
+  const { config } = memory();
+  const first = toAgent(source().source, { persistence: config, telemetry: false });
+  const live: string[] = [];
+  first.rawEvents$.subscribe(event => live.push(event.type));
+  await first.ready;
+  await first.submit({ message: 'Approve this' });
+  first.dispose();
+  expect(live).toEqual(['RUN_STARTED', 'STATE_SNAPSHOT', 'MESSAGES_SNAPSHOT', 'RUN_FINISHED']);
+
+  const second = toAgent(source().source, { persistence: config, telemetry: false });
+  const replayed: string[] = [];
+  second.rawEvents$.subscribe(event => replayed.push(event.type));
+  await second.ready;
+  expect(second.state()).toEqual({ amount: 12 });
+  expect(replayed).toEqual([]);
+  second.dispose();
+});
