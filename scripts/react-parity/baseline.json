@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "512ab688a4048b87713ef26b97a0ac136c8c50d1",
+  "baselineHead": "f7aa7957601763c06b02a0420bdbfb1342db7ff7",
   "sourceState": {
     "modified": [],
     "untracked": []
@@ -144,7 +144,7 @@
       "id": "asset:libs/ag-ui/README.md",
       "kind": "asset",
       "path": "libs/ag-ui/README.md",
-      "sha256": "cb35525bfa5dc5b0c0dbdc6a3d288df9dacb48875427a1e53a96cc6564ed0804"
+      "sha256": "937f12f00bd56e73854cf5440993763dcb7281ecd2b27e73137e1c194621c608"
     },
     {
       "id": "asset:libs/ag-ui/fixtures/runtime-transcripts/maf-hitl-interrupt.sse",
@@ -2250,7 +2250,7 @@
       "id": "doc:apps/website/content/docs/ag-ui/api/inject-agent.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/api/inject-agent.mdx",
-      "sha256": "201c9188b2ca16824297509f6d430240ea14992dd780efa22a36ffed34bbcdb4"
+      "sha256": "421e493f31c27be0e3ec8d63f298f137e9d68e7f7ce91f30cb1ba083101f3255"
     },
     {
       "id": "doc:apps/website/content/docs/ag-ui/api/provide-agent.mdx",
@@ -2262,7 +2262,7 @@
       "id": "doc:apps/website/content/docs/ag-ui/api/to-agent.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/api/to-agent.mdx",
-      "sha256": "898fb760e88951f7dc3c1fa116ade13d0bb9a7a6dab4f32cb4bacd646bb7f096"
+      "sha256": "eefc77eadd17e6a48d08014d916dabf6898c4c7d75293c26fed7f4ec04608af0"
     },
     {
       "id": "doc:apps/website/content/docs/ag-ui/concepts/architecture.mdx",
@@ -11757,7 +11757,7 @@
       "id": "source:libs/ag-ui/src/lib/to-agent.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/to-agent.ts",
-      "sha256": "63a38acb9425211d5f714bc8c637ce62c1cb71db8ac9f834847883fb08e28956"
+      "sha256": "4331c9c3c3616116eabf9f9a68ee8475cd6f0f085ad6e631cbab2b21f4689d97"
     },
     {
       "id": "source:libs/ag-ui/src/public-api.ts",
