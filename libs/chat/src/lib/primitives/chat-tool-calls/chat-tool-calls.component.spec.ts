@@ -493,3 +493,72 @@ describe('ChatToolCallsComponent — subagent cards anchored to spawning task ca
     expect(fixture.nativeElement.querySelectorAll('[data-group="true"]').length).toBe(0);
   });
 });
+
+describe('ChatToolCallsComponent — group header disclosure semantics', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({ imports: [GroupingHost] });
+  });
+
+  function renderTwoGroups() {
+    const fixture = TestBed.createComponent(GroupingHost);
+    fixture.componentInstance.agent = mockAgent({
+      toolCalls: [
+        { id: 'a', name: 'search_web', args: {}, status: 'complete', result: 'r' },
+        { id: 'b', name: 'search_web', args: {}, status: 'complete', result: 'r' },
+        { id: 'c', name: 'read_file', args: {}, status: 'complete', result: 'r' },
+        { id: 'd', name: 'read_file', args: {}, status: 'complete', result: 'r' },
+      ],
+    });
+    fixture.detectChanges();
+    const headers = Array.from(
+      fixture.nativeElement.querySelectorAll('.ctc__group-header'),
+    ) as HTMLButtonElement[];
+    return { fixture, headers };
+  }
+
+  it('reports collapsed state and controls nothing while collapsed', () => {
+    const { headers } = renderTwoGroups();
+    expect(headers).toHaveLength(2);
+    for (const header of headers) {
+      expect(header.getAttribute('aria-expanded')).toBe('false');
+      expect(header.hasAttribute('aria-controls')).toBe(false);
+    }
+  });
+
+  it('reports expanded state and points aria-controls at the rendered body', () => {
+    const { fixture, headers } = renderTwoGroups();
+    headers[0].click();
+    fixture.detectChanges();
+
+    expect(headers[0].getAttribute('aria-expanded')).toBe('true');
+    const controls = headers[0].getAttribute('aria-controls');
+    expect(controls).toBeTruthy();
+    const body = fixture.nativeElement.querySelector(`#${controls}`) as HTMLElement | null;
+    expect(body?.classList.contains('ctc__group-body')).toBe(true);
+    expect(headers[1].getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('gives each group body a unique id', () => {
+    const { fixture, headers } = renderTwoGroups();
+    headers[0].click();
+    headers[1].click();
+    fixture.detectChanges();
+
+    const ids = headers.map((header) => header.getAttribute('aria-controls'));
+    expect(new Set(ids).size).toBe(2);
+    for (const id of ids) {
+      expect(fixture.nativeElement.querySelector(`#${id}`)).toBeTruthy();
+    }
+  });
+
+  it('gives the group header a focus ring and a target at least 24px tall', () => {
+    renderTwoGroups();
+    const css = Array.from(document.head.querySelectorAll('style'))
+      .map((style) => style.textContent ?? '')
+      .join('\n');
+    expect(css).toMatch(
+      /\.ctc__group-header(\[[^\]]*\])?:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--tplane-chat-primary\)/,
+    );
+    expect(css).toMatch(/\.ctc__group-header(\[[^\]]*\])?\s*\{[^}]*min-height:\s*24px/);
+  });
+});
