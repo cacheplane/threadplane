@@ -1,0 +1,148 @@
+---
+title: 'Threadplane 0.3.0: AG-UI 1.0 and a Slot for Every Turn'
+description: 'Threadplane 0.3.0 moves the AG-UI adapter to AG-UI 1.0, adds a per-message activity slot to chat, and exposes raw events and token usage.'
+date: 2026-10-07
+tags: [threadplane, release, angular, ag-ui, agentic-ui]
+author: brian
+featured: true
+draft: false
+---
+
+Threadplane 0.3.0 moves the AG-UI adapter to AG-UI 1.0, and gives you a slot to render each assistant turn your way.
+
+There's one change you need to act on, and it's a quick one.
+The rest is new surface you can pick up when you're ready.
+
+## Goals
+
+- Upgrade `@threadplane/ag-ui` to AG-UI 1.0.
+- Learn the new `chatActivityTemplate` slot on `<chat>`.
+- Tap the raw AG-UI event stream with `rawEvents$`.
+- Read per-run token usage from the agent.
+- Know what got fixed.
+
+## What do I need to change?
+
+If you're on `@threadplane/ag-ui`, install AG-UI 1.0.1 or later alongside it:
+
+```bash
+npm install @threadplane/chat @threadplane/ag-ui @ag-ui/client @ag-ui/core marked
+```
+
+That's the breaking change.
+The adapter's peer range on `@ag-ui/client` and `@ag-ui/core` moves from `^0.0.59` to `^1.0.1`.
+
+Why move the floor?
+The adapter now imports its protocol validators from `@ag-ui/core/schemas`, and the 0.0.x line doesn't ship that entry point.
+It also declares `protocolVersion` on every run, so a 1.0 runtime knows exactly which protocol it's talking to.
+
+There's one behavior change worth a look while you're in there.
+A run that ends with a cancelled outcome now settles as `aborted`, without an error.
+If you had UI that treated a cancellation as a failure, it'll quietly stop showing one.
+For me, that's the right call: the user pressed stop, and nothing went wrong.
+
+If you're only on `@threadplane/langgraph`, there's nothing to change beyond the version.
+The six packages still move in lockstep, so bump them together and pin the exact version.
+
+## What's new?
+
+Let's look at the new surface, starting with the one I'm most excited about.
+
+### A slot for every turn
+
+`chatActivityTemplate` is a per-message activity slot on `<chat>`.
+When it's present, your template replaces the reasoning pill and the tool-call region of every assistant message.
+Markdown, tool views, generative UI, and message actions still render around it.
+
+```html
+<chat [agent]="agent">
+  <ng-template
+    chatActivityTemplate
+    let-message
+    let-toolCalls="toolCalls"
+    let-subagents="subagents"
+  >
+    @if (message.reasoning || toolCalls.length > 0) {
+      <my-turn-activity
+        [reasoning]="message.reasoning"
+        [steps]="toolCalls"
+        [subagents]="subagents"
+      />
+    }
+  </ng-template>
+</chat>
+```
+
+The template gets the message, its tool calls, the subagents those calls spawned, and the agent itself.
+I think this is the right shape when activity reads better per turn than per tool call: one summary line with plain-language steps, nested subagent turns, or an approval card sitting next to the step it gates.
+
+One thing to keep in mind: the template renders for *every* assistant message, including ones with no reasoning and no tool calls.
+That's why the example guards on the context.
+The [ChatActivityTemplate docs](/docs/chat/components/chat-activity-template) cover placement and how it interacts with tool-call templates.
+
+### The raw event stream
+
+`@threadplane/ag-ui` now exposes every protocol event it reduces as `rawEvents$`:
+
+```ts
+import { HttpAgent } from '@ag-ui/client';
+import { toAgent } from '@threadplane/ag-ui';
+
+const agent = toAgent(new HttpAgent({ url: '/api/agent' }));
+
+agent.rawEvents$.subscribe((event) => {
+  // event is the AG-UI BaseEvent, already reduced into the signals.
+  myViewModel.fold(event);
+});
+```
+
+This is for hosts that fold every AG-UI event into their own view model.
+Before, that meant constructing a second `AbstractAgent` and bypassing the persistence and telemetry wiring you'd already set up.
+Now you get the same events the signals saw, in the same order.
+
+A few rules make it predictable:
+
+- Events the adapter suppresses aren't emitted: a superseded run, anything after `stop()`, anything after a run's terminal event.
+- A run's `RUN_ERROR` is emitted once, after `error()` and `status()` settle, and it's redacted the same way `error()` is.
+- It's hot and unbuffered, so subscribe before calling `submit()`.
+- Hydrating from persistence doesn't replay events. Seed from `messages()` and `state()`, then fold from there.
+
+The [raw event stream docs](/docs/ag-ui/api/to-agent#raw-event-stream) have the details.
+
+### Token usage
+
+The `Agent` contract gains an optional `usage` signal.
+It holds the token usage for the most recent completed or errored run as a list of entries: provider, model, and input, output, reasoning, and cached token counts.
+It's `undefined` while a run is in flight.
+
+Today the AG-UI adapter fills it in from `RUN_FINISHED` and `RUN_ERROR`.
+On LangGraph it stays `undefined` for now, so treat it as optional in your UI.
+
+### Tool results as parts
+
+AG-UI 1.0 lets a tool return a list of content parts instead of a single string.
+`ToolCall.parts` keeps every part, while `result` still gives you the text, parsed as JSON when there's exactly one text part holding valid JSON.
+Text parts and URL-sourced images in a tool message also map to chat content blocks.
+
+### Zod 3 or 4
+
+The `zod` peer range on `@threadplane/chat` widens to `^3.25.0 || ^4.0.0`.
+The library only imports the `zod/v4` entry point, which both lines ship, so you can stay on 3.25 until you're ready.
+
+## What got fixed?
+
+- **Reduced motion.** The reduced-motion styles targeted classes no component renders, so the real typing dots, streaming caret, reasoning pulse, and skeleton shimmer froze mid-loop instead of stopping. They now stop.
+- **Disclosure headers.** Collapsible headers like the tool-call group now report `aria-expanded`, show a focus ring, and give you a 24px target.
+- **Contrast.** Small status text uses a success color that meets WCAG AA.
+- **LangGraph checkpoints.** The adapter now confirms a checkpoint from the stream when the saved checkpoint's metadata omits the run, instead of rejecting it.
+- **LangGraph tool calls.** A run of fixes keeps tool-call identity and ownership intact across streaming, cancellation, and persistence.
+
+The full list is in the [GitHub release](https://github.com/cacheplane/threadplane/releases/tag/v0.3.0).
+
+## Conclusion
+
+In summary, 0.3.0 asks one thing of you: if you're on AG-UI, install 1.0.1 alongside the adapter.
+In return you get a slot to render each turn your way, the raw protocol stream without a second agent, per-run token usage, and tool results that keep their parts.
+
+Give it a spin, and let me know what you build with the activity slot.
+I'd *love* to see it.
