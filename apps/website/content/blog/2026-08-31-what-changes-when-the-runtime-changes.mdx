@@ -1,6 +1,6 @@
 ---
 title: 'What Changes in Your Angular Code When the Agent Runtime Changes'
-description: 'AG-UI and LangGraph land on the same Angular contract. Here is what actually differs — and which differences are the protocol, not the adapter.'
+description: 'AG-UI and LangGraph land on the same Angular contract. Here''s what actually differs, and which differences are the protocol, not the adapter.'
 date: 2026-08-31
 tags: [AG-UI, langgraph, angular, architecture, agentic-ui]
 author: brian
@@ -8,21 +8,21 @@ featured: false
 draft: false
 ---
 
-Two adapters, one Angular contract.
+What changes in your Angular code when the agent runtime changes?
 
-The short answer, measured against twin demos in our own repository: your components barely move, your providers do not survive at all, and a small set of capabilities fail at compile time rather than degrading politely.
+The short answer, measured against twin demos in our own repository: your components barely move, your providers don't survive at all, and a small set of capabilities fail at compile time rather than degrading politely.
 
-That last part is the one architects care about, and it is the part I had to read the source to find.
+That last part is the one architects care about, and it's the part I had to read the source to find.
 
-I am not going to tell you which runtime to pick.
+I'm not going to tell you which runtime to pick.
 The whole point of putting the runtime behind an Angular contract is that the pick stops being a one-way door.
 What I can do is show you exactly where the door is still one-way.
 
-My recommendation up front, so you can argue with it while you read:
+Here's my recommendation up front, so you can argue with it while you read:
 
 - Keep every component on the neutral `Agent` surface. Treat `AgentWithHistory` and the `langGraph*` members as an explicit, tested boundary rather than an ambient convenience.
-- Choose the runtime by whether your product needs a durable conversation store, not by adapter ergonomics. That is the axis where the two actually diverge.
-- If you need thread history, checkpoints, or time travel today, use LangGraph — not because AG-UI is behind, but because those capabilities are outside what the protocol defines.
+- Choose the runtime by whether your product needs a durable conversation store, not by adapter ergonomics. That's the axis where the two actually diverge.
+- If you need thread history, checkpoints, or time travel today, use LangGraph. Not because AG-UI is behind, but because those capabilities are outside what the protocol defines.
 - If vendor neutrality and a single SSE endpoint matter more than durability, AG-UI is the cleaner shape. Go in knowing our adapter is the thinner of the two.
 
 ## What actually reaches your Angular code?
@@ -35,34 +35,33 @@ An `events$` observable.
 Two optional signals, `interrupt` and `subagents`, that a runtime may leave undefined.
 One optional `clientTools` capability.
 
-That is the whole surface `<chat>` consumes.
+That's the whole surface `<chat>` consumes.
 
-I already wrote the type-level version of this in [What injectAgent() Actually Returns](/blog/what-inject-agent-returns), and I am not going to re-derive it here.
+I already wrote the type-level version of this in [What injectAgent() Actually Returns](/blog/what-inject-agent-returns), so I won't re-derive it here.
 The relevant fact for this post is narrower.
 `LangGraphAgent` extends `AgentWithHistory`, which extends `Agent`.
 `AgUiAgent` extends `Agent` directly.
 
-One interface deeper on one side.
-Remember that; it comes back with teeth.
+So one side is one interface deeper.
+Keep that in mind, because it matters later on.
 
-## What does not change
+## What doesn't change?
 
-Two files move.
-The component and the provider.
+Two files move: the component and the provider.
 
-Here is the accounting behind that.
+Let's look at the accounting behind that.
 We keep three capability demos built twice — once against `@threadplane/langgraph`, once against `@threadplane/ag-ui`.
 Generative UI with A2UI, human-in-the-loop interrupts, and subagent delegation.
 Same libraries, same `<chat>` composition, different adapter.
 
 Each Angular app has nine files under `src/`.
-In all three pairs, six of them differ, and it is the same six every time.
-Four of those six are not application code.
+In all three pairs, six of them differ, and it's the same six every time.
+Four of those six aren't application code.
 `index.html` differs by the text inside its `<title>` tag.
 `index.ts` is a docs-manifest descriptor.
 The two environment files differ because the LangGraph app needs a platform URL and a graph id, and the AG-UI app needs neither.
 
-Now look inside the interesting one.
+Let's look inside the interesting one.
 For the A2UI pair, the demo component diff, normalized for whitespace, is exactly one token:
 
 ```diff
@@ -74,20 +73,20 @@ For the A2UI pair, the demo component diff, normalized for whitespace, is exactl
 The generative UI renders the same way on both runtimes because the renderer never learned which runtime it was talking to.
 
 I want to be precise about the other two pairs, because the honest version is less tidy.
-The interrupts and subagents components differ substantially between the twins — but they differ because they are different demos.
+The interrupts and subagents components differ substantially between the twins, but they differ because they're different demos.
 One is a flight booking with a sidebar interrupt panel.
 The other is a refund authorization with a modal approval card.
 Those diffs measure our demo-writing, not the adapter boundary.
 Only the A2UI pair is a controlled experiment, and that one comes back at one line.
 
-For me, that is the number worth carrying into a design review.
+For me, that's the number worth carrying into a design review.
 When the demo is held constant, the component-level cost of a runtime swap is an import specifier.
 
-## What does change
+## What does change?
 
-Everything that is not a component.
+Everything that isn't a component.
 
-### The provider is not substitutable
+### The provider isn't substitutable
 
 `provideAgent()` exists in both packages and accepts config shapes that barely overlap.
 
@@ -95,8 +94,7 @@ The LangGraph `AgentConfig` has twelve fields: `apiUrl`, `assistantId`, `threadI
 
 The AG-UI `AgentConfig` has five: `url`, `agentId`, `threadId`, `headers`, and `telemetry`.
 
-Two fields overlap.
-Two.
+Only two fields overlap.
 
 ```ts
 // cockpit/chat/a2ui — LangGraph
@@ -109,7 +107,7 @@ provideAgent({
 provideAgent({ url: new URL('agent', document.baseURI).pathname });
 ```
 
-The shapes are not merely different in spelling.
+The shapes aren't merely different in spelling.
 They describe different topologies.
 LangGraph addresses a platform API and names a graph on it.
 AG-UI addresses one HTTP endpoint that streams Server-Sent Events, and the endpoint is the whole address space.
@@ -126,23 +124,23 @@ Your template binds to it identically.
 Underneath, they are filled by mechanisms with different failure modes.
 
 On AG-UI, the server writes state with `STATE_SNAPSHOT` (a full replacement) and `STATE_DELTA` (a list of RFC-6902 JSON Patch operations applied to the current document).
-Patches apply in order, and a patch that fails — bad path, failed `test` op — throws for the whole batch.
+Patches apply in order, and a patch that fails (bad path, failed `test` op) throws for the whole batch.
 When you pass a state patch to `submit()`, the adapter merges it into the source agent's client state optimistically and lets the server's next snapshot win.
 
 On LangGraph, state is graph state.
-It arrives on the `values` stream, it is typed to your graph's schema, and it is written back through the platform's thread-state API rather than carried on the next run's input.
+It arrives on the `values` stream, it's typed to your graph's schema, and it's written back through the platform's thread-state API rather than carried on the next run's input.
 
 Take that as a coupling warning, not a bug report.
 Code that only reads `state()` is portable.
-Code that reasons about *when* and *how* state converges — optimistic local merge versus authoritative checkpoint — is not, and it will not fail to compile when you move it.
+Code that reasons about *when* and *how* state converges — optimistic local merge versus authoritative checkpoint — isn't, and it won't fail to compile when you move it.
 
 ### Threads cascade into code that has nothing to do with the agent
 
 Our canonical demo runs on LangGraph and carries thread persistence.
-The AG-UI demo does not.
+The AG-UI demo doesn't.
 
-The difference is not confined to the provider.
-The LangGraph demo's routes file is 57 lines and includes a hand-written `UrlMatcher` factory — with a fourteen-line comment explaining why two separate route entries tore down the mode component mid-stream.
+The difference isn't confined to the provider.
+The LangGraph demo's routes file is 57 lines and includes a hand-written `UrlMatcher` factory, with a fourteen-line comment explaining why two separate route entries tore down the mode component mid-stream.
 The AG-UI demo's entire routes file is 13 lines: three plain path entries, a redirect, and a wildcard.
 
 The shell components tell the same story: 858 lines against 269.
@@ -151,10 +149,10 @@ The extra weight is thread routing, a `LangGraphThreadsAdapter` wired to the sid
 None of that is agent code.
 All of it exists because threads are durable on one runtime and not on the other.
 
-If you are sizing a migration, this is the line item people miss.
+If you're sizing a migration, this is the line item people miss.
 The adapter swap is cheap.
-The features the adapter made possible are not.
-One more line item while you are counting: `@threadplane/chat` peer-declares `@langchain/core`, so an AG-UI-only app still installs that package today — the usage is type-only, but the install is not optional.
+The features the adapter made possible aren't.
+One more line item while you're counting: `@threadplane/chat` peer-declares `@langchain/core`, so an AG-UI-only app still installs that package today (the usage is type-only, but the install isn't optional).
 
 ### Some capabilities fail at compile time
 
@@ -165,12 +163,12 @@ There is no `history` signal on it.
 
 So binding an AG-UI agent to a timeline component is a TypeScript error, not a runtime fallback and not an empty state.
 
-I think this is the correct design, and I want to defend it rather than apologize for it.
-A time-travel slider with no checkpoints to travel through is not a degraded feature; it is a lie.
+I think this is the correct design, and I'd rather defend it than apologize for it.
+A time-travel slider with no checkpoints to travel through isn't a degraded feature; it's a lie.
 Failing in the type system means the mismatch surfaces in your editor rather than in a demo.
 
 But it does mean "swap the provider" is only true for components bound to the neutral slice.
-Anything reaching for `AgentWithHistory` — or for the `langGraph*`-prefixed members, or `branch`, `setBranch`, `switchThread`, `queue`, `joinStream`, `lifecycle` — is runtime-coupled by construction.
+Anything reaching for `AgentWithHistory` (or for the `langGraph*`-prefixed members, or `branch`, `setBranch`, `switchThread`, `queue`, `joinStream`, `lifecycle`) is runtime-coupled by construction.
 
 ### The test harness forks
 
@@ -180,16 +178,16 @@ A runtime swap is a test-infrastructure change, not only an app change.
 
 ## Is that a protocol gap or our gap?
 
-This is the question that decides whether a missing capability is a roadmap item or a fact of life.
+This question decides whether a missing capability is a roadmap item or a fact of life.
 
 I read the `EventType` enum in `@ag-ui/core` to answer it.
-Thirty-three members.
-Text messages, tool calls, reasoning, state snapshots and deltas, message snapshots, activities, steps, run start and finish and error, plus a `CUSTOM` and a `RAW` escape hatch.
+It has thirty-three members:
+text messages, tool calls, reasoning, state snapshots and deltas, message snapshots, activities, steps, run start and finish and error, plus a `CUSTOM` and a `RAW` escape hatch.
 
 There is no event for a checkpoint.
 No event for thread history.
 No operation anywhere in `@ag-ui/client` to list, fetch, rename, or delete a thread.
-`AbstractAgent` carries a `threadId` field, but it is a correlation label on a run, not a handle to a stored object.
+`AbstractAgent` carries a `threadId` field, but it's a correlation label on a run, not a handle to a stored object.
 Messages and state live in memory on the client.
 
 | Capability | LangGraph adapter | AG-UI adapter | Cause of the difference |
@@ -206,36 +204,35 @@ Messages and state live in memory on the client.
 | `DestroyRef` teardown | Yes | No | Our gap |
 | Durable client-tool `flush()` | Yes, writes to the checkpoint | In-memory only | Both — no durable store to write to |
 
-Read the fourth column twice.
-Most of the AG-UI column's "no" is not something we neglected to build.
-It is not expressible on the wire.
+The fourth column is worth reading twice.
+Most of the AG-UI column's "no" isn't something we neglected to build.
+It isn't expressible on the wire.
 
-The last row is the one to sit with, because it is the only one caused by both sides at once.
-Our AG-UI `flush()` is a no-op, which is defensible on its own terms — but even a perfect implementation would have nowhere durable to write, so the weaker guarantee survives fixing our half.
+The last row is the one to sit with, because it's the only one caused by both sides at once.
+Our AG-UI `flush()` is a no-op, which is defensible on its own terms, but even a perfect implementation would have nowhere durable to write, so the weaker guarantee survives fixing our half.
 
 Interrupts are the sharp example of a pure protocol gap.
 AG-UI has no interrupt event type, so our adapter recognizes a `CUSTOM` event named `on_interrupt` and parses its payload.
 That works, and it works well, but the name is a convention of the LangGraph-to-AG-UI bridge, not a protocol primitive.
-A backend that speaks AG-UI without adopting that convention would not surface an interrupt to `<chat>` at all.
+A backend that speaks AG-UI without adopting that convention wouldn't surface an interrupt to `<chat>` at all.
 
 Subagents run the other way, and this is the one place where I think AG-UI's design is simply better than LangGraph's.
 
 Our LangGraph subagent tracker is 543 lines.
 It infers subagent identity from stream namespaces, correlates namespaces back to tool-call ids, and requires you to configure `subagentToolNames: ['task']` in the provider so it knows which tool calls are delegations.
-That is client-side inference of a server-side fact, and inference is exactly as reliable as it sounds.
+That's client-side inference of a server-side fact, and inference is exactly as reliable as it sounds.
 
 AG-UI ships `SUBAGENT_STARTED`, `SUBAGENT_FINISHED`, and `SUBAGENT_ERROR` as first-class events, and every content event can carry a `subagentRunId`.
 The server declares "this is a subagent, here is its name, here is the tool call that dispatched it, and these messages and tool calls belong to it."
 Our reducer projects those onto the neutral `Subagent` contract, and the AG-UI provider config for the subagents demo needs no subagent option at all.
 
-Declared beats inferred.
-Every time.
+For me, declared beats inferred every time.
 
-## Where each one is stronger
+## Where is each one stronger?
 
 ### AG-UI: neutrality and operations
 
-- The adapter peer-declares `@ag-ui/client` and `@ag-ui/core` — a protocol client, not a runtime SDK.
+- The adapter peer-declares `@ag-ui/client` and `@ag-ui/core`: a protocol client, not a runtime SDK.
 - The wire is Server-Sent Events over plain HTTP. Every proxy and load balancer in your stack already knows what to do with it.
 - One endpoint. One thing to secure.
 - The delegation model puts the truth on the server, where it belongs.
@@ -246,18 +243,18 @@ Every time.
 - Checkpoint history, which is what makes `<chat-timeline>` possible at all.
 - Branch trees for time travel, and queued runs via a multitask strategy.
 - Rejoining an in-flight stream by run id, plus a configurable retry budget.
-- Eight lifecycle signals that reset on thread switch. That is the difference between "we have metrics" and "we can answer why that run was slow."
+- Eight lifecycle signals that reset on thread switch. That's the difference between "we have metrics" and "we can answer why that run was slow."
 
 <ArchFlowDiagram />
 
-This is not a maturity gradient.
-It is a scope difference.
+This isn't a maturity gradient.
+It's a scope difference.
 AG-UI standardizes the run; LangGraph Platform also owns the store.
-A protocol that deliberately does not define persistence cannot be criticized for lacking persistence — but you also cannot build a thread sidebar on it without bringing your own store.
+A protocol that deliberately doesn't define persistence can't be criticized for lacking persistence, but you also can't build a thread sidebar on it without bringing your own store.
 
-## Where our AG-UI adapter is thin
+## Where is our AG-UI adapter thin?
 
-I would rather you hear this from me than find it in the source.
+I'd rather you hear this from me than find it in the source.
 
 The LangGraph adapter is 5,817 lines of non-test source.
 The AG-UI adapter is 1,873.
@@ -267,60 +264,60 @@ Some of it is us.
 Specifically:
 
 - **No `DestroyRef` teardown.** The LangGraph adapter injects `DestroyRef` and tears its stream bridge down on destroy; the AG-UI adapter never unsubscribes and calls `abortRun()` only from `stop()`.
-  The cost is concrete: destroy the injector while a run is in flight — navigate away mid-stream from a component-scoped agent — and the run is not cancelled.
+  The cost is concrete: destroy the injector while a run is in flight (navigate away mid-stream from a component-scoped agent) and the run isn't cancelled.
   The SSE connection stays open and the reducer keeps writing into signals nothing renders, until the server ends the run on its own.
-  Worse, `toAgent()`'s own documentation tells callers to rely on the provider's destroy hook, and the AG-UI provider does not register one.
-  That comment is wrong, and I would rather say so here than let you discover it.
+  Worse, `toAgent()`'s own documentation tells callers to rely on the provider's destroy hook, and the AG-UI provider doesn't register one.
+  That comment is wrong, and I'd rather say so here than let you discover it.
 - **`clientTools.flush()` is a no-op.** The reasoning is sound as far as it goes: `settle()` already appends a tool message to the source agent's outgoing list, so nothing further is needed to make the result reach the next run.
   But "durable" on the LangGraph side means written to a checkpoint that survives a reload. On AG-UI it means present in a JavaScript array.
 - **No lifecycle signals, no retry configuration, no thread store.**
 
 <Callout type="warning" title="One thing not to take on faith">
 We ship an `Agent` conformance suite and both adapters pass it.
-Do not take that as proof of interchangeability.
-It is 65 lines, and most of it asserts that signals are functions, that arrays are arrays, and that `submit()` returns a promise.
-It is a shape check, not a behavioral one.
-It would not catch a difference in when `isLoading` settles.
+Don't take that as proof of interchangeability.
+It's 65 lines, and most of it asserts that signals are functions, that arrays are arrays, and that `submit()` returns a promise.
+It's a shape check, not a behavioral one.
+It wouldn't catch a difference in when `isLoading` settles.
 </Callout>
 
-## What this post cannot tell you
+## What can't this post tell you?
 
 Every AG-UI backend in our repository is itself a LangGraph graph.
 Each one compiles a `StateGraph` and wraps it with the `ag_ui_langgraph` bridge behind a FastAPI SSE endpoint.
 In the A2UI pair, the two Python graphs differ by exactly two lines: a `MemorySaver` import, and passing that checkpointer to `compile()`.
 
 So what our parity data demonstrates is a **transport swap over one runtime**.
-It is not a runtime swap.
+It isn't a runtime swap.
 
 That distinction matters for anyone reading this as a portability argument.
 Whether the neutral `Agent` contract holds up against a non-LangGraph AG-UI backend we have not measured — CrewAI, Pydantic AI, something you wrote — is untested by us.
 The backends we have measured since, Mastra among them, are covered in [We Measured the Runtime Swap](/blog/we-measured-the-runtime-swap).
 I believe it holds, because the contract is built on the protocol event vocabulary rather than on any runtime's shapes.
-But belief is not measurement, and I am not going to dress one up as the other.
+But belief isn't measurement, and I'm not going to dress one up as the other.
 
 Two smaller caveats.
-The interrupt path accepts two conventions — the protocol-standard `RUN_FINISHED` interrupt outcome, and the `CUSTOM` `on_interrupt` event the LangGraph bridge emits — and retains both in one session. Updated September 9, 2026: native batches take precedence in `auto` mode regardless of arrival order; Mastra uses the explicit `mastra-command` profile.
+The interrupt path accepts two conventions (the protocol-standard `RUN_FINISHED` interrupt outcome, and the `CUSTOM` `on_interrupt` event the LangGraph bridge emits) and retains both in one session. Updated September 9, 2026: native batches take precedence in `auto` mode regardless of arrival order; Mastra uses the explicit `mastra-command` profile.
 And the subagent path rests on the protocol's `SUBAGENT_*` events, which the adapter consumes directly; each measured runtime reaches them through a small in-tree emitter, as [the measurement post](/blog/we-measured-the-runtime-swap#what-stayed-partial) records.
 
 *Editor's note: the measurement exists.*
-*Three genuinely non-LangGraph backends, two languages, wire transcripts replayed through the shipped client — covering messages, tool calls, state, interrupts, and subagents.*
+*Three genuinely non-LangGraph backends, two languages, and wire transcripts replayed through the shipped client, covering messages, tool calls, state, interrupts, and subagents.*
 *The results are in [We Measured the Runtime Swap](/blog/we-measured-the-runtime-swap).*
 
 ## Conclusion
 
 The measured answer to the title is short.
-
 Components bound to the neutral contract move by one import line.
-Providers do not port at all.
-Features built on durability — threads, history, time travel, resumable runs — do not port either, and they take routing, shells, and services with them when they go.
+Providers don't port at all.
+Features built on durability (threads, history, time travel, resumable runs) don't port either, and they take routing, shells, and services with them when they go.
 
-So the recommendation from the top of the post, now that it is earned: bind to the neutral surface, make every runtime-specific reach an explicit boundary, and pick the runtime on durability rather than on ergonomics.
+So here's the recommendation from the top of the post, now that it's earned: bind to the neutral surface, make every runtime-specific reach an explicit boundary, and pick the runtime on durability rather than on ergonomics.
 LangGraph if you need the store.
-AG-UI if you need the neutrality — and know which of our gaps are the protocol's and which are ours.
+AG-UI if you need the neutrality, knowing which of our gaps are the protocol's and which are ours.
 
 The [adapter guide](/docs/choosing-an-adapter) is the lookup table for this decision.
 [Agentic UI in Angular: production patterns](/blog/agentic-ui-in-angular-production-patterns) covers why the contract boundary is worth keeping in the first place.
-The [AG-UI walkthrough](/blog/build-fullstack-agentic-angular-apps-using-ag-ui) is where to start if you have not wired one yet.
+The [AG-UI walkthrough](/blog/build-fullstack-agentic-angular-apps-using-ag-ui) is where to start if you haven't wired one yet.
 
 The contract is doing its job.
-The interesting engineering is on the other side of it.
+I think the interesting engineering is on the other side of it. 🤔
+If you've swapped runtimes and hit a difference this post missed, please let me know.

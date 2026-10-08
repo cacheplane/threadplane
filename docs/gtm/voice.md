@@ -1,42 +1,46 @@
 # Voice: Brian Love
 
-> The canonical voice + tone reference for any post drafted on Brian's behalf — blog, social, threads, replies. Two layers, and they come from different places: **sentence-level register** is measured from Brian's 2026 posts (`~/repos/brianflove/src/content/posts/`, see "The 2026 register" below — this governs); **structural scaffolding** comes from the 2012–2024 tutorial corpus (~141 posts) documented in the rest of this file. Where the two conflict at the sentence level, 2026 wins.
+> The canonical voice + tone reference for any post drafted on Brian's behalf — blog, social, threads, replies. As of 2026-10-07 the **pre-2024 register governs**: sentence-level style and structure both come from Brian's 2012–2024 posts (`~/repos/brianflove/src/content/posts/`, ~141 posts). Good references: `2019-12-14-console-debugging-with-window-ng.md` (tutorial), `2024-01-09-year-in-review.md` and `2024-01-11-success-in-the-ordinary.md` (essay). The 2026 register (no contractions, no "Let's", no emoji) is retired for Threadplane posts; see "Register history" below.
 
-## The 2026 register (governs sentence-level style)
+## The register (governs)
 
-Measured 2026-08-31 across every 2026 post in the corpus. These are counts, not
-impressions:
+Brian, 2026-10-07: Threadplane posts use his older voice in full.
+The 2026 register read colder than he wants.
 
-| Marker | 2026 corpus | Notes |
-|---|---|---|
-| Contractions | **zero** | The A2UI post has one apostrophe in 2,252 words: the possessive "Google's". He writes *It is*, *That would be*, *you are*. |
-| "Let's" | **zero** | Not a 2026 move, despite the 2012–2020 sections below. |
-| Opinion flags | frequent | "For me, the core idea is simple", "That is why I think memory is going to become foundational" — 9 in one post. |
-| Emoji | zero | |
+**Sentence-level rules:**
 
-**Sentence-level rules (these override the historical guidance further down):**
+- **Contractions are normal.** *It's*, *don't*, *you're*, *that's*. Write the way he talks.
+- **"Let's" is the workhorse transition.** *"Let's look at an example."* *"Let's break this down:"* When he writes it, the work happens in the next line.
+- **Emoji sparingly.** One or two per post at most, from the small repertoire (💚 💙 🔥 🤔 🏖 👍 😲 😆). They color a sentence, never replace one. Never stack. Zero is fine.
+- **Warm asides.** Inline parentheticals (*"(though I often much prefer reactive forms)"*), the occasional "(haha)", a genuine "freakin' cool" or exclamation mark. One or two per post, never stacked.
+- **Flag opinions** early and often: "For me, …", "I think …", "In my opinion, …".
+- **One sentence per line.** Hard returns inside paragraphs are the norm.
 
-- **No contractions.** Full forms throughout. This is the single most reliable tell.
-- **No "Let's."** Move with a declarative sentence instead.
-- **One sentence per line.** Hard returns inside paragraphs are the norm, not the exception.
-- **Declarative fragments carry emphasis.** *"That is the part that matters." "Memory is becoming policy."*
-- **Flag opinions often**, and early: "For me, …", "My recommendation is simple:", "I think …".
-- **Close on a declarative beat**, not a sign-off: *"That is what makes this interesting."*
-- **No stagey fragments or scene-setting quips.** Nothing like *"Five libraries, twelve rows."*, *"This is the row the title is about."*, *"Now the honest part."*, or *"I will be brief."* Brian does not narrate the post's structure or wind up for a point. Declarative fragments carry *emphasis* on a claim already made; they never announce what is coming. (Brian, 2026-09-15: "I would never say something like that.")
+**Structure:**
 
-**Keep from the tutorial corpus (structure, not sentences):** `## Goals` blocks,
-H2-as-question, series cross-links, an explicit `## Conclusion`, and a closing
-invitation. Reader is a peer. No hype, no marketing CTAs.
+- `## Goals` block near the top of tutorials (3–5 bullets).
+- H2-as-question, body-as-answer.
+- Explicit `## Conclusion` that restates the takeaway.
+- **Closing invitation**, not a CTA: *"let me know in the comments"*, *"Please share…"*, *"let me know where it breaks."*
 
-**Never fabricate a first-person anecdote.** Warmth comes from opinion and
-directness, not from invented experiences.
+**Standing rules (unchanged):**
 
+- **Never fabricate a first-person anecdote.** Warmth comes from opinion, asides, and directness, not from invented experiences.
+- **No stagey fragments or scene-setting quips.** Nothing like *"Five libraries, twelve rows."*, *"This is the row the title is about."*, *"Now the honest part."*, or *"I will be brief."* Brian does not narrate the post's structure or wind up for a point. (Brian, 2026-09-15: "I would never say something like that.")
+- **No hype, no marketing CTAs.** Reader is a peer.
+- **Compact.** Say it once. Roughly 1,000 words for an essay or announcement; tutorials run as long as the code needs and no longer.
+
+## Register history
+
+Measured 2026-08-31 across Brian's 2026 posts, the "2026 register" used zero contractions, zero "Let's", and zero emoji, and this file mandated it for sentence-level style.
+On 2026-10-07 Brian chose the older voice for Threadplane posts instead, and the existing Threadplane blog posts were rewritten to match.
+Do not reintroduce the 2026 register without asking him.
 
 ## tl;dr
 
 - One thought per line. Most paragraphs are 1–3 short sentences. Hard returns inside a paragraph are normal.
 - Openings restate the title in a single sentence, then jump into the work. No "Introduction" header, no "in this article we'll explore."
-- *(2012–2024 only — superseded, see "The 2026 register" above.)* Contractions were normal in the older corpus. In 2026 he uses full forms.
+- Contractions are normal (*it's*, *don't*, *you're*).
 - Warm, low-stakes humor — "freakin' cool," "giddy up and get onboard," the occasional emoji (🤔 💚 😆 👍). Not bro-voice. Closer to "fun coworker."
 - Reader addressed directly ("Let's look at," "I suggest you check it out"); opinions flagged as opinions ("For me," "In my opinion," "what I think").
 - A small set of recurring values across 12 years: ship the boring thing, do it well, have fun, name the people you're thankful to.
@@ -55,7 +59,7 @@ Brian writes in three distinct registers. Pick one and stay in it.
 
 **Technical tutorial** (bulk of corpus, 2012–2020). Walks through a specific task. Numbered Goals, heavy "Let's," H2s as questions, explicit `## Conclusion`. Friendly, practical, code-heavy. For "here is how to do X."
 
-**Opinion / pattern post** (2017–2020). Antipatterns and recommendations, but softer than the 2026 register. Still contracted, still hedged with "I think," closes with an invitation. For "here is what I learned by getting it wrong."
+**Opinion / pattern post** (2017–2020). Antipatterns and recommendations. Contracted, still hedged with "I think," closes with an invitation. For "here is what I learned by getting it wrong."
 
 **Personal / business essay** (2019, 2024). Short, reflective, built around one rhetorical question (*"What if success is found in the ordinary?"*). One-sentence paragraphs. Italicized intensifiers. Closes on an invitation (*"Join me in ordinary success."*). For how he thinks, lives, or works.
 
@@ -63,7 +67,7 @@ Brian writes in three distinct registers. Pick one and stay in it.
 
 - **One sentence per line.** From "Year in Review": *"In 2023, I began development of Polaris in earnest. / This was my first step into bootstrapping a startup."*
 - **Short, direct, most under 20 words.** *"I like ordinary. / Ordinary is welcoming, accepting, inclusive, diverse, unapologetic, and authentic."*
-- **Contractions default** *(2012–2024 only; superseded — 2026 uses full forms).*
+- **Contractions default.** *"It's been on my list for awhile."*
 - **Italics for single-word emphasis.** *"Bootstrapping a startup is *hard*,"* *"build for mobile and *then* respond to users."* Rarely bold.
 - **Bold reserved for must-do callouts.** *"This is a **must** for smaller screen devices."*
 - **Em-dashes sparingly for asides.** He more often reaches for a period.
@@ -77,7 +81,7 @@ Brian writes in three distinct registers. Pick one and stay in it.
 - **Opening: title restated as the lede.** *"Learn the basics of implementing the Redux pattern in Angular applications."*
 - **`## Goals` block, 3–5 bullets, near the top.** The last bullet is sometimes literally *"Have fun!"*
 - **Series cross-link block** with the current post marked: *"1. NgRX: The Basics (this post) / 2. NgRX: Getting Started…"*
-- **"Let's" as workhorse transition** *(2012–2020 only; superseded — zero occurrences in the 2026 corpus).*
+- **"Let's" as workhorse transition.** *"Let's break this down:"* / *"Let's look at an example."*
 - **H2-as-question, body-as-answer.** *"## What are Operators? / ## How are they composable? / ## How do I import?"*
 - **Three-bullet spine, each bullet becoming an H3.** Personal essays: *"- Building a product / - Listening to developers / - Consulting."*
 - **"Anything Else?" near the close.** *"Did I miss something? Is there something on your top 5 list that I did not mention?"*
@@ -154,12 +158,14 @@ Warm, slightly goofy, occasionally folksy. Humor lives in the asides:
 ## Drafting checklist
 
 - [ ] Opens with one sentence restating the title or stating intent. No "Introduction" header.
-- [ ] **No contractions.** Full forms throughout.
+- [ ] Contractions where he'd say them (*it's*, *don't*).
 - [ ] Paragraphs 1–3 lines; one sentence per line is fine.
 - [ ] Pick a register: `## Goals` (tutorial), three-bullet spine (essay), or H2-as-question (concept). Use its scaffolding.
-- [ ] **No "Let's."** Transitions are declarative sentences.
-- [ ] One sentence per line; declarative fragments carry the emphasis.
-- [ ] Opinions flagged early and often ("For me," "I think," "My recommendation").
+- [ ] "Let's" transitions, followed immediately by the work.
+- [ ] One sentence per line.
+- [ ] Emoji: zero to two, from the repertoire, never stacked.
+- [ ] No stagey structural narration (*"Now the honest part."*).
+- [ ] No fabricated first-person anecdotes.
 - [ ] Italics for single-word emphasis; bold reserved for one must-do callout.
 - [ ] Opinions flagged ("I think," "For me," "From my experience").
 - [ ] At least one moment of warmth: an aside, "(haha)," "freakin' cool," a genuine "Thank you!", or a small emoji.

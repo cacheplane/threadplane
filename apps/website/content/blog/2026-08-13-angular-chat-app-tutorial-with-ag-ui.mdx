@@ -8,13 +8,13 @@ featured: false
 draft: false
 ---
 
-This post builds an Angular chat app on AG-UI where the interesting tools run in the _browser_.
+Let's build an Angular chat app on AG-UI where the interesting tools run in the _browser_.
 
 Most chat tutorials stop at streaming text.
 The app in this one saves links to a reading list, renders each one as a real Angular component inside the transcript, and asks the user to confirm before it clears anything.
 None of that work happens on the server.
 
-That is the part AG-UI makes straightforward, because the protocol carries a tool catalog in both directions.
+That's the part AG-UI makes straightforward, because the protocol carries a tool catalog in both directions.
 The browser ships what it can do, the model calls it, and the browser executes and answers.
 
 ## Goals
@@ -23,7 +23,7 @@ The browser ships what it can do, the model calls it, and the browser executes a
 - Bind it to Angular with `@threadplane/ag-ui` and `@threadplane/chat`.
 - Declare `action`, `view`, and `ask` client tools the model can call.
 - Read agent-shared state as an Angular signal.
-- Be clear about what AG-UI gives you and what it does not.
+- Be clear about what AG-UI gives you and what it doesn't.
 - Have fun!
 
 <Callout type="info" title="MIT-licensed packages">
@@ -32,7 +32,7 @@ The browser ships what it can do, the model calls it, and the browser executes a
   covers setup.
 </Callout>
 
-For a tour of the AG-UI event model and how it maps onto signals, read [Build Fullstack Agentic Angular Apps Using AG-UI](/blog/build-fullstack-agentic-angular-apps-using-ag-ui). This post assumes that and builds the app on top.
+For a tour of the AG-UI event model and how it maps onto signals, read [Build Fullstack Agentic Angular Apps Using AG-UI](/blog/build-fullstack-agentic-angular-apps-using-ag-ui). This post assumes you've read that one and builds the app on top.
 
 ## What are we building?
 
@@ -63,10 +63,10 @@ source .venv/bin/activate
 pip install "ag-ui-langgraph==0.0.40" langchain-openai "fastapi>=0.115" "uvicorn[standard]" "threadplane-middleware>=0.0.1"
 ```
 
-I am using the LangGraph integration because it is the shortest path to a running endpoint, but this is the interchangeable half.
-CrewAI, Mastra, Pydantic AI, AG2, and AWS Strands all expose the same AG-UI endpoint shape, and the Angular half below does not change for any of them.
+I'm using the LangGraph integration because it's the shortest path to a running endpoint, but this is the interchangeable half.
+CrewAI, Mastra, Pydantic AI, AG2, and AWS Strands all expose the same AG-UI endpoint shape, and the Angular half below doesn't change for any of them.
 
-Now `server.py`:
+Now let's write `server.py`:
 
 ```python
 from typing import Annotated, Optional
@@ -136,13 +136,13 @@ The load-bearing line is `bind_client_tools(llm, [], state)`.
 
 AG-UI's `RunAgentInput` has a `tools` field, and `ag-ui-langgraph` merges it into `state["tools"]`.
 So the catalog the browser declared this run is sitting right there in graph state.
-`bind_client_tools` turns those entries into function-tool stubs and binds them alongside your server tools — an empty list, here, since this app has none.
+`bind_client_tools` turns those entries into function-tool stubs and binds them alongside your server tools (an empty list here, since this app has none).
 
 Bind it _inside_ the node, not once at module scope.
 The catalog arrives per run and can differ between runs.
 
-The routing is worth a sentence too.
-In an app with server tools you would add a conditional edge to a `ToolNode`, and route to `END` when every call is a client tool.
+What about routing?
+In an app with server tools you'd add a conditional edge to a `ToolNode`, and route to `END` when every call is a client tool.
 Here there are no server tools at all, so the graph always ends its turn after the model speaks, and the browser picks it up.
 
 Run it:
@@ -154,7 +154,7 @@ uvicorn server:app --port 8000
 
 <Callout type="warning" title="Only export what you need">
   Sourcing a whole shared `.env` here is a good way to switch on auth middleware
-  you did not mean to enable and get a confusing 401 on `/agent`. Export the one
+  you didn't mean to enable and get a confusing 401 on `/agent`. Export the one
   key.
 </Callout>
 
@@ -178,11 +178,11 @@ export const appConfig: ApplicationConfig = {
 ```
 
 `provideAgent` also takes `headers` for auth tokens and `agentId` when one endpoint serves several agents.
-That is the whole config.
+That's the whole config.
 
 ## How does the browser get its own tools?
 
-This is the part worth the trip.
+For me, this is the best part. 💚
 
 A client tool is declared in Angular, shipped to the model as part of the catalog, and executed in the browser.
 There are three kinds, and they differ in what produces the result:
@@ -197,8 +197,8 @@ All three are built over one signal store.
 
 ### The store
 
-Ordinary Angular.
-The agent never sees this — it only calls tools.
+It's ordinary Angular.
+The agent never sees this; it only calls tools.
 
 ```ts
 @Injectable({ providedIn: 'root' })
@@ -253,7 +253,8 @@ export function readingListTools(): ClientToolRegistry {
 ```
 
 The object keys are the tool names the model sees.
-The descriptions are the _only_ steering the model gets about when to call them, so write them like instructions, not labels — "Afterwards, show it with `link_card`" is doing real work in that first one.
+The descriptions are the _only_ steering the model gets about when to call them, so write them like instructions, not labels.
+"Afterwards, show it with `link_card`" is doing real work in that first one.
 
 Arguments are typed by a [Standard Schema](https://standardschema.dev), so Zod works directly and `action` handlers infer their argument type from it.
 
@@ -287,7 +288,7 @@ export class LinkCardComponent {
 }
 ```
 
-Derive the input types with `ViewProps<typeof LINK_CARD_SCHEMA>` if you would rather not repeat them by hand.
+Derive the input types with `ViewProps<typeof LINK_CARD_SCHEMA>` if you'd rather not repeat them by hand.
 
 ### An `ask` component
 
@@ -333,9 +334,9 @@ export class ConfirmClearComponent {
 
 Two details make this behave well.
 
-The mutation happens _here_, in the component, not in a handler — an `ask` emits its own result and nothing sits in between to intercept it.
-Once it resolves, the adapter writes the emitted value back onto the local tool call, so the component re-renders with `cleared` and `removed` as props.
-That is why the template branches: the live card only shows while `cleared()` is still `undefined`, and afterwards the transcript shows a frozen line instead of buttons the user could press again.
+First, the mutation happens _here_, in the component, not in a handler. An `ask` emits its own result and nothing sits in between to intercept it.
+Second, once it resolves, the adapter writes the emitted value back onto the local tool call, so the component re-renders with `cleared` and `removed` as props.
+That's why the template branches: the live card only shows while `cleared()` is still `undefined`, and afterwards the transcript shows a frozen line instead of buttons the user could press again.
 
 ### Binding it
 
@@ -348,8 +349,8 @@ protected readonly agent = injectAgent();
 protected readonly clientTools = readingListTools();
 ```
 
-That is it.
-Ask the assistant to save a link, and you will watch `add_link` execute in the browser, the sidebar count go up, and `link_card` mount inside the transcript as a real component.
+That's it!
+Ask the assistant to save a link, and you'll watch `add_link` execute in the browser, the sidebar count go up, and `link_card` mount inside the transcript as a real component.
 
 ## How does the agent share state?
 
@@ -361,7 +362,7 @@ protected readonly savedCount = computed(
 );
 ```
 
-Which brings up a detail that is easy to lose an hour to.
+This brings up a detail that's easy to lose an hour to.
 
 The graph counts completed `add_link` calls.
 The obvious implementation is to look for `ToolMessage`s named `add_link`, and it silently returns zero forever.
@@ -387,8 +388,8 @@ For progress _during_ a run rather than state after it, AG-UI `CUSTOM` events ac
 
 ## What happens when we swap the backend?
 
-The Angular half does not change.
-That is the payoff, and it is worth being precise about what it costs.
+The Angular half doesn't change.
+That's the payoff, so let's be precise about what it costs.
 
 Swapping runtimes is the provider line:
 
@@ -400,14 +401,15 @@ Swapping runtimes is the provider line:
 ```
 
 Those are two different functions from two different packages, not one symbol that takes both shapes.
-Components stay identical because both adapters produce the same runtime-neutral `Agent` contract — and client tools are declared against `@threadplane/chat`, so the registry above moves across untouched.
+Components stay identical because both adapters produce the same runtime-neutral `Agent` contract.
+And client tools are declared against `@threadplane/chat`, so the registry above moves across untouched.
 
 The cost is a thin translation layer per adapter, and a real compatibility surface: your new backend has to emit the AG-UI events the UI reads.
 The [event mapping reference](/docs/ag-ui/reference/event-mapping) is the checklist when a stream renders as nothing.
 
 ## What doesn't AG-UI give you?
 
-Thread history, and it is a protocol fact rather than a gap in any library.
+Thread history, and that's a protocol fact rather than a gap in any library.
 
 AG-UI is event-stream-only.
 It defines no server-side thread-lookup endpoint, so there is nothing to enumerate past conversations with and nothing to validate a thread id against.
@@ -421,25 +423,24 @@ Portability across agent frameworks and server-managed thread history are differ
 
 ## What still needs work before production?
 
-- **Client tools run in the browser, so they run with the user's authority.** A handler that calls your API is a client calling your API. Authorize on the server; a tool description is not an access-control policy.
-- **Side effects need a guard.** Tools are non-idempotent by default. If a handler moves money or sends mail, pair it with a `[clientToolExecutionGuard]` so a reload cannot run it twice, and mark only genuinely safe tools `idempotent: true`.
+- **Client tools run in the browser, so they run with the user's authority.** A handler that calls your API is a client calling your API. Authorize on the server; a tool description isn't an access-control policy.
+- **Side effects need a guard.** Tools are non-idempotent by default. If a handler moves money or sends mail, pair it with a `[clientToolExecutionGuard]` so a reload can't run it twice, and mark only genuinely safe tools `idempotent: true`.
 - **Runaway loops are capped, but tune the cap.** A model that keeps calling client tools stops after 10 continuation groups per user turn. Adjust with `[clientToolContinuationPolicy]` and decide what the UI says when it trips.
 - **CORS and auth.** `http://localhost:4200` is a development origin.
   Use your real one, or route through the same domain and skip cross-origin entirely.
   Pass tokens with `headers`.
 - **A buffering proxy breaks streaming.** Disable response buffering and preserve the streaming content type, or the whole thing collapses into a spinner.
-- **`MemorySaver` is not persistence.** It is in this tutorial because `ag-ui-langgraph` needs a checkpointer to read state. It is not a store.
+- **`MemorySaver` is not persistence.** It's in this tutorial because `ag-ui-langgraph` needs a checkpointer to read state. It isn't a store.
 
 ## Conclusion
 
 The good boundary in an AG-UI app is that the protocol carries capability in both directions.
 The server streams events, and the browser declares tools.
 Once both halves are true, "which framework is behind this" stops being a question your components can answer.
-That is the point.
 
 Start with one `action`, get it mutating a signal store, then add a `view` for how the result should look and an `ask` for the moments that need a human.
 That order keeps each step small enough to debug.
 
 And when you need a conversation sidebar with real history, reach for a runtime that stores threads rather than making the protocol do something it never claimed to.
 
-Have fun!
+Have fun, and let me know which client tool you build first!

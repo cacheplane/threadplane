@@ -10,21 +10,20 @@ draft: false
 
 The previous post in this series ended on an admission rather than a conclusion.
 
-I had spent several thousand words showing that swapping the agent runtime under an Angular app costs one import line at the component level.
+I'd spent several thousand words showing that swapping the agent runtime under an Angular app costs one import line at the component level.
 Then I had to point out that every AG-UI backend in our repository was itself a LangGraph graph.
-A transport swap over one runtime.
-Not a runtime swap.
-I wrote that I believed the neutral contract would hold against a genuinely different runtime, and that belief is not measurement.
+That was a transport swap over one runtime, not a runtime swap.
+I wrote that I believed the neutral contract would hold against a genuinely different runtime, and a belief isn't a measurement.
 
 So we measured it.
 
-Three runtimes that have no LangGraph anywhere in them: AWS Strands, Microsoft Agent Framework, and Mastra.
+We picked three runtimes that have no LangGraph anywhere in them: AWS Strands, Microsoft Agent Framework, and Mastra.
 Two languages.
 Real servers, driven by real model calls, with the Server-Sent Events captured off the wire and replayed through the shipped client.
 
 The short version is that the contract held where it mattered and broke in two places, and both of the breaks were ours.
 
-## What was actually run
+## What was actually run?
 
 Each runtime got a server standing on its upstream AG-UI integration, not on anything we wrote to make the numbers look good.
 Microsoft Agent Framework runs behind `agent-framework-ag-ui`.
@@ -38,7 +37,7 @@ Those captures then went back through schema validation and the protocol client'
 A screenshot of a working demo proves that one path worked once.
 A committed transcript replayed through the real client proves what the runtime put on the wire, and it keeps proving it every time the test suite runs.
 
-## The result
+## What was the result?
 
 | Runtime | Messages | Tool calls | State | Interrupts | Subagents |
 | --- | --- | --- | --- | --- | --- |
@@ -48,20 +47,20 @@ A committed transcript replayed through the real client proves what the runtime 
 | Mastra | Yes | Yes | Yes | Yes | Yes |
 
 Messages, tool calls, and shared state crossed three non-LangGraph runtimes with zero changes to the adapter.
-Not one line.
+Not one line!
 The Angular side of each example is the same `injectAgent()` call and the same `<chat>` element that the LangGraph demos use.
 
-For me, that is the claim I actually wanted to test.
+For me, that's the claim I actually wanted to test. 💚
 
-One note on the Mastra interrupt cell.
+There's one note on the Mastra interrupt cell.
 It was verified live against a real model in the development harness.
 Its resume round trip is covered by tests that replay the captured transcripts through the shipped protocol client.
-The production service for it does not exist yet.
-I am not going to call that cell production-proven, because it is not.
+The production service for it doesn't exist yet.
+I'm not going to call that cell production-proven, because it isn't.
 
 ## Both real failures were ours
 
-This is the part of the exercise I would keep if I had to throw the rest away.
+I think this is the most useful part of the exercise.
 
 We went in expecting the negative cells to indict the protocol or the upstream bridges.
 The two hard failures indicted us.
@@ -70,7 +69,7 @@ The two hard failures indicted us.
 
 Our AG-UI adapter detected a human-in-the-loop pause by watching for a `CUSTOM` event with the name `on_interrupt`.
 I flagged that in the previous post as a fragility, and I was right about the fragility and wrong about the shape of the risk.
-I assumed a runtime that did not adopt the convention would simply have no interrupt support.
+I assumed a runtime that didn't adopt the convention would simply have no interrupt support.
 
 What actually happens is worse.
 
@@ -79,7 +78,7 @@ The run-finished event carries an outcome object naming the pending interrupts.
 Neither of them emits the custom event at all.
 Our handler for that event read the status and ignored the outcome.
 
-So the run did not fail.
+So the run didn't fail.
 It finalized as a success, with a tool call sitting there waiting for an approval the UI never asked for.
 The adapter's `interrupt` signal stayed undefined.
 It failed silently, which only means it took longer to notice.
@@ -88,10 +87,10 @@ The fix was small once the cause was clear, and it landed in [#888](https://gith
 Both conventions are now recognized.
 Updated September 9, 2026: the adapter retains both forms in one session. Native batches take precedence in `auto` mode regardless of arrival order; the Mastra integration explicitly selects `mastra-command` so the resume includes its decision and suspended-tool correlation.
 
-I want to name the mistake precisely, because "we had a bug" is not the lesson.
+I want to name the mistake precisely, because "we had a bug" isn't the lesson.
 We built a protocol adapter and then tested it exclusively against one bridge implementation of that protocol.
 A bridge convention and a protocol primitive are different things.
-A test suite that only ever sees one backend cannot tell you which of the two you depend on.
+A test suite that only ever sees one backend can't tell you which of the two you depend on.
 
 ### Our resume payload was shaped like LangGraph
 
@@ -100,87 +99,88 @@ The second defect is the same mistake wearing different clothes.
 When the user approves the pending action, the adapter sends the resume value back.
 It sent exactly the shape the LangGraph bridge reads, under `forwardedProps.command.resume`.
 That works for LangGraph.
-It is a coincidence anywhere else.
+It's a coincidence anywhere else.
 
 Mastra needs the interrupt's identity carried with the value, specifically the tool-call id and the run id of the suspended run.
-Without those it cannot find the suspension to resume.
+Without those it can't find the suspension to resume.
 
 Strands and Microsoft Agent Framework want something else entirely: the top-level `resume` array the protocol itself defines, carrying one entry per interrupt id.
 Microsoft additionally wants an entry addressing every pending interrupt.
 Send it nothing addressable and it raises an error.
 
-Four runtimes, three answers to the question of how a resume identifies itself.
+That's four runtimes with three different answers to how a resume identifies itself.
 
-The adapter now derives the outgoing shape from how the interrupt arrived, which is the only signal available that is not a hardcoded runtime name.
+The adapter now derives the outgoing shape from how the interrupt arrived, which is the only signal available that isn't a hardcoded runtime name.
 That work is in [#889](https://github.com/cacheplane/threadplane/pull/889).
 The protocol-package upgrade in [#891](https://github.com/cacheplane/threadplane/pull/891) is what made the standard top-level array sendable at all.
-The application-facing call did not change.
+The application-facing call didn't change.
 You still write `submit({ resume })` and the adapter decides what goes on the wire.
 
 Both defects share a root.
 Neither would have been found by another demo, another end-to-end test, or another review of our own code.
 They were only findable by pointing the adapter at software written by people who had never heard of us.
 
-## What stayed partial
+## What stayed partial?
 
-One cell did not go fully green.
+One cell didn't go fully green.
 
 **Shared state on Strands is partial.**
 Its bridge sends whole-document snapshots and never sends a patch, and a tool only contributes state if it opts in through a per-tool hook.
-A snapshot replaces the document; it does not merge into it.
+A snapshot replaces the document; it doesn't merge into it.
 So every hook has to return the entire state object.
 A hook that returns just the key it touched will erase its siblings.
-That is a real hazard.
-It is documented in the example.
+That's a real hazard.
+It's documented in the example.
 The cause is the upstream bridge, not the protocol and not us.
 
 **Subagents were the last column to converge, and the fix was one seam per runtime.**
 
-The protocol standardized the events — `SUBAGENT_STARTED`, `SUBAGENT_FINISHED`, `SUBAGENT_ERROR`, plus a `subagentRunId` attribution field on ordinary content events — and the adapter consumes them directly.
+The protocol standardized the events (`SUBAGENT_STARTED`, `SUBAGENT_FINISHED`, `SUBAGENT_ERROR`, plus a `subagentRunId` attribution field on ordinary content events), and the adapter consumes them directly.
 What no runtime does is emit them natively.
 Each one reports delegation in its own dialect: Strands surfaces the specialist's tool use and forwards its token stream, Microsoft Agent Framework streams the specialist's updates in-process into the tool body where the in-tree emitter merges them across the bridge boundary, and Mastra forwards the child's chunks on the parent stream, where its bridge drops them and withholds the delegation tool call until the child resolves.
-So each demo backend carries a small emitter — roughly 190 to 360 lines each — that translates its runtime's dialect into the standard events at the bridge boundary.
+So each demo backend carries a small emitter (roughly 190 to 360 lines each) that translates its runtime's dialect into the standard events at the bridge boundary.
 
 All three cards stream live.
 Mastra's took one more seam than the others: the emitter observes the runtime's public stream through a tee ahead of the bridge, emits the delegation tool call eagerly, and forwards the child's deltas itself, because the bridge would otherwise have painted the card only at completion.
 That extra seam belongs to the runtime's bridge rather than to the protocol or the adapter, and the bridge itself is left unmodified.
-If you are building on server-declared subagents today, the contract to target is the protocol's own events; the emitter is the per-runtime cost, and it is small.
+If you're building on server-declared subagents today, the contract to target is the protocol's own events; the emitter is the per-runtime cost, and it's small.
 
-## What the deploy check found
+## What did the deploy check find?
 
 Measuring the deploy path surfaced something unrelated.
 
 One of our AG-UI demo topics had been dead in production for two and a half months.
 Its imports were written in a form that resolves when the topic is served from its own directory in development.
-In the aggregated deployment layout they do not resolve, so every image built since the middle of June crashed on startup.
+In the aggregated deployment layout they don't resolve, so every image built since the middle of June crashed on startup.
 The deploy command uploads and detaches, so it reports success at upload time.
 The platform kept serving the last image that booted.
 Nothing was red anywhere.
 The route had been returning a not-found for months.
 
 The fix in [#899](https://github.com/cacheplane/threadplane/pull/899) was two import statements.
-The deploy workflow now installs the exact dependency set, imports the server, and fails the job if it cannot boot.
+The deploy workflow now installs the exact dependency set, imports the server, and fails the job if it can't boot.
 
 Verify the route, not the exit code.
 A deploy step that exits zero has told you that a file was uploaded.
-It has not told you that anything is running, and if your platform keeps the previous image alive on failure, the absence of an alarm is not evidence.
+It hasn't told you that anything is running, and if your platform keeps the previous image alive on failure, the absence of an alarm isn't evidence.
 
 ## Conclusion
 
 The neutral `Agent` contract is portable across runtimes for messages, tool calls, and state.
-That is now measured against three implementations in two languages.
+That's now measured against three implementations in two languages.
 
-Interrupts are portable as of these fixes, and they were not before, in a way no amount of internal testing would have revealed.
+Interrupts are portable as of these fixes, and they weren't before, in a way no amount of internal testing would have revealed.
 
 Subagents are portable through a per-runtime emitter that speaks the protocol's own events, streaming on all three runtimes.
 
 The matrix now lives in the [adapter guide](/docs/choosing-an-adapter), with a cause column on every gap.
-Split three ways: the protocol cannot express it, the upstream bridge does not emit it, or our adapter failed to consume it.
-That third category is the one I care about keeping honest, and it is currently empty.
+It's split three ways: the protocol can't express it, the upstream bridge doesn't emit it, or our adapter failed to consume it.
+That third category is the one I care about keeping honest, and it's currently empty.
 
 The transcripts for messages, tool calls, state, and interrupts are committed as test fixtures, verbatim from the wire.
 The subagent captures are committed as wire-capture documents alongside each backend, and the subagent transcript the suite replays is synthetic, built to the event shape those captures record.
 Interrupt detection and resume shaping are now pinned to what three real runtimes actually sent us on a specific day.
 The next regression in either one fails a test.
 
-That is the difference between a portability claim and a portability guarantee.
+For me, that's the difference between a portability claim and a portability guarantee.
+If you point the adapter at a runtime we haven't tried, let me know where it breaks.
