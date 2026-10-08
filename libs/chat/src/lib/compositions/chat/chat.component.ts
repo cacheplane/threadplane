@@ -1,6 +1,6 @@
 // libs/chat/src/lib/compositions/chat/chat.component.ts
 import {
-  Component, ChangeDetectionStrategy, input, model, output, computed, contentChild, effect, signal, untracked, viewChild,
+  Component, ChangeDetectionStrategy, input, model, output, computed, contentChild, contentChildren, effect, signal, untracked, viewChild,
   ElementRef, DestroyRef, inject, Injector, runInInjectionContext,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -35,6 +35,7 @@ import {
   type StreamingMarkdownDocument,
 } from '../../streaming/streaming-markdown.component';
 import { ChatToolCallsComponent } from '../../primitives/chat-tool-calls/chat-tool-calls.component';
+import { ChatToolCallTemplateDirective } from '../../primitives/chat-tool-calls/chat-tool-call-template.directive';
 import { resolveMessageToolCalls } from '../../primitives/chat-tool-calls/resolve-message-tool-calls';
 import { ChatMessageActionsComponent } from '../../primitives/chat-message-actions/chat-message-actions.component';
 import { ChatWelcomeComponent } from '../../primitives/chat-welcome/chat-welcome.component';
@@ -244,11 +245,16 @@ export function isPinned(
                         [label]="run.label"
                       />
                     }
-                    <chat-tool-calls [agent]="agent()" [message]="message" [excludeToolNames]="excludedToolNames()">
-                      <ng-container ngProjectAs="[chatToolCallTemplate]">
-                        <ng-content select="[chatToolCallTemplate]" />
-                      </ng-container>
-                    </chat-tool-calls>
+                    <!-- Per-tool templates projected into <chat> are collected
+                         here and handed down as an input: a content query on
+                         <chat-tool-calls> cannot see templates re-projected
+                         through <chat>'s own ng-content. -->
+                    <chat-tool-calls
+                      [agent]="agent()"
+                      [message]="message"
+                      [excludeToolNames]="excludedToolNames()"
+                      [toolCallTemplates]="toolCallTemplates()"
+                    />
                   }
                   <chat-tool-views
                     [agent]="agent()"
@@ -491,6 +497,14 @@ export class ChatComponent {
    * takes precedence over any projected `chatToolCallTemplate`.
    */
   readonly activityTemplate = contentChild(ChatActivityTemplateDirective);
+
+  /**
+   * Per-tool-name templates projected as `<ng-template chatToolCallTemplate>`.
+   * Collected here and passed to each message's `<chat-tool-calls>`, which
+   * cannot query templates re-projected through `<chat>`. Unused while an
+   * `activityTemplate` is present.
+   */
+  readonly toolCallTemplates = contentChildren(ChatToolCallTemplateDirective);
 
   private readonly activityContexts = new Map<string, ChatActivityTemplateContext>();
 

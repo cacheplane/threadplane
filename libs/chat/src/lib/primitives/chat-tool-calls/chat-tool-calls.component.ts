@@ -120,11 +120,23 @@ export class ChatToolCallsComponent {
    */
   readonly excludeToolNames = input<readonly string[]>([]);
 
+  /**
+   * Per-tool-name + wildcard templates supplied by a parent composition.
+   * Compositions that forward templates projected into themselves (such as
+   * `<chat>`) pass them here, because a content query cannot see templates
+   * re-projected through another component. Templates registered as content
+   * children of this component take precedence for the same tool name.
+   */
+  readonly toolCallTemplates = input<readonly ChatToolCallTemplateDirective[]>([]);
+
   /** Per-tool-name + wildcard templates registered as content children. */
   readonly templates = contentChildren(ChatToolCallTemplateDirective);
 
   private readonly templateRegistry = computed(() => {
     const map = new Map<string, ChatToolCallTemplateDirective>();
+    for (const t of this.toolCallTemplates()) {
+      map.set(t.name(), t);
+    }
     for (const t of this.templates()) {
       map.set(t.name(), t);
     }
