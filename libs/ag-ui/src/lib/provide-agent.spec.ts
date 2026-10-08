@@ -64,6 +64,34 @@ class StubAgent {
 }
 
 describe('provideAgent', () => {
+  it('replays the configured thread on hydration', async () => {
+    const replay = vi.fn(async () => [
+      { type: 'RUN_STARTED', threadId: 'thread-1', runId: 'r1' },
+      { type: 'TEXT_MESSAGE_START', messageId: 'a1', role: 'assistant' },
+      { type: 'TEXT_MESSAGE_CONTENT', messageId: 'a1', delta: 'restored' },
+      { type: 'RUN_FINISHED', threadId: 'thread-1', runId: 'r1' },
+    ] as unknown as BaseEvent[]);
+    TestBed.configureTestingModule({
+      providers: [provideAgent({ url: 'http://test.invalid', threadId: 'thread-1', replay, telemetry: false })],
+    });
+    const agent = TestBed.runInInjectionContext(() => injectAgent());
+    await agent.ready;
+    expect(replay).toHaveBeenCalledWith('thread-1', expect.any(AbortSignal));
+    expect(agent.messages().map(message => message.content)).toEqual(['restored']);
+    TestBed.resetTestingModule();
+  });
+
+  it('does not replay a fresh conversation with no configured threadId', async () => {
+    const replay = vi.fn(async () => [] as BaseEvent[]);
+    TestBed.configureTestingModule({
+      providers: [provideAgent({ url: 'http://test.invalid', replay, telemetry: false })],
+    });
+    const agent = TestBed.runInInjectionContext(() => injectAgent());
+    await agent.ready;
+    expect(replay).not.toHaveBeenCalled();
+    TestBed.resetTestingModule();
+  });
+
   it('disposes the adapter when its injector is destroyed', async () => {
     TestBed.configureTestingModule({ providers: [provideAgent({ url: 'http://test.invalid', telemetry: false })] });
     const ref = TestBed.runInInjectionContext(() => injectAgent());

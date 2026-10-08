@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "e940bb09ae10626d492f1e38587cf97f977303c1",
+  "baselineHead": "f94f038fa77c1e73994c95db696af087e02ab00d",
   "sourceState": {
     "modified": [],
     "untracked": []
@@ -144,7 +144,7 @@
       "id": "asset:libs/ag-ui/README.md",
       "kind": "asset",
       "path": "libs/ag-ui/README.md",
-      "sha256": "9e3b9466fe8ea6fe03691121b2f5e52b5a268a7932c0a42f7a5f87c9932f1e75"
+      "sha256": "db39f18b45bec3e398ab3a4306db2942cd6f73ebd6f546f348fbad9ae57f00b0"
     },
     {
       "id": "asset:libs/ag-ui/fixtures/runtime-transcripts/maf-hitl-interrupt.sse",
@@ -2266,25 +2266,25 @@
       "id": "doc:apps/website/content/docs/ag-ui/api/inject-agent.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/api/inject-agent.mdx",
-      "sha256": "f94e7cd9bde8cf3770540800cf0a7f9da0be05a3170d40c40cd22368462d809b"
+      "sha256": "5e07ebd615a565d1c13263b78dda46a5a2cea6bc40ce5327c776391e1b0b489e"
     },
     {
       "id": "doc:apps/website/content/docs/ag-ui/api/provide-agent.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/api/provide-agent.mdx",
-      "sha256": "db8cfbb4b4a087e7301a0bdee430f4e91abae56815282e58adc81529441ae73f"
+      "sha256": "8c9a3ed6a58ffe8754d65bd6856c5189c7a6834ccb82f55a1edf76d2cc5672be"
     },
     {
       "id": "doc:apps/website/content/docs/ag-ui/api/to-agent.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/api/to-agent.mdx",
-      "sha256": "12fc9f5469c79afb3e74d5fffd202960db6803a361c544507b905dd816afe103"
+      "sha256": "13d234d4d5c9f2abf3ac509cc4a4a55e6121e983d4191a242f888e7a2b0ac2f3"
     },
     {
       "id": "doc:apps/website/content/docs/ag-ui/concepts/architecture.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/concepts/architecture.mdx",
-      "sha256": "c1ddbbb122aa6811a502fa839354ea6f9de1aad260ee1fb093fd5c6bbe6bf575"
+      "sha256": "f2b007a8dd8007bf4fe58a395a7fbb181adc8f7a7769c375adfa21459fde3a06"
     },
     {
       "id": "doc:apps/website/content/docs/ag-ui/getting-started/installation.mdx",
@@ -2338,7 +2338,7 @@
       "id": "doc:apps/website/content/docs/ag-ui/guides/interrupts.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/guides/interrupts.mdx",
-      "sha256": "f41b6bb8d94751fc1f8d1295a46c67dd40593835bad1a05ed3cda7206dfe5ef8"
+      "sha256": "ca0dee9e94c1b51d24be43da3201da83db8d396403981a17a70c4af324a859fc"
     },
     {
       "id": "doc:apps/website/content/docs/ag-ui/guides/json-render.mdx",
@@ -2632,7 +2632,7 @@
       "id": "doc:apps/website/content/docs/choosing-an-adapter/index.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/choosing-an-adapter/index.mdx",
-      "sha256": "d3c5b76e47d11f6b2e1584f10a21305603b9146c3533392d9f192c57da519778"
+      "sha256": "f2ad6dcf56f7931665a6e2cacd8bff540b4da275c4526bc124f70bb2d45124a1"
     },
     {
       "id": "doc:apps/website/content/docs/deep-agents/capabilities/filesystem.mdx",
@@ -4000,6 +4000,20 @@
       ]
     },
     {
+      "id": "export:libs/ag-ui/src/public-api.ts#AgUiReplaySource",
+      "kind": "export",
+      "path": "libs/ag-ui/src/public-api.ts",
+      "symbol": "AgUiReplaySource",
+      "declarations": [
+        {
+          "path": "libs/ag-ui/src/lib/replay.ts",
+          "symbol": "AgUiReplaySource",
+          "syntaxKind": "TypeAliasDeclaration",
+          "signature": "export type AgUiReplaySource = (threadId: string, signal: AbortSignal) => Promise<readonly BaseEvent[]> | Observable<BaseEvent>;"
+        }
+      ]
+    },
+    {
       "id": "export:libs/ag-ui/src/public-api.ts#AgUiSubmitOptions",
       "kind": "export",
       "path": "libs/ag-ui/src/public-api.ts",
@@ -4037,7 +4051,7 @@
           "path": "libs/ag-ui/src/lib/provide-agent.ts",
           "symbol": "AgentConfig",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface AgentConfig {\n    interruptTransport?: ToAgentOptions['interruptTransport'];\n    persistence?: ToAgentOptions['persistence'];\n    url: string;\n    agentId?: string;\n    threadId?: string;\n    headers?: Record<string, string>;\n    telemetry?: AgentRuntimeTelemetrySink | false;\n}"
+          "signature": "export interface AgentConfig {\n    interruptTransport?: ToAgentOptions['interruptTransport'];\n    persistence?: ToAgentOptions['persistence'];\n    replay?: ToAgentOptions['replay'];\n    url: string;\n    agentId?: string;\n    threadId?: string;\n    headers?: Record<string, string>;\n    telemetry?: AgentRuntimeTelemetrySink | false;\n}"
         }
       ]
     },
@@ -4080,6 +4094,20 @@
           "symbol": "FakeAgentScript",
           "syntaxKind": "TypeAliasDeclaration",
           "signature": "export type FakeAgentScript = readonly {\n    when: 'initial' | {\n        toolMessageFor: string;\n    };\n    events: readonly BaseEvent[];\n}[];"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#HttpReplayOptions",
+      "kind": "export",
+      "path": "libs/ag-ui/src/public-api.ts",
+      "symbol": "HttpReplayOptions",
+      "declarations": [
+        {
+          "path": "libs/ag-ui/src/lib/replay.ts",
+          "symbol": "HttpReplayOptions",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface HttpReplayOptions {\n    url: (threadId: string) => string;\n    fetch?: typeof fetch;\n    headers?: Record<string, string>;\n}"
         }
       ]
     },
@@ -4163,7 +4191,7 @@
           "path": "libs/ag-ui/src/lib/to-agent.ts",
           "symbol": "ToAgentOptions",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface ToAgentOptions {\n    persistence?: AgUiInterruptPersistence;\n    interruptTransport?: InterruptTransport;\n    telemetry?: AgentRuntimeTelemetrySink | false;\n    a2uiClientCapabilities?: {\n        supportedCatalogIds: string[];\n        inlineCatalogs?: unknown[];\n    };\n}"
+          "signature": "export interface ToAgentOptions {\n    persistence?: AgUiInterruptPersistence;\n    interruptTransport?: InterruptTransport;\n    replay?: AgUiReplaySource;\n    telemetry?: AgentRuntimeTelemetrySink | false;\n    a2uiClientCapabilities?: {\n        supportedCatalogIds: string[];\n        inlineCatalogs?: unknown[];\n    };\n}"
         }
       ]
     },
@@ -4178,6 +4206,20 @@
           "symbol": "bridgeCitationsState",
           "syntaxKind": "FunctionDeclaration",
           "signature": "export function bridgeCitationsState(thread: ThreadStateLike, messages: Message[]): Message[] {\n    const citationsByMsg = (thread.state as {\n        citations?: unknown;\n    })?.citations;\n    if (!citationsByMsg || typeof citationsByMsg !== 'object')\n        return messages;\n    const map = citationsByMsg as Record<string, unknown>;\n    return messages.map(msg => {\n        const raw = map[msg.id];\n        if (!Array.isArray(raw) || raw.length === 0)\n            return msg;\n        return { ...msg, citations: raw.map((entry, i) => normalizeCitation(entry, i + 1)) };\n    });\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#httpReplay",
+      "kind": "export",
+      "path": "libs/ag-ui/src/public-api.ts",
+      "symbol": "httpReplay",
+      "declarations": [
+        {
+          "path": "libs/ag-ui/src/lib/replay.ts",
+          "symbol": "httpReplay",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function httpReplay(options: HttpReplayOptions): AgUiReplaySource {\n    return async (threadId, signal) => {\n        const fetchImpl = options.fetch ?? globalThis.fetch.bind(globalThis);\n        const response = await fetchImpl(options.url(threadId), {\n            method: 'GET',\n            headers: { accept: 'application/json', ...options.headers },\n            signal,\n        });\n        if (response.status === 404)\n            return [];\n        if (!response.ok)\n            throw new Error(`Thread replay request failed with status ${response.status}`);\n        const body: unknown = await response.json();\n        if (!isRecord(body) || !Array.isArray(body['events'])) {\n            throw new Error('Thread replay response must be a JSON object with an events array');\n        }\n        const events = body['events'] as unknown[];\n        for (const event of events) {\n            if (!isRecord(event) || typeof event['type'] !== 'string') {\n                throw new Error('Thread replay events must be objects with a string type');\n            }\n        }\n        return events as BaseEvent[];\n    };\n}"
         }
       ]
     },
@@ -11771,13 +11813,19 @@
       "id": "source:libs/ag-ui/src/lib/provide-agent.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/provide-agent.ts",
-      "sha256": "551da65caa6df29c8f1904ef69bd2ee3f52ddca80152fc95650093c7c39106e3"
+      "sha256": "61f27d61c0fab6f9f743ca1e6b85f45751e4ca18d12eaed1c171625aa20cd816"
     },
     {
       "id": "source:libs/ag-ui/src/lib/reducer.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/reducer.ts",
       "sha256": "9fb91d77393aa8c215c40b3745a1d2e23c26f5ad7951c272374619b160481a76"
+    },
+    {
+      "id": "source:libs/ag-ui/src/lib/replay.ts",
+      "kind": "source",
+      "path": "libs/ag-ui/src/lib/replay.ts",
+      "sha256": "f4b9d15ecf6ad249536cb8f944058f434b5a955b48a4eb73905431c802782b77"
     },
     {
       "id": "source:libs/ag-ui/src/lib/run-state-transaction.ts",
@@ -11807,13 +11855,13 @@
       "id": "source:libs/ag-ui/src/lib/to-agent.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/to-agent.ts",
-      "sha256": "deb5e18c7b3eec73a24f7a22323beeefcb65936ab44933ce3b38f46db27eb25c"
+      "sha256": "841f71be7ef2962696657fb5d9075bbaf46e0309db8f1a45a6ebe361c1811a52"
     },
     {
       "id": "source:libs/ag-ui/src/public-api.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/public-api.ts",
-      "sha256": "3a6e03c590c4ed74eca832b04c206b8efa6544232618a8f573981e26ed8ee180"
+      "sha256": "ea886bc41d52d887b4b7d53997eaeb2e8111a6bcb93b8d79c4cf516ccbc0b6fb"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/activity-messages.ts",

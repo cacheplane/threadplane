@@ -26,6 +26,7 @@ const agent = toAgent(source, { telemetry: myTelemetrySink });
 |--------|------|-------------|
 | `interruptTransport` | `InterruptTransport` | `auto` (default), `protocol`, `legacy-command`, or `mastra-command`. Native batches take precedence in `auto`. |
 | `persistence` | `AgUiInterruptPersistence` | Application-owned durable storage and optional authoritative reconciliation. Requires a stable source `threadId` and scoped namespace. |
+| `replay` | `AgUiReplaySource` | Loads the thread's AG-UI events from the server on hydration and folds them through the live reducer. Wins over `persistence` when it returns events. See [Restoring a thread from the server](#restoring-a-thread-from-the-server). |
 | `telemetry` | `AgentRuntimeTelemetrySink \| false` | Optional app-owned sink. Supply one to receive runtime lifecycle events. |
 | `a2uiClientCapabilities` | `{ supportedCatalogIds: string[]; inlineCatalogs?: unknown[] }` | A2UI catalog negotiation to advertise to the agent. Seeded once into the AG-UI shared state under the `a2ui_client_capabilities` key, so every `RunAgentInput.state` carries it. Use `a2uiClientCapabilities()` from `@threadplane/chat` for the renderer's standard value. |
 
@@ -35,7 +36,7 @@ const agent = toAgent(source, { telemetry: myTelemetrySink });
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `ready` | `Promise<void>` | Resolves after persisted state is hydrated; actions also wait for hydration. |
+| `ready` | `Promise<void>` | Resolves after replayed or persisted state is hydrated; actions also wait for hydration. Never rejects for a failed replay. |
 | `interruptSession()` | `InterruptSessionSnapshot` | Current batch, generation, phase, and retained attempt. |
 | `reconcileInterrupt()` | `Promise<void>` | Applies authoritative recovery through the configured persistence reconciler. An unknown result leaves recovery blocked. |
 | `dispose()` | `void` | Stops local work and unsubscribes. Call when a directly created adapter is no longer needed; it does not cancel backend checkpoints. |
@@ -98,10 +99,40 @@ agent.rawEvents$.subscribe((event) => {
 - **What the signals saw.** Each event is emitted right after it is reduced, so the signals already reflect it. Events the adapter suppresses are not emitted: events from a run superseded by a newer request, events arriving after `stop()` or a failure, and events after a run's terminal event.
 - **Run failures settle the stream.** A run's terminal `RUN_ERROR` is emitted exactly once, after `error()` and `status()` are already set, and nothing from that run follows it. `rawEvents$` honours the same error protection as `error()`: where `provideAgent()` replaces a server error with a generic message, the emitted `RUN_ERROR` carries only that generic `message`, and the server's message, `code`, and payload are dropped, so rendering a failed turn from it is safe. A run that ends without a protocol terminal event — a transport failure, or a stream that closes early — emits nothing more; `status()` and `error()` report it.
 - **Hot and unbuffered.** Subscribe before calling `submit()` to see a whole run; nothing is replayed to late subscribers.
-- **Hydration is a snapshot, not a replay.** With `persistence` configured, `ready` restores the committed messages and state directly. No protocol events are emitted for it, so read the hydrated `messages()` and `state()` to seed a host view model, then fold `rawEvents$` from there.
+- **Replayed hydration is emitted; persisted hydration is not.** With `replay` configured, every replayed event is emitted in order once the whole replay has been folded into the signals, so subscribe before awaiting `ready` to fold the restored thread too. Hydration from `persistence` restores a committed snapshot instead: no protocol events are emitted for it, so read the hydrated `messages()` and `state()` to seed a host view model, then fold `rawEvents$` from there.
 - **Completes on `dispose()`.**
 
 `rawEvents$` is AG-UI-specific. The neutral `events$` is unchanged and still carries only `state_update` and `custom` events.
+
+## Restoring a thread from the server
+
+The adapter can restore a reopened thread from two sources, and they restore different things.
+
+- **`persistence`** is an application-owned store of the last committed protocol messages and state, plus the interrupt session. It brings back the transcript and a pending approval, but nothing the protocol carried only as events: reasoning, tool-call progress beyond what the messages record, subagent nesting, and step-level detail are gone. A thread restored this way does not match the live view.
+- **`replay`** loads the thread's protocol events from a server that kept them, and folds them through the same reducer and interrupt bookkeeping a live run uses. Messages, tool calls with their arguments and results, reasoning, subagent cards with their nested messages, and pending interrupts come back as the live view showed them, and each replayed event is emitted on `rawEvents$`.
+
+```ts
+import { HttpAgent } from '@ag-ui/client';
+import { httpReplay, toAgent } from '@threadplane/ag-ui';
+
+const agent = toAgent(new HttpAgent({ url: '/api/agent', threadId }), {
+  replay: httpReplay({ url: (id) => `/api/threads/${encodeURIComponent(id)}/events` }),
+});
+await agent.ready;
+```
+
+`replay` is a function `(threadId, signal) => Promise<readonly BaseEvent[]> | Observable<BaseEvent>`. `httpReplay({ url, fetch?, headers? })` covers the common HTTP shape: it sends `GET url(threadId)` and reads a JSON body `{ events: BaseEvent[] }`. A `404` means the server has nothing for the thread; any other failed status, or a body without an `events` array, is a failed replay.
+
+How hydration resolves:
+
+- **Replay wins when it returns events.** The store is then not read at hydration. Later runs still write to it, so a configured `persistence` keeps working for interrupt claims and reconciliation.
+- **Anything else falls back to `persistence`**, or to an empty thread without one: an empty result, a `404`, a rejected request, or events the adapter cannot fold. A fold that fails part-way is discarded whole, and nothing is emitted for it. `ready` does not reject for a failed replay; development builds log a warning.
+- **The final run decides the status.** A run that finished leaves the agent `idle`, and one that ended in `RUN_ERROR` leaves it in `error` (redacted where errors are protected). A run that paused on an interrupt restores the pending interrupt, so `submit({ resume })` answers it exactly as it would after the live pause; a later run on the thread counts as the answer to an earlier pause. A run with no terminal event — the replay ended while the server was still working — has its messages settled as `interrupted` and leaves the agent `idle`, because the adapter is not attached to that run and cannot tell how it ends.
+- **User turns come from the run input.** A live transcript gets the user's message from the local `submit()`. On replay, user messages carried in `RUN_STARTED.input.messages` are added in order; a server that sends a `MESSAGES_SNAPSHOT` instead is handled by the reducer as usual.
+- **Reasoning durations come from event timestamps.** When a reasoning block's start and end events carry a `timestamp`, the duration is their difference; otherwise it is omitted rather than reporting how long the replay took.
+- **The next request carries the replayed history.** The source's messages and state are set to what the protocol client derives from the same events, which is what a live run would have left there.
+
+The request is aborted, and nothing is applied, when the adapter is disposed. The adapter is bound to one thread, so moving to another thread means building a new adapter and disposing the old one, which aborts its replay. `provideAgent()` calls `replay` only when a `threadId` is configured, because a fresh conversation has nothing to replay.
 
 ## Lifecycle note
 

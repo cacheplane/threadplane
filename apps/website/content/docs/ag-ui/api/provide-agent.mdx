@@ -48,10 +48,11 @@ const agent = injectAgent(); // AgUiAgent<Record<string, unknown>>
 | `threadId` | `string` | Thread to connect to on start. Omit to begin a fresh conversation. |
 | `interruptTransport` | `InterruptTransport` | `auto` (default), `protocol`, `legacy-command`, or `mastra-command`. Native batches win in `auto`; select the Mastra command profile for the Mastra integration. |
 | `persistence` | `AgUiInterruptPersistence` | Application-owned store and optional authoritative reconciler. Requires a stable configured `threadId` and scoped namespace. |
+| `replay` | `AgUiReplaySource` | Loads the thread's AG-UI events from the server on hydration, so a reopened thread comes back as the live view showed it. Called only when `threadId` is configured. Use `httpReplay({ url })` for the common HTTP shape. See [Restoring a thread from the server](/docs/ag-ui/api/to-agent#restoring-a-thread-from-the-server). |
 | `headers` | `Record<string, string>` | Extra HTTP headers sent with every request. |
 | `telemetry` | `AgentRuntimeTelemetrySink \| false` | Omit for automatic development-only collection, pass `false` to disable it, or pass an app-owned sink to receive the runtime lifecycle events yourself. |
 
-With persistence enabled, await `agent.ready` before displaying restored approval controls. The store must implement atomic `compareAndSwap`; browser state alone cannot restore a lost backend checkpoint. The provider disposes the adapter when its injector is destroyed, stopping local work without cancelling backend checkpoints.
+With `replay` or `persistence` configured, await `agent.ready` before displaying restored approval controls. Replay wins when it returns events and falls back to persistence otherwise; persistence alone restores messages, state and the interrupt session, not the reasoning, tool-call progress or subagent detail the live view showed. The store must implement atomic `compareAndSwap`; browser state alone cannot restore a lost backend checkpoint. The provider disposes the adapter when its injector is destroyed, stopping local work without cancelling backend checkpoints.
 
 ## Static versus factory config
 

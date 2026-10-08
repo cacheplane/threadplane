@@ -4,8 +4,8 @@ import { installationToken } from '#development-install';
 declare const ngDevMode: boolean;
 import { createDevelopmentRuntime, registerDevelopmentRuntimePolicy } from '@threadplane/telemetry/browser';
 import { THREADPLANE_PACKAGE_VERSION as packageVersion } from './package-version';
-import { Subject, type Observable } from 'rxjs';
-import type { AbstractAgent, BaseEvent } from '@ag-ui/client';
+import { Subject, from, type Observable } from 'rxjs';
+import { defaultApplyEvents, type AbstractAgent, type BaseEvent } from '@ag-ui/client';
 import {
   completeDelivery,
   staticDelivery,
@@ -38,14 +38,29 @@ import {
 import { createClientToolsCapability } from './client-tools';
 import { InterruptSession } from './interrupt-session';
 import type { InterruptSessionSnapshot, InterruptTransport, ResumeAttempt } from './interrupt-session.types';
-import { RunStateTransaction } from './run-state-transaction';
+import { RunStateTransaction, type ThreadSnapshot } from './run-state-transaction';
 import { InterruptPersistence, type AgUiInterruptPersistence, type AgUiThreadRecord } from './interrupt-persistence';
+import { collectReplay, type AgUiReplaySource } from './replay';
+import { messageContentFromParts } from './internal/content-parts';
 
 export interface ToAgentOptions {
   /** Application-owned durable storage. Requires a stable source threadId and scoped namespace. */
   persistence?: AgUiInterruptPersistence;
   /** Native outcomes take precedence in auto mode; select a legacy profile explicitly when required. */
   interruptTransport?: InterruptTransport;
+  /**
+   * Loads the thread's AG-UI events from the server when the adapter hydrates.
+   *
+   * The replayed events are folded through the same reducer a live run uses, so
+   * messages, tool calls, reasoning, subagent nesting and pending interrupts
+   * come back as the live view showed them, and each event is emitted on
+   * `rawEvents$`. Replay wins whenever it returns at least one event; an empty
+   * result, a failure, or events that cannot be folded fall back to
+   * `persistence` (or an empty thread). Failures never reject `ready`. The
+   * request is aborted when the adapter is disposed. See `httpReplay()` for
+   * the common HTTP shape.
+   */
+  replay?: AgUiReplaySource;
   /**
    * Omit to enable automatic development-only collection. Set `false` to disable.
    * An app-owned sink replaces the automatic destination and receives the
@@ -106,7 +121,7 @@ export interface AgUiSubmitOptions extends AgentSubmitOptions {
  */
 export interface AgUiAgent<TState = Record<string, unknown>> extends Agent<TState> {
   submit(input: AgentSubmitInput, opts?: AgUiSubmitOptions): Promise<void>;
-  /** Resolves after persisted thread state is hydrated; actions wait for it. */
+  /** Resolves after replayed or persisted thread state is hydrated; actions wait for it. */
   ready: Promise<void>;
   /**
    * Recover an uncertain attempt using the configured authoritative reconciler,
@@ -140,9 +155,11 @@ export interface AgUiAgent<TState = Record<string, unknown>> extends Agent<TStat
    * code and payload dropped. Hot and unbuffered — subscribe before submitting to
    * see a whole run. Completes on `dispose()`.
    *
-   * Hydration from `persistence` restores a committed snapshot rather than
-   * replaying protocol events, so nothing is emitted for it; read the hydrated
-   * `messages()` and `state()` instead.
+   * Hydration from a configured `replay` source emits every replayed event, in
+   * order, once the whole replay has been folded into the signals; subscribe
+   * before awaiting `ready` to see them. Hydration from `persistence` restores a
+   * committed snapshot rather than replaying protocol events, so nothing is
+   * emitted for it; read the hydrated `messages()` and `state()` instead.
    */
   rawEvents$: Observable<BaseEvent>;
 }
@@ -224,7 +241,7 @@ function createAgentAdapter(
   let disposed = false;
   let resumeInput: { state: Record<string, unknown>; messages: typeof source.messages; localMessages?: Message[] } | undefined;
   const persistence = options.persistence ? new InterruptPersistence(options.persistence, source.threadId) : undefined;
-  const hydrated = signal(!persistence);
+  const hydrated = signal(!persistence && !options.replay);
   const reconciling = signal(false);
   let persistenceFault: unknown;
   let persistenceWrites: Promise<void> = Promise.resolve();
@@ -259,9 +276,43 @@ function createAgentAdapter(
     resumeInput = record.resumeInput ? structuredClone(record.resumeInput) : undefined;
     publishInterrupt();
   }
-  const ready = persistence
-    ? persistence.load().then(record => { if (record) hydrate(record); hydrated.set(true); }).catch(error => { storageError(error); throw error; })
-    : Promise.resolve();
+  const replayAbort = new AbortController();
+  /** True when a server replay hydrated the thread; persistence is then not read. */
+  async function hydrateFromReplay(replay: AgUiReplaySource): Promise<boolean> {
+    let events: readonly BaseEvent[];
+    let protocol: ThreadSnapshot;
+    try {
+      events = await collectReplay(replay, source.threadId, replayAbort.signal);
+      if (disposed || events.length === 0) return false;
+      // The protocol-side history the next request carries, computed by the
+      // client SDK's own event application — what a live stream leaves on the
+      // source after the same events.
+      protocol = await applyProtocolEvents(source, events);
+    } catch (error) {
+      if (!disposed && !safeIsAbortError(error)) warnReplayFailed(error);
+      return false;
+    }
+    if (disposed) return false;
+    try {
+      foldReplay(events, protocol);
+    } catch (error) {
+      resetView();
+      warnReplayFailed(error);
+      return false;
+    }
+    return true;
+  }
+  const ready = (async () => {
+    if (options.replay && await hydrateFromReplay(options.replay)) { hydrated.set(true); return; }
+    if (disposed) return;
+    if (persistence) {
+      try {
+        const record = await persistence.load();
+        if (record) hydrate(record);
+      } catch (error) { storageError(error); throw error; }
+    }
+    hydrated.set(true);
+  })();
   void ready.catch(() => undefined);
   function publishInterrupt(): void {
     const snapshot = interrupts.snapshot;
@@ -277,6 +328,141 @@ function createAgentAdapter(
       store.interrupt.set(snapshot.legacy);
     }
   }
+  /** Clears every view signal, for a replay that could not be folded. */
+  function resetView(): void {
+    store.deliveryRun = null;
+    store.argsBuffers?.clear();
+    store.messages.set([]); store.toolCalls.set([]); store.state.set({});
+    store.customEvents.set([]); store.activities.set(new Map());
+    store.usage.set(undefined); store.pendingClientToolCallIds.set(undefined);
+    store.status.set('idle'); store.isLoading.set(false); store.error.set(undefined);
+    interrupts.restore({ phase: 'none', generation: 0, interrupts: [] });
+    publishInterrupt();
+  }
+
+  /**
+   * Rebuild the thread from replayed protocol events. Each `RUN_STARTED` opens
+   * a delivery run exactly as a live request does, and every event goes through
+   * the live reducer and the same interrupt bookkeeping `onEvent` applies, so
+   * the result matches what the live stream left behind. Differences, all
+   * forced by the replay having ended rather than streaming on:
+   * - a run with no terminal event is settled as `interrupted` and the agent
+   *   is left `idle` — the adapter is not attached to it, so it cannot know how
+   *   (or whether) that run ended;
+   * - a run started after a paused one clears the pause, because the server
+   *   only starts another run on the thread once the pause was answered;
+   * - user messages a run's `RUN_STARTED.input` carries are added, since the
+   *   live transcript got them from the local submit instead;
+   * - reasoning durations come from event `timestamp`s, and are omitted when a
+   *   block's start or end carries none.
+   * Throws on events it cannot fold; the caller then discards the partial view.
+   */
+  function foldReplay(events: readonly BaseEvent[], protocol: ThreadSnapshot): void {
+    resetView();
+    let run: ReducerDeliveryRun | null = null;
+    let terminal = false;
+    const reasoningStartedAt = new Map<string, number | undefined>();
+    const emitted: BaseEvent[] = [];
+    const reduce = (event: BaseEvent): void => { reduceEvent(event, store); emitted.push(event); };
+    for (const event of events) {
+      if (event.type === 'RUN_STARTED') {
+        if (run && run.outcome === undefined) finalizeDeliveryRun(store, run, 'interrupted');
+        const paused = interrupts.snapshot;
+        if (paused.phase !== 'none') interrupts.restore({ phase: 'none', generation: paused.generation, interrupts: [] });
+        run = {
+          generation: allocateDeliveryGeneration('replay'),
+          baselineMessageIds: new Set(store.messages().map(message => message.id)),
+          ownedMessageIds: new Set(),
+          snapshotReplacementIds: new Set(),
+        };
+        store.deliveryRun = run;
+        terminal = false;
+        appendInputUserMessages(event);
+      } else if (run) {
+        if (run.outcome === 'error' || run.outcome === 'aborted' || run.outcome === 'interrupted') continue;
+        if (terminal && (run.outcome !== 'paused' || (event.type !== 'CUSTOM' && event.type !== 'RUN_FINISHED'))) continue;
+      }
+      if (event.type === 'RUN_ERROR' && options.protectOperationErrors) {
+        // Redacted exactly as a live protected run error is.
+        if (run && finalizeDeliveryRun(store, run, 'error')) {
+          store.status.set('error'); store.isLoading.set(false);
+          store.error.set(protectedAgentError());
+          emitted.push(protectedRunErrorEvent());
+        }
+        terminal = true;
+        continue;
+      }
+      if (event.type === 'RUN_FINISHED') {
+        if (!hasValidFinishedOutcome(event)) throw new Error('Invalid run outcome in thread replay');
+        const outcome = (event as unknown as { outcome?: { type: string; interrupts?: unknown[] } }).outcome;
+        if (outcome?.type === 'interrupt') interrupts.observeNative(outcome.interrupts ?? [], run?.protocolRunId ?? eventRunId(event));
+      }
+      const reasoningId = (event as { messageId?: string }).messageId;
+      const routedToSubagent = (event as { subagentRunId?: string }).subagentRunId !== undefined;
+      if (event.type === 'REASONING_MESSAGE_START' && reasoningId && !routedToSubagent) {
+        reasoningStartedAt.set(reasoningId, eventTimestamp(event));
+      }
+      reduce(event);
+      if (event.type === 'REASONING_MESSAGE_END' && reasoningId && !routedToSubagent) {
+        const startedAt = reasoningStartedAt.get(reasoningId);
+        const endedAt = eventTimestamp(event);
+        reasoningStartedAt.delete(reasoningId);
+        store.messages.update(messages => messages.map(message => {
+          if (message.id !== reasoningId || message.reasoningDurationMs === undefined) return message;
+          // The reducer timed the block with the local clock, which measured the
+          // fold, not the model; keep only a duration the events establish.
+          const rest = { ...message };
+          delete rest.reasoningDurationMs;
+          return startedAt !== undefined && endedAt !== undefined && endedAt >= startedAt
+            ? { ...rest, reasoningDurationMs: endedAt - startedAt }
+            : rest;
+        }));
+      }
+      if (event.type === 'CUSTOM' && (event as { name?: string }).name === 'on_interrupt') {
+        const value = (event as unknown as { value: unknown }).value;
+        let parsed = value;
+        if (typeof value === 'string') { try { parsed = JSON.parse(value); } catch { /* Keep opaque compatibility values. */ } }
+        interrupts.observeLegacy(parsed, run?.protocolRunId);
+      }
+      if (event.type === 'RUN_FINISHED' || event.type === 'RUN_ERROR') {
+        terminal = true;
+        if (interrupts.snapshot.phase === 'collecting') interrupts.ready();
+      }
+    }
+    if (run && run.outcome === undefined) {
+      finalizeDeliveryRun(store, run, 'interrupted');
+      store.status.set('idle'); store.isLoading.set(false);
+    }
+    if (interrupts.snapshot.phase === 'collecting') interrupts.ready();
+    publishInterrupt();
+    transaction.commit(protocol);
+    source.state = structuredClone(protocol.state);
+    source.messages = structuredClone(protocol.messages);
+    source.pendingInterrupts = structuredClone(interrupts.snapshot.interrupts);
+    for (const event of emitted) rawEvents$.next(event);
+  }
+
+  function appendInputUserMessages(event: BaseEvent): void {
+    const input = (event as { input?: unknown }).input;
+    const messages = isRecord(input) && Array.isArray(input['messages']) ? input['messages'] : [];
+    const known = new Set(store.messages().map(message => message.id));
+    const added: Message[] = [];
+    for (const message of messages) {
+      if (!isRecord(message) || message['role'] !== 'user' || typeof message['id'] !== 'string' || known.has(message['id'])) continue;
+      const id = message['id'];
+      const raw = message['content'];
+      const mapped = Array.isArray(raw) ? messageContentFromParts(raw) : undefined;
+      known.add(id);
+      added.push({
+        id, role: 'user',
+        content: mapped ? mapped.content : typeof raw === 'string' ? raw : '',
+        ...(mapped?.extra ? { extra: mapped.extra } : {}),
+        delivery: staticDelivery(id),
+      } as Message);
+    }
+    if (added.length > 0) store.messages.update(previous => [...previous, ...added]);
+  }
+
   function assertAvailable(): void {
     if (disposed) throw new Error('Agent has been disposed');
     if (reconciling()) throw new Error('Interrupt reconciliation is in progress');
@@ -912,6 +1098,7 @@ function createAgentAdapter(
     dispose: () => {
       if (disposed) return;
       disposed = true;
+      replayAbort.abort();
       if (activeRun) abortRun(activeRun);
       subscription.unsubscribe();
       source.abortRun();
@@ -1098,6 +1285,51 @@ function hasValidFinishedOutcome(event: object): boolean {
   const value = outcome as Record<string, unknown>;
   if (value['type'] === 'success' || value['type'] === 'cancelled') return true;
   return value['type'] === 'interrupt' && Array.isArray(value['interrupts']);
+}
+
+/**
+ * The protocol messages and state the client SDK's own event application
+ * derives from `events`, starting from an empty history and the source's
+ * current client state.
+ */
+function applyProtocolEvents(source: AbstractAgent, events: readonly BaseEvent[]): Promise<ThreadSnapshot> {
+  const input = {
+    threadId: source.threadId, runId: 'thread-replay', messages: [],
+    state: structuredClone((source.state as Record<string, unknown>) ?? {}),
+    tools: [], context: [], forwardedProps: {},
+  };
+  return new Promise<ThreadSnapshot>((resolve, reject) => {
+    const snapshot: ThreadSnapshot = { messages: [], state: input.state };
+    defaultApplyEvents(input as Parameters<typeof defaultApplyEvents>[0], from(events), source, []).subscribe({
+      next: mutation => {
+        if (mutation.messages) snapshot.messages = mutation.messages;
+        if (mutation.state) snapshot.state = mutation.state as Record<string, unknown>;
+      },
+      error: reject,
+      complete: () => resolve(structuredClone(snapshot)),
+    });
+  });
+}
+
+function eventRunId(event: BaseEvent): string | undefined {
+  const runId = (event as { runId?: unknown }).runId;
+  return typeof runId === 'string' ? runId : undefined;
+}
+
+function eventTimestamp(event: BaseEvent): number | undefined {
+  const timestamp = (event as { timestamp?: unknown }).timestamp;
+  return typeof timestamp === 'number' && Number.isFinite(timestamp) ? timestamp : undefined;
+}
+
+/** Development-only notice that replay produced nothing usable; hydration
+ *  then falls back to persistence, so the failure is otherwise silent. */
+function warnReplayFailed(error: unknown): void {
+  if (!isDevMode()) return;
+  console.warn(
+    `[@threadplane/ag-ui] Thread replay failed, so the thread was hydrated from persistence ` +
+      `(or left empty) instead.`,
+    error,
+  );
 }
 
 /** Development-only notice that a status check produced nothing, and why. The

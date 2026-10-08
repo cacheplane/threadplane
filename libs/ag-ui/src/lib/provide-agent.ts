@@ -17,6 +17,13 @@ export interface AgentConfig {
   interruptTransport?: ToAgentOptions['interruptTransport'];
   /** Optional application-owned durable thread storage and reconciliation. */
   persistence?: ToAgentOptions['persistence'];
+  /**
+   * Optional source of the thread's AG-UI events, replayed on hydration so a
+   * reopened thread comes back as the live view showed it. Called only when
+   * `threadId` is configured — a fresh conversation has nothing to replay.
+   * `httpReplay()` covers the common HTTP shape.
+   */
+  replay?: ToAgentOptions['replay'];
   /** Endpoint URL of the AG-UI HTTP agent (e.g. `'http://localhost:8000/agent'`). Required. */
   url: string;
   /** Agent identifier, when the endpoint serves more than one agent. */
@@ -57,7 +64,10 @@ function buildAgUiAgent(configOrFactory: AgentConfig | (() => AgentConfig)): AgU
       : {}),
   });
   if (config.persistence && !config.threadId) throw new Error('Interrupt persistence requires a stable configured threadId');
-  const options = { telemetry: config.telemetry, interruptTransport: config.interruptTransport, persistence: config.persistence };
+  const options: ToAgentOptions = {
+    telemetry: config.telemetry, interruptTransport: config.interruptTransport, persistence: config.persistence,
+    ...(config.replay && config.threadId ? { replay: config.replay } : {}),
+  };
   const adapter = reportOperationFailure === null
     ? toAgent(source, options)
     : ɵtoAgentWithProtectedErrors(source, options);
