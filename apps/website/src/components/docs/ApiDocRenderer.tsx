@@ -30,23 +30,31 @@ function KindBadge({ kind }: { kind: string }) {
   );
 }
 
+const PARAM_COLUMNS = [
+  ['Parameter', 'key'],
+  ['Type', 'prose'],
+  ['Description', 'prose'],
+] as const;
+
 function ParamTable({ params }: { params: ApiParam[] }) {
   return (
     <div className="docs-table-scroll" tabIndex={0} role="region" aria-label="Parameters table, scrolls horizontally">
-    <table className="api-doc-param-table">
+    {/* Same annotations rehype-readable-tables gives a markdown table, so the
+        phone card layout in docs.css applies here too. */}
+    <table className="api-doc-param-table tp-table" data-shape="reference">
       <thead>
         <tr>
-          {['Parameter', 'Type', 'Description'].map((h) => (
-            <th key={h}>{h}</th>
+          {PARAM_COLUMNS.map(([label, kind]) => (
+            <th key={label} className={`tp-col-${kind}`}>{label}</th>
           ))}
         </tr>
       </thead>
       <tbody>
         {params.map((p) => (
           <tr key={p.name}>
-            <td className="api-doc-param-name">{p.name}{p.optional ? '?' : ''}</td>
-            <td className="api-doc-param-type">{p.type}</td>
-            <td className="api-doc-param-desc">{p.description}</td>
+            <td className="api-doc-param-name tp-col-key" data-label="Parameter">{p.name}{p.optional ? '?' : ''}</td>
+            <td className="api-doc-param-type tp-col-prose" data-label="Type">{p.type}</td>
+            <td className="api-doc-param-desc tp-col-prose" data-label="Description">{p.description}</td>
           </tr>
         ))}
       </tbody>

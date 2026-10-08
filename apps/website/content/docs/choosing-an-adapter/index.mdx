@@ -89,14 +89,20 @@ Reach for the smallest layer that covers your test. Do not stand up aimock when 
 The AG-UI adapter is protocol-first, so "any AG-UI backend plugs in" is a claim that can be tested rather than asserted.
 It was tested against three runtimes that have nothing to do with LangGraph, in two languages — first on 2026-08-31, and most recently on 2026-09-02 for the subagent cells.
 
-| Runtime | Messages | Tool calls | State | Interrupts | Subagents | Cause of any gap |
-|---|---|---|---|---|---|---|
-| **LangGraph** (via the AG-UI bridge) | Yes | Yes | Yes | Yes | Yes | — |
-| **AWS Strands** (Python) | Yes | Yes | Partial | Yes | Yes | State: upstream. Subagents: a small in-tree emitter translates native delegation signals to the protocol's `SUBAGENT_*` events |
-| **Microsoft Agent Framework** (Python) | Yes | Yes | Yes | Yes | Yes | Subagents: a small in-tree emitter translates native delegation signals to the protocol's `SUBAGENT_*` events |
-| **Mastra** (TypeScript) | Yes | Yes | Yes | Yes | Yes | Subagents: a small in-tree emitter observes the runtime's public stream through a tee and emits the protocol's `SUBAGENT_*` events plus the child's token deltas, because the runtime's bridge drops child output |
+| Runtime | Messages | Tool calls | State | Interrupts | Subagents |
+|---|---|---|---|---|---|
+| **LangGraph** (via the AG-UI bridge) | Yes | Yes | Yes | Yes | Yes |
+| **AWS Strands** (Python) | Yes | Yes | Partial | Yes | Yes |
+| **Microsoft Agent Framework** (Python) | Yes | Yes | Yes | Yes | Yes |
+| **Mastra** (TypeScript) | Yes | Yes | Yes | Yes | Yes |
 
-Every gap in that table falls into one of three causes, and the distinction is the point of the column:
+What sits behind the cells that needed work:
+
+- **AWS Strands** — State is partial because of the upstream bridge (explained below). Subagents work through a small in-tree emitter that translates native delegation signals to the protocol's `SUBAGENT_*` events.
+- **Microsoft Agent Framework** — Subagents work through the same kind of in-tree emitter, translating native delegation signals to `SUBAGENT_*` events.
+- **Mastra** — Subagents work through a small in-tree emitter that observes the runtime's public stream through a tee and emits `SUBAGENT_*` events plus the child's token deltas, because the runtime's bridge drops child output.
+
+Every gap in that table falls into one of three causes, and the distinction matters more than the cell:
 
 - **Protocol** — the AG-UI event vocabulary has no way to express the capability. Nothing an adapter or a backend author can do about it today.
 - **Upstream integration** — the protocol can express it, but the runtime's AG-UI bridge does not emit the events. Fixable upstream.
