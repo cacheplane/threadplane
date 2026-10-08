@@ -103,7 +103,7 @@ Reasoning and text write to the same message when they share a `messageId`, so o
 
 | AG-UI event | Surface | Behavior |
 | --- | --- | --- |
-| `TOOL_CALL_START` | `toolCalls`, `messages` | Adds a tool call with status `running`; when `parentMessageId` is present, links the call to that assistant message, creating the message slot if the turn produced no text. |
+| `TOOL_CALL_START` | `toolCalls`, `messages` | Adds a tool call with status `running` and lists it in the owning assistant message's `toolCallIds`. With `parentMessageId`, the owner is that assistant message, created if the turn produced no text. Without one, or when that id belongs to a non-assistant message, the owner is a new assistant message whose id is the tool call id. |
 | `TOOL_CALL_ARGS` | `toolCalls` | Appends `delta` to a per-call buffer, parses the buffer whenever it becomes valid JSON, and keeps the last good args while more fragments arrive. |
 | `TOOL_CALL_END` | `toolCalls` | Parses the accumulated buffer one final time, discards the buffer, and marks the call `complete`. |
 | `TOOL_CALL_RESULT` | `toolCalls` | Stores the result on the matching call. A string is parsed as JSON when possible. For a content-part list, `result` is the text of the parts, parsed as JSON only when exactly one text part holds valid JSON. Every part is kept under `parts`, and an all-media list yields an empty-string `result`. |
