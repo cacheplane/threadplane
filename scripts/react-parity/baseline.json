@@ -1,33 +1,8 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "ef7ec9be3ec062bb8a0786969faee76ef561d93c",
+  "baselineHead": "d3e7400340171e26f55e1c07f6d83a6f6344f03c",
   "sourceState": {
-    "modified": [
-      "apps/website/content/docs/ag-ui/api/inject-agent.mdx",
-      "apps/website/content/docs/ag-ui/api/to-agent.mdx",
-      "apps/website/content/docs/ag-ui/guides/testing.mdx",
-      "apps/website/content/docs/ag-ui/reference/event-mapping.mdx",
-      "apps/website/content/docs/chat/components/chat-activity-template.mdx",
-      "apps/website/content/docs/chat/components/chat-subagent-card.mdx",
-      "apps/website/content/docs/chat/components/chat-tool-call-template.mdx",
-      "apps/website/content/docs/chat/components/chat.mdx",
-      "apps/website/content/docs/chat/getting-started/installation.mdx",
-      "apps/website/content/docs/chat/guides/client-tools.mdx",
-      "apps/website/content/docs/chat/guides/theming.mdx",
-      "libs/ag-ui/README.md",
-      "libs/ag-ui/src/lib/testing/provide-fake-agent.ts",
-      "libs/ag-ui/src/lib/to-agent.ts",
-      "libs/chat/README.md",
-      "libs/chat/package.json",
-      "libs/chat/src/lib/compositions/chat-subagent-card/chat-subagent-card.component.ts",
-      "libs/chat/src/lib/compositions/chat/chat-activity-template.directive.ts",
-      "libs/chat/src/lib/compositions/chat/chat.component.ts",
-      "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-      "libs/chat/src/lib/styles/chat-reasoning.styles.ts",
-      "libs/chat/src/lib/styles/chat-tokens.ts",
-      "libs/chat/src/lib/styles/chat-trace.styles.ts",
-      "libs/chat/src/public-api.ts"
-    ],
+    "modified": [],
     "untracked": []
   },
   "scope": {
@@ -2441,7 +2416,7 @@
       "id": "doc:apps/website/content/docs/chat/components/chat-activity-template.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/components/chat-activity-template.mdx",
-      "sha256": "cb6ecf5bf363e0503b32d265596f48111b27333fce44abbecd4e9a7bcbba048d"
+      "sha256": "093b87ea04992bd94b78a37befa4d620646e069bf6ee6cd1cccd52667ed87394"
     },
     {
       "id": "doc:apps/website/content/docs/chat/components/chat-debug.mdx",
