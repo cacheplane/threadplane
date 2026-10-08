@@ -1,3 +1,23 @@
+## 0.3.1 (2026-10-08)
+
+### ✨ Highlights
+
+- **ag-ui:** a `replay` adapter option and an `httpReplay` helper rebuild a reloaded thread from the server's recorded protocol events
+- **langgraph:** reloading a thread restores its subagent cards and reasoning
+- **ag-ui:** tool calls streamed without a parent message now get an assistant message, `chat.css` ships with the package, and local-only message fields stay out of the run input
+- **chat:** a `chatToolCallTemplate` projected through `<chat>` now renders
+
+### 🚀 Features
+
+- **ag-ui:** replay a thread's protocol events on hydration ([#1283](https://github.com/cacheplane/threadplane/pull/1283))
+- **langgraph:** restore subagent cards and reasoning when a thread is reloaded ([#1284](https://github.com/cacheplane/threadplane/pull/1284))
+
+### 🩹 Fixes
+
+- **ag-ui:** render tool calls streamed without a parent message ([#1285](https://github.com/cacheplane/threadplane/pull/1285))
+- **chat:** render chatToolCallTemplate projected through <chat> ([#1282](https://github.com/cacheplane/threadplane/pull/1282), [#1276](https://github.com/cacheplane/threadplane/issues/1276))
+- **website:** make docs and site tables readable at every width ([#1281](https://github.com/cacheplane/threadplane/pull/1281), [#1275](https://github.com/cacheplane/threadplane/issues/1275))
+
 ## 0.3.0 (2026-10-07)
 
 ### ⚠️  Breaking Changes

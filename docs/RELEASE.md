@@ -1,6 +1,6 @@
 # Release Process
 
-The six publishable libraries (`@threadplane/chat`, `@threadplane/langgraph`, `@threadplane/ag-ui`, `@threadplane/render`, `@threadplane/a2ui`, `@threadplane/telemetry`) ship together at a synchronized version via Nx Release. Releases use **minor** bumps (`0.1.0` → `0.2.0` → …). **Never cut `1.0.0` without explicit approval from the repository owner, every time.**
+The six publishable libraries (`@threadplane/chat`, `@threadplane/langgraph`, `@threadplane/ag-ui`, `@threadplane/render`, `@threadplane/a2ui`, `@threadplane/telemetry`) ship together at a synchronized version via Nx Release. A release with breaking changes bumps the **minor** (`0.2.0` → `0.3.0`); a release with only features and fixes bumps the **patch** (`0.3.0` → `0.3.1`). **Never cut `1.0.0` without explicit approval from the repository owner, every time.**
 
 Nx updates internal dependency and peer ranges with the synchronized release. `preserveMatchingDependencyRanges` is disabled so a prior `^0.0.x` peer range cannot block the next patch or leave companion packages on incompatible versions. External dependency ranges remain unchanged.
 
@@ -32,7 +32,8 @@ git checkout -b release/X.Y.Z origin/main
 #    real type errors (for example a missing `@ag-ui/core/schemas`).
 npm ci
 
-# 1. Version bump. Runs preVersionCommand (builds all six projects), rewrites every
+# 1. Version bump. Use --specifier=minor when the release has breaking
+#    changes, --specifier=patch otherwise (see Versioning policy). Runs preVersionCommand (builds all six projects), rewrites every
 #    package.json and the internal peer ranges, updates package-lock.json, and stages the result.
 npx nx release version --specifier=minor
 
@@ -205,7 +206,7 @@ Anything above `0` means main has unpublished commits.
 
 ## Versioning policy
 
-Releases bump the **minor** component (`0.1.0` → `0.2.0` → …). Breaking changes can still land in any release while the major is `0`, so consumers should lock to an exact version; the changelog names the breaking entries.
+A release that contains breaking changes bumps the **minor** component (`0.2.0` → `0.3.0`). A release with only additive features and fixes bumps the **patch** (`0.3.0` → `0.3.1`), so existing `^0.3.0` ranges still resolve it. Breaking changes still land in minors while the major is `0`, so consumers should lock to an exact version; the changelog names the breaking entries.
 
 `1.0.0` is a deliberate gate, not something to infer from scope or stability: **ask the repository owner and wait for an explicit yes before cutting it.**
 

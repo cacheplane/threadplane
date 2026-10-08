@@ -5,8 +5,15 @@ description: Highlight releases of @threadplane/chat since 0.0.19, from client t
 # Changelog
 
 <Callout type="info" title="Highlight releases only">
-This changelog tracks selected highlight releases, not every release. The published package is at `0.3.0`. The entries below cover the notable changes since `0.0.19`.
+This changelog tracks selected highlight releases, not every release. The published package is at `0.3.1`. The entries below cover the notable changes since `0.0.19`.
 </Callout>
+
+## 0.3.1
+
+- `@threadplane/ag-ui` takes a `replay` option, and the `httpReplay` helper rebuilds a reloaded thread from the protocol events your server recorded.
+- Reloading a LangGraph thread restores its subagent cards and reasoning.
+- An AG-UI tool call streamed without a parent message now renders inside an assistant message, and `chat.css` ships with `@threadplane/ag-ui`.
+- A `chatToolCallTemplate` projected through `<chat>` now renders.
 
 ## 0.3.0
 
