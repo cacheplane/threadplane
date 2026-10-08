@@ -4264,6 +4264,30 @@
       "status": "planned"
     },
     {
+      "id": "export:libs/ag-ui/src/public-api.ts#AgUiReplaySource",
+      "taskIds": [
+        "T13"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#HttpReplayOptions",
+      "taskIds": [
+        "T13"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#httpReplay",
+      "taskIds": [
+        "T13"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
       "id": "export:libs/ag-ui/src/public-api.ts#AgentConfig",
       "taskIds": [
         "T14"
@@ -8631,6 +8655,14 @@
     },
     {
       "id": "source:libs/ag-ui/src/lib/interrupt-persistence.ts",
+      "taskIds": [
+        "T13"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
+      "id": "source:libs/ag-ui/src/lib/replay.ts",
       "taskIds": [
         "T13"
       ],
