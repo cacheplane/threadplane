@@ -2074,6 +2074,12 @@
         "optional": false
       },
       {
+        "name": "toolCallTemplates",
+        "type": "Signal<readonly ChatToolCallTemplateDirective[]>",
+        "description": "Per-tool-name templates projected as `<ng-template chatToolCallTemplate>`.\nCollected here and passed to each message's `<chat-tool-calls>`, which\ncannot query templates re-projected through `<chat>`. Unused while an\n`activityTemplate` is present.",
+        "optional": false
+      },
+      {
         "name": "views",
         "type": "InputSignal<Readonly<Record<string, Type<unknown> | RenderViewEntry>> | undefined>",
         "description": "",
@@ -4972,6 +4978,12 @@
         "name": "toolCalls",
         "type": "Signal<ToolCall[]>",
         "description": "",
+        "optional": false
+      },
+      {
+        "name": "toolCallTemplates",
+        "type": "InputSignal<readonly ChatToolCallTemplateDirective[]>",
+        "description": "Per-tool-name + wildcard templates supplied by a parent composition.\nCompositions that forward templates projected into themselves (such as\n`<chat>`) pass them here, because a content query cannot see templates\nre-projected through another component. Templates registered as content\nchildren of this component take precedence for the same tool name.",
         "optional": false
       }
     ],
