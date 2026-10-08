@@ -69,7 +69,15 @@ Then, by hand, before committing:
   without printing a vitest summary, which hides the real failure:
   `cd apps/website && npx vitest run --config vite.config.mts`
 
-Commit as `chore(release): X.Y.Z` and open a PR.
+Commit as `chore(release): X.Y.Z`. Then refresh the React-parity inventory, which hashes the
+library manifests, version constants, lockfile and docs, so every release changes it. CI runs
+`--check` in the Library job and fails the release PR without this. Run it on a clean tree so the
+recorded provenance is the release commit, commit `scripts/react-parity/baseline.json`, and open a PR:
+
+```bash
+node scripts/react-parity/inventory.mjs --write-baseline
+node scripts/react-parity/inventory.mjs --check
+```
 
 ### Phase 2: publish
 
@@ -110,6 +118,8 @@ Each of these shipped and had to be fixed afterwards. The steps above now cover 
   so source checkouts reported the wrong runtime version.
 - **0.2.0:** a hand-written `## Unreleased` section was left below the new release heading,
   so its breaking changes never appeared under 0.2.0 in CHANGELOG.md.
+- **0.3.0:** the React-parity inventory gate (`inventory.mjs --check`, added after 0.2.0) failed the
+  release PR until `baseline.json` was regenerated.
 - **0.1.0:** the Python `threadplane-middleware` needed its own publish and pinned images
   (#1068). Check `git log v<previous>..origin/main -- packages/threadplane-middleware`; if it
   changed, publish it with `publish-middleware-python.yml` (dry run first).
