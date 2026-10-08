@@ -116,7 +116,7 @@ Every input, output, and projection slot below is declared on `ChatComponent` it
 
 ### Projection slots
 
-`<chat>` accepts content on five named slots.
+`<chat>` accepts content on seven named slots.
 
 | Selector | Where it lands |
 |---|---|
@@ -124,6 +124,8 @@ Every input, output, and projection slot below is declared on `ChatComponent` it
 | `[chatHeader]` | The header row above the message scroller. |
 | `ng-template[chatToolCallTemplate]` | Collected by `<chat>` and passed to each message's inner `<chat-tool-calls>`, so an `<ng-template chatToolCallTemplate="…">` replaces the default card for one tool name. |
 | `ng-template[chatActivityTemplate]` | A per-message activity renderer that replaces the reasoning pill and tool-call region of every assistant message. Takes precedence over `chatToolCallTemplate`. |
+| `ng-template[chatRunActivityTemplate]` | A turn-level run renderer shown after the last message while a run is active and has no assistant message yet. Replaces the typing indicator in that window. |
+| `ng-template[chatInterruptTemplate]` | Rendered at the end of the transcript while `agent.interrupt()` is defined, for approval cards and other human-in-the-loop UI. |
 | `[chatInputModelSelect]` | The model-picker slot in the conversation composer. Used only when the auto-rendered picker is off, that is when `modelOptions` is empty or `showModelPicker` is `false`. |
 
 ### Thread Type
@@ -280,6 +282,7 @@ The component tracks message count and loading state to auto-scroll. Every scrol
 - **New message**: jumps to the bottom and re-pins the view.
 - **Streaming updates**: jump to the bottom only while the view is pinned, meaning the scroller sits within 150px of the bottom.
 - **User scrolled up**: unpins the view, so streaming no longer moves the scroller. A scroll-to-bottom bubble appears in the footer to re-pin it.
+- **Run activity and interrupt regions**: the regions rendered by `chatRunActivityTemplate` and `chatInterruptTemplate` are followed too. When one appears or changes size while the view is pinned, the scroller jumps to the bottom.
 
 ## Message Pattern
 
@@ -311,7 +314,7 @@ Under the hood, `ChatComponent` composes these primitives:
 - `ChatThreadListComponent` for the sidebar
 - `ChatStreamingMdComponent`, `ChatReasoningComponent`, `ChatToolCallsComponent`, and `ChatToolViewsComponent` inside the assistant template
 
-Interrupts are not part of this list. `<chat>` renders no interrupt banner — compose [`<chat-interrupt-panel>`](/docs/chat/components/chat-interrupt-panel) alongside it when your runtime pauses for input.
+Interrupts are not part of this list. `<chat>` renders no interrupt UI of its own. Project a [`chatInterruptTemplate`](/docs/chat/components/chat-interrupt-template) to place it in the transcript, or compose [`<chat-interrupt-panel>`](/docs/chat/components/chat-interrupt-panel) alongside `<chat>`.
 
 ## Reasoning
 
@@ -350,3 +353,37 @@ To render a message's activity as one unit instead of per tool call, project an 
 ```
 
 The activity template takes precedence over any projected `chatToolCallTemplate`. See [chatActivityTemplate](/docs/chat/components/chat-activity-template) for the context reference.
+
+## Showing a run before its first message
+
+A run can spend a long time in its first model call before any text or tool call arrives. Until the first assistant message exists, the per-message activity template has nothing to render into, so the transcript shows only the typing indicator. To render the run itself in that window, project an `<ng-template chatRunActivityTemplate>`:
+
+```html
+<chat [agent]="agent">
+  <ng-template chatActivityTemplate let-message let-toolCalls="toolCalls">
+    <my-turn-activity [message]="message" [steps]="toolCalls" />
+  </ng-template>
+  <ng-template chatRunActivityTemplate let-agent>
+    <my-turn-activity [agent]="agent" />
+  </ng-template>
+</chat>
+```
+
+The run template renders after the last message while `agent.isLoading()` is true and the current run, every message after the last user message, has no assistant message. It replaces the typing indicator only in that window. When the first assistant message arrives, the run template stops rendering and the per-message `chatActivityTemplate` takes over, so a host that renders turn-level activity uses the two together and shows one continuous activity. See [chatRunActivityTemplate](/docs/chat/components/chat-run-activity-template) for the context reference.
+
+## Interrupt template
+
+To place approval cards in the conversation instead of beside it, project an `<ng-template chatInterruptTemplate>`. It renders at the end of the transcript, after any run activity, while the agent has a pending interrupt:
+
+```html
+<chat [agent]="agent">
+  <ng-template chatInterruptTemplate let-agent let-interrupt="interrupt">
+    <my-approval-card
+      [request]="interrupt.value"
+      (decide)="agent.submit({ resume: $event })"
+    />
+  </ng-template>
+</chat>
+```
+
+With no pending interrupt, or no template, nothing renders. See [chatInterruptTemplate](/docs/chat/components/chat-interrupt-template) for the context reference.

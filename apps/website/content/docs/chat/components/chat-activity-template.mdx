@@ -53,6 +53,10 @@ The context object is reused while the message, its tool calls and its subagents
 
 The template renders for every assistant message, including ones with no reasoning and no tool calls. Guard on the context when an empty message should render nothing.
 
+## Before the first assistant message
+
+The template renders per assistant message, so a run has nothing to render into until its first assistant message arrives, which can take a long time when the first model call is slow. Project a [`chatRunActivityTemplate`](/docs/chat/components/chat-run-activity-template) alongside this one to show the run in that window. It stops rendering when the first assistant message arrives and this template takes over.
+
 ## Placement
 
 The template renders at message level, inside the assistant bubble and above the markdown. It is not placed inside a [`<chat-trace>`](/docs/chat/components/chat-trace) body, so tall activity is never clipped by the trace's maximum height.

@@ -1649,6 +1649,26 @@
       "reason": "Per-message activity slot. Replace the activity template directive with a typed render function on the native chat composition."
     },
     {
+      "id": "component:libs/chat/src/lib/compositions/chat/chat-run-activity-template.directive.ts#ChatRunActivityTemplateDirective",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "planned",
+      "target": "libs/react/src/chat/chat.tsx",
+      "reason": "Run activity slot. Replace the run activity template directive with a typed render function on the native chat composition."
+    },
+    {
+      "id": "component:libs/chat/src/lib/compositions/chat/chat-interrupt-template.directive.ts#ChatInterruptTemplateDirective",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "planned",
+      "target": "libs/react/src/chat/chat.tsx",
+      "reason": "Interrupt slot. Replace the interrupt template directive with a typed render function on the native chat composition."
+    },
+    {
       "id": "component:libs/chat/src/lib/markdown/markdown-children.component.ts#MarkdownChildrenComponent",
       "taskIds": [
         "T26"
@@ -2877,6 +2897,24 @@
     },
     {
       "id": "doc:apps/website/content/docs/chat/components/chat-activity-template.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned"
+    },
+    {
+      "id": "doc:apps/website/content/docs/chat/components/chat-run-activity-template.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned"
+    },
+    {
+      "id": "doc:apps/website/content/docs/chat/components/chat-interrupt-template.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -5376,6 +5414,42 @@
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatActivityTemplateContext",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "planned"
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ChatRunActivityTemplateDirective",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "planned",
+      "target": "libs/react/src/chat/chat.tsx",
+      "reason": "Run activity slot. Replace the run activity template directive with a typed render function on the native chat composition."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ChatRunActivityTemplateContext",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "planned"
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ChatInterruptTemplateDirective",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "planned",
+      "target": "libs/react/src/chat/chat.tsx",
+      "reason": "Interrupt slot. Replace the interrupt template directive with a typed render function on the native chat composition."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ChatInterruptTemplateContext",
       "taskIds": [
         "T23"
       ],
@@ -9706,6 +9780,22 @@
     },
     {
       "id": "source:libs/chat/src/lib/compositions/chat/chat-activity-template.directive.ts",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "planned"
+    },
+    {
+      "id": "source:libs/chat/src/lib/compositions/chat/chat-run-activity-template.directive.ts",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "planned"
+    },
+    {
+      "id": "source:libs/chat/src/lib/compositions/chat/chat-interrupt-template.directive.ts",
       "taskIds": [
         "T23"
       ],
