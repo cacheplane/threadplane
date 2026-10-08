@@ -131,7 +131,7 @@ The LangGraph bridge reads `forwardedProps.command.resume`.
 You pass one neutral `submit({ resume })`, and the adapter shapes the request using the observed batch and configured transport profile. The backend still defines what the decision payload means.
 
 **Recovery belongs to the adapter and backend.**
-AG-UI can restore client state through an application-owned `persistence` store with atomic compare-and-swap and authoritative reconciliation. The native LangGraph adapter uses LangGraph's thread and checkpoint APIs. Neither a shared Angular approval component nor a stored client record guarantees exactly-once server execution or recreates a lost checkpoint.
+AG-UI can restore a thread by replaying its protocol events from a server that kept them, or restore client state through an application-owned `persistence` store with atomic compare-and-swap and authoritative reconciliation; only replay brings back reasoning and subagent detail. The native LangGraph adapter uses LangGraph's thread and checkpoint APIs. Neither a shared Angular approval component nor a stored client record guarantees exactly-once server execution or recreates a lost checkpoint.
 
 **The Mastra row is hosted on its own lane.**
 Its cells come from a real Mastra server driven with live model calls, and its transcripts are committed and replayed like the others.
