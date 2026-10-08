@@ -55,10 +55,7 @@ const request=new EventEmitter();request.destroy=()=>{};request.end=body=>{fs.ap
         './themes/material-light.css',
       ]) {
         assert.equal(pkg.exports[subpath], subpath, `Missing CSS export: ${subpath}`);
-        // The legacy chat.css file was retired; the four supported theme assets remain.
-        if (subpath.startsWith('./themes/')) {
-          assert(packed.files.some((file) => file.path === subpath.slice(2)), `Missing CSS asset: ${subpath}`);
-        }
+        assert(packed.files.some((file) => file.path === subpath.slice(2)), `Missing CSS asset: ${subpath}`);
       }
     }
     for (const file of [
