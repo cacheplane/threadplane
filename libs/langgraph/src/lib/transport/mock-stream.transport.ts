@@ -24,6 +24,9 @@ import type { ThreadState } from '@langchain/langgraph-sdk';
  */
 export class MockAgentTransport implements AgentTransport {
   history: ThreadState[] = [];
+  /** Child-namespace checkpoints served by `getChildState`, keyed by checkpoint namespace. */
+  childStates = new Map<string, ThreadState>();
+  readonly childStateCalls: Array<{ threadId: string; checkpointNs: string }> = [];
   readonly historyCalls: string[] = [];
   readonly streams: Array<{ threadId: string | null; payload: unknown; options?: LangGraphSubmitOptions }> = [];
   readonly createdQueuedRuns: AgentQueueEntry[] = [];
@@ -172,6 +175,12 @@ export class MockAgentTransport implements AgentTransport {
     void signal;
     this.historyCalls.push(threadId);
     return this.history;
+  }
+
+  async getChildState(threadId: string, checkpointNs: string, signal: AbortSignal): Promise<ThreadState | undefined> {
+    void signal;
+    this.childStateCalls.push({ threadId, checkpointNs });
+    return this.childStates.get(checkpointNs);
   }
 
   async *joinStream(

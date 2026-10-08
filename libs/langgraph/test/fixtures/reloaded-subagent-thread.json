@@ -1,0 +1,398 @@
+{
+  "description": "Thread history in the shape the LangGraph threads history API returns (newest first) for one delegated subagent run, hand-built from the documented ThreadState/ThreadTask schema. `childStates` maps a child checkpoint namespace to the newest checkpoint saved under it.",
+  "threadId": "thread-reload",
+  "history": [
+    {
+      "values": {
+        "messages": [
+          {
+            "id": "human-1",
+            "type": "human",
+            "content": "Research the 2025 aviation fuel prices."
+          },
+          {
+            "id": "ai-1",
+            "type": "ai",
+            "content": [
+              {
+                "type": "reasoning",
+                "summary": [
+                  {
+                    "type": "summary_text",
+                    "text": "A researcher should gather the prices first."
+                  }
+                ]
+              },
+              {
+                "type": "text",
+                "text": ""
+              }
+            ],
+            "tool_calls": [
+              {
+                "id": "call_research",
+                "name": "task",
+                "args": {
+                  "subagent_type": "researcher",
+                  "description": "Gather 2025 aviation fuel prices"
+                }
+              }
+            ]
+          },
+          {
+            "id": "tool-1",
+            "type": "tool",
+            "tool_call_id": "call_research",
+            "name": "task",
+            "content": "Jet-A averaged $5.80/gal in 2025.",
+            "status": "success"
+          },
+          {
+            "id": "ai-2",
+            "type": "ai",
+            "content": [
+              {
+                "type": "reasoning",
+                "summary": [
+                  {
+                    "type": "summary_text",
+                    "text": "The researcher's figure answers the question."
+                  }
+                ]
+              },
+              {
+                "type": "text",
+                "text": "Jet-A averaged $5.80 per gallon in 2025."
+              }
+            ],
+            "tool_calls": []
+          }
+        ]
+      },
+      "next": [],
+      "checkpoint": {
+        "thread_id": "thread-reload",
+        "checkpoint_ns": "",
+        "checkpoint_id": "cp-4",
+        "checkpoint_map": null
+      },
+      "metadata": {
+        "source": "loop",
+        "step": 4
+      },
+      "created_at": "2026-10-08T12:00:04.000Z",
+      "parent_checkpoint": {
+        "thread_id": "thread-reload",
+        "checkpoint_ns": "",
+        "checkpoint_id": "cp-3",
+        "checkpoint_map": null
+      },
+      "tasks": []
+    },
+    {
+      "values": {
+        "messages": [
+          {
+            "id": "human-1",
+            "type": "human",
+            "content": "Research the 2025 aviation fuel prices."
+          },
+          {
+            "id": "ai-1",
+            "type": "ai",
+            "content": [
+              {
+                "type": "reasoning",
+                "summary": [
+                  {
+                    "type": "summary_text",
+                    "text": "A researcher should gather the prices first."
+                  }
+                ]
+              },
+              {
+                "type": "text",
+                "text": ""
+              }
+            ],
+            "tool_calls": [
+              {
+                "id": "call_research",
+                "name": "task",
+                "args": {
+                  "subagent_type": "researcher",
+                  "description": "Gather 2025 aviation fuel prices"
+                }
+              }
+            ]
+          },
+          {
+            "id": "tool-1",
+            "type": "tool",
+            "tool_call_id": "call_research",
+            "name": "task",
+            "content": "Jet-A averaged $5.80/gal in 2025.",
+            "status": "success"
+          }
+        ]
+      },
+      "next": [
+        "model"
+      ],
+      "checkpoint": {
+        "thread_id": "thread-reload",
+        "checkpoint_ns": "",
+        "checkpoint_id": "cp-3",
+        "checkpoint_map": null
+      },
+      "metadata": {
+        "source": "loop",
+        "step": 3
+      },
+      "created_at": "2026-10-08T12:00:03.000Z",
+      "parent_checkpoint": {
+        "thread_id": "thread-reload",
+        "checkpoint_ns": "",
+        "checkpoint_id": "cp-2",
+        "checkpoint_map": null
+      },
+      "tasks": [
+        {
+          "id": "task-model-2",
+          "name": "model",
+          "path": [
+            "__pregel_pull",
+            "model"
+          ],
+          "error": null,
+          "interrupts": [],
+          "checkpoint": null,
+          "state": null,
+          "result": {
+            "messages": [
+              {
+                "id": "ai-2",
+                "type": "ai",
+                "content": [
+                  {
+                    "type": "reasoning",
+                    "summary": [
+                      {
+                        "type": "summary_text",
+                        "text": "The researcher's figure answers the question."
+                      }
+                    ]
+                  },
+                  {
+                    "type": "text",
+                    "text": "Jet-A averaged $5.80 per gallon in 2025."
+                  }
+                ],
+                "tool_calls": []
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "values": {
+        "messages": [
+          {
+            "id": "human-1",
+            "type": "human",
+            "content": "Research the 2025 aviation fuel prices."
+          },
+          {
+            "id": "ai-1",
+            "type": "ai",
+            "content": [
+              {
+                "type": "reasoning",
+                "summary": [
+                  {
+                    "type": "summary_text",
+                    "text": "A researcher should gather the prices first."
+                  }
+                ]
+              },
+              {
+                "type": "text",
+                "text": ""
+              }
+            ],
+            "tool_calls": [
+              {
+                "id": "call_research",
+                "name": "task",
+                "args": {
+                  "subagent_type": "researcher",
+                  "description": "Gather 2025 aviation fuel prices"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "next": [
+        "tools"
+      ],
+      "checkpoint": {
+        "thread_id": "thread-reload",
+        "checkpoint_ns": "",
+        "checkpoint_id": "cp-2",
+        "checkpoint_map": null
+      },
+      "metadata": {
+        "source": "loop",
+        "step": 2
+      },
+      "created_at": "2026-10-08T12:00:02.000Z",
+      "parent_checkpoint": {
+        "thread_id": "thread-reload",
+        "checkpoint_ns": "",
+        "checkpoint_id": "cp-1",
+        "checkpoint_map": null
+      },
+      "tasks": [
+        {
+          "id": "7f3c1a52-0b8e-4d7a-9e61-2a5b8c0d4e19",
+          "name": "tools",
+          "path": [
+            "__pregel_push",
+            0,
+            false
+          ],
+          "error": null,
+          "interrupts": [],
+          "checkpoint": null,
+          "state": null,
+          "result": {
+            "messages": [
+              {
+                "id": "tool-1",
+                "type": "tool",
+                "tool_call_id": "call_research",
+                "name": "task",
+                "content": "Jet-A averaged $5.80/gal in 2025.",
+                "status": "success"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "values": {
+        "messages": [
+          {
+            "id": "human-1",
+            "type": "human",
+            "content": "Research the 2025 aviation fuel prices."
+          }
+        ]
+      },
+      "next": [
+        "model"
+      ],
+      "checkpoint": {
+        "thread_id": "thread-reload",
+        "checkpoint_ns": "",
+        "checkpoint_id": "cp-1",
+        "checkpoint_map": null
+      },
+      "metadata": {
+        "source": "loop",
+        "step": 1
+      },
+      "created_at": "2026-10-08T12:00:01.000Z",
+      "parent_checkpoint": {
+        "thread_id": "thread-reload",
+        "checkpoint_ns": "",
+        "checkpoint_id": "cp-0",
+        "checkpoint_map": null
+      },
+      "tasks": [
+        {
+          "id": "task-model-1",
+          "name": "model",
+          "path": [
+            "__pregel_pull",
+            "model"
+          ],
+          "error": null,
+          "interrupts": [],
+          "checkpoint": null,
+          "state": null,
+          "result": {
+            "messages": [
+              {
+                "id": "ai-1",
+                "type": "ai",
+                "content": [
+                  {
+                    "type": "reasoning",
+                    "summary": [
+                      {
+                        "type": "summary_text",
+                        "text": "A researcher should gather the prices first."
+                      }
+                    ]
+                  },
+                  {
+                    "type": "text",
+                    "text": ""
+                  }
+                ],
+                "tool_calls": [
+                  {
+                    "id": "call_research",
+                    "name": "task",
+                    "args": {
+                      "subagent_type": "researcher",
+                      "description": "Gather 2025 aviation fuel prices"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "childStates": {
+    "tools:7f3c1a52-0b8e-4d7a-9e61-2a5b8c0d4e19": {
+      "values": {
+        "messages": [
+          {
+            "id": "child-human-1",
+            "type": "human",
+            "content": "Gather 2025 aviation fuel prices"
+          },
+          {
+            "id": "child-ai-1",
+            "type": "ai",
+            "content": "Jet-A averaged $5.80/gal in 2025.",
+            "tool_calls": []
+          }
+        ],
+        "files": {}
+      },
+      "next": [],
+      "checkpoint": {
+        "thread_id": "thread-reload",
+        "checkpoint_ns": "tools:7f3c1a52-0b8e-4d7a-9e61-2a5b8c0d4e19",
+        "checkpoint_id": "child-cp-2",
+        "checkpoint_map": null
+      },
+      "metadata": {
+        "source": "loop",
+        "step": 2
+      },
+      "created_at": "2026-10-08T12:00:02.500Z",
+      "parent_checkpoint": null,
+      "tasks": []
+    }
+  }
+}

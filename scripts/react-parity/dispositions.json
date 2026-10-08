@@ -873,6 +873,14 @@
       "note": "Contributor guidance for private checkpoint authority, transport obligations and consumed-task limits; no public package migration or release claim."
     },
     {
+      "id": "asset:libs/langgraph/test/fixtures/reloaded-subagent-thread.json",
+      "taskIds": [
+        "T10"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned"
+    },
+    {
       "id": "asset:libs/langgraph/test/fixtures/streaming-reasoning-puzzle.json",
       "taskIds": [
         "T05",
@@ -11486,6 +11494,14 @@
       "treatment": "shared",
       "status": "planned",
       "reason": "Carry forward terminal-event versus unexpected-close handling, dispatch uncertainty, status checks, and stale-completion suppression from v0.2.0."
+    },
+    {
+      "id": "source:libs/langgraph/src/lib/internals/history-restore.ts",
+      "taskIds": [
+        "T10"
+      ],
+      "treatment": "shared",
+      "status": "planned"
     },
     {
       "id": "source:libs/langgraph/src/lib/internals/subagent-tracker.ts",
