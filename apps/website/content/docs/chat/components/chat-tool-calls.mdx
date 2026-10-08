@@ -84,6 +84,7 @@ The component is standalone, so add it to a component's `imports` array.
 | `grouping` | `'auto' \| 'none'` | `'auto'` | With `'auto'`, consecutive calls to the same tool collapse into one strip. With `'none'`, every call renders on its own. |
 | `groupSummary` | `((name: string, count: number) => string) \| undefined` | `undefined` | Replaces the built-in strip label. When left undefined, the default registry below is used. |
 | `excludeToolNames` | `readonly string[]` | `[]` | Tool names to hide entirely. Compositions use it to keep internal orchestration tools out of the transcript. |
+| `toolCallTemplates` | `readonly ChatToolCallTemplateDirective[]` | `[]` | Per-tool templates supplied by a parent composition, such as the ones `<chat>` collects from its own content. A template projected directly into `<chat-tool-calls>` wins over a supplied one with the same name. |
 
 The component has no outputs.
 
