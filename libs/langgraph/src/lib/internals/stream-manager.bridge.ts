@@ -43,6 +43,7 @@ import {
   childStreamRefFromNamespace,
   isChildNamespace,
 } from './subagent-tracker';
+import { mapChildExecutionsFromHistory, restoreReasoning, type ChildExecution } from './history-restore';
 import type { BaseMessage } from '@langchain/core/messages';
 import type { Interrupt, Message as LangGraphMessage, ThreadState, ToolCallWithResult, ToolProgress } from '@langchain/langgraph-sdk';
 
@@ -218,6 +219,13 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
   let disposed = false;
   let abortController: AbortController | null = null;
   let historyAbortController: AbortController | null = null;
+  // Child-transcript reads started by a history refresh. Separate from
+  // `historyAbortController` because they outlive the refresh that started
+  // them; a thread switch or teardown aborts them.
+  let childStateAbortController: AbortController | null = null;
+  // Tool calls whose child transcript has already been requested on this
+  // thread, so repeated refreshes do not re-read the same namespace.
+  const requestedChildTranscripts = new Set<string>();
   const userAbortedControllers = new WeakSet<AbortController>();
   const toolProgressMap = new Map<string, ToolProgress>();
   // Message ids whose content is known-final (installed by a canonical
@@ -566,6 +574,9 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
     subjects.custom$.next([]);
     subjects.isThreadLoading$.next(false);
     toolProgressMap.clear();
+    childStateAbortController?.abort();
+    childStateAbortController = null;
+    requestedChildTranscripts.clear();
     subagentManager.clear();
     reasoningTimingMap.clear();
     canonicalMessageIds.clear();
@@ -609,6 +620,7 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
     invalidateQueueDrain();
     abortController?.abort();
     historyAbortController?.abort();
+    childStateAbortController?.abort();
     reasoningTimingMap.clear();
     if (activeAttempt && !activeAttempt.terminalOutcome) {
       finalizeAttempt(activeAttempt, 'interrupted');
@@ -671,7 +683,14 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
           // canonical surface for them; keeping a duplicate in values$
           // would confuse downstream consumers reading both subjects.
           delete (restoredValues as { messages?: unknown }).messages;
-          subjects.messages$.next(preserveIds(subjects.messages$.value, restoredMessages));
+          // A checkpoint carries reasoning as content blocks, not as the
+          // derived `reasoning` field the live merge attaches; restore it so a
+          // reloaded thread shows the same reasoning a live one did.
+          subjects.messages$.next(restoreReasoning(
+            subjects.messages$.value,
+            preserveIds(subjects.messages$.value, restoredMessages),
+            extractReasoning,
+          ));
           subjects.values$.next(restoredValues);
           if (!force && !activeAttempt && (restoredMessages.length > 0 || Object.keys(restoredValues as object).length > 0)) {
             developmentRuntime.milestone('thread.persisted');
@@ -681,6 +700,7 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
           // toolCalls$, which is built from messages$; without this, the
           // panel keeps showing the streamed pre-mutation content.
           syncToolCallsFromMessages();
+          restoreSubagentsFromHistory(threadId, history as ThreadState<T>[], restoredMessages);
         }
 
         // Hydrate pending interrupts from the latest checkpoint. When a
@@ -703,6 +723,91 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
     }
     if (failure) throw failure;
     return applied;
+  }
+
+  /**
+   * Rebuild delegation subagent cards from persisted thread history.
+   *
+   * Live, a card is opened by the parent's tool call and fed by child-namespace
+   * stream events; none of those events replay when a thread is reloaded. What
+   * history does carry:
+   *
+   * - the spawning tool calls and their ToolMessage results in the parent's
+   *   messages, which register each card under its tool-call id and settle it
+   *   with its final status and result;
+   * - the parent checkpoints' pushed tasks, which link each tool call to the
+   *   task that ran it, i.e. to the child's `tools:<task id>` namespace. Binding
+   *   that namespace lets a run that resumes after the reload stream into the
+   *   restored card rather than open a duplicate;
+   * - the child's own checkpoints under that namespace, read through the
+   *   optional `transport.getChildState`, which fill the card's transcript.
+   *
+   * Plain compiled-subgraph children (non-tool nodes) and nested delegations
+   * are not rebuilt: history does not link them to a parent tool call.
+   */
+  function restoreSubagentsFromHistory(
+    threadId: string,
+    history: ThreadState<T>[],
+    messages: BaseMessage[],
+  ): void {
+    syncSubagentsFromMessages(messages);
+    const executions = mapChildExecutionsFromHistory(
+      history as ThreadState<unknown>[],
+      subagentManager.getToolChildIds(),
+    );
+    if (executions.size === 0) return;
+    for (const execution of executions.values()) {
+      subagentManager.restoreExecution(execution.toolCallId, {
+        // Live events key a `tools:<id>` child by `<id>`; a child run by a
+        // differently named node streams as a subgraph, which this card does
+        // not own, so only the `tools` task name is bound.
+        ...(execution.taskName === 'tools' ? { namespaceId: execution.taskId } : {}),
+        outstanding: execution.outstanding,
+        failed: execution.failed,
+      });
+    }
+    publishSubagents();
+    void restoreChildTranscripts(threadId, [...executions.values()]);
+  }
+
+  async function restoreChildTranscripts(threadId: string, executions: ChildExecution[]): Promise<void> {
+    const getChildState = transport.getChildState?.bind(transport);
+    if (!getChildState) return;
+    const pending = executions.filter(execution =>
+      !requestedChildTranscripts.has(execution.toolCallId)
+      && subagentManager.needsTranscript(execution.toolCallId),
+    );
+    if (pending.length === 0) return;
+    childStateAbortController ??= new AbortController();
+    const controller = childStateAbortController;
+    await Promise.all(pending.map(async execution => {
+      requestedChildTranscripts.add(execution.toolCallId);
+      try {
+        const state = await getChildState(threadId, execution.checkpointNs, controller.signal);
+        if (controller.signal.aborted || disposed || currentThreadId !== threadId || !state) return;
+        // Only a checkpoint from the requested namespace is the child's. A
+        // transport that ignored the namespace would hand back the parent's
+        // state, and the parent transcript must never fill a child card.
+        const checkpointNs = state.checkpoint?.checkpoint_ns;
+        if (
+          typeof checkpointNs !== 'string'
+          || (checkpointNs !== execution.checkpointNs && !checkpointNs.startsWith(`${execution.checkpointNs}|`))
+        ) return;
+        if (!isRecord(state.values)) return;
+        const { messages: childMessages, ...childValues } = state.values;
+        if (!Array.isArray(childMessages)) return;
+        const normalized = options.toMessage
+          ? childMessages.map(options.toMessage)
+          : childMessages as BaseMessage[];
+        if (subagentManager.restoreTranscript(execution.toolCallId, normalized, childValues)) {
+          publishSubagents();
+        }
+      } catch {
+        // The transcript is supplementary: the card already shows its status
+        // and result from the parent's history, so a failed read leaves it
+        // there instead of raising an error over a usable thread.
+      }
+    }));
   }
 
   function waitForHistory<R>(history: Promise<R>, signal: AbortSignal): Promise<R> {
