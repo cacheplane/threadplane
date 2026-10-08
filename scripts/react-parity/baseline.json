@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "93fff854335ae499de2ad480f6596cc34c33ce45",
+  "baselineHead": "10000391c305355d5fd2508171e483774bcef23d",
   "sourceState": {
     "modified": [],
     "untracked": []
@@ -2626,7 +2626,7 @@
       "id": "doc:apps/website/content/docs/choosing-an-adapter/index.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/choosing-an-adapter/index.mdx",
-      "sha256": "67347b4fc3096b428ee955d5b873a4b55af53de96ff7f3bafd4d2ee884f78110"
+      "sha256": "d3c5b76e47d11f6b2e1584f10a21305603b9146c3533392d9f192c57da519778"
     },
     {
       "id": "doc:apps/website/content/docs/deep-agents/capabilities/filesystem.mdx",
