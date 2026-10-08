@@ -56,14 +56,14 @@ The transport handles:
 - **Streaming modes** — defaults to `values`, `messages-tuple`, `updates`, and `custom`.
 - **Cancellation** — forwards `AbortSignal` to LangGraph run APIs.
 - **Queued runs** — supports create, cancel, and join flows when the backend supports them.
-- **History and state update** — loads checkpoint history and calls `threads.updateState()` for regenerate rollback.
+- **History and state update** — loads checkpoint history, reads a subagent's latest checkpoint under its child namespace (`getChildState()`) when a thread is reloaded, and calls `threads.updateState()` for regenerate rollback.
 - **Error propagation** — SDK and network errors surface through `injectAgent().error()`.
 
 <Callout type="tip" title="Transport interface">
   `FetchStreamTransport` implements `AgentTransport`. Custom transports must
   implement `stream(assistantId, threadId, payload, signal, options?)`; optional
   methods such as `joinStream`, `createQueuedRun`, `cancelRun`, `getHistory`,
-  and `updateState` enable advanced LangGraph features.
+  `getChildState`, and `updateState` enable advanced LangGraph features.
 </Callout>
 
 ## What's Next

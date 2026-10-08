@@ -185,7 +185,18 @@ provideAgent({
 });
 ```
 
-`threadId` accepts a Signal, which is the other way to change threads: set the signal and `injectAgent()` reacts to it, fetches that thread's checkpoint, and updates every derived signal. The example calls `switchThread()` instead because it wants the switch to happen exactly when the button is clicked.
+`threadId` accepts a Signal, which is the other way to change threads: set the signal and `injectAgent()` reacts to it, fetches that thread's checkpoint history, and rebuilds the derived signals from it. The example calls `switchThread()` instead because it wants the switch to happen exactly when the button is clicked.
+
+### What a reloaded thread shows
+
+A reloaded thread is rebuilt from checkpoint history, not from the stream events the live view saw, so it shows what history carries and no more:
+
+- **Messages, values, tool calls and pending interrupts** come from the latest checkpoint.
+- **Reasoning** is restored from the `reasoning` and `thinking` content blocks the checkpoint saved with each assistant message. Its duration is not: history records no start or end time for reasoning, so a reloaded message shows its reasoning without the "Thought for" duration label.
+- **Subagent cards** for delegation tool calls (the `subagentToolNames` option, `task` by default) are rebuilt from the parent's tool calls and their results, so each card sits under its tool call with its final status and result. The parent checkpoints also link each call to the child's checkpoint namespace; the default transport reads the child's latest checkpoint there to restore the card's transcript, and a run that resumes after the reload streams into the same card instead of opening a second one.
+- **Not rebuilt:** cards for compiled subgraphs added as plain graph nodes, nested delegations (a subagent that delegates again), and tool progress events. History does not tie these to a parent tool call, so they appear only while a run is streaming.
+
+A custom transport restores child transcripts only if it implements the optional `getChildState()` method; without it, subagent cards come back with their status and result but no messages.
 
 <Callout type="tip" title="Thread loading state">
 Use the `isThreadLoading()` signal to show a skeleton UI while `injectAgent()` fetches checkpoint state from the server. This avoids a flash of empty content when switching threads.
