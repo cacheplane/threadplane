@@ -1972,6 +1972,18 @@
         "optional": false
       },
       {
+        "name": "interruptContext",
+        "type": "Signal<ChatInterruptTemplateContext | undefined>",
+        "description": "Context for the interrupt template, or undefined when there is no\ntemplate or no pending interrupt.",
+        "optional": false
+      },
+      {
+        "name": "interruptTemplate",
+        "type": "Signal<ChatInterruptTemplateDirective<> | undefined>",
+        "description": "Optional interrupt renderer projected as\n`<ng-template chatInterruptTemplate>`. Rendered at the end of the\ntranscript while `agent.interrupt()` is defined.",
+        "optional": false
+      },
+      {
         "name": "liveSurfaceStore",
         "type": "A2uiSurfaceStore",
         "description": "Shared A2UI surface store fed by the live partial-args bridge. The\ncontent-classifier path will share this store via tool_call_id\nshort-circuit (skipping re-dispatch for live tool_call_ids).",
@@ -2035,6 +2047,18 @@
         "name": "resolvedStore",
         "type": "Signal<StateStore | undefined>",
         "description": "",
+        "optional": false
+      },
+      {
+        "name": "runActivityContext",
+        "type": "Signal<ChatRunActivityTemplateContext | undefined>",
+        "description": "Context for the run-activity template, or undefined when it should not\nrender: no template, no active run, or the current run already has an\nassistant message. Reused while the agent and run messages are unchanged.",
+        "optional": false
+      },
+      {
+        "name": "runActivityTemplate",
+        "type": "Signal<ChatRunActivityTemplateDirective<> | undefined>",
+        "description": "Optional turn-level run renderer projected as\n`<ng-template chatRunActivityTemplate>`. Rendered after the last message\nwhile a run is active and has no assistant message yet, in place of the\ntyping indicator.",
         "optional": false
       },
       {
@@ -2958,6 +2982,42 @@
     "methods": []
   },
   {
+    "name": "ChatInterruptTemplateDirective",
+    "kind": "class",
+    "description": "Registers an interrupt renderer on `<chat>`. While the agent has a pending\ninterrupt (`agent.interrupt()` is defined), the template renders at the\nend of the transcript, inside the scroll region and after any run\nactivity, so approval cards and other human-in-the-loop UI sit in the\nconversation. With no pending interrupt, or no template, nothing renders:\n`<chat>` has no default interrupt UI.\n\nUsage:\n\n  <chat [agent]=\"agent\">\n    <ng-template chatInterruptTemplate let-agent let-interrupt=\"interrupt\">\n      <my-approval-card [interrupt]=\"interrupt\" (decide)=\"agent.submit({ resume: $event })\" />\n    </ng-template>\n  </chat>",
+    "params": [],
+    "examples": [],
+    "properties": [
+      {
+        "name": "templateRef",
+        "type": "TemplateRef<ChatInterruptTemplateContext>",
+        "description": "",
+        "optional": false
+      }
+    ],
+    "methods": [
+      {
+        "name": "ngTemplateContextGuard",
+        "signature": "ngTemplateContextGuard(_directive: ChatInterruptTemplateDirective<>, context: unknown): context is ChatInterruptTemplateContext",
+        "description": "",
+        "params": [
+          {
+            "name": "_directive",
+            "type": "ChatInterruptTemplateDirective<>",
+            "description": "",
+            "optional": false
+          },
+          {
+            "name": "context",
+            "type": "unknown",
+            "description": "",
+            "optional": false
+          }
+        ]
+      }
+    ]
+  },
+  {
     "name": "ChatLauncherButtonComponent",
     "kind": "class",
     "description": "",
@@ -3630,6 +3690,42 @@
         "signature": "toggle(): void",
         "description": "",
         "params": []
+      }
+    ]
+  },
+  {
+    "name": "ChatRunActivityTemplateDirective",
+    "kind": "class",
+    "description": "Registers a turn-level run-activity renderer on `<chat>`. The template\nrenders after the last message, inside the transcript's scroll region,\nwhile a run is active and the current run has no assistant message yet:\nthe window between the user's submit and the first assistant message,\nwhich can be long when the first model call is slow. It replaces the\ndefault typing indicator in that window.\n\nThe current run is every message after the last user message. Once an\nassistant message arrives, the template stops rendering and the\nper-message `chatActivityTemplate` (or the default reasoning and tool-call\nregion) takes over. A resumed run that continues an existing assistant\nmessage never shows it.\n\nWithout this template, `<chat>` renders the default typing indicator.\n\nUsage:\n\n  <chat [agent]=\"agent\">\n    <ng-template chatRunActivityTemplate let-agent>\n      <my-turn-activity [agent]=\"agent\" />\n    </ng-template>\n  </chat>",
+    "params": [],
+    "examples": [],
+    "properties": [
+      {
+        "name": "templateRef",
+        "type": "TemplateRef<ChatRunActivityTemplateContext>",
+        "description": "",
+        "optional": false
+      }
+    ],
+    "methods": [
+      {
+        "name": "ngTemplateContextGuard",
+        "signature": "ngTemplateContextGuard(_directive: ChatRunActivityTemplateDirective<>, context: unknown): context is ChatRunActivityTemplateContext",
+        "description": "",
+        "params": [
+          {
+            "name": "_directive",
+            "type": "ChatRunActivityTemplateDirective<>",
+            "description": "",
+            "optional": false
+          },
+          {
+            "name": "context",
+            "type": "unknown",
+            "description": "",
+            "optional": false
+          }
+        ]
       }
     ]
   },
@@ -6710,6 +6806,26 @@
     "examples": []
   },
   {
+    "name": "ChatInterruptTemplateContext",
+    "kind": "interface",
+    "description": "Template context for the interrupt template projected into `<chat>`.",
+    "properties": [
+      {
+        "name": "$implicit",
+        "type": "Agent<>",
+        "description": "The agent bound to `<chat>` (`let-agent`).",
+        "optional": false
+      },
+      {
+        "name": "interrupt",
+        "type": "AgentInterrupt",
+        "description": "The pending interrupt, read from `agent.interrupt()`\n(`let-interrupt=\"interrupt\"`). Runtimes that expose a full interrupt\nbatch do so on their own agent type, reachable through `$implicit`.",
+        "optional": false
+      }
+    ],
+    "examples": []
+  },
+  {
     "name": "ChatLifecycle",
     "kind": "interface",
     "description": "",
@@ -6763,6 +6879,38 @@
         "type": "string",
         "description": "",
         "optional": true
+      }
+    ],
+    "examples": []
+  },
+  {
+    "name": "ChatRunActivityTemplateContext",
+    "kind": "interface",
+    "description": "Template context for the run-activity template projected into `<chat>`.\nOne context is built while a run is active and has no assistant message.",
+    "properties": [
+      {
+        "name": "$implicit",
+        "type": "Agent<>",
+        "description": "The agent bound to `<chat>` (`let-agent`).",
+        "optional": false
+      },
+      {
+        "name": "hasAssistantMessage",
+        "type": "boolean",
+        "description": "Whether the current run has an assistant message yet. Always `false`\nwhile the template renders: the first assistant message hands the run\nover to the per-message activity slot (`let-hasAssistantMessage=\"hasAssistantMessage\"`).",
+        "optional": false
+      },
+      {
+        "name": "messages",
+        "type": "Message[]",
+        "description": "The current run's messages: every message after the last user message,\nor every message when there is none (`let-messages=\"messages\"`).",
+        "optional": false
+      },
+      {
+        "name": "running",
+        "type": "boolean",
+        "description": "Whether a run is in flight (`agent.isLoading()`). Always `true` while the\ntemplate renders (`let-running=\"running\"`).",
+        "optional": false
       }
     ],
     "examples": []

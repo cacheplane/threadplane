@@ -65,6 +65,16 @@ The panel takes one input, the agent, and renders nothing at all while no interr
 
 The status line beside it reads `agent.status()`, which is `idle`, `running`, or `error`.
 
+To place the panel in the conversation instead, project it through a [`chatInterruptTemplate`](/docs/chat/components/chat-interrupt-template). `<chat>` then renders it at the end of the transcript while the interrupt is pending:
+
+```html
+<chat [agent]="agent">
+  <ng-template chatInterruptTemplate let-agent>
+    <chat-interrupt-panel [agent]="agent" (action)="onInterruptAction($event)" />
+  </ng-template>
+</chat>
+```
+
 ### Resuming with the decision
 
 The panel emits an `InterruptAction`, and the component turns the two actions it cares about into resume payloads. The graph expects a string, so `accept` submits `'confirm'` and `ignore` submits `'cancel'`.
