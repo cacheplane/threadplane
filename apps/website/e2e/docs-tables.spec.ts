@@ -7,22 +7,37 @@ import { test, expect, type Page } from '@playwright/test';
  * text, so they hold for any table layout rather than one stylesheet.
  */
 
-/** Words that wrap onto a second line inside a table cell. */
+/**
+ * Words that break across lines between two letters ("Ye/s"). A wrap right
+ * after a hyphen or slash ("AG-/UI") is ordinary typesetting and depends on
+ * the platform's font metrics, so it does not count.
+ */
 async function splitWords(page: Page, selector: string): Promise<string[]> {
   return page.locator(selector).evaluate((table) => {
+    const lineTop = (node: Text, start: number, end: number): number | undefined => {
+      const range = document.createRange();
+      range.setStart(node, start);
+      range.setEnd(node, end);
+      const rect = [...range.getClientRects()].find((r) => r.width > 0);
+      return rect ? Math.round(rect.top) : undefined;
+    };
     const split: string[] = [];
     for (const cell of table.querySelectorAll('th, td')) {
       const walker = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT);
       let node: Text | null;
       while ((node = walker.nextNode() as Text | null)) {
         for (const match of node.data.matchAll(/\S+/g)) {
-          const range = document.createRange();
-          range.setStart(node, match.index);
-          range.setEnd(node, match.index + match[0].length);
-          const tops = new Set(
-            [...range.getClientRects()].filter((r) => r.width > 0).map((r) => Math.round(r.top))
-          );
-          if (tops.size > 1) split.push(match[0]);
+          const word = match[0];
+          let previous: number | undefined;
+          for (let i = 0; i < word.length; i++) {
+            const top = lineTop(node, match.index + i, match.index + i + 1);
+            if (top === undefined) continue;
+            if (previous !== undefined && top !== previous && !/[-/_.,|]/.test(word[i - 1])) {
+              split.push(word);
+              break;
+            }
+            previous = top;
+          }
         }
       }
     }
