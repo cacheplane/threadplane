@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "7c1b5e67050fc1dfa109a771d0cabff317b82811",
+  "baselineHead": "e940bb09ae10626d492f1e38587cf97f977303c1",
   "sourceState": {
     "modified": [],
     "untracked": []
@@ -354,7 +354,7 @@
       "id": "asset:libs/chat/ng-package.json",
       "kind": "asset",
       "path": "libs/chat/ng-package.json",
-      "sha256": "5b1947224519b367fb619f61b560aa956ee62339a0efa45b3f0e23205e1bb52c"
+      "sha256": "83d70d90a31d59108d24fc066cb2968603a65120ef59c3eece92b737ead1869a"
     },
     {
       "id": "asset:libs/chat/package.json",
@@ -367,6 +367,12 @@
       "kind": "asset",
       "path": "libs/chat/project.json",
       "sha256": "650f32a6f72513086685aeee1ad31e0de6686a4458a6f247e09e7d5689d4f68b"
+    },
+    {
+      "id": "asset:libs/chat/src/chat.css",
+      "kind": "asset",
+      "path": "libs/chat/src/chat.css",
+      "sha256": "449d96e16dd6a71d886589f367d02d4cecf19dd55047fec98e42b5ce302081cc"
     },
     {
       "id": "asset:libs/chat/src/themes/default-dark.css",
@@ -2356,7 +2362,7 @@
       "id": "doc:apps/website/content/docs/ag-ui/guides/tool-views.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/guides/tool-views.mdx",
-      "sha256": "903569df654da40bde49b699524f3d0f9afbd9f25bcfe88e6a6324d9f4e7e1d1"
+      "sha256": "28293b0d8b08de61a43be6a3f293da2fcc441120ec7cf1818b2bace3899e72b0"
     },
     {
       "id": "doc:apps/website/content/docs/ag-ui/guides/troubleshooting.mdx",
@@ -2368,7 +2374,7 @@
       "id": "doc:apps/website/content/docs/ag-ui/reference/event-mapping.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/reference/event-mapping.mdx",
-      "sha256": "080e7de4a03c8453d938258c9bb1c5358c84ec0427173eade0b2d9cd26e12fe7"
+      "sha256": "b7a1889559589d29b13beb7c38a87dbc54f9904966bfe3c268bf3d383bafd293"
     },
     {
       "id": "doc:apps/website/content/docs/chat/a2ui/catalog.mdx",
@@ -11771,7 +11777,7 @@
       "id": "source:libs/ag-ui/src/lib/reducer.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/reducer.ts",
-      "sha256": "c130eab7c3f75f49aede4959ae325eadc93756e445cea943b7322ac238222209"
+      "sha256": "9fb91d77393aa8c215c40b3745a1d2e23c26f5ad7951c272374619b160481a76"
     },
     {
       "id": "source:libs/ag-ui/src/lib/run-state-transaction.ts",
@@ -11801,7 +11807,7 @@
       "id": "source:libs/ag-ui/src/lib/to-agent.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/to-agent.ts",
-      "sha256": "bb25287d7c1e11bdf1668307d30021481399f402f4c23c4912e912b4dde22745"
+      "sha256": "deb5e18c7b3eec73a24f7a22323beeefcb65936ab44933ce3b38f46db27eb25c"
     },
     {
       "id": "source:libs/ag-ui/src/public-api.ts",
@@ -14615,7 +14621,7 @@
       "id": "source:libs/telemetry/install/verify-pack.mjs",
       "kind": "source",
       "path": "libs/telemetry/install/verify-pack.mjs",
-      "sha256": "5adfab0a3e37b70e2b7c84c6ce280e96414de51344ecd16ae6841a5f82863a18"
+      "sha256": "eed4c3f5967805194f97b23b0b2071f0c6bcc0dd7f59a037d505ee917cfd74dd"
     },
     {
       "id": "source:libs/telemetry/scripts/assemble-dist.mjs",

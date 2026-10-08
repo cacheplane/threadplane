@@ -353,6 +353,14 @@
       "status": "planned"
     },
     {
+      "id": "asset:libs/chat/src/chat.css",
+      "taskIds": [
+        "T22"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned"
+    },
+    {
       "id": "asset:libs/chat/src/themes/default-dark.css",
       "taskIds": [
         "T22"

@@ -286,27 +286,30 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
         ...prev,
         { id: e.toolCallId, name: e.toolCallName, args: {}, status: 'running' },
       ]);
-      // Link the tool call to its parent assistant message so the chat lib's
-      // per-message tool-call resolution (chat-tool-calls / chat-tool-views)
-      // can scope it. ag-ui-langgraph emits parentMessageId for every tool
-      // call. If the parent assistant message hasn't been created yet (a
-      // tool-call-only turn emits no TEXT_MESSAGE_START), create a slot.
-      const parentId = e.parentMessageId;
-      if (parentId) {
-        const delivery = ownAssistantMessage(store, parentId);
-        if (!delivery) return;
-        store.messages.update((prev) => {
-          const existing = prev.find((m) => m.id === parentId);
-          if (existing) {
-            return prev.map((m) =>
-              m.id === parentId
-                ? { ...m, toolCallIds: [...(m.toolCallIds ?? []), e.toolCallId], delivery }
-                : m,
-            );
-          }
-          return [...prev, { id: parentId, role: 'assistant', content: '', toolCallIds: [e.toolCallId], delivery }];
+      // Link the tool call to the assistant message that owns it, so the chat
+      // lib's per-message tool-call resolution (chat-tool-calls /
+      // chat-tool-views) and subagent anchoring can scope it. A server may
+      // stream tool calls without a parent message (no parentMessageId and no
+      // TEXT_MESSAGE_START first); the owner is then a new assistant message
+      // keyed by the tool call id, the same message the source agent's own
+      // message list holds for it, so a hydrated thread matches the live one.
+      const ownerId = toolCallOwnerId(store.messages(), e.toolCallId, e.parentMessageId);
+      const delivery = ownAssistantMessage(store, ownerId);
+      if (!delivery) return;
+      store.messages.update((prev) => {
+        if (!prev.some((m) => m.id === ownerId)) {
+          return [...prev, { id: ownerId, role: 'assistant', content: '', toolCallIds: [e.toolCallId], delivery }];
+        }
+        return prev.map((m) => {
+          if (m.id !== ownerId) return m;
+          const ids = m.toolCallIds ?? [];
+          return {
+            ...m,
+            toolCallIds: ids.includes(e.toolCallId) ? ids : [...ids, e.toolCallId],
+            delivery,
+          };
         });
-      }
+      });
       return;
     }
     case 'TOOL_CALL_ARGS': {
@@ -420,7 +423,9 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
             });
           }
           const { toolCalls: _dropped, ...rest } = m;
-          snapshotMessage = { ...rest, toolCallIds: ids } as unknown as Omit<Message, 'delivery'>;
+          // A tool-call-only assistant message may carry no content on the
+          // wire; the streamed message it replaces has ''.
+          snapshotMessage = { ...rest, content: rest.content ?? '', toolCallIds: ids } as unknown as Omit<Message, 'delivery'>;
         }
         if (completedMessage) {
           const snapshotChanged = !sameContent(completedMessage.content, snapshotMessage.content)
@@ -876,6 +881,21 @@ function ownAssistantMessage(store: ReducerStore, id: string) {
   run.ownedMessageIds.add(id);
   run.currentAssistantMessageId = id;
   return streamingDelivery(run.generation);
+}
+
+/**
+ * The id of the assistant message a TOOL_CALL_START belongs to, resolved the
+ * way the source agent applies the event to its own message list: a message
+ * that already lists the call keeps it; otherwise a named parent owns it unless
+ * that id belongs to a non-assistant message; otherwise the call id names a new
+ * assistant message.
+ */
+function toolCallOwnerId(messages: readonly Message[], toolCallId: string, parentMessageId?: string): string {
+  const listed = messages.find((m) => m.role === 'assistant' && m.toolCallIds?.includes(toolCallId));
+  if (listed) return listed.id;
+  if (!parentMessageId) return toolCallId;
+  const parent = messages.find((m) => m.id === parentMessageId);
+  return !parent || parent.role === 'assistant' ? parentMessageId : toolCallId;
 }
 
 function sameContent(a: unknown, b: unknown): boolean {

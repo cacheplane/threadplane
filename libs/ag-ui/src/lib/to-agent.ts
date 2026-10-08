@@ -958,7 +958,7 @@ function createAgentAdapter(
         const userMsg = buildUserMessage(input);
         if (userMsg) {
           store.messages.update(prev => [...prev, userMsg]);
-          source.addMessage(userMsg as Parameters<typeof source.addMessage>[0]);
+          source.addMessage(toSourceMessage(userMsg));
         }
         resumeInput = structuredClone({ state: source.state ?? {}, messages: source.messages ?? [], localMessages: store.messages() });
         await executeRun(
@@ -979,7 +979,7 @@ function createAgentAdapter(
       if (userMsg) {
         store.messages.update((prev) => [...prev, userMsg]);
         // Sync to AG-UI source so it's included in the next run's input.
-        source.addMessage(userMsg as Parameters<typeof source.addMessage>[0]);
+        source.addMessage(toSourceMessage(userMsg));
       }
 
       // Record the input so retry() can re-run it without re-appending the
@@ -1064,7 +1064,7 @@ function createAgentAdapter(
       // matches what we're about to re-run. source.setMessages() replaces the
       // agent's internal message list without appending — the trailing user
       // message in `trimmed` becomes the active prompt for the next run.
-      source.setMessages(trimmed as Parameters<typeof source.setMessages>[0]);
+      source.setMessages(trimmed.map(toSourceMessage));
 
       await executeRun('regenerate');
     },
@@ -1155,6 +1155,20 @@ function buildUserMessage(input: AgentSubmitInput): Message | undefined {
     : input.message.map((b) => b.type === 'text' ? b.text : JSON.stringify(b)).join('');
   const id = randomId();
   return { id, role: 'user', content, delivery: staticDelivery(id) };
+}
+
+const LOCAL_MESSAGE_FIELDS = ['delivery', 'reasoningDurationMs', 'citations', 'toolCallIds'] as const satisfies readonly (keyof Message)[];
+
+/**
+ * The protocol projection of a local message. Drops the fields this adapter
+ * derives for rendering (delivery lifecycle, reasoning timing, bridged
+ * citations, tool-call linkage), which the protocol does not define and the
+ * client would otherwise strip, with a warning, from every run's input.
+ */
+function toSourceMessage(message: Message): Parameters<AbstractAgent['addMessage']>[0] {
+  const wire: Record<string, unknown> = { ...message };
+  for (const field of LOCAL_MESSAGE_FIELDS) delete wire[field];
+  return wire as Parameters<AbstractAgent['addMessage']>[0];
 }
 
 function randomId(): string {

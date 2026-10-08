@@ -1,0 +1,18 @@
+/*
+ * @threadplane/chat — global stylesheet entry
+ *
+ * Importing this file is optional. Every chat component injects the
+ * `--tplane-chat-*` and `--a2ui-*` design tokens itself (inside the
+ * `@layer tplane-chat` cascade layer) the first time one renders, so no
+ * global stylesheet is required for `<chat>` to look right.
+ *
+ * This file exists so `@import '@threadplane/chat/chat.css';` keeps
+ * resolving. It declares nothing, and adds nothing to the cascade.
+ *
+ * To customise the look, override the tokens in your own stylesheet, or
+ * import one of the presets:
+ *   @import '@threadplane/chat/themes/default-dark.css';
+ *   @import '@threadplane/chat/themes/default-light.css';
+ *   @import '@threadplane/chat/themes/material-dark.css';
+ *   @import '@threadplane/chat/themes/material-light.css';
+ */
