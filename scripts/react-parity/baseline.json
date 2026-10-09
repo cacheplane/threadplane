@@ -1,11 +1,8 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "b5ba906aa73768003dd1697c435a96b67c010d88",
+  "baselineHead": "beabb1d39164a7ff6cf8141faa18f64c7d90ee4e",
   "sourceState": {
-    "modified": [
-      "apps/website/content/docs/chat/guides/generative-ui.mdx",
-      "libs/cockpit-registry/src/lib/content-descriptors.ts"
-    ],
+    "modified": [],
     "untracked": []
   },
   "scope": {
@@ -2151,7 +2148,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "e267321eb5a1e8a4c88a5cbd2b4c5a20551a2dcde270389a16048ffc887d6d2a"
+      "sha256": "aaa0cda27d8b4074673bca49a24e5c42e81af7200d9e482c4f2e89a9f2a998bb"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",

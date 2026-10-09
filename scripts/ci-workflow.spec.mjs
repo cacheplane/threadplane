@@ -1,4 +1,6 @@
-import { readdir, readFile } from 'node:fs/promises';
+import { chmod, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { privateScaffoldProjects } from './react-parity/package-policy.mjs';
@@ -78,7 +80,84 @@ function readNamedStep(job, name) {
   return job.slice(start, end);
 }
 
+const pinnedPostgresImage =
+  'public.ecr.aws/docker/library/postgres@sha256:ca0bd484cb98bf4b24eb1010e73fb3fcbd6714d240fbc1a10eea5b7dbecb641d';
+
+function readStepRunBlock(step) {
+  const match = /^ {8}run: \|\n((?: {10}[^\n]*\n?)+)/m.exec(step);
+  assert.ok(match, 'expected a workflow shell run block');
+  return match[1].replace(/^ {10}/gm, '').trimEnd();
+}
+
+async function runPostgresPreparation(failingCommand) {
+  const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'library');
+  const script = readStepRunBlock(readNamedStep(job, 'Prepare pinned PostgreSQL integration image'));
+  const directory = await mkdtemp(join(tmpdir(), 'ci-postgres-preparation-'));
+  const log = join(directory, 'docker-arguments.jsonl');
+  try {
+    // Only the Docker command boundary is replaced; Bash executes the production block.
+    const docker = join(directory, 'docker');
+    await writeFile(docker, `#!${process.execPath}\n` +
+      `const { appendFileSync } = require('node:fs');\n` +
+      `const args = process.argv.slice(2);\n` +
+      `appendFileSync(process.env.DOCKER_ARGUMENT_LOG, JSON.stringify(args) + '\\n');\n` +
+      `if (args[0] === process.env.FAIL_DOCKER_COMMAND) process.exit(args[0] === 'pull' ? 41 : 42);\n`);
+    await chmod(docker, 0o755);
+    const result = spawnSync('/bin/bash', ['-e', '-c', script], {
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        PATH: directory,
+        DOCKER_ARGUMENT_LOG: log,
+        FAIL_DOCKER_COMMAND: failingCommand ?? '',
+      },
+    });
+    assert.ifError(result.error);
+    const calls = (await readFile(log, 'utf8')).trim().split('\n').map((line) => JSON.parse(line));
+    return { result, calls };
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+}
+
 describe('CI workflow', () => {
+  it('requires unconditional pinned PostgreSQL preparation immediately before the real durable tool verifier', async () => {
+    const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'library');
+    const prepare = readNamedStep(job, 'Prepare pinned PostgreSQL integration image');
+    const verify = readNamedStep(job, 'Verify durable tool ownership and PostgreSQL migration');
+    assert.equal((job.match(/- name: Prepare pinned PostgreSQL integration image/g) ?? []).length, 1);
+    assert.equal(readStepRunBlock(prepare), `docker pull ${pinnedPostgresImage}\ndocker tag ${pinnedPostgresImage} postgres:16`);
+    assert.equal(job.slice(job.indexOf(prepare) + prepare.length).trimStart().startsWith(verify.trimStart()), true,
+      'the real verifier must be the next GitHub step after successful preparation');
+    for (const step of [prepare, verify]) {
+      assert.doesNotMatch(step, /if:|continue-on-error|\|\|\s*true|set\s+\+e|secrets\.|credentials|docker login/);
+    }
+    assert.equal(verify.trimEnd(), '      - name: Verify durable tool ownership and PostgreSQL migration\n' +
+      '        run: node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.base.json scripts/react-parity/verify-tool-claims.ts');
+    const source = await readFile('scripts/react-parity/verify-tool-claims.ts', 'utf8');
+    assert.match(source, /'--network',\s*'none'/);
+    assert.match(source, /'postgres:16'/);
+    assert.match(source, /await migrationScenario\(\)/);
+  });
+
+  it('executes the production PostgreSQL preparation block with exactly the pinned pull and local tag', async () => {
+    const { result, calls } = await runPostgresPreparation();
+    assert.equal(result.status, 0, result.stderr);
+    assert.deepEqual(calls, [['pull', pinnedPostgresImage], ['tag', pinnedPostgresImage, 'postgres:16']]);
+  });
+
+  it('stops the production PostgreSQL preparation block before tagging when pull fails', async () => {
+    const { result, calls } = await runPostgresPreparation('pull');
+    assert.equal(result.status, 41, result.stderr);
+    assert.deepEqual(calls, [['pull', pinnedPostgresImage]]);
+  });
+
+  it('fails the production PostgreSQL preparation block when the local tag fails', async () => {
+    const { result, calls } = await runPostgresPreparation('tag');
+    assert.equal(result.status, 42, result.stderr);
+    assert.deepEqual(calls, [['pull', pinnedPostgresImage], ['tag', pinnedPostgresImage, 'postgres:16']]);
+  });
+
   it('runs both graph streaming regressions with locked Python before cockpit smoke can pass', async () => {
     const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'cockpit-smoke');
     const setup = readNamedStep(job, 'Set up Python for graph streaming regressions');
@@ -409,6 +488,73 @@ describe('CI workflow', () => {
   async function readAgUiDemoJob() {
     return readJobBlock(await readWorkflow(), 'ag-ui-demo-deploy');
   }
+
+  // Exercise grep's ERE semantics with the selector read from the deploy step,
+  // so these cases cannot pass against a separately maintained test regex.
+  for (const [path, changed] of [
+    ['libs/ag-ui/src/public-api.ts', true],
+    ['libs/chat/src/lib/compositions/chat/chat.component.ts', true],
+    ['libs/render/src/public-api.ts', true],
+    ['libs/telemetry/src/browser/public-api.ts', true],
+    ['libs/langgraph/src/public-api.ts', true],
+    ['libs/core/src/index.ts', true],
+    ['libs/a2ui/src/index.ts', true],
+    ['libs/future-library/src/index.ts', true],
+    ['package.json', true],
+    ['package-lock.json', true],
+    ['nx.json', true],
+    ['tsconfig.base.json', true],
+    ['.github/workflows/ci.yml', true],
+    ['examples/ag-ui/angular/src/app/app.ts', true],
+    ['examples/ag-ui/python/src/agent.py', true],
+    ['scripts/ag-ui-demo-middleware.ts', true],
+    ['scripts/assemble-ag-ui-demo.ts', true],
+    ['scripts/demo-routes.ts', true],
+    ['README.md', false],
+    ['apps/website/content/docs/ag-ui.mdx', false],
+    ['deployments/ag-ui-mastra/src/index.ts', false],
+    ['examples/chat/python/src/agent.py', false],
+    ['scripts/ci-workflow.spec.mjs', false],
+    ['scripts/demo-routes.spec.ts', false],
+    ['scripts/assemble-ag-ui-demo.spec.ts', false],
+    ['library/ag-ui/src/index.ts', false],
+    ['libs-extra/ag-ui/src/index.ts', false],
+    ['nested/libs/ag-ui/src/index.ts', false],
+    ['examples/ag-ui-extra/angular/src/app.ts', false],
+    ['nested/examples/ag-ui/angular/src/app.ts', false],
+    ['scripts/demo-routes.ts.bak', false],
+    ['scripts/not-demo-routes.ts', false],
+    ['nested/package.json', false],
+    ['packageXjson', false],
+    ['package-lockXjson', false],
+    ['package.json.bak', false],
+    ['nxXjson', false],
+    ['tsconfigXbaseXjson', false],
+    ['.github/workflows/ciXyml', false],
+    ['.github/workflows/ci.yml.bak', false],
+    ['.github/workflows/release.yml', false],
+    ['', false],
+  ]) {
+    it(`AG-UI demo deployment ${changed ? 'includes' : 'excludes'} ${path || 'an empty change list'}`, async () => {
+      const step = readNamedStep(await readAgUiDemoJob(), 'Check if AG-UI demo changed');
+      const selectors = [...step.matchAll(/grep -E '([^']+)'/g)];
+      assert.equal(selectors.length, 1, 'expected exactly one deployment path selector');
+      const result = spawnSync('grep', ['-E', selectors[0][1]], {
+        input: `${path}\n`,
+        encoding: 'utf8',
+      });
+      assert.ifError(result.error);
+      assert.equal(result.status, changed ? 0 : 1, `${path}: ${result.stderr}`);
+    });
+  }
+
+  it('runs the deployment selector regressions on every pull request', async () => {
+    const job = await readCiScopeJob();
+    const step = readNamedStep(job, 'Validate CI workflow guards');
+    assert.match(step, /run: node --test scripts\/ci-workflow\.spec\.mjs\s*$/);
+    assert.doesNotMatch(step, /if:|continue-on-error|\|\|\s*true|--test-name-pattern/);
+    assert.doesNotMatch(job, /^ {4}if:/m);
+  });
 
   async function readProductionSmokeJob() {
     return readJobBlock(await readWorkflow(), 'production-smoke');
