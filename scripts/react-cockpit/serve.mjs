@@ -17,6 +17,7 @@ import { createChatInputFixture } from './chat-input-fixture.mjs';
 import { createChatInterruptsFixture } from './chat-interrupts-fixture.mjs';
 import { createChatToolCallsFixture } from './chat-tool-calls-fixture.mjs';
 import { createChatSubagentsFixture } from './chat-subagents-fixture.mjs';
+import { createChatGenerativeUiFixture } from './chat-generative-ui-fixture.mjs';
 import { createChatTimelineFixture } from './chat-timeline-fixture.mjs';
 import { createChatThreadsFixture } from './chat-threads-fixture.mjs';
 import { createAgUiStreamingFixture } from './ag-ui-streaming-fixture.mjs';
@@ -26,6 +27,7 @@ import { createAgUiJsonRenderFixture } from './ag-ui-json-render-fixture.mjs';
 import { createAgUiSubagentsFixture } from './ag-ui-subagents-fixture.mjs';
 
 const configuration = reactCockpitConfiguration(process.argv[2]);
+let chatGenerativeUiFixture = configuration.library === 'chat' && configuration.topic === 'generative-ui' ? createChatGenerativeUiFixture() : null;
 const chatTimelineFixture = configuration.library === 'chat' && configuration.topic === 'timeline' ? createChatTimelineFixture() : null;
 const chatThreadsFixture = configuration.library === 'chat' && configuration.topic === 'threads' ? createChatThreadsFixture() : null;
 const chatSubagentsFixture = configuration.library === 'chat' && configuration.topic === 'subagents' ? createChatSubagentsFixture() : null;
@@ -102,6 +104,17 @@ const release = () => {
 };
 const server = createServer(async (request, response) => {
   const pathname = new URL(request.url, 'http://localhost').pathname;
+  if (chatGenerativeUiFixture && pathname === '/__reset') {
+    if (request.method !== 'POST') return json(response, {}, 405);
+    try {
+      await chatGenerativeUiFixture.close();
+      chatGenerativeUiFixture = createChatGenerativeUiFixture();
+      return json(response, {});
+    } catch {
+      return json(response, { error: 'Fixture reset failed.' }, 500);
+    }
+  }
+  if (chatGenerativeUiFixture && (await chatGenerativeUiFixture(request, response, pathname))) return;
   if (chatTimelineFixture && (await chatTimelineFixture(request, response, pathname))) return;
   if (chatThreadsFixture && (await chatThreadsFixture(request, response, pathname))) return;
   if (chatSubagentsFixture && (await chatSubagentsFixture(request, response, pathname))) return;
@@ -321,11 +334,11 @@ const server = createServer(async (request, response) => {
 server.listen(configuration.port, '127.0.0.1');
 const parentServer = !process.argv.includes('--no-parent')
   ? createServer(server.listeners('request')[0]).listen(3000, '127.0.0.1') : null;
-if (chatInterruptsFixture || chatToolCallsFixture || chatSubagentsFixture || chatThreadsFixture || chatTimelineFixture) {
+if (chatGenerativeUiFixture || chatInterruptsFixture || chatToolCallsFixture || chatSubagentsFixture || chatThreadsFixture || chatTimelineFixture) {
   let closing;
   const shutdown = (code = 0) => {
     closing ??= (async () => {
-      await (chatInterruptsFixture ?? chatToolCallsFixture ?? chatSubagentsFixture ?? chatThreadsFixture ?? chatTimelineFixture).close();
+      await (chatGenerativeUiFixture ?? chatInterruptsFixture ?? chatToolCallsFixture ?? chatSubagentsFixture ?? chatThreadsFixture ?? chatTimelineFixture).close();
       await Promise.all([server, parentServer].filter(Boolean).map((owned) => new Promise((resolve) => {
         owned.close(resolve);
         owned.closeAllConnections();
