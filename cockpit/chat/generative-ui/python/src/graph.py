@@ -16,14 +16,17 @@ adapted for a continuation loop instead of terminal dispatch.
 
 import json
 import os
+from copy import deepcopy
+from math import isfinite
 from pathlib import Path
-from typing import Literal
+from typing import Literal, NotRequired
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, MessagesState, END
 from langgraph.prebuilt import ToolNode
+from langgraph.constants import TAG_NOSTREAM
 from langgraph_sdk import get_client
 
 from src.dashboard_tools import ALL_TOOLS as _DATA_TOOLS
@@ -34,9 +37,23 @@ _MAX_TOOL_ITERATIONS = 6
 
 
 class DashboardState(MessagesState):
-    """The dashboard spec lives in AI message content (the canonical
-    chat-lib surface-delivery protocol), not on the state object."""
-    pass
+    """Layouts live in messages; owned data and completion survive checkpoints."""
+    dashboard: NotRequired[dict]
+    completed_turn_id: NotRequired[str | None]
+    completed_answer_id: NotRequired[str | None]
+    completed_message_ids: NotRequired[list[str] | None]
+    _submitted_turn_id: NotRequired[str | None]
+
+
+def prepare_turn(state: DashboardState) -> dict:
+    """Capture the submitted human before tools append intermediate messages."""
+    last = state["messages"][-1] if state["messages"] else None
+    return {
+        "_submitted_turn_id": last.id if isinstance(last, HumanMessage) else None,
+        "completed_turn_id": None,
+        "completed_answer_id": None,
+        "completed_message_ids": None,
+    }
 
 
 # region render-spec-tool
@@ -110,7 +127,7 @@ async def generate_title(state: DashboardState, config) -> dict:
             return {}
         if first_user.content.lstrip().startswith("{"):
             return {}
-        llm = ChatOpenAI(model=_TITLE_MODEL, temperature=0)
+        llm = ChatOpenAI(model=_TITLE_MODEL, temperature=0, tags=[TAG_NOSTREAM])
         response = await llm.ainvoke([
             SystemMessage(content=_TITLE_PROMPT),
             HumanMessage(content=first_user.content),
@@ -246,45 +263,77 @@ async def wrap_spec_into_ai(state: DashboardState) -> dict:
 
 
 # region emit-state
-async def emit_state(state: DashboardState) -> DashboardState:
-    """Emit state_update custom events from data tool results. Walks
-    state["messages"] in reverse, accumulates state patches from
-    ToolMessages produced this turn (until the most recent human message
-    — NOT ai, since the loop produces multiple AI messages per turn).
+def _data_slots(name: str, data) -> dict:
+    """Accept only the four data tools' successful fixture-shaped payloads."""
+    def number(value):
+        try:
+            return type(value) in (int, float) and isfinite(value)
+        except OverflowError:
+            return False
 
-    Ignores tool names not in the known set (e.g. render_spec, whose
-    payload was already wrapped into AI content by wrap_spec_into_ai
-    and whose ToolMessage is now the "rendered" stub).
+    if name == "query_airline_kpis":
+        fields = {"on_time", "flights_today", "avg_delay", "load_factor"}
+        if not isinstance(data, dict) or not data or not set(data) <= fields:
+            return {}
+        for value in data.values():
+            if (not isinstance(value, dict) or set(value) != {"value", "delta"}
+                    or not isinstance(value["delta"], str)
+                    or not (isinstance(value["value"], str) or number(value["value"]))):
+                return {}
+        return deepcopy(data)
+
+    contracts = {
+        "query_on_time_trend": ("on_time_trend", {"month": str, "on_time_pct": number}),
+        "query_flights_by_airline": ("flights_by_airline", {"airline": str, "count": number}),
+        "query_recent_disruptions": ("recent_disruptions", {
+            "flight_number": str, "type": str, "minutes": number, "route": str, "date": str}),
+    }
+    if name not in contracts or not isinstance(data, list):
+        return {}
+    slot, fields = contracts[name]
+    for row in data:
+        if not isinstance(row, dict) or set(row) != set(fields):
+            return {}
+        if any(not (isinstance(row[key], str) if check is str else check(row[key]))
+               for key, check in fields.items()):
+            return {}
+    return {slot: deepcopy(data)}
+
+
+async def emit_state(state: DashboardState) -> dict:
+    """Persist current-turn data and emit equivalent Angular state patches.
+
+    Traverse in transcript order so the newest successful result for a slot
+    wins. Prior-turn results never replay; untouched prior slots are retained.
     """
     from langgraph.config import get_stream_writer
 
-    tool_results: dict = {}
-    for msg in reversed(state["messages"]):
-        if msg.type == "tool":
-            try:
-                data = json.loads(msg.content) if isinstance(msg.content, str) else msg.content
-            except (json.JSONDecodeError, TypeError):
-                continue
+    messages = state["messages"]
+    start = next((i + 1 for i in range(len(messages) - 1, -1, -1)
+                  if isinstance(messages[i], HumanMessage)), len(messages))
+    slots: dict = {}
+    for msg in messages[start:]:
+        if not isinstance(msg, ToolMessage) or msg.status != "success":
+            continue
+        try:
+            data = json.loads(msg.content) if isinstance(msg.content, str) else msg.content
+        except (json.JSONDecodeError, TypeError):
+            continue
+        slots.update(_data_slots(msg.name, data))
 
-            if msg.name == "query_airline_kpis":
-                for section_key, section_val in data.items():
-                    if isinstance(section_val, dict):
-                        for k, v in section_val.items():
-                            tool_results[f"/{section_key}/{k}"] = v
-            elif msg.name == "query_on_time_trend":
-                tool_results["/on_time_trend"] = data
-            elif msg.name == "query_flights_by_airline":
-                tool_results["/flights_by_airline"] = data
-            elif msg.name == "query_recent_disruptions":
-                tool_results["/recent_disruptions"] = data
-        elif msg.type == "human":
-            break
-
-    if tool_results:
+    dashboard = deepcopy(state.get("dashboard") or {})
+    dashboard.update(slots)
+    if slots:
+        patches = {}
+        for key, value in slots.items():
+            if isinstance(value, dict):
+                patches.update({f"/{key}/{field}": deepcopy(item) for field, item in value.items()})
+            else:
+                patches[f"/{key}"] = deepcopy(value)
         writer = get_stream_writer()
-        writer({"name": "state_update", "data": tool_results})
+        writer({"name": "state_update", "data": patches})
 
-    return state
+    return {"dashboard": dashboard}
 # endregion
 
 
@@ -300,11 +349,25 @@ async def respond(state: DashboardState) -> dict:
         ))
     ] + state["messages"]
     response = await _respond_llm.ainvoke(messages)
-    return {"messages": [response]}
+    canonical = [*state["messages"], response]
+    ids = [getattr(message, "id", None) for message in canonical]
+    human = next((m for m in reversed(state["messages"]) if isinstance(m, HumanMessage)), None)
+    completion = {}
+    if (human is not None and human.id == state.get("_submitted_turn_id")
+            and isinstance(response, AIMessage)
+            and all(isinstance(identity, str) and identity for identity in ids)
+            and len(ids) == len(set(ids))):
+        completion = {
+            "completed_turn_id": human.id,
+            "completed_answer_id": response.id,
+            "completed_message_ids": ids,
+        }
+    return {"messages": [response], **completion}
 
 
 # region graph-wiring
 _builder = StateGraph(DashboardState)
+_builder.add_node("prepare_turn", prepare_turn)
 _builder.add_node("agent", agent)
 _builder.add_node("tools", ToolNode(_ALL_TOOLS))
 _builder.add_node("wrap_spec_into_ai", wrap_spec_into_ai)
@@ -313,7 +376,8 @@ _builder.add_node("emit_state", emit_state)
 _builder.add_node("respond", respond)
 _builder.add_node("generate_title", generate_title)
 
-_builder.set_entry_point("agent")
+_builder.set_entry_point("prepare_turn")
+_builder.add_edge("prepare_turn", "agent")
 _builder.add_conditional_edges("agent", should_continue)
 _builder.add_edge("tools", "wrap_spec_into_ai")
 _builder.add_edge("wrap_spec_into_ai", "agent")

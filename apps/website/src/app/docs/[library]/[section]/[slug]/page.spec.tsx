@@ -75,6 +75,17 @@ const route = (library: string, section: string, slug: string, mode?: string) =>
   } as never);
 
 describe('unified docs workspace route', () => {
+  it('selects the native Generative UI article and source assets on the canonical guide', async () => {
+    const tree = await route('chat', 'guides', 'generative-ui');
+    const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
+    expect(workspace?.props.reactDocsSlot).toBeTruthy();
+    const slot = workspace?.props.reactDocsSlot;
+    expect(isValidElement<ElementProps>(slot) && slot.props.exampleCode?.assetPaths).toEqual(
+      expect.arrayContaining(['app.tsx', 'application.ts', 'connection.ts', 'dashboard-views.tsx', 'dashboard-data.ts', 'dashboard-spec.ts', 'tool-evidence.ts', 'observation.ts', 'terminal.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/chat/generative-ui/react/src/${file}`))
+    );
+    expect(isValidElement(slot) && typeof slot.type === 'function' && slot.type.name).toBe('ReactChatGenerativeUiPreview');
+    expect(findElement(slot, ReactChatSubagentsPreview as ComponentType<never>)).toBeNull();
+  });
   it('selects the native Timeline article and source assets on the canonical guide', async () => {
     const tree = await route('chat', 'components', 'chat-trace');
     const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);

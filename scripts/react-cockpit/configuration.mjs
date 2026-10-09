@@ -1,5 +1,10 @@
 /** Closed authored frontend selection; callers cannot supply filesystem paths. */
 export function reactCockpitConfiguration(topic = 'streaming') {
+  if (topic === 'chat-generative-ui')
+    return Object.freeze({
+      topic: 'generative-ui', library: 'chat', adapter: 'langgraph', appPath: 'cockpit/chat/generative-ui/react',
+      base: '/chat/generative-ui/react/', port: 4627, project: 'cockpit-chat-generative-ui-react',
+    });
   if (topic === 'chat-timeline')
     return Object.freeze({
       topic: 'timeline', library: 'chat', adapter: 'langgraph', appPath: 'cockpit/chat/timeline/react',

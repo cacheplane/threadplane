@@ -1021,6 +1021,17 @@ const agUiStreamingReact = (() => {
     runtimeUrl: frontend.runtimePath, devPort: frontend.port,
   });
 })();
+const chatGenerativeUiReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'chat-generative-ui-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-chat-generative-ui-react');
+  if (!canonical || !frontend) throw new Error('Chat Generative UI frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical, id: 'chat-generative-ui-python-react', frontend: 'react', title: 'Chat Generative UI (React preview)',
+    codeAssetPaths: ['app.tsx', 'application.ts', 'connection.ts', 'dashboard-views.tsx', 'dashboard-data.ts', 'dashboard-spec.ts', 'tool-evidence.ts', 'observation.ts', 'terminal.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/chat/generative-ui/react/src/${file}`),
+    runtimeUrl: frontend.runtimePath, devPort: frontend.port,
+  });
+})();
+
 const chatTimelineReact = (() => {
   const canonical = capabilityModules.find(descriptor => descriptor.id === 'chat-timeline-python');
   const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-chat-timeline-react');
@@ -1243,6 +1254,7 @@ export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
     ...capabilityModules,
     chatThreadsReact,
     chatTimelineReact,
+    chatGenerativeUiReact,
     chatSubagentsReact,
     chatToolCallsReact,
     chatInterruptsReact,

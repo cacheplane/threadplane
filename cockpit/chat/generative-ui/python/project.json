@@ -15,6 +15,23 @@
         "tsConfig": "cockpit/chat/generative-ui/python/tsconfig.json"
       }
     },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "cwd": "cockpit/chat/generative-ui/python",
+        "command": "uv run --frozen --python 3.12 python -m unittest discover -s tests"
+      }
+    },
+    "smoke": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": ["test"],
+      "options": {
+        "cwd": "cockpit/chat/generative-ui/python",
+        "command": "npx tsx -e \"import { chatGenerativeUiPythonModule } from './src/index.ts'; const module = chatGenerativeUiPythonModule; if (module.id !== 'chat-generative-ui-python' || module.title !== 'Chat Generative UI (Python)') { throw new Error('Unexpected module shape for ' + module.id); }\""
+      }
+    },
     "serve": {
       "executor": "nx:run-commands",
       "options": {
@@ -25,6 +42,7 @@
   },
   "tags": [
     "scope:cockpit-e2e",
-    "scope:cockpit-examples"
+    "scope:cockpit-examples",
+    "scope:cockpit-smoke"
   ]
 }

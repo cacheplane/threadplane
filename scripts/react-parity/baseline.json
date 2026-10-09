@@ -1,8 +1,12 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "ad5ff17ca862dd4aa9a62d47c9354f790f29419a",
+  "baselineHead": "cfc4811a5331e1e4fde8115938641cafb9263ef5",
   "sourceState": {
-    "modified": [],
+    "modified": [
+      "apps/website/content/docs/chat/guides/generative-ui.mdx",
+      "libs/cockpit-registry/src/lib/capability-registry.ts",
+      "libs/cockpit-registry/src/lib/content-descriptors.ts"
+    ],
     "untracked": []
   },
   "scope": {
@@ -2622,7 +2626,7 @@
       "id": "doc:apps/website/content/docs/chat/guides/generative-ui.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/guides/generative-ui.mdx",
-      "sha256": "e5a7458d1e969968ae66018bf53cb918599e5928d49a0611c4c8eb6e2cc42708"
+      "sha256": "0a806da93db7eb535b25b35193c7ad136d0696fb9acca5754f5a4d7516262631"
     },
     {
       "id": "doc:apps/website/content/docs/chat/guides/layout-modes.mdx",
@@ -13461,13 +13465,13 @@
       "id": "source:libs/cockpit-registry/src/lib/capability-registry.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "sha256": "22699a554c51476b82553afbff99f692d9610e765f36a5fb255c90076050773c"
+      "sha256": "12c30dbfbb604e5705eee4b4fd4caf4987cc42bb660c9d5ea2bb1292d2b8c965"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/content-descriptors.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/content-descriptors.ts",
-      "sha256": "dacd030ddae2409c204d03230daa9fd9a826a961d49817eefcda03cc07bcd414"
+      "sha256": "96c22b1ddb34bcadb69810e18803f41301b857548da8370e131709359a0482ba"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/docs-links.ts",

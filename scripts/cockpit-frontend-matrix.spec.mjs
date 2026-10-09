@@ -6,13 +6,22 @@ import { test } from 'node:test';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { deriveCockpitCaps, selectCockpitCaps } from './cockpit-matrix.mjs';
+test('Generative UI backend changes select both canonical frontends registered by the website', () => {
+  const root = fileURLToPath(new URL('..', import.meta.url));
+  const selected = selectCockpitCaps(deriveCockpitCaps(root), new Set(['cockpit-chat-generative-ui-python']), { fullFleet: false });
+  assert.deepEqual(selected.map(cap => cap.angular).sort(), ['cockpit-chat-generative-ui-angular', 'cockpit-chat-generative-ui-react']);
+  assert.ok(selected.every(cap => cap.python === 'cockpit/chat/generative-ui/python'));
+  const frontends = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', 'const module = await import("./libs/cockpit-registry/src/lib/capability-registry.ts"); console.log(JSON.stringify((module.default ?? module).getCockpitFrontends()));'], { cwd: root, encoding: 'utf8', env: { ...process.env, TSX_TSCONFIG_PATH: 'tsconfig.base.json' } }));
+  assert.equal(frontends.length, 69);
+  assert.deepEqual(frontends.filter(frontend => frontend.project.startsWith('cockpit-chat-generative-ui-')).map(frontend => frontend.project).sort(), selected.map(cap => cap.angular).sort());
+});
 test('Timeline backend changes select both canonical frontends registered by the website', () => {
   const root = fileURLToPath(new URL('..', import.meta.url));
   const selected = selectCockpitCaps(deriveCockpitCaps(root), new Set(['cockpit-chat-timeline-python']), { fullFleet: false });
   assert.deepEqual(selected.map(cap => cap.angular).sort(), ['cockpit-chat-timeline-angular', 'cockpit-chat-timeline-react']);
   assert.ok(selected.every(cap => cap.python === 'cockpit/chat/timeline/python'));
   const frontends = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', 'const module = await import("./libs/cockpit-registry/src/lib/capability-registry.ts"); console.log(JSON.stringify((module.default ?? module).getCockpitFrontends()));'], { cwd: root, encoding: 'utf8', env: { ...process.env, TSX_TSCONFIG_PATH: 'tsconfig.base.json' } }));
-  assert.equal(frontends.length, 68);
+  assert.equal(frontends.length, 69);
   assert.deepEqual(frontends.filter(frontend => frontend.project.startsWith('cockpit-chat-timeline-')).map(frontend => frontend.project).sort(), selected.map(cap => cap.angular).sort());
 });
 test('Chat Timeline owns an exact native React identity', async () => {
@@ -31,7 +40,7 @@ test('Threads backend changes select both canonical frontends registered by the 
   assert.deepEqual(selected.map(cap => cap.angular).sort(), ['cockpit-chat-threads-angular', 'cockpit-chat-threads-react']);
   assert.ok(selected.every(cap => cap.python === 'cockpit/chat/threads/python'));
   const frontends = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', 'const module = await import("./libs/cockpit-registry/src/lib/capability-registry.ts"); console.log(JSON.stringify((module.default ?? module).getCockpitFrontends()));'], { cwd: root, encoding: 'utf8', env: { ...process.env, TSX_TSCONFIG_PATH: 'tsconfig.base.json' } }));
-  assert.equal(frontends.length, 68);
+  assert.equal(frontends.length, 69);
   assert.deepEqual(frontends.filter(frontend => frontend.project.startsWith('cockpit-chat-threads-')).map(frontend => frontend.project).sort(), selected.map(cap => cap.angular).sort());
 });
 test('Chat Threads owns an exact native React identity', async () => {
@@ -471,4 +480,25 @@ test('CI discovers both streaming frontends and attributes their shared backend'
     }),
     [caps[1]]
   );
+});
+
+test('native chat generative UI has an exact isolated key and route', async () => {
+  const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
+  assert.deepEqual(reactCockpitConfiguration('chat-generative-ui'), {
+    topic: 'generative-ui',
+    library: 'chat',
+    adapter: 'langgraph',
+    appPath: 'cockpit/chat/generative-ui/react',
+    base: '/chat/generative-ui/react/',
+    port: 4627,
+    project: 'cockpit-chat-generative-ui-react',
+  });
+  for (const key of [
+    'generative-ui',
+    'ag-ui-generative-ui',
+    'chat-generative-ui/../timeline',
+  ])
+    assert.throws(() => reactCockpitConfiguration(key));
+  assert.equal(reactCockpitConfiguration('ag-ui-json-render').port, 4612);
+  assert.equal(reactCockpitConfiguration('chat-timeline').port, 4626);
 });

@@ -6,6 +6,8 @@ description: How the generative UI example authors a dashboard spec as message c
 
 An agent can return the interface rather than describe it. It writes a declarative json-render specification as the assistant message content, and the `<chat>` composition detects that content, parses it while it is still streaming, and mounts it through the `views` registry you supply. The running example is an airline operations dashboard, and this guide walks the three files that build it.
 
+This default Angular guide describes progressive rendering. Select **React** in Example UI for the experimental native preview, which publishes confirmed layouts and data together after saved-state verification.
+
 The detection and the rendering are adapter-neutral. This page uses `@threadplane/langgraph`; the same registry and the same store work over the [AG-UI adapter](/docs/ag-ui/guides/json-render), where only the way the backend delivers the data differs.
 
 ## What the demo does
@@ -43,12 +45,12 @@ The rest of `wrap_spec_into_ai` replaces both messages, keeping their ids so Lan
 The tool message becomes a short placeholder and the assistant message takes the specification JSON, stripped of a code fence if the model wrapped one around it.
 
 <Callout type="info" title="Why the message and not the state">
-The specification travels as message content because that is what the client classifies. `DashboardState` in this example adds no fields of its own to `MessagesState`: the layout lives in the message, and the numbers arrive as the state updates below.
+The specification travels as message content because that is what the client classifies. `DashboardState` extends `MessagesState` with persisted dashboard data and completion evidence. The layout stays in the message. The same tool data is saved in the dashboard field and sent through the custom updates below, which keep the Angular views progressive.
 </Callout>
 
 ### Sending the tool data as state updates
 
-The data tools return their results as tool messages, which the browser would otherwise only see as tool output. `emit_state` walks this turn's messages back to the most recent user message, turns each known tool result into JSON Pointer paths, and writes them to the stream as one custom event named `state_update`.
+The data tools return their results as tool messages, which the browser would otherwise only see as tool output. `emit_state` processes successful known tool results from the current turn in chronological order, with the newest result for each dashboard slice winning. It turns each result into JSON Pointer paths, and writes them to the stream as one custom event named `state_update`.
 
 <ExampleCode file="graph.py" region="emit-state" title="graph.py — emit_state" />
 
@@ -92,7 +94,7 @@ From there the content goes through `@cacheplane/partial-json`, and a `ParseTree
 The data takes the other path. The LangGraph adapter surfaces a custom event named `state_update` on the agent's event stream, and the composition writes its payload straight into the render store, keys included. Because `emit_state` already emits JSON Pointer keys, a binding of `{ "$state": "/on_time/value" }` resolves the moment the event lands.
 
 <Callout type="info" title="Pointers, not top-level keys">
-This is the one place the LangGraph path differs from AG-UI. An AG-UI agent puts its data in graph state, and the composition maps each top-level key `k` of any adapter's `state()` to the pointer `/k`. Here the graph names the pointers itself, so a nested value like `/on_time/value` needs no state field to hold it.
+This is the one place the LangGraph path differs from AG-UI. An AG-UI agent puts its data in graph state, and the composition maps each top-level key `k` of any adapter's `state()` to the pointer `/k`. Here the graph names the pointers itself in its custom `state_update` event. A nested value such as `/on_time/value` updates the Angular store directly, while the graph also persists that data in its owned `dashboard` field for saved-state confirmation.
 </Callout>
 
 ## Writing a view component

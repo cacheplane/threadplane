@@ -14,6 +14,16 @@ const streaming: CockpitManifestIdentity = {
   page: 'overview',
   language: 'python',
 };
+it('resolves native Chat Generative UI with its canonical docs and existing backend', () => {
+  const canonical=capabilityModules.find(entry=>entry.id==='chat-generative-ui-python');
+  if(!canonical) throw Error('Missing canonical Chat Generative UI');
+  const react=getFrontendCapabilityDescriptor(canonical.manifestIdentity as CockpitManifestIdentity,'react');
+  expect(react).toMatchObject({id:'chat-generative-ui-python-react',frontend:'react',runtimeAdapter:'langgraph',runtimeUrl:'chat/generative-ui/react',devPort:4627,docsPath:'/docs/chat/guides/generative-ui',backendAssetPaths:canonical.backendAssetPaths,promptAssetPaths:canonical.promptAssetPaths});
+  expect(react?.codeAssetPaths).toEqual(['app.tsx','application.ts','connection.ts','dashboard-views.tsx','dashboard-data.ts','dashboard-spec.ts','tool-evidence.ts','observation.ts','terminal.ts','main.tsx','styles.css'].map(file=>`cockpit/chat/generative-ui/react/src/${file}`));
+  for(const asset of react?.codeAssetPaths ?? [])expect(existsSync(new URL('../../../../'+asset,import.meta.url))).toBe(true);
+  expect(getCockpitFrontends().find(entry=>entry.project==='cockpit-chat-generative-ui-react')).toMatchObject({port:4627,runtimePath:'chat/generative-ui/react'});
+  expect(getFrontendCapabilityDescriptor(canonical.manifestIdentity as CockpitManifestIdentity,'angular')).toBe(canonical);
+});
 it('resolves native Chat Timeline with its canonical docs and existing backend', () => {
   const canonical=capabilityModules.find(entry=>entry.id==='chat-timeline-python');
   if(!canonical) throw Error('Missing canonical Chat Timeline');
@@ -239,8 +249,8 @@ describe('registered React public previews', () => {
     expect(react?.backendAssetPaths).toEqual(['graph.py','dashboard_tools.py','server.py'].map(file=>`cockpit/ag-ui/json-render/python/src/${file}`));
     expect(getFrontendCapabilityDescriptor(identity,'angular')?.runtimeUrl).toBe('ag-ui/json-render');
     expect(getFrontendCapabilityDescriptor({...identity,topic:'testing'},'react')).toBeUndefined();
-    expect(getCockpitFrontends().filter(frontend=>frontend.frontend==='react')).toHaveLength(27);
-    expect(getCockpitFrontends()).toHaveLength(68);
+    expect(getCockpitFrontends().filter(frontend=>frontend.frontend==='react')).toHaveLength(28);
+    expect(getCockpitFrontends()).toHaveLength(69);
     for(const asset of [...(react?.codeAssetPaths??[]),...(react?.backendAssetPaths??[])])expect(existsSync(new URL('../../../../'+asset,import.meta.url))).toBe(true);
   });
   it('resolves AG-UI Tool Views with authored weather policy and unchanged server-tool endpoint', () => {
@@ -269,9 +279,9 @@ describe('registered React public previews', () => {
     expect(getFrontendCapabilityDescriptor(identity, 'angular')?.runtimeUrl).toBe('ag-ui/interrupts');
     expect(getFrontendCapabilityDescriptor({ ...identity, product: 'langgraph' }, 'react')?.runtimeUrl).toBe('langgraph/interrupts/react');
     const frontends = getCockpitFrontends();
-    expect(frontends.filter(frontend => frontend.frontend === 'react')).toHaveLength(27);
-    expect(frontends).toHaveLength(68);
-    expect(new Set(frontends.map(frontend => frontend.project)).size).toBe(68);
+    expect(frontends.filter(frontend => frontend.frontend === 'react')).toHaveLength(28);
+    expect(frontends).toHaveLength(69);
+    expect(new Set(frontends.map(frontend => frontend.project)).size).toBe(69);
     for (const asset of [...(react?.codeAssetPaths ?? []), ...(react?.backendAssetPaths ?? [])])
       expect(existsSync(new URL('../../../../' + asset, import.meta.url))).toBe(true);
   });
@@ -286,8 +296,8 @@ describe('registered React public previews', () => {
     expect(react?.backendAssetPaths).toContain('cockpit/ag-ui/streaming/python/src/server.py');
     expect(getFrontendCapabilityDescriptor(identity,'angular')?.runtimeUrl).toBe('ag-ui/streaming');
     expect(getFrontendCapabilityDescriptor(streaming,'react')?.runtimeUrl).toBe('langgraph/streaming/react');
-    expect(getCockpitFrontends().filter(x=>x.frontend==='react')).toHaveLength(27);
-    expect(getCockpitFrontends()).toHaveLength(68);
+    expect(getCockpitFrontends().filter(x=>x.frontend==='react')).toHaveLength(28);
+    expect(getCockpitFrontends()).toHaveLength(69);
   });
   it('maps the canonical Deployment guide to the exact Deployment Runtime React sources', () => {
     const identity = { ...streaming, topic: 'deployment-runtime' };
@@ -315,8 +325,8 @@ describe('registered React public previews', () => {
     ).toBe('langgraph/deployment-runtime');
     expect(
       getCockpitFrontends().filter((frontend) => frontend.frontend === 'react')
-    ).toHaveLength(27);
-    expect(getCockpitFrontends()).toHaveLength(68);
+    ).toHaveLength(28);
+    expect(getCockpitFrontends()).toHaveLength(69);
   });
   it('resolves Time Travel with exact owner, checkpoint eligibility and canonical identity sources', () => {
     const identity = { ...streaming, topic: 'time-travel' };
@@ -576,11 +586,11 @@ describe('registered React public previews', () => {
 
   it('enumerates deployable frontend identities with distinct paths and projects', () => {
     const frontends = getCockpitFrontends();
-    expect(frontends).toHaveLength(68);
-    expect(new Set(frontends.map((entry) => entry.runtimePath)).size).toBe(68);
-    expect(new Set(frontends.map((entry) => entry.project)).size).toBe(68);
-    expect(new Set(frontends.map((entry) => entry.port)).size).toBe(68);
-    expect(new Set(frontends.map((entry) => entry.buildOutput)).size).toBe(68);
+    expect(frontends).toHaveLength(69);
+    expect(new Set(frontends.map((entry) => entry.runtimePath)).size).toBe(69);
+    expect(new Set(frontends.map((entry) => entry.project)).size).toBe(69);
+    expect(new Set(frontends.map((entry) => entry.port)).size).toBe(69);
+    expect(new Set(frontends.map((entry) => entry.buildOutput)).size).toBe(69);
     expect(
       frontends.find(
         (entry) => entry.project === 'cockpit-langgraph-memory-react'
