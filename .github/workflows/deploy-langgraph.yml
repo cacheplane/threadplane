@@ -7,6 +7,8 @@ on:
       - '.github/workflows/deploy-langgraph.yml'
       - 'cockpit/langgraph/**/python/**'
       - 'cockpit/deep-agents/**/python/**'
+      - 'cockpit/chat/**/python/**'
+      - 'cockpit/render/**/python/**'
       - 'examples/chat/python/**'
       - 'libs/cockpit-registry/src/lib/capability-registry.ts'
       - 'scripts/generate-shared-deployment-config.ts'
