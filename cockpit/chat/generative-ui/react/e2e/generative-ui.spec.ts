@@ -42,6 +42,22 @@ test.afterEach(async ({ page, request }) => {
       actualCompiledGraph: true,
       networkConnectAttempts: 0,
       titleMessageCallbacks: 0,
+      decisionMessageCallbacks: 0,
+      interpretationMessageCallbacks: 0,
+      productionSourceSha256: Object.fromEntries(
+        [
+          'src/graph.py',
+          'src/dashboard_tools.py',
+          'src/operations.py',
+          'src/dashboard_contract.py',
+          'prompts/generative-ui.md',
+        ].map((path) => [
+          path,
+          createHash('sha256')
+            .update(readFileSync(resolve(__dirname, '../../python/' + path)))
+            .digest('hex'),
+        ])
+      ),
       sourceSha256: createHash('sha256')
         .update(readFileSync(resolve(__dirname, '../../python/src/graph.py')))
         .digest('hex'),
@@ -103,6 +119,12 @@ test('mount is inert; four confirmed turns retain ownership and share refreshed 
   expect(
     await table.locator('tbody tr td:nth-child(2)').allTextContents()
   ).toEqual(['cancelled', 'cancelled', 'cancelled']);
+  expect(
+    await table.locator('tbody tr td:first-child').allTextContents()
+  ).toEqual(['AA456', 'UA204', 'UA640']);
+  await expect(
+    page.getByText('Stored 3 cancelled disruption rows (limit 5).')
+  ).toBeVisible();
   await expect(table).toContainText('cancelled');
   expect(await requests(request)).toHaveLength(9);
   await send(page, 'Remove the disruptions table from the structure.');
@@ -173,6 +195,102 @@ test('nonempty parent preserves prose with inspectable raw result and notice', a
       .first()
   ).toBeVisible();
   expect(await requests(request)).toHaveLength(5);
+  const proofs = await (await request.get('/__graph-proof')).json();
+  expect(
+    proofs.some(
+      (p: { op: string; fixtureControls: { prose_parent: boolean } }) =>
+        p.op === 'submit' && p.fixtureControls.prose_parent
+    )
+  ).toBe(true);
+});
+for (const decisionFault of ['missing', 'invalid'])
+  test(`saved ${decisionFault} decision honestly leaves the prior board unchanged`, async ({
+    page,
+    request,
+  }) => {
+    await page.goto(base);
+    await send(page, 'Show dashboard');
+    const old = await boards(page).innerText();
+    const owner = await boards(page).getAttribute('data-dashboard-spec-owner');
+    await configure(request, { decisionFault });
+    await send(page, 'Filter to cancelled flights');
+    await expect(boards(page)).toHaveCount(1);
+    expect(await boards(page).innerText()).toBe(old);
+    expect(await boards(page).getAttribute('data-dashboard-spec-owner')).toBe(
+      owner
+    );
+    await expect(
+      page.getByText(
+        'No valid dashboard operation was selected. No dashboard changes were made.'
+      )
+    ).toBeVisible();
+    await expect(box(page)).toBeEnabled();
+    expect(
+      (await requests(request)).filter((r: { path: string }) =>
+        r.path.endsWith('/runs/stream')
+      )
+    ).toHaveLength(2);
+  });
+for (const toolFault of ['failKpis', 'malformedTrend'])
+  test(`real ${toolFault} batch keeps successful peers inspectable but cannot replace the confirmed board`, async ({
+    page,
+    request,
+  }) => {
+    await configure(request, { partialDashboard: true });
+    await page.goto(base);
+    await send(page, 'Show dashboard');
+    const old = await boards(page).innerText();
+    const owner = await boards(page).getAttribute('data-dashboard-spec-owner');
+    await configure(request, { partialDashboard: false, [toolFault]: true });
+    await box(page).fill('Show another dashboard');
+    await box(page).press('Enter');
+    await expect(page.getByRole('alert')).toContainText(
+      'could not be confirmed'
+    );
+    await expect(boards(page)).toHaveCount(1);
+    expect(await boards(page).innerText()).toBe(old);
+    expect(await boards(page).getAttribute('data-dashboard-spec-owner')).toBe(
+      owner
+    );
+    await expect(box(page)).toBeDisabled();
+    await expect(
+      page.getByText('Start a new conversation to continue.', { exact: true })
+    ).toBeVisible();
+    await page.getByText('Server tool result', { exact: true }).last().click();
+    await expect(
+      page
+        .locator('details[open] > pre')
+        .filter({ hasText: 'on_time_pct' })
+        .last()
+    ).toBeVisible();
+    expect(
+      (await requests(request)).filter((r: { path: string }) =>
+        r.path.endsWith('/runs/stream')
+      )
+    ).toHaveLength(2);
+    await page.getByRole('button', { name: 'New conversation' }).click();
+    await expect(boards(page)).toHaveCount(0);
+    await expect(box(page)).toBeEnabled();
+  });
+test('failed read-only interpretation retains the confirmed board and requires New', async ({
+  page,
+  request,
+}) => {
+  await page.goto(base);
+  await send(page, 'Show dashboard');
+  const old = await boards(page).innerText();
+  await configure(request, { failInterpretation: true });
+  await box(page).fill('Why is on-time low?');
+  await box(page).press('Enter');
+  await expect(page.getByRole('alert')).toBeVisible();
+  await expect(boards(page)).toHaveCount(1);
+  expect(await boards(page).innerText()).toBe(old);
+  await expect(box(page)).toBeDisabled();
+  expect(
+    (await requests(request)).filter((r: { path: string }) =>
+      r.path.endsWith('/runs/stream')
+    )
+  ).toHaveLength(2);
 });
 test('pending update keeps the old board; double submit, Stop and New cannot publish stale state', async ({
   page,

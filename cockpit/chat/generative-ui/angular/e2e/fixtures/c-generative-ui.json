@@ -7,8 +7,8 @@
       "response": {
         "toolCalls": [
           {
-            "name": "render_spec",
-            "arguments": "{\"elements\":{\"root\":{\"type\":\"dashboard_grid\",\"children\":[\"stats_row\",\"charts_row\",\"table_section\"]},\"stats_row\":{\"type\":\"container\",\"props\":{\"direction\":\"row\"},\"children\":[\"on_time_card\",\"flights_card\",\"delay_card\",\"load_card\"]},\"on_time_card\":{\"type\":\"stat_card\",\"props\":{\"label\":\"On-time %\",\"value\":{\"$state\":\"/on_time/value\"},\"delta\":{\"$state\":\"/on_time/delta\"}}},\"flights_card\":{\"type\":\"stat_card\",\"props\":{\"label\":\"Flights Today\",\"value\":{\"$state\":\"/flights_today/value\"},\"delta\":{\"$state\":\"/flights_today/delta\"}}},\"delay_card\":{\"type\":\"stat_card\",\"props\":{\"label\":\"Avg Delay (min)\",\"value\":{\"$state\":\"/avg_delay/value\"},\"delta\":{\"$state\":\"/avg_delay/delta\"}}},\"load_card\":{\"type\":\"stat_card\",\"props\":{\"label\":\"Load Factor\",\"value\":{\"$state\":\"/load_factor/value\"},\"delta\":{\"$state\":\"/load_factor/delta\"}}},\"charts_row\":{\"type\":\"container\",\"props\":{\"direction\":\"row\"},\"children\":[\"trend_chart\",\"airline_chart\"]},\"trend_chart\":{\"type\":\"line_chart\",\"props\":{\"title\":\"On-time % Trend\",\"data\":{\"$state\":\"/on_time_trend\"},\"xKey\":\"month\",\"yKey\":\"on_time_pct\"}},\"airline_chart\":{\"type\":\"bar_chart\",\"props\":{\"title\":\"Flights by Airline (Daily)\",\"data\":{\"$state\":\"/flights_by_airline\"},\"labelKey\":\"airline\",\"valueKey\":\"count\"}},\"table_section\":{\"type\":\"data_grid\",\"props\":{\"title\":\"Recent Disruptions\",\"rows\":{\"$state\":\"/recent_disruptions\"},\"columns\":[\"flight_number\",\"type\",\"minutes\",\"route\",\"date\"]}}},\"root\":\"root\"}",
+            "name": "plan_dashboard_operation",
+            "arguments": "{\"kind\":\"create\",\"calls\":[{\"name\":\"render_spec\",\"args\":{\"elements\":{\"root\":{\"type\":\"dashboard_grid\",\"children\":[\"stats_row\",\"charts_row\",\"table_section\"]},\"stats_row\":{\"type\":\"container\",\"props\":{\"direction\":\"row\"},\"children\":[\"on_time_card\",\"flights_card\",\"delay_card\",\"load_card\"]},\"on_time_card\":{\"type\":\"stat_card\",\"props\":{\"label\":\"On-time %\",\"value\":{\"$state\":\"/on_time/value\"},\"delta\":{\"$state\":\"/on_time/delta\"}}},\"flights_card\":{\"type\":\"stat_card\",\"props\":{\"label\":\"Flights Today\",\"value\":{\"$state\":\"/flights_today/value\"},\"delta\":{\"$state\":\"/flights_today/delta\"}}},\"delay_card\":{\"type\":\"stat_card\",\"props\":{\"label\":\"Avg Delay (min)\",\"value\":{\"$state\":\"/avg_delay/value\"},\"delta\":{\"$state\":\"/avg_delay/delta\"}}},\"load_card\":{\"type\":\"stat_card\",\"props\":{\"label\":\"Load Factor\",\"value\":{\"$state\":\"/load_factor/value\"},\"delta\":{\"$state\":\"/load_factor/delta\"}}},\"charts_row\":{\"type\":\"container\",\"props\":{\"direction\":\"row\"},\"children\":[\"trend_chart\",\"airline_chart\"]},\"trend_chart\":{\"type\":\"line_chart\",\"props\":{\"title\":\"On-time % Trend\",\"data\":{\"$state\":\"/on_time_trend\"},\"xKey\":\"month\",\"yKey\":\"on_time_pct\"}},\"airline_chart\":{\"type\":\"bar_chart\",\"props\":{\"title\":\"Flights by Airline (Daily)\",\"data\":{\"$state\":\"/flights_by_airline\"},\"labelKey\":\"airline\",\"valueKey\":\"count\"}},\"table_section\":{\"type\":\"data_grid\",\"props\":{\"title\":\"Recent Disruptions\",\"rows\":{\"$state\":\"/recent_disruptions\"},\"columns\":[\"flight_number\",\"type\",\"minutes\",\"route\",\"date\"]}}},\"root\":\"root\"}},{\"name\":\"query_airline_kpis\",\"args\":{}},{\"name\":\"query_on_time_trend\",\"args\":{}},{\"name\":\"query_flights_by_airline\",\"args\":{}},{\"name\":\"query_recent_disruptions\",\"args\":{}}],\"interpretation\":\"\"}",
             "id": "call_offZhaDPm8tbblqv1sNHarnc"
           }
         ]
@@ -21,8 +21,8 @@
       "response": {
         "toolCalls": [
           {
-            "name": "query_recent_disruptions",
-            "arguments": "{\"limit\":5,\"type\":\"cancelled\"}",
+            "name": "plan_dashboard_operation",
+            "arguments": "{\"kind\":\"data_update\",\"calls\":[{\"name\":\"query_recent_disruptions\",\"args\":{\"limit\":5,\"type\":\"cancelled\"}}],\"interpretation\":\"\"}",
             "id": "call_ivGTFO6CX8sl4bkOprs633gH"
           }
         ]

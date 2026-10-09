@@ -19,6 +19,8 @@ it('resolves native Chat Generative UI with its canonical docs and existing back
   if(!canonical) throw Error('Missing canonical Chat Generative UI');
   const react=getFrontendCapabilityDescriptor(canonical.manifestIdentity as CockpitManifestIdentity,'react');
   expect(react).toMatchObject({id:'chat-generative-ui-python-react',frontend:'react',runtimeAdapter:'langgraph',runtimeUrl:'chat/generative-ui/react',devPort:4627,docsPath:'/docs/chat/guides/generative-ui',backendAssetPaths:canonical.backendAssetPaths,promptAssetPaths:canonical.promptAssetPaths});
+  expect(canonical.backendAssetPaths).toEqual(['graph.py', 'dashboard_tools.py', 'operations.py', 'dashboard_contract.py'].map(file => `cockpit/chat/generative-ui/python/src/${file}`));
+  for (const asset of canonical.backendAssetPaths) expect(existsSync(new URL('../../../../' + asset, import.meta.url))).toBe(true);
   expect(react?.codeAssetPaths).toEqual(['app.tsx','application.ts','connection.ts','dashboard-views.tsx','dashboard-data.ts','dashboard-spec.ts','tool-evidence.ts','observation.ts','terminal.ts','main.tsx','styles.css'].map(file=>`cockpit/chat/generative-ui/react/src/${file}`));
   for(const asset of react?.codeAssetPaths ?? [])expect(existsSync(new URL('../../../../'+asset,import.meta.url))).toBe(true);
   expect(getCockpitFrontends().find(entry=>entry.project==='cockpit-chat-generative-ui-react')).toMatchObject({port:4627,runtimePath:'chat/generative-ui/react'});

@@ -103,6 +103,76 @@ it('actual nonempty-parent render keeps prose and raw result without mounting a 
   const last = f.app.getSnapshot().toolCalls.at(-1);
   expect(last?.status === 'complete' && last.result).not.toBe('rendered');
 }, 60000);
+it.each(['missing', 'invalid'])(
+  'actual %s decision confirms an honest saved no-op with the prior dashboard',
+  async (decisionFault) => {
+    const f = await fixture();
+    expect(await f.app.submit('Show dashboard')).toBe(true);
+    const prior = f.app.getSnapshot();
+    await f.control({ decisionFault });
+    expect(await f.app.submit('Filter to cancelled flights')).toBe(true);
+    const saved = f.app.getSnapshot();
+    expect(saved.dashboard).toEqual(prior.dashboard);
+    expect(saved.surfaces).toEqual(prior.surfaces);
+    expect(saved.toolCalls).toEqual(prior.toolCalls);
+    expect(saved.messages.at(-1)?.content).toContain(
+      'No dashboard changes were made.'
+    );
+    expect(saved.canSubmit).toBe(true);
+    expect(
+      (await f.requests()).filter((r) => r.path.endsWith('/runs/stream'))
+    ).toHaveLength(2);
+  },
+  60000
+);
+it.each(['failKpis', 'malformedTrend'])(
+  'actual %s structural rollback stays unconfirmed with real successful peers',
+  async (toolFault) => {
+    const f = await fixture();
+    await f.control({ partialDashboard: true });
+    expect(await f.app.submit('Show dashboard')).toBe(true);
+    const prior = f.app.getSnapshot();
+    expect(Object.keys(prior.dashboard).sort()).toEqual([
+      'flights_by_airline',
+      'recent_disruptions',
+    ]);
+    await f.control({ partialDashboard: false, [toolFault]: true });
+    expect(await f.app.submit('Show another dashboard')).toBe(false);
+    const failed = f.app.getSnapshot();
+    expect(failed.dashboard).toBe(prior.dashboard);
+    expect(failed.surfaces).toBe(prior.surfaces);
+    expect(failed.canSubmit).toBe(false);
+    const render = failed.toolCalls
+      .filter((c) => c.name === 'render_spec')
+      .at(-1);
+    expect(render?.status === 'complete' && render.result).not.toBe('rendered');
+    const peer = failed.toolCalls.find((c) => c.name === 'query_on_time_trend');
+    expect(peer?.status).toBe('complete');
+    const count = (await f.requests()).length;
+    expect(await f.app.submit('Try again')).toBe(false);
+    expect(await f.requests()).toHaveLength(count);
+    await f.app.newConversation();
+    expect(f.app.getSnapshot()).toMatchObject({
+      canSubmit: true,
+      surfaces: [],
+      dashboard: {},
+    });
+  },
+  60000
+);
+it('actual failed read-only interpretation retains the confirmed dashboard and requires New', async () => {
+  const f = await fixture();
+  expect(await f.app.submit('Show dashboard')).toBe(true);
+  const prior = f.app.getSnapshot();
+  await f.control({ failInterpretation: true });
+  expect(await f.app.submit('Why is on-time low?')).toBe(false);
+  expect(f.app.getSnapshot().dashboard).toBe(prior.dashboard);
+  expect(f.app.getSnapshot().surfaces).toBe(prior.surfaces);
+  expect(f.app.getSnapshot().canSubmit).toBe(false);
+  expect(
+    (await f.requests()).filter((r) => r.path.endsWith('/runs/stream'))
+  ).toHaveLength(2);
+}, 60000);
 it('actual pending task rejects confirmation and Stop preserves the confirmed board without retry', async () => {
   const f = await fixture();
   expect(await f.app.submit('Show dashboard')).toBe(true);

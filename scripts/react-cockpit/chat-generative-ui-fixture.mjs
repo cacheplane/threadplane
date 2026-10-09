@@ -123,6 +123,27 @@ export function createChatGenerativeUiFixture({
         .digest('hex'),
     ])
   );
+  const productionSourceSha256 = Object.fromEntries(
+    [
+      'src/graph.py',
+      'src/dashboard_tools.py',
+      'src/operations.py',
+      'src/dashboard_contract.py',
+      'prompts/generative-ui.md',
+    ].map((path) => [
+      path,
+      createHash('sha256')
+        .update(
+          readFileSync(
+            new URL(
+              '../../cockpit/chat/generative-ui/python/' + path,
+              import.meta.url
+            )
+          )
+        )
+        .digest('hex'),
+    ])
+  );
   let worker,
     closed = false,
     closing,
@@ -164,10 +185,17 @@ export function createChatGenerativeUiFixture({
         !result.proof?.actualCompiledGraph ||
         result.proof.networkConnectAttempts !== 0 ||
         result.proof.titleMessageCallbacks !== 0 ||
+        result.proof.decisionMessageCallbacks !== 0 ||
+        result.proof.interpretationMessageCallbacks !== 0 ||
         result.proof.op !== value.op ||
         result.proof.threadId !== (value.threadId ?? null) ||
         Object.entries(expected).some(
           ([key, hash]) => result.proof[key] !== hash
+        ) ||
+        Object.keys(result.proof.productionSourceSha256 ?? {}).length !==
+          Object.keys(productionSourceSha256).length ||
+        Object.entries(productionSourceSha256).some(
+          ([path, hash]) => result.proof.productionSourceSha256?.[path] !== hash
         )
       )
         throw Error('Invalid graph proof');
@@ -262,11 +290,32 @@ export function createChatGenerativeUiFixture({
       }
       if (pathname === '/__configure') {
         Object.assign(options, body);
-        if ('failTitle' in body || 'failAgent' in body)
+        if (
+          [
+            'failTitle',
+            'failAgent',
+            'failInterpretation',
+            'failMetadata',
+            'failWrite',
+            'mapped',
+            'decisionFault',
+            'partialDashboard',
+            'failKpis',
+            'malformedTrend',
+          ].some((key) => key in body)
+        )
           await operate({
             op: 'configure',
             failTitle: options.failTitle ?? false,
             failAgent: options.failAgent ?? false,
+            failInterpretation: options.failInterpretation ?? false,
+            failMetadata: options.failMetadata ?? false,
+            failWrite: options.failWrite ?? false,
+            mapped: options.mapped ?? false,
+            decisionFault: options.decisionFault ?? null,
+            partialDashboard: options.partialDashboard ?? false,
+            failKpis: options.failKpis ?? false,
+            malformedTrend: options.malformedTrend ?? false,
           });
         json(response, {});
         return true;
