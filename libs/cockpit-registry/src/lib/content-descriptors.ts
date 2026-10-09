@@ -830,7 +830,12 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       'cockpit/chat/generative-ui/angular/src/app/generative-ui.component.ts',
       'cockpit/chat/generative-ui/angular/src/app/app.config.ts',
     ],
-    backendAssetPaths: ['cockpit/chat/generative-ui/python/src/graph.py'],
+    backendAssetPaths: [
+      'cockpit/chat/generative-ui/python/src/graph.py',
+      'cockpit/chat/generative-ui/python/src/dashboard_tools.py',
+      'cockpit/chat/generative-ui/python/src/operations.py',
+      'cockpit/chat/generative-ui/python/src/dashboard_contract.py',
+    ],
     runtimeUrl: 'chat/generative-ui',
     devPort: 4508,
   },

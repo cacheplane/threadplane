@@ -1,390 +1,354 @@
-"""Single-node agentic graph for the airline operations KPI dashboard.
-
-Flow:
-  START → agent ↔ tools → wrap_spec_into_ai → agent (loop) → emit_state → respond → END
-
-`agent` is a single LLM call with all 5 tools bound (render_spec + 4 data
-tools). After tools run, `wrap_spec_into_ai` post-processes — if the LLM
-called render_spec, it replaces the parent AI message's content with the
-spec JSON (in place via add_messages' id-match reducer) so the chat-lib's
-content-classifier mounts <chat-generative-ui>. Then loops back to agent
-until the LLM returns no tool_calls (cap _MAX_TOOL_ITERATIONS per turn).
-
-Mirrors the emit_generated_surface pattern from examples/chat/python/src/graph.py,
-adapted for a continuation loop instead of terminal dispatch.
-"""
-
+"""Required decision, bounded execution, atomic dashboard publication."""
 import json
 import os
 from copy import deepcopy
-from math import isfinite
 from pathlib import Path
 from typing import Literal, NotRequired
-
+from uuid import uuid4
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
-from langgraph.graph import StateGraph, MessagesState, END
-from langgraph.prebuilt import ToolNode
 from langgraph.constants import TAG_NOSTREAM
+from langgraph.graph import END, MessagesState, StateGraph
+from langgraph.prebuilt import ToolNode
 from langgraph_sdk import get_client
-
+from src.dashboard_contract import bindings_resolve, capture, data_slots, parse_data, require, validate_dashboard, validate_spec
 from src.dashboard_tools import ALL_TOOLS as _DATA_TOOLS
+from src.operations import admit
 
 _PROMPT = (Path(__file__).parent.parent / "prompts" / "generative-ui.md").read_text()
 
-_MAX_TOOL_ITERATIONS = 6
-
-
 class DashboardState(MessagesState):
-    """Layouts live in messages; owned data and completion survive checkpoints."""
     dashboard: NotRequired[dict]
     completed_turn_id: NotRequired[str | None]
     completed_answer_id: NotRequired[str | None]
     completed_message_ids: NotRequired[list[str] | None]
+    operation_receipt: NotRequired[dict | None]
     _submitted_turn_id: NotRequired[str | None]
+    _submitted_human: NotRequired[dict | None]
+    _decision: NotRequired[dict | None]
+    _operation: NotRequired[dict | None]
+    _reason: NotRequired[str | None]
+    _parent_id: NotRequired[str | None]
+    _result_ids: NotRequired[list[str]]
+    _assessment: NotRequired[dict | None]
+    _owned_layout: NotRequired[dict | None]
+    _render_owner: NotRequired[dict | None]
+    _prior_dashboard: NotRequired[dict]
+    _prior_layout: NotRequired[dict | None]
+    _prior_owner: NotRequired[dict | None]
 
+def fresh(prefix):
+    return f"{prefix}-{uuid4()}"
 
-def prepare_turn(state: DashboardState) -> dict:
-    """Capture the submitted human before tools append intermediate messages."""
-    last = state["messages"][-1] if state["messages"] else None
-    return {
-        "_submitted_turn_id": last.id if isinstance(last, HumanMessage) else None,
-        "completed_turn_id": None,
-        "completed_answer_id": None,
-        "completed_message_ids": None,
-    }
-
+@tool
+def plan_dashboard_operation(kind: Literal["create", "data_update", "restructure", "interpret", "unsupported"], calls: list[dict], interpretation: str) -> dict:
+    """Choose one bounded operation. Calls contain only name and args. No action executes until independent admission."""
+    return {"kind": kind, "calls": calls, "interpretation": interpretation}
 
 # region render-spec-tool
 @tool
 async def render_spec(elements: dict, root: str) -> str:
-    """Render an interactive dashboard layout.
-
-    Use this tool to author or update the dashboard layout. See the system
-    prompt for the full component catalog and state binding conventions.
-
-    Call this tool AT MOST ONCE per turn — only when the layout needs to
-    be created (first turn) or restructured (follow-up structural change).
-    Do NOT call it again to refresh data; the data tools handle that.
-
-    Args:
-        elements: Dict keyed by component id. Each value has `type`, optional
-            `props`, and optional `children` (list of component ids).
-        root: The id of the top-level component (must be a key in `elements`).
-
-    Returns:
-        The spec serialized as JSON. A post-process node (wrap_spec_into_ai)
-        wraps this payload into the AI message content where the
-        chat-lib's content-classifier picks it up.
-    """
+    """Render a validated native dashboard layout. The graph owns publication."""
     return json.dumps({"elements": elements, "root": root})
 # endregion
 
-
 _ALL_TOOLS = [render_spec, *_DATA_TOOLS]
-
-_llm_with_tools = ChatOpenAI(
-    model="gpt-5",
-    temperature=0,
-    streaming=True,
-    reasoning_effort="minimal",
-).bind_tools(_ALL_TOOLS)
-
+_llm_with_tools = ChatOpenAI(model="gpt-5", temperature=0, streaming=True, reasoning_effort="minimal", tags=[TAG_NOSTREAM]).bind_tools(
+    [plan_dashboard_operation], tool_choice=plan_dashboard_operation.name, parallel_tool_calls=False, strict=False)
 _respond_llm = ChatOpenAI(model="gpt-5-mini", temperature=0, streaming=True)
-
-# ── generate_title node (inline; matches Pattern D from spec
-#     2026-05-19-llm-generated-labels-design.md) ──────────────────────────────
-
-_TITLE_PROMPT = (
-    "In 3-5 words, summarize what the user is asking about. "
-    "Output ONLY the title — no quotes, no period, no prefix."
-)
+_TITLE_PROMPT = "In 3-5 words, summarize what the user is asking about. Output ONLY the title — no quotes, no period, no prefix."
 _TITLE_MODEL = "gpt-5-mini"
 
-
 async def generate_title(state: DashboardState, config) -> dict:
-    """Background title generation: on the first turn, summarize the user's
-    intent into 3-5 words and persist to LangGraph thread metadata.
-
-    Idempotent — skips when metadata.title already exists. Errors are
-    swallowed because the title is a UX nicety, never a blocker.
-    """
+    """Best-effort metadata title; never a blocking or streamed action."""
     thread_id = (config.get("configurable") or {}).get("thread_id")
     if not thread_id:
         return {}
-    sdk_url = os.environ.get("LANGGRAPH_API_URL")
     try:
-        client = get_client(url=sdk_url)
+        client = get_client(url=os.environ.get("LANGGRAPH_API_URL"))
         thread = await client.threads.get(thread_id)
         if (thread.get("metadata") or {}).get("title"):
             return {}
-        first_user = next(
-            (m for m in state["messages"] if getattr(m, "type", None) == "human"),
-            None,
-        )
-        if not first_user or not isinstance(first_user.content, str):
-            return {}
-        if first_user.content.lstrip().startswith("{"):
+        first_user = next((m for m in state["messages"] if isinstance(m, HumanMessage)), None)
+        if not first_user or not isinstance(first_user.content, str) or first_user.content.lstrip().startswith("{"):
             return {}
         llm = ChatOpenAI(model=_TITLE_MODEL, temperature=0, tags=[TAG_NOSTREAM])
-        response = await llm.ainvoke([
-            SystemMessage(content=_TITLE_PROMPT),
-            HumanMessage(content=first_user.content),
-        ])
+        response = await llm.ainvoke([SystemMessage(content=_TITLE_PROMPT), HumanMessage(content=first_user.content)])
         title = (response.content or "").strip().strip('"').strip("'")[:80]
         if title:
             await client.threads.update(thread_id, metadata={"title": title})
-    except Exception as e:  # noqa: BLE001 — title is a UX nicety; never block
-        print(
-            f"[generate_title] failed for thread {thread_id}: "
-            f"{type(e).__name__}: {e}",
-            flush=True,
-        )
+    except Exception as error:
+        print(f"[generate_title] failed for thread {thread_id}: {type(error).__name__}: {error}", flush=True)
     return {}
 
+def owned_layout(state):
+    """Accept only a checkpoint layout with its exact graph-owned wrapped pair."""
+    layout, owner = state.get("_owned_layout"), state.get("_render_owner")
+    if layout is None or type(owner) is not dict:
+        return None, None
+    try:
+        spec = validate_spec(layout)
+        parent = next(m for m in state["messages"] if m.id == owner["parent_id"])
+        result = next(m for m in state["messages"] if m.id == owner["result_id"])
+        require(isinstance(parent, AIMessage) and isinstance(result, ToolMessage))
+        require(result.name == "render_spec" and result.tool_call_id == owner["call_id"] and result.status == "success" and result.content == "rendered")
+        require(parse_data(parent.content) == spec)
+        require(any(c["id"] == owner["call_id"] and c["name"] == "render_spec" and c["args"] == spec for c in parent.tool_calls))
+        return spec, deepcopy(owner)
+    except (ValueError, KeyError, StopIteration):
+        return None, None
 
-async def agent(state: DashboardState) -> dict:
-    """Single agentic node: LLM bound with all 5 tools."""
-    messages = [SystemMessage(content=_PROMPT)] + state["messages"]
-    response = await _llm_with_tools.ainvoke(messages)
-    return {"messages": [response]}
+def prepare_turn(state: DashboardState) -> dict:
+    last = state["messages"][-1] if state["messages"] else None
+    layout, owner = owned_layout(state)
+    try:
+        dashboard = validate_dashboard(state.get("dashboard") or {})
+    except ValueError:
+        dashboard = {}
+    return {"_submitted_turn_id": last.id if isinstance(last, HumanMessage) else None,
+            "_submitted_human": deepcopy(last.model_dump()) if isinstance(last, HumanMessage) else None,
+            "_decision": None, "_operation": None, "_reason": None, "_parent_id": None,
+            "_result_ids": [], "_assessment": None, "operation_receipt": None,
+            "completed_turn_id": None, "completed_answer_id": None, "completed_message_ids": None,
+            "_prior_dashboard": deepcopy(dashboard), "_prior_layout": deepcopy(layout),
+            "_prior_owner": deepcopy(owner), "dashboard": dashboard, "_owned_layout": layout, "_render_owner": owner}
 
 
-def should_continue(state: DashboardState) -> Literal["tools", "finalize", "emit_state"]:
-    """Loop while the agent emits tool_calls, up to _MAX_TOOL_ITERATIONS
-    this turn. After the cap, route through `finalize` (strips orphan
-    tool_calls from the last AI message) before emit_state — otherwise
-    `respond`'s LLM call rejects the message history because the AI
-    message had tool_calls without matching ToolMessages."""
-    last = state["messages"][-1]
-    if not (hasattr(last, "tool_calls") and last.tool_calls):
-        return "emit_state"
+def submitted_human_matches(state):
+    human = next((m for m in reversed(state["messages"]) if isinstance(m, HumanMessage)), None)
+    return (human is not None and human.id == state.get("_submitted_turn_id")
+            and human.model_dump() == state.get("_submitted_human"))
 
-    iter_count = 0
-    for msg in reversed(state["messages"]):
-        if msg.type == "human":
-            break
-        if msg.type == "ai" and getattr(msg, "tool_calls", None):
-            iter_count += 1
-    if iter_count >= _MAX_TOOL_ITERATIONS:
-        return "finalize"
-    return "tools"
+async def decide(state: DashboardState) -> dict:
+    if not state.get("_submitted_turn_id") or not submitted_human_matches(state):
+        return {"_reason": "Missing submitted human identity"}
+    context = json.dumps({"accepted_layout": state.get("_prior_layout"), "dashboard": state["_prior_dashboard"]})
+    response = await _llm_with_tools.ainvoke([SystemMessage(content=_PROMPT + "\nConfirmed checkpoint: " + context), *state["messages"]], config={"tags": [TAG_NOSTREAM]})
+    try:
+        require(isinstance(response, AIMessage) and not response.invalid_tool_calls, "Invalid decision tool calls")
+        require(not response.additional_kwargs.get("refusal"), "Decision refused")
+        require(len(response.tool_calls) == 1 and response.tool_calls[0]["name"] == plan_dashboard_operation.name, "Exactly one required decision was not returned")
+        return {"_decision": capture(response.tool_calls[0]["args"])}
+    except ValueError as error:
+        return {"_reason": str(error)}
 
-
-async def finalize(state: DashboardState) -> dict:
-    """Strip tool_calls from the last AI message when the iteration cap
-    is hit, so respond's LLM call doesn't fail with 'tool_calls without
-    matching ToolMessage' errors. Replaces in place via add_messages
-    id-match reducer."""
-    last = state["messages"][-1]
-    if not (isinstance(last, AIMessage) and last.tool_calls):
+def admit_operation(state: DashboardState) -> dict:
+    if state.get("_reason"):
         return {}
-    replacement_kwargs: dict = {
-        "content": last.content or "(iteration cap reached)",
-        "additional_kwargs": last.additional_kwargs or {},
-        "response_metadata": last.response_metadata or {},
-    }
-    if getattr(last, "id", None):
-        replacement_kwargs["id"] = last.id
-    return {"messages": [AIMessage(**replacement_kwargs)]}
+    try:
+        human = state["messages"][-1] if state["messages"] else None
+        require(isinstance(human, HumanMessage) and human.model_dump() == state.get("_submitted_human"), "Submitted human changed before admission")
+        operation = admit(state.get("_decision"), state["_prior_dashboard"], state.get("_prior_layout"))
+        operation["calls"] = [{**call, "id": fresh("call"), "type": "tool_call"} for call in operation["calls"]]
+        parent_id = fresh("action") if operation["calls"] else None
+        update = {"_operation": deepcopy(operation), "_parent_id": parent_id}
+        if parent_id:
+            update["messages"] = [AIMessage(id=parent_id, content="", tool_calls=deepcopy(operation["calls"]))]
+        return update
+    except ValueError as error:
+        return {"_reason": str(error)}
 
+def route_operation(state):
+    return "tools" if (state.get("_operation") or {}).get("calls") else "assess_results"
+
+_tool_node = ToolNode(_ALL_TOOLS, handle_tool_errors="The dashboard tool failed.")
+
+async def execute_tools(state: DashboardState, config) -> dict:
+    """Real ToolNode execution with owned result IDs before transcript publication."""
+    output = await _tool_node.ainvoke(state, config)
+    # LangChain treats [] as an empty multimodal-content list, rather than JSON.
+    # Preserve the genuine empty data result in the native text-result format.
+    results = [m.model_copy(deep=True, update={"id": fresh("result"),
+               "content": "[]" if m.content == [] else deepcopy(m.content)}) for m in output["messages"]]
+    return {"messages": results, "_result_ids": [m.id for m in results]}
+
+def current_results(state):
+    parent_index = next((i for i, m in enumerate(state["messages"]) if m.id == state.get("_parent_id")), None)
+    return [] if parent_index is None else [m for m in state["messages"][parent_index + 1:] if isinstance(m, ToolMessage)]
+
+
+def result_projection(results):
+    return [{"id": m.id, "tool_call_id": m.tool_call_id, "name": m.name,
+             "status": m.status, "content": deepcopy(m.content)} for m in results]
+
+
+def latest_data_slots(results, calls):
+    """Merge validated data in transcript order, owning every selected slot.
+
+    Admission forbids repeated tool names in executable operations. This helper
+    still defines chronological replacement for historical/direct observations.
+    """
+    slots = {}
+    by_id = {call["id"]: call for call in calls}
+    for result in results:
+        if result.name == "render_spec":
+            continue
+        call = by_id.get(result.tool_call_id)
+        require(call is not None and result.name == call["name"] and result.status == "success", "Uncorrelated data result")
+        slots.update(data_slots(result.name, parse_data(result.content), call["args"]))
+    return deepcopy(slots)
+
+def assess_results(state: DashboardState) -> dict:
+    operation = state.get("_operation")
+    if operation is None:
+        return {"_assessment": {"outcome": "rejected", "slots": {}, "layout": None, "reason": state.get("_reason") or "Invalid decision"}}
+    if not operation["calls"]:
+        return {"_assessment": {"outcome": operation["kind"], "slots": {}, "layout": None, "reason": None}}
+    try:
+        require(submitted_human_matches(state), "Submitted human changed before assessment")
+        calls, results = operation["calls"], current_results(state)
+        require(len(results) == len(calls) and len(state["_result_ids"]) == len(calls), "Missing or extra results")
+        require([m.id for m in results] == state["_result_ids"] and len(set(state["_result_ids"])) == len(results), "Unowned results")
+        slots, layout, render_result, render_text = {}, None, None, None
+        seen = set()
+        for result in results:
+            matching = [call for call in calls if call["id"] == result.tool_call_id]
+            require(len(matching) == 1 and result.tool_call_id not in seen, "Uncorrelated results")
+            call = matching[0]
+            seen.add(result.tool_call_id)
+            require(result.name == call["name"] and result.status == "success", "Failed or misnamed tool result")
+            payload = result.content
+            if call["name"] == "render_spec" and type(payload) is str and payload.strip().startswith("```"):
+                payload = "\n".join(line for line in payload.strip().split("\n") if not line.startswith("```")).strip()
+            parsed = parse_data(payload)
+            if call["name"] == "render_spec":
+                layout = validate_spec(parsed)
+                require(layout == call["args"], "Render differs from admitted arguments")
+                render_result = result.id
+                render_text = payload.strip()
+        slots = latest_data_slots(results, calls)
+        candidate = deepcopy(state["_prior_dashboard"])
+        candidate.update(deepcopy(slots))
+        if layout is not None:
+            require(bindings_resolve(layout, candidate), "Unresolved layout bindings")
+        parent = next(m for m in state["messages"] if m.id == state["_parent_id"])
+        require(isinstance(parent, AIMessage) and parent.tool_calls == calls, "Unowned action parent")
+        require(parent.content == "", "Render/action parent already contains prose")
+        observed = result_projection(results)
+        return {"_assessment": {"outcome": "applied", "slots": deepcopy(slots), "layout": deepcopy(layout), "render_result_id": render_result, "render_text": render_text, "observed_results": observed, "reason": None}}
+    except (ValueError, KeyError, StopIteration) as error:
+        return {"_assessment": {"outcome": "unfulfilled", "slots": {}, "layout": None, "reason": str(error)}}
 
 # region wrap-spec-into-ai
 async def wrap_spec_into_ai(state: DashboardState) -> dict:
-    """Post-process that wraps the most recent render_spec ToolMessage
-    payload into the parent AI tool-call message's content (in place via
-    LangGraph's add_messages reducer matching by id). The chat-lib's
-    content-classifier then sees content starting with `{` and mounts
-    <chat-generative-ui>.
-
-    Idempotent: if the parent AI message already has non-empty content
-    (already wrapped on a prior iteration), no-op. Also no-op if there
-    is no render_spec ToolMessage to process.
-
-    Mirrors emit_generated_surface from examples/chat/python/src/graph.py,
-    adapted to loop back to `agent` instead of going to END.
-    """
-    msgs = state["messages"]
-
-    render_tool_msg: ToolMessage | None = None
-    parent_ai: AIMessage | None = None
-    for m in reversed(msgs):
-        if isinstance(m, ToolMessage) and m.name == "render_spec":
-            render_tool_msg = m
-            for prior in reversed(msgs):
-                if isinstance(prior, AIMessage) and prior.tool_calls:
-                    if any(tc.get("id") == render_tool_msg.tool_call_id for tc in prior.tool_calls):
-                        parent_ai = prior
-                        break
-            break
-
-    if render_tool_msg is None or parent_ai is None:
+    assessment = state.get("_assessment") or {}
+    if assessment.get("outcome") != "applied" or assessment.get("layout") is None:
         return {}
+    parent = next((m for m in state["messages"] if m.id == state["_parent_id"]), None)
+    result = next((m for m in current_results(state) if m.id == assessment["render_result_id"]), None)
+    if (not submitted_human_matches(state)
+            or not isinstance(parent, AIMessage) or parent.content != "" or result is None
+            or parent.tool_calls != state["_operation"]["calls"]
+            or result_projection(current_results(state)) != assessment["observed_results"]
+            or [m.id for m in current_results(state)] != state["_result_ids"]):
+        return {"_assessment": {"outcome": "unfulfilled", "slots": {}, "layout": None, "reason": "Render parent could not be applied"}}
+    return {"messages": [result.model_copy(deep=True, update={"content": "rendered"}), parent.model_copy(deep=True, update={"content": assessment["render_text"]})]}
 # endregion
 
-# region rewrite-message-content
-    existing = parent_ai.content
-    if isinstance(existing, str) and existing.strip():
-        return {}
-
-    payload = render_tool_msg.content if isinstance(render_tool_msg.content, str) else ""
-    if not payload:
-        return {}
-
-    stripped = payload.strip()
-    if stripped.startswith("```"):
-        lines = stripped.split("\n")
-        stripped = "\n".join(line for line in lines if not line.startswith("```")).strip()
-
-    out: list = []
-
-    placeholder_kwargs: dict = {
-        "content": "rendered",
-        "tool_call_id": render_tool_msg.tool_call_id,
-        "name": "render_spec",
-    }
-    if getattr(render_tool_msg, "id", None):
-        placeholder_kwargs["id"] = render_tool_msg.id
-    out.append(ToolMessage(**placeholder_kwargs))
-
-    replacement_kwargs: dict = {
-        "content": stripped,
-        "tool_calls": parent_ai.tool_calls,
-        "additional_kwargs": parent_ai.additional_kwargs or {},
-        "response_metadata": parent_ai.response_metadata or {},
-    }
-    if getattr(parent_ai, "id", None):
-        replacement_kwargs["id"] = parent_ai.id
-    out.append(AIMessage(**replacement_kwargs))
-
-    return {"messages": out}
-# endregion
-
+def make_receipt(state, assessment, owner):
+    operation = state.get("_operation")
+    results = current_results(state) if operation and operation["calls"] else []
+    return {"submitted_human_id": state.get("_submitted_turn_id"), "submitted_human": deepcopy(state.get("_submitted_human")), "kind": operation["kind"] if operation else None,
+            "admitted_calls": deepcopy(operation["calls"]) if operation else [],
+            "results": result_projection(results),
+            "validated_slots": deepcopy(assessment.get("slots") or {}), "render_owner": deepcopy(owner),
+            "outcome": assessment["outcome"], "reason": assessment.get("reason")}
 
 # region emit-state
-def _data_slots(name: str, data) -> dict:
-    """Accept only the four data tools' successful fixture-shaped payloads."""
-    def number(value):
-        try:
-            return type(value) in (int, float) and isfinite(value)
-        except OverflowError:
-            return False
-
-    if name == "query_airline_kpis":
-        fields = {"on_time", "flights_today", "avg_delay", "load_factor"}
-        if not isinstance(data, dict) or not data or not set(data) <= fields:
-            return {}
-        for value in data.values():
-            if (not isinstance(value, dict) or set(value) != {"value", "delta"}
-                    or not isinstance(value["delta"], str)
-                    or not (isinstance(value["value"], str) or number(value["value"]))):
-                return {}
-        return deepcopy(data)
-
-    contracts = {
-        "query_on_time_trend": ("on_time_trend", {"month": str, "on_time_pct": number}),
-        "query_flights_by_airline": ("flights_by_airline", {"airline": str, "count": number}),
-        "query_recent_disruptions": ("recent_disruptions", {
-            "flight_number": str, "type": str, "minutes": number, "route": str, "date": str}),
-    }
-    if name not in contracts or not isinstance(data, list):
-        return {}
-    slot, fields = contracts[name]
-    for row in data:
-        if not isinstance(row, dict) or set(row) != set(fields):
-            return {}
-        if any(not (isinstance(row[key], str) if check is str else check(row[key]))
-               for key, check in fields.items()):
-            return {}
-    return {slot: deepcopy(data)}
-
-
 async def emit_state(state: DashboardState) -> dict:
-    """Persist current-turn data and emit equivalent Angular state patches.
-
-    Traverse in transcript order so the newest successful result for a slot
-    wins. Prior-turn results never replay; untouched prior slots are retained.
-    """
     from langgraph.config import get_stream_writer
-
-    messages = state["messages"]
-    start = next((i + 1 for i in range(len(messages) - 1, -1, -1)
-                  if isinstance(messages[i], HumanMessage)), len(messages))
-    slots: dict = {}
-    for msg in messages[start:]:
-        if not isinstance(msg, ToolMessage) or msg.status != "success":
-            continue
+    assessment = deepcopy(state["_assessment"])
+    layout, owner = deepcopy(state["_prior_layout"]), deepcopy(state["_prior_owner"])
+    slots = {}
+    if assessment["outcome"] == "applied":
         try:
-            data = json.loads(msg.content) if isinstance(msg.content, str) else msg.content
-        except (json.JSONDecodeError, TypeError):
-            continue
-        slots.update(_data_slots(msg.name, data))
-
-    dashboard = deepcopy(state.get("dashboard") or {})
-    dashboard.update(slots)
+            require(submitted_human_matches(state), "Submitted human changed before publication")
+            operation = state["_operation"]
+            parent = next(m for m in state["messages"] if m.id == state["_parent_id"])
+            require(isinstance(parent, AIMessage) and parent.tool_calls == operation["calls"], "Changed action ownership")
+            observed = deepcopy(assessment["observed_results"])
+            if assessment["layout"] is not None:
+                next(item for item in observed if item["id"] == assessment["render_result_id"])["content"] = "rendered"
+            current = result_projection(current_results(state))
+            require(current == observed and [item["id"] for item in current] == state["_result_ids"], "Results changed after assessment")
+            if assessment["layout"] is not None:
+                result = next(m for m in current_results(state) if m.id == assessment["render_result_id"])
+                render = next(c for c in operation["calls"] if c["name"] == "render_spec")
+                require(result.content == "rendered" and result.status == "success" and result.name == "render_spec" and result.tool_call_id == render["id"] and parent.content == assessment["render_text"] and parse_data(parent.content) == assessment["layout"], "Render wrapper was not applied")
+                layout = deepcopy(assessment["layout"])
+                owner = {"parent_id": parent.id, "call_id": render["id"], "result_id": result.id}
+            else:
+                require(parent.content == "", "Unexpected data action content")
+            slots = deepcopy(assessment["slots"])
+        except (ValueError, StopIteration, KeyError) as error:
+            assessment = {"outcome": "unfulfilled", "slots": {}, "layout": None, "reason": str(error)}
+            layout, owner = deepcopy(state["_prior_layout"]), deepcopy(state["_prior_owner"])
+    dashboard = deepcopy(state["_prior_dashboard"])
+    dashboard.update(deepcopy(slots))
+    receipt = make_receipt(state, assessment, owner if assessment["outcome"] == "applied" and assessment.get("layout") is not None else None)
     if slots:
         patches = {}
         for key, value in slots.items():
-            if isinstance(value, dict):
+            if type(value) is dict:
                 patches.update({f"/{key}/{field}": deepcopy(item) for field, item in value.items()})
             else:
                 patches[f"/{key}"] = deepcopy(value)
-        writer = get_stream_writer()
-        writer({"name": "state_update", "data": patches})
-
-    return {"dashboard": dashboard}
+        get_stream_writer()({"name": "state_update", "data": deepcopy(patches)})
+    return {"dashboard": dashboard, "_owned_layout": layout, "_render_owner": owner, "operation_receipt": deepcopy(receipt), "_assessment": assessment}
 # endregion
 
+def action_answer(receipt):
+    if receipt["outcome"] == "applied":
+        facts = []
+        for call in receipt["admitted_calls"]:
+            name, args = call["name"], call["args"]
+            if name == "render_spec":
+                facts.append("Dashboard layout applied.")
+            elif name == "query_recent_disruptions":
+                facts.append(f"Stored {len(receipt['validated_slots']['recent_disruptions'])} {args.get('type') or 'all'} disruption rows (limit {args.get('limit', 5)}).")
+            elif name == "query_on_time_trend":
+                facts.append(f"Stored {len(receipt['validated_slots']['on_time_trend'])} months of on-time data (requested {args.get('months', 12)}).")
+            elif name == "query_flights_by_airline":
+                selection = ", ".join(args.get("airlines") or []) or "all airlines"
+                facts.append(f"Stored {len(receipt['validated_slots']['flights_by_airline'])} airline rows for {selection}.")
+            else:
+                facts.append("Operational KPI data applied.")
+        return " ".join(facts)
+    if receipt["outcome"] == "unsupported":
+        return "This request is unsupported. No dashboard changes were made."
+    if receipt["outcome"] == "unfulfilled":
+        return "The dashboard operation could not be applied. No dashboard changes were made."
+    return "No valid dashboard operation was selected. No dashboard changes were made."
 
 async def respond(state: DashboardState) -> dict:
-    """Generate a brief conversational summary of what just happened on
-    this turn. ALWAYS runs (no early-exit)."""
-    messages = [
-        SystemMessage(content=(
-            "Provide a brief (1-2 sentence) conversational summary of what "
-            "you just did this turn. If you generated a dashboard, say so. "
-            "If you filtered data, say what you filtered. "
-            "Do NOT output JSON. Do NOT ask follow-up questions."
-        ))
-    ] + state["messages"]
-    response = await _respond_llm.ainvoke(messages)
-    canonical = [*state["messages"], response]
-    ids = [getattr(message, "id", None) for message in canonical]
-    human = next((m for m in reversed(state["messages"]) if isinstance(m, HumanMessage)), None)
+    receipt = state["operation_receipt"]
+    if receipt["outcome"] == "interpret":
+        result = await _respond_llm.ainvoke([SystemMessage(content="Answer the user's interpretive question using confirmed data. This is read-only: do not claim actions or changes. Do not output tools or JSON."), *state["messages"], SystemMessage(content="Confirmed dashboard: " + json.dumps(state["dashboard"]))], config={"tags": [TAG_NOSTREAM]})
+        prose = result.content if isinstance(result.content, str) else ""
+        content = prose + "\n\nNo dashboard changes were made."
+    else:
+        content = action_answer(receipt)
+    response = AIMessage(id=fresh("answer"), content=content)
+    ids = [m.id for m in [*state["messages"], response]]
     completion = {}
-    if (human is not None and human.id == state.get("_submitted_turn_id")
-            and isinstance(response, AIMessage)
-            and all(isinstance(identity, str) and identity for identity in ids)
-            and len(ids) == len(set(ids))):
-        completion = {
-            "completed_turn_id": human.id,
-            "completed_answer_id": response.id,
-            "completed_message_ids": ids,
-        }
+    if submitted_human_matches(state) and all(type(identity) is str and identity for identity in ids) and len(ids) == len(set(ids)):
+        completion = {"completed_turn_id": state["_submitted_turn_id"], "completed_answer_id": response.id, "completed_message_ids": ids}
     return {"messages": [response], **completion}
 
-
 # region graph-wiring
-_builder = StateGraph(DashboardState)
-_builder.add_node("prepare_turn", prepare_turn)
-_builder.add_node("agent", agent)
-_builder.add_node("tools", ToolNode(_ALL_TOOLS))
-_builder.add_node("wrap_spec_into_ai", wrap_spec_into_ai)
-_builder.add_node("finalize", finalize)
-_builder.add_node("emit_state", emit_state)
-_builder.add_node("respond", respond)
-_builder.add_node("generate_title", generate_title)
-
+_builder = StateGraph(DashboardState, input_schema=MessagesState)
+for name, node in (("prepare_turn", prepare_turn), ("decide", decide), ("admit", admit_operation), ("tools", execute_tools), ("assess_results", assess_results), ("wrap_spec_into_ai", wrap_spec_into_ai), ("emit_state", emit_state), ("respond", respond), ("generate_title", generate_title)):
+    _builder.add_node(name, node)
 _builder.set_entry_point("prepare_turn")
-_builder.add_edge("prepare_turn", "agent")
-_builder.add_conditional_edges("agent", should_continue)
-_builder.add_edge("tools", "wrap_spec_into_ai")
-_builder.add_edge("wrap_spec_into_ai", "agent")
-_builder.add_edge("finalize", "emit_state")
+_builder.add_edge("prepare_turn", "decide")
+_builder.add_edge("decide", "admit")
+_builder.add_conditional_edges("admit", route_operation)
+_builder.add_edge("tools", "assess_results")
+_builder.add_edge("assess_results", "wrap_spec_into_ai")
+_builder.add_edge("wrap_spec_into_ai", "emit_state")
 _builder.add_edge("emit_state", "respond")
 _builder.add_edge("respond", "generate_title")
 _builder.add_edge("generate_title", END)
-
 graph = _builder.compile()
 # endregion

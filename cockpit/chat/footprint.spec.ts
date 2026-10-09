@@ -53,7 +53,9 @@ describe('Chat footprint', () => {
 
       expect(graphSource).toContain('async def generate_title');
       expect(graphSource).toContain('metadata={"title": title}');
-      expect(graphSource).toContain('add_node("generate_title", generate_title)');
+      const explicitRegistration = graphSource.includes('add_node("generate_title", generate_title)');
+      const loopRegistration = /for name, node in \([^\n]*\("generate_title", generate_title\)[^\n]*\):\n    _builder\.add_node\(name, node\)/.test(graphSource);
+      expect(explicitRegistration || loopRegistration).toBe(true);
       expect(graphSource).toContain('add_edge("generate_title", END)');
     }
   });

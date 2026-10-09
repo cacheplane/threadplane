@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import assert from 'node:assert/strict';
 import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { isBuiltin } from 'node:module';
 import { tmpdir } from 'node:os';
@@ -6,6 +7,7 @@ import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { satisfies } from 'semver';
 import ts from 'typescript';
+import { lockedVendorGraph, vendorOverrides } from './langgraph-candidate-package.mjs';
 
 export function runMiddlewareConsumer(command, args, cwd) {
   const result = spawnSync(command, args, {
@@ -27,7 +29,27 @@ export function lockedMiddlewareManifest(manifest, lock) {
     if (!satisfies(pinned, range)) throw new Error(`${name}@${pinned} does not satisfy middleware peer range ${range}`);
     return [name, pinned];
   }));
-  return { private: true, type: 'module', dependencies, devDependencies: Object.fromEntries(['typescript', '@types/node'].map((name) => [name, version(name)])) };
+  const seeds = Object.keys(dependencies);
+  const vendors = lockedVendorGraph(lock, seeds);
+  const overrides = vendorOverrides(vendors, seeds);
+  // A qualified nested selector can miss a newly published compatible version.
+  // Pin every unique provider globally, retaining owner overrides for duplicates.
+  for (const vendor of vendors) {
+    const versions = new Set(vendors.filter(({ name }) => name === vendor.name).map(({ version }) => version));
+    if (versions.size !== 1) continue;
+    const key = `${vendor.name}@${vendor.version}`;
+    overrides[vendor.name] = vendorOverrides(vendors, [key])[key];
+  }
+  return { private: true, type: 'module', dependencies, overrides, devDependencies: Object.fromEntries(['typescript', '@types/node'].map((name) => [name, version(name)])) };
+}
+
+export function assertMiddlewareVendorGraph(manifest, rootLock, installedLock) {
+  const seeds = Object.keys(manifest.peerDependencies ?? {});
+  assert.deepEqual(
+    lockedVendorGraph(installedLock, seeds),
+    lockedVendorGraph(rootLock, seeds),
+    'Installed middleware provider edges preserve the reviewed locked graph'
+  );
 }
 
 export function assertConsumerFiles(consumer, files) {
@@ -100,7 +122,8 @@ export async function verifyMiddlewarePackage(root = process.cwd()) {
     const errors = auditMiddlewarePackage(artifact);
     if (errors.length) throw new Error(errors.join('\n'));
     const packageManifest = JSON.parse(readFileSync(join(artifact, 'package.json'), 'utf8'));
-    const manifest = lockedMiddlewareManifest(packageManifest, JSON.parse(readFileSync(join(root, 'package-lock.json'), 'utf8')));
+    const rootLock = JSON.parse(readFileSync(join(root, 'package-lock.json'), 'utf8'));
+    const manifest = lockedMiddlewareManifest(packageManifest, rootLock);
     manifest.dependencies['@threadplane/middleware'] = `file:${tarball}`;
     const consumer = join(temporary, 'consumer');
     cpSync(join(root, 'fixtures/react-parity/consumers/middleware'), consumer, { recursive: true });
@@ -108,6 +131,7 @@ export async function verifyMiddlewarePackage(root = process.cwd()) {
     console.log(`Middleware consumer toolchain: ${JSON.stringify(manifest)}`);
     console.log(runMiddlewareConsumer('npm', ['install', '--ignore-scripts', '--no-audit', '--no-fund'], consumer));
     const installedLock = JSON.parse(readFileSync(join(consumer, 'package-lock.json'), 'utf8'));
+    assertMiddlewareVendorGraph(packageManifest, rootLock, installedLock);
     for (const [path, value] of Object.entries(installedLock.packages)) {
       if (!path) continue;
       const name = path.split('node_modules/').at(-1);

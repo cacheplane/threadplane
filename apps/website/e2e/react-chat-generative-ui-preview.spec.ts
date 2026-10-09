@@ -99,6 +99,17 @@ test('native Chat Generative UI keeps canonical Docs, Code and Run aligned', asy
   await expect(page.getByRole('tabpanel')).toContainText(
     'createConnectedApplication'
   );
+  for (const name of ['graph.py', 'dashboard_tools.py', 'operations.py', 'dashboard_contract.py'] as const) {
+    const file = page.getByRole('complementary', { name: 'File tree' }).getByRole('button', { name, exact: true });
+    await expect(file).toBeVisible();
+    await file.click();
+    await expect(page.getByRole('tabpanel')).toContainText({
+      'graph.py': 'plan_dashboard_operation',
+      'dashboard_tools.py': 'query_recent_disruptions',
+      'operations.py': 'def admit(',
+      'dashboard_contract.py': 'def validate_spec(',
+    }[name]!);
+  }
   await expect(page).toHaveURL(/(?:\?|&)mode=code(?:&|$)/);
   await page
     .locator('[data-workspace-desktop-navigation]')

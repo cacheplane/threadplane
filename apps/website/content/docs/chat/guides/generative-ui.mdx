@@ -4,65 +4,65 @@ description: How the generative UI example authors a dashboard spec as message c
 
 # Generative UI
 
-An agent can return the interface rather than describe it. It writes a declarative json-render specification as the assistant message content, and the `<chat>` composition detects that content, parses it while it is still streaming, and mounts it through the `views` registry you supply. The running example is an airline operations dashboard, and this guide walks the three files that build it.
+An agent can return an interface rather than describe it. In this example, the model proposes a declarative json-render layout and the backend validates the operation before publishing the complete specification as assistant message content. The `<chat>` composition classifies that content and mounts it through the `views` registry you supply. The running example is an airline operations dashboard.
 
-This default Angular guide describes progressive rendering. Select **React** in Example UI for the experimental native preview, which publishes confirmed layouts and data together after saved-state verification.
+Angular is the default Example UI. Its render surface can update progressively as message content and state events arrive. Select **React** for the experimental native preview, which publishes confirmed layouts and data together only after verifying the exact saved checkpoint and tool evidence. Graph-state publication does not guarantee that browser painting happens atomically.
 
-The detection and the rendering are adapter-neutral. This page uses `@threadplane/langgraph`; the same registry and the same store work over the [AG-UI adapter](/docs/ag-ui/guides/json-render), where only the way the backend delivers the data differs.
+The detection and rendering are adapter-neutral. This page uses `@threadplane/langgraph`; the same registry and store work over the [AG-UI adapter](/docs/ag-ui/guides/json-render), where the backend delivers data differently.
 
 ## What the demo does
 
-The Run tab shows the prebuilt `<chat>` composition. Choose the welcome suggestion "Airline operations dashboard" and the agent calls one tool to author the layout — four KPI cards, a line chart, a bar chart, and a table — and, in the same turn, the data tools that back it. The cards mount as skeletons and take their values when the data arrives.
+The Run tab shows the prebuilt `<chat>` composition. Choose "Airline operations dashboard" or write your own request. The model authors a layout from six supported view types: `dashboard_grid`, `container`, `stat_card`, `line_chart`, `bar_chart`, and `data_grid`. A layout may use any valid subset of this catalog; it does not need six elements.
 
-The second suggestion, "Filter to cancelled flights", is the follow-up worth trying. The agent does not author a new layout for it. It calls one data tool again with new arguments, the new result replaces that slice of the store, and the dashboard already on screen updates in place.
+Try "Filter to cancelled flights" after creating a dashboard. A data update executes one query and replaces its validated dashboard slice while keeping the existing layout and its render owner. A request to change the arrangement instead requires a new layout. Interpretive questions execute no dashboard tools and answer from confirmed data. Unsupported requests make no changes.
+
+The model still interprets freeform language, so the selected category and interpretive prose are probabilistic. The backend's independent validation bounds what can execute; it does not guarantee that the model understood every request correctly.
 
 ## How it is built
 
-Three files carry the feature: a LangGraph graph that authors the layout and streams the data, an application config that registers the agent, and a component that supplies the view registry and the store. Open the Code tab to read them in full.
+The Code tab includes four backend modules. `graph.py` owns the turn, messages, publication, and response. `dashboard_tools.py` supplies the airline queries. `operations.py` admits bounded operations against the accepted prior layout, and `dashboard_contract.py` validates layouts, data, and bindings. The prompt is a separate asset. The frontend config registers the agent, and its component supplies the view registry and store.
+
+### Choosing a bounded operation
+
+Every turn requires one named `plan_dashboard_operation` decision: `create`, `data_update`, `restructure`, `interpret`, or `unsupported`. The decision itself executes nothing. Independent admission checks the category, tool arguments, prior layout, and bindings before the real tool node runs a single batch.
+
+A data update requires an existing accepted layout and exactly one query. Create and restructure require one `render_spec` call plus only the queries needed for bindings missing from the applicable data, with at most five unique calls in total. Interpret and unsupported decisions have no calls. There is no agent retry loop or iteration cap.
 
 ### The tool that authors the layout
 
-The layout arrives as a tool call. `render_spec` takes the flat element dictionary and the id of the root element, and returns them serialized as JSON.
+`render_spec` returns a flat element dictionary and root id as serialized JSON. The model proposes the layout; the graph controls whether it becomes a published dashboard.
 
 <ExampleCode file="graph.py" region="render-spec-tool" title="graph.py — the render_spec tool" />
 
-The docstring is the contract the model reads, which is why it says to call the tool at most once per turn: layout changes go through this tool, and data refreshes go through the data tools instead.
+### Moving the accepted specification into the message
 
-### Moving the specification into the message
+The graph assesses the entire current tool batch before wrapping a layout or emitting data. Every result must belong to the admitted call and graph-owned action parent, report success, and satisfy the dashboard contract. A layout must match the admitted arguments and resolve its bindings against the candidate data. A failed or malformed result prevents partial dashboard publication, retaining the prior board and genuine raw tool results.
 
-A tool result is not message content, so a post-processing node moves it. `wrap_spec_into_ai` finds the most recent `render_spec` tool message and the assistant message whose tool call produced it.
+Only an accepted, correlated render result can move into its assistant parent. `wrap_spec_into_ai` preserves message ids, transfers the complete JSON text into the empty parent, and changes that render tool result to `rendered`. Data-only updates leave the prior render pair and owner intact.
 
-<ExampleCode file="graph.py" region="wrap-spec-into-ai" title="graph.py — locating the specification" />
+<ExampleCode file="graph.py" region="wrap-spec-into-ai" title="graph.py — applying the correlated specification" />
 
-The node returns early when this turn produced no `render_spec` result at all; the guard that makes it safe on every pass of the loop is the content check in the next region.
-
-### Rewriting the message in place
-
-The rest of `wrap_spec_into_ai` replaces both messages, keeping their ids so LangGraph's `add_messages` reducer matches and replaces rather than appends. The early return on an already-filled parent message is what stops a second pass from wrapping the same payload twice.
-
-<ExampleCode file="graph.py" region="rewrite-message-content" title="graph.py — rewriting the message content" />
-
-The tool message becomes a short placeholder and the assistant message takes the specification JSON, stripped of a code fence if the model wrapped one around it.
-
-<Callout type="info" title="Why the message and not the state">
-The specification travels as message content because that is what the client classifies. `DashboardState` extends `MessagesState` with persisted dashboard data and completion evidence. The layout stays in the message. The same tool data is saved in the dashboard field and sent through the custom updates below, which keep the Angular views progressive.
+<Callout type="info" title="Message content and persisted ownership">
+The assistant message contains the JSON that the client classifies and renders. The graph also persists an owned layout, its exact render owner, dashboard data, and an internal operation receipt. That receipt records the submitted human message, admitted calls, observed results, validated slices, and outcome; it is completion evidence rather than a separate public receipt API.
 </Callout>
 
-### Sending the tool data as state updates
+### Sending accepted data as state updates
 
-The data tools return their results as tool messages, which the browser would otherwise only see as tool output. `emit_state` processes successful known tool results from the current turn in chronological order, with the newest result for each dashboard slice winning. It turns each result into JSON Pointer paths, and writes them to the stream as one custom event named `state_update`.
+`emit_state` rechecks the accepted messages and results before recording the dashboard, layout ownership, and operation receipt together in graph state. Only validated slices from an applied batch produce a custom `state_update` event. The newest validated result for a slice defines its value; admission forbids duplicate query names within an executable batch.
 
 <ExampleCode file="graph.py" region="emit-state" title="graph.py — emit_state" />
 
-The keys it builds, such as `/on_time/value` and `/recent_disruptions`, are exactly the pointers the specification binds to with `$state`.
+The event contains JSON Pointer keys such as `/on_time/value` and `/recent_disruptions`, matching the specification's `$state` bindings. The Angular store applies these events as they arrive. React additionally verifies the saved checkpoint and exact tool evidence before publishing a confirmed board.
 
-### The graph wiring
+### Outcomes and graph wiring
 
-The wiring shows the loop. `agent` calls the tools and the `tools` node runs them; `wrap_spec_into_ai` post-processes the result and returns to the agent; the turn ends through `emit_state`, a short conversational summary, and background title generation. `should_continue` routes to `finalize` instead of `tools` when the six-iteration cap is hit, so orphaned `tool_calls` are stripped from the last AI message before the turn ends. See the [persistence guide](/docs/langgraph/guides/persistence) for the no-checkpointer rule the last line follows and its one exception.
+The flow is prepare, required decision, admission, bounded execution when needed, whole-batch assessment, wrapping, state publication, response, and best-effort title generation. The graph owns the action, call, result, and answer identities. Its input schema accepts messages; the LangGraph API server supplies persistence, so the graph calls `compile()` without an explicit checkpointer.
 
 <ExampleCode file="graph.py" region="graph-wiring" title="graph.py — graph wiring" />
 
-The last line calls `compile()` with no checkpointer, because this graph is served by the LangGraph API server, which supplies persistence itself.
+Action responses are derived from the executed receipt: an applied operation reports the actual layout or stored data, while rejected decisions, unsupported requests, and unfulfilled operations report no dashboard changes. Read-only interpretation uses model prose followed by an explicit no-change footer. Title generation is best effort and does not stream into the action response.
+
+A malformed decision with no executable calls can be saved as an honest no-op and the conversation can continue. A real failed or malformed tool batch does not become a confirmed native turn merely because the backend retained its prior state or recorded an outcome. The React preview fails closed, keeps its prior confirmed board, and requires **New** before further submissions when saved evidence cannot be confirmed.
 
 ### Registering the agent
 
@@ -87,9 +87,9 @@ Both travel as inputs on `<chat>`: `[views]` for the registry and `[store]` for 
 
 The pieces meet in the browser in a fixed order.
 
-The content classifier in `@threadplane/chat` inspects each assistant message as it streams and decides from the start of the content: a `{` is a json-render specification, the `---a2ui_JSON---` sentinel is A2UI, and anything else is markdown. That is why the system prompt insists on raw JSON with no prose and no code fence around it.
+The content classifier in `@threadplane/chat` inspects each assistant message as it streams and decides from the start of the content: a `{` is a json-render specification, the `---a2ui_JSON---` sentinel is A2UI, and anything else is markdown. This backend supplies complete validated JSON through the correlated wrapper, rather than streaming raw model-authored JSON into the render surface.
 
-From there the content goes through `@cacheplane/partial-json`, and a `ParseTreeStore` materializes a best-effort `Spec` from the parse tree on every chunk, so a signal holds a usable specification long before the JSON closes. The composition mounts that specification as `<chat-generative-ui>`, which renders it through `<render-spec>` from `@threadplane/render` using the registry you passed. The surface also receives a `loading` input, true while the agent is still streaming, which a view component can read to draw a placeholder.
+For general streaming specifications, the content goes through `@cacheplane/partial-json`, and a `ParseTreeStore` materializes a best-effort `Spec` from the parse tree on every chunk, so a signal holds a usable specification long before the JSON closes. The composition mounts that specification as `<chat-generative-ui>`, which renders it through `<render-spec>` from `@threadplane/render` using the registry you passed. The surface also receives a `loading` input, true while the agent is still streaming, which a view component can read to draw a placeholder.
 
 The data takes the other path. The LangGraph adapter surfaces a custom event named `state_update` on the agent's event stream, and the composition writes its payload straight into the render store, keys included. Because `emit_state` already emits JSON Pointer keys, a binding of `{ "$state": "/on_time/value" }` resolves the moment the event lands.
 
@@ -132,7 +132,7 @@ export class StatCardComponent {
 }
 ```
 
-Give every input a default. A prop bound with `$state` is `undefined` until its event arrives, and a prop that is still streaming can be a partial string, so a component that requires its inputs will fail on the first frame.
+Give every input a default, including when using the renderer with other backends that stream partial specifications. A prop bound with `$state` is `undefined` until its event arrives, and a prop that is still streaming can be a partial string, so a component that requires its inputs will fail on the first frame.
 
 The specification that drives it is flat. One `root` id and one `elements` map, each element naming a `type`, optional `props`, and optional `children` as an array of ids:
 
@@ -157,7 +157,7 @@ The specification that drives it is flat. One `root` id and one `elements` map, 
 }
 ```
 
-The full format, including `$bindState`, `$computed` and visibility conditions, is covered in [Specs and elements](/docs/render/guides/specs).
+The general render format, including `$bindState`, `$computed` and visibility conditions, is covered in [Specs and elements](/docs/render/guides/specs).
 
 ## Event handlers
 
@@ -171,7 +171,7 @@ protected readonly handlers = {
 };
 ```
 
-An element wires it as `"on": { "click": { "action": "submitForm", "params": {} } }`. Handlers may return a value or a `Promise`, which lets an action await a network call before the surface advances. The dashboard example registers no handlers, because its dashboard is read-only. See [Events and actions](/docs/render/guides/events) for the dispatch rules.
+An element wires it as `"on": { "click": { "action": "submitForm", "params": {} } }`. Handlers may return a value or a `Promise`, which lets an action await a network call before the surface advances. The general render library supports actions and computed expressions. This bounded dashboard demo registers no handlers and rejects action bindings and computed expressions in model-authored layouts. See [Events and actions](/docs/render/guides/events) for the dispatch rules.
 
 ## A2UI protocol
 

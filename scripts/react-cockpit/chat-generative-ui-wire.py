@@ -20,6 +20,12 @@ sys.path.insert(0, str(PROJECT / "tests"))
 from test_streaming import LocalModel, call
 from langchain_core.messages import AIMessage
 from copy import deepcopy
+from langchain_core.runnables import RunnableLambda
+from langchain_core.tools import StructuredTool
+from langgraph.prebuilt import ToolNode
+from src.dashboard_contract import SLOT_TO_TOOL, bindings, resolve
+
+PRODUCTION_SOURCES = ("src/graph.py", "src/dashboard_tools.py", "src/operations.py", "src/dashboard_contract.py", "prompts/generative-ui.md")
 
 class Metadata:
     def __init__(self):
@@ -70,12 +76,17 @@ def checkpoint(state, mapped=False):
 
 async def main():
     client = AuthoredClient()
-    options = {"fail_title": False, "mapped": False}
+    options = {"fail_title": False, "mapped": False, "decisionFault": None,
+               "partialDashboard": False, "failKpis": False, "malformedTrend": False,
+               "prose_parent": False}
+    callbacks = {"titleMessageCallbacks": 0, "decisionMessageCallbacks": 0, "interpretationMessageCallbacks": 0}
     agent_model, respond_model = LocalModel(), LocalModel()
     layout = json.loads((PROJECT / "prompts/generative-ui.md").read_text().split('For "show me the dashboard":')[1].strip())
     def model_factory(**kwargs):
         if kwargs.get("streaming"):
-            return agent_model if kwargs["model"] == "gpt-5" else respond_model
+            model = agent_model if kwargs["model"] == "gpt-5" else respond_model
+            model.tags = kwargs.get("tags", [])
+            return model
         return LocalModel(responses=[AIMessage(id="title", content="Local dashboard title")], tags=kwargs.get("tags", []), fail=options["fail_title"])
     source = PROJECT / "src/graph.py"
     with patch.object(socket.socket, "connect", side_effect=AssertionError("Remote socket forbidden")) as connect, patch(
@@ -85,6 +96,14 @@ async def main():
             spec = importlib.util.spec_from_file_location("authored_generative_ui_wire", source)
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
+            # Explicit test-only node intervention proves the production wrapper's
+            # nonempty-parent fallback. Normal decisions never supply parent prose.
+            def fixture_admit(state):
+                output = module.admit_operation(state)
+                if options["prose_parent"] and output.get("messages"):
+                    output["messages"][0] = output["messages"][0].model_copy(update={"content": "Here is the layout."})
+                return output
+            module.graph.builder.nodes["admit"].runnable = RunnableLambda(fixture_admit)
             graph = module.graph.builder.compile(checkpointer=InMemorySaver())
         for line in sys.stdin:
             request = json.loads(line)
@@ -103,33 +122,73 @@ async def main():
                         client.threads.fail_write = request.get("failWrite", False)
                         options["fail_title"] = request.get("failTitle", False)
                         options["mapped"] = request.get("mapped", options["mapped"])
+                        for key in ("decisionFault", "partialDashboard", "failKpis", "malformedTrend"):
+                            options[key] = request.get(key, options[key])
+                        respond_model.fail = request.get("failInterpretation", respond_model.fail)
                         result = {}
                     elif request["op"] == "submit":
                         identity = request["messages"][0]["id"]
                         text = request["messages"][0]["content"].lower()
+                        prior = graph.get_state(config).values
+                        accepted = prior.get("_owned_layout")
                         spec_layout = deepcopy(layout)
+                        options["prose_parent"] = "prose render" in text
+                        if options["prose_parent"] and not accepted:
+                            for element in spec_layout["elements"].values():
+                                for key, value in element.get("props", {}).items():
+                                    if isinstance(value, dict) and "$state" in value:
+                                        element["props"][key] = None
+                        elif options["partialDashboard"] and not accepted:
+                            for element in spec_layout["elements"].values():
+                                for key, value in element.get("props", {}).items():
+                                    if isinstance(value, dict) and value.get("$state", "").split("/")[1] in ("on_time", "flights_today", "avg_delay", "load_factor", "on_time_trend"):
+                                        element["props"][key] = None
                         if "cancelled" in text:
-                            batch = [call("query_recent_disruptions", {"type": "cancelled"}, identity + "-filter")]
+                            kind, batch = "data_update", [call("query_recent_disruptions", {"type": "cancelled"})]
                         elif "remove" in text or "structure" in text:
-                            spec_layout["elements"]["root"]["children"].remove("table_section")
-                            del spec_layout["elements"]["table_section"]
-                            batch = [call("render_spec", spec_layout, identity + "-render")]
+                            spec_layout = deepcopy(accepted or spec_layout)
+                            if "table_section" in spec_layout["elements"]:
+                                spec_layout["elements"]["root"]["children"].remove("table_section")
+                                del spec_layout["elements"]["table_section"]
+                            kind, batch = "restructure" if accepted else "create", [call("render_spec", spec_layout)]
                         elif "why" in text or "interpret" in text:
-                            batch = []
+                            kind, batch = "interpret", []
                         else:
-                            batch = [call("render_spec", spec_layout, identity + "-render")]
-                            batch += [call(tool.name, identity=identity + "-" + tool.name) for tool in module._DATA_TOOLS]
-                        agent_model.responses = ([AIMessage(id=identity + "-agent", content="Here is the layout." if "prose render" in text else "", tool_calls=batch)] if batch else []) + [AIMessage(id=identity + "-done", content="Ready.")]
+                            kind, batch = "restructure" if accepted else "create", [call("render_spec", spec_layout)]
+                        if batch and batch[0]["name"] == "render_spec":
+                            prior_data = prior.get("dashboard", {}) if accepted else {}
+                            necessary = {SLOT_TO_TOOL[pointer.split("/")[1]] for pointer in bindings(spec_layout) if not resolve(pointer, prior_data)}
+                            batch += [call(tool.name) for tool in module._DATA_TOOLS if tool.name in necessary]
+                        selected = call("plan_dashboard_operation", {"kind": kind, "calls": [{"name": c["name"], "args": c["args"]} for c in batch], "interpretation": text if kind == "interpret" else ""})
+                        if options["decisionFault"] == "invalid":
+                            selected["args"]["calls"] = [{"name": "query_recent_disruptions", "args": {"type": "invented"}}]
+                        agent_model.responses = [AIMessage(id=identity + "-decision", content="", tool_calls=[] if options["decisionFault"] == "missing" else [selected])]
                         agent_model.cursor = 0
-                        respond_model.responses = [AIMessage(id=identity + "-answer", content="Dashboard updated." if batch else "On-time performance needs operational context to explain.")]
+                        respond_model.responses = [AIMessage(id=identity + "-interpretation", content="On-time performance needs operational context to explain.")]
                         respond_model.cursor = 0
+                        def failed_kpis():
+                            raise RuntimeError("Explicit local KPI tool failure")
+                        def malformed_trend(months=12):
+                            return [{"month": "Invalid", "on_time_pct": 101}]
+                        tools = [module.render_spec, *module._DATA_TOOLS]
+                        if options["failKpis"]:
+                            tools = [StructuredTool.from_function(failed_kpis, name="query_airline_kpis", description="Test-only throwing KPI tool") if tool.name == "query_airline_kpis" else tool for tool in tools]
+                        if options["malformedTrend"]:
+                            tools = [StructuredTool.from_function(malformed_trend, name="query_on_time_trend", description="Test-only malformed trend tool") if tool.name == "query_on_time_trend" else tool for tool in tools]
+                        module._tool_node = ToolNode(tools, handle_tool_errors="The dashboard tool failed.")
                         events = []
                         terminal_config = config
                         failure = False
                         try:
                             async for kind, event in graph.astream({"messages": request["messages"]}, config, stream_mode=["messages", "values", "updates", "custom", "checkpoints"]):
-                                if kind == "messages" and event[1].get("langgraph_node") == "generate_title":
-                                    raise AssertionError("Title callbacks leaked into answer stream")
+                                if kind == "messages":
+                                    node, message = event[1].get("langgraph_node"), event[0]
+                                    key = ("titleMessageCallbacks" if node == "generate_title" else
+                                           "decisionMessageCallbacks" if node == "decide" else
+                                           "interpretationMessageCallbacks" if message.id == identity + "-interpretation" else None)
+                                    if key:
+                                        callbacks[key] += 1
+                                        raise AssertionError("Private model callbacks leaked into answer stream")
                                 if kind == "checkpoints":
                                     if options["mapped"]:
                                         position = event["config"]["configurable"]
@@ -148,7 +207,9 @@ async def main():
                     "op": request["op"], "threadId": request.get("threadId"),
                     "sourceSha256": hashlib.sha256(source.read_bytes()).hexdigest(),
                     "lockSha256": hashlib.sha256((PROJECT / "uv.lock").read_bytes()).hexdigest(),
-                    "networkConnectAttempts": connect.call_count, "titleMessageCallbacks": 0,
+                    "productionSourceSha256": {path: hashlib.sha256((PROJECT / path).read_bytes()).hexdigest() for path in PRODUCTION_SOURCES},
+                    "networkConnectAttempts": connect.call_count, **callbacks,
+                    "fixtureControls": {key: options[key] for key in ("decisionFault", "partialDashboard", "failKpis", "malformedTrend", "prose_parent")},
                     "httpCheckpointRepresentation": "root-map" if options["mapped"] else "native",
                 }
                 result["requestId"] = request["requestId"]
