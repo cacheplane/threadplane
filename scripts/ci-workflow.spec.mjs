@@ -410,6 +410,73 @@ describe('CI workflow', () => {
     return readJobBlock(await readWorkflow(), 'ag-ui-demo-deploy');
   }
 
+  // Exercise grep's ERE semantics with the selector read from the deploy step,
+  // so these cases cannot pass against a separately maintained test regex.
+  for (const [path, changed] of [
+    ['libs/ag-ui/src/public-api.ts', true],
+    ['libs/chat/src/lib/compositions/chat/chat.component.ts', true],
+    ['libs/render/src/public-api.ts', true],
+    ['libs/telemetry/src/browser/public-api.ts', true],
+    ['libs/langgraph/src/public-api.ts', true],
+    ['libs/core/src/index.ts', true],
+    ['libs/a2ui/src/index.ts', true],
+    ['libs/future-library/src/index.ts', true],
+    ['package.json', true],
+    ['package-lock.json', true],
+    ['nx.json', true],
+    ['tsconfig.base.json', true],
+    ['.github/workflows/ci.yml', true],
+    ['examples/ag-ui/angular/src/app/app.ts', true],
+    ['examples/ag-ui/python/src/agent.py', true],
+    ['scripts/ag-ui-demo-middleware.ts', true],
+    ['scripts/assemble-ag-ui-demo.ts', true],
+    ['scripts/demo-routes.ts', true],
+    ['README.md', false],
+    ['apps/website/content/docs/ag-ui.mdx', false],
+    ['deployments/ag-ui-mastra/src/index.ts', false],
+    ['examples/chat/python/src/agent.py', false],
+    ['scripts/ci-workflow.spec.mjs', false],
+    ['scripts/demo-routes.spec.ts', false],
+    ['scripts/assemble-ag-ui-demo.spec.ts', false],
+    ['library/ag-ui/src/index.ts', false],
+    ['libs-extra/ag-ui/src/index.ts', false],
+    ['nested/libs/ag-ui/src/index.ts', false],
+    ['examples/ag-ui-extra/angular/src/app.ts', false],
+    ['nested/examples/ag-ui/angular/src/app.ts', false],
+    ['scripts/demo-routes.ts.bak', false],
+    ['scripts/not-demo-routes.ts', false],
+    ['nested/package.json', false],
+    ['packageXjson', false],
+    ['package-lockXjson', false],
+    ['package.json.bak', false],
+    ['nxXjson', false],
+    ['tsconfigXbaseXjson', false],
+    ['.github/workflows/ciXyml', false],
+    ['.github/workflows/ci.yml.bak', false],
+    ['.github/workflows/release.yml', false],
+    ['', false],
+  ]) {
+    it(`AG-UI demo deployment ${changed ? 'includes' : 'excludes'} ${path || 'an empty change list'}`, async () => {
+      const step = readNamedStep(await readAgUiDemoJob(), 'Check if AG-UI demo changed');
+      const selectors = [...step.matchAll(/grep -E '([^']+)'/g)];
+      assert.equal(selectors.length, 1, 'expected exactly one deployment path selector');
+      const result = spawnSync('grep', ['-E', selectors[0][1]], {
+        input: `${path}\n`,
+        encoding: 'utf8',
+      });
+      assert.ifError(result.error);
+      assert.equal(result.status, changed ? 0 : 1, `${path}: ${result.stderr}`);
+    });
+  }
+
+  it('runs the deployment selector regressions on every pull request', async () => {
+    const job = await readCiScopeJob();
+    const step = readNamedStep(job, 'Validate CI workflow guards');
+    assert.match(step, /run: node --test scripts\/ci-workflow\.spec\.mjs\s*$/);
+    assert.doesNotMatch(step, /if:|continue-on-error|\|\|\s*true|--test-name-pattern/);
+    assert.doesNotMatch(job, /^ {4}if:/m);
+  });
+
   async function readProductionSmokeJob() {
     return readJobBlock(await readWorkflow(), 'production-smoke');
   }

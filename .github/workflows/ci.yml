@@ -1485,8 +1485,9 @@ jobs:
           # touch a gated path.
           #
           # refs/deploy/ag-ui-demo-last-promoted advances only after a fully
-          # successful, non-stale run of this job, so the range covers
-          # everything not yet promoted. A separate ref from the deploy job's:
+          # successful, non-stale run of this job, including a no-change run.
+          # It records the last processed baseline, so the range covers all
+          # relevant changes not yet promoted. A separate ref from the deploy job's:
           # the two promote different targets and go stale independently.
           base_sha=""
           marker="$(git ls-remote origin refs/deploy/ag-ui-demo-last-promoted 2>/dev/null | cut -f1)"
@@ -1516,7 +1517,7 @@ jobs:
           head_sha="${{ github.sha }}"
           changed_files="$(git diff --name-only "$base_sha" "$head_sha")"
           ag_ui_changed=false
-          if printf '%s\n' "$changed_files" | grep -E '^(examples/ag-ui/.*|scripts/(ag-ui-demo-middleware|assemble-ag-ui-demo|demo-routes)\.ts)$' >/dev/null; then
+          if printf '%s\n' "$changed_files" | grep -E '^(examples/ag-ui/.*|libs/.*|scripts/(ag-ui-demo-middleware|assemble-ag-ui-demo|demo-routes)\.ts|package\.json|package-lock\.json|nx\.json|tsconfig\.base\.json|\.github/workflows/ci\.yml)$' >/dev/null; then
             ag_ui_changed=true
           fi
           echo "changed=$ag_ui_changed" >> "$GITHUB_OUTPUT"
@@ -1563,10 +1564,11 @@ jobs:
         run: |
           npx --yes @railway/cli@4 up --service ag-ui-demo --detach
 
-      # Advance only when the whole job succeeded and actually promoted. A
-      # stale run, a failure, or a partial deploy leaves the marker put, so the
-      # next run's range still covers whatever did not ship. Never `always()`:
-      # advancing past unshipped work is the bug this exists to prevent.
+      # Advance only when the whole job succeeded and is non-stale, including
+      # no-change runs that successfully processed the baseline. A stale run,
+      # a failure, or a partial deploy leaves the marker put, so the next run's
+      # range still covers whatever did not ship. Never `always()`: advancing
+      # past unshipped work is the bug this exists to prevent.
       - name: Record this commit as AG-UI demo promoted
         if: success() && steps.freshness.outputs.stale != 'true'
         run: git push origin --force "${{ github.sha }}:refs/deploy/ag-ui-demo-last-promoted"
