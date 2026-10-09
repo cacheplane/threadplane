@@ -1,26 +1,8 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "e29b85812a0da69c85c1c46c2238c4293f4d593b",
+  "baselineHead": "ad5ff17ca862dd4aa9a62d47c9354f790f29419a",
   "sourceState": {
-    "modified": [
-      "apps/website/content/docs/ag-ui/getting-started/installation.mdx",
-      "apps/website/content/docs/chat/getting-started/changelog.mdx",
-      "apps/website/content/docs/chat/getting-started/installation.mdx",
-      "apps/website/content/docs/chat/guides/writing-an-adapter.mdx",
-      "apps/website/content/docs/langgraph/getting-started/installation.mdx",
-      "apps/website/content/docs/render/getting-started/installation.mdx",
-      "libs/a2ui/package.json",
-      "libs/ag-ui/package.json",
-      "libs/ag-ui/src/lib/package-version.ts",
-      "libs/chat/package.json",
-      "libs/chat/src/lib/package-version.ts",
-      "libs/langgraph/package.json",
-      "libs/langgraph/src/lib/package-version.ts",
-      "libs/render/package.json",
-      "libs/render/src/lib/package-version.ts",
-      "libs/telemetry/package.json",
-      "package-lock.json"
-    ],
+    "modified": [],
     "untracked": []
   },
   "scope": {
@@ -108,7 +90,7 @@
       "id": "asset:libs/a2ui/package.json",
       "kind": "asset",
       "path": "libs/a2ui/package.json",
-      "sha256": "a89c3114d7c33e4769291f9bc4a7b6a74f917cab7dc85fc7c0faaaee67e71a3f"
+      "sha256": "2b7bd77ad53eb4c4e27037021c895d1c266760a715000f2cb0f05a4d0d0279d8"
     },
     {
       "id": "asset:libs/a2ui/project.json",
@@ -228,7 +210,7 @@
       "id": "asset:libs/ag-ui/package.json",
       "kind": "asset",
       "path": "libs/ag-ui/package.json",
-      "sha256": "2f18cb1df3633a44fb882faedda465a6bfe29b405665f24453f5b73fe6096de7"
+      "sha256": "31099672ac63bde416180930102cc688604d8cb865812991976c6aa6f5bbfbe2"
     },
     {
       "id": "asset:libs/ag-ui/project.json",
@@ -378,7 +360,7 @@
       "id": "asset:libs/chat/package.json",
       "kind": "asset",
       "path": "libs/chat/package.json",
-      "sha256": "302f15edb185bc8adf725a1d2efb60f406ca5fb3e2bb56e7a6a939499c6d8232"
+      "sha256": "36408c7c85a1c383fd4402a3d8bf6e742f74828272b6aa666810c8eb5ab5ce91"
     },
     {
       "id": "asset:libs/chat/project.json",
@@ -738,7 +720,7 @@
       "id": "asset:libs/langgraph/package.json",
       "kind": "asset",
       "path": "libs/langgraph/package.json",
-      "sha256": "62dbed2943f27bdbf7a9ae6ee242465f872c961015cee3eabb57c6e4738da181"
+      "sha256": "c32cb17640ebd7e7ee31b0b9c2329e07a8768c3bdd2a3c629e629a47c4d2bfc8"
     },
     {
       "id": "asset:libs/langgraph/project.json",
@@ -906,7 +888,7 @@
       "id": "asset:libs/render/package.json",
       "kind": "asset",
       "path": "libs/render/package.json",
-      "sha256": "6c2e35d27ee198c11c16d445bd295b107056d4729430141d88c95a287ffd268f"
+      "sha256": "2b6b3a95b466c7b1b3c24e53b71df1a2d322fb1402ab266fa563d0fe69a22c62"
     },
     {
       "id": "asset:libs/render/project.json",
@@ -960,7 +942,7 @@
       "id": "asset:libs/telemetry/package.json",
       "kind": "asset",
       "path": "libs/telemetry/package.json",
-      "sha256": "a01d7cf86c7b8def8dcf5232cf0fcbdf588f2edcf3f3cee5ba3fa8249a7a3be8"
+      "sha256": "538ab741e48c869d1450047c5c248116db209b1d58e40e6ffec3ac9e5ea9772d"
     },
     {
       "id": "asset:libs/telemetry/project.json",
@@ -2220,7 +2202,7 @@
       "id": "config:package-lock.json",
       "kind": "config",
       "path": "package-lock.json",
-      "sha256": "2169e697d30e8d27b52ee6109f9c22be606ee7ec46794d8e3bda3b70aaedec8c"
+      "sha256": "0541ff264027517727fef7558652a8cef64605c70a2ef5ff81054df421d7b467"
     },
     {
       "id": "config:package.json",
@@ -2334,7 +2316,7 @@
       "id": "doc:apps/website/content/docs/ag-ui/getting-started/installation.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/getting-started/installation.mdx",
-      "sha256": "464690e512fc6a2fc187ac2245a78463baf68c0f48cfc3996e0b9a713d12e67a"
+      "sha256": "ed5a1ac105ff8344a7487e557e440720674f1b7c2e62c7e8f6ad235ca99dcb98"
     },
     {
       "id": "doc:apps/website/content/docs/ag-ui/getting-started/introduction.mdx",
@@ -2586,7 +2568,7 @@
       "id": "doc:apps/website/content/docs/chat/getting-started/changelog.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/getting-started/changelog.mdx",
-      "sha256": "a8c719f328e85da416e9fb7fab4d80eafe030cda1d0a5443181d57ad0546ea02"
+      "sha256": "88e3e57fb7d239f068bd86032ab8f847de9faaf1ac1a7be1e70f82afcda82a5e"
     },
     {
       "id": "doc:apps/website/content/docs/chat/getting-started/coding-agents.mdx",
@@ -2598,7 +2580,7 @@
       "id": "doc:apps/website/content/docs/chat/getting-started/installation.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/getting-started/installation.mdx",
-      "sha256": "a9fdd004df3f3d40cfa7a94c2dd0dec3ad712609b368b5ebfff35ad2f8ca2378"
+      "sha256": "1c22b6eaf2e6b75b7c71cd45379a6462d00df0bc660d72327d6990c842e05de9"
     },
     {
       "id": "doc:apps/website/content/docs/chat/getting-started/introduction.mdx",
@@ -2682,7 +2664,7 @@
       "id": "doc:apps/website/content/docs/chat/guides/writing-an-adapter.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/guides/writing-an-adapter.mdx",
-      "sha256": "86ce5628d6957ef3483e9dc3d454501b1a5a8905db48470af8d778435cee7eb4"
+      "sha256": "402661d01a28feb8a1239f628bab9efe9cf240d8e50ae6a47ea0f2fed52c80e4"
     },
     {
       "id": "doc:apps/website/content/docs/choosing-an-adapter/index.mdx",
@@ -2790,7 +2772,7 @@
       "id": "doc:apps/website/content/docs/langgraph/getting-started/installation.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/langgraph/getting-started/installation.mdx",
-      "sha256": "1b58bc1693985685c12429e7e688935a4fc130cda33f46acb85c0a8a2f60460b"
+      "sha256": "54fa5c4b61c37dcf8503a99f753084907ec617c187b6b003ba6ba9d1c78559d9"
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/getting-started/introduction.mdx",
@@ -2934,7 +2916,7 @@
       "id": "doc:apps/website/content/docs/render/getting-started/installation.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/render/getting-started/installation.mdx",
-      "sha256": "72b64f93418372970a26978b94f4763fe2f4114f95b0ae1f7af420270d2d6906"
+      "sha256": "81b620c43fe9a7f48c6c6de56ec0fee0507199dda0d7f1ecebd2fa8fcf2e6b2b"
     },
     {
       "id": "doc:apps/website/content/docs/render/getting-started/introduction.mdx",
@@ -11919,7 +11901,7 @@
       "id": "source:libs/ag-ui/src/lib/package-version.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/package-version.ts",
-      "sha256": "5d8823f3a3c97880d4e7556d07ca7afa69e3807bcc3b470465b68e82bf7730dc"
+      "sha256": "c93e06e801409fc1f7c3c838455c8803c0cba5d238bb058ac27c6471820ff931"
     },
     {
       "id": "source:libs/ag-ui/src/lib/provide-agent.ts",
@@ -12957,7 +12939,7 @@
       "id": "source:libs/chat/src/lib/package-version.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/package-version.ts",
-      "sha256": "5d8823f3a3c97880d4e7556d07ca7afa69e3807bcc3b470465b68e82bf7730dc"
+      "sha256": "c93e06e801409fc1f7c3c838455c8803c0cba5d238bb058ac27c6471820ff931"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-citations/chat-citation-preview.component.ts",
@@ -14091,7 +14073,7 @@
       "id": "source:libs/langgraph/src/lib/package-version.ts",
       "kind": "source",
       "path": "libs/langgraph/src/lib/package-version.ts",
-      "sha256": "5d8823f3a3c97880d4e7556d07ca7afa69e3807bcc3b470465b68e82bf7730dc"
+      "sha256": "c93e06e801409fc1f7c3c838455c8803c0cba5d238bb058ac27c6471820ff931"
     },
     {
       "id": "source:libs/langgraph/src/lib/runtime-operation-reporter.ts",
@@ -14661,7 +14643,7 @@
       "id": "source:libs/render/src/lib/package-version.ts",
       "kind": "source",
       "path": "libs/render/src/lib/package-version.ts",
-      "sha256": "5d8823f3a3c97880d4e7556d07ca7afa69e3807bcc3b470465b68e82bf7730dc"
+      "sha256": "c93e06e801409fc1f7c3c838455c8803c0cba5d238bb058ac27c6471820ff931"
     },
     {
       "id": "source:libs/render/src/lib/provide-render.ts",

@@ -1,3 +1,14 @@
+## 0.3.2 (2026-10-08)
+
+### ✨ Highlights
+
+- **chat:** `chatRunActivityTemplate` renders a run's activity before its first assistant message exists, replacing the typing indicator in that window
+- **chat:** `chatInterruptTemplate` renders a host's interrupt UI at the end of the transcript while `agent.interrupt()` is pending
+
+### 🚀 Features
+
+- **chat:** add run-activity and interrupt slots to <chat> ([#1287](https://github.com/cacheplane/threadplane/pull/1287))
+
 ## 0.3.1 (2026-10-08)
 
 ### ✨ Highlights

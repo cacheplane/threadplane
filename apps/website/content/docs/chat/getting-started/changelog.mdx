@@ -5,8 +5,13 @@ description: Highlight releases of @threadplane/chat since 0.0.19, from client t
 # Changelog
 
 <Callout type="info" title="Highlight releases only">
-This changelog tracks selected highlight releases, not every release. The published package is at `0.3.1`. The entries below cover the notable changes since `0.0.19`.
+This changelog tracks selected highlight releases, not every release. The published package is at `0.3.2`. The entries below cover the notable changes since `0.0.19`.
 </Callout>
+
+## 0.3.2
+
+- `chatRunActivityTemplate` renders while a run has no assistant message yet, so you can show turn-level activity during a slow first model call. It replaces the typing indicator only in that window. See [ChatRunActivityTemplate](/docs/chat/components/chat-run-activity-template).
+- `chatInterruptTemplate` renders your interrupt UI at the end of the transcript while `agent.interrupt()` is pending. See [ChatInterruptTemplate](/docs/chat/components/chat-interrupt-template).
 
 ## 0.3.1
 
