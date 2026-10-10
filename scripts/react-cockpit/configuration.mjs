@@ -1,5 +1,10 @@
 /** Closed authored frontend selection; callers cannot supply filesystem paths. */
 export function reactCockpitConfiguration(topic = 'streaming') {
+  if (topic === 'deep-agents-planning')
+    return Object.freeze({
+      topic: 'planning', library: 'deep-agents', adapter: 'langgraph', appPath: 'cockpit/deep-agents/planning/react',
+      base: '/deep-agents/planning/react/', port: 4628, project: 'cockpit-deep-agents-planning-react',
+    });
   if (topic === 'chat-generative-ui')
     return Object.freeze({
       topic: 'generative-ui', library: 'chat', adapter: 'langgraph', appPath: 'cockpit/chat/generative-ui/react',

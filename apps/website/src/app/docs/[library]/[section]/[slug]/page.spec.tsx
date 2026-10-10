@@ -33,6 +33,19 @@ import { ReactTimeTravelPreview } from '../../../../../components/docs/ReactTime
 import { WebsiteWorkspace } from '../../../../../components/workspace/WebsiteWorkspace';
 import DocsPage, { generateMetadata } from './page';
 
+it('selects Planning-specific native React Docs and sources while retaining Angular Docs', async () => {
+  const tree = await route('deep-agents', 'capabilities', 'planning');
+  const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
+  const article = workspace?.props.reactDocsSlot as React.ReactElement<ElementProps> | undefined;
+  expect(article).toBeTruthy();
+  expect((article?.type as { name?: string })?.name).toBe('ReactDeepAgentsPlanningPreview');
+  expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/deep-agents/planning/react/src/plan-state.ts');
+  expect(article?.props.exampleCode?.sources?.['cockpit/deep-agents/planning/react/src/terminal.ts']).toContain('checkpoint');
+  const angular = findElement(workspace?.props.docsSlot, MdxRenderer as ComponentType<never>);
+  expect(angular?.props.exampleCode?.assetPaths.some(path => path.includes('/planning/angular/'))).toBe(true);
+  expect(findElement(workspace?.props.reactDocsSlot, ReactStreamingPreview as ComponentType<never>)).toBeNull();
+});
+
 interface ElementProps {
   children?: ReactNode;
   docsSlot?: ReactNode;

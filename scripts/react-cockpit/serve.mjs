@@ -25,8 +25,10 @@ import { createAgUiInterruptsFixture } from './ag-ui-interrupts-fixture.mjs';
 import { createAgUiToolViewsFixture } from './ag-ui-tool-views-fixture.mjs';
 import { createAgUiJsonRenderFixture } from './ag-ui-json-render-fixture.mjs';
 import { createAgUiSubagentsFixture } from './ag-ui-subagents-fixture.mjs';
+import { createDeepAgentsPlanningFixture } from './deep-agents-planning-fixture.mjs';
 
 const configuration = reactCockpitConfiguration(process.argv[2]);
+const deepAgentsPlanningFixture = configuration.library === 'deep-agents' && configuration.topic === 'planning' ? createDeepAgentsPlanningFixture() : null;
 let chatGenerativeUiFixture = configuration.library === 'chat' && configuration.topic === 'generative-ui' ? createChatGenerativeUiFixture() : null;
 const chatTimelineFixture = configuration.library === 'chat' && configuration.topic === 'timeline' ? createChatTimelineFixture() : null;
 const chatThreadsFixture = configuration.library === 'chat' && configuration.topic === 'threads' ? createChatThreadsFixture() : null;
@@ -104,6 +106,7 @@ const release = () => {
 };
 const server = createServer(async (request, response) => {
   const pathname = new URL(request.url, 'http://localhost').pathname;
+  if (deepAgentsPlanningFixture && (await deepAgentsPlanningFixture(request, response, pathname))) return;
   if (chatGenerativeUiFixture && pathname === '/__reset') {
     if (request.method !== 'POST') return json(response, {}, 405);
     try {
@@ -334,11 +337,11 @@ const server = createServer(async (request, response) => {
 server.listen(configuration.port, '127.0.0.1');
 const parentServer = !process.argv.includes('--no-parent')
   ? createServer(server.listeners('request')[0]).listen(3000, '127.0.0.1') : null;
-if (chatGenerativeUiFixture || chatInterruptsFixture || chatToolCallsFixture || chatSubagentsFixture || chatThreadsFixture || chatTimelineFixture) {
+if (deepAgentsPlanningFixture || chatGenerativeUiFixture || chatInterruptsFixture || chatToolCallsFixture || chatSubagentsFixture || chatThreadsFixture || chatTimelineFixture) {
   let closing;
   const shutdown = (code = 0) => {
     closing ??= (async () => {
-      await (chatGenerativeUiFixture ?? chatInterruptsFixture ?? chatToolCallsFixture ?? chatSubagentsFixture ?? chatThreadsFixture ?? chatTimelineFixture).close();
+      await (deepAgentsPlanningFixture ?? chatGenerativeUiFixture ?? chatInterruptsFixture ?? chatToolCallsFixture ?? chatSubagentsFixture ?? chatThreadsFixture ?? chatTimelineFixture).close();
       await Promise.all([server, parentServer].filter(Boolean).map((owned) => new Promise((resolve) => {
         owned.close(resolve);
         owned.closeAllConnections();

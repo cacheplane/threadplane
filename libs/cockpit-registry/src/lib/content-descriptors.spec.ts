@@ -44,6 +44,20 @@ import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { capabilityModules, getFrontendCapabilityDescriptor } from './content-descriptors';
 import { cockpitManifest } from './manifest';
+it('registers one frozen native Planning variant with the canonical backend and exact sources', () => {
+  const canonical = capabilityModules.find(entry => entry.id === 'deep-agents-planning-python')!;
+  const react = getFrontendCapabilityDescriptor(canonical.manifestIdentity as never, 'react');
+  expect(react).toBeDefined();
+  expect(react?.manifestIdentity).toEqual(canonical.manifestIdentity);
+  expect(react?.backendAssetPaths).toEqual(deepAgentsPlanningPythonModule.backendAssetPaths);
+  expect(react?.promptAssetPaths).toEqual(deepAgentsPlanningPythonModule.promptAssetPaths);
+  expect(react?.runtimeUrl).toBe('deep-agents/planning/react');
+  expect(react?.devPort).toBe(4628);
+  expect(react?.codeAssetPaths).toEqual(['app.tsx', 'application.ts', 'connection.ts', 'plan-state.ts', 'tool-evidence.ts', 'terminal.ts', 'plan-panel.tsx', 'main.tsx', 'styles.css'].map(file => `cockpit/deep-agents/planning/react/src/${file}`));
+  expect(Object.isFrozen(react)).toBe(true);
+  expect(Object.isFrozen(react?.codeAssetPaths)).toBe(true);
+  expect(capabilityModules.filter(entry => entry.id === canonical.id)).toHaveLength(1);
+});
 it('keeps native Chat Generative UI attached to the original backend descriptor assets', () => {
   const canonical=capabilityModules.find(entry=>entry.id==='chat-generative-ui-python');
   if (!canonical) throw new Error('Missing canonical Chat Generative UI');

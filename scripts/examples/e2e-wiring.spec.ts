@@ -1,4 +1,18 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
+
+it('wires native Planning build, fixture and website coverage to the shared Python graph', () => {
+  const read = (path: string) => JSON.parse(readFileSync(join(repoRoot, path), 'utf8'));
+  const react = read('cockpit/deep-agents/planning/react/project.json');
+  expect(react.tags).toEqual(expect.arrayContaining(['framework:react', 'scope:cockpit-e2e', 'scope:cockpit-examples']));
+  expect(react.targets.build.options.command).toBe('node scripts/react-cockpit/build.mjs deep-agents-planning');
+  expect(react.targets.e2e.dependsOn).toEqual(['build', 'fixture-test']);
+  expect(react.targets['fixture-test'].dependsOn).toContainEqual({ target: 'test', projects: ['cockpit-deep-agents-planning-python'] });
+  const website = read('apps/website/project.json');
+  expect(website.targets.e2e.dependsOn[0].projects).toContain('cockpit-deep-agents-planning-react');
+  const config = readFileSync(join(repoRoot, 'apps/website/playwright.config.ts'), 'utf8');
+  expect(config).toContain('cockpit-deep-agents-planning-python:smoke && node scripts/react-cockpit/serve.mjs deep-agents-planning --no-parent');
+  expect(config).toContain("url: 'http://127.0.0.1:4628'");
+});
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { capabilities } from '@threadplane/cockpit-registry';
