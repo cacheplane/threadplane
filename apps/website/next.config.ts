@@ -85,6 +85,14 @@ export const nextConfig: WithNxOptions = {
       destination: '/api/markdown/chat/getting-started/installation',
       permanent: true,
     },
+    // Founder booking link for lifecycle mail. Recipient copy carries this
+    // first-party URL so every link matches the sending domain; the temporary
+    // redirect lets the calendar page change without touching sent mail.
+    {
+      source: '/call',
+      destination: 'https://calendar.app.google/nK961tWHZd21izKR6',
+      permanent: false,
+    },
   ],
   rewrites: async () => [
     {
