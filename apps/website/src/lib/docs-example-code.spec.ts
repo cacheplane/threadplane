@@ -28,6 +28,21 @@ const findWorkspaceRoot = (): string => {
 const WORKSPACE_ROOT = findWorkspaceRoot();
 const CONTENT_ROOT = join(WORKSPACE_ROOT, 'apps/website/content');
 
+it('resolves every native Filesystem article include from its registered sources and shared backend', () => {
+  const canonical = capabilityModules.find(entry => entry.id === 'deep-agents-filesystem-python');
+  if (!canonical) throw new Error('Missing canonical Filesystem');
+  const react = getFrontendCapabilityDescriptor(canonical.manifestIdentity as never, 'react')!;
+  const page = { docsPath: react.docsPath, assetPaths: [...react.codeAssetPaths, ...(react.backendAssetPaths ?? [])] };
+  const context = contextFor(page);
+  const article = readFileSync(join(WORKSPACE_ROOT, 'apps/website/src/components/docs/ReactDeepAgentsFilesystemPreview.tsx'), 'utf8');
+  for (const include of includesIn(article)) {
+    expect(resolveExampleFile(include.file, context)).toBe(include.file);
+    expect(context.sources[include.file]?.length).toBeGreaterThan(0);
+  }
+  expect(includesIn(article)).toHaveLength(8);
+  expect(page.assetPaths.some(path => /fixture|wire\.py|\.spec\./.test(path))).toBe(false);
+  for (const path of page.assetPaths) expect(context.sources[path]?.length).toBeGreaterThan(0);
+});
 it('resolves every native Planning article include from its registered sources and shared backend', () => {
   const canonical = capabilityModules.find(entry => entry.id === 'deep-agents-planning-python')!;
   const react = getFrontendCapabilityDescriptor(canonical.manifestIdentity as never, 'react')!;
@@ -41,6 +56,17 @@ it('resolves every native Planning article include from its registered sources a
   expect(includesIn(article)).toHaveLength(7);
   expect(page.assetPaths.some(path => /fixture|wire\.py|\.spec\./.test(path))).toBe(false);
   for (const path of page.assetPaths) expect(context.sources[path]?.length).toBeGreaterThan(0);
+});
+
+it('uses the actual Filesystem workspace labels and distinguishes unavailable records from invalid maps', () => {
+  const article = readFileSync(join(WORKSPACE_ROOT, 'apps/website/src/components/docs/ReactDeepAgentsFilesystemPreview.tsx'), 'utf8');
+  const panel = readFileSync(join(WORKSPACE_ROOT, 'cockpit/deep-agents/filesystem/react/src/workspace-panel.tsx'), 'utf8');
+  for (const label of ['Live workspace', 'Paused · confirmed workspace', 'Saved workspace', 'Last confirmed workspace']) {
+    expect(panel).toContain(label);
+    expect(article).toContain(`**${label}**`);
+  }
+  expect(article).toContain('A malformed whole workspace map or unconfirmed checkpoint ownership blocks confirmation and decisions.');
+  expect(article).toContain('Unsupported individual file records remain visibly unavailable and never supply literal file text');
 });
 
 interface MappedPage {

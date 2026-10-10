@@ -44,6 +44,26 @@ import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { capabilityModules, getFrontendCapabilityDescriptor } from './content-descriptors';
 import { cockpitManifest } from './manifest';
+it('registers one frozen native Filesystem variant with the canonical backend and exact product sources', () => {
+  const canonical = capabilityModules.find(entry => entry.id === 'deep-agents-filesystem-python');
+  if (!canonical) throw new Error('Missing canonical Filesystem');
+  const react = getFrontendCapabilityDescriptor(canonical.manifestIdentity as never, 'react');
+  expect(react).toBeDefined();
+  expect(react?.manifestIdentity).toEqual(canonical.manifestIdentity);
+  expect(react?.backendAssetPaths).toEqual(deepAgentsFilesystemPythonModule.backendAssetPaths);
+  expect(react?.promptAssetPaths).toEqual(deepAgentsFilesystemPythonModule.promptAssetPaths);
+  expect(react?.runtimeUrl).toBe('deep-agents/filesystem/react');
+  expect(react?.devPort).toBe(4629);
+  expect(react?.codeAssetPaths).toEqual(['app.tsx', 'application.ts', 'connection.ts', 'workspace-state.ts', 'approval-state.ts', 'authority.ts', 'workspace-panel.tsx', 'approval-panel.tsx', 'main.tsx', 'styles.css'].map(file => `cockpit/deep-agents/filesystem/react/src/${file}`));
+  expect(Object.isFrozen(react)).toBe(true);
+  expect(Object.isFrozen(react?.codeAssetPaths)).toBe(true);
+  expect(getFrontendCapabilityDescriptor(canonical.manifestIdentity as never, 'angular')).toBe(canonical);
+  expect(capabilityModules.filter(entry => entry.id === canonical.id)).toHaveLength(1);
+  for (const path of [...(react?.codeAssetPaths ?? []), ...(react?.backendAssetPaths ?? [])]) {
+    expect(path).not.toMatch(/fixture|wire\.py|\.spec\.|proof/);
+    expect(existsSync(new URL('../../../../' + path, import.meta.url))).toBe(true);
+  }
+});
 it('registers one frozen native Planning variant with the canonical backend and exact sources', () => {
   const canonical = capabilityModules.find(entry => entry.id === 'deep-agents-planning-python')!;
   const react = getFrontendCapabilityDescriptor(canonical.manifestIdentity as never, 'react');
