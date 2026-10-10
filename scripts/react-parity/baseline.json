@@ -1,11 +1,9 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "be130a47650e0197ce2f083e0b5496f0474a1cfa",
+  "baselineHead": "dd545f8c04c2803aae25135600a9876bc861a5dc",
   "sourceState": {
     "modified": [
-      "apps/website/content/docs/deep-agents/capabilities/planning.mdx",
-      "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "libs/cockpit-registry/src/lib/content-descriptors.ts"
+      "apps/website/content/docs/deep-agents/capabilities/planning.mdx"
     ],
     "untracked": []
   },
@@ -2692,7 +2690,7 @@
       "id": "doc:apps/website/content/docs/deep-agents/capabilities/planning.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/deep-agents/capabilities/planning.mdx",
-      "sha256": "13b4072fb050c5784c16e44556a3f6f0afcd76ef6c6f6f5c1e4edabdf3455e46"
+      "sha256": "e1e2f1b12b08dc5d6cdce3be8318c1dd1b8d174e241e3444bb764ccd8ed051a8"
     },
     {
       "id": "doc:apps/website/content/docs/deep-agents/capabilities/skills.mdx",
