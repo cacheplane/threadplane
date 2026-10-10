@@ -96,3 +96,21 @@ describe('website next.config redirects for the removed chat configuration API',
     }
   });
 });
+
+/**
+ * Lifecycle mail links to `/call` rather than the Google Calendar host so every
+ * URL in the message matches the sending domain. The redirect must stay
+ * temporary so the booking page can move without stale browser caches.
+ */
+describe('website next.config founder booking redirect', () => {
+  it('temporarily redirects /call to the Google Calendar booking page', async () => {
+    const redirects = await config.redirects!();
+    const rule = redirects.find((r: { source: string }) => r.source === '/call');
+
+    expect(rule).toBeTruthy();
+    expect(rule.destination).toBe(
+      'https://calendar.app.google/nK961tWHZd21izKR6'
+    );
+    expect(rule.permanent).toBe(false);
+  });
+});
