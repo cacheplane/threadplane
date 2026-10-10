@@ -13,7 +13,7 @@ The Run tab shows the prebuilt `<chat>` composition beside a workspace panel. Th
 
 The scratch file under `/notes/` appears in the panel the moment the agent writes it. The report does not. A write under `/reports/` pauses the run, and an approval card appears below the tree while the target path is already listed as a dimmed, italic row badged "awaiting approval".
 
-Accept lets the write land and the run continue. Ignore rejects it, and the agent finishes without the file. The card also offers Edit and Respond, which this example leaves unhandled. Selecting any file in the tree shows its contents in the preview underneath.
+Accept approves the pending action and resumes the run. Ignore rejects that action; the agent may propose another action afterward, so rejection does not guarantee a terminal response or the absence of a file. The card also offers Edit and Respond, which this example leaves unhandled. Selecting any file in the tree shows its contents in the preview underneath.
 
 ## How it is built
 
@@ -54,7 +54,7 @@ provideAgent({
 
 ### The pending write, read off the interrupt
 
-While an approval is open the file does not exist yet. It is an argument on a paused tool call, so the only place to find it is the interrupt payload, which `injectAgent()` exposes as the `langGraphInterrupts()` Signal. The payload is `{ action_requests: [{ name, args }], review_configs: [...] }`, and for `write_file` the target path is `args.file_path`.
+A proposed new file is not yet saved, while a proposed replacement may target an existing file. The Angular component reads only the first action request of the first interrupt from the `langGraphInterrupts()` Signal exposed by `injectAgent()`. The payload is `{ action_requests: [{ name, args }], review_configs: [...] }`, and for `write_file` the target path is `args.file_path`.
 
 <ExampleCode file="filesystem.component.ts" region="pending-path" title="filesystem.component.ts — the pending path" />
 
@@ -62,7 +62,7 @@ Reading it lets the tree show the file before it lands, so the reviewer sees whe
 
 ### The file map, projected into a tree
 
-`files` is a flat map from absolute path to a file record; the text is on its `content` field, which is why the projection stringifies anything that is not already a string. `agent.value()` returns the live graph state that holds the map. The projection reads that map, adds the pending path as a ghost entry when one is open, and splits each key on its last slash to derive a directory and a name.
+`files` is a flat map from absolute path to a file record. This Angular projection displays a string value directly and calls `JSON.stringify` on the whole record for any non-string value; it does not extract the record's `content` field. `agent.value()` returns the live graph state that holds the map. The projection reads that map, adds the pending path as a ghost entry when one is open, and splits each key on its last slash to derive a directory and a name.
 
 <ExampleCode file="filesystem.component.ts" region="files" title="filesystem.component.ts — the file projection" />
 
@@ -82,21 +82,27 @@ Keeping the tree and the approval in one sidebar is the point of the layout: the
 
 ### Resuming with a decision
 
-`<chat-interrupt-panel>` emits an `InterruptAction` of `accept`, `edit`, `respond`, or `ignore`, and the component turns the two it handles into resume payloads. `HumanInTheLoopMiddleware` resumes on an object with a `decisions` list, one decision per paused tool call, each `{ "type": "approve" }`, `{ "type": "edit" }`, or `{ "type": "reject" }`.
+`<chat-interrupt-panel>` emits an `InterruptAction` of `accept`, `edit`, `respond`, or `ignore`, and the component turns the two it handles into resume payloads. `HumanInTheLoopMiddleware` resumes on an object with a `decisions` list, one ordered decision per protected action request, each `{ "type": "approve" }`, `{ "type": "edit" }`, or `{ "type": "reject" }`.
 
 <ExampleCode file="filesystem.component.ts" region="resume" title="filesystem.component.ts — resuming the run" />
 
-The demo always sends exactly one decision, which is enough because only one write is ever paused here. The middleware rejects a resume whose decision count differs from the number of hanging tool calls, so a turn that batches two writes into one interrupt needs two decisions.
+The Angular demo always sends exactly one decision. The backend can pause several protected actions in one interrupt, so this frontend does not handle every possible batch. The required decision count is the number of protected `action_requests`, in their original order, rather than every unresolved tool call. Notes and report actions can be scheduled in parallel: a mixed pause can have `files: {}` and three pending tool calls but only one protected report decision.
 
-The consequence is visible in the tree. On Accept the write lands, the ghost row stops being pending, and the preview shows the real file content. On Ignore the interrupt clears without a file being written, so the row that only ever existed as a projection of the pending path disappears.
+After either decision, subsequent graph state determines the files shown in the tree. Approval can still encounter a tool error; rejection may be followed by another proposed action. Neither button predicts final file contents or guarantees that a future write cannot occur.
 
 <Callout type="warning" title="The resume payload is an object, not a list">
 The middleware reads `interrupt(request)["decisions"]`, so a bare list or a bare string raises a `TypeError` on the server rather than a validation error the browser can show. The failure appears as a dead run rather than as a rejected submission, so the shape is worth getting right the first time.
 </Callout>
 
+## React preview
+
+Choose React in the Example UI selector for a native React workspace with literal UTF-8 and legacy text projection, separate live and checkpoint-confirmed files, and complete ordered Approve or Reject batch decisions. Its Docs, Code and Run modes share the selected frontend; Angular remains the default. React suggestions fill a draft and only Send creates the owned thread.
+
 ## Permission rules
 
 A `FilesystemPermission` carries three fields: the `operations` it covers, the `paths` it matches, and the `mode` it applies. Rules are evaluated in declaration order and the first match wins; a call that matches no rule is allowed. Subagents inherit the parent rules unless they declare `permissions` of their own, which replaces the parent set entirely.
+
+The pinned `/reports/**` rule protects report descendants. Exact `/reports` writes and edits are allowed; deletion of `/reports` or `/` is protected because the deletion subtree overlaps the rule.
 
 The three modes are `allow`, which lets the call proceed, `deny`, which returns a permission-denied error to the model, and `interrupt`, which pauses the call for human approval. Path patterns must start with `/` and may not contain `..`.
 

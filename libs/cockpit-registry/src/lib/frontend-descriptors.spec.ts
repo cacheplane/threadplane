@@ -14,7 +14,7 @@ it('keeps Planning as one canonical backend with Angular default and two exact f
   expect(planning[0]).toMatchObject({ angularProject: 'cockpit-deep-agents-planning-angular', pythonDir: 'cockpit/deep-agents/planning/python', graphName: 'da-planning' });
   const frontends = getCockpitFrontends();
   expect(frontends.filter(entry => entry.frontend === 'angular')).toHaveLength(41);
-  expect(frontends.filter(entry => entry.frontend === 'react')).toHaveLength(29);
+  expect(frontends.filter(entry => entry.frontend === 'react')).toHaveLength(30);
   expect(frontends.filter(entry => entry.product === 'deep-agents' && entry.topic === 'planning')).toEqual([
     { frontend: 'angular', project: 'cockpit-deep-agents-planning-angular', port: 4310, product: 'deep-agents', topic: 'planning', runtimePath: 'deep-agents/planning', buildOutput: 'dist/cockpit/deep-agents/planning/angular' },
     { frontend: 'react', project: 'cockpit-deep-agents-planning-react', port: 4628, product: 'deep-agents', topic: 'planning', runtimePath: 'deep-agents/planning/react', buildOutput: 'dist/cockpit/deep-agents/planning/react' },

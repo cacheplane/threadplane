@@ -1269,10 +1269,26 @@ const deepAgentsPlanningReact = (() => {
   });
 })();
 
+const deepAgentsFilesystemReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'deep-agents-filesystem-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-deep-agents-filesystem-react');
+  if (!canonical || !frontend) throw new Error('Filesystem frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical,
+    id: 'deep-agents-filesystem-python-react',
+    frontend: 'react',
+    title: 'Filesystem (React preview)',
+    codeAssetPaths: ['app.tsx', 'application.ts', 'connection.ts', 'workspace-state.ts', 'approval-state.ts', 'authority.ts', 'workspace-panel.tsx', 'approval-panel.tsx', 'main.tsx', 'styles.css'].map(file => `cockpit/deep-agents/filesystem/react/src/${file}`),
+    runtimeUrl: frontend.runtimePath,
+    devPort: frontend.port,
+  });
+})();
+
 export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
   Object.freeze([
     ...capabilityModules,
     deepAgentsPlanningReact,
+    deepAgentsFilesystemReact,
     chatThreadsReact,
     chatTimelineReact,
     chatGenerativeUiReact,

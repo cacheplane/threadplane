@@ -1,9 +1,11 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "dd545f8c04c2803aae25135600a9876bc861a5dc",
+  "baselineHead": "a3e5452c45369e4caba69cb51b0c1c8b186216c1",
   "sourceState": {
     "modified": [
-      "apps/website/content/docs/deep-agents/capabilities/planning.mdx"
+      "apps/website/content/docs/deep-agents/capabilities/filesystem.mdx",
+      "libs/cockpit-registry/src/lib/capability-registry.ts",
+      "libs/cockpit-registry/src/lib/content-descriptors.ts"
     ],
     "untracked": []
   },
@@ -2678,7 +2680,7 @@
       "id": "doc:apps/website/content/docs/deep-agents/capabilities/filesystem.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/deep-agents/capabilities/filesystem.mdx",
-      "sha256": "3a02cf18319cdbebf786b4a0d72d6340ead8d49d2b099119cf257a3649d8229e"
+      "sha256": "020539311d0b6d3450e36b8eaeb94587bf6f7604368cf652b3b65fd6bde054fa"
     },
     {
       "id": "doc:apps/website/content/docs/deep-agents/capabilities/memory.mdx",
@@ -13463,13 +13465,13 @@
       "id": "source:libs/cockpit-registry/src/lib/capability-registry.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "sha256": "4d4c6981d7c743949415e37996705246726f6742f8d64d70163d162e53b73efd"
+      "sha256": "b0be0c0dca65b7ba110f6b0412c6dea4048e3fd2cc33ea3e4b5cccf941bc93ac"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/content-descriptors.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/content-descriptors.ts",
-      "sha256": "917e033c3eed3e90323c735efa1558a2de0c3cc89846b1f87c02d82bd588f0d6"
+      "sha256": "b84d95ce712bab88fad1625ebe3ef58e96e9df47f06256dcee1cc4f6c6760930"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/docs-links.ts",
