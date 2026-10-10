@@ -1,8 +1,12 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "beabb1d39164a7ff6cf8141faa18f64c7d90ee4e",
+  "baselineHead": "be130a47650e0197ce2f083e0b5496f0474a1cfa",
   "sourceState": {
-    "modified": [],
+    "modified": [
+      "apps/website/content/docs/deep-agents/capabilities/planning.mdx",
+      "libs/cockpit-registry/src/lib/capability-registry.ts",
+      "libs/cockpit-registry/src/lib/content-descriptors.ts"
+    ],
     "untracked": []
   },
   "scope": {
@@ -2688,7 +2692,7 @@
       "id": "doc:apps/website/content/docs/deep-agents/capabilities/planning.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/deep-agents/capabilities/planning.mdx",
-      "sha256": "48fc7346f3aab0d9da40558432b9826ea84be15e0e4407196057f6cbaef2a8fa"
+      "sha256": "13b4072fb050c5784c16e44556a3f6f0afcd76ef6c6f6f5c1e4edabdf3455e46"
     },
     {
       "id": "doc:apps/website/content/docs/deep-agents/capabilities/skills.mdx",
@@ -13461,13 +13465,13 @@
       "id": "source:libs/cockpit-registry/src/lib/capability-registry.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "sha256": "12c30dbfbb604e5705eee4b4fd4caf4987cc42bb660c9d5ea2bb1292d2b8c965"
+      "sha256": "4d4c6981d7c743949415e37996705246726f6742f8d64d70163d162e53b73efd"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/content-descriptors.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/content-descriptors.ts",
-      "sha256": "cc4bbfd31fc7d1bdec187b37d2007557aa3a2de1af6a4f55eea29732b2ef4b84"
+      "sha256": "917e033c3eed3e90323c735efa1558a2de0c3cc89846b1f87c02d82bd588f0d6"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/docs-links.ts",

@@ -1254,9 +1254,25 @@ const computedFunctionsReact = (() => {
   });
 })();
 
+const deepAgentsPlanningReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'deep-agents-planning-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-deep-agents-planning-react');
+  if (!canonical || !frontend) throw new Error('Planning frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical,
+    id: 'deep-agents-planning-python-react',
+    frontend: 'react',
+    title: 'Planning (React preview)',
+    codeAssetPaths: ['app.tsx', 'application.ts', 'connection.ts', 'plan-state.ts', 'tool-evidence.ts', 'terminal.ts', 'plan-panel.tsx', 'main.tsx', 'styles.css'].map(file => `cockpit/deep-agents/planning/react/src/${file}`),
+    runtimeUrl: frontend.runtimePath,
+    devPort: frontend.port,
+  });
+})();
+
 export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
   Object.freeze([
     ...capabilityModules,
+    deepAgentsPlanningReact,
     chatThreadsReact,
     chatTimelineReact,
     chatGenerativeUiReact,

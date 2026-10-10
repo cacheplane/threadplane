@@ -6,25 +6,29 @@
   "targets": {
     "build": {
       "executor": "@nx/js:tsc",
-      "outputs": [
-        "{workspaceRoot}/dist/cockpit/deep-agents/planning/python"
-      ],
+      "outputs": ["{workspaceRoot}/dist/cockpit/deep-agents/planning/python"],
       "options": {
         "outputPath": "dist/cockpit/deep-agents/planning/python",
         "main": "cockpit/deep-agents/planning/python/src/index.ts",
         "tsConfig": "cockpit/deep-agents/planning/python/tsconfig.json"
       }
     },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "cwd": "cockpit/deep-agents/planning/python",
+        "command": "uv run --frozen --python 3.12 python -m unittest discover -s tests"
+      }
+    },
     "smoke": {
       "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": ["test"],
       "options": {
         "command": "npx tsx -e \"import { deepAgentsPlanningPythonModule } from './cockpit/deep-agents/planning/python/src/index.ts'; const mod = deepAgentsPlanningPythonModule; if (mod.id !== 'deep-agents-planning-python') throw new Error('Unexpected id: ' + mod.id); if (mod.title !== 'Deep Agents Planning (Python)') throw new Error('Unexpected title: ' + mod.title); console.log(JSON.stringify({ id: mod.id, title: mod.title }));\""
       }
     }
   },
-  "tags": [
-    "scope:cockpit-e2e",
-    "scope:cockpit-examples",
-    "scope:cockpit-smoke"
-  ]
+  "tags": ["scope:cockpit-e2e", "scope:cockpit-examples", "scope:cockpit-smoke"]
 }

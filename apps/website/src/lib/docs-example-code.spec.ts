@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
-import { capabilityModules } from '@threadplane/cockpit-registry';
+import { capabilityModules, getFrontendCapabilityDescriptor } from '@threadplane/cockpit-registry';
 import { describe, expect, it } from 'vitest';
 import {
   resolveExampleFile,
@@ -27,6 +27,21 @@ const findWorkspaceRoot = (): string => {
 };
 const WORKSPACE_ROOT = findWorkspaceRoot();
 const CONTENT_ROOT = join(WORKSPACE_ROOT, 'apps/website/content');
+
+it('resolves every native Planning article include from its registered sources and shared backend', () => {
+  const canonical = capabilityModules.find(entry => entry.id === 'deep-agents-planning-python')!;
+  const react = getFrontendCapabilityDescriptor(canonical.manifestIdentity as never, 'react')!;
+  const page = { docsPath: react.docsPath, assetPaths: [...react.codeAssetPaths, ...(react.backendAssetPaths ?? [])] };
+  const context = contextFor(page);
+  const article = readFileSync(join(WORKSPACE_ROOT, 'apps/website/src/components/docs/ReactDeepAgentsPlanningPreview.tsx'), 'utf8');
+  for (const include of includesIn(article)) {
+    expect(resolveExampleFile(include.file, context)).toBe(include.file);
+    expect(context.sources[include.file]?.length).toBeGreaterThan(0);
+  }
+  expect(includesIn(article)).toHaveLength(7);
+  expect(page.assetPaths.some(path => /fixture|wire\.py|\.spec\./.test(path))).toBe(false);
+  for (const path of page.assetPaths) expect(context.sources[path]?.length).toBeGreaterThan(0);
+});
 
 interface MappedPage {
   readonly docsPath: string;
