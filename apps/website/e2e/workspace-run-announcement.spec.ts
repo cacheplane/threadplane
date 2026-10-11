@@ -193,6 +193,10 @@ for (const frontend of ['angular', 'react'] as const) {
           'data-workspace-mode',
           direct ? 'Run' : 'Docs'
         );
+        // Finish native configuration before advancing the shared browser clock.
+        await expect(
+          page.frameLocator('iframe').getByRole('textbox').first()
+        ).toBeAttached();
         await eligible(page);
         if (!direct) {
           await expect(toast(page)).toBeVisible();
