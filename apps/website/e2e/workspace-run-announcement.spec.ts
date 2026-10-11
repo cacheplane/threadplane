@@ -170,7 +170,9 @@ test.beforeEach(async ({ page, context }) => {
   });
   await page.clock.install();
 });
-test.afterEach(async ({ page }) => {
+test.afterEach(async ({ page }, testInfo) => {
+  // A deployed-base skip runs before the local request guard is initialized.
+  if (testInfo.status === 'skipped' && !violations.has(page)) return;
   expect(violations.get(page)).toEqual([]);
 });
 
