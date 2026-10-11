@@ -13,6 +13,7 @@ import { Client } from '@langchain/langgraph-sdk';
 import {
   emitCandidate,
   packCandidate,
+  installCandidateConsumer,
 } from '../react-parity/langgraph-candidate-package.mjs';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const { createDeepAgentsSubagentsFixture } = await import(
@@ -53,27 +54,17 @@ function nativeRuntime() {
     const lock = JSON.parse(readFileSync(join(root, 'package-lock.json')));
     const consumer = join(directory, 'consumer');
     mkdirSync(consumer);
-    writeFileSync(
-      join(consumer, 'package.json'),
-      JSON.stringify({
-        private: true,
-        type: 'module',
-        dependencies: {
-          '@threadplane/core': 'file:' + join(directory, core.filename),
-          '@threadplane/langgraph': 'file:' + packed.tarball,
-          // SDK stream projection imports this runtime peer; Nx propagates the
-          // repo's legacy-peer-deps policy, so declare the locked peer explicitly.
-          '@langchain/core':
-            lock.packages['node_modules/@langchain/core'].version,
-          '@langchain/langgraph-sdk':
-            lock.packages['node_modules/@langchain/langgraph-sdk'].version,
-        },
-      })
-    );
-    execFileSync(
-      'npm',
-      ['install', '--offline', '--ignore-scripts', '--no-audit', '--no-fund'],
-      { cwd: consumer, stdio: 'pipe' }
+    // Reuse the package verifier's exact locked graph and tarball-byte checks.
+    // A clean npm-ci cache contains tarballs but need not contain packuments.
+    const installation = installCandidateConsumer(
+      consumer,
+      { private: true, type: 'module' },
+      {
+        '@threadplane/core': 'file:' + join(directory, core.filename),
+        '@threadplane/langgraph': 'file:' + packed.tarball,
+      },
+      lock,
+      'node'
     );
     const installed = join(
       consumer,
@@ -83,6 +74,7 @@ function nativeRuntime() {
       directory,
       installed,
       emission,
+      installation,
       installedSha256: createHash('sha256')
         .update(readFileSync(installed))
         .digest('hex'),
