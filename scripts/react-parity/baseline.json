@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "a3e5452c45369e4caba69cb51b0c1c8b186216c1",
+  "baselineHead": "49d0b92652f290f586b5b8cb3d9c9d9748834531",
   "sourceState": {
     "modified": [
-      "apps/website/content/docs/deep-agents/capabilities/filesystem.mdx",
+      "apps/website/content/docs/deep-agents/capabilities/subagents.mdx",
       "libs/cockpit-registry/src/lib/capability-registry.ts",
       "libs/cockpit-registry/src/lib/content-descriptors.ts"
     ],
@@ -2704,7 +2704,7 @@
       "id": "doc:apps/website/content/docs/deep-agents/capabilities/subagents.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/deep-agents/capabilities/subagents.mdx",
-      "sha256": "19e8785ec483298a26172b0e30b1da110090d874bb1f725cff080e645b4f6ab2"
+      "sha256": "366cdd8205a105b636c1a0073913180ffbaeb08e14e3d894253e53944b2ce8b7"
     },
     {
       "id": "doc:apps/website/content/docs/deep-agents/getting-started/introduction.mdx",
@@ -13465,13 +13465,13 @@
       "id": "source:libs/cockpit-registry/src/lib/capability-registry.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "sha256": "b0be0c0dca65b7ba110f6b0412c6dea4048e3fd2cc33ea3e4b5cccf941bc93ac"
+      "sha256": "e59447b7d2de74b83b953bb1adb07d8c01a7bb3ea61c7657ff9fab35956f8ee0"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/content-descriptors.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/content-descriptors.ts",
-      "sha256": "b84d95ce712bab88fad1625ebe3ef58e96e9df47f06256dcee1cc4f6c6760930"
+      "sha256": "98d6fae452f3d5919ddb70463703ce34a5d8b09a31f7b73437a11fad0dd0b593"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/docs-links.ts",

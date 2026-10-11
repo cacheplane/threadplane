@@ -1,5 +1,7 @@
 /** Closed authored frontend selection; callers cannot supply filesystem paths. */
 export function reactCockpitConfiguration(topic = 'streaming') {
+  if (topic === 'deep-agents-subagents')
+    return Object.freeze({topic:'subagents',library:'deep-agents',adapter:'langgraph',appPath:'cockpit/deep-agents/subagents/react',base:'/deep-agents/subagents/react/',port:4630,project:'cockpit-deep-agents-subagents-react'});
   if (topic === 'deep-agents-filesystem')
     return Object.freeze({topic:'filesystem',library:'deep-agents',adapter:'langgraph',appPath:'cockpit/deep-agents/filesystem/react',base:'/deep-agents/filesystem/react/',port:4629,project:'cockpit-deep-agents-filesystem-react'});
   if (topic === 'deep-agents-planning')

@@ -8,13 +8,26 @@ import {
 import type { CockpitManifestIdentity } from './manifest.types';
 import { capabilities, getCockpitFrontends } from './capability-registry';
 
+it('keeps Subagents as one canonical backend with Angular default and two exact frontend deployments', () => {
+  const subagents = capabilities.filter(entry => entry.product === 'deep-agents' && entry.topic === 'subagents');
+  expect(subagents).toHaveLength(1);
+  expect(subagents[0]).toMatchObject({ angularProject: 'cockpit-deep-agents-subagents-angular', pythonDir: 'cockpit/deep-agents/subagents/python', graphName: 'subagents', pythonPort: 5312 });
+  const frontends = getCockpitFrontends();
+  expect(frontends.filter(entry => entry.frontend === 'angular')).toHaveLength(41);
+  expect(frontends.filter(entry => entry.frontend === 'react')).toHaveLength(31);
+  expect(frontends.filter(entry => entry.product === 'deep-agents' && entry.topic === 'subagents')).toEqual([
+    { frontend: 'angular', project: 'cockpit-deep-agents-subagents-angular', port: 4312, product: 'deep-agents', topic: 'subagents', runtimePath: 'deep-agents/subagents', buildOutput: 'dist/cockpit/deep-agents/subagents/angular' },
+    { frontend: 'react', project: 'cockpit-deep-agents-subagents-react', port: 4630, product: 'deep-agents', topic: 'subagents', runtimePath: 'deep-agents/subagents/react', buildOutput: 'dist/cockpit/deep-agents/subagents/react' },
+  ]);
+});
+
 it('keeps Planning as one canonical backend with Angular default and two exact frontend deployments', () => {
   const planning = capabilities.filter(entry => entry.product === 'deep-agents' && entry.topic === 'planning');
   expect(planning).toHaveLength(1);
   expect(planning[0]).toMatchObject({ angularProject: 'cockpit-deep-agents-planning-angular', pythonDir: 'cockpit/deep-agents/planning/python', graphName: 'da-planning' });
   const frontends = getCockpitFrontends();
   expect(frontends.filter(entry => entry.frontend === 'angular')).toHaveLength(41);
-  expect(frontends.filter(entry => entry.frontend === 'react')).toHaveLength(30);
+  expect(frontends.filter(entry => entry.frontend === 'react')).toHaveLength(31);
   expect(frontends.filter(entry => entry.product === 'deep-agents' && entry.topic === 'planning')).toEqual([
     { frontend: 'angular', project: 'cockpit-deep-agents-planning-angular', port: 4310, product: 'deep-agents', topic: 'planning', runtimePath: 'deep-agents/planning', buildOutput: 'dist/cockpit/deep-agents/planning/angular' },
     { frontend: 'react', project: 'cockpit-deep-agents-planning-react', port: 4628, product: 'deep-agents', topic: 'planning', runtimePath: 'deep-agents/planning/react', buildOutput: 'dist/cockpit/deep-agents/planning/react' },

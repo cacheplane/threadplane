@@ -1284,11 +1284,30 @@ const deepAgentsFilesystemReact = (() => {
   });
 })();
 
+const deepAgentsSubagentsReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'deep-agents-subagents-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-deep-agents-subagents-react');
+  if (!canonical || !frontend) throw new Error('Subagents frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical,
+    id: 'deep-agents-subagents-python-react',
+    frontend: 'react',
+    title: 'Subagents (React preview)',
+    codeAssetPaths: [
+      ...['app.tsx', 'application.ts', 'connection.ts', 'authority.ts', 'projection.ts', 'children.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/deep-agents/subagents/react/src/${file}`),
+      'cockpit/deep-agents/subagents/react/project.json',
+    ],
+    runtimeUrl: frontend.runtimePath,
+    devPort: frontend.port,
+  });
+})();
+
 export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
   Object.freeze([
     ...capabilityModules,
     deepAgentsPlanningReact,
     deepAgentsFilesystemReact,
+    deepAgentsSubagentsReact,
     chatThreadsReact,
     chatTimelineReact,
     chatGenerativeUiReact,

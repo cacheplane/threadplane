@@ -28,7 +28,10 @@ import { createAgUiSubagentsFixture } from './ag-ui-subagents-fixture.mjs';
 import { createDeepAgentsFilesystemFixture } from './deep-agents-filesystem-fixture.mjs';
 import { createDeepAgentsPlanningFixture } from './deep-agents-planning-fixture.mjs';
 
+import { createDeepAgentsSubagentsFixture } from './deep-agents-subagents-fixture.mjs';
+
 const configuration = reactCockpitConfiguration(process.argv[2]);
+const deepAgentsSubagentsFixture = configuration.library === 'deep-agents' && configuration.topic === 'subagents' ? createDeepAgentsSubagentsFixture() : null;
 const deepAgentsFilesystemFixture = configuration.library === 'deep-agents' && configuration.topic === 'filesystem' ? createDeepAgentsFilesystemFixture() : null;
 const deepAgentsPlanningFixture = configuration.library === 'deep-agents' && configuration.topic === 'planning' ? createDeepAgentsPlanningFixture() : null;
 let chatGenerativeUiFixture = configuration.library === 'chat' && configuration.topic === 'generative-ui' ? createChatGenerativeUiFixture() : null;
@@ -108,6 +111,7 @@ const release = () => {
 };
 const server = createServer(async (request, response) => {
   const pathname = new URL(request.url, 'http://localhost').pathname;
+  if (deepAgentsSubagentsFixture && (await deepAgentsSubagentsFixture(request, response, pathname))) return;
   if (deepAgentsFilesystemFixture && (await deepAgentsFilesystemFixture(request, response, pathname))) return;
   if (deepAgentsPlanningFixture && (await deepAgentsPlanningFixture(request, response, pathname))) return;
   if (chatGenerativeUiFixture && pathname === '/__reset') {
@@ -340,11 +344,11 @@ const server = createServer(async (request, response) => {
 server.listen(configuration.port, '127.0.0.1');
 const parentServer = !process.argv.includes('--no-parent')
   ? createServer(server.listeners('request')[0]).listen(3000, '127.0.0.1') : null;
-if (deepAgentsFilesystemFixture || deepAgentsPlanningFixture || chatGenerativeUiFixture || chatInterruptsFixture || chatToolCallsFixture || chatSubagentsFixture || chatThreadsFixture || chatTimelineFixture) {
+if (deepAgentsSubagentsFixture || deepAgentsFilesystemFixture || deepAgentsPlanningFixture || chatGenerativeUiFixture || chatInterruptsFixture || chatToolCallsFixture || chatSubagentsFixture || chatThreadsFixture || chatTimelineFixture) {
   let closing;
   const shutdown = (code = 0) => {
     closing ??= (async () => {
-      await (deepAgentsFilesystemFixture ?? deepAgentsPlanningFixture ?? chatGenerativeUiFixture ?? chatInterruptsFixture ?? chatToolCallsFixture ?? chatSubagentsFixture ?? chatThreadsFixture ?? chatTimelineFixture).close();
+      await (deepAgentsSubagentsFixture ?? deepAgentsFilesystemFixture ?? deepAgentsPlanningFixture ?? chatGenerativeUiFixture ?? chatInterruptsFixture ?? chatToolCallsFixture ?? chatSubagentsFixture ?? chatThreadsFixture ?? chatTimelineFixture).close();
       await Promise.all([server, parentServer].filter(Boolean).map((owned) => new Promise((resolve) => {
         owned.close(resolve);
         owned.closeAllConnections();
