@@ -170,7 +170,9 @@ test.beforeEach(async ({ page, context }) => {
   });
   await page.clock.install();
 });
-test.afterEach(async ({ page }) => {
+test.afterEach(async ({ page }, testInfo) => {
+  // A deployed-base skip runs before the local request guard is initialized.
+  if (testInfo.status === 'skipped' && !violations.has(page)) return;
   expect(violations.get(page)).toEqual([]);
 });
 
@@ -193,6 +195,10 @@ for (const frontend of ['angular', 'react'] as const) {
           'data-workspace-mode',
           direct ? 'Run' : 'Docs'
         );
+        // Finish native configuration before advancing the shared browser clock.
+        await expect(
+          page.frameLocator('iframe').getByRole('textbox').first()
+        ).toBeAttached();
         await eligible(page);
         if (!direct) {
           await expect(toast(page)).toBeVisible();
