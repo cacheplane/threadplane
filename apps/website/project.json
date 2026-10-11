@@ -104,7 +104,8 @@
             "cockpit-chat-timeline-react",
             "cockpit-chat-generative-ui-react",
             "cockpit-deep-agents-planning-react",
-            "cockpit-deep-agents-filesystem-react"
+            "cockpit-deep-agents-filesystem-react",
+            "cockpit-deep-agents-subagents-react"
           ]
         }
       ],

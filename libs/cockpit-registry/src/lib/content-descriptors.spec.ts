@@ -44,6 +44,26 @@ import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { capabilityModules, getFrontendCapabilityDescriptor } from './content-descriptors';
 import { cockpitManifest } from './manifest';
+it('registers one frozen native Subagents variant with the canonical backend and exact product sources', () => {
+  const canonical = capabilityModules.find(entry => entry.id === 'deep-agents-subagents-python');
+  if (!canonical) throw new Error('Missing canonical Subagents');
+  const react = getFrontendCapabilityDescriptor(canonical.manifestIdentity as never, 'react');
+  expect(react).toBeDefined();
+  expect(react?.manifestIdentity).toEqual(canonical.manifestIdentity);
+  expect(react?.backendAssetPaths).toEqual(deepAgentsSubagentsPythonModule.backendAssetPaths);
+  expect(react?.promptAssetPaths).toEqual(deepAgentsSubagentsPythonModule.promptAssetPaths);
+  expect(react?.runtimeUrl).toBe('deep-agents/subagents/react');
+  expect(react?.devPort).toBe(4630);
+  expect(react?.codeAssetPaths).toEqual([...['app.tsx', 'application.ts', 'connection.ts', 'authority.ts', 'projection.ts', 'children.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/deep-agents/subagents/react/src/${file}`), 'cockpit/deep-agents/subagents/react/project.json']);
+  expect(Object.isFrozen(react)).toBe(true);
+  expect(Object.isFrozen(react?.codeAssetPaths)).toBe(true);
+  expect(getFrontendCapabilityDescriptor(canonical.manifestIdentity as never, 'angular')).toBe(canonical);
+  expect(capabilityModules.filter(entry => entry.id === canonical.id)).toHaveLength(1);
+  for (const path of [...(react?.codeAssetPaths ?? []), ...(react?.backendAssetPaths ?? [])]) {
+    expect(path).not.toMatch(/fixture|wire\.py|\.spec\.|proof/);
+    expect(existsSync(new URL('../../../../' + path, import.meta.url))).toBe(true);
+  }
+});
 it('registers one frozen native Filesystem variant with the canonical backend and exact product sources', () => {
   const canonical = capabilityModules.find(entry => entry.id === 'deep-agents-filesystem-python');
   if (!canonical) throw new Error('Missing canonical Filesystem');
