@@ -321,8 +321,25 @@ for (const path of [
 test('normal marketing page keeps natural timer and scroll eligibility', async ({
   page,
 }) => {
+  // Marketing main is server-rendered. Observe the real delay registration so
+  // the clock cannot advance past it before AnnouncementToast hydrates.
+  await page.addInitScript(() => {
+    const browserTimers: WindowOrWorkerGlobalScope = window;
+    const schedule = browserTimers.setTimeout.bind(window);
+    browserTimers.setTimeout = (handler, delay, ...args) => {
+      const id = schedule(handler, delay, ...args);
+      if (delay === 30_000)
+        Reflect.set(window, 'announcementTimerScheduled', true);
+      return id;
+    };
+  });
   await page.goto('/');
   await expect(page.locator('main')).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(() => Reflect.get(window, 'announcementTimerScheduled'))
+    )
+    .toBe(true);
   await page.clock.fastForward(31_000);
   await expect(toast(page)).toHaveCount(0);
   expect(
@@ -331,12 +348,27 @@ test('normal marketing page keeps natural timer and scroll eligibility', async (
     )
   ).toBeGreaterThan(0);
   await page.evaluate(() =>
-    window.scrollTo(
-      0,
-      (document.documentElement.scrollHeight - innerHeight) * 0.5
-    )
+    window.scrollTo({
+      top: (document.documentElement.scrollHeight - innerHeight) * 0.5,
+      behavior: 'instant',
+    })
   );
-  await page.clock.runFor(500);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => scrollY / (document.documentElement.scrollHeight - innerHeight)
+      )
+    )
+    .toBeGreaterThanOrEqual(0.4);
+  // Scroll delivery, React's visibility effect, and its mount RAF are separate
+  // turns. Keep advancing real frames until the actual toast finishes mounting.
+  await expect
+    .poll(async () => {
+      await page.clock.runFor(100);
+      return toast(page).evaluateAll(
+        (elements) => elements[0]?.getAttribute('data-mounted') ?? null
+      );
+    })
+    .toBe('true');
   await expect(toast(page)).toBeVisible();
-  await expect(toast(page)).toHaveAttribute('data-mounted', 'true');
 });
