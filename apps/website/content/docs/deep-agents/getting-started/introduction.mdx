@@ -1,6 +1,6 @@
 ---
 title: Introduction
-description: Render the Deep Agents middleware capabilities — planning, filesystem, subagents, memory, and skills — in an Angular UI over LangGraph.
+description: Render Deep Agents middleware capabilities in the canonical Angular UI or an experimental native React preview over LangGraph.
 ---
 
 # Introduction
@@ -12,7 +12,7 @@ description: Render the Deep Agents middleware capabilities — planning, filesy
 | [Planning](/docs/deep-agents/capabilities/planning) | `TodoListMiddleware` (from LangChain) | A `todos` array the agent rewrites as it works. |
 | [Filesystem](/docs/deep-agents/capabilities/filesystem) | `FilesystemMiddleware` | A `files` map, plus write approvals when a permission is set to interrupt. |
 | [Subagents](/docs/deep-agents/capabilities/subagents) | `SubAgentMiddleware` | A `task` tool that dispatches real child graphs. |
-| [Memory](/docs/deep-agents/capabilities/memory) | `MemoryMiddleware` | A memory file the agent maintains, held across threads. |
+| [Memory](/docs/deep-agents/capabilities/memory) | `MemoryMiddleware` | An agent-authored store file shared across threads under a captured browser scope, with fresh read-time observations. |
 | [Skills](/docs/deep-agents/capabilities/skills) | `SkillsMiddleware` | A skill index loaded from `SKILL.md` frontmatter. |
 
 The five capabilities do not all arrive the same way. `create_deep_agent` always installs `FilesystemMiddleware`, and the subagent `task` tool ships with it by default. Memory and skills are switched on by their `create_deep_agent` arguments (`memory=[...]`, `skills=[...]`). Planning is a LangChain middleware — `langchain.agents.middleware.TodoListMiddleware` — that you pass explicitly in `middleware=[...]`; `create_deep_agent` does not install it on its own.
@@ -27,7 +27,7 @@ These pages document what a Deep Agents graph exposes and how an Angular applica
 
 A Deep Agents agent is a LangGraph graph. `create_deep_agent` returns a compiled graph, LangGraph Server serves it like any other, and the browser talks to it over the same protocol. There is no Deep Agents adapter, because none is needed: `@threadplane/langgraph` is the whole client wiring.
 
-That means the setup is identical for all five capabilities, and it is the setup already documented under the LangGraph adapter. Work through the [LangGraph quickstart](/docs/langgraph/getting-started/quickstart) once, and every page below assumes it.
+The shared protocol and basic provider setup are documented under the LangGraph adapter. Work through the [LangGraph quickstart](/docs/langgraph/getting-started/quickstart) once. Memory additionally requires its captured browser scope, context transport and authoring gate; use the complete source on the [Memory guide](/docs/deep-agents/capabilities/memory) rather than this basic provider alone.
 
 ```ts
 // app.config.ts
@@ -60,7 +60,7 @@ export class App {
 }
 ```
 
-What changes from capability to capability is not the provider and not the component. It is which part of the agent handle each panel reads: `value()` for state keys, `subagents()` for dispatches, `customEvents()` for application visibility signals, `toolCalls()` for read requests and their results.
+Each panel reads the relevant part of the agent handle: `value()` for state keys, `subagents()` for dispatches, `customEvents()` for application visibility signals, and `toolCalls()` for read requests and their results. Memory also supplies its validated scope through the provider's transport and guards every author action.
 
 ## Three ways a capability reaches the browser
 
@@ -84,3 +84,7 @@ All five share one scenario — an aviation dispatch desk with a handful of airp
 - [Chat subagent card](/docs/chat/components/chat-subagent-card) — the component the `task` dispatches render into.
 - [Chat interrupt panel](/docs/chat/components/chat-interrupt-panel) — the component a filesystem write approval renders into.
 - [Persistence](/docs/langgraph/guides/persistence) — checkpoints and the store, which the memory capability depends on.
+
+## Native Memory preview
+
+[Memory React preview](/docs/deep-agents/capabilities/memory?frontend=react) shares the canonical Python graph and prompt while Angular stays the default. It captures a persisted UUIDv4 browser scope, blocks authoring if storage is unavailable or changes, and distinguishes custom live observations from exact confirmed historical checkpoints. Teach and Recall fill drafts without sending; only Send creates an owned thread lazily. New and reload use fresh threads with the same captured scope. This is a logical partition, not authentication. API values filtered by output channels omit private Memory keys while custom and raw checkpoint evidence retain them. Build with `npx nx build cockpit-deep-agents-memory-react` and verify with `npx nx e2e cockpit-deep-agents-memory-react`.

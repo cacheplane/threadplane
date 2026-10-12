@@ -24,6 +24,7 @@ import { ReactComputedFunctionsPreview } from '../../../../../components/docs/Re
 import { ReactChatMessagesPreview } from '../../../../../components/docs/ReactChatMessagesPreview';
 import { ReactChatGenerativeUiPreview } from '../../../../../components/docs/ReactChatGenerativeUiPreview';
 import { ReactDeepAgentsSkillsPreview } from '../../../../../components/docs/ReactDeepAgentsSkillsPreview';
+import { ReactDeepAgentsMemoryPreview } from '../../../../../components/docs/ReactDeepAgentsMemoryPreview';
 import { ReactDeepAgentsSubagentsPreview } from '../../../../../components/docs/ReactDeepAgentsSubagentsPreview';
 import { ReactDeepAgentsFilesystemPreview } from '../../../../../components/docs/ReactDeepAgentsFilesystemPreview';
 import { ReactDeepAgentsPlanningPreview } from '../../../../../components/docs/ReactDeepAgentsPlanningPreview';
@@ -286,11 +287,13 @@ export default async function DocsPage({ params }: DocsRouteProps) {
         reactDocsSlot={
           workspacePage.frontendVariants?.react &&
           (library === 'langgraph' ||
-            (library === 'deep-agents' && section === 'capabilities' && ['planning', 'filesystem', 'subagents', 'skills'].includes(slug)) ||
+            (library === 'deep-agents' && section === 'capabilities' && ['planning', 'filesystem', 'subagents', 'skills', 'memory'].includes(slug)) ||
             (library === 'render' && ((section === 'guides' && ['specs','state-store','repeat-loops','registry'].includes(slug)) || (section === 'api' && ['render-spec-component','provide-render'].includes(slug)))) ||
             (library === 'ag-ui' && ((section === 'reference' && slug === 'event-mapping') || (section === 'guides' && ['interrupts','tool-views','json-render','subagents'].includes(slug)))) ||
             (library === 'chat' && ((section === 'guides' && ['thread-routing', 'generative-ui'].includes(slug)) || slug === 'client-tools' || (section === 'concepts' && slug === 'message-model') || (section === 'components' && ['chat-trace', 'chat-input', 'chat-interrupt-panel', 'chat-tool-calls', 'chat-subagent-card'].includes(slug))))) ? (
-            library === 'deep-agents' && section === 'capabilities' && slug === 'skills' ? (
+            library === 'deep-agents' && section === 'capabilities' && slug === 'memory' ? (
+              <ReactDeepAgentsMemoryPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />
+            ) : library === 'deep-agents' && section === 'capabilities' && slug === 'skills' ? (
               <ReactDeepAgentsSkillsPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />
             ) : library === 'deep-agents' && section === 'capabilities' && slug === 'subagents' ? (
               <ReactDeepAgentsSubagentsPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />

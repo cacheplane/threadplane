@@ -1,5 +1,11 @@
 /** Closed authored frontend selection; callers cannot supply filesystem paths. */
 export function reactCockpitConfiguration(topic = 'streaming') {
+  if (topic === 'deep-agents-memory')
+    return Object.freeze({
+      topic: 'memory', library: 'deep-agents', adapter: 'langgraph',
+      appPath: 'cockpit/deep-agents/memory/react', base: '/deep-agents/memory/react/',
+      port: 4632, project: 'cockpit-deep-agents-memory-react',
+    });
   if (topic === 'deep-agents-skills')
     return Object.freeze({
       topic: 'skills', library: 'deep-agents', adapter: 'langgraph',

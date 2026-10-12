@@ -33,6 +33,17 @@ import { ReactTimeTravelPreview } from '../../../../../components/docs/ReactTime
 import { WebsiteWorkspace } from '../../../../../components/workspace/WebsiteWorkspace';
 import DocsPage, { generateMetadata } from './page';
 
+it('selects Memory-specific native React Docs and complete sources with Angular default', async () => {
+  const tree = await route('deep-agents', 'capabilities', 'memory');
+  const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
+  const article = workspace?.props.reactDocsSlot as React.ReactElement<ElementProps> | undefined;
+  expect((article?.type as { name?: string })?.name).toBe('ReactDeepAgentsMemoryPreview');
+  expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/deep-agents/memory/react/src/browser-scope.ts');
+  expect(article?.props.exampleCode?.sources?.['cockpit/deep-agents/memory/python/src/memory_observation.py']).toContain('validate_scope');
+  const angular = findElement(workspace?.props.docsSlot, MdxRenderer as ComponentType<never>);
+  expect(angular?.props.exampleCode?.assetPaths).toContain('cockpit/deep-agents/memory/angular/src/app/memory-scope.ts');
+});
+
 it('selects Skills-specific native React Docs and exact sources while retaining Angular Docs', async () => {
   const tree = await route('deep-agents', 'capabilities', 'skills');
   const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);

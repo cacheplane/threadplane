@@ -430,6 +430,22 @@ describe('registry content descriptors', () => {
   });
 });
 
+it('registers native Memory with complete shared source and Angular default', () => {
+  const canonical = capabilityModules.find(entry => entry.id === 'deep-agents-memory-python')!;
+  const react = getFrontendCapabilityDescriptor(canonical.manifestIdentity as never, 'react');
+  const backend = ['graph.py', 'memory_observation.py'].map(file => `cockpit/deep-agents/memory/python/src/${file}`);
+  expect(canonical.backendAssetPaths).toEqual(backend);
+  expect(deepAgentsMemoryPythonModule.backendAssetPaths).toEqual(backend);
+  expect(canonical.codeAssetPaths).toEqual(['memory.component.ts', 'app.config.ts', 'memory-scope.ts', 'memory-transport.ts', 'memory-agent-gate.ts'].map(file => `cockpit/deep-agents/memory/angular/src/app/${file}`));
+  expect(react).toMatchObject({ frontend: 'react', runtimeUrl: 'deep-agents/memory/react', devPort: 4632, backendAssetPaths: backend, promptAssetPaths: canonical.promptAssetPaths });
+  expect(react?.codeAssetPaths).toEqual([...['app.tsx', 'application.ts', 'connection.ts', 'authority.ts', 'browser-scope.ts', 'memory-projection.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/deep-agents/memory/react/src/${file}`), 'cockpit/deep-agents/memory/react/project.json']);
+  expect(getFrontendCapabilityDescriptor(canonical.manifestIdentity as never, 'angular')).toBe(canonical);
+  for (const path of [...(react?.codeAssetPaths ?? []), ...(react?.backendAssetPaths ?? [])]) {
+    expect(path).not.toMatch(/fixture|wire\.py|\.spec\.|proof/);
+    expect(existsSync(new URL('../../../../' + path, import.meta.url))).toBe(true);
+  }
+});
+
 it('registers native Skills with the complete shared backend and product-only assets', () => {
   const canonical = capabilityModules.find(entry => entry.id === 'deep-agents-skills-python');
   if (!canonical) throw new Error('Missing canonical Skills');
