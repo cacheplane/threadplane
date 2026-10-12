@@ -14,7 +14,16 @@ const actual = JSON.parse(
     'utf8'
   )
 );
-it('preserves actual root skills_metadata across native run, installed SDK history, and native load', async () => {
+it.each([
+  {
+    name: 'preserves actual root skills_metadata across native run, installed SDK history, and native load',
+    filtered: false,
+  },
+  {
+    name: 'confirms filtered deployed public values through genuine native submit and installed SDK load',
+    filtered: true,
+  },
+])('$name', async ({ filtered }) => {
   const requests: string[] = [];
   const fetch = vi.fn(
     async (url: string | URL | Request, init?: RequestInit) => {
@@ -59,7 +68,16 @@ it('preserves actual root skills_metadata across native run, installed SDK histo
           id: 'offline-human',
           content: 'Inspect bundled skills.',
         });
-        yield { type: 'values', data: actual.rootValues };
+        // Model the observed deployed public key set, retaining the compiled
+        // graph checkpoint unchanged. Both snapshots come from createSession.
+        const publicValues = Object.fromEntries(
+          Object.entries(actual.rootValues).filter(
+            ([key]) =>
+              !filtered ||
+              (key !== 'skills_metadata' && key !== 'skills_load_errors')
+          )
+        );
+        yield { type: 'values', data: publicValues };
       },
       getHistory: (thread) => sdk.threads.getHistory(thread),
     },
@@ -76,9 +94,18 @@ it('preserves actual root skills_metadata across native run, installed SDK histo
     );
     await session.load?.();
     const loadedSnapshot = session.getSnapshot();
-    expect(snapshot.values?.skills_metadata).toEqual(
-      actual.current.values.skills_metadata
-    );
+    if (filtered) {
+      expect(Object.keys(snapshot.values ?? {})).toEqual(['files']);
+      expect(Object.hasOwn(snapshot.values ?? {}, 'skills_metadata')).toBe(
+        false
+      );
+    } else {
+      expect(snapshot.values?.skills_metadata).toEqual(
+        actual.current.values.skills_metadata
+      );
+    }
+    expect(observedState).toEqual(history[0]);
+    expect(loadedCheckpoint).toEqual(observedState);
     expect(loadedSnapshot.values?.skills_metadata).toEqual(
       actual.current.values.skills_metadata
     );

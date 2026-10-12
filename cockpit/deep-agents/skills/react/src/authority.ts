@@ -539,6 +539,28 @@ function matchesRoot(
   return true;
 }
 
+/** Compare already-owned live values with the exact checkpoint projection.
+ * Deployed streams can omit the two private Skills keys. Every observed key
+ * still agrees exactly; every ordinary checkpoint key must be observed. */
+function matchesLiveValues(
+  live: unknown,
+  checkpoint: Record<string, unknown>
+): boolean {
+  if (!record(live)) return false;
+  return (
+    Object.keys(live).every(
+      (key) =>
+        Object.hasOwn(checkpoint, key) && sameData(live[key], checkpoint[key])
+    ) &&
+    Object.keys(checkpoint).every(
+      (key) =>
+        Object.hasOwn(live, key) ||
+        key === 'skills_metadata' ||
+        key === 'skills_load_errors'
+    )
+  );
+}
+
 /** A failure yields no replacement: callers retain previously confirmed authority.
  * The caller captures its owned client and turn once before asynchronous reads. */
 export function captureAuthority(input: unknown): Authority {
@@ -618,7 +640,7 @@ export function captureAuthority(input: unknown): Authority {
       !raw ||
       !matchesRoot(raw, before, prefix.length) ||
       !matchesRoot(raw, after, prefix.length) ||
-      !sameData(captured.snapshot.values, otherValues) ||
+      !matchesLiveValues(captured.snapshot.values, otherValues) ||
       !sameData(captured.loadedSnapshot.values, otherValues)
     )
       return unavailable;
