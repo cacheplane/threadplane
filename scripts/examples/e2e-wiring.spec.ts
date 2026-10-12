@@ -1,4 +1,5 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import * as ts from 'typescript';
 
 it('wires native Planning build, fixture and website coverage to the shared Python graph', () => {
   const read = (path: string) => JSON.parse(readFileSync(join(repoRoot, path), 'utf8'));
@@ -60,6 +61,323 @@ import { capabilities } from '@threadplane/cockpit-registry';
 // allowJs:true but this top-level test file doesn't go through that config.
 // eslint-disable-next-line @nx/enforce-module-boundaries -- repo-root port registry is intentionally outside an Nx project.
 import { portsFor } from '../../cockpit/ports.mjs';
+
+function compiledMemoryBackend(
+  project: string | undefined,
+  setup: string,
+  fixture: string
+): string | undefined {
+  if (project !== 'cockpit-deep-agents-memory-angular') return undefined;
+  const signature = (node: ts.Node): string => {
+    const shape = (child: ts.Node): unknown => {
+      const children: unknown[] = [];
+      ts.forEachChild(child, (nested) => {
+        children.push(shape(nested));
+      });
+      return [child.kind, children.length ? children : child.getText().trim()];
+    };
+    return JSON.stringify(shape(node));
+  };
+  const has = (nodes: readonly ts.Node[], expected: string) => {
+    const grammar = ts.createSourceFile(
+      'grammar.ts',
+      expected,
+      ts.ScriptTarget.Latest,
+      true
+    );
+    const target = signature(grammar.statements[0]);
+    return nodes.filter((node) => signature(node) === target).length === 1;
+  };
+  const declaration = (
+    body: ts.Block,
+    name: string
+  ): ts.VariableDeclaration | undefined => {
+    const matches = body.statements
+      .filter(ts.isVariableStatement)
+      .flatMap((statement) => [...statement.declarationList.declarations])
+      .filter((node) => ts.isIdentifier(node.name) && node.name.text === name);
+    return matches.length === 1 ? matches[0] : undefined;
+  };
+  const setupAst = ts.createSourceFile(
+    'setup.ts',
+    setup,
+    ts.ScriptTarget.Latest,
+    true
+  );
+  const owners = setupAst.statements.filter(
+    (node): node is ts.FunctionDeclaration =>
+      ts.isFunctionDeclaration(node) && node.name?.text === 'setup'
+  );
+  if (
+    owners.length !== 1 ||
+    !owners[0].body ||
+    !owners[0].modifiers?.some(
+      (modifier) => modifier.kind === ts.SyntaxKind.DefaultKeyword
+    )
+  )
+    return undefined;
+  const body = owners[0].body;
+  const required = [
+    "const { createDeepAgentsMemoryFixture } = await import('../../../../../scripts/react-cockpit/deep-agents-memory-fixture.mjs');",
+    'const fixture = createDeepAgentsMemoryFixture();',
+    `const backend = createServer(async (req, res) => {
+      const path = new URL(req.url!, 'http://localhost:5313').pathname;
+      try { if (!await fixture(req, res, path.startsWith('/threads') ? '/api' + path : path)) { res.writeHead(404); res.end(); } }
+      catch { res.writeHead(500); res.end(); }
+    });`,
+  ];
+  if (!required.every((grammar) => has(body.statements, grammar)))
+    return undefined;
+  const startup = body.statements.filter(ts.isTryStatement);
+  if (
+    startup.length !== 1 ||
+    !has(startup[0].tryBlock.statements, 'backend.listen(5313);') ||
+    !has(
+      startup[0].tryBlock.statements,
+      "child = spawn(process.execPath, [resolve(root, 'node_modules/nx/bin/nx.js'), 'serve', 'cockpit-deep-agents-memory-angular', '--configuration=cockpit', '--port=4313', '--host=localhost'], { cwd: root, detached: true, stdio: ['ignore', log, log], env: { ...process.env, NX_DAEMON: 'false' } });"
+    )
+  )
+    return undefined;
+  // The actual worker selects the canonical pinned Python project and wire script.
+  const parsedFixture = ts.createSourceFile(
+    'fixture.mjs',
+    fixture,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.JS
+  );
+  const factories = parsedFixture.statements.filter(
+    (node): node is ts.FunctionDeclaration =>
+      ts.isFunctionDeclaration(node) &&
+      node.name?.text === 'createDeepAgentsMemoryFixture' &&
+      node.modifiers?.some(
+        (modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword
+      ) === true
+  );
+  if (
+    factories.length !== 1 ||
+    !factories[0].body ||
+    factories[0].parameters.length !== 1
+  )
+    return undefined;
+  const factory = factories[0],
+    parameter = factory.parameters[0];
+  if (!ts.isObjectBindingPattern(parameter.name)) return undefined;
+  const spawnBinding = parameter.name.elements.filter(
+    (element) => element.name.getText() === 'spawnWorker'
+  );
+  const arrow =
+    spawnBinding.length === 1 ? spawnBinding[0].initializer : undefined;
+  if (
+    !arrow ||
+    !ts.isArrowFunction(arrow) ||
+    arrow.parameters.length !== 0 ||
+    !ts.isCallExpression(arrow.body) ||
+    arrow.body.expression.getText() !== 'spawn' ||
+    arrow.body.arguments[0]?.getText() !== "'uv'"
+  )
+    return undefined;
+  const args = arrow.body.arguments[1];
+  if (
+    !args ||
+    !ts.isArrayLiteralExpression(args) ||
+    JSON.stringify(
+      args.elements.map((element) =>
+        ts.isStringLiteral(element) ? element.text : null
+      )
+    ) !==
+      JSON.stringify([
+        'run',
+        '--frozen',
+        '--python',
+        '3.12',
+        '--project',
+        'cockpit/deep-agents/memory/python',
+        'python',
+        'scripts/react-cockpit/deep-agents-memory-wire.py',
+      ])
+  )
+    return undefined;
+  const factoryBody = factory.body;
+  if (!factoryBody || !has(factoryBody.statements, 'return handle;'))
+    return undefined;
+  const handle = declaration(factoryBody, 'handle')?.initializer;
+  const operations = factoryBody.statements.filter(
+    (node): node is ts.FunctionDeclaration =>
+      ts.isFunctionDeclaration(node) && node.name?.text === 'operate'
+  );
+  const workers = parsedFixture.statements.filter(
+    (node): node is ts.FunctionDeclaration =>
+      ts.isFunctionDeclaration(node) && node.name?.text === 'graphWorker'
+  );
+  if (
+    !handle ||
+    !ts.isArrowFunction(handle) ||
+    !ts.isBlock(handle.body) ||
+    operations.length !== 1 ||
+    !operations[0].body ||
+    workers.length !== 1 ||
+    !workers[0].body ||
+    !has(workers[0].body.statements, 'const child = spawnWorker();')
+  )
+    return undefined;
+  const queued = declaration(operations[0].body, 'result')?.initializer;
+  if (
+    !queued ||
+    !ts.isCallExpression(queued) ||
+    queued.expression.getText() !== 'queue.then' ||
+    queued.arguments.length !== 1
+  )
+    return undefined;
+  const execute = queued.arguments[0];
+  if (
+    !ts.isArrowFunction(execute) ||
+    !ts.isBlock(execute.body) ||
+    !has(
+      execute.body.statements,
+      'worker ??= graphWorker(spawnWorker, workerTimeoutMs);'
+    ) ||
+    !has(
+      execute.body.statements,
+      'const result = await worker.send(value), proof = result.proof;'
+    ) ||
+    !has(operations[0].body.statements, 'return result;')
+  )
+    return undefined;
+  // Runtime calls in the returned handler count; nested uncalled helpers do not.
+  let operationCalls = 0;
+  const visitHandler = (node: ts.Node) => {
+    if (
+      node !== handle.body &&
+      (ts.isFunctionDeclaration(node) ||
+        ts.isArrowFunction(node) ||
+        ts.isFunctionExpression(node))
+    )
+      return;
+    if (ts.isCallExpression(node) && node.expression.getText() === 'operate')
+      operationCalls++;
+    ts.forEachChild(node, visitHandler);
+  };
+  visitHandler(handle.body);
+  return operationCalls === 5 ? 'cockpit/deep-agents/memory/python' : undefined;
+}
+
+it.each(['setup', 'fixture'])(
+  'rejects unused canonical Memory %s subtrees',
+  (owner) => {
+    let setup = readRepoFile(
+      'cockpit/deep-agents/memory/angular/e2e/global-setup-impl.ts'
+    );
+    let fixture = readRepoFile(
+      'scripts/react-cockpit/deep-agents-memory-fixture.mjs'
+    );
+    if (owner === 'setup')
+      setup = setup
+        .replace(
+          'export default async function setup() {',
+          'export default async function setup() { async function neverCalled() {'
+        )
+        .trimEnd()
+        .replace(/}$/, '} }');
+    else
+      fixture =
+        fixture.replace(
+          'export function createDeepAgentsMemoryFixture(',
+          'function unusedFixture('
+        ) +
+        '\nexport function createDeepAgentsMemoryFixture() { return async () => true; }';
+    expect(
+      compiledMemoryBackend(
+        'cockpit-deep-agents-memory-angular',
+        setup,
+        fixture
+      )
+    ).toBeUndefined();
+  }
+);
+
+it('recognizes the actual compiled Memory backend and rejects project, fixture, port and proxy drift', () => {
+  const setup = readRepoFile(
+    'cockpit/deep-agents/memory/angular/e2e/global-setup-impl.ts'
+  );
+  const fixture = readRepoFile(
+    'scripts/react-cockpit/deep-agents-memory-fixture.mjs'
+  );
+  const parse = (
+    text = setup,
+    implementation = fixture,
+    project = 'cockpit-deep-agents-memory-angular'
+  ) => compiledMemoryBackend(project, text, implementation);
+  expect(parse()).toBe('cockpit/deep-agents/memory/python');
+  expect(
+    parse(setup, fixture, 'cockpit-deep-agents-skills-angular')
+  ).toBeUndefined();
+  for (const changed of [
+    setup.replace('deep-agents-memory-fixture.mjs', 'generic-fixture.mjs'),
+    setup.replace(
+      'const fixture = createDeepAgentsMemoryFixture();',
+      'const fixture = createGenericFixture();'
+    ),
+    setup.replace('backend.listen(5313)', 'backend.listen(9999)'),
+    setup.replace(
+      'const backend = createServer',
+      'const unused = createServer'
+    ),
+    setup.replace(
+      'export default async function setup()',
+      'async function deadSetup()'
+    ),
+    setup.replace("'/api' + path", 'path'),
+    setup.replace("'--port=4313'", "'--port=9999'"),
+  ])
+    expect(parse(changed)).toBeUndefined();
+  expect(
+    parse(
+      setup,
+      fixture.replace(
+        "'cockpit/deep-agents/memory/python'",
+        "'cockpit/deep-agents/skills/python'"
+      )
+    )
+  ).toBeUndefined();
+});
+
+it('wires native Memory build, compiled fixture and website coverage to the shared Python graph', () => {
+  const read = (path: string) => JSON.parse(readRepoFile(path));
+  const react = read('cockpit/deep-agents/memory/react/project.json');
+  expect(react.tags).toEqual(
+    expect.arrayContaining([
+      'framework:react',
+      'scope:cockpit-e2e',
+      'scope:cockpit-examples',
+    ])
+  );
+  expect(react.targets.build.options.command).toBe(
+    'node scripts/react-cockpit/build.mjs deep-agents-memory'
+  );
+  expect(react.targets.e2e.dependsOn).toEqual([
+    { target: 'build', projects: ['cockpit-deep-agents-memory-react'] },
+    { target: 'fixture-test', projects: ['cockpit-deep-agents-memory-react'] },
+  ]);
+  expect(react.targets['fixture-test'].dependsOn).toEqual([
+    { target: 'test', projects: ['cockpit-deep-agents-memory-python'] },
+  ]);
+  expect(react.targets['fixture-test'].options.command).toBe(
+    'node --test scripts/react-cockpit/deep-agents-memory-fixture.spec.mjs scripts/react-cockpit/deep-agents-memory-configuration.spec.mjs'
+  );
+  expect(
+    read('apps/website/project.json').targets.e2e.dependsOn[0].projects
+  ).toContain('cockpit-deep-agents-memory-react');
+  expect(
+    read('cockpit/deep-agents/memory/angular/project.json').targets.e2e
+      .dependsOn
+  ).toContain('lifecycle-test');
+  const config = readRepoFile('apps/website/playwright.config.ts');
+  expect(config).toContain(
+    'cockpit-deep-agents-memory-python:smoke && node scripts/react-cockpit/serve.mjs deep-agents-memory --no-parent'
+  );
+  expect(config).toContain("url: 'http://127.0.0.1:4632'");
+});
 
 interface E2eWiring {
   angularPort: number;
@@ -154,7 +472,12 @@ function activeCockpitE2eWiring(): E2eWiring[] {
       const langgraphCwd =
         parseStringProperty(globalSetup, 'langgraphCwd') ??
         parseStringProperty(globalSetup, 'pythonCwd') ??
-        parseStringProperty(globalSetup, 'backendCwd');
+        parseStringProperty(globalSetup, 'backendCwd') ??
+        compiledMemoryBackend(
+          project.name,
+          globalSetup,
+          readRepoFile('scripts/react-cockpit/deep-agents-memory-fixture.mjs')
+        );
 
       // Post-port-registry migration: ports are imported from
       // cockpit/ports.mjs rather than living as literals in
