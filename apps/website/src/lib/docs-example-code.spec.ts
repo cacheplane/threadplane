@@ -200,6 +200,39 @@ describe('docs pages teach through their example', () => {
   });
 });
 
+it('describes the pinned Memory prompt transformation without trimming leading whitespace', () => {
+  const files = [
+    'apps/website/content/docs/deep-agents/capabilities/memory.mdx',
+    'apps/website/src/components/docs/ReactDeepAgentsMemoryPreview.tsx',
+    ...['AGENTS', 'CLAUDE'].flatMap(name => [`apps/website/content/${name}.md.template`, `apps/website/public/${name}.md`]),
+  ];
+  for (const file of files) {
+    const source = readFileSync(join(WORKSPACE_ROOT, file), 'utf8');
+    expect(source).toContain('strips HTML comments and trailing whitespace');
+    expect(source).not.toContain('trims surrounding whitespace');
+    expect(source).not.toContain('Pinned prompt text trims whitespace');
+  }
+});
+
+it('resolves every Memory article include and both complete shared backend sources', () => {
+  const canonical = capabilityModules.find(entry => entry.id === 'deep-agents-memory-python')!;
+  const react = getFrontendCapabilityDescriptor(canonical.manifestIdentity as never, 'react')!;
+  expect(react).toBeDefined();
+  for (const descriptor of [canonical, react]) {
+    const page = { docsPath: descriptor.docsPath, assetPaths: [...descriptor.codeAssetPaths, ...(descriptor.backendAssetPaths ?? [])] };
+    const context = contextFor(page);
+    const article = descriptor === react ? readFileSync(join(WORKSPACE_ROOT, 'apps/website/src/components/docs/ReactDeepAgentsMemoryPreview.tsx'), 'utf8') : mdxFor(canonical.docsPath);
+    expect(includesIn(article).length).toBeGreaterThan(5);
+    for (const include of includesIn(article)) {
+      expect(resolveExampleFile(include.file, context)).toBe(include.file);
+      expect(context.sources[include.file]).toBe(readFileSync(join(WORKSPACE_ROOT, include.file), 'utf8'));
+    }
+    expect(page.assetPaths).toContain('cockpit/deep-agents/memory/python/src/memory_observation.py');
+    expect(page.assetPaths.some(path => /fixture|wire\.py|\.spec\.|proof/.test(path))).toBe(false);
+    for (const path of page.assetPaths) expect(context.sources[path]).toBe(readFileSync(join(WORKSPACE_ROOT, path), 'utf8'));
+  }
+});
+
 it('resolves every native Skills article include and the complete read-only backend', () => {
   const canonical = capabilityModules.find(entry => entry.id === 'deep-agents-skills-python')!;
   const react = getFrontendCapabilityDescriptor(canonical.manifestIdentity as never, 'react')!;

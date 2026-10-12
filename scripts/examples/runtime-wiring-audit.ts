@@ -849,10 +849,223 @@ function hasCanonicalTopLevelBootstrapOwner(
   );
 }
 
+// This is an ordered AST grammar for the one capability that intentionally
+// persists a non-secret Memory identity. It is not a generic storage exemption.
+function sameSyntax(actual: ts.Node, expected: string): boolean {
+  const parsed = ts.createSourceFile(
+    'grammar.ts',
+    expected,
+    ts.ScriptTarget.Latest,
+    true
+  );
+  const shape = (node: ts.Node): unknown => {
+    const children: unknown[] = [];
+    ts.forEachChild(node, (child) => {
+      children.push(shape(child));
+    });
+    return [node.kind, children.length ? children : node.getText().trim()];
+  };
+  return (
+    JSON.stringify(shape(actual)) ===
+    JSON.stringify(shape(parsed.statements[0]))
+  );
+}
+
+const memoryFactoryGrammar = `const factory = () => {
+  const connection = injectCockpitRuntimeConnection();
+  if (connection.adapter !== 'langgraph') { throw new Error('incompatible runtime'); }
+  const scope = inject(MemoryScope);
+  const threadId = signal<string | null>(null);
+  const onThreadId = (id: string) => threadId.set(id);
+  const clientOptions = { ...connection.clientOptions, maxRetries: 0 };
+  const transport = new MemoryTransport(connection.apiUrl, scope, onThreadId,
+    clientOptions, inject(ɵLANGGRAPH_RUNTIME_OPERATION_REPORTER, { optional: true }) ?? undefined);
+  return { apiUrl: connection.apiUrl, assistantId: connection.assistantId,
+    clientOptions, threadId, onThreadId, transport };
+};`;
+
+function matchesMemoryFactory(factory: ts.Node): boolean {
+  const parsed = ts.createSourceFile(
+    'grammar.ts',
+    memoryFactoryGrammar,
+    ts.ScriptTarget.Latest,
+    true
+  );
+  const expected = (parsed.statements[0] as ts.VariableStatement)
+    .declarationList.declarations[0].initializer!;
+  // Compare semantic AST children, including order, operators, literals and types.
+  const signature = (node: ts.Node): unknown => {
+    const children: unknown[] = [];
+    ts.forEachChild(node, (child) => {
+      children.push(signature(child));
+    });
+    return [node.kind, children.length ? children : node.getText().trim()];
+  };
+  return (
+    JSON.stringify(signature(factory)) === JSON.stringify(signature(expected))
+  );
+}
+
+function memoryScopeStorageAccess(
+  sourceFile: ts.SourceFile
+): ts.Node | undefined {
+  const controllers = sourceFile.statements.filter(
+    (node): node is ts.FunctionDeclaration =>
+      ts.isFunctionDeclaration(node) && node.name?.text === 'createBrowserScope'
+  );
+  if (controllers.length !== 1 || !controllers[0].body) return undefined;
+  const controllerBody = controllers[0].body;
+  let storageAccess: ts.Node | undefined;
+  let key = false,
+    options = false,
+    events = false,
+    blocking = false,
+    registration = false,
+    admission = false,
+    invalid = false,
+    reads = 0,
+    writes = 0;
+  const initialization = controllerBody.statements.filter(ts.isTryStatement);
+  registration =
+    initialization.length === 1 &&
+    initialization[0].tryBlock.statements.some((statement) =>
+      sameSyntax(
+        statement,
+        `if (options.events) {
+    options.events.addEventListener('storage', onStorage);
+    listening = true;
+  }`
+      )
+    );
+  walk(sourceFile, (node) => {
+    if (
+      ts.isVariableStatement(node) &&
+      node.declarationList.declarations.some(
+        (d) => ts.isIdentifier(d.name) && d.name.text === 'SCOPE_KEY'
+      ) &&
+      node.parent === sourceFile
+    ) {
+      key = sameSyntax(
+        node,
+        "export const SCOPE_KEY = 'threadplane.deep-agents-memory.scope.v1';"
+      );
+    }
+    if (
+      ts.isVariableStatement(node) &&
+      node.parent === controllerBody &&
+      node.declarationList.declarations.some(
+        (declaration) =>
+          ts.isIdentifier(declaration.name) && declaration.name.text === 'block'
+      )
+    ) {
+      blocking = sameSyntax(
+        node,
+        `const block = () => {
+        if (snapshot.status === 'blocked') return;
+        snapshot = Object.freeze({ status: 'blocked', scope, warning:
+          'Browser memory identity changed or storage is unavailable. Active work keeps its original scope. Reload before sending again.' });
+        for (const listener of [...listeners]) listener();
+      };`
+      );
+    }
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.name.text === 'onStorage' &&
+      node.parent.parent.parent === controllerBody
+    ) {
+      events = sameSyntax(
+        node.parent.parent,
+        `const onStorage = (event: ScopeEvent) => {
+        if (disposed || (event.storageArea !== null && event.storageArea !== storage) || (event.key !== null && event.key !== SCOPE_KEY)) return;
+        if (event.key === null || event.newValue !== scope) block();
+      };`
+      );
+    }
+    if (ts.isMethodDeclaration(node) && node.name.getText() === 'admit') {
+      const grammar = ts.createSourceFile(
+        'admission.ts',
+        `const controller = { admit() {
+        if (disposed || snapshot.status !== 'ready') return undefined;
+        try { if (storage?.getItem(SCOPE_KEY) !== scope) block(); } catch { block(); }
+        return snapshot.status === 'ready' ? Object.freeze({ memory_scope: scope! }) : undefined;
+      } };`,
+        ts.ScriptTarget.Latest,
+        true
+      );
+      const method = (
+        (grammar.statements[0] as ts.VariableStatement).declarationList
+          .declarations[0].initializer as ts.ObjectLiteralExpression
+      ).properties[0];
+      // The wrapper's forwarding method is distinct from the controller admission.
+      if (
+        node.body &&
+        ts.isObjectLiteralExpression(node.parent) &&
+        ts.isCallExpression(node.parent.parent) &&
+        node.parent.parent.expression.getText() === 'Object.freeze' &&
+        ts.isReturnStatement(node.parent.parent.parent) &&
+        node.parent.parent.parent.parent === controllerBody
+      )
+        admission = sameSyntax(
+          node.body,
+          (method as ts.MethodDeclaration).body!.getText()
+        );
+    }
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.name.text === 'MEMORY_SCOPE_OPTIONS'
+    ) {
+      options =
+        !!node.initializer &&
+        sameSyntax(
+          node.parent.parent,
+          `export const MEMORY_SCOPE_OPTIONS = new InjectionToken<ScopeOptions>('MEMORY_SCOPE_OPTIONS', {
+        providedIn: 'root', factory: () => ({storage: () => window.localStorage, uuid: () => window.crypto.randomUUID(), events: window})
+      });`
+        );
+      if (options)
+        walk(node, (child) => {
+          if (
+            ts.isPropertyAccessExpression(child) &&
+            child.getText() === 'window.localStorage'
+          )
+            storageAccess = child;
+        });
+    }
+    if (
+      ts.isCallExpression(node) &&
+      ts.isPropertyAccessExpression(node.expression) &&
+      ['getItem', 'setItem'].includes(node.expression.name.text)
+    ) {
+      const method = node.expression.name.text;
+      if (
+        node.arguments[0]?.getText() !== 'SCOPE_KEY' ||
+        node.expression.expression.getText() !== 'storage'
+      )
+        invalid = true;
+      if (method === 'getItem') reads++;
+      else writes++;
+    }
+  });
+  return key &&
+    options &&
+    events &&
+    blocking &&
+    registration &&
+    admission &&
+    !invalid &&
+    reads === 3 &&
+    writes === 1
+    ? storageAccess
+    : undefined;
+}
+
 export function inspectRuntimeTargetSource(
   source: string,
   fileName: string,
-  expectedAdapter?: CompatibleRuntimeAdapter
+  expectedAdapter?: CompatibleRuntimeAdapter,
+  project?: string
 ): RuntimeTargetSourceInspection {
   const sourceFile = ts.createSourceFile(
     fileName,
@@ -861,6 +1074,8 @@ export function inspectRuntimeTargetSource(
     true,
     ts.ScriptKind.TS
   );
+  const memoryOwner = project === 'cockpit-deep-agents-memory-angular';
+  let memoryStorageAccess: ts.Node | undefined;
   const issues: RuntimeWiringAuditIssue[] = [];
   const providerCalls: CanonicalProviderCall[] = [];
   const bootstrapCalls: BootstrapCallRecord[] = [];
@@ -1579,7 +1794,31 @@ export function inspectRuntimeTargetSource(
       sourceFile,
       adapter
     );
-    if (!connectionMetadata.canonicalFactory) {
+    const memoryFactory =
+      memoryOwner &&
+      fileName === 'src/app/app.config.ts' &&
+      adapter === 'langgraph' &&
+      matchesMemoryFactory(factory) &&
+      [
+        ['inject', '@angular/core'],
+        ['signal', '@angular/core'],
+        ['MemoryScope', './memory-scope'],
+        ['MemoryTransport', './memory-transport'],
+        ['ɵLANGGRAPH_RUNTIME_OPERATION_REPORTER', '@threadplane/langgraph'],
+      ].every(([name, module]) => {
+        const references: ts.Identifier[] = [];
+        walk(factory.body, (child) => {
+          if (ts.isIdentifier(child) && child.text === name)
+            references.push(child);
+        });
+        return (
+          references.length > 0 &&
+          references.every((identifier) =>
+            hasExactImportBinding(exactBinding(identifier), module, name)
+          )
+        );
+      });
+    if (!connectionMetadata.canonicalFactory && !memoryFactory) {
       report(
         'noncanonical-provider-wiring',
         'provider factory must contain only the ordered connection declaration, adapter guard, and sole return'
@@ -1595,6 +1834,10 @@ export function inspectRuntimeTargetSource(
     }
     const properties: Record<string, string> = {};
     for (const property of returned.properties) {
+      if (memoryFactory && ts.isShorthandPropertyAssignment(property)) {
+        properties[property.name.text] = property.name.text;
+        continue;
+      }
       if (
         !ts.isPropertyAssignment(property) ||
         !ts.isIdentifier(property.name)
@@ -1612,7 +1855,12 @@ export function inspectRuntimeTargetSource(
         ? ['url']
         : ['apiUrl', 'assistantId', 'clientOptions'];
     for (const property of required) {
-      if (properties[property] !== `connection.${property}`) {
+      if (
+        properties[property] !==
+        (memoryFactory && property === 'clientOptions'
+          ? 'clientOptions'
+          : `connection.${property}`)
+      ) {
         report(
           'noncanonical-provider-wiring',
           `${property} must be an explicit ${property}: connection.${property} assignment`
@@ -1899,6 +2147,27 @@ export function inspectRuntimeTargetSource(
     });
   }
 
+  if (memoryOwner && fileName === 'src/app/memory-scope.ts') {
+    const tokenReferences: ts.Identifier[] = [];
+    walk(sourceFile, (child) => {
+      if (
+        ts.isNewExpression(child) &&
+        ts.isIdentifier(child.expression) &&
+        child.expression.text === 'InjectionToken'
+      )
+        tokenReferences.push(child.expression);
+    });
+    if (
+      tokenReferences.length === 1 &&
+      hasExactImportBinding(
+        exactBinding(tokenReferences[0]),
+        '@angular/core',
+        'InjectionToken'
+      )
+    )
+      memoryStorageAccess = memoryScopeStorageAccess(sourceFile);
+  }
+
   const isGlobalObjectIdentifier = (
     expression: ts.Expression
   ): expression is ts.Identifier =>
@@ -1909,6 +2178,7 @@ export function inspectRuntimeTargetSource(
     !isLexicallyDeclared(expression);
 
   walk(sourceFile, (node) => {
+    if (node === memoryStorageAccess) return;
     const reportUnconditionalMember = (property: string): void => {
       if (unconditionalBrowserMemberNames.has(property)) {
         report('browser-state-read', `sensitive member ${property}`);

@@ -9,7 +9,7 @@ export default defineConfig({
   testMatch: '**/*.spec.ts',
   fullyParallel: false,
   workers: 1,
-  retries: process.env.CI ? 2 : 0,
+  retries: 0,
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
   use: {
     baseURL: `http://localhost:${angularPort}`,
@@ -17,5 +17,4 @@ export default defineConfig({
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   globalSetup: './global-setup-impl.ts',
-  globalTeardown: require.resolve('../../../../../libs/e2e-harness/src/global-teardown'),
 });

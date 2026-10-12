@@ -6,6 +6,28 @@ import { test } from 'node:test';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { deriveCockpitCaps, selectCockpitCaps } from './cockpit-matrix.mjs';
+test('Memory backend changes select its two actual registered frontends and exact shared backend', () => {
+  const root = fileURLToPath(new URL('..', import.meta.url));
+  const selected = selectCockpitCaps(deriveCockpitCaps(root), new Set(['cockpit-deep-agents-memory-python']), { fullFleet: false });
+  assert.deepEqual(selected.map(cap => cap.angular).sort(), ['cockpit-deep-agents-memory-angular', 'cockpit-deep-agents-memory-react']);
+  assert.ok(selected.every(cap => cap.python === 'cockpit/deep-agents/memory/python' && cap.pythonName === 'cockpit-deep-agents-memory-python'));
+  const registry = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', 'const module = await import("./libs/cockpit-registry/src/lib/capability-registry.ts"); const registry = module.default ?? module; console.log(JSON.stringify({ frontends: registry.getCockpitFrontends(), capability: registry.capabilities.find(cap => cap.id === "da-memory") }));'], { cwd: root, encoding: 'utf8', env: { ...process.env, TSX_TSCONFIG_PATH: 'tsconfig.base.json' } }));
+  assert.equal(registry.frontends.length, 74);
+  assert.deepEqual(registry.frontends.filter(frontend => frontend.product === 'deep-agents' && frontend.topic === 'memory'), [
+    { frontend: 'angular', project: 'cockpit-deep-agents-memory-angular', port: 4313, product: 'deep-agents', topic: 'memory', runtimePath: 'deep-agents/memory', buildOutput: 'dist/cockpit/deep-agents/memory/angular' },
+    { frontend: 'react', project: 'cockpit-deep-agents-memory-react', port: 4632, product: 'deep-agents', topic: 'memory', runtimePath: 'deep-agents/memory/react', buildOutput: 'dist/cockpit/deep-agents/memory/react' },
+  ]);
+  assert.equal(registry.capability.pythonDir, 'cockpit/deep-agents/memory/python');
+  assert.equal(registry.capability.pythonPort, 5313);
+  assert.equal(registry.capability.graphName, 'da-memory');
+});
+test('Memory owns exact closed native root metadata without changing ordinary LangGraph Memory', async () => {
+  const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
+  const config = reactCockpitConfiguration('deep-agents-memory');
+  assert.deepEqual(config, { topic: 'memory', library: 'deep-agents', adapter: 'langgraph', appPath: 'cockpit/deep-agents/memory/react', base: '/deep-agents/memory/react/', port: 4632, project: 'cockpit-deep-agents-memory-react' });
+  assert.equal(Object.isFrozen(config), true);
+  assert.equal(reactCockpitConfiguration('memory').appPath, 'cockpit/langgraph/memory/react');
+});
 test('Planning backend changes select exactly both canonical frontends', () => {
   const root = fileURLToPath(new URL('..', import.meta.url));
   const selected = selectCockpitCaps(deriveCockpitCaps(root), new Set(['cockpit-deep-agents-planning-python']), { fullFleet: false });
@@ -57,7 +79,7 @@ test('Generative UI backend changes select both canonical frontends registered b
   assert.deepEqual(selected.map(cap => cap.angular).sort(), ['cockpit-chat-generative-ui-angular', 'cockpit-chat-generative-ui-react']);
   assert.ok(selected.every(cap => cap.python === 'cockpit/chat/generative-ui/python'));
   const frontends = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', 'const module = await import("./libs/cockpit-registry/src/lib/capability-registry.ts"); console.log(JSON.stringify((module.default ?? module).getCockpitFrontends()));'], { cwd: root, encoding: 'utf8', env: { ...process.env, TSX_TSCONFIG_PATH: 'tsconfig.base.json' } }));
-  assert.equal(frontends.length, 73);
+  assert.equal(frontends.length, 74);
   assert.deepEqual(frontends.filter(frontend => frontend.project.startsWith('cockpit-chat-generative-ui-')).map(frontend => frontend.project).sort(), selected.map(cap => cap.angular).sort());
 });
 test('Timeline backend changes select both canonical frontends registered by the website', () => {
@@ -66,7 +88,7 @@ test('Timeline backend changes select both canonical frontends registered by the
   assert.deepEqual(selected.map(cap => cap.angular).sort(), ['cockpit-chat-timeline-angular', 'cockpit-chat-timeline-react']);
   assert.ok(selected.every(cap => cap.python === 'cockpit/chat/timeline/python'));
   const frontends = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', 'const module = await import("./libs/cockpit-registry/src/lib/capability-registry.ts"); console.log(JSON.stringify((module.default ?? module).getCockpitFrontends()));'], { cwd: root, encoding: 'utf8', env: { ...process.env, TSX_TSCONFIG_PATH: 'tsconfig.base.json' } }));
-  assert.equal(frontends.length, 73);
+  assert.equal(frontends.length, 74);
   assert.deepEqual(frontends.filter(frontend => frontend.project.startsWith('cockpit-chat-timeline-')).map(frontend => frontend.project).sort(), selected.map(cap => cap.angular).sort());
 });
 test('Chat Timeline owns an exact native React identity', async () => {
@@ -85,7 +107,7 @@ test('Threads backend changes select both canonical frontends registered by the 
   assert.deepEqual(selected.map(cap => cap.angular).sort(), ['cockpit-chat-threads-angular', 'cockpit-chat-threads-react']);
   assert.ok(selected.every(cap => cap.python === 'cockpit/chat/threads/python'));
   const frontends = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', 'const module = await import("./libs/cockpit-registry/src/lib/capability-registry.ts"); console.log(JSON.stringify((module.default ?? module).getCockpitFrontends()));'], { cwd: root, encoding: 'utf8', env: { ...process.env, TSX_TSCONFIG_PATH: 'tsconfig.base.json' } }));
-  assert.equal(frontends.length, 73);
+  assert.equal(frontends.length, 74);
   assert.deepEqual(frontends.filter(frontend => frontend.project.startsWith('cockpit-chat-threads-')).map(frontend => frontend.project).sort(), selected.map(cap => cap.angular).sort());
 });
 test('Chat Threads owns an exact native React identity', async () => {

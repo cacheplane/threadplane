@@ -431,8 +431,11 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
     codeAssetPaths: [
       'cockpit/deep-agents/memory/angular/src/app/memory.component.ts',
       'cockpit/deep-agents/memory/angular/src/app/app.config.ts',
+      'cockpit/deep-agents/memory/angular/src/app/memory-scope.ts',
+      'cockpit/deep-agents/memory/angular/src/app/memory-transport.ts',
+      'cockpit/deep-agents/memory/angular/src/app/memory-agent-gate.ts',
     ],
-    backendAssetPaths: ['cockpit/deep-agents/memory/python/src/graph.py'],
+    backendAssetPaths: ['cockpit/deep-agents/memory/python/src/graph.py', 'cockpit/deep-agents/memory/python/src/memory_observation.py'],
     runtimeUrl: 'deep-agents/memory',
     devPort: 4313,
   },
@@ -1308,6 +1311,24 @@ const deepAgentsSubagentsReact = (() => {
   });
 })();
 
+const deepAgentsMemoryReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'deep-agents-memory-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-deep-agents-memory-react');
+  if (!canonical || !frontend) throw new Error('Memory frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical,
+    id: 'deep-agents-memory-python-react',
+    frontend: 'react',
+    title: 'Memory (React preview)',
+    codeAssetPaths: [
+      ...['app.tsx', 'application.ts', 'connection.ts', 'authority.ts', 'browser-scope.ts', 'memory-projection.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/deep-agents/memory/react/src/${file}`),
+      'cockpit/deep-agents/memory/react/project.json',
+    ],
+    runtimeUrl: frontend.runtimePath,
+    devPort: frontend.port,
+  });
+})();
+
 const deepAgentsSkillsReact = (() => {
   const canonical = capabilityModules.find(descriptor => descriptor.id === 'deep-agents-skills-python');
   const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-deep-agents-skills-react');
@@ -1333,6 +1354,7 @@ export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
     deepAgentsFilesystemReact,
     deepAgentsSubagentsReact,
     deepAgentsSkillsReact,
+    deepAgentsMemoryReact,
     chatThreadsReact,
     chatTimelineReact,
     chatGenerativeUiReact,

@@ -13,8 +13,18 @@ import {
   type ExactImportBinding,
   type ProviderRegistrationOwner,
 } from './runtime-wiring-audit';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import {
+  existsSync,
+  readFileSync,
+  readdirSync,
+  mkdtempSync,
+  mkdirSync,
+  writeFileSync,
+  rmSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
+import * as ts from 'typescript';
 import { fileURLToPath } from 'node:url';
 
 const cockpitRoot = fileURLToPath(new URL('../../cockpit/', import.meta.url));
@@ -27,7 +37,40 @@ function angularSourceFiles(projectRoot: string): string[] {
       return entry.isFile() && entry.name.endsWith('.ts') ? [entryPath] : [];
     });
 
-  return visit(resolve(projectRoot, 'src'));
+  if (!projectRoot.endsWith('/deep-agents/memory/angular'))
+    return visit(resolve(projectRoot, 'src'));
+  // App excludes remove test roots, but an import makes an excluded file runtime.
+  const configPath = resolve(projectRoot, 'tsconfig.app.json');
+  const config = ts.readConfigFile(configPath, ts.sys.readFile);
+  const parsed = ts.parseJsonConfigFileContent(
+    config.config,
+    ts.sys,
+    projectRoot
+  );
+  if (config.error || parsed.errors.length)
+    throw Error('Invalid Memory app tsconfig');
+  const files = new Set(
+    parsed.fileNames.filter((name) =>
+      name.startsWith(resolve(projectRoot, 'src') + '/')
+    )
+  );
+  for (const name of files) {
+    for (const imported of ts.preProcessFile(
+      readFileSync(name, 'utf8'),
+      true,
+      true
+    ).importedFiles) {
+      const resolved = ts.resolveModuleName(
+        imported.fileName,
+        name,
+        parsed.options,
+        ts.sys
+      ).resolvedModule?.resolvedFileName;
+      if (resolved?.startsWith(resolve(projectRoot, 'src') + '/'))
+        files.add(resolved);
+    }
+  }
+  return [...files];
 }
 
 interface ExpectedRuntimeWiring {
@@ -726,7 +769,8 @@ describe('cockpit capability wiring', () => {
         inspection: inspectRuntimeTargetSource(
           file.source,
           file.relativeFileName,
-          adapter
+          adapter,
+          capability.angularProject
         ),
       }));
       if (expected) {
@@ -764,6 +808,158 @@ describe('cockpit capability wiring', () => {
 
     expect(configurable).toHaveLength(35);
     expect(unmigrated).toEqual([]);
+  });
+
+  it('audits excluded Memory tests when runtime source imports them', () => {
+    const temporary = mkdtempSync(resolve(tmpdir(), 'memory-runtime-audit-'));
+    const root = resolve(temporary, 'deep-agents/memory/angular');
+    try {
+      mkdirSync(resolve(root, 'src'), { recursive: true });
+      writeFileSync(
+        resolve(root, 'tsconfig.app.json'),
+        JSON.stringify({
+          files: ['src/main.ts'],
+          include: ['src/**/*.ts'],
+          exclude: ['src/**/*.spec.ts'],
+        })
+      );
+      writeFileSync(resolve(root, 'src/main.ts'), 'export const app = true;');
+      writeFileSync(
+        resolve(root, 'src/secret.spec.ts'),
+        "export const secret = window.localStorage.getItem('apiKey');"
+      );
+      expect(
+        angularSourceFiles(root).some((name) => name.endsWith('secret.spec.ts'))
+      ).toBe(false);
+      for (const source of [
+        "import { secret } from './secret.spec'; export const app = secret;",
+        "export const app = import('./secret.spec');",
+        "declare function require(path: string): unknown; export const app = require('./secret.spec');",
+      ]) {
+        writeFileSync(resolve(root, 'src/main.ts'), source);
+        const runtime = angularSourceFiles(root);
+        expect(runtime.some((name) => name.endsWith('secret.spec.ts'))).toBe(
+          true
+        );
+        expect(
+          runtime.flatMap((name) =>
+            auditRuntimeTargetSource(readFileSync(name, 'utf8'), name)
+          )
+        ).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({ kind: 'browser-state-read' }),
+          ])
+        );
+      }
+    } finally {
+      rmSync(temporary, { recursive: true, force: true });
+    }
+  });
+
+  it.each(['listener', 'block'])(
+    'rejects a disconnected Memory %s control',
+    (control) => {
+      const scope = readFileSync(
+        resolve(
+          cockpitRoot,
+          'deep-agents/memory/angular/src/app/memory-scope.ts'
+        ),
+        'utf8'
+      );
+      const changed =
+        control === 'listener'
+          ? scope.replace(
+              "addEventListener('storage', onStorage)",
+              "addEventListener('storage', () => {})"
+            )
+          : scope.replace(
+              /const block = \(\) => \{[\s\S]*?\n {2}\};/,
+              'const block = () => {};'
+            );
+      expect(changed).not.toBe(scope);
+      expect(
+        inspectRuntimeTargetSource(
+          changed,
+          'src/app/memory-scope.ts',
+          'langgraph',
+          'cockpit-deep-agents-memory-angular'
+        ).issues
+      ).not.toEqual([]);
+    }
+  );
+
+  it('audits the scoped Memory provider and production browser scope without exempting other projects', () => {
+    const project = 'cockpit-deep-agents-memory-angular';
+    const root = resolve(cockpitRoot, 'deep-agents/memory/angular');
+    const provider = readFileSync(
+      resolve(root, 'src/app/app.config.ts'),
+      'utf8'
+    );
+    const scope = readFileSync(
+      resolve(root, 'src/app/memory-scope.ts'),
+      'utf8'
+    );
+    const inspect = (source: string, path: string, owner = project) =>
+      inspectRuntimeTargetSource(source, path, 'langgraph', owner).issues;
+    expect(inspect(provider, 'src/app/app.config.ts')).toEqual([]);
+    expect(inspect(scope, 'src/app/memory-scope.ts')).toEqual([]);
+    expect(
+      inspect(
+        provider,
+        'src/app/app.config.ts',
+        'cockpit-langgraph-memory-angular'
+      )
+    ).not.toEqual([]);
+    expect(inspect(scope, 'src/app/other.ts')).not.toEqual([]);
+    expect(
+      angularSourceFiles(root).some((name) => name.endsWith('.spec.ts'))
+    ).toBe(false);
+    for (const changed of [
+      provider.replace('const scope =', 'mutate(connection); const scope ='),
+      provider.replace('connection.apiUrl,', "'/unsafe',"),
+      provider.replace('maxRetries: 0', 'maxRetries: 1'),
+      provider.replace('...connection.clientOptions', '...unsafeOptions'),
+      provider.replace(
+        'clientOptions,\n        threadId,',
+        'clientOptions, secret: window.runtimeApiKey,\n        threadId,'
+      ),
+      provider.replace(
+        'import { MemoryScope }',
+        'import { UnsafeScope as MemoryScope }'
+      ),
+      provider.replace('inject, signal', 'inject, signal as unsafeSignal'),
+      provider.replace('transport,', '...unsafeOverrides, transport,'),
+    ])
+      expect(inspect(changed, 'src/app/app.config.ts')).not.toEqual([]);
+    for (const changed of [
+      scope.replace('window.localStorage', 'window.sessionStorage'),
+      scope.replace('  InjectionToken,', '  InjectionToken as UnsafeToken,'),
+      scope + '\nconst InjectionToken = UnsafeToken;',
+      scope.replace('scope.v1', 'runtime-target'),
+      scope.replace('event.key !== SCOPE_KEY', 'false'),
+      scope.replace('event.key !== SCOPE_KEY', 'false') +
+        `
+        function unused() {
+          const onStorage = (event: ScopeEvent) => {
+            if (disposed || (event.storageArea !== null && event.storageArea !== storage) || (event.key !== null && event.key !== SCOPE_KEY)) return;
+            if (event.key === null || event.newValue !== scope) block();
+          };
+        }`,
+      scope.replace("disposed || snapshot.status !== 'ready'", 'disposed'),
+      scope.replace('storage?.getItem(SCOPE_KEY) !== scope', 'false'),
+      scope.replace('storage.getItem(SCOPE_KEY)', "storage.getItem('apiKey')"),
+      scope.replace(
+        'storage?.getItem(SCOPE_KEY)',
+        "storage?.getItem('runtime-target')"
+      ),
+      scope.replace(
+        'window.crypto.randomUUID()',
+        "window.localStorage.getItem('apiKey')"
+      ),
+      scope +
+        "\nexport const unsafe = () => window.localStorage.getItem('runtime-target');",
+    ])
+      expect(inspect(changed, 'src/app/memory-scope.ts')).not.toEqual([]);
   });
 
   it.each([
@@ -2678,7 +2874,6 @@ describe('cockpit capability wiring', () => {
       []
     );
   });
-
 });
 
 it('keeps Skills Angular and React on one canonical shared backend capability', () => {

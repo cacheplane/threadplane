@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "b654abd3dfed6932f364c27d32e219f585f4143e",
+  "baselineHead": "54d9a356b42dbf83c3b6ae5ff8b255a46a8f8f9e",
   "sourceState": {
     "modified": [],
     "untracked": []
@@ -2682,7 +2682,7 @@
       "id": "doc:apps/website/content/docs/deep-agents/capabilities/memory.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/deep-agents/capabilities/memory.mdx",
-      "sha256": "62160da63e594cb423645e708fd260043dc01fe50942507cde4296e13a0890b8"
+      "sha256": "fd2577c6ab090c5fa37c4c7c7bbff4410d1927c49f75699d095184c4038e49c7"
     },
     {
       "id": "doc:apps/website/content/docs/deep-agents/capabilities/planning.mdx",
@@ -2706,7 +2706,7 @@
       "id": "doc:apps/website/content/docs/deep-agents/getting-started/introduction.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/deep-agents/getting-started/introduction.mdx",
-      "sha256": "b03339b9fff465dce25d55c086c655b6206f31789efcf2795fc08d534e6538c2"
+      "sha256": "2096bd5210569850b192236ee732e1e04a747a4f7d77478a7e80bea606437a84"
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/api/fetch-stream-transport.mdx",
@@ -13461,13 +13461,13 @@
       "id": "source:libs/cockpit-registry/src/lib/capability-registry.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "sha256": "94146df9963d3893e36db016aa787c72067ab2c366bfb0b548f5c3e1702cdac6"
+      "sha256": "60edfd2b2f9ae703f395fd43e466eed663fe6898d725ae4282537e0ee1bc3884"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/content-descriptors.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/content-descriptors.ts",
-      "sha256": "eb8710b9ba1d987bade2a95b59c2f31a2697cf291aeaab73cf8ae0c790f750cc"
+      "sha256": "446be6436f7b8d5b614fa36b7fd0c5b3a8248005ef756d0b292d7902424b4911"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/docs-links.ts",

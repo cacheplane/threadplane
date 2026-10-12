@@ -431,6 +431,13 @@ export const createWebsitePlaywrightConfig = (
                   timeout: 180_000,
                 },
                 {
+                  command: 'npx nx run cockpit-deep-agents-memory-python:smoke && node scripts/react-cockpit/serve.mjs deep-agents-memory --no-parent',
+                  cwd: '../..',
+                  url: 'http://127.0.0.1:4632',
+                  reuseExistingServer,
+                  timeout: 180_000,
+                },
+                {
                   command: 'npx nx run cockpit-chat-generative-ui-python:smoke && node scripts/react-cockpit/serve.mjs chat-generative-ui --no-parent',
                   cwd: '../..',
                   url: 'http://127.0.0.1:4627',
