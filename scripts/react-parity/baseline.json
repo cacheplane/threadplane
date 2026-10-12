@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "8a0175a5248f9b9d11075d45e8961a53864907a4",
+  "baselineHead": "b654abd3dfed6932f364c27d32e219f585f4143e",
   "sourceState": {
     "modified": [],
     "untracked": []
@@ -2694,7 +2694,7 @@
       "id": "doc:apps/website/content/docs/deep-agents/capabilities/skills.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/deep-agents/capabilities/skills.mdx",
-      "sha256": "4977c435bd7c84f436cd56062542b07a3b5de69248ead90e2210da58d62f0942"
+      "sha256": "ad260092841e9e00945e92845feed0d64660d3bc0ed9c681f664fc3505e73c1f"
     },
     {
       "id": "doc:apps/website/content/docs/deep-agents/capabilities/subagents.mdx",
@@ -2706,7 +2706,7 @@
       "id": "doc:apps/website/content/docs/deep-agents/getting-started/introduction.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/deep-agents/getting-started/introduction.mdx",
-      "sha256": "a9515a3a1a8b2f1c0eaea972e50e931e2a453ad2ba0221122cdc16e2200f8cb1"
+      "sha256": "b03339b9fff465dce25d55c086c655b6206f31789efcf2795fc08d534e6538c2"
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/api/fetch-stream-transport.mdx",

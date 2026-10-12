@@ -66,6 +66,21 @@ it('confirms tool errors honestly without disabling an otherwise confirmed paren
   expect(x.app.getSnapshot().canSubmit).toBe(true);
   expect(x.app.getSnapshot().reads).toMatchObject([{ kind: 'error' }]);
 });
+it('confirms filtered live private values from the full checkpoint and keeps Send/history/read evidence available', async () => {
+  const x = setup();
+  delete (x.input.snapshot.values as any).skills_metadata;
+  await x.app.submit('Inspect runway.');
+  const view = x.app.getSnapshot();
+  expect(view.canSubmit).toBe(true);
+  expect(view.history).toHaveLength(1);
+  expect(view.index).toMatchObject({ source: 'checkpoint' });
+  expect(view.reads).toMatchObject([{ id: 'read', kind: 'inspected' }]);
+  expect(x.session.load).toHaveBeenCalledTimes(1);
+  await x.app.newConversation();
+  await x.app.selectConversation('thread');
+  expect(x.app.getSnapshot().canSubmit).toBe(true);
+  expect(x.session.submit).toHaveBeenCalledTimes(1);
+});
 it('New preserves known local history and selection freshly reads without model execution', async () => {
   const x = setup();
   await x.app.submit('Inspect runway.');
@@ -442,6 +457,7 @@ it('malformed live state never reaches the display and requires New', async () =
 });
 it('unsupported child state cannot masquerade as confirmed root skill evidence', async () => {
   const x = setup();
+  delete (x.input.snapshot.values as any).skills_metadata;
   x.input.snapshot.subgraphs.push({ id: 'child' } as never);
   x.input.loadedSnapshot.subgraphs.push({ id: 'child' } as never);
   await x.app.submit('Inspect runway.');

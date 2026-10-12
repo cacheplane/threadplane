@@ -7,6 +7,133 @@ import {
 } from './authority';
 import { authorityInput } from './test-fixtures';
 describe('terminal owned Skills authority', () => {
+  function withPrivateErrors() {
+    const input = authorityInput();
+    for (const values of [
+      input.observedState.values,
+      input.history[0].values,
+      input.loadedCheckpoint.values,
+      input.snapshot.values,
+      input.loadedSnapshot.values,
+    ]) {
+      (values as any).skills_load_errors = [
+        { path: '/skills/broken/SKILL.md', error: 'Invalid frontmatter' },
+      ];
+    }
+    return input;
+  }
+  it.each([
+    { keys: [] },
+    { keys: ['skills_metadata'] },
+    { keys: ['skills_load_errors'] },
+    { keys: ['skills_metadata', 'skills_load_errors'] },
+  ])(
+    'confirms only absent live private keys $keys and retains exact checkpoint metadata',
+    ({ keys }) => {
+      const input = withPrivateErrors();
+      for (const key of keys) delete (input.snapshot.values as any)[key];
+      const authority = captureAuthority(input);
+      expect(authority.kind).toBe('terminal');
+      if (authority.kind !== 'terminal')
+        throw Error('Unconfirmed private projection');
+      expect(authority.values).toEqual(input.loadedCheckpoint.values);
+      expect(authority.rawToolStatuses).toEqual({ read: 'success' });
+    }
+  );
+  it.each(['skills_metadata', 'skills_load_errors'])(
+    'rejects conflicting or present undefined private %s',
+    (key) => {
+      for (const value of [[], undefined]) {
+        const input = withPrivateErrors();
+        delete (input.snapshot.values as any)[
+          key === 'skills_metadata' ? 'skills_load_errors' : 'skills_metadata'
+        ];
+        (input.snapshot.values as any)[key] = value;
+        expect(captureAuthority(input).kind).toBe('unconfirmed');
+      }
+    }
+  );
+  it.each(['skills_metadata', 'skills_load_errors'])(
+    'requires loaded private %s even when live omits both',
+    (key) => {
+      for (const remove of [true, false]) {
+        const input = withPrivateErrors();
+        delete (input.snapshot.values as any).skills_metadata;
+        delete (input.snapshot.values as any).skills_load_errors;
+        if (remove) delete (input.loadedSnapshot.values as any)[key];
+        else (input.loadedSnapshot.values as any)[key] = [];
+        expect(captureAuthority(input).kind).toBe('unconfirmed');
+      }
+    }
+  );
+  it('rejects missing/conflicting ordinary keys, nested omissions, unknown extras and nonrecord live values', () => {
+    for (const modify of [
+      (i: any) => {
+        delete i.snapshot.values.files;
+      },
+      (i: any) => {
+        i.snapshot.values.files = { stale: true };
+      },
+      (i: any) => {
+        i.snapshot.values.extra = [];
+      },
+      (i: any) => {
+        i.snapshot.values = structuredClone(i.snapshot.values);
+        delete i.snapshot.values.skills_metadata[0].description;
+      },
+      ...[undefined, null, [], 'invalid'].map((value) => (i: any) => {
+        i.snapshot.values = value;
+      }),
+    ]) {
+      const input = authorityInput();
+      modify(input);
+      expect(captureAuthority(input).kind).toBe('unconfirmed');
+    }
+  });
+  it('does not accept custom metadata when the checkpoint lacks it', () => {
+    const input = authorityInput();
+    for (const values of [
+      input.observedState.values,
+      input.history[0].values,
+      input.loadedCheckpoint.values,
+      input.loadedSnapshot.values,
+    ])
+      delete (values as any).skills_metadata;
+    expect(captureAuthority(input).kind).toBe('unconfirmed');
+    delete (input.snapshot.values as any).skills_metadata;
+    (input.snapshot as any).customEvents = [
+      { name: 'skills_visibility', data: { skills_metadata: ['untrusted'] } },
+    ];
+    const authority = captureAuthority(input);
+    expect(authority.kind).toBe('terminal');
+    if (authority.kind !== 'terminal')
+      throw Error('Unconfirmed ordinary values');
+    expect(Object.hasOwn(authority.values, 'skills_metadata')).toBe(false);
+  });
+  it('keeps transcript, tool, control and ownership gates when live private keys are omitted', () => {
+    for (const modify of [
+      (i: any) => {
+        i.snapshot.messages[3].content = 'Different answer';
+      },
+      (i: any) => {
+        i.snapshot.toolCalls[0].result = 'Different result';
+      },
+      (i: any) => {
+        i.snapshot.interrupts = [{ id: 'interrupt' }];
+      },
+      (i: any) => {
+        i.owner = 'other-owner';
+      },
+      (i: any) => {
+        i.observedState.next.push('pending');
+      },
+    ]) {
+      const input = authorityInput();
+      delete (input.snapshot.values as any).skills_metadata;
+      modify(input);
+      expect(captureAuthority(input).kind).toBe('unconfirmed');
+    }
+  });
   it('confirms current/fresh-history/exact/native-load equality and retains raw success/error', () => {
     expect(captureAuthority(authorityInput())).toMatchObject({
       kind: 'terminal',

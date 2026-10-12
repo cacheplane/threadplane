@@ -17,11 +17,14 @@ read-only at `/skills/` through a `CompositeBackend`; everything else the agent
 writes goes to the thread's own `StateBackend`.
 
 Visibility: `PrivateStateAttr` excludes Skills keys from declared input/output
-schemas. The pinned graph exposes metadata in root values and checkpoints;
-optional load errors can appear when produced, and normal loads can omit them.
+schemas. The local compiled graph exposes metadata in root values and saved
+checkpoints. The observed deployed API stream omits private Skills keys while
+saved checkpoints retain metadata, consistent with output-schema filtering.
+Optional load errors can appear when produced, and normal loads can omit them.
 `SkillsVisibilityMiddleware` always includes both keys in its custom event,
 using an empty-list fallback for load errors;
-this verified Skills contract makes no inference about Memory.
+The custom event is a live index signal, not confirmed-read proof. This Skills
+contract makes no inference about Memory.
 """
 
 from pathlib import Path
@@ -131,11 +134,12 @@ SKILLS_STORE = _seed_skills_store()
 class SkillsVisibilityMiddleware(AgentMiddleware):
     """Republish `skills_metadata` as a `custom` stream event.
 
-    Skills keys are excluded from declared input/output schemas. Root values
-    and checkpoints expose metadata; optional load errors can appear when
-    produced and can be omitted on normal loads. This live event always includes
-    both keys, with an empty-list fallback for load errors. It makes no claim
-    about Memory visibility.
+    Skills keys are excluded from declared input/output schemas. Local compiled
+    root values expose metadata; observed deployed API values omit private keys.
+    Saved checkpoints remain authoritative. Optional load errors can appear when
+    produced and can be omitted on normal loads. This live index event includes
+    both keys, with an empty-list fallback for errors; it does not prove a
+    confirmed read and makes no claim about Memory visibility.
     """
 
     @property

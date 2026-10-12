@@ -33,8 +33,11 @@ const SUGGESTIONS = [
  * The panel displays that index and paths requested through read_file.
  *
  * PrivateStateAttr excludes Skills keys from declared input/output schemas;
- * the pinned graph exposes metadata in root values and checkpoints. Optional
- * load errors can appear when produced and normal loads can omit them. The named
+ * the local compiled graph exposes metadata in root values and checkpoints.
+ * Observed deployed API values omit private Skills keys while saved checkpoints
+ * retain metadata. The named event supplies live index visibility, not proof of
+ * a confirmed read. Optional load errors can appear when produced and normal
+ * loads can omit them. The named
  * custom event always includes both keys, using an empty-list error fallback.
  * The panel prefers that event and falls back to agent.value(). Its checkpoint
  * label identifies that fallback, without proving reopened-thread provenance.

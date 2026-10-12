@@ -17,9 +17,9 @@ Aviation examples use fixed sample data. Only explicit Send creates the owned th
 
 ## Inspect the index and actual reads
 
-The index exposes names, descriptions, virtual instruction paths and optional support annotations from root **skills_metadata**. Declared input/output schema exclusions do not promise privacy: actual root stream values and checkpoints contain metadata. Metadata alone does not establish that instructions were read. Both runway-analysis and weather-brief remain index evidence even when only one has associated reads.
+The index exposes names, descriptions, virtual instruction paths and optional support annotations from root **skills_metadata**. The local compiled graph exposes metadata in root stream values and saved checkpoints. Observed deployed API values omit private Skills keys while saved checkpoints retain metadata, consistent with declared output-schema filtering. Angular uses the custom event for its live index. React reads native root values and, when the public stream omits metadata, the confirmed saved checkpoint. The custom event does not supply React index authority or confirmed-read proof. Metadata alone does not establish that instructions were read. Both runway-analysis and weather-brief remain index evidence even when only one has associated reads.
 
-**Observed root values** identifies live index evidence. **Confirmed checkpoint** requires matching current root state, fresh history head, exact checkpoint and the native transcript/load. Other actual root fields remain part of this authority.
+**Observed root values** identifies live index evidence. **Confirmed checkpoint** requires matching current root state, fresh history head, exact checkpoint and the native transcript/load. Only absent live skills_metadata and skills_load_errors are permitted; present private values and every ordinary root value must agree with the checkpoint. Loaded values must agree fully. Saved checkpoint metadata remains authoritative. This Skills contract makes no inference about Memory visibility.
 
 <ExampleCode file="cockpit/deep-agents/skills/react/src/index-projection.ts" />
 <ExampleCode file="cockpit/deep-agents/skills/react/src/authority.ts" />
