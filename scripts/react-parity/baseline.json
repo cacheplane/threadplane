@@ -1,12 +1,8 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "49d0b92652f290f586b5b8cb3d9c9d9748834531",
+  "baselineHead": "8a0175a5248f9b9d11075d45e8961a53864907a4",
   "sourceState": {
-    "modified": [
-      "apps/website/content/docs/deep-agents/capabilities/subagents.mdx",
-      "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "libs/cockpit-registry/src/lib/content-descriptors.ts"
-    ],
+    "modified": [],
     "untracked": []
   },
   "scope": {
@@ -448,7 +444,7 @@
       "id": "asset:libs/cockpit-registry/project.json",
       "kind": "asset",
       "path": "libs/cockpit-registry/project.json",
-      "sha256": "ed12ce136c1bac914e325a2af8f92eacbb1a63d93aa96ffd752f1e741bd56317"
+      "sha256": "b020b8128d18cdaff16607373387b99044e685fa5fa8b923cf773717ab486d25"
     },
     {
       "id": "asset:libs/cockpit-registry/tsconfig.json",
@@ -2698,7 +2694,7 @@
       "id": "doc:apps/website/content/docs/deep-agents/capabilities/skills.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/deep-agents/capabilities/skills.mdx",
-      "sha256": "108415815e56f3b72b99a0c0204029b7764454c6ad0942804bff8654066fc7ee"
+      "sha256": "4977c435bd7c84f436cd56062542b07a3b5de69248ead90e2210da58d62f0942"
     },
     {
       "id": "doc:apps/website/content/docs/deep-agents/capabilities/subagents.mdx",
@@ -2710,7 +2706,7 @@
       "id": "doc:apps/website/content/docs/deep-agents/getting-started/introduction.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/deep-agents/getting-started/introduction.mdx",
-      "sha256": "dd2c712bf83374b61a2ce10fcf30fdb174cde9e68085a413f0cf73c09b89d372"
+      "sha256": "a9515a3a1a8b2f1c0eaea972e50e931e2a453ad2ba0221122cdc16e2200f8cb1"
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/api/fetch-stream-transport.mdx",
@@ -13465,13 +13461,13 @@
       "id": "source:libs/cockpit-registry/src/lib/capability-registry.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "sha256": "e59447b7d2de74b83b953bb1adb07d8c01a7bb3ea61c7657ff9fab35956f8ee0"
+      "sha256": "94146df9963d3893e36db016aa787c72067ab2c366bfb0b548f5c3e1702cdac6"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/content-descriptors.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/content-descriptors.ts",
-      "sha256": "98d6fae452f3d5919ddb70463703ce34a5d8b09a31f7b73437a11fad0dd0b593"
+      "sha256": "eb8710b9ba1d987bade2a95b59c2f31a2697cf291aeaab73cf8ae0c790f750cc"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/docs-links.ts",

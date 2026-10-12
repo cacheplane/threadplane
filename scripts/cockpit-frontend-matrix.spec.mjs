@@ -57,7 +57,7 @@ test('Generative UI backend changes select both canonical frontends registered b
   assert.deepEqual(selected.map(cap => cap.angular).sort(), ['cockpit-chat-generative-ui-angular', 'cockpit-chat-generative-ui-react']);
   assert.ok(selected.every(cap => cap.python === 'cockpit/chat/generative-ui/python'));
   const frontends = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', 'const module = await import("./libs/cockpit-registry/src/lib/capability-registry.ts"); console.log(JSON.stringify((module.default ?? module).getCockpitFrontends()));'], { cwd: root, encoding: 'utf8', env: { ...process.env, TSX_TSCONFIG_PATH: 'tsconfig.base.json' } }));
-  assert.equal(frontends.length, 72);
+  assert.equal(frontends.length, 73);
   assert.deepEqual(frontends.filter(frontend => frontend.project.startsWith('cockpit-chat-generative-ui-')).map(frontend => frontend.project).sort(), selected.map(cap => cap.angular).sort());
 });
 test('Timeline backend changes select both canonical frontends registered by the website', () => {
@@ -66,7 +66,7 @@ test('Timeline backend changes select both canonical frontends registered by the
   assert.deepEqual(selected.map(cap => cap.angular).sort(), ['cockpit-chat-timeline-angular', 'cockpit-chat-timeline-react']);
   assert.ok(selected.every(cap => cap.python === 'cockpit/chat/timeline/python'));
   const frontends = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', 'const module = await import("./libs/cockpit-registry/src/lib/capability-registry.ts"); console.log(JSON.stringify((module.default ?? module).getCockpitFrontends()));'], { cwd: root, encoding: 'utf8', env: { ...process.env, TSX_TSCONFIG_PATH: 'tsconfig.base.json' } }));
-  assert.equal(frontends.length, 72);
+  assert.equal(frontends.length, 73);
   assert.deepEqual(frontends.filter(frontend => frontend.project.startsWith('cockpit-chat-timeline-')).map(frontend => frontend.project).sort(), selected.map(cap => cap.angular).sort());
 });
 test('Chat Timeline owns an exact native React identity', async () => {
@@ -85,7 +85,7 @@ test('Threads backend changes select both canonical frontends registered by the 
   assert.deepEqual(selected.map(cap => cap.angular).sort(), ['cockpit-chat-threads-angular', 'cockpit-chat-threads-react']);
   assert.ok(selected.every(cap => cap.python === 'cockpit/chat/threads/python'));
   const frontends = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', 'const module = await import("./libs/cockpit-registry/src/lib/capability-registry.ts"); console.log(JSON.stringify((module.default ?? module).getCockpitFrontends()));'], { cwd: root, encoding: 'utf8', env: { ...process.env, TSX_TSCONFIG_PATH: 'tsconfig.base.json' } }));
-  assert.equal(frontends.length, 72);
+  assert.equal(frontends.length, 73);
   assert.deepEqual(frontends.filter(frontend => frontend.project.startsWith('cockpit-chat-threads-')).map(frontend => frontend.project).sort(), selected.map(cap => cap.angular).sort());
 });
 test('Chat Threads owns an exact native React identity', async () => {
@@ -404,7 +404,7 @@ test('CI discovers native React previews across protocols with their own Python 
   const root = mkdtempSync(join(tmpdir(), 'cockpit-react-topics-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   // All writes in this test target this isolated temporary root.
-  for (const topic of ['planning', 'filesystem', 'subagents']) for (const frontend of ['react', 'python']) {
+  for (const topic of ['planning', 'filesystem', 'subagents', 'skills']) for (const frontend of ['react', 'python']) {
     const directory = join(root, 'cockpit/deep-agents', topic, frontend);
     mkdirSync(directory, { recursive: true });
     writeFileSync(join(directory, 'project.json'), JSON.stringify({
@@ -447,7 +447,7 @@ test('CI discovers native React previews across protocols with their own Python 
     );
   }
   const caps = deriveCockpitCaps(root);
-  assert.equal(caps.length, 31);
+  assert.equal(caps.length, 32);
   const agUi = selectCockpitCaps(
     caps,
     new Set(['cockpit-ag-ui-streaming-python']),
@@ -556,3 +556,10 @@ test('native chat generative UI has an exact isolated key and route', async () =
   assert.equal(reactCockpitConfiguration('ag-ui-json-render').port, 4612);
   assert.equal(reactCockpitConfiguration('chat-timeline').port, 4626);
 });
+
+ test('Skills backend changes select exactly both canonical frontends', () => {
+  const root = fileURLToPath(new URL('..', import.meta.url));
+  const selected = selectCockpitCaps(deriveCockpitCaps(root), new Set(['cockpit-deep-agents-skills-python']), { fullFleet: false });
+  assert.deepEqual(selected.map(cap => cap.angular).sort(), ['cockpit-deep-agents-skills-angular', 'cockpit-deep-agents-skills-react']);
+  assert.ok(selected.every(cap => cap.python === 'cockpit/deep-agents/skills/python'));
+ });

@@ -60,7 +60,7 @@ export class App {
 }
 ```
 
-What changes from capability to capability is not the provider and not the component. It is which part of the agent handle each panel reads: `value()` for state keys, `subagents()` for dispatches, `customEvents()` for keys the framework keeps private, `toolCalls()` for what the agent actually opened.
+What changes from capability to capability is not the provider and not the component. It is which part of the agent handle each panel reads: `value()` for state keys, `subagents()` for dispatches, `customEvents()` for application visibility signals, `toolCalls()` for read requests and their results.
 
 ## Three ways a capability reaches the browser
 
@@ -70,9 +70,7 @@ Deep Agents does not publish all five capabilities the same way, and the differe
 
 **Tool calls are already structured.** The subagent `task` tool and the filesystem `read_file` tool arrive as normal tool calls. The subagent tracker recognizes `task` by default, so child agents render as cards with no client configuration at all.
 
-**Private state keys do not stream.** `memory_contents` and `skills_metadata` are annotated `PrivateStateAttr` by their middleware. That annotation keeps them out of the `values` stream by design — they are context for the model, not transcript — and it means a panel bound to `agent.value()` shows nothing while the agent is working. Those keys are written to the checkpoint, so they arrive at settle, but a live panel needs the graph to announce them on a channel the client does receive. The memory and skills pages show the small middleware that does it, and say plainly that it is an application-side shim rather than a framework feature.
-
-That last row is a real constraint of the framework as it stands, not an oversight in the demos. It is stated on both pages it affects.
+**Private schema annotations need a capability-specific contract.** `PrivateStateAttr` excludes annotated keys from declared input and output schemas; it does not establish that every root stream omits them. The pinned Skills graph exposes `skills_metadata` in root values and saved checkpoints. The optional `skills_load_errors` key can appear there when load errors are produced; normal successful loads can omit it. A named application-side custom visibility event always includes both keys, using an empty-list fallback for load errors. Its page describes that verified behavior. Memory is a separate capability: the Skills tests do not establish its `memory_contents` visibility.
 
 ## The demos
 

@@ -19,6 +19,17 @@
       "executor": "nx:run-commands",
       "options": {
         "command": "npx tsx -e \"import { deepAgentsSkillsPythonModule } from './cockpit/deep-agents/skills/python/src/index.ts'; const mod = deepAgentsSkillsPythonModule; if (mod.id !== 'deep-agents-skills-python') throw new Error('Unexpected id: ' + mod.id); if (mod.title !== 'Deep Agents Skills (Python)') throw new Error('Unexpected title: ' + mod.title); console.log(JSON.stringify({ id: mod.id, title: mod.title }));\""
+      },
+      "dependsOn": [
+        "test"
+      ]
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "cwd": "cockpit/deep-agents/skills/python",
+        "command": "uv run --frozen --python 3.12 python -m unittest discover -s tests"
       }
     }
   },

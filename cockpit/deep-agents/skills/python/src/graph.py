@@ -1,12 +1,12 @@
 """Deep Agents skills capability: SKILL.md progressive disclosure.
 
 A skill is a folder with a `SKILL.md` whose YAML frontmatter carries a `name`
-and a `description`. `SkillsMiddleware` loads only that frontmatter into the
-system prompt — a short index the model can scan — and leaves the body on the
+and a `description`. `SkillsMiddleware` loads a name, description, and instruction path into the
+system prompt — a short metadata index the model can scan — and leaves the body on the
 filesystem for the agent to `read_file` when a request actually matches. That
-two-stage load is what "progressive disclosure" means: the instructions cost
-nothing until they are needed, and a reference file inside the skill costs
-nothing until the SKILL.md sends the agent to it.
+two-stage load is what "progressive disclosure" means: instruction bodies
+contribute tokens when needed, and a reference file body is loaded only
+when the SKILL.md sends the agent to it. Index scanning still reads the backend.
 
 Where the skills live matters. They must be readable through a backend, and this
 demo is deployed on a shared public LangGraph deployment, so a host-filesystem
@@ -16,9 +16,12 @@ skills are seeded into a process-local `InMemoryStore` at import and mounted
 read-only at `/skills/` through a `CompositeBackend`; everything else the agent
 writes goes to the thread's own `StateBackend`.
 
-Visibility: `skills_metadata` is annotated `PrivateStateAttr`, so it never
-reaches the `values` stream. `SkillsVisibilityMiddleware` republishes it as a
-`custom` stream event.
+Visibility: `PrivateStateAttr` excludes Skills keys from declared input/output
+schemas. The pinned graph exposes metadata in root values and checkpoints;
+optional load errors can appear when produced, and normal loads can omit them.
+`SkillsVisibilityMiddleware` always includes both keys in its custom event,
+using an empty-list fallback for load errors;
+this verified Skills contract makes no inference about Memory.
 """
 
 from pathlib import Path
@@ -31,6 +34,8 @@ from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 from langgraph.config import get_stream_writer
 from langgraph.store.memory import InMemoryStore
+
+from src.skills_readonly import ReadOnlySkillsBackend
 
 # region skills-constants
 PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
@@ -104,9 +109,8 @@ def lookup_weather(airport: str) -> str:
 def _seed_skills_store() -> InMemoryStore:
     """Load the bundled skill folders into a process-local store.
 
-    Read once at import. The store is never written to at runtime, so the agent
-    sees `/skills/` as a stable read-only mount even though it is served by the
-    same `StoreBackend` machinery as a writable one.
+    Read once at import through a writable backend. Runtime access is mounted
+    through `ReadOnlySkillsBackend`, which denies every mutation entry point.
     """
     store = InMemoryStore()
     backend = StoreBackend(namespace=lambda _runtime: SKILLS_NAMESPACE, store=store)
@@ -127,9 +131,11 @@ SKILLS_STORE = _seed_skills_store()
 class SkillsVisibilityMiddleware(AgentMiddleware):
     """Republish `skills_metadata` as a `custom` stream event.
 
-    Same shim as the memory capability's: the key stays private on the state and
-    is announced alongside it, so a panel can render the loaded skill index
-    while the agent works rather than only once the run settles.
+    Skills keys are excluded from declared input/output schemas. Root values
+    and checkpoints expose metadata; optional load errors can appear when
+    produced and can be omitted on normal loads. This live event always includes
+    both keys, with an empty-list fallback for load errors. It makes no claim
+    about Memory visibility.
     """
 
     @property
@@ -181,7 +187,7 @@ def build_skills_agent():
         backend=CompositeBackend(
             default=StateBackend(),
             routes={
-                SKILLS_ROOT: StoreBackend(
+                SKILLS_ROOT: ReadOnlySkillsBackend(
                     namespace=lambda _runtime: SKILLS_NAMESPACE,
                     store=SKILLS_STORE,
                 ),

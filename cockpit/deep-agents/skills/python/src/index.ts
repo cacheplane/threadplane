@@ -34,6 +34,10 @@ export const deepAgentsSkillsPythonModule: CockpitCapabilityModule = {
   ],
   backendAssetPaths: [
     'cockpit/deep-agents/skills/python/src/graph.py',
+    'cockpit/deep-agents/skills/python/src/skills_readonly.py',
+    'cockpit/deep-agents/skills/python/skills/runway-analysis/SKILL.md',
+    'cockpit/deep-agents/skills/python/skills/runway-analysis/reference/margins.md',
+    'cockpit/deep-agents/skills/python/skills/weather-brief/SKILL.md',
   ],
   runtimeUrl: 'deep-agents/skills',
   devPort: 4314,

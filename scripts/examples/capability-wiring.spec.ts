@@ -2680,3 +2680,17 @@ describe('cockpit capability wiring', () => {
   });
 
 });
+
+it('keeps Skills Angular and React on one canonical shared backend capability', () => {
+  const skills = capabilities.filter(cap => cap.id === 'da-skills');
+  expect(skills).toHaveLength(1);
+  expect(skills[0]).toMatchObject({
+    angularProject: 'cockpit-deep-agents-skills-angular', port: 4314,
+    react: { project: 'cockpit-deep-agents-skills-react', port: 4631 },
+    pythonDir: 'cockpit/deep-agents/skills/python', graphName: 'da-skills', pythonPort: 5314,
+  });
+  const canonical = capabilityModules.find(entry => entry.id === 'deep-agents-skills-python')!;
+  expect(canonical.backendAssetPaths).toEqual(['src/graph.py', 'src/skills_readonly.py', 'skills/runway-analysis/SKILL.md', 'skills/runway-analysis/reference/margins.md', 'skills/weather-brief/SKILL.md'].map(file => `cockpit/deep-agents/skills/python/${file}`));
+  const component = readFileSync(resolve(cockpitRoot, 'deep-agents/skills/angular/src/app/skills.component.ts'), 'utf8');
+  expect(component).toContain('Requested read_file paths, without validating completion or returned content.');
+});
