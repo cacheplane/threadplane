@@ -1,21 +1,21 @@
 ---
 title: Skills
-description: SkillsMiddleware puts only a skill's frontmatter in the system prompt and leaves the body on the backend until a request matches.
+description: SkillsMiddleware puts a skill's name, description, and instruction path in the prompt, leaving its body on the backend until requested.
 ---
 
 # Skills
 
-A skill is a folder with a `SKILL.md` whose YAML frontmatter carries a `name` and a `description`, following the [agentskills.io](https://agentskills.io) specification. `SkillsMiddleware` scans a mount for those folders, and puts only the frontmatter into the system prompt: a short entry per skill giving the name, the description, and the path to read for the full instructions. The body stays on the backend until a request matches. That two-stage load is what progressive disclosure means, and the running example is built to make both stages visible.
+A skill is a folder with a `SKILL.md` whose YAML frontmatter carries a `name` and a `description`, following the [agentskills.io](https://agentskills.io) specification. `SkillsMiddleware` scans a mount for those folders, and puts a short metadata index into the system prompt: a short entry per skill giving the name, the description, and the path to read for the full instructions. The body stays on the backend until a request matches. That two-stage load is what progressive disclosure means, and the running example is built to make both stages visible. Supported metadata can also contain optional license, compatibility, allowed-tools, and arbitrary metadata annotations; the React index displays these when present.
 
 ## What the demo does
 
-The Run tab shows the prebuilt `<chat>` composition beside a panel titled Skill Index, which is empty until a run begins. The welcome suggestion asks whether a mid-size jet can operate out of KASE, and the panel fills in before the answer does: both skills are listed, `runway-analysis` and `weather-brief`, each with its description and a line reading "body not read", because both frontmatter blocks are in the prompt and neither body has been opened.
+The Run tab shows the prebuilt `<chat>` composition beside a panel titled Skill Index, which is empty until a run begins. The welcome suggestion asks whether a mid-size jet can operate out of KASE, and the panel fills in before the answer does: both skills are listed, `runway-analysis` and `weather-brief`, each with its description and a line reading "body not read", because both metadata entries are in the prompt and no read has yet been requested.
 
-Then exactly one skill opens. `runway-analysis` picks up an outline, the path of its `SKILL.md` appears under it, and the path of the margin table that the `SKILL.md` sends the agent to appears a step later. The weather skill stays closed for the whole run. It is in the index so that a different question, the conditions at KSFO for example, has somewhere else to route.
+For the welcome scenario, the agent requests one skill. `runway-analysis` picks up an outline, the path of its `SKILL.md` appears under it, and the path of the margin table that the `SKILL.md` sends the agent to appears a step later. The Angular weather card has no matching requested path in the welcome scenario; this does not establish that its body was absent from all model context. It is in the index so that a different question, the conditions at KSFO for example, has somewhere else to route.
 
 ## How it is built
 
-Three files carry the capability: a Python graph that seeds the skill mount, builds the agent, and republishes the middleware's private state, `skills_metadata` and `skills_load_errors`, an application config, and the Angular component that renders the panel. Open the Code tab to read them in place.
+Both the Angular and React examples share the Python graph and `skills_readonly.py` enforcement module. The graph seeds the skill mount, builds the agent, and announces `skills_metadata` and `skills_load_errors`. Angular renders an index and requested paths; the React preview additionally distinguishes successfully inspected reads from requests, failures, and unavailable evidence. Open the Code tab to read the selected frontend alongside the complete shared backend.
 
 ### The names the graph and the panel agree on
 
@@ -25,7 +25,7 @@ The mount point, the store namespace, and the name of the custom stream event ar
 
 ### A skill on disk
 
-The frontmatter is the part the model sees first, so the `description` is written as a matching rule rather than as a summary, and its `name` must match the directory the file sits in, which is what makes the folder the unit rather than the file. This is the whole of `skills/runway-analysis/SKILL.md`:
+The name, description, and instruction path form the index the model sees first, so the `description` is written as a matching rule rather than as a summary, and its `name` must match the directory the file sits in, which is what makes the folder the unit rather than the file. This is the whole of `skills/runway-analysis/SKILL.md`:
 
 ```markdown
 ---
@@ -57,7 +57,7 @@ Always name the margin you applied. A verdict without the margin is not
 reviewable.
 ```
 
-Step 2 is the second stage of the disclosure: the margin table costs nothing until the `SKILL.md` sends the agent to it.
+Step 2 is the second stage of disclosure: the margin table body is loaded only when requested. Scanning the metadata index itself still requires backend reads.
 
 ### Seeding the skill mount
 
@@ -65,7 +65,9 @@ Step 2 is the second stage of the disclosure: the margin table costs nothing unt
 
 <ExampleCode file="graph.py" region="seed-store" title="graph.py — seeding the store" />
 
-Nothing in the demo writes to the store after import, so `/skills/` stays stable for the whole run, even though the machinery serving it is the same `StoreBackend` a writable mount would use.
+The seed uses a writable `StoreBackend` only at import. Runtime access goes through `ReadOnlySkillsBackend`, which denies writes, edits, and uploads synchronously and asynchronously. This keeps the shared `/skills/` mount stable across threads; the default `StateBackend` remains writable for thread-local notes. Merely asking the model not to write would not enforce this boundary.
+
+<ExampleCode file="skills_readonly.py" />
 
 <Callout type="warning" title="CompositeBackend strips the route prefix">
 Seed the store at `/runway-analysis/SKILL.md`, not `/skills/runway-analysis/SKILL.md`. The composite removes the matched prefix before delegating and re-adds it to the paths it returns, so a store seeded with the prefix surfaces to the agent as `/skills/skills/runway-analysis/...` and the scan finds nothing.
@@ -85,20 +87,20 @@ The middleware appends its own guidance to the system message, including an inst
 You are a dispatcher. Your procedures are not in this prompt — they are skills on
 your filesystem under `/skills/`, and each one is a folder with a `SKILL.md`.
 
-You have been given the name and description of every skill up front. That index
+You have been given the name, description, and instruction path of every skill up front. That index
 is deliberately short. When a request matches a skill, read its `SKILL.md` with
 `read_file` before you start, and follow the procedure it gives you. If the
 `SKILL.md` points at another file, read that too — the numbers in a reference
 file are the authority, and your recollection is not.
 ```
 
-### Announcing the private state keys
+### Announcing Skills metadata
 
-`SkillsMiddleware` declares `skills_metadata` and `skills_load_errors` annotated with `PrivateStateAttr`, so the loaded index is deliberately absent from the agent's declared input and output and never reaches the `values` stream. A panel bound to the settled state alone would therefore stay empty until the run finished. A small middleware announces both keys on a channel the client does receive while the run is going, guarded because `get_stream_writer` raises outside a streaming context.
+`SkillsMiddleware` annotates `skills_metadata` and `skills_load_errors` with `PrivateStateAttr`, excluding them from the declared input and output schemas. That does not hide the keys from every stream: the pinned Skills graph exposes `skills_metadata` in root `values` snapshots and saved checkpoints. The optional `skills_load_errors` key can appear when load errors are produced, and normal successful loads can omit it. `SkillsVisibilityMiddleware` always includes both keys in its named `custom` event, using an empty-list fallback for load errors and guarded because `get_stream_writer` raises outside a streaming context. This application event provides an explicit live signal; it is not proof that root values omit Skills metadata.
 
 <ExampleCode file="graph.py" region="visibility-middleware" title="graph.py — republishing skills_metadata and skills_load_errors" />
 
-This is the same application-side shim the [memory capability](/docs/deep-agents/capabilities/memory) uses, and it is worth naming as such rather than mistaking it for a framework feature.
+This is an application-side visibility event rather than a framework feature. The Skills contracts establish this behavior for the pinned Skills graph; they make no inference about the separate Memory capability.
 
 ### Providing the agent
 
@@ -108,43 +110,43 @@ This is the same application-side shim the [memory capability](/docs/deep-agents
 
 ### Two sources for one index
 
-A custom event is a live signal and is not replayed when a thread is reopened. The thread state is durable but arrives only when the client hydrates it. A panel that wants the index during the run and after a reload reads both.
+A custom event is a live signal and is not replayed when a thread is reopened. Root values can also carry the index during a run, and the saved checkpoint carries it for hydration. The Angular panel prefers the named custom event and otherwise reads `agent.value()`. Its `checkpoint` label identifies that fallback, without proving the value came only from a reopened thread.
 
 <ExampleCode file="skills.component.ts" region="skills-sources" title="skills.component.ts — the two readers" />
 
-`agent.customEvents()` holds the custom events of the current run, cleared when a new run starts, so the live reader walks it newest first and takes the most recent payload under the event name the graph emits, while `agent.value()` is the agent state the adapter projects from the latest checkpoint, which carries the key even though the run stream does not.
+`agent.customEvents()` holds the custom events of the current run, cleared when a new run starts, so the live reader walks it newest first and takes the most recent payload under the event name the graph emits, while `agent.value()` is the agent state the adapter projects from the latest checkpoint, which may include the key from root values or a checkpoint.
 
-### What the agent actually opened
+### Requested paths and successfully inspected reads
 
-The label the panel shows distinguishes the two sources rather than blending them: `live` means the visibility middleware announced the index during this run, and `checkpoint` is what a reopened thread looks like. The other half of the panel needs no shim at all. Reading a skill is a `read_file` call, an ordinary tool call on the runtime-neutral `agent.toolCalls()` Signal, so the paths are already on the client.
+The Angular `live` label means the visibility middleware announced the index; `checkpoint` means the value fallback supplied it. Its path projection reads `read_file` arguments from the runtime-neutral `agent.toolCalls()` Signal. These are requested paths: a failed read can still appear, and the panel does not inspect the result or establish successful body disclosure. The React preview separates requests from successfully inspected matching tool results and exposes failed or unavailable evidence explicitly.
 
 <ExampleCode file="skills.component.ts" region="opened-paths" title="skills.component.ts — the opened paths" />
 
-Each entry of `skills_metadata` carries the `path` of its `SKILL.md`, and everything before the last slash of that path is the skill's directory, so matching the opened paths against that prefix is what attributes a read to a skill and is why the margin table counts as opening `runway-analysis` rather than as an unrelated file read.
+Each metadata entry carries its `SKILL.md` path. Angular derives the directory prefix and attributes requested paths under it to that skill. This prefix match associates the margin-table request with `runway-analysis`; it does not validate returned content. React validates canonical paths and matching successful tool results before marking content inspected.
 
 <ExampleCode file="skills.component.ts" region="skills-projection" title="skills.component.ts — attributing reads to skills" />
 
 ### The panel
 
-The sidebar renders the source label, then one card per skill: the name, the description the model was given, and either the paths read or the words "body not read". An opened card carries `data-opened="true"`, which is what draws the outline.
+The sidebar renders the source label, then one card per skill: the name, the description the model was given, and either the requested paths or the words "body not read". An opened card carries `data-opened="true"`, which is what draws the outline.
 
 <ExampleCode file="skills.component.ts" region="skills-panel" title="skills.component.ts — the skill index panel" />
 
-Rendering both halves in one column is the point, because the index is what the prompt paid for and the read paths are what the request actually cost.
+In Angular, "body not read" means no matching read request was observed. It is not evidence that the body was absent from all model context. In React, read evidence is independent of index authority: archived evidence does not authorize another Send, and body content is shown as inspected only after a successful matching result.
 
 ## The skill that stays closed
 
-The strongest evidence that a skills setup is working is the skill that does not get opened. If every skill's files are read on every request, the index is not routing anything and the descriptions are doing no work. That makes the descriptions, not the procedures, the part to iterate on: they are the only text the model sees before it chooses.
+A useful routing check is that an unrelated skill has no matching read request or successful result in the observed root run. If every skill's files are read on every request, the index is not routing anything and the descriptions are doing no work. That makes the descriptions, not the procedures, the part to iterate on: they guide selection alongside the name and instruction path in the index.
 
 <Callout type="tip" title="Assert the closed skill as well as the open one">
-A test that only checks that `runway-analysis` was read passes just as happily when the agent reads everything. The example's end-to-end test asserts the negative too: `weather-brief` still carries `data-opened="false"` when the run is over.
+The Angular end-to-end test checks both markers: `runway-analysis` has a matching requested path and `weather-brief` carries `data-opened="false"` when the run is over. The negative means no matching weather path request was observed; it does not prove body absence from model context or successful inspection of the selected skill.
 </Callout>
 
 ## What's Next
 
 <CardGroup cols={2}>
   <Card title="Memory" href="/docs/deep-agents/capabilities/memory">
-    The same private-state visibility problem, for `memory_contents`.
+    Explore the separate Memory capability and its own visibility contract.
   </Card>
   <Card title="Filesystem" href="/docs/deep-agents/capabilities/filesystem">
     The backends the skill mount is assembled from, and approval on writes.

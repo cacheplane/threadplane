@@ -522,7 +522,13 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       'cockpit/deep-agents/skills/angular/src/app/skills.component.ts',
       'cockpit/deep-agents/skills/angular/src/app/app.config.ts',
     ],
-    backendAssetPaths: ['cockpit/deep-agents/skills/python/src/graph.py'],
+    backendAssetPaths: [
+      'cockpit/deep-agents/skills/python/src/graph.py',
+      'cockpit/deep-agents/skills/python/src/skills_readonly.py',
+      'cockpit/deep-agents/skills/python/skills/runway-analysis/SKILL.md',
+      'cockpit/deep-agents/skills/python/skills/runway-analysis/reference/margins.md',
+      'cockpit/deep-agents/skills/python/skills/weather-brief/SKILL.md',
+    ],
     runtimeUrl: 'deep-agents/skills',
     devPort: 4314,
   },
@@ -1302,12 +1308,31 @@ const deepAgentsSubagentsReact = (() => {
   });
 })();
 
+const deepAgentsSkillsReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'deep-agents-skills-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-deep-agents-skills-react');
+  if (!canonical || !frontend) throw new Error('Skills frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical,
+    id: 'deep-agents-skills-python-react',
+    frontend: 'react',
+    title: 'Skills (React preview)',
+    codeAssetPaths: [
+      ...['app.tsx', 'application.ts', 'connection.ts', 'authority.ts', 'index-projection.ts', 'read-projection.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/deep-agents/skills/react/src/${file}`),
+      'cockpit/deep-agents/skills/react/project.json',
+    ],
+    runtimeUrl: frontend.runtimePath,
+    devPort: frontend.port,
+  });
+})();
+
 export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
   Object.freeze([
     ...capabilityModules,
     deepAgentsPlanningReact,
     deepAgentsFilesystemReact,
     deepAgentsSubagentsReact,
+    deepAgentsSkillsReact,
     chatThreadsReact,
     chatTimelineReact,
     chatGenerativeUiReact,

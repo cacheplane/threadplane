@@ -429,3 +429,21 @@ describe('registry content descriptors', () => {
     }
   });
 });
+
+it('registers native Skills with the complete shared backend and product-only assets', () => {
+  const canonical = capabilityModules.find(entry => entry.id === 'deep-agents-skills-python');
+  if (!canonical) throw new Error('Missing canonical Skills');
+  const react = getFrontendCapabilityDescriptor(canonical.manifestIdentity as never, 'react');
+  const backend = ['src/graph.py', 'src/skills_readonly.py', 'skills/runway-analysis/SKILL.md', 'skills/runway-analysis/reference/margins.md', 'skills/weather-brief/SKILL.md'].map(file => `cockpit/deep-agents/skills/python/${file}`);
+  expect(canonical.backendAssetPaths).toEqual(backend);
+  expect(deepAgentsSkillsPythonModule.backendAssetPaths).toEqual(backend);
+  expect(react).toMatchObject({ frontend: 'react', runtimeUrl: 'deep-agents/skills/react', devPort: 4631, backendAssetPaths: backend, promptAssetPaths: canonical.promptAssetPaths });
+  expect(react?.codeAssetPaths).toEqual([...['app.tsx', 'application.ts', 'connection.ts', 'authority.ts', 'index-projection.ts', 'read-projection.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/deep-agents/skills/react/src/${file}`), 'cockpit/deep-agents/skills/react/project.json']);
+  expect(Object.isFrozen(react)).toBe(true);
+  expect(Object.isFrozen(react?.codeAssetPaths)).toBe(true);
+  expect(getFrontendCapabilityDescriptor(canonical.manifestIdentity as never, 'angular')).toBe(canonical);
+  for (const path of [...(react?.codeAssetPaths ?? []), ...(react?.backendAssetPaths ?? [])]) {
+    expect(path).not.toMatch(/fixture|wire\.py|\.spec\.|proof/);
+    expect(existsSync(new URL('../../../../' + path, import.meta.url))).toBe(true);
+  }
+});

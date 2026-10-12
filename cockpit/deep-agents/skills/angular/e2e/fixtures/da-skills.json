@@ -52,7 +52,7 @@
         "turnIndex": 4
       },
       "response": {
-        "content": "A mid-size jet requires 10,057 ft of runway at KASE (Aspen), but the longest available is only 8,006 ft. \n\nMargin applied: mid-size jet, 4,800 ft sea-level balanced field, 14% penalty per 1,000 ft elevation. Verdict: The runway is not long enough for a mid-size jet at this elevation. (Used: runway-analysis skill)"
+        "content": "A mid-size jet requires 10,055 ft of runway at KASE (Aspen), but the longest available is only 8,006 ft. \n\nMargin applied: mid-size jet, 4,800 ft sea-level balanced field, 14% penalty per 1,000 ft elevation. Verdict: The runway is not long enough for a mid-size jet at this elevation. (Used: runway-analysis skill)"
       }
     },
     {

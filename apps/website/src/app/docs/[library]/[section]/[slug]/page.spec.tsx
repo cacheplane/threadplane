@@ -33,6 +33,18 @@ import { ReactTimeTravelPreview } from '../../../../../components/docs/ReactTime
 import { WebsiteWorkspace } from '../../../../../components/workspace/WebsiteWorkspace';
 import DocsPage, { generateMetadata } from './page';
 
+it('selects Skills-specific native React Docs and exact sources while retaining Angular Docs', async () => {
+  const tree = await route('deep-agents', 'capabilities', 'skills');
+  const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
+  const article = workspace?.props.reactDocsSlot as React.ReactElement<ElementProps> | undefined;
+  expect(article).toBeTruthy();
+  expect((article?.type as { name?: string })?.name).toBe('ReactDeepAgentsSkillsPreview');
+  expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/deep-agents/skills/react/src/read-projection.ts');
+  expect(article?.props.exampleCode?.sources?.['cockpit/deep-agents/skills/react/src/authority.ts']).toContain('checkpoint');
+  const angular = findElement(workspace?.props.docsSlot, MdxRenderer as ComponentType<never>);
+  expect(angular?.props.exampleCode?.assetPaths.some(path => path.includes('/skills/angular/'))).toBe(true);
+  expect(article?.props.exampleCode?.assetPaths.some(path => /fixture|wire\.py|\.spec\.|proof/.test(path))).toBe(false);
+});
 it('selects Subagents-specific native React Docs and exact sources while retaining Angular Docs', async () => {
   const tree = await route('deep-agents', 'capabilities', 'subagents');
   const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);

@@ -11,9 +11,9 @@ interface SkillEntry {
   name: string;
   description: string;
   path: string;
-  /** Directory the skill lives in, used to match files the agent opened. */
+  /** Directory prefix used to attribute requested file paths. */
   root: string;
-  /** Files under this skill the agent has read during the run. */
+  /** Requested paths under this skill; results are not inspected here. */
   opened: string[];
 }
 
@@ -29,19 +29,20 @@ const SUGGESTIONS = [
 /**
  * SkillsComponent shows progressive disclosure happening.
  *
- * `SkillsMiddleware` loads only each SKILL.md's frontmatter — a name and a
- * description — into the system prompt. The body stays on the filesystem until
- * a request matches, and a reference file inside the skill stays unread until
- * the SKILL.md sends the agent to it. The panel therefore has two halves: the
- * index the model was given up front, and the files it actually opened.
+ * SkillsMiddleware puts name, description, and instruction path in the prompt.
+ * The panel displays that index and paths requested through read_file.
  *
- * The index is not on the `values` stream: `skills_metadata` is annotated
- * `PrivateStateAttr`. The graph republishes it as a `custom` stream event, and
- * the checkpoint carries it for a reopened thread — the same two-source pattern
- * as the memory capability.
+ * PrivateStateAttr excludes Skills keys from declared input/output schemas;
+ * the pinned graph exposes metadata in root values and checkpoints. Optional
+ * load errors can appear when produced and normal loads can omit them. The named
+ * custom event always includes both keys, using an empty-list error fallback.
+ * The panel prefers that event and falls back to agent.value(). Its checkpoint
+ * label identifies that fallback, without proving reopened-thread provenance.
  *
- * The opened files come from the ordinary tool-call stream, because `read_file`
- * is not private at all.
+ * Path attribution uses arguments only and does not inspect successful results.
+ * A failed read can appear; body not read means no matching request was observed.
+ * The React preview separately validates inspected reads. No Memory visibility
+ * behavior is inferred from this Skills contract.
  */
 @Component({
   selector: 'app-skills',
@@ -212,7 +213,7 @@ export class SkillsComponent {
   // #endregion
 
   // #region opened-paths
-  /** Absolute paths the agent has read with `read_file` during this run. */
+  /** Requested read_file paths, without validating completion or returned content. */
   private readonly openedPaths = computed<string[]>(() => {
     const paths: string[] = [];
     for (const call of this.agent.toolCalls()) {
