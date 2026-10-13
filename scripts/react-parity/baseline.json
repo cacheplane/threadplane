@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "54d9a356b42dbf83c3b6ae5ff8b255a46a8f8f9e",
+  "baselineHead": "d618a6fc26c4d36129b3f25ef2ea63dec10cb886",
   "sourceState": {
     "modified": [],
     "untracked": []
@@ -2148,7 +2148,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "aaa0cda27d8b4074673bca49a24e5c42e81af7200d9e482c4f2e89a9f2a998bb"
+      "sha256": "545dbf75ff9bcb3a2c8d4035da22c377aa13c20fb025345573846baef2c19233"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -11964,6 +11964,18 @@
       "sha256": "0bf7b2198b9d7cf7f36fcdf9efeaa9cbcc68fe87916dd40eb6a18936e71a6eef"
     },
     {
+      "id": "source:libs/ag-ui/src/runtime/client-tool-ledger.ts",
+      "kind": "source",
+      "path": "libs/ag-ui/src/runtime/client-tool-ledger.ts",
+      "sha256": "8578a2c73d4dec64720c49df8dfc23338a9c107535f7b55b1a46ac7695ce7c27"
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/client-tools.ts",
+      "kind": "source",
+      "path": "libs/ag-ui/src/runtime/client-tools.ts",
+      "sha256": "d667209f2c36742d645efd01072342bc31755b51cc85a0b0dc74e07dd6540bd4"
+    },
+    {
       "id": "source:libs/ag-ui/src/runtime/create-http-request.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/create-http-request.ts",
@@ -11973,13 +11985,13 @@
       "id": "source:libs/ag-ui/src/runtime/create-run.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/create-run.ts",
-      "sha256": "ee7a3397587f3f469d8d6fc89c08fe30e35c9bf28082e7cc58e058e27295cd2b"
+      "sha256": "33808703aabc66b6cafd880916037cc0e3bd3d2844476d40bb92130ddad87a1a"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/create-session.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/create-session.ts",
-      "sha256": "76d493ff7eccd6f27503aed42e0282dff8d94862166fb5276cce8efcf804ca98"
+      "sha256": "a4e1b2004de27cbccf3f775d1d5c00da0b85aa153a5ef21209a53f61ffcf4485"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/decision.ts",
