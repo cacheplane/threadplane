@@ -1149,6 +1149,22 @@ const agUiToolViewsReact = (() => {
   });
 })();
 
+const agUiClientToolsReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'ag-ui-client-tools-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-ag-ui-client-tools-react');
+  if (!canonical || !frontend) throw new Error('AG-UI Client Tools frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical, id: 'ag-ui-client-tools-python-react', frontend: 'react',
+    title: 'AG-UI Client Tools (React preview)',
+    codeAssetPaths: [
+      ...['app.tsx', 'tools.ts', 'application.ts', 'projection.ts', 'weather-card.tsx', 'confirm-booking.tsx', 'connection.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/ag-ui/client-tools/react/src/${file}`),
+      'cockpit/ag-ui/client-tools/react/project.json',
+      ...canonical.promptAssetPaths,
+    ],
+    runtimeUrl: frontend.runtimePath, devPort: frontend.port,
+  });
+})();
+
 const agUiJsonRenderReact = (() => {
   const canonical=capabilityModules.find(descriptor=>descriptor.id==='ag-ui-json-render-python');
   const frontend=getCockpitFrontends().find(entry=>entry.project==='cockpit-ag-ui-json-render-react');
@@ -1366,6 +1382,7 @@ export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
     agUiStreamingReact,
     agUiInterruptsReact,
     agUiToolViewsReact,
+    agUiClientToolsReact,
     agUiJsonRenderReact,
     agUiSubagentsReact,
     renderSpecReact,

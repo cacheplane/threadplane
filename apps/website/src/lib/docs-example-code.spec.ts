@@ -273,3 +273,19 @@ it('loads every bundled Skills Markdown asset as literal code for both frontends
     }
   }
 });
+
+it('renders every native AG-UI Client Tools include from exact registered source bytes', async () => {
+  const page = await getWebsiteWorkspacePage({ docsPath: '/docs/ag-ui/guides/client-tools', title: 'Client Tools' });
+  const react = page.frontendVariants?.react;
+  if (!react) throw new Error('Missing native AG-UI Client Tools variant');
+  const context = getExampleCodeContext(react);
+  if (!context) throw new Error('Missing native AG-UI Client Tools source context');
+  const article = readFileSync(join(WORKSPACE_ROOT, 'apps/website/src/components/docs/ReactAgUiClientToolsPreview.tsx'), 'utf8');
+  const includes = includesIn(article);
+  expect(includes).toHaveLength(11);
+  for (const include of includes) {
+    const asset = resolveExampleFile(include.file, context);
+    expect(context.sources[asset]).toBe(readFileSync(join(WORKSPACE_ROOT, asset), 'utf8'));
+    expect(asset).not.toMatch(/fixture|scripted|\.spec\.|type-test/);
+  }
+});

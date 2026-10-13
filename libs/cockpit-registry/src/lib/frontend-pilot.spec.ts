@@ -267,8 +267,8 @@ describe('registered React public previews', () => {
     expect(react?.backendAssetPaths).toEqual(['graph.py','dashboard_tools.py','server.py'].map(file=>`cockpit/ag-ui/json-render/python/src/${file}`));
     expect(getFrontendCapabilityDescriptor(identity,'angular')?.runtimeUrl).toBe('ag-ui/json-render');
     expect(getFrontendCapabilityDescriptor({...identity,topic:'testing'},'react')).toBeUndefined();
-    expect(getCockpitFrontends().filter(frontend=>frontend.frontend==='react')).toHaveLength(33);
-    expect(getCockpitFrontends()).toHaveLength(74);
+    expect(getCockpitFrontends().filter(frontend=>frontend.frontend==='react')).toHaveLength(34);
+    expect(getCockpitFrontends()).toHaveLength(75);
     for(const asset of [...(react?.codeAssetPaths??[]),...(react?.backendAssetPaths??[])])expect(existsSync(new URL('../../../../'+asset,import.meta.url))).toBe(true);
   });
   it('resolves AG-UI Tool Views with authored weather policy and unchanged server-tool endpoint', () => {
@@ -297,9 +297,9 @@ describe('registered React public previews', () => {
     expect(getFrontendCapabilityDescriptor(identity, 'angular')?.runtimeUrl).toBe('ag-ui/interrupts');
     expect(getFrontendCapabilityDescriptor({ ...identity, product: 'langgraph' }, 'react')?.runtimeUrl).toBe('langgraph/interrupts/react');
     const frontends = getCockpitFrontends();
-    expect(frontends.filter(frontend => frontend.frontend === 'react')).toHaveLength(33);
-    expect(frontends).toHaveLength(74);
-    expect(new Set(frontends.map(frontend => frontend.project)).size).toBe(74);
+    expect(frontends.filter(frontend => frontend.frontend === 'react')).toHaveLength(34);
+    expect(frontends).toHaveLength(75);
+    expect(new Set(frontends.map(frontend => frontend.project)).size).toBe(75);
     for (const asset of [...(react?.codeAssetPaths ?? []), ...(react?.backendAssetPaths ?? [])])
       expect(existsSync(new URL('../../../../' + asset, import.meta.url))).toBe(true);
   });
@@ -314,8 +314,8 @@ describe('registered React public previews', () => {
     expect(react?.backendAssetPaths).toContain('cockpit/ag-ui/streaming/python/src/server.py');
     expect(getFrontendCapabilityDescriptor(identity,'angular')?.runtimeUrl).toBe('ag-ui/streaming');
     expect(getFrontendCapabilityDescriptor(streaming,'react')?.runtimeUrl).toBe('langgraph/streaming/react');
-    expect(getCockpitFrontends().filter(x=>x.frontend==='react')).toHaveLength(33);
-    expect(getCockpitFrontends()).toHaveLength(74);
+    expect(getCockpitFrontends().filter(x=>x.frontend==='react')).toHaveLength(34);
+    expect(getCockpitFrontends()).toHaveLength(75);
   });
   it('maps the canonical Deployment guide to the exact Deployment Runtime React sources', () => {
     const identity = { ...streaming, topic: 'deployment-runtime' };
@@ -343,8 +343,8 @@ describe('registered React public previews', () => {
     ).toBe('langgraph/deployment-runtime');
     expect(
       getCockpitFrontends().filter((frontend) => frontend.frontend === 'react')
-    ).toHaveLength(33);
-    expect(getCockpitFrontends()).toHaveLength(74);
+    ).toHaveLength(34);
+    expect(getCockpitFrontends()).toHaveLength(75);
   });
   it('resolves Time Travel with exact owner, checkpoint eligibility and canonical identity sources', () => {
     const identity = { ...streaming, topic: 'time-travel' };
@@ -604,11 +604,11 @@ describe('registered React public previews', () => {
 
   it('enumerates deployable frontend identities with distinct paths and projects', () => {
     const frontends = getCockpitFrontends();
-    expect(frontends).toHaveLength(74);
-    expect(new Set(frontends.map((entry) => entry.runtimePath)).size).toBe(74);
-    expect(new Set(frontends.map((entry) => entry.project)).size).toBe(74);
-    expect(new Set(frontends.map((entry) => entry.port)).size).toBe(74);
-    expect(new Set(frontends.map((entry) => entry.buildOutput)).size).toBe(74);
+    expect(frontends).toHaveLength(75);
+    expect(new Set(frontends.map((entry) => entry.runtimePath)).size).toBe(75);
+    expect(new Set(frontends.map((entry) => entry.project)).size).toBe(75);
+    expect(new Set(frontends.map((entry) => entry.port)).size).toBe(75);
+    expect(new Set(frontends.map((entry) => entry.buildOutput)).size).toBe(75);
     expect(
       frontends.find(
         (entry) => entry.project === 'cockpit-langgraph-memory-react'
@@ -638,4 +638,22 @@ describe('registered React public previews', () => {
       }
     );
   });
+});
+
+ it('resolves AG-UI Client Tools React from one native backend while retaining Angular default', () => {
+  const canonical = capabilityModules.find(entry => entry.id === 'ag-ui-client-tools-python');
+  if (!canonical) throw Error('Missing canonical AG-UI Client Tools');
+  const react = getFrontendCapabilityDescriptor(canonical.manifestIdentity as CockpitManifestIdentity, 'react');
+  expect(react).toMatchObject({ id: 'ag-ui-client-tools-python-react', frontend: 'react', runtimeAdapter: 'ag-ui', runtimeUrl: 'ag-ui/client-tools/react', devPort: 4640, docsPath: '/docs/ag-ui/guides/client-tools', backendAssetPaths: canonical.backendAssetPaths, promptAssetPaths: canonical.promptAssetPaths });
+  expect(react?.codeAssetPaths).toEqual([
+    ...['app.tsx', 'tools.ts', 'application.ts', 'projection.ts', 'weather-card.tsx', 'confirm-booking.tsx', 'connection.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/ag-ui/client-tools/react/src/${file}`),
+    'cockpit/ag-ui/client-tools/react/project.json',
+    'cockpit/ag-ui/client-tools/python/prompts/client-tools.md',
+  ]);
+  for (const asset of react?.codeAssetPaths ?? []) expect(existsSync(new URL('../../../../'+asset, import.meta.url))).toBe(true);
+  expect(getFrontendCapabilityDescriptor(canonical.manifestIdentity as CockpitManifestIdentity, 'angular')).toBe(canonical);
+  expect(getCockpitFrontends().filter(entry => entry.product === 'ag-ui' && entry.topic === 'client-tools')).toEqual([
+    { frontend: 'angular', project: 'cockpit-ag-ui-client-tools-angular', port: 4325, product: 'ag-ui', topic: 'client-tools', runtimePath: 'ag-ui/client-tools', buildOutput: 'dist/cockpit/ag-ui/client-tools/angular' },
+    { frontend: 'react', project: 'cockpit-ag-ui-client-tools-react', port: 4640, product: 'ag-ui', topic: 'client-tools', runtimePath: 'ag-ui/client-tools/react', buildOutput: 'dist/cockpit/ag-ui/client-tools/react' },
+  ]);
 });

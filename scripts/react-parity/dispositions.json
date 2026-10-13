@@ -10831,8 +10831,9 @@
         "T34"
       ],
       "treatment": "internal",
-      "status": "planned",
-      "reason": "Private cockpit, example, or test infrastructure; adapt for React scenarios without adding a public package API."
+      "status": "in-progress",
+      "reason": "Private cockpit, example, or test infrastructure; adapt for React scenarios without adding a public package API.",
+      "note": "Bounded AG-UI Client Tools private React source-build preview registered with canonical Angular default and shared backend; broader parity and public release remain open."
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/content-descriptors.ts",
@@ -10841,8 +10842,9 @@
         "T34"
       ],
       "treatment": "internal",
-      "status": "planned",
-      "reason": "Private cockpit, example, or test infrastructure; adapt for React scenarios without adding a public package API."
+      "status": "in-progress",
+      "reason": "Private cockpit, example, or test infrastructure; adapt for React scenarios without adding a public package API.",
+      "note": "Bounded AG-UI Client Tools private React source-build preview registered with canonical Angular default and shared backend; broader parity and public release remain open."
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/docs-links.ts",
@@ -12890,8 +12892,9 @@
         "T34"
       ],
       "treatment": "internal",
-      "status": "planned",
-      "reason": "Private cockpit, example, or test infrastructure; adapt for React scenarios without adding a public package API."
+      "status": "in-progress",
+      "reason": "Private cockpit, example, or test infrastructure; adapt for React scenarios without adding a public package API.",
+      "note": "Stable path deduplication admits canonical prompt includes without duplicate Code tree rows or tabs; broader workspace migration remains open."
     },
     {
       "id": "source:libs/workspace-react/src/lib/components/code-mode/file-tree.tsx",

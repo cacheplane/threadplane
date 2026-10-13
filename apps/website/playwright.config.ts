@@ -64,7 +64,7 @@ export const createWebsitePlaywrightConfig = (
     ? [...modeIgnores]
     : [...new Set([...modeIgnores, ...fixtureDrivenSpecs])];
 
-  return defineConfig({
+  const config = defineConfig({
     testDir: './e2e',
     testMatch: bfcacheRuntimeTest
       ? '**/custom-runtime-bfcache.spec.ts'
@@ -181,6 +181,12 @@ export const createWebsitePlaywrightConfig = (
                   command: 'npx nx run cockpit-ag-ui-tool-views-angular:serve:cockpit --port 4322',
                   cwd: '../..',
                   url: 'http://localhost:4322',
+                  reuseExistingServer,
+                },
+                {
+                  command: 'npx nx run cockpit-ag-ui-client-tools-angular:serve:cockpit --port 4325',
+                  cwd: '../..',
+                  url: 'http://localhost:4325',
                   reuseExistingServer,
                 },
                 {
@@ -316,6 +322,14 @@ export const createWebsitePlaywrightConfig = (
                   cwd: '../..',
                   url: 'http://127.0.0.1:4611',
                   reuseExistingServer,
+                  timeout: 180_000,
+                },
+                {
+                  command: 'node scripts/react-cockpit/prepare-ag-ui-client-tools-fixture.mjs --serve',
+                  cwd: '../..',
+                  url: 'http://127.0.0.1:4640',
+                  // A reused listener cannot establish canonical worker ownership.
+                  reuseExistingServer: false,
                   timeout: 180_000,
                 },
                 {
@@ -470,6 +484,15 @@ export const createWebsitePlaywrightConfig = (
         ]
       : undefined,
   });
+  if (environment['WEBSITE_E2E_REACT_TOPIC'] === 'ag-ui-client-tools') {
+    config.testMatch = '**/react-ag-ui-client-tools-preview.spec.ts';
+    if (Array.isArray(config.webServer)) {
+      config.webServer = config.webServer.filter(server =>
+        [localURL, 'http://localhost:4325', 'http://127.0.0.1:4640'].includes(server.url ?? '')
+      );
+    }
+  }
+  return config;
 };
 
 export default createWebsitePlaywrightConfig();

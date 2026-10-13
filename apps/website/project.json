@@ -13,7 +13,9 @@
     "cockpit-ag-ui-json-render-angular",
     "cockpit-ag-ui-subagents-angular",
     "cockpit-chat-threads-angular",
-    "cockpit-render-computed-functions-angular"
+    "cockpit-render-computed-functions-angular",
+    "cockpit-ag-ui-client-tools-react",
+    "cockpit-ag-ui-client-tools-angular"
   ],
   "tags": ["scope:website", "scope:website-e2e", "type:app"],
   "targets": {
@@ -107,7 +109,8 @@
             "cockpit-deep-agents-filesystem-react",
             "cockpit-deep-agents-subagents-react",
             "cockpit-deep-agents-skills-react",
-            "cockpit-deep-agents-memory-react"
+            "cockpit-deep-agents-memory-react",
+            "cockpit-ag-ui-client-tools-react"
           ]
         }
       ],

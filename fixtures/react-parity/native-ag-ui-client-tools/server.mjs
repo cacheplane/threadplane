@@ -86,11 +86,17 @@ export async function createClientToolsServer({
   root = defaultRoot,
   mode = 'nonstream',
   holdTerminal = false,
+  scenario,
+  holdAfterRequest = 0,
+  holdReceipt = false,
   environment = process.env.THREADPLANE_AG_UI_FIXTURE_ENVIRONMENT ??
     '/tmp/threadplane-agui-client-tools-native-fixture-env',
 } = {}) {
   root = realpathSync(root);
   assert.ok(['nonstream', 'stream', 'unknown'].includes(mode));
+  assert.ok(scenario === undefined || scenario === 'cockpit');
+  assert.equal(typeof holdReceipt, 'boolean');
+  assert.ok(Number.isSafeInteger(holdAfterRequest) && holdAfterRequest >= 0 && holdAfterRequest < 12);
   const env = Object.fromEntries(
     Object.entries(process.env).filter(
       ([key]) => !/(?:API_KEY|TOKEN|SECRET|LANGSMITH|LANGCHAIN)/i.test(key)
@@ -117,6 +123,7 @@ export async function createClientToolsServer({
       'python',
       worker,
       mode,
+      ...(scenario ? [scenario] : []),
     ],
     { cwd: root, env, stdio: ['pipe', 'pipe', 'pipe'], detached: true }
   );
@@ -142,7 +149,7 @@ export async function createClientToolsServer({
     stdinClosed: false,
   };
   const stats = () =>
-    structuredClone({ ready, requests: records, errors, stderr, closure });
+    structuredClone({ ready, requests: records, errors, stderr, closure, ownership: { spawnedPid: child.pid, port, processes: [...ownedProcesses.values()] } });
   const fail = (error) => {
     errors.push(String(error));
     for (const pending of waiting.splice(0)) pending.reject(error);
@@ -211,9 +218,10 @@ export async function createClientToolsServer({
       if (request.method === 'POST' && request.url === '/release') {
         for (const record of records)
           if (record.held && !record.closed) {
-            record.response.write(
-              `data: ${JSON.stringify(record.events.at(-1))}\n\n`
-            );
+            for (const event of record.heldEvents) {
+              record.response.write(`data: ${JSON.stringify(event)}\n\n`);
+              record.sentEvents.push(event);
+            }
             record.response.end();
             record.held = false;
           }
@@ -226,7 +234,7 @@ export async function createClientToolsServer({
         'bounded sequential requests'
       );
       active = true;
-      const record = { closed: false, events: [], held: false };
+      const record = { closed: false, events: [], sentEvents: [], heldEvents: [], held: false };
       records.push(record);
       // The response itself is non-enumerable: stats retain only independent evidence.
       Object.defineProperty(record, 'response', { value: response });
@@ -250,12 +258,17 @@ export async function createClientToolsServer({
         'content-type': 'text/event-stream',
         'cache-control': 'no-store',
       });
-      record.held = holdTerminal;
-      const events = holdTerminal ? output.events.slice(0, -1) : output.events;
+      record.held = holdTerminal && records.length > holdAfterRequest;
+      const receiptAt = holdReceipt ? output.events.findLastIndex((event) => event.type === 'MESSAGES_SNAPSHOT') : -1;
+      const heldAt = record.held ? (receiptAt >= 0 ? receiptAt : output.events.length - 1) : output.events.length;
+      record.heldEvents = output.events.slice(heldAt);
+      const events = output.events.slice(0, heldAt);
       for (const event of events)
-        if (!response.destroyed)
+        if (!response.destroyed) {
           response.write(`data: ${JSON.stringify(event)}\n\n`);
-      if (!holdTerminal) response.end();
+          record.sentEvents.push(event);
+        }
+      if (!record.held) response.end();
     } catch (error) {
       errors.push(String(error));
       if (!response.headersSent) json(422, { error: String(error) });
@@ -355,6 +368,8 @@ export async function createClientToolsServer({
     }
     ownedGroupMembers(inventory, child.pid, ownedProcesses);
     assert.equal(ready.mode, mode);
+    assert.equal(ready.scenario, scenario ?? null);
+    assert.equal(realpathSync(ready.environment), realpathSync(environment));
     assert.match(ready.python, /^3\.12\./);
     assert.equal(ready.versions['ag-ui-langgraph'], '0.0.45');
     assert.equal(ready.versions['ag-ui-protocol'], '1.0.0');

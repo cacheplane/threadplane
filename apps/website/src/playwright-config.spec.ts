@@ -12,8 +12,8 @@ describe('Website Playwright configuration', () => {
     const prerequisites = project.targets.e2e.dependsOn?.find(
       (dependency: { target?: string }) => dependency.target === 'build'
     )?.projects ?? [];
-    expect(prerequisites).toHaveLength(33);
-    expect(new Set(prerequisites).size).toBe(33);
+    expect(prerequisites).toHaveLength(34);
+    expect(new Set(prerequisites).size).toBe(34);
     expect([...prerequisites].sort()).toEqual(
       getCockpitFrontends()
         .filter(frontend => frontend.frontend === 'react')
@@ -59,19 +59,19 @@ describe('Website Playwright configuration', () => {
     const project = JSON.parse(readFileSync(resolve(import.meta.dirname,'../project.json'),'utf8'));
     expect(project.implicitDependencies).toContain('cockpit-ag-ui-tool-views-angular');
   });
-  it('starts thirty-three owned React servers after exact fresh Nx prerequisites', () => {
+  it('starts thirty-four owned React servers after exact fresh Nx prerequisites', () => {
     const config = createWebsitePlaywrightConfig({ CI: 'true' });
     const servers = Array.isArray(config.webServer) ? config.webServer : [];
-    const reactServers = servers.filter(server => /^http:\/\/127\.0\.0\.1:46(?:0\d|1[0123456789]|2[0123456789]|3[012])$/.test(server.url ?? ''));
-    expect(reactServers).toHaveLength(33);
+    const reactServers = servers.filter(server => /^http:\/\/127\.0\.0\.1:46(?:0\d|1[0123456789]|2[0123456789]|3[012]|40)$/.test(server.url ?? ''));
+    expect(reactServers).toHaveLength(34);
     expect(reactServers.every(server => server.reuseExistingServer === false)).toBe(true);
     expect(reactServers.find(server => server.url === 'http://127.0.0.1:4610')?.command).toBe('node scripts/react-cockpit/serve.mjs ag-ui-interrupts --no-parent');
     const project = JSON.parse(readFileSync(resolve(import.meta.dirname, '../project.json'), 'utf8'));
     const projects = project.targets.e2e.dependsOn.find(
       (dependency: { target?: string }) => dependency.target === 'build'
     ).projects;
-    expect(projects).toHaveLength(33);
-    expect(new Set(projects).size).toBe(33);
+    expect(projects).toHaveLength(34);
+    expect(new Set(projects).size).toBe(34);
     expect(projects).toContain('cockpit-render-state-management-react');
     expect(projects).toContain('cockpit-render-repeat-loops-react');
     expect(projects).toContain('cockpit-render-registry-react');
@@ -298,6 +298,7 @@ describe('Website Playwright configuration', () => {
         command: 'npx nx run cockpit-ag-ui-tool-views-angular:serve:cockpit --port 4322',
         url: 'http://localhost:4322',
       }),
+      expect.objectContaining({command:'npx nx run cockpit-ag-ui-client-tools-angular:serve:cockpit --port 4325',url:'http://localhost:4325'}),
       expect.objectContaining({
         command:'npx nx run cockpit-ag-ui-json-render-angular:serve:cockpit --port 4323',
         url:'http://localhost:4323',
@@ -368,6 +369,7 @@ describe('Website Playwright configuration', () => {
         command: 'node scripts/react-cockpit/serve.mjs ag-ui-tool-views --no-parent',
         url: 'http://127.0.0.1:4611',
       }),
+      expect.objectContaining({command:'node scripts/react-cockpit/prepare-ag-ui-client-tools-fixture.mjs --serve',url:'http://127.0.0.1:4640'}),
       expect.objectContaining({command:'npx nx run cockpit-ag-ui-json-render-python:smoke && node scripts/react-cockpit/serve.mjs ag-ui-json-render --no-parent',url:'http://127.0.0.1:4612'}),
       expect.objectContaining({command:'npx nx run cockpit-ag-ui-subagents-python:smoke && node scripts/react-cockpit/serve.mjs ag-ui-subagents --no-parent',url:'http://127.0.0.1:4613'}),
       expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs render-spec-rendering --no-parent',url:'http://127.0.0.1:4614'}),
@@ -430,4 +432,23 @@ describe('Website Playwright configuration', () => {
       args: ['--enable-features=BackForwardCache'],
     });
   });
+});
+
+it('owns frozen AG-UI Client Tools preparation without reusing a foreign fixture', () => {
+  const config = createWebsitePlaywrightConfig({ PLAYWRIGHT_REUSE_EXISTING_SERVER: 'true' });
+  const servers = Array.isArray(config.webServer) ? config.webServer : [];
+  expect(servers.find(server => server.url === 'http://127.0.0.1:4640')).toMatchObject({
+    command: 'node scripts/react-cockpit/prepare-ag-ui-client-tools-fixture.mjs --serve',
+    timeout: 180_000, reuseExistingServer: false,
+  });
+  const project = JSON.parse(readFileSync(resolve(import.meta.dirname, '../project.json'), 'utf8'));
+  expect(project.implicitDependencies).toContain('cockpit-ag-ui-client-tools-react');
+  expect(project.targets.e2e.dependsOn.find((dependency: { target?: string }) => dependency.target === 'build').projects).toContain('cockpit-ag-ui-client-tools-react');
+});
+
+it('scopes native client-tools checks to the Website and exact two owned frontend servers', () => {
+  const config = createWebsitePlaywrightConfig({ WEBSITE_E2E_REACT_TOPIC: 'ag-ui-client-tools', WEBSITE_E2E_PORT: '4390' });
+  const servers = Array.isArray(config.webServer) ? config.webServer : [];
+  expect(servers.map(server => server.url)).toEqual(['http://127.0.0.1:4390', 'http://localhost:4325', 'http://127.0.0.1:4640']);
+  expect(config.testMatch).toBe('**/react-ag-ui-client-tools-preview.spec.ts');
 });
