@@ -122,6 +122,7 @@ jobs:
     env:
       LIBS: chat,langgraph,ag-ui,render,a2ui,telemetry,middleware
       FOUNDATIONS: core,content,angular,react
+      THREADPLANE_AG_UI_FIXTURE_ENVIRONMENT: /tmp/threadplane-agui-client-tools-native-fixture-env
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
@@ -188,6 +189,10 @@ jobs:
         run: node scripts/react-parity/review-native-ag-ui.mjs --verify
       - name: Verify real LangGraph candidate package
         run: node scripts/react-parity/verify-langgraph-candidate.mjs
+      - name: Prepare canonical AG-UI client-tools fixture
+        run: UV_PYTHON=3.12 UV_PROJECT_ENVIRONMENT="$THREADPLANE_AG_UI_FIXTURE_ENVIRONMENT" uv sync --frozen --no-install-project --project cockpit/ag-ui/client-tools/python
+      - name: Verify canonical AG-UI client-tools fixtures
+        run: node --test scripts/react-parity/ag-ui-candidate-package.spec.mjs fixtures/react-parity/native-ag-ui-client-tools/server.spec.mjs
       - name: Verify real AG-UI candidate package
         run: node scripts/react-parity/verify-ag-ui-candidate.mjs
       - name: Verify installed owned Markdown

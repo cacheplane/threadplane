@@ -24,6 +24,37 @@ import { installFootprint, runConsumer } from './verify-packages.mjs';
 export const entry = 'fixtures/react-parity/ag-ui-candidate/entry';
 export const factory = 'libs/ag-ui/src/runtime/create-session';
 export const projector = 'libs/ag-ui/src/runtime/text-transcript';
+export const clientTools = 'libs/ag-ui/src/runtime/client-tools';
+export const reviewedSources = [
+  entry,
+  ...['apply-patch', 'copy-data'].map(
+    (name) => 'libs/ag-ui/src/lib/internal/' + name
+  ),
+  ...[
+    'activity-messages',
+    'client-tool-ledger',
+    'client-tools',
+    'create-http-request',
+    'create-run',
+    'create-session',
+    'decision',
+    'encrypted-messages',
+    'interrupt-mode',
+    'reconcile-transcript',
+    'session-attribution',
+    'session-observation',
+    'session-publication',
+    'state',
+    'subagents',
+    'submit-input',
+    'text-messages',
+    'text-transcript',
+    'tool-messages',
+    'transcript',
+  ].map((name) => 'libs/ag-ui/src/runtime/' + name),
+]
+  .map((path) => path + '.ts')
+  .sort();
 const bareImports = new Set(['@threadplane/core', '@ag-ui/client']);
 const seeds = ['@ag-ui/client'];
 export function candidateManifest(version, coreVersion, sdkVersion) {
@@ -70,9 +101,18 @@ function forwarding(source, declaration) {
       return false;
     for (const name of statement.exportClause.elements) {
       if (name.propertyName) return false;
-      const expected = ['createSession', 'Session', 'SessionOptions'].includes(
-        name.name.text
-      )
+      const expected = [
+        'ClientToolSessionSnapshot',
+        'ClientToolCall',
+        'ClientToolBlocker',
+      ].includes(name.name.text)
+        ? clientTools
+        : [
+            'createSession',
+            'Session',
+            'SessionOptions',
+            'ClientToolSession',
+          ].includes(name.name.text)
         ? factory
         : projector;
       if (statement.moduleSpecifier.text !== '../../../' + expected + '.js')
@@ -80,9 +120,15 @@ function forwarding(source, declaration) {
       const typeOnly = statement.isTypeOnly || name.isTypeOnly;
       if (
         typeOnly !==
-        ['Session', 'SessionOptions', 'TextTranscriptRow'].includes(
-          name.name.text
-        )
+        [
+          'Session',
+          'SessionOptions',
+          'ClientToolSession',
+          'ClientToolSessionSnapshot',
+          'ClientToolCall',
+          'ClientToolBlocker',
+          'TextTranscriptRow',
+        ].includes(name.name.text)
       )
         return false;
       names.push(name.name.text);
@@ -96,6 +142,10 @@ function forwarding(source, declaration) {
             'createSession',
             'Session',
             'SessionOptions',
+            'ClientToolSession',
+            'ClientToolSessionSnapshot',
+            'ClientToolCall',
+            'ClientToolBlocker',
             'projectTextTranscript',
             'TextTranscriptRow',
           ]
@@ -156,7 +206,11 @@ export function candidateViolations(directory) {
       !(
         name === entry + '.js' ||
         name === entry + '.d.ts' ||
-        /^libs\/ag-ui\/src\/.*\.(?:js|d\.ts)$/.test(name)
+        reviewedSources.some(
+          (source) =>
+            name === source.slice(0, -3) + '.js' ||
+            name === source.slice(0, -3) + '.d.ts'
+        )
       ) ||
       /\.(?:spec|test|type-test)\./.test(name) ||
       /\/testing\//.test(name)
@@ -171,7 +225,25 @@ export function candidateViolations(directory) {
     ).importedFiles) {
       const specifier = imported.fileName;
       if (!specifier.startsWith('.')) {
-        if (!bareImports.has(specifier))
+        const parsed = ts.createSourceFile(
+          name,
+          readFileSync(path, 'utf8'),
+          ts.ScriptTarget.Latest,
+          true
+        );
+        const toolTypesOnly =
+          path.endsWith('.d.ts') &&
+          specifier === '@threadplane/core/tools' &&
+          parsed.statements
+            .filter(
+              (statement) => statement.moduleSpecifier?.text === specifier
+            )
+            .every(
+              (statement) =>
+                ts.isImportDeclaration(statement) &&
+                statement.importClause?.isTypeOnly
+            );
+        if (!bareImports.has(specifier) && !toolTypesOnly)
           errors.push(`Forbidden candidate import ${specifier}`);
         continue;
       }
@@ -215,9 +287,14 @@ export function emitCandidate(root, directory) {
   const host = ts.createCompilerHost(options);
   host.resolveModuleNames = (names, containingFile) =>
     names.map((name) =>
-      name === '@threadplane/core'
+      name === '@threadplane/core' || name === '@threadplane/core/tools'
         ? {
-            resolvedFileName: join(core, 'src/index.d.ts'),
+            resolvedFileName: join(
+              core,
+              name.endsWith('/tools')
+                ? 'src/tools/index.d.ts'
+                : 'src/index.d.ts'
+            ),
             extension: ts.Extension.Dts,
             isExternalLibraryImport: true,
           }
@@ -247,12 +324,10 @@ export function emitCandidate(root, directory) {
       sha256: sha256(readFileSync(file.fileName)),
     }))
     .sort((a, b) => a.path.localeCompare(b.path));
-  assert.ok(
-    sources.every(
-      (file) =>
-        file.path === entry + '.ts' || file.path.startsWith('libs/ag-ui/src/')
-    ),
-    'Only actual AG-UI and the direct fixture entry are emitted'
+  assert.deepEqual(
+    sources.map((file) => file.path).sort(),
+    reviewedSources,
+    'Only the reviewed actual AG-UI source set is emitted'
   );
   assert.equal(program.emit().emitSkipped, false);
   const lock = JSON.parse(
@@ -365,9 +440,15 @@ export function agUiVendorOverrides(vendors) {
   // override also applies to the SDK's original, different exact request.
   // Mixed React consumers require both AG-UI's Zod 3 and render's Zod 4.
   // Qualify only multi-version roots; keep the supported unique RxJS pin.
-  const pins = vendorOverrides(vendors, vendors.map(({ name, version }) => `${name}@${version}`));
+  const pins = vendorOverrides(
+    vendors,
+    vendors.map(({ name, version }) => `${name}@${version}`)
+  );
   return Object.fromEntries(
-    vendors.map(({ name, version }) => [counts.get(name) === 1 ? name : `${name}@${version}`, pins[`${name}@${version}`]])
+    vendors.map(({ name, version }) => [
+      counts.get(name) === 1 ? name : `${name}@${version}`,
+      pins[`${name}@${version}`],
+    ])
   );
 }
 export function consumerVendorGraph(

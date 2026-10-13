@@ -8856,6 +8856,22 @@
       "note": "Captures activity content, complete patches and metadata, checks selected message ambiguity, and preserves prior observations. Operational patch failure retains content/type while admitting independently owned metadata; ownership failures propagate. Actual held HTTP covers continuation, snapshot retention, egress exclusion and callback error closure. Full-history admission, routing, lifecycle, rendering, session integration and public parity remain separate migration work."
     },
     {
+      "id": "source:libs/ag-ui/src/runtime/client-tool-ledger.ts",
+      "taskIds": ["T12", "T13"],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private session-lifetime client-tool admission, result retention and exact native echo delivery evidence; excluded from public exports and legacy Angular reachability.",
+      "note": "Tracks request baselines and finalized root invocations, rejects unsupported, conflicting or consumed calls, preserves exact locally authored results and acknowledges only matching native echoes. Private runtime and installed canonical checks cover owned execution and continuation; durable Store or replay, hosted proof and public package or React migration remain separate work."
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/client-tools.ts",
+      "taskIds": ["T12", "T13"],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private typed optional client-tool catalog and immutable local execution projection for native AG-UI sessions; excluded from public exports and legacy Angular reachability.",
+      "note": "Captures authored function definitions and opaque metadata for request catalogs and exposes typed readonly call, blocker and command-outcome evidence. The no-catalog session contract remains unchanged. Local installed declarations and offline canonical proofs do not establish public API migration, hosted model behavior or React dogfood completion."
+    },
+    {
       "id": "source:libs/ag-ui/src/runtime/create-http-request.ts",
       "taskIds": ["T12", "T13"],
       "treatment": "internal",

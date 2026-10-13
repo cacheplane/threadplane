@@ -56,7 +56,8 @@ export function createRun(
     start(
       input: RunAgentInput,
       onEvent: (event: BaseEvent) => void,
-      signal?: AbortSignal
+      signal?: AbortSignal,
+      invocationGuard?: () => boolean
     ): RunHandle {
       let resolve!: (result: RunResult) => void;
       const done = new Promise<RunResult>((yes) => {
@@ -140,6 +141,11 @@ export function createRun(
           },
           undefined,
           () => {
+            if (closed) return false;
+            if (invocationGuard && !invocationGuard()) {
+              abort();
+              return false;
+            }
             if (closed) return false;
             fetchInvoked = true;
             return true;
