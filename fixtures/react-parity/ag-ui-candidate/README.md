@@ -5,17 +5,21 @@ selector. A fixture entry directly forwards their real exports and types. The
 temporary `@threadplane/ag-ui` package keeps version 0.2.0 and does not change the
 published Angular package root or introduce a permanent migration API.
 
-With the repository's existing dependencies available, build the prerequisites
-and install the exact local service lock:
+With the repository's existing npm dependencies, Python 3.12 and `uv` available,
+build the prerequisites and install both exact local service locks:
 
 ```sh
-NX_DAEMON=false NX_TUI=false npx nx run-many -t build -p core,angular,react --skip-nx-cache --outputStyle=stream
+NX_DAEMON=false NX_TUI=false npx nx run-many -t build -p core,content,angular,react --skip-nx-cache --outputStyle=stream
 npm ci --prefix deployments/ag-ui-mastra --no-audit --no-fund
+export THREADPLANE_AG_UI_FIXTURE_ENVIRONMENT=/tmp/threadplane-agui-client-tools-native-fixture-env
+UV_PYTHON=3.12 UV_PROJECT_ENVIRONMENT="$THREADPLANE_AG_UI_FIXTURE_ENVIRONMENT" uv sync --frozen --no-install-project --project cockpit/ag-ui/client-tools/python
+node --test scripts/react-parity/ag-ui-candidate-package.spec.mjs fixtures/react-parity/native-ag-ui-client-tools/server.spec.mjs
+node scripts/react-parity/verify-ag-ui-client-tools.mjs
 node scripts/react-parity/verify-ag-ui-candidate.mjs
 ```
 
-The verifier emits 20 backend modules plus the direct forwarding entry, with
-21 corresponding declarations. It packs into its own temporary directory and
+The verifier emits the exact reviewed set of 22 backend modules plus the direct
+forwarding entry, with 23 corresponding declarations. It packs into its own temporary directory and
 installs real core, React, Angular and backend tarballs. The existing APF output
 and framework-only SDK installation ban remain separate required checks. There
 is no output rewrite, source alias, narrowed declaration or backend wrapper.
@@ -37,6 +41,34 @@ and disposal. Strict NodeNext and browser checks use the full installed
 declarations with `skipLibCheck: false`. Framework bindings retain the native
 snapshot type. Core is required by those declarations; its implementation need
 not occur in the backend's runtime graph.
+The sole additional bare subpath is a type-only `@threadplane/core/tools`
+declaration dependency resolved from the actual packed core tools entry.
+The candidate retains exactly two runtime exports, `createSession` and
+`projectTextTranscript`; its client-tool session, snapshot, call and blocker
+types forward directly from the native runtime modules. Heterogeneous authored
+handler argument/result contracts are verified under NodeNext and Bundler,
+including readonly projections, an empty catalog and the original no-catalog
+snapshot contract.
+
+The installed client-tools proof uses `createSession(options, catalog)` against
+an owned loopback server and the actual canonical compiled Python graph,
+repository middleware and locked adapter. Only the model is replaced with an
+offline scripted model. In separate nonstream and stream worker lifetimes, one
+human submission causes two distinct physical runs, one handler invocation,
+an exact authored result carried into the real model, a final answer and an
+exact native result echo. Snapshot-only calls and streamed argument repair are
+verified from genuine adapter events. Unknown calls, held-terminal cancellation
+and noncooperative handler cancellation are separate negative scenarios. Each
+receipt records sources, module identities, exact Python patch and package
+versions, denied socket/DNS operations and owned resource closure.
+
+The Library CI job uses its existing Python 3.12 setup and performs the frozen
+client-tools sync before the scoped worker tests and full candidate proof.
+`uv run --frozen --no-sync` deliberately relies on that completed sync. To verify
+a clean environment locally, choose a new empty directory for
+`THREADPLANE_AG_UI_FIXTURE_ENVIRONMENT` and repeat the sync and checks above.
+The fixture accepts any Python 3.12 patch and records the actual patch in its
+provenance. It requires no provider credentials or paid model requests.
 
 The installed browser uses the same application and independent HTTP oracle as
 the original native review: all 13 controls, two owners, both frameworks, child
@@ -69,8 +101,9 @@ build hashes and installed artifact hashes describe different stages: npm can
 omit build-only metadata such as `.npmignore`. Installed bytes are compared to
 the actual unpacked tarball, not to an assumed identical dist directory.
 
-This does not establish hosted model access, universal provider support, durable
-cancellation, persistence, history loading, reconnect, client-tool execution, SSR
-or hydration. The source review and source Mastra executables remain separate
+This establishes the specified local native client-tool execution and automatic
+continuation with an offline scripted model. It does not establish hosted model
+access, universal provider support, durable cancellation or execution, persistence,
+history loading, reconnect, SSR or hydration. The source review and source Mastra executables remain separate
 required proofs; they alone do not prove candidate installation. Final public
 selector placement, backend root migration and releases remain separate work.
