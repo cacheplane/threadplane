@@ -516,3 +516,20 @@ describe('unified docs workspace route', () => {
     expect(String(metadata.alternates?.canonical)).not.toContain('mode');
   });
 });
+
+it('selects native AG-UI Client Tools React docs and actual assets while retaining Angular docs', async () => {
+  const tree = await route('ag-ui', 'guides', 'client-tools');
+  const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
+  const slot = workspace?.props.reactDocsSlot;
+  expect(isValidElement(slot) && typeof slot.type === 'function' && slot.type.name).toBe('ReactAgUiClientToolsPreview');
+  expect(isValidElement<ElementProps>(slot) && slot.props.exampleCode?.assetPaths).toEqual(expect.arrayContaining([
+    'cockpit/ag-ui/client-tools/react/src/tools.ts',
+    'cockpit/ag-ui/client-tools/react/src/application.ts',
+    'cockpit/ag-ui/client-tools/python/src/graph.py',
+    'cockpit/ag-ui/client-tools/python/prompts/client-tools.md',
+  ]));
+  const angular = findElement(workspace?.props.docsSlot, MdxRenderer as ComponentType<never>);
+  expect(angular?.props.exampleCode?.assetPaths?.some(path => path.includes('/client-tools/angular/'))).toBe(true);
+  expect(findElement(slot, ReactStreamingPreview as ComponentType<never>)).toBeNull();
+  expect(findElement(slot, ReactClientToolsPreview as ComponentType<never>)).toBeNull();
+});

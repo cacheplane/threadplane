@@ -128,6 +128,13 @@ export function reactCockpitConfiguration(topic = 'streaming') {
       port: 4612,
       project: 'cockpit-ag-ui-json-render-react',
     });
+  if (topic === 'ag-ui-client-tools')
+    return Object.freeze({
+      topic: 'client-tools', adapter: 'ag-ui',
+      appPath: 'cockpit/ag-ui/client-tools/react',
+      base: '/ag-ui/client-tools/react/', port: 4640,
+      project: 'cockpit-ag-ui-client-tools-react',
+    });
   if (topic === 'ag-ui-tool-views')
     return Object.freeze({
       topic: 'tool-views',

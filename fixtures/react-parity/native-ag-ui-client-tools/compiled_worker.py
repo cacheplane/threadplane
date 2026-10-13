@@ -80,6 +80,68 @@ class ScriptedStreamingModel(ScriptedModel):
             yield ChatGenerationChunk(message=AIMessageChunk(id='scripted-weather-call', content='', tool_call_chunks=[{'id': None, 'name': None, 'args': '"KASE"}', 'index': 0}]))
             yield ChatGenerationChunk(message=AIMessageChunk(id='scripted-weather-call', content='', response_metadata={'finish_reason': 'tool_calls'}))
 
+class CockpitModel(ScriptedModel):
+    """History-driven BaseChatModel only; canonical graph/adapter author all events."""
+    sequence: int = 0
+
+    def answer(self, messages):
+        self.sequence += 1
+        identity = f'cockpit-assistant-{self.sequence}'
+        last = messages[-1]
+        if isinstance(last, ToolMessage):
+            latest_human = next((m for m in reversed(messages) if m.type == 'human'), None)
+            if latest_human and 'Rounds' in str(latest_human.content):
+                after_human = messages[messages.index(latest_human) + 1:]
+                if len([m for m in after_human if isinstance(m, ToolMessage)]) == 1:
+                    return AIMessage(id=identity, content='', tool_calls=[{'id': f'cockpit-call-{self.sequence}-0', 'name': 'weather_card', 'args': {'location': 'San Francisco', 'temperatureF': 68, 'conditions': 'Sunny', 'humidity': 55, 'windMph': 8}, 'type': 'tool_call'}])
+            receipts = [m.content for m in messages if isinstance(m, ToolMessage)]
+            return AIMessage(id=identity, content='Canonical local results received: ' + json.dumps(receipts))
+        text = str(last.content)
+        reading = {'location': 'San Francisco', 'temperatureF': 68, 'conditions': 'Sunny', 'humidity': 55, 'windMph': 8}
+        if 'Literal' in text:
+            reading['location'] = '<script>San Francisco</script>'
+        if 'Malformed' in text:
+            names = [('weather_card', {**reading, 'humidity': 101})]
+        elif 'Unknown' in text:
+            names = [('unknown_weather', {})]
+        elif 'Mixed' in text:
+            names = [('weather_snapshot', reading), ('get_weather', {'location': 'San Francisco'})]
+        elif 'Bookings' in text:
+            names = [('confirm_booking', {'summary': 'Fictional dinner A'}), ('confirm_booking', {'summary': 'Fictional dinner B'})]
+        elif 'confirm_booking' in text:
+            names = [('confirm_booking', {'summary': 'Fictional dinner booking'})]
+        elif 'slow_status_check' in text:
+            names = [('slow_status_check', {'label': 'demo check'})]
+        elif 'weather_snapshot' in text:
+            names = [('weather_snapshot', reading)]
+        elif 'weather_card' in text:
+            names = [('weather_card', reading)]
+        elif 'get_weather' in text:
+            names = [('get_weather', {'location': 'San Francisco'})]
+        else:
+            return AIMessage(id=identity, content='Canonical plain answer: ' + text)
+        return AIMessage(id=identity, content='', tool_calls=[{'id': f'cockpit-call-{self.sequence}-{index}', 'name': name, 'args': args, 'type': 'tool_call'} for index, (name, args) in enumerate(names)])
+
+    def _generate(self, messages, stop=None, run_manager=None, **kwargs):
+        self.observed_messages.append([m.model_dump(mode='json') for m in messages])
+        return ChatResult(generations=[ChatGeneration(message=self.answer(messages))])
+
+class CockpitStreamingModel(CockpitModel):
+    streaming: bool = False
+    async def _astream(self, messages, stop=None, run_manager=None, **kwargs):
+        self.observed_messages.append([m.model_dump(mode='json') for m in messages])
+        answer = self.answer(messages)
+        if not answer.tool_calls:
+            yield ChatGenerationChunk(message=AIMessageChunk(id=answer.id, content=answer.content))
+            return
+        for index, call in enumerate(answer.tool_calls):
+            arguments = json.dumps(call['args'])
+            split = max(1, len(arguments) // 2)
+            yield ChatGenerationChunk(message=AIMessageChunk(id=answer.id, content='', tool_call_chunks=[{'id': call['id'], 'name': call['name'], 'args': '', 'index': index}]))
+            yield ChatGenerationChunk(message=AIMessageChunk(id=answer.id, content='', tool_call_chunks=[{'id': None, 'name': None, 'args': arguments[:split], 'index': index}]))
+            yield ChatGenerationChunk(message=AIMessageChunk(id=answer.id, content='', tool_call_chunks=[{'id': None, 'name': None, 'args': arguments[split:], 'index': index}]))
+        yield ChatGenerationChunk(message=AIMessageChunk(id=answer.id, content='', response_metadata={'finish_reason': 'tool_calls'}))
+
 def emit(value):
     encoded = json.dumps(value, separators=(',', ':'))
     if len(encoded.encode()) > MAX_BYTES:
@@ -92,13 +154,17 @@ async def main():
     assert mode in ['nonstream', 'stream', 'unknown']
     module = importlib.import_module('src.graph')
     model = ScriptedStreamingModel() if mode == 'stream' else ScriptedModel(call_name='unknown_weather' if mode == 'unknown' else 'get_weather')
+    scenario = sys.argv[2] if len(sys.argv) > 2 else None
+    assert scenario in [None, 'cockpit']
+    if scenario == 'cockpit':
+        model = CockpitStreamingModel(streaming=True) if mode == 'stream' else CockpitModel()
     module._base_llm = model
     graph = module.build_client_tools_graph()
     agent = LangGraphAgent(name='offline-canonical-client-tools', graph=graph)
     paths = [Path(__file__), ROOT / 'cockpit/ag-ui/client-tools/python/src/graph.py', ROOT / 'cockpit/ag-ui/client-tools/python/prompts/client-tools.md', ROOT / 'cockpit/ag-ui/client-tools/python/uv.lock', ROOT / 'cockpit/ag-ui/client-tools/python/pyproject.toml']
     modules = {name: str(Path(sys.modules[name].__file__).resolve()) for name in ['src.graph', 'ag_ui_langgraph.agent', 'threadplane.middleware.langgraph.middleware']}
     paths.extend(Path(value) for value in modules.values())
-    identity = {'pid': os.getpid(), 'python': sys.version.split()[0], 'mode': mode, 'modules': modules, 'socketAttempts': socket_attempts, 'blockedSocketConstructions': blocked_socket_constructions, 'versions': {name: importlib.metadata.version(name) for name in ['ag-ui-langgraph', 'ag-ui-protocol', 'langgraph', 'langchain-core']}, 'sources': [{'path': str(path), 'sha256': hashlib.sha256(path.read_bytes()).hexdigest()} for path in dict.fromkeys(paths)]}
+    identity = {'pid': os.getpid(), 'python': sys.version.split()[0], 'mode': mode, 'scenario': scenario, 'environment': sys.prefix, 'modules': modules, 'socketAttempts': socket_attempts, 'blockedSocketConstructions': blocked_socket_constructions, 'versions': {name: importlib.metadata.version(name) for name in ['ag-ui-langgraph', 'ag-ui-protocol', 'langgraph', 'langchain-core']}, 'sources': [{'path': str(path), 'sha256': hashlib.sha256(path.read_bytes()).hexdigest()} for path in dict.fromkeys(paths)]}
     emit({'ready': identity})
     count = 0
     while True:

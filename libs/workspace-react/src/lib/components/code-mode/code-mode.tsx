@@ -31,7 +31,7 @@ function CodeFileContent({
 export function CodeMode({ entryTitle, codeAssetPaths, backendAssetPaths, codeFiles, promptFiles, capability }: CodeModeProps) {
   const promptPaths = React.useMemo(() => Object.keys(promptFiles), [promptFiles]);
   const allPaths = React.useMemo(
-    () => [...codeAssetPaths, ...backendAssetPaths, ...promptPaths],
+    () => [...new Set([...codeAssetPaths, ...backendAssetPaths, ...promptPaths])],
     [codeAssetPaths, backendAssetPaths, promptPaths],
   );
 

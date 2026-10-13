@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { reactCockpitConfiguration } from './configuration.mjs';
 import { createInterruptsFixture } from './interrupts-fixture.mjs';
 import { createMemoryFixture } from './memory-fixture.mjs';
+import { createAgUiClientToolsFixture } from './ag-ui-client-tools-fixture.mjs';
 import { createClientToolsFixture } from './client-tools-fixture.mjs';
 import { createPersistenceFixture } from './persistence-fixture.mjs';
 import { createDurableFixture } from './durable-fixture.mjs';
@@ -84,8 +85,9 @@ const interruptsFixture =
     : null;
 const memoryFixture =
   configuration.library !== 'deep-agents' && configuration.topic === 'memory' ? createMemoryFixture() : null;
+const agUiClientToolsFixture = configuration.adapter === 'ag-ui' && configuration.topic === 'client-tools' ? createAgUiClientToolsFixture() : null;
 const clientToolsFixture =
-  configuration.topic === 'client-tools' ? createClientToolsFixture() : null;
+  configuration.adapter !== 'ag-ui' && configuration.topic === 'client-tools' ? createClientToolsFixture() : null;
 
 const root = resolve(
   dirname(fileURLToPath(import.meta.url)),
@@ -115,6 +117,7 @@ const release = () => {
 };
 const server = createServer(async (request, response) => {
   const pathname = new URL(request.url, 'http://localhost').pathname;
+  if (agUiClientToolsFixture && (await agUiClientToolsFixture(request, response, pathname))) return;
   if (deepAgentsMemoryFixture && (await deepAgentsMemoryFixture(request, response, pathname))) return;
   if (deepAgentsSkillsFixture && (await deepAgentsSkillsFixture(request, response, pathname))) return;
   if (deepAgentsSubagentsFixture && (await deepAgentsSubagentsFixture(request, response, pathname))) return;
@@ -350,11 +353,11 @@ const server = createServer(async (request, response) => {
 server.listen(configuration.port, '127.0.0.1');
 const parentServer = !process.argv.includes('--no-parent')
   ? createServer(server.listeners('request')[0]).listen(3000, '127.0.0.1') : null;
-if (deepAgentsMemoryFixture || deepAgentsSubagentsFixture || deepAgentsSkillsFixture || deepAgentsFilesystemFixture || deepAgentsPlanningFixture || chatGenerativeUiFixture || chatInterruptsFixture || chatToolCallsFixture || chatSubagentsFixture || chatThreadsFixture || chatTimelineFixture) {
+if (agUiClientToolsFixture || deepAgentsMemoryFixture || deepAgentsSubagentsFixture || deepAgentsSkillsFixture || deepAgentsFilesystemFixture || deepAgentsPlanningFixture || chatGenerativeUiFixture || chatInterruptsFixture || chatToolCallsFixture || chatSubagentsFixture || chatThreadsFixture || chatTimelineFixture) {
   let closing;
   const shutdown = (code = 0) => {
     closing ??= (async () => {
-      await (deepAgentsMemoryFixture ?? deepAgentsSubagentsFixture ?? deepAgentsSkillsFixture ?? deepAgentsFilesystemFixture ?? deepAgentsPlanningFixture ?? chatGenerativeUiFixture ?? chatInterruptsFixture ?? chatToolCallsFixture ?? chatSubagentsFixture ?? chatThreadsFixture ?? chatTimelineFixture).close();
+      await (agUiClientToolsFixture ?? deepAgentsMemoryFixture ?? deepAgentsSubagentsFixture ?? deepAgentsSkillsFixture ?? deepAgentsFilesystemFixture ?? deepAgentsPlanningFixture ?? chatGenerativeUiFixture ?? chatInterruptsFixture ?? chatToolCallsFixture ?? chatSubagentsFixture ?? chatThreadsFixture ?? chatTimelineFixture).close();
       await Promise.all([server, parentServer].filter(Boolean).map((owned) => new Promise((resolve) => {
         owned.close(resolve);
         owned.closeAllConnections();

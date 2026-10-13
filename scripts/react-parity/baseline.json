@@ -1,8 +1,13 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "d618a6fc26c4d36129b3f25ef2ea63dec10cb886",
+  "baselineHead": "b69f180df57b997adea85e9d2c2e29736fd152d2",
   "sourceState": {
-    "modified": [],
+    "modified": [
+      ".github/workflows/ci.yml",
+      "libs/cockpit-registry/src/lib/capability-registry.ts",
+      "libs/cockpit-registry/src/lib/content-descriptors.ts",
+      "libs/workspace-react/src/lib/components/code-mode/code-mode.tsx"
+    ],
     "untracked": []
   },
   "scope": {
@@ -2148,7 +2153,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "545dbf75ff9bcb3a2c8d4035da22c377aa13c20fb025345573846baef2c19233"
+      "sha256": "63e3504d5925b09d968ad56a9271814d374de910600a757b04c7e20c216b5bcf"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -13473,13 +13478,13 @@
       "id": "source:libs/cockpit-registry/src/lib/capability-registry.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "sha256": "60edfd2b2f9ae703f395fd43e466eed663fe6898d725ae4282537e0ee1bc3884"
+      "sha256": "71fb516c9e668e577972d0534355cd491b748bb7ab3c70439dda90493072c91b"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/content-descriptors.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/content-descriptors.ts",
-      "sha256": "446be6436f7b8d5b614fa36b7fd0c5b3a8248005ef756d0b292d7902424b4911"
+      "sha256": "3081771e78e7cd6b196d9ab5f8725009809d179793f9fcef613e81d0c8ae9ecf"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/docs-links.ts",
@@ -15045,7 +15050,7 @@
       "id": "source:libs/workspace-react/src/lib/components/code-mode/code-mode.tsx",
       "kind": "source",
       "path": "libs/workspace-react/src/lib/components/code-mode/code-mode.tsx",
-      "sha256": "73dd092ea1ac482cd3947def92f7987cbcc79bef9a2ff37bf77fec56a870dec5"
+      "sha256": "bc31ed9589d3f26a9758a7ad6425077c22153a5c20b237a3600094e58cdb9a1c"
     },
     {
       "id": "source:libs/workspace-react/src/lib/components/code-mode/file-tree.tsx",
