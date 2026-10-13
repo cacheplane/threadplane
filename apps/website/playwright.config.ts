@@ -333,6 +333,13 @@ export const createWebsitePlaywrightConfig = (
                   timeout: 180_000,
                 },
                 {
+                  command: 'node scripts/react-cockpit/serve.mjs runtimes-mastra --no-parent',
+                  cwd: '../..',
+                  url: 'http://127.0.0.1:4641',
+                  reuseExistingServer: false,
+                  timeout: 180_000,
+                },
+                {
                   command: 'npx nx run cockpit-ag-ui-json-render-python:smoke && node scripts/react-cockpit/serve.mjs ag-ui-json-render --no-parent',
                   cwd: '../..',
                   url: 'http://127.0.0.1:4612',
@@ -489,6 +496,14 @@ export const createWebsitePlaywrightConfig = (
     if (Array.isArray(config.webServer)) {
       config.webServer = config.webServer.filter(server =>
         [localURL, 'http://localhost:4325', 'http://127.0.0.1:4640'].includes(server.url ?? '')
+      );
+    }
+  }
+  if (environment['WEBSITE_E2E_REACT_TOPIC'] === 'runtimes-mastra') {
+    config.testMatch = '**/react-mastra-preview.spec.ts';
+    if (Array.isArray(config.webServer)) {
+      config.webServer = config.webServer.filter(server =>
+        [localURL, 'http://127.0.0.1:4641'].includes(server.url ?? '')
       );
     }
   }

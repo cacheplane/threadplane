@@ -3613,7 +3613,8 @@
         "T35"
       ],
       "treatment": "infrastructure",
-      "status": "planned"
+      "status": "in-progress",
+      "note": "Bounded private native React Mastra reservation preview documented alongside the canonical Angular camping planner. Angular compatibility command transport is distinguished from current opaque native pause and top-level resume; broader parity and public release remain open."
     },
     {
       "id": "doc:apps/website/content/docs/runtimes/mastra/overview.mdx",
@@ -3622,7 +3623,8 @@
         "T35"
       ],
       "treatment": "infrastructure",
-      "status": "planned"
+      "status": "in-progress",
+      "note": "Bounded private native React Mastra reservation preview documented alongside the canonical Angular camping planner. Angular compatibility command transport is distinguished from current opaque native pause and top-level resume; broader parity and public release remain open."
     },
     {
       "id": "doc:apps/website/content/docs/runtimes/mastra/quickstart.mdx",
@@ -3631,7 +3633,8 @@
         "T35"
       ],
       "treatment": "infrastructure",
-      "status": "planned"
+      "status": "in-progress",
+      "note": "Bounded private native React Mastra reservation preview documented alongside the canonical Angular camping planner. Angular compatibility command transport is distinguished from current opaque native pause and top-level resume; broader parity and public release remain open."
     },
     {
       "id": "doc:apps/website/content/docs/runtimes/microsoft-agent-framework/how-it-connects.mdx",
@@ -10833,7 +10836,7 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private cockpit, example, or test infrastructure; adapt for React scenarios without adding a public package API.",
-      "note": "Bounded AG-UI Client Tools private React source-build preview registered with canonical Angular default and shared backend; broader parity and public release remain open."
+      "note": "Bounded AG-UI Client Tools and native Mastra reservation private React source-build previews; Mastra retains canonical Angular backend and prompts. Native Mastra Docs/Code/Run uses current pause authority and literal correlated backend outcomes; broader parity and public release remain open."
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/content-descriptors.ts",
@@ -10844,7 +10847,7 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private cockpit, example, or test infrastructure; adapt for React scenarios without adding a public package API.",
-      "note": "Bounded AG-UI Client Tools private React source-build preview registered with canonical Angular default and shared backend; broader parity and public release remain open."
+      "note": "Bounded AG-UI Client Tools and native Mastra reservation private React source-build previews; Mastra retains canonical Angular backend and prompts. Native Mastra Docs/Code/Run uses current pause authority and literal correlated backend outcomes; broader parity and public release remain open."
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/docs-links.ts",
