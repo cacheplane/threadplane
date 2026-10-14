@@ -4,6 +4,13 @@
   "sourceRoot": "cockpit/runtimes/microsoft-agent-framework/python/src",
   "projectType": "library",
   "targets": {
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "cockpit/runtimes/microsoft-agent-framework/python",
+        "command": "uv run --frozen pytest tests"
+      }
+    },
     "build": {
       "executor": "@nx/js:tsc",
       "outputs": [

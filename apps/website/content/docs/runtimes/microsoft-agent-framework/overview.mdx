@@ -63,6 +63,12 @@ Passing `azure_endpoint` explicitly is the constructor's strongest Azure signal,
 
 With that mapping in place the bridge streams the `expense` argument of `submit_expense` into frontend state as the model generates it, over `STATE_SNAPSHOT` and `STATE_DELTA`, rather than waiting for the tool call to complete.
 
+### Historical tool snapshot compatibility
+
+The example uses `HistoricalToolSnapshotAgent`, a small subclass of the public `AgentFrameworkAgent`. The pinned `agent-framework-ag-ui` 1.2.1 bridge can repeat a historical policy tool result in the final approval-resume message snapshot. This helper removes only later identical copies of a unique root tool message already present in the request history. Conflicting, new, assistant, or child identities pass through unchanged for the client's identity checks. It preserves literal approval and rejection results and emits no replacement tool-result or terminal events. This is an example-owned compatibility correction; it does not establish an upstream fixed version.
+
+<ExampleCode file="snapshot_compat.py" />
+
 ### Serving the agent
 
 The backend is a FastAPI application, and `add_agent_framework_fastapi_endpoint` mounts the agent at a path that speaks the AG-UI event stream.

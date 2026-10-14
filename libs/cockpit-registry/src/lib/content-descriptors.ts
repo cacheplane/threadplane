@@ -933,6 +933,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
     backendAssetPaths: [
       'cockpit/runtimes/microsoft-agent-framework/python/src/agent.py',
       'cockpit/runtimes/microsoft-agent-framework/python/src/server.py',
+      'cockpit/runtimes/microsoft-agent-framework/python/src/snapshot_compat.py',
     ],
     runtimeUrl: 'runtimes/microsoft-agent-framework',
     devPort: 4330,

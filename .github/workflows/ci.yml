@@ -662,6 +662,11 @@ jobs:
         if: matrix.cap.python != ''
         working-directory: ${{ matrix.cap.python }}
         run: uv sync
+      - name: Test pinned MAF snapshot compatibility
+        if: matrix.cap.angular == 'cockpit-runtimes-microsoft-agent-framework-angular'
+        run: |
+          git diff --exit-code -- cockpit/runtimes/microsoft-agent-framework/python/uv.lock
+          npx nx test cockpit-runtimes-microsoft-agent-framework-python --skip-nx-cache
       - name: Check requirements.txt matches uv.lock
         if: matrix.cap.python != ''
         working-directory: ${{ matrix.cap.python }}

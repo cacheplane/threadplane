@@ -44,6 +44,11 @@ import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { capabilityModules, getFrontendCapabilityDescriptor } from './content-descriptors';
 import { cockpitManifest } from './manifest';
+it('includes the required MAF snapshot compatibility source in both registrations', () => {
+  const helper = 'cockpit/runtimes/microsoft-agent-framework/python/src/snapshot_compat.py';
+  expect(runtimesMicrosoftAgentFrameworkPythonModule.backendAssetPaths).toContain(helper);
+  expect(capabilityModules.find(entry => entry.id === 'runtimes-microsoft-agent-framework-python')?.backendAssetPaths).toContain(helper);
+});
 it('registers one frozen native Subagents variant with the canonical backend and exact product sources', () => {
   const canonical = capabilityModules.find(entry => entry.id === 'deep-agents-subagents-python');
   if (!canonical) throw new Error('Missing canonical Subagents');
