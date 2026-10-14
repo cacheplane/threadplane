@@ -44,6 +44,8 @@ export function preparationEnvironment(env = process.env) {
     ),
     CI: 'true',
     NX_DAEMON: 'false',
+    // Keep Nx plugin workers in the preparation process group we own.
+    NX_ISOLATE_PLUGINS: 'false',
     NX_TUI: 'false',
     NX_LOAD_DOT_ENV_FILES: 'false',
     NX_NO_CLOUD: 'true',
