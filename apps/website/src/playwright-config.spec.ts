@@ -4,6 +4,18 @@ import { resolve } from 'node:path';
 import { getCockpitFrontends } from '@threadplane/cockpit-registry';
 import { createWebsitePlaywrightConfig } from '../playwright.config';
 
+it('scopes native MAF Website checks to the owned fixture after frozen preparation and build', () => {
+  const config = createWebsitePlaywrightConfig({ WEBSITE_E2E_REACT_TOPIC: 'runtimes-microsoft-agent-framework', WEBSITE_E2E_PORT: '4390', PLAYWRIGHT_REUSE_EXISTING_SERVER: 'true' });
+  expect(config.testMatch).toBe('**/react-maf-preview.spec.ts');
+  const servers = Array.isArray(config.webServer) ? config.webServer : [];
+  expect(servers.map(server => server.url)).toEqual(['http://127.0.0.1:4390', 'http://127.0.0.1:4642']);
+  expect(servers[1]).toMatchObject({ command: 'node scripts/react-cockpit/serve.mjs runtimes-microsoft-agent-framework --no-parent', reuseExistingServer: false });
+  const project = JSON.parse(readFileSync(resolve(import.meta.dirname, '../project.json'), 'utf8'));
+  const name = 'cockpit-runtimes-microsoft-agent-framework-react';
+  expect(project.implicitDependencies).toContain(name);
+  for (const target of ['build', 'prepare-fixture']) expect(project.targets.e2e.dependsOn.find((dependency: { target?: string }) => dependency.target === target).projects).toContain(name);
+});
+
 it('scopes native Mastra Website checks to the owned actual service fixture', () => {
   const config = createWebsitePlaywrightConfig({ WEBSITE_E2E_REACT_TOPIC: 'runtimes-mastra', WEBSITE_E2E_PORT: '4390' });
   expect(config.testMatch).toBe('**/react-mastra-preview.spec.ts');
@@ -20,8 +32,8 @@ describe('Website Playwright configuration', () => {
     const prerequisites = project.targets.e2e.dependsOn?.find(
       (dependency: { target?: string }) => dependency.target === 'build'
     )?.projects ?? [];
-    expect(prerequisites).toHaveLength(35);
-    expect(new Set(prerequisites).size).toBe(35);
+    expect(prerequisites).toHaveLength(36);
+    expect(new Set(prerequisites).size).toBe(36);
     expect([...prerequisites].sort()).toEqual(
       getCockpitFrontends()
         .filter(frontend => frontend.frontend === 'react')
@@ -67,19 +79,19 @@ describe('Website Playwright configuration', () => {
     const project = JSON.parse(readFileSync(resolve(import.meta.dirname,'../project.json'),'utf8'));
     expect(project.implicitDependencies).toContain('cockpit-ag-ui-tool-views-angular');
   });
-  it('starts thirty-five owned React servers after exact fresh Nx prerequisites', () => {
+  it('starts thirty-six owned React servers after exact fresh Nx prerequisites', () => {
     const config = createWebsitePlaywrightConfig({ CI: 'true' });
     const servers = Array.isArray(config.webServer) ? config.webServer : [];
-    const reactServers = servers.filter(server => /^http:\/\/127\.0\.0\.1:46(?:0\d|1[0123456789]|2[0123456789]|3[012]|4[01])$/.test(server.url ?? ''));
-    expect(reactServers).toHaveLength(35);
+    const reactServers = servers.filter(server => /^http:\/\/127\.0\.0\.1:46(?:0\d|1[0123456789]|2[0123456789]|3[012]|4[012])$/.test(server.url ?? ''));
+    expect(reactServers).toHaveLength(36);
     expect(reactServers.every(server => server.reuseExistingServer === false)).toBe(true);
     expect(reactServers.find(server => server.url === 'http://127.0.0.1:4610')?.command).toBe('node scripts/react-cockpit/serve.mjs ag-ui-interrupts --no-parent');
     const project = JSON.parse(readFileSync(resolve(import.meta.dirname, '../project.json'), 'utf8'));
     const projects = project.targets.e2e.dependsOn.find(
       (dependency: { target?: string }) => dependency.target === 'build'
     ).projects;
-    expect(projects).toHaveLength(35);
-    expect(new Set(projects).size).toBe(35);
+    expect(projects).toHaveLength(36);
+    expect(new Set(projects).size).toBe(36);
     expect(projects).toContain('cockpit-render-state-management-react');
     expect(projects).toContain('cockpit-render-repeat-loops-react');
     expect(projects).toContain('cockpit-render-registry-react');
@@ -379,6 +391,7 @@ describe('Website Playwright configuration', () => {
       }),
       expect.objectContaining({command:'node scripts/react-cockpit/prepare-ag-ui-client-tools-fixture.mjs --serve',url:'http://127.0.0.1:4640'}),
       expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs runtimes-mastra --no-parent',url:'http://127.0.0.1:4641'}),
+      expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs runtimes-microsoft-agent-framework --no-parent',url:'http://127.0.0.1:4642'}),
       expect.objectContaining({command:'npx nx run cockpit-ag-ui-json-render-python:smoke && node scripts/react-cockpit/serve.mjs ag-ui-json-render --no-parent',url:'http://127.0.0.1:4612'}),
       expect.objectContaining({command:'npx nx run cockpit-ag-ui-subagents-python:smoke && node scripts/react-cockpit/serve.mjs ag-ui-subagents --no-parent',url:'http://127.0.0.1:4613'}),
       expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs render-spec-rendering --no-parent',url:'http://127.0.0.1:4614'}),

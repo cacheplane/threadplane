@@ -2152,7 +2152,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "ab361d9d8b1a9107904c2c5fa62686176900479d99b5f68c7cf1b2cd584c08eb"
+      "sha256": "02e1153900676ea2910f4bfb7ac92144a1bab646c4672e8d4b662816a0907bac"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -3016,19 +3016,19 @@
       "id": "doc:apps/website/content/docs/runtimes/microsoft-agent-framework/how-it-connects.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/runtimes/microsoft-agent-framework/how-it-connects.mdx",
-      "sha256": "b8c244e7fb2642efeaffa7b980b5476bdc464ae22cf79d2e5148a6d45efc6075"
+      "sha256": "095c068d6981915597d3d8f7128f626e0d69f6ed6e78400607ef893f2eb8c1c9"
     },
     {
       "id": "doc:apps/website/content/docs/runtimes/microsoft-agent-framework/overview.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/runtimes/microsoft-agent-framework/overview.mdx",
-      "sha256": "9d219e5ad42274025bae55184baa906475e3c40a9b76dbe18e67589e777450ca"
+      "sha256": "6318c677d644fa1b03a2a5b9eb21fdc485b0497c619960a365b4254ccbc62df3"
     },
     {
       "id": "doc:apps/website/content/docs/runtimes/microsoft-agent-framework/quickstart.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/runtimes/microsoft-agent-framework/quickstart.mdx",
-      "sha256": "b15736aee1214e18a946a0f79ccb5c07bdcfbeada035aeee1e34018dcb4ae36f"
+      "sha256": "c245bb7eddd61026b62ce68df8b79012b3de770723c6ae41b821facac92e99db"
     },
     {
       "id": "entry:libs/a2ui/src/index.ts",
@@ -13477,13 +13477,13 @@
       "id": "source:libs/cockpit-registry/src/lib/capability-registry.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "sha256": "6d0e7b61bb843fccb7f3ba63414bc83f753a98b9780f4be8c8a1aaa33041913f"
+      "sha256": "ced4a25824970736d5055cde8edd18bb786aae9af85459a2cf956662d2a032f5"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/content-descriptors.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/content-descriptors.ts",
-      "sha256": "781f3b91c14d19f4cd55e46c6f2e5b583f9317fde53d91513b35c25ace769c6d"
+      "sha256": "7e1497afb802a498e2ab58d0926806cbb35368dccbf3baed6481bb863bb5b1c6"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/docs-links.ts",

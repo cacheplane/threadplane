@@ -6,6 +6,27 @@ import assert from 'node:assert/strict';
 import { privateScaffoldProjects } from './react-parity/package-policy.mjs';
 import { spawnSync } from 'node:child_process';
 
+it('runs native MAF Node configuration, preparation, actual fixture and model checks in scoped CI', async () => {
+  const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+  const scope = readNamedStep(readJobBlock(workflow, 'ci-scope'), 'Test CI scope classifier');
+  for (const file of ['runtimes-microsoft-agent-framework-configuration.spec.mjs', 'prepare-native-maf-fixture.spec.mjs']) assert.ok(scope.includes(`scripts/react-cockpit/${file}`));
+  const fleet = readJobBlock(workflow, 'cockpit-e2e');
+  const step = readNamedStep(fleet, 'Verify native MAF fixture ownership');
+  assert.match(step, /if: matrix\.cap\.angular == 'cockpit-runtimes-microsoft-agent-framework-react'/);
+  const preparation = step.indexOf('npx nx run cockpit-runtimes-microsoft-agent-framework-react:prepare-fixture --skip-nx-cache');
+  const fixture = step.indexOf('node --test --test-concurrency=1 scripts/react-cockpit/native-maf-fixture.spec.mjs');
+  assert.ok(preparation >= 0 && fixture > preparation);
+  assert.match(step, /python -m unittest discover -s fixtures\/react-parity\/native-maf-react -p test_model\.py/);
+  assert.match(step, /fixtures\/react-parity\/native-maf-react\/server\.spec\.mjs/);
+  assert.ok(fleet.includes('python-version: \'3.12\''));
+  assert.ok(!step.includes('THREADPLANE_AG_UI_FIXTURE_ENVIRONMENT'));
+});
+
+it('bounds the Website promotion budget without changing other deploy budgets', async () => {
+  const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+  assert.match(readJobBlock(workflow, 'deploy'), /timeout-minutes: 45/);
+});
+
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

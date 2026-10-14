@@ -16,7 +16,8 @@
     "cockpit-render-computed-functions-angular",
     "cockpit-ag-ui-client-tools-react",
     "cockpit-ag-ui-client-tools-angular",
-    "cockpit-runtimes-mastra-react"
+    "cockpit-runtimes-mastra-react",
+    "cockpit-runtimes-microsoft-agent-framework-react"
   ],
   "tags": ["scope:website", "scope:website-e2e", "type:app"],
   "targets": {
@@ -77,7 +78,7 @@
       "dependsOn": [
         {
           "target": "prepare-fixture",
-          "projects": ["cockpit-runtimes-mastra-react"]
+          "projects": ["cockpit-runtimes-mastra-react", "cockpit-runtimes-microsoft-agent-framework-react"]
         },
         {
           "target": "build",
@@ -116,7 +117,8 @@
             "cockpit-deep-agents-skills-react",
             "cockpit-deep-agents-memory-react",
             "cockpit-ag-ui-client-tools-react",
-            "cockpit-runtimes-mastra-react"
+            "cockpit-runtimes-mastra-react",
+            "cockpit-runtimes-microsoft-agent-framework-react"
           ]
         }
       ],

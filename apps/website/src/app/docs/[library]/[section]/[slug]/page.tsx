@@ -14,6 +14,7 @@ import { ReactAgUiStreamingPreview } from '../../../../../components/docs/ReactA
 import { ReactAgUiInterruptsPreview } from '../../../../../components/docs/ReactAgUiInterruptsPreview';
 import { ReactAgUiClientToolsPreview } from '../../../../../components/docs/ReactAgUiClientToolsPreview';
 import { ReactMastraPreview } from '../../../../../components/docs/ReactMastraPreview';
+import { ReactMafPreview } from '../../../../../components/docs/ReactMafPreview';
 import { ReactAgUiToolViewsPreview } from '../../../../../components/docs/ReactAgUiToolViewsPreview';
 import { ReactAgUiJsonRenderPreview } from '../../../../../components/docs/ReactAgUiJsonRenderPreview';
 import { ReactAgUiSubagentsPreview } from '../../../../../components/docs/ReactAgUiSubagentsPreview';
@@ -290,11 +291,14 @@ export default async function DocsPage({ params }: DocsRouteProps) {
           workspacePage.frontendVariants?.react &&
           (library === 'langgraph' ||
             (library === 'runtimes' && section === 'mastra' && slug === 'overview') ||
+            (library === 'runtimes' && section === 'microsoft-agent-framework' && slug === 'overview') ||
             (library === 'deep-agents' && section === 'capabilities' && ['planning', 'filesystem', 'subagents', 'skills', 'memory'].includes(slug)) ||
             (library === 'render' && ((section === 'guides' && ['specs','state-store','repeat-loops','registry'].includes(slug)) || (section === 'api' && ['render-spec-component','provide-render'].includes(slug)))) ||
             (library === 'ag-ui' && ((section === 'reference' && slug === 'event-mapping') || (section === 'guides' && ['interrupts','tool-views','client-tools','json-render','subagents'].includes(slug)))) ||
             (library === 'chat' && ((section === 'guides' && ['thread-routing', 'generative-ui'].includes(slug)) || slug === 'client-tools' || (section === 'concepts' && slug === 'message-model') || (section === 'components' && ['chat-trace', 'chat-input', 'chat-interrupt-panel', 'chat-tool-calls', 'chat-subagent-card'].includes(slug))))) ? (
-            library === 'runtimes' && section === 'mastra' && slug === 'overview' ? (
+            library === 'runtimes' && section === 'microsoft-agent-framework' && slug === 'overview' ? (
+              <ReactMafPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />
+            ) : library === 'runtimes' && section === 'mastra' && slug === 'overview' ? (
               <ReactMastraPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />
             ) : library === 'deep-agents' && section === 'capabilities' && slug === 'memory' ? (
               <ReactDeepAgentsMemoryPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />

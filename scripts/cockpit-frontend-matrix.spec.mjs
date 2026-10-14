@@ -1,4 +1,11 @@
 import assert from 'node:assert/strict';
+
+test('MAF backend changes select exactly its canonical Angular and bounded React frontends', () => {
+  const root = fileURLToPath(new URL('..', import.meta.url));
+  const selected = selectCockpitCaps(deriveCockpitCaps(root), new Set(['cockpit-runtimes-microsoft-agent-framework-python']), { fullFleet: false });
+  assert.deepEqual(selected.map(cap => cap.angular).sort(), ['cockpit-runtimes-microsoft-agent-framework-angular', 'cockpit-runtimes-microsoft-agent-framework-react']);
+  assert.ok(selected.every(cap => cap.python === 'cockpit/runtimes/microsoft-agent-framework/python'));
+});
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -12,7 +19,7 @@ test('Memory backend changes select its two actual registered frontends and exac
   assert.deepEqual(selected.map(cap => cap.angular).sort(), ['cockpit-deep-agents-memory-angular', 'cockpit-deep-agents-memory-react']);
   assert.ok(selected.every(cap => cap.python === 'cockpit/deep-agents/memory/python' && cap.pythonName === 'cockpit-deep-agents-memory-python'));
   const registry = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', 'const module = await import("./libs/cockpit-registry/src/lib/capability-registry.ts"); const registry = module.default ?? module; console.log(JSON.stringify({ frontends: registry.getCockpitFrontends(), capability: registry.capabilities.find(cap => cap.id === "da-memory") }));'], { cwd: root, encoding: 'utf8', env: { ...process.env, TSX_TSCONFIG_PATH: 'tsconfig.base.json' } }));
-  assert.equal(registry.frontends.length, 76);
+  assert.equal(registry.frontends.length, 77);
   assert.deepEqual(registry.frontends.filter(frontend => frontend.product === 'deep-agents' && frontend.topic === 'memory'), [
     { frontend: 'angular', project: 'cockpit-deep-agents-memory-angular', port: 4313, product: 'deep-agents', topic: 'memory', runtimePath: 'deep-agents/memory', buildOutput: 'dist/cockpit/deep-agents/memory/angular' },
     { frontend: 'react', project: 'cockpit-deep-agents-memory-react', port: 4632, product: 'deep-agents', topic: 'memory', runtimePath: 'deep-agents/memory/react', buildOutput: 'dist/cockpit/deep-agents/memory/react' },
@@ -79,7 +86,7 @@ test('Generative UI backend changes select both canonical frontends registered b
   assert.deepEqual(selected.map(cap => cap.angular).sort(), ['cockpit-chat-generative-ui-angular', 'cockpit-chat-generative-ui-react']);
   assert.ok(selected.every(cap => cap.python === 'cockpit/chat/generative-ui/python'));
   const frontends = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', 'const module = await import("./libs/cockpit-registry/src/lib/capability-registry.ts"); console.log(JSON.stringify((module.default ?? module).getCockpitFrontends()));'], { cwd: root, encoding: 'utf8', env: { ...process.env, TSX_TSCONFIG_PATH: 'tsconfig.base.json' } }));
-  assert.equal(frontends.length, 76);
+  assert.equal(frontends.length, 77);
   assert.deepEqual(frontends.filter(frontend => frontend.project.startsWith('cockpit-chat-generative-ui-')).map(frontend => frontend.project).sort(), selected.map(cap => cap.angular).sort());
 });
 test('Timeline backend changes select both canonical frontends registered by the website', () => {
@@ -88,7 +95,7 @@ test('Timeline backend changes select both canonical frontends registered by the
   assert.deepEqual(selected.map(cap => cap.angular).sort(), ['cockpit-chat-timeline-angular', 'cockpit-chat-timeline-react']);
   assert.ok(selected.every(cap => cap.python === 'cockpit/chat/timeline/python'));
   const frontends = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', 'const module = await import("./libs/cockpit-registry/src/lib/capability-registry.ts"); console.log(JSON.stringify((module.default ?? module).getCockpitFrontends()));'], { cwd: root, encoding: 'utf8', env: { ...process.env, TSX_TSCONFIG_PATH: 'tsconfig.base.json' } }));
-  assert.equal(frontends.length, 76);
+  assert.equal(frontends.length, 77);
   assert.deepEqual(frontends.filter(frontend => frontend.project.startsWith('cockpit-chat-timeline-')).map(frontend => frontend.project).sort(), selected.map(cap => cap.angular).sort());
 });
 test('Chat Timeline owns an exact native React identity', async () => {
@@ -107,7 +114,7 @@ test('Threads backend changes select both canonical frontends registered by the 
   assert.deepEqual(selected.map(cap => cap.angular).sort(), ['cockpit-chat-threads-angular', 'cockpit-chat-threads-react']);
   assert.ok(selected.every(cap => cap.python === 'cockpit/chat/threads/python'));
   const frontends = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', 'const module = await import("./libs/cockpit-registry/src/lib/capability-registry.ts"); console.log(JSON.stringify((module.default ?? module).getCockpitFrontends()));'], { cwd: root, encoding: 'utf8', env: { ...process.env, TSX_TSCONFIG_PATH: 'tsconfig.base.json' } }));
-  assert.equal(frontends.length, 76);
+  assert.equal(frontends.length, 77);
   assert.deepEqual(frontends.filter(frontend => frontend.project.startsWith('cockpit-chat-threads-')).map(frontend => frontend.project).sort(), selected.map(cap => cap.angular).sort());
 });
 test('Chat Threads owns an exact native React identity', async () => {
@@ -592,8 +599,8 @@ test('AG-UI Client Tools selects the two native frontends and one canonical back
   assert.deepEqual(selected.map(cap => cap.angular).sort(), ['cockpit-ag-ui-client-tools-angular', 'cockpit-ag-ui-client-tools-react']);
   assert.ok(selected.every(cap => cap.python === 'cockpit/ag-ui/client-tools/python'));
   const frontends = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', 'const module = await import("./libs/cockpit-registry/src/lib/capability-registry.ts"); console.log(JSON.stringify((module.default ?? module).getCockpitFrontends()));'], { cwd: root, encoding: 'utf8', env: { ...process.env, TSX_TSCONFIG_PATH: 'tsconfig.base.json' } }));
-  assert.equal(frontends.length, 76);
-  assert.equal(frontends.filter(cap => cap.frontend === 'react').length, 35);
+  assert.equal(frontends.length, 77);
+  assert.equal(frontends.filter(cap => cap.frontend === 'react').length, 36);
   assert.equal(frontends.filter(cap => cap.frontend === 'angular').length, 41);
   assert.equal(frontends.find(cap => cap.project === 'cockpit-ag-ui-client-tools-react')?.runtimePath, 'ag-ui/client-tools/react');
 });

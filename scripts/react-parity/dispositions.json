@@ -3643,7 +3643,8 @@
         "T35"
       ],
       "treatment": "infrastructure",
-      "status": "planned"
+      "status": "in-progress",
+      "note": "Bounded private native React MAF expense preview documented alongside the canonical Angular/provider example. Native current pause correlation, top-level resume and literal backend result confirmation are distinguished from Angular wrapper specialist streaming; broader parity and public release remain open."
     },
     {
       "id": "doc:apps/website/content/docs/runtimes/microsoft-agent-framework/overview.mdx",
@@ -3652,7 +3653,8 @@
         "T35"
       ],
       "treatment": "infrastructure",
-      "status": "planned"
+      "status": "in-progress",
+      "note": "Bounded private native React MAF expense preview documented alongside the canonical Angular/provider example. Native current pause correlation, top-level resume and literal backend result confirmation are distinguished from Angular wrapper specialist streaming; broader parity and public release remain open."
     },
     {
       "id": "doc:apps/website/content/docs/runtimes/microsoft-agent-framework/quickstart.mdx",
@@ -3661,7 +3663,8 @@
         "T35"
       ],
       "treatment": "infrastructure",
-      "status": "planned"
+      "status": "in-progress",
+      "note": "Bounded private native React MAF expense preview documented alongside the canonical Angular/provider example. Native current pause correlation, top-level resume and literal backend result confirmation are distinguished from Angular wrapper specialist streaming; broader parity and public release remain open."
     },
     {
       "id": "entry:libs/a2ui/src/index.ts",
