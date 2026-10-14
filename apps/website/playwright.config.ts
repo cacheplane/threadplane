@@ -340,6 +340,13 @@ export const createWebsitePlaywrightConfig = (
                   timeout: 180_000,
                 },
                 {
+                  command: 'node scripts/react-cockpit/serve.mjs runtimes-microsoft-agent-framework --no-parent',
+                  cwd: '../..',
+                  url: 'http://127.0.0.1:4642',
+                  reuseExistingServer: false,
+                  timeout: 180_000,
+                },
+                {
                   command: 'npx nx run cockpit-ag-ui-json-render-python:smoke && node scripts/react-cockpit/serve.mjs ag-ui-json-render --no-parent',
                   cwd: '../..',
                   url: 'http://127.0.0.1:4612',
@@ -504,6 +511,18 @@ export const createWebsitePlaywrightConfig = (
     if (Array.isArray(config.webServer)) {
       config.webServer = config.webServer.filter(server =>
         [localURL, 'http://127.0.0.1:4641'].includes(server.url ?? '')
+      );
+    }
+  }
+  if (environment['WEBSITE_E2E_REACT_TOPIC'] === 'runtimes-microsoft-agent-framework') {
+    config.testMatch = '**/react-maf-preview.spec.ts';
+    config.workers = 1;
+    config.fullyParallel = false;
+    config.retries = 0;
+    config.outputDir = resolve(__dirname, '../../test-results/native-maf-website');
+    if (Array.isArray(config.webServer)) {
+      config.webServer = config.webServer.filter(server =>
+        [localURL, 'http://127.0.0.1:4642'].includes(server.url ?? '')
       );
     }
   }

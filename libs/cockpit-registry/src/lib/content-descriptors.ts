@@ -1166,6 +1166,22 @@ const agUiClientToolsReact = (() => {
   });
 })();
 
+const mafReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'runtimes-microsoft-agent-framework-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-runtimes-microsoft-agent-framework-react');
+  if (!canonical || !frontend) throw new Error('MAF React frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical, id: 'runtimes-microsoft-agent-framework-react', frontend: 'react',
+    title: 'Microsoft Agent Framework expenses (React preview)',
+    codeAssetPaths: [
+      ...['app.tsx', 'application.ts', 'approval-policy.ts', 'expense-projection.ts', 'connection.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/runtimes/microsoft-agent-framework/react/src/${file}`),
+      'cockpit/runtimes/microsoft-agent-framework/react/project.json',
+      ...canonical.promptAssetPaths,
+    ],
+    runtimeUrl: frontend.runtimePath, devPort: frontend.port,
+  });
+})();
+
 const mastraReact = (() => {
   const canonical = capabilityModules.find(descriptor => descriptor.id === 'runtimes-mastra-angular');
   const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-runtimes-mastra-react');
@@ -1401,6 +1417,7 @@ export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
     agUiToolViewsReact,
     agUiClientToolsReact,
     mastraReact,
+    mafReact,
     agUiJsonRenderReact,
     agUiSubagentsReact,
     renderSpecReact,

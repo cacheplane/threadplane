@@ -6,6 +6,52 @@ import assert from 'node:assert/strict';
 import { privateScaffoldProjects } from './react-parity/package-policy.mjs';
 import { spawnSync } from 'node:child_process';
 
+it('runs native MAF Node configuration, preparation, actual fixture and model checks in scoped CI', async () => {
+  const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+  const scope = readNamedStep(readJobBlock(workflow, 'ci-scope'), 'Test CI scope classifier');
+  for (const file of ['runtimes-microsoft-agent-framework-configuration.spec.mjs', 'prepare-native-maf-fixture.spec.mjs']) assert.ok(scope.includes(`scripts/react-cockpit/${file}`));
+  const fleet = readJobBlock(workflow, 'cockpit-e2e');
+  const step = readNamedStep(fleet, 'Verify native MAF fixture ownership');
+  assert.match(step, /if: matrix\.cap\.angular == 'cockpit-runtimes-microsoft-agent-framework-react'/);
+  const preparation = step.indexOf('npx nx run cockpit-runtimes-microsoft-agent-framework-react:prepare-fixture --skip-nx-cache');
+  const fixture = step.indexOf('node --test --test-concurrency=1 scripts/react-cockpit/native-maf-fixture.spec.mjs');
+  assert.ok(preparation >= 0 && fixture > preparation);
+  assert.match(step, /python -m unittest discover -s fixtures\/react-parity\/native-maf-react -p test_model\.py/);
+  assert.match(step, /fixtures\/react-parity\/native-maf-react\/server\.spec\.mjs/);
+  assert.ok(fleet.includes('python-version: \'3.12\''));
+  assert.ok(!step.includes('THREADPLANE_AG_UI_FIXTURE_ENVIRONMENT'));
+});
+
+it('bounds the Website promotion budget without changing other deploy budgets', async () => {
+  const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+  assert.match(readJobBlock(workflow, 'deploy'), /timeout-minutes: 45/);
+});
+
+it('installs pinned Python before Website e2e fixture prerequisites in local and preview CI', async () => {
+  const website = JSON.parse(await readFile('apps/website/project.json', 'utf8'));
+  assert.ok(website.targets.e2e.dependsOn.some((dependency) =>
+    dependency.target === 'prepare-fixture' &&
+    dependency.projects.includes('cockpit-runtimes-microsoft-agent-framework-react')
+  ), 'remote BASE_URL does not bypass the native MAF Nx prerequisite');
+
+  const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+  for (const [jobName, setupName, command] of [
+    ['website-preview-e2e', 'Set up Python for Website fixture prerequisites', 'npx nx e2e website'],
+    ['website-e2e', 'Prepare frozen dashboard browser producer', 'npx nx e2e website'],
+    ['cockpit-e2e', 'Install uv', 'npx nx run cockpit-runtimes-microsoft-agent-framework-react:prepare-fixture'],
+  ]) {
+    const job = readJobBlock(workflow, jobName);
+    const setup = readNamedStep(job, setupName);
+    assert.match(setup, /uses: astral-sh\/setup-uv@cec208311dfd045dd5311c1add060b2062131d57(?:\s|$)/);
+    assert.match(setup, /python-version: ['"]3\.12['"]/);
+    assert.doesNotMatch(setup, /if:|continue-on-error/);
+    const invocation = job.indexOf(command);
+    assert.ok(invocation >= 0, `expected ${jobName} to invoke ${command}`);
+    assert.ok(job.indexOf(setup) + setup.length <= invocation,
+      `${jobName} must install uv and Python before Nx executes fixture prerequisites`);
+  }
+});
+
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
