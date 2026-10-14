@@ -102,6 +102,11 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 call={'id':'c0_lookup_expense_policy','type':'function','function':{'name':'lookup_expense_policy','arguments':'{"category":"meals"}'}}
                 deltas=[{'role':'assistant','content':''},{'tool_calls':[{'index':0,**call}]}]
                 message={'role':'assistant','content':None,'tool_calls':[call]};finish='tool_calls'
+                if model.mode=='batch':
+                    record['branch']='batch-policy-submit'
+                    submit_call={'id':'c0_submit_expense','type':'function','function':{'name':'submit_expense','arguments':json.dumps({'expense':EXPENSE},separators=(',',':'))}}
+                    message['tool_calls'].append(submit_call)
+                    deltas.append({'tool_calls':[{'index':1,**submit_call}]})
             if body.get('stream'):
                 chunks=[self.chunk(delta) for delta in deltas]+[self.chunk({},finish)]
                 data=b''.join(('data: '+json.dumps(chunk)+'\n\n').encode() for chunk in chunks)+b'data: [DONE]\n\n'

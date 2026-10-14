@@ -8,6 +8,154 @@ import {
 } from './approval-policy';
 import { running, paused, completed, literal } from './fixtures.spec-helper';
 const turn = () => captureTurn(running(), 'thread', undefined, [])!;
+function batch(approved = true) {
+  const done = structuredClone(completed(approved)) as any;
+  done.transcript[1].toolCalls.unshift({
+    id: 'policy',
+    type: 'function',
+    function: {
+      name: 'lookup_expense_policy',
+      arguments: '{"category":"meals"}',
+    },
+  });
+  const pause = {
+    ...paused(),
+    transcript: structuredClone(done.transcript.slice(0, 2)),
+  } as any;
+  done.transcript.push({
+    id: 'policy-result',
+    role: 'tool',
+    toolCallId: 'policy',
+    content: 'Policy supplied by the native backend.',
+  });
+  return { pause, done };
+}
+it.each([true, false])(
+  'confirms both previously declared batch results (%s)',
+  (approved) => {
+    const { pause, done } = batch(approved);
+    const a = captureApproval(pause, turn())!;
+    expect(a).toBeDefined();
+    expect(confirmResume(done, a, 'resume', approved)?.result).toBe(
+      literal(approved)
+    );
+  }
+);
+it('requires every matching pending lookup ID to resolve exactly once', () => {
+  const { pause, done } = batch();
+  const another = structuredClone(pause.transcript[1].toolCalls[0]);
+  another.id = 'policy-two';
+  pause.transcript[1].toolCalls.push(another);
+  done.transcript[1].toolCalls.push(structuredClone(another));
+  const a = captureApproval(pause, turn())!;
+  expect(confirmResume(done, a, 'resume', true)).toBeUndefined();
+  done.transcript.push({
+    id: 'policy-result-two',
+    role: 'tool',
+    toolCallId: 'policy-two',
+    content: 'Another native policy result.',
+  });
+  expect(confirmResume(done, a, 'resume', true)?.result).toBe(literal(true));
+});
+it.each([
+  'missing',
+  'child',
+  'duplicate',
+  'error',
+  'blank',
+  'nonstring',
+  'malformed',
+  'null-args',
+  'array-args',
+  'missing-category',
+  'nonstring-category',
+  'category',
+  'extra',
+  'unknown-name',
+  'new-call',
+  'undeclared-result',
+  'history',
+  'submit-args',
+  'submit-result',
+  'run',
+  'thread',
+  'child-terminal',
+])('rejects batch %s corruption', (kind) => {
+  const { pause, done } = batch();
+  const call = pause.transcript[1].toolCalls[0];
+  if (kind === 'malformed') call.function.arguments = '{';
+  if (kind === 'null-args') call.function.arguments = 'null';
+  if (kind === 'array-args') call.function.arguments = '["meals"]';
+  if (kind === 'missing-category') call.function.arguments = '{}';
+  if (kind === 'nonstring-category') call.function.arguments = '{"category":1}';
+  if (kind === 'category') call.function.arguments = '{"category":"travel"}';
+  if (kind === 'extra')
+    call.function.arguments = '{"category":"meals","extra":true}';
+  if (kind === 'unknown-name') call.function.name = 'another_tool';
+  done.transcript[1] = structuredClone(pause.transcript[1]);
+  const a = captureApproval(pause, turn())!;
+  if (kind === 'missing') done.transcript.pop();
+  if (kind === 'child') done.transcript[3].subagentRunId = 'child';
+  if (kind === 'duplicate')
+    done.transcript.push({ ...done.transcript[3], id: 'duplicate-result' });
+  if (kind === 'error') done.transcript[3].error = true;
+  if (kind === 'blank') done.transcript[3].content = ' \n ';
+  if (kind === 'nonstring') done.transcript[3].content = { text: 'policy' };
+  if (kind === 'new-call')
+    done.transcript[1].toolCalls.push({
+      ...structuredClone(call),
+      id: 'new-policy',
+    });
+  if (kind === 'undeclared-result')
+    done.transcript.push({
+      ...done.transcript[3],
+      id: 'new-result',
+      toolCallId: 'unknown',
+    });
+  if (kind === 'history') done.transcript[0].content = 'Edited';
+  if (kind === 'submit-args')
+    done.transcript[1].toolCalls[1].function.arguments = '{}';
+  if (kind === 'submit-result')
+    done.transcript[2].content = 'Policy says approved';
+  if (kind === 'run') done.run.terminal.runId = 'other';
+  if (kind === 'thread') done.run.terminal.threadId = 'other';
+  if (kind === 'child-terminal') done.run.terminal.subagentRunId = 'child';
+  expect(confirmResume(done, a, 'resume', true)).toBeUndefined();
+});
+it('rejects duplicate pending lookup call IDs at pause and completion', () => {
+  const { pause, done } = batch();
+  const a = captureApproval(pause, turn())!;
+  done.transcript[1].toolCalls.push(
+    structuredClone(done.transcript[1].toolCalls[0])
+  );
+  expect(confirmResume(done, a, 'resume', true)).toBeUndefined();
+  pause.transcript[1].toolCalls.push(
+    structuredClone(pause.transcript[1].toolCalls[0])
+  );
+  expect(captureApproval(pause, turn())).toBeUndefined();
+});
+it('cannot authorize a lookup declared only by a child assistant', () => {
+  const { pause, done } = batch();
+  const child = {
+    id: 'child-policy',
+    role: 'assistant',
+    subagentRunId: 'child',
+    toolCalls: [pause.transcript[1].toolCalls.shift()],
+  };
+  done.transcript[1].toolCalls.shift();
+  pause.transcript.push(structuredClone(child));
+  done.transcript.push(structuredClone(child));
+  const a = captureApproval(pause, turn())!;
+  expect(confirmResume(done, a, 'resume', true)).toBeUndefined();
+});
+it('preserves an already resolved historical lookup row exactly', () => {
+  const { pause, done } = batch();
+  pause.transcript.push(structuredClone(done.transcript[3]));
+  const a = captureApproval(pause, turn())!;
+  expect(confirmResume(done, a, 'resume', true)).toBeDefined();
+  done.transcript[3].content = 'Edited policy';
+  expect(confirmResume(done, a, 'resume', true)).toBeUndefined();
+});
 it('captures the native tool_call approval with complete expense and original opaque pause', () => {
   const p = paused(),
     a = captureApproval(p, turn())!;

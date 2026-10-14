@@ -6,6 +6,19 @@ from urllib.request import Request, urlopen
 from model import Model
 
 class ModelTest(unittest.TestCase):
+    def test_batch_declares_both_calls_in_one_openai_response(self):
+        model = Model('batch')
+        thread = threading.Thread(target=model.serve_forever, daemon=True); thread.start()
+        try:
+            body = {'messages':[{'role':'user','content':'Blue Finch Bistro'}], 'stream':False}
+            response=json.load(urlopen(Request(f'http://127.0.0.1:{model.server_port}/v1/chat/completions',data=json.dumps(body).encode(),headers={'Content-Type':'application/json'}),timeout=2))
+            calls=response['choices'][0]['message']['tool_calls']
+            self.assertEqual([call['function']['name'] for call in calls], ['lookup_expense_policy','submit_expense'])
+            self.assertEqual(json.loads(calls[1]['function']['arguments'])['expense']['amount_usd'],220)
+            self.assertEqual(model.stats()['httpSeen'],1)
+        finally:
+            model.closing.set(); model.shutdown(); model.server_close(); thread.join()
+
     def test_physical_invalid_request_is_counted(self):
         model = Model('approval')
         thread = threading.Thread(target=model.serve_forever, daemon=True)

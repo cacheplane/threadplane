@@ -468,6 +468,37 @@ export function confirmResume(
           e.category
         }) — queued for reimbursement.`
       : 'Error: Tool call invocation was rejected by user.';
+  // A native approval may pause a batch before its read-only lookup resolves.
+  // Only declarations already owned at the pause may gain a result on resume.
+  const pending = submitCalls(approval.transcript).filter(
+    (c) =>
+      c.id !== approval.toolCallId &&
+      !approval.transcript.some(
+        (m) => m.role === 'tool' && m.toolCallId === c.id
+      )
+  );
+  for (const call of pending) {
+    try {
+      if (
+        call.function.name !== 'lookup_expense_policy' ||
+        !same(JSON.parse(call.function.arguments), { category: e.category })
+      )
+        return;
+    } catch {
+      return;
+    }
+    const lookup = rows.filter(
+      (m) => m.role === 'tool' && m.toolCallId === call.id
+    );
+    if (
+      lookup.length !== 1 ||
+      lookup[0].role !== 'tool' ||
+      lookup[0].error ||
+      typeof lookup[0].content !== 'string' ||
+      !lookup[0].content.trim()
+    )
+      return;
+  }
   if (
     calls.length !== 1 ||
     calls[0].function.name !== 'submit_expense' ||
@@ -484,7 +515,8 @@ export function confirmResume(
       (m) =>
         m.role === 'tool' &&
         m.toolCallId !== approval.toolCallId &&
-        !approval.transcript.some((p) => p.id === m.id)
+        !approval.transcript.some((p) => p.id === m.id) &&
+        !pending.some((c) => c.id === m.toolCallId)
     ) ||
     submitCalls(rows).some(
       (c) =>

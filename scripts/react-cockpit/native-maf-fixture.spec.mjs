@@ -18,6 +18,7 @@ test('negative wire transformations preserve positive frames and remove/corrupt 
     /negative-wrong-run/
   );
   assert.equal(transformFrame(terminal, 'approval'), terminal);
+  assert.equal(transformFrame(terminal, 'batch'), terminal);
   const child = transformFrame(terminal, 'child-pause');
   const parsed = JSON.parse(child.match(/^data: (.+)$/m)[1]);
   assert.equal(SubagentFinishedEventSchema.safeParse(parsed).success, true);
