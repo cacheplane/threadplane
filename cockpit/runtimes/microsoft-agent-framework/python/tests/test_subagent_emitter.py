@@ -5,7 +5,12 @@ yields, exactly where the framework invokes the real tool on the pump's
 driving chain) and asserts the exact merged sequence field-for-field."""
 
 import asyncio
+import os
+from pathlib import Path
+import subprocess
+import sys
 
+import anyio
 import pytest
 
 from ag_ui.core import (
@@ -386,6 +391,111 @@ async def test_wrapper_resets_contextvar_after_normal_completion():
     out = await _collect(wrap_agent_run(_FakeInner(inner)))
     assert [ev.type for ev in out] == [EventType.RUN_STARTED, EventType.RUN_FINISHED]
     assert subagent_emitter._event_queue.get() is None
+
+
+async def _awaited_cleanup_case(mode):
+    """Exercise scope cancellation with a resource that needs awaited cleanup."""
+    ready = asyncio.Event()
+    closed = asyncio.Event()
+    next_cancelled = asyncio.Event()
+    restored = []
+    owned_tasks = set()
+
+    async def inner(_input):
+        owned_tasks.add(asyncio.current_task())
+        try:
+            yield _run_started()
+            ready.set()
+            await asyncio.Event().wait()
+        finally:
+            await anyio.sleep(0.05)
+            closed.set()
+
+    class CloseOnlyIterator:
+        def __init__(self):
+            self.started = False
+
+        def __aiter__(self):
+            return self
+
+        async def __anext__(self):
+            owned_tasks.add(asyncio.current_task())
+            if not self.started:
+                self.started = True
+                return _run_started()
+            ready.set()
+            try:
+                await asyncio.Event().wait()
+            except asyncio.CancelledError:
+                next_cancelled.set()
+                raise
+
+        async def aclose(self):
+            await anyio.sleep(0.05)
+            closed.set()
+
+    iterator = CloseOnlyIterator()
+    agent = wrap_agent_run(
+        _FakeInner((lambda _: iterator) if mode == "iterator" else inner)
+    )
+
+    async def consume():
+        previous = subagent_emitter._event_queue.get()
+        gen = agent.run({"messages": []})
+        try:
+            assert (await gen.__anext__()).type == EventType.RUN_STARTED
+            if mode == "aclose":
+                await ready.wait()
+                with anyio.CancelScope() as scope:
+                    scope.cancel()
+                    await gen.aclose()
+            else:
+                await gen.__anext__()
+        finally:
+            # This must run in the consumer's context, not the parent task's.
+            restored.append(subagent_emitter._event_queue.get() is previous)
+
+    if mode == "aclose":
+        await consume()
+    else:
+        async with anyio.create_task_group() as group:
+            group.start_soon(consume)
+            await ready.wait()
+            group.cancel_scope.cancel()
+
+    assert closed.is_set(), f"awaited cleanup did not close resource: {mode}"
+    assert restored == [True], f"consumer ContextVar was not restored: {mode}"
+    assert all(task.done() for task in owned_tasks), "owned pump remains live"
+    if mode == "iterator":
+        assert next_cancelled.is_set(), "iterator __anext__ was not cancelled"
+
+
+@pytest.mark.parametrize("mode", ["taskgroup", "aclose", "iterator"])
+def test_wrapper_awaited_cleanup_under_cancelled_scope(mode):
+    # An independent process watchdog also bounds failures that defeat an
+    # in-process cancellation timeout. runpy loads this actual canonical file.
+    test_file = Path(__file__).resolve()
+    env = {
+        key: value for key, value in os.environ.items()
+        if not any(part in key.upper() for part in (
+            "KEY", "TOKEN", "SECRET", "PASSWORD", "AZURE", "OPENAI",
+            "ANTHROPIC", "LANGSMITH", "LANGCHAIN",
+        ))
+    }
+    env["OPENAI_API_KEY"] = "sk-dummy-cancellation-test"
+    result = subprocess.run(
+        [sys.executable, "-c", (
+            "import asyncio, runpy, sys; "
+            "case = runpy.run_path(sys.argv[1])['_awaited_cleanup_case']; "
+            "asyncio.run(case(sys.argv[2]))"
+        ), str(test_file), mode],
+        cwd=test_file.parents[1],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
 
 
 def test_wrap_agent_run_returns_agentframeworkagent_for_endpoint_dispatch():

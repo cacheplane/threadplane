@@ -47,6 +47,8 @@ The `delegation_*` helpers close that gap. They live in `src/subagent_emitter.py
 
 The wire capture behind the design is committed next to the module as [`python/docs/wire-capture-subagents.md`](https://github.com/cacheplane/threadplane/blob/main/cockpit/runtimes/microsoft-agent-framework/python/docs/wire-capture-subagents.md).
 
+The run wrapper shields its cleanup from enclosing AnyIO cancellation scopes so it can cancel and await its pump, await the inner iterator's close, and restore the consumer's context. The regression tests exercise awaited cleanup with synthetic streams; they do not establish HTTP disconnect behavior or protection against arbitrary direct task cancellation.
+
 ### Choosing the model client
 
 Azure OpenAI is the default path, and the choice is made by one environment variable.

@@ -54,6 +54,8 @@ from contextvars import ContextVar
 from dataclasses import dataclass, field
 from typing import Any, AsyncGenerator
 
+import anyio
+
 from ag_ui.core import (
     BaseEvent,
     EventType,
@@ -292,15 +294,16 @@ class SubagentEmittingAgent(AgentFrameworkAgent):
             # Consumer break / client disconnect (GeneratorExit) or pump
             # failure: cancel and await the pump so no task is orphaned,
             # then close the inner generator.
-            pump.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await pump
-            with contextlib.suppress(Exception):
-                await inner_gen.aclose()
-            # reset raises ValueError if a GC-driven aclose runs the finally
-            # in a different context than the one that set the var.
-            with contextlib.suppress(ValueError):
-                _event_queue.reset(token)
+            with anyio.CancelScope(shield=True):
+                pump.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await pump
+                with contextlib.suppress(Exception):
+                    await inner_gen.aclose()
+                # reset raises ValueError if a GC-driven aclose runs the finally
+                # in a different context than the one that set the var.
+                with contextlib.suppress(ValueError):
+                    _event_queue.reset(token)
 
 
 def wrap_agent_run(agent: AgentFrameworkAgent) -> SubagentEmittingAgent:
