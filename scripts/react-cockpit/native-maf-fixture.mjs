@@ -77,6 +77,7 @@ export function createNativeMafFixture() {
       assert.ok(
         [
           'approval',
+          'batch',
           'cancel',
           'missing-terminal',
           'wrong-terminal',
@@ -87,7 +88,9 @@ export function createNativeMafFixture() {
       await closeOwner();
       // createNativeMafServer owns failed acquisition cleanup before returning.
       const server = await createNativeMafServer({
-        mode: options.scenario === 'cancel' ? 'cancel' : 'approval',
+        mode: ['cancel', 'batch'].includes(options.scenario)
+          ? options.scenario
+          : 'approval',
       });
       owner = {
         server,
@@ -223,7 +226,7 @@ export function createNativeMafFixture() {
           incoming.on('data', (chunk) => {
             input.push(Buffer.from(chunk));
             record();
-            if (scenario === 'approval' || scenario === 'cancel') {
+            if (['approval', 'batch', 'cancel'].includes(scenario)) {
               send(chunk);
               return;
             }

@@ -27,7 +27,7 @@ export async function createNativeMafServer({
   python = resolve(environment, 'bin/python'),
   spawnProcess = spawn,
 } = {}) {
-  assert.ok(['approval', 'cancel'].includes(mode));
+  assert.ok(['approval', 'batch', 'cancel'].includes(mode));
   let child,
     exiting,
     closing,

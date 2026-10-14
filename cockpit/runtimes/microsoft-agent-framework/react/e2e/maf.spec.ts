@@ -17,10 +17,24 @@ interface WireEvent {
   readonly type: string;
   readonly runId?: string;
   readonly threadId?: string;
+  readonly subagentRunId?: string;
+  readonly messages?: readonly WireMessage[];
   readonly outcome?: {
     readonly type: string;
     readonly interrupts?: readonly { readonly id: string }[];
   };
+}
+interface WireMessage {
+  readonly id: string;
+  readonly role: string;
+  readonly content?: string;
+  readonly toolCallId?: string;
+  readonly subagentRunId?: string;
+  readonly error?: boolean;
+  readonly toolCalls?: readonly {
+    readonly id: string;
+    readonly function: { readonly name: string; readonly arguments: string };
+  }[];
 }
 function events(base64: string): WireEvent[] {
   return [
@@ -107,152 +121,242 @@ test('mount, preset, edit and New allocate no requests; only explicit Send reach
   expect(evidence.current.observed.model.httpSeen).toBe(2);
 });
 
-for (const width of [1280, 390])
-  for (const decision of ['Approve', 'Decline'] as const) {
-    test(`actual native ${decision} at ${width} binds original pause, typed model continuation and literal result`, async ({
-      page,
-      request,
-    }) => {
-      await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
-      await start(page, request);
-      await send(page);
-      await expect(page.getByRole('status')).toHaveText(
-        'Awaiting your decision.'
-      );
-      await expect(
-        page.getByRole('button', { name: 'Approve', exact: true })
-      ).toBeEnabled();
-      await expect(
-        page.getByRole('button', { name: 'Decline', exact: true })
-      ).toBeEnabled();
-      const draft = page.getByRole('region', {
-        name: 'Predictive expense draft',
-      });
-      await expect(draft).toContainText('Blue Finch Bistro');
-      await expect(draft).toContainText('meals');
-      await expect(draft).toContainText('$220.00');
-      await expect(draft).toContainText(
-        'Team dinner for 4 attendees; receipt attached.'
-      );
-      await expect(
-        page.getByRole('textbox', { name: 'Message', exact: true })
-      ).toBeDisabled();
-      expect(
-        await page.evaluate(
-          () => document.documentElement.scrollWidth <= innerWidth
-        )
-      ).toBe(true);
-      await page.screenshot({
-        path: test.info().outputPath('complete-approval.png'),
-        fullPage: true,
-      });
-      const card = page.locator('.tp-approval-card');
-      await expect(card).toContainText('Blue Finch Bistro');
-      await expect(card).toContainText('$220.00');
-      for (const control of [
-        page.getByRole('button', { name: 'Approve', exact: true }),
-        page.getByRole('button', { name: 'Decline', exact: true }),
-        page.getByRole('button', { name: 'New conversation', exact: true }),
-        page.getByRole('textbox', { name: 'Message', exact: true }),
-        page.getByRole('status'),
-      ])
-        await withinViewport(control);
-      expect(
-        await card.evaluate((element) => {
-          const rect = element.getBoundingClientRect();
-          return (
-            rect.left >= 0 &&
-            rect.right <= innerWidth &&
-            element.scrollWidth <= element.clientWidth + 1
+for (const scenario of ['approval', 'batch'])
+  for (const width of [1280, 390])
+    for (const decision of ['Approve', 'Decline'] as const) {
+      test(`actual native ${scenario} ${decision} at ${width} binds original pause, typed model continuation and literal result`, async ({
+        page,
+        request,
+      }) => {
+        await page.setViewportSize({
+          width,
+          height: width === 390 ? 844 : 900,
+        });
+        await start(page, request, scenario);
+        await send(page);
+        await expect(page.getByRole('status')).toHaveText(
+          'Awaiting your decision.'
+        );
+        await expect(
+          page.getByRole('button', { name: 'Approve', exact: true })
+        ).toBeEnabled();
+        await expect(
+          page.getByRole('button', { name: 'Decline', exact: true })
+        ).toBeEnabled();
+        const draft = page.getByRole('region', {
+          name: 'Predictive expense draft',
+        });
+        await expect(draft).toContainText('Blue Finch Bistro');
+        await expect(draft).toContainText('meals');
+        await expect(draft).toContainText('$220.00');
+        await expect(draft).toContainText(
+          'Team dinner for 4 attendees; receipt attached.'
+        );
+        await expect(
+          page.getByRole('textbox', { name: 'Message', exact: true })
+        ).toBeDisabled();
+        expect(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth
+          )
+        ).toBe(true);
+        await page.screenshot({
+          path: test.info().outputPath('complete-approval.png'),
+          fullPage: true,
+        });
+        const card = page.locator('.tp-approval-card');
+        await expect(card).toContainText('Blue Finch Bistro');
+        await expect(card).toContainText('$220.00');
+        for (const control of [
+          page.getByRole('button', { name: 'Approve', exact: true }),
+          page.getByRole('button', { name: 'Decline', exact: true }),
+          page.getByRole('button', { name: 'New conversation', exact: true }),
+          page.getByRole('textbox', { name: 'Message', exact: true }),
+          page.getByRole('status'),
+        ])
+          await withinViewport(control);
+        expect(
+          await card.evaluate((element) => {
+            const rect = element.getBoundingClientRect();
+            return (
+              rect.left >= 0 &&
+              rect.right <= innerWidth &&
+              element.scrollWidth <= element.clientWidth + 1
+            );
+          })
+        ).toBe(true);
+        await card.screenshot({
+          path: test.info().outputPath('canonical-approval-card.png'),
+        });
+        const before = await stats(request);
+        expect(before.current.requests).toHaveLength(1);
+        const initial = before.current.requests[0];
+        expect(initial.upstreamBase64).toBe(initial.sentBase64);
+        const terminal = events(initial.upstreamBase64).find(
+          (event) => event.type === 'RUN_FINISHED'
+        );
+        expect(terminal?.runId).toBe(initial.body.runId);
+        expect(terminal?.threadId).toBe(initial.body.threadId);
+        expect(terminal?.outcome?.type).toBe('interrupt');
+        expect(terminal?.outcome?.interrupts).toHaveLength(1);
+        if (scenario === 'batch') {
+          expect(before.current.observed.model.httpSeen).toBe(1);
+          const response = Buffer.from(
+            before.current.observed.model.records[0].responseBase64,
+            'base64'
+          ).toString();
+          const declarations = [
+            ...response.matchAll(/^data: (\{.+\})$/gm),
+          ].flatMap(
+            (match) => JSON.parse(match[1]).choices[0].delta.tool_calls ?? []
           );
-        })
-      ).toBe(true);
-      await card.screenshot({
-        path: test.info().outputPath('canonical-approval-card.png'),
+          expect(
+            declarations.map((call) => [call.id, call.function.name])
+          ).toEqual([
+            ['c0_lookup_expense_policy', 'lookup_expense_policy'],
+            ['c0_submit_expense', 'submit_expense'],
+          ]);
+          const pausedRows = events(initial.upstreamBase64)
+            .filter((event) => event.type === 'MESSAGES_SNAPSHOT')
+            .at(-1)?.messages;
+          expect(pausedRows).toBeDefined();
+          const assistant = pausedRows?.filter(
+            (message) =>
+              message.role === 'assistant' && message.toolCalls?.length
+          );
+          expect(assistant).toHaveLength(1);
+          expect(
+            assistant?.[0].toolCalls?.map((call) => [
+              call.id,
+              call.function.name,
+              JSON.parse(call.function.arguments),
+            ])
+          ).toEqual(
+            declarations.map((call) => [
+              call.id,
+              call.function.name,
+              JSON.parse(call.function.arguments),
+            ])
+          );
+          expect(
+            pausedRows?.filter((message) => message.role === 'tool')
+          ).toHaveLength(0);
+        }
+        expect(before.current.observed.entries).toBe(0);
+        await page.getByRole('button', { name: decision, exact: true }).click();
+        await expect(page.getByRole('status')).toHaveText(
+          decision === 'Approve'
+            ? 'Fictional expense approved.'
+            : 'Expense declined.'
+        );
+        const result = page.getByRole('region', {
+          name: 'Observed backend result',
+        });
+        await expect(result.locator('pre')).toHaveText(
+          decision === 'Approve' ? approved : rejected
+        );
+        await expect(
+          page.getByRole('textbox', { name: 'Message', exact: true })
+        ).toBeEnabled();
+        await expect(
+          page.getByRole('button', { name: 'Approve', exact: true })
+        ).toHaveCount(0);
+        await page.screenshot({
+          path: test.info().outputPath('complete-result.png'),
+          fullPage: true,
+        });
+        for (const control of [
+          result.locator('pre'),
+          page.getByRole('textbox', { name: 'Message', exact: true }),
+          page.getByRole('button', { name: 'Send', exact: true }),
+          page.getByRole('button', { name: 'New conversation', exact: true }),
+          page.getByRole('status'),
+        ])
+          await withinViewport(control);
+        await result.screenshot({
+          path: test.info().outputPath('literal-result-region.png'),
+        });
+        const after = await stats(request),
+          records = after.current.requests;
+        expect(records).toHaveLength(2);
+        expect(records[1].upstreamBase64).toBe(records[1].sentBase64);
+        expect(records[1].body.threadId).toBe(initial.body.threadId);
+        expect(records[1].body.runId).not.toBe(initial.body.runId);
+        expect(records[1].body.resume).toEqual([
+          {
+            interruptId: terminal?.outcome?.interrupts?.[0].id,
+            status: 'resolved',
+            payload: { approved: decision === 'Approve' },
+          },
+        ]);
+        const final = events(records[1].upstreamBase64).find(
+          (event) => event.type === 'RUN_FINISHED'
+        );
+        expect(final?.runId).toBe(records[1].body.runId);
+        expect(final?.threadId).toBe(records[1].body.threadId);
+        expect(final?.subagentRunId).toBeUndefined();
+        if (scenario === 'batch') {
+          const finalRows = events(records[1].upstreamBase64)
+            .filter((event) => event.type === 'MESSAGES_SNAPSHOT')
+            .at(-1)?.messages;
+          expect(finalRows).toBeDefined();
+          for (const callId of [
+            'c0_lookup_expense_policy',
+            'c0_submit_expense',
+          ]) {
+            const results = finalRows?.filter(
+              (message) =>
+                message.role === 'tool' && message.toolCallId === callId
+            );
+            expect(results).toHaveLength(1);
+            expect(results?.[0].subagentRunId).toBeUndefined();
+            expect(results?.[0].error).toBeFalsy();
+            expect(results?.[0].content?.trim()).toBeTruthy();
+            if (callId === 'c0_submit_expense')
+              expect(results?.[0].content).toBe(
+                decision === 'Approve' ? approved : rejected
+              );
+            // The lookup is compared with the genuine continuation, never used as expense authority.
+            expect(
+              after.current.observed.model.records
+                .at(-1)
+                .body.messages.filter(
+                  (message: { role: string; tool_call_id?: string }) =>
+                    message.role === 'tool' && message.tool_call_id === callId
+                )
+                .map((message: { content: string }) => message.content)
+            ).toEqual([results?.[0].content]);
+          }
+          expect(
+            records[1].body.messages.filter(
+              (message: WireMessage) => message.role === 'tool'
+            )
+          ).toHaveLength(0);
+        }
+        expect(after.current.observed.model.httpSeen).toBe(
+          scenario === 'batch' ? 2 : 3
+        );
+        expect(
+          after.current.observed.model.records.map(
+            (record: Record<string, unknown>) => record.branch
+          )
+        ).toEqual([
+          ...(scenario === 'batch'
+            ? ['batch-policy-submit']
+            : ['lookup-policy', 'submit-expense']),
+          decision === 'Approve'
+            ? 'continuation-approve'
+            : 'continuation-decline',
+        ]);
+        expect(
+          after.current.observed.model.records.at(-1)
+            .actualContinuationToolContent
+        ).toBe(decision === 'Approve' ? approved : rejected);
+        expect(after.current.observed.entries).toBe(
+          decision === 'Approve' ? 1 : 0
+        );
       });
-      const before = await stats(request);
-      expect(before.current.requests).toHaveLength(1);
-      const initial = before.current.requests[0];
-      expect(initial.upstreamBase64).toBe(initial.sentBase64);
-      const terminal = events(initial.upstreamBase64).find(
-        (event) => event.type === 'RUN_FINISHED'
-      );
-      expect(terminal?.runId).toBe(initial.body.runId);
-      expect(terminal?.threadId).toBe(initial.body.threadId);
-      expect(terminal?.outcome?.type).toBe('interrupt');
-      expect(terminal?.outcome?.interrupts).toHaveLength(1);
-      expect(before.current.observed.entries).toBe(0);
-      await page.getByRole('button', { name: decision, exact: true }).click();
-      await expect(page.getByRole('status')).toHaveText(
-        decision === 'Approve'
-          ? 'Fictional expense approved.'
-          : 'Expense declined.'
-      );
-      const result = page.getByRole('region', {
-        name: 'Observed backend result',
-      });
-      await expect(result.locator('pre')).toHaveText(
-        decision === 'Approve' ? approved : rejected
-      );
-      await expect(
-        page.getByRole('textbox', { name: 'Message', exact: true })
-      ).toBeEnabled();
-      await expect(
-        page.getByRole('button', { name: 'Approve', exact: true })
-      ).toHaveCount(0);
-      await page.screenshot({
-        path: test.info().outputPath('complete-result.png'),
-        fullPage: true,
-      });
-      for (const control of [
-        result.locator('pre'),
-        page.getByRole('textbox', { name: 'Message', exact: true }),
-        page.getByRole('button', { name: 'Send', exact: true }),
-        page.getByRole('button', { name: 'New conversation', exact: true }),
-        page.getByRole('status'),
-      ])
-        await withinViewport(control);
-      await result.screenshot({
-        path: test.info().outputPath('literal-result-region.png'),
-      });
-      const after = await stats(request),
-        records = after.current.requests;
-      expect(records).toHaveLength(2);
-      expect(records[1].upstreamBase64).toBe(records[1].sentBase64);
-      expect(records[1].body.threadId).toBe(initial.body.threadId);
-      expect(records[1].body.runId).not.toBe(initial.body.runId);
-      expect(records[1].body.resume).toEqual([
-        {
-          interruptId: terminal?.outcome?.interrupts?.[0].id,
-          status: 'resolved',
-          payload: { approved: decision === 'Approve' },
-        },
-      ]);
-      const final = events(records[1].upstreamBase64).find(
-        (event) => event.type === 'RUN_FINISHED'
-      );
-      expect(final?.runId).toBe(records[1].body.runId);
-      expect(final?.threadId).toBe(records[1].body.threadId);
-      expect(after.current.observed.model.httpSeen).toBe(3);
-      expect(
-        after.current.observed.model.records.map(
-          (record: Record<string, unknown>) => record.branch
-        )
-      ).toEqual([
-        'lookup-policy',
-        'submit-expense',
-        decision === 'Approve'
-          ? 'continuation-approve'
-          : 'continuation-decline',
-      ]);
-      expect(
-        after.current.observed.model.records[2].actualContinuationToolContent
-      ).toBe(decision === 'Approve' ? approved : rejected);
-      expect(after.current.observed.entries).toBe(
-        decision === 'Approve' ? 1 : 0
-      );
-    });
-  }
+    }
 
 for (const scenario of ['missing-terminal', 'wrong-terminal'])
   test(`negative-only ${scenario} leaves actual result unconfirmed`, async ({
