@@ -18,6 +18,7 @@ annotated-types==0.8.0
     # via pydantic
 anyio==4.14.2
     # via
+    #   cockpit-runtimes-microsoft-agent-framework
     #   httpx
     #   openai
     #   sse-starlette
