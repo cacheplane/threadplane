@@ -1165,6 +1165,22 @@ const agUiClientToolsReact = (() => {
   });
 })();
 
+const mastraReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'runtimes-mastra-angular');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-runtimes-mastra-react');
+  if (!canonical || !frontend) throw new Error('Mastra React frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical, id: 'runtimes-mastra-react', frontend: 'react',
+    title: 'Mastra reservations (React preview)',
+    codeAssetPaths: [
+      ...['app.tsx', 'application.ts', 'approval-policy.ts', 'connection.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/runtimes/mastra/react/src/${file}`),
+      'cockpit/runtimes/mastra/react/project.json',
+      ...canonical.promptAssetPaths,
+    ],
+    runtimeUrl: frontend.runtimePath, devPort: frontend.port,
+  });
+})();
+
 const agUiJsonRenderReact = (() => {
   const canonical=capabilityModules.find(descriptor=>descriptor.id==='ag-ui-json-render-python');
   const frontend=getCockpitFrontends().find(entry=>entry.project==='cockpit-ag-ui-json-render-react');
@@ -1383,6 +1399,7 @@ export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
     agUiInterruptsReact,
     agUiToolViewsReact,
     agUiClientToolsReact,
+    mastraReact,
     agUiJsonRenderReact,
     agUiSubagentsReact,
     renderSpecReact,

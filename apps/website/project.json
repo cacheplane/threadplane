@@ -15,7 +15,8 @@
     "cockpit-chat-threads-angular",
     "cockpit-render-computed-functions-angular",
     "cockpit-ag-ui-client-tools-react",
-    "cockpit-ag-ui-client-tools-angular"
+    "cockpit-ag-ui-client-tools-angular",
+    "cockpit-runtimes-mastra-react"
   ],
   "tags": ["scope:website", "scope:website-e2e", "type:app"],
   "targets": {
@@ -75,6 +76,10 @@
       "executor": "@nx/playwright:playwright",
       "dependsOn": [
         {
+          "target": "prepare-fixture",
+          "projects": ["cockpit-runtimes-mastra-react"]
+        },
+        {
           "target": "build",
           "projects": [
             "cockpit-langgraph-streaming-react",
@@ -110,7 +115,8 @@
             "cockpit-deep-agents-subagents-react",
             "cockpit-deep-agents-skills-react",
             "cockpit-deep-agents-memory-react",
-            "cockpit-ag-ui-client-tools-react"
+            "cockpit-ag-ui-client-tools-react",
+            "cockpit-runtimes-mastra-react"
           ]
         }
       ],

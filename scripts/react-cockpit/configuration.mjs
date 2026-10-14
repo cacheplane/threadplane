@@ -1,5 +1,11 @@
 /** Closed authored frontend selection; callers cannot supply filesystem paths. */
 export function reactCockpitConfiguration(topic = 'streaming') {
+  if (topic === 'runtimes-mastra')
+    return Object.freeze({
+      topic: 'mastra', library: 'runtimes', adapter: 'ag-ui',
+      appPath: 'cockpit/runtimes/mastra/react', base: '/runtimes/mastra/react/',
+      port: 4641, project: 'cockpit-runtimes-mastra-react',
+    });
   if (topic === 'deep-agents-memory')
     return Object.freeze({
       topic: 'memory', library: 'deep-agents', adapter: 'langgraph',

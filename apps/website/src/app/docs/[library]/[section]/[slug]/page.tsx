@@ -13,6 +13,7 @@ import { ReactDeploymentRuntimePreview } from '../../../../../components/docs/Re
 import { ReactAgUiStreamingPreview } from '../../../../../components/docs/ReactAgUiStreamingPreview';
 import { ReactAgUiInterruptsPreview } from '../../../../../components/docs/ReactAgUiInterruptsPreview';
 import { ReactAgUiClientToolsPreview } from '../../../../../components/docs/ReactAgUiClientToolsPreview';
+import { ReactMastraPreview } from '../../../../../components/docs/ReactMastraPreview';
 import { ReactAgUiToolViewsPreview } from '../../../../../components/docs/ReactAgUiToolViewsPreview';
 import { ReactAgUiJsonRenderPreview } from '../../../../../components/docs/ReactAgUiJsonRenderPreview';
 import { ReactAgUiSubagentsPreview } from '../../../../../components/docs/ReactAgUiSubagentsPreview';
@@ -288,11 +289,14 @@ export default async function DocsPage({ params }: DocsRouteProps) {
         reactDocsSlot={
           workspacePage.frontendVariants?.react &&
           (library === 'langgraph' ||
+            (library === 'runtimes' && section === 'mastra' && slug === 'overview') ||
             (library === 'deep-agents' && section === 'capabilities' && ['planning', 'filesystem', 'subagents', 'skills', 'memory'].includes(slug)) ||
             (library === 'render' && ((section === 'guides' && ['specs','state-store','repeat-loops','registry'].includes(slug)) || (section === 'api' && ['render-spec-component','provide-render'].includes(slug)))) ||
             (library === 'ag-ui' && ((section === 'reference' && slug === 'event-mapping') || (section === 'guides' && ['interrupts','tool-views','client-tools','json-render','subagents'].includes(slug)))) ||
             (library === 'chat' && ((section === 'guides' && ['thread-routing', 'generative-ui'].includes(slug)) || slug === 'client-tools' || (section === 'concepts' && slug === 'message-model') || (section === 'components' && ['chat-trace', 'chat-input', 'chat-interrupt-panel', 'chat-tool-calls', 'chat-subagent-card'].includes(slug))))) ? (
-            library === 'deep-agents' && section === 'capabilities' && slug === 'memory' ? (
+            library === 'runtimes' && section === 'mastra' && slug === 'overview' ? (
+              <ReactMastraPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />
+            ) : library === 'deep-agents' && section === 'capabilities' && slug === 'memory' ? (
               <ReactDeepAgentsMemoryPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />
             ) : library === 'deep-agents' && section === 'capabilities' && slug === 'skills' ? (
               <ReactDeepAgentsSkillsPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />

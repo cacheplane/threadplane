@@ -1,6 +1,18 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import * as ts from 'typescript';
 
+function websiteBuildProjects(website: {
+  targets: {
+    e2e: {
+      dependsOn: readonly { target: string; projects?: readonly string[] }[];
+    };
+  };
+}) {
+  return website.targets.e2e.dependsOn.find(
+    dependency => dependency.target === 'build'
+  )?.projects;
+}
+
 it('wires native Planning build, fixture and website coverage to the shared Python graph', () => {
   const read = (path: string) => JSON.parse(readFileSync(join(repoRoot, path), 'utf8'));
   const react = read('cockpit/deep-agents/planning/react/project.json');
@@ -9,7 +21,7 @@ it('wires native Planning build, fixture and website coverage to the shared Pyth
   expect(react.targets.e2e.dependsOn).toEqual(['build', 'fixture-test']);
   expect(react.targets['fixture-test'].dependsOn).toContainEqual({ target: 'test', projects: ['cockpit-deep-agents-planning-python'] });
   const website = read('apps/website/project.json');
-  expect(website.targets.e2e.dependsOn[0].projects).toContain('cockpit-deep-agents-planning-react');
+  expect(websiteBuildProjects(website)).toContain('cockpit-deep-agents-planning-react');
   const config = readFileSync(join(repoRoot, 'apps/website/playwright.config.ts'), 'utf8');
   expect(config).toContain('cockpit-deep-agents-planning-python:smoke && node scripts/react-cockpit/serve.mjs deep-agents-planning --no-parent');
   expect(config).toContain("url: 'http://127.0.0.1:4628'");
@@ -23,7 +35,7 @@ it('wires native Skills build, fixture and website coverage to the shared Python
   expect(react.targets['fixture-test'].dependsOn).toContainEqual({ target: 'test', projects: ['cockpit-deep-agents-skills-python'] });
   expect(react.targets['fixture-test'].dependsOn).toContainEqual({ target: 'build', projects: ['core'] });
   const website = read('apps/website/project.json');
-  expect(website.targets.e2e.dependsOn[0].projects).toContain('cockpit-deep-agents-skills-react');
+  expect(websiteBuildProjects(website)).toContain('cockpit-deep-agents-skills-react');
   const config = readFileSync(join(repoRoot, 'apps/website/playwright.config.ts'), 'utf8');
   expect(config).toContain('cockpit-deep-agents-skills-python:smoke && node scripts/react-cockpit/serve.mjs deep-agents-skills --no-parent');
   expect(config).toContain("url: 'http://127.0.0.1:4631'");
@@ -36,7 +48,7 @@ it('wires native Subagents build, fixture and website coverage to the shared Pyt
   expect(react.targets.e2e.dependsOn).toEqual(['build', 'fixture-test']);
   expect(react.targets['fixture-test'].dependsOn).toContainEqual({ target: 'test', projects: ['cockpit-deep-agents-subagents-python'] });
   const website = read('apps/website/project.json');
-  expect(website.targets.e2e.dependsOn[0].projects).toContain('cockpit-deep-agents-subagents-react');
+  expect(websiteBuildProjects(website)).toContain('cockpit-deep-agents-subagents-react');
   const config = readFileSync(join(repoRoot, 'apps/website/playwright.config.ts'), 'utf8');
   expect(config).toContain('cockpit-deep-agents-subagents-python:smoke && node scripts/react-cockpit/serve.mjs deep-agents-subagents --no-parent');
   expect(config).toContain("url: 'http://127.0.0.1:4630'");
@@ -49,7 +61,7 @@ it('wires native Filesystem build, fixture and website coverage to the shared Py
   expect(react.targets.e2e.dependsOn).toEqual(['build', 'fixture-test']);
   expect(react.targets['fixture-test'].dependsOn).toContainEqual({ target: 'test', projects: ['cockpit-deep-agents-filesystem-python'] });
   const website = read('apps/website/project.json');
-  expect(website.targets.e2e.dependsOn[0].projects).toContain('cockpit-deep-agents-filesystem-react');
+  expect(websiteBuildProjects(website)).toContain('cockpit-deep-agents-filesystem-react');
   const config = readFileSync(join(repoRoot, 'apps/website/playwright.config.ts'), 'utf8');
   expect(config).toContain('cockpit-deep-agents-filesystem-python:smoke && node scripts/react-cockpit/serve.mjs deep-agents-filesystem --no-parent');
   expect(config).toContain("url: 'http://127.0.0.1:4629'");
@@ -366,7 +378,7 @@ it('wires native Memory build, compiled fixture and website coverage to the shar
     'node --test scripts/react-cockpit/deep-agents-memory-fixture.spec.mjs scripts/react-cockpit/deep-agents-memory-configuration.spec.mjs'
   );
   expect(
-    read('apps/website/project.json').targets.e2e.dependsOn[0].projects
+    websiteBuildProjects(read('apps/website/project.json'))
   ).toContain('cockpit-deep-agents-memory-react');
   expect(
     read('cockpit/deep-agents/memory/angular/project.json').targets.e2e

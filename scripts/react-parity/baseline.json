@@ -1,12 +1,13 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "b69f180df57b997adea85e9d2c2e29736fd152d2",
+  "baselineHead": "612567da329248148ddf5bd145649990c9c9c765",
   "sourceState": {
     "modified": [
-      ".github/workflows/ci.yml",
+      "apps/website/content/docs/runtimes/mastra/how-it-connects.mdx",
+      "apps/website/content/docs/runtimes/mastra/overview.mdx",
+      "apps/website/content/docs/runtimes/mastra/quickstart.mdx",
       "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "libs/cockpit-registry/src/lib/content-descriptors.ts",
-      "libs/workspace-react/src/lib/components/code-mode/code-mode.tsx"
+      "libs/cockpit-registry/src/lib/content-descriptors.ts"
     ],
     "untracked": []
   },
@@ -2999,19 +3000,19 @@
       "id": "doc:apps/website/content/docs/runtimes/mastra/how-it-connects.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/runtimes/mastra/how-it-connects.mdx",
-      "sha256": "f6fc4d4db24e487bb5a478dbf01e046c91079e5ac20510b54fe7a8cfb42ef28d"
+      "sha256": "b9318f4535db5019052933a953abac671e707f7b5fbe6a37098a2a7513d24fa5"
     },
     {
       "id": "doc:apps/website/content/docs/runtimes/mastra/overview.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/runtimes/mastra/overview.mdx",
-      "sha256": "4bbf3bfb26bacc5bedc2fc1790d44f707c28f6cc08220da730fe55a5dc0175b1"
+      "sha256": "43e882acae9a7c750fefb7e563394649ee712e0a0ff45f03d34ba0113ceb0087"
     },
     {
       "id": "doc:apps/website/content/docs/runtimes/mastra/quickstart.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/runtimes/mastra/quickstart.mdx",
-      "sha256": "d4addec10501b566b4c77229127ea73631ea6ac2eeffeeada74eb9f7475bd1d1"
+      "sha256": "bd6f8e287bc83103bad43b5e9d9c63542994f1cde5324245b7fdde577aea2dec"
     },
     {
       "id": "doc:apps/website/content/docs/runtimes/microsoft-agent-framework/how-it-connects.mdx",
@@ -13478,13 +13479,13 @@
       "id": "source:libs/cockpit-registry/src/lib/capability-registry.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "sha256": "71fb516c9e668e577972d0534355cd491b748bb7ab3c70439dda90493072c91b"
+      "sha256": "6d0e7b61bb843fccb7f3ba63414bc83f753a98b9780f4be8c8a1aaa33041913f"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/content-descriptors.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/content-descriptors.ts",
-      "sha256": "3081771e78e7cd6b196d9ab5f8725009809d179793f9fcef613e81d0c8ae9ecf"
+      "sha256": "a9cd3dcd3ee9b9ebc2c71a07b4407a77efbad6f4ec00b9cf8d2a09872d0eb913"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/docs-links.ts",

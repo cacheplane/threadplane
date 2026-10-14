@@ -95,7 +95,7 @@ export const capabilities: readonly Capability[] = [
   // No pythonDir: the Mastra topic's backend is the hand-written Node
   // service deployments/ag-ui-mastra (start it locally on pythonPort — here
   // meaning "backend port" — for dev/e2e; see that service's README).
-  { id: 'rt-mastra', runtimeAdapter: 'ag-ui', product: 'runtimes', topic: 'mastra', angularProject: 'cockpit-runtimes-mastra-angular', port: 4332, pythonPort: 5332, framework: 'mastra' },
+  { id: 'rt-mastra', runtimeAdapter: 'ag-ui', product: 'runtimes', topic: 'mastra', angularProject: 'cockpit-runtimes-mastra-angular', port: 4332, react: { project: 'cockpit-runtimes-mastra-react', port: 4641 }, pythonPort: 5332, framework: 'mastra' },
 ] as const;
 
 export function findCapability(id: string): Capability | undefined {
