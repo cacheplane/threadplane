@@ -1,12 +1,10 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "612567da329248148ddf5bd145649990c9c9c765",
+  "baselineHead": "6d18458a0dd1b1fea7a4080a18e76d12e809b06f",
   "sourceState": {
     "modified": [
-      "apps/website/content/docs/runtimes/mastra/how-it-connects.mdx",
-      "apps/website/content/docs/runtimes/mastra/overview.mdx",
-      "apps/website/content/docs/runtimes/mastra/quickstart.mdx",
-      "libs/cockpit-registry/src/lib/capability-registry.ts",
+      ".github/workflows/ci.yml",
+      "apps/website/content/docs/runtimes/microsoft-agent-framework/overview.mdx",
       "libs/cockpit-registry/src/lib/content-descriptors.ts"
     ],
     "untracked": []
@@ -2154,7 +2152,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "63e3504d5925b09d968ad56a9271814d374de910600a757b04c7e20c216b5bcf"
+      "sha256": "ab361d9d8b1a9107904c2c5fa62686176900479d99b5f68c7cf1b2cd584c08eb"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -3024,7 +3022,7 @@
       "id": "doc:apps/website/content/docs/runtimes/microsoft-agent-framework/overview.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/runtimes/microsoft-agent-framework/overview.mdx",
-      "sha256": "36d41ef551bbf62b7adcbc60a124459779f7af9472be32da9940083e39ce0a63"
+      "sha256": "749a0f3d205b79ff10f9afbe9f90ec5556e7af52f1b856bddbd831d50fc49e72"
     },
     {
       "id": "doc:apps/website/content/docs/runtimes/microsoft-agent-framework/quickstart.mdx",
@@ -13485,7 +13483,7 @@
       "id": "source:libs/cockpit-registry/src/lib/content-descriptors.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/content-descriptors.ts",
-      "sha256": "a9cd3dcd3ee9b9ebc2c71a07b4407a77efbad6f4ec00b9cf8d2a09872d0eb913"
+      "sha256": "781f3b91c14d19f4cd55e46c6f2e5b583f9317fde53d91513b35c25ace769c6d"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/docs-links.ts",
