@@ -27,6 +27,31 @@ it('bounds the Website promotion budget without changing other deploy budgets', 
   assert.match(readJobBlock(workflow, 'deploy'), /timeout-minutes: 45/);
 });
 
+it('installs pinned Python before Website e2e fixture prerequisites in local and preview CI', async () => {
+  const website = JSON.parse(await readFile('apps/website/project.json', 'utf8'));
+  assert.ok(website.targets.e2e.dependsOn.some((dependency) =>
+    dependency.target === 'prepare-fixture' &&
+    dependency.projects.includes('cockpit-runtimes-microsoft-agent-framework-react')
+  ), 'remote BASE_URL does not bypass the native MAF Nx prerequisite');
+
+  const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+  for (const [jobName, setupName, command] of [
+    ['website-preview-e2e', 'Set up Python for Website fixture prerequisites', 'npx nx e2e website'],
+    ['website-e2e', 'Prepare frozen dashboard browser producer', 'npx nx e2e website'],
+    ['cockpit-e2e', 'Install uv', 'npx nx run cockpit-runtimes-microsoft-agent-framework-react:prepare-fixture'],
+  ]) {
+    const job = readJobBlock(workflow, jobName);
+    const setup = readNamedStep(job, setupName);
+    assert.match(setup, /uses: astral-sh\/setup-uv@cec208311dfd045dd5311c1add060b2062131d57(?:\s|$)/);
+    assert.match(setup, /python-version: ['"]3\.12['"]/);
+    assert.doesNotMatch(setup, /if:|continue-on-error/);
+    const invocation = job.indexOf(command);
+    assert.ok(invocation >= 0, `expected ${jobName} to invoke ${command}`);
+    assert.ok(job.indexOf(setup) + setup.length <= invocation,
+      `${jobName} must install uv and Python before Nx executes fixture prerequisites`);
+  }
+});
+
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
