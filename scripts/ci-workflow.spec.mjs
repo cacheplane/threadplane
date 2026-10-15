@@ -165,7 +165,7 @@ const pinnedPostgresMirror =
   'docker.io/library/postgres@sha256:ca0bd484cb98bf4b24eb1010e73fb3fcbd6714d240fbc1a10eea5b7dbecb641d';
 
 function readStepRunBlock(step) {
-  const match = /^ {8}run: \|\n((?: {10}[^\n]*\n?)+)/m.exec(step);
+  const match = /^ {8}run: \|\n((?:(?: {10}[^\n]*|)\n?)+)/m.exec(step);
   assert.ok(match, 'expected a workflow shell run block');
   return match[1].replace(/^ {10}/gm, '').trimEnd();
 }
@@ -463,7 +463,8 @@ describe('CI workflow', () => {
     for (const name of ['deploy', 'demo-deploy', 'ag-ui-demo-deploy', 'production-smoke']) {
       const guard = readJobFieldBlock(readJobBlock(workflow, name), 'if');
       assert.match(guard, /github\.ref == 'refs\/heads\/main'/);
-      assert.match(guard, /github\.event_name == 'push'/);
+      assert.match(guard, /\(github\.event_name == 'push' \|\| github\.event_name == 'workflow_dispatch'\)/);
+      assert.match(guard, /needs\.ci-scope\.result == 'success' && needs\.ci-scope\.outputs\.main_run == 'true'/);
     }
   });
 
@@ -948,7 +949,7 @@ describe('CI workflow', () => {
     const ifBlock = readJobFieldBlock(job, 'if');
 
     assert.deepEqual(readJobNeeds(job), ['ci-scope']);
-    assert.match(ifBlock, /github\.event_name != 'push'/);
+    assert.match(ifBlock, /\(github\.event_name == 'pull_request' \|\| github\.event_name == 'merge_group'\)/);
     assert.match(ifBlock, /needs\.ci-scope\.outputs\.website_e2e == 'true'/);
     assert.match(
       ifBlock,
@@ -1044,6 +1045,7 @@ describe('CI workflow', () => {
     const agUiDemoJob = await readAgUiDemoJob();
 
     assert.deepEqual(readJobNeeds(productionSmokeJob), [
+      'ci-scope',
       'deploy',
       'demo-deploy',
       'ag-ui-demo-deploy',
@@ -1577,4 +1579,260 @@ describe('CI workflow test helpers', () => {
     assert.deepEqual(readJobNeeds(job), ['ci-scope']);
     assert.match(job, /needs\.library\.result/);
   });
+});
+
+// Execute the actual workflow Bash; only external command boundaries are mocked.
+const recoverySha = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+const promotedSha = '89da2a188bf5c5dcbd79a9ed4ab87a9f9c2d3013';
+const unpromotedParent = '16cb465df054e61845a9ea16913da9e1ff8634db';
+async function runRecoveryBlock(jobName, stepName, options = {}) {
+  const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+  let script = readStepRunBlock(readNamedStep(readJobBlock(workflow, jobName), stepName));
+  const expressions = {
+    'github.event_name': 'workflow_dispatch', 'github.sha': recoverySha,
+    'github.event.before': '', 'github.event.pull_request.base.sha': '', 'github.event.pull_request.head.sha': '',
+    'github.event.merge_group.base_sha': '', 'github.event.merge_group.head_sha': '',
+    'needs.examples-chat-smoke.result': 'success',
+    'needs.examples-chat-e2e.result': 'success', 'needs.examples-ag-ui-e2e.result': 'success',
+    ...options.expressions,
+  };
+  script = script.replace(/\$\{\{\s*([^}]+?)\s*\}\}/g, (_, key) => {
+    assert.ok(Object.hasOwn(expressions, key), `unmocked workflow expression ${key}`);
+    return expressions[key];
+  });
+  const directory = await mkdtemp(join(tmpdir(), 'ci-main-recovery-'));
+  try {
+    const output = join(directory, 'output');
+    const callsFile = join(directory, 'calls');
+    await writeFile(output, '');
+    await writeFile(callsFile, '');
+    const command = `#!${process.execPath}\n` + `const fs = require('node:fs');\n` +
+      `const args = process.argv.slice(2); const command = require('node:path').basename(process.argv[1]);\n` +
+      `fs.appendFileSync(process.env.CALLS, JSON.stringify([command, ...args]) + '\\n');\n` +
+      `const scenario = JSON.parse(process.env.SCENARIO);\n` +
+      `if (command === scenario.commandFailure) process.exit(25);\n` +
+      `if (command !== 'git') process.exit(0);\n` +
+      `if (args[0] === 'ls-remote') { if (scenario.remoteFailure) process.exit(23); process.stdout.write(scenario.remote ?? process.env.GITHUB_SHA + '\\t' + args.at(-1) + '\\n'); }\n` +
+      `else if (args[0] === 'cat-file') process.exit(scenario.missingCommit && !(scenario.fetchMakesCommit && fs.existsSync(process.env.CALLS + '.fetched')) ? 1 : 0);\n` +
+      `else if (args[0] === 'rev-parse') console.log(args.at(-1).endsWith('^') ? '${unpromotedParent}' : (scenario.head ?? process.env.GITHUB_SHA));\n` +
+      `else if (args[0] === 'merge-base') process.exit(scenario.nonAncestor ? 1 : 0);\n` +
+      `else if (args[0] === 'fetch') { if (scenario.fetchFailure) process.exit(26); fs.writeFileSync(process.env.CALLS + '.fetched', ''); }\n` +
+      `else { console.error('Unexpected git boundary: ' + args.join(' ')); process.exit(24); }\n`;
+    for (const name of ['git', 'node', 'npx']) {
+      await writeFile(join(directory, name), command);
+      await chmod(join(directory, name), 0o755);
+    }
+    const result = spawnSync('/bin/bash', ['-e', '-o', 'pipefail', '-c', `${script}\nprintf 'NEXT_MUTATION_BOUNDARY\\n'`], {
+      encoding: 'utf8', env: { ...process.env, PATH: `${directory}:/usr/bin:/bin`,
+        GITHUB_REF: 'refs/heads/main', GITHUB_SHA: recoverySha, GITHUB_REPOSITORY: 'owner/repository',
+        EXPECTED_MAIN: recoverySha, CONFIRM_PRODUCTION: 'true', GITHUB_OUTPUT: output,
+        CALLS: callsFile, SCENARIO: JSON.stringify(options.scenario ?? {}), ...options.env },
+    });
+    assert.ifError(result.error);
+    return { result, output: await readFile(output, 'utf8'), calls: (await readFile(callsFile, 'utf8')).trim().split('\n').filter(Boolean).map(JSON.parse) };
+  } finally { await rm(directory, { recursive: true, force: true }); }
+}
+function assertBlocked(run) {
+  assert.notEqual(run.result.status, 0, run.result.stdout);
+  assert.doesNotMatch(run.result.stdout, /NEXT_MUTATION_BOUNDARY/);
+  assert.doesNotMatch(run.output, /main_run=true/);
+}
+
+describe('guarded current-main manual recovery', () => {
+  it('requires explicit production confirmation and pins the first validation before checkout', async () => {
+    const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+    const trigger = workflow.slice(0, workflow.indexOf('\nconcurrency:'));
+    assert.match(trigger, /workflow_dispatch:\n    inputs:\n      expectedMain:\n        description: [^\n]+\n        required: true\n        type: string/);
+    assert.match(trigger, /confirm_production:\n        description: [^\n]+\n        required: true\n        type: boolean\n        default: false/);
+    assert.doesNotMatch(trigger, /expectedMain:[\s\S]*?default:[\s\S]*?confirm_production:/);
+    const scope = readJobBlock(workflow, 'ci-scope');
+    const guard = readNamedStep(scope, 'Validate manual main recovery');
+    assert.ok(scope.indexOf(guard) < scope.indexOf('uses: actions/checkout@'));
+    assert.match(guard, /if: github.event_name == 'workflow_dispatch'/);
+    assert.match(guard, /EXPECTED_MAIN: \$\{\{ inputs.expectedMain \}\}/);
+    assert.match(guard, /CONFIRM_PRODUCTION: \$\{\{ inputs.confirm_production \}\}/);
+    assert.doesNotMatch(readStepRunBlock(guard), /\$\{\{ inputs\.|eval/);
+    assert.doesNotMatch(scope, /ref:\s*\$\{\{/);
+    const pinned = scope.indexOf('- name: Validate checked-out commit');
+    assert.ok(pinned > scope.indexOf('uses: actions/checkout@') && pinned < scope.indexOf('uses: actions/setup-node@'));
+    assert.match(scope, /main_run: \$\{\{ steps.scope.outputs.main_run \}\}/);
+  });
+  it('accepts exactly the confirmed live main SHA with one bounded public read', async () => {
+    const run = await runRecoveryBlock('ci-scope', 'Validate manual main recovery');
+    assert.equal(run.result.status, 0, run.result.stderr);
+    assert.deepEqual(run.calls, [['git', 'ls-remote', '--exit-code', 'https://github.com/owner/repository.git', 'refs/heads/main']]);
+  });
+  for (const [name, env] of Object.entries({
+    branch: { GITHUB_REF: 'refs/heads/feature' }, tag: { GITHUB_REF: 'refs/tags/v1' },
+    wrong: { EXPECTED_MAIN: 'b'.repeat(40) }, missing: { EXPECTED_MAIN: '' }, short: { EXPECTED_MAIN: 'abc' },
+    uppercase: { EXPECTED_MAIN: 'A'.repeat(40) }, nonhex: { EXPECTED_MAIN: 'g'.repeat(40) },
+    newline: { EXPECTED_MAIN: `${recoverySha}\n` }, shell: { EXPECTED_MAIN: '$(touch /tmp/never-execute);' },
+    false: { CONFIRM_PRODUCTION: 'false' }, unconfirmed: { CONFIRM_PRODUCTION: '' },
+  })) it(`rejects ${name} input before checkout, commands or eligibility`, async () => {
+    const run = await runRecoveryBlock('ci-scope', 'Validate manual main recovery', { env });
+    assertBlocked(run); assert.deepEqual(run.calls, []);
+  });
+  for (const [name, scenario] of Object.entries({
+    empty: { remote: '' }, multiple: { remote: `${recoverySha}\trefs/heads/main\n${recoverySha}\trefs/heads/main\n` },
+    blankline: { remote: `${recoverySha}\trefs/heads/main\n\n` },
+    malformed: { remote: `${recoverySha} refs/heads/main\n` }, wrongref: { remote: `${recoverySha}\trefs/heads/other\n` },
+    moved: { remote: `${'b'.repeat(40)}\trefs/heads/main\n` }, failure: { remoteFailure: true },
+  })) it(`rejects ${name} live main response before checkout or eligibility`, async () => {
+    assertBlocked(await runRecoveryBlock('ci-scope', 'Validate manual main recovery', { scenario }));
+  });
+  it('validates the actual pinned checkout before any npm or tests', async () => {
+    assert.equal((await runRecoveryBlock('ci-scope', 'Validate checked-out commit')).result.status, 0);
+    for (const scenario of [{ missingCommit: true }, { head: 'b'.repeat(40) }]) {
+      assertBlocked(await runRecoveryBlock('ci-scope', 'Validate checked-out commit', { scenario }));
+    }
+  });
+  it('selects push full scope for manual runs and emits eligibility only after classification succeeds', async () => {
+    const run = await runRecoveryBlock('ci-scope', 'Detect changed CI surfaces');
+    assert.equal(run.result.status, 0, run.result.stderr);
+    assert.deepEqual(run.calls, [['node', 'scripts/ci-scope.mjs', '--event', 'push', '--output', run.calls[0]?.at(-1)]]);
+    assert.match(run.output, /^main_run=true$/m);
+    const script = readStepRunBlock(readNamedStep(readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'ci-scope'), 'Detect changed CI surfaces'));
+    assert.equal((script.match(/main_run=true/g) ?? []).length, 1);
+    assert.ok(script.indexOf('main_run=true') > script.indexOf('--output "$GITHUB_OUTPUT"'));
+  });
+  it('preserves direct production needs, success eligibility, preview allowlist, and main concurrency', async () => {
+    const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+    const expected = {
+      deploy: ['ci-scope', 'library', 'website', 'cockpit', 'cockpit-examples-build', 'cockpit-smoke', 'examples-chat-smoke', 'examples-chat-e2e', 'cockpit-e2e-summary', 'website-e2e', 'growth-lifecycle', 'lifecycle'],
+      'demo-deploy': ['ci-scope', 'examples-chat-smoke', 'examples-chat-e2e'],
+      'ag-ui-demo-deploy': ['ci-scope', 'examples-ag-ui-e2e'],
+      'production-smoke': ['ci-scope', 'deploy', 'demo-deploy', 'ag-ui-demo-deploy'],
+    };
+    for (const [name, needs] of Object.entries(expected)) {
+      const job = readJobBlock(workflow, name); const guard = readJobFieldBlock(job, 'if');
+      assert.deepEqual(readJobNeeds(job), needs);
+      for (const text of ["needs.ci-scope.result == 'success'", "needs.ci-scope.outputs.main_run == 'true'", "github.ref == 'refs/heads/main'", "(github.event_name == 'push' || github.event_name == 'workflow_dispatch')"]) assert.ok(guard.includes(text), `${name}: ${text}`);
+      if (name === 'deploy' || name === 'production-smoke') assert.doesNotMatch(guard, /always\(/);
+      else {
+        assert.match(guard, /always\(\) && !cancelled\(\)/);
+        assert.ok(job.indexOf('prerequisite jobs') < job.indexOf('uses: actions/checkout@'));
+      }
+    }
+    assert.match(readJobFieldBlock(readJobBlock(workflow, 'website-preview-e2e'), 'if'), /\(github.event_name == 'pull_request' \|\| github.event_name == 'merge_group'\)/);
+    assert.match(readJobFieldBlock(readJobBlock(workflow, 'required-pr-checks'), 'if'), /github.event_name == 'pull_request'.*github.event_name == 'merge_group'/);
+    assert.match(workflow, /group: \$\{\{ github.workflow \}\}-\$\{\{ github.event_name == 'pull_request' && github.event.pull_request.number \|\| github.ref \}\}/);
+    assert.match(workflow, /cancel-in-progress: \$\{\{ github.event_name == 'pull_request' \}\}/);
+  });
+  for (const [job, step, prerequisites] of [
+    ['demo-deploy', 'Require demo prerequisite jobs', ['examples-chat-smoke', 'examples-chat-e2e']],
+    ['ag-ui-demo-deploy', 'Require AG-UI demo prerequisite jobs', ['examples-ag-ui-e2e']],
+  ]) it(`${job} rejects failed or skipped prerequisites before mutation`, async () => {
+    assert.equal((await runRecoveryBlock(job, step)).result.status, 0);
+    for (const prerequisite of prerequisites) for (const result of ['failure', 'skipped', 'cancelled']) {
+      assertBlocked(await runRecoveryBlock(job, step, { expressions: { [`needs.${prerequisite}.result`]: result } }));
+    }
+  });
+  for (const [job, step, ref] of [
+    ['deploy', 'Resolve deploy baseline', 'refs/deploy/last-promoted'],
+    ['ag-ui-demo-deploy', 'Resolve AG-UI demo deploy baseline', 'refs/deploy/ag-ui-demo-last-promoted'],
+  ]) {
+    it(`${job} retains the complete last-promoted range across unpromoted parents`, async () => {
+      const run = await runRecoveryBlock(job, step, { scenario: { remote: `${promotedSha}\t${ref}\n` } });
+      assert.equal(run.result.status, 0, run.result.stderr);
+      assert.equal(run.output, `base=${promotedSha}\n`);
+      assert.ok(run.calls.some(args => args.join(' ') === `git merge-base --is-ancestor ${promotedSha} ${recoverySha}`));
+      assert.ok(!run.calls.some(args => args[1] === 'rev-parse'));
+    });
+    for (const [name, scenario] of Object.entries({
+      missing: { remote: '' }, duplicate: { remote: `${promotedSha}\t${ref}\n${promotedSha}\t${ref}\n` },
+      blankline: { remote: `${promotedSha}\t${ref}\n\n` }, uppercase: { remote: `${'A'.repeat(40)}\t${ref}\n` },
+      malformed: { remote: `bad\t${ref}\n` }, wrongref: { remote: `${promotedSha}\trefs/heads/main\n` },
+      failure: { remoteFailure: true }, unresolved: { remote: `${promotedSha}\t${ref}\n`, missingCommit: true },
+      fetchfailure: { remote: `${promotedSha}\t${ref}\n`, missingCommit: true, fetchFailure: true },
+      nonancestor: { remote: `${promotedSha}\t${ref}\n`, nonAncestor: true },
+    })) it(`${job} blocks ${name} manual marker before mutation`, async () => {
+      assertBlocked(await runRecoveryBlock(job, step, { scenario }));
+    });
+    it(`${job} fetches only the exact validated manual marker when absent locally`, async () => {
+      const run = await runRecoveryBlock(job, step, { scenario: { remote: `${promotedSha}\t${ref}\n`, missingCommit: true, fetchMakesCommit: true } });
+      assert.equal(run.result.status, 0, run.result.stderr); assert.equal(run.output, `base=${promotedSha}\n`);
+      assert.deepEqual(run.calls.filter(args => args[1] === 'fetch'), [['git', 'fetch', '--no-tags', 'origin', promotedSha]]);
+    });
+    it(`${job} preserves push missing-marker parent fallback`, async () => {
+      const run = await runRecoveryBlock(job, step, { expressions: { 'github.event_name': 'push' }, scenario: { remote: '' } });
+      assert.equal(run.result.status, 0, run.result.stderr);
+      assert.equal(run.output, `base=${unpromotedParent}\n`);
+    });
+  }
+  it('executes all cockpit builds and both PostHog read-only drift gates on manual runs', async () => {
+    const build = await runRecoveryBlock('cockpit-examples-build', 'Build cockpit examples (affected on PR, all on main)');
+    assert.equal(build.result.status, 0, build.result.stderr);
+    assert.deepEqual(build.calls, [['npx', 'nx', 'run-many', '-t', 'build', '--projects=cockpit-*-angular', '--skip-nx-cache']]);
+    for (const [step, output] of [['Detect PostHog-relevant changes', 'relevant=true\n'], ['Detect affected', 'is_affected=yes\n']]) {
+      const run = await runRecoveryBlock('posthog-sync-plan', step);
+      assert.equal(run.result.status, 0, run.result.stderr); assert.equal(run.output, output); assert.deepEqual(run.calls, []);
+    }
+    const dispatcher = await runRecoveryBlock('cockpit-e2e-dispatcher', 'Compute affected base + head');
+    assert.equal(dispatcher.result.status, 0); assert.match(dispatcher.output, /full=true/);
+  });
+});
+
+it('manual scope uses all fourteen real push outputs and preserves every ordinary scoped lane', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'ci-real-full-scope-'));
+  try {
+    const output = join(directory, 'output');
+    const result = spawnSync(process.execPath, ['scripts/ci-scope.mjs', '--event', 'push', '--output', output], { encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+    const flags = Object.fromEntries((await readFile(output, 'utf8')).trim().split('\n').map(line => line.split('=')));
+    assert.equal(Object.keys(flags).length, 14);
+    assert.ok(Object.values(flags).every(value => value === 'true'));
+    const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+    const ordinary = ['scripts-tests', 'library', 'angular-compatibility', 'website', 'growth-lifecycle', 'lifecycle', 'growth-research', 'cockpit', 'cockpit-examples-build', 'cockpit-smoke', 'examples-chat-smoke', 'examples-chat-e2e', 'examples-chat-e2e-summary', 'examples-ag-ui-e2e', 'cockpit-e2e-dispatcher', 'cockpit-e2e', 'cockpit-e2e-summary', 'website-e2e', 'posthog-sync-plan'];
+    for (const name of ordinary) {
+      const job = readJobBlock(workflow, name);
+      assert.ok(readJobNeeds(job).includes('ci-scope'), name);
+      const guard = readJobFieldBlock(job, 'if');
+      const keys = [...guard.matchAll(/needs\.ci-scope\.outputs\.([a-z0-9_]+) == 'true'/g)].map(match => match[1]);
+      assert.ok(keys.some(key => flags[key] === 'true'), `${name} must be selected by full scope`);
+    }
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
+it('scope classification failure cannot publish production eligibility', async () => {
+  assertBlocked(await runRecoveryBlock('ci-scope', 'Detect changed CI surfaces', { scenario: { commandFailure: 'node' } }));
+  for (const event of ['pull_request', 'merge_group']) {
+    const run = await runRecoveryBlock('ci-scope', 'Detect changed CI surfaces', { expressions: { 'github.event_name': event, 'github.event.pull_request.base.sha': recoverySha, 'github.event.pull_request.head.sha': recoverySha } });
+    assert.equal(run.result.status, 0, run.result.stderr); assert.doesNotMatch(run.output, /main_run=/);
+  }
+});
+
+for (const [job, step] of [
+  ['deploy', 'Check this commit is still the tip of main'],
+  ['demo-deploy', 'Check this commit is still the tip of main'],
+  ['ag-ui-demo-deploy', 'Check this commit is still the tip of main'],
+  ['production-smoke', 'Check this commit is still the tip before recording promotion'],
+]) it(`${job} executes the preserved freshness block and fences stale production mutations`, async () => {
+  const current = await runRecoveryBlock(job, step);
+  assert.equal(current.result.status, 0, current.result.stderr); assert.equal(current.output, 'stale=false\n');
+  for (const scenario of [{ remote: '' }, { remoteFailure: true }]) assertBlocked(await runRecoveryBlock(job, step, { scenario }));
+  const moved = await runRecoveryBlock(job, step, { scenario: { remote: `${'b'.repeat(40)}\trefs/heads/main\n` } });
+  assert.equal(moved.result.status, 0); assert.equal(moved.output, 'stale=true\n');
+  // Scheduler eligibility is asserted from YAML separately; Bash mocks do not simulate Actions.
+  const block = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), job);
+  const mutationNames = {
+    deploy: ['Deploy Angular examples to Vercel (production)', 'Promote verified Website artifact unchanged'],
+    'demo-deploy': ['Deploy canonical demo to Vercel (production)'],
+    'ag-ui-demo-deploy': ['Deploy AG-UI demo SPA to Vercel (production)', 'Record this commit as AG-UI demo promoted'],
+    'production-smoke': ['Record this commit as promoted'],
+  };
+  for (const name of mutationNames[job]) assert.match(readNamedStep(block, name), /if: .*steps.freshness.outputs.stale != 'true'/);
+});
+
+
+it('executes the final Website freshness fence before unchanged-artifact promotion', async () => {
+  const step = 'Check this commit is still the tip before Website promotion';
+  const current = await runRecoveryBlock('deploy', step);
+  assert.equal(current.result.status, 0, current.result.stderr); assert.equal(current.output, 'fresh=true\n');
+  for (const scenario of [{ remote: '' }, { remoteFailure: true }]) assertBlocked(await runRecoveryBlock('deploy', step, { scenario }));
+  const moved = await runRecoveryBlock('deploy', step, { scenario: { remote: `${'b'.repeat(40)}\trefs/heads/main\n` } });
+  assert.equal(moved.result.status, 0); assert.equal(moved.output, 'fresh=false\n');
+  const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'deploy');
+  const promotion = readNamedStep(job, 'Promote verified Website artifact unchanged');
+  assert.match(promotion, /steps.website_promotion_freshness.outputs.fresh == 'true'/);
+  assert.match(promotion, /npx vercel promote "\$\{\{ steps.deploy_website.outputs.deployment_url \}\}"/);
 });
