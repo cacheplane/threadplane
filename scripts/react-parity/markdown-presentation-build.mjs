@@ -385,6 +385,9 @@ export const angularLanggraphPresentationSeeds = [
   '@angular/compiler-cli',
   '@langchain/langgraph-sdk',
 ];
+export const angularFoundationPresentationSeeds = angularLanggraphPresentationSeeds.filter(
+  (name) => name !== '@langchain/langgraph-sdk'
+);
 const localNames = [
   '@threadplane/content',
   '@threadplane/core',
@@ -397,6 +400,7 @@ function presentationLocals(profile) {
       'markdown',
       'react-langgraph',
       'angular-langgraph',
+      'angular-foundation',
       'react-ag-ui',
       'react-render',
     ].includes(profile),
@@ -405,6 +409,8 @@ function presentationLocals(profile) {
   if (profile === 'markdown') return localNames;
   if (profile === 'react-render')
     return localNames.filter((name) => name !== '@threadplane/angular');
+  if (profile === 'angular-foundation')
+    return localNames.filter((name) => name !== '@threadplane/react');
   const excluded =
     profile === 'react-langgraph' || profile === 'react-ag-ui'
       ? '@threadplane/angular'
@@ -438,7 +444,7 @@ function assertPresentationPackages(
           ].includes(name),
         `Unexpected Angular package: ${name}`
       );
-    if (profile === 'angular-langgraph')
+    if (profile === 'angular-langgraph' || profile === 'angular-foundation')
       assert.ok(
         !['react', 'react-dom', '@types/react', '@types/react-dom'].includes(
           name
@@ -450,7 +456,7 @@ function assertPresentationPackages(
       ['langchain', '@mastra/client-js'].includes(name);
     assert.ok(
       (!backend ||
-        (profile !== 'markdown' && profile !== 'react-render' &&
+        (profile !== 'markdown' && profile !== 'react-render' && profile !== 'angular-foundation' &&
           name.startsWith(
             profile === 'react-ag-ui' ? '@ag-ui/' : '@langchain/'
           ) &&
@@ -563,6 +569,8 @@ export function derivePresentationConsumer(
       ? 'Exactly four Markdown foundation tarballs required'
       : profile === 'react-render'
       ? 'Exactly React, core and content static tarballs required'
+      : profile === 'angular-foundation'
+      ? 'Exactly Angular, core and content foundation tarballs required'
       : `Exactly ${
           profile === 'react-langgraph' || profile === 'react-ag-ui'
             ? 'React'
@@ -579,17 +587,19 @@ export function derivePresentationConsumer(
     const selectedSeeds =
       profile === 'react-render'
         ? reactRenderPresentationSeeds
+        : profile === 'angular-foundation'
+        ? angularFoundationPresentationSeeds
         : profile === 'react-ag-ui'
         ? reactAgUiPresentationSeeds
         : react
         ? reactLanggraphPresentationSeeds
         : angularLanggraphPresentationSeeds;
-    const framework = react ? 'React' : 'Angular';
+    const framework = react ? 'React' : profile === 'angular-foundation' ? 'Angular foundation' : 'Angular';
     assertPresentationPackages(
       selected,
       profile,
       locals,
-      profile === 'react-render' ? {} : selectPresentationLock(
+      profile === 'react-render' || profile === 'angular-foundation' ? {} : selectPresentationLock(
         rootLock,
         [
           profile === 'react-ag-ui'
@@ -608,7 +618,7 @@ export function derivePresentationConsumer(
       [...seeds].sort(),
       [...selectedSeeds].sort(),
       `Exactly ${
-        react ? 'eleven' : 'fourteen'
+        react ? 'eleven' : profile === 'angular-foundation' ? 'thirteen' : 'fourteen'
       } selected ${framework} seeds required`
     );
   }
@@ -745,7 +755,7 @@ export function assertPresentationInstallation(consumer, derived, tarballs) {
     actual.packages,
     profile,
     locals,
-    profile !== 'markdown' && profile !== 'react-render'
+    profile !== 'markdown' && profile !== 'react-render' && profile !== 'angular-foundation'
       ? selectPresentationLock(
           lock,
           [
