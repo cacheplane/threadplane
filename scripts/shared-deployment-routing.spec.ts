@@ -69,6 +69,7 @@ describe('shared free deployment routing', () => {
     'examples/chat/python/src/graph.py',
     '.github/workflows/deploy-langgraph.yml',
     'scripts/generate-shared-deployment-config.ts',
+    'scripts/pin_shared_deployment_image.py',
     'libs/cockpit-registry/src/lib/capability-registry.ts',
     'deployments/shared-dev/langgraph.json',
   ])('redeploys when shared deployment input %s changes', (file) => {
@@ -119,6 +120,56 @@ describe('shared free deployment routing', () => {
     expect(command).toContain('--tag "$GITHUB_SHA"');
     expect(workflow).toContain("- '.github/workflows/deploy-langgraph.yml'");
   });
+
+  it('runs offline provider contracts in the existing CI scripts suite', () => {
+    const result = spawnSync(
+      'python3',
+      [
+        '-m',
+        'unittest',
+        'discover',
+        '-s',
+        'scripts',
+        '-p',
+        'test_pin_shared_deployment_image.py',
+        '-v',
+      ],
+      {
+        cwd: root,
+        encoding: 'utf8',
+        env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' },
+      }
+    );
+    expect(result.error).toBeUndefined();
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stderr).toMatch(/Ran \d+ tests/);
+    const ci = parse(
+      readFileSync(resolve(root, '.github/workflows/ci.yml'), 'utf8')
+    );
+    expect(
+      ci.jobs['scripts-tests'].steps.some(
+        (step: { run?: string }) => step.run === 'npx nx test scripts'
+      )
+    ).toBe(true);
+  });
+
+  it('pins only after evidence through the actual helper and output binding', () => {
+    const evidence = deploySteps.findIndex(
+      (step) => step.name === 'Record shared deployment image evidence'
+    );
+    const pin = deploySteps.findIndex(
+      (step) => step.name === 'Pin existing shared deployment image'
+    );
+    expect(pin).toBeGreaterThan(evidence);
+    expect(deploySteps[pin]).toMatchObject({
+      run: 'python3 scripts/pin_shared_deployment_image.py pin',
+      env: {
+        IMAGE_URI: '${{ steps.image_evidence.outputs.image_uri }}',
+        LANGSMITH_API_KEY: '${{ secrets.LANGSMITH_API_KEY }}',
+      },
+    });
+    expect(deploySteps[evidence]).toMatchObject({ id: 'image_evidence' });
+  });
 });
 
 // Offline command tests execute the YAML shell with fake local commands. They
@@ -132,7 +183,8 @@ describe('shared deployment image evidence (offline command tests)', () => {
   function runEvidence(
     dockerOutput: string,
     checkoutSha = sha,
-    dockerStatus = 0
+    dockerStatus = 0,
+    workflowSha = sha
   ) {
     const step = deploySteps.find(
       (candidate) =>
@@ -152,7 +204,7 @@ describe('shared deployment image evidence (offline command tests)', () => {
     try {
       writeFileSync(
         resolve(directory, 'docker'),
-        '#!/bin/bash\nprintf "%s\\n" "$@" > "$DOCKER_ARGS"\nprintf "%s" "$DOCKER_OUTPUT"\nexit "$DOCKER_STATUS"\n',
+        '#!/bin/bash\nprintf "%s\\n" "$@" > "$DOCKER_ARGS"\nif [[ "$2" == "ls" ]]; then printf "%s@<none>\\n" "$REPOSITORY"; else printf "%s" "$DOCKER_OUTPUT"; fi\nexit "$DOCKER_STATUS"\n',
         { mode: 0o755 }
       );
       writeFileSync(
@@ -161,17 +213,23 @@ describe('shared deployment image evidence (offline command tests)', () => {
         { mode: 0o755 }
       );
       const argsPath = resolve(directory, 'docker-args');
+      const outputPath = resolve(directory, 'github-output');
       const result = spawnSync(
         '/bin/bash',
         ['--noprofile', '--norc', '-e', '-o', 'pipefail', '-c', step!.run!],
         {
-          cwd: directory,
+          cwd: root,
           encoding: 'utf8',
           env: {
             PATH: `${directory}:/usr/bin:/bin`,
-            GITHUB_SHA: sha,
+            REPOSITORY: repository,
+            GITHUB_SHA: workflowSha,
+            GITHUB_OUTPUT: outputPath,
+            PYTHONDONTWRITEBYTECODE: '1',
             CHECKOUT_SHA: checkoutSha,
-            DOCKER_OUTPUT: dockerOutput,
+            DOCKER_OUTPUT: JSON.stringify(
+              dockerOutput ? dockerOutput.trim().split('\n') : []
+            ),
             DOCKER_STATUS: String(dockerStatus),
             DOCKER_ARGS: argsPath,
           },
@@ -180,6 +238,9 @@ describe('shared deployment image evidence (offline command tests)', () => {
       expect(result.error).toBeUndefined();
       return {
         ...result,
+        workflowOutput: existsSync(outputPath)
+          ? readFileSync(outputPath, 'utf8')
+          : '',
         dockerArgs: existsSync(argsPath)
           ? readFileSync(argsPath, 'utf8').trim().split('\n')
           : [],
@@ -189,19 +250,18 @@ describe('shared deployment image evidence (offline command tests)', () => {
     }
   }
 
-  it('prints only exact source and one immutable image from a read-only SHA-filtered listing', () => {
+  it('prints exact source and one immutable RepoDigest from exact image inspection', () => {
     const result = runEvidence(`${image}\n`);
     expect(result.status).toBe(0);
     expect(result.stderr).toBe('');
     expect(result.stdout).toBe(`source_sha=${sha}\nimage_uri=${image}\n`);
+    expect(result.workflowOutput).toBe(result.stdout);
     expect(result.dockerArgs).toEqual([
       'image',
-      'ls',
-      '--digests',
-      '--filter',
-      `reference=${repository}:${sha}`,
+      'inspect',
+      `${repository}:${sha}`,
       '--format',
-      '{{.Repository}}@{{.Digest}}',
+      '{{json .RepoDigests}}',
     ]);
   });
 
@@ -222,12 +282,23 @@ describe('shared deployment image evidence (offline command tests)', () => {
     expect(result.stdout).toBe('');
   });
 
-  it('fails before listing images when checkout differs from the workflow source', () => {
+  it('fails before inspecting images when checkout differs from the workflow source', () => {
     const result = runEvidence(`${image}\n`, 'b'.repeat(40));
     expect(result.status).not.toBe(0);
     expect(result.stdout).toBe('');
     expect(result.dockerArgs).toEqual([]);
   });
+
+  it.each(['', 'a'.repeat(39), 'A'.repeat(40), `${sha}\n`])(
+    'rejects malformed workflow source %s',
+    (source) => {
+      const result = runEvidence(image, sha, 0, source);
+      expect(result.status).not.toBe(0);
+      expect(result.stdout).toBe('');
+      expect(result.workflowOutput).toBe('');
+      expect(result.dockerArgs).toEqual([]);
+    }
+  );
 
   it('fails closed when Docker fails even with valid-looking output', () => {
     const result = runEvidence(`${image}\n`, sha, 1);
