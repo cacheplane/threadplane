@@ -291,6 +291,13 @@ describe('classifyFromAffected — short-circuit', () => {
 });
 
 describe('classifyFromAffected — lint-only files', () => {
+  it('runs scripts contracts for the rootless LangGraph deployment workflow', () => {
+    assert.equal(
+      classifyFromAffected(['.github/workflows/deploy-langgraph.yml'], [])
+        .scripts_tests,
+      true
+    );
+  });
   it('eslint.config.mjs flips only lint-running scopes, NOT e2e/smoke/deploy', () => {
     const scope = classifyFromAffected(['eslint.config.mjs'], []);
     // Lint-running scopes: true

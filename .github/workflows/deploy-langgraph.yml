@@ -12,6 +12,7 @@ on:
       - 'examples/chat/python/**'
       - 'libs/cockpit-registry/src/lib/capability-registry.ts'
       - 'scripts/generate-shared-deployment-config.ts'
+      - 'scripts/pin_shared_deployment_image.py'
       - 'deployments/shared-dev/langgraph.json'
   workflow_dispatch:
     inputs:
@@ -72,13 +73,14 @@ jobs:
 
       # Local push evidence only; --no-wait does not establish provider readiness.
       - name: Record shared deployment image evidence
+        id: image_evidence
         shell: bash
-        run: |
-          [[ "$GITHUB_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
-          [[ "$(git rev-parse HEAD)" == "$GITHUB_SHA" ]] || exit 1
-          repository='us-central1-docker.pkg.dev/langchain-prod/cockpit-dev-free-6957db75280055dcbbf2a4916c04b66f/shared-dev'
-          image="$(docker image ls --digests --filter "reference=$repository:$GITHUB_SHA" --format '{{.Repository}}@{{.Digest}}')"
-          [[ "$image" == "$repository"@sha256:* ]] || exit 1
-          digest="${image#"$repository"@}"
-          [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]] || exit 1
-          printf 'source_sha=%s\nimage_uri=%s\n' "$GITHUB_SHA" "$image"
+        run: python3 scripts/pin_shared_deployment_image.py evidence
+
+      # Desired configuration only. A separate provider check must establish
+      # active == latest, DEPLOYED, and the exact immutable image before proof.
+      - name: Pin existing shared deployment image
+        run: python3 scripts/pin_shared_deployment_image.py pin
+        env:
+          IMAGE_URI: ${{ steps.image_evidence.outputs.image_uri }}
+          LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}

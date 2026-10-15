@@ -159,6 +159,10 @@ export function classifyFromAffected(changedFiles, affectedProjects) {
   }
 
   const scope = emptyScope();
+  // Rootless workflow shell contracts execute in the scripts Vitest suite.
+  if (changedFiles.includes('.github/workflows/deploy-langgraph.yml')) {
+    scope.scripts_tests = true;
+  }
   for (const project of affectedProjects) {
     for (const tag of project.tags ?? []) {
       if (!tag.startsWith('scope:')) continue;
