@@ -35,6 +35,7 @@ export const runtimesAwsStrandsPythonModule: CockpitCapabilityModule = {
   backendAssetPaths: [
     'cockpit/runtimes/aws-strands/python/src/agent.py',
     'cockpit/runtimes/aws-strands/python/src/server.py',
+    'cockpit/runtimes/aws-strands/python/src/subagent_emitter.py',
   ],
   runtimeUrl: 'runtimes/aws-strands',
   devPort: 4331,

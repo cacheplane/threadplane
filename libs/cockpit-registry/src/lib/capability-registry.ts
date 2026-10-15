@@ -91,7 +91,7 @@ export const capabilities: readonly Capability[] = [
   // Runtime-portability examples (one capability, many runtimes; AG-UI-served
   // like the AG-UI caps, but the backend is genuinely non-LangGraph)
   { id: 'rt-maf', runtimeAdapter: 'ag-ui', product: 'runtimes', topic: 'microsoft-agent-framework', angularProject: 'cockpit-runtimes-microsoft-agent-framework-angular', port: 4330, react: { project: 'cockpit-runtimes-microsoft-agent-framework-react', port: 4642 }, pythonPort: 5330, pythonDir: 'cockpit/runtimes/microsoft-agent-framework/python', framework: 'microsoft-agent-framework' },
-  { id: 'rt-strands', runtimeAdapter: 'ag-ui', product: 'runtimes', topic: 'aws-strands', angularProject: 'cockpit-runtimes-aws-strands-angular', port: 4331, pythonPort: 5331, pythonDir: 'cockpit/runtimes/aws-strands/python', framework: 'aws-strands' },
+  { id: 'rt-strands', runtimeAdapter: 'ag-ui', product: 'runtimes', topic: 'aws-strands', angularProject: 'cockpit-runtimes-aws-strands-angular', port: 4331, react: { project: 'cockpit-runtimes-aws-strands-react', port: 4643 }, pythonPort: 5331, pythonDir: 'cockpit/runtimes/aws-strands/python', framework: 'aws-strands' },
   // No pythonDir: the Mastra topic's backend is the hand-written Node
   // service deployments/ag-ui-mastra (start it locally on pythonPort — here
   // meaning "backend port" — for dev/e2e; see that service's README).

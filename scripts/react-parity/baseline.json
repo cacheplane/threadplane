@@ -1,11 +1,9 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "6d18458a0dd1b1fea7a4080a18e76d12e809b06f",
+  "baselineHead": "391bc164993f2889944f5098e22a9eeb2ecd5127",
   "sourceState": {
     "modified": [
-      ".github/workflows/ci.yml",
-      "apps/website/content/docs/runtimes/microsoft-agent-framework/overview.mdx",
-      "libs/cockpit-registry/src/lib/content-descriptors.ts"
+      ".github/workflows/ci.yml"
     ],
     "untracked": []
   },
@@ -2152,7 +2150,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "ca40685006cfb71aad78fe2f489510f7f56e0f898da7ec992b3ebb5225b17844"
+      "sha256": "f4cbd8a83ccd11cdaee2b5ce95040b4f822503133df6092b3a56427f22c3027d"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -2974,19 +2972,19 @@
       "id": "doc:apps/website/content/docs/runtimes/aws-strands/how-it-connects.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/runtimes/aws-strands/how-it-connects.mdx",
-      "sha256": "624dd309b718db445b672851cb30b5e674ff3eaca7266a3542338861a6ca9f35"
+      "sha256": "4e17511f5e14d0d86d690bac6a742707f83a18f30a3a0fa905109d9363a5fb81"
     },
     {
       "id": "doc:apps/website/content/docs/runtimes/aws-strands/overview.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/runtimes/aws-strands/overview.mdx",
-      "sha256": "e093efaf9ce09a575701cab6305021f3083a966a9680962df12eec8ecfa8b6bd"
+      "sha256": "148bc0aad1fe81828c28125343ad556c37aafa67dfaed4302d3459a9c2c055a2"
     },
     {
       "id": "doc:apps/website/content/docs/runtimes/aws-strands/quickstart.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/runtimes/aws-strands/quickstart.mdx",
-      "sha256": "896c32dc6176e08b7908562b7dd260e83dc0d2d162170ee4f074c5a56261afe3"
+      "sha256": "b38f4028a6a03927a91014682193489ce9a07cc78f6d02405f6bd34a7bb12a25"
     },
     {
       "id": "doc:apps/website/content/docs/runtimes/getting-started/introduction.mdx",
@@ -13477,13 +13475,13 @@
       "id": "source:libs/cockpit-registry/src/lib/capability-registry.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "sha256": "ced4a25824970736d5055cde8edd18bb786aae9af85459a2cf956662d2a032f5"
+      "sha256": "12a6b6d9b8b0108db82fe104f95d21c1f8981cfddbe7ac89129b28ff11fe8dae"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/content-descriptors.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/content-descriptors.ts",
-      "sha256": "7e1497afb802a498e2ab58d0926806cbb35368dccbf3baed6481bb863bb5b1c6"
+      "sha256": "c6ca52f6485137a5d8aaa143e20bd79a31065168a1d03d88957e5c123b56a63c"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/docs-links.ts",

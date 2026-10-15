@@ -57,7 +57,7 @@ jobs:
       # classifier walk.
       - run: npm ci
       - name: Test CI scope classifier
-        run: node --test scripts/ci-scope.spec.mjs scripts/cockpit-matrix.spec.mjs scripts/cockpit-frontend-matrix.spec.mjs scripts/cockpit-ports.spec.mjs scripts/cockpit-runtime-bridge-coverage.spec.mjs scripts/react-cockpit/ag-ui-client-tools-configuration.spec.mjs scripts/react-cockpit/ag-ui-client-tools-preparation.spec.mjs scripts/react-cockpit/runtimes-microsoft-agent-framework-configuration.spec.mjs scripts/react-cockpit/prepare-native-maf-fixture.spec.mjs
+        run: node --test scripts/ci-scope.spec.mjs scripts/cockpit-matrix.spec.mjs scripts/cockpit-frontend-matrix.spec.mjs scripts/cockpit-ports.spec.mjs scripts/cockpit-runtime-bridge-coverage.spec.mjs scripts/react-cockpit/ag-ui-client-tools-configuration.spec.mjs scripts/react-cockpit/ag-ui-client-tools-preparation.spec.mjs scripts/react-cockpit/runtimes-microsoft-agent-framework-configuration.spec.mjs scripts/react-cockpit/prepare-native-maf-fixture.spec.mjs scripts/react-cockpit/runtimes-aws-strands-configuration.spec.mjs scripts/react-cockpit/prepare-native-strands-fixture.spec.mjs
       - name: Detect changed CI surfaces
         id: scope
         run: |
@@ -171,8 +171,12 @@ jobs:
       - run: npx nx test langgraph --coverage --maxWorkers=2 --reporter=default
       - name: Prepare pinned PostgreSQL integration image
         run: |
-          docker pull public.ecr.aws/docker/library/postgres@sha256:ca0bd484cb98bf4b24eb1010e73fb3fcbd6714d240fbc1a10eea5b7dbecb641d
-          docker tag public.ecr.aws/docker/library/postgres@sha256:ca0bd484cb98bf4b24eb1010e73fb3fcbd6714d240fbc1a10eea5b7dbecb641d postgres:16
+          postgres_image='public.ecr.aws/docker/library/postgres@sha256:ca0bd484cb98bf4b24eb1010e73fb3fcbd6714d240fbc1a10eea5b7dbecb641d'
+          if ! docker pull "$postgres_image"; then
+            postgres_image='docker.io/library/postgres@sha256:ca0bd484cb98bf4b24eb1010e73fb3fcbd6714d240fbc1a10eea5b7dbecb641d'
+            docker pull "$postgres_image"
+          fi
+          docker tag "$postgres_image" postgres:16
       - name: Verify durable tool ownership and PostgreSQL migration
         run: node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.base.json scripts/react-parity/verify-tool-claims.ts
       - run: npx nx run-many -t test --projects=chat,ag-ui,render,a2ui,telemetry,middleware --coverage --parallel=1 --maxWorkers=2
@@ -721,6 +725,12 @@ jobs:
           npx nx run cockpit-runtimes-microsoft-agent-framework-react:prepare-fixture --skip-nx-cache
           node --test --test-concurrency=1 scripts/react-cockpit/native-maf-fixture.spec.mjs fixtures/react-parity/native-maf-react/server.spec.mjs
           python -m unittest discover -s fixtures/react-parity/native-maf-react -p test_model.py
+      - name: Verify native Strands fixture ownership
+        if: matrix.cap.angular == 'cockpit-runtimes-aws-strands-react'
+        run: |
+          npx nx run cockpit-runtimes-aws-strands-react:prepare-fixture --skip-nx-cache
+          node --test --test-concurrency=1 scripts/react-cockpit/native-strands-fixture.spec.mjs fixtures/react-parity/native-strands-react/server.spec.mjs
+          python -m unittest discover -s fixtures/react-parity/native-strands-react -p test_model.py
       - name: nx e2e ${{ matrix.cap.angular }}
         run: npx nx e2e "${{ matrix.cap.angular }}" --skip-nx-cache
       - name: Upload Playwright trace on failure
