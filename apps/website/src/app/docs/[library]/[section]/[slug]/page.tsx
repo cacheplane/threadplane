@@ -26,6 +26,7 @@ import { ReactRepeatLoopsPreview } from '../../../../../components/docs/ReactRep
 import { ReactStateManagementPreview } from '../../../../../components/docs/ReactStateManagementPreview';
 import { ReactComputedFunctionsPreview } from '../../../../../components/docs/ReactComputedFunctionsPreview';
 import { ReactChatMessagesPreview } from '../../../../../components/docs/ReactChatMessagesPreview';
+import { ReactChatThemingPreview } from '../../../../../components/docs/ReactChatThemingPreview';
 import { ReactChatGenerativeUiPreview } from '../../../../../components/docs/ReactChatGenerativeUiPreview';
 import { ReactDeepAgentsSkillsPreview } from '../../../../../components/docs/ReactDeepAgentsSkillsPreview';
 import { ReactDeepAgentsMemoryPreview } from '../../../../../components/docs/ReactDeepAgentsMemoryPreview';
@@ -297,7 +298,7 @@ export default async function DocsPage({ params }: DocsRouteProps) {
             (library === 'deep-agents' && section === 'capabilities' && ['planning', 'filesystem', 'subagents', 'skills', 'memory'].includes(slug)) ||
             (library === 'render' && ((section === 'guides' && ['specs','state-store','repeat-loops','registry'].includes(slug)) || (section === 'api' && ['render-spec-component','provide-render'].includes(slug)))) ||
             (library === 'ag-ui' && ((section === 'reference' && slug === 'event-mapping') || (section === 'guides' && ['interrupts','tool-views','client-tools','json-render','subagents'].includes(slug)))) ||
-            (library === 'chat' && ((section === 'guides' && ['thread-routing', 'generative-ui'].includes(slug)) || slug === 'client-tools' || (section === 'concepts' && slug === 'message-model') || (section === 'components' && ['chat-trace', 'chat-input', 'chat-interrupt-panel', 'chat-tool-calls', 'chat-subagent-card'].includes(slug))))) ? (
+            (library === 'chat' && ((section === 'guides' && ['thread-routing', 'generative-ui', 'theming'].includes(slug)) || slug === 'client-tools' || (section === 'concepts' && slug === 'message-model') || (section === 'components' && ['chat-trace', 'chat-input', 'chat-interrupt-panel', 'chat-tool-calls', 'chat-subagent-card'].includes(slug))))) ? (
             library === 'runtimes' && section === 'aws-strands' && slug === 'overview' ? (
               <ReactStrandsPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />
             ) : library === 'runtimes' && section === 'microsoft-agent-framework' && slug === 'overview' ? (
@@ -328,6 +329,8 @@ export default async function DocsPage({ params }: DocsRouteProps) {
               slug === 'tool-views' ? <ReactAgUiToolViewsPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} /> :
               slug === 'interrupts' ? <ReactAgUiInterruptsPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} /> :
               <ReactAgUiStreamingPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />
+            ) : library === 'chat' && section === 'guides' && slug === 'theming' ? (
+              <ReactChatThemingPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />
             ) : library === 'chat' && section === 'guides' && slug === 'generative-ui' ? (
               <ReactChatGenerativeUiPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />
             ) : library === 'chat' && section === 'components' && slug === 'chat-trace' ? (

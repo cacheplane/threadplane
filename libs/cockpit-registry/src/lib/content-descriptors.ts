@@ -1114,6 +1114,17 @@ const chatInputReact = (() => {
   });
 })();
 
+const chatThemingReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'chat-theming-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-chat-theming-react');
+  if (!canonical || !frontend) throw new Error('Chat Theming frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical, id: 'chat-theming-python-react', frontend: 'react', title: 'Chat Theming (React preview)',
+    codeAssetPaths: [...['app.tsx', 'application.ts', 'connection.ts', 'themes.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/chat/theming/react/src/${file}`), 'cockpit/chat/theming/react/project.json'],
+    runtimeUrl: frontend.runtimePath, devPort: frontend.port,
+  });
+})();
+
 const chatMessagesReact = (() => {
   const canonical = capabilityModules.find(descriptor => descriptor.id === 'chat-messages-python');
   const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-chat-messages-react');
@@ -1429,6 +1440,7 @@ export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
     chatInterruptsReact,
     chatInputReact,
     chatMessagesReact,
+    chatThemingReact,
     agUiStreamingReact,
     agUiInterruptsReact,
     agUiToolViewsReact,

@@ -1,9 +1,12 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "16cb465df054e61845a9ea16913da9e1ff8634db",
+  "baselineHead": "ae28e5ed7a70b44306dc23ef646d2c46cfc3847f",
   "sourceState": {
     "modified": [
-      ".github/workflows/ci.yml"
+      ".github/workflows/ci.yml",
+      "apps/website/content/docs/chat/guides/theming.mdx",
+      "libs/cockpit-registry/src/lib/capability-registry.ts",
+      "libs/cockpit-registry/src/lib/content-descriptors.ts"
     ],
     "untracked": []
   },
@@ -2150,7 +2153,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "246a9fff7114bf5ee3ce75bae81c7d70b3f7fa6b9244f6807976094750ce2d55"
+      "sha256": "2aa96853d24e4ac793a2c0da7a49d58cf235aa49159e17ec6d86558391a97606"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -2654,7 +2657,7 @@
       "id": "doc:apps/website/content/docs/chat/guides/theming.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/guides/theming.mdx",
-      "sha256": "8ca760d12d917b32ced74b39a1ade8dce305538423017f7a2dc1d86e8744657e"
+      "sha256": "3e2920ea136279147f2278786e87a456d0d484b6598a32bb8782b09a90e0c0b3"
     },
     {
       "id": "doc:apps/website/content/docs/chat/guides/thread-routing.mdx",
@@ -13475,13 +13478,13 @@
       "id": "source:libs/cockpit-registry/src/lib/capability-registry.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "sha256": "12a6b6d9b8b0108db82fe104f95d21c1f8981cfddbe7ac89129b28ff11fe8dae"
+      "sha256": "4abc464ca0ade216d6dda249785c1f188a44196dd8e62528f283e8709277d91f"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/content-descriptors.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/content-descriptors.ts",
-      "sha256": "c6ca52f6485137a5d8aaa143e20bd79a31065168a1d03d88957e5c123b56a63c"
+      "sha256": "d86f5cb23b688cf6e5df3c1c21fa90e9027cb143d0315a191503fd9c15472335"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/docs-links.ts",

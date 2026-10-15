@@ -33,6 +33,16 @@ import { ReactTimeTravelPreview } from '../../../../../components/docs/ReactTime
 import { WebsiteWorkspace } from '../../../../../components/workspace/WebsiteWorkspace';
 import DocsPage, { generateMetadata } from './page';
 
+it('selects the exact native Theming guide with real source Code and canonical Angular docs', async () => {
+  const tree = await route('chat', 'guides', 'theming');
+  const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
+  const article = workspace?.props.reactDocsSlot as React.ReactElement<ElementProps> | undefined;
+  expect((article?.type as { name?: string })?.name).toBe('ReactChatThemingPreview');
+  expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/chat/theming/react/src/themes.ts');
+  const angular = findElement(workspace?.props.docsSlot, MdxRenderer as ComponentType<never>);
+  expect(angular?.props.exampleCode?.assetPaths).toContain('cockpit/chat/theming/angular/src/app/theming.component.ts');
+});
+
 it('selects Memory-specific native React Docs and complete sources with Angular default', async () => {
   const tree = await route('deep-agents', 'capabilities', 'memory');
   const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);

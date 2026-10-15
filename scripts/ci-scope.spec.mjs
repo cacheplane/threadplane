@@ -32,6 +32,18 @@ const COCKPIT_CAP_PYTHON_TAGS = [
   'scope:cockpit-smoke',
 ];
 const WEBSITE_TAGS = ['scope:website', 'scope:website-e2e'];
+
+describe('Theming actual project CI owners', () => {
+  for (const [file, projectPath, expected] of [
+    ['cockpit/chat/theming/react/src/styles.css', 'cockpit/chat/theming/react/project.json', ['cockpit_examples', 'cockpit_e2e']],
+    ['cockpit/chat/theming/python/src/graph.py', 'cockpit/chat/theming/python/project.json', ['cockpit_examples', 'cockpit_e2e', 'cockpit_smoke']],
+    ['apps/website/src/components/docs/ReactChatThemingPreview.tsx', 'apps/website/project.json', ['website', 'website_e2e']],
+  ]) it(`attributes ${file} through actual source tags`, async () => {
+    const project = JSON.parse(await readFile(projectPath, 'utf8'));
+    const scope = classifyFromAffected([file], [project]);
+    for (const key of expected) assert.equal(scope[key], true, key);
+  });
+});
 const EXAMPLES_CHAT_TAGS = [
   'scope:angular-compatibility',
   'scope:examples-chat',

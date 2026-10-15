@@ -1,6 +1,39 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { isCapAffected, selectCockpitCaps } from './cockpit-matrix.mjs';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { deriveCockpitCaps, isCapAffected, selectCockpitCaps } from './cockpit-matrix.mjs';
+
+describe('Theming fixture files through actual Nx attribution', () => {
+  const root = fileURLToPath(new URL('../', import.meta.url));
+  const project = 'cockpit-chat-theming-react';
+  for (const file of [
+    'scripts/react-cockpit/chat-theming-fixture.mjs',
+    'scripts/react-cockpit/chat-theming-wire.py',
+    'scripts/react-cockpit/chat-theming-fixture.spec.mjs',
+    'scripts/cockpit-matrix.spec.mjs',
+  ]) test(`attributes ${file} without forcing the fleet`, () => {
+    const affected = new Set(JSON.parse(execFileSync(process.execPath, [
+      'node_modules/nx/bin/nx.js', 'show', 'projects', '--affected', `--files=${file}`, '--json',
+    ], { cwd: root, encoding: 'utf8', timeout: 45000, maxBuffer: 4 * 1024 * 1024, env: { ...process.env, NX_DAEMON: 'false', NX_ISOLATE_PLUGINS: 'false' } })));
+    const caps = deriveCockpitCaps(root);
+    const fullFleet = !caps.some(cap => isCapAffected(cap, affected));
+    assert.equal(fullFleet, false, 'Other actually affected cockpit owners prevent fleet fallback');
+    const selected = selectCockpitCaps(caps, affected, { fullFleet });
+    const expected = file.startsWith('scripts/react-cockpit/');
+    assert.equal(affected.has(project), expected, `Nx attribution for ${file}`);
+    assert.equal(selected.filter(cap => cap.angular === project).length, expected ? 1 : 0, `Native ownership lane for ${file}`);
+    assert.ok(selected.length < caps.length, 'The fix must not force the full fleet');
+  });
+});
+
+test('actual Theming source selects exactly its frontend and Python sibling lanes', () => {
+  const caps = deriveCockpitCaps();
+  const react = caps.filter(cap => cap.angular === 'cockpit-chat-theming-react');
+  assert.deepEqual(react, [{ angular: 'cockpit-chat-theming-react', python: 'cockpit/chat/theming/python', pythonName: 'cockpit-chat-theming-python' }]);
+  assert.deepEqual(selectCockpitCaps(caps, new Set(['cockpit-chat-theming-react']), { fullFleet: false }), react);
+  assert.deepEqual(selectCockpitCaps(caps, new Set(['cockpit-chat-theming-python']), { fullFleet: false }).map(cap => cap.angular), ['cockpit-chat-theming-angular', 'cockpit-chat-theming-react']);
+});
 
 const ALL_CAPS = [
   {

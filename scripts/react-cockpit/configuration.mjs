@@ -1,5 +1,11 @@
 /** Closed authored frontend selection; callers cannot supply filesystem paths. */
 export function reactCockpitConfiguration(topic = 'streaming') {
+  if (topic === 'chat-theming')
+    return Object.freeze({
+      topic: 'theming', library: 'chat', adapter: 'langgraph',
+      appPath: 'cockpit/chat/theming/react', base: '/chat/theming/react/',
+      port: 4644, project: 'cockpit-chat-theming-react',
+    });
   if (topic === 'runtimes-aws-strands')
     return Object.freeze({
       topic: 'aws-strands', library: 'runtimes', adapter: 'ag-ui',

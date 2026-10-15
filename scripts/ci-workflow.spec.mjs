@@ -1836,3 +1836,19 @@ it('executes the final Website freshness fence before unchanged-artifact promoti
   assert.match(promotion, /steps.website_promotion_freshness.outputs.fresh == 'true'/);
   assert.match(promotion, /npx vercel promote "\$\{\{ steps.deploy_website.outputs.deployment_url \}\}"/);
 });
+
+it('representative smoke includes the canonical tagged Theming graph', async () => {
+  const ci = await readFile('.github/workflows/ci.yml', 'utf8');
+  assert.match(ci, /--projects=[^\n]*cockpit-chat-theming-python/);
+});
+
+it('runs bounded Theming fixture tests in its actual React fleet lane', async () => {
+  const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+  const scope = readNamedStep(readJobBlock(workflow, 'ci-scope'), 'Test CI scope classifier');
+  assert.ok(scope.includes('scripts/react-cockpit/chat-theming-configuration.spec.mjs'));
+  const step = readNamedStep(readJobBlock(workflow, 'cockpit-e2e'), 'Verify native Theming fixture ownership');
+  assert.match(step, /if: matrix\.cap\.angular == 'cockpit-chat-theming-react'/);
+  assert.match(step, /npx nx run cockpit-chat-theming-python:test --skip-nx-cache/);
+  assert.match(step, /node --test --test-concurrency=1 scripts\/react-cockpit\/chat-theming-fixture.spec.mjs/);
+  assert.match(readJobBlock(workflow, 'cockpit-e2e'), /output\/playwright\/chat-theming-react\//);
+});
