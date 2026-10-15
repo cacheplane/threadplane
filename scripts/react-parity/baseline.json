@@ -1,14 +1,9 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "89da2a188bf5c5dcbd79a9ed4ab87a9f9c2d3013",
+  "baselineHead": "391bc164993f2889944f5098e22a9eeb2ecd5127",
   "sourceState": {
     "modified": [
-      ".github/workflows/ci.yml",
-      "apps/website/content/docs/runtimes/aws-strands/how-it-connects.mdx",
-      "apps/website/content/docs/runtimes/aws-strands/overview.mdx",
-      "apps/website/content/docs/runtimes/aws-strands/quickstart.mdx",
-      "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "libs/cockpit-registry/src/lib/content-descriptors.ts"
+      ".github/workflows/ci.yml"
     ],
     "untracked": []
   },
@@ -2155,7 +2150,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "30ae26b5918c74b95aeb20390b16d34a2e18c310948318b0c98b7b5a31e685e8"
+      "sha256": "f4cbd8a83ccd11cdaee2b5ce95040b4f822503133df6092b3a56427f22c3027d"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",

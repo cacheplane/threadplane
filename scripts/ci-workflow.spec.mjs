@@ -161,6 +161,8 @@ function readNamedStep(job, name) {
 
 const pinnedPostgresImage =
   'public.ecr.aws/docker/library/postgres@sha256:ca0bd484cb98bf4b24eb1010e73fb3fcbd6714d240fbc1a10eea5b7dbecb641d';
+const pinnedPostgresMirror =
+  'docker.io/library/postgres@sha256:ca0bd484cb98bf4b24eb1010e73fb3fcbd6714d240fbc1a10eea5b7dbecb641d';
 
 function readStepRunBlock(step) {
   const match = /^ {8}run: \|\n((?: {10}[^\n]*\n?)+)/m.exec(step);
@@ -168,7 +170,7 @@ function readStepRunBlock(step) {
   return match[1].replace(/^ {10}/gm, '').trimEnd();
 }
 
-async function runPostgresPreparation(failingCommand) {
+async function runPostgresPreparation(failingCommand, failedPullImages = []) {
   const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'library');
   const script = readStepRunBlock(readNamedStep(job, 'Prepare pinned PostgreSQL integration image'));
   const directory = await mkdtemp(join(tmpdir(), 'ci-postgres-preparation-'));
@@ -180,7 +182,7 @@ async function runPostgresPreparation(failingCommand) {
       `const { appendFileSync } = require('node:fs');\n` +
       `const args = process.argv.slice(2);\n` +
       `appendFileSync(process.env.DOCKER_ARGUMENT_LOG, JSON.stringify(args) + '\\n');\n` +
-      `if (args[0] === process.env.FAIL_DOCKER_COMMAND) process.exit(args[0] === 'pull' ? 41 : 42);\n`);
+      `if (args[0] === process.env.FAIL_DOCKER_COMMAND || (args[0] === 'pull' && JSON.parse(process.env.FAIL_DOCKER_PULL_IMAGES).includes(args[1]))) process.exit(args[0] === 'pull' ? 41 : 42);\n`);
     await chmod(docker, 0o755);
     const result = spawnSync('/bin/bash', ['-e', '-c', script], {
       encoding: 'utf8',
@@ -189,6 +191,7 @@ async function runPostgresPreparation(failingCommand) {
         PATH: directory,
         DOCKER_ARGUMENT_LOG: log,
         FAIL_DOCKER_COMMAND: failingCommand ?? '',
+        FAIL_DOCKER_PULL_IMAGES: JSON.stringify(failedPullImages),
       },
     });
     assert.ifError(result.error);
@@ -205,7 +208,14 @@ describe('CI workflow', () => {
     const prepare = readNamedStep(job, 'Prepare pinned PostgreSQL integration image');
     const verify = readNamedStep(job, 'Verify durable tool ownership and PostgreSQL migration');
     assert.equal((job.match(/- name: Prepare pinned PostgreSQL integration image/g) ?? []).length, 1);
-    assert.equal(readStepRunBlock(prepare), `docker pull ${pinnedPostgresImage}\ndocker tag ${pinnedPostgresImage} postgres:16`);
+    assert.equal(pinnedPostgresMirror.split('@')[1], pinnedPostgresImage.split('@')[1]);
+    assert.equal(readStepRunBlock(prepare),
+      `postgres_image='${pinnedPostgresImage}'\n` +
+      `if ! docker pull "$postgres_image"; then\n` +
+      `  postgres_image='${pinnedPostgresMirror}'\n` +
+      `  docker pull "$postgres_image"\n` +
+      `fi\n` +
+      `docker tag "$postgres_image" postgres:16`);
     assert.equal(job.slice(job.indexOf(prepare) + prepare.length).trimStart().startsWith(verify.trimStart()), true,
       'the real verifier must be the next GitHub step after successful preparation');
     for (const step of [prepare, verify]) {
@@ -225,16 +235,36 @@ describe('CI workflow', () => {
     assert.deepEqual(calls, [['pull', pinnedPostgresImage], ['tag', pinnedPostgresImage, 'postgres:16']]);
   });
 
-  it('stops the production PostgreSQL preparation block before tagging when pull fails', async () => {
-    const { result, calls } = await runPostgresPreparation('pull');
-    assert.equal(result.status, 41, result.stderr);
-    assert.deepEqual(calls, [['pull', pinnedPostgresImage]]);
+  it('uses the identical pinned mirror only after the primary pull fails', async () => {
+    const { result, calls } = await runPostgresPreparation(undefined, [pinnedPostgresImage]);
+    assert.equal(result.status, 0, result.stderr);
+    assert.deepEqual(calls, [
+      ['pull', pinnedPostgresImage],
+      ['pull', pinnedPostgresMirror],
+      ['tag', pinnedPostgresMirror, 'postgres:16'],
+    ]);
   });
 
-  it('fails the production PostgreSQL preparation block when the local tag fails', async () => {
+  it('stops before tagging when both pinned registry pulls fail', async () => {
+    const { result, calls } = await runPostgresPreparation('pull');
+    assert.equal(result.status, 41, result.stderr);
+    assert.deepEqual(calls, [['pull', pinnedPostgresImage], ['pull', pinnedPostgresMirror]]);
+  });
+
+  it('fails without a mirror pull when tagging the primary image fails', async () => {
     const { result, calls } = await runPostgresPreparation('tag');
     assert.equal(result.status, 42, result.stderr);
     assert.deepEqual(calls, [['pull', pinnedPostgresImage], ['tag', pinnedPostgresImage, 'postgres:16']]);
+  });
+
+  it('fails without another pull when tagging the fallback image fails', async () => {
+    const { result, calls } = await runPostgresPreparation('tag', [pinnedPostgresImage]);
+    assert.equal(result.status, 42, result.stderr);
+    assert.deepEqual(calls, [
+      ['pull', pinnedPostgresImage],
+      ['pull', pinnedPostgresMirror],
+      ['tag', pinnedPostgresMirror, 'postgres:16'],
+    ]);
   });
 
   it('runs both graph streaming regressions with locked Python before cockpit smoke can pass', async () => {

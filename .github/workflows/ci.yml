@@ -171,8 +171,12 @@ jobs:
       - run: npx nx test langgraph --coverage --maxWorkers=2 --reporter=default
       - name: Prepare pinned PostgreSQL integration image
         run: |
-          docker pull public.ecr.aws/docker/library/postgres@sha256:ca0bd484cb98bf4b24eb1010e73fb3fcbd6714d240fbc1a10eea5b7dbecb641d
-          docker tag public.ecr.aws/docker/library/postgres@sha256:ca0bd484cb98bf4b24eb1010e73fb3fcbd6714d240fbc1a10eea5b7dbecb641d postgres:16
+          postgres_image='public.ecr.aws/docker/library/postgres@sha256:ca0bd484cb98bf4b24eb1010e73fb3fcbd6714d240fbc1a10eea5b7dbecb641d'
+          if ! docker pull "$postgres_image"; then
+            postgres_image='docker.io/library/postgres@sha256:ca0bd484cb98bf4b24eb1010e73fb3fcbd6714d240fbc1a10eea5b7dbecb641d'
+            docker pull "$postgres_image"
+          fi
+          docker tag "$postgres_image" postgres:16
       - name: Verify durable tool ownership and PostgreSQL migration
         run: node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.base.json scripts/react-parity/verify-tool-claims.ts
       - run: npx nx run-many -t test --projects=chat,ag-ui,render,a2ui,telemetry,middleware --coverage --parallel=1 --maxWorkers=2
