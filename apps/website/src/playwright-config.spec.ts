@@ -4,6 +4,23 @@ import { resolve } from 'node:path';
 import { getCockpitFrontends } from '@threadplane/cockpit-registry';
 import { createWebsitePlaywrightConfig } from '../playwright.config';
 
+it('scopes Chat Theming Website to two owned servers with zero retries and focused preparation', () => {
+  const config = createWebsitePlaywrightConfig({ WEBSITE_E2E_REACT_TOPIC: 'chat-theming', CI: 'true', PLAYWRIGHT_REUSE_EXISTING_SERVER: 'true' });
+  expect(config.testMatch).toBe('**/react-theming-preview.spec.ts');
+  expect(config.workers).toBe(1);
+  expect(config.fullyParallel).toBe(false);
+  expect(config.retries).toBe(0);
+  expect(config.outputDir).toContain('chat-theming-website');
+  const servers = Array.isArray(config.webServer) ? config.webServer : [];
+  expect(servers.map(server => server.url)).toEqual(['http://127.0.0.1:4308', 'http://127.0.0.1:4644']);
+  expect(servers.every(server => server.reuseExistingServer === false)).toBe(true);
+  expect(servers[1]).toMatchObject({ command: 'node scripts/react-cockpit/serve.mjs chat-theming --no-parent', gracefulShutdown: { signal: 'SIGTERM', timeout: 5000 } });
+  const project = JSON.parse(readFileSync(resolve(import.meta.dirname, '../project.json'), 'utf8'));
+  expect(project.implicitDependencies).toContain('cockpit-chat-theming-react');
+  expect(project.targets.e2e.dependsOn.find((dependency: { target?: string }) => dependency.target === 'build').projects).toContain('cockpit-chat-theming-react');
+  expect(project.targets.e2e.dependsOn.find((dependency: { target?: string }) => dependency.target === 'test').projects).toContain('cockpit-chat-theming-python');
+});
+
 it('scopes native MAF Website checks to the owned fixture after frozen preparation and build', () => {
   const config = createWebsitePlaywrightConfig({ WEBSITE_E2E_REACT_TOPIC: 'runtimes-microsoft-agent-framework', WEBSITE_E2E_PORT: '4390', PLAYWRIGHT_REUSE_EXISTING_SERVER: 'true' });
   expect(config.testMatch).toBe('**/react-maf-preview.spec.ts');
@@ -417,6 +434,7 @@ describe('Website Playwright configuration', () => {
       expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs render-element-rendering --no-parent',url:'http://127.0.0.1:4618'}),
       expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs render-computed-functions --no-parent',url:'http://127.0.0.1:4619'}),
       expect.objectContaining({command:'npx nx run cockpit-chat-messages-python:smoke && node scripts/react-cockpit/serve.mjs chat-messages --no-parent',url:'http://127.0.0.1:4620'}),
+      expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs chat-theming --no-parent',url:'http://127.0.0.1:4644'}),
       expect.objectContaining({command:'npx nx run cockpit-chat-input-python:smoke && node scripts/react-cockpit/serve.mjs chat-input --no-parent',url:'http://127.0.0.1:4621'}),
       expect.objectContaining({command:'npx nx run cockpit-chat-interrupts-python:smoke && node scripts/react-cockpit/serve.mjs chat-interrupts --no-parent',url:'http://127.0.0.1:4622'}),
       expect.objectContaining({command:'npx nx run cockpit-chat-tool-calls-python:smoke && node scripts/react-cockpit/serve.mjs chat-tool-calls --no-parent',url:'http://127.0.0.1:4623'}),

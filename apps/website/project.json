@@ -4,6 +4,7 @@
   "sourceRoot": "apps/website/src",
   "projectType": "application",
   "implicitDependencies": [
+    "cockpit-chat-theming-react",
     "workspace-react",
     "cockpit-langgraph-streaming-angular",
     "cockpit-langgraph-streaming-react",
@@ -78,6 +79,10 @@
       "executor": "@nx/playwright:playwright",
       "dependsOn": [
         {
+          "target": "test",
+          "projects": ["cockpit-chat-theming-python"]
+        },
+        {
           "target": "prepare-fixture",
           "projects": ["cockpit-runtimes-mastra-react", "cockpit-runtimes-microsoft-agent-framework-react", "cockpit-runtimes-aws-strands-react"]
         },
@@ -105,6 +110,7 @@
             "cockpit-render-element-rendering-react",
             "cockpit-render-computed-functions-react",
             "cockpit-chat-messages-react",
+            "cockpit-chat-theming-react",
             "cockpit-chat-input-react",
             "cockpit-chat-interrupts-react",
             "cockpit-chat-tool-calls-react",

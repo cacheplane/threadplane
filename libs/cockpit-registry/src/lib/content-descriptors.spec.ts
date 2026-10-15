@@ -176,6 +176,16 @@ it('keeps native Chat Messages attached to the original backend descriptor asset
   expect(Object.isFrozen(react)).toBe(true);
 });
 
+it('keeps the native Theming descriptor attached to its canonical Python module', () => {
+  const canonical = capabilityModules.find(entry => entry.id === 'chat-theming-python');
+  if (!canonical) throw Error('Missing canonical Theming');
+  const react = getFrontendCapabilityDescriptor(canonical.manifestIdentity as never, 'react');
+  expect(react?.backendAssetPaths).toEqual(chatThemingPythonModule.backendAssetPaths);
+  expect(react?.promptAssetPaths).toEqual(chatThemingPythonModule.promptAssetPaths);
+  expect(react?.manifestIdentity).toEqual(canonical.manifestIdentity);
+  expect(Object.isFrozen(react)).toBe(true);
+});
+
 const EXPECTED_DESCRIPTOR_IDS = [
   'langgraph-streaming-python',
   'langgraph-persistence-python',

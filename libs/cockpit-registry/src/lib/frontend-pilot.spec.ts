@@ -14,6 +14,18 @@ const streaming: CockpitManifestIdentity = {
   page: 'overview',
   language: 'python',
 };
+it('resolves one native Chat Theming frontend with canonical sources and Angular default', () => {
+  const canonical = capabilityModules.find(entry => entry.id === 'chat-theming-python');
+  if (!canonical) throw Error('Missing canonical Chat Theming');
+  const react = getFrontendCapabilityDescriptor(canonical.manifestIdentity as CockpitManifestIdentity, 'react');
+  expect(react).toMatchObject({ id: 'chat-theming-python-react', frontend: 'react', runtimeAdapter: 'langgraph', runtimeUrl: 'chat/theming/react', devPort: 4644, docsPath: '/docs/chat/guides/theming', backendAssetPaths: canonical.backendAssetPaths, promptAssetPaths: canonical.promptAssetPaths });
+  const frontend = getCockpitFrontends().filter(entry => entry.project === 'cockpit-chat-theming-react');
+  expect(frontend).toHaveLength(1);
+  expect(frontend[0]).toMatchObject({ port: 4644, runtimePath: 'chat/theming/react' });
+  expect(react?.codeAssetPaths).toEqual([...['app.tsx', 'application.ts', 'connection.ts', 'themes.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/chat/theming/react/src/${file}`), 'cockpit/chat/theming/react/project.json']);
+  for (const asset of [...(react?.codeAssetPaths ?? []), ...(react?.backendAssetPaths ?? []), ...(react?.promptAssetPaths ?? [])]) expect(existsSync(new URL('../../../../' + asset, import.meta.url))).toBe(true);
+  expect(getFrontendCapabilityDescriptor(canonical.manifestIdentity as CockpitManifestIdentity, 'angular')).toBe(canonical);
+});
 it('selects the Subagents React frontend without changing the Angular or Python deployment', () => {
   const canonical = capabilityModules.find(entry => entry.id === 'deep-agents-subagents-python');
   if (!canonical) throw new Error('Missing canonical Subagents');
