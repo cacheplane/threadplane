@@ -25,7 +25,7 @@ Only **Send** creates a confirmed server thread and starts the existing aviation
 
 <ExampleCode file="cockpit/chat/theming/react/src/application.ts" />
 
-One configured LangGraph target serves thread creation, streaming and saved history with SDK retries disabled. The shared backend reuses c-theming. The title model carries TAG_NOSTREAM, so title generation updates thread metadata without entering the visible answer stream.
+One configured LangGraph target serves thread creation, streaming and saved history. The shared backend reuses c-theming. The title model carries TAG_NOSTREAM, so title generation updates thread metadata without entering the visible answer stream.
 
 <ExampleCode file="cockpit/chat/theming/react/src/connection.ts" />
 <ExampleCode file="cockpit/chat/theming/python/src/graph.py" />
