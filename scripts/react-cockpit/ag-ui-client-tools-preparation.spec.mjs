@@ -34,7 +34,7 @@ test('proof routing scopes native and retained LangGraph fixtures and shutdown t
   const serve=read('scripts/react-cockpit/serve.mjs');
   assert.match(serve,/configuration.adapter === 'ag-ui' && configuration.topic === 'client-tools' \? createAgUiClientToolsFixture/);
   assert.match(serve,/configuration.adapter !== 'ag-ui' && configuration.topic === 'client-tools' \? createClientToolsFixture/);
-  assert.match(serve,/await \(nativeMafFixture \?\? nativeMastraFixture \?\? agUiClientToolsFixture \?\?/);
+  assert.match(serve,/await \(nativeStrandsFixture \?\? nativeMafFixture \?\? nativeMastraFixture \?\? agUiClientToolsFixture \?\? [^\n]+\)\.close\(\);/);
   assert.match(read('cockpit/ag-ui/client-tools/react/e2e/playwright.config.ts'),/prepare-ag-ui-client-tools-fixture.mjs --serve/);
   assert.match(read('scripts/react-cockpit/prepare-ag-ui-client-tools-fixture.mjs'),/'ag-ui-client-tools', '--no-parent'/);
 });
