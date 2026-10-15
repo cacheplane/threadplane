@@ -960,6 +960,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
     backendAssetPaths: [
       'cockpit/runtimes/aws-strands/python/src/agent.py',
       'cockpit/runtimes/aws-strands/python/src/server.py',
+      'cockpit/runtimes/aws-strands/python/src/subagent_emitter.py',
     ],
     runtimeUrl: 'runtimes/aws-strands',
     devPort: 4331,
@@ -1176,6 +1177,22 @@ const mafReact = (() => {
     codeAssetPaths: [
       ...['app.tsx', 'application.ts', 'approval-policy.ts', 'expense-projection.ts', 'connection.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/runtimes/microsoft-agent-framework/react/src/${file}`),
       'cockpit/runtimes/microsoft-agent-framework/react/project.json',
+      ...canonical.promptAssetPaths,
+    ],
+    runtimeUrl: frontend.runtimePath, devPort: frontend.port,
+  });
+})();
+
+const strandsReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'runtimes-aws-strands-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-runtimes-aws-strands-react');
+  if (!canonical || !frontend) throw new Error('Strands React frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical, id: 'runtimes-aws-strands-react', frontend: 'react',
+    title: 'AWS Strands meetings (React preview)',
+    codeAssetPaths: [
+      ...['app.tsx', 'application.ts', 'approval-policy.ts', 'schedule-projection.ts', 'connection.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/runtimes/aws-strands/react/src/${file}`),
+      'cockpit/runtimes/aws-strands/react/project.json',
       ...canonical.promptAssetPaths,
     ],
     runtimeUrl: frontend.runtimePath, devPort: frontend.port,
@@ -1418,6 +1435,7 @@ export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
     agUiClientToolsReact,
     mastraReact,
     mafReact,
+    strandsReact,
     agUiJsonRenderReact,
     agUiSubagentsReact,
     renderSpecReact,

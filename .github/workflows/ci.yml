@@ -57,7 +57,7 @@ jobs:
       # classifier walk.
       - run: npm ci
       - name: Test CI scope classifier
-        run: node --test scripts/ci-scope.spec.mjs scripts/cockpit-matrix.spec.mjs scripts/cockpit-frontend-matrix.spec.mjs scripts/cockpit-ports.spec.mjs scripts/cockpit-runtime-bridge-coverage.spec.mjs scripts/react-cockpit/ag-ui-client-tools-configuration.spec.mjs scripts/react-cockpit/ag-ui-client-tools-preparation.spec.mjs scripts/react-cockpit/runtimes-microsoft-agent-framework-configuration.spec.mjs scripts/react-cockpit/prepare-native-maf-fixture.spec.mjs
+        run: node --test scripts/ci-scope.spec.mjs scripts/cockpit-matrix.spec.mjs scripts/cockpit-frontend-matrix.spec.mjs scripts/cockpit-ports.spec.mjs scripts/cockpit-runtime-bridge-coverage.spec.mjs scripts/react-cockpit/ag-ui-client-tools-configuration.spec.mjs scripts/react-cockpit/ag-ui-client-tools-preparation.spec.mjs scripts/react-cockpit/runtimes-microsoft-agent-framework-configuration.spec.mjs scripts/react-cockpit/prepare-native-maf-fixture.spec.mjs scripts/react-cockpit/runtimes-aws-strands-configuration.spec.mjs scripts/react-cockpit/prepare-native-strands-fixture.spec.mjs
       - name: Detect changed CI surfaces
         id: scope
         run: |
@@ -721,6 +721,12 @@ jobs:
           npx nx run cockpit-runtimes-microsoft-agent-framework-react:prepare-fixture --skip-nx-cache
           node --test --test-concurrency=1 scripts/react-cockpit/native-maf-fixture.spec.mjs fixtures/react-parity/native-maf-react/server.spec.mjs
           python -m unittest discover -s fixtures/react-parity/native-maf-react -p test_model.py
+      - name: Verify native Strands fixture ownership
+        if: matrix.cap.angular == 'cockpit-runtimes-aws-strands-react'
+        run: |
+          npx nx run cockpit-runtimes-aws-strands-react:prepare-fixture --skip-nx-cache
+          node --test --test-concurrency=1 scripts/react-cockpit/native-strands-fixture.spec.mjs fixtures/react-parity/native-strands-react/server.spec.mjs
+          python -m unittest discover -s fixtures/react-parity/native-strands-react -p test_model.py
       - name: nx e2e ${{ matrix.cap.angular }}
         run: npx nx e2e "${{ matrix.cap.angular }}" --skip-nx-cache
       - name: Upload Playwright trace on failure

@@ -22,6 +22,22 @@ it('runs native MAF Node configuration, preparation, actual fixture and model ch
   assert.ok(!step.includes('THREADPLANE_AG_UI_FIXTURE_ENVIRONMENT'));
 });
 
+it('runs native Strands Node configuration, preparation, actual fixture and model checks in scoped CI', async () => {
+  const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+  const scope = readNamedStep(readJobBlock(workflow, 'ci-scope'), 'Test CI scope classifier');
+  for (const file of ['runtimes-aws-strands-configuration.spec.mjs', 'prepare-native-strands-fixture.spec.mjs']) assert.ok(scope.includes(`scripts/react-cockpit/${file}`));
+  const fleet = readJobBlock(workflow, 'cockpit-e2e');
+  const step = readNamedStep(fleet, 'Verify native Strands fixture ownership');
+  assert.match(step, /if: matrix\.cap\.angular == 'cockpit-runtimes-aws-strands-react'/);
+  const preparation = step.indexOf('npx nx run cockpit-runtimes-aws-strands-react:prepare-fixture --skip-nx-cache');
+  const fixture = step.indexOf('node --test --test-concurrency=1 scripts/react-cockpit/native-strands-fixture.spec.mjs');
+  assert.ok(preparation >= 0 && fixture > preparation);
+  assert.match(step, /python -m unittest discover -s fixtures\/react-parity\/native-strands-react -p test_model\.py/);
+  assert.match(step, /fixtures\/react-parity\/native-strands-react\/server\.spec\.mjs/);
+  assert.ok(fleet.includes('python-version: \'3.12\''));
+  assert.ok(!step.includes('THREADPLANE_AG_UI_FIXTURE_ENVIRONMENT'));
+});
+
 it('bounds the Website promotion budget without changing other deploy budgets', async () => {
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
   assert.match(readJobBlock(workflow, 'deploy'), /timeout-minutes: 45/);
@@ -29,10 +45,11 @@ it('bounds the Website promotion budget without changing other deploy budgets', 
 
 it('installs pinned Python before Website e2e fixture prerequisites in every CI caller', async () => {
   const website = JSON.parse(await readFile('apps/website/project.json', 'utf8'));
-  assert.ok(website.targets.e2e.dependsOn.some((dependency) =>
-    dependency.target === 'prepare-fixture' &&
-    dependency.projects.includes('cockpit-runtimes-microsoft-agent-framework-react')
-  ), 'remote BASE_URL does not bypass the native MAF Nx prerequisite');
+  for (const name of ['cockpit-runtimes-microsoft-agent-framework-react', 'cockpit-runtimes-aws-strands-react']) {
+    assert.ok(website.targets.e2e.dependsOn.some((dependency) =>
+      dependency.target === 'prepare-fixture' && dependency.projects.includes(name)
+    ), `remote BASE_URL does not bypass the native fixture Nx prerequisite for ${name}`);
+  }
 
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
   const websiteCallers = [

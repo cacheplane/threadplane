@@ -143,6 +143,8 @@ describe('React migration baseline scope', () => {
     'scripts/react-parity/ag-ui-candidate-package.mjs',
     'scripts/react-parity/verify-ag-ui-candidate.mjs',
     'scripts/react-parity/verify-markdown.mjs',
+    'fixtures/react-parity/native-strands-react/model.py',
+    'fixtures/react-parity/native-strands-react/server.mjs',
     'fixtures/react-parity/markdown/browser.tsx',
     'fixtures/react-parity/markdown/installed-types.ts',
     'libs/content/src/markdown/create-markdown.ts',

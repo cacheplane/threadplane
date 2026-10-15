@@ -1,5 +1,12 @@
 /** Closed authored frontend selection; callers cannot supply filesystem paths. */
 export function reactCockpitConfiguration(topic = 'streaming') {
+  if (topic === 'runtimes-aws-strands')
+    return Object.freeze({
+      topic: 'aws-strands', library: 'runtimes', adapter: 'ag-ui',
+      appPath: 'cockpit/runtimes/aws-strands/react',
+      base: '/runtimes/aws-strands/react/', port: 4643,
+      project: 'cockpit-runtimes-aws-strands-react',
+    });
   if (topic === 'runtimes-microsoft-agent-framework')
     return Object.freeze({
       topic: 'microsoft-agent-framework', library: 'runtimes', adapter: 'ag-ui',
