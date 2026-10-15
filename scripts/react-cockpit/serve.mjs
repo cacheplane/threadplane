@@ -18,6 +18,7 @@ import { createTimeTravelFixture } from './time-travel-fixture.mjs';
 import { createDeploymentRuntimeFixture } from './deployment-runtime-fixture.mjs';
 import { createChatMessagesFixture } from './chat-messages-fixture.mjs';
 import { createChatThemingFixture } from './chat-theming-fixture.mjs';
+import { createChatDebugFixture } from './chat-debug-fixture.mjs';
 import { createChatInputFixture } from './chat-input-fixture.mjs';
 import { createChatInterruptsFixture } from './chat-interrupts-fixture.mjs';
 import { createChatToolCallsFixture } from './chat-tool-calls-fixture.mjs';
@@ -38,6 +39,7 @@ import { createDeepAgentsSkillsFixture } from './deep-agents-skills-fixture.mjs'
 import { createDeepAgentsSubagentsFixture } from './deep-agents-subagents-fixture.mjs';
 
 const configuration = reactCockpitConfiguration(process.argv[2]);
+const chatDebugFixture = configuration.library === 'chat' && configuration.topic === 'debug' ? createChatDebugFixture() : null;
 const chatThemingFixture = configuration.library === 'chat' && configuration.topic === 'theming' ? createChatThemingFixture() : null;
 const nativeStrandsFixture = configuration.library === 'runtimes' && configuration.topic === 'aws-strands' ? createNativeStrandsFixture() : null;
 const nativeMafFixture = configuration.library === 'runtimes' && configuration.topic === 'microsoft-agent-framework' ? createNativeMafFixture() : null;
@@ -125,6 +127,29 @@ const release = () => {
 };
 const server = createServer(async (request, response) => {
   const pathname = new URL(request.url, 'http://localhost').pathname;
+  if (chatDebugFixture) {
+    // Closed local controls, excluded from application inputs and bundles.
+    const controls = {
+      '/__requests': ['GET', () => chatDebugFixture.requests],
+      '/__captures': ['GET', () => chatDebugFixture.captures],
+      '/__lifetime': ['GET', () => chatDebugFixture.receipt()],
+      '/__reset': ['POST', async () => { await chatDebugFixture.reset(); return chatDebugFixture.receipt(); }],
+      '/__release': ['POST', () => { chatDebugFixture.release(); return {}; }],
+      '/__hold/stream': ['POST', () => { chatDebugFixture.holdStreams(true); return {}; }],
+      '/__hold/current': ['POST', () => { chatDebugFixture.holdReads('current'); return {}; }],
+      '/__hold/history': ['POST', () => { chatDebugFixture.holdReads('history'); return {}; }],
+      '/__hold/checkpoint': ['POST', () => { chatDebugFixture.holdReads('checkpoint'); return {}; }],
+    };
+    if (pathname.startsWith('/__')) {
+      const control = Object.hasOwn(controls, pathname) ? controls[pathname] : undefined;
+      if (!control) return json(response, {}, 404);
+      if (request.method !== control[0]) return json(response, {}, 405);
+      try { return json(response, await control[1]()); }
+      catch { return json(response, { error: 'Local fixture control failed' }, 500); }
+    }
+    if (await chatDebugFixture.handle(request, response, pathname)) return;
+    if (pathname.startsWith('/developer-api/')) return json(response, {}, 404);
+  }
   if (chatThemingFixture && (await chatThemingFixture(request, response, pathname))) return;
   if (nativeStrandsFixture && (await nativeStrandsFixture(request, response, pathname))) return;
   if (nativeMafFixture && (await nativeMafFixture(request, response, pathname))) return;
@@ -365,18 +390,19 @@ const server = createServer(async (request, response) => {
 server.listen(configuration.port, '127.0.0.1');
 const parentServer = !process.argv.includes('--no-parent')
   ? createServer(server.listeners('request')[0]).listen(3000, '127.0.0.1') : null;
-if (chatThemingFixture || nativeStrandsFixture || nativeMafFixture || nativeMastraFixture || agUiClientToolsFixture || deepAgentsMemoryFixture || deepAgentsSubagentsFixture || deepAgentsSkillsFixture || deepAgentsFilesystemFixture || deepAgentsPlanningFixture || chatGenerativeUiFixture || chatInterruptsFixture || chatToolCallsFixture || chatSubagentsFixture || chatThreadsFixture || chatTimelineFixture) {
+if (chatDebugFixture || chatThemingFixture || nativeStrandsFixture || nativeMafFixture || nativeMastraFixture || agUiClientToolsFixture || deepAgentsMemoryFixture || deepAgentsSubagentsFixture || deepAgentsSkillsFixture || deepAgentsFilesystemFixture || deepAgentsPlanningFixture || chatGenerativeUiFixture || chatInterruptsFixture || chatToolCallsFixture || chatSubagentsFixture || chatThreadsFixture || chatTimelineFixture) {
   let closing;
   const shutdown = (code = 0) => {
     closing ??= (async () => {
-      await (chatThemingFixture ?? nativeStrandsFixture ?? nativeMafFixture ?? nativeMastraFixture ?? agUiClientToolsFixture ?? deepAgentsMemoryFixture ?? deepAgentsSubagentsFixture ?? deepAgentsSkillsFixture ?? deepAgentsFilesystemFixture ?? deepAgentsPlanningFixture ?? chatGenerativeUiFixture ?? chatInterruptsFixture ?? chatToolCallsFixture ?? chatSubagentsFixture ?? chatThreadsFixture ?? chatTimelineFixture).close();
+      await (chatDebugFixture ?? chatThemingFixture ?? nativeStrandsFixture ?? nativeMafFixture ?? nativeMastraFixture ?? agUiClientToolsFixture ?? deepAgentsMemoryFixture ?? deepAgentsSubagentsFixture ?? deepAgentsSkillsFixture ?? deepAgentsFilesystemFixture ?? deepAgentsPlanningFixture ?? chatGenerativeUiFixture ?? chatInterruptsFixture ?? chatToolCallsFixture ?? chatSubagentsFixture ?? chatThreadsFixture ?? chatTimelineFixture).close();
       await Promise.all([server, parentServer].filter(Boolean).map((owned) => new Promise((resolve) => {
         owned.close(resolve);
         owned.closeAllConnections();
       })));
       if (chatThemingFixture) console.log(JSON.stringify({ serverPid: process.pid, chatThemingFixtureClosed: chatThemingFixture.receipt(), listenersClosed: true }));
+      if (chatDebugFixture) console.log(JSON.stringify({ serverPid: process.pid, parentServerOwned: Boolean(parentServer), chatDebugFixtureClosed: chatDebugFixture.receipt(), listenersClosed: true }));
     })();
-    if (chatThemingFixture) void closing.then(() => process.exit(code), () => process.exit(1));
+    if (chatThemingFixture || chatDebugFixture) void closing.then(() => process.exit(code), () => process.exit(1));
     else void closing.finally(() => process.exit(code));
   };
   process.once('SIGINT', () => shutdown());

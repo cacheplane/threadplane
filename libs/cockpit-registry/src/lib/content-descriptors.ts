@@ -1114,6 +1114,17 @@ const chatInputReact = (() => {
   });
 })();
 
+const chatDebugReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'chat-debug-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-chat-debug-react');
+  if (!canonical || !frontend) throw new Error('Chat Debug frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical, id: 'chat-debug-python-react', frontend: 'react', title: 'Chat Debug (React preview)',
+    codeAssetPaths: [...['app.tsx', 'application.ts', 'authority.ts', 'checkpoint-page.ts', 'inspection-values.ts', 'connection.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/chat/debug/react/src/${file}`), 'cockpit/chat/debug/react/project.json'],
+    runtimeUrl: frontend.runtimePath, devPort: frontend.port,
+  });
+})();
+
 const chatThemingReact = (() => {
   const canonical = capabilityModules.find(descriptor => descriptor.id === 'chat-theming-python');
   const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-chat-theming-react');
@@ -1441,6 +1452,7 @@ export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
     chatInputReact,
     chatMessagesReact,
     chatThemingReact,
+    chatDebugReact,
     agUiStreamingReact,
     agUiInterruptsReact,
     agUiToolViewsReact,

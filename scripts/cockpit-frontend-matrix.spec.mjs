@@ -19,6 +19,11 @@ import { test } from 'node:test';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { deriveCockpitCaps, selectCockpitCaps } from './cockpit-matrix.mjs';
+test('Debug backend selects both registered frontends and their exact shared Python owner', () => {
+  const selected = selectCockpitCaps(deriveCockpitCaps(), new Set(['cockpit-chat-debug-python']), { fullFleet: false });
+  assert.deepEqual(selected.map(cap => cap.angular).sort(), ['cockpit-chat-debug-angular', 'cockpit-chat-debug-react']);
+  assert.ok(selected.every(cap => cap.python === 'cockpit/chat/debug/python' && cap.pythonName === 'cockpit-chat-debug-python'));
+});
 test('Memory backend changes select its two actual registered frontends and exact shared backend', () => {
   const root = fileURLToPath(new URL('..', import.meta.url));
   const selected = selectCockpitCaps(deriveCockpitCaps(root), new Set(['cockpit-deep-agents-memory-python']), { fullFleet: false });

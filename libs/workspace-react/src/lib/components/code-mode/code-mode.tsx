@@ -145,7 +145,7 @@ export function CodeMode({ entryTitle, codeAssetPaths, backendAssetPaths, codeFi
             onValueChange={(v) => setActivePath(v)}
             className="flex flex-col h-full"
           >
-            <TabsList className="shrink-0">
+            <TabsList className="shrink-0 min-w-0 max-w-full overflow-x-auto">
               {openPaths.map((path) => {
                 const label = getTabLabel(path);
                 return (
@@ -154,8 +154,8 @@ export function CodeMode({ entryTitle, codeAssetPaths, backendAssetPaths, codeFi
                     value={path}
                     className={
                       isPromptPath(path)
-                        ? 'text-[var(--ds-accent)]/70 data-[state=active]:text-[var(--ds-accent)] workspace-tab-trigger'
-                        : 'workspace-tab-trigger'
+                        ? 'text-[var(--ds-accent)]/70 data-[state=active]:text-[var(--ds-accent)] workspace-tab-trigger shrink-0 whitespace-nowrap'
+                        : 'workspace-tab-trigger shrink-0 whitespace-nowrap'
                     }
                   >
                     <span>{label}</span>

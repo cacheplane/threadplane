@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
@@ -78,7 +78,8 @@ function fixture(t, change = {}) {
   const manifest = { name: '@threadplane/react', private: true, type: 'module', license: 'MIT', exports: { '.': { types: './src/index.d.ts', import: './src/index.js', default: './src/index.js' }, './markdown': reactMarkdown }, ...change.manifest };
   // Keep unrelated export mutations valid now that Markdown is mandatory.
   if (manifest.name === '@threadplane/react' && !change.omitMarkdown) manifest.exports = { './markdown': reactMarkdown, ...manifest.exports };
-  const files = { 'package.json': JSON.stringify(manifest), 'README.md': 'Private scaffolding', 'LICENSE.md': 'MIT', 'src/index.js': "'use client';\nexport {};", 'src/index.d.ts': 'export {};', 'src/markdown/index.js': "'use client';\nexport function Markdown() {}", 'src/markdown/index.d.ts': 'export declare function Markdown(): void;', ...change.files };
+  if (manifest.name === '@threadplane/react' && !change.omitDebug) manifest.exports = { './debug': reactDebug, './debug/styles.css': './src/debug/styles.css', ...manifest.exports };
+  const files = { 'src/debug/index.js': "'use client';\nexport function ChatDebug() {}", 'src/debug/index.d.ts': 'export declare function ChatDebug(): void;', 'src/debug/styles.css': '.tp-debug {}', 'package.json': JSON.stringify(manifest), 'README.md': 'Private scaffolding', 'LICENSE.md': 'MIT', 'src/index.js': "'use client';\nexport {};", 'src/index.d.ts': 'export {};', 'src/markdown/index.js': "'use client';\nexport function Markdown() {}", 'src/markdown/index.d.ts': 'export declare function Markdown(): void;', ...change.files };
   for (const [path, text] of Object.entries(files)) if (text !== null) { mkdirSync(dirname(join(directory, path)), { recursive: true }); writeFileSync(join(directory, path), text); }
   return directory;
 }
@@ -200,13 +201,13 @@ test('stylesheet exports are static assets outside consumer imports', (t) => {
   for (const entry of ['./src/chat/styles.css', { default: './src/chat/styles.css' }]) {
     const manifest = { name: '@threadplane/react', exports: { ...cssRoot, './chat/styles.css': entry } };
     assert.deepEqual(validatePackage(fixture(t, { manifest, files: { 'src/chat/styles.css': '.x{}' } })), []);
-    assert.ok(!packageVerifier.consumerSpecifiers({ ...manifest, exports: { './markdown': reactMarkdown, ...manifest.exports } }).includes('@threadplane/react/chat/styles.css'));
+    assert.ok(!packageVerifier.consumerSpecifiers({ ...manifest, exports: { './debug': reactDebug, './debug/styles.css': './src/debug/styles.css', './markdown': reactMarkdown, ...manifest.exports } }).includes('@threadplane/react/chat/styles.css'));
   }
 });
 test('stylesheet subpaths cannot disguise a JavaScript runtime', (t) => {
   const manifest = { name: '@threadplane/react', exports: { ...cssRoot, './chat/styles.css': './src/index.js' } };
   assert.ok(validatePackage(fixture(t, { manifest })).length > 0);
-  assert.ok(packageVerifier.consumerSpecifiers({ ...manifest, exports: { './markdown': reactMarkdown, ...manifest.exports } }).includes('@threadplane/react/chat/styles.css'));
+  assert.ok(packageVerifier.consumerSpecifiers({ ...manifest, exports: { './debug': reactDebug, './debug/styles.css': './src/debug/styles.css', './markdown': reactMarkdown, ...manifest.exports } }).includes('@threadplane/react/chat/styles.css'));
 });
 test('stylesheet exports require their target file', (t) => {
   const manifest = { name: '@threadplane/react', exports: { ...cssRoot, './chat/styles.css': './src/chat/styles.css' } };
@@ -276,4 +277,41 @@ test('installation footprint counts actual package files and bytes separately fr
   writeFileSync(join(directory, 'node_modules/core/package.json'), '{}');
   writeFileSync(join(directory, 'node_modules/core/index.js'), 'abc');
   assert.deepEqual(packageVerifier.installFootprint(directory, lockFor(['core', 'optional-platform'])), { installedPackages: 1, lockedPackages: 2, fileBytes: 5 });
+});
+
+const reactDebug = { types: './src/debug/index.d.ts', import: './src/debug/index.js', default: './src/debug/index.js' };
+test('React Debug exposes exactly the passive component', () => {
+ assert.throws(() => packageVerifier.assertSupportedExports('react/debug', {}), /ChatDebug/);
+ assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/debug', { ChatDebug() {} }));
+ assert.throws(() => packageVerifier.assertSupportedExports('react/debug', { ChatDebug() {}, createSession() {} }), /unexpected/);
+});
+test('production root and chat bundle evidence rejects Debug JS or CSS', () => {
+ for (const suffix of ['index.js', 'chat-debug.js', 'styles.css']) {
+  const path = `node_modules/@threadplane/react/src/debug/${suffix}`;
+  for (const input of [path, path.replaceAll('/', '\\')]) assert.throws(() => packageVerifier.assertDebugFreeInputs({ [input]: {} }), /Debug/);
+ }
+ assert.doesNotThrow(() => packageVerifier.assertDebugFreeInputs({ 'node_modules/@threadplane/react/src/chat/index.js': {} }));
+});
+test('React Debug cannot disappear from validation or consumer enumeration', (t) => {
+ const exports = { '.': cssRoot['.'], './markdown': reactMarkdown };
+ assert.ok(validatePackage(fixture(t, { manifest: { exports }, omitDebug: true })).some(error => /debug/.test(error)));
+ assert.throws(() => packageVerifier.consumerSpecifiers({ name: '@threadplane/react', exports }), /debug/);
+});
+for (const [name, files, diagnostic] of [
+ ['missing client directive', { 'src/debug/index.js': 'export function ChatDebug() {}' }, /debug.*use client/],
+ ['missing declaration', { 'src/debug/index.d.ts': null }, /debug.*missing export target/],
+ ['missing runtime', { 'src/debug/index.js': null }, /debug.*missing export target/],
+ ['missing CSS', { 'src/debug/styles.css': null }, /debug.*missing export target/],
+]) test(`Debug rejects ${name}`, (t) => assert.ok(validatePackage(fixture(t, { files })).some(error => diagnostic.test(error))));
+
+test('Debug CSS uses the established chat theme tokens and scopes every rule', () => {
+ const css = readFileSync(new URL('../../libs/react/src/debug/styles.css', import.meta.url), 'utf8');
+ const supported = new Set(['text', 'surface', 'border', 'accent', 'on-accent', 'muted', 'danger', 'gap']);
+ for (const [, token] of css.matchAll(/var\(--tp-chat-([a-z-]+)/g)) assert.ok(supported.has(token), `Unknown chat token: ${token}`);
+ for (const token of ['text', 'surface', 'border', 'accent', 'on-accent']) assert.ok(css.includes(`--tp-chat-${token},`), `Expected established ${token} token`);
+ for (const [, selector] of css.matchAll(/(?:^|})\s*([^{}]+)\{/g)) {
+  if (selector.trim().startsWith('@media')) continue;
+  for (const part of selector.split(',')) assert.ok(part.trim().startsWith('.tp-debug'), `Unscoped selector: ${part}`);
+ }
+ assert.ok(!/\b(?:html|body)\s*[{,]/.test(css));
 });

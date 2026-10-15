@@ -3,6 +3,39 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { deriveCockpitCaps, isCapAffected, selectCockpitCaps } from './cockpit-matrix.mjs';
+import { readFileSync } from 'node:fs';
+import { classifyFromAffected } from './ci-scope.mjs';
+
+describe('Debug proof files through actual Nx attribution and classification', () => {
+  const root = fileURLToPath(new URL('../', import.meta.url));
+  const project = JSON.parse(readFileSync(new URL('../cockpit/chat/debug/react/project.json', import.meta.url), 'utf8'));
+  for (const file of [
+    'scripts/react-cockpit/chat-debug-fixture.mjs',
+    'scripts/react-cockpit/chat-debug-wire.py',
+    'scripts/react-cockpit/chat-debug-fixture.spec.mjs',
+    'scripts/react-cockpit/chat-debug-configuration.spec.mjs',
+    'scripts/react-cockpit/configuration.mjs',
+    'scripts/react-cockpit/serve.mjs',
+    'scripts/react-cockpit/chat-debug-native-session-probe.mjs',
+    'fixtures/react-parity/langgraph-candidate/chat-debug-native-session.mjs',
+    'cockpit/chat/debug/python/src/graph.py',
+    'cockpit/chat/debug/python/tests/providers.py',
+    'cockpit/chat/debug/python/tests/test_streaming.py',
+    'cockpit/chat/debug/python/uv.lock',
+    'cockpit/chat/debug/react/e2e/playwright.config.ts',
+  ]) test(`selects the full Debug job for ${file}`, () => {
+    const affected = new Set(JSON.parse(execFileSync(process.execPath, [
+      'node_modules/nx/bin/nx.js', 'show', 'projects', '--affected', `--files=${file}`, '--json',
+    ], { cwd: root, encoding: 'utf8', timeout: 45000, maxBuffer: 4 * 1024 * 1024, env: { ...process.env, NX_DAEMON: 'false', NX_ISOLATE_PLUGINS: 'false' } })));
+    assert.ok(affected.has(project.name), `actual Nx owner for ${file}`);
+    const scope = classifyFromAffected([file], [project]);
+    assert.equal(scope.cockpit_e2e, true);
+    const caps = deriveCockpitCaps(root);
+    const selected = selectCockpitCaps(caps, affected, { fullFleet: false });
+    assert.equal(selected.filter(cap => cap.angular === project.name).length, 1);
+    if (file.includes('chat-debug')) assert.ok(selected.length < caps.length, 'Debug-only proof changes must not force the fleet');
+  });
+});
 
 describe('Theming fixture files through actual Nx attribution', () => {
   const root = fileURLToPath(new URL('../', import.meta.url));

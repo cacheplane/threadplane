@@ -36,6 +36,7 @@ function stylesheetExport(subpath, entry) {
 
 export function consumerSpecifiers(manifest) {
   if (manifest.name === '@threadplane/react' && !manifest.exports?.['./markdown']) throw new Error('React ./markdown export required');
+  if (manifest.name === '@threadplane/react' && (!manifest.exports?.['./debug'] || !manifest.exports?.['./debug/styles.css'])) throw new Error('React ./debug and ./debug/styles.css exports required');
   return Object.entries(manifest.exports).filter(([subpath, entry]) => !metadataExport(subpath, entry))
     .map(([subpath]) => manifest.name + (subpath === '.' ? '' : subpath.slice(1)));
 }
@@ -52,6 +53,7 @@ export function validatePackage(directory, { angularTransitions = angularTransit
   for (const file of ['LICENSE.md', 'README.md']) if (!existsSync(join(directory, file))) errors.push(`Missing ${file}`);
   if (!emittedEntries(manifest).length) errors.push('Missing root export.');
   if (project === 'react' && !manifest.exports?.['./markdown']) errors.push('Missing ./markdown export.');
+  if (project === 'react' && (!manifest.exports?.['./debug'] || !manifest.exports?.['./debug/styles.css'])) errors.push('Missing ./debug or ./debug/styles.css export.');
   const exports = manifest.exports ?? { '.': { types: manifest.types ?? manifest.typings, default: manifest.module ?? manifest.main } };
   for (const [subpath, entry] of Object.entries(exports)) {
     const conditions = typeof entry === 'string' ? { default: entry } : entry;
@@ -177,7 +179,14 @@ export function assertParserFreeInputs(inputs) {
   if (found.length) throw new Error(`Framework root includes content parser inputs: ${found.join(', ')}`);
 }
 
+export function assertDebugFreeInputs(inputs) {
+  if (!inputs || !Object.keys(inputs).length) throw new Error('Missing bundler inputs evidence');
+  const found = Object.keys(inputs).filter(path => /@threadplane\/react\/src\/debug\//.test(path.replaceAll('\\', '/')));
+  if (found.length) throw new Error(`Production entry includes Debug feature: ${found.join(', ')}`);
+}
+
 export function assertHeadlessInputs(inputs) {
+  assertDebugFreeInputs(inputs);
   assertParserFreeInputs(inputs);
   const render = Object.keys(inputs).filter((path) => /(?:@threadplane\/react\/src\/render\/|node_modules\/@json-render\/)/.test(path.replaceAll('\\', '/')));
   if (render.length) throw new Error(`Headless framework root includes render feature: ${render.join(', ')}`);
@@ -218,6 +227,7 @@ export function assertSupportedExports(project, entry) {
         'TextTranscript',
         'ToolObservation',
       ],
+      'react/debug': ['ChatDebug'],
       'react/markdown': ['Markdown'],
       'react/render': ['RenderSpec'],
       'content/json': ['createJson'],
@@ -233,7 +243,7 @@ export function assertSupportedExports(project, entry) {
     if (!supported(entry[name]))
       throw new Error(`${project} missing supported contract ${name}`);
   if (
-    ['react/chat', 'react/markdown', 'react/render', 'content/json'].includes(project) &&
+    ['react/debug', 'react/chat', 'react/markdown', 'react/render', 'content/json'].includes(project) &&
     Object.keys(entry).some((name) => !expected.includes(name))
   )
     throw new Error(`${project} has unexpected exports`);
@@ -254,6 +264,8 @@ export async function verifyPackedConsumers(root = process.cwd()) {
     const plain = join(temporary, 'plain-consumer');
     mkdirSync(plain);
     installConsumer(plain, lockedReactManifest(JSON.parse(readFileSync(join(root, 'package-lock.json'), 'utf8'))), tarballs, 'plain');
+    const installedLock = JSON.parse(readFileSync(join(plain, 'package-lock.json'), 'utf8'));
+    console.log(`Installed local candidate resolutions: ${JSON.stringify(Object.fromEntries(Object.entries(installedLock.packages).filter(([path]) => path.includes('node_modules/@threadplane/')).map(([path, entry]) => [path, { version: entry.version, resolved: entry.resolved, integrity: entry.integrity }])) )}`);
     const count = verifyPlainExports(root, plain, Object.keys(tarballs).map((name) => name.slice('@threadplane/'.length)));
     cpSync(join(root, 'fixtures/react-parity/runtime/json-runtime.mjs'), join(plain, 'json-runtime.mjs'));
     console.log(runConsumer(process.execPath, ['json-runtime.mjs'], plain));
@@ -263,6 +275,34 @@ export async function verifyPackedConsumers(root = process.cwd()) {
     const bundle = buildSync({ absWorkingDir: plain, entryPoints: [join(plain, 'react-root.mjs')], bundle: true, platform: 'browser', format: 'esm', write: false, metafile: true });
     assertHeadlessInputs(bundle.metafile.inputs);
     console.log(`React development root-import probe (unminified, separate from the production app): ${Object.keys(bundle.metafile.inputs).length} inputs, ${bundle.outputFiles[0].contents.length} bytes, no content parsers. Inputs: ${Object.keys(bundle.metafile.inputs).join(', ')}.`);
+    for (const entry of ['root', 'chat', 'debug']) {
+      const specifier = entry === 'root' ? '@threadplane/react' : `@threadplane/react/${entry}`;
+      const css = entry === 'debug' || entry === 'chat' ? `import '${specifier}/styles.css';\n` : '';
+      writeFileSync(join(plain, `${entry}-production.mjs`), `${css}import * as entry from '${specifier}';\nconsole.log(Object.keys(entry));\n`);
+      const result = buildSync({ absWorkingDir: plain, entryPoints: [`${entry}-production.mjs`], bundle: true, platform: 'browser', format: 'esm', minify: true, define: { 'process.env.NODE_ENV': '"production"' }, outdir: join(plain, `proof-${entry}`), write: false, metafile: true });
+      const assets = result.outputFiles.filter(file => file.path.endsWith('.css'));
+      const debugCss = assets.some(file => file.text.includes('.tp-debug'));
+      if (entry === 'debug') {
+        if (!Object.keys(result.metafile.inputs).some(path => path.endsWith('/debug/chat-debug.js')) || !debugCss) throw new Error('Installed standalone Debug import and emitted CSS required');
+      } else {
+        assertDebugFreeInputs(result.metafile.inputs);
+        if (debugCss) throw new Error('Production root/chat includes Debug CSS');
+      }
+      console.log(`Installed production ${entry} proof: ${JSON.stringify({ metafile: result.metafile, outputs: result.outputFiles.map(file => ({ path: file.path, bytes: file.contents.length })), css: assets.map(file => ({ path: file.path, text: file.text })), debugCss })}`);
+    }
+    writeFileSync(join(plain, 'debug-types.ts'), `import { ChatDebug, type ChatDebugProps, type DebugSelection } from '@threadplane/react/debug';
+const selection: DebugSelection = { contextKey: 'owner', pageGeneration: 1, rowKey: 'row' };
+const props: ChatDebugProps = { contextKey: 'owner', current: { contextKey: 'owner', status: 'ready', values: {} }, selection, onInspect: () => undefined };
+ChatDebug(props);
+// @ts-expect-error Debug does not accept a session capability.
+ChatDebug({ ...props, session: {} });
+// @ts-expect-error Async readers are not notification callbacks.
+ChatDebug({ ...props, onInspect: async () => undefined });
+// @ts-expect-error Selection is immutable.
+selection.rowKey = 'other';
+`);
+    writeFileSync(join(plain, 'tsconfig.debug.json'), JSON.stringify({ compilerOptions: { target: 'ES2022', module: 'NodeNext', moduleResolution: 'NodeNext', lib: ['ES2022', 'DOM'], strict: true, skipLibCheck: false, noEmit: true }, files: ['debug-types.ts'] }));
+    runConsumer(process.execPath, [join(root, 'node_modules/typescript/bin/tsc'), '-p', 'tsconfig.debug.json'], plain);
     prepareInstalledTypes(root, plain, 'react');
     await prepareRuntimeConsumer(root, plain, 'react');
     for (const config of ['tsconfig.contracts.json', 'tsconfig.app.json']) runConsumer(process.execPath, [join(plain, 'node_modules/typescript/bin/tsc'), '-p', config], plain);

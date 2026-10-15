@@ -1,0 +1,49 @@
+.tp-chat.debug-demo {
+  --tp-chat-text: #e0e0e0;
+  --tp-chat-muted: #a3a3a3;
+  --tp-chat-border: #767676;
+  --tp-chat-surface: #1c1c1c;
+  --tp-chat-accent: #3b82f6;
+  --tp-chat-on-accent: #07111f;
+  --tp-chat-danger: #ff8a80;
+  --tp-chat-gap: 1rem;
+  color-scheme: dark;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 100svh;
+  padding: clamp(1rem, 4vw, 2rem);
+  background: var(--tp-chat-surface);
+  color: var(--tp-chat-text);
+  font-family: system-ui, sans-serif;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.debug-demo .debug-demo__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tp-chat-gap);
+}
+.debug-demo .debug-demo__header h1 {
+  margin: 0;
+}
+.debug-demo .debug-demo__message-body {
+  --ds-text-primary: var(--tp-chat-text);
+}
+.debug-demo .debug-demo__header button {
+  color: var(--tp-chat-text);
+  background: var(--tp-chat-surface);
+  border: 1px solid var(--tp-chat-border);
+  padding: 0.6rem 0.8rem;
+  border-radius: 0.4rem;
+  cursor: pointer;
+}
+.debug-demo .debug-demo__header button:focus-visible {
+  outline: 2px solid var(--tp-chat-accent);
+  outline-offset: 3px;
+}
+.debug-demo .tp-chat__error {
+  color: var(--tp-chat-danger);
+}
