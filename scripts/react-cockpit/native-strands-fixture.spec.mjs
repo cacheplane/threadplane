@@ -447,17 +447,30 @@ test(
       method: 'POST',
     });
     partial.on('error', () => {});
+    let callerClosed = false;
+    partial.once('close', () => {
+      callerClosed = true;
+    });
     partial.write('{partial');
     t.after(() => partial.destroy());
     const deadline = Date.now() + 1500;
+    // The deadline flag precedes asynchronous physical close and active cleanup.
     while (
       Date.now() < deadline &&
-      !fixture.stats().current.requests[0]?.deadlineExceeded
+      (!fixture.stats().current.requests[0]?.deadlineExceeded ||
+        !callerClosed ||
+        fixture.stats().current.active !== 0)
     )
       await pause(10);
     const stats = fixture.stats().current;
     assert.equal(stats.requests[0]?.deadlineExceeded, true);
+    assert.equal(callerClosed, true);
+    assert.equal(partial.socket?.destroyed, true);
     assert.equal(stats.active, 0);
+    assert.ok(
+      Date.now() <= deadline,
+      'Physical close and cleanup must settle within 1500ms'
+    );
   }
 );
 
