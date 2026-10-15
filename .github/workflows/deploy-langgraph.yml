@@ -66,6 +66,19 @@ jobs:
       # lookup can create a paid replacement, so never use --name here.
       - name: Update existing cockpit-dev-free
         working-directory: deployments/shared-dev
-        run: uv run --with langgraph-cli==0.4.21 langgraph deploy --config langgraph.json --deployment-id 6d350054-14ea-4031-8463-010ec27f9059 --no-wait
+        run: uv run --with langgraph-cli==0.4.21 langgraph deploy --config langgraph.json --deployment-id 6d350054-14ea-4031-8463-010ec27f9059 --no-wait --tag "$GITHUB_SHA"
         env:
           LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+
+      # Local push evidence only; --no-wait does not establish provider readiness.
+      - name: Record shared deployment image evidence
+        shell: bash
+        run: |
+          [[ "$GITHUB_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          [[ "$(git rev-parse HEAD)" == "$GITHUB_SHA" ]] || exit 1
+          repository='us-central1-docker.pkg.dev/langchain-prod/cockpit-dev-free-6957db75280055dcbbf2a4916c04b66f/shared-dev'
+          image="$(docker image ls --digests --filter "reference=$repository:$GITHUB_SHA" --format '{{.Repository}}@{{.Digest}}')"
+          [[ "$image" == "$repository"@sha256:* ]] || exit 1
+          digest="${image#"$repository"@}"
+          [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]] || exit 1
+          printf 'source_sha=%s\nimage_uri=%s\n' "$GITHUB_SHA" "$image"
