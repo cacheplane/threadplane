@@ -978,11 +978,11 @@ jobs:
           cat > .vercel/project.json <<'EOF'
           {"projectId":"${{ secrets.VERCEL_EXAMPLES_PROJECT_ID }}","orgId":"${{ secrets.VERCEL_ORG_ID }}","projectName":"threadplane-examples"}
           EOF
-          npx vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
-          url=$(npx vercel deploy --prebuilt --yes --token=${{ secrets.VERCEL_TOKEN }} | tail -n 1)
+          npx vercel@64.2.0 pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+          url=$(npx vercel@64.2.0 deploy --prebuilt --yes --token=${{ secrets.VERCEL_TOKEN }} | tail -n 1)
           url=$(node -e 'const parsed = new URL(process.argv[1]); if (parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.pathname !== "/" || parsed.search || parsed.hash) throw new Error("Vercel returned a non-origin examples preview URL"); process.stdout.write(parsed.origin)' "$url")
           echo "examples deployment: $url"
-          npx vercel alias set "$url" "${{ steps.aliases.outputs.examples }}" --scope=${{ secrets.VERCEL_ORG_ID }} --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel@64.2.0 alias set "$url" "${{ steps.aliases.outputs.examples }}" --scope=${{ secrets.VERCEL_ORG_ID }} --token=${{ secrets.VERCEL_TOKEN }}
       - name: Build, deploy, and alias the Website preview
         env:
           GROWTH_FORM_POLICY: growth_v1
@@ -993,13 +993,13 @@ jobs:
           cat > .vercel/project.json <<'EOF'
           {"projectId":"${{ secrets.VERCEL_WEBSITE_PROJECT_ID }}","orgId":"${{ secrets.VERCEL_ORG_ID }}","projectName":"threadplane"}
           EOF
-          npx vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel@64.2.0 pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
           rm -rf .vercel/output
-          npx vercel build --token=${{ secrets.VERCEL_TOKEN }}
-          url=$(npx vercel deploy --prebuilt --archive=tgz --yes --token=${{ secrets.VERCEL_TOKEN }} | tail -n 1)
+          npx vercel@64.2.0 build --token=${{ secrets.VERCEL_TOKEN }}
+          url=$(npx vercel@64.2.0 deploy --prebuilt --archive=tgz --yes --token=${{ secrets.VERCEL_TOKEN }} | tail -n 1)
           url=$(node -e 'const parsed = new URL(process.argv[1]); if (parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.pathname !== "/" || parsed.search || parsed.hash) throw new Error("Vercel returned a non-origin Website preview URL"); process.stdout.write(parsed.origin)' "$url")
           echo "website deployment: $url"
-          npx vercel alias set "$url" "${{ steps.aliases.outputs.website }}" --scope=${{ secrets.VERCEL_ORG_ID }} --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel@64.2.0 alias set "$url" "${{ steps.aliases.outputs.website }}" --scope=${{ secrets.VERCEL_ORG_ID }} --token=${{ secrets.VERCEL_TOKEN }}
       - name: Run the Website suite against the aliased preview
         run: npx nx e2e website --skip-nx-cache
         env:
@@ -1379,7 +1379,7 @@ jobs:
           cat > .vercel/project.json <<EOF
           {"projectId":"${{ secrets.VERCEL_WEBSITE_PROJECT_ID }}","orgId":"${{ secrets.VERCEL_ORG_ID }}","projectName":"threadplane"}
           EOF
-          npx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel@64.2.0 pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
           rm -rf .vercel/output
       - name: Deploy immutable Website preview
         if: steps.freshness.outputs.stale != 'true' && steps.affected.outputs.website == 'true'
@@ -1393,8 +1393,8 @@ jobs:
           # "GROWTH_FORM_POLICY must be growth_v1". It is not a secret.
           GROWTH_FORM_POLICY: growth_v1
         run: |
-          npx vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-          url=$(npx vercel deploy --prebuilt --archive=tgz --prod --skip-domain --yes --token=${{ secrets.VERCEL_TOKEN }} | tail -n 1)
+          npx vercel@64.2.0 build --prod --token=${{ secrets.VERCEL_TOKEN }}
+          url=$(npx vercel@64.2.0 deploy --prebuilt --archive=tgz --prod --skip-domain --yes --token=${{ secrets.VERCEL_TOKEN }} | tail -n 1)
           preview_origin=$(node -e 'const parsed = new URL(process.argv[1]); if (parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.pathname !== "/" || parsed.search || parsed.hash) throw new Error("Vercel returned a non-origin Website preview URL"); process.stdout.write(parsed.origin)' "$url")
           echo "deployment_url=$preview_origin" >> "$GITHUB_OUTPUT"
           echo "preview_origin=$preview_origin" >> "$GITHUB_OUTPUT"
@@ -1411,8 +1411,8 @@ jobs:
           cat > .vercel/project.json <<EOF
           {"projectId":"${{ secrets.VERCEL_EXAMPLES_PROJECT_ID }}","orgId":"${{ secrets.VERCEL_ORG_ID }}","projectName":"threadplane-examples"}
           EOF
-          npx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-          npx vercel deploy --prebuilt --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel@64.2.0 pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel@64.2.0 deploy --prebuilt --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
       - name: Verify Website preview runtime embedding policy
         if: steps.freshness.outputs.stale != 'true' && steps.affected.outputs.website == 'true'
         run: |
@@ -1451,7 +1451,7 @@ jobs:
         # cannot read the team from .vercel/project.json and falls back to the
         # token's default team — a personal one here, which fails with
         # "Deployment doesn't belong to current team". Scope it explicitly.
-        run: npx vercel promote "${{ steps.deploy_website.outputs.deployment_url }}" --scope=${{ secrets.VERCEL_ORG_ID }} --yes --token=${{ secrets.VERCEL_TOKEN }}
+        run: npx vercel@64.2.0 promote "${{ steps.deploy_website.outputs.deployment_url }}" --scope=${{ secrets.VERCEL_ORG_ID }} --yes --token=${{ secrets.VERCEL_TOKEN }}
       - name: Verify deployed website
         if: steps.freshness.outputs.stale != 'true' && steps.affected.outputs.website == 'true' && steps.website_promotion_freshness.outputs.fresh == 'true'
         run: npx nx e2e website --skip-nx-cache
@@ -1519,8 +1519,8 @@ jobs:
           cat > .vercel/project.json <<EOF
           {"projectId":"${{ secrets.VERCEL_DEMO_PROJECT_ID }}","orgId":"${{ secrets.VERCEL_ORG_ID }}","projectName":"threadplane-demo"}
           EOF
-          npx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-          npx vercel deploy --prebuilt --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel@64.2.0 pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel@64.2.0 deploy --prebuilt --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
       - name: Verify canonical demo build stamp
         if: steps.freshness.outputs.stale != 'true'
         env:
@@ -1703,8 +1703,8 @@ jobs:
           {"projectId":"${{ secrets.VERCEL_AG_UI_DEMO_PROJECT_ID }}","orgId":"${{ secrets.VERCEL_ORG_ID }}","projectName":"threadplane-ag-ui-demo"}
           EOF
           cd deploy/ag-ui-demo
-          npx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-          npx vercel deploy --prebuilt --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel@64.2.0 pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel@64.2.0 deploy --prebuilt --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
       - name: Deploy AG-UI backend to Railway
         if: steps.freshness.outputs.stale != 'true' && steps.ag_ui_changed.outputs.changed == 'true'
         working-directory: examples/ag-ui/python
