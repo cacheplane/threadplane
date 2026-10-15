@@ -364,7 +364,9 @@ export function createStrandsApplication(options: {
     const candidate = await candidatePromise;
     if (!valid()) return;
     const methods: Partial<Methods> = {};
-    let release: (() => void) | undefined, p: Owner | undefined;
+    let release: (() => void) | undefined,
+      p: Owner | undefined,
+      cleanupAccessFailed = false;
     try {
       if (
         candidate === null ||
@@ -379,7 +381,13 @@ export function createStrandsApplication(options: {
         'stop',
         'dispose',
       ] as const) {
-        const method = candidate[name];
+        let method: unknown;
+        try {
+          method = candidate[name];
+        } catch (error) {
+          cleanupAccessFailed = name === 'stop' || name === 'dispose';
+          throw error;
+        }
         if (!valid()) {
           void cleanupCandidate(candidate, methods);
           return;
@@ -419,6 +427,9 @@ export function createStrandsApplication(options: {
     } catch (error) {
       if (p) p.closed = true;
       void cleanupCandidate(candidate, methods, release);
+      // Register owned cleanup before notifying reentrant observers. A later
+      // successful disposal cannot erase an observed cleanup accessor failure.
+      if (cleanupAccessFailed) failCleanup();
       throw error;
     }
   }

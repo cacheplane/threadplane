@@ -15,4 +15,8 @@ it('resolves bounded MAF React Docs Code and Run with the unchanged canonical ba
   const guide = readFileSync(resolve(import.meta.dirname, '../components/docs/ReactMafPreview.tsx'), 'utf8');
   expect(guide).toContain('A normal terminal may omit its outcome field.');
   expect(guide).toContain('without a **TOOL_CALL_RESULT** event');
+  expect(guide).toContain('Docs, Code, and Run retain the same iframe and unsent draft');
+  expect(guide).toContain('Leaving the page or switching frontend disposes the Session');
+  expect(guide).toContain('Reload the preview after an owned cleanup failure');
+  expect(guide).not.toContain('Leaving Run or switching frontend');
 });

@@ -408,6 +408,126 @@ it.each(['release', 'dispose', 'dispose-and-stop'] as const)(
     expect(h.app.getSnapshot().status).toBe('disposed');
   }
 );
+it.each(['stop', 'dispose'] as const)(
+  'retains an admission %s getter failure even when later disposal succeeds',
+  async (method) => {
+    const h = harness(),
+      dispose = h.session.dispose,
+      stop = h.session.stop,
+      retainedSend = h.app.submit;
+    let reads = 0;
+    Object.defineProperty(h.session, method, {
+      get() {
+        reads++;
+        if (method === 'stop' || reads === 1) throw Error('cleanup getter');
+        return dispose;
+      },
+    });
+    await h.app.submit('Book');
+    await vi.waitFor(() => expect(dispose).toHaveBeenCalledTimes(1));
+    await h.app.newConversation();
+    expect(h.app.getSnapshot()).toMatchObject({
+      status: 'cleanup-failed',
+      canSend: false,
+      canRespond: false,
+      busy: false,
+      approval: undefined,
+      result: null,
+    });
+    expect(h.app.getSnapshot().error).toMatch(/Reload/);
+    await h.app.newConversation();
+    await retainedSend('Second explicit Send');
+    expect(h.factory).toHaveBeenCalledTimes(1);
+    expect(h.session.submit).not.toHaveBeenCalled();
+    expect(h.session.resume).not.toHaveBeenCalled();
+    expect(stop).not.toHaveBeenCalled();
+    await h.app.dispose();
+    expect(dispose).toHaveBeenCalledTimes(1);
+  }
+);
+it('admission cleanup getter failure observers await registered held disposal', async () => {
+  const h = harness();
+  let finishCleanup!: () => void, disposal: Promise<void> | undefined;
+  Object.defineProperty(h.session, 'stop', {
+    get() {
+      throw Error('cleanup getter');
+    },
+  });
+  vi.mocked(h.session.dispose).mockImplementation(
+    () =>
+      new Promise<void>((resolve) => {
+        finishCleanup = resolve;
+      })
+  );
+  h.app.subscribe(() => {
+    if (h.app.getSnapshot().status !== 'cleanup-failed') return;
+    expect(h.app.getSnapshot().canSend).toBe(false);
+    expect(h.app.getSnapshot().canRespond).toBe(false);
+    void h.app.newConversation();
+    void h.app.submit('Reentrant Send');
+    disposal ??= h.app.dispose();
+  });
+  const submission = h.app.submit('Book');
+  await vi.waitFor(() => expect(finishCleanup).toBeTypeOf('function'));
+  expect(disposal).toBeDefined();
+  let settled = false;
+  void disposal!.then(() => {
+    settled = true;
+  });
+  await Promise.resolve();
+  await Promise.resolve();
+  expect(settled).toBe(false);
+  finishCleanup();
+  await disposal;
+  await submission;
+  expect(h.factory).toHaveBeenCalledTimes(1);
+  expect(h.session.dispose).toHaveBeenCalledTimes(1);
+  expect(h.session.submit).not.toHaveBeenCalled();
+  expect(h.session.resume).not.toHaveBeenCalled();
+  expect(h.app.getSnapshot().status).toBe('disposed');
+});
+it('allows successful New after an ordinary admission getter failure with successful owned cleanup', async () => {
+  const h = harness(),
+    getSnapshot = h.session.getSnapshot;
+  let reads = 0;
+  Object.defineProperty(h.session, 'getSnapshot', {
+    get() {
+      if (++reads === 1) throw Error('ordinary admission getter');
+      return getSnapshot;
+    },
+  });
+  await h.app.submit('Book');
+  await vi.waitFor(() => expect(h.session.dispose).toHaveBeenCalledTimes(1));
+  expect(h.app.getSnapshot().status).toBe('unconfirmed');
+  await h.app.newConversation();
+  expect(h.app.getSnapshot()).toMatchObject({ status: 'ready', canSend: true });
+  const next = h.app.submit('Second explicit Send');
+  await vi.waitFor(() => expect(h.session.submit).toHaveBeenCalledTimes(1));
+  h.update(paused());
+  h.settle('paused');
+  await next;
+  expect(h.factory).toHaveBeenCalledTimes(2);
+  expect(h.app.getSnapshot().status).toBe('pending');
+  expect(h.app.getSnapshot().approval).toBeDefined();
+  await h.app.dispose();
+});
+it('a rejected factory without an acquired candidate permits successful New', async () => {
+  const factory = vi.fn(async () => {
+    throw Error('No candidate acquired');
+  });
+  const app = createStrandsApplication({
+    sessionFactory: factory,
+    threadIdFactory: () => 'thread',
+  });
+  await app.submit('Book');
+  expect(app.getSnapshot().status).toBe('unconfirmed');
+  await app.newConversation();
+  expect(app.getSnapshot()).toMatchObject({ status: 'ready', canSend: true });
+  await app.submit('Second explicit Send');
+  expect(factory).toHaveBeenCalledTimes(2);
+  expect(app.getSnapshot().status).toBe('unconfirmed');
+  await app.dispose();
+});
 it.each(['dispose', 'dispose-and-stop', 'dispose-getter'] as const)(
   'late candidate %s cleanup failure settles New without restoring execution',
   async (failure) => {

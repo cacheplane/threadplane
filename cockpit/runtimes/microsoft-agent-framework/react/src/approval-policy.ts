@@ -215,9 +215,22 @@ function rootRows(s: NativeSnapshot): Transcript | undefined {
       }
     }
   }
-  return Object.freeze(
-    s.transcript.filter((m) => m.subagentRunId === undefined)
-  );
+  const rows = s.transcript.filter((m) => m.subagentRunId === undefined);
+  const declarations = new Map<string, number>();
+  rows.forEach((m, index) => {
+    if (m.role === 'assistant')
+      for (const call of m.toolCalls ?? []) declarations.set(call.id, index);
+  });
+  // Native metadata can authorize a pause without a redundant declaration.
+  // When a declaration is present, its canonical result must follow it.
+  if (
+    rows.some(
+      (m, index) =>
+        m.role === 'tool' && (declarations.get(m.toolCallId) ?? -1) >= index
+    )
+  )
+    return;
+  return Object.freeze(rows);
 }
 function semantic(message: Transcript[number]) {
   return message.role === 'assistant' &&
@@ -226,10 +239,31 @@ function semantic(message: Transcript[number]) {
     : message;
 }
 function history(past: Transcript, current: Transcript) {
-  return past.every((m) => {
-    const found = current.find((n) => n.id === m.id);
-    return found && same(semantic(m), semantic(found));
-  });
+  let cursor = 0;
+  for (const message of current) {
+    if (message.id !== past[cursor]?.id) continue;
+    if (!same(semantic(past[cursor]), semantic(message))) return false;
+    cursor++;
+  }
+  return cursor === past.length;
+}
+function declarationsAfterHuman(
+  rows: Transcript,
+  humanId: string,
+  prefix: Transcript
+) {
+  const humanIndex = rows.findIndex((m) => m.id === humanId),
+    earlier = new Set(submitCalls(prefix).map((c) => c.id));
+  return (
+    humanIndex >= 0 &&
+    rows.every(
+      (m, index) =>
+        m.role !== 'assistant' ||
+        (m.toolCalls ?? []).every(
+          (c) => earlier.has(c.id) || index > humanIndex
+        )
+    )
+  );
 }
 export function captureTurn(
   snapshot: NativeSnapshot,
@@ -345,7 +379,8 @@ export function captureApproval(
     t.outcome?.type !== 'interrupt' ||
     !Array.isArray(t.outcome.interrupts) ||
     t.outcome.interrupts.length !== 1 ||
-    !history([...turn.prefix, turn.human], rows)
+    !history([...turn.prefix, turn.human], rows) ||
+    !declarationsAfterHuman(rows, turn.human.id, turn.prefix)
   )
     return;
   const i = nativeInterrupt(d.interrupts[0], Date.now()),
@@ -448,6 +483,7 @@ export function confirmResume(
   )
     return;
   const t = s.run.terminal;
+  const humanIndex = approval.transcript.map((m) => m.role).lastIndexOf('user');
   if (
     t?.type !== 'RUN_FINISHED' ||
     record(t)?.['subagentRunId'] !== undefined ||
@@ -455,7 +491,13 @@ export function confirmResume(
     t.runId !== runId ||
     (t.outcome !== undefined && t.outcome.type !== 'success') ||
     (t.outcome?.type === 'success' && !!t.outcome.pendingToolCallIds?.length) ||
-    !history(approval.transcript, rows)
+    !history(approval.transcript, rows) ||
+    humanIndex < 0 ||
+    !declarationsAfterHuman(
+      rows,
+      approval.transcript[humanIndex].id,
+      approval.transcript.slice(0, humanIndex)
+    )
   )
     return;
   const calls = submitCalls(rows).filter((c) => c.id === approval.toolCallId),

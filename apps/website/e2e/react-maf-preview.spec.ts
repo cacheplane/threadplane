@@ -40,6 +40,9 @@ test.describe('native MAF Website', () => {
     await writeFile(info.outputPath('dom.html'), await page.content());
     await page.screenshot({ path: info.outputPath('final-page.png') });
     await page.goto('about:blank');
+    // These receipts establish owned fixture closure after page exit. The
+    // connection integration spec separately proves synchronous native abort
+    // and revoked retained callbacks on unmount.
     await writeFile(info.outputPath('actual-service-evidence.json'), JSON.stringify(await (await request.get(origin + '/__stats')).json(), null, 2));
     const receipt = await (await request.post(origin + '/__finish')).json();
     await writeFile(info.outputPath('owned-cleanup.json'), JSON.stringify(receipt, null, 2));
@@ -76,6 +79,16 @@ test.describe('native MAF Website', () => {
       const frame = page.frameLocator('iframe');
       await expect(frame.getByRole('status')).toHaveText('Ready.');
       await frame.getByRole('button', { name: 'Team dinner for 4', exact: true }).click();
+      const iframe = await page.locator('iframe').elementHandle();
+      const draft = await frame.getByRole('textbox', { name: 'Message', exact: true }).inputValue();
+      await mode(page, 'Docs', width);
+      await expect(page.getByRole('heading', { name: 'React Microsoft Agent Framework expense preview', exact: true })).toBeVisible();
+      await mode(page, 'Code', width);
+      await expect(page.getByRole('tabpanel')).toBeVisible();
+      await mode(page, 'Run', width);
+      expect(await page.locator('iframe').evaluate((current, retained) => current === retained, iframe)).toBe(true);
+      await expect(frame.getByRole('textbox', { name: 'Message', exact: true })).toHaveValue(draft);
+      await expect(frame.getByRole('status')).toHaveText('Ready.');
       expect((await (await request.get(origin + '/__stats')).json()).current.requests).toHaveLength(0);
       await frame.getByRole('button', { name: 'Send', exact: true }).click();
       await expect(frame.getByRole('status')).toHaveText('Awaiting your decision.');

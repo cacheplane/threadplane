@@ -228,6 +228,42 @@ it.each(['unconfirmed', 'replacing'] as const)(
     );
   }
 );
+it('requires reload and disables New, Send, preset and decisions after cleanup failure', () => {
+  const h = setup({
+    status: 'pending',
+    canSend: false,
+    canRespond: true,
+    approval: approval(),
+  });
+  const retainedDecision = h.view.getByRole('button', { name: 'Approve' });
+  act(() =>
+    h.update({
+      status: 'cleanup-failed',
+      canRespond: false,
+      approval: undefined,
+      error:
+        'The conversation could not close safely. Reload the preview to continue.',
+    })
+  );
+  expect(h.view.getByRole('status').textContent).toMatch(/Reload/);
+  expect(h.view.getByRole('alert').textContent).toMatch(/Reload/);
+  for (const name of ['New conversation', 'Send', 'Team dinner for 4']) {
+    const button = h.view.getByRole('button', {
+      name,
+    }) as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    fireEvent.click(button);
+  }
+  expect(
+    (h.view.getByRole('textbox', { name: 'Message' }) as HTMLTextAreaElement)
+      .disabled
+  ).toBe(true);
+  expect(h.view.queryByRole('button', { name: 'Approve' })).toBeNull();
+  fireEvent.click(retainedDecision);
+  expect(h.app.decide).not.toHaveBeenCalled();
+  expect(h.app.newConversation).not.toHaveBeenCalled();
+  expect(h.app.submit).not.toHaveBeenCalled();
+});
 it('clears stale card and draft on a new generation and disposes synchronously on unmount', () => {
   const h = setup({
     approval: approval(),
