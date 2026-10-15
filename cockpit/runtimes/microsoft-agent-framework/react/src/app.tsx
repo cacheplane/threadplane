@@ -96,6 +96,8 @@ function MafPresentation({
     approved: 'Fictional expense approved.',
     declined: 'Expense declined.',
     unconfirmed: 'Expense unconfirmed. Start a new conversation.',
+    'cleanup-failed':
+      'Conversation cleanup failed. Reload the preview to continue.',
     replacing: 'Starting new conversation…',
     disposed: 'Preview closed.',
   }[snapshot.status];
@@ -109,7 +111,9 @@ function MafPresentation({
         <button
           type="button"
           disabled={
-            snapshot.status === 'replacing' || snapshot.status === 'disposed'
+            snapshot.status === 'replacing' ||
+            snapshot.status === 'disposed' ||
+            snapshot.status === 'cleanup-failed'
           }
           onClick={() => {
             void application.newConversation();

@@ -25,7 +25,7 @@ Native text and predictive expense state are projected for display. **Observed b
 
 ## Stop and start fresh
 
-**Stop** revokes current controls. **New conversation** clears local state and waits for owned cleanup before another Send. Leaving Run or switching frontend disposes the Session. There is no automatic reconnect, replay, saved-history restoration, or durable cross-reload claim.
+**Stop** revokes current controls. **New conversation** clears local state and waits for owned cleanup before another Send. Docs, Code, and Run retain the same iframe and unsent draft without starting a request. Leaving the page or switching frontend disposes the Session. Reload the preview after an owned cleanup failure; Send, decisions, and New conversation remain disabled for that application lifetime. There is no automatic reconnect, replay, saved-history restoration, or durable cross-reload claim.
 
 ## Use the shared service
 

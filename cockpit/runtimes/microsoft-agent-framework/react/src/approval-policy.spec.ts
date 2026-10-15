@@ -236,7 +236,7 @@ it('rejects a malformed interrupt terminal without throwing', () => {
   delete p.run.terminal.outcome.interrupts;
   expect(captureApproval(p, turn())).toBeUndefined();
 });
-it('normalizes optional empty assistant content and authoritative ordering while preserving history', () => {
+it('normalizes optional empty assistant content while preserving ordered history', () => {
   const p = paused(),
     final = completed();
   const call = final.transcript[1];
@@ -249,7 +249,7 @@ it('normalizes optional empty assistant content and authoritative ordering while
     confirmResume(
       {
         ...final,
-        transcript: [final.transcript[0], final.transcript[2], call],
+        transcript: [final.transcript[0], call, final.transcript[2]],
       },
       a,
       'resume',
@@ -257,6 +257,192 @@ it('normalizes optional empty assistant content and authoritative ordering while
     )
   ).toBeDefined();
 });
+it('rejects a result before its known declaration, including metadata-only pause authority', () => {
+  const final = completed(),
+    a = captureApproval(paused(), turn())!;
+  expect(
+    confirmResume(
+      {
+        ...final,
+        transcript: [
+          final.transcript[0],
+          final.transcript[2],
+          final.transcript[1],
+        ],
+      },
+      a,
+      'resume',
+      true
+    )
+  ).toBeUndefined();
+});
+// Synthetic multi-turn snapshots: previous completed expenses must keep their
+// order while a previously declared pending lookup may finish between owned rows.
+function laterTurn() {
+  const completedPrefix = JSON.parse(
+    JSON.stringify(completed().transcript)
+      .replaceAll('"call"', '"old-call"')
+      .replaceAll('"human"', '"old-human"')
+      .replaceAll('"submit"', '"old-submit"')
+      .replaceAll('"authoritative-result"', '"old-result"')
+  ) as ReturnType<typeof completed>['transcript'];
+  const prefix: typeof completedPrefix = [
+    ...completedPrefix,
+    {
+      id: 'old-note-one',
+      role: 'assistant',
+      content: 'Recorded the previous expense.',
+    },
+    {
+      id: 'old-note-two',
+      role: 'assistant',
+      content: 'Ready for another expense.',
+    },
+  ];
+  const start = {
+    ...running(),
+    transcript: [...prefix, ...running().transcript],
+  };
+  const owned = captureTurn(start, 'thread', 'previous-resume', prefix)!;
+  const { pause, done } = batch();
+  pause.transcript = [
+    ...prefix,
+    ...pause.transcript,
+    { id: 'pause-note', role: 'assistant', content: 'Awaiting review.' },
+  ];
+  // Move the known pending lookup result between the retained declaration and
+  // the retained pause note, preserving every retained row's relative order.
+  done.transcript = [
+    ...prefix,
+    ...done.transcript.slice(0, 2),
+    done.transcript[3],
+    pause.transcript.at(-1),
+    done.transcript[2],
+  ];
+  return { prefix, start, owned, pause, done };
+}
+it('preserves a nonempty completed prefix and accepts an inserted known pending lookup result', () => {
+  const { prefix, start, owned, pause, done } = laterTurn();
+  expect(captureTurn(start, 'thread', 'previous-resume', prefix)).toBeDefined();
+  const approval = captureApproval(pause, owned)!;
+  expect(approval).toBeDefined();
+  expect(confirmResume(done, approval, 'resume', true)?.result).toBe(
+    literal(true)
+  );
+});
+it.each(['turn', 'approval', 'resume'] as const)(
+  'rejects reversed retained rows during %s with a nonempty completed prefix',
+  (stage) => {
+    const { prefix, start, owned, pause, done } = laterTurn();
+    if (stage === 'turn') {
+      expect(
+        captureTurn(
+          {
+            ...start,
+            transcript: [...prefix].reverse().concat(running().transcript),
+          },
+          'thread',
+          'previous-resume',
+          prefix
+        )
+      ).toBeUndefined();
+    } else if (stage === 'approval') {
+      pause.transcript.splice(0, prefix.length, ...[...prefix].reverse());
+      expect(captureApproval(pause, owned)).toBeUndefined();
+    } else {
+      const approval = captureApproval(pause, owned)!;
+      done.transcript.splice(0, prefix.length, ...[...prefix].reverse());
+      expect(confirmResume(done, approval, 'resume', true)).toBeUndefined();
+    }
+  }
+);
+it.each(['turn', 'approval', 'resume'] as const)(
+  'rejects reversed retained assistant prose during %s independently of tool causality',
+  (stage) => {
+    const { prefix, start, owned, pause, done } = laterTurn();
+    const reordered = [...prefix];
+    [reordered[3], reordered[4]] = [reordered[4], reordered[3]];
+    if (stage === 'turn') {
+      expect(
+        captureTurn(
+          { ...start, transcript: [...reordered, ...running().transcript] },
+          'thread',
+          'previous-resume',
+          prefix
+        )
+      ).toBeUndefined();
+    } else if (stage === 'approval') {
+      pause.transcript.splice(0, prefix.length, ...reordered);
+      expect(captureApproval(pause, owned)).toBeUndefined();
+    } else {
+      const approval = captureApproval(pause, owned)!;
+      done.transcript.splice(0, prefix.length, ...reordered);
+      expect(confirmResume(done, approval, 'resume', true)).toBeUndefined();
+    }
+  }
+);
+it.each(['approval', 'resume'] as const)(
+  'rejects a current declaration before the owned current human during %s',
+  (stage) => {
+    const { prefix, owned, pause } = laterTurn();
+    if (stage === 'approval') {
+      [pause.transcript[prefix.length], pause.transcript[prefix.length + 1]] = [
+        pause.transcript[prefix.length + 1],
+        pause.transcript[prefix.length],
+      ];
+      expect(captureApproval(pause, owned)).toBeUndefined();
+    } else {
+      // Metadata-only native pause intentionally has no redundant declaration.
+      const approval = captureApproval(
+        { ...paused(), transcript: [...prefix, ...paused().transcript] },
+        owned
+      )!;
+      expect(approval).toBeDefined();
+      const final = {
+        ...completed(),
+        transcript: [...prefix, ...completed().transcript],
+      };
+      [final.transcript[prefix.length], final.transcript[prefix.length + 1]] = [
+        final.transcript[prefix.length + 1],
+        final.transcript[prefix.length],
+      ];
+      expect(confirmResume(final, approval, 'resume', true)).toBeUndefined();
+    }
+  }
+);
+it.each(['turn', 'approval', 'resume'] as const)(
+  'rejects a result before a matching known historical declaration during %s',
+  (stage) => {
+    const { prefix, start, owned, pause, done } = laterTurn();
+    // Use equally reordered retained input to isolate causal validation from
+    // retained-subsequence validation at each admission stage.
+    const reversed = [prefix[0], prefix[2], prefix[1]];
+    if (stage === 'turn')
+      expect(
+        captureTurn(
+          { ...start, transcript: [...reversed, ...running().transcript] },
+          'thread',
+          'previous-resume',
+          reversed
+        )
+      ).toBeUndefined();
+    if (stage === 'approval') {
+      pause.transcript.splice(0, prefix.length, ...reversed);
+      expect(
+        captureApproval(pause, { ...owned, prefix: reversed })
+      ).toBeUndefined();
+    }
+    if (stage === 'resume') {
+      const approval = captureApproval(pause, owned)!;
+      const rows = [...approval.transcript];
+      rows.splice(0, prefix.length, ...reversed);
+      done.transcript.splice(0, prefix.length, ...reversed);
+      expect(
+        confirmResume(done, { ...approval, transcript: rows }, 'resume', true)
+      ).toBeUndefined();
+    }
+  }
+);
 it('rejects an unrelated new root tool result alongside the expected result', () => {
   const done = completed(),
     a = captureApproval(paused(), turn())!;

@@ -28,6 +28,7 @@ export interface MafSnapshot {
     | 'approved'
     | 'declined'
     | 'unconfirmed'
+    | 'cleanup-failed'
     | 'replacing'
     | 'disposed';
   readonly error: string | null;
@@ -59,6 +60,7 @@ export function createMafApplication(options: {
   let primary: Owner | undefined,
     operation: AbortController | undefined,
     disposed = false,
+    cleanupFailed = false,
     revoking = false,
     disposal: Promise<void> | undefined;
   let snapshot: MafSnapshot = Object.freeze({
@@ -74,9 +76,27 @@ export function createMafApplication(options: {
     status: 'ready',
     error: null,
   });
+  const cleanupFailure: Partial<MafSnapshot> = Object.freeze({
+    canSend: false,
+    canRespond: false,
+    approval: undefined,
+    result: null,
+    status: 'cleanup-failed',
+    error:
+      'The conversation could not close safely. Reload the preview to continue.',
+  });
+  function failCleanup() {
+    // A successful fallback cannot erase an earlier owned cleanup failure.
+    cleanupFailed = true;
+    publish(cleanupFailure);
+  }
   function publish(update: Partial<MafSnapshot>) {
     if (disposed) return;
-    snapshot = Object.freeze({ ...snapshot, ...update });
+    snapshot = Object.freeze({
+      ...snapshot,
+      ...update,
+      ...(cleanupFailed ? cleanupFailure : {}),
+    });
     for (const notify of [...listeners]) {
       try {
         notify();
@@ -98,7 +118,7 @@ export function createMafApplication(options: {
     while (cleanups.size) await Promise.all([...cleanups]);
   }
   function current(p: Owner) {
-    return !disposed && primary === p && !p.closed;
+    return !disposed && !cleanupFailed && primary === p && !p.closed;
   }
   function cleanupCandidate(
     candidate: unknown,
@@ -107,40 +127,46 @@ export function createMafApplication(options: {
   ) {
     // Authority and the rendered controls have already been revoked by the caller.
     const done = track(
-      Promise.resolve().then(async () => {
-        let dispose = methods?.dispose,
-          stop = methods?.stop;
-        try {
-          dispose ??= (candidate as Session)?.dispose;
-        } catch {
-          /* Try stop. */
-        }
-        try {
-          stop ??= (candidate as Session)?.stop;
-        } catch {
-          /* No cleanup surface. */
-        }
-        if (typeof dispose === 'function') {
+      Promise.resolve()
+        .then(async () => {
+          let dispose = methods?.dispose;
           try {
-            await dispose.call(candidate);
-            return;
+            dispose ??= (candidate as Session)?.dispose;
           } catch {
-            /* Try stop after failed disposal. */
+            failCleanup();
           }
-        }
-        if (typeof stop === 'function') {
+          if (typeof dispose === 'function') {
+            try {
+              await dispose.call(candidate);
+              return;
+            } catch {
+              failCleanup();
+            }
+          }
+          let stop = methods?.stop;
           try {
-            await stop.call(candidate);
+            stop ??= (candidate as Session)?.stop;
           } catch {
-            /* Detached cleanup is best effort. */
+            failCleanup();
           }
-        }
-      })
+          if (typeof stop === 'function') {
+            try {
+              await stop.call(candidate);
+            } catch {
+              failCleanup();
+            }
+          } else failCleanup();
+        })
+        .catch(() => {
+          // Preserve failure before the settlement-only tracking barrier.
+          failCleanup();
+        })
     );
     try {
       release?.();
     } catch {
-      /* Detached. The cleanup barrier is already registered. */
+      // The cleanup barrier is registered before publishing to reentrant observers.
+      failCleanup();
     }
     return done;
   }
@@ -286,7 +312,10 @@ export function createMafApplication(options: {
     const controller = new AbortController();
     operation = controller;
     const valid = () =>
-      !disposed && operation === controller && !controller.signal.aborted;
+      !disposed &&
+      !cleanupFailed &&
+      operation === controller &&
+      !controller.signal.aborted;
     publish({
       busy: true,
       canSend: false,
@@ -336,7 +365,9 @@ export function createMafApplication(options: {
     const candidate = await candidatePromise;
     if (!valid()) return;
     const methods: Partial<Methods> = {};
-    let release: (() => void) | undefined, p: Owner | undefined;
+    let release: (() => void) | undefined,
+      p: Owner | undefined,
+      cleanupAccessFailed = false;
     try {
       if (
         candidate === null ||
@@ -351,7 +382,13 @@ export function createMafApplication(options: {
         'stop',
         'dispose',
       ] as const) {
-        const method = candidate[name];
+        let method: unknown;
+        try {
+          method = candidate[name];
+        } catch (error) {
+          cleanupAccessFailed = name === 'stop' || name === 'dispose';
+          throw error;
+        }
         if (!valid()) {
           void cleanupCandidate(candidate, methods);
           return;
@@ -391,12 +428,16 @@ export function createMafApplication(options: {
     } catch (error) {
       if (p) p.closed = true;
       void cleanupCandidate(candidate, methods, release);
+      // Register owned cleanup before notifying reentrant observers. A later
+      // successful disposal cannot erase an observed cleanup accessor failure.
+      if (cleanupAccessFailed) failCleanup();
       throw error;
     }
   }
   async function submit(message: string, generation = snapshot.generation) {
     if (
       disposed ||
+      cleanupFailed ||
       revoking ||
       snapshot.busy ||
       !snapshot.canSend ||
@@ -476,6 +517,7 @@ export function createMafApplication(options: {
     const p = primary;
     if (
       disposed ||
+      cleanupFailed ||
       revoking ||
       snapshot.busy ||
       !snapshot.canRespond ||
@@ -546,7 +588,7 @@ export function createMafApplication(options: {
     }
   }
   async function revoke(replacing: boolean) {
-    if (disposed || revoking) return;
+    if (disposed || cleanupFailed || revoking) return;
     revoking = true;
     const previous = operation,
       p = primary;

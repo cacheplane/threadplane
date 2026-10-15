@@ -363,17 +363,228 @@ it('Stop synchronously clears a previously confirmed result', async () => {
   expect(h.app.getSnapshot().canSend).toBe(false);
   await stopped;
 });
-it('cleanup throws without restoring authority or blocking a fresh conversation', async () => {
+it.each(['release', 'dispose', 'dispose-and-stop'])(
+  'keeps %s cleanup failure revoked for the entire application lifetime',
+  async (failure) => {
+    const h = harness();
+    if (failure === 'release')
+      vi.mocked(h.session.subscribe).mockImplementation(() => () => {
+        throw Error('release');
+      });
+    const approval = await h.pause();
+    if (failure !== 'release')
+      vi.mocked(h.session.dispose).mockRejectedValue(Error('dispose'));
+    if (failure === 'dispose-and-stop')
+      vi.mocked(h.session.stop).mockRejectedValue(Error('stop'));
+    await h.app.newConversation();
+    expect(h.app.getSnapshot()).toMatchObject({
+      status: 'cleanup-failed',
+      canSend: false,
+      canRespond: false,
+      busy: false,
+      result: null,
+    });
+    expect(h.app.getSnapshot().error).toMatch(/Reload/);
+    expect(h.app.getSnapshot().approval).toBeUndefined();
+    await h.app.newConversation();
+    await h.app.stop();
+    h.update(completed());
+    await h.app.decide(approval, 'approve');
+    await h.app.submit('Second explicit Send');
+    expect(h.factory).toHaveBeenCalledTimes(1);
+    expect(h.session.resume).not.toHaveBeenCalled();
+    expect(h.session.stop).toHaveBeenCalledTimes(failure === 'release' ? 0 : 1);
+    await h.app.dispose();
+    expect(h.app.getSnapshot().status).toBe('disposed');
+  }
+);
+it.each(['stop', 'dispose'] as const)(
+  'retains an admission %s getter failure even when later disposal succeeds',
+  async (method) => {
+    const h = harness(),
+      dispose = h.session.dispose,
+      stop = h.session.stop;
+    let reads = 0;
+    Object.defineProperty(h.session, method, {
+      get() {
+        reads++;
+        if (method === 'stop' || reads === 1) throw Error('cleanup getter');
+        return dispose;
+      },
+    });
+    await h.app.submit('File');
+    await vi.waitFor(() => expect(dispose).toHaveBeenCalledTimes(1));
+    await h.app.newConversation();
+    expect(h.app.getSnapshot()).toMatchObject({
+      status: 'cleanup-failed',
+      canSend: false,
+      canRespond: false,
+      busy: false,
+    });
+    expect(h.app.getSnapshot().error).toMatch(/Reload/);
+    await h.app.submit('Second explicit Send');
+    expect(h.factory).toHaveBeenCalledTimes(1);
+    expect(h.session.submit).not.toHaveBeenCalled();
+    expect(stop).not.toHaveBeenCalled();
+    await h.app.dispose();
+    expect(dispose).toHaveBeenCalledTimes(1);
+  }
+);
+it('admission cleanup getter failure observers await registered held disposal', async () => {
   const h = harness();
+  let finishCleanup!: () => void, disposal: Promise<void> | undefined;
+  Object.defineProperty(h.session, 'stop', {
+    get() {
+      throw Error('cleanup getter');
+    },
+  });
+  vi.mocked(h.session.dispose).mockImplementation(
+    () =>
+      new Promise<void>((resolve) => {
+        finishCleanup = resolve;
+      })
+  );
+  h.app.subscribe(() => {
+    if (h.app.getSnapshot().status !== 'cleanup-failed') return;
+    expect(h.app.getSnapshot().canSend).toBe(false);
+    expect(h.app.getSnapshot().canRespond).toBe(false);
+    void h.app.newConversation();
+    void h.app.submit('Reentrant Send');
+    disposal ??= h.app.dispose();
+  });
+  const submission = h.app.submit('File');
+  await vi.waitFor(() => expect(finishCleanup).toBeTypeOf('function'));
+  expect(disposal).toBeDefined();
+  let settled = false;
+  void disposal!.then(() => {
+    settled = true;
+  });
+  await Promise.resolve();
+  await Promise.resolve();
+  expect(settled).toBe(false);
+  finishCleanup();
+  await disposal;
+  await submission;
+  expect(h.factory).toHaveBeenCalledTimes(1);
+  expect(h.session.dispose).toHaveBeenCalledTimes(1);
+  expect(h.session.submit).not.toHaveBeenCalled();
+  expect(h.session.resume).not.toHaveBeenCalled();
+  expect(h.app.getSnapshot().status).toBe('disposed');
+});
+it('allows successful New after an ordinary admission getter failure with successful owned cleanup', async () => {
+  const h = harness(),
+    getSnapshot = h.session.getSnapshot;
+  let reads = 0;
+  Object.defineProperty(h.session, 'getSnapshot', {
+    get() {
+      if (++reads === 1) throw Error('ordinary admission getter');
+      return getSnapshot;
+    },
+  });
+  await h.app.submit('File');
+  await vi.waitFor(() => expect(h.session.dispose).toHaveBeenCalledTimes(1));
+  expect(h.app.getSnapshot().status).toBe('unconfirmed');
+  await h.app.newConversation();
+  expect(h.app.getSnapshot()).toMatchObject({ status: 'ready', canSend: true });
+  const next = h.app.submit('Second explicit Send');
+  await vi.waitFor(() => expect(h.session.submit).toHaveBeenCalledTimes(1));
+  h.update(paused());
+  h.settle('paused');
+  await next;
+  expect(h.factory).toHaveBeenCalledTimes(2);
+  expect(h.app.getSnapshot().status).toBe('pending');
+  await h.app.dispose();
+});
+it.each(['dispose', 'stop'] as const)(
+  'retains a throwing late-candidate %s getter cleanup failure',
+  async (method) => {
+    const h = harness();
+    let resolve!: (candidate: Session) => void;
+    const factory = vi.fn(
+      () =>
+        new Promise<Session>((done) => {
+          resolve = done;
+        })
+    );
+    const app = createMafApplication({
+      sessionFactory: factory,
+      threadIdFactory: () => 'thread',
+    });
+    const submission = app.submit('File');
+    await vi.waitFor(() => expect(resolve).toBeTypeOf('function'));
+    const replacement = app.newConversation();
+    if (method === 'stop')
+      vi.mocked(h.session.dispose).mockRejectedValue(Error('dispose'));
+    Object.defineProperty(h.session, method, {
+      get() {
+        throw Error('cleanup getter');
+      },
+    });
+    resolve(h.session);
+    await submission;
+    await replacement;
+    expect(app.getSnapshot()).toMatchObject({
+      status: 'cleanup-failed',
+      canSend: false,
+      busy: false,
+    });
+    await app.newConversation();
+    await app.submit('Second explicit Send');
+    expect(factory).toHaveBeenCalledTimes(1);
+    await app.dispose();
+  }
+);
+it('cleanup failure observers cannot restore authority or finish disposal before registered teardown', async () => {
+  const h = harness();
+  let releaseCleanup!: () => void, disposal: Promise<void> | undefined;
   vi.mocked(h.session.subscribe).mockImplementation(() => () => {
     throw Error('release');
   });
-  await h.pause();
-  vi.mocked(h.session.dispose).mockRejectedValue(Error('dispose'));
-  vi.mocked(h.session.stop).mockRejectedValue(Error('stop'));
-  await h.app.newConversation();
-  expect(h.app.getSnapshot().canSend).toBe(true);
-  expect(h.session.stop).toHaveBeenCalledTimes(1);
+  const approval = await h.pause();
+  vi.mocked(h.session.dispose).mockImplementation(
+    () =>
+      new Promise<void>((resolve) => {
+        releaseCleanup = resolve;
+      })
+  );
+  h.app.subscribe(() => {
+    if (h.app.getSnapshot().status !== 'cleanup-failed') return;
+    expect(h.app.getSnapshot().canSend).toBe(false);
+    void h.app.newConversation();
+    void h.app.submit('Reentrant Send');
+    void h.app.decide(approval, 'approve');
+    disposal ??= h.app.dispose();
+  });
+  const replacement = h.app.newConversation();
+  await vi.waitFor(() => expect(releaseCleanup).toBeTypeOf('function'));
+  expect(disposal).toBeDefined();
+  let settled = false;
+  void disposal!.then(() => {
+    settled = true;
+  });
+  await Promise.resolve();
+  expect(settled).toBe(false);
+  releaseCleanup();
+  await replacement;
+  await disposal;
+  expect(h.factory).toHaveBeenCalledTimes(1);
+  expect(h.session.resume).not.toHaveBeenCalled();
+});
+it('a rejected factory without an acquired candidate permits successful New', async () => {
+  const factory = vi.fn(async () => {
+    throw Error('allocation failed');
+  });
+  const app = createMafApplication({
+    sessionFactory: factory,
+    threadIdFactory: () => 'thread',
+  });
+  await app.submit('File');
+  expect(app.getSnapshot().status).toBe('unconfirmed');
+  await app.newConversation();
+  expect(app.getSnapshot()).toMatchObject({ status: 'ready', canSend: true });
+  await app.submit('Explicit retry');
+  expect(factory).toHaveBeenCalledTimes(2);
+  await app.dispose();
 });
 it('a stale approval object, generation or expired occurrence never resumes', async () => {
   const h = harness(),
