@@ -1,21 +1,46 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useAgent } from '@threadplane/react';
 import { RenderSpec } from '@threadplane/react/render';
 import type { Playback } from './playback';
 import { localRegistry } from './views';
-import { createInitialState, editState } from './state';
+import type { DemoObserver, StateEditor } from './state';
 
 export function StateDemo({
   playback,
+  renderState,
+  onStateEdit,
   samples,
   onReady,
 }: {
   readonly playback: Playback;
+  readonly renderState: DemoObserver;
+  readonly onStateEdit: StateEditor;
   readonly samples: readonly string[];
   readonly onReady: () => void;
 }) {
-  const [host, setHost] = useState(createInitialState);
-  const [ageDraft, setAgeDraft] = useState('30');
-  const [ageError, setAgeError] = useState<string | null>(null);
+  const host = useAgent(renderState);
+  const [ageInput, setAgeInput] = useState(() => ({
+    observer: renderState,
+    age: host.user.age,
+    draft: String(host.user.age),
+    error: null as string | null,
+  }));
+  // React retries this component before committing its children. Keeping this
+  // presentation in React state retires accepted spellings on committed changes
+  // without mutating refs or the owner during rendering.
+  if (
+    ageInput.observer !== renderState ||
+    (ageInput.error === null && ageInput.age !== host.user.age)
+  ) {
+    setAgeInput({
+      observer: renderState,
+      age: host.user.age,
+      draft: String(host.user.age),
+      error: null,
+    });
+  }
+  const ageDraft = ageInput.draft;
+  const ageError = ageInput.error;
   const state = useSyncExternalStore(
     playback.subscribe,
     playback.getSnapshot,
@@ -45,7 +70,7 @@ export function StateDemo({
             value={host.user.name}
             onChange={(event) => {
               const value = event.target.value;
-              setHost((previous) => editState(previous, 'name', value).state);
+              onStateEdit('name', value);
             }}
           />
         </label>
@@ -61,10 +86,13 @@ export function StateDemo({
             aria-describedby={ageError ? 'age-error' : undefined}
             onChange={(event) => {
               const draft = event.target.value;
-              const edited = editState(host, 'age', draft);
-              setAgeDraft(draft);
-              setAgeError(edited.error);
-              setHost(edited.state);
+              const error = onStateEdit('age', draft);
+              setAgeInput({
+                observer: renderState,
+                draft,
+                error,
+                age: error === null ? Number(draft) : host.user.age,
+              });
             }}
           />
         </label>
@@ -74,7 +102,7 @@ export function StateDemo({
             value={host.settings.theme}
             onChange={(event) => {
               const value = event.target.value;
-              setHost((previous) => editState(previous, 'theme', value).state);
+              onStateEdit('theme', value);
             }}
           >
             <option value="dark">Dark</option>
