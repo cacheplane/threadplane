@@ -1,20 +1,19 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "b632ba2afd3e90cf8a593db5bbb24b6af31d7e91",
+  "baselineHead": "ece23302f85586ebd07484353bf1ee38dca08eba",
   "sourceState": {
     "modified": [
       ".github/workflows/ci.yml",
-      "libs/a2ui/project.json",
       "libs/content/README.md",
       "libs/content/package.json",
-      "libs/content/src/a2ui/index.ts",
-      "package-lock.json"
+      "tsconfig.base.json"
     ],
     "untracked": [
-      "libs/content/src/a2ui/create-surfaces.ts",
-      "libs/content/src/a2ui/owned-value.ts",
-      "libs/content/src/a2ui/transition.ts",
-      "libs/content/src/a2ui/types.ts"
+      "libs/content/src/render-state/create-render-state.ts",
+      "libs/content/src/render-state/index.ts",
+      "libs/content/src/render-state/owned-value.ts",
+      "libs/content/src/render-state/pointer.ts",
+      "libs/content/src/render-state/types.ts"
     ]
   },
   "scope": {
@@ -53,6 +52,7 @@
       "libs/content/src/json/index.ts",
       "libs/content/src/markdown/index.ts",
       "libs/content/src/messages/index.ts",
+      "libs/content/src/render-state/index.ts",
       "libs/langgraph/src/public-api.ts",
       "libs/middleware/src/langgraph/index.ts",
       "libs/react/src/chat/index.ts",
@@ -571,13 +571,13 @@
       "id": "asset:libs/content/README.md",
       "kind": "asset",
       "path": "libs/content/README.md",
-      "sha256": "f8beb948c5010e6bbedf2eafbe477d8221c357ecadb90d63f8fece5645d0c52a"
+      "sha256": "7c8c956bf89d2fd0f3485b72020a4e97b204f9b4372b45728d240da5502b7eed"
     },
     {
       "id": "asset:libs/content/package.json",
       "kind": "asset",
       "path": "libs/content/package.json",
-      "sha256": "742b577bc1b46e2be6db118788aaa1649cac0a2d1404230cb985cc5d2bb7e3bf"
+      "sha256": "13eaf8f7ec63360086edbd1364fa40b1a616933e04a7a43718cae7a573e8a77a"
     },
     {
       "id": "asset:libs/content/project.json",
@@ -2167,7 +2167,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "6015317d1dc980ebddda6049ad24f970a912391dc7acb60b36093ae127336e8a"
+      "sha256": "85313f1b3fd81f3675437cefb17db8b029a63455a3027c01aecf19d46f4acfc1"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -2257,7 +2257,7 @@
       "id": "config:tsconfig.base.json",
       "kind": "config",
       "path": "tsconfig.base.json",
-      "sha256": "31a6d9e25f5c5a77b9ec2ef1aebcabf17879f3b0cb4e0c4dab04da25957ee571"
+      "sha256": "2df95b2453abb605eb56acf44f4ac53f06620f97a01144af7f194aab70e86293"
     },
     {
       "id": "doc:apps/website/content/docs/a2ui/getting-started/introduction.mdx",
@@ -3109,6 +3109,11 @@
       "id": "entry:libs/content/src/messages/index.ts",
       "kind": "entry",
       "path": "libs/content/src/messages/index.ts"
+    },
+    {
+      "id": "entry:libs/content/src/render-state/index.ts",
+      "kind": "entry",
+      "path": "libs/content/src/render-state/index.ts"
     },
     {
       "id": "entry:libs/langgraph/src/public-api.ts",
@@ -9140,6 +9145,76 @@
       ]
     },
     {
+      "id": "export:libs/content/src/render-state/index.ts#RenderState",
+      "kind": "export",
+      "path": "libs/content/src/render-state/index.ts",
+      "symbol": "RenderState",
+      "declarations": [
+        {
+          "path": "libs/content/src/render-state/types.ts",
+          "symbol": "RenderState",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface RenderState {\n    readonly getSnapshot: () => RenderStateSnapshot;\n    readonly get: (path: string) => RenderStateValue;\n    readonly set: (path: string, value: unknown) => void;\n    readonly update: (updates: Readonly<Record<string, unknown>>) => void;\n    readonly lastChange: () => RenderStateChange | undefined;\n    readonly subscribe: (notify: () => void) => () => void;\n    readonly dispose: () => void;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/render-state/index.ts#RenderStateChange",
+      "kind": "export",
+      "path": "libs/content/src/render-state/index.ts",
+      "symbol": "RenderStateChange",
+      "declarations": [
+        {
+          "path": "libs/content/src/render-state/types.ts",
+          "symbol": "RenderStateChange",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface RenderStateChange {\n    readonly path: string;\n    readonly value: RenderStateValue;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/render-state/index.ts#RenderStateSnapshot",
+      "kind": "export",
+      "path": "libs/content/src/render-state/index.ts",
+      "symbol": "RenderStateSnapshot",
+      "declarations": [
+        {
+          "path": "libs/content/src/render-state/types.ts",
+          "symbol": "RenderStateSnapshot",
+          "syntaxKind": "TypeAliasDeclaration",
+          "signature": "export type RenderStateSnapshot = {\n    readonly [key: string]: RenderStateValue;\n};"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/render-state/index.ts#RenderStateValue",
+      "kind": "export",
+      "path": "libs/content/src/render-state/index.ts",
+      "symbol": "RenderStateValue",
+      "declarations": [
+        {
+          "path": "libs/content/src/render-state/types.ts",
+          "symbol": "RenderStateValue",
+          "syntaxKind": "TypeAliasDeclaration",
+          "signature": "export type RenderStateValue = string | number | boolean | null | undefined | readonly RenderStateValue[] | {\n    readonly [key: string]: RenderStateValue;\n};"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/render-state/index.ts#createRenderState",
+      "kind": "export",
+      "path": "libs/content/src/render-state/index.ts",
+      "symbol": "createRenderState",
+      "declarations": [
+        {
+          "path": "libs/content/src/render-state/create-render-state.ts",
+          "symbol": "createRenderState",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function createRenderState(initialState: Readonly<Record<string, unknown>> = {}): RenderState {\n    let snapshot = captureRecord(initialState);\n    let change: RenderStateChange | undefined;\n    let disposed = false, notifying = false, dirty = false;\n    const registrations = new Set<{\n        notify: () => void;\n    }>();\n    function assertActive(): void {\n        if (disposed)\n            throw new Error('Render-state owner is disposed');\n    }\n    function publish(): void {\n        dirty = true;\n        if (notifying)\n            return;\n        notifying = true;\n        try {\n            while (dirty && !disposed) {\n                dirty = false;\n                for (const registration of [...registrations]) {\n                    if (disposed)\n                        break;\n                    if (!registrations.has(registration))\n                        continue;\n                    try {\n                        registration.notify();\n                    }\n                    catch {\n                    }\n                }\n            }\n        }\n        finally {\n            notifying = false;\n        }\n    }\n    function prepare(path: string, original: unknown) {\n        const segments = parsePointer(path);\n        const owned = segments.length === 0 ? captureRecord(original) : captureValue(original);\n        return { path, segments, original, owned };\n    }\n    function commit(writes: readonly {\n        path: string;\n        segments: readonly string[];\n        original: unknown;\n        owned: RenderStateValue;\n    }[]): void {\n        let working = snapshot;\n        let finalChange: RenderStateChange | undefined;\n        for (const write of writes) {\n            if (readPointer(working, write.segments) === write.original)\n                continue;\n            working = applyPointer(working, write.segments, write.owned);\n            finalChange = Object.freeze({ path: write.path, value: write.owned });\n        }\n        if (!finalChange)\n            return;\n        snapshot = working;\n        change = finalChange;\n        publish();\n    }\n    return {\n        getSnapshot: () => snapshot,\n        get: path => readPointer(snapshot, parsePointer(path)),\n        lastChange: () => change,\n        set(path, value) {\n            assertActive();\n            commit([prepare(path, value)]);\n        },\n        update(updates) {\n            assertActive();\n            if (!isRecord(updates))\n                throw new TypeError('Render-state updates must be a plain record');\n            const descriptors = Object.getOwnPropertyDescriptors(updates);\n            for (const key of Reflect.ownKeys(descriptors)) {\n                if (typeof key !== 'string')\n                    throw new TypeError('Symbol render-state update keys are unsupported');\n                if (!Object.hasOwn(descriptors[key], 'value'))\n                    throw new TypeError('Render-state update accessors are unsupported');\n            }\n            const writes = Object.keys(descriptors)\n                .filter(path => descriptors[path].enumerable)\n                .map(path => prepare(path, descriptors[path].value));\n            commit(writes);\n        },\n        subscribe(notify) {\n            if (disposed)\n                return () => undefined;\n            const registration = { notify };\n            registrations.add(registration);\n            return () => { registrations.delete(registration); };\n        },\n        dispose() {\n            disposed = true;\n            dirty = false;\n            registrations.clear();\n        },\n    };\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/langgraph/src/public-api.ts#AGENT_LIFECYCLE",
       "kind": "export",
       "path": "libs/langgraph/src/public-api.ts",
@@ -13912,6 +13987,36 @@
       "kind": "source",
       "path": "libs/content/src/messages/index.ts",
       "sha256": "1b4e1a12cbed486e134eb53e1bab6cb9eb3af0b9fbc3a2fff9322f91ff2fe59a"
+    },
+    {
+      "id": "source:libs/content/src/render-state/create-render-state.ts",
+      "kind": "source",
+      "path": "libs/content/src/render-state/create-render-state.ts",
+      "sha256": "9dd186d31115f7d79d3905577ba6c1d0a83ca91187c7eb3bef1a06c0ff5abe71"
+    },
+    {
+      "id": "source:libs/content/src/render-state/index.ts",
+      "kind": "source",
+      "path": "libs/content/src/render-state/index.ts",
+      "sha256": "721dbea0f65f5beb61274affb29f9d83bf38481aa2c2c6ec5d91da9cc6ced4f9"
+    },
+    {
+      "id": "source:libs/content/src/render-state/owned-value.ts",
+      "kind": "source",
+      "path": "libs/content/src/render-state/owned-value.ts",
+      "sha256": "3d3d6267fae10510eeaec47c490c25563fde3f99b02928eba5d6259644e4487a"
+    },
+    {
+      "id": "source:libs/content/src/render-state/pointer.ts",
+      "kind": "source",
+      "path": "libs/content/src/render-state/pointer.ts",
+      "sha256": "2cc0180d28eea1eb82ef3c0d74ee103e6a4a070eb3eafd0313c04dcbd85d58f5"
+    },
+    {
+      "id": "source:libs/content/src/render-state/types.ts",
+      "kind": "source",
+      "path": "libs/content/src/render-state/types.ts",
+      "sha256": "26d68a023e58a28495ac7c0c2a42407dd53068c51bddbf407f7c040a945b8b5d"
     },
     {
       "id": "source:libs/content/src/testing/index.ts",

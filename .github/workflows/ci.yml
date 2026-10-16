@@ -248,6 +248,8 @@ jobs:
         run: node scripts/react-parity/verify-markdown.mjs
       - name: Verify installed owned A2UI surfaces
         run: node scripts/react-parity/verify-a2ui-surfaces.mjs
+      - name: Verify installed owned render state
+        run: node scripts/react-parity/verify-render-state.mjs
       - name: Verify emitted boundaries and isolated packages
         run: |
           node scripts/react-parity/verify-boundaries.mjs --built

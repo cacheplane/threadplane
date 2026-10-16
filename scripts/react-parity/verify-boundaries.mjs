@@ -175,6 +175,14 @@ export function verifyBoundaries({ root = process.cwd(), mode = 'source', projec
         : ['chat', 'markdown'].map(entry => join(directory, project === 'angular' ? `${entry}/src/public-api.ts` : `src/${entry}/index.ts`));
       for (const path of [...roots, ...features.filter(existsSync)]) visit(path, false, [], false, false, false, true);
     }
+    // The optional state owner is neutral in both implementation and declarations.
+    // Carry both guards through wrappers, aliases and type-only dependencies.
+    if (project === 'content') {
+      const owners = mode === 'built'
+        ? emittedEntries(manifest, './render-state').map(value => join(directory, value))
+        : [join(directory, 'src/render-state/index.ts')].filter(existsSync);
+      for (const path of owners) visit(path, false, [], false, true, false, true);
+    }
     if (mode === 'source' && ['langgraph', 'ag-ui'].includes(project)) {
       const neutralRoots = [
         ...filesIn(join(directory, 'src/runtime')).filter((path) => !optional.test(relative(directory, path))),

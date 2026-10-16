@@ -10,6 +10,57 @@ test('JSON feature exposes only its owned factory', () => {
   assert.throws(() => packageVerifier.assertSupportedExports('content/json', { createJson() {}, createJsonOwner() {} }), /unexpected/);
 });
 import * as packageVerifier from './verify-packages.mjs';
+test('render-state exposes exactly its owned factory', () => {
+  assert.throws(() => packageVerifier.assertSupportedExports('content/render-state', {}), /createRenderState/);
+  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('content/render-state', { createRenderState() {} }));
+  assert.throws(() => packageVerifier.assertSupportedExports('content/render-state', { createRenderState() {}, createStateStore() {} }), /unexpected/);
+});
+const renderStateTypes = ['RenderState', 'RenderStateValue', 'RenderStateSnapshot', 'RenderStateChange'];
+function installedOwner(t, declaration) {
+  const consumer = mkdtempSync(join(tmpdir(), 'threadplane-owner-types-'));
+  t.after(() => rmSync(consumer, { recursive: true, force: true }));
+  const directory = join(consumer, 'node_modules/@threadplane/content');
+  mkdirSync(directory, { recursive: true });
+  writeFileSync(join(directory, 'package.json'), JSON.stringify({ name: '@threadplane/content', type: 'module', exports: { './render-state': { types: './index.d.ts', import: './index.js' } } }));
+  writeFileSync(join(directory, 'index.d.ts'), declaration);
+  writeFileSync(join(consumer, 'package.json'), '{"type":"module"}');
+  return { consumer, directory };
+}
+const ownerDeclaration = 'export declare function createRenderState(): void;\n' + renderStateTypes.map(name => `export interface ${name} { readonly value?: string }`).join('\n');
+test('resolved installed declarations expose exactly four types and the factory through reexports', t => {
+  const { consumer, directory } = installedOwner(t, "export * from './public.js';");
+  writeFileSync(join(directory, 'public.d.ts'), ownerDeclaration);
+  const result = packageVerifier.verifyRenderStateDeclarations(consumer);
+  assert.deepEqual(result.types, [...renderStateTypes].sort());
+  assert.deepEqual(result.runtime, ['createRenderState']);
+  assert.ok(result.declaration.endsWith('/node_modules/@threadplane/content/index.d.ts'));
+  // Runtime keys cannot reveal this accidental public type.
+  writeFileSync(join(directory, 'public.d.ts'), ownerDeclaration + '\nexport interface LeakedSdkType {}');
+  assert.throws(() => packageVerifier.verifyRenderStateDeclarations(consumer), /unexpected.*LeakedSdkType/);
+  writeFileSync(join(directory, 'public.d.ts'), ownerDeclaration + '\nexport declare namespace LeakedNamespace { type Extra = string; }');
+  assert.throws(() => packageVerifier.verifyRenderStateDeclarations(consumer), /unexpected.*LeakedNamespace/);
+});
+test('mandatory installed render-state import rejects a missing manifest entry and broken strict declarations', t => {
+  const { consumer, directory } = installedOwner(t, ownerDeclaration);
+  writeFileSync(join(directory, 'package.json'), '{"name":"@threadplane/content","type":"module","exports":{".":"./index.js"}}');
+  assert.throws(() => packageVerifier.verifyRenderStateDeclarations(consumer), /Cannot find module|resolve/);
+  writeFileSync(join(directory, 'package.json'), '{"name":"@threadplane/content","type":"module","exports":{"./render-state":{"types":"./index.d.ts"}}}');
+  writeFileSync(join(directory, 'index.d.ts'), ownerDeclaration + '\nexport interface Invalid { value: MissingDependency }');
+  assert.throws(() => packageVerifier.verifyRenderStateDeclarations(consumer), /MissingDependency/);
+});
+test('owner-only inputs require installed emitted implementation and reject every external or optional feature edge', () => {
+  const owner = Object.fromEntries(['index', 'create-render-state', 'pointer', 'owned-value'].map(name => [`node_modules/@threadplane/content/src/render-state/${name}.js`, {}]));
+  assert.doesNotThrow(() => packageVerifier.assertRenderStateInputs(owner));
+  assert.throws(() => packageVerifier.assertRenderStateInputs({ 'render-state-owner.mjs': {} }), /emitted.*owner/);
+  for (const path of ['node_modules/@json-render/core/dist/index.js', 'node_modules/react/index.js', 'node_modules/@angular/core/index.js', 'node_modules/@langchain/core/index.js', 'node_modules/marked/index.js', 'node_modules/@threadplane/content/src/a2ui/index.js', 'node_modules/@threadplane/a2ui/src/index.js']) {
+    for (const candidate of [path, path.replaceAll('/', '\\')]) assert.throws(() => packageVerifier.assertRenderStateInputs({ ...owner, [candidate]: {} }), /forbidden/);
+  }
+});
+test('private SDK compile graph derives the SDK and its Zod version from the root lock', () => {
+  const lock = { packages: { 'node_modules/@json-render/core': { version: '0.16.0' }, 'node_modules/@json-render/core/node_modules/zod': { version: '4.3.6' } } };
+  assert.deepEqual(packageVerifier.lockedRenderStateSdk(lock), { '@json-render/core': '0.16.0', zod: '4.3.6' });
+  assert.throws(() => packageVerifier.lockedRenderStateSdk({ packages: {} }), /Missing root lock/);
+});
 test('selected public protocol package enumerates its actual legacy ESM root without inventing subpaths', () => {
   const protocol = { name: '@threadplane/a2ui', type: 'module', types: './src/index.d.ts', module: './src/index.js', main: './src/index.js' };
   assert.deepEqual(packageVerifier.consumerSpecifiers(protocol), ['@threadplane/a2ui']);
