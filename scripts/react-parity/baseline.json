@@ -2170,7 +2170,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "1e2ff183febc529a664bddffc00d837856b64bf98da738ca9c8353bb750ad8a0"
+      "sha256": "40b517e49d254368a5fb20a99e0e2995bebbd86005727c82f21a91e3e1de3c87"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",

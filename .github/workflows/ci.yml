@@ -292,7 +292,7 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Generate, install, build, and run consumer
         run: >-
-          node examples/chat/smoke/cli.mjs
+          npm exec --yes --package=npm@11.6.0 -- node examples/chat/smoke/cli.mjs
           --non-interactive --fresh
           --target "${{ runner.temp }}/threadplane-angular-${{ matrix.angular }}"
           --local-dist-root dist/libs

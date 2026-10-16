@@ -6,6 +6,8 @@ changes land in libs/chat, libs/langgraph, libs/render, libs/ag-ui.
 
 ## Pre-flight
 
+- [ ] Node >=22.22.3 and exactly npm 11.6.0 for installation; run the generator with `npm exec --yes --package=npm@11.6.0 -- node examples/chat/smoke/cli.mjs` to select npm for this command.
+
 - [ ] `OPENAI_API_KEY` present in the repository root `.env`
 - [ ] `nx run examples-chat-python:serve` running on :2024 — `curl localhost:2024/ok` returns `{"ok":true}`
 - [ ] Smoke consumer started — page loads at :4200
