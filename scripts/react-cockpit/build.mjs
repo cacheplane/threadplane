@@ -113,6 +113,15 @@ try {
     .flatMap((entry) => entry.output)
     .flatMap((chunk) => Object.entries(chunk.modules ?? {}));
   const modules = emittedModules.map(([path]) => path);
+  if (appPath === 'cockpit/render/computed-functions/react') {
+    assert.ok(
+      emittedModules.some(([path, module]) =>
+        path.endsWith('/node_modules/@threadplane/react/src/render/readiness.js') &&
+        module.renderedLength > 0
+      ),
+      'Installed readiness implementation required for computed functions'
+    );
+  }
   if (appPath === 'cockpit/render/element-rendering/react') {
     assert.ok(
       emittedModules.some(([path, module]) =>

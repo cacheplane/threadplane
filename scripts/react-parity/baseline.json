@@ -1,19 +1,16 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "ece23302f85586ebd07484353bf1ee38dca08eba",
+  "baselineHead": "c9a548f5649d1166a6cd84296e5da87b918eefc5",
   "sourceState": {
     "modified": [
       ".github/workflows/ci.yml",
-      "libs/content/README.md",
-      "libs/content/package.json",
-      "tsconfig.base.json"
+      "libs/react/README.md",
+      "libs/react/src/render/index.ts",
+      "libs/react/src/render/render-spec.tsx",
+      "libs/react/src/render/types.ts"
     ],
     "untracked": [
-      "libs/content/src/render-state/create-render-state.ts",
-      "libs/content/src/render-state/index.ts",
-      "libs/content/src/render-state/owned-value.ts",
-      "libs/content/src/render-state/pointer.ts",
-      "libs/content/src/render-state/types.ts"
+      "libs/react/src/render/readiness.tsx"
     ]
   },
   "scope": {
@@ -841,7 +838,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "1b1022e457f64e20f24751fd366ad9b6295ac782675d9bae2586777fc5fa41f9"
+      "sha256": "487a68c7dc6dce5995eb1e80e4e118b68ec929376f6ba197d66c280fe8941505"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -2167,7 +2164,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "85313f1b3fd81f3675437cefb17db8b029a63455a3027c01aecf19d46f4acfc1"
+      "sha256": "540c15ee4566e1290f2e6c543dbb144d389f6da15c4ae996fb420bc7ed47bcb0"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -10570,7 +10567,7 @@
           "path": "libs/react/src/render/types.ts",
           "symbol": "ReactRenderRegistry",
           "syntaxKind": "TypeAliasDeclaration",
-          "signature": "export type ReactRenderRegistry = Readonly<Record<string, ComponentType<RenderViewProps>>>;"
+          "signature": "export type ReactRenderRegistry = Readonly<Record<string, ComponentType<RenderViewProps> | RenderReadinessEntry>>;"
         }
       ]
     },
@@ -10599,6 +10596,20 @@
           "symbol": "RenderElementData",
           "syntaxKind": "TypeAliasDeclaration",
           "signature": "export type RenderElementData = DeepReadonly<Pick<UIElement, 'type' | 'props' | 'children' | 'visible' | 'repeat'>>;"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/render/index.ts#RenderReadinessEntry",
+      "kind": "export",
+      "path": "libs/react/src/render/index.ts",
+      "symbol": "RenderReadinessEntry",
+      "declarations": [
+        {
+          "path": "libs/react/src/render/types.ts",
+          "symbol": "RenderReadinessEntry",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface RenderReadinessEntry {\n    readonly kind: 'readiness';\n    readonly component: ComponentType<RenderViewProps>;\n    readonly isReady: (props: Readonly<Record<string, RenderValue>>) => boolean;\n    readonly fallback?: ComponentType<RenderViewProps>;\n}"
         }
       ]
     },
@@ -14808,19 +14819,25 @@
       "id": "source:libs/react/src/render/index.ts",
       "kind": "source",
       "path": "libs/react/src/render/index.ts",
-      "sha256": "14799a4b304ac4d54d3123c20145bc4681b45887e83b09773cd3bc1b6d3af4b5"
+      "sha256": "ba7f1e2f7f1ee13abd31169ef1cfb4b35295d8ece4cd6ae7c2af054797cd40ba"
+    },
+    {
+      "id": "source:libs/react/src/render/readiness.tsx",
+      "kind": "source",
+      "path": "libs/react/src/render/readiness.tsx",
+      "sha256": "8b7484a9ed563b6c7919e31cf897d25509fc49fa09079d50adad7f8b9b26c471"
     },
     {
       "id": "source:libs/react/src/render/render-spec.tsx",
       "kind": "source",
       "path": "libs/react/src/render/render-spec.tsx",
-      "sha256": "bed5b36a934b0faa3668ccdd3c17059ad86184c54389e7de27fc0b4253348d5b"
+      "sha256": "4d7c4d2ea61afa2b9739692e6b8ca23d2102925da6c1d1a9f46912b7f0dc2fa0"
     },
     {
       "id": "source:libs/react/src/render/types.ts",
       "kind": "source",
       "path": "libs/react/src/render/types.ts",
-      "sha256": "a4d3ea12396351eeac40993aaf4edd66a2dd68796fccb30a6eb77ac8a21163f2"
+      "sha256": "6dd179c469a169b1c703bbcaea775c02b06bbef71a884b14844da2312dfe9b46"
     },
     {
       "id": "source:libs/react/src/render/values.ts",

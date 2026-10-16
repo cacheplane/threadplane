@@ -328,6 +328,53 @@ unfrozen and unmodified. Unknown function names resolve to `undefined` with the
 upstream warning behavior. This optional host map does not permit executable
 callbacks in raw specs or add actions, watchers or state ownership.
 
+The same entry exports the type-only `RenderReadinessEntry`. Direct function,
+`memo` and `forwardRef` registrations still receive missing values as `undefined`.
+An optional readiness descriptor delays one view's initial admission:
+
+```tsx
+import type {
+  ReactRenderRegistry, RenderReadinessEntry, RenderViewProps,
+} from '@threadplane/react/render';
+
+// Keep the component and predicate identities stable outside rendering.
+function Value({ props }: RenderViewProps) {
+  return <output>{String(props['value'] ?? '')}</output>;
+}
+const valueEntry: RenderReadinessEntry = {
+  kind: 'readiness',
+  component: Value,
+  isReady: (props) => typeof props['value'] === 'number',
+  fallback: () => <span>Waiting for a value…</span>,
+};
+const readinessRegistry: ReactRenderRegistry = { Value: valueEntry };
+```
+
+`isReady` receives the owned, recursively frozen resolved prop record. It must be
+pure and return a synchronous boolean; React may evaluate it repeatedly. Errors
+propagate, and promises or other non-boolean results throw `TypeError`. This is
+app-authored admission, without automatic Standard Schema or all-props-defined
+validation. While pending, the descriptor fallback receives current `props`,
+`bindings`, `elementKey` and `loading`, without children; absent fallback renders
+nothing. The top-level `RenderSpec` fallback remains separate and handles unknown
+registry types.
+
+Only a successful real-view commit latches admission. Later ordinary missing
+values, prop, binding or loading updates retain that view's actual DOM and local
+state and skip further predicate calls. An initially suspended or abandoned
+candidate cannot latch. Element key, element type, component or predicate identity
+changes reset admission and remount even when the component is otherwise the
+same. Equivalent registry/descriptor objects and fallback-only changes retain
+admission; a committed pending replacement retires the old lifetime even if its
+contract later returns. Hidden or missing elements, null specs, removal and
+transitions to direct registrations reset the lifetime. Stable repeated keys retain
+it. StrictMode effect cleanup does not reset admission or issue owner commands.
+
+This private client contract adds no observation or owner lifetime: the app owns
+state writes, commands and disposal. Forms, catalog views, actions, automatic
+schema validation, SSR, hydration, public release and full legacy parity remain
+outside this readiness slice.
+
 State and resolved values must be finite, acyclic plain data. Functions, symbols,
 accessors and non-plain objects are rejected. Raw props also reject `undefined`
 and own `__proto__` keys because the upstream raw-prop resolver cannot preserve

@@ -12,6 +12,8 @@ import type {
 import type { RenderSpecProps, RenderValue } from './types.js';
 import { ownRenderValue } from './values.js';
 import { ownRenderFunctions } from './functions.js';
+import { ReadinessGate } from './readiness.js';
+import type { RenderReadinessEntry, RenderViewProps } from './types.js';
 
 const EMPTY_STATE = Object.freeze({});
 interface ElementProps
@@ -57,11 +59,11 @@ function Element({
     )
   )
     return null;
-  const Component =
+  const entry =
     (Object.hasOwn(registry, element.type)
       ? registry[element.type]
       : undefined) ?? fallback;
-  if (!Component) return null;
+  if (!entry) return null;
   const rawProps = ownRenderValue(element.props, true) as Record<
     string,
     unknown
@@ -119,16 +121,26 @@ function Element({
   } else {
     children = childrenFor(context);
   }
-  return (
-    <Component
-      props={props}
-      bindings={bindings ? Object.freeze({ ...bindings }) : undefined}
-      elementKey={elementKey}
-      loading={loading}
-    >
-      {children}
-    </Component>
-  );
+  const view: RenderViewProps = {
+    props,
+    bindings: bindings ? Object.freeze({ ...bindings }) : undefined,
+    elementKey,
+    loading,
+    children,
+  };
+  if (
+    Object.hasOwn(entry, 'kind') &&
+    (entry as RenderReadinessEntry).kind === 'readiness'
+  )
+    return (
+      <ReadinessGate
+        entry={entry as RenderReadinessEntry}
+        type={element.type}
+        {...view}
+      />
+    );
+  const Component = entry as Exclude<typeof entry, RenderReadinessEntry>;
+  return <Component {...view} />;
 }
 
 /** Present a caller-prepared read-only tree; application code owns validation and state. */

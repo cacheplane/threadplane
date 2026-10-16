@@ -13712,11 +13712,13 @@
       "id": "asset:libs/react/README.md",
       "taskIds": [
         "T02",
-        "T22"
+        "T22",
+        "T20",
+        "T24"
       ],
       "treatment": "infrastructure",
       "status": "in-progress",
-      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity. Bounded private T20/T24 React readiness admission: pure synchronous boolean over owned resolved props, pending fallback without children, successful real-view commit latch and explicit identity/lifetime resets. Direct registrations remain supported. Forms, schema validation, actions, catalog, SSR, public release and full legacy parity remain open.",
       "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
     },
     {
@@ -14966,19 +14968,23 @@
       "id": "entry:libs/react/src/render/index.ts",
       "taskIds": [
         "T07",
-        "T24"
+        "T24",
+        "T20"
       ],
       "treatment": "react",
-      "status": "in-progress"
+      "status": "in-progress",
+      "reason": "Bounded private T20/T24 React readiness admission: pure synchronous boolean over owned resolved props, pending fallback without children, successful real-view commit latch and explicit identity/lifetime resets. Direct registrations remain supported. Forms, schema validation, actions, catalog, SSR, public release and full legacy parity remain open."
     },
     {
       "id": "export:libs/react/src/render/index.ts#ReactRenderRegistry",
       "taskIds": [
         "T07",
-        "T24"
+        "T24",
+        "T20"
       ],
       "treatment": "react",
-      "status": "in-progress"
+      "status": "in-progress",
+      "reason": "Bounded private T20/T24 React readiness admission: pure synchronous boolean over owned resolved props, pending fallback without children, successful real-view commit latch and explicit identity/lifetime resets. Direct registrations remain supported. Forms, schema validation, actions, catalog, SSR, public release and full legacy parity remain open."
     },
     {
       "id": "export:libs/react/src/render/index.ts#ReactRenderFunctions",
@@ -15011,10 +15017,12 @@
       "id": "export:libs/react/src/render/index.ts#RenderSpec",
       "taskIds": [
         "T07",
-        "T24"
+        "T24",
+        "T20"
       ],
       "treatment": "react",
-      "status": "in-progress"
+      "status": "in-progress",
+      "reason": "Bounded private T20/T24 React readiness admission: pure synchronous boolean over owned resolved props, pending fallback without children, successful real-view commit latch and explicit identity/lifetime resets. Direct registrations remain supported. Forms, schema validation, actions, catalog, SSR, public release and full legacy parity remain open."
     },
     {
       "id": "export:libs/react/src/render/index.ts#RenderSpecData",
@@ -15065,28 +15073,34 @@
       "id": "source:libs/react/src/render/index.ts",
       "taskIds": [
         "T07",
-        "T24"
+        "T24",
+        "T20"
       ],
       "treatment": "react",
-      "status": "in-progress"
+      "status": "in-progress",
+      "reason": "Bounded private T20/T24 React readiness admission: pure synchronous boolean over owned resolved props, pending fallback without children, successful real-view commit latch and explicit identity/lifetime resets. Direct registrations remain supported. Forms, schema validation, actions, catalog, SSR, public release and full legacy parity remain open."
     },
     {
       "id": "source:libs/react/src/render/render-spec.tsx",
       "taskIds": [
         "T07",
-        "T24"
+        "T24",
+        "T20"
       ],
       "treatment": "react",
-      "status": "in-progress"
+      "status": "in-progress",
+      "reason": "Bounded private T20/T24 React readiness admission: pure synchronous boolean over owned resolved props, pending fallback without children, successful real-view commit latch and explicit identity/lifetime resets. Direct registrations remain supported. Forms, schema validation, actions, catalog, SSR, public release and full legacy parity remain open."
     },
     {
       "id": "source:libs/react/src/render/types.ts",
       "taskIds": [
         "T07",
-        "T24"
+        "T24",
+        "T20"
       ],
       "treatment": "react",
-      "status": "in-progress"
+      "status": "in-progress",
+      "reason": "Bounded private T20/T24 React readiness admission: pure synchronous boolean over owned resolved props, pending fallback without children, successful real-view commit latch and explicit identity/lifetime resets. Direct registrations remain supported. Forms, schema validation, actions, catalog, SSR, public release and full legacy parity remain open."
     },
     {
       "id": "source:libs/react/src/render/values.ts",
@@ -15363,6 +15377,26 @@
       "treatment": "shared",
       "status": "in-progress",
       "reason": "Bounded private application-owned render-state data, paths, atomic writes and lifetime with borrowed observation; readiness, form sessions, actions, catalog views, SSR, public release and full legacy/SDK/RFC parity remain open."
+    },
+    {
+      "id": "export:libs/react/src/render/index.ts#RenderReadinessEntry",
+      "taskIds": [
+        "T20",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Bounded private T20/T24 React readiness admission: pure synchronous boolean over owned resolved props, pending fallback without children, successful real-view commit latch and explicit identity/lifetime resets. Direct registrations remain supported. Forms, schema validation, actions, catalog, SSR, public release and full legacy parity remain open."
+    },
+    {
+      "id": "source:libs/react/src/render/readiness.tsx",
+      "taskIds": [
+        "T20",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Bounded private T20/T24 React readiness admission: pure synchronous boolean over owned resolved props, pending fallback without children, successful real-view commit latch and explicit identity/lifetime resets. Direct registrations remain supported. Forms, schema validation, actions, catalog, SSR, public release and full legacy parity remain open."
     }
   ]
 }

@@ -94,3 +94,34 @@ it('rewinds, pauses and resets native computed output without retaining stale sa
     phase: 'paused',
   });
 });
+
+it('waits on an admitted Value prefix, then retains its committed real view on rewind', () => {
+  const { playback } = fixture();
+  const position = screen.getByRole('slider');
+  const incomplete = localSamples[0].json.indexOf('hello world') + 'hello'.length;
+  fireEvent.change(position, { target: { value: String(incomplete) } });
+  expect(playback.getSnapshot().rawJson.endsWith('"hello')).toBe(true);
+  expect(playback.getSnapshot().spec?.elements.upper).toEqual({
+    type: 'Value',
+    props: { label: 'Uppercase' },
+  });
+  const pending = screen.getByRole('group', { name: 'Uppercase pending' });
+  expect(pending.textContent).toBe('Uppercase…');
+  expect(pending.getAttribute('aria-busy')).toBe('true');
+  expect(screen.queryByText('HELLO WORLD')).toBeNull();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Finish' }));
+  expect(screen.queryByRole('group', { name: 'Uppercase pending' })).toBeNull();
+  const value = screen.getByText('HELLO WORLD');
+  const realView = value.closest('dl');
+  expect(realView?.getAttribute('aria-busy')).toBe('false');
+
+  fireEvent.change(position, { target: { value: String(incomplete) } });
+  expect(playback.getSnapshot().spec?.elements.upper.props).toEqual({
+    label: 'Uppercase',
+  });
+  expect(screen.queryByRole('group', { name: 'Uppercase pending' })).toBeNull();
+  expect(screen.getByText('Uppercase').closest('dl')).toBe(realView);
+  expect(realView?.querySelector('dd')?.textContent).toBe('…');
+  expect(realView?.getAttribute('aria-busy')).toBe('true');
+});

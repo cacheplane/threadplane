@@ -24,8 +24,15 @@ export interface RenderViewProps {
   readonly elementKey: string;
   readonly loading?: boolean;
 }
+/** App-owned synchronous admission for one mounted view lifetime. */
+export interface RenderReadinessEntry {
+  readonly kind: 'readiness';
+  readonly component: ComponentType<RenderViewProps>;
+  readonly isReady: (props: Readonly<Record<string, RenderValue>>) => boolean;
+  readonly fallback?: ComponentType<RenderViewProps>;
+}
 export type ReactRenderRegistry = Readonly<
-  Record<string, ComponentType<RenderViewProps>>
+  Record<string, ComponentType<RenderViewProps> | RenderReadinessEntry>
 >;
 /** A pure synchronous calculation; arguments are owned and recursively frozen. */
 export type RenderComputedFunction = (

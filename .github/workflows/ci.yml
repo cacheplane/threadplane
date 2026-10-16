@@ -250,6 +250,8 @@ jobs:
         run: node scripts/react-parity/verify-a2ui-surfaces.mjs
       - name: Verify installed owned render state
         run: node scripts/react-parity/verify-render-state.mjs
+      - name: Verify installed native React readiness
+        run: node scripts/react-parity/verify-react-readiness.mjs
       - name: Verify emitted boundaries and isolated packages
         run: |
           node scripts/react-parity/verify-boundaries.mjs --built

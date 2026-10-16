@@ -1,5 +1,6 @@
 import type {
   ReactRenderRegistry,
+  RenderReadinessEntry,
   RenderViewProps,
 } from '@threadplane/react/render';
 
@@ -39,8 +40,31 @@ function Card({ props, children, loading }: RenderViewProps) {
     </article>
   );
 }
+const valueReady: RenderReadinessEntry['isReady'] = (props) =>
+  typeof props.value === 'string' ||
+  (typeof props.value === 'number' && Number.isFinite(props.value));
+
+function PendingValue({ props }: RenderViewProps) {
+  const label = literal(props.label);
+  return (
+    <dl
+      className="render-value"
+      role="group"
+      aria-label={`${label} pending`}
+      aria-busy={true}
+    >
+      <dt>{label}</dt>
+      <dd>…</dd>
+    </dl>
+  );
+}
 export const localRegistry: ReactRenderRegistry = Object.freeze({
   Heading,
-  Value,
+  Value: {
+    kind: 'readiness',
+    component: Value,
+    isReady: valueReady,
+    fallback: PendingValue,
+  },
   Card,
 });
