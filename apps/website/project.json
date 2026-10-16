@@ -4,6 +4,7 @@
   "sourceRoot": "apps/website/src",
   "projectType": "application",
   "implicitDependencies": [
+    "cockpit-chat-debug-react",
     "cockpit-chat-theming-react",
     "workspace-react",
     "cockpit-langgraph-streaming-angular",
@@ -80,7 +81,7 @@
       "dependsOn": [
         {
           "target": "test",
-          "projects": ["cockpit-chat-theming-python"]
+          "projects": ["cockpit-chat-theming-python", "cockpit-chat-debug-python"]
         },
         {
           "target": "prepare-fixture",
@@ -111,6 +112,7 @@
             "cockpit-render-computed-functions-react",
             "cockpit-chat-messages-react",
             "cockpit-chat-theming-react",
+            "cockpit-chat-debug-react",
             "cockpit-chat-input-react",
             "cockpit-chat-interrupts-react",
             "cockpit-chat-tool-calls-react",

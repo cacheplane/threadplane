@@ -1296,7 +1296,7 @@
       "treatment": "react",
       "status": "planned",
       "target": "libs/react/src/debug/chat-debug.tsx",
-      "reason": "Opt-in public component. Opt-in debug entry point; dock/open persistence and replay/fork callbacks; guard storage during SSR."
+      "reason": "Private native first slice now provides passive current and selected historical state, explicit app-owned checkpoint reads, bounded Copy and guarded open/dock/tab preferences. T29 remains partial: historical diff, Replay/Fork callbacks, full checkpoint tree and broader devtools parity remain planned."
     },
     {
       "id": "component:libs/chat/debug/src/lib/compositions/chat-debug/debug-checkpoint-card.component.ts#DebugCheckpointCardComponent",
@@ -4489,7 +4489,7 @@
       "treatment": "react",
       "status": "planned",
       "target": "libs/react/src/debug/chat-debug.tsx",
-      "reason": "Opt-in public component. Opt-in debug entry point; dock/open persistence and replay/fork callbacks; guard storage during SSR."
+      "reason": "Private native first slice now provides passive current and selected historical state, explicit app-owned checkpoint reads, bounded Copy and guarded open/dock/tab preferences. T29 remains partial: historical diff, Replay/Fork callbacks, full checkpoint tree and broader devtools parity remain planned."
     },
     {
       "id": "export:libs/chat/debug/public-api.ts#DockPosition",
@@ -15114,6 +15114,48 @@
       "treatment": "react",
       "status": "in-progress",
       "note": "Bounded readonly source metadata view; no legacy overlays, source fetching or full citation parity."
+    },
+    {
+      "id": "asset:libs/react/src/debug/styles.css",
+      "taskIds": ["T29"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Explicit opt-in scoped stylesheet using existing chat tokens for the private native Debug first slice; broader devtools parity remains planned."
+    },
+    {
+      "id": "source:libs/react/src/debug/bounded-value.ts",
+      "taskIds": ["T29"],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Bounded display and exact shown-JSON Copy for app-owned inspection data; not a full raw export or hostile Proxy isolation."
+    },
+    {
+      "id": "source:libs/react/src/debug/chat-debug.tsx",
+      "taskIds": ["T29"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Private passive current/selected state and explicit checkpoint notifications. Historical diff, Replay/Fork callbacks and full checkpoint tree remain planned."
+    },
+    {
+      "id": "source:libs/react/src/debug/index.ts",
+      "taskIds": ["T29"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Private opt-in secondary entry point; no root export or publication. T29 remains partial."
+    },
+    {
+      "id": "source:libs/react/src/debug/persistence.ts",
+      "taskIds": ["T29"],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Guarded open/dock/tab preferences only; no conversation, state, targets or credentials persisted."
+    },
+    {
+      "id": "source:libs/react/src/debug/types.ts",
+      "taskIds": ["T29"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Readonly app-owned DTOs and synchronous notifications; no SDK, session, read or disposal capability accepted by the view. Broader T29 contracts remain planned."
     }
   ]
 }

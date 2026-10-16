@@ -100,6 +100,8 @@ jobs:
       - run: npm ci
       - name: Test CI scope classifier
         run: node --test scripts/ci-scope.spec.mjs scripts/cockpit-matrix.spec.mjs scripts/cockpit-frontend-matrix.spec.mjs scripts/cockpit-ports.spec.mjs scripts/cockpit-runtime-bridge-coverage.spec.mjs scripts/react-cockpit/ag-ui-client-tools-configuration.spec.mjs scripts/react-cockpit/ag-ui-client-tools-preparation.spec.mjs scripts/react-cockpit/runtimes-microsoft-agent-framework-configuration.spec.mjs scripts/react-cockpit/prepare-native-maf-fixture.spec.mjs scripts/react-cockpit/runtimes-aws-strands-configuration.spec.mjs scripts/react-cockpit/prepare-native-strands-fixture.spec.mjs scripts/react-cockpit/chat-theming-configuration.spec.mjs
+      - name: Test Debug static configuration without Python workers
+        run: node --test --test-name-pattern='^debug ' scripts/react-cockpit/chat-debug-configuration.spec.mjs
       - name: Detect changed CI surfaces
         id: scope
         run: |
@@ -290,7 +292,7 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Generate, install, build, and run consumer
         run: >-
-          node examples/chat/smoke/cli.mjs
+          npm exec --yes --package=npm@11.6.0 -- node examples/chat/smoke/cli.mjs
           --non-interactive --fresh
           --target "${{ runner.temp }}/threadplane-angular-${{ matrix.angular }}"
           --local-dist-root dist/libs
@@ -482,7 +484,7 @@ jobs:
         with:
           python-version: '3.12'
           enable-cache: false
-      - run: npx nx run-many -t smoke --projects=cockpit-ag-ui-interrupts-python,cockpit-ag-ui-streaming-python,cockpit-deep-agents-planning-python,cockpit-deep-agents-filesystem-python,cockpit-deep-agents-subagents-python,cockpit-deep-agents-memory-python,cockpit-deep-agents-skills-python,cockpit-langgraph-persistence-python,cockpit-langgraph-durable-execution-python,cockpit-langgraph-streaming-python,cockpit-langgraph-interrupts-python,cockpit-langgraph-memory-python,cockpit-langgraph-subgraphs-python,cockpit-langgraph-time-travel-python,cockpit-langgraph-deployment-runtime-python,cockpit-chat-messages-python,cockpit-chat-theming-python,cockpit-render-spec-rendering-python,cockpit-runtimes-microsoft-agent-framework-python,cockpit-runtimes-aws-strands-python --skip-nx-cache
+      - run: npx nx run-many -t smoke --projects=cockpit-ag-ui-interrupts-python,cockpit-ag-ui-streaming-python,cockpit-deep-agents-planning-python,cockpit-deep-agents-filesystem-python,cockpit-deep-agents-subagents-python,cockpit-deep-agents-memory-python,cockpit-deep-agents-skills-python,cockpit-langgraph-persistence-python,cockpit-langgraph-durable-execution-python,cockpit-langgraph-streaming-python,cockpit-langgraph-interrupts-python,cockpit-langgraph-memory-python,cockpit-langgraph-subgraphs-python,cockpit-langgraph-time-travel-python,cockpit-langgraph-deployment-runtime-python,cockpit-chat-messages-python,cockpit-chat-theming-python,cockpit-chat-debug-python,cockpit-render-spec-rendering-python,cockpit-runtimes-microsoft-agent-framework-python,cockpit-runtimes-aws-strands-python --skip-nx-cache
 
   examples-chat-smoke:
     name: examples/chat — python smoke
@@ -706,9 +708,13 @@ jobs:
           path: ${{ matrix.cap.python }}/.venv
           key: uv-venv-${{ github.repository }}-${{ runner.os }}-py3.12-${{ matrix.cap.python }}-${{ hashFiles(format('{0}/uv.lock', matrix.cap.python)) }}
       - name: uv sync per-cap python
-        if: matrix.cap.python != ''
+        if: matrix.cap.python != '' && matrix.cap.python != 'cockpit/chat/debug/python'
         working-directory: ${{ matrix.cap.python }}
         run: uv sync
+      - name: Prepare frozen Debug Python fixture
+        if: matrix.cap.python == 'cockpit/chat/debug/python'
+        working-directory: ${{ matrix.cap.python }}
+        run: uv sync --frozen --python 3.12
       - name: Test pinned MAF snapshot compatibility
         if: matrix.cap.angular == 'cockpit-runtimes-microsoft-agent-framework-angular'
         run: |
@@ -779,6 +785,13 @@ jobs:
         run: |
           npx nx run cockpit-chat-theming-python:test --skip-nx-cache
           node --test --test-concurrency=1 scripts/react-cockpit/chat-theming-fixture.spec.mjs
+      - name: Verify native Debug fixture and installed session ownership
+        if: matrix.cap.angular == 'cockpit-chat-debug-react'
+        run: |
+          npx nx run cockpit-chat-debug-python:test --skip-nx-cache
+          node --test --test-concurrency=1 scripts/react-cockpit/chat-debug-configuration.spec.mjs scripts/react-cockpit/chat-debug-fixture.spec.mjs
+          npx nx build core --skip-nx-cache
+          node scripts/react-cockpit/chat-debug-native-session-probe.mjs
       - name: nx e2e ${{ matrix.cap.angular }}
         run: npx nx e2e "${{ matrix.cap.angular }}" --skip-nx-cache
       - name: Upload Playwright trace on failure
@@ -790,6 +803,7 @@ jobs:
             cockpit/**/angular/e2e/test-results/
             cockpit/**/react/e2e/test-results/
             output/playwright/chat-theming-react/
+            output/playwright/chat-debug-react/
             test-results/
           retention-days: 7
 
@@ -964,11 +978,11 @@ jobs:
           cat > .vercel/project.json <<'EOF'
           {"projectId":"${{ secrets.VERCEL_EXAMPLES_PROJECT_ID }}","orgId":"${{ secrets.VERCEL_ORG_ID }}","projectName":"threadplane-examples"}
           EOF
-          npx vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
-          url=$(npx vercel deploy --prebuilt --yes --token=${{ secrets.VERCEL_TOKEN }} | tail -n 1)
+          npx vercel@64.2.0 pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+          url=$(npx vercel@64.2.0 deploy --prebuilt --yes --token=${{ secrets.VERCEL_TOKEN }} | tail -n 1)
           url=$(node -e 'const parsed = new URL(process.argv[1]); if (parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.pathname !== "/" || parsed.search || parsed.hash) throw new Error("Vercel returned a non-origin examples preview URL"); process.stdout.write(parsed.origin)' "$url")
           echo "examples deployment: $url"
-          npx vercel alias set "$url" "${{ steps.aliases.outputs.examples }}" --scope=${{ secrets.VERCEL_ORG_ID }} --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel@64.2.0 alias set "$url" "${{ steps.aliases.outputs.examples }}" --scope=${{ secrets.VERCEL_ORG_ID }} --token=${{ secrets.VERCEL_TOKEN }}
       - name: Build, deploy, and alias the Website preview
         env:
           GROWTH_FORM_POLICY: growth_v1
@@ -979,13 +993,13 @@ jobs:
           cat > .vercel/project.json <<'EOF'
           {"projectId":"${{ secrets.VERCEL_WEBSITE_PROJECT_ID }}","orgId":"${{ secrets.VERCEL_ORG_ID }}","projectName":"threadplane"}
           EOF
-          npx vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel@64.2.0 pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
           rm -rf .vercel/output
-          npx vercel build --token=${{ secrets.VERCEL_TOKEN }}
-          url=$(npx vercel deploy --prebuilt --archive=tgz --yes --token=${{ secrets.VERCEL_TOKEN }} | tail -n 1)
+          npx vercel@64.2.0 build --token=${{ secrets.VERCEL_TOKEN }}
+          url=$(npx vercel@64.2.0 deploy --prebuilt --archive=tgz --yes --token=${{ secrets.VERCEL_TOKEN }} | tail -n 1)
           url=$(node -e 'const parsed = new URL(process.argv[1]); if (parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.pathname !== "/" || parsed.search || parsed.hash) throw new Error("Vercel returned a non-origin Website preview URL"); process.stdout.write(parsed.origin)' "$url")
           echo "website deployment: $url"
-          npx vercel alias set "$url" "${{ steps.aliases.outputs.website }}" --scope=${{ secrets.VERCEL_ORG_ID }} --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel@64.2.0 alias set "$url" "${{ steps.aliases.outputs.website }}" --scope=${{ secrets.VERCEL_ORG_ID }} --token=${{ secrets.VERCEL_TOKEN }}
       - name: Run the Website suite against the aliased preview
         run: npx nx e2e website --skip-nx-cache
         env:
@@ -1365,7 +1379,7 @@ jobs:
           cat > .vercel/project.json <<EOF
           {"projectId":"${{ secrets.VERCEL_WEBSITE_PROJECT_ID }}","orgId":"${{ secrets.VERCEL_ORG_ID }}","projectName":"threadplane"}
           EOF
-          npx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel@64.2.0 pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
           rm -rf .vercel/output
       - name: Deploy immutable Website preview
         if: steps.freshness.outputs.stale != 'true' && steps.affected.outputs.website == 'true'
@@ -1379,8 +1393,8 @@ jobs:
           # "GROWTH_FORM_POLICY must be growth_v1". It is not a secret.
           GROWTH_FORM_POLICY: growth_v1
         run: |
-          npx vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-          url=$(npx vercel deploy --prebuilt --archive=tgz --prod --skip-domain --yes --token=${{ secrets.VERCEL_TOKEN }} | tail -n 1)
+          npx vercel@64.2.0 build --prod --token=${{ secrets.VERCEL_TOKEN }}
+          url=$(npx vercel@64.2.0 deploy --prebuilt --archive=tgz --prod --skip-domain --yes --token=${{ secrets.VERCEL_TOKEN }} | tail -n 1)
           preview_origin=$(node -e 'const parsed = new URL(process.argv[1]); if (parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.pathname !== "/" || parsed.search || parsed.hash) throw new Error("Vercel returned a non-origin Website preview URL"); process.stdout.write(parsed.origin)' "$url")
           echo "deployment_url=$preview_origin" >> "$GITHUB_OUTPUT"
           echo "preview_origin=$preview_origin" >> "$GITHUB_OUTPUT"
@@ -1397,8 +1411,8 @@ jobs:
           cat > .vercel/project.json <<EOF
           {"projectId":"${{ secrets.VERCEL_EXAMPLES_PROJECT_ID }}","orgId":"${{ secrets.VERCEL_ORG_ID }}","projectName":"threadplane-examples"}
           EOF
-          npx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-          npx vercel deploy --prebuilt --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel@64.2.0 pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel@64.2.0 deploy --prebuilt --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
       - name: Verify Website preview runtime embedding policy
         if: steps.freshness.outputs.stale != 'true' && steps.affected.outputs.website == 'true'
         run: |
@@ -1437,7 +1451,7 @@ jobs:
         # cannot read the team from .vercel/project.json and falls back to the
         # token's default team — a personal one here, which fails with
         # "Deployment doesn't belong to current team". Scope it explicitly.
-        run: npx vercel promote "${{ steps.deploy_website.outputs.deployment_url }}" --scope=${{ secrets.VERCEL_ORG_ID }} --yes --token=${{ secrets.VERCEL_TOKEN }}
+        run: npx vercel@64.2.0 promote "${{ steps.deploy_website.outputs.deployment_url }}" --scope=${{ secrets.VERCEL_ORG_ID }} --yes --token=${{ secrets.VERCEL_TOKEN }}
       - name: Verify deployed website
         if: steps.freshness.outputs.stale != 'true' && steps.affected.outputs.website == 'true' && steps.website_promotion_freshness.outputs.fresh == 'true'
         run: npx nx e2e website --skip-nx-cache
@@ -1505,8 +1519,8 @@ jobs:
           cat > .vercel/project.json <<EOF
           {"projectId":"${{ secrets.VERCEL_DEMO_PROJECT_ID }}","orgId":"${{ secrets.VERCEL_ORG_ID }}","projectName":"threadplane-demo"}
           EOF
-          npx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-          npx vercel deploy --prebuilt --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel@64.2.0 pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel@64.2.0 deploy --prebuilt --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
       - name: Verify canonical demo build stamp
         if: steps.freshness.outputs.stale != 'true'
         env:
@@ -1689,8 +1703,8 @@ jobs:
           {"projectId":"${{ secrets.VERCEL_AG_UI_DEMO_PROJECT_ID }}","orgId":"${{ secrets.VERCEL_ORG_ID }}","projectName":"threadplane-ag-ui-demo"}
           EOF
           cd deploy/ag-ui-demo
-          npx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-          npx vercel deploy --prebuilt --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel@64.2.0 pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel@64.2.0 deploy --prebuilt --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
       - name: Deploy AG-UI backend to Railway
         if: steps.freshness.outputs.stale != 'true' && steps.ag_ui_changed.outputs.changed == 'true'
         working-directory: examples/ag-ui/python

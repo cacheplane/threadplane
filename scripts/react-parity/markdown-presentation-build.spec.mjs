@@ -616,6 +616,87 @@ const deriveAngular = (input) =>
     'angular-langgraph'
   );
 
+const angularFoundationSeeds = angularSeeds.filter((name) => name !== '@langchain/langgraph-sdk');
+const angularFoundationFixture = (t, changes = {}) => {
+  const root = angularRoot();
+  for (const path of Object.keys(root.packages))
+    if (path.startsWith('node_modules/@langchain/')) delete root.packages[path];
+  return angularFixture(t, { projects: ['content', 'core', 'angular'], root, ...changes });
+};
+const deriveAngularFoundation = (input, seeds = angularFoundationSeeds) =>
+  derivePresentationConsumer(input.root, input.tarballs, seeds, 'angular-foundation');
+
+test('Angular foundation requires exactly thirteen root seeds and only core, content and Angular tarballs', (t) => {
+  const input = angularFoundationFixture(t);
+  const before = JSON.stringify(input.root);
+  const derived = deriveAngularFoundation(input);
+  assert.deepEqual(presentation.angularFoundationPresentationSeeds, angularFoundationSeeds);
+  assert.equal(derived.profile, 'angular-foundation');
+  assert.deepEqual(Object.keys(derived.manifest.dependencies).sort(), [...angularFoundationSeeds, ...Object.keys(input.tarballs)].sort());
+  assert.equal(derived.manifest.overrides, undefined);
+  assertPresentationInstallation(input.consumer, derived, input.tarballs);
+  assert.equal(JSON.stringify(input.root), before);
+  for (const name of angularFoundationSeeds)
+    assert.throws(() => deriveAngularFoundation(input, angularFoundationSeeds.filter(seed => seed !== name)), /thirteen selected Angular foundation seeds required/);
+  assert.throws(() => deriveAngularFoundation(input, [...angularFoundationSeeds, angularFoundationSeeds[0]]), /thirteen selected Angular foundation seeds required/);
+  for (const name of Object.keys(input.tarballs)) {
+    const tarballs = { ...input.tarballs };
+    delete tarballs[name];
+    assert.throws(() => deriveAngularFoundation({ ...input, tarballs }), /Angular, core and content foundation tarballs required/);
+  }
+  for (const project of ['react', 'langgraph'])
+    assert.throws(() => deriveAngularFoundation({ ...input, tarballs: { ...input.tarballs, ['@threadplane/' + project]: input.tarballs['@threadplane/core'] } }), /foundation tarballs required/);
+});
+
+test('Angular foundation keeps repository nested Vite placement and integrity without SDK or React', (t) => {
+  const bytes = readFileSync(new URL('../../package-lock.json', import.meta.url));
+  const root = JSON.parse(bytes);
+  const input = angularFoundationFixture(t, { manifests: {
+    content: { dependencies: { '@cacheplane/partial-markdown': '0.5.8' } },
+    angular: { peerDependencies: { '@angular/core': '^21.0.0' } },
+  } });
+  const derived = deriveAngularFoundation({ ...input, root });
+  const path = 'node_modules/@angular/build/node_modules/vite';
+  assert.ok(root.packages[path]?.integrity);
+  assert.deepEqual(derived.lock.packages[path], root.packages[path]);
+  for (const [path, record] of Object.entries(selectPresentationLock(root, angularFoundationSeeds)))
+    assert.deepEqual(derived.lock.packages[path], record);
+  assert.ok(!Object.keys(derived.lock.packages).some(path => /node_modules\/(?:@langchain\/|@ag-ui\/|react$|react-dom$|@types\/react)/.test(path)));
+  assert.deepEqual(readFileSync(new URL('../../package-lock.json', import.meta.url)), bytes);
+});
+
+for (const name of ['react', 'react-dom', '@types/react', '@types/react-dom', '@langchain/langgraph-sdk', '@ag-ui/client', 'openai']) {
+  test(`Angular foundation rejects selected and installed unrelated package ${name}`, (t) => {
+    const input = angularFoundationFixture(t);
+    const derived = deriveAngularFoundation(input);
+    input.root.packages['node_modules/@angular/build'].dependencies[name] = '^1.0.0';
+    input.root.packages['node_modules/' + name] = pkg();
+    assert.throws(() => deriveAngularFoundation(input), /Unexpected (React package|backend SDK)/);
+    const directory = join(input.consumer, 'node_modules', name);
+    mkdirSync(directory, { recursive: true });
+    writeJson(join(directory, 'package.json'), { name, version: '1.0.0' });
+    assert.throws(() => assertPresentationInstallation(input.consumer, derived, input.tarballs), /Unexpected (React package|backend SDK)/);
+  });
+}
+
+test('Angular foundation rejects missing locked dependencies and changed installed artifact bytes', (t) => {
+  const input = angularFoundationFixture(t);
+  const derived = deriveAngularFoundation(input);
+  delete input.root.packages['node_modules/a'];
+  assert.throws(() => deriveAngularFoundation(input), /Missing locked dependency a/);
+  writeFileSync(join(input.consumer, 'node_modules/@threadplane/angular/index.js'), 'tampered');
+  assert.throws(() => assertPresentationInstallation(input.consumer, derived, input.tarballs), /bytes equal/);
+});
+
+test('Angular foundation installer preserves its exact profile and rejects child lock mutation', (t) => {
+  const input = installerFixture(t, false, angularFoundationFixture);
+  const proof = presentation.installPresentationConsumer(input.consumer, input.root, input.tarballs, { seeds: angularFoundationSeeds, profile: 'angular-foundation', env: input.env });
+  assert.equal(proof.profile, 'angular-foundation');
+  assert.deepEqual(proof.seeds, angularFoundationSeeds);
+  const mutated = installerFixture(t, true, angularFoundationFixture);
+  assert.throws(() => presentation.installPresentationConsumer(mutated.consumer, mutated.root, mutated.tarballs, { seeds: angularFoundationSeeds, profile: 'angular-foundation', env: mutated.env }), /lock bytes/);
+});
+
 for (const framework of ['react', 'angular']) {
   test(`selected ${framework} consumer retains the current content JSON parser dependency`, (t) => {
     const root = JSON.parse(

@@ -425,6 +425,14 @@ export const createWebsitePlaywrightConfig = (
                   timeout: 180_000,
                 },
                 {
+                  command: 'node scripts/react-cockpit/serve.mjs chat-debug --no-parent',
+                  cwd: '../..',
+                  url: 'http://127.0.0.1:4645',
+                  reuseExistingServer: false,
+                  gracefulShutdown: { signal: 'SIGTERM' as const, timeout: 5000 },
+                  timeout: 180_000,
+                },
+                {
                   command: 'npx nx run cockpit-chat-input-python:smoke && node scripts/react-cockpit/serve.mjs chat-input --no-parent',
                   cwd: '../..',
                   url: 'http://127.0.0.1:4621',
@@ -561,6 +569,18 @@ export const createWebsitePlaywrightConfig = (
     config.outputDir = resolve(__dirname, '../../output/playwright/chat-theming-website');
     if (Array.isArray(config.webServer)) {
       config.webServer = config.webServer.filter(server => [localURL, 'http://127.0.0.1:4644'].includes(server.url ?? '')).map(server => ({ ...server, reuseExistingServer: false, gracefulShutdown: { signal: 'SIGTERM' as const, timeout: 5000 } }));
+    }
+  }
+  if (environment['WEBSITE_E2E_REACT_TOPIC'] === 'chat-debug') {
+    config.testMatch = '**/react-debug-preview.spec.ts';
+    config.workers = 1;
+    config.fullyParallel = false;
+    config.retries = 0;
+    config.outputDir = resolve(__dirname, '../../output/playwright/chat-debug-website');
+    if (Array.isArray(config.webServer)) {
+      config.webServer = config.webServer
+        .filter(server => [localURL, 'http://127.0.0.1:4645'].includes(server.url ?? ''))
+        .map(server => ({ ...server, reuseExistingServer: false, gracefulShutdown: { signal: 'SIGTERM' as const, timeout: 5000 } }));
     }
   }
   return config;

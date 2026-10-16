@@ -340,3 +340,52 @@ automatic schema validation, A2UI, telemetry, SSR and hydration. Native React
 dogfoods this bounded feature by preparing the existing typed terminal trip
 recap outside rendering. This is not arbitrary streamed JSON rendering or full
 render parity. The root entry stays headless.
+
+## Private Debug first slice
+
+`@threadplane/react/debug` exports `ChatDebug` and narrow readonly data types.
+Import `@threadplane/react/debug/styles.css` explicitly for the scoped panel CSS.
+Root and chat imports carry no Debug JavaScript or styles.
+
+```tsx
+import { ChatDebug } from '@threadplane/react/debug';
+import '@threadplane/react/debug/styles.css';
+
+<ChatDebug
+  contextKey="application-owner"
+  current={{ contextKey: 'application-owner', status: 'ready', values: {} }}
+  storageKey="my-app:debug-ui"
+/>;
+```
+
+This passive, nonmodal view presents current application values and an app-owned
+checkpoint page of at most ten metadata rows. Unknown/unavailable current state
+is distinct from observed `{}`; an unloaded page is distinct from an empty page.
+The app controls `selection` and supplies separately keyed `inspection` results.
+Context, page generation and row key must match before historical values/errors
+are displayed. The UI never interprets SDK checkpoint objects.
+
+`onRefresh` and `onInspect` are synchronous notifications returning `undefined`.
+Each explicit action supplies its complete ownership token; application code
+validates it and starts any separately owned read. Rendering, mounting, opening,
+tabs, docking, closing and unmounting issue no reads, runs or disposal. The app
+owns network access, stale-result validation, selection and resource lifetime.
+History order is as supplied, with no automatic paging or live branch-tree claim.
+Fork, replay, diff and full T29 parity remain outside this first private slice.
+
+Displayed plain JSON is bounded to depth 6, 200 entries, 2,000 Unicode code points
+per string/key and 32 KiB of UTF-8 output. Truncation is disclosed separately from
+valid JSON. Copy awaits clipboard success/failure and copies exactly the displayed
+projection, never a complete-raw-state promise. Only visited prefixes are validated;
+SDK decoding and caller allocation happen before this display bound. Invalid
+visited data is unavailable. Plain app-owned data excludes executable objects,
+accessors and proxies; this view is not an SDK validation boundary.
+
+The panel's own data/default props produce deterministic server markup and can
+hydrate independently of `useAgent`; this does not extend the hook's SSR contract.
+After hydration, a supplied application-scoped `storageKey` restores only open,
+dock and tab preferences, tolerating denied storage. Defaults never overwrite saved
+preferences during hydration. State, history, IDs, target and selection are never
+persisted. Use separate keys for independent panels. Scoped Escape handling and
+outside-pointer close retain outside focus; user-close restores the launcher only
+while focus remains owned by that panel.

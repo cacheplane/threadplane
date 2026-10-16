@@ -33,6 +33,18 @@ import { ReactTimeTravelPreview } from '../../../../../components/docs/ReactTime
 import { WebsiteWorkspace } from '../../../../../components/workspace/WebsiteWorkspace';
 import DocsPage, { generateMetadata } from './page';
 
+it('selects native Debug Docs with its exact source context while retaining canonical Angular MDX', async () => {
+  const tree = await route('chat', 'components', 'chat-debug');
+  const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
+  const article = workspace?.props.reactDocsSlot as React.ReactElement<ElementProps> | undefined;
+  expect((article?.type as { name?: string })?.name).toBe('ReactChatDebugPreview');
+  expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/chat/debug/react/src/checkpoint-page.ts');
+  expect(article?.props.exampleCode?.sources?.['cockpit/chat/debug/python/src/graph.py']).toContain('TAG_NOSTREAM');
+  const angular = findElement(workspace?.props.docsSlot, MdxRenderer as ComponentType<never>);
+  expect(angular?.props.exampleCode?.assetPaths).toContain('cockpit/chat/debug/angular/src/app/debug.component.ts');
+  expect(angular?.props.source).toContain('# ChatDebugComponent');
+});
+
 it('selects the exact native Theming guide with real source Code and canonical Angular docs', async () => {
   const tree = await route('chat', 'guides', 'theming');
   const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
@@ -116,6 +128,7 @@ interface ElementProps {
   contextTrail?: readonly { label: string; href?: string; icon?: ReactNode }[];
   docsContext?: unknown;
   docsPath?: string;
+  source?: string;
   exampleCode?: {
     assetPaths?: readonly string[];
     sources?: Record<string, string>;

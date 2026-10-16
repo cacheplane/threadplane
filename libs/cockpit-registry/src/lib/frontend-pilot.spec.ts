@@ -14,6 +14,17 @@ const streaming: CockpitManifestIdentity = {
   page: 'overview',
   language: 'python',
 };
+it('resolves native Chat Debug while preserving the canonical Angular frontend', () => {
+  const canonical = capabilityModules.find(entry => entry.id === 'chat-debug-python');
+  if (!canonical) throw Error('Missing canonical Chat Debug');
+  const identity = canonical.manifestIdentity as CockpitManifestIdentity;
+  const react = getFrontendCapabilityDescriptor(identity, 'react');
+  expect(react).toMatchObject({ id: 'chat-debug-python-react', frontend: 'react', runtimeAdapter: 'langgraph', runtimeUrl: 'chat/debug/react', devPort: 4645, docsPath: '/docs/chat/components/chat-debug', backendAssetPaths: canonical.backendAssetPaths, promptAssetPaths: canonical.promptAssetPaths });
+  expect(getFrontendCapabilityDescriptor(identity, 'angular')).toBe(canonical);
+  expect(canonical).toMatchObject({ runtimeUrl: 'chat/debug', devPort: 4509 });
+  expect(getCockpitFrontends().filter(entry => entry.project === 'cockpit-chat-debug-react')).toHaveLength(1);
+  expect(getCockpitFrontends().find(entry => entry.project === 'cockpit-chat-debug-react')).toMatchObject({ port: 4645, runtimePath: 'chat/debug/react' });
+});
 it('resolves one native Chat Theming frontend with canonical sources and Angular default', () => {
   const canonical = capabilityModules.find(entry => entry.id === 'chat-theming-python');
   if (!canonical) throw Error('Missing canonical Chat Theming');

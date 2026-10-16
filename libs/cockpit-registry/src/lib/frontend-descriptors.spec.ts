@@ -8,6 +8,19 @@ import {
 import type { CockpitManifestIdentity } from './manifest.types';
 import { capabilities, getCockpitFrontends } from './capability-registry';
 
+it('registers only authored native Debug sources and its project with canonical Python assets', () => {
+  const identity = { product: 'chat', section: 'core-capabilities', topic: 'debug', page: 'overview', language: 'python' } as const;
+  const canonical = getCapabilityDescriptor(identity);
+  const react = getFrontendCapabilityDescriptor(identity, 'react');
+  expect(react?.codeAssetPaths).toEqual([
+    ...['app.tsx', 'application.ts', 'authority.ts', 'checkpoint-page.ts', 'inspection-values.ts', 'connection.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/chat/debug/react/src/${file}`),
+    'cockpit/chat/debug/react/project.json',
+  ]);
+  expect(react?.backendAssetPaths).toEqual(canonical?.backendAssetPaths);
+  expect(react?.promptAssetPaths).toEqual(canonical?.promptAssetPaths);
+  expect(react?.codeAssetPaths.join(' ')).not.toMatch(/fixture|\.spec\.|tests\/|wire|credentials/);
+});
+
 it('registers bounded native MAF React with canonical Python backend and exact authored assets', () => {
   const identity = { product: 'runtimes', section: 'core-capabilities', topic: 'microsoft-agent-framework', page: 'overview', language: 'python' } as const;
   const canonical = getCapabilityDescriptor(identity);

@@ -748,3 +748,17 @@ for (const dependency of ['@langchain/langgraph-sdk/react', '@langchain/langgrap
     assert.ok(verifyBoundaries({ root, projects: ['langgraph'] }).some((error) => error.includes('neutral runtime') && error.includes(dependency)));
   });
 }
+
+for (const extension of ['ts', 'js', 'd.ts']) {
+ test(`React ${extension} root rejects indirect Debug entry`, t => {
+  const mode = extension === 'ts' ? 'source' : 'built';
+  const prefix = `${mode === 'source' ? '' : 'dist/'}libs/react`;
+  const root = fixture(t, {
+   [`${prefix}/package.json`]: JSON.stringify({ exports: { '.': { [extension === 'd.ts' ? 'types' : 'import']: `./src/index.${extension}` } } }),
+   [`${prefix}/src/index.${extension}`]: "export * from './bridge.js';",
+   [`${prefix}/src/bridge.${extension}`]: "export * from './debug/index.js';",
+   [`${prefix}/src/debug/index.${extension}`]: 'export {};',
+  });
+  assert.ok(verifyBoundaries({ root, mode, projects: ['react'], ...finalOptions }).some(error => /feature dependency reachable from root/.test(error)));
+ });
+}

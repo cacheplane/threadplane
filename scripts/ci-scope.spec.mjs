@@ -33,6 +33,79 @@ const COCKPIT_CAP_PYTHON_TAGS = [
 ];
 const WEBSITE_TAGS = ['scope:website', 'scope:website-e2e'];
 
+describe('Debug actual CI owners', () => {
+  for (const [file, projectPath, expected] of [
+    ['cockpit/chat/debug/react/src/app.tsx', 'cockpit/chat/debug/react/project.json', ['cockpit_examples', 'cockpit_e2e']],
+    ['cockpit/chat/debug/python/src/graph.py', 'cockpit/chat/debug/python/project.json', ['cockpit_examples', 'cockpit_e2e', 'cockpit_smoke']],
+    ['apps/website/src/components/docs/ReactChatDebugPreview.tsx', 'apps/website/project.json', ['website', 'website_e2e']],
+  ]) it(`attributes ${file} through actual source tags`, async () => {
+    const project = JSON.parse(await readFile(projectPath, 'utf8'));
+    const scope = classifyFromAffected([file], [project]);
+    for (const key of expected) assert.equal(scope[key], true, key);
+  });
+
+  it('runs the real Python test before its uncached export smoke', async () => {
+    const project = JSON.parse(await readFile('cockpit/chat/debug/python/project.json', 'utf8'));
+    assert.equal(project.targets.test.options.command, 'uv run --frozen --python 3.12 python -E -B -m unittest discover -s tests');
+    const smoke = project.targets.smoke;
+    assert.ok(smoke, 'Debug Python smoke target');
+    assert.equal(smoke.cache, false);
+    assert.deepEqual(smoke.dependsOn, ['test']);
+    assert.equal(smoke.options.cwd, 'cockpit/chat/debug/python');
+    assert.match(smoke.options.command, /chatDebugPythonModule/);
+    assert.match(smoke.options.command, /chat-debug-python/);
+    assert.match(smoke.options.command, /Chat Debug \(Python\)/);
+  });
+
+  it('splits Node-only static preflight from the Python-equipped full Debug proof', async () => {
+    const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+    const scope = workflow.split('  ci-scope:')[1].split('\n  scripts-tests:')[0];
+    assert.match(scope, /node --test --test-name-pattern='\^debug ' scripts\/react-cockpit\/chat-debug-configuration.spec.mjs/);
+    const debugPreflight = scope.split('\n').filter(line => line.includes('chat-debug-configuration.spec.mjs'));
+    assert.equal(debugPreflight.length, 1, 'Exactly one filtered Debug static preflight');
+    assert.doesNotMatch(scope, /setup-uv|chat-debug-fixture.spec.mjs/);
+    const cockpit = workflow.split('  cockpit-e2e:')[1].split('\n  cockpit-e2e-summary:')[0];
+    const debug = cockpit.split("if: matrix.cap.angular == 'cockpit-chat-debug-react'")[1]?.split('      - name:')[0];
+    assert.ok(debug, 'conditional Debug proof');
+    const commands = [
+      'npx nx run cockpit-chat-debug-python:test --skip-nx-cache',
+      'node --test --test-concurrency=1 scripts/react-cockpit/chat-debug-configuration.spec.mjs scripts/react-cockpit/chat-debug-fixture.spec.mjs',
+      'npx nx build core --skip-nx-cache',
+      'node scripts/react-cockpit/chat-debug-native-session-probe.mjs',
+    ];
+    let previous = -1;
+    for (const command of commands) {
+      const position = debug.indexOf(command);
+      assert.ok(position > previous, `ordered Debug proof: ${command}`);
+      previous = position;
+    }
+    assert.match(cockpit, /python-version: '3.12'/);
+    assert.match(cockpit, /name: Prepare frozen Debug Python fixture\n        if: matrix.cap.python == 'cockpit\/chat\/debug\/python'\n        working-directory: \$\{\{ matrix.cap.python \}\}\n        run: uv sync --frozen --python 3.12/);
+    assert.match(cockpit, /output\/playwright\/chat-debug-react\//);
+    const smoke = workflow.split('  cockpit-smoke:')[1].split('\n  cockpit-examples:')[0];
+    assert.match(smoke, /--projects=[^\n]*cockpit-chat-debug-python/);
+  });
+
+  it('retains Website discovery, Debug build prerequisites, and private package gates', async () => {
+    const website = JSON.parse(await readFile('apps/website/project.json', 'utf8'));
+    const prerequisites = website.targets.e2e.dependsOn;
+    assert.ok(prerequisites.some(item => item.target === 'build' && item.projects.includes('cockpit-chat-debug-react')));
+    assert.ok(prerequisites.some(item => item.target === 'test' && item.projects.includes('cockpit-chat-debug-python')));
+    const config = await readFile('apps/website/playwright.config.ts', 'utf8');
+    assert.match(config, /testDir: '\.\/e2e'/);
+    assert.match(config, /node scripts\/react-cockpit\/serve.mjs chat-debug --no-parent/);
+    const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+    const library = workflow.split('\n  library:\n')[1].split('\n  angular-compatibility:')[0];
+    for (const command of [
+      'node --test scripts/react-parity/*.spec.mjs',
+      'node scripts/react-parity/verify-boundaries.mjs',
+      'npx nx run-many -t lint test type-tests build --projects=$FOUNDATIONS',
+      'node scripts/react-parity/verify-boundaries.mjs --built',
+      'node scripts/react-parity/verify-packages.mjs',
+    ]) assert.ok(library.includes(command), command);
+  });
+});
+
 describe('Theming actual project CI owners', () => {
   for (const [file, projectPath, expected] of [
     ['cockpit/chat/theming/react/src/styles.css', 'cockpit/chat/theming/react/project.json', ['cockpit_examples', 'cockpit_e2e']],

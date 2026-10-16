@@ -1,5 +1,11 @@
 /** Closed authored frontend selection; callers cannot supply filesystem paths. */
 export function reactCockpitConfiguration(topic = 'streaming') {
+  if (topic === 'chat-debug')
+    return Object.freeze({
+      topic: 'debug', library: 'chat', adapter: 'langgraph',
+      appPath: 'cockpit/chat/debug/react', base: '/chat/debug/react/',
+      port: 4645, project: 'cockpit-chat-debug-react',
+    });
   if (topic === 'chat-theming')
     return Object.freeze({
       topic: 'theming', library: 'chat', adapter: 'langgraph',

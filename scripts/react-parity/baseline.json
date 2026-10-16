@@ -1,14 +1,25 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "ae28e5ed7a70b44306dc23ef646d2c46cfc3847f",
+  "baselineHead": "64c6a6affc876eab64e6056c346ac1c99e837e03",
   "sourceState": {
     "modified": [
       ".github/workflows/ci.yml",
-      "apps/website/content/docs/chat/guides/theming.mdx",
+      "apps/website/content/docs/chat/components/chat-debug.mdx",
       "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "libs/cockpit-registry/src/lib/content-descriptors.ts"
+      "libs/cockpit-registry/src/lib/content-descriptors.ts",
+      "libs/react/README.md",
+      "libs/react/package.json",
+      "libs/react/project.json",
+      "libs/workspace-react/src/lib/components/code-mode/code-mode.tsx"
     ],
-    "untracked": []
+    "untracked": [
+      "libs/react/src/debug/bounded-value.ts",
+      "libs/react/src/debug/chat-debug.tsx",
+      "libs/react/src/debug/index.ts",
+      "libs/react/src/debug/persistence.ts",
+      "libs/react/src/debug/styles.css",
+      "libs/react/src/debug/types.ts"
+    ]
   },
   "scope": {
     "libraries": [
@@ -833,25 +844,31 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "609ad2fbda10ecbbdd8f1f00a44f47593b55da46438f2e38f8550f18b261455e"
+      "sha256": "1b1022e457f64e20f24751fd366ad9b6295ac782675d9bae2586777fc5fa41f9"
     },
     {
       "id": "asset:libs/react/package.json",
       "kind": "asset",
       "path": "libs/react/package.json",
-      "sha256": "5e290a4fd60c9e1eb88d7f88156df7bba991434d5016d8644033735688cc0a65"
+      "sha256": "4c9655563abbc5b413767f89b8a1050e1892e0b52e1e8c3876bb385710d54dc3"
     },
     {
       "id": "asset:libs/react/project.json",
       "kind": "asset",
       "path": "libs/react/project.json",
-      "sha256": "c083c71eaa2a0b55f06a41647dd8cfee6d9c741f1f55a6858d209d4c29286f38"
+      "sha256": "de9f5b9ac46d2a3b473698a3d1d6679d99af0da97d3102bb1580b01753af6987"
     },
     {
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
       "sha256": "17714e42237ffd1b5efb67521f1bcbae16eec3357d383ba5fa9ef8ca5e11a15f"
+    },
+    {
+      "id": "asset:libs/react/src/debug/styles.css",
+      "kind": "asset",
+      "path": "libs/react/src/debug/styles.css",
+      "sha256": "5418fab5681562d1994b1bfa2c97f1b0cddbac1c48b2ed72b37b8405aedb464a"
     },
     {
       "id": "asset:libs/react/tsconfig.json",
@@ -2153,7 +2170,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "2aa96853d24e4ac793a2c0da7a49d58cf235aa49159e17ec6d86558391a97606"
+      "sha256": "40b517e49d254368a5fb20a99e0e2995bebbd86005727c82f21a91e3e1de3c87"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -2459,7 +2476,7 @@
       "id": "doc:apps/website/content/docs/chat/components/chat-debug.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/components/chat-debug.mdx",
-      "sha256": "cc1768297c8fa1f3061a6c4e3a71a5157cfd25cf6a760a916aea44954b86a1a7"
+      "sha256": "efa33045cb579c2863f40253711e94f2881bbed3571fa2fdf7fd5058ccf2789b"
     },
     {
       "id": "doc:apps/website/content/docs/chat/components/chat-input.mdx",
@@ -13478,13 +13495,13 @@
       "id": "source:libs/cockpit-registry/src/lib/capability-registry.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "sha256": "4abc464ca0ade216d6dda249785c1f188a44196dd8e62528f283e8709277d91f"
+      "sha256": "f67265f2f624b8e01b6ec69036759e396c302ac9db8dee7563de07439dbd1ab0"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/content-descriptors.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/content-descriptors.ts",
-      "sha256": "d86f5cb23b688cf6e5df3c1c21fa90e9027cb143d0315a191503fd9c15472335"
+      "sha256": "580052b12c3e449b2188824f7720c156ae6bd5be3eec7e8707100749263ff3be"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/docs-links.ts",
@@ -14513,6 +14530,36 @@
       "sha256": "4770ffb6da23573b8bf0ecad9de36bec724b29ea96edb9776cb27078b4000e24"
     },
     {
+      "id": "source:libs/react/src/debug/bounded-value.ts",
+      "kind": "source",
+      "path": "libs/react/src/debug/bounded-value.ts",
+      "sha256": "5d5e5bfdb086c5bbef15e88d31c653ec06b7fc38582bc92e436bdeaef34b95e0"
+    },
+    {
+      "id": "source:libs/react/src/debug/chat-debug.tsx",
+      "kind": "source",
+      "path": "libs/react/src/debug/chat-debug.tsx",
+      "sha256": "a0a6fa5ca3f986a2104c7db82cc3cdb6884d9fc326d3e9372b4576ac157fe1fc"
+    },
+    {
+      "id": "source:libs/react/src/debug/index.ts",
+      "kind": "source",
+      "path": "libs/react/src/debug/index.ts",
+      "sha256": "755e6886bce63a67ef4997c6e89997c44bd75cc6fa4d42c72d5fd4792f559b91"
+    },
+    {
+      "id": "source:libs/react/src/debug/persistence.ts",
+      "kind": "source",
+      "path": "libs/react/src/debug/persistence.ts",
+      "sha256": "e3760ddc4e47ed5a2ea59889407d0fc4643d94fa0f1dcf2aa254881c4899c00f"
+    },
+    {
+      "id": "source:libs/react/src/debug/types.ts",
+      "kind": "source",
+      "path": "libs/react/src/debug/types.ts",
+      "sha256": "6204b82976f3220cac935890c7eec14fae340153353073113c9e46c6d5c7185b"
+    },
+    {
       "id": "source:libs/react/src/index.ts",
       "kind": "source",
       "path": "libs/react/src/index.ts",
@@ -15050,7 +15097,7 @@
       "id": "source:libs/workspace-react/src/lib/components/code-mode/code-mode.tsx",
       "kind": "source",
       "path": "libs/workspace-react/src/lib/components/code-mode/code-mode.tsx",
-      "sha256": "bc31ed9589d3f26a9758a7ad6425077c22153a5c20b237a3600094e58cdb9a1c"
+      "sha256": "5b4e3028879f337a9a890470d7b7a06d9036f9626143f403bc87f2c3d2ec216e"
     },
     {
       "id": "source:libs/workspace-react/src/lib/components/code-mode/file-tree.tsx",
