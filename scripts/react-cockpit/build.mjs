@@ -109,9 +109,19 @@ try {
     esbuild: { jsx: 'automatic' },
     build: { outDir: output, emptyOutDir: true, sourcemap: false },
   });
-  const modules = (Array.isArray(result) ? result : [result])
+  const emittedModules = (Array.isArray(result) ? result : [result])
     .flatMap((entry) => entry.output)
-    .flatMap((chunk) => Object.keys(chunk.modules ?? {}));
+    .flatMap((chunk) => Object.entries(chunk.modules ?? {}));
+  const modules = emittedModules.map(([path]) => path);
+  if (appPath === 'cockpit/render/element-rendering/react') {
+    assert.ok(
+      emittedModules.some(([path, module]) =>
+        path.endsWith('/node_modules/@threadplane/content/src/render-state/create-render-state.js') &&
+        module.renderedLength > 0
+      ),
+      'Installed render-state owner implementation required for element rendering'
+    );
+  }
   assert.ok(
     modules.some((path) => path.includes('/node_modules/@threadplane/react/')),
     'Installed React required'
