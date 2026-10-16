@@ -2,7 +2,7 @@
 
 Private, unpublished content preparation. `/markdown` owns an incremental document
 using the locked `@cacheplane/partial-markdown` 0.5.8 parser. The root stays empty;
-`/a2ui` and `/testing` remain reserved stubs.
+`/testing` remains a reserved stub.
 
 `/json` exports `createJson`, an application-owned incremental JSON document using
 the exact `@cacheplane/json-stream` 0.1.1 kernel. It follows the Markdown document
@@ -49,6 +49,53 @@ use the ownership semantics described below for Markdown. Disposal does not fini
 the parser. The generic React/Angular observer bindings can borrow a JSON owner;
 views unsubscribe without disposing it. This remains a private content foundation;
 automatic classification, RenderSpec views, SSR and public release are separate.
+
+`/a2ui` exports `createA2uiSurfaces`, an application-owned accumulator for
+already parsed, correctly shaped supported A2UI envelopes. Create one owner per
+caller-selected message and delivery generation. The caller applies envelopes,
+replaces the owner on that lifetime boundary, and disposes the old owner.
+
+```ts
+import { createA2uiSurfaces } from '@threadplane/content/a2ui';
+
+// This owner belongs to one chosen message and delivery generation.
+const surfaces = createA2uiSurfaces();
+surfaces.apply({
+  version: 'v0.9',
+  createSurface: { surfaceId: 'booking', catalogId: 'application-catalog' },
+});
+surfaces.apply({
+  version: 'v0.9',
+  updateComponents: {
+    surfaceId: 'booking',
+    components: [{ id: 'root', component: 'Text', text: 'Choose a trip' }],
+  },
+});
+const snapshot = surfaces.getSnapshot();
+// snapshot.surfaces is immutable raw state; the host chooses how to render it.
+surfaces.dispose();
+```
+
+Creation and updates stay staged until both creation and a `root` component are
+available. Published snapshots preserve surface/component order, own and freeze
+nested data, and retain identity until a published command. Accepted input
+mutations cannot change retained snapshots. Supported values are finite scalars,
+null, undefined, plain records and arrays (including holes). Classes, cycles,
+accessors, symbol keys, nonfinite numbers and unsupported array properties throw
+before changing staged or published state. Hostile Proxy behavior is outside this
+plain-data boundary. Pointer paths use simple slash segments, without RFC6901
+unescaping; supported legacy array/deletion behavior is preserved.
+
+Borrow this owner with `useAgent` from `@threadplane/react` or `observeAgent` from
+`@threadplane/angular`. Subscriptions only observe: mounting and unmounting do not
+apply envelopes or dispose the owner. Each subscription has an independent,
+idempotent release. Disposal is terminal, releases staging and listeners, and
+retains the last readable snapshot; later `apply` calls throw.
+
+This is a private accumulator foundation. It does not parse or classify text,
+infer message identity, deduplicate deliveries, expose renderer readiness, or
+provide catalog views, forms, validation, actions or publishing. Full legacy
+renderer parity and SSR remain separate work.
 
 `/messages` exports `createMessageContent`, which projects immutable agent
 snapshots into cached transcript rows. Each row owns answer `markdown` and, when

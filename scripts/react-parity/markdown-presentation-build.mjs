@@ -349,6 +349,8 @@ export const presentationSeeds = [
   '@angular/build',
   '@angular/compiler-cli',
 ];
+// The mixed native build uses the same exact framework/build roots as Markdown.
+export const a2uiSurfacesPresentationSeeds = Object.freeze([...presentationSeeds]);
 export const reactLanggraphPresentationSeeds = [
   '@json-render/core',
   '@cacheplane/json-stream',
@@ -398,6 +400,7 @@ function presentationLocals(profile) {
   assert.ok(
     [
       'markdown',
+      'a2ui-surfaces',
       'react-langgraph',
       'angular-langgraph',
       'angular-foundation',
@@ -407,6 +410,7 @@ function presentationLocals(profile) {
     `Unknown presentation profile: ${profile}`
   );
   if (profile === 'markdown') return localNames;
+  if (profile === 'a2ui-surfaces') return [...localNames, '@threadplane/a2ui'];
   if (profile === 'react-render')
     return localNames.filter((name) => name !== '@threadplane/angular');
   if (profile === 'angular-foundation')
@@ -456,7 +460,7 @@ function assertPresentationPackages(
       ['langchain', '@mastra/client-js'].includes(name);
     assert.ok(
       (!backend ||
-        (profile !== 'markdown' && profile !== 'react-render' && profile !== 'angular-foundation' &&
+        (profile !== 'markdown' && profile !== 'a2ui-surfaces' && profile !== 'react-render' && profile !== 'angular-foundation' &&
           name.startsWith(
             profile === 'react-ag-ui' ? '@ag-ui/' : '@langchain/'
           ) &&
@@ -540,7 +544,28 @@ export function canonicalVendorGraph(
   seeds = presentationSeeds,
   effectiveRanges = {}
 ) {
-  const records = lockedVendorGraph(lock, seeds, effectiveRanges).map(
+  // Only explicitly present local optional peers contribute edges. This keeps
+  // partial profiles isolated while validating selected feature peer ranges.
+  const packages = Object.fromEntries(
+    Object.entries(lock.packages).map(([path, record]) => {
+      const selected = Object.keys(record.peerDependencies ?? {}).filter(
+        (name) => name.startsWith('@threadplane/') &&
+          record.peerDependenciesMeta?.[name]?.optional &&
+          lock.packages['node_modules/' + name]
+      );
+      if (!selected.length) return [path, record];
+      return [path, {
+        ...record,
+        peerDependenciesMeta: {
+          ...record.peerDependenciesMeta,
+          ...Object.fromEntries(selected.map((name) => [name, {
+            ...record.peerDependenciesMeta[name], optional: false,
+          }])),
+        },
+      }];
+    })
+  );
+  const records = lockedVendorGraph({ ...lock, packages }, seeds, effectiveRanges).map(
     (record) => ({
       ...record,
       dependencies: Object.fromEntries(
@@ -567,6 +592,8 @@ export function derivePresentationConsumer(
     [...locals].sort(),
     profile === 'markdown'
       ? 'Exactly four Markdown foundation tarballs required'
+      : profile === 'a2ui-surfaces'
+      ? 'Exactly five A2UI surfaces tarballs required'
       : profile === 'react-render'
       ? 'Exactly React, core and content static tarballs required'
       : profile === 'angular-foundation'
@@ -585,7 +612,9 @@ export function derivePresentationConsumer(
   if (profile !== 'markdown') {
     const react = ['react-langgraph', 'react-ag-ui', 'react-render'].includes(profile);
     const selectedSeeds =
-      profile === 'react-render'
+      profile === 'a2ui-surfaces'
+        ? a2uiSurfacesPresentationSeeds
+        : profile === 'react-render'
         ? reactRenderPresentationSeeds
         : profile === 'angular-foundation'
         ? angularFoundationPresentationSeeds
@@ -594,12 +623,12 @@ export function derivePresentationConsumer(
         : react
         ? reactLanggraphPresentationSeeds
         : angularLanggraphPresentationSeeds;
-    const framework = react ? 'React' : profile === 'angular-foundation' ? 'Angular foundation' : 'Angular';
+    const framework = profile === 'a2ui-surfaces' ? 'A2UI surfaces' : react ? 'React' : profile === 'angular-foundation' ? 'Angular foundation' : 'Angular';
     assertPresentationPackages(
       selected,
       profile,
       locals,
-      profile === 'react-render' || profile === 'angular-foundation' ? {} : selectPresentationLock(
+      profile === 'a2ui-surfaces' || profile === 'react-render' || profile === 'angular-foundation' ? {} : selectPresentationLock(
         rootLock,
         [
           profile === 'react-ag-ui'
@@ -618,7 +647,7 @@ export function derivePresentationConsumer(
       [...seeds].sort(),
       [...selectedSeeds].sort(),
       `Exactly ${
-        react ? 'eleven' : profile === 'angular-foundation' ? 'thirteen' : 'fourteen'
+        profile === 'a2ui-surfaces' ? 'eighteen' : react ? 'eleven' : profile === 'angular-foundation' ? 'thirteen' : 'fourteen'
       } selected ${framework} seeds required`
     );
   }
@@ -755,7 +784,7 @@ export function assertPresentationInstallation(consumer, derived, tarballs) {
     actual.packages,
     profile,
     locals,
-    profile !== 'markdown' && profile !== 'react-render' && profile !== 'angular-foundation'
+    profile !== 'markdown' && profile !== 'a2ui-surfaces' && profile !== 'react-render' && profile !== 'angular-foundation'
       ? selectPresentationLock(
           lock,
           [

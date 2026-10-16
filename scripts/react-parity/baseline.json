@@ -1,24 +1,20 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "64c6a6affc876eab64e6056c346ac1c99e837e03",
+  "baselineHead": "b632ba2afd3e90cf8a593db5bbb24b6af31d7e91",
   "sourceState": {
     "modified": [
       ".github/workflows/ci.yml",
-      "apps/website/content/docs/chat/components/chat-debug.mdx",
-      "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "libs/cockpit-registry/src/lib/content-descriptors.ts",
-      "libs/react/README.md",
-      "libs/react/package.json",
-      "libs/react/project.json",
-      "libs/workspace-react/src/lib/components/code-mode/code-mode.tsx"
+      "libs/a2ui/project.json",
+      "libs/content/README.md",
+      "libs/content/package.json",
+      "libs/content/src/a2ui/index.ts",
+      "package-lock.json"
     ],
     "untracked": [
-      "libs/react/src/debug/bounded-value.ts",
-      "libs/react/src/debug/chat-debug.tsx",
-      "libs/react/src/debug/index.ts",
-      "libs/react/src/debug/persistence.ts",
-      "libs/react/src/debug/styles.css",
-      "libs/react/src/debug/types.ts"
+      "libs/content/src/a2ui/create-surfaces.ts",
+      "libs/content/src/a2ui/owned-value.ts",
+      "libs/content/src/a2ui/transition.ts",
+      "libs/content/src/a2ui/types.ts"
     ]
   },
   "scope": {
@@ -53,6 +49,7 @@
       "libs/chat/src/public-api.ts",
       "libs/chat/testing/public-api.ts",
       "libs/content/src/index.ts",
+      "libs/content/src/a2ui/index.ts",
       "libs/content/src/json/index.ts",
       "libs/content/src/markdown/index.ts",
       "libs/content/src/messages/index.ts",
@@ -112,7 +109,7 @@
       "id": "asset:libs/a2ui/project.json",
       "kind": "asset",
       "path": "libs/a2ui/project.json",
-      "sha256": "4bb3a6df0955b314df44cbcc527958606bae0a0a8a5f1edc30ccbe049f277f1b"
+      "sha256": "4323f771801cabf80281edd07e60fdb79c16c6ff118e684546ff9d5fe28a57d7"
     },
     {
       "id": "asset:libs/a2ui/schemas/README.md",
@@ -574,13 +571,13 @@
       "id": "asset:libs/content/README.md",
       "kind": "asset",
       "path": "libs/content/README.md",
-      "sha256": "2c0549ea146a9e6dab2d8b137807c4377bc763331a62174a183e1d3e203507dd"
+      "sha256": "f8beb948c5010e6bbedf2eafbe477d8221c357ecadb90d63f8fece5645d0c52a"
     },
     {
       "id": "asset:libs/content/package.json",
       "kind": "asset",
       "path": "libs/content/package.json",
-      "sha256": "5592aa4c53a4c986d5a6cf458724356c25af18bb2f4f950c97181dc05db58787"
+      "sha256": "742b577bc1b46e2be6db118788aaa1649cac0a2d1404230cb985cc5d2bb7e3bf"
     },
     {
       "id": "asset:libs/content/project.json",
@@ -2170,7 +2167,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "40b517e49d254368a5fb20a99e0e2995bebbd86005727c82f21a91e3e1de3c87"
+      "sha256": "6015317d1dc980ebddda6049ad24f970a912391dc7acb60b36093ae127336e8a"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -2224,7 +2221,7 @@
       "id": "config:package-lock.json",
       "kind": "config",
       "path": "package-lock.json",
-      "sha256": "0541ff264027517727fef7558652a8cef64605c70a2ef5ff81054df421d7b467"
+      "sha256": "7d321076f790911480ec8fa21356034c06d0ce2d80b45806bd8f3786beadb12c"
     },
     {
       "id": "config:package.json",
@@ -3087,6 +3084,11 @@
       "id": "entry:libs/chat/testing/public-api.ts",
       "kind": "entry",
       "path": "libs/chat/testing/public-api.ts"
+    },
+    {
+      "id": "entry:libs/content/src/a2ui/index.ts",
+      "kind": "entry",
+      "path": "libs/content/src/a2ui/index.ts"
     },
     {
       "id": "entry:libs/content/src/index.ts",
@@ -8746,6 +8748,90 @@
       ]
     },
     {
+      "id": "export:libs/content/src/a2ui/index.ts#A2uiComponentSnapshot",
+      "kind": "export",
+      "path": "libs/content/src/a2ui/index.ts",
+      "symbol": "A2uiComponentSnapshot",
+      "declarations": [
+        {
+          "path": "libs/content/src/a2ui/types.ts",
+          "symbol": "A2uiComponentSnapshot",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface A2uiComponentSnapshot {\n    readonly id: string;\n    readonly component: string;\n    readonly [key: string]: A2uiValue;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/a2ui/index.ts#A2uiSurfaceSnapshot",
+      "kind": "export",
+      "path": "libs/content/src/a2ui/index.ts",
+      "symbol": "A2uiSurfaceSnapshot",
+      "declarations": [
+        {
+          "path": "libs/content/src/a2ui/types.ts",
+          "symbol": "A2uiSurfaceSnapshot",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface A2uiSurfaceSnapshot {\n    readonly surfaceId: string;\n    readonly catalogId: string;\n    readonly theme?: Readonly<A2uiTheme>;\n    readonly sendDataModel?: boolean;\n    readonly components: readonly A2uiComponentSnapshot[];\n    readonly dataModel: A2uiValue;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/a2ui/index.ts#A2uiSurfaces",
+      "kind": "export",
+      "path": "libs/content/src/a2ui/index.ts",
+      "symbol": "A2uiSurfaces",
+      "declarations": [
+        {
+          "path": "libs/content/src/a2ui/types.ts",
+          "symbol": "A2uiSurfaces",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface A2uiSurfaces {\n    readonly getSnapshot: () => A2uiSurfacesSnapshot;\n    readonly subscribe: (notify: () => void) => () => void;\n    readonly apply: (message: A2uiMessage) => void;\n    readonly dispose: () => void;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/a2ui/index.ts#A2uiSurfacesSnapshot",
+      "kind": "export",
+      "path": "libs/content/src/a2ui/index.ts",
+      "symbol": "A2uiSurfacesSnapshot",
+      "declarations": [
+        {
+          "path": "libs/content/src/a2ui/types.ts",
+          "symbol": "A2uiSurfacesSnapshot",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface A2uiSurfacesSnapshot {\n    readonly surfaces: readonly A2uiSurfaceSnapshot[];\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/a2ui/index.ts#A2uiValue",
+      "kind": "export",
+      "path": "libs/content/src/a2ui/index.ts",
+      "symbol": "A2uiValue",
+      "declarations": [
+        {
+          "path": "libs/content/src/a2ui/types.ts",
+          "symbol": "A2uiValue",
+          "syntaxKind": "TypeAliasDeclaration",
+          "signature": "export type A2uiValue = string | number | boolean | null | undefined | {\n    readonly [key: string]: A2uiValue;\n} | readonly A2uiValue[];"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/a2ui/index.ts#createA2uiSurfaces",
+      "kind": "export",
+      "path": "libs/content/src/a2ui/index.ts",
+      "symbol": "createA2uiSurfaces",
+      "declarations": [
+        {
+          "path": "libs/content/src/a2ui/create-surfaces.ts",
+          "symbol": "createA2uiSurfaces",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function createA2uiSurfaces(): A2uiSurfaces {\n    let state: SurfaceState | null = createSurfaceState();\n    let snapshot = surfaceSnapshot(state);\n    let disposed = false, notifying = false, dirty = false;\n    const registrations = new Set<{\n        notify: () => void;\n    }>();\n    function assertActive(): SurfaceState {\n        if (disposed || !state)\n            throw new Error('A2UI surfaces owner is disposed');\n        return state;\n    }\n    function publish(): void {\n        dirty = true;\n        if (notifying)\n            return;\n        notifying = true;\n        try {\n            while (dirty && !disposed) {\n                dirty = false;\n                for (const registration of [...registrations]) {\n                    if (disposed)\n                        break;\n                    if (!registrations.has(registration))\n                        continue;\n                    try {\n                        registration.notify();\n                    }\n                    catch {\n                    }\n                }\n            }\n        }\n        finally {\n            notifying = false;\n        }\n    }\n    return {\n        getSnapshot: () => snapshot,\n        subscribe(notify) {\n            if (disposed)\n                return () => undefined;\n            const registration = { notify };\n            registrations.add(registration);\n            return () => { registrations.delete(registration); };\n        },\n        apply(message) {\n            const next = transition(assertActive(), message);\n            assertActive();\n            state = next.state;\n            if (!next.publish)\n                return;\n            snapshot = surfaceSnapshot(state);\n            publish();\n        },\n        dispose() {\n            disposed = true;\n            dirty = false;\n            registrations.clear();\n            state = null;\n        },\n    };\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/content/src/json/index.ts#Json",
       "kind": "export",
       "path": "libs/content/src/json/index.ts",
@@ -13714,10 +13800,34 @@
       "sha256": "c1afeb8d76bb58b54fc601ea871743a500ebdeb54bbe7cde47aa075e64f433e8"
     },
     {
+      "id": "source:libs/content/src/a2ui/create-surfaces.ts",
+      "kind": "source",
+      "path": "libs/content/src/a2ui/create-surfaces.ts",
+      "sha256": "e68a5392b884457d010ffa35f29f8cec575683091a40b0a461fbde4b1b201e8c"
+    },
+    {
       "id": "source:libs/content/src/a2ui/index.ts",
       "kind": "source",
       "path": "libs/content/src/a2ui/index.ts",
-      "sha256": "2023e7c300e5129f80a87f3c5edea0213e5283fc55ae9a96fcb403024e63f783"
+      "sha256": "9242cd797ea4e9e33f7bebaa56024170725f4a529f794e0dc86fa97deac11fb0"
+    },
+    {
+      "id": "source:libs/content/src/a2ui/owned-value.ts",
+      "kind": "source",
+      "path": "libs/content/src/a2ui/owned-value.ts",
+      "sha256": "7f214bfdd46b5bb138d2c3526b135a17354b0f61b743042bc2ece6c5b0dc8255"
+    },
+    {
+      "id": "source:libs/content/src/a2ui/transition.ts",
+      "kind": "source",
+      "path": "libs/content/src/a2ui/transition.ts",
+      "sha256": "d44c6911c7a593a79aab3d6b46bd7e292e3379f51948f71bd1c1977cd1d06867"
+    },
+    {
+      "id": "source:libs/content/src/a2ui/types.ts",
+      "kind": "source",
+      "path": "libs/content/src/a2ui/types.ts",
+      "sha256": "91420e73c1393bf390d619eeabdf42cdc85c170c66e670d03db069383e9c5989"
     },
     {
       "id": "source:libs/content/src/index.ts",

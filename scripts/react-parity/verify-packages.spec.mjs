@@ -10,6 +10,41 @@ test('JSON feature exposes only its owned factory', () => {
   assert.throws(() => packageVerifier.assertSupportedExports('content/json', { createJson() {}, createJsonOwner() {} }), /unexpected/);
 });
 import * as packageVerifier from './verify-packages.mjs';
+test('selected public protocol package enumerates its actual legacy ESM root without inventing subpaths', () => {
+  const protocol = { name: '@threadplane/a2ui', type: 'module', types: './src/index.d.ts', module: './src/index.js', main: './src/index.js' };
+  assert.deepEqual(packageVerifier.consumerSpecifiers(protocol), ['@threadplane/a2ui']);
+  for (const key of ['types', 'main']) assert.throws(() => packageVerifier.consumerSpecifiers({ ...protocol, [key]: undefined }));
+  assert.throws(() => packageVerifier.consumerSpecifiers({ ...protocol, name: '@threadplane/content' }));
+  assert.throws(() => packageVerifier.consumerSpecifiers({ ...protocol, type: 'commonjs' }));
+  for (const fields of [{ main: './src/../outside.js' }, { types: './src/../index.d.ts' }, { main: './src\\index.js' }, { main: 'index.js' }, { types: './src/index.ts' }]) assert.throws(() => packageVerifier.consumerSpecifiers({ ...protocol, ...fields }));
+});
+test('A2UI feature exposes exactly its owned factory', () => {
+  assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', {}), /createA2uiSurfaces/);
+  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {} }));
+  assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {}, createOwner() {} }), /unexpected/);
+});
+test('optional local peers require explicit selection and validate selected artifacts independent of traversal order', () => {
+  const manifests = {
+    content: { version: '0.0.0', peerDependencies: { '@threadplane/a2ui': '^0.3.2' }, peerDependenciesMeta: { '@threadplane/a2ui': { optional: true } } },
+    a2ui: { version: '0.3.2' },
+  };
+  const read = name => manifests[name];
+  assert.deepEqual(packageVerifier.localDependencyProjects(['content'], read), ['content']);
+  assert.deepEqual(new Set(packageVerifier.localDependencyProjects(['content'], read, { optionalPeers: ['a2ui'] })), new Set(['content', 'a2ui']));
+  for (const projects of [['content', 'a2ui'], ['a2ui', 'content']]) {
+    manifests.a2ui.version = '0.2.0';
+    assert.throws(() => packageVerifier.localDependencyProjects(projects, read, { optionalPeers: ['a2ui'] }), /does not satisfy/);
+    assert.throws(() => packageVerifier.localDependencyProjects(projects, read), /does not satisfy/);
+  }
+  manifests.react = { dependencies: { '@threadplane/a2ui': '^0.2.0', '@threadplane/content': '0.0.0' } };
+  assert.throws(() => packageVerifier.localDependencyProjects(['react'], read), /does not satisfy content peerDependencies/);
+  manifests.react.dependencies = { '@threadplane/content': '0.0.0', '@threadplane/a2ui': '^0.2.0' };
+  assert.throws(() => packageVerifier.localDependencyProjects(['react'], read), /does not satisfy content peerDependencies/);
+  delete manifests.a2ui;
+  assert.deepEqual(packageVerifier.localDependencyProjects(['content'], read), ['content']);
+  assert.throws(() => packageVerifier.localDependencyProjects(['content'], read, { optionalPeers: ['a2ui'] }), /Missing local artifact manifest/);
+  assert.throws(() => packageVerifier.localDependencyProjects(['content'], read, { optionalPeers: ['unknown'] }), /No local artifact policy/);
+});
 const { validatePackage } = packageVerifier;
 test('consumer commands accept an explicit environment without inheriting a backend credential', () => {
   const previous = process.env.NATIVE_LANGGRAPH_API_KEY;

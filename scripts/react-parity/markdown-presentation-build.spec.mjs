@@ -277,6 +277,97 @@ function consumerFixture(
   return { root, tarballs, consumer };
 }
 
+const a2uiFixture = (t, changes = {}) => consumerFixture(t, {
+  projects: ['content', 'core', 'react', 'angular', 'a2ui'],
+  root: lock({ ...fixture().packages, ...Object.fromEntries(presentation.presentationSeeds.map(name => ['node_modules/' + name, pkg('1.0.0', name === '@angular/build' ? { dependencies: { a: '^1.0.0' } } : {})])) }),
+  manifests: {
+    content: { dependencies: { a: '^1.0.0' }, peerDependencies: { '@threadplane/a2ui': '^0.3.2' }, peerDependenciesMeta: { '@threadplane/a2ui': { optional: true } } },
+    a2ui: { version: '0.3.2', dependencies: {} },
+    ...changes.manifests,
+  },
+});
+const deriveA2ui = input => derivePresentationConsumer(input.root, input.tarballs, presentation.presentationSeeds, 'a2ui-surfaces');
+test('A2UI surfaces selects exact mixed native roots and five artifacts without changing root bytes', (t) => {
+  const input = a2uiFixture(t);
+  const before = JSON.stringify(input.root);
+  const derived = deriveA2ui(input);
+  assert.deepEqual(presentation.a2uiSurfacesPresentationSeeds, presentation.presentationSeeds);
+  assert.ok(Object.isFrozen(presentation.a2uiSurfacesPresentationSeeds));
+  assert.equal(derived.profile, 'a2ui-surfaces');
+  assert.deepEqual(Object.keys(derived.manifest.dependencies).sort(), [...presentation.presentationSeeds, ...Object.keys(input.tarballs)].sort());
+  assert.equal(derived.graph.find(record => record.name === '@threadplane/content').dependencies['@threadplane/a2ui'], '0.3.2');
+  assertPresentationInstallation(input.consumer, derived, input.tarballs);
+  assert.equal(JSON.stringify(input.root), before);
+  for (const name of presentation.presentationSeeds)
+    assert.throws(() => derivePresentationConsumer(input.root, input.tarballs, presentation.presentationSeeds.filter(seed => seed !== name), 'a2ui-surfaces'), /selected A2UI surfaces seeds required/);
+  assert.throws(() => derivePresentationConsumer(input.root, input.tarballs, [...presentation.presentationSeeds, 'typescript'], 'a2ui-surfaces'), /selected A2UI surfaces seeds required/);
+});
+test('A2UI surfaces fails closed on absent, wrong, mismatched, tampered or leaking artifacts', (t) => {
+  const input = a2uiFixture(t);
+  const derived = deriveA2ui(input);
+  const missing = { ...input.tarballs }; delete missing['@threadplane/a2ui'];
+  assert.throws(() => deriveA2ui({ ...input, tarballs: missing }), /five A2UI surfaces tarballs required/);
+  assert.throws(() => deriveA2ui({ ...input, tarballs: { ...input.tarballs, '@threadplane/a2ui': input.tarballs['@threadplane/core'] } }), /identity|name/);
+  assert.throws(() => deriveA2ui(a2uiFixture(t, { manifests: { a2ui: { version: '0.2.0', dependencies: {} } } })), /does not satisfy/);
+  assert.throws(() => derivePresentationConsumer(input.root, input.tarballs, [], 'a2ui-unknown'), /Unknown presentation profile/);
+  assert.throws(() => derivePresentationConsumer(input.root, input.tarballs, presentation.presentationSeeds, 'markdown'), /four Markdown foundation tarballs required/);
+  const corrupt = structuredClone(derived); corrupt.lock.packages['node_modules/@threadplane/a2ui'].integrity = 'sha512-wrong';
+  assert.throws(() => assertPresentationInstallation(input.consumer, corrupt, input.tarballs), /integrity/);
+  const tarball = input.tarballs['@threadplane/a2ui'].slice(5), bytes = readFileSync(tarball);
+  writeFileSync(tarball, 'tampered');
+  assert.throws(() => assertPresentationInstallation(input.consumer, derived, input.tarballs), /integrity/);
+  writeFileSync(tarball, bytes);
+  writeFileSync(join(input.consumer, 'node_modules/@threadplane/a2ui/index.js'), 'changed');
+  assert.throws(() => assertPresentationInstallation(input.consumer, derived, input.tarballs), /bytes equal/);
+});
+for (const name of ['@langchain/langgraph-sdk', '@ag-ui/client', 'openai', '@anthropic-ai/sdk', '@threadplane/langgraph']) {
+  test(`A2UI surfaces rejects selected and installed backend leakage ${name}`, (t) => {
+    const input = a2uiFixture(t);
+    const derived = deriveA2ui(input);
+    input.root.packages['node_modules/@angular/build'].dependencies = { [name]: '^1.0.0' };
+    input.root.packages['node_modules/' + name] = pkg();
+    assert.throws(() => deriveA2ui(input), /Unexpected (backend SDK|local package)/);
+    const directory = join(input.consumer, 'node_modules', name); mkdirSync(directory, { recursive: true });
+    writeJson(join(directory, 'package.json'), { name, version: '1.0.0' });
+    assert.throws(() => assertPresentationInstallation(input.consumer, derived, input.tarballs), /Unexpected (backend SDK|local package)/);
+  });
+}
+
+test('selected A2UI feature declarations compile strictly only with the selected protocol artifact', (t) => {
+  const input = a2uiFixture(t, { manifests: {
+    content: { dependencies: {}, peerDependencies: { '@threadplane/a2ui': '^0.3.2' }, peerDependenciesMeta: { '@threadplane/a2ui': { optional: true } }, exports: { './a2ui': { types: './index.d.ts', default: './index.js' } } },
+    a2ui: { version: '0.3.2', dependencies: {}, exports: { '.': { types: './index.d.ts', default: './index.js' } } },
+  } });
+  for (const [name, declarations] of Object.entries({
+    content: "import type { A2uiMessage } from '@threadplane/a2ui'; export declare function createA2uiSurfaces(): { apply(message: A2uiMessage): void };",
+    a2ui: "export interface A2uiMessage { surfaceId: string }",
+  })) {
+    const original = join(input.consumer, '..', name, 'package');
+    writeFileSync(join(original, 'index.d.ts'), declarations);
+    writeFileSync(join(input.consumer, 'node_modules/@threadplane', name, 'index.d.ts'), declarations);
+    execFileSync('tar', ['-czf', input.tarballs['@threadplane/' + name].slice(5), '-C', join(original, '..'), 'package']);
+  }
+  const derived = deriveA2ui(input);
+  assertPresentationInstallation(input.consumer, derived, input.tarballs);
+  writeFileSync(join(input.consumer, 'index.ts'), "import { createA2uiSurfaces } from '@threadplane/content/a2ui'; createA2uiSurfaces().apply({ surfaceId: 'selected' });");
+  writeJson(join(input.consumer, 'tsconfig.json'), { compilerOptions: { target: 'ES2022', module: 'NodeNext', moduleResolution: 'NodeNext', strict: true, skipLibCheck: false, noEmit: true, types: [] }, files: ['index.ts'] });
+  const compile = () => execFileSync(process.execPath, [new URL('../../node_modules/typescript/bin/tsc', import.meta.url).pathname, '-p', 'tsconfig.json'], { cwd: input.consumer, encoding: 'utf8', stdio: 'pipe' });
+  compile();
+  rmSync(join(input.consumer, 'node_modules/@threadplane/a2ui'), { recursive: true });
+  assert.throws(compile, error => /TS2307.*@threadplane\/a2ui/.test(error.stdout));
+});
+for (const field of ['version', 'peerDependencies', 'peerDependenciesMeta']) {
+  test(`A2UI selected installation rejects changed ${field} metadata`, (t) => {
+    const input = a2uiFixture(t);
+    const derived = deriveA2ui(input);
+    const path = join(input.consumer, 'node_modules/@threadplane/content/package.json');
+    const manifest = JSON.parse(readFileSync(path, 'utf8'));
+    manifest[field] = field === 'version' ? '9.0.0' : {};
+    writeJson(path, manifest);
+    assert.throws(() => assertPresentationInstallation(input.consumer, derived, input.tarballs), /bytes equal/);
+  });
+}
+
 const reactSeeds = [
   '@json-render/core',
   '@cacheplane/json-stream',
@@ -626,6 +717,33 @@ const angularFoundationFixture = (t, changes = {}) => {
 const deriveAngularFoundation = (input, seeds = angularFoundationSeeds) =>
   derivePresentationConsumer(input.root, input.tarballs, seeds, 'angular-foundation');
 
+for (const [profile, makeFixture, seeds] of [
+  ['markdown', consumerFixture, ['a']],
+  ['react-langgraph', reactFixture, reactSeeds],
+  ['react-ag-ui', agUiReactFixture, agUiReactSeeds],
+  ['react-render', renderReactFixture, renderReactSeeds],
+  ['angular-langgraph', angularFixture, angularSeeds],
+  ['angular-foundation', angularFoundationFixture, angularFoundationSeeds],
+]) {
+  test(`${profile} retains its exact closure when content declares the unselected optional protocol peer`, (t) => {
+    const input = makeFixture(t);
+    const before = derivePresentationConsumer(input.root, input.tarballs, seeds, profile);
+    const original = join(input.consumer, '../content/package');
+    const manifest = JSON.parse(readFileSync(join(original, 'package.json'), 'utf8'));
+    manifest.peerDependencies = { ...manifest.peerDependencies, '@threadplane/a2ui': '^0.3.2' };
+    manifest.peerDependenciesMeta = { '@threadplane/a2ui': { optional: true } };
+    writeJson(join(original, 'package.json'), manifest);
+    writeJson(join(input.consumer, 'node_modules/@threadplane/content/package.json'), manifest);
+    execFileSync('tar', ['-czf', input.tarballs['@threadplane/content'].slice(5), '-C', join(original, '..'), 'package']);
+    const after = derivePresentationConsumer(input.root, input.tarballs, seeds, profile);
+    assert.deepEqual(after.graph, before.graph);
+    assert.deepEqual(Object.keys(after.lock.packages).sort(), Object.keys(before.lock.packages).sort());
+    assert.deepEqual(after.manifest.dependencies, before.manifest.dependencies);
+    assert.equal(after.lock.packages['node_modules/@threadplane/a2ui'], undefined);
+    assertPresentationInstallation(input.consumer, after, input.tarballs);
+  });
+}
+
 test('Angular foundation requires exactly thirteen root seeds and only core, content and Angular tarballs', (t) => {
   const input = angularFoundationFixture(t);
   const before = JSON.stringify(input.root);
@@ -686,6 +804,16 @@ test('Angular foundation rejects missing locked dependencies and changed install
   assert.throws(() => deriveAngularFoundation(input), /Missing locked dependency a/);
   writeFileSync(join(input.consumer, 'node_modules/@threadplane/angular/index.js'), 'tampered');
   assert.throws(() => assertPresentationInstallation(input.consumer, derived, input.tarballs), /bytes equal/);
+});
+
+test('A2UI surfaces installer preserves exact profile and seeds and rejects child lock mutation', (t) => {
+  const input = installerFixture(t, false, a2uiFixture);
+  const options = { seeds: presentation.a2uiSurfacesPresentationSeeds, profile: 'a2ui-surfaces', env: input.env };
+  const proof = presentation.installPresentationConsumer(input.consumer, input.root, input.tarballs, options);
+  assert.equal(proof.profile, 'a2ui-surfaces');
+  assert.deepEqual(proof.seeds, presentation.presentationSeeds);
+  const mutated = installerFixture(t, true, a2uiFixture);
+  assert.throws(() => presentation.installPresentationConsumer(mutated.consumer, mutated.root, mutated.tarballs, { ...options, env: mutated.env }), /lock bytes/);
 });
 
 test('Angular foundation installer preserves its exact profile and rejects child lock mutation', (t) => {
