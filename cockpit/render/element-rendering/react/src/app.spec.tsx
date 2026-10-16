@@ -74,13 +74,20 @@ it('never flashes hidden conditional text at any actual prefix with detail disab
   const { playback } = fixture();
   choose(2);
   fireEvent.click(detail());
+  // Resolve stable regions once; inspect their live contents at every prefix.
+  const outputRegion = output();
+  const sourceRegion = screen.getByRole('region', { name: 'Streaming JSON' });
   const json = ELEMENT_RENDERING_SAMPLES[2].json;
   for (let position = 0; position <= json.length; position++) {
     act(() => playback.seek(position));
+    expect(outputRegion.isConnected).toBe(true);
+    expect(sourceRegion.isConnected).toBe(true);
     expect(
-      output().querySelector('[data-element-key="conditional"]')
+      outputRegion.querySelector('[data-element-key="conditional"]')
     ).toBeNull();
-    expect(source()).toBe(json.slice(0, position));
+    expect(sourceRegion.querySelector('pre')?.textContent).toBe(
+      json.slice(0, position)
+    );
   }
   const before = playback.getSnapshot();
   fireEvent.click(detail());
@@ -95,6 +102,7 @@ it('never flashes hidden conditional text at any actual prefix with detail disab
 it('shows a conditional node only after native visibility metadata is admitted', () => {
   const { playback } = fixture();
   choose(2);
+  const outputRegion = output();
   for (
     let position = 0;
     position <= ELEMENT_RENDERING_SAMPLES[2].json.length;
@@ -102,8 +110,9 @@ it('shows a conditional node only after native visibility metadata is admitted',
   ) {
     act(() => playback.seek(position));
     const conditional = playback.getSnapshot().spec?.elements.conditional;
+    expect(outputRegion.isConnected).toBe(true);
     expect(
-      Boolean(output().querySelector('[data-element-key="conditional"]'))
+      Boolean(outputRegion.querySelector('[data-element-key="conditional"]'))
     ).toBe(Boolean(conditional));
     if (conditional)
       expect(conditional.visible).toEqual({ $state: '/showDetail' });
