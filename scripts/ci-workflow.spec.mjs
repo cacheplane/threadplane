@@ -1861,3 +1861,16 @@ it('runs bounded Theming fixture tests in its actual React fleet lane', async ()
   assert.match(step, /node --test --test-concurrency=1 scripts\/react-cockpit\/chat-theming-fixture.spec.mjs/);
   assert.match(readJobBlock(workflow, 'cockpit-e2e'), /output\/playwright\/chat-theming-react\//);
 });
+
+
+it('requires installed native React readiness immediately after owned render state and after build/browser prerequisites', async () => {
+  const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'library');
+  const name = 'Verify installed native React readiness';
+  const step = readNamedStep(job, name);
+  assert.match(step, /run: node scripts\/react-parity\/verify-react-readiness\.mjs\s*$/);
+  assert.doesNotMatch(step, /if:|continue-on-error|\|\|/);
+  const owner = readNamedStep(job, 'Verify installed owned render state');
+  assert.match(owner, /run: node scripts\/react-parity\/verify-render-state\.mjs/);
+  assert.equal(job.slice(job.indexOf(owner) + owner.length, job.indexOf(step)).trim(), '', 'readiness immediately follows owner proof');
+  for (const prerequisite of ['Build and validate private React foundations', 'Install Chromium for packed runtime consumers', 'npx playwright install --with-deps chromium']) assert.ok(job.indexOf(prerequisite) >= 0 && job.indexOf(prerequisite) < job.indexOf(step));
+});

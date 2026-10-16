@@ -199,9 +199,9 @@ node scripts/react-parity/verify-packages.mjs
 node scripts/react-parity/verify-angular-package.mjs
 ```
 
-The plain packaging check packs core, content and React, validates their thirteen export
-paths, README/license inclusion and production exclusions, then imports and
-type-checks the tarballs outside workspace aliases with `skipLibCheck: false`.
+The plain packaging check packs core, content, React and the legacy A2UI protocol,
+validates the sixteen plain ESM export paths, README/license inclusion and
+production exclusions, then imports and type-checks the tarballs outside workspace aliases with `skipLibCheck: false`.
 Its core-only consumer checks all three core exports and rejects extra dependencies.
 The separate Angular check packs the one Angular APF entry and proves CLI
 compilation/linking with `skipLibCheck: false`. Both frameworks now run installed
@@ -311,11 +311,11 @@ This bounded runtime proof does not establish complete migration parity.
 | T17 | Separate neutral telemetry from framework integration |
 | T18 | Extract Markdown documents and citation projections |
 | T19 | Extract JSON classification and A2UI surface processing |
-| T20 | In progress: private application-owned render state; readiness and form sessions remain open |
+| T20 | In progress: private application-owned render state and bounded React readiness; form sessions and full parity remain open |
 | T21 | Introduce safe SSR dehydration and browser boundaries |
 | T22 | Build React component foundations, styles and overlays |
 | T23 | Implement transcript, composer and basic chat composition |
-| T24 | Implement React render registry, context and element lifecycle |
+| T24 | In progress: private read-only React registry and committed readiness lifecycle; broader context and full element parity remain open |
 | T25 | Implement render actions, host events and tool views |
 | T26 | Implement all Markdown views and citation UI |
 | T27 | Implement A2UI surface and all 18 catalog views |
@@ -357,13 +357,38 @@ profiles each retain their separate four-step foundation build sequence. Run:
 ```sh
 npx nx run-many -t build --projects=core,a2ui,content,react,angular --parallel=1 --skip-nx-cache
 node scripts/react-parity/verify-packages.mjs
-node scripts/react-parity/verify-boundaries.mjs --built
 node scripts/react-parity/verify-render-state.mjs --retain /tmp/new-render-state-proof
 ```
 
 The retained browser proof records actual installed inputs, tarballs, locks,
 compiler/runtime output, snapshots and owner observations, GET-only same-origin
 requests, and lifecycle cleanup. Use a new retain directory for each run. The
-existing standalone A2UI proof remains separate. T20 stays in progress: readiness,
-forms, validation, actions, all catalog views, SSR, public release and full
-legacy/SDK/RFC parity remain open.
+existing standalone A2UI proof remains separate. The global `--built` boundary
+scan above requires all ten fresh package builds; this narrow five-artifact
+quickstart does not satisfy that prerequisite.
+
+## Private React readiness
+
+The distinct [readiness fixture](./react-readiness/README.md) proves bounded
+T20/T24 admission through the existing `react-render` profile, installing exactly
+core, content and React. It compiles the type-only `RenderReadinessEntry` against
+installed declarations and observes the actual owner in development React
+StrictMode. Pending fallback, real-view commit, retained DOM/local state,
+contract replacement, repeated keys and abandoned suspension are checked through
+explicit application controls. See the [render contract](../../libs/react/README.md#read-only-render-trees).
+
+```sh
+npx nx run-many -t build --projects=core,content,react --parallel=1 --skip-nx-cache
+node scripts/react-parity/verify-react-readiness.mjs --retain /tmp/new-react-readiness-proof
+```
+
+Use a new retain directory. The proof records installed dependencies separately
+from build module inputs and emitted executable modules: installed parser packages
+do not imply parser execution. It retains three local artifacts, installed strict
+type/browser evidence, source and lock fingerprints, screenshots and owned
+process/profile/socket cleanup. The original `render-state` proof remains the
+separate mixed React/Angular four-artifact owner proof with its no-SDK contract.
+Readiness does not replace it or establish SDK behavior parity.
+
+T20/T24 stay in progress: form sessions, validation, actions, all catalog views,
+SSR, hydration, public release and full legacy/SDK/RFC parity remain open.
