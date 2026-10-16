@@ -358,7 +358,7 @@ describe('CI workflow', () => {
     assert.equal((job.match(/npx nx run native-conversation-\w+:tooling-test/g) ?? []).length, 1, 'shared tooling runs once');
     for (const framework of ['react', 'angular']) {
       const project = JSON.parse(await readFile(`examples/chat/native/${framework}/project.json`, 'utf8'));
-      assert.equal(project.targets['tooling-test'].options.command, 'node --test examples/chat/native/tooling/*.spec.mjs');
+      assert.equal(project.targets['tooling-test'].options.command, 'node --import tsx --test examples/chat/native/tooling/*.spec.mjs');
     }
   });
   it('requires native example development, production and actual verification CLI after builds and Chromium', async () => {

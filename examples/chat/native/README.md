@@ -137,7 +137,9 @@ node examples/chat/native/tooling/verify.mjs --framework=angular
 ```
 
 The single tooling target runs the shared import-safe Node tests for both
-frameworks without building or installing an app. The test and build targets
+frameworks without building or installing an app. It uses the existing `tsx`
+dependency explicitly to load the authored Vite TypeScript configuration instead
+of relying on Node's default TypeScript stripping. The test and build targets
 prepare isolated consumers from locally
 built candidate tarballs and the root lockfile, using exact `npm ci`
 installation. They compile against those installed declarations and runtimes.
