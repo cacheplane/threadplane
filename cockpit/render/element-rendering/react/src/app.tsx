@@ -1,22 +1,27 @@
-import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
+import type { RenderStateSnapshot } from '@threadplane/content/render-state';
+import { useAgent } from '@threadplane/react';
 import { RenderSpec } from '@threadplane/react/render';
 import type { Playback } from './playback';
 import { localRegistry } from './views';
 
 export function ElementRenderingDemo({
   playback,
+  renderState,
+  onShowDetailChange,
   samples,
   onReady,
 }: {
   readonly playback: Playback;
+  readonly renderState: {
+    readonly getSnapshot: () => RenderStateSnapshot;
+    readonly subscribe: (notify: () => void) => () => void;
+  };
+  readonly onShowDetailChange: (value: boolean) => void;
   readonly samples: readonly string[];
   readonly onReady: () => void;
 }) {
-  const [showDetail, setShowDetail] = useState(true);
-  const renderState = useMemo(
-    () => Object.freeze({ showDetail }),
-    [showDetail]
-  );
+  const renderSnapshot = useAgent(renderState);
   const state = useSyncExternalStore(
     playback.subscribe,
     playback.getSnapshot,
@@ -41,8 +46,8 @@ export function ElementRenderingDemo({
         <label className="visibility-toggle">
           <input
             type="checkbox"
-            checked={showDetail}
-            onChange={(event) => setShowDetail(event.target.checked)}
+            checked={renderSnapshot.showDetail === true}
+            onChange={(event) => onShowDetailChange(event.target.checked)}
           />
           Show detail
         </label>
@@ -113,7 +118,7 @@ export function ElementRenderingDemo({
             <RenderSpec
               spec={state.spec}
               registry={localRegistry}
-              state={renderState}
+              state={renderSnapshot}
               loading={state.position < state.total}
             />
           ) : (
