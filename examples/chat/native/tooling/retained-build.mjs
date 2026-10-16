@@ -127,6 +127,7 @@ function selectedInputs(p, selected) {
       /^(?:package(?:-lock)?\.json|nx\.json|tsconfig[^/]*\.json)$/.test(path) ||
       [
         'libs/core/',
+        'libs/a2ui/',
         'libs/content/',
         `libs/${framework}/`,
         'libs/langgraph/',

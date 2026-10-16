@@ -51,7 +51,7 @@ test('closed framework selection propagates through launcher and foundation comm
   }
   assert.deepEqual(
     foundationCommands('/owned/root', 'angular').map(({ args }) => args[2]),
-    ['core', 'content', 'angular']
+    ['core', 'a2ui', 'content', 'angular']
   );
   assert.throws(() => foundationCommands('/owned/root', 'vue'), /framework/i);
   assert.equal(
@@ -197,7 +197,7 @@ test('preparation disables installed Nx plugin isolation in a real child', () =>
 test('foundation invocations build only the ordered selected libraries', () => {
   assert.deepEqual(
     foundationCommands('/owned/root'),
-    ['core', 'content', 'react'].map((project) => ({
+    ['core', 'a2ui', 'content', 'react'].map((project) => ({
       command: process.execPath,
       args: [
         '/owned/root/node_modules/nx/bin/nx.js',

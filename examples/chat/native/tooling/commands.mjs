@@ -57,16 +57,18 @@ export function preparationEnvironment(env = process.env) {
 }
 
 export function foundationCommands(root, framework) {
-  return ['core', 'content', selectedFramework(framework)].map((project) => ({
-    command: process.execPath,
-    args: [
-      join(root, 'node_modules/nx/bin/nx.js'),
-      'build',
-      project,
-      '--excludeTaskDependencies',
-      '--skip-nx-cache',
-      '--outputStyle=stream',
-    ],
-    cwd: root,
-  }));
+  return ['core', 'a2ui', 'content', selectedFramework(framework)].map(
+    (project) => ({
+      command: process.execPath,
+      args: [
+        join(root, 'node_modules/nx/bin/nx.js'),
+        'build',
+        project,
+        '--excludeTaskDependencies',
+        '--skip-nx-cache',
+        '--outputStyle=stream',
+      ],
+      cwd: root,
+    })
+  );
 }
