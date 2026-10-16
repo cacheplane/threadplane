@@ -7,6 +7,41 @@ import { verifyBoundaries } from './verify-boundaries.mjs';
 
 const finalOptions = { angularTransitions: [], telemetryBrowserTransition: false };
 
+for (const extension of ['ts', 'js', 'd.ts']) {
+  const mode = extension === 'ts' ? 'source' : 'built';
+  const base = `${mode === 'source' ? '' : 'dist/'}libs/content`;
+  for (const dependency of ['@json-render/core', 'marked', '@threadplane/content/a2ui', '@angular/core', '@langchain/langgraph-sdk', 'react']) {
+    for (const form of ['import', 'reexport', 'import-type', 'alias']) {
+      if (extension === 'js' && form === 'import-type') continue;
+      test(`render-state ${extension} rejects transitive ${form} ${dependency}`, t => {
+        const edge = form === 'alias' ? '#hidden' : dependency;
+        const root = fixture(t, {
+          'tsconfig.base.json': JSON.stringify({ compilerOptions: { paths: { '#hidden': ['./libs/content/src/hidden.ts'] } } }),
+          [`${base}/package.json`]: JSON.stringify({ exports: { '.': { import: './src/index.js', types: './src/index.d.ts' }, './render-state': { import: './src/render-state/index.js', types: './src/render-state/index.d.ts' } } }),
+          [`${base}/src/index.${extension}`]: 'export {};',
+          [`${base}/src/render-state/index.${extension}`]: "export * from '../bridge.js';",
+          [`${base}/src/bridge.${extension}`]: form === 'import-type' ? `export type Value = import('${edge}').Value;` : form === 'import' ? `import '${edge}';` : `export * from '${mode === 'built' && form === 'alias' ? './hidden.js' : edge}';`,
+          [`${base}/src/hidden.${extension}`]: `export * from '${dependency}';`,
+          [`${base}/src/a2ui/index.${extension}`]: 'export {};',
+        });
+        const errors = verifyBoundaries({ root, mode, projects: ['content'], ...finalOptions });
+        assert.ok(errors.some(error => /neutral runtime forbidden dependency|A2UI dependency reachable/.test(error) && error.includes(dependency)), errors.join('\n'));
+      });
+    }
+  }
+  for (const expression of ['import(target)', 'require(target)', 'import(']) {
+    test(`render-state ${extension} fails closed on ${expression}`, t => {
+      const root = fixture(t, {
+        [`${base}/package.json`]: JSON.stringify({ exports: { '.': { import: './src/index.js', types: './src/index.d.ts' }, './render-state': { import: './src/render-state/index.js', types: './src/render-state/index.d.ts' } } }),
+        [`${base}/src/index.${extension}`]: 'export {};',
+        [`${base}/src/render-state/index.${extension}`]: "export * from '../bridge.js';",
+        [`${base}/src/bridge.${extension}`]: `const target = 'marked'; ${expression};`,
+      });
+      assert.ok(verifyBoundaries({ root, mode, projects: ['content'], ...finalOptions }).some(error => /cannot analyze guarded dependencies/.test(error)));
+    });
+  }
+}
+
 for (const extension of ['ts', 'js']) {
   test(`guarded A2UI ${extension} entry rejects unanalyzable indirect imports`, (t) => {
     const mode = extension === 'ts' ? 'source' : 'built';

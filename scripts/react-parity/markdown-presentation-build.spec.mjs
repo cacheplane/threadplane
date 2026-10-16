@@ -287,6 +287,40 @@ const a2uiFixture = (t, changes = {}) => consumerFixture(t, {
   },
 });
 const deriveA2ui = input => derivePresentationConsumer(input.root, input.tarballs, presentation.presentationSeeds, 'a2ui-surfaces');
+const renderStateSeeds = [...presentation.presentationSeeds];
+const renderStateFixture = (t) => consumerFixture(t, {
+  root: lock({ ...fixture().packages, ...Object.fromEntries(renderStateSeeds.map(name => ['node_modules/' + name, pkg('1.0.0', name === '@angular/build' ? {dependencies:{a:'^1.0.0'}} : {})])) }),
+});
+test('render-state has a separate exact mixed four-artifact profile without backend SDK or optional protocol', (t) => {
+  const input = renderStateFixture(t), before = JSON.stringify(input.root);
+  assert.deepEqual(presentation.renderStatePresentationSeeds, renderStateSeeds);
+  assert.ok(Object.isFrozen(presentation.renderStatePresentationSeeds));
+  const derived = derivePresentationConsumer(input.root, input.tarballs, renderStateSeeds, 'render-state');
+  assert.equal(derived.profile, 'render-state');
+  assert.equal(Object.keys(derived.artifacts).length, 4);
+  assert.equal(derived.lock.packages['node_modules/@threadplane/a2ui'], undefined);
+  assert.ok(derived.lock.packages['node_modules/@json-render/core']);
+  assertPresentationInstallation(input.consumer, derived, input.tarballs);
+  assert.equal(JSON.stringify(input.root), before);
+  for (const name of Object.keys(input.tarballs)) {
+    const missing = {...input.tarballs}; delete missing[name];
+    assert.throws(() => derivePresentationConsumer(input.root, missing, renderStateSeeds, 'render-state'), /Exactly four render-state/);
+  }
+  for (const seeds of [renderStateSeeds.slice(1), [...renderStateSeeds, renderStateSeeds[0]]])
+    assert.throws(() => derivePresentationConsumer(input.root, input.tarballs, seeds, 'render-state'), /Exactly eighteen selected render-state seeds/);
+});
+for (const name of ['@langchain/langgraph-sdk', '@ag-ui/client', '@threadplane/a2ui', 'openai'])
+  test('render-state rejects selected and installed unrelated package ' + name, (t) => {
+    const input = renderStateFixture(t);
+    const derived = derivePresentationConsumer(input.root, input.tarballs, renderStateSeeds, 'render-state');
+    const path = 'node_modules/' + name;
+    input.root.packages[path] = pkg();
+    input.root.packages['node_modules/@angular/build'].dependencies = {[name]: '*'};
+    assert.throws(() => derivePresentationConsumer(input.root, input.tarballs, renderStateSeeds, 'render-state'), /Unexpected/);
+    mkdirSync(join(input.consumer, path), {recursive: true});
+    writeJson(join(input.consumer, path, 'package.json'), {name,version:'1.0.0'});
+    assert.throws(() => assertPresentationInstallation(input.consumer, derived, input.tarballs), /Unexpected/);
+  });
 test('A2UI surfaces selects exact mixed native roots and five artifacts without changing root bytes', (t) => {
   const input = a2uiFixture(t);
   const before = JSON.stringify(input.root);

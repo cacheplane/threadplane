@@ -15264,6 +15264,105 @@
       "treatment": "shared",
       "status": "in-progress",
       "reason": "Bounded private T19 accumulator foundation with owned immutable raw surfaces and borrowed generic observation; parsing, readiness, catalog/forms/actions, public registration and full T19/T20/T27 remain open."
+    },
+    {
+      "id": "entry:libs/content/src/render-state/index.ts",
+      "taskIds": [
+        "T20"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private application-owned render-state data, paths, atomic writes and lifetime with borrowed observation; readiness, form sessions, actions, catalog views, SSR, public release and full legacy/SDK/RFC parity remain open."
+    },
+    {
+      "id": "export:libs/content/src/render-state/index.ts#RenderState",
+      "taskIds": [
+        "T20"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private application-owned render-state data, paths, atomic writes and lifetime with borrowed observation; readiness, form sessions, actions, catalog views, SSR, public release and full legacy/SDK/RFC parity remain open."
+    },
+    {
+      "id": "export:libs/content/src/render-state/index.ts#RenderStateChange",
+      "taskIds": [
+        "T20"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private application-owned render-state data, paths, atomic writes and lifetime with borrowed observation; readiness, form sessions, actions, catalog views, SSR, public release and full legacy/SDK/RFC parity remain open."
+    },
+    {
+      "id": "export:libs/content/src/render-state/index.ts#RenderStateSnapshot",
+      "taskIds": [
+        "T20"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private application-owned render-state data, paths, atomic writes and lifetime with borrowed observation; readiness, form sessions, actions, catalog views, SSR, public release and full legacy/SDK/RFC parity remain open."
+    },
+    {
+      "id": "export:libs/content/src/render-state/index.ts#RenderStateValue",
+      "taskIds": [
+        "T20"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private application-owned render-state data, paths, atomic writes and lifetime with borrowed observation; readiness, form sessions, actions, catalog views, SSR, public release and full legacy/SDK/RFC parity remain open."
+    },
+    {
+      "id": "export:libs/content/src/render-state/index.ts#createRenderState",
+      "taskIds": [
+        "T20"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private application-owned render-state data, paths, atomic writes and lifetime with borrowed observation; readiness, form sessions, actions, catalog views, SSR, public release and full legacy/SDK/RFC parity remain open."
+    },
+    {
+      "id": "source:libs/content/src/render-state/create-render-state.ts",
+      "taskIds": [
+        "T20"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private application-owned render-state data, paths, atomic writes and lifetime with borrowed observation; readiness, form sessions, actions, catalog views, SSR, public release and full legacy/SDK/RFC parity remain open."
+    },
+    {
+      "id": "source:libs/content/src/render-state/index.ts",
+      "taskIds": [
+        "T20"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private application-owned render-state data, paths, atomic writes and lifetime with borrowed observation; readiness, form sessions, actions, catalog views, SSR, public release and full legacy/SDK/RFC parity remain open."
+    },
+    {
+      "id": "source:libs/content/src/render-state/owned-value.ts",
+      "taskIds": [
+        "T20"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private application-owned render-state data, paths, atomic writes and lifetime with borrowed observation; readiness, form sessions, actions, catalog views, SSR, public release and full legacy/SDK/RFC parity remain open."
+    },
+    {
+      "id": "source:libs/content/src/render-state/pointer.ts",
+      "taskIds": [
+        "T20"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private application-owned render-state data, paths, atomic writes and lifetime with borrowed observation; readiness, form sessions, actions, catalog views, SSR, public release and full legacy/SDK/RFC parity remain open."
+    },
+    {
+      "id": "source:libs/content/src/render-state/types.ts",
+      "taskIds": [
+        "T20"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private application-owned render-state data, paths, atomic writes and lifetime with borrowed observation; readiness, form sessions, actions, catalog views, SSR, public release and full legacy/SDK/RFC parity remain open."
     }
   ]
 }

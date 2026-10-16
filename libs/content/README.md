@@ -97,6 +97,79 @@ infer message identity, deduplicate deliveries, expose renderer readiness, or
 provide catalog views, forms, validation, actions or publishing. Full legacy
 renderer parity and SSR remain separate work.
 
+`/render-state` exports the runtime factory `createRenderState` and four readonly
+types: `RenderState`, `RenderStateValue`, `RenderStateSnapshot` and
+`RenderStateChange`. This optional private entry owns application state; its
+runtime graph has no framework, backend SDK, parser or protocol dependency.
+The package root and its existing dependencies are unchanged.
+
+```ts
+import { createRenderState } from '@threadplane/content/render-state';
+
+// Create outside rendering, at the application's chosen lifetime boundary.
+const state = createRenderState({ trip: { destination: 'Paris' }, selected: false });
+const release = state.subscribe(() => console.log(state.getSnapshot()));
+state.set('/selected', true);
+state.update({ '/trip/destination': 'Lisbon', '/trip/days': 3 });
+// Views borrow state through useAgent(state) or observeAgent(state).
+release();
+state.dispose(); // The application disposes it when that lifetime ends.
+```
+
+The initial state and root replacements must be ordinary or null-prototype
+records; the default is `{}`. Nested values can be finite numbers, strings,
+booleans, null, undefined, plain records and standard arrays. Capture copies own
+enumerable string data into recursively frozen null-prototype records and frozen
+arrays. Sparse slots and array-growth gaps become own undefined entries.
+Non-enumerable record data is ignored. Accessors are rejected without evaluation,
+as are symbol keys, cycles, classes, functions, nonfinite numbers and nonstandard
+array properties/prototypes. Repeated noncyclic aliases are accepted and captured
+independently. Caller mutations cannot alter current or retained snapshots.
+Hostile Proxy behavior is outside this plain-data boundary.
+
+`getSnapshot()` returns the owned record directly. `get(path)` reads only own
+properties. Both `''` and `'/'` address the root; other paths must start with `/`.
+Segments decode `~0` to `~` and `~1` to `/`; malformed escapes throw. The root
+slash alias excludes addressing an empty root member. Missing valid paths read
+undefined. Existing arrays accept only canonical nonnegative indices below
+2^32 - 1; negative/noncanonical indices, `length` and other array properties
+throw, while reads beyond the current length return undefined. Record keys,
+including numeric and prototype-named keys, remain own data. Deep writes through
+missing or scalar branches create records, including numeric branches; they do
+not infer arrays. Existing arrays retain their array behavior.
+
+Writes validate input before considering a no-op. The original incoming value
+is compared with the current owned value using strict equality. Equal primitives,
+an exact existing snapshot branch, or undefined at an absent path preserve the
+snapshot and `lastChange()` identity and send no notification. A new equivalent
+object is an accepted write. Reusing a mutated caller object remains a write
+because accepted values were captured separately. Unchanged owned branches retain
+identity; there is no schema inference or validation of application fields.
+
+`update(updates)` validates the entire plain updates record, paths and values
+before accepting anything. Own enumerable paths run in observed enumeration order
+against a private working state, including overlapping paths and root aliases.
+Array traversal is checked against that ordered working state. Any later error
+discards the whole batch. An accepted batch commits once and publishes one
+invalidation; `lastChange()` records the final applied original path and its owned
+written value. Empty/all-no-op batches preserve metadata. A batch that applies
+writes and returns to equivalent data still publishes.
+
+Subscriptions have independent idempotent releases, including duplicate callbacks,
+and do not notify initially. Snapshot and change metadata commit before callbacks.
+Observer errors are contained; reentrant writes execute synchronously and queue
+invalidation passes without recursive callback delivery. Later observers can read
+a newer accepted snapshot. Removed observers are skipped and disposal clears
+pending delivery. `dispose()` is terminal and idempotent: it releases listeners,
+retains readable snapshot/get/change results, makes new subscriptions inert and
+makes later `set`/`update` commands throw. Mounting, StrictMode replay, unmounting,
+subscription release and owner replacement issue no commands or disposal.
+
+This is a bounded T20 state foundation. Readiness, form sessions, validation,
+actions, catalog rendering, SSR and public release remain open. The installed
+SDK StateStore assignment proves structural compatibility only; these documented
+path/data boundaries do not establish complete SDK, legacy or RFC parity.
+
 `/messages` exports `createMessageContent`, which projects immutable agent
 snapshots into cached transcript rows. Each row owns answer `markdown` and, when
 the backend supplies a nonempty `Message.reasoning`, a separate optional

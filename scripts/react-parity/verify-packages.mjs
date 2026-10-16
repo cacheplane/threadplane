@@ -228,6 +228,83 @@ function verifyPlainExports(root, consumer, projects) {
   return specifiers.length;
 }
 
+export function lockedRenderStateSdk(lock) {
+  const sdk = lock.packages?.['node_modules/@json-render/core'];
+  const zod = lock.packages?.['node_modules/@json-render/core/node_modules/zod'] ?? lock.packages?.['node_modules/zod'];
+  if (!sdk?.version || !zod?.version) throw new Error('Missing root lock version for render-state SDK compile graph');
+  return { '@json-render/core': sdk.version, zod: zod.version };
+}
+
+export function verifyRenderStateDeclarations(consumer) {
+  // A mandatory direct import prevents a removed manifest subpath from silently
+  // disappearing from the general manifest-driven enumeration.
+  const probe = join(consumer, 'render-state-exports.ts');
+  writeFileSync(probe, "import * as owner from '@threadplane/content/render-state';\nexport type InstalledOwner = typeof owner;\n");
+  const options = { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.NodeNext, moduleResolution: ts.ModuleResolutionKind.NodeNext, strict: true, skipLibCheck: false, noEmit: true, types: [], lib: ['lib.es2022.d.ts', 'lib.dom.d.ts'] };
+  const program = ts.createProgram([probe], options);
+  const diagnostics = ts.getPreEmitDiagnostics(program);
+  if (diagnostics.length) throw new Error(ts.formatDiagnosticsWithColorAndContext(diagnostics, { getCanonicalFileName: p => p, getCurrentDirectory: () => consumer, getNewLine: () => '\n' }));
+  const checker = program.getTypeChecker();
+  const module = checker.getSymbolAtLocation(program.getSourceFile(probe).statements[0].moduleSpecifier);
+  const declaration = module?.declarations?.find(node => ts.isSourceFile(node) && node.isDeclarationFile)?.fileName;
+  if (!declaration || !declaration.replaceAll('\\', '/').includes('/node_modules/@threadplane/content/')) throw new Error('Cannot resolve installed render-state declarations');
+  const runtime = [], types = [];
+  const exports = checker.getExportsOfModule(module);
+  for (const exported of exports) {
+    const symbol = exported.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(exported) : exported;
+    if (symbol.flags & ts.SymbolFlags.Value) runtime.push(exported.name);
+    if (symbol.flags & ts.SymbolFlags.Type) types.push(exported.name);
+  }
+  runtime.sort(); types.sort();
+  const expectedTypes = ['RenderState', 'RenderStateChange', 'RenderStateSnapshot', 'RenderStateValue'];
+  const names = exports.map(symbol => symbol.name).sort();
+  if (JSON.stringify(names) !== JSON.stringify([...expectedTypes, 'createRenderState'].sort()) || JSON.stringify(runtime) !== JSON.stringify(['createRenderState']) || JSON.stringify(types) !== JSON.stringify(expectedTypes)) throw new Error(`render-state has unexpected declaration exports: ${JSON.stringify({ names, runtime, types })}`);
+  return { declaration, runtime, types, strict: true, skipLibCheck: false, files: program.getSourceFiles().map(source => source.fileName) };
+}
+
+export function assertRenderStateInputs(inputs) {
+  const paths = Object.keys(inputs ?? {}).map(path => path.replaceAll('\\', '/'));
+  for (const name of ['index', 'create-render-state', 'pointer', 'owned-value']) {
+    if (!paths.some(path => path.endsWith(`/node_modules/@threadplane/content/src/render-state/${name}.js`) || path === `node_modules/@threadplane/content/src/render-state/${name}.js`)) throw new Error(`Missing installed emitted render-state owner implementation ${name}`);
+  }
+  const forbidden = paths.filter(path => path !== 'render-state-owner.mjs' && !/^(?:.*\/)?node_modules\/@threadplane\/content\/src\/render-state\/[^/]+\.js$/.test(path));
+  if (forbidden.length) throw new Error(`render-state owner has forbidden inputs: ${forbidden.join(', ')}`);
+}
+
+function verifyInstalledRenderState(root, ownerConsumer, plain, rootLock) {
+  const ownerLock = JSON.parse(readFileSync(join(ownerConsumer, 'package-lock.json'), 'utf8'));
+  const optional = Object.keys(ownerLock.packages).filter(path => /node_modules\/(?:@threadplane\/a2ui|@json-render\/|@angular\/|react(?:-dom)?(?:\/|$))/.test(path));
+  if (optional.length) throw new Error(`Owner-only install includes optional frameworks/SDK/protocol: ${optional}`);
+  cpSync(join(root, 'fixtures/react-parity/render-state/installed-runtime.mjs'), join(ownerConsumer, 'render-state-owner.mjs'));
+  const runtime = runConsumer(process.execPath, ['render-state-owner.mjs'], ownerConsumer);
+  console.log(runtime);
+  const bundle = buildSync({ absWorkingDir: ownerConsumer, entryPoints: ['render-state-owner.mjs'], bundle: true, platform: 'browser', format: 'esm', write: false, metafile: true });
+  assertRenderStateInputs(bundle.metafile.inputs);
+  writeFileSync(join(ownerConsumer, 'render-state-owner.bundle.mjs'), bundle.outputFiles[0].contents);
+  const bundledRuntime = runConsumer(process.execPath, ['render-state-owner.bundle.mjs'], ownerConsumer);
+  if (bundledRuntime !== runtime) throw new Error('Bundled owner runtime differs from installed module probe');
+  // Root footprint remains independent of the optional owner entry.
+  writeFileSync(join(ownerConsumer, 'content-root.mjs'), "import * as content from '@threadplane/content'; console.log(Object.keys(content));\n");
+  const contentRoot = buildSync({ absWorkingDir: ownerConsumer, entryPoints: ['content-root.mjs'], bundle: true, platform: 'browser', format: 'esm', write: false, metafile: true });
+  if (Object.keys(contentRoot.metafile.inputs).some(path => /\/render-state\//.test(path))) throw new Error('Content root includes optional render-state owner');
+  const declarations = verifyRenderStateDeclarations(plain);
+  cpSync(join(root, 'fixtures/react-parity/render-state/installed-types.ts'), join(plain, 'render-state-types.ts'));
+  writeFileSync(join(plain, 'tsconfig.render-state.json'), JSON.stringify({ compilerOptions: { target: 'ES2022', module: 'NodeNext', moduleResolution: 'NodeNext', lib: ['ES2022', 'DOM'], types: [], strict: true, skipLibCheck: false, noEmit: true }, files: ['render-state-types.ts'] }));
+  runConsumer(process.execPath, [join(plain, 'node_modules/typescript/bin/tsc'), '-p', 'tsconfig.render-state.json'], plain);
+  const sdkResolution = ts.resolveModuleName('@json-render/core', join(plain, 'render-state-types.ts'), { module: ts.ModuleKind.NodeNext, moduleResolution: ts.ModuleResolutionKind.NodeNext }, ts.sys).resolvedModule;
+  if (!sdkResolution?.resolvedFileName.includes(join(plain, 'node_modules/@json-render/core/'))) throw new Error('SDK compatibility must resolve the installed SDK declaration');
+  const installedSdk = JSON.parse(readFileSync(join(plain, 'node_modules/@json-render/core/package.json'), 'utf8'));
+  if (installedSdk.version !== lockedRenderStateSdk(rootLock)['@json-render/core']) throw new Error('Installed SDK differs from the root lock');
+  const sdkConfig = ts.readConfigFile(join(plain, 'tsconfig.render-state.json'), ts.sys.readFile);
+  const sdkParsed = ts.parseJsonConfigFileContent(sdkConfig.config, ts.sys, plain);
+  const sdkProgram = ts.createProgram(sdkParsed.fileNames, sdkParsed.options);
+  const sdkDiagnostics = ts.getPreEmitDiagnostics(sdkProgram);
+  if (sdkDiagnostics.length) throw new Error(ts.formatDiagnosticsWithColorAndContext(sdkDiagnostics, { getCanonicalFileName: p => p, getCurrentDirectory: () => plain, getNewLine: () => '\n' }));
+  const evidence = { declarations, sdk: { version: installedSdk.version, resolution: sdkResolution, strict: true, skipLibCheck: false, files: sdkProgram.getSourceFiles().map(source => source.fileName) }, runtime, bundledRuntime, ownerLock, bundle: { metafile: bundle.metafile, outputs: bundle.outputFiles.map(file => ({ path: file.path, bytes: file.contents.length })) }, contentRoot: { metafile: contentRoot.metafile, bytes: contentRoot.outputFiles[0].contents.length } };
+  writeFileSync(join(ownerConsumer, 'render-state-proof.json'), JSON.stringify(evidence, null, 2));
+  console.log(`Installed render-state proof: ${JSON.stringify(evidence)}`);
+}
+
 export function assertSupportedExports(project, entry) {
   const expected =
     {
@@ -254,6 +331,7 @@ export function assertSupportedExports(project, entry) {
       'react/render': ['RenderSpec'],
       'content/json': ['createJson'],
       'content/a2ui': ['createA2uiSurfaces'],
+      'content/render-state': ['createRenderState'],
     }[project] ?? [];
   // React entries may export forwardRef/memo components, which are $$typeof objects.
   const supported = (value) =>
@@ -266,13 +344,13 @@ export function assertSupportedExports(project, entry) {
     if (!supported(entry[name]))
       throw new Error(`${project} missing supported contract ${name}`);
   if (
-    ['react/debug', 'react/chat', 'react/markdown', 'react/render', 'content/json', 'content/a2ui'].includes(project) &&
+    ['react/debug', 'react/chat', 'react/markdown', 'react/render', 'content/json', 'content/a2ui', 'content/render-state'].includes(project) &&
     Object.keys(entry).some((name) => !expected.includes(name))
   )
     throw new Error(`${project} has unexpected exports`);
 }
 
-export async function verifyPackedConsumers(root = process.cwd()) {
+export async function verifyPackedConsumers(root = process.cwd(), { retain = false } = {}) {
   root = resolve(root);
   const temporary = mkdtempSync(join(tmpdir(), 'threadplane-consumer-'));
   try {
@@ -286,7 +364,15 @@ export async function verifyPackedConsumers(root = process.cwd()) {
     runConsumer(process.execPath, [join(root, 'node_modules/typescript/bin/tsc'), '-p', 'tsconfig.contracts.json'], core);
     const plain = join(temporary, 'plain-consumer');
     mkdirSync(plain);
-    installConsumer(plain, lockedReactManifest(JSON.parse(readFileSync(join(root, 'package-lock.json'), 'utf8'))), tarballs, 'plain');
+    const rootLock = JSON.parse(readFileSync(join(root, 'package-lock.json'), 'utf8'));
+    const plainManifest = lockedReactManifest(rootLock);
+    plainManifest.devDependencies = { ...plainManifest.devDependencies, ...lockedRenderStateSdk(rootLock) };
+    installConsumer(plain, plainManifest, tarballs, 'plain');
+    const owner = join(temporary, 'render-state-consumer');
+    mkdirSync(owner);
+    // Keep protocol and SDK selection out of the owner-only graph.
+    installConsumer(owner, { private: true, type: 'module' }, Object.fromEntries(['core', 'content'].map(project => [`@threadplane/${project}`, tarballs[`@threadplane/${project}`]])), 'plain');
+    verifyInstalledRenderState(root, owner, plain, rootLock);
     const installedLock = JSON.parse(readFileSync(join(plain, 'package-lock.json'), 'utf8'));
     console.log(`Installed local candidate resolutions: ${JSON.stringify(Object.fromEntries(Object.entries(installedLock.packages).filter(([path]) => path.includes('node_modules/@threadplane/')).map(([path, entry]) => [path, { version: entry.version, resolved: entry.resolved, integrity: entry.integrity }])) )}`);
     const count = verifyPlainExports(root, plain, Object.keys(tarballs).map((name) => name.slice('@threadplane/'.length)));
@@ -332,6 +418,9 @@ selection.rowKey = 'other';
     console.log(runConsumer(process.execPath, [join(plain, 'node_modules/vite/bin/vite.js'), 'build'], plain));
     await runRuntimeScenarios(join(plain, 'dist'), 'React');
     console.log(`Verified ${Object.keys(tarballs).length} selected plain tarballs, ${count} ESM/type exports, and ${coreCount} isolated core exports with skipLibCheck:false, precise heterogeneous tool contracts, and a production-built installed React consumer.`);
-  } finally { rmSync(temporary, { recursive: true, force: true }); }
+  } finally {
+    if (retain) console.log(`Retained packed consumer evidence: ${temporary}`);
+    else rmSync(temporary, { recursive: true, force: true });
+  }
 }
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await verifyPackedConsumers();
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await verifyPackedConsumers(process.cwd(), { retain: process.argv.includes('--retain') });

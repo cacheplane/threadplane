@@ -311,7 +311,7 @@ This bounded runtime proof does not establish complete migration parity.
 | T17 | Separate neutral telemetry from framework integration |
 | T18 | Extract Markdown documents and citation projections |
 | T19 | Extract JSON classification and A2UI surface processing |
-| T20 | Extract render state, readiness and form-session helpers |
+| T20 | In progress: private application-owned render state; readiness and form sessions remain open |
 | T21 | Introduce safe SSR dehydration and browser boundaries |
 | T22 | Build React component foundations, styles and overlays |
 | T23 | Implement transcript, composer and basic chat composition |
@@ -331,3 +331,39 @@ This bounded runtime proof does not establish complete migration parity.
 | T37 | Prepare prerelease, publishing, provenance and rollback |
 | T38 | Measure and optimize streaming, bundles and retention |
 | T39 | Complete accessibility, parity audit and maintenance handoff |
+
+## Private application-owned render state
+
+The optional `@threadplane/content/render-state` entry exports `createRenderState`
+and four readonly types. Its bounded T20 owner captures immutable plain data,
+uses strict own-data paths, preserves reference no-ops, commits ordered batches
+atomically and retains readable state after terminal disposal. See
+[the content contract](../../libs/content/README.md) for exact data, path, reference,
+notification and lifetime semantics and an application-owned example.
+
+The real installed fixture in `render-state/` borrows the same owner with React
+`useAgent` under development StrictMode and Angular `observeAgent`. Application
+controls prove external writes while either view is absent, remount identity,
+owner replacement, observer release without commands/disposal, and explicit
+application disposal. The owner-only bundle excludes framework, backend SDK,
+parser and protocol inputs; the mixed presentation installs actual package
+artifacts and framework runtimes. SDK assignment is a strict installed type proof
+of structural compatibility. It is not complete SDK behavior parity.
+
+Build the actual core, protocol, content and React artifacts, then the Angular
+artifact required by the mixed browser fixture. The native React and Angular
+profiles each retain their separate four-step foundation build sequence. Run:
+
+```sh
+npx nx run-many -t build --projects=core,a2ui,content,react,angular --parallel=1 --skip-nx-cache
+node scripts/react-parity/verify-packages.mjs
+node scripts/react-parity/verify-boundaries.mjs --built
+node scripts/react-parity/verify-render-state.mjs --retain /tmp/new-render-state-proof
+```
+
+The retained browser proof records actual installed inputs, tarballs, locks,
+compiler/runtime output, snapshots and owner observations, GET-only same-origin
+requests, and lifecycle cleanup. Use a new retain directory for each run. The
+existing standalone A2UI proof remains separate. T20 stays in progress: readiness,
+forms, validation, actions, all catalog views, SSR, public release and full
+legacy/SDK/RFC parity remain open.

@@ -351,6 +351,10 @@ export const presentationSeeds = [
 ];
 // The mixed native build uses the same exact framework/build roots as Markdown.
 export const a2uiSurfacesPresentationSeeds = Object.freeze([...presentationSeeds]);
+// Mixed data-only borrowers need both frameworks/build tooling. The installed
+// React manifest still brings its required SDK dependency into the lock, but
+// neither SDK nor content parsers may enter this presentation's runtime graph.
+export const renderStatePresentationSeeds = Object.freeze([...presentationSeeds]);
 export const reactLanggraphPresentationSeeds = [
   '@json-render/core',
   '@cacheplane/json-stream',
@@ -401,6 +405,7 @@ function presentationLocals(profile) {
     [
       'markdown',
       'a2ui-surfaces',
+      'render-state',
       'react-langgraph',
       'react-native-a2ui-langgraph',
       'angular-langgraph',
@@ -410,7 +415,7 @@ function presentationLocals(profile) {
     ].includes(profile),
     `Unknown presentation profile: ${profile}`
   );
-  if (profile === 'markdown') return localNames;
+  if (profile === 'markdown' || profile === 'render-state') return localNames;
   if (profile === 'a2ui-surfaces') return [...localNames, '@threadplane/a2ui'];
   if (profile === 'react-native-a2ui-langgraph')
     return ['core', 'content', 'a2ui', 'react', 'langgraph'].map(
@@ -465,7 +470,7 @@ function assertPresentationPackages(
       ['langchain', '@mastra/client-js'].includes(name);
     assert.ok(
       (!backend ||
-        (profile !== 'markdown' && profile !== 'a2ui-surfaces' && profile !== 'react-render' && profile !== 'angular-foundation' &&
+        (profile !== 'markdown' && profile !== 'a2ui-surfaces' && profile !== 'render-state' && profile !== 'react-render' && profile !== 'angular-foundation' &&
           name.startsWith(
             profile === 'react-ag-ui' ? '@ag-ui/' : '@langchain/'
           ) &&
@@ -599,6 +604,8 @@ export function derivePresentationConsumer(
       ? 'Exactly four Markdown foundation tarballs required'
       : profile === 'a2ui-surfaces'
       ? 'Exactly five A2UI surfaces tarballs required'
+      : profile === 'render-state'
+      ? 'Exactly four render-state tarballs required'
       : profile === 'react-native-a2ui-langgraph'
       ? 'Exactly five native React A2UI LangGraph tarballs required'
       : profile === 'react-render'
@@ -621,6 +628,8 @@ export function derivePresentationConsumer(
     const selectedSeeds =
       profile === 'a2ui-surfaces'
         ? a2uiSurfacesPresentationSeeds
+        : profile === 'render-state'
+        ? renderStatePresentationSeeds
         : profile === 'react-render'
         ? reactRenderPresentationSeeds
         : profile === 'angular-foundation'
@@ -630,12 +639,12 @@ export function derivePresentationConsumer(
         : react
         ? reactLanggraphPresentationSeeds
         : angularLanggraphPresentationSeeds;
-    const framework = profile === 'a2ui-surfaces' ? 'A2UI surfaces' : react ? 'React' : profile === 'angular-foundation' ? 'Angular foundation' : 'Angular';
+    const framework = profile === 'a2ui-surfaces' ? 'A2UI surfaces' : profile === 'render-state' ? 'render-state' : react ? 'React' : profile === 'angular-foundation' ? 'Angular foundation' : 'Angular';
     assertPresentationPackages(
       selected,
       profile,
       locals,
-      profile === 'a2ui-surfaces' || profile === 'react-render' || profile === 'angular-foundation' ? {} : selectPresentationLock(
+      profile === 'a2ui-surfaces' || profile === 'render-state' || profile === 'react-render' || profile === 'angular-foundation' ? {} : selectPresentationLock(
         rootLock,
         [
           profile === 'react-ag-ui'
@@ -654,7 +663,7 @@ export function derivePresentationConsumer(
       [...seeds].sort(),
       [...selectedSeeds].sort(),
       `Exactly ${
-        profile === 'a2ui-surfaces' ? 'eighteen' : react ? 'eleven' : profile === 'angular-foundation' ? 'thirteen' : 'fourteen'
+        profile === 'a2ui-surfaces' || profile === 'render-state' ? 'eighteen' : react ? 'eleven' : profile === 'angular-foundation' ? 'thirteen' : 'fourteen'
       } selected ${framework} seeds required`
     );
   }
@@ -791,7 +800,7 @@ export function assertPresentationInstallation(consumer, derived, tarballs) {
     actual.packages,
     profile,
     locals,
-    profile !== 'markdown' && profile !== 'a2ui-surfaces' && profile !== 'react-render' && profile !== 'angular-foundation'
+    profile !== 'markdown' && profile !== 'a2ui-surfaces' && profile !== 'render-state' && profile !== 'react-render' && profile !== 'angular-foundation'
       ? selectPresentationLock(
           lock,
           [
