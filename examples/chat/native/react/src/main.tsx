@@ -6,7 +6,7 @@ import {
   bindBrowserLifetime,
   getBrowserConfiguration,
 } from '../../shared/browser';
-import { createApplication } from '../../shared/application';
+import { createReactApplication } from './application';
 import { createThreadDirectory } from '../../shared/directory';
 import { browserHistory } from '../../shared/route';
 import '../../shared/tokens.css';
@@ -16,7 +16,7 @@ const root = document.getElementById('root');
 if (!root) throw new Error('Application root is missing');
 const browser = getBrowserConfiguration(configuration);
 const application = browser.configured
-  ? createApplication({
+  ? createReactApplication({
       assistantId: browser.assistantId,
       apiUrl: browser.apiUrl,
       directory: createThreadDirectory({

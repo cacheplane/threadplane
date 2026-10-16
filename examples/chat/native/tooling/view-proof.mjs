@@ -18,15 +18,24 @@ import {
 import { preparationEnvironment, selectedFramework } from './commands.mjs';
 import { angularInputHashes, angularStatsInputs } from './angular-build.mjs';
 
-function selection(framework) {
+function selection(framework, profile) {
   selectedFramework(framework);
   assert.ok(framework, 'View framework required');
   const angular = framework === 'angular';
+  const expectedProfile = angular
+    ? 'angular-langgraph'
+    : 'react-native-a2ui-langgraph';
+  assert.equal(
+    profile,
+    expectedProfile,
+    'Explicit native view profile required'
+  );
   const tools = angular
     ? ['typescript', '@angular/compiler-cli', '@angular/cli', '@angular/build']
     : ['typescript', 'vite'];
   return {
     framework,
+    profile,
     angular,
     tools,
     entry: 'view-proof/entry.' + (angular ? 'ts' : 'tsx'),
@@ -51,11 +60,14 @@ function selection(framework) {
       '@threadplane/content',
       '@threadplane/langgraph',
       '@threadplane/' + framework,
+      ...(!angular ? ['@threadplane/a2ui'] : []),
     ].sort(),
   };
 }
 const helper = 'view-proof/view-owner.ts';
 const helperSource = 'examples/chat/native/tooling/view-owner.ts';
+const reactHelper = 'view-proof/view-owner.react.ts';
+const reactHelperSource = 'examples/chat/native/tooling/view-owner.react.ts';
 const keys = (value) => Object.keys(value).sort();
 function composition(selected, types, runtime) {
   for (const p of [
@@ -65,6 +77,14 @@ function composition(selected, types, runtime) {
     'shared/application.ts',
     'shared/message-content.ts',
     ...(selected.angular ? ['angular/src/application.token.ts'] : []),
+    ...(!selected.angular
+      ? [
+          reactHelper,
+          'react/src/application.ts',
+          'react/src/a2ui-message-content.ts',
+          'react/src/a2ui-trip-catalog.ts',
+        ]
+      : []),
   ]) {
     assert.ok(types.includes(p), 'View compiler composition missing: ' + p);
     assert.ok(runtime.includes(p), 'View runtime composition missing: ' + p);
@@ -73,6 +93,9 @@ function composition(selected, types, runtime) {
     '@threadplane/langgraph/runtime/create-session',
     '@threadplane/content/src/markdown/create-markdown',
     '@threadplane/content/src/messages/create-message-content',
+    ...(!selected.angular
+      ? ['@threadplane/content/src/a2ui/create-surfaces']
+      : []),
     ...(!selected.angular ? ['@threadplane/react/src/render/render-spec'] : []),
     ...(!selected.angular ? ['@threadplane/react/src/chat/citations'] : []),
     ...(!selected.angular
@@ -87,6 +110,21 @@ function composition(selected, types, runtime) {
       runtime.includes('node_modules/' + p + '.js'),
       'Installed view runtime missing: ' + p
     );
+  }
+  if (!selected.angular) {
+    assert.ok(
+      types.some(
+        (p) =>
+          p.startsWith('node_modules/@threadplane/a2ui/') && p.endsWith('.d.ts')
+      ),
+      'A2UI protocol declarations required'
+    );
+    for (const path of runtime)
+      assert.doesNotMatch(
+        path,
+        /^node_modules\/@threadplane\/a2ui\//,
+        'A2UI protocol runtime forbidden'
+      );
   }
   if (selected.angular)
     for (const p of [
@@ -134,6 +172,7 @@ function checkPath(path, selected) {
   const proof = [
     selected.entry,
     helper,
+    ...(!selected.angular ? [reactHelper] : []),
     'view-proof/index.html',
     'view-proof/tsconfig.json',
     selected.config,
@@ -153,15 +192,32 @@ function checkPath(path, selected) {
   );
   assert.doesNotMatch(
     path,
-    /(?:^|\/)(?:libs|fixtures|runtime-entry)\/|node_modules\/@threadplane\/(?:chat|telemetry|render|a2ui|ag-ui)\/|node_modules\/@threadplane\/langgraph\/(?:fesm\d*|esm\d*|types)\//,
+    /(?:^|\/)(?:libs|fixtures|runtime-entry)\/|node_modules\/@threadplane\/(?:chat|telemetry|render|ag-ui)\/|node_modules\/@threadplane\/langgraph\/(?:fesm\d*|esm\d*|types)\//,
     'Forbidden view input'
   );
   const local = path.match(/^node_modules\/@threadplane\/([^/]+)\//);
   if (local)
     assert.ok(
-      ['core', 'content', 'langgraph', selected.framework].includes(local[1]),
+      [
+        'core',
+        'content',
+        'langgraph',
+        selected.framework,
+        ...(!selected.angular ? ['a2ui'] : []),
+      ].includes(local[1]),
       'Unknown view local package'
     );
+  if (local?.[1] === 'a2ui')
+    assert.ok(
+      path.endsWith('.d.ts') ||
+        path === 'node_modules/@threadplane/a2ui/package.json',
+      'Only protocol declarations allowed'
+    );
+  assert.notEqual(
+    path,
+    'react/src/application-fixture.ts',
+    'Test fixture forbidden in view'
+  );
   if (selected.angular)
     assert.doesNotMatch(
       path,
@@ -223,9 +279,9 @@ function configs(selected) {
 // Compile a separate real entry against the same still-live installed consumer.
 export function captureViewProof(
   directory,
-  { root, consumer, framework = 'react' }
+  { root, consumer, framework = 'react', profile }
 ) {
-  const selected = selection(framework);
+  const selected = selection(framework, profile);
   noLinks(dirname(directory));
   mkdirSync(directory); // Exclusive ownership; never discard a caller's existing directory.
   try {
@@ -239,6 +295,11 @@ export function captureViewProof(
       join(consumer, helper),
       readFileSync(join(root, helperSource))
     );
+    if (!selected.angular)
+      writeFileSync(
+        join(consumer, reactHelper),
+        readFileSync(join(root, reactHelperSource))
+      );
     writeFileSync(
       join(cwd, 'index.html'),
       '<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body><div id="root"></div>' +
@@ -368,9 +429,18 @@ export default defineConfig({root:import.meta.dirname,envDir:false,esbuild:{jsx:
     const record = {
       version: 2,
       framework,
+      profile,
       entry: selected.entry,
       source: { path: selected.source, sha256: inputs[selected.entry] },
       helper: { path: helperSource, sha256: inputs[helper] },
+      ...(!selected.angular
+        ? {
+            reactHelper: {
+              path: reactHelperSource,
+              sha256: inputs[reactHelper],
+            },
+          }
+        : {}),
       compiler: {
         executable: selected.compiler,
         executableSha256: inputs[selected.compiler],
@@ -422,12 +492,17 @@ export default defineConfig({root:import.meta.dirname,envDir:false,esbuild:{jsx:
 export function readViewProof(directory) {
   const r = JSON.parse(file(directory, 'view.json'));
   assert.equal(r.version, 2);
-  const selected = selection(r.framework);
+  const selected = selection(r.framework, r.profile);
   assert.equal(r.entry, selected.entry);
   assert.equal(r.source.path, selected.source);
   assert.equal(r.source.sha256, r.inputs[r.entry]);
   assert.equal(r.helper.path, helperSource);
   assert.equal(r.helper.sha256, r.inputs[helper]);
+  if (!selected.angular) {
+    assert.equal(r.reactHelper.path, reactHelperSource);
+    assert.ok(r.inputs[reactHelper], 'React proof helper required');
+    assert.equal(r.reactHelper.sha256, r.inputs[reactHelper]);
+  } else assert.equal(r.reactHelper, undefined);
   for (const p of keys(map(r.inputs))) checkPath(p, selected);
   assert.ok(r.inputs[helper], 'Proof owner helper required');
   for (const p of [

@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.test.json",
+  "include": [
+    "shared/**/*.spec.ts",
+    "shared/application-content-types.type-test.ts",
+    "tooling/proof-server.mjs",
+    "react/src/**/*.spec.ts"
+  ]
+}

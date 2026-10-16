@@ -95,13 +95,14 @@ function installationSnapshot(temporary: string, consumer: string) {
   const tarballs = readdirSync(temporary)
     .filter((name) => name.endsWith('.tgz'))
     .sort();
-  expect(tarballs).toHaveLength(4);
+  expect(tarballs).toHaveLength(5);
   const packages = [
     'typescript',
     'vite',
     'react',
     'react-dom',
     '@threadplane/core',
+    '@threadplane/a2ui',
     '@threadplane/content',
     '@threadplane/react',
     '@threadplane/langgraph',

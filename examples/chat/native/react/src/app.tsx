@@ -9,10 +9,10 @@ import {
   ToolObservation,
 } from '@threadplane/react/chat';
 import type {
-  createApplication,
-  ApplicationSnapshot,
-} from '../../shared/application';
-import type { MessageContent } from '../../shared/message-content';
+  ReactApplication as Application,
+  ReactApplicationSnapshot as ApplicationSnapshot,
+} from './application';
+import type { A2uiMessageContent as MessageContent } from './a2ui-message-content';
 import { filterLoadedTitles } from '../../shared/projection';
 import { submissionStatus } from '../../shared/submission-status';
 import { Approval } from './approval';
@@ -20,7 +20,6 @@ import { BackgroundActivity } from './background-activity';
 import { CopyAnswer } from './copy-answer';
 import { TripSummary } from './trip-summary';
 
-type Application = ReturnType<typeof createApplication>;
 const literal = (value: unknown) =>
   typeof value === 'string' ? value : JSON.stringify(value, null, 2) ?? '';
 
@@ -43,7 +42,7 @@ const Message = memo(function Message({ row }: { row: MessageContent }) {
         <Citations citations={row.message.citations} />
       )}
       {row.role === 'assistant' &&
-        row.tripSummaryRenders.map((prepared) => (
+        row.a2uiTripSummaryRenders.map((prepared) => (
           <TripSummary key={prepared.callId} prepared={prepared} />
         ))}
       {row.role !== 'tool' &&

@@ -426,6 +426,147 @@ const deriveReact = (input) =>
     'react-langgraph'
   );
 
+const nativeA2uiFixture = (t, changes = {}) =>
+  reactFixture(t, {
+    projects: ['core', 'content', 'a2ui', 'react', 'langgraph'],
+    manifests: {
+      content: {
+        dependencies: { a: '^1.0.0' },
+        peerDependencies: { '@threadplane/a2ui': '^0.3.2' },
+        peerDependenciesMeta: { '@threadplane/a2ui': { optional: true } },
+      },
+      a2ui: { version: '0.3.2', dependencies: {} },
+      langgraph: {
+        dependencies: {
+          '@threadplane/core': '0.0.1',
+          '@langchain/langgraph-sdk': '^1.0.0',
+        },
+      },
+    },
+    ...changes,
+  });
+const deriveNativeA2ui = (input) =>
+  derivePresentationConsumer(
+    input.root,
+    input.tarballs,
+    reactSeeds,
+    'react-native-a2ui-langgraph'
+  );
+
+test('native React A2UI profile explicitly selects five locals with the unchanged React SDK graph', (t) => {
+  const input = nativeA2uiFixture(t);
+  const before = JSON.stringify(input.root);
+  const derived = deriveNativeA2ui(input);
+  assert.equal(derived.profile, 'react-native-a2ui-langgraph');
+  assert.deepEqual(
+    Object.keys(derived.artifacts).sort(),
+    ['a2ui', 'content', 'core', 'langgraph', 'react'].map(
+      (name) => '@threadplane/' + name
+    )
+  );
+  assert.equal(
+    derived.graph.find((record) => record.name === '@threadplane/content')
+      .dependencies['@threadplane/a2ui'],
+    '0.3.2'
+  );
+  assert.equal(JSON.stringify(input.root), before);
+  assert.deepEqual(derived.seeds, reactSeeds);
+  assertPresentationInstallation(input.consumer, derived, input.tarballs);
+  for (const seed of reactSeeds)
+    assert.throws(
+      () =>
+        derivePresentationConsumer(
+          input.root,
+          input.tarballs,
+          reactSeeds.filter((name) => name !== seed),
+          'react-native-a2ui-langgraph'
+        ),
+      /Exactly eleven selected React seeds required/
+    );
+  assert.throws(
+    () =>
+      derivePresentationConsumer(
+        input.root,
+        input.tarballs,
+        [...reactSeeds, 'vite'],
+        'react-native-a2ui-langgraph'
+      ),
+    /Exactly eleven selected React seeds required/
+  );
+  for (const name of Object.keys(input.tarballs)) {
+    const missing = { ...input.tarballs };
+    delete missing[name];
+    assert.throws(
+      () => deriveNativeA2ui({ ...input, tarballs: missing }),
+      /Exactly five native React A2UI/
+    );
+  }
+  assert.throws(
+    () =>
+      deriveNativeA2ui({
+        ...input,
+        tarballs: {
+          ...input.tarballs,
+          '@threadplane/angular': input.tarballs['@threadplane/react'],
+        },
+      }),
+    /Exactly five/
+  );
+  const wrong = nativeA2uiFixture(t, {
+    manifests: {
+      a2ui: { version: '0.2.0', dependencies: {} },
+      content: {
+        dependencies: {},
+        peerDependencies: { '@threadplane/a2ui': '^0.3.2' },
+        peerDependenciesMeta: { '@threadplane/a2ui': { optional: true } },
+      },
+    },
+  });
+  assert.throws(() => deriveNativeA2ui(wrong), /does not satisfy/);
+});
+
+test('native React A2UI profile rejects Angular seeds, foreign providers and unselected vendor records', (t) => {
+  const input = nativeA2uiFixture(t);
+  assert.throws(
+    () =>
+      derivePresentationConsumer(
+        input.root,
+        input.tarballs,
+        presentation.angularLanggraphPresentationSeeds,
+        'react-native-a2ui-langgraph'
+      ),
+    /Angular|Missing locked/
+  );
+  for (const name of ['@angular/core', '@ag-ui/client', 'openai']) {
+    const poisoned = structuredClone(input.root);
+    poisoned.packages['node_modules/' + name] = pkg();
+    poisoned.packages['node_modules/vite'].dependencies[name] = '*';
+    assert.throws(
+      () => deriveNativeA2ui({ ...input, root: poisoned }),
+      /Unexpected Angular|Unexpected backend/
+    );
+  }
+});
+
+for (const name of [
+  '@angular/core',
+  '@ag-ui/client',
+  '@threadplane/angular',
+  'unselected-vendor',
+])
+  test(`native React A2UI installed revalidation rejects ${name}`, (t) => {
+    const input = nativeA2uiFixture(t),
+      derived = deriveNativeA2ui(input);
+    const directory = join(input.consumer, 'node_modules', name);
+    mkdirSync(directory, { recursive: true });
+    writeJson(join(directory, 'package.json'), { name, version: '1.0.0' });
+    assert.throws(
+      () =>
+        assertPresentationInstallation(input.consumer, derived, input.tarballs),
+      /Unexpected Angular|Unexpected backend|Unexpected local|Unexpected installed record/
+    );
+  });
+
 const renderReactSeeds = reactSeeds.map((name) =>
   name === '@langchain/langgraph-sdk' ? '@cacheplane/partial-json' : name
 );

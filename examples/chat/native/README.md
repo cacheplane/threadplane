@@ -12,11 +12,32 @@ session. It adds authored trip-summary cards to the shared rows while preserving
 their Markdown and tool observations. View removal does not release that content;
 retiring the selection disposes it.
 
-React trip recaps compose the private `@threadplane/react/render` `RenderSpec`.
-Application composition prepares and caches a readonly tree and explicit state;
-an authored registry presents the supplied title, day/place repeats, counts and
-optional note. The view does not parse tool arguments or own render state,
-actions or effects. Angular retains its existing supplied-card presentation.
+React trip recaps use the application-authored custom catalog
+`urn:threadplane:native:trip-summary:v1`. For associated completed typed tool
+calls, the application owns one private `createA2uiSurfaces` instance per
+assistant message ID and delivery generation. It applies literal A2UI v0.9
+descriptions with root `root` and seven component types: `Trip`, `Counts`,
+`Days`, `Day`, `Places`, `Place` and `Note`. Strict application validation and
+raw snapshot projection produce a frozen `@threadplane/react/render`
+`RenderSpec` with direct props, static children and empty state. The existing
+authored registry renders one card per call, preserving order, duplicate labels,
+empty lists and literal text.
+The view borrows prepared descriptions; it does not parse tool arguments,
+apply raw commands or own render actions or effects. Angular retains its
+existing supplied-card presentation.
+
+Shared content still owns Markdown, reasoning and tool association. React's
+raw owners survive StrictMode, unmounting and updates while the view is absent;
+selection retirement, generation replacement and application disposal release
+them once. If validation, raw application or projection fails, the last combined
+snapshot remains visible and all raw owners are disposed. Identical complete
+input can rebuild fresh owners. Initial failure becomes a selection error;
+later publication failures are contained without automatically issuing commands.
+This is completed typed-tool data authored by the application, not generic
+wire-message classification or a generic A2UI interpreter. Arbitrary data-model
+bindings, the basic catalog, forms, actions, functions, templates, URLs,
+protocol parsing, readiness and public catalog registration remain outside this
+example.
 
 React assistant rows compose `Citations` from explicitly supplied message
 metadata. Sources preserve their order, indices and literal title/snippet/type
@@ -197,18 +218,34 @@ The view proof checks that removing the view releases only its subscription,
 the owner still receives a held response while absent, remounting preserves
 snapshot/Markdown and two completed summary-card identities without another
 terminal write, and explicit owner disposal physically closes the stream.
+That original lifecycle records six requests and one terminal write. A separate
+React lifecycle records nine requests and two writes: a held completed-summary
+response creates raw surfaces while the view is absent, remount preserves the
+same prepared descriptions and raw owner. Navigation retires the first owner;
+an explicit recap request in another conversation completes a tool call with
+the same assistant message ID and a new delivery generation, creating the
+second owner. Loading history does not reconstruct rich cards. Both owners
+are disposed exactly once. The React app and view proof use the same production
+application factory, catalog and snapshot projector against
+installed candidate packages; the extra observation helper is proof-only.
 Real Back/Forward navigation and synthetic pagehide checks do not
 claim actual browser BFCache coverage.
 
 ## Working on the example
 
-Each development session selects one framework and builds/installs its fixed
-four local candidate packages (core, content, LangGraph and React or Angular)
-once. The isolated library build also builds the A2UI protocol from frozen
-sources before content; the protocol is a build input and is not installed in
-the ordinary consumer. Source edits use that same installed consumer and
-derived lockfile; they do not reinstall packages. A configured browser document owns its application
-and selected session; framework views borrow that owner.
+Each development session selects one framework and prepares its fixed installed
+candidate profile once. Native React build, serve and default tests use five
+packages: core, content, A2UI protocol, React and LangGraph
+(`react-native-a2ui-langgraph`). Native Angular uses four: core, content, Angular
+and LangGraph (`angular-langgraph`). The explicit ordinary React shared-test
+profile still uses four packages without protocol declarations. Separately,
+each isolated foundation build runs four ordered library builds: core, A2UI
+protocol, content, then the selected binding. Installed package counts do not
+count these build steps. React consumes protocol declarations; neither native
+production bundle includes protocol JavaScript. Source edits use that same
+installed consumer and derived lockfile; they do not reinstall packages.
+A configured browser document owns its application and selected session;
+framework views borrow that owner.
 
 Edits, additions and deletions in the selected `react/src`, `react/public`,
 `react/index.html` or `angular/src`, `angular/public`, plus supported `shared`
@@ -288,9 +325,11 @@ text with `followUp:false` independently of either view. Rendering never execute
 or acknowledges the tool. The typed catalog narrows tool-call observations;
 unknown tools' saved ToolMessage text remains readable as literal text.
 
-There is no argument validator or schema engine. Normal string/array/number
+The tool handler has no argument validator or schema engine. Normal string/array/number
 formatting operations use the authored TypeScript contract; malformed values
-can throw and become ordinary tool errors with no partial card. Metadata may
+can throw and become ordinary tool errors with no partial card. React separately
+validates its authored literal surface before projecting a raw snapshot; this
+does not validate arbitrary tool input or enforce itinerary rules. Metadata may
 describe positive integral days, but formatting does not enforce that domain.
 Completed local calls render one card at their assistant row, including empty
 lists and repeated labels. Pending and failed calls remain ordinary observations.
@@ -340,7 +379,10 @@ and its literal-text, keyboard, draft, repeated-pause, physical-cancellation and
 mobile-layout facts. It also requires the nine-request summary persistence and
 restoration proof, the eight-request failed-write proof, and the six-request
 actual view lifecycle with two preserved card identities and exactly one
-terminal write. Missing or contradictory material evidence fails review. It serves
+terminal write. React additionally requires the separate nine-request,
+two-write raw-owner lifecycle, installed raw implementation and declaration
+evidence, and matching production app/view inputs. Missing or contradictory
+material evidence fails review. It serves
 immutable copies of the checked bytes. These hashes establish local
 integrity, not authenticity or a replayable build-tool installation. Review does
 not rebuild or install anything, and it uses a deterministic local fixture,
