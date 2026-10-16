@@ -402,6 +402,7 @@ function presentationLocals(profile) {
       'markdown',
       'a2ui-surfaces',
       'react-langgraph',
+      'react-native-a2ui-langgraph',
       'angular-langgraph',
       'angular-foundation',
       'react-ag-ui',
@@ -411,6 +412,10 @@ function presentationLocals(profile) {
   );
   if (profile === 'markdown') return localNames;
   if (profile === 'a2ui-surfaces') return [...localNames, '@threadplane/a2ui'];
+  if (profile === 'react-native-a2ui-langgraph')
+    return ['core', 'content', 'a2ui', 'react', 'langgraph'].map(
+      (name) => '@threadplane/' + name
+    );
   if (profile === 'react-render')
     return localNames.filter((name) => name !== '@threadplane/angular');
   if (profile === 'angular-foundation')
@@ -437,7 +442,7 @@ function assertPresentationPackages(
   for (const path of Object.keys(packages)) {
     if (!path) continue;
     const name = path.split('node_modules/').at(-1);
-    if (['react-langgraph', 'react-ag-ui', 'react-render'].includes(profile))
+    if (['react-langgraph', 'react-native-a2ui-langgraph', 'react-ag-ui', 'react-render'].includes(profile))
       assert.ok(
         !/^@(?:angular|angular-devkit)\//.test(name) &&
           ![
@@ -594,6 +599,8 @@ export function derivePresentationConsumer(
       ? 'Exactly four Markdown foundation tarballs required'
       : profile === 'a2ui-surfaces'
       ? 'Exactly five A2UI surfaces tarballs required'
+      : profile === 'react-native-a2ui-langgraph'
+      ? 'Exactly five native React A2UI LangGraph tarballs required'
       : profile === 'react-render'
       ? 'Exactly React, core and content static tarballs required'
       : profile === 'angular-foundation'
@@ -610,7 +617,7 @@ export function derivePresentationConsumer(
   const effectiveRanges = profile === 'react-ag-ui' ? { rxjs: '~7.8.0' } : {};
   const selected = selectPresentationLock(rootLock, seeds, effectiveRanges);
   if (profile !== 'markdown') {
-    const react = ['react-langgraph', 'react-ag-ui', 'react-render'].includes(profile);
+    const react = ['react-langgraph', 'react-native-a2ui-langgraph', 'react-ag-ui', 'react-render'].includes(profile);
     const selectedSeeds =
       profile === 'a2ui-surfaces'
         ? a2uiSurfacesPresentationSeeds

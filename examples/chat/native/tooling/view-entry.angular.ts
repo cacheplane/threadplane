@@ -7,9 +7,10 @@ import { createApplication } from '@angular/platform-browser';
 import { AppComponent } from '../angular/src/app.component';
 import { APPLICATION } from '../angular/src/application.token';
 import { createViewOwner } from './view-owner';
+import { createApplication as createOwner } from '../shared/application';
 
 // A single owner lives outside every component creation and destruction.
-const { owner, application, controls } = createViewOwner();
+const { owner, application, controls } = createViewOwner(createOwner);
 const container = document.getElementById('root')!;
 const angular = await createApplication({
   providers: [

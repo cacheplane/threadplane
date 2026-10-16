@@ -2,8 +2,9 @@ import {
   RenderSpec,
   type ReactRenderRegistry,
   type RenderViewProps,
+  type RenderSpecData,
+  type RenderSpecProps,
 } from '@threadplane/react/render';
-import type { TripSummaryRender } from '../../shared/trip-summary-render';
 
 function text(props: RenderViewProps['props'], key: string): string {
   const value = props[key];
@@ -45,7 +46,10 @@ const registry: ReactRenderRegistry = {
 export function TripSummary({
   prepared,
 }: {
-  readonly prepared: TripSummaryRender;
+  readonly prepared: {
+    readonly spec: RenderSpecData;
+    readonly state: RenderSpecProps['state'];
+  };
 }) {
   return (
     <RenderSpec
