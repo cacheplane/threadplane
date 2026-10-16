@@ -204,8 +204,10 @@ claim actual browser BFCache coverage.
 
 Each development session selects one framework and builds/installs its fixed
 four local candidate packages (core, content, LangGraph and React or Angular)
-once. Source edits use that same installed consumer and derived lockfile; they
-do not reinstall packages. A configured browser document owns its application
+once. The isolated library build also builds the A2UI protocol from frozen
+sources before content; the protocol is a build input and is not installed in
+the ordinary consumer. Source edits use that same installed consumer and
+derived lockfile; they do not reinstall packages. A configured browser document owns its application
 and selected session; framework views borrow that owner.
 
 Edits, additions and deletions in the selected `react/src`, `react/public`,

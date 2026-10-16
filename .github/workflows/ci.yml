@@ -246,6 +246,8 @@ jobs:
         run: node scripts/react-parity/verify-ag-ui-candidate.mjs
       - name: Verify installed owned Markdown
         run: node scripts/react-parity/verify-markdown.mjs
+      - name: Verify installed owned A2UI surfaces
+        run: node scripts/react-parity/verify-a2ui-surfaces.mjs
       - name: Verify emitted boundaries and isolated packages
         run: |
           node scripts/react-parity/verify-boundaries.mjs --built

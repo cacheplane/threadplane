@@ -383,6 +383,7 @@ for (const state of ['missing', 'changed', 'same', 'symlink'])
 for (const path of [
   'package-lock.json',
   'libs/core/src/index.ts',
+  'libs/a2ui/src/new.ts',
   'libs/react/src/new.ts',
 ])
   test(`preparation change to ${path} rejects readiness even without watch events`, async (t) => {

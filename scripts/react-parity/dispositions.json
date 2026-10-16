@@ -37,10 +37,12 @@
       "taskIds": [
         "T02",
         "T36",
-        "T37"
+        "T37",
+        "T19"
       ],
       "treatment": "infrastructure",
-      "status": "planned"
+      "status": "in-progress",
+      "reason": "Retains public protocol sources; compatibility-layer tag and existing README build asset support the private T19 installed legacy/package proof. Broader migration and release work remain open."
     },
     {
       "id": "asset:libs/a2ui/schemas/README.md",
@@ -2343,11 +2345,13 @@
       "id": "config:.github/workflows/ci.yml",
       "taskIds": [
         "T02",
-        "T36"
+        "T36",
+        "T19"
       ],
       "treatment": "infrastructure",
       "status": "in-progress",
-      "note": "Bounded runtime verification/configuration subset updated; broader assigned migration and release work remain open."
+      "note": "Bounded runtime verification/configuration subset updated; broader assigned migration and release work remain open.",
+      "reason": "Adds backend-free installed private T19 surface observation after existing builds and Chromium installation; preserves existing matrices and verification steps. Broader migration and release work remain open."
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -2422,11 +2426,13 @@
       "taskIds": [
         "T02",
         "T36",
-        "T37"
+        "T37",
+        "T19"
       ],
       "treatment": "infrastructure",
       "status": "in-progress",
-      "note": "Bounded runtime verification/configuration subset updated; broader assigned migration and release work remain open."
+      "note": "Bounded runtime verification/configuration subset updated; broader assigned migration and release work remain open.",
+      "reason": "Records only the private content package optional A2UI protocol peer metadata for the bounded T19 foundation; no dependency version or resolution changes."
     },
     {
       "id": "config:package.json",
@@ -14298,21 +14304,23 @@
       "id": "asset:libs/content/README.md",
       "taskIds": [
         "T02",
-        "T26"
+        "T26",
+        "T19"
       ],
       "treatment": "infrastructure",
       "status": "in-progress",
-      "reason": "Private content package and empty root infrastructure for owned Markdown preparation."
+      "reason": "Documents private T19 accumulator ownership, explicit apply/dispose, immutable raw state, borrowed observation and finite plain-data limits; full T19/T20/T27 remain open."
     },
     {
       "id": "asset:libs/content/package.json",
       "taskIds": [
         "T02",
-        "T26"
+        "T26",
+        "T19"
       ],
       "treatment": "infrastructure",
       "status": "in-progress",
-      "reason": "Private content package and empty root infrastructure for owned Markdown preparation."
+      "reason": "Private T19 entry uses optional public A2UI protocol types without adding a root runtime dependency; existing owned Markdown/JSON boundaries remain separate."
     },
     {
       "id": "asset:libs/content/project.json",
@@ -14468,11 +14476,12 @@
       "id": "source:libs/content/src/a2ui/index.ts",
       "taskIds": [
         "T02",
-        "T26"
+        "T26",
+        "T19"
       ],
       "treatment": "infrastructure",
-      "status": "planned",
-      "reason": "Unchanged reserved content entry; no renderer capability claimed."
+      "status": "in-progress",
+      "reason": "Bounded private T19 accumulator foundation with owned immutable raw surfaces and borrowed generic observation; parsing, readiness, catalog/forms/actions, public registration and full T19/T20/T27 remain open."
     },
     {
       "id": "source:libs/content/src/index.ts",
@@ -15156,6 +15165,105 @@
       "treatment": "react",
       "status": "in-progress",
       "note": "Readonly app-owned DTOs and synchronous notifications; no SDK, session, read or disposal capability accepted by the view. Broader T29 contracts remain planned."
+    },
+    {
+      "id": "entry:libs/content/src/a2ui/index.ts",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private T19 accumulator foundation with owned immutable raw surfaces and borrowed generic observation; parsing, readiness, catalog/forms/actions, public registration and full T19/T20/T27 remain open."
+    },
+    {
+      "id": "export:libs/content/src/a2ui/index.ts#A2uiComponentSnapshot",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private T19 accumulator foundation with owned immutable raw surfaces and borrowed generic observation; parsing, readiness, catalog/forms/actions, public registration and full T19/T20/T27 remain open."
+    },
+    {
+      "id": "export:libs/content/src/a2ui/index.ts#A2uiSurfaceSnapshot",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private T19 accumulator foundation with owned immutable raw surfaces and borrowed generic observation; parsing, readiness, catalog/forms/actions, public registration and full T19/T20/T27 remain open."
+    },
+    {
+      "id": "export:libs/content/src/a2ui/index.ts#A2uiSurfaces",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private T19 accumulator foundation with owned immutable raw surfaces and borrowed generic observation; parsing, readiness, catalog/forms/actions, public registration and full T19/T20/T27 remain open."
+    },
+    {
+      "id": "export:libs/content/src/a2ui/index.ts#A2uiSurfacesSnapshot",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private T19 accumulator foundation with owned immutable raw surfaces and borrowed generic observation; parsing, readiness, catalog/forms/actions, public registration and full T19/T20/T27 remain open."
+    },
+    {
+      "id": "export:libs/content/src/a2ui/index.ts#A2uiValue",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private T19 accumulator foundation with owned immutable raw surfaces and borrowed generic observation; parsing, readiness, catalog/forms/actions, public registration and full T19/T20/T27 remain open."
+    },
+    {
+      "id": "export:libs/content/src/a2ui/index.ts#createA2uiSurfaces",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private T19 accumulator foundation with owned immutable raw surfaces and borrowed generic observation; parsing, readiness, catalog/forms/actions, public registration and full T19/T20/T27 remain open."
+    },
+    {
+      "id": "source:libs/content/src/a2ui/create-surfaces.ts",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private T19 accumulator foundation with owned immutable raw surfaces and borrowed generic observation; parsing, readiness, catalog/forms/actions, public registration and full T19/T20/T27 remain open."
+    },
+    {
+      "id": "source:libs/content/src/a2ui/owned-value.ts",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private T19 accumulator foundation with owned immutable raw surfaces and borrowed generic observation; parsing, readiness, catalog/forms/actions, public registration and full T19/T20/T27 remain open."
+    },
+    {
+      "id": "source:libs/content/src/a2ui/transition.ts",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private T19 accumulator foundation with owned immutable raw surfaces and borrowed generic observation; parsing, readiness, catalog/forms/actions, public registration and full T19/T20/T27 remain open."
+    },
+    {
+      "id": "source:libs/content/src/a2ui/types.ts",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private T19 accumulator foundation with owned immutable raw surfaces and borrowed generic observation; parsing, readiness, catalog/forms/actions, public registration and full T19/T20/T27 remain open."
     }
   ]
 }

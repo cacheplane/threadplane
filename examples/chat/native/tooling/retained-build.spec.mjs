@@ -351,6 +351,31 @@ test('retains actual bytes and original lock, verifies after original temporary 
 });
 
 for (const framework of ['react', 'angular'])
+  test(`${framework} retains protocol build inputs without installing the optional protocol`, (t) => {
+    const f = fixture(t, framework);
+    const path = 'libs/a2ui/src/index.ts';
+    f.provenance.inputs[path] = put(f.root, path, 'protocol build input');
+    f.provenance.buildInputs[path] = put(
+      f.buildRoot,
+      path,
+      'protocol build input'
+    );
+    captureRetainedBuild(f.directory, f);
+    rmSync(f.temporary, { recursive: true });
+    rmSync(f.root, { recursive: true });
+    assert.equal(readRetainedBuild(f.directory).framework, framework);
+    assert.equal(
+      existsSync(join(f.directory, 'consumer/node_modules/@threadplane/a2ui')),
+      false
+    );
+    writeFileSync(join(f.directory, 'build-inputs', path), 'drift');
+    assert.throws(
+      () => readRetainedBuild(f.directory),
+      /hash|bytes|inventory/i
+    );
+  });
+
+for (const framework of ['react', 'angular'])
   for (const [graph, extension] of [
     ['compiler', '.d.ts'],
     ['bundler', '.js'],

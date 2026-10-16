@@ -32,6 +32,7 @@ function fixture(t) {
   t.after(() => rmSync(directory, { recursive: true, force: true }));
   for (const path of [
     'libs/core/src/index.ts',
+    'libs/a2ui/src/index.ts',
     'libs/content/src/index.ts',
     'libs/react/src/index.ts',
     'libs/angular/src/index.ts',
@@ -174,6 +175,8 @@ test('preparation builds and packs byte-identical selected sources in its own wo
     'libs/core/.env.local',
     'libs/core/dist/stale.js',
     'libs/core/.install-collector/stale.mjs',
+    'libs/a2ui/.env.local',
+    'libs/a2ui/dist/stale.js',
   ]) {
     mkdirSync(join(root, path, '..'), { recursive: true });
     writeFileSync(join(root, path), 'excluded');
@@ -190,6 +193,8 @@ test('preparation builds and packs byte-identical selected sources in its own wo
       'libs/core/.env.local',
       'libs/core/dist',
       'libs/core/.install-collector',
+      'libs/a2ui/.env.local',
+      'libs/a2ui/dist',
       'examples/chat/native',
       'libs/design-tokens',
       'libs/telemetry/src',
@@ -197,6 +202,10 @@ test('preparation builds and packs byte-identical selected sources in its own wo
       assert.equal(existsSync(join(buildRoot, path)), false, path);
     assert.equal(
       readFileSync(join(buildRoot, 'libs/core/src/index.ts'), 'utf8'),
+      'original'
+    );
+    assert.equal(
+      readFileSync(join(buildRoot, 'libs/a2ui/src/index.ts'), 'utf8'),
       'original'
     );
     assert.equal(

@@ -511,7 +511,12 @@ test('development: authored refresh, native diagnostics, browser abort and owned
     expect(
       installationSnapshot(first.started.temporary, first.consumer)
     ).toEqual(before);
-    expect(logs.filter((line) => line.startsWith('Building '))).toHaveLength(3);
+    expect(logs.filter((line) => line.startsWith('Building '))).toEqual([
+      'Building core from frozen inputs',
+      'Building a2ui from frozen inputs',
+      'Building content from frozen inputs',
+      'Building react from frozen inputs',
+    ]);
     evidence.first = {
       installation: before,
       requests,
@@ -549,7 +554,16 @@ test('development: authored refresh, native diagnostics, browser abort and owned
     );
     await assertStopped(second.url, second.started.temporary);
     expect(groups.size).toBe(6);
-    expect(logs.filter((line) => line.startsWith('Building '))).toHaveLength(6);
+    expect(logs.filter((line) => line.startsWith('Building '))).toEqual([
+      'Building core from frozen inputs',
+      'Building a2ui from frozen inputs',
+      'Building content from frozen inputs',
+      'Building react from frozen inputs',
+      'Building core from frozen inputs',
+      'Building a2ui from frozen inputs',
+      'Building content from frozen inputs',
+      'Building react from frozen inputs',
+    ]);
     expect(requests).toHaveLength(7);
     expect(new Set(searchDocuments).size).toBe(5);
     expect(

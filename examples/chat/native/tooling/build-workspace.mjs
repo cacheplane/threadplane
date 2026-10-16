@@ -19,6 +19,7 @@ import { selectedFramework } from './commands.mjs';
 export function selectedBuildInputRoots(root, framework) {
   return [
     'libs/core',
+    'libs/a2ui',
     'libs/content',
     'libs/' + selectedFramework(framework),
     'libs/langgraph',

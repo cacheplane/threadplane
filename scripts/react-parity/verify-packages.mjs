@@ -35,6 +35,13 @@ function stylesheetExport(subpath, entry) {
 }
 
 export function consumerSpecifiers(manifest) {
+  // The selected protocol package predates export maps. Exercise its actual
+  // installed root while keeping private scaffold export requirements strict.
+  if (manifest.name === '@threadplane/a2ui' && manifest.exports === undefined) {
+    const target = (path, extension) => typeof path === 'string' && path.startsWith('./') && !path.includes('\\') && path.slice(2).split('/').every(part => part && part !== '.' && part !== '..') && extension.test(path);
+    if (manifest.type !== 'module' || !target(manifest.types, /\.d\.ts$/) || !target(manifest.main, /\.m?js$/)) throw new Error('A2UI legacy root requires ESM main and declarations');
+    return [manifest.name];
+  }
   if (manifest.name === '@threadplane/react' && !manifest.exports?.['./markdown']) throw new Error('React ./markdown export required');
   if (manifest.name === '@threadplane/react' && (!manifest.exports?.['./debug'] || !manifest.exports?.['./debug/styles.css'])) throw new Error('React ./debug and ./debug/styles.css exports required');
   return Object.entries(manifest.exports).filter(([subpath, entry]) => !metadataExport(subpath, entry))
@@ -77,11 +84,14 @@ export function validatePackage(directory, { angularTransitions = angularTransit
   return errors;
 }
 
-// Resolve only declared local dependencies, including peers, before npm sees a
-// manifest. Unknown Threadplane packages fail closed instead of using npm.
-export function localDependencyProjects(projects, readManifest) {
+// Resolve required local dependencies/peers before npm sees a manifest. Optional
+// local peers enter only through explicit roots, required edges or optionalPeers.
+// Unknown selected Threadplane packages fail closed instead of using npm.
+export function localDependencyProjects(projects, readManifest, { optionalPeers = [] } = {}) {
+  const selectedPeers = new Set(optionalPeers);
   const selected = new Set();
   const manifests = new Map();
+  const optionalEdges = [];
   function visit(project) {
     if (selected.has(project)) return;
     if (!scanProjects.includes(project)) throw new Error(`No local artifact policy for ${project}`);
@@ -93,6 +103,10 @@ export function localDependencyProjects(projects, readManifest) {
       for (const [name, range] of Object.entries(manifest[field] ?? {})) {
         if (!name.startsWith('@threadplane/')) continue;
         const dependency = name.slice('@threadplane/'.length);
+        if (field === 'peerDependencies' && manifest.peerDependenciesMeta?.[name]?.optional === true) {
+          optionalEdges.push({ project, name, dependency, range });
+          if (!selectedPeers.has(dependency)) continue;
+        }
         visit(dependency);
         const version = manifests.get(dependency).version;
         if (!version || !satisfies(version, range)) throw new Error(`Local ${name}@${version} does not satisfy ${project} ${field} range ${range}`);
@@ -100,6 +114,14 @@ export function localDependencyProjects(projects, readManifest) {
     }
   }
   projects.forEach(visit);
+  optionalPeers.forEach(visit);
+  // A peer selected as a root or through a required edge must also satisfy every
+  // optional peer constraint, regardless of the order in which roots were read.
+  for (const { project, name, dependency, range } of optionalEdges) {
+    if (!selected.has(dependency)) continue;
+    const version = manifests.get(dependency).version;
+    if (!version || !satisfies(version, range)) throw new Error(`Local ${name}@${version} does not satisfy ${project} peerDependencies range ${range}`);
+  }
   return [...selected];
 }
 
@@ -111,9 +133,9 @@ export function runConsumer(command, args, cwd, env = process.env) {
   });
 }
 
-export function packLocalArtifacts(root, temporary, projects) {
+export function packLocalArtifacts(root, temporary, projects, { optionalPeers = [] } = {}) {
   const selected = localDependencyProjects(projects, (project) =>
-    JSON.parse(readFileSync(join(root, 'dist/libs', project, 'package.json'), 'utf8')));
+    JSON.parse(readFileSync(join(root, 'dist/libs', project, 'package.json'), 'utf8')), { optionalPeers });
   const dependencies = {};
   for (const project of selected) {
     const packed = JSON.parse(runConsumer('npm', ['pack', join(root, 'dist/libs', project), '--ignore-scripts', '--json', '--pack-destination', temporary], temporary));
@@ -231,6 +253,7 @@ export function assertSupportedExports(project, entry) {
       'react/markdown': ['Markdown'],
       'react/render': ['RenderSpec'],
       'content/json': ['createJson'],
+      'content/a2ui': ['createA2uiSurfaces'],
     }[project] ?? [];
   // React entries may export forwardRef/memo components, which are $$typeof objects.
   const supported = (value) =>
@@ -243,7 +266,7 @@ export function assertSupportedExports(project, entry) {
     if (!supported(entry[name]))
       throw new Error(`${project} missing supported contract ${name}`);
   if (
-    ['react/debug', 'react/chat', 'react/markdown', 'react/render', 'content/json'].includes(project) &&
+    ['react/debug', 'react/chat', 'react/markdown', 'react/render', 'content/json', 'content/a2ui'].includes(project) &&
     Object.keys(entry).some((name) => !expected.includes(name))
   )
     throw new Error(`${project} has unexpected exports`);
@@ -254,7 +277,7 @@ export async function verifyPackedConsumers(root = process.cwd()) {
   const temporary = mkdtempSync(join(tmpdir(), 'threadplane-consumer-'));
   try {
     const projects = privateScaffoldProjects.filter((project) => project !== 'angular');
-    const tarballs = packLocalArtifacts(root, temporary, projects);
+    const tarballs = packLocalArtifacts(root, temporary, projects, { optionalPeers: ['a2ui'] });
     const core = join(temporary, 'core-consumer');
     mkdirSync(core);
     installConsumer(core, { private: true, type: 'module' }, { '@threadplane/core': tarballs['@threadplane/core'] }, 'core');
@@ -308,7 +331,7 @@ selection.rowKey = 'other';
     for (const config of ['tsconfig.contracts.json', 'tsconfig.app.json']) runConsumer(process.execPath, [join(plain, 'node_modules/typescript/bin/tsc'), '-p', config], plain);
     console.log(runConsumer(process.execPath, [join(plain, 'node_modules/vite/bin/vite.js'), 'build'], plain));
     await runRuntimeScenarios(join(plain, 'dist'), 'React');
-    console.log(`Verified ${Object.keys(tarballs).length} private plain tarballs, ${count} ESM/type exports, and ${coreCount} isolated core exports with skipLibCheck:false, precise heterogeneous tool contracts, and a production-built installed React consumer.`);
+    console.log(`Verified ${Object.keys(tarballs).length} selected plain tarballs, ${count} ESM/type exports, and ${coreCount} isolated core exports with skipLibCheck:false, precise heterogeneous tool contracts, and a production-built installed React consumer.`);
   } finally { rmSync(temporary, { recursive: true, force: true }); }
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await verifyPackedConsumers();
