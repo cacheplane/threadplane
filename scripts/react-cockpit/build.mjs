@@ -122,13 +122,14 @@ try {
       'Installed readiness implementation required for computed functions'
     );
   }
-  if (appPath === 'cockpit/render/element-rendering/react') {
+  if (appPath === 'cockpit/render/element-rendering/react' ||
+      appPath === 'cockpit/render/state-management/react') {
     assert.ok(
       emittedModules.some(([path, module]) =>
         path.endsWith('/node_modules/@threadplane/content/src/render-state/create-render-state.js') &&
         module.renderedLength > 0
       ),
-      'Installed render-state owner implementation required for element rendering'
+      'Installed render-state owner implementation required for element rendering and state management'
     );
   }
   assert.ok(
