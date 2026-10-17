@@ -281,6 +281,159 @@ describe('canonical A2UI native regression CI ownership', () => {
   });
 });
 
+describe('native AG-UI A2UI proof CI ownership', () => {
+  for (const file of [
+    'scripts/react-parity/verify-ag-ui-a2ui.mjs',
+    'scripts/react-parity/ag-ui-a2ui-proof-policy.mjs',
+    'fixtures/react-parity/native-ag-ui-a2ui/compiled_worker.py',
+    'fixtures/react-parity/native-ag-ui-a2ui/README.md',
+    'cockpit/ag-ui/a2ui/python/src/graph.py',
+    'cockpit/ag-ui/a2ui/python/src/__init__.py',
+    'cockpit/ag-ui/a2ui/python/src/server.py',
+    'cockpit/ag-ui/a2ui/python/pyproject.toml',
+    'cockpit/ag-ui/a2ui/python/uv.lock',
+  ])
+    it(`selects only Library without Nx owners for ${file}`, () => {
+      assert.deepEqual(classifyFromAffected([file], []), {
+        ...emptyScope(),
+        library: true,
+      });
+    });
+
+  for (const file of [
+    'cockpit/ag-ui/a2ui/python/src/helper.py',
+    'cockpit/ag-ui/a2ui/python/src/server.py.bak',
+    'cockpit/ag-ui/a2ui/python/src/__init__.py/extra',
+    'cockpit/ag-ui/a2ui/python/uv.lock.bak',
+    'cockpit/ag-ui/a2ui/python/pyproject.toml/extra',
+    'cockpit/ag-ui/a2ui/python/project.json',
+    'cockpit/ag-ui/a2ui/python/tests/test_graph.py',
+    'cockpit/ag-ui/other/python/src/server.py',
+  ])
+    it(`preserves unrelated scopes for ${file}`, () => {
+      assert.deepEqual(classifyFromAffected([file], []), emptyScope());
+    });
+
+  it('runs a separate closed locked proof after prerequisites and retains complete owned evidence', async () => {
+    const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+    const library = workflow
+      .split('\n  library:\n')[1]
+      .split('\n  angular-compatibility:')[0];
+    const steps = library.split(/\n      - /);
+    const proof = steps.find((step) =>
+      step.startsWith('name: Verify installed native AG-UI A2UI')
+    );
+    assert.ok(proof, 'dedicated AG-UI A2UI proof step');
+    const position = library.indexOf(proof);
+    for (const prerequisite of [
+      "python-version: '3.12'",
+      'npx nx run-many -t lint test type-tests build --projects=$FOUNDATIONS',
+      'node scripts/react-parity/verify-ag-ui-candidate.mjs',
+    ])
+      assert.ok(
+        library.indexOf(prerequisite) >= 0 &&
+          library.indexOf(prerequisite) < position,
+        prerequisite
+      );
+    assert.match(proof, /timeout-minutes: (?:[1-9]|1[0-5])\b/);
+    assert.doesNotMatch(
+      proof,
+      /continue-on-error|\|\| true|\bsecrets\.|\n        if:/
+    );
+    assert.match(
+      proof,
+      /AG_UI_A2UI_ROOT: \$\{\{ runner.temp \}\}\/threadplane-agui-a2ui/
+    );
+    for (const owned of ['environment', 'home', 'cache', 'tmp', 'proof']) {
+      assert.ok(proof.includes(`$AG_UI_A2UI_ROOT/${owned}`), `owned ${owned}`);
+    }
+    // Inspect shell commands rather than requiring a particular multiline layout.
+    const commands = proof
+      .replace(/\\\n\s*/g, ' ')
+      .split('\n')
+      .map((line) => line.trim());
+    const closed = commands.filter((line) => line.startsWith('env -i '));
+    const find = closed.find((line) => line.includes('python find '));
+    const sync = closed.find((line) => line.includes(' sync '));
+    const unit = closed.find((line) => line.includes(' --test '));
+    const verify = closed.find(
+      (line) =>
+        line.includes('node_path') && line.includes('verify-ag-ui-a2ui.mjs')
+    );
+    assert.equal(
+      closed.length,
+      4,
+      'Python discovery, sync, unit and installed proof close inheritance'
+    );
+    for (const command of closed) {
+      assert.ok(command.includes('HOME="$fixture_home"'));
+      assert.ok(command.includes('TMPDIR="$fixture_tmp"'));
+      assert.ok(command.includes('PATH="$fixture_path"'));
+      assert.doesNotMatch(
+        command,
+        /NODE_OPTIONS=|(?:OPENAI|ANTHROPIC|LANGSMITH_API|LANGCHAIN_API)[A-Z_]*=/
+      );
+    }
+    for (const flag of [
+      '--no-project',
+      '--no-config',
+      '--no-python-downloads',
+      '3.12',
+    ])
+      assert.ok(find?.includes(flag), flag);
+    for (const flag of [
+      '--frozen',
+      '--no-install-project',
+      '--no-config',
+      '--no-python-downloads',
+      '--python "$python_path"',
+      '--project cockpit/ag-ui/a2ui/python',
+    ])
+      assert.ok(sync?.includes(flag), flag);
+    assert.doesNotMatch(sync, /--(?:no-)?env-file\b/);
+    assert.ok(sync.includes('UV_PROJECT_ENVIRONMENT="$fixture_environment"'));
+    assert.ok(sync.includes('UV_CACHE_DIR="$fixture_cache/uv"'));
+    assert.ok(
+      unit?.includes('fixtures/react-parity/native-ag-ui-a2ui/server.spec.mjs')
+    );
+    for (const flag of [
+      '--retain "$AG_UI_A2UI_ROOT/proof"',
+      '--python "$fixture_environment/bin/python"',
+      '--environment "$fixture_environment"',
+      '--home "$fixture_home"',
+      '--tmpdir "$fixture_tmp"',
+      'NX_LOAD_DOT_ENV_FILES=false',
+      'npm_config_userconfig="$fixture_home/npm-user"',
+      'npm_config_globalconfig="$fixture_home/npm-global"',
+      'npm_config_cache="$fixture_cache/npm"',
+    ])
+      assert.ok(verify?.includes(flag), flag);
+    assert.ok(
+      commands.indexOf(sync) < commands.indexOf(unit) &&
+        commands.indexOf(unit) < commands.indexOf(verify)
+    );
+    assert.match(
+      library,
+      /UV_PROJECT_ENVIRONMENT="\$THREADPLANE_AG_UI_FIXTURE_ENVIRONMENT" uv sync --frozen --no-install-project --project cockpit\/ag-ui\/client-tools\/python/
+    );
+    const upload = steps.find((step) =>
+      step.startsWith('name: Upload native AG-UI A2UI proof')
+    );
+    assert.ok(upload);
+    assert.match(upload, /if: always\(\)/);
+    assert.match(
+      upload,
+      /uses: actions\/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02/
+    );
+    assert.match(
+      upload,
+      /path: \$\{\{ runner.temp \}\}\/threadplane-agui-a2ui\/proof\s*\n/
+    );
+    assert.match(upload, /include-hidden-files: true/);
+    assert.doesNotMatch(upload, /\/environment|\/home|\/cache/);
+  });
+});
+
 describe('React migration baseline scope', () => {
   for (const file of [
     'examples/chat/native/react/src/app.tsx',
