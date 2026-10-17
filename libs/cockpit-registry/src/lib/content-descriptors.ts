@@ -1114,6 +1114,17 @@ const chatInputReact = (() => {
   });
 })();
 
+const chatA2uiReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'chat-a2ui-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-chat-a2ui-react');
+  if (!canonical || !frontend) throw new Error('Chat A2UI frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical, id: 'chat-a2ui-python-react', frontend: 'react', title: 'Chat A2UI (React preview)',
+    codeAssetPaths: ['app.tsx', 'application.ts', 'connection.ts', 'data.ts', 'terminal.ts', 'protocol.ts', 'form.ts', 'actions.ts', 'views.tsx', 'main.tsx', 'styles.css'].map(file => `cockpit/chat/a2ui/react/src/${file}`),
+    runtimeUrl: frontend.runtimePath, devPort: frontend.port,
+  });
+})();
+
 const chatDebugReact = (() => {
   const canonical = capabilityModules.find(descriptor => descriptor.id === 'chat-debug-python');
   const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-chat-debug-react');
@@ -1452,6 +1463,7 @@ export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
     chatInputReact,
     chatMessagesReact,
     chatThemingReact,
+    chatA2uiReact,
     chatDebugReact,
     agUiStreamingReact,
     agUiInterruptsReact,

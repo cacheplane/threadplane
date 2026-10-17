@@ -31,7 +31,8 @@ import { checkTypes } from '../react-parity/verify-langgraph-candidate.mjs';
 import { reactCockpitConfiguration } from './configuration.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const { appPath, base, adapter } = reactCockpitConfiguration(process.argv[2]);
+const { appPath, base, adapter, library, topic } = reactCockpitConfiguration(process.argv[2]);
+const nativeA2ui = library === 'chat' && topic === 'a2ui';
 const nativeAgUi = adapter === 'ag-ui';
 const staticRender = adapter === 'none';
 if (nativeAgUi) rootRangeOverrides(root);
@@ -45,7 +46,9 @@ const temporary = realpathSync(
 try {
   // Nx app targets prepare shared packages once before parallel isolated builds.
   let emission = { sources: [] };
-  const tarballs = packLocalArtifacts(root, temporary, ['react']);
+  const tarballs = packLocalArtifacts(root, temporary, ['react'], {
+    optionalPeers: nativeA2ui ? ['a2ui'] : [],
+  });
   if (!staticRender) {
     const candidate = join(temporary, 'candidate');
     mkdirSync(candidate);
@@ -63,14 +66,15 @@ try {
       seeds: staticRender ? reactRenderPresentationSeeds : nativeAgUi
         ? reactAgUiPresentationSeeds
         : reactLanggraphPresentationSeeds,
-      profile: staticRender ? 'react-render' : nativeAgUi ? 'react-ag-ui' : 'react-langgraph',
+      profile: staticRender ? 'react-render' : nativeAgUi ? 'react-ag-ui' : nativeA2ui ? 'react-native-a2ui-langgraph' : 'react-langgraph',
     }
   );
   const app = join(consumer, appPath);
   mkdirSync(app, { recursive: true });
   cpSync(join(root, appPath, 'src'), join(app, 'src'), {
     recursive: true,
-    filter: (path) => !path.endsWith('.spec.ts') && !path.endsWith('.spec.tsx'),
+    filter: (path) => !path.endsWith('.spec.ts') && !path.endsWith('.spec.tsx') &&
+      !(nativeA2ui && path.split(/[\\/]/).includes('testing')),
   });
   cpSync(join(root, appPath, 'index.html'), join(app, 'index.html'));
   cpSync(
@@ -113,6 +117,20 @@ try {
     .flatMap((entry) => entry.output)
     .flatMap((chunk) => Object.entries(chunk.modules ?? {}));
   const modules = emittedModules.map(([path]) => path);
+  if (nativeA2ui) {
+    for (const implementation of [
+      '/node_modules/@threadplane/content/src/a2ui/create-surfaces.js',
+      '/node_modules/@threadplane/a2ui/src/lib/parser.js',
+      '/node_modules/@threadplane/content/src/render-state/create-render-state.js',
+      '/node_modules/@threadplane/react/src/render/render-spec.js',
+    ]) assert.ok(emittedModules.some(([path, module]) =>
+      path.endsWith(implementation) && module.renderedLength > 0
+    ), 'Installed nonzero A2UI implementation required: ' + implementation);
+    assert.ok(emittedModules.some(([path, module]) =>
+      path.includes('/node_modules/@threadplane/langgraph/') && module.renderedLength > 0
+    ), 'Installed nonzero native runtime required');
+    assert.ok(!modules.some(path => /\/(?:testing|fixtures|e2e)\//.test(path)), 'No testing implementation in public A2UI assets');
+  }
   if (appPath === 'cockpit/render/computed-functions/react') {
     assert.ok(
       emittedModules.some(([path, module]) =>

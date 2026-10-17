@@ -1,5 +1,11 @@
 /** Closed authored frontend selection; callers cannot supply filesystem paths. */
 export function reactCockpitConfiguration(topic = 'streaming') {
+  if (topic === 'chat-a2ui')
+    return Object.freeze({
+      topic: 'a2ui', library: 'chat', adapter: 'langgraph',
+      appPath: 'cockpit/chat/a2ui/react', base: '/chat/a2ui/react/',
+      port: 4646, project: 'cockpit-chat-a2ui-react',
+    });
   if (topic === 'chat-debug')
     return Object.freeze({
       topic: 'debug', library: 'chat', adapter: 'langgraph',

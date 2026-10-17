@@ -158,6 +158,20 @@ const route = (library: string, section: string, slug: string, mode?: string) =>
   } as never);
 
 describe('unified docs workspace route', () => {
+  it('selects native Chat A2UI sources and article while retaining canonical Angular docs', async () => {
+    const tree = await route('chat', 'a2ui', 'overview');
+    const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
+    const slot = workspace?.props.reactDocsSlot;
+    expect(isValidElement(slot) && typeof slot.type === 'function' && slot.type.name).toBe('ReactChatA2uiPreview');
+    expect(isValidElement<ElementProps>(slot) && slot.props.exampleCode?.assetPaths).toEqual(
+      expect.arrayContaining(['app.tsx', 'application.ts', 'connection.ts', 'data.ts', 'terminal.ts', 'protocol.ts', 'form.ts', 'actions.ts', 'views.tsx', 'main.tsx', 'styles.css'].map(file => `cockpit/chat/a2ui/react/src/${file}`))
+    );
+    const assets = isValidElement<ElementProps>(slot) ? slot.props.exampleCode?.assetPaths ?? [] : [];
+    expect(assets.some(path => /fixture|probe|testing|\.spec\./.test(path))).toBe(false);
+    expect(isValidElement<ElementProps>(slot) && slot.props.exampleCode?.sources?.['cockpit/chat/a2ui/python/src/graph.py']).toContain('a2ui');
+    const angular = findElement(workspace?.props.docsSlot, MdxRenderer as ComponentType<never>);
+    expect(angular?.props.exampleCode?.assetPaths.some(path => path.includes('/a2ui/angular/'))).toBe(true);
+  });
   it('selects the native Generative UI article and source assets on the canonical guide', async () => {
     const tree = await route('chat', 'guides', 'generative-ui');
     const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);

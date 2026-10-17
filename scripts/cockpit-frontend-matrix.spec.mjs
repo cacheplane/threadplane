@@ -1,5 +1,11 @@
 import assert from 'node:assert/strict';
 
+test('A2UI backend selects exactly the canonical Angular and registered native React frontend', () => {
+  const selected = selectCockpitCaps(deriveCockpitCaps(), new Set(['cockpit-chat-a2ui-python']), { fullFleet: false });
+  assert.deepEqual(selected.map(cap => cap.angular).sort(), ['cockpit-chat-a2ui-angular', 'cockpit-chat-a2ui-react']);
+  assert.ok(selected.every(cap => cap.python === 'cockpit/chat/a2ui/python' && cap.pythonName === 'cockpit-chat-a2ui-python'));
+});
+
 test('MAF backend changes select exactly its canonical Angular and bounded React frontends', () => {
   const root = fileURLToPath(new URL('..', import.meta.url));
   const selected = selectCockpitCaps(deriveCockpitCaps(root), new Set(['cockpit-runtimes-microsoft-agent-framework-python']), { fullFleet: false });

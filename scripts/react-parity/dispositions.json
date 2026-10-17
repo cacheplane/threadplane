@@ -10845,7 +10845,7 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private cockpit, example, or test infrastructure; adapt for React scenarios without adding a public package API.",
-      "note": "Bounded AG-UI Client Tools and native Mastra reservation private React source-build previews; Mastra retains canonical Angular backend and prompts. Native Mastra Docs/Code/Run uses current pause authority and literal correlated backend outcomes; broader parity and public release remain open."
+      "note": "Bounded AG-UI Client Tools and native Mastra reservation private React source-build previews; Mastra retains canonical Angular backend and prompts. Native Mastra Docs/Code/Run uses current pause authority and literal correlated backend outcomes; broader parity and public release remain open. Native Chat A2UI adds its private frontend identity and canonical Docs/Code/Run source descriptor using the existing shared backend; 40 React and 41 Angular frontends are registered. The closed ten-view flight profile does not complete generic all-18 A2UI parity, T20/T25/T27, SSR or public package release."
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/content-descriptors.ts",
@@ -10856,7 +10856,7 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private cockpit, example, or test infrastructure; adapt for React scenarios without adding a public package API.",
-      "note": "Bounded AG-UI Client Tools and native Mastra reservation private React source-build previews; Mastra retains canonical Angular backend and prompts. Native Mastra Docs/Code/Run uses current pause authority and literal correlated backend outcomes; broader parity and public release remain open."
+      "note": "Bounded AG-UI Client Tools and native Mastra reservation private React source-build previews; Mastra retains canonical Angular backend and prompts. Native Mastra Docs/Code/Run uses current pause authority and literal correlated backend outcomes; broader parity and public release remain open. Native Chat A2UI adds its private frontend identity and canonical Docs/Code/Run source descriptor using the existing shared backend; 40 React and 41 Angular frontends are registered. The closed ten-view flight profile does not complete generic all-18 A2UI parity, T20/T25/T27, SSR or public package release."
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/docs-links.ts",

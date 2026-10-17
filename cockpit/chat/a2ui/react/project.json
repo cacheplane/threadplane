@@ -1,0 +1,48 @@
+{
+  "name": "cockpit-chat-a2ui-react",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "cockpit/chat/a2ui/react/src",
+  "projectType": "application",
+  "tags": ["scope:cockpit-examples", "scope:cockpit-e2e", "framework:react"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [{ "target": "build", "projects": ["core", "content", "react", "a2ui"] }],
+      "outputs": ["{workspaceRoot}/dist/cockpit/chat/a2ui/react"],
+      "options": { "command": "node scripts/react-cockpit/build.mjs chat-a2ui" }
+    },
+    "e2e": {
+      "executor": "@nx/playwright:playwright",
+      "cache": false,
+      "dependsOn": ["build", "fixture-test"],
+      "options": {
+        "config": "cockpit/chat/a2ui/react/e2e/playwright.config.ts",
+        "skipInstall": true
+      }
+    },
+    "test": {
+      "executor": "@nx/vitest:test",
+      "options": {
+        "configFile": "cockpit/chat/a2ui/react/vite.config.mts",
+        "reporters": ["default"]
+      }
+    },
+    "fixture-test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [
+        {
+          "target": "build",
+          "projects": ["core", "content", "react", "a2ui"]
+        }
+      ],
+      "options": {
+        "command": "node --test cockpit/chat/a2ui/react/fixtures/terminal-admission.spec.mjs"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}
