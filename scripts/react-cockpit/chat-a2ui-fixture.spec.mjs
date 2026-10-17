@@ -417,6 +417,9 @@ test(
     assert.equal(report.receipt.turns.length, 4);
     assert.ok(report.receipt.turns.every((turn) => turn.outcome === 'success'));
     assert.equal(report.compiler.exit, 0);
+    assert.equal(report.compiler.claim, 'small public API scaffold only');
+    assert.deepEqual(report.compiler.files, ['contract.ts']);
+    assert.equal(report.application, undefined);
     assert.equal(report.consumerChild.reaped, true);
     assert.equal(report.receipt.fixture.worker.reaped, true);
     assert.equal(report.receipt.fixture.worker.pythonAbsent, true);
@@ -425,3 +428,68 @@ test(
     assert.equal(report.closure.groupAbsent, true);
   }
 );
+
+test('native probe rejects unknown admission modes and mixed controls before setup', async () => {
+  for (const mode of ['unknown', '', true, {}, ['application-admission']])
+    await assert.rejects(
+      probe.runNativeProbe({ mode, workerScenario: 'fail-setup' }),
+      /Unknown native probe mode/
+    );
+  await assert.rejects(
+    probe.runNativeProbe({
+      mode: 'application-admission',
+      workerScenario: 'fail-setup',
+    }),
+    /Cannot combine admission mode/
+  );
+});
+
+test('native probe rejects malformed option records and worker CLI combinations', async () => {
+  const { spawnSync } = await import('node:child_process');
+  for (const options of [
+    null,
+    [],
+    Object.assign(Object.create({ mode: 'application-admission' }), {
+      workerScenario: 'fail-setup',
+    }),
+    { source: '/tmp/foreign.ts' },
+  ])
+    await assert.rejects(
+      probe.runNativeProbe(options),
+      /Unknown native probe options/
+    );
+  let reads = 0;
+  await assert.rejects(
+    probe.runNativeProbe(
+      Object.defineProperty({}, 'mode', {
+        get() {
+          reads++;
+          return 'application-admission';
+        },
+      })
+    ),
+    /Unknown native probe options/
+  );
+  assert.equal(reads, 0);
+  for (const args of [
+    ['--worker', '/tmp', '--mode', 'unknown'],
+    [
+      '--worker',
+      '/tmp',
+      '--mode',
+      'application-admission',
+      '--scenario',
+      'fail-setup',
+    ],
+    ['--worker', '/tmp', '--mode', 'settlement', '--scenario', 'unknown'],
+    ['--worker', '/tmp', '--mode', 'settlement', 'extra'],
+  ]) {
+    const result = spawnSync(
+      process.execPath,
+      ['scripts/react-cockpit/chat-a2ui-native-probe.mjs', ...args],
+      { encoding: 'utf8' }
+    );
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /Unknown native probe options/);
+  }
+});

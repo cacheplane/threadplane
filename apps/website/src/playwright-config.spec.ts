@@ -436,6 +436,7 @@ describe('Website Playwright configuration', () => {
       expect.objectContaining({command:'npx nx run cockpit-chat-messages-python:smoke && node scripts/react-cockpit/serve.mjs chat-messages --no-parent',url:'http://127.0.0.1:4620'}),
       expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs chat-theming --no-parent',url:'http://127.0.0.1:4644'}),
       expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs chat-debug --no-parent',url:'http://127.0.0.1:4645'}),
+      expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs chat-a2ui --no-parent',url:'http://127.0.0.1:4646'}),
       expect.objectContaining({command:'npx nx run cockpit-chat-input-python:smoke && node scripts/react-cockpit/serve.mjs chat-input --no-parent',url:'http://127.0.0.1:4621'}),
       expect.objectContaining({command:'npx nx run cockpit-chat-interrupts-python:smoke && node scripts/react-cockpit/serve.mjs chat-interrupts --no-parent',url:'http://127.0.0.1:4622'}),
       expect.objectContaining({command:'npx nx run cockpit-chat-tool-calls-python:smoke && node scripts/react-cockpit/serve.mjs chat-tool-calls --no-parent',url:'http://127.0.0.1:4623'}),
@@ -501,6 +502,17 @@ it('owns frozen AG-UI Client Tools preparation without reusing a foreign fixture
   const project = JSON.parse(readFileSync(resolve(import.meta.dirname, '../project.json'), 'utf8'));
   expect(project.implicitDependencies).toContain('cockpit-ag-ui-client-tools-react');
   expect(project.targets.e2e.dependsOn.find((dependency: { target?: string }) => dependency.target === 'build').projects).toContain('cockpit-ag-ui-client-tools-react');
+});
+
+it('scopes native Chat A2UI checks to Website and the exact owned React server', () => {
+  const config = createWebsitePlaywrightConfig({ WEBSITE_E2E_REACT_TOPIC: 'chat-a2ui', WEBSITE_E2E_PORT: '4390', CI: 'true', PLAYWRIGHT_REUSE_EXISTING_SERVER: 'true' });
+  const servers = Array.isArray(config.webServer) ? config.webServer : [];
+  expect(servers.map(server => server.url)).toEqual(['http://127.0.0.1:4390', 'http://127.0.0.1:4646']);
+  expect(servers.every(server => server.reuseExistingServer === false)).toBe(true);
+  expect(servers[1]?.command).toBe('node scripts/react-cockpit/serve.mjs chat-a2ui --no-parent');
+  expect(config.testMatch).toBe('**/react-chat-a2ui-preview.spec.ts');
+  expect(config.workers).toBe(1);
+  expect(config.retries).toBe(0);
 });
 
 it('scopes native client-tools checks to the Website and exact two owned frontend servers', () => {

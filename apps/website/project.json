@@ -4,6 +4,7 @@
   "sourceRoot": "apps/website/src",
   "projectType": "application",
   "implicitDependencies": [
+    "cockpit-chat-a2ui-react",
     "cockpit-chat-debug-react",
     "cockpit-chat-theming-react",
     "workspace-react",
@@ -80,6 +81,10 @@
       "executor": "@nx/playwright:playwright",
       "dependsOn": [
         {
+          "target": "fixture-test",
+          "projects": ["cockpit-chat-a2ui-react"]
+        },
+        {
           "target": "test",
           "projects": ["cockpit-chat-theming-python", "cockpit-chat-debug-python"]
         },
@@ -90,6 +95,7 @@
         {
           "target": "build",
           "projects": [
+            "cockpit-chat-a2ui-react",
             "cockpit-langgraph-streaming-react",
             "cockpit-langgraph-interrupts-react",
             "cockpit-langgraph-memory-react",

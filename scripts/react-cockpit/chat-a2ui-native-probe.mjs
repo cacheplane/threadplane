@@ -61,7 +61,7 @@ export async function withOwnedResources(work, report = {}, finish = () => {}) {
   if (failure) throw failure;
 }
 
-async function installedConsumer() {
+async function installedConsumer(mode) {
   const assert = (await import('node:assert/strict')).default;
   const { createServer } = await import('node:http');
   const { once } = await import('node:events');
@@ -84,7 +84,13 @@ async function installedConsumer() {
       realpathSync(process.cwd()) + '/node_modules/'
     )
   );
+  const admission =
+    mode === 'application-admission'
+      ? await import('./compiled/application/terminal.js')
+      : undefined;
   const report = { entry, sdkEntry, turns: [], observations: [] };
+  let activeObservation, currentOperation;
+  let confirmedMessages = [];
   let fixture;
   await withOwnedResources(
     async (own) => {
@@ -125,6 +131,7 @@ async function installedConsumer() {
       own('session', () => session.dispose());
       const unsubscribe = session.subscribe(() => {
         const s = session.getSnapshot();
+        activeObservation?.observe(s);
         report.observations.push({
           status: s.status,
           error: s.error,
@@ -137,6 +144,14 @@ async function installedConsumer() {
       own('subscription', unsubscribe);
       let prior = [];
       for (const input of JSON.parse(readFileSync('inputs.json', 'utf8'))) {
+        const operation = {};
+        currentOperation = operation;
+        const observation = admission?.createObservation({
+          threadId,
+          input,
+          previous: confirmedMessages,
+        });
+        activeObservation = observation;
         const outcome = await session.submit(input);
         const snapshot = session.getSnapshot();
         const turn = { input, outcome, snapshot };
@@ -150,7 +165,31 @@ async function installedConsumer() {
         assert.equal(snapshot.error, undefined);
         assert.deepEqual(snapshot.interrupts, []);
         assert.deepEqual(snapshot.subgraphs, []);
-        await session.load();
+        activeObservation = undefined;
+        let exactFromAdmission;
+        if (admission) {
+          const prepared = await admission.prepareTerminal({
+            operation,
+            observation,
+            outcome,
+            getOperation: () => currentOperation,
+            getSnapshot: () => session.getSnapshot(),
+            load: () => session.load(),
+            read: async (checkpoint) => {
+              exactFromAdmission = await client.threads.getState(
+                threadId,
+                checkpoint
+              );
+              return exactFromAdmission;
+            },
+          });
+          assert.equal(
+            prepared.kind,
+            'prepared',
+            'Actual installed app helper must admit canonical terminal'
+          );
+          turn.admission = prepared.confirmation;
+        } else await session.load();
         const loaded = session.getSnapshot();
         turn.loaded = loaded;
         const cp = structuredClone(loaded.history[0].checkpoint);
@@ -158,7 +197,8 @@ async function installedConsumer() {
         assert.equal(cp.thread_id, threadId);
         assert.equal(cp.checkpoint_ns, '');
         assert.ok(cp.checkpoint_id);
-        const exact = await client.threads.getState(threadId, cp);
+        const exact =
+          exactFromAdmission ?? (await client.threads.getState(threadId, cp));
         turn.exact = exact;
         assert.deepEqual(exact.checkpoint, cp);
         assert.deepEqual(exact.tasks, []);
@@ -197,6 +237,111 @@ async function installedConsumer() {
             content: m.content,
           }))
         );
+        if (admission) {
+          const owned = admission.captureOwned({
+            observation,
+            outcome,
+            snapshot,
+          });
+          const negatives = [
+            [
+              'wrong thread',
+              (l, r) => {
+                r.checkpoint.thread_id = 'other';
+              },
+            ],
+            [
+              'wrong checkpoint',
+              (l, r) => {
+                r.checkpoint.checkpoint_id = 'other';
+              },
+            ],
+            [
+              'wrong root map',
+              (l, r) => {
+                r.checkpoint.checkpoint_map = { '': 'other' };
+              },
+            ],
+            [
+              'pending task',
+              (l, r) => {
+                r.tasks = [{ id: 'pending' }];
+              },
+            ],
+            [
+              'wrong human',
+              (l) => {
+                l.messages.at(-2).id = 'other';
+              },
+            ],
+            [
+              'duplicate IDs',
+              (l) => {
+                l.messages.at(-1).id = l.messages[0].id;
+              },
+            ],
+            [
+              'tool authority',
+              (l, r) => {
+                r.values.messages.at(-1).tool_calls = [{ id: 'tool' }];
+              },
+            ],
+            [
+              'changed prior prefix',
+              (l, r) => {
+                l.messages[0].content = 'changed';
+              },
+            ],
+            [
+              'complete-looking callback prefix',
+              (l, r) => {
+                l.messages.at(-1).content =
+                  '---a2ui_JSON---\n{"createSurface":{"surfaceId":"fake"}}';
+                r.values.completed_answer_id = l.messages.at(-1).id;
+              },
+            ],
+          ];
+          turn.admissionNegatives = negatives.map(([name, mutate]) => {
+            const l = structuredClone(loaded),
+              r = structuredClone(exact);
+            mutate(l, r);
+            const rejected =
+              admission.captureTerminal(owned, l, r) === undefined;
+            assert.ok(rejected, name);
+            return { name, rejected };
+          });
+          turn.admissionNegatives.push({
+            name: 'actual transient callback snapshot',
+            rejected:
+              admission.captureTerminal(owned, snapshot, exact) === undefined,
+          });
+          for (const phase of ['load', 'read', 'snapshot']) {
+            let current = operation,
+              capturedSnapshot = snapshot;
+            const result = await admission.prepareTerminal({
+              operation,
+              observation,
+              outcome,
+              getOperation: () => current,
+              getSnapshot: () => capturedSnapshot,
+              load: async () => {
+                capturedSnapshot = loaded;
+                if (phase === 'load') current = {};
+              },
+              read: async () => {
+                if (phase === 'read') current = {};
+                if (phase === 'snapshot') capturedSnapshot = { ...loaded };
+                return exact;
+              },
+            });
+            turn.admissionNegatives.push({
+              name: 'stale after ' + phase,
+              rejected: result.kind === 'unavailable',
+            });
+          }
+          assert.ok(turn.admissionNegatives.every((row) => row.rejected));
+          confirmedMessages = turn.admission.messages;
+        }
         prior = exact.values.messages;
       }
       const captured = fixture.receipt();
@@ -253,7 +398,7 @@ async function installedConsumer() {
   );
 }
 
-async function runWorker(evidence, scenario) {
+async function runWorker(evidence, scenario, mode) {
   assert.equal(process.versions.node.split('.')[0], '22');
   const root = realpathSync(fileURLToPath(new URL('../../', import.meta.url)));
   const candidate = join(evidence, 'candidate'),
@@ -262,7 +407,7 @@ async function runWorker(evidence, scenario) {
   mkdirSync(consumer);
   const node = realpathSync(process.execPath);
   const env = { ...process.env };
-  const report = { evidence, root, node };
+  const report = { evidence, root, node, mode };
   const sha = (p) => createHash('sha256').update(readFileSync(p)).digest('hex');
   try {
     if (scenario === 'fail-setup') throw Error('controlled setup failure');
@@ -299,7 +444,9 @@ async function runWorker(evidence, scenario) {
     );
     writeFileSync(
       join(consumer, 'native-consumer.mjs'),
-      `const withOwnedResources = ${withOwnedResources.toString()};\n(${installedConsumer.toString()})().catch(e => { console.error(e); process.exitCode=1; });\n`
+      `const withOwnedResources = ${withOwnedResources.toString()};\n(${installedConsumer.toString()})(${JSON.stringify(
+        mode
+      )}).catch(e => { console.error(e); process.exitCode=1; });\n`
     );
     const action = (name, context) =>
       JSON.stringify({
@@ -337,6 +484,22 @@ async function runWorker(evidence, scenario) {
       join(consumer, 'contract.ts'),
       "import {createSession} from '@threadplane/langgraph';\nconst session = createSession({assistantId:'c-a2ui',threadId:'local',apiUrl:'http://127.0.0.1'});\nconst outcome: Promise<string> = session.submit('request');\nvoid outcome; if (session.load) void session.load(); void session.getSnapshot().history;\n"
     );
+    const files = ['contract.ts'];
+    if (mode === 'application-admission') {
+      mkdirSync(join(consumer, 'application'));
+      report.application = { sources: {}, modules: {} };
+      for (const name of ['data.ts', 'terminal.ts']) {
+        const path = join(root, 'cockpit/chat/a2ui/react/src', name);
+        const bytes = readFileSync(path);
+        writeFileSync(join(consumer, 'application', name), bytes);
+        report.application.sources[name] = {
+          path,
+          bytes: bytes.length,
+          sha256: createHash('sha256').update(bytes).digest('hex'),
+        };
+        files.push('application/' + name);
+      }
+    }
     writeFileSync(
       join(consumer, 'tsconfig.json'),
       JSON.stringify({
@@ -347,10 +510,13 @@ async function runWorker(evidence, scenario) {
           lib: ['ES2022', 'ESNext.Disposable', 'DOM'],
           strict: true,
           skipLibCheck: false,
-          noEmit: true,
+          noEmit: mode !== 'application-admission',
+          ...(mode === 'application-admission'
+            ? { outDir: 'compiled', rootDir: '.' }
+            : {}),
           types: ['node'],
         },
-        files: ['contract.ts'],
+        files,
       })
     );
     const compiler = join(consumer, 'node_modules/typescript/bin/tsc');
@@ -360,7 +526,12 @@ async function runWorker(evidence, scenario) {
       implementationSha256: sha(
         join(consumer, 'node_modules/typescript/lib/_tsc.js')
       ),
-      claim: 'small public API scaffold only',
+      files,
+      configSha256: sha(join(consumer, 'tsconfig.json')),
+      claim:
+        mode === 'application-admission'
+          ? 'actual application admission helpers'
+          : 'small public API scaffold only',
     };
     execFileSync(node, [compiler, '--project', 'tsconfig.json'], {
       cwd: consumer,
@@ -368,6 +539,15 @@ async function runWorker(evidence, scenario) {
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     report.compiler.exit = 0;
+    if (mode === 'application-admission')
+      for (const name of ['data.js', 'terminal.js']) {
+        const path = join(consumer, 'compiled/application', name);
+        report.application.modules[name] = {
+          path,
+          bytes: readFileSync(path).length,
+          sha256: sha(path),
+        };
+      }
     const source = join(consumer, 'native-consumer.mjs');
     report.consumerSha256 = sha(source);
     copyFileSync(
@@ -471,11 +651,35 @@ function fileManifest(directory) {
 }
 
 /** The caller owns a fresh POSIX group, including synchronous helper descendants. */
-export async function runNativeProbe({
-  evidence = mkdtempSync(join(tmpdir(), 'threadplane-a2ui-native-')),
-  deadlineMs = 120000,
-  workerScenario,
-} = {}) {
+export async function runNativeProbe(options = {}) {
+  assert.ok(
+    options &&
+      typeof options === 'object' &&
+      Object.getPrototypeOf(options) === Object.prototype,
+    'Unknown native probe options'
+  );
+  assert.ok(
+    Reflect.ownKeys(options).every(
+      (key) =>
+        ['evidence', 'deadlineMs', 'workerScenario', 'mode'].includes(key) &&
+        'value' in Object.getOwnPropertyDescriptor(options, key)
+    ),
+    'Unknown native probe options'
+  );
+  const {
+    evidence = mkdtempSync(join(tmpdir(), 'threadplane-a2ui-native-')),
+    deadlineMs = 120000,
+    workerScenario,
+    mode = 'settlement',
+  } = options;
+  assert.ok(
+    ['settlement', 'application-admission'].includes(mode),
+    'Unknown native probe mode'
+  );
+  assert.ok(
+    mode !== 'application-admission' || workerScenario === undefined,
+    'Cannot combine admission mode with control scenarios'
+  );
   assert.ok(
     ['darwin', 'linux'].includes(process.platform),
     'POSIX process ownership required'
@@ -516,6 +720,7 @@ export async function runNativeProbe({
     nodeVersion: process.version,
     deadlineMs,
     workerScenario,
+    mode,
     environmentKeys: Object.keys(env).sort(),
   };
   let child,
@@ -573,6 +778,8 @@ export async function runNativeProbe({
         fileURLToPath(import.meta.url),
         '--worker',
         evidence,
+        '--mode',
+        mode,
         ...(workerScenario ? ['--scenario', workerScenario] : []),
       ],
       { env, detached: true, stdio: ['ignore', 'pipe', 'pipe'] }
@@ -667,9 +874,14 @@ if (
   else if (
     args[0] === '--worker' &&
     isAbsolute(args[1] ?? '') &&
-    (args.length === 2 ||
-      (args.length === 4 && args[2] === '--scenario' && scenarios.has(args[3])))
+    args[2] === '--mode' &&
+    ['settlement', 'application-admission'].includes(args[3]) &&
+    (args.length === 4 ||
+      (args.length === 6 &&
+        args[3] === 'settlement' &&
+        args[4] === '--scenario' &&
+        scenarios.has(args[5])))
   )
-    await runWorker(args[1], args[3]);
+    await runWorker(args[1], args[5], args[3]);
   else throw Error('Unknown native probe options');
 }

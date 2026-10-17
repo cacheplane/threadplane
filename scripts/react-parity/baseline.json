@@ -1,17 +1,12 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "c9a548f5649d1166a6cd84296e5da87b918eefc5",
+  "baselineHead": "b02aed46f21fa33aa16921272ef95c1f18628d09",
   "sourceState": {
     "modified": [
-      ".github/workflows/ci.yml",
-      "libs/react/README.md",
-      "libs/react/src/render/index.ts",
-      "libs/react/src/render/render-spec.tsx",
-      "libs/react/src/render/types.ts"
+      "libs/cockpit-registry/src/lib/capability-registry.ts",
+      "libs/cockpit-registry/src/lib/content-descriptors.ts"
     ],
-    "untracked": [
-      "libs/react/src/render/readiness.tsx"
-    ]
+    "untracked": []
   },
   "scope": {
     "libraries": [
@@ -13667,13 +13662,13 @@
       "id": "source:libs/cockpit-registry/src/lib/capability-registry.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "sha256": "f67265f2f624b8e01b6ec69036759e396c302ac9db8dee7563de07439dbd1ab0"
+      "sha256": "2490c7a94f197eb2fffe28bec75fc935a7f3a5859de5975c74713c3f29dd6cb0"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/content-descriptors.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/content-descriptors.ts",
-      "sha256": "580052b12c3e449b2188824f7720c156ae6bd5be3eec7e8707100749263ff3be"
+      "sha256": "83c99ddf863681598cea828cdbea1843e94531db82d0c351d887879e6bfa3efc"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/docs-links.ts",
