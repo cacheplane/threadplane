@@ -101,6 +101,10 @@ const A2UI_NATIVE_FIXTURE_FILES = new Set([
   'cockpit/chat/a2ui/python/uv.lock',
   'cockpit/chat/a2ui/python/pyproject.toml',
   'cockpit/ag-ui/a2ui/python/src/graph.py',
+  'cockpit/ag-ui/a2ui/python/src/__init__.py',
+  'cockpit/ag-ui/a2ui/python/src/server.py',
+  'cockpit/ag-ui/a2ui/python/pyproject.toml',
+  'cockpit/ag-ui/a2ui/python/uv.lock',
 ]);
 
 // Keep migration CI ownership aligned with the inventory's reviewed scope.

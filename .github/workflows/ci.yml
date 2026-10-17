@@ -270,6 +270,53 @@ jobs:
         run: node --test scripts/react-parity/ag-ui-candidate-package.spec.mjs fixtures/react-parity/native-ag-ui-client-tools/server.spec.mjs
       - name: Verify real AG-UI candidate package
         run: node scripts/react-parity/verify-ag-ui-candidate.mjs
+      - name: Verify installed native AG-UI A2UI
+        timeout-minutes: 15
+        env:
+          AG_UI_A2UI_ROOT: ${{ runner.temp }}/threadplane-agui-a2ui
+        run: |
+          set -euo pipefail
+          uv_path="$(command -v uv)"
+          node_path="$(command -v node)"
+          python_bin="$(command -v python3.12)"
+          fixture_path="$(dirname "$node_path"):$(dirname "$uv_path"):$(dirname "$python_bin"):/usr/bin:/bin"
+          fixture_environment="$AG_UI_A2UI_ROOT/environment"
+          fixture_home="$AG_UI_A2UI_ROOT/home"
+          fixture_cache="$AG_UI_A2UI_ROOT/cache"
+          fixture_tmp="$AG_UI_A2UI_ROOT/tmp"
+          mkdir "$AG_UI_A2UI_ROOT"
+          mkdir "$fixture_home" "$fixture_cache" "$fixture_tmp"
+          : > "$fixture_home/npm-user"
+          : > "$fixture_home/npm-global"
+          python_path="$(
+            env -i HOME="$fixture_home" PATH="$fixture_path" TMPDIR="$fixture_tmp" LANG=C.UTF-8 \
+              UV_CACHE_DIR="$fixture_cache/uv" \
+              "$uv_path" python find --no-project --no-config --no-python-downloads 3.12
+          )"
+          env -i HOME="$fixture_home" PATH="$fixture_path" TMPDIR="$fixture_tmp" LANG=C.UTF-8 \
+            UV_PROJECT_ENVIRONMENT="$fixture_environment" UV_CACHE_DIR="$fixture_cache/uv" \
+            PYTHONDONTWRITEBYTECODE=1 LANGSMITH_TRACING=false LANGCHAIN_TRACING_V2=false \
+            "$uv_path" sync --frozen --no-install-project --no-config --no-python-downloads \
+            --python "$python_path" --project cockpit/ag-ui/a2ui/python
+          env -i HOME="$fixture_home" PATH="$fixture_path" TMPDIR="$fixture_tmp" LANG=C.UTF-8 \
+            NX_LOAD_DOT_ENV_FILES=false \
+            "$node_path" --test fixtures/react-parity/native-ag-ui-a2ui/server.spec.mjs
+          env -i HOME="$fixture_home" PATH="$fixture_path" TMPDIR="$fixture_tmp" LANG=C.UTF-8 \
+            NX_LOAD_DOT_ENV_FILES=false npm_config_cache="$fixture_cache/npm" \
+            npm_config_userconfig="$fixture_home/npm-user" npm_config_globalconfig="$fixture_home/npm-global" \
+            PYTHONDONTWRITEBYTECODE=1 LANGSMITH_TRACING=false LANGCHAIN_TRACING_V2=false \
+            "$node_path" scripts/react-parity/verify-ag-ui-a2ui.mjs \
+            --retain "$AG_UI_A2UI_ROOT/proof" --python "$fixture_environment/bin/python" \
+            --environment "$fixture_environment" --home "$fixture_home" --tmpdir "$fixture_tmp"
+      - name: Upload native AG-UI A2UI proof
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: threadplane-native-agui-a2ui-proof
+          path: ${{ runner.temp }}/threadplane-agui-a2ui/proof
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 7
       - name: Verify installed owned Markdown
         run: node scripts/react-parity/verify-markdown.mjs
       - name: Verify installed owned A2UI surfaces
