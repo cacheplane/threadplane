@@ -187,6 +187,10 @@ describe('canonical A2UI native regression CI ownership', () => {
     'scripts/react-cockpit/chat-a2ui-native-probe.mjs',
     'cockpit/chat/a2ui/python/src/graph.py',
     'cockpit/chat/a2ui/python/src/nested/helper.py',
+    'cockpit/chat/a2ui/python/tests/test_booking_form.py',
+    'cockpit/chat/a2ui/python/tests/test_graph.py',
+    'cockpit/chat/a2ui/python/tests/nested/test_graph.py',
+    'cockpit/ag-ui/a2ui/python/src/graph.py',
     'cockpit/chat/a2ui/python/uv.lock',
     'cockpit/chat/a2ui/python/pyproject.toml',
   ];
@@ -194,6 +198,8 @@ describe('canonical A2UI native regression CI ownership', () => {
     it(`selects Library independently for ${file} and preserves actual owner scopes`, async () => {
       const projectPath = file.startsWith('scripts/')
         ? 'scripts/project.json'
+        : file.startsWith('cockpit/ag-ui/')
+        ? 'cockpit/ag-ui/a2ui/python/project.json'
         : 'cockpit/chat/a2ui/python/project.json';
       const project = JSON.parse(await readFile(projectPath, 'utf8'));
       assert.equal(hasGlobalCiFileChange([file]), false);
@@ -220,7 +226,14 @@ describe('canonical A2UI native regression CI ownership', () => {
     'cockpit/chat/a2ui/python/uv.lock.bak',
     'cockpit/chat/a2ui/python/pyproject.toml/extra',
     'cockpit/chat/a2ui/python/project.json',
-    'cockpit/chat/a2ui/python/tests/test_graph.py',
+    'cockpit/chat/a2ui/python/tests-other/test_booking_form.py',
+    'cockpit/chat/a2ui/python/tests.py',
+    'other/cockpit/chat/a2ui/python/tests/test_booking_form.py',
+    'cockpit/ag-ui/a2ui/python/src/graph.py.bak',
+    'cockpit/ag-ui/a2ui/python/src/graph.py/extra',
+    'cockpit/ag-ui/a2ui/python/src/helper.py',
+    'cockpit/ag-ui/a2ui/python/tests/test_booking_form.py',
+    'cockpit/ag-ui/a2ui/python-other/src/graph.py',
     'cockpit/chat/other/python/src/graph.py',
   ]) it(`keeps unrelated input outside Library: ${file}`, () => {
     assert.deepEqual(classifyFromAffected([file], []), emptyScope());
@@ -249,10 +262,15 @@ describe('canonical A2UI native regression CI ownership', () => {
     assert.match(proof, /A2UI_FIXTURE_CACHE: \$\{\{ runner.temp \}\}\/threadplane-a2ui-cache/);
     assert.match(proof, /uv_path="\$\(command -v uv\)"/);
     assert.match(proof, /python_path="\$\("\$uv_path" python find --no-project --no-config --no-python-downloads 3.12\)"/);
-    assert.equal((proof.match(/env -i /g) ?? []).length, 2, 'preparation and execution both close inherited environment');
+    assert.equal((proof.match(/env -i /g) ?? []).length, 3, 'preparation, unit tests and native fixtures each close inherited environment');
     const prepare = proof.indexOf('"$uv_path" run --frozen --python "$python_path" --no-env-file --no-config --no-python-downloads');
+    const unit = proof.indexOf('"$A2UI_FIXTURE_ENV/bin/python" -E -B -m unittest discover -s cockpit/chat/a2ui/python/tests -p test_booking_form.py');
     const execute = proof.indexOf('"$node_path" --test --test-concurrency=1 scripts/react-cockpit/chat-a2ui-fixture.spec.mjs');
-    assert.ok(prepare >= 0 && execute > prepare, 'frozen preparation precedes the exact maintained regression');
+    assert.ok(prepare >= 0 && unit > prepare && execute > unit, 'frozen preparation precedes exact unit discovery and then the maintained native regression');
+    const unitBlock = proof.slice(proof.lastIndexOf('env -i ', unit), unit);
+    assert.match(unitBlock, /^env -i HOME="\$fixture_home" PATH="\$fixture_path" LANG=C.UTF-8 \\\n/);
+    assert.match(unitBlock, /PYTHONDONTWRITEBYTECODE=1 LANGSMITH_TRACING=false LANGCHAIN_TRACING_V2=false \\\n/);
+    assert.doesNotMatch(unitBlock, /\b(?:OPENAI|ANTHROPIC|LANGSMITH_API|LANGCHAIN_API)[A-Z_]*=/);
     assert.match(proof, /--project cockpit\/chat\/a2ui\/python python -E -B -c 'import langgraph'/);
     for (const configuration of [
       'A2UI_FIXTURE_UV="$uv_path"',

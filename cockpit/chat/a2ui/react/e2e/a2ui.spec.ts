@@ -89,7 +89,7 @@ test('installed native application saves request, edited Search, Select and serv
     expect(state.values.messages).toHaveLength((index + 1) * 2);
     expect(state.values.messages.at(-2).id).toBe(runs[index].body.input.messages[0].id);
   }
-  expect(receipt.proofs.every((p: any) => p.actualCompiledGraph && p.networkConnectAttempts === 0 && p.sourceSha256 === '32e8be8cc0794542a0537438201916d5cfaaffcc3ca58b9c94b1a94586fe5bd5' && p.lockSha256 === '56247b7f8c8a4cd27f43238a3c99f37f251c8e3a850a94d1761d7ac472abf303')).toBe(true);
+  expect(receipt.proofs.every((p: any) => p.actualCompiledGraph && p.networkConnectAttempts === 0 && p.sourceSha256 === '9a54abf5d03dfd7d285265fc4f3c37ca3b5a830dee319cf52093584907ea8462' && p.lockSha256 === '56247b7f8c8a4cd27f43238a3c99f37f251c8e3a850a94d1761d7ac472abf303')).toBe(true);
   expect(JSON.stringify(receipt.proofs)).toContain('_find_routes_impl');
   expect(JSON.stringify(receipt.events)).toContain('generate_title');
   expect(JSON.stringify(receipt.events)).toContain('messages');
