@@ -323,10 +323,10 @@ This bounded runtime proof does not establish complete migration parity.
 | T29 | Implement thread/project/search/history/timeline/debug surfaces |
 | T30 | Implement popup, sidebar and sidenav compositions |
 | T31 | Create canonical React applications and public testing utilities |
-| T32 | In progress: nine LangGraph and native AG-UI Streaming/Interrupts/Tool Views frontend/runtime identities; existing bridges reused |
-| T33 | In progress: twelve installed React previews across LangGraph and AG-UI; remaining 29 topic frontends pending |
-| T34 | In progress: public selectors and frontend URL state for nine LangGraph and three AG-UI previews; broader navigation/search parity pending |
-| T35 | In progress: authored docs and public agent guidance for twelve React previews; full React docs pending |
+| T32 | In progress: registered native React frontend identities across LangGraph, Deep Agents, Chat, AG-UI, Render and Runtimes; existing runtimes and bridges reused, Render playback stays local |
+| T33 | In progress: 39 installed React previews (9 LangGraph, 5 Deep Agents, 10 Chat, 6 AG-UI, 6 Render, 3 Runtimes); Chat A2UI and AG-UI A2UI React frontends remain pending |
+| T34 | In progress: public selectors and frontend URL state for registered React previews; broader navigation/search parity pending |
+| T35 | In progress: docs and public agent guidance for native React previews; full React docs pending |
 | T36 | Expand CI and packed consumer compatibility |
 | T37 | Prepare prerelease, publishing, provenance and rollback |
 | T38 | Measure and optimize streaming, bundles and retention |
