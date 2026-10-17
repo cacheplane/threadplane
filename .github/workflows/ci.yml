@@ -226,6 +226,29 @@ jobs:
         run: node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.base.json scripts/react-parity/verify-tool-claims.ts
       - run: npx nx run-many -t test --projects=chat,ag-ui,render,a2ui,telemetry,middleware --coverage --parallel=1 --maxWorkers=2
       - run: npx nx run-many -t build --projects=$LIBS --configuration=production
+      - name: Verify canonical A2UI native fixtures
+        timeout-minutes: 15
+        env:
+          A2UI_FIXTURE_ENV: ${{ runner.temp }}/threadplane-a2ui-environment
+          A2UI_FIXTURE_CACHE: ${{ runner.temp }}/threadplane-a2ui-cache
+        run: |
+          set -euo pipefail
+          uv_path="$(command -v uv)"
+          python_path="$("$uv_path" python find --no-project --no-config --no-python-downloads 3.12)"
+          node_path="$(command -v node)"
+          fixture_home="$RUNNER_TEMP/threadplane-a2ui-home"
+          fixture_path="$(dirname "$node_path"):$(dirname "$uv_path"):/usr/bin:/bin"
+          mkdir -p "$fixture_home" "$A2UI_FIXTURE_CACHE"
+          env -i HOME="$fixture_home" PATH="$fixture_path" LANG=C.UTF-8 \
+            UV_PROJECT_ENVIRONMENT="$A2UI_FIXTURE_ENV" UV_CACHE_DIR="$A2UI_FIXTURE_CACHE" \
+            PYTHONDONTWRITEBYTECODE=1 LANGSMITH_TRACING=false LANGCHAIN_TRACING_V2=false \
+            "$uv_path" run --frozen --python "$python_path" --no-env-file --no-config --no-python-downloads \
+            --project cockpit/chat/a2ui/python python -E -B -c 'import langgraph'
+          env -i HOME="$fixture_home" PATH="$fixture_path" LANG=C.UTF-8 \
+            A2UI_FIXTURE_UV="$uv_path" A2UI_FIXTURE_PYTHON="$python_path" \
+            A2UI_FIXTURE_ENV="$A2UI_FIXTURE_ENV" A2UI_FIXTURE_CACHE="$A2UI_FIXTURE_CACHE" \
+            PYTHONDONTWRITEBYTECODE=1 LANGSMITH_TRACING=false LANGCHAIN_TRACING_V2=false \
+            "$node_path" --test --test-concurrency=1 scripts/react-cockpit/chat-a2ui-fixture.spec.mjs
       - name: Install Chromium for packed runtime consumers
         run: npx playwright install --with-deps chromium
       - name: Verify native conversation example

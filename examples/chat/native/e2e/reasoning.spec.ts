@@ -117,7 +117,7 @@ test('installed React reasoning borrows snapshots and preserves response disclos
             },
           ],
         },
-        stream_mode: ['values', 'messages-tuple', 'updates', 'custom'],
+        stream_mode: ['values', 'messages-tuple', 'updates', 'custom', 'checkpoints'],
         stream_subgraphs: true,
         stream_resumable: true,
         on_disconnect: 'continue',
