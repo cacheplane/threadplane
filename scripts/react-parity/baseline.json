@@ -1,11 +1,8 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "b02aed46f21fa33aa16921272ef95c1f18628d09",
+  "baselineHead": "2b733bf976fa1fdbd8facb1a4cba9939a1dd7f80",
   "sourceState": {
-    "modified": [
-      "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "libs/cockpit-registry/src/lib/content-descriptors.ts"
-    ],
+    "modified": [],
     "untracked": []
   },
   "scope": {
@@ -2159,7 +2156,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "f1cf5c6daf0d3f9c2af33bb666e2947c604bf019e7c8eb2600885839d0c5a228"
+      "sha256": "fa6638186e56b1fd5ac8fce795bd64bb3497b5bd32d384e8acc4e5bcbda31c74"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -2255,7 +2252,7 @@
       "id": "doc:apps/website/content/docs/a2ui/getting-started/introduction.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/a2ui/getting-started/introduction.mdx",
-      "sha256": "86a4a8a1a12de6c2a91c70634897bb2826aaf7c5114b656c56f41f9502c2b935"
+      "sha256": "abdea2d3e0c266554a09c6369cfe1194e783a2e54d8accb9e9ccec0e5cfe1139"
     },
     {
       "id": "doc:apps/website/content/docs/a2ui/getting-started/quickstart.mdx",
@@ -2423,7 +2420,7 @@
       "id": "doc:apps/website/content/docs/chat/a2ui/overview.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/a2ui/overview.mdx",
-      "sha256": "1cebb907d3cd9e936568c0c86769aa2387bd23374e01248a423cc642283ad7ab"
+      "sha256": "b0b945aeef57d2e894fb17337b24e9fe2c0a949e2954567ea30a9d513d64549b"
     },
     {
       "id": "doc:apps/website/content/docs/chat/a2ui/surface-component.mdx",

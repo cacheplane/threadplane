@@ -245,6 +245,9 @@ jobs:
             "$uv_path" run --frozen --python "$python_path" --no-env-file --no-config --no-python-downloads \
             --project cockpit/chat/a2ui/python python -E -B -c 'import langgraph'
           env -i HOME="$fixture_home" PATH="$fixture_path" LANG=C.UTF-8 \
+            PYTHONDONTWRITEBYTECODE=1 LANGSMITH_TRACING=false LANGCHAIN_TRACING_V2=false \
+            "$A2UI_FIXTURE_ENV/bin/python" -E -B -m unittest discover -s cockpit/chat/a2ui/python/tests -p test_booking_form.py
+          env -i HOME="$fixture_home" PATH="$fixture_path" LANG=C.UTF-8 \
             A2UI_FIXTURE_UV="$uv_path" A2UI_FIXTURE_PYTHON="$python_path" \
             A2UI_FIXTURE_ENV="$A2UI_FIXTURE_ENV" A2UI_FIXTURE_CACHE="$A2UI_FIXTURE_CACHE" \
             PYTHONDONTWRITEBYTECODE=1 LANGSMITH_TRACING=false LANGCHAIN_TRACING_V2=false \

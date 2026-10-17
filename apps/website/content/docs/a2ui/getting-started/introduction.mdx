@@ -32,7 +32,7 @@ The validator is the safety gate: an unknown `component` name renders nothing vi
 
 ### The three parts of a surface
 
-Every surface in this demo is the same triple: an id, an initial data model, and a flat list of components. Three subclasses give each node its own schema name and description without changing the shape.
+Every surface in this demo is the same triple: an id, an initial data model, and a flat list of components. Three subclasses give each node its own schema name and description. `BookingFormSpec` also validates the intended picker identities and path bindings, and requires each picker to contain its complete canonical option domain. Those domains come from graph constants outside this snippet. Invalid picker data enters the existing structured-output retry and fallback flow.
 
 <ExampleCode file="graph.py" region="surface-spec" title="graph.py — the surface spec" />
 
