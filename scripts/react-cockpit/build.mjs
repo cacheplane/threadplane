@@ -123,13 +123,14 @@ try {
     );
   }
   if (appPath === 'cockpit/render/element-rendering/react' ||
-      appPath === 'cockpit/render/state-management/react') {
+      appPath === 'cockpit/render/state-management/react' ||
+      appPath === 'cockpit/render/repeat-loops/react') {
     assert.ok(
       emittedModules.some(([path, module]) =>
         path.endsWith('/node_modules/@threadplane/content/src/render-state/create-render-state.js') &&
         module.renderedLength > 0
       ),
-      'Installed render-state owner implementation required for element rendering and state management'
+      'Installed render-state owner implementation required for element rendering, state management and repeat loops'
     );
   }
   assert.ok(
