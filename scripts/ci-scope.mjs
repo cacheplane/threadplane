@@ -91,6 +91,17 @@ const LINT_SCOPE_KEYS = [
  *  this regex only decides which CI scope a change to them lights up. */
 const COCKPIT_ROOTLESS_SPEC = /^cockpit\/[^/]+\/[^/]+\.spec\.ts$/;
 
+// The Library lane's installed A2UI regression consumes only these scripts and
+// the canonical Python source/lock, independently of their Nx owner tags.
+const A2UI_NATIVE_FIXTURE_FILES = new Set([
+  'scripts/react-cockpit/chat-a2ui-wire.py',
+  'scripts/react-cockpit/chat-a2ui-fixture.mjs',
+  'scripts/react-cockpit/chat-a2ui-fixture.spec.mjs',
+  'scripts/react-cockpit/chat-a2ui-native-probe.mjs',
+  'cockpit/chat/a2ui/python/uv.lock',
+  'cockpit/chat/a2ui/python/pyproject.toml',
+]);
+
 // Keep migration CI ownership aligned with the inventory's reviewed scope.
 // Rootless fixtures and documentation can change it without affecting an Nx library.
 const parityScope = JSON.parse(
@@ -182,6 +193,11 @@ export function classifyFromAffected(changedFiles, affectedProjects) {
   if (changedFiles.some(isParityChange)) {
     scope.library = true;
   }
+  if (changedFiles.some((file) => {
+    const normalized = normalizePath(file);
+    return A2UI_NATIVE_FIXTURE_FILES.has(normalized) ||
+      normalized.startsWith('cockpit/chat/a2ui/python/src/');
+  })) scope.library = true;
   // The installed native approval proof copies only these canonical inputs.
   if (
     changedFiles.some((file) => {

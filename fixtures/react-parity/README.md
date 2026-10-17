@@ -14,6 +14,12 @@ function-tool execution. Both native bindings borrow the application-owned
 session: subscribing or mounting does not submit work, and unmounting does not
 implicitly dispose the owner.
 
+Session-owned native SDK streams and same-run joins request canonical checkpoint
+events; supplied custom transports and legacy defaults remain unchanged.
+Exact-run failure and uncertainty still prevent successful completion. Unsaved
+title and schema callbacks are not canonical application data and still need
+separate application admission work.
+
 Explicit fixed-thread history loading replaces the transcript from the latest
 checkpoint. Equal reads preserve identity, failures preserve the previous
 snapshot, and loaded tools never execute. Readonly application `values` and full

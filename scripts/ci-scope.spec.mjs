@@ -179,6 +179,90 @@ describe('native canonical provider inputs', () => {
     });
 });
 
+describe('canonical A2UI native regression CI ownership', () => {
+  const inputs = [
+    'scripts/react-cockpit/chat-a2ui-wire.py',
+    'scripts/react-cockpit/chat-a2ui-fixture.mjs',
+    'scripts/react-cockpit/chat-a2ui-fixture.spec.mjs',
+    'scripts/react-cockpit/chat-a2ui-native-probe.mjs',
+    'cockpit/chat/a2ui/python/src/graph.py',
+    'cockpit/chat/a2ui/python/src/nested/helper.py',
+    'cockpit/chat/a2ui/python/uv.lock',
+    'cockpit/chat/a2ui/python/pyproject.toml',
+  ];
+  for (const file of inputs) {
+    it(`selects Library independently for ${file} and preserves actual owner scopes`, async () => {
+      const projectPath = file.startsWith('scripts/')
+        ? 'scripts/project.json'
+        : 'cockpit/chat/a2ui/python/project.json';
+      const project = JSON.parse(await readFile(projectPath, 'utf8'));
+      assert.equal(hasGlobalCiFileChange([file]), false);
+      for (const projects of [[], [project]]) {
+        const expected = emptyScope();
+        for (const tag of project.tags.filter(tag => tag.startsWith('scope:'))) {
+          const key = tag.slice(6).replaceAll('-', '_');
+          if (projects.length && SCOPE_KEYS.includes(key)) expected[key] = true;
+        }
+        expected.library = true;
+        assert.deepEqual(classifyFromAffected([file], projects), expected);
+      }
+    });
+  }
+  for (const file of [
+    'scripts/react-cockpit/chat-a2ui-wire.py.bak',
+    'scripts/react-cockpit/chat-a2ui-fixture-other.mjs',
+    'scripts/react-cockpit/chat-a2ui-fixture.spec.mjs/extra',
+    'scripts/react-cockpit/chat-a2ui-native-probe.mjs.bak',
+    'scripts/react-cockpit/chat-debug-fixture.mjs',
+    'other/scripts/react-cockpit/chat-a2ui-wire.py',
+    'cockpit/chat/a2ui/python-other/src/graph.py',
+    'cockpit/chat/a2ui/python/src-other/graph.py',
+    'cockpit/chat/a2ui/python/uv.lock.bak',
+    'cockpit/chat/a2ui/python/pyproject.toml/extra',
+    'cockpit/chat/a2ui/python/project.json',
+    'cockpit/chat/a2ui/python/tests/test_graph.py',
+    'cockpit/chat/other/python/src/graph.py',
+  ]) it(`keeps unrelated input outside Library: ${file}`, () => {
+    assert.deepEqual(classifyFromAffected([file], []), emptyScope());
+  });
+
+  it('runs the frozen closed-environment regression in the PR Library lane after its build prerequisites', async () => {
+    const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+    const library = workflow.split('\n  library:\n')[1].split('\n  angular-compatibility:')[0];
+    assert.match(library, /if: github.event_name == 'push' \|\| needs.ci-scope.outputs.library == 'true'/);
+    const setup = library.indexOf('uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57');
+    assert.ok(setup >= 0);
+    assert.match(library.slice(setup).split('      - name:')[0], /python-version: '3.12'/);
+    const foundations = library.indexOf('npx nx run-many -t lint test type-tests build --projects=$FOUNDATIONS');
+    assert.ok(foundations >= 0, 'foundation build prerequisite is present');
+    assert.match(library, /FOUNDATIONS: core,content,angular,react/);
+    assert.match(library, /LIBS: chat,langgraph,ag-ui,render,a2ui,telemetry,middleware/);
+    const builds = library.indexOf('npx nx run-many -t build --projects=$LIBS --configuration=production');
+    assert.ok(builds >= 0, 'all-library production build prerequisite is present');
+    const marker = '      - name: Verify canonical A2UI native fixtures';
+    const position = library.indexOf(marker);
+    assert.ok(position > setup && position > foundations && position > builds, 'A2UI regression follows Python and all required builds');
+    const proof = library.slice(position).split('\n      - name:')[0];
+    assert.match(proof, /timeout-minutes: 15/);
+    assert.doesNotMatch(proof, /continue-on-error|\|\| true|\bsecrets\.|\n        if:/);
+    assert.match(proof, /A2UI_FIXTURE_ENV: \$\{\{ runner.temp \}\}\/threadplane-a2ui-environment/);
+    assert.match(proof, /A2UI_FIXTURE_CACHE: \$\{\{ runner.temp \}\}\/threadplane-a2ui-cache/);
+    assert.match(proof, /uv_path="\$\(command -v uv\)"/);
+    assert.match(proof, /python_path="\$\("\$uv_path" python find --no-project --no-config --no-python-downloads 3.12\)"/);
+    assert.equal((proof.match(/env -i /g) ?? []).length, 2, 'preparation and execution both close inherited environment');
+    const prepare = proof.indexOf('"$uv_path" run --frozen --python "$python_path" --no-env-file --no-config --no-python-downloads');
+    const execute = proof.indexOf('"$node_path" --test --test-concurrency=1 scripts/react-cockpit/chat-a2ui-fixture.spec.mjs');
+    assert.ok(prepare >= 0 && execute > prepare, 'frozen preparation precedes the exact maintained regression');
+    assert.match(proof, /--project cockpit\/chat\/a2ui\/python python -E -B -c 'import langgraph'/);
+    for (const configuration of [
+      'A2UI_FIXTURE_UV="$uv_path"',
+      'A2UI_FIXTURE_PYTHON="$python_path"',
+      'A2UI_FIXTURE_ENV="$A2UI_FIXTURE_ENV"',
+      'A2UI_FIXTURE_CACHE="$A2UI_FIXTURE_CACHE"',
+    ]) assert.ok(proof.includes(configuration), configuration);
+  });
+});
+
 describe('React migration baseline scope', () => {
   for (const file of [
     'examples/chat/native/react/src/app.tsx',

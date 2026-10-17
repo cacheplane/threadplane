@@ -13,7 +13,7 @@ const runBody = (message) => ({
       { name: 'count', description: 'Count values' },
     ],
   },
-  stream_mode: ['values', 'messages-tuple', 'updates', 'custom'],
+  stream_mode: ['values', 'messages-tuple', 'updates', 'custom', 'checkpoints'],
   stream_subgraphs: true, stream_resumable: true, on_disconnect: 'continue',
 });
 const post = (server, path, body, signal) => fetch(`${server.url}/api/threads/${path}`, {
@@ -97,4 +97,25 @@ test('thread review rejects extra run fields and misrouted prompts', async () =>
     assert.equal(server.errors.length, 2);
     assert.deepEqual(server.threads.requests, []);
   } finally { await server.close(); }
+});
+
+
+test('thread review accepts exactly five modes and rejects otherwise valid mode or field drift', async () => {
+  const stream_mode = ['values', 'messages-tuple', 'updates', 'custom', 'checkpoints'];
+  for (const [label, body, status] of [
+    ['exact modes', { ...runBody('Send B'), stream_mode }, 200],
+    ['missing mode', { ...runBody('Send B'), stream_mode: stream_mode.slice(0, -1) }, 500],
+    ['wrong mode', { ...runBody('Send B'), stream_mode: [...stream_mode.slice(0, -1), 'debug'] }, 500],
+    ['extra mode', { ...runBody('Send B'), stream_mode: [...stream_mode, 'debug'] }, 500],
+    ['extra field', { ...runBody('Send B'), stream_mode, extra: true }, 500],
+  ]) {
+    const server = await serveRuntimeConsumer('/unused');
+    try {
+      const response = await post(server, 'thread-b/runs/stream', body);
+      assert.equal(response.status, status, label);
+      await response.text();
+      assert.equal(server.threads.requests.length, status === 200 ? 1 : 0, label);
+      assert.equal(server.errors.length, status === 200 ? 0 : 1, label);
+    } finally { await server.close(); }
+  }
 });

@@ -59,7 +59,7 @@ export function createThreadRoutes() {
           messages: [{ id: message.id, type: 'human', content: thread === 'thread-a' ? 'Hold A' : 'Send B' }],
           client_tools: [{ name: 'weather', description: 'Current weather' }, { name: 'count', description: 'Count values' }],
         },
-        stream_mode: ['values', 'messages-tuple', 'updates', 'custom'],
+        stream_mode: ['values', 'messages-tuple', 'updates', 'custom', 'checkpoints'],
         stream_subgraphs: true, stream_resumable: true, on_disconnect: 'continue',
       });
       assert.ok(!requests.some((r) => r.thread === thread && r.operation === operation), 'one run per thread');
