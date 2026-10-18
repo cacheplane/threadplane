@@ -2,22 +2,12 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { mkdirSync, rmSync } from 'node:fs';
-import { createServer } from 'node:net';
 import { resolve } from 'node:path';
 import { environment, fixtureEnvironment, root } from './configuration.mjs';
 export const token = 'local-fictional-meeting-fixture';
 const ownershipLock = environment + '.owner';
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-async function freePort() {
-  const socket = createServer();
-  await new Promise((resolve, reject) => {
-    socket.once('error', reject);
-    socket.listen(0, '127.0.0.1', resolve);
-  });
-  const port = socket.address().port;
-  await new Promise((resolve) => socket.close(resolve));
-  return port;
-}
+const readinessPrefix = 'STRANDS_FIXTURE_READY ';
 export async function createNativeStrandsServer({
   mode = 'approval',
   python = resolve(environment, 'bin/python'),
@@ -34,6 +24,7 @@ export async function createNativeStrandsServer({
     ownsLock = false,
     observed,
     stdout = '',
+    pendingStdout = '',
     stderr = '',
     final,
     startupError,
@@ -105,9 +96,6 @@ export async function createNativeStrandsServer({
   try {
     mkdirSync(ownershipLock);
     ownsLock = true;
-    const port = await freePort();
-    const url = `http://127.0.0.1:${port}`;
-    serviceUrl = url;
     child = spawnProcess(
       python,
       [resolve(root, 'fixtures/react-parity/native-strands-react/service.py')],
@@ -118,7 +106,6 @@ export async function createNativeStrandsServer({
           ...fixtureEnvironment(),
           PYTHONDONTWRITEBYTECODE: '1',
           STRANDS_FIXTURE_ROOT: root,
-          STRANDS_FIXTURE_PORT: String(port),
           STRANDS_FIXTURE_MODE: mode,
           AG_UI_INTERNAL_TOKEN: token,
           OPENAI_API_KEY: 'fictional-local-only',
@@ -142,17 +129,47 @@ export async function createNativeStrandsServer({
     void exiting.catch(() => undefined);
     child.stdout.on('data', (bytes) => {
       stdout += bytes;
+      pendingStdout += bytes;
+      let newline;
+      while ((newline = pendingStdout.indexOf('\n')) !== -1) {
+        const line = pendingStdout.slice(0, newline);
+        pendingStdout = pendingStdout.slice(newline + 1);
+        if (!line.startsWith(readinessPrefix)) continue;
+        try {
+          assert.equal(serviceUrl, undefined, 'Duplicate readiness record');
+          const ready = JSON.parse(line.slice(readinessPrefix.length));
+          assert.deepEqual(Object.keys(ready).sort(), ['host', 'pid', 'port']);
+          assert.equal(ready.host, '127.0.0.1');
+          assert.ok(
+            Number.isSafeInteger(ready.port) &&
+              ready.port > 0 &&
+              ready.port <= 65535
+          );
+          assert.ok(Number.isSafeInteger(ready.pid) && ready.pid > 0);
+          // Test proxies may defer spawn; require the actual child PID at receipt.
+          assert.equal(ready.pid, child.pid);
+          serviceUrl = `http://127.0.0.1:${ready.port}`;
+        } catch (cause) {
+          startupError ??= Error('Invalid native service readiness record', {
+            cause,
+          });
+        }
+      }
     });
     child.stderr.on('data', (bytes) => {
       stderr += bytes;
     });
     const observe = async (timeoutMs = 2000) => {
-      const response = await fetch(url + '/fixture-stats', {
+      const response = await fetch(serviceUrl + '/fixture-stats', {
         headers: { 'x-internal-token': token },
         signal: AbortSignal.timeout(Math.max(1, timeoutMs)),
       });
       assert.equal(response.status, 200);
       observed = await response.json();
+      if (observed.pid !== child.pid) {
+        startupError ??= Error('Native service stats PID mismatch');
+        throw startupError;
+      }
       return structuredClone(observed);
     };
 
@@ -163,12 +180,18 @@ export async function createNativeStrandsServer({
       const remaining = deadline - performance.now();
       if (remaining <= 0)
         throw Error('Native service startup deadline exceeded');
+      if (!serviceUrl) {
+        await delay(Math.min(50, Math.ceil(remaining)));
+        continue;
+      }
       try {
         await observe(Math.min(2000, Math.ceil(remaining)));
+        if (startupError) throw startupError;
         if (performance.now() > deadline)
           throw Error('Native service startup deadline exceeded');
         break;
       } catch (error) {
+        if (startupError) throw startupError;
         if (performance.now() >= deadline)
           throw Error('Native service startup deadline exceeded', {
             cause: error,
@@ -176,7 +199,7 @@ export async function createNativeStrandsServer({
         await delay(Math.min(50, Math.max(0, deadline - performance.now())));
       }
     }
-    return { url, observe, stats, close };
+    return { url: serviceUrl, observe, stats, close };
   } catch (error) {
     try {
       await close();
