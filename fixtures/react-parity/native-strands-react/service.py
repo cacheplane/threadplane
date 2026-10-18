@@ -187,13 +187,17 @@ def stats():
 if __name__ == "__main__":
     import uvicorn
 
-    model_thread.start()
+    listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    model_started = False
     try:
+        # Allocate and retain the socket; no unowned port crosses processes.
+        listener.bind(("127.0.0.1", 0))
+        listener.listen()
         owned = uvicorn.Server(
             uvicorn.Config(
                 Tap(server.app),
                 host="127.0.0.1",
-                port=int(os.environ["STRANDS_FIXTURE_PORT"]),
+                port=0,
                 log_level="warning",
                 timeout_graceful_shutdown=2,
             )
@@ -201,12 +205,23 @@ if __name__ == "__main__":
         owned.capture_signals = nullcontext
         for sig in (signal.SIGTERM, signal.SIGINT):
             signal.signal(sig, lambda *_: setattr(owned, "should_exit", True))
-        owned.run()
+        model_thread.start()
+        model_started = True
+        host, port = listener.getsockname()
+        print(
+            "STRANDS_FIXTURE_READY "
+            + json.dumps({"host": host, "port": port, "pid": os.getpid()}),
+            flush=True,
+        )
+        owned.run(sockets=[listener])
     finally:
+        listener.close()
         model.closing.set()
-        model.shutdown()
+        if model_started:
+            model.shutdown()
         model.server_close()
-        model_thread.join(3)
+        if model_started:
+            model_thread.join(3)
         print(
             "\n"
             + json.dumps(

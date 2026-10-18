@@ -15,6 +15,7 @@
     "e2e": {
       "executor": "@nx/playwright:playwright",
       "cache": false,
+      "inputs": ["default", "awsStrandsFixture"],
       "dependsOn": ["prepare-fixture", "build"],
       "options": {
         "config": "cockpit/runtimes/aws-strands/react/e2e/playwright.config.ts",
@@ -39,5 +40,14 @@
         "command": "node scripts/react-cockpit/build.mjs runtimes-aws-strands"
       }
     }
+  },
+  "namedInputs": {
+    "awsStrandsFixture": [
+      "{workspaceRoot}/fixtures/react-parity/native-strands-react/**/*",
+      "{workspaceRoot}/scripts/react-cockpit/native-strands-fixture.mjs",
+      "{workspaceRoot}/scripts/react-cockpit/native-strands-fixture.spec.mjs",
+      "{workspaceRoot}/scripts/react-cockpit/prepare-native-strands-fixture.mjs",
+      "{workspaceRoot}/scripts/react-cockpit/prepare-native-strands-fixture.spec.mjs"
+    ]
   }
 }
