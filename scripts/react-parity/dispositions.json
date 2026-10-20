@@ -1586,9 +1586,9 @@
         "T30"
       ],
       "treatment": "react",
-      "status": "planned",
-      "target": "libs/react/src/chat/sidebar.tsx",
-      "reason": "Native component. Controlled/uncontrolled open and docking; focus/layout behavior and custom composition."
+      "status": "in-progress",
+      "target": "libs/react/src/chat/chat-sidebar.tsx",
+      "reason": "Private controlled non-modal full-height overlay reuses ChatPopup visibility, focus and retained children, with installed native dogfood. Content pushing, peer edge claims and full legacy parity remain open."
     },
     {
       "id": "component:libs/chat/src/lib/compositions/chat-sidenav/chat-sidenav.component.ts#ChatSidenavComponent",
@@ -5510,9 +5510,9 @@
         "T30"
       ],
       "treatment": "react",
-      "status": "planned",
-      "target": "libs/react/src/chat/sidebar.tsx",
-      "reason": "Native component. Controlled/uncontrolled open and docking; focus/layout behavior and custom composition."
+      "status": "in-progress",
+      "target": "libs/react/src/chat/chat-sidebar.tsx",
+      "reason": "Private controlled non-modal full-height overlay export; application owns execution and visibility. Content pushing and full legacy parity remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatSidenavComponent",
@@ -15528,6 +15528,27 @@
       "treatment": "react",
       "status": "in-progress",
       "reason": "Bounded controlled non-modal popup with accepted-transition focus and retained hidden/inert children; full legacy composition parity remains open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidebar",
+      "taskIds": ["T30"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private controlled non-modal full-height overlay; application owns visibility and execution. Native dogfood preserves retained views."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidebarProps",
+      "taskIds": ["T30"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Same readonly controlled visibility, labels and children as ChatPopup; no session or disposal ownership."
+    },
+    {
+      "id": "source:libs/react/src/chat/chat-sidebar.tsx",
+      "taskIds": ["T30"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Full-height ChatPopup composition with scoped responsive sidebar styles; content pushing, peer edge claims and navigation sidenav remain open."
     }
   ]
 }

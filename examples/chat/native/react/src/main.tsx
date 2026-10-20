@@ -32,14 +32,16 @@ if (application) {
   bindBrowserLifetime(application, window);
   application.start();
 }
+const presentation = new URLSearchParams(window.location.search).get(
+  'presentation'
+);
 createRoot(root).render(
   <StrictMode>
     <App
       application={application}
       presentation={
-        new URLSearchParams(window.location.search).get('presentation') ===
-        'popup'
-          ? 'popup'
+        presentation === 'popup' || presentation === 'sidebar'
+          ? presentation
           : 'page'
       }
     />

@@ -319,6 +319,7 @@ export function assertSupportedExports(project, entry) {
         'ApprovalCard',
         'Chat',
         'ChatPopup',
+        'ChatSidebar',
         'ChatInput',
         'Citations',
         'MessageList',

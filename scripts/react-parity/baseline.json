@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "2c7f01fa958441f3ed94e2559987217be284e94a",
+  "baselineHead": "7bc7c11c7777c3cc67b8f4f6cdac162e03af1413",
   "sourceState": {
     "modified": [
       "libs/react/README.md",
@@ -8,7 +8,7 @@
       "libs/react/src/chat/styles.css"
     ],
     "untracked": [
-      "libs/react/src/chat/chat-popup.tsx"
+      "libs/react/src/chat/chat-sidebar.tsx"
     ]
   },
   "scope": {
@@ -855,7 +855,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "ffa26c427950672321aa19db270694b20d70cce1078a124bb6b9f278fbfb1c45"
+      "sha256": "803a420aafafb167bb259e32caeec222c4f5480ff23ed36c9e7a8cec61e7f875"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -873,7 +873,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "1919836d9feaccf9d36f110bdaaec60cd409ebe57ff9c47d3965ee1ec9eeadee"
+      "sha256": "35705248029ed61802ad31d7f4591dabc2f31fa4705681e6f0fc66e9826d6708"
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -10365,6 +10365,34 @@
       ]
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidebar",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ChatSidebar",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/chat-sidebar.tsx",
+          "symbol": "ChatSidebar",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function ChatSidebar({ className, open, ...props }: ChatSidebarProps) {\n    return (<ChatPopup {...props} open={open} className={['tp-chat-sidebar', open && 'tp-chat-sidebar--open', className]\n            .filter(Boolean)\n            .join(' ')}/>);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidebarProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ChatSidebarProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/chat-sidebar.tsx",
+          "symbol": "ChatSidebarProps",
+          "syntaxKind": "TypeAliasDeclaration",
+          "signature": "export type ChatSidebarProps = ChatPopupProps;"
+        }
+      ]
+    },
+    {
       "id": "export:libs/react/src/chat/index.ts#Citations",
       "kind": "export",
       "path": "libs/react/src/chat/index.ts",
@@ -14801,6 +14829,12 @@
       "sha256": "f6c7866061fbd50921d72ffe6546592db05efecaf4babddcd9c4991d9dcb9adb"
     },
     {
+      "id": "source:libs/react/src/chat/chat-sidebar.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/chat-sidebar.tsx",
+      "sha256": "6513629da3aaa787d27b335b860b323335c177db6c4f4c1130cb0bd148e70a61"
+    },
+    {
       "id": "source:libs/react/src/chat/chat.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/chat.tsx",
@@ -14816,7 +14850,7 @@
       "id": "source:libs/react/src/chat/index.ts",
       "kind": "source",
       "path": "libs/react/src/chat/index.ts",
-      "sha256": "34c7193bc3f4d25215d0dd304e0b601710a4d63c6839a72c49ecf0a0e83197bb"
+      "sha256": "ed317358f5919d7a93b9f8f0fe7ef5320a5d3eda4e0789e636f50250bf080666"
     },
     {
       "id": "source:libs/react/src/chat/internal/isomorphic-layout-effect.ts",

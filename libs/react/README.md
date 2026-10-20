@@ -258,7 +258,7 @@ Reading above the bottom preserves position. The observer disconnects on unmount
 without it, row-update following remains available. The list uses one unstyled
 content wrapper inside its existing scroll region.
 
-## Controlled chat popup
+## Controlled chat panels
 
 `ChatPopup` is a private non-modal shell from `@threadplane/react/chat`:
 
@@ -292,8 +292,19 @@ The dialog has a generated title relationship, ordinary non-modal Tab order and
 viewport-bounded scrolling. It uses the same scoped chat stylesheet and tokens.
 Mount it outside transformed or clipping ancestors: this first slice uses fixed
 positioning in its existing DOM location, with no portal, backdrop, focus trap,
-global shortcut or persisted open state. Sidebar/sidenav compositions, SSR,
-hydration and public release remain separate work.
+global shortcut or persisted open state.
+
+`ChatSidebar` uses the same controlled props and retained-child behavior as
+`ChatPopup`. Import it from the same `/chat` entry and replace `ChatPopup` in the
+example above to use a full-height panel at the viewport's inline end. Its width
+is 28rem on larger screens and the full viewport width at 640px and below. The
+launcher hides while open; Close and scoped Escape request closure, then focus
+returns to the launcher when appropriate. The surrounding page stays interactive
+and Tab can leave the panel.
+
+The sidebar overlays the page. Content-pushing layouts, peer-panel edge claims,
+the conversation-navigation sidenav, SSR, hydration and public release remain
+separate work. Both panels are private contributor APIs.
 
 ## Read-only render trees
 

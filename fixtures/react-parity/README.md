@@ -327,7 +327,7 @@ This bounded runtime proof does not establish complete migration parity.
 | T27 | Implement A2UI surface and all 18 catalog views |
 | T28 | Implement approvals, tools, reasoning and subagent UI |
 | T29 | Implement thread/project/search/history/timeline/debug surfaces |
-| T30 | In progress: private controlled non-modal React ChatPopup, dogfooded by the native conversation example; sidebar and sidenav compositions remain open |
+| T30 | In progress: private controlled non-modal React ChatPopup and full-height ChatSidebar, dogfooded by the native conversation example; content-pushing layouts and navigation sidenav remain open |
 | T31 | Create canonical React applications and public testing utilities |
 | T32 | In progress: 41 registered native React and 41 Angular frontend identities across LangGraph, Deep Agents, Chat, AG-UI, Render and Runtimes; Chat and AG-UI A2UI reuse their existing shared backends, existing runtimes and bridges are reused, Render playback stays local |
 | T33 | In progress: 41 installed React previews (9 LangGraph, 5 Deep Agents, 11 Chat, 7 AG-UI, 6 Render, 3 Runtimes). Chat and AG-UI A2UI share the closed ten-view booking presentation; generic all-18 A2UI parity remains pending |
