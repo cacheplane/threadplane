@@ -1,12 +1,14 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, realpathSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
-test('installed React popup preserves its draft and a hidden running response without commands', async ({
-  page,
-}, testInfo) => {
+async function verifyPanel(
+  page: Page,
+  testInfo: TestInfo,
+  presentation: 'popup' | 'sidebar'
+) {
   test.setTimeout(300_000);
   const { buildConsumer } = await import('../tooling/consumer.mjs');
   const { startProofServer, threadEnvelope } = await import(
@@ -14,8 +16,11 @@ test('installed React popup preserves its draft and a hidden running response wi
   );
   const { captureRetainedBuild, readRetainedBuild, startCheckedServer } =
     await import('../tooling/retained-build.mjs');
-  const work = realpathSync(mkdtempSync(join(tmpdir(), 'native-popup-')));
-  const thread = threadEnvelope('popup', 'Popup conversation');
+  const work = realpathSync(
+    mkdtempSync(join(tmpdir(), `native-${presentation}-`))
+  );
+  const title = `${presentation} conversation`;
+  const thread = threadEnvelope('popup', title);
   const saved = [{ type: 'ai', id: 'saved', content: '# Saved answer' }];
   const backend = await startProofServer([
     {
@@ -81,7 +86,7 @@ test('installed React popup preserves its draft and a hidden running response wi
         assert.deepEqual(payload.input.messages[0], {
           id: payload.input.messages[0].id,
           type: 'human',
-          content: 'Continue in the popup.',
+          content: `Continue in the ${presentation}.`,
         });
         assert.match(payload.input.messages[0].id, /^[0-9a-f-]{36}$/i);
         assert.deepEqual(
@@ -121,10 +126,9 @@ test('installed React popup preserves its draft and a hidden running response wi
       errors.push('Unexpected external request: ' + route.request().url());
       return route.abort();
     });
-    await page.goto(origin + '/?presentation=popup');
-    await page
-      .getByRole('button', { name: 'Popup conversation', exact: true })
-      .click();
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto(origin + `/?presentation=${presentation}`);
+    await page.getByRole('button', { name: title, exact: true }).click();
     const launcher = page.getByRole('button', { name: 'Chat', exact: true });
     const dialog = page.getByRole('dialog', {
       name: 'Conversation',
@@ -147,6 +151,18 @@ test('installed React popup preserves its draft and a hidden running response wi
     });
     await expect(close).toBeFocused();
     await expect(dialog).toHaveAttribute('aria-modal', 'false');
+    if (presentation === 'sidebar') {
+      await expect(launcher).toBeHidden();
+      const rect = await panel.boundingBox();
+      assert.ok(rect);
+      const rem = await page.evaluate(() =>
+        parseFloat(getComputedStyle(document.documentElement).fontSize)
+      );
+      expect(rect.width).toBeCloseTo(28 * rem, 0);
+      expect(rect.x + rect.width).toBe(1280);
+      expect(rect.y).toBe(0);
+      expect(rect.height).toBe(900);
+    }
     await draft.fill('Keep this unsent draft.');
     await draft.press('Escape');
     await expect(dialog).toBeHidden();
@@ -160,10 +176,14 @@ test('installed React popup preserves its draft and a hidden running response wi
     ).toBe(true);
     await close.focus();
     await page.keyboard.press('Shift+Tab');
-    await expect(launcher).toBeFocused();
+    await expect(
+      presentation === 'sidebar'
+        ? page.getByRole('button', { name: title, exact: true })
+        : launcher
+    ).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(dialog).toBeVisible();
-    await page.keyboard.press('Enter');
+    await close.click();
     await expect(dialog).toBeHidden();
     // Real Tab navigation must skip the retained but hidden/inert controls.
     for (let index = 0; index < 8; index++) {
@@ -174,7 +194,7 @@ test('installed React popup preserves its draft and a hidden running response wi
     }
     expect(backend.requests).toHaveLength(3);
     await launcher.click();
-    await draft.fill('Continue in the popup.');
+    await draft.fill(`Continue in the ${presentation}.`);
     await draft.press('Control+Enter');
     await backend.steps[3].received;
     await expect(
@@ -205,30 +225,39 @@ test('installed React popup preserves its draft and a hidden running response wi
       )
     ).toBe(true);
     expect(backend.requests).toHaveLength(4);
-    await page.setViewportSize({ width: 390, height: 844 });
-    const rect = await panel.boundingBox();
-    assert.ok(rect);
-    expect(rect.x).toBeGreaterThanOrEqual(0);
-    expect(rect.x + rect.width).toBeLessThanOrEqual(390);
-    expect(rect.y).toBeGreaterThanOrEqual(0);
-    expect(rect.y + rect.height).toBeLessThanOrEqual(844);
-    await draft.scrollIntoViewIfNeeded();
-    await expect(draft).toBeVisible();
-    await draft.fill('Mobile draft');
-    const send = dialog.getByRole('button', { name: 'Send', exact: true });
-    await send.scrollIntoViewIfNeeded();
-    await expect(send).toBeVisible();
-    await expect(send).toBeEnabled();
-    await expect(close).toBeVisible();
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= innerWidth
-      )
-    ).toBe(true);
-    await page.screenshot({
-      path: testInfo.outputPath('popup-mobile.png'),
-      fullPage: true,
-    });
+    for (const width of [390, 600]) {
+      await page.setViewportSize({ width, height: 844 });
+      const rect = await panel.boundingBox();
+      assert.ok(rect);
+      expect(rect.x).toBeGreaterThanOrEqual(0);
+      expect(rect.x + rect.width).toBeLessThanOrEqual(width);
+      expect(rect.y).toBeGreaterThanOrEqual(0);
+      expect(rect.y + rect.height).toBeLessThanOrEqual(844);
+      if (presentation === 'sidebar') {
+        expect(rect.x).toBe(0);
+        expect(rect.y).toBe(0);
+        expect(rect.width).toBe(width);
+        expect(rect.height).toBe(844);
+        await expect(launcher).toBeHidden();
+      }
+      await draft.scrollIntoViewIfNeeded();
+      await expect(draft).toBeVisible();
+      await draft.fill('Mobile draft');
+      const send = dialog.getByRole('button', { name: 'Send', exact: true });
+      await send.scrollIntoViewIfNeeded();
+      await expect(send).toBeVisible();
+      await expect(send).toBeEnabled();
+      await expect(close).toBeVisible();
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth
+        )
+      ).toBe(true);
+      await page.screenshot({
+        path: testInfo.outputPath(`${presentation}-mobile-${width}.png`),
+        fullPage: true,
+      });
+    }
     await close.click();
     await expect(launcher).toBeFocused();
     backend.verify();
@@ -241,4 +270,12 @@ test('installed React popup preserves its draft and a hidden running response wi
     await backend.close();
     rmSync(work, { recursive: true, force: true });
   }
-});
+}
+
+for (const presentation of ['popup', 'sidebar'] as const) {
+  test(`installed React ${presentation} preserves its draft and a hidden running response without commands`, async ({
+    page,
+  }, testInfo) => {
+    await verifyPanel(page, testInfo, presentation);
+  });
+}

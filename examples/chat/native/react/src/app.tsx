@@ -4,6 +4,7 @@ import { Markdown } from '@threadplane/react/markdown';
 import {
   ChatInput,
   ChatPopup,
+  ChatSidebar,
   Citations,
   MessageList,
   Reasoning,
@@ -108,22 +109,23 @@ function Composer({
 }
 
 function ConversationSurface({
-  popup,
+  presentation,
   children,
 }: {
-  popup: boolean;
+  presentation: 'page' | 'popup' | 'sidebar';
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
-  return popup ? (
-    <ChatPopup
+  const Panel = presentation === 'sidebar' ? ChatSidebar : ChatPopup;
+  return presentation !== 'page' ? (
+    <Panel
       open={open}
       onOpenChange={setOpen}
       title="Conversation"
-      className="native-conversation-popup"
+      className="native-conversation-panel"
     >
       {children}
-    </ChatPopup>
+    </Panel>
   ) : (
     <>{children}</>
   );
@@ -134,7 +136,7 @@ function Conversation({
   presentation,
 }: {
   application: Application;
-  presentation: 'page' | 'popup';
+  presentation: 'page' | 'popup' | 'sidebar';
 }) {
   const snapshot = useAgent(application);
   const [filter, setFilter] = useState('');
@@ -203,7 +205,7 @@ function Conversation({
           <p className="muted">No loaded conversations match.</p>
         )}
       </aside>
-      <ConversationSurface popup={presentation === 'popup'}>
+      <ConversationSurface presentation={presentation}>
         <section className="conversation" aria-labelledby="conversation-title">
           <div className="conversation-heading">
             <p className="eyebrow">React example</p>
@@ -273,7 +275,7 @@ export function App({
   presentation = 'page',
 }: {
   application: Application | null;
-  presentation?: 'page' | 'popup';
+  presentation?: 'page' | 'popup' | 'sidebar';
 }) {
   return (
     <div className="application">

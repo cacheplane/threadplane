@@ -401,24 +401,29 @@ stops only its owned servers and leaves the retained directory intact. Keep or
 remove that directory yourself after review; use development serving above for
 an interactive session against a live endpoint.
 
-## React popup presentation
+## React popup and sidebar presentations
 
 Add `?presentation=popup` to the native React example URL to keep the loaded
 conversation directory on the page and show the selected conversation in the
-installed private `ChatPopup` composition. The default presentation stays inline;
+installed private `ChatPopup` composition. Use `?presentation=sidebar` for the
+full-height private `ChatSidebar` instead. It overlays the page, fills the viewport
+width at 640px and below, and hides its launcher while open. Both modes use the
+same selected application and conversation view. The default presentation stays inline;
 unknown presentation values also use the page layout.
 
 The application owns the open state. Closing hides the same mounted conversation,
 preserving its unsent draft, content owners and subscriptions. Responses continue
 while hidden; opening and closing send no conversation commands. Stop and changing
 the selected conversation retain their existing meanings. The Close button and
-Escape inside the popup request closure, focus returns to the launcher, and Tab
+Escape inside the panel request closure, focus returns to the launcher when
+appropriate, and Tab
 can leave this non-modal dialog for the surrounding page.
 
-`npx nx e2e native-conversation-react --grep popup` verifies the installed
+`npx nx e2e native-conversation-react --grep 'installed React (popup|sidebar)'` verifies the installed
 production component against an owned local HTTP/SSE fixture, including hidden
-completion, retained DOM/draft, keyboard access and narrow-screen bounds. It does
-not use a live model. This is a bounded first popup slice, not complete Angular
+completion, retained DOM/draft, keyboard access, a hidden open-sidebar launcher,
+desktop geometry, and 390px/600px layouts with reachable Close and Send. It does
+not use a live model. These are bounded overlay slices, not complete Angular
 popup/sidebar/sidenav parity or a published package.
 
 ## React message actions

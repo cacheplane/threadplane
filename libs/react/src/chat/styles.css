@@ -245,3 +245,18 @@
   outline: 2px solid var(--tp-chat-accent);
   outline-offset: 3px;
 }
+.tp-chat-sidebar .tp-chat-popup__panel {
+  inset-block: 0;
+  inset-inline-end: 0;
+  width: min(28rem, 100vw);
+  height: 100dvh;
+  border-radius: 0;
+}
+.tp-chat-sidebar--open .tp-chat-popup__launcher {
+  display: none;
+}
+@media (max-width: 640px) {
+  .tp-chat-sidebar .tp-chat-popup__panel {
+    width: 100vw;
+  }
+}
