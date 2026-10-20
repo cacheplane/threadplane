@@ -327,10 +327,10 @@ This bounded runtime proof does not establish complete migration parity.
 | T27 | Implement A2UI surface and all 18 catalog views |
 | T28 | Implement approvals, tools, reasoning and subagent UI |
 | T29 | Implement thread/project/search/history/timeline/debug surfaces |
-| T30 | Implement popup, sidebar and sidenav compositions |
+| T30 | In progress: private controlled non-modal React ChatPopup, dogfooded by the native conversation example; sidebar and sidenav compositions remain open |
 | T31 | Create canonical React applications and public testing utilities |
-| T32 | In progress: 40 registered native React and 41 Angular frontend identities across LangGraph, Deep Agents, Chat, AG-UI, Render and Runtimes; Chat A2UI reuses its existing shared backend, existing runtimes and bridges are reused, Render playback stays local |
-| T33 | In progress: 40 installed React previews (9 LangGraph, 5 Deep Agents, 11 Chat, 6 AG-UI, 6 Render, 3 Runtimes); only AG-UI A2UI remains an unregistered React frontend. Chat A2UI supports the closed ten-view booking profile; generic all-18 A2UI parity remains pending |
+| T32 | In progress: 41 registered native React and 41 Angular frontend identities across LangGraph, Deep Agents, Chat, AG-UI, Render and Runtimes; Chat and AG-UI A2UI reuse their existing shared backends, existing runtimes and bridges are reused, Render playback stays local |
+| T33 | In progress: 41 installed React previews (9 LangGraph, 5 Deep Agents, 11 Chat, 7 AG-UI, 6 Render, 3 Runtimes). Chat and AG-UI A2UI share the closed ten-view booking presentation; generic all-18 A2UI parity remains pending |
 | T34 | In progress: public selectors and frontend URL state for registered React previews, including native Chat A2UI on its canonical overview; broader navigation/search parity pending |
 | T35 | In progress: docs and public agent guidance for native React previews, including the bounded Chat A2UI profile and private package limits; full React docs pending |
 | T36 | Expand CI and packed consumer compatibility |

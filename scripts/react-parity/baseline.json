@@ -1,11 +1,15 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "ef1e201abad33a1cb26fcda3de609d55a276f7dd",
+  "baselineHead": "2c7f01fa958441f3ed94e2559987217be284e94a",
   "sourceState": {
     "modified": [
-      ".github/workflows/ci.yml"
+      "libs/react/README.md",
+      "libs/react/src/chat/index.ts",
+      "libs/react/src/chat/styles.css"
     ],
-    "untracked": []
+    "untracked": [
+      "libs/react/src/chat/chat-popup.tsx"
+    ]
   },
   "scope": {
     "libraries": [
@@ -851,7 +855,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "487a68c7dc6dce5995eb1e80e4e118b68ec929376f6ba197d66c280fe8941505"
+      "sha256": "ffa26c427950672321aa19db270694b20d70cce1078a124bb6b9f278fbfb1c45"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -869,7 +873,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "17714e42237ffd1b5efb67521f1bcbae16eec3357d383ba5fa9ef8ca5e11a15f"
+      "sha256": "1919836d9feaccf9d36f110bdaaec60cd409ebe57ff9c47d3965ee1ec9eeadee"
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -10319,6 +10323,34 @@
       ]
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#ChatPopup",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ChatPopup",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/chat-popup.tsx",
+          "symbol": "ChatPopup",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function ChatPopup({ open, onOpenChange, title, launcherLabel = 'Chat', closeLabel = 'Close chat', closeOnEscape = true, className, children, }: ChatPopupProps) {\n    const id = useId();\n    const panelId = `${id}-dialog`;\n    const titleId = `${id}-title`;\n    const panel = useRef<HTMLElement>(null);\n    const launcher = useRef<HTMLButtonElement>(null);\n    const close = useRef<HTMLButtonElement>(null);\n    const wasOpen = useRef(false);\n    useIsomorphicLayoutEffect(() => {\n        if (open === wasOpen.current)\n            return;\n        wasOpen.current = open;\n        if (open) {\n            close.current?.focus();\n        }\n        else {\n            const document = panel.current?.ownerDocument;\n            const active = document?.activeElement;\n            if (active &&\n                (panel.current?.contains(active) || active === document?.body)) {\n                launcher.current?.focus();\n            }\n        }\n    }, [open]);\n    return (<div className={['tp-chat', 'tp-chat-popup', className]\n            .filter(Boolean)\n            .join(' ')}>\n      <button ref={launcher} type=\"button\" className=\"tp-chat-popup__launcher\" aria-controls={panelId} aria-expanded={open} aria-haspopup=\"dialog\" onClick={() => onOpenChange(!open)}>\n        {launcherLabel}\n      </button>\n      <section ref={panel} id={panelId} className=\"tp-chat-popup__panel\" role=\"dialog\" aria-modal={false} aria-labelledby={titleId} hidden={!open} inert={!open} onKeyDown={(event) => {\n            if (!open ||\n                !closeOnEscape ||\n                event.key !== 'Escape' ||\n                event.defaultPrevented ||\n                event.nativeEvent.isComposing ||\n                event.nativeEvent.keyCode === 229)\n                return;\n            event.preventDefault();\n            event.stopPropagation();\n            onOpenChange(false);\n        }}>\n        <header className=\"tp-chat-popup__header\">\n          <h2 id={titleId} className=\"tp-chat-popup__title\">\n            {title}\n          </h2>\n          <button ref={close} type=\"button\" className=\"tp-chat-popup__close\" onClick={() => onOpenChange(false)}>\n            {closeLabel}\n          </button>\n        </header>\n        <div className=\"tp-chat-popup__body\">{children}</div>\n      </section>\n    </div>);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatPopupProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ChatPopupProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/chat-popup.tsx",
+          "symbol": "ChatPopupProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface ChatPopupProps {\n    readonly open: boolean;\n    readonly onOpenChange: (open: boolean) => void;\n    readonly title: string;\n    readonly launcherLabel?: string;\n    readonly closeLabel?: string;\n    readonly closeOnEscape?: boolean;\n    readonly className?: string;\n    readonly children?: ReactNode;\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/react/src/chat/index.ts#ChatProps",
       "kind": "export",
       "path": "libs/react/src/chat/index.ts",
@@ -14763,6 +14795,12 @@
       "sha256": "095afe94063f1d259f4c53cb6bad2f5c2c8ac80241ba5920cd725882ce5edc35"
     },
     {
+      "id": "source:libs/react/src/chat/chat-popup.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/chat-popup.tsx",
+      "sha256": "f6c7866061fbd50921d72ffe6546592db05efecaf4babddcd9c4991d9dcb9adb"
+    },
+    {
       "id": "source:libs/react/src/chat/chat.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/chat.tsx",
@@ -14778,7 +14816,7 @@
       "id": "source:libs/react/src/chat/index.ts",
       "kind": "source",
       "path": "libs/react/src/chat/index.ts",
-      "sha256": "689e0593fd5ecb092dde99cfa86f5ea7210e72263da6d08a82b687d0743ff965"
+      "sha256": "34c7193bc3f4d25215d0dd304e0b601710a4d63c6839a72c49ecf0a0e83197bb"
     },
     {
       "id": "source:libs/react/src/chat/internal/isomorphic-layout-effect.ts",

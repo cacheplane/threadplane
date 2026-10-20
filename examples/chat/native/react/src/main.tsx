@@ -10,7 +10,9 @@ import { createReactApplication } from './application';
 import { createThreadDirectory } from '../../shared/directory';
 import { browserHistory } from '../../shared/route';
 import '../../shared/tokens.css';
+import '@threadplane/react/chat/styles.css';
 import '../../shared/styles.css';
+import './popup.css';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Application root is missing');
@@ -32,6 +34,14 @@ if (application) {
 }
 createRoot(root).render(
   <StrictMode>
-    <App application={application} />
+    <App
+      application={application}
+      presentation={
+        new URLSearchParams(window.location.search).get('presentation') ===
+        'popup'
+          ? 'popup'
+          : 'page'
+      }
+    />
   </StrictMode>
 );
