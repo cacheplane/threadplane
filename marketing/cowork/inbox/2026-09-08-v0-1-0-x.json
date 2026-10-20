@@ -1,0 +1,21 @@
+{
+  "_meta": {
+    "campaign": "threadplane-0-1-0",
+    "channel_note": "Day 0. Brian's account. Attach the x-card PNG to the FIRST tweet at post time \u2014 Draft.media needs a PNG Buffer, which cannot live in JSON. Render it with an EXPLICIT eyebrow; brand.ts still defaults to retired positioning. DRY_RUN=1 smoke first.",
+    "card_alt": "Threadplane 0.1.0 announcement card: \"The coffee in the hangar is free\" over the subtitle \"Chat, durable threads, approvals, and generative UI for Angular. No paid tier.\"",
+    "review_status": "awaiting-brian"
+  },
+  "draft": {
+    "channel": "x",
+    "threadParts": [
+      "Threadplane 0.1.0 is out.\n\nChat, durable threads, human approvals, subagents, and generative UI for Angular \u2014 on LangGraph or AG-UI.\n\nAll of it MIT. No paid tier, no account, no activation.\n\nBut the version number is the honest part \ud83e\uddf5",
+      "Through 0.0.66 we only ever bumped the patch digit.\n\n55 commits of breaking changes went out under a counter that said nothing had broken.\n\nThat's not semver. That's a lie with a decimal point in it.\n\n0.1.0 is the release where the number starts telling the truth.",
+      "What's actually finished is the last mile \u2014 everything between \"my agent streams tokens\" and \"my team can put this in front of a customer.\"\n\nThat gap is where Angular teams lose weeks. It's the only thing this project has tried to close.",
+      "In the box:\n\n\u2022 <chat> + 15 documented components\n\u2022 durable threads, checkpoints, time travel\n\u2022 interrupts and approvals\n\u2022 client tools\n\u2022 generative UI (json-render + A2UI)\n\u2022 subagents\n\u2022 5 classified error kinds with retry\n\u2022 tests that run with no model and no API key",
+      "The adapter is not a one-way door.\n\nLangGraph and AG-UI produce the same Agent contract, so components don't know which backend they're talking to.\n\nWe tested AG-UI against AWS Strands, Microsoft Agent Framework, and Mastra. Two languages, no adapter changes.",
+      "The part I like more than the feature list is where it stops.\n\nYour proxy. Your keys. Your CORS. Your thread IDs. You compose the interrupt panel.\n\nEvery one of those is a place where doing it for you would mean deciding it for you.",
+      "And the money, plainly: there's no open-core split.\n\nNothing is held back for a paid tier. The paid offerings sell review time and a response commitment \u2014 not code you can't otherwise have.\n\nIf you disagree with a decision I made, the license already grants you a fork.",
+      "Full write-up:\nhttps://threadplane.ai/blog/threadplane-0-1-0?utm_source=x&utm_medium=social&utm_campaign=threadplane-0-1-0\n\nOr skip me entirely and try it without a backend:\n\nnpm i @threadplane/chat @threadplane/langgraph"
+    ]
+  }
+}
