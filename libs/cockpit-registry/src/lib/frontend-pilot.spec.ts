@@ -14,19 +14,37 @@ const streaming: CockpitManifestIdentity = {
   page: 'overview',
   language: 'python',
 };
+it('registers native AG-UI A2UI React with resolvable authored assets and Angular default', () => {
+  const canonical = capabilityModules.find(entry => entry.id === 'ag-ui-a2ui-python');
+  if (!canonical) throw Error('Missing canonical AG-UI A2UI');
+  const identity = canonical.manifestIdentity as CockpitManifestIdentity;
+  const react = getFrontendCapabilityDescriptor(identity, 'react');
+  expect(react).toMatchObject({ id: 'ag-ui-a2ui-python-react', frontend: 'react', runtimeAdapter: 'ag-ui', runtimeUrl: 'ag-ui/a2ui/react', devPort: 4647, docsPath: canonical.docsPath, backendAssetPaths: canonical.backendAssetPaths, promptAssetPaths: canonical.promptAssetPaths, manifestIdentity: canonical.manifestIdentity });
+  expect(getFrontendCapabilityDescriptor(identity, 'angular')).toBe(canonical);
+  expect(react?.codeAssetPaths).toEqual([
+    ...['app.tsx', 'application.ts', 'connection.ts', 'terminal.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/ag-ui/a2ui/react/src/${file}`),
+    ...['index.ts', 'data.ts', 'protocol.ts', 'form.ts', 'actions.ts', 'views.tsx', 'surface.ts'].map(file => `libs/cockpit-a2ui-react/src/${file}`),
+  ]);
+  for (const asset of react?.codeAssetPaths ?? []) expect(existsSync(new URL('../../../../' + asset, import.meta.url))).toBe(true);
+  const frontends = getCockpitFrontends();
+  expect(frontends).toHaveLength(82);
+  expect(frontends.filter(entry => entry.frontend === 'react')).toHaveLength(41);
+  expect(frontends.filter(entry => entry.frontend === 'angular')).toHaveLength(41);
+  expect(frontends.filter(entry => entry.port === 4647)).toHaveLength(1);
+});
 it('resolves native A2UI sources with the canonical backend, prompt and documentation identity', () => {
   const canonical = capabilityModules.find(entry => entry.id === 'chat-a2ui-python');
   if (!canonical) throw Error('Missing canonical Chat A2UI');
   const identity = canonical.manifestIdentity as CockpitManifestIdentity;
   const react = getFrontendCapabilityDescriptor(identity, 'react');
   expect(react).toMatchObject({ id: 'chat-a2ui-python-react', frontend: 'react', runtimeAdapter: 'langgraph', runtimeUrl: 'chat/a2ui/react', devPort: 4646, docsPath: canonical.docsPath, backendAssetPaths: canonical.backendAssetPaths, promptAssetPaths: canonical.promptAssetPaths, manifestIdentity: canonical.manifestIdentity });
-  expect(react?.codeAssetPaths).toEqual(['app.tsx', 'application.ts', 'connection.ts', 'data.ts', 'terminal.ts', 'protocol.ts', 'form.ts', 'actions.ts', 'views.tsx', 'main.tsx', 'styles.css'].map(file => `cockpit/chat/a2ui/react/src/${file}`));
+  expect(react?.codeAssetPaths).toEqual([...['app.tsx', 'application.ts', 'connection.ts', 'terminal.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/chat/a2ui/react/src/${file}`), ...['index.ts', 'data.ts', 'protocol.ts', 'form.ts', 'actions.ts', 'views.tsx', 'surface.ts'].map(file => `libs/cockpit-a2ui-react/src/${file}`)]);
   for (const asset of react?.codeAssetPaths ?? []) expect(existsSync(new URL('../../../../' + asset, import.meta.url))).toBe(true);
   expect(getFrontendCapabilityDescriptor(identity, 'angular')).toBe(canonical);
   const frontends = getCockpitFrontends();
-  expect(frontends.filter(entry => entry.frontend === 'react')).toHaveLength(40);
+  expect(frontends.filter(entry => entry.frontend === 'react')).toHaveLength(41);
   expect(frontends.filter(entry => entry.frontend === 'angular')).toHaveLength(41);
-  expect(frontends).toHaveLength(81);
+  expect(frontends).toHaveLength(82);
   expect(frontends.find(entry => entry.project === 'cockpit-chat-a2ui-react')).toMatchObject({ port: 4646, runtimePath: 'chat/a2ui/react' });
 });
 it('resolves native Chat Debug while preserving the canonical Angular frontend', () => {

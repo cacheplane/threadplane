@@ -19,16 +19,16 @@ Only the newest settled surface is interactive after a successful owned submissi
 
 <ExampleCode file="cockpit/chat/a2ui/react/src/application.ts" />
 <ExampleCode file="cockpit/chat/a2ui/react/src/terminal.ts" />
-<ExampleCode file="cockpit/chat/a2ui/react/src/data.ts" />
+<ExampleCode file="libs/cockpit-a2ui-react/src/data.ts" />
 
 ## A bounded booking profile
 
 The ten supported views are **Column**, **Row**, **List**, **Card**, **Text**, **Divider**, **ChoicePicker**, **DateTimeInput**, **TextField** and **Button**. This closed flight example supports origin, destination, departure date, passenger count and fare class. Airports are LAX, JFK, SFO, ORD, BOS, ATL, DFW, SEA, MIA and DEN; fares are Economy, Premium, Business and First. Generic A2UI support for all 18 views remains pending; this preview does not claim full catalog parity or SSR support.
 
-<ExampleCode file="cockpit/chat/a2ui/react/src/protocol.ts" />
-<ExampleCode file="cockpit/chat/a2ui/react/src/form.ts" />
-<ExampleCode file="cockpit/chat/a2ui/react/src/actions.ts" />
-<ExampleCode file="cockpit/chat/a2ui/react/src/views.tsx" />
+<ExampleCode file="libs/cockpit-a2ui-react/src/protocol.ts" />
+<ExampleCode file="libs/cockpit-a2ui-react/src/form.ts" />
+<ExampleCode file="libs/cockpit-a2ui-react/src/actions.ts" />
+<ExampleCode file="libs/cockpit-a2ui-react/src/views.tsx" />
 
 ## Stop and recover
 

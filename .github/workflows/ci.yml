@@ -513,6 +513,10 @@ jobs:
       # is `scope:shared`, which is not a SCOPE_KEY — adding it to LIBS would
       # not have run it, because a workspace-react change never flips
       # `library`.
+      - run: npx nx lint cockpit-a2ui-react
+      - run: npx nx test cockpit-a2ui-react --skip-nx-cache
+      - run: npx nx test cockpit-chat-a2ui-react --skip-nx-cache
+      - run: npx nx test cockpit-ag-ui-a2ui-react --skip-nx-cache
       - run: npx nx lint workspace-react
       - run: npx nx run-many -t test --projects=cockpit-registry,cockpit-shell,workspace-react --skip-nx-cache
   cockpit-examples-build:
@@ -781,13 +785,13 @@ jobs:
       # deployments/ag-ui-mastra Node service, installed by the example's
       # own e2e global setup). Skip the uv/venv steps for those.
       - name: Cache cap python venv
-        if: matrix.cap.python != ''
+        if: matrix.cap.python != '' && matrix.cap.angular != 'cockpit-ag-ui-a2ui-react'
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ${{ matrix.cap.python }}/.venv
           key: uv-venv-${{ github.repository }}-${{ runner.os }}-py3.12-${{ matrix.cap.python }}-${{ hashFiles(format('{0}/uv.lock', matrix.cap.python)) }}
       - name: uv sync per-cap python
-        if: matrix.cap.python != '' && matrix.cap.python != 'cockpit/chat/debug/python'
+        if: matrix.cap.python != '' && matrix.cap.python != 'cockpit/chat/debug/python' && matrix.cap.angular != 'cockpit-ag-ui-a2ui-react'
         working-directory: ${{ matrix.cap.python }}
         run: uv sync
       - name: Prepare frozen Debug Python fixture
@@ -847,6 +851,26 @@ jobs:
         run: |
           npx nx run cockpit-ag-ui-client-tools-react:prepare-fixture --skip-nx-cache
           node --test scripts/react-cockpit/ag-ui-client-tools-fixture.spec.mjs
+      - name: Prepare native A2UI proof ownership
+        if: matrix.cap.angular == 'cockpit-ag-ui-a2ui-react'
+        run: |
+          set -euo pipefail
+          export THREADPLANE_AGUI_A2UI_APPLICATION_ROOT="$RUNNER_TEMP/threadplane-agui-a2ui-application"
+          printf '%s\n' "THREADPLANE_AGUI_A2UI_APPLICATION_ROOT=$THREADPLANE_AGUI_A2UI_APPLICATION_ROOT" >> "$GITHUB_ENV"
+          node --input-type=module <<'NODE'
+          import { execFileSync } from 'node:child_process';
+          import { mkdirSync, writeFileSync } from 'node:fs';
+          import { join } from 'node:path';
+          const git = argument => execFileSync('git', ['rev-parse', argument], { encoding: 'utf8', timeout: 5000 }).trim();
+          const provenance = { head: git('HEAD'), tree: git('HEAD^{tree}'), workflowSha: process.env.GITHUB_SHA, runId: process.env.GITHUB_RUN_ID, runAttempt: process.env.GITHUB_RUN_ATTEMPT };
+          for (const key of ['head', 'tree', 'workflowSha']) if (!/^[a-f0-9]{40}$/.test(provenance[key] ?? '')) throw Error('Invalid source provenance');
+          for (const key of ['runId', 'runAttempt']) if (!/^[1-9][0-9]*$/.test(provenance[key] ?? '')) throw Error('Invalid run provenance');
+          if (provenance.head !== provenance.workflowSha) throw Error('Checkout does not match workflow source');
+          const retain = process.env.THREADPLANE_AGUI_A2UI_APPLICATION_ROOT;
+          mkdirSync(retain, { recursive: true });
+          writeFileSync(join(retain, 'provenance.json'), JSON.stringify(provenance, null, 2) + '\n', { flag: 'wx' });
+          NODE
+          timeout 1200s node --test --test-concurrency=1 --test-timeout=120000 scripts/react-cockpit/ag-ui-a2ui-configuration.spec.mjs scripts/react-cockpit/ag-ui-a2ui-preparation.spec.mjs scripts/react-cockpit/ag-ui-a2ui-fixture.spec.mjs scripts/react-cockpit/ag-ui-a2ui-native-probe.spec.mjs
       - name: Verify native MAF fixture ownership
         if: matrix.cap.angular == 'cockpit-runtimes-microsoft-agent-framework-react'
         run: |
@@ -873,6 +897,15 @@ jobs:
           node scripts/react-cockpit/chat-debug-native-session-probe.mjs
       - name: nx e2e ${{ matrix.cap.angular }}
         run: npx nx e2e "${{ matrix.cap.angular }}" --skip-nx-cache
+      - name: Retain native A2UI installed application attempts
+        if: always() && matrix.cap.angular == 'cockpit-ag-ui-a2ui-react'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: threadplane-agui-a2ui-application-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/threadplane-agui-a2ui-application
+          include-hidden-files: true
+          retention-days: 7
+          if-no-files-found: warn
       - name: Upload Playwright trace on failure
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -883,6 +916,7 @@ jobs:
             cockpit/**/react/e2e/test-results/
             output/playwright/chat-theming-react/
             output/playwright/chat-debug-react/
+            output/playwright/ag-ui-a2ui-react/
             test-results/
           retention-days: 7
 
@@ -918,6 +952,8 @@ jobs:
           python-version: '3.12'
       - name: Prepare frozen canonical client tools browser producer
         run: node scripts/react-cockpit/prepare-ag-ui-client-tools-fixture.mjs
+      - name: Prepare frozen canonical A2UI browser producer
+        run: node scripts/react-cockpit/prepare-ag-ui-a2ui-fixture.mjs
       - name: Cache Playwright browsers
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:

@@ -44,6 +44,16 @@ import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { capabilityModules, getFrontendCapabilityDescriptor } from './content-descriptors';
 import { cockpitManifest } from './manifest';
+it('keeps native AG-UI A2UI assets frozen, resolvable and free of private proof inputs', () => {
+  const canonical=capabilityModules.find(entry=>entry.id==='ag-ui-a2ui-python')!;
+  const react=getFrontendCapabilityDescriptor(canonical.manifestIdentity as never,'react')!;
+  expect(react.backendAssetPaths).toEqual(canonical.backendAssetPaths);
+  expect(react.promptAssetPaths).toEqual(canonical.promptAssetPaths);
+  expect(react.docsPath).toBe('/docs/a2ui/getting-started/introduction');
+  expect(Object.isFrozen(react)).toBe(true); expect(Object.isFrozen(react.codeAssetPaths)).toBe(true);
+  for(const path of [...react.codeAssetPaths,...react.backendAssetPaths,...react.promptAssetPaths]) expect(existsSync(new URL('../../../../'+path,import.meta.url))).toBe(true);
+  expect(react.codeAssetPaths.some(path=>/fixture|probe|testing|\.spec\./.test(path))).toBe(false);
+});
 it('includes the required MAF snapshot compatibility source in both registrations', () => {
   const helper = 'cockpit/runtimes/microsoft-agent-framework/python/src/snapshot_compat.py';
   expect(runtimesMicrosoftAgentFrameworkPythonModule.backendAssetPaths).toContain(helper);
@@ -476,5 +486,18 @@ it('registers native Skills with the complete shared backend and product-only as
   for (const path of [...(react?.codeAssetPaths ?? []), ...(react?.backendAssetPaths ?? [])]) {
     expect(path).not.toMatch(/fixture|wire\.py|\.spec\.|proof/);
     expect(existsSync(new URL('../../../../' + path, import.meta.url))).toBe(true);
+  }
+});
+
+it('exposes the actual moved private Chat aviation presentation sources', () => {
+  const canonical=capabilityModules.find(entry=>entry.id==='chat-a2ui-python')!;
+  const react=getFrontendCapabilityDescriptor(canonical.manifestIdentity as never,'react');
+  expect(react?.codeAssetPaths).toEqual([
+    ...['app.tsx','application.ts','connection.ts','terminal.ts','main.tsx','styles.css'].map(file=>`cockpit/chat/a2ui/react/src/${file}`),
+    ...['index.ts','data.ts','protocol.ts','form.ts','actions.ts','views.tsx','surface.ts'].map(file=>`libs/cockpit-a2ui-react/src/${file}`),
+  ]);
+  for(const path of react?.codeAssetPaths ?? []) {
+    expect(path).not.toMatch(/fixture|testing|\.spec\./);
+    expect(existsSync(new URL('../../../../'+path,import.meta.url))).toBe(true);
   }
 });

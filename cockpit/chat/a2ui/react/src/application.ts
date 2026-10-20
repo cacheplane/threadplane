@@ -1,23 +1,18 @@
 import type { AgentSession, AgentSnapshot, Message } from '@threadplane/core';
 import {
-  createRenderState,
-  type RenderState,
-} from '@threadplane/content/render-state';
-import type { RenderSpecData } from '@threadplane/react/render';
-import {
   createObservation,
   prepareTerminal,
   type Checkpoint,
   type Observation,
 } from './terminal';
+// Same-layout private source import is copied unchanged into installed consumers.
+// eslint-disable-next-line @nx/enforce-module-boundaries -- Internal package-less aviation presentation.
 import {
-  prepareSurface,
-  type PreparedSurface,
+  createFlightSurface,
+  type FlightSurface,
+  type SurfaceView,
   type SurfaceKind,
-} from './protocol';
-import { createBookingForm, type BookingForm } from './form';
-import { createActions, type Actions } from './actions';
-import type { Data } from './data';
+} from '../../../../../libs/cockpit-a2ui-react/src/index';
 
 export interface A2uiSession extends Omit<AgentSession, 'getSnapshot'> {
   getSnapshot(): AgentSnapshot & {
@@ -31,19 +26,6 @@ export interface A2uiClient {
   createThread(signal: AbortSignal): Promise<string>;
   sessionFactory(threadId: string): A2uiSession;
   readCheckpoint(checkpoint: Checkpoint, signal: AbortSignal): Promise<unknown>;
-}
-/** Presentation borrows immutable data and pre-captured, fenced commands only. */
-export interface SurfaceView {
-  readonly id: string;
-  readonly kind: SurfaceKind;
-  readonly messageId: string;
-  readonly spec: RenderSpecData;
-  readonly prose: string;
-  readonly wire: string;
-  readonly model: Readonly<Record<string, Data>>;
-  readonly form?: Pick<BookingForm, 'getSnapshot' | 'subscribe'>;
-  readonly edits: Readonly<Record<string, (draft: string) => void>>;
-  readonly actions: Readonly<Record<string, () => boolean>>;
 }
 export interface A2uiSnapshot {
   readonly threadId: string | null;
@@ -61,15 +43,7 @@ export interface A2uiSnapshot {
   readonly error: string | null;
   readonly viewGeneration: number;
 }
-type SurfaceOwner = {
-  view: SurfaceView;
-  surface: PreparedSurface;
-  state: RenderState;
-  form?: BookingForm;
-  actions: Actions;
-  live: boolean;
-  disposed: boolean;
-};
+type SurfaceOwner = FlightSurface;
 type Conversation = {
   id: string;
   session: A2uiSession;
@@ -113,13 +87,7 @@ export function createA2uiApplication(client: A2uiClient) {
     }
   }
   function retire(owner: SurfaceOwner) {
-    owner.live = false;
-    if (owner.disposed) return;
-    owner.disposed = true;
-    owner.actions.dispose();
-    owner.form?.dispose();
-    owner.surface.dispose();
-    owner.state.dispose();
+    owner.dispose();
   }
   function revokeActive() {
     if (active) retire(active);
@@ -158,93 +126,26 @@ export function createA2uiApplication(client: A2uiClient) {
     );
   }
   function prepare(content: string, kind: SurfaceKind, messageId: string) {
-    const surface = prepareSurface(content, kind);
-    let state: RenderState | undefined,
-      form: BookingForm | undefined,
-      actions: Actions | undefined;
-    try {
-      state = createRenderState(surface.model);
-      if (kind === 'booking') form = createBookingForm(surface, state);
-      const id = 'surface-' + ++sequence;
-      const owner = {} as SurfaceOwner;
-      const usable = () =>
-        !revoked &&
-        owner.live &&
-        active === owner &&
-        !snapshot.busy &&
-        snapshot.canSubmit;
-      actions = createActions(surface, {
-        form,
-        timestamp: () => new Date().toISOString(),
-        dispatch(payload) {
-          if (!usable()) return;
-          const next: SurfaceKind =
-            payload.action.name === 'bookingSubmit'
-              ? 'results'
-              : payload.action.name === 'flightSelect'
-              ? 'confirmation'
-              : 'booking';
-          // submit closes the epoch synchronously, before the first transport await.
-          void submit(JSON.stringify(payload), next).catch(() => undefined);
-        },
-      });
-      const edits: Record<string, (draft: string) => void> =
-        Object.create(null);
-      const activations: Record<string, () => boolean> = Object.create(null);
-      for (const component of Object.values(surface.components)) {
-        if (
-          form &&
-          ['ChoicePicker', 'DateTimeInput', 'TextField'].includes(
-            component.component
-          )
-        ) {
-          const edit = form.captureEdit(component.id);
-          edits[component.id] = (draft) => {
-            if (usable()) edit(draft);
-          };
-        }
-        if (component.component === 'Button') {
-          const activate = actions.capability(component.id);
-          activations[component.id] = () => usable() && activate();
-        }
-      }
-      const view: SurfaceView = Object.freeze({
-        id,
-        kind,
-        messageId,
-        spec: surface.spec,
-        prose: surface.prose,
-        wire: content,
-        model: surface.model,
-        ...(form
-          ? {
-              form: Object.freeze({
-                getSnapshot: form.getSnapshot,
-                subscribe: form.subscribe,
-              }),
-            }
-          : {}),
-        edits: Object.freeze(edits),
-        actions: Object.freeze(activations),
-      });
-      Object.assign(owner, {
-        view,
-        surface,
-        state,
-        form,
-        actions,
-        live: true,
-        disposed: false,
-      });
-      surfaces.add(owner);
-      return owner;
-    } catch (error) {
-      actions?.dispose();
-      form?.dispose();
-      surface.dispose();
-      state?.dispose();
-      throw error;
-    }
+    const owner: SurfaceOwner = createFlightSurface({
+      content,
+      expected: kind,
+      messageId,
+      id: 'surface-' + ++sequence,
+      isCurrent: () =>
+        !revoked && active === owner && !snapshot.busy && snapshot.canSubmit,
+      onAction(payload) {
+        const next: SurfaceKind =
+          payload.action.name === 'bookingSubmit'
+            ? 'results'
+            : payload.action.name === 'flightSelect'
+            ? 'confirmation'
+            : 'booking';
+        // submit closes the epoch synchronously before transport or observer reentry.
+        void submit(JSON.stringify(payload), next).catch(() => undefined);
+      },
+    });
+    surfaces.add(owner);
+    return owner;
   }
   async function submit(
     text: string,
@@ -427,7 +328,7 @@ export function createA2uiApplication(client: A2uiClient) {
     const running = !!operation;
     operation?.abort();
     operation = undefined;
-    for (const owner of surfaces) owner.live = false;
+    for (const owner of surfaces) owner.revoke();
     conversation?.release?.();
     if (conversation) {
       conversation.release = undefined;

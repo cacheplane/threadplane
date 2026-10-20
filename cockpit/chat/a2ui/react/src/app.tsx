@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { useAgent } from '@threadplane/react';
 import { ChatInput } from '@threadplane/react/chat';
 import type { A2uiApplication } from './application';
-import { A2uiSurface } from './views';
+// eslint-disable-next-line @nx/enforce-module-boundaries -- Same-layout private presentation source in installed consumers.
+import { A2uiSurface } from '../../../../../libs/cockpit-a2ui-react/src/index';
 
 function humanText(content: string) {
   try {

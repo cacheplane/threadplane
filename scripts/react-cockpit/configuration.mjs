@@ -1,5 +1,11 @@
 /** Closed authored frontend selection; callers cannot supply filesystem paths. */
 export function reactCockpitConfiguration(topic = 'streaming') {
+  if (topic === 'ag-ui-a2ui')
+    return Object.freeze({
+      topic: 'a2ui', library: 'ag-ui', adapter: 'ag-ui',
+      appPath: 'cockpit/ag-ui/a2ui/react', base: '/ag-ui/a2ui/react/',
+      port: 4647, project: 'cockpit-ag-ui-a2ui-react',
+    });
   if (topic === 'chat-a2ui')
     return Object.freeze({
       topic: 'a2ui', library: 'chat', adapter: 'langgraph',

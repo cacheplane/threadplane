@@ -400,6 +400,9 @@ const localNames = [
   '@threadplane/react',
   '@threadplane/angular',
 ];
+function isReactAgUiProfile(profile) {
+  return profile === 'react-ag-ui' || profile === 'react-native-a2ui-ag-ui';
+}
 function presentationLocals(profile) {
   assert.ok(
     [
@@ -408,6 +411,7 @@ function presentationLocals(profile) {
       'render-state',
       'react-langgraph',
       'react-native-a2ui-langgraph',
+      'react-native-a2ui-ag-ui',
       'angular-langgraph',
       'angular-foundation',
       'react-ag-ui',
@@ -421,17 +425,21 @@ function presentationLocals(profile) {
     return ['core', 'content', 'a2ui', 'react', 'langgraph'].map(
       (name) => '@threadplane/' + name
     );
+  if (profile === 'react-native-a2ui-ag-ui')
+    return ['core', 'content', 'a2ui', 'react', 'ag-ui'].map(
+      (name) => '@threadplane/' + name
+    );
   if (profile === 'react-render')
     return localNames.filter((name) => name !== '@threadplane/angular');
   if (profile === 'angular-foundation')
     return localNames.filter((name) => name !== '@threadplane/react');
   const excluded =
-    profile === 'react-langgraph' || profile === 'react-ag-ui'
+    profile === 'react-langgraph' || isReactAgUiProfile(profile)
       ? '@threadplane/angular'
       : '@threadplane/react';
   return [
     ...localNames.filter((name) => name !== excluded),
-    profile === 'react-ag-ui' ? '@threadplane/ag-ui' : '@threadplane/langgraph',
+    isReactAgUiProfile(profile) ? '@threadplane/ag-ui' : '@threadplane/langgraph',
   ];
 }
 
@@ -447,7 +455,7 @@ function assertPresentationPackages(
   for (const path of Object.keys(packages)) {
     if (!path) continue;
     const name = path.split('node_modules/').at(-1);
-    if (['react-langgraph', 'react-native-a2ui-langgraph', 'react-ag-ui', 'react-render'].includes(profile))
+    if (['react-langgraph', 'react-native-a2ui-langgraph', 'react-native-a2ui-ag-ui', 'react-ag-ui', 'react-render'].includes(profile))
       assert.ok(
         !/^@(?:angular|angular-devkit)\//.test(name) &&
           ![
@@ -472,7 +480,7 @@ function assertPresentationPackages(
       (!backend ||
         (profile !== 'markdown' && profile !== 'a2ui-surfaces' && profile !== 'render-state' && profile !== 'react-render' && profile !== 'angular-foundation' &&
           name.startsWith(
-            profile === 'react-ag-ui' ? '@ag-ui/' : '@langchain/'
+            isReactAgUiProfile(profile) ? '@ag-ui/' : '@langchain/'
           ) &&
           sdkNames.has(name))) &&
         (profile === 'markdown' ||
@@ -608,23 +616,25 @@ export function derivePresentationConsumer(
       ? 'Exactly four render-state tarballs required'
       : profile === 'react-native-a2ui-langgraph'
       ? 'Exactly five native React A2UI LangGraph tarballs required'
+      : profile === 'react-native-a2ui-ag-ui'
+      ? 'Exactly five native React A2UI AG-UI tarballs required'
       : profile === 'react-render'
       ? 'Exactly React, core and content static tarballs required'
       : profile === 'angular-foundation'
       ? 'Exactly Angular, core and content foundation tarballs required'
       : `Exactly ${
-          profile === 'react-langgraph' || profile === 'react-ag-ui'
+          profile === 'react-langgraph' || isReactAgUiProfile(profile)
             ? 'React'
             : 'Angular'
         }, core, content and ${
-          profile === 'react-ag-ui' ? 'AG-UI' : 'LangGraph'
+          isReactAgUiProfile(profile) ? 'AG-UI' : 'LangGraph'
         } candidate tarballs required`
   );
   // AG-UI's pinned client is installed under the repository's reviewed RxJS policy.
-  const effectiveRanges = profile === 'react-ag-ui' ? { rxjs: '~7.8.0' } : {};
+  const effectiveRanges = isReactAgUiProfile(profile) ? { rxjs: '~7.8.0' } : {};
   const selected = selectPresentationLock(rootLock, seeds, effectiveRanges);
   if (profile !== 'markdown') {
-    const react = ['react-langgraph', 'react-native-a2ui-langgraph', 'react-ag-ui', 'react-render'].includes(profile);
+    const react = ['react-langgraph', 'react-native-a2ui-langgraph', 'react-native-a2ui-ag-ui', 'react-ag-ui', 'react-render'].includes(profile);
     const selectedSeeds =
       profile === 'a2ui-surfaces'
         ? a2uiSurfacesPresentationSeeds
@@ -634,7 +644,7 @@ export function derivePresentationConsumer(
         ? reactRenderPresentationSeeds
         : profile === 'angular-foundation'
         ? angularFoundationPresentationSeeds
-        : profile === 'react-ag-ui'
+        : isReactAgUiProfile(profile)
         ? reactAgUiPresentationSeeds
         : react
         ? reactLanggraphPresentationSeeds
@@ -647,7 +657,7 @@ export function derivePresentationConsumer(
       profile === 'a2ui-surfaces' || profile === 'render-state' || profile === 'react-render' || profile === 'angular-foundation' ? {} : selectPresentationLock(
         rootLock,
         [
-          profile === 'react-ag-ui'
+          isReactAgUiProfile(profile)
             ? '@ag-ui/client'
             : '@langchain/langgraph-sdk',
         ],
@@ -673,7 +683,7 @@ export function derivePresentationConsumer(
     version: '0.0.0',
     private: true,
     type: 'module',
-    ...(profile === 'react-ag-ui' ? { overrides: effectiveRanges } : {}),
+    ...(isReactAgUiProfile(profile) ? { overrides: effectiveRanges } : {}),
     dependencies: {
       ...Object.fromEntries(
         seeds.map((name) => [
@@ -768,8 +778,8 @@ function installedPackages(consumer) {
 export function assertPresentationInstallation(consumer, derived, tarballs) {
   const { lock, seeds, artifacts } = derived;
   const profile = derived.profile ?? 'markdown';
-  const effectiveRanges = profile === 'react-ag-ui' ? { rxjs: '~7.8.0' } : {};
-  if (profile === 'react-ag-ui')
+  const effectiveRanges = isReactAgUiProfile(profile) ? { rxjs: '~7.8.0' } : {};
+  if (isReactAgUiProfile(profile))
     assert.deepEqual(derived.manifest.overrides, effectiveRanges);
   const locals = presentationLocals(profile);
   assertLocalResolutions(consumer, lock, tarballs);
@@ -804,7 +814,7 @@ export function assertPresentationInstallation(consumer, derived, tarballs) {
       ? selectPresentationLock(
           lock,
           [
-            profile === 'react-ag-ui'
+            isReactAgUiProfile(profile)
               ? '@ag-ui/client'
               : '@langchain/langgraph-sdk',
           ],

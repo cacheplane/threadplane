@@ -30,6 +30,7 @@ import { ReactChatThemingPreview } from '../../../../../components/docs/ReactCha
 import { ReactChatDebugPreview } from '../../../../../components/docs/ReactChatDebugPreview';
 import { ReactChatGenerativeUiPreview } from '../../../../../components/docs/ReactChatGenerativeUiPreview';
 import { ReactChatA2uiPreview } from '../../../../../components/docs/ReactChatA2uiPreview';
+import { ReactAgUiA2uiPreview } from '../../../../../components/docs/ReactAgUiA2uiPreview';
 import { ReactDeepAgentsSkillsPreview } from '../../../../../components/docs/ReactDeepAgentsSkillsPreview';
 import { ReactDeepAgentsMemoryPreview } from '../../../../../components/docs/ReactDeepAgentsMemoryPreview';
 import { ReactDeepAgentsSubagentsPreview } from '../../../../../components/docs/ReactDeepAgentsSubagentsPreview';
@@ -294,6 +295,7 @@ export default async function DocsPage({ params }: DocsRouteProps) {
         reactDocsSlot={
           workspacePage.frontendVariants?.react &&
           (library === 'langgraph' ||
+            (library === 'a2ui' && section === 'getting-started' && slug === 'introduction') ||
             (library === 'runtimes' && section === 'aws-strands' && slug === 'overview') ||
             (library === 'runtimes' && section === 'mastra' && slug === 'overview') ||
             (library === 'runtimes' && section === 'microsoft-agent-framework' && slug === 'overview') ||
@@ -301,7 +303,9 @@ export default async function DocsPage({ params }: DocsRouteProps) {
             (library === 'render' && ((section === 'guides' && ['specs','state-store','repeat-loops','registry'].includes(slug)) || (section === 'api' && ['render-spec-component','provide-render'].includes(slug)))) ||
             (library === 'ag-ui' && ((section === 'reference' && slug === 'event-mapping') || (section === 'guides' && ['interrupts','tool-views','client-tools','json-render','subagents'].includes(slug)))) ||
             (library === 'chat' && ((section === 'a2ui' && slug === 'overview') || (section === 'guides' && ['thread-routing', 'generative-ui', 'theming'].includes(slug)) || slug === 'client-tools' || (section === 'concepts' && slug === 'message-model') || (section === 'components' && ['chat-debug', 'chat-trace', 'chat-input', 'chat-interrupt-panel', 'chat-tool-calls', 'chat-subagent-card'].includes(slug))))) ? (
-            library === 'runtimes' && section === 'aws-strands' && slug === 'overview' ? (
+            library === 'a2ui' && section === 'getting-started' && slug === 'introduction' ? (
+              <ReactAgUiA2uiPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />
+            ) : library === 'runtimes' && section === 'aws-strands' && slug === 'overview' ? (
               <ReactStrandsPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />
             ) : library === 'runtimes' && section === 'microsoft-agent-framework' && slug === 'overview' ? (
               <ReactMafPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />

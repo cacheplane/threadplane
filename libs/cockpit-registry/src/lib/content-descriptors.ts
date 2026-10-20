@@ -1114,13 +1114,24 @@ const chatInputReact = (() => {
   });
 })();
 
+const agUiA2uiReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'ag-ui-a2ui-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-ag-ui-a2ui-react');
+  if (!canonical || !frontend) throw new Error('AG-UI A2UI frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical, id: 'ag-ui-a2ui-python-react', frontend: 'react', title: 'AG-UI A2UI (React preview)',
+    codeAssetPaths: [...['app.tsx', 'application.ts', 'connection.ts', 'terminal.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/ag-ui/a2ui/react/src/${file}`), ...['index.ts', 'data.ts', 'protocol.ts', 'form.ts', 'actions.ts', 'views.tsx', 'surface.ts'].map(file => `libs/cockpit-a2ui-react/src/${file}`)],
+    runtimeUrl: frontend.runtimePath, devPort: frontend.port,
+  });
+})();
+
 const chatA2uiReact = (() => {
   const canonical = capabilityModules.find(descriptor => descriptor.id === 'chat-a2ui-python');
   const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-chat-a2ui-react');
   if (!canonical || !frontend) throw new Error('Chat A2UI frontend registration is missing');
   return freezeCapabilityDescriptor({
     ...canonical, id: 'chat-a2ui-python-react', frontend: 'react', title: 'Chat A2UI (React preview)',
-    codeAssetPaths: ['app.tsx', 'application.ts', 'connection.ts', 'data.ts', 'terminal.ts', 'protocol.ts', 'form.ts', 'actions.ts', 'views.tsx', 'main.tsx', 'styles.css'].map(file => `cockpit/chat/a2ui/react/src/${file}`),
+    codeAssetPaths: [...['app.tsx', 'application.ts', 'connection.ts', 'terminal.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/chat/a2ui/react/src/${file}`), ...['index.ts', 'data.ts', 'protocol.ts', 'form.ts', 'actions.ts', 'views.tsx', 'surface.ts'].map(file => `libs/cockpit-a2ui-react/src/${file}`)],
     runtimeUrl: frontend.runtimePath, devPort: frontend.port,
   });
 })();
@@ -1464,6 +1475,7 @@ export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
     chatMessagesReact,
     chatThemingReact,
     chatA2uiReact,
+    agUiA2uiReact,
     chatDebugReact,
     agUiStreamingReact,
     agUiInterruptsReact,

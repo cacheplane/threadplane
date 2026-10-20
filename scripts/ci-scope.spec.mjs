@@ -1175,3 +1175,21 @@ describe('classifyFromAffected — cockpit e2e matrix stays scoped to its own ca
     assert.equal(scope.cockpit_e2e, true);
   });
 });
+
+// This package-less private project owns all three CI surfaces and propagates
+// to the Chat consumer through its explicit Nx dependency.
+describe('shared private aviation presentation scope', () => {
+  it('selects cockpit, examples and e2e from actual shared project tags', async () => {
+    const project = JSON.parse(await readFile('libs/cockpit-a2ui-react/project.json', 'utf8'));
+    const scope = classifyFromAffected(['libs/cockpit-a2ui-react/src/surface.ts'], [project]);
+    for (const key of ['cockpit','cockpit_examples','cockpit_e2e']) assert.equal(scope[key], true, key);
+    assert.equal(project.projectType, 'library');
+    const workflow = await readFile('.github/workflows/ci.yml','utf8');
+    const cockpit = workflow.split('\n  cockpit:\n')[1].split('\n  cockpit-examples-build:')[0];
+    assert.match(cockpit, /npx nx lint cockpit-a2ui-react/);
+    assert.match(cockpit, /npx nx test cockpit-a2ui-react --skip-nx-cache/);
+  });
+  it('affects the real Chat consumer for shared source changes', () => {
+    assert.ok(nxAffectedFiles('libs/cockpit-a2ui-react/src/surface.ts').includes('cockpit-chat-a2ui-react'));
+  });
+});

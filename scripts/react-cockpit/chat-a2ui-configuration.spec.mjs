@@ -61,3 +61,20 @@ test('production source copying excludes testing and preserves private fixture i
   assert.match(serve, /heldStreams/);
   assert.match(serve, /closedWorkers/);
 });
+
+test('shared aviation presentation is package-less and copied at its authored layout', () => {
+  const project = JSON.parse(read('libs/cockpit-a2ui-react/project.json'));
+  assert.equal(project.name,'cockpit-a2ui-react');
+  assert.ok(!readdirSync('libs/cockpit-a2ui-react').includes('package.json'));
+  assert.deepEqual(JSON.parse(read('cockpit/chat/a2ui/react/project.json')).implicitDependencies,['cockpit-a2ui-react']);
+  const build = read('scripts/react-cockpit/build.mjs');
+  assert.match(build,/join\(root, 'libs\/cockpit-a2ui-react\/src'\)/);
+  assert.match(build,/join\(consumer, 'libs\/cockpit-a2ui-react\/src'\)/);
+  assert.match(build,/\['testing', 'fixtures'\]/);
+  const terminal=read('cockpit/chat/a2ui/react/src/terminal.ts');
+  assert.match(terminal,/libs\/cockpit-a2ui-react\/src\/data\.js/);
+  assert.doesNotMatch(terminal,/cockpit-a2ui-react\/src\/index/);
+  const probe=read('scripts/react-cockpit/chat-a2ui-native-probe.mjs');
+  assert.match(probe,/compiled\/cockpit\/chat\/a2ui\/react\/src\/terminal\.js/);
+  assert.match(probe,/libs\/cockpit-a2ui-react\/src\/data\.ts/);
+});

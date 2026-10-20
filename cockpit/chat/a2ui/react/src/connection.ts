@@ -5,7 +5,8 @@ import {
   type A2uiClient,
   type A2uiSession,
 } from './application';
-import { copyData } from './data';
+// eslint-disable-next-line @nx/enforce-module-boundaries -- Same-layout private data source in installed consumers.
+import { copyData } from '../../../../../libs/cockpit-a2ui-react/src/data';
 import { checkpointSource, type Checkpoint } from './terminal';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Internal bridge is copied by the isolated build.
 import type { RuntimeBridgeConfiguration } from '../../../../../libs/cockpit-runtime-bridge/src/index';

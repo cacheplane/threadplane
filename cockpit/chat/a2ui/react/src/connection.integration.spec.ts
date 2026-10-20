@@ -6,7 +6,9 @@ import { join } from 'node:path';
 import type { AddressInfo } from 'node:net';
 import { expect, it, onTestFinished } from 'vitest';
 import { createConnectedApplication } from './connection';
-import type { A2uiApplication, SurfaceView } from './application';
+import type { A2uiApplication } from './application';
+// eslint-disable-next-line @nx/enforce-module-boundaries -- Borrow the moved private presentation type.
+import type { SurfaceView } from '../../../../../libs/cockpit-a2ui-react/src/surface';
 
 async function fixture() {
   const location = new URL(
