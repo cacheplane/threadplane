@@ -212,9 +212,10 @@ renders correctly both during streaming and after completion.
 
 ## Reasoning blocks
 
-- [ ] Palette "Effort" dropdown lists 4 options
-      (minimal (fast) / low / medium / high (visible reasoning))
-- [ ] Default value is `minimal` on first load
+- [ ] Palette "Effort" dropdown lists 5 options
+      (model default / minimal (fast) / low / medium / high (visible reasoning))
+- [ ] Default value is `model default` on first load, and the submitted
+      state carries `reasoning_effort: null` (the model's own default applies)
 - [ ] Effort selection persists across reload
 - [ ] With model = gpt-5-mini and effort = high, send the puzzle prompt
       ("Solve a multi-step puzzle (try Effort = high)" welcome suggestion):
