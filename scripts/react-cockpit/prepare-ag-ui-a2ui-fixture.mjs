@@ -560,6 +560,33 @@ export async function prepareAgUiA2uiFixture({
   }
 }
 
+/** Own only the already-prepared browser service; preparation has its own deadline. */
+export const BROWSER_SERVER_FALLBACK_MS = 35 * 60 * 1000;
+export function servePreparedAgUiA2uiFixture(result, { run = runPreparationStage } = {}) {
+  return run({
+    executable: process.execPath,
+    args: [
+      join(root, 'scripts/react-cockpit/serve.mjs'),
+      'ag-ui-a2ui',
+      '--no-parent',
+    ],
+    env: {
+      ...result.env,
+      THREADPLANE_AGUI_A2UI_BROWSER_RUNTIME: JSON.stringify({
+        python: result.python,
+        environment: result.environment,
+        home: result.home,
+        tmpdir: result.tmpdir,
+      }),
+      THREADPLANE_AGUI_A2UI_BROWSER_RETAIN: join(result.attempt, 'browser'),
+    },
+    timeoutMs: BROWSER_SERVER_FALLBACK_MS,
+    retain: result.attempt,
+    name: 'browser-server',
+    allowInterrupt: true,
+  });
+}
+
 if (
   process.argv[1] &&
   resolve(process.argv[1]) === fileURLToPath(import.meta.url)
@@ -575,28 +602,7 @@ if (
       })
     );
     if (mode.serve) {
-      await runPreparationStage({
-        executable: process.execPath,
-        args: [
-          join(root, 'scripts/react-cockpit/serve.mjs'),
-          'ag-ui-a2ui',
-          '--no-parent',
-        ],
-        env: {
-          ...result.env,
-          THREADPLANE_AGUI_A2UI_BROWSER_RUNTIME: JSON.stringify({
-            python: result.python,
-            environment: result.environment,
-            home: result.home,
-            tmpdir: result.tmpdir,
-          }),
-          THREADPLANE_AGUI_A2UI_BROWSER_RETAIN: join(result.attempt, 'browser'),
-        },
-        timeoutMs: 1200000,
-        retain: result.attempt,
-        name: 'browser-server',
-        allowInterrupt: true,
-      });
+      await servePreparedAgUiA2uiFixture(result);
     }
   } catch {
     console.error(

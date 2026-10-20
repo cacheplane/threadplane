@@ -4,6 +4,19 @@ import { resolve } from 'node:path';
 import { getCockpitFrontends } from '@threadplane/cockpit-registry';
 import { createWebsitePlaywrightConfig } from '../playwright.config';
 
+it('bounds full and scoped local Website setup plus tests without changing external modes', () => {
+  for (const environment of [{}, { WEBSITE_E2E_REACT_TOPIC: 'ag-ui-a2ui' }, { WEBSITE_E2E_REACT_TOPIC: 'chat-a2ui' }]) {
+    const config = createWebsitePlaywrightConfig(environment);
+    expect(config.globalTimeout).toBe(30 * 60 * 1000);
+  }
+  for (const environment of [{ BASE_URL: 'https://threadplane.ai' }, { WEBSITE_E2E_MODE: 'production' }, { CUSTOM_RUNTIME_BFCACHE: 'true' }, { PRODUCTION_SMOKE: 'true' }]) {
+    expect(createWebsitePlaywrightConfig(environment).globalTimeout).toBeUndefined();
+  }
+  const scoped = createWebsitePlaywrightConfig({ WEBSITE_E2E_REACT_TOPIC: 'ag-ui-a2ui', CI: 'true' });
+  expect(scoped.retries).toBe(0);
+  expect(scoped.workers).toBe(1);
+});
+
 it('scopes Chat Theming Website to two owned servers with zero retries and focused preparation', () => {
   const config = createWebsitePlaywrightConfig({ WEBSITE_E2E_REACT_TOPIC: 'chat-theming', CI: 'true', PLAYWRIGHT_REUSE_EXISTING_SERVER: 'true' });
   expect(config.testMatch).toBe('**/react-theming-preview.spec.ts');

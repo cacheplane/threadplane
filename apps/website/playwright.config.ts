@@ -67,6 +67,9 @@ export const createWebsitePlaywrightConfig = (
 
   const config = defineConfig({
     testDir: './e2e',
+    globalTimeout: shouldStartLocalServer && !productionMode && !bfcacheRuntimeTest
+      ? 30 * 60 * 1000
+      : undefined,
     testMatch: bfcacheRuntimeTest
       ? '**/custom-runtime-bfcache.spec.ts'
       : undefined,

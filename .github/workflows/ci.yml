@@ -967,6 +967,7 @@ jobs:
             playwright-${{ runner.os }}-
       - run: npx playwright install --with-deps chromium
       - run: npx nx e2e website --skip-nx-cache
+        timeout-minutes: 45
       # The public-copy gate reads served output, and `next dev` serves a
       # different bundle than production. Run it a second time against a real
       # production build so a claim that only appears in the built output — in a
