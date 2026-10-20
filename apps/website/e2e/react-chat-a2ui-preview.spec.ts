@@ -51,7 +51,7 @@ test('native Chat A2UI keeps canonical Docs, Code and Run aligned', async ({ pag
   await hydrated(page, 'Docs');
   await expect(page.getByLabel('Example UI')).toHaveValue('react');
   await expect(page.getByRole('heading', { name: 'React chat A2UI preview', exact: true })).toBeVisible();
-  await expect(page.locator('[data-example-file="cockpit/chat/a2ui/react/src/protocol.ts"]')).toBeVisible();
+  await expect(page.locator('[data-example-file="libs/cockpit-a2ui-react/src/protocol.ts"]')).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('react-chat-a2ui-docs-desktop.png') });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({ path: testInfo.outputPath('react-chat-a2ui-docs-mobile.png') });

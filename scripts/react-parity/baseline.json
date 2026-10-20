@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "0ca32c3a7cfb05c3dc75bdd27062ca32780719f3",
+  "baselineHead": "ef1e201abad33a1cb26fcda3de609d55a276f7dd",
   "sourceState": {
     "modified": [
       ".github/workflows/ci.yml"
@@ -13,6 +13,7 @@
       "ag-ui",
       "angular",
       "chat",
+      "cockpit-a2ui-react",
       "cockpit-registry",
       "cockpit-runtime-bridge",
       "cockpit-shell",
@@ -439,6 +440,24 @@
       "sha256": "dc1c927e6591f9339047bab6b5d8b61f26112c6384fb1b356c5157b0b8ee946b"
     },
     {
+      "id": "asset:libs/cockpit-a2ui-react/project.json",
+      "kind": "asset",
+      "path": "libs/cockpit-a2ui-react/project.json",
+      "sha256": "13ab188418cd6823cac31f0156001c00e852296153f423b639643d8c6a4bef14"
+    },
+    {
+      "id": "asset:libs/cockpit-a2ui-react/tsconfig.json",
+      "kind": "asset",
+      "path": "libs/cockpit-a2ui-react/tsconfig.json",
+      "sha256": "a09a58b7d3dcea48de9843cab6675202b4fc4c629fdbb0064f95c271e31142da"
+    },
+    {
+      "id": "asset:libs/cockpit-a2ui-react/tsconfig.lib.json",
+      "kind": "asset",
+      "path": "libs/cockpit-a2ui-react/tsconfig.lib.json",
+      "sha256": "543a790c4609fe96c21eafa78c6997c8e82f8b842dbf881b26bb98f61f7261ba"
+    },
+    {
       "id": "asset:libs/cockpit-registry/package.json",
       "kind": "asset",
       "path": "libs/cockpit-registry/package.json",
@@ -448,7 +467,7 @@
       "id": "asset:libs/cockpit-registry/project.json",
       "kind": "asset",
       "path": "libs/cockpit-registry/project.json",
-      "sha256": "b020b8128d18cdaff16607373387b99044e685fa5fa8b923cf773717ab486d25"
+      "sha256": "dbef979778a5a262d04254a264fb48e2e914cd8aea0608cdbf4e07e7657329d4"
     },
     {
       "id": "asset:libs/cockpit-registry/tsconfig.json",
@@ -2158,7 +2177,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "8f5f3db690d76913155a8e8025226f9b0a6a06f8195d942b66ed44e9ef2b9d15"
+      "sha256": "0853b39e792f2bedd6186abc8d117e527441890acefb0c60dad01176f51d3abd"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -13646,6 +13665,60 @@
       "sha256": "c1afeb8d76bb58b54fc601ea871743a500ebdeb54bbe7cde47aa075e64f433e8"
     },
     {
+      "id": "source:libs/cockpit-a2ui-react/eslint.config.mjs",
+      "kind": "source",
+      "path": "libs/cockpit-a2ui-react/eslint.config.mjs",
+      "sha256": "f32eea35ed79934d666e1e15928c156f3b176df6a424ca1c6466a84431702dc4"
+    },
+    {
+      "id": "source:libs/cockpit-a2ui-react/src/actions.ts",
+      "kind": "source",
+      "path": "libs/cockpit-a2ui-react/src/actions.ts",
+      "sha256": "a399cdb271189e1f4555aedfd1fe16fd64533b72a3e743522ec3f5e7ce26ae7f"
+    },
+    {
+      "id": "source:libs/cockpit-a2ui-react/src/data.ts",
+      "kind": "source",
+      "path": "libs/cockpit-a2ui-react/src/data.ts",
+      "sha256": "6cd1df7f3bcb055b5585ac439bcc972623fa400377cf213de17a7fe135238060"
+    },
+    {
+      "id": "source:libs/cockpit-a2ui-react/src/form.ts",
+      "kind": "source",
+      "path": "libs/cockpit-a2ui-react/src/form.ts",
+      "sha256": "9c2ce90e80185a931cbbc3e0b14f3b43a0bd986224ecf645126b32de059a6c27"
+    },
+    {
+      "id": "source:libs/cockpit-a2ui-react/src/index.ts",
+      "kind": "source",
+      "path": "libs/cockpit-a2ui-react/src/index.ts",
+      "sha256": "45678068c9e377495205abe5d4da8d5ae86b25b9184ee9ae62fd61650b4aae78"
+    },
+    {
+      "id": "source:libs/cockpit-a2ui-react/src/protocol.ts",
+      "kind": "source",
+      "path": "libs/cockpit-a2ui-react/src/protocol.ts",
+      "sha256": "6a145bc9548a8780c1ac01889430d56c57e6707d922d301fd2e727ccdaee2d70"
+    },
+    {
+      "id": "source:libs/cockpit-a2ui-react/src/surface.ts",
+      "kind": "source",
+      "path": "libs/cockpit-a2ui-react/src/surface.ts",
+      "sha256": "b91870993383bd1ff0fde8eb9af958d0aa07c80e95fd89c264ce77c152250fdf"
+    },
+    {
+      "id": "source:libs/cockpit-a2ui-react/src/views.tsx",
+      "kind": "source",
+      "path": "libs/cockpit-a2ui-react/src/views.tsx",
+      "sha256": "a4feff8e4575ec95b57191b1f94dda26508d438e30ab506982b390c05a3d6e16"
+    },
+    {
+      "id": "source:libs/cockpit-a2ui-react/vite.config.mts",
+      "kind": "source",
+      "path": "libs/cockpit-a2ui-react/vite.config.mts",
+      "sha256": "cc2d8fbcca28f7051725532dddb0cb32c82f05cf3ec749dddbeacdac349741d5"
+    },
+    {
       "id": "source:libs/cockpit-registry/eslint.config.mjs",
       "kind": "source",
       "path": "libs/cockpit-registry/eslint.config.mjs",
@@ -13661,13 +13734,13 @@
       "id": "source:libs/cockpit-registry/src/lib/capability-registry.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "sha256": "2490c7a94f197eb2fffe28bec75fc935a7f3a5859de5975c74713c3f29dd6cb0"
+      "sha256": "e31f623f33c87f37f58e0946a78afb91c40162837e49b7c50e357e2fc9221ca5"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/content-descriptors.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/content-descriptors.ts",
-      "sha256": "83c99ddf863681598cea828cdbea1843e94531db82d0c351d887879e6bfa3efc"
+      "sha256": "76c60b06c71174194e6636dec475d40fa94a97b75284ade6a9e917c7901ed7ff"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/docs-links.ts",

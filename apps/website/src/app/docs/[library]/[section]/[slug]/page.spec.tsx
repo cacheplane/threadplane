@@ -158,13 +158,25 @@ const route = (library: string, section: string, slug: string, mode?: string) =>
   } as never);
 
 describe('unified docs workspace route', () => {
+  it('selects native AG-UI A2UI Docs on its canonical A2UI introduction route', async () => {
+    const tree = await route('a2ui', 'getting-started', 'introduction');
+    const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
+    const slot = workspace?.props.reactDocsSlot;
+    expect(isValidElement(slot) && typeof slot.type === 'function' && slot.type.name).toBe('ReactAgUiA2uiPreview');
+    const context = isValidElement<ElementProps>(slot) ? slot.props.exampleCode : undefined;
+    expect(context?.assetPaths).toEqual(expect.arrayContaining(['cockpit/ag-ui/a2ui/react/src/app.tsx', 'libs/cockpit-a2ui-react/src/protocol.ts']));
+    expect(context?.sources?.['cockpit/ag-ui/a2ui/python/src/graph.py']).toContain('a2ui');
+    expect(context?.assetPaths.some(path => /fixture|probe|testing|\.spec\./.test(path))).toBe(false);
+    const angular = findElement(workspace?.props.docsSlot, MdxRenderer as ComponentType<never>);
+    expect(angular?.props.exampleCode?.assetPaths).toContain('cockpit/ag-ui/a2ui/angular/src/app/a2ui.component.ts');
+  });
   it('selects native Chat A2UI sources and article while retaining canonical Angular docs', async () => {
     const tree = await route('chat', 'a2ui', 'overview');
     const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
     const slot = workspace?.props.reactDocsSlot;
     expect(isValidElement(slot) && typeof slot.type === 'function' && slot.type.name).toBe('ReactChatA2uiPreview');
     expect(isValidElement<ElementProps>(slot) && slot.props.exampleCode?.assetPaths).toEqual(
-      expect.arrayContaining(['app.tsx', 'application.ts', 'connection.ts', 'data.ts', 'terminal.ts', 'protocol.ts', 'form.ts', 'actions.ts', 'views.tsx', 'main.tsx', 'styles.css'].map(file => `cockpit/chat/a2ui/react/src/${file}`))
+      expect.arrayContaining([...['app.tsx', 'application.ts', 'connection.ts', 'terminal.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/chat/a2ui/react/src/${file}`), ...['data.ts', 'protocol.ts', 'form.ts', 'actions.ts', 'views.tsx'].map(file => `libs/cockpit-a2ui-react/src/${file}`)])
     );
     const assets = isValidElement<ElementProps>(slot) ? slot.props.exampleCode?.assetPaths ?? [] : [];
     expect(assets.some(path => /fixture|probe|testing|\.spec\./.test(path))).toBe(false);

@@ -12,8 +12,8 @@ test(
     assert.equal(report.compiler.claim, 'actual application admission helpers');
     assert.deepEqual(report.compiler.files, [
       'contract.ts',
-      'application/data.ts',
-      'application/terminal.ts',
+      'libs/cockpit-a2ui-react/src/data.ts',
+      'cockpit/chat/a2ui/react/src/terminal.ts',
     ]);
     assert.equal(report.compiler.exit, 0);
     assert.deepEqual(
@@ -28,12 +28,12 @@ test(
       )
     );
     assert.deepEqual(Object.keys(report.application.sources), [
-      'data.ts',
-      'terminal.ts',
+      'libs/cockpit-a2ui-react/src/data.ts',
+      'cockpit/chat/a2ui/react/src/terminal.ts',
     ]);
     assert.deepEqual(Object.keys(report.application.modules), [
-      'data.js',
-      'terminal.js',
+      'libs/cockpit-a2ui-react/src/data.js',
+      'cockpit/chat/a2ui/react/src/terminal.js',
     ]);
     assert.ok(report.receipt.cleanup.every((row) => row.closed));
     assert.equal(report.closure.processAbsent, true);

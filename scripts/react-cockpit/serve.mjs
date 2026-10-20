@@ -5,6 +5,7 @@ import { dirname, extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { reactCockpitConfiguration } from './configuration.mjs';
 import { createChatA2uiFixture } from './chat-a2ui-fixture.mjs';
+import { createAgUiA2uiFixture } from './ag-ui-a2ui-fixture.mjs';
 import { createNativeMastraFixture } from './native-mastra-fixture.mjs';
 import { createNativeStrandsFixture } from './native-strands-fixture.mjs';
 import { createNativeMafFixture } from './native-maf-fixture.mjs';
@@ -40,6 +41,8 @@ import { createDeepAgentsSkillsFixture } from './deep-agents-skills-fixture.mjs'
 import { createDeepAgentsSubagentsFixture } from './deep-agents-subagents-fixture.mjs';
 
 const configuration = reactCockpitConfiguration(process.argv[2]);
+const agUiA2uiFixture = configuration.library === 'ag-ui' && configuration.adapter === 'ag-ui' && configuration.topic === 'a2ui'
+  ? createAgUiA2uiFixture({ ...JSON.parse(process.env.THREADPLANE_AGUI_A2UI_BROWSER_RUNTIME ?? '{}'), retain: process.env.THREADPLANE_AGUI_A2UI_BROWSER_RETAIN }) : null;
 let chatA2uiFixture = configuration.library === 'chat' && configuration.topic === 'a2ui' ? createChatA2uiFixture() : null;
 // Local failure controls own only these responses; production builds never import this server.
 let holdA2uiStreams = false;
@@ -148,6 +151,7 @@ const release = () => {
 };
 const server = createServer(async (request, response) => {
   const pathname = new URL(request.url, 'http://localhost').pathname;
+  if (agUiA2uiFixture && (await agUiA2uiFixture(request, response, pathname))) return;
   if (chatA2uiFixture) {
     if (pathname.startsWith('/__')) {
       const controls = {
@@ -453,11 +457,16 @@ const server = createServer(async (request, response) => {
 server.listen(configuration.port, '127.0.0.1');
 const parentServer = !process.argv.includes('--no-parent')
   ? createServer(server.listeners('request')[0]).listen(3000, '127.0.0.1') : null;
-if (chatA2uiFixture || chatDebugFixture || chatThemingFixture || nativeStrandsFixture || nativeMafFixture || nativeMastraFixture || agUiClientToolsFixture || deepAgentsMemoryFixture || deepAgentsSubagentsFixture || deepAgentsSkillsFixture || deepAgentsFilesystemFixture || deepAgentsPlanningFixture || chatGenerativeUiFixture || chatInterruptsFixture || chatToolCallsFixture || chatSubagentsFixture || chatThreadsFixture || chatTimelineFixture) {
+if (agUiA2uiFixture || chatA2uiFixture || chatDebugFixture || chatThemingFixture || nativeStrandsFixture || nativeMafFixture || nativeMastraFixture || agUiClientToolsFixture || deepAgentsMemoryFixture || deepAgentsSubagentsFixture || deepAgentsSkillsFixture || deepAgentsFilesystemFixture || deepAgentsPlanningFixture || chatGenerativeUiFixture || chatInterruptsFixture || chatToolCallsFixture || chatSubagentsFixture || chatThreadsFixture || chatTimelineFixture) {
   let closing;
   const shutdown = (code = 0) => {
     closing ??= (async () => {
-      if (chatA2uiFixture) {
+      let a2uiFailure;
+      if (agUiA2uiFixture) {
+        try { await agUiA2uiFixture.close(); }
+        catch (error) { a2uiFailure = error; }
+      }
+      else if (chatA2uiFixture) {
         releaseA2uiStreams(true);
         await chatA2uiFixture.close();
       }
@@ -469,8 +478,10 @@ if (chatA2uiFixture || chatDebugFixture || chatThemingFixture || nativeStrandsFi
       if (chatThemingFixture) console.log(JSON.stringify({ serverPid: process.pid, chatThemingFixtureClosed: chatThemingFixture.receipt(), listenersClosed: true }));
       if (chatDebugFixture) console.log(JSON.stringify({ serverPid: process.pid, parentServerOwned: Boolean(parentServer), chatDebugFixtureClosed: chatDebugFixture.receipt(), listenersClosed: true }));
       if (chatA2uiFixture) console.log(JSON.stringify({ serverPid: process.pid, parentServerOwned: Boolean(parentServer), chatA2uiFixtureClosed: a2uiReceipt(), listenersClosed: true }));
+      if (agUiA2uiFixture) console.log(JSON.stringify({ serverPid: process.pid, parentServerOwned: Boolean(parentServer), agUiA2uiFixtureClosed: agUiA2uiFixture.receipt(), bufferedCanonicalWire: true, listenersClosed: true }));
+      if (a2uiFailure) throw a2uiFailure;
     })();
-    if (chatA2uiFixture || chatThemingFixture || chatDebugFixture) void closing.then(() => process.exit(code), () => process.exit(1));
+    if (agUiA2uiFixture || chatA2uiFixture || chatThemingFixture || chatDebugFixture) void closing.then(() => process.exit(code), () => process.exit(1));
     else void closing.finally(() => process.exit(code));
   };
   process.once('SIGINT', () => shutdown());

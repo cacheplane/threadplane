@@ -4,6 +4,19 @@ import { resolve } from 'node:path';
 import { getCockpitFrontends } from '@threadplane/cockpit-registry';
 import { createWebsitePlaywrightConfig } from '../playwright.config';
 
+it('bounds full and scoped local Website setup plus tests without changing external modes', () => {
+  for (const environment of [{}, { WEBSITE_E2E_REACT_TOPIC: 'ag-ui-a2ui' }, { WEBSITE_E2E_REACT_TOPIC: 'chat-a2ui' }]) {
+    const config = createWebsitePlaywrightConfig(environment);
+    expect(config.globalTimeout).toBe(30 * 60 * 1000);
+  }
+  for (const environment of [{ BASE_URL: 'https://threadplane.ai' }, { WEBSITE_E2E_MODE: 'production' }, { CUSTOM_RUNTIME_BFCACHE: 'true' }, { PRODUCTION_SMOKE: 'true' }]) {
+    expect(createWebsitePlaywrightConfig(environment).globalTimeout).toBeUndefined();
+  }
+  const scoped = createWebsitePlaywrightConfig({ WEBSITE_E2E_REACT_TOPIC: 'ag-ui-a2ui', CI: 'true' });
+  expect(scoped.retries).toBe(0);
+  expect(scoped.workers).toBe(1);
+});
+
 it('scopes Chat Theming Website to two owned servers with zero retries and focused preparation', () => {
   const config = createWebsitePlaywrightConfig({ WEBSITE_E2E_REACT_TOPIC: 'chat-theming', CI: 'true', PLAYWRIGHT_REUSE_EXISTING_SERVER: 'true' });
   expect(config.testMatch).toBe('**/react-theming-preview.spec.ts');
@@ -242,6 +255,7 @@ describe('Website Playwright configuration', () => {
       '**/public-copy.spec.ts',
       '**/custom-runtime-targets.spec.ts',
       '**/custom-runtime-bfcache.spec.ts',
+      '**/react-ag-ui-a2ui-preview.spec.ts',
     ]);
   });
 
@@ -263,6 +277,7 @@ describe('Website Playwright configuration', () => {
       '**/custom-runtime-bfcache.spec.ts',
       '**/public-copy.spec.ts',
       '**/custom-runtime-targets.spec.ts',
+      '**/react-ag-ui-a2ui-preview.spec.ts',
     ]);
   });
 
@@ -333,6 +348,12 @@ describe('Website Playwright configuration', () => {
           'cockpit-langgraph-streaming-angular:serve:cockpit'
         ),
         url: 'http://localhost:4300',
+      }),
+      expect.objectContaining({
+        command: 'node scripts/react-cockpit/prepare-ag-ui-a2ui-fixture.mjs --serve',
+        url: 'http://127.0.0.1:4647',
+        reuseExistingServer: false,
+        timeout: 330_000,
       }),
       expect.objectContaining({
         command: expect.stringContaining(
@@ -513,6 +534,23 @@ it('scopes native Chat A2UI checks to Website and the exact owned React server',
   expect(config.testMatch).toBe('**/react-chat-a2ui-preview.spec.ts');
   expect(config.workers).toBe(1);
   expect(config.retries).toBe(0);
+});
+
+it('scopes native AG-UI A2UI checks to Website and the prepared owned React server', () => {
+  const config = createWebsitePlaywrightConfig({ WEBSITE_E2E_REACT_TOPIC: 'ag-ui-a2ui', WEBSITE_E2E_PORT: '4390', CI: 'true', PLAYWRIGHT_REUSE_EXISTING_SERVER: 'true' });
+  const servers = Array.isArray(config.webServer) ? config.webServer : [];
+  expect(servers.map(server => server.url)).toEqual(['http://127.0.0.1:4390', 'http://127.0.0.1:4647']);
+  expect(servers.every(server => server.reuseExistingServer === false)).toBe(true);
+  expect(servers[1]?.command).toBe('node scripts/react-cockpit/prepare-ag-ui-a2ui-fixture.mjs --serve');
+  expect(config.testMatch).toBe('**/react-ag-ui-a2ui-preview.spec.ts');
+  expect(config.workers).toBe(1);
+  expect(config.retries).toBe(0);
+  for (const environment of [{ BASE_URL: 'https://example.test' }, { PRODUCTION_SMOKE: 'true' }, { WEBSITE_E2E_MODE: 'production' }]) {
+    const passive = createWebsitePlaywrightConfig(environment);
+    expect(passive.testIgnore).toContain('**/react-ag-ui-a2ui-preview.spec.ts');
+    const passiveServers = Array.isArray(passive.webServer) ? passive.webServer : [];
+    expect(passiveServers.some(server => server.url === 'http://127.0.0.1:4647')).toBe(false);
+  }
 });
 
 it('scopes native client-tools checks to the Website and exact two owned frontend servers', () => {

@@ -3,6 +3,7 @@
   "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "cockpit/chat/a2ui/react/src",
   "projectType": "application",
+  "implicitDependencies": ["cockpit-a2ui-react"],
   "tags": ["scope:cockpit-examples", "scope:cockpit-e2e", "framework:react"],
   "targets": {
     "build": {

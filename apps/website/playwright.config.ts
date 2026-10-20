@@ -63,9 +63,13 @@ export const createWebsitePlaywrightConfig = (
   const testIgnore = shouldStartLocalServer
     ? [...modeIgnores]
     : [...new Set([...modeIgnores, ...fixtureDrivenSpecs])];
+  if (!shouldStartLocalServer || productionMode) testIgnore.push('**/react-ag-ui-a2ui-preview.spec.ts');
 
   const config = defineConfig({
     testDir: './e2e',
+    globalTimeout: shouldStartLocalServer && !productionMode && !bfcacheRuntimeTest
+      ? 30 * 60 * 1000
+      : undefined,
     testMatch: bfcacheRuntimeTest
       ? '**/custom-runtime-bfcache.spec.ts'
       : undefined,
@@ -161,6 +165,12 @@ export const createWebsitePlaywrightConfig = (
             url: runtimeURL,
             reuseExistingServer,
           },
+          ...(!productionMode && !bfcacheRuntimeTest ? [{
+            command: 'node scripts/react-cockpit/prepare-ag-ui-a2ui-fixture.mjs --serve',
+            cwd: '../..', url: 'http://127.0.0.1:4647',
+            reuseExistingServer: false, timeout: 330_000,
+            gracefulShutdown: { signal: 'SIGTERM' as const, timeout: 15000 },
+          }] : []),
           ...(!bfcacheRuntimeTest
             ? [
                 {
@@ -589,6 +599,18 @@ export const createWebsitePlaywrightConfig = (
       config.webServer = config.webServer
         .filter(server => [localURL, 'http://127.0.0.1:4645'].includes(server.url ?? ''))
         .map(server => ({ ...server, reuseExistingServer: false, gracefulShutdown: { signal: 'SIGTERM' as const, timeout: 5000 } }));
+    }
+  }
+  if (environment['WEBSITE_E2E_REACT_TOPIC'] === 'ag-ui-a2ui' && shouldStartLocalServer && !productionMode) {
+    config.testMatch = '**/react-ag-ui-a2ui-preview.spec.ts';
+    config.workers = 1;
+    config.fullyParallel = false;
+    config.retries = 0;
+    config.outputDir = resolve(__dirname, '../../output/playwright/ag-ui-a2ui-website');
+    if (Array.isArray(config.webServer)) {
+      config.webServer = config.webServer
+        .filter(server => [localURL, 'http://127.0.0.1:4647'].includes(server.url ?? ''))
+        .map(server => ({ ...server, reuseExistingServer: false, gracefulShutdown: { signal: 'SIGTERM' as const, timeout: 15000 } }));
     }
   }
   if (environment['WEBSITE_E2E_REACT_TOPIC'] === 'chat-a2ui') {

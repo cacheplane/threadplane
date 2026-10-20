@@ -1,5 +1,7 @@
 import type { Message } from '@threadplane/core';
-import { copyData, equalData, plainRecord, closedFields } from './data.js';
+// Keep the terminal proof transport-only: the private leaf avoids the React view barrel.
+// eslint-disable-next-line @nx/enforce-module-boundaries -- Same-layout copied private data leaf.
+import { copyData, equalData, plainRecord, closedFields } from '../../../../../libs/cockpit-a2ui-react/src/data.js';
 
 export interface Checkpoint {
   readonly thread_id: string;

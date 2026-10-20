@@ -80,6 +80,55 @@ describe('Strands native fixture CI ownership', () => {
   });
 });
 
+describe('native AG-UI A2UI actual Nx proof ownership', () => {
+  const root = fileURLToPath(new URL('../', import.meta.url));
+  const native = 'cockpit-ag-ui-a2ui-react';
+  for (const file of [
+    'fixtures/react-parity/native-ag-ui-a2ui/server.mjs',
+    'fixtures/react-parity/native-ag-ui-a2ui/compiled_worker.py',
+    'scripts/react-cockpit/ag-ui-a2ui-fixture.mjs',
+    'scripts/react-cockpit/prepare-ag-ui-a2ui-fixture.mjs',
+    'scripts/react-cockpit/ag-ui-a2ui-native-probe.mjs',
+    'libs/cockpit-a2ui-react/src/surface.ts',
+  ]) test(`native A2UI selects its capability lane for ${file}`, () => {
+    const affected = new Set(JSON.parse(execFileSync(process.execPath, ['node_modules/nx/bin/nx.js','show','projects','--affected',`--files=${file}`,'--json'], { cwd: root, encoding: 'utf8', timeout: 45000, maxBuffer: 4 * 1024 * 1024, env: { ...process.env, NX_DAEMON:'false', NX_ISOLATE_PLUGINS:'false' } })));
+    assert.ok(affected.has(native), 'Native canonical proof owner must be attributed by actual Nx');
+    const caps = deriveCockpitCaps(root), selected = selectCockpitCaps(caps, affected, { fullFleet:false });
+    assert.equal(selected.filter(cap => cap.angular === native).length, 1);
+    assert.ok(selected.length < caps.length, 'No full-fleet fallback');
+    if (file.startsWith('libs/')) {
+      assert.ok(affected.has('cockpit-chat-a2ui-react'));
+      assert.equal(selected.filter(cap => cap.angular === 'cockpit-chat-a2ui-react').length, 1);
+    }
+    const project = JSON.parse(readFileSync(new URL('../cockpit/ag-ui/a2ui/react/project.json', import.meta.url), 'utf8'));
+    const shared = JSON.parse(readFileSync(new URL('../libs/cockpit-a2ui-react/project.json', import.meta.url), 'utf8'));
+    const scope = classifyFromAffected([file], file.startsWith('libs/') ? [project, shared] : [project]);
+    assert.equal(scope.cockpit_examples,true); assert.equal(scope.cockpit_e2e,true);
+    if (file.startsWith('libs/')) assert.equal(scope.cockpit,true);
+  });
+  for (const file of ['fixtures/react-parity/native-ag-ui-a2ui-other/server.mjs', 'scripts/react-cockpit/ag-ui-a2ui-fixture.mjs.bak']) test(`native A2UI near-prefix plus unrelated lane remains accurately attributed for ${file}`, () => {
+    const files = `${file},cockpit/chat/messages/react/src/app.tsx`;
+    const affected = new Set(JSON.parse(execFileSync(process.execPath,['node_modules/nx/bin/nx.js','show','projects','--affected',`--files=${files}`,'--json'], { cwd:root, encoding:'utf8', timeout:45000, maxBuffer:4*1024*1024, env:{...process.env,NX_DAEMON:'false',NX_ISOLATE_PLUGINS:'false'} })));
+    const caps=deriveCockpitCaps(root), selected=selectCockpitCaps(caps,affected,{fullFleet:false});
+    assert.equal(selected.filter(cap=>cap.angular===native).length,affected.has(native)?1:0);
+    assert.equal(selected.filter(cap=>cap.angular==='cockpit-chat-messages-react').length,1);
+    assert.ok(selected.length<caps.length);
+  });
+  test('native A2UI exact owned fixture and unrelated Messages select both lanes once', () => {
+    const files='fixtures/react-parity/native-ag-ui-a2ui/server.mjs,cockpit/chat/messages/react/src/app.tsx';
+    const affected=new Set(JSON.parse(execFileSync(process.execPath,['node_modules/nx/bin/nx.js','show','projects','--affected',`--files=${files}`,'--json'],{cwd:root,encoding:'utf8',timeout:45000,maxBuffer:4*1024*1024,env:{...process.env,NX_DAEMON:'false',NX_ISOLATE_PLUGINS:'false'}})));
+    const caps=deriveCockpitCaps(root), selected=selectCockpitCaps(caps,affected,{fullFleet:false});
+    for(const name of [native,'cockpit-chat-messages-react']) assert.equal(selected.filter(cap=>cap.angular===name).length,1);
+    assert.ok(selected.length<caps.length);
+  });
+  test('native A2UI nearby canonical fixture directory alone is not its owner', () => {
+    const file='fixtures/react-parity/native-ag-ui-a2ui-other/server.mjs';
+    const affected=new Set(JSON.parse(execFileSync(process.execPath,['node_modules/nx/bin/nx.js','show','projects','--affected',`--files=${file}`,'--json'],{cwd:root,encoding:'utf8',timeout:45000,maxBuffer:4*1024*1024,env:{...process.env,NX_DAEMON:'false',NX_ISOLATE_PLUGINS:'false'}})));
+    assert.equal(affected.has(native),false);
+    assert.equal(selectCockpitCaps(deriveCockpitCaps(root),affected,{fullFleet:false}).filter(cap=>cap.angular===native).length,0);
+  });
+});
+
 describe('Debug proof files through actual Nx attribution and classification', () => {
   const root = fileURLToPath(new URL('../', import.meta.url));
   const project = JSON.parse(readFileSync(new URL('../cockpit/chat/debug/react/project.json', import.meta.url), 'utf8'));

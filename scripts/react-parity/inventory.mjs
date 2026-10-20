@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 
 export const DEFAULT_SCOPE = {
-  libraries: ['a2ui', 'ag-ui', 'angular', 'chat', 'cockpit-registry', 'cockpit-runtime-bridge', 'cockpit-shell', 'cockpit-telemetry', 'content', 'design-tokens', 'e2e-harness', 'example-layouts', 'langgraph', 'middleware', 'react', 'render', 'telemetry', 'ui-react', 'workspace-react'],
+  libraries: ['a2ui', 'ag-ui', 'angular', 'chat', 'cockpit-a2ui-react', 'cockpit-registry', 'cockpit-runtime-bridge', 'cockpit-shell', 'cockpit-telemetry', 'content', 'design-tokens', 'e2e-harness', 'example-layouts', 'langgraph', 'middleware', 'react', 'render', 'telemetry', 'ui-react', 'workspace-react'],
   entryPoints: ['libs/a2ui/src/index.ts', 'libs/ag-ui/src/public-api.ts', 'libs/angular/src/public-api.ts', 'libs/angular/chat/src/public-api.ts', 'libs/angular/markdown/src/public-api.ts', 'libs/chat/src/public-api.ts', 'libs/chat/debug/public-api.ts', 'libs/chat/testing/public-api.ts', 'libs/content/src/index.ts', 'libs/content/src/a2ui/index.ts', 'libs/content/src/json/index.ts', 'libs/content/src/markdown/index.ts', 'libs/content/src/messages/index.ts', 'libs/content/src/render-state/index.ts', 'libs/langgraph/src/public-api.ts', 'libs/middleware/src/langgraph/index.ts', 'libs/react/src/index.ts', 'libs/react/src/chat/index.ts', 'libs/react/src/markdown/index.ts', 'libs/react/src/render/index.ts', 'libs/render/src/public-api.ts', 'libs/telemetry/src/index.ts', 'libs/telemetry/src/browser/public-api.ts', 'libs/telemetry/src/node/index.ts', 'libs/telemetry/src/shared/public-api.ts'],
   docsRoot: 'apps/website/content/docs',
   topicsRoot: 'cockpit',

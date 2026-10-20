@@ -711,6 +711,134 @@ const agUiReactFixture = (t, changes = {}) =>
 const deriveAgUiReact = (input, seeds = agUiReactSeeds) =>
   derivePresentationConsumer(input.root, input.tarballs, seeds, 'react-ag-ui');
 
+const nativeAgUiA2uiFixture = (t, changes = {}) => agUiReactFixture(t, {
+  projects: ['core', 'content', 'a2ui', 'react', 'ag-ui'],
+  manifests: {
+    content: {
+      dependencies: { a: '^1.0.0' },
+      peerDependencies: { '@threadplane/a2ui': '^0.3.2' },
+      peerDependenciesMeta: { '@threadplane/a2ui': { optional: true } },
+    },
+    a2ui: { version: '0.3.2', dependencies: {} },
+    'ag-ui': {
+      dependencies: { '@threadplane/core': '0.0.1', '@ag-ui/client': '1.0.1' },
+    },
+  },
+  ...changes,
+});
+const deriveNativeAgUiA2ui = (input, seeds = agUiReactSeeds) =>
+  derivePresentationConsumer(input.root, input.tarballs, seeds, 'react-native-a2ui-ag-ui');
+
+test('native React AG-UI A2UI selects exactly five locals and the unchanged AG-UI vendor graph', (t) => {
+  const input = nativeAgUiA2uiFixture(t);
+  const before = JSON.stringify(input.root);
+  const derived = deriveNativeAgUiA2ui(input);
+  assert.equal(derived.profile, 'react-native-a2ui-ag-ui');
+  assert.deepEqual(derived.seeds, presentation.reactAgUiPresentationSeeds);
+  assert.deepEqual(Object.keys(derived.artifacts).sort(),
+    ['a2ui', 'ag-ui', 'content', 'core', 'react'].map(name => '@threadplane/' + name));
+  assert.deepEqual(derived.manifest.overrides, { rxjs: '~7.8.0' });
+  assert.equal(derived.graph.find(record => record.name === '@threadplane/content')
+    .dependencies['@threadplane/a2ui'], '0.3.2');
+  for (const [path, record] of Object.entries(selectPresentationLock(input.root,
+    agUiReactSeeds, { rxjs: '~7.8.0' }))) assert.deepEqual(derived.lock.packages[path], record);
+  assert.equal(JSON.stringify(input.root), before);
+  assert.ok(!Object.keys(derived.lock.packages).some(path => /@(?:angular|langchain)\//.test(path)));
+  assertPresentationInstallation(input.consumer, derived, input.tarballs);
+  assert.throws(() => deriveAgUiReact(input), /tarballs required/);
+  assert.throws(() => deriveNativeA2ui(input), /tarballs required/);
+  for (const name of Object.keys(input.tarballs)) {
+    const tarballs = { ...input.tarballs };
+    delete tarballs[name];
+    assert.throws(() => deriveNativeAgUiA2ui({ ...input, tarballs }), /Exactly five native React A2UI AG-UI tarballs required/);
+  }
+  for (const name of ['@threadplane/angular', '@threadplane/langgraph'])
+    assert.throws(() => deriveNativeAgUiA2ui({ ...input, tarballs: {
+      ...input.tarballs, [name]: input.tarballs['@threadplane/ag-ui'],
+    } }), /tarballs required/);
+  for (const seed of agUiReactSeeds)
+    assert.throws(() => deriveNativeAgUiA2ui(input, agUiReactSeeds.filter(name => name !== seed)), /selected React seeds required/);
+  assert.throws(() => deriveNativeAgUiA2ui(input, [...agUiReactSeeds, 'vite']), /selected React seeds required/);
+  assert.throws(() => derivePresentationConsumer(input.root, input.tarballs, agUiReactSeeds,
+    'react-native-a2ui-ag-ui-unreviewed'), /Unknown presentation profile/);
+});
+
+test('native React AG-UI A2UI validates the selected optional peer and supported RxJS override', (t) => {
+  const wrongPeer = nativeAgUiA2uiFixture(t, { manifests: {
+    content: { dependencies: {}, peerDependencies: { '@threadplane/a2ui': '^0.3.2' },
+      peerDependenciesMeta: { '@threadplane/a2ui': { optional: true } } },
+    a2ui: { version: '0.2.0', dependencies: {} },
+    'ag-ui': { dependencies: { '@ag-ui/client': '1.0.1' } },
+  } });
+  assert.throws(() => deriveNativeAgUiA2ui(wrongPeer), /does not satisfy/);
+  const input = nativeAgUiA2uiFixture(t);
+  input.root.packages['node_modules/rxjs'].version = '7.9.0';
+  assert.throws(() => deriveNativeAgUiA2ui(input), /must satisfy ~7.8.0/);
+});
+
+for (const name of ['@angular/core', '@angular/build', '@langchain/langgraph-sdk', '@mastra/client-js', 'openai', '@anthropic-ai/sdk'])
+  test(`native React AG-UI A2UI rejects selected and installed foreign package ${name}`, (t) => {
+    const input = nativeAgUiA2uiFixture(t);
+    const derived = deriveNativeAgUiA2ui(input);
+    const poisoned = structuredClone(input.root);
+    poisoned.packages['node_modules/' + name] = pkg();
+    poisoned.packages['node_modules/@ag-ui/client'].dependencies[name] = '*';
+    assert.throws(() => deriveNativeAgUiA2ui({ ...input, root: poisoned }), /Unexpected Angular|Unexpected backend/);
+    const path = join(input.consumer, 'node_modules', name);
+    mkdirSync(path, { recursive: true });
+    writeJson(join(path, 'package.json'), { name, version: '1.0.0' });
+    assert.throws(() => assertPresentationInstallation(input.consumer, derived, input.tarballs), /Unexpected Angular|Unexpected backend/);
+  });
+
+test('native React AG-UI A2UI revalidates exact installed graph, payload and override policy', (t) => {
+  const input = nativeAgUiA2uiFixture(t), derived = deriveNativeAgUiA2ui(input);
+  const missingOverride = structuredClone(derived);
+  delete missingOverride.manifest.overrides;
+  assert.throws(() => assertPresentationInstallation(input.consumer, missingOverride, input.tarballs));
+  const wrongOverride = structuredClone(derived);
+  wrongOverride.manifest.overrides.rxjs = '*';
+  assert.throws(() => assertPresentationInstallation(input.consumer, wrongOverride, input.tarballs));
+  const manifestPath = join(input.consumer, 'node_modules/rxjs/package.json');
+  const original = readFileSync(manifestPath);
+  writeJson(manifestPath, { name: 'rxjs', version: '7.9.0' });
+  assert.throws(() => assertPresentationInstallation(input.consumer, derived, input.tarballs), /does not satisfy|must satisfy|graph/);
+  writeFileSync(manifestPath, original);
+  const a2ui = join(input.consumer, 'node_modules/@threadplane/a2ui');
+  rmSync(a2ui, { recursive: true });
+  assert.throws(() => assertPresentationInstallation(input.consumer, derived, input.tarballs));
+});
+
+test('native React AG-UI A2UI rejects installed protocol byte drift and extra records', (t) => {
+  const input = nativeAgUiA2uiFixture(t), derived = deriveNativeAgUiA2ui(input);
+  const file = join(input.consumer, 'node_modules/@threadplane/a2ui/index.js');
+  const original = readFileSync(file);
+  writeFileSync(file, 'tampered');
+  assert.throws(() => assertPresentationInstallation(input.consumer, derived, input.tarballs), /bytes equal/);
+  writeFileSync(file, original);
+  for (const name of ['@threadplane/langgraph', 'unselected-vendor']) {
+    const path = join(input.consumer, 'node_modules', name);
+    mkdirSync(path, { recursive: true });
+    writeJson(join(path, 'package.json'), { name, version: '1.0.0' });
+    assert.throws(() => assertPresentationInstallation(input.consumer, derived, input.tarballs), /Unexpected local|Unexpected installed record/);
+    rmSync(path, { recursive: true });
+  }
+});
+
+test('native React AG-UI A2UI installer retains profile and override and rejects lock mutation', (t) => {
+  for (const mutate of [false, true]) {
+    const input = installerFixture(t, mutate, nativeAgUiA2uiFixture);
+    const install = () => presentation.installPresentationConsumer(input.consumer, input.root,
+      input.tarballs, { seeds: agUiReactSeeds, profile: 'react-native-a2ui-ag-ui', env: input.env });
+    if (mutate) assert.throws(install, /preserves derived lock bytes/);
+    else {
+      const proof = install();
+      assert.equal(proof.profile, 'react-native-a2ui-ag-ui');
+      assert.deepEqual(proof.seeds, presentation.reactAgUiPresentationSeeds);
+      assert.deepEqual(JSON.parse(readFileSync(join(input.consumer, 'package.json'))).overrides, { rxjs: '~7.8.0' });
+    }
+  }
+});
+
 test('selected React AG-UI preserves exact native SDK and locked platform graph without Angular or LangGraph', (t) => {
   const input = agUiReactFixture(t);
   const before = JSON.stringify(input.root);

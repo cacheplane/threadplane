@@ -4,6 +4,7 @@
   "sourceRoot": "apps/website/src",
   "projectType": "application",
   "implicitDependencies": [
+    "cockpit-ag-ui-a2ui-react",
     "cockpit-chat-a2ui-react",
     "cockpit-chat-debug-react",
     "cockpit-chat-theming-react",
@@ -90,12 +91,13 @@
         },
         {
           "target": "prepare-fixture",
-          "projects": ["cockpit-runtimes-mastra-react", "cockpit-runtimes-microsoft-agent-framework-react", "cockpit-runtimes-aws-strands-react"]
+          "projects": ["cockpit-runtimes-mastra-react", "cockpit-runtimes-microsoft-agent-framework-react", "cockpit-runtimes-aws-strands-react", "cockpit-ag-ui-a2ui-react"]
         },
         {
           "target": "build",
           "projects": [
             "cockpit-chat-a2ui-react",
+            "cockpit-ag-ui-a2ui-react",
             "cockpit-langgraph-streaming-react",
             "cockpit-langgraph-interrupts-react",
             "cockpit-langgraph-memory-react",

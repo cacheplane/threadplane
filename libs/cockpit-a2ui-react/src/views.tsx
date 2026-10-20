@@ -6,7 +6,7 @@ import {
   type RenderValue,
   type RenderViewProps,
 } from '@threadplane/react/render';
-import type { SurfaceView } from './application';
+import type { SurfaceView } from './surface';
 import type { BookingField } from './protocol';
 import type { BookingSnapshot } from './form';
 

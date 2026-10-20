@@ -86,7 +86,7 @@ async function installedConsumer(mode) {
   );
   const admission =
     mode === 'application-admission'
-      ? await import('./compiled/application/terminal.js')
+      ? await import('./compiled/cockpit/chat/a2ui/react/src/terminal.js')
       : undefined;
   const report = { entry, sdkEntry, turns: [], observations: [] };
   let activeObservation, currentOperation;
@@ -486,18 +486,18 @@ async function runWorker(evidence, scenario, mode) {
     );
     const files = ['contract.ts'];
     if (mode === 'application-admission') {
-      mkdirSync(join(consumer, 'application'));
       report.application = { sources: {}, modules: {} };
-      for (const name of ['data.ts', 'terminal.ts']) {
-        const path = join(root, 'cockpit/chat/a2ui/react/src', name);
+      for (const relative of ['libs/cockpit-a2ui-react/src/data.ts', 'cockpit/chat/a2ui/react/src/terminal.ts']) {
+        const path = join(root, relative);
         const bytes = readFileSync(path);
-        writeFileSync(join(consumer, 'application', name), bytes);
-        report.application.sources[name] = {
+        mkdirSync(join(consumer, relative, '..'), { recursive: true });
+        writeFileSync(join(consumer, relative), bytes);
+        report.application.sources[relative] = {
           path,
           bytes: bytes.length,
           sha256: createHash('sha256').update(bytes).digest('hex'),
         };
-        files.push('application/' + name);
+        files.push(relative);
       }
     }
     writeFileSync(
@@ -540,9 +540,9 @@ async function runWorker(evidence, scenario, mode) {
     });
     report.compiler.exit = 0;
     if (mode === 'application-admission')
-      for (const name of ['data.js', 'terminal.js']) {
-        const path = join(consumer, 'compiled/application', name);
-        report.application.modules[name] = {
+      for (const relative of ['libs/cockpit-a2ui-react/src/data.js', 'cockpit/chat/a2ui/react/src/terminal.js']) {
+        const path = join(consumer, 'compiled', relative);
+        report.application.modules[relative] = {
           path,
           bytes: readFileSync(path).length,
           sha256: sha(path),

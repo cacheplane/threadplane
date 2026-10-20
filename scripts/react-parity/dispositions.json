@@ -15397,6 +15397,114 @@
       "treatment": "react",
       "status": "in-progress",
       "reason": "Bounded private T20/T24 React readiness admission: pure synchronous boolean over owned resolved props, pending fallback without children, successful real-view commit latch and explicit identity/lifetime resets. Direct registrations remain supported. Forms, schema validation, actions, catalog, SSR, public release and full legacy parity remain open."
+    },
+    {
+      "id": "asset:libs/cockpit-a2ui-react/project.json",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private closed aviation presentation and resource ownership shared by React cockpit consumers. Transport admission remains application-owned; this record makes no generic forms, SSR, publication, or completed parity claim."
+    },
+    {
+      "id": "asset:libs/cockpit-a2ui-react/tsconfig.json",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private closed aviation presentation and resource ownership shared by React cockpit consumers. Transport admission remains application-owned; this record makes no generic forms, SSR, publication, or completed parity claim."
+    },
+    {
+      "id": "asset:libs/cockpit-a2ui-react/tsconfig.lib.json",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private closed aviation presentation and resource ownership shared by React cockpit consumers. Transport admission remains application-owned; this record makes no generic forms, SSR, publication, or completed parity claim."
+    },
+    {
+      "id": "source:libs/cockpit-a2ui-react/eslint.config.mjs",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private closed aviation presentation and resource ownership shared by React cockpit consumers. Transport admission remains application-owned; this record makes no generic forms, SSR, publication, or completed parity claim."
+    },
+    {
+      "id": "source:libs/cockpit-a2ui-react/src/actions.ts",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private closed aviation presentation and resource ownership shared by React cockpit consumers. Transport admission remains application-owned; this record makes no generic forms, SSR, publication, or completed parity claim."
+    },
+    {
+      "id": "source:libs/cockpit-a2ui-react/src/data.ts",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private closed aviation presentation and resource ownership shared by React cockpit consumers. Transport admission remains application-owned; this record makes no generic forms, SSR, publication, or completed parity claim."
+    },
+    {
+      "id": "source:libs/cockpit-a2ui-react/src/form.ts",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private closed aviation presentation and resource ownership shared by React cockpit consumers. Transport admission remains application-owned; this record makes no generic forms, SSR, publication, or completed parity claim."
+    },
+    {
+      "id": "source:libs/cockpit-a2ui-react/src/index.ts",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private closed aviation presentation and resource ownership shared by React cockpit consumers. Transport admission remains application-owned; this record makes no generic forms, SSR, publication, or completed parity claim."
+    },
+    {
+      "id": "source:libs/cockpit-a2ui-react/src/protocol.ts",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private closed aviation presentation and resource ownership shared by React cockpit consumers. Transport admission remains application-owned; this record makes no generic forms, SSR, publication, or completed parity claim."
+    },
+    {
+      "id": "source:libs/cockpit-a2ui-react/src/surface.ts",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private closed aviation presentation and resource ownership shared by React cockpit consumers. Transport admission remains application-owned; this record makes no generic forms, SSR, publication, or completed parity claim."
+    },
+    {
+      "id": "source:libs/cockpit-a2ui-react/src/views.tsx",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private closed aviation presentation and resource ownership shared by React cockpit consumers. Transport admission remains application-owned; this record makes no generic forms, SSR, publication, or completed parity claim."
+    },
+    {
+      "id": "source:libs/cockpit-a2ui-react/vite.config.mts",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private closed aviation presentation and resource ownership shared by React cockpit consumers. Transport admission remains application-owned; this record makes no generic forms, SSR, publication, or completed parity claim."
     }
   ]
 }
