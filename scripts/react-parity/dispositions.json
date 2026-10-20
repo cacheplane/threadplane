@@ -1576,9 +1576,9 @@
         "T30"
       ],
       "treatment": "react",
-      "status": "planned",
-      "target": "libs/react/src/chat/popup.tsx",
-      "reason": "Native component. Controlled/uncontrolled open, portal positioning, focus and close behavior; ref methods if needed."
+      "status": "in-progress",
+      "target": "libs/react/src/chat/chat-popup.tsx",
+      "reason": "Private controlled non-modal popup with retained hidden/inert children, accepted-transition focus and scoped Escape, dogfooded by the installed native React example. Portal, global shortcut, uncontrolled state and full composition parity remain open."
     },
     {
       "id": "component:libs/chat/src/lib/compositions/chat-sidebar/chat-sidebar.component.ts#ChatSidebarComponent",
@@ -5380,9 +5380,9 @@
         "T30"
       ],
       "treatment": "react",
-      "status": "planned",
-      "target": "libs/react/src/chat/popup.tsx",
-      "reason": "Native component. Controlled/uncontrolled open, portal positioning, focus and close behavior; ref methods if needed."
+      "status": "in-progress",
+      "target": "libs/react/src/chat/chat-popup.tsx",
+      "reason": "Private /chat export for the bounded controlled non-modal ChatPopup. Full legacy popup parity and public release remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatProjectListComponent",
@@ -9747,7 +9747,9 @@
         "T30"
       ],
       "treatment": "react",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/react/src/chat/chat-popup.tsx",
+      "reason": "Bounded private React composition only; existing Angular implementation and release path remain unchanged."
     },
     {
       "id": "source:libs/chat/src/lib/compositions/chat-sidebar/chat-sidebar.component.ts",
@@ -15505,6 +15507,27 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private closed aviation presentation and resource ownership shared by React cockpit consumers. Transport admission remains application-owned; this record makes no generic forms, SSR, publication, or completed parity claim."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatPopup",
+      "taskIds": ["T30"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private controlled non-modal popup shell; application owns visibility and execution. Installed native conversation dogfood covers retained hidden views."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatPopupProps",
+      "taskIds": ["T30"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly explicit visibility, labels and children; no inferred session commands or disposal."
+    },
+    {
+      "id": "source:libs/react/src/chat/chat-popup.tsx",
+      "taskIds": ["T30"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Bounded controlled non-modal popup with accepted-transition focus and retained hidden/inert children; full legacy composition parity remains open."
     }
   ]
 }
