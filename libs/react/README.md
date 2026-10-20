@@ -258,6 +258,43 @@ Reading above the bottom preserves position. The observer disconnects on unmount
 without it, row-update following remains available. The list uses one unstyled
 content wrapper inside its existing scroll region.
 
+## Controlled chat popup
+
+`ChatPopup` is a private non-modal shell from `@threadplane/react/chat`:
+
+```tsx
+import { useState } from 'react';
+import { Chat, ChatPopup } from '@threadplane/react/chat';
+import '@threadplane/react/chat/styles.css';
+
+function Support() {
+  const [open, setOpen] = useState(false);
+  return (
+    <ChatPopup open={open} onOpenChange={setOpen} title="Support">
+      <Chat session={session} content={content} />
+    </ChatPopup>
+  );
+}
+```
+
+The application owns visibility. The launcher, Close button and unclaimed Escape
+inside the panel request changes through `onOpenChange`; accepted `open` changes
+control visibility and focus. Opening focuses Close; closing returns focus to the
+launcher unless another page control already has focus. `launcherLabel`,
+`closeLabel`, `closeOnEscape` and `className` customize the shell.
+
+Closed children remain mounted, hidden and inert. Drafts and borrowed subscriptions
+survive closing; a running response continues. Closing never stops or disposes the
+session or app-owned content. The application still owns Stop and final disposal.
+Changing the selected conversation can independently reset its composer.
+
+The dialog has a generated title relationship, ordinary non-modal Tab order and
+viewport-bounded scrolling. It uses the same scoped chat stylesheet and tokens.
+Mount it outside transformed or clipping ancestors: this first slice uses fixed
+positioning in its existing DOM location, with no portal, backdrop, focus trap,
+global shortcut or persisted open state. Sidebar/sidenav compositions, SSR,
+hydration and public release remain separate work.
+
 ## Read-only render trees
 
 The private `@threadplane/react/render` client entry exports `RenderSpec`.

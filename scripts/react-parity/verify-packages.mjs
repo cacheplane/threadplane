@@ -318,6 +318,7 @@ export function assertSupportedExports(project, entry) {
       'react/chat': [
         'ApprovalCard',
         'Chat',
+        'ChatPopup',
         'ChatInput',
         'Citations',
         'MessageList',

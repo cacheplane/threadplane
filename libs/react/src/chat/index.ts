@@ -23,3 +23,4 @@ export {
   type ApprovalCardProps,
 } from './approval-card.js';
 export { Chat, type ChatProps } from './chat.js';
+export { ChatPopup, type ChatPopupProps } from './chat-popup.js';

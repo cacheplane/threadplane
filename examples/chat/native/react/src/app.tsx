@@ -1,8 +1,9 @@
-import { memo, useState } from 'react';
+import { memo, useState, type ReactNode } from 'react';
 import { useAgent } from '@threadplane/react';
 import { Markdown } from '@threadplane/react/markdown';
 import {
   ChatInput,
+  ChatPopup,
   Citations,
   MessageList,
   Reasoning,
@@ -106,7 +107,35 @@ function Composer({
   );
 }
 
-function Conversation({ application }: { application: Application }) {
+function ConversationSurface({
+  popup,
+  children,
+}: {
+  popup: boolean;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  return popup ? (
+    <ChatPopup
+      open={open}
+      onOpenChange={setOpen}
+      title="Conversation"
+      className="native-conversation-popup"
+    >
+      {children}
+    </ChatPopup>
+  ) : (
+    <>{children}</>
+  );
+}
+
+function Conversation({
+  application,
+  presentation,
+}: {
+  application: Application;
+  presentation: 'page' | 'popup';
+}) {
   const snapshot = useAgent(application);
   const [filter, setFilter] = useState('');
   const rows = filterLoadedTitles(snapshot.list.rows, filter);
@@ -174,70 +203,78 @@ function Conversation({ application }: { application: Application }) {
           <p className="muted">No loaded conversations match.</p>
         )}
       </aside>
-      <section className="conversation" aria-labelledby="conversation-title">
-        <div className="conversation-heading">
-          <p className="eyebrow">React example</p>
-          <h1 id="conversation-title">
-            {selection.row?.title ?? 'Your conversation'}
-          </h1>
-          {selection.id && (
-            <p className="conversation-id muted">
-              Conversation ID: {selection.id}
-            </p>
-          )}
-        </div>
-        {selection.status === 'empty' && (
-          <div className="empty-state">
-            <h2>A place for your next conversation.</h2>
-            <p>Select a conversation or start a new one.</p>
-          </div>
-        )}
-        {selection.status === 'pending' && (
-          <p role="status">Loading conversation…</p>
-        )}
-        {(selection.status === 'missing' || selection.status === 'error') && (
-          <div className="selection-error">
-            <p role="alert">
-              {selection.status === 'missing'
-                ? 'Conversation not found.'
-                : 'Could not load this conversation.'}
-            </p>
-            <button type="button" onClick={() => application.retry()}>
-              Retry
-            </button>
-          </div>
-        )}
-        {selection.status === 'ready' && (
-          <>
-            <MessageList
-              key={selection.id}
-              rows={snapshot.messages}
-              renderMessage={renderMessage}
-              label="Conversation messages"
-              className="transcript"
-            />
-            {snapshot.messages.length === 0 && (
-              <p className="empty-state">
-                This conversation has no messages yet.
+      <ConversationSurface popup={presentation === 'popup'}>
+        <section className="conversation" aria-labelledby="conversation-title">
+          <div className="conversation-heading">
+            <p className="eyebrow">React example</p>
+            <h1 id="conversation-title">
+              {selection.row?.title ?? 'Your conversation'}
+            </h1>
+            {selection.id && (
+              <p className="conversation-id muted">
+                Conversation ID: {selection.id}
               </p>
             )}
-            <BackgroundActivity
-              observations={snapshot.runtime?.subgraphs ?? []}
-            />
-          </>
-        )}
-        <Approval application={application} snapshot={snapshot} />
-        <Composer
-          key={selection.id}
-          application={application}
-          snapshot={snapshot}
-        />
-      </section>
+          </div>
+          {selection.status === 'empty' && (
+            <div className="empty-state">
+              <h2>A place for your next conversation.</h2>
+              <p>Select a conversation or start a new one.</p>
+            </div>
+          )}
+          {selection.status === 'pending' && (
+            <p role="status">Loading conversation…</p>
+          )}
+          {(selection.status === 'missing' || selection.status === 'error') && (
+            <div className="selection-error">
+              <p role="alert">
+                {selection.status === 'missing'
+                  ? 'Conversation not found.'
+                  : 'Could not load this conversation.'}
+              </p>
+              <button type="button" onClick={() => application.retry()}>
+                Retry
+              </button>
+            </div>
+          )}
+          {selection.status === 'ready' && (
+            <>
+              <MessageList
+                key={selection.id}
+                rows={snapshot.messages}
+                renderMessage={renderMessage}
+                label="Conversation messages"
+                className="transcript"
+              />
+              {snapshot.messages.length === 0 && (
+                <p className="empty-state">
+                  This conversation has no messages yet.
+                </p>
+              )}
+              <BackgroundActivity
+                observations={snapshot.runtime?.subgraphs ?? []}
+              />
+            </>
+          )}
+          <Approval application={application} snapshot={snapshot} />
+          <Composer
+            key={selection.id}
+            application={application}
+            snapshot={snapshot}
+          />
+        </section>
+      </ConversationSurface>
     </div>
   );
 }
 
-export function App({ application }: { application: Application | null }) {
+export function App({
+  application,
+  presentation = 'page',
+}: {
+  application: Application | null;
+  presentation?: 'page' | 'popup';
+}) {
   return (
     <div className="application">
       <header>
@@ -246,7 +283,7 @@ export function App({ application }: { application: Application | null }) {
       </header>
       <main>
         {application ? (
-          <Conversation application={application} />
+          <Conversation application={application} presentation={presentation} />
         ) : (
           <section className="setup" role="status">
             <h1>Set up an assistant to begin</h1>
