@@ -21,7 +21,7 @@ test('control palette: toolbar renders defaults and persists selected controls',
   ).toBeVisible();
   // chat-select trigger displays the option's label as text, not the value.
   await expect(toolbarSelect(page, 'Model')).toHaveText(/gpt-5-mini/);
-  await expect(toolbarSelect(page, 'Effort')).toHaveText(/minimal \(fast\)/);
+  await expect(toolbarSelect(page, 'Effort')).toHaveText(/model default/);
   await expect(toolbarSelect(page, 'Gen UI')).toHaveText(/A2UI/);
   await expect(toolbarSelect(page, 'Theme')).toHaveText(/Default dark/);
 
