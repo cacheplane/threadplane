@@ -111,3 +111,35 @@ test('native A2UI capability CI owns one installed proof with retained partial a
     )
   );
 });
+
+test('workspace full A2UI regressions provision pinned Python tooling before every suite', () => {
+  const workflow = parse(
+    readFileSync(
+      new URL('../../.github/workflows/ci.yml', import.meta.url),
+      'utf8'
+    )
+  );
+  const steps = workflow.jobs.cockpit.steps;
+  const suites = [
+    'npx nx test cockpit-a2ui-react --skip-nx-cache',
+    'npx nx test cockpit-chat-a2ui-react --skip-nx-cache',
+    'npx nx test cockpit-ag-ui-a2ui-react --skip-nx-cache',
+  ];
+  const setupIndex = steps.findIndex((step) =>
+    step.uses?.startsWith('astral-sh/setup-uv@')
+  );
+  assert.ok(setupIndex >= 0, 'Workspace full tests need uv and Python 3.12');
+  const setup = steps[setupIndex];
+  assert.equal(
+    setup.uses,
+    'astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57'
+  );
+  assert.equal(setup.with['python-version'], '3.12');
+  assert.equal(Object.hasOwn(setup, 'if'), false, 'Tooling setup is unconditional');
+  for (const command of suites) {
+    const matches = steps.filter((step) => step.run === command);
+    assert.equal(matches.length, 1, `Preserve one complete suite: ${command}`);
+    assert.equal(Object.hasOwn(matches[0], 'if'), false);
+    assert.ok(steps.indexOf(matches[0]) > setupIndex, `Provision before ${command}`);
+  }
+});

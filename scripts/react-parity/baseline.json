@@ -1,27 +1,11 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "4ab0d4aaf3ca4f9c4159d49247e4efca456a0cf2",
+  "baselineHead": "166235e084da7eb4dd65a21b5c67bfa9b9c37474",
   "sourceState": {
     "modified": [
-      ".github/workflows/ci.yml",
-      "libs/cockpit-registry/project.json",
-      "libs/cockpit-registry/src/lib/capability-registry.ts",
-      "libs/cockpit-registry/src/lib/content-descriptors.ts"
+      ".github/workflows/ci.yml"
     ],
-    "untracked": [
-      "libs/cockpit-a2ui-react/eslint.config.mjs",
-      "libs/cockpit-a2ui-react/project.json",
-      "libs/cockpit-a2ui-react/src/actions.ts",
-      "libs/cockpit-a2ui-react/src/data.ts",
-      "libs/cockpit-a2ui-react/src/form.ts",
-      "libs/cockpit-a2ui-react/src/index.ts",
-      "libs/cockpit-a2ui-react/src/protocol.ts",
-      "libs/cockpit-a2ui-react/src/surface.ts",
-      "libs/cockpit-a2ui-react/src/views.tsx",
-      "libs/cockpit-a2ui-react/tsconfig.json",
-      "libs/cockpit-a2ui-react/tsconfig.lib.json",
-      "libs/cockpit-a2ui-react/vite.config.mts"
-    ]
+    "untracked": []
   },
   "scope": {
     "libraries": [
@@ -2193,7 +2177,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "cfceb213c164783bfba2e592908621253f804bb1857fdb0ca8ebad62293cc9c9"
+      "sha256": "92dbe1d7f77d5549e4808e166cb4360204af79883518ec82c330f1c7353eac37"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",

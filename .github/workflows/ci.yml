@@ -513,6 +513,10 @@ jobs:
       # is `scope:shared`, which is not a SCOPE_KEY — adding it to LIBS would
       # not have run it, because a workspace-react change never flips
       # `library`.
+      - name: Set up Python fixture tooling
+        uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57 # v8.0.0
+        with:
+          python-version: '3.12'
       - run: npx nx lint cockpit-a2ui-react
       - run: npx nx test cockpit-a2ui-react --skip-nx-cache
       - run: npx nx test cockpit-chat-a2ui-react --skip-nx-cache
