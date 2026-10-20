@@ -11,7 +11,7 @@ draft: false
 Most agent UI libraries ask you to deploy a server of their own before the chat box works.
 
 I wanted to understand why, so I read the docs and source of the four libraries I see most often, the Vercel AI SDK, TanStack AI, assistant-ui, and CopilotKit, and compared them with Threadplane on twenty-four questions.
-This post is that comparison.
+Let's walk through that comparison.
 
 I think these are all great libraries.
 Each one made a real architectural choice about where the agent loop runs, and each choice buys something and costs something.
@@ -27,24 +27,24 @@ My goal is to make those trades visible, including the ones Threadplane makes.
 - We ship middleware that runs inside your graph, not a box in front of it.
 - The trade is real: no hosted inspector, no multi-agent routing, no server-side stream middleware from us, and a smaller surface than the bigger projects.
 
-## What "runtime" means here
+## What does "runtime" mean here?
 
-The word is overloaded, so I want to pin it down first.
+The word is overloaded, so let's pin it down first.
 
 In this post a *runtime* is a server component shipped by the UI vendor that sits in the request path between the browser and your agent.
 You deploy it.
 Your browser talks to it.
 It talks to your agent.
 
-It is not your agent's own runtime.
+It isn't your agent's own runtime.
 LangGraph Platform is a runtime in the ordinary sense, and so is any server that speaks AG-UI.
-I have written about choosing between those two [elsewhere](/blog/what-changes-when-the-runtime-changes).
+I've written about choosing between those two [elsewhere](/blog/what-changes-when-the-runtime-changes).
 This post is about the extra hop.
 
 ## The comparison
 
 Every cell in the table below comes from the library's own docs, npm registry data, or source, checked on 2026-09-15, and the sources are listed at the end.
-Where I could not verify a cell, I say so in the section for that row rather than guess.
+Where I couldn't verify a cell, I say so in the section for that row rather than guess.
 
 | | Threadplane | Vercel AI SDK | TanStack AI | assistant-ui | CopilotKit |
 | --- | --- | --- | --- | --- | --- |
@@ -73,11 +73,11 @@ Where I could not verify a cell, I say so in the section for that row rather tha
 | 🧪 Testing utilities | ✅ three layers | ✅ mocks | ❌ | ❌ | ❌ |
 | 🕸️ Multi-agent routing | ❌ | ❌ | ❌ | ❌ | ✅ in runtime |
 
-The rest of this post walks through the rows and tries to say, for each one, what the design buys you and what it trades away.
+Let's walk through the rows and look, for each one, at what the design buys you and what it trades away.
 
 ## 📜 Project facts
 
-All five are open source, and I want to start there because it is good news.
+All five are open source, and I want to start there because it's good news!
 
 - **[Threadplane](https://github.com/cacheplane/threadplane)**: MIT, [0.1.0](/blog/threadplane-0-1-0), 69 stars. No tier, no key to obtain from us, no dev-only flag.
 - **[Vercel AI SDK](https://ai-sdk.dev)**: Apache-2.0, [`ai` 7.0](https://www.npmjs.com/package/ai), about [26,800 stars](https://github.com/vercel/ai). No tier. The [AI Gateway](https://ai-sdk.dev/providers/ai-sdk-providers/ai-gateway) is a separate Vercel product that the SDK uses by default when you pass a `creator/model` string.
@@ -85,36 +85,36 @@ All five are open source, and I want to start there because it is good news.
 - **[assistant-ui](https://www.assistant-ui.com)**: MIT, [0.15](https://www.npmjs.com/package/@assistant-ui/react), about [12,200 stars](https://github.com/assistant-ui/assistant-ui), [YC-backed](https://www.ycombinator.com/companies/assistant-ui) with a team of three. [Assistant Cloud](https://www.assistant-ui.com/pricing) is optional: free up to 200 monthly users, then $50 a month, with startup and enterprise plans above that.
 - **[CopilotKit](https://docs.copilotkit.ai)**: MIT on [npm](https://www.npmjs.com/package/@copilotkit/react-core) and [GitHub](https://github.com/CopilotKit/CopilotKit), 1.72, about 37,400 stars, a [$27M Series A](https://www.copilotkit.ai/blog/series-a) this year. Its hosted [Intelligence tier](https://www.copilotkit.ai/pricing) starts free at 200 threads with three days of retention, then $39 a month. The direct-to-agent production path, [`selfManagedAgents`](https://docs.copilotkit.ai/backend/self-managed-agents), is documented as part of an Enterprise tier. I read [the source](https://github.com/CopilotKit/CopilotKit/blob/main/packages/react-core/src/v2/providers/CopilotKitProvider.tsx), and the gate is a console warning the code itself calls advisory, not a technical block. I appreciate that honesty in the implementation.
 
-What a tier buys you is a funded team, and every one of these projects ships faster because of how it is funded.
+What a tier buys you is a funded team, and every one of these projects ships faster because of how it's funded.
 
-## 🧱 Who sits in the request path
+## 🧱 Who sits in the request path?
 
 **Threadplane** has nothing of ours in the path.
 [`provideAgent()`](/docs/langgraph/api/provide-agent) in `@threadplane/langgraph` uses the LangGraph SDK client to call your deployment.
 [`provideAgent()`](/docs/ag-ui/api/provide-agent) in `@threadplane/ag-ui` posts `RunAgentInput` to your endpoint.
 
-The **Vercel AI SDK**, **TanStack AI**, and **assistant-ui** do not require a vendor box.
+The **Vercel AI SDK**, **TanStack AI**, and **assistant-ui** don't require a vendor box.
 What they ask for instead is a route that you deploy, running their code, which the next section covers.
 
 **CopilotKit** requires [Copilot Runtime](https://docs.copilotkit.ai/copilot-runtime) in production.
 The provider throws in a production build unless you give it a runtime URL, a public API key, a license key, or a locally registered agent.
 The docs describe the runtime as the backend layer that connects your frontend to your agents, and call it "the recommended way."
 
-What you gain is one place for everything: key custody, auth, agent discovery and routing, a middleware pipeline that runs where the client cannot tamper with it, and the door to hosted threads and the inspector.
-What you trade is a second server on the hot path, on their release schedule, and a direct path that is labelled either dev-only or enterprise.
+What you gain is one place for everything: key custody, auth, agent discovery and routing, a middleware pipeline that runs where the client can't tamper with it, and the door to hosted threads and the inspector.
+What you trade is a second server on the hot path, on their release schedule, and a direct path that's labelled either dev-only or enterprise.
 
 We *do* recommend a server endpoint in front of your agent, and it should be one you own and control.
 The LangGraph adapter has no `apiKey` option at all, because a deployment credential passed from Angular would ship in the bundle, and it constructs the SDK client with an explicit null key so nothing is read from the environment either.
 What it does accept is `defaultHeaders`, for a per-user session token that your deployment's custom auth handler validates.
 The production shape the [deployment guide](/docs/langgraph/guides/deployment#authentication) recommends is a same-origin rewrite, one line of hosting config, that adds the credential server-side.
 
-So there is still a hop.
+So there's still a hop.
 The difference from a vendor runtime is who owns the code running in it.
 
-That is why the homepage says "no cloud" and not "no proxy."
+That's why the homepage says "no cloud" and not "no proxy."
 We changed that wording on purpose.
 
-## 🔁 Where the agent loop runs
+## 🔁 Where does the agent loop run?
 
 The *agent loop* is the code that calls the model, sees a tool call, runs or forwards it, and calls the model again.
 Somebody's code has to do that, and where it runs decides almost everything else in the table.
@@ -128,13 +128,13 @@ Somebody's code has to do that, and where it runs decides almost everything else
 For me, this is the actual design decision, and I think each answer is defensible.
 
 Running the loop in your route, the Vercel and TanStack shape, means the library controls the whole experience end to end, and features like approvals and persistence can be first-class because the library owns both ends.
-That is a genuine advantage.
+That's a genuine advantage.
 The trade is vendor code on the hot path, on the vendor's release schedule, and an agent loop that is separate from the one your agent framework already has.
 
 Running the loop in the agent, the Threadplane shape and the assistant-ui framework-runtime shape, means one loop, owned by the agent framework you already chose.
 The trade is that the UI can only show what the agent server actually sends.
 If a framework's AG-UI bridge never emits a state delta, no adapter can invent one.
-That is why the [adapter docs](/docs/choosing-an-adapter#measured-runtime-support) test each runtime and publish the result cell by cell, instead of claiming every feature works everywhere.
+That's why the [adapter docs](/docs/choosing-an-adapter#measured-runtime-support) test each runtime and publish the result cell by cell, instead of claiming every feature works everywhere.
 
 ## 🔌 Talking AG-UI from the browser
 
@@ -142,9 +142,9 @@ That is why the [adapter docs](/docs/choosing-an-adapter#measured-runtime-suppor
 The protocol is a `POST` with a `RunAgentInput` body and a [stream of events](https://docs.ag-ui.com/sdk/js/client/http-agent) back.
 The [architecture document](https://docs.ag-ui.com/concepts/architecture) names an optional secure proxy as a place for "additional capabilities," not as a required component.
 
-- **Threadplane**: yes. That is the whole [AG-UI adapter](/docs/ag-ui/getting-started/introduction), and it consumes the state, subagent, and custom events too.
+- **Threadplane**: yes. That's the whole [AG-UI adapter](/docs/ag-ui/getting-started/introduction), and it consumes the state, subagent, and custom events too.
 - **Vercel AI SDK**: no. It has its own [UI Message Stream protocol](https://ai-sdk.dev/docs/ai-sdk-ui/stream-protocol) over SSE, and the only AG-UI integration is a [server-side wrapper](https://github.com/ag-ui-protocol/ag-ui/tree/main/integrations/vercel-ai-sdk/typescript) that turns an AI SDK model into an AG-UI agent.
-- **TanStack AI**: yes. Since [May 2026](https://tanstack.com/blog/ag-ui-compliance) the client posts an AG-UI 0.0.52 `RunAgentInput`, and the [docs](https://tanstack.com/ai/latest/docs/migration/ag-ui-compliance) say it can hit any AG-UI server with no translation layer in between. I think this was the most important move in the space this year. Its documented [event list](https://tanstack.com/ai/latest/docs/chat/stream-events) does not include the state snapshot and delta events.
+- **TanStack AI**: yes. Since [May 2026](https://tanstack.com/blog/ag-ui-compliance) the client posts an AG-UI 0.0.52 `RunAgentInput`, and the [docs](https://tanstack.com/ai/latest/docs/migration/ag-ui-compliance) say it can hit any AG-UI server with no translation layer in between. I think this was the most important move in the space this year. Its documented [event list](https://tanstack.com/ai/latest/docs/chat/stream-events) doesn't include the state snapshot and delta events.
 - **assistant-ui**: yes, through [`@assistant-ui/react-ag-ui`](https://www.assistant-ui.com/docs/runtimes/ag-ui/overview) over the standard `HttpAgent`, with a [published table](https://www.assistant-ui.com/docs/runtimes/ag-ui/runtime-options) that maps state, subagent, custom, and activity events.
 - **CopilotKit**: the free direct path is [`agents__unsafe_dev_only`](https://docs.copilotkit.ai/backend/self-managed-agents), and the docs say of that name, "The name is intentionally loud." The production direct path is `selfManagedAgents`, covered above. CopilotKit created AG-UI, so its runtime speaks it natively.
 
@@ -155,7 +155,7 @@ You write an `authenticate` handler, the browser sends its own session token, an
 Without that handler the platform sees only the API-key owner, which is usually the developer, so this is worth setting up on day one.
 
 - **Threadplane**: yes, with the same-origin proxy recommended for the credential and `defaultHeaders` for the session token.
-- **Vercel AI SDK**: yes, a [`LangSmithDeploymentTransport`](https://ai-sdk.dev/providers/adapters/langchain) that connects from the browser and takes the API key as an option. I could not find a warning about that on the page, so treat it as a development convenience.
+- **Vercel AI SDK**: yes, a [`LangSmithDeploymentTransport`](https://ai-sdk.dev/providers/adapters/langchain) that connects from the browser and takes the API key as an option. I couldn't find a warning about that on the page, so treat it as a development convenience.
 - **TanStack AI**: no adapter. It integrates with model providers and coding-agent harnesses, not agent frameworks.
 - **assistant-ui**: yes, [`react-langgraph`](https://www.assistant-ui.com/docs/runtimes/langgraph/overview) and a `react-langchain` runtime at feature parity, and the [quickstart](https://www.assistant-ui.com/docs/runtimes/langgraph/quickstart) tells you to proxy in production so the key never reaches the client.
 - **CopilotKit**: through Copilot Runtime, which has first-class [LangGraph Python](https://docs.copilotkit.ai/langgraph-python/backend/copilot-runtime) and TypeScript integrations.
@@ -193,9 +193,9 @@ For me, the provider list is the cleanest statement of the two philosophies: a l
 I build in Angular, so this is the row that decides the table for me.
 
 - **Threadplane**: Angular 20, 21, and 22, tested in CI. Angular is the only framework.
-- **Vercel AI SDK**: [`@ai-sdk/angular`](https://www.npmjs.com/package/@ai-sdk/angular) exists and is current, with `Chat`, `Completion`, and `StructuredObject` classes on signals. There is no getting-started guide for it, an [open issue](https://github.com/vercel/ai/issues/12398) asks for one, and the [`useObject`](https://ai-sdk.dev/docs/ai-sdk-ui/object-generation) hook and the [AI Elements](https://elements.ai-sdk.dev/overview) component kit are React only.
+- **Vercel AI SDK**: [`@ai-sdk/angular`](https://www.npmjs.com/package/@ai-sdk/angular) exists and is current, with `Chat`, `Completion`, and `StructuredObject` classes on signals. There's no getting-started guide for it, an [open issue](https://github.com/vercel/ai/issues/12398) asks for one, and the [`useObject`](https://ai-sdk.dev/docs/ai-sdk-ui/object-generation) hook and the [AI Elements](https://elements.ai-sdk.dev/overview) component kit are React only.
 - **TanStack AI**: [`@tanstack/ai-angular`](https://tanstack.com/ai/latest/docs/api/ai-angular) is official and signals-based, with an `injectChat` family and a headless [`createChatHook`](https://tanstack.com/ai/latest/docs/ui/angular). There are no prebuilt Angular components, no [Angular devtools](https://tanstack.com/ai/latest/docs/getting-started/devtools), and [MCP Apps](https://tanstack.com/ai/latest/docs/mcp/apps) rendering is deferred for Angular.
-- **assistant-ui**: no Angular package. It is a [React library](https://www.assistant-ui.com/docs), with React Native and a terminal renderer, and Vue and Svelte packages in the repo that are not published.
+- **assistant-ui**: no Angular package. It's a [React library](https://www.assistant-ui.com/docs), with React Native and a terminal renderer, and Vue and Svelte packages in the repo that aren't published.
 - **CopilotKit**: [`@copilotkit/angular`](https://docs.copilotkit.ai/angular) is current and requires Angular 22. Its [feature page](https://docs.copilotkit.ai/angular/features) lists 41 supported items, including A2UI, Open Generative UI, MCP Apps, shared state, interrupts, and attachments.
 
 Two of the four have first-class Angular support with docs.
@@ -212,7 +212,7 @@ One is React only.
 
 ## 🎨 Generative UI
 
-"Generative UI" hides four different mechanisms behind one phrase, so I want to separate them before comparing anyone.
+"Generative UI" hides four different mechanisms behind one phrase, so let's separate them before comparing anyone.
 
 1. **Tool-call rendering.** The model calls a tool, and you map the tool name to a component. Everyone does this.
 2. **Declarative specs.** The model authors a UI tree in a standard format, and the client renders it from a catalog. The two open specs here are [A2UI](https://a2ui.org) and [json-render](https://github.com/vercel-labs/json-render).
@@ -223,21 +223,21 @@ One is React only.
 - **Vercel AI SDK**: [tool parts mapped to components](https://ai-sdk.dev/docs/ai-sdk-ui/generative-user-interfaces), an experimental [RSC `streamUI`](https://ai-sdk.dev/docs/ai-sdk-rsc/overview), and experimental [MCP Apps](https://ai-sdk.dev/docs/ai-sdk-core/mcp-apps) rendering that is React only. No A2UI in the SDK. json-render is a separate [Vercel Labs project](https://github.com/vercel-labs/json-render).
 - **TanStack AI**: [typed tool-call parts](https://tanstack.com/ai/latest/docs/migration/create-ui) mapped to components, and [MCP Apps](https://tanstack.com/ai/latest/docs/mcp/apps) through `@mcp-ui/client` for React and Preact only. No A2UI and no json-render anywhere in the tree.
 - **assistant-ui**: [tool UI](https://www.assistant-ui.com/docs/tools/tool-ui) through `defineToolkit`, a [`present` tool](https://www.assistant-ui.com/docs/tools/generative-ui) with a default vocabulary of 27 components, [A2UI over AG-UI](https://www.assistant-ui.com/docs/tools/a2ui) accepting both v0.9 and v1.0 payloads, [MCP Apps](https://www.assistant-ui.com/docs/tools/mcp-apps), and a [LangGraph data-UI](https://www.assistant-ui.com/docs/runtimes/langgraph/generative-ui) path. An unstable [Interactables](https://www.assistant-ui.com/docs/tools/interactables) API for shared editable state.
-- **CopilotKit**: [six documented approaches](https://docs.copilotkit.ai/concepts/generative-ui-overview). [Components as tools](https://docs.copilotkit.ai/generative-ui/tool-based), tool-call rendering, [state rendering](https://docs.copilotkit.ai/generative-ui/state-rendering), [A2UI](https://docs.copilotkit.ai/generative-ui/a2ui) in fixed and dynamic schema modes, [MCP Apps](https://docs.copilotkit.ai/generative-ui/mcp-apps), and [Open Generative UI](https://docs.copilotkit.ai/generative-ui/open-generative-ui). A [cookbook](https://docs.copilotkit.ai/generative-ui/json-render) adds json-render as bring-your-own-components. The A2UI, MCP Apps, and Open Generative UI paths are runtime middlewares; whether they work on the direct `selfManagedAgents` path is not stated in the docs.
+- **CopilotKit**: [six documented approaches](https://docs.copilotkit.ai/concepts/generative-ui-overview). [Components as tools](https://docs.copilotkit.ai/generative-ui/tool-based), tool-call rendering, [state rendering](https://docs.copilotkit.ai/generative-ui/state-rendering), [A2UI](https://docs.copilotkit.ai/generative-ui/a2ui) in fixed and dynamic schema modes, [MCP Apps](https://docs.copilotkit.ai/generative-ui/mcp-apps), and [Open Generative UI](https://docs.copilotkit.ai/generative-ui/open-generative-ui). A [cookbook](https://docs.copilotkit.ai/generative-ui/json-render) adds json-render as bring-your-own-components. The A2UI, MCP Apps, and Open Generative UI paths are runtime middlewares; whether they work on the direct `selfManagedAgents` path isn't stated in the docs.
 
 A2UI is becoming the shared vocabulary: Threadplane, assistant-ui, and CopilotKit all speak it, and CopilotKit's Angular package does too.
 
-## ✋ Approvals
+## ✋ Where does the approval pause live?
 
-Human-in-the-loop is a pause, and what matters is where the pause lives, because that is where the decision is enforced.
+Human-in-the-loop is a pause, and what matters is where the pause lives, because that's where the decision is enforced.
 
 - **Threadplane**: your agent. [LangGraph interrupts](/docs/langgraph/guides/interrupts) on one adapter, [AG-UI interrupts](/docs/ag-ui/guides/interrupts) on the other, one neutral `submit({ resume })` on both.
-- **Vercel AI SDK**: [`toolApproval`](https://ai-sdk.dev/docs/agents/tool-approvals) in your route, resumed with a client response. The [docs](https://ai-sdk.dev/docs/ai-sdk-ui/chatbot-tool-usage) note approvals cannot be used inside subagents, and say nothing about surviving a reload.
+- **Vercel AI SDK**: [`toolApproval`](https://ai-sdk.dev/docs/agents/tool-approvals) in your route, resumed with a client response. The [docs](https://ai-sdk.dev/docs/ai-sdk-ui/chatbot-tool-usage) note approvals can't be used inside subagents, and say nothing about surviving a reload.
 - **TanStack AI**: its server loop emits an [approval request](https://github.com/TanStack/ai/blob/main/docs/interrupts/tool-approval.md) and closes the stream. The browser holds the decision and resumes, no database required, and [client persistence](https://tanstack.com/ai/latest/docs/persistence/client-persistence) rehydrates a pending prompt after a reload.
 - **assistant-ui**: your route or its local runtime, with [allow-once and allow-always](https://www.assistant-ui.com/docs/tools/tool-ui) options and free-text answers. On the AG-UI runtime, interrupts are still marked experimental.
 - **CopilotKit**: [two mechanisms](https://docs.copilotkit.ai/human-in-the-loop). A browser-side tool that pauses in the UI, or an agent interrupt that pauses in the graph. Not supported on its built-in agent.
 
-I think the pause belongs in the agent, because it is the only place that cannot be skipped by a client that chooses not to render the button.
+I think the pause belongs in the agent, because it's the only place that can't be skipped by a client that chooses not to render the button.
 The route-based designs get a simpler story for stateless deployments in exchange.
 
 ## 🛠️ Browser-executed tools
@@ -248,7 +248,7 @@ Client tools run in the browser, so the model needs to know they exist, and some
 - **Vercel AI SDK**: yes, [`onToolCall` and `addToolOutput`](https://ai-sdk.dev/docs/ai-sdk-ui/chatbot-tool-usage), with automatic resubmission through your route.
 - **TanStack AI**: yes, a [`.client()` handler](https://tanstack.com/ai/latest/docs/tools/client-tools), with the round trip going through its server function as a resume batch.
 - **assistant-ui**: yes, a [frontend tool](https://www.assistant-ui.com/docs/tools/defining-tools) is any tool whose `execute` starts with `"use client"`, and there are human tools that wait for a person.
-- **CopilotKit**: yes, through Copilot Runtime and a [middleware on the agent](https://docs.copilotkit.ai/langgraph-python/frontend-tools) that forwards the tool schemas. I could not find documentation for client tools on the `selfManagedAgents` path.
+- **CopilotKit**: yes, through Copilot Runtime and a [middleware on the agent](https://docs.copilotkit.ai/langgraph-python/frontend-tools) that forwards the tool schemas. I couldn't find documentation for client tools on the `selfManagedAgents` path.
 
 That middleware of ours is the closest thing we have to a runtime, so I want to be precise about it.
 It runs in your graph, in your process, on your deploy.
@@ -281,7 +281,7 @@ TanStack AI has no subagent feature.
 
 This is where CopilotKit's runtime earns its keep.
 Threads, a thread drawer, and an inspector come through that door, and they are polished.
-If that is what you want, the runtime is the price, and I think it is a fair one.
+If that's what you want, the runtime is the price, and I think it's a fair one.
 
 ## 📎 Attachments and voice
 
@@ -296,7 +296,7 @@ CopilotKit has an [attachments config](https://docs.copilotkit.ai/multimodal-att
 **Debug panels.**
 Every library has a local one, and none of them needs an account.
 Ours is a [`<chat-debug>`](/docs/chat/components/chat-debug) panel for LangGraph checkpoints and state, from a debug-only entry point.
-[TanStack's devtools](https://tanstack.com/ai/latest/docs/getting-started/devtools) do not ship for Angular, and the others are [`@ai-sdk/devtools`](https://ai-sdk.dev/docs/ai-sdk-core/devtools), [`@assistant-ui/react-devtools`](https://www.assistant-ui.com/docs/devtools), and the [CopilotKit Inspector](https://docs.copilotkit.ai/deepagents/troubleshooting/inspector-dev-console).
+[TanStack's devtools](https://tanstack.com/ai/latest/docs/getting-started/devtools) don't ship for Angular, and the others are [`@ai-sdk/devtools`](https://ai-sdk.dev/docs/ai-sdk-core/devtools), [`@assistant-ui/react-devtools`](https://www.assistant-ui.com/docs/devtools), and the [CopilotKit Inspector](https://docs.copilotkit.ai/deepagents/troubleshooting/inspector-dev-console).
 
 **Observability.**
 The [Vercel AI SDK](https://ai-sdk.dev/docs/ai-sdk-core/telemetry) and [TanStack AI](https://tanstack.com/ai/latest/docs/advanced/otel) both emit OpenTelemetry with the GenAI semantic conventions.
@@ -304,19 +304,19 @@ assistant-ui and CopilotKit route observability through their hosted tiers, with
 Threadplane leans on LangSmith or whatever your agent server already does, plus an opt-in [telemetry package](https://www.npmjs.com/package/@threadplane/telemetry) that points at infrastructure you control.
 
 **Testing utilities.**
-This is one place where Threadplane is ahead, and I am a little proud of it.
+This is one place where Threadplane is ahead, and I'm a little proud of it.
 We ship [three layers](/docs/choosing-an-adapter#testing): a `mockAgent()` for component tests, [`provideFakeAgent()`](/docs/ag-ui/api/fake-agent) for adapter tests with canned wire events, and recorded LLM fixtures [replayed through the whole stack](/blog/what-fixture-replay-cant-catch).
 The Vercel AI SDK ships [mock language models](https://ai-sdk.dev/docs/ai-sdk-core/testing) and a stream simulator.
 I found no documented test helpers for TanStack AI, assistant-ui, or CopilotKit.
 
 ## 🕸️ Multi-agent routing
 
-Nobody treats this as a feature except CopilotKit, and Threadplane does not either.
+Nobody treats this as a feature except CopilotKit, and Threadplane doesn't either.
 One `provideAgent()`, one agent.
 If you need several, you compose that yourself.
 
 CopilotKit does it [automatically, in its runtime](https://docs.copilotkit.ai/langgraph-python/backend/copilot-runtime), with a default agent and per-request routing.
-It is a real feature, and it is one of the better arguments for having a runtime at all.
+It's a real feature, and it's one of the better arguments for having a runtime at all.
 
 ## So why do they require a runtime?
 
@@ -330,21 +330,21 @@ Every item on that list is a real production concern.
 
 **The runtime is where the product lives.**
 A hosted layer for threads and observability needs a door, and the runtime is the door.
-That funds the project, and I am glad the project is funded.
+That funds the project, and I'm glad the project is funded.
 
 The route-based designs answer the same question differently.
 The Vercel AI SDK and TanStack AI get end-to-end control without a vendor box.
 assistant-ui gets to be agnostic about it.
 Each of those is a fair answer.
 
-## What Threadplane does instead
+## What does Threadplane do instead?
 
 Threadplane has no runtime.
 What it has is a recommendation and a package.
 
 The recommendation is a server endpoint that *you* own and control in front of your agent.
-That is where auth, credentials, rate limits, and any inspection of the stream belong.
-You already know how to authenticate it, log it, and deploy it, because it is the same kind of thing as the rest of your backend.
+That's where auth, credentials, rate limits, and any inspection of the stream belong.
+You already know how to authenticate it, log it, and deploy it, because it's the same kind of thing as the rest of your backend.
 
 The package is [`@threadplane/middleware`](/docs/middleware/getting-started/introduction).
 It runs inside your LangGraph graph and handles the one thing the browser genuinely needs from the backend: client tools.
@@ -352,7 +352,7 @@ It ships for both LangGraph.js and Python LangGraph, and it works the same wheth
 On other AG-UI backends the tool catalog still rides in the protocol's `tools` field, and the framework's own bridge decides whether to bind it.
 
 Everything the runtimes do still has to be done.
-Here is where each item goes.
+Let's look at where each item goes.
 
 | Concern | Where it lives |
 | --- | --- |
@@ -364,23 +364,23 @@ Here is where each item goes.
 | 🧵 Threads | LangGraph Platform. On AG-UI, a store you own |
 | 📋 Audit | Your agent server, LangSmith, or your own tracing |
 
-"No runtime" does not mean no server. It means no server of ours.
+"No runtime" doesn't mean no server. It means no server of ours.
 
-## What you give up
+## What do you give up?
 
-I would rather list it than let you discover it.
+I'd rather list it than let you discover it.
 
 **No hosted thread list or inspector.**
 LangGraph Platform gives you threads and LangSmith gives you traces, and our debug panel runs locally only.
 
 **No server-side event middleware from us.**
-If you want to inspect or rewrite the stream in a place the client cannot reach, that is your endpoint to write.
+If you want to inspect or rewrite the stream in a place the client can't reach, that's your endpoint to write.
 
 **No multi-agent routing.**
 One adapter, one agent, per application.
 
 **No MCP Apps, and thin multimodal.**
-Four of the five render MCP Apps and we do not. Attachments are a slot, not a pipeline, and there is no voice.
+Four of the five render MCP Apps and we don't. Attachments are a slot, not a pipeline, and there's no voice.
 
 **Angular only, two protocols.**
 If your backend speaks neither the LangGraph API nor AG-UI, nothing here helps you.
@@ -389,22 +389,23 @@ If your backend speaks neither the LangGraph API nor AG-UI, nothing here helps y
 Sixty-nine stars against tens of thousands. The bigger projects have more hands, more integrations, and more eyes on bugs.
 
 **You can still get it wrong.**
-There is no field named `apiKey`, but `defaultHeaders` will carry whatever string you put in it.
+There's no field named `apiKey`, but `defaultHeaders` will carry whatever string you put in it.
 The docs say what it is for.
-The code does not inspect the value.
-I think that is the right posture for a library, but it moves the responsibility to you.
+The code doesn't inspect the value.
+I think that's the right posture for a library, but it moves the responsibility to you.
 
 ## Conclusion
 
 Agent UI libraries require a runtime because the runtime is where their features live, and because a hosted product needs a door.
 The engineering reasons are real: key custody, auth, input control, trusted middleware, persistence, audit.
 
-My position is simple.
+For me, the position is simple.
 Those concerns belong to the agent server, which you already run, and to an endpoint you own in front of it.
 A vendor's box in the path, or a vendor's loop in your route, is a second place to solve a problem you already had one place to solve.
 
 Threadplane is built on that position.
-It costs you a hosted inspector, routing, server-side stream middleware, and a few features the larger projects have and we do not yet.
+It costs you a hosted inspector, routing, server-side stream middleware, and a few features the larger projects have and we don't yet.
+If you think I got a cell wrong, or the trade looks different from where you sit, please let me know.
 
 ## Sources
 

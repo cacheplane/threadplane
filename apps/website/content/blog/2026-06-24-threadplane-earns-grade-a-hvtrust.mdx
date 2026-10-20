@@ -8,23 +8,25 @@ featured: true
 ---
 
 Every agent framework asks you to trust it.
-I would rather you measure it.
+I'd rather you measure it.
 
-[HVTracker](https://hvtracker.net/agents/threadplane/) is an independent trust tracker for AI agent software. It just scored Threadplane at **82.8/100 — a Grade A**.
+[HVTracker](https://hvtracker.net/agents/threadplane/) is an independent trust tracker for AI agent software.
+It just scored Threadplane at **82.8/100 — a Grade A**. 💚
 
-In the Agent Frameworks category, that is #7 of 75. And it is the #1 — really the *only* — Angular agent framework on the list.
+In the Agent Frameworks category, that's #7 of 75.
+And it's the #1 (really the *only*) Angular agent framework on the list.
 
-I did not fill out a questionnaire or pay for a badge.
+I didn't fill out a questionnaire or pay for a badge.
 HVTracker scores from public signals only: the GitHub API, the npm and PyPI registries, and the OpenSSF Scorecard CLI, refreshed daily.
 The grade is what their analysis says about us, not what we say about ourselves.
 
-For me, that is the whole point.
-A trust claim you make about yourself is not worth much.
+For me, that's the whole point.
+A trust claim you make about yourself isn't worth much.
 
 ## Who else is on the list?
 
 This is the part I keep coming back to.
-Start with the company we are keeping.
+Let's start with the company we're keeping.
 
 | Rank | Framework | Trust | Stars |
 | --- | --- | --- | --- |
@@ -38,22 +40,23 @@ Start with the company we are keeping.
 
 Look at the stars column.
 
-Threadplane ranks *above* CrewAI, AutoGen, and LangChain on trust — with 99 GitHub stars against their tens of thousands.
+Threadplane ranks *above* CrewAI, AutoGen, and LangChain on trust, with 99 GitHub stars against their tens of thousands. 😲
 
-That is not a glitch.
+That's not a glitch.
 HVTrust is weighted toward supply-chain integrity and provenance, not popularity.
 A package can be downloaded millions of times a week and still have thin security signals.
 A smaller one can have every signal in place.
 The grade rewards the second kind, which is the whole reason a tracker like this exists.
 
-And I will be just as honest about where we are weak.
+And I'll be just as honest about where we're weak.
 Our lowest signal is adoption.
-With 99 stars, that is the part of the profile we have the most room to grow, and it is the one place the big projects above us are genuinely ahead.
-I am not going to dress that up.
+With 99 stars, that's the part of the profile we have the most room to grow, and it's the one place the big projects above us are genuinely ahead.
+I'm not going to dress that up.
 
 ## What does a Grade A actually mean?
 
-HVTracker is careful about its own claims, and I want to be too. Right on the listing, they print this:
+HVTracker is careful about its own claims, and I want to be too.
+Right on the listing, they print this:
 
 > Not a safety endorsement.
 > HVTracker describes what public signals show, not whether a project is safe for your use case.
@@ -61,7 +64,8 @@ HVTracker is careful about its own claims, and I want to be too. Right on the li
 
 That caveat is exactly why the grade is worth anything.
 
-It is not a sticker that says "trust us." It is a measurement across five dimensions:
+It's not a sticker that says "trust us."
+It's a measurement across five dimensions:
 
 - **Safety / Integrity** — OSSF Scorecard, provenance, signatures.
 - **Identity / Provenance** — a verifiable link between the published package and the source that built it. This is our *strongest* signal.
@@ -70,30 +74,32 @@ It is not a sticker that says "trust us." It is a measurement across five dimens
 - **Adoption** — stars and downloads.
 
 Grade A just means the score lands in the top band (A is 80 and up).
-It does not mean anyone audited your threat model for you.
+It doesn't mean anyone audited your threat model for you.
 It means the public evidence is strong, and you can go verify every piece of it yourself.
 
-## Why this matters more for agent frameworks
+## Why does this matter more for agent frameworks?
 
-Most software you install does one job in one place. An agent framework is different.
+Most software you install does one job in one place.
+An agent framework is different.
 
 It runs models.
 It executes tool calls.
 It reaches for credentials and acts on behalf of your users, often with real authority over real systems.
 
-So the blast radius of a compromised dependency underneath an agent is bigger than almost anything else in your stack. That is what makes "is this thing's supply chain in order" a real question and not a checkbox.
+So the blast radius of a compromised dependency underneath an agent is bigger than almost anything else in your stack.
+That's what makes "is this thing's supply chain in order" a real question and not a checkbox.
 
-It is also the gap the tooling exists to close.
-The OpenSSF Scorecard — the engine behind a big part of HVTrust — checks the parts of the chain attackers actually go after: source, build, dependencies, signing, and maintenance.
+It's also the gap the tooling exists to close.
+The OpenSSF Scorecard (the engine behind a big part of HVTrust) checks the parts of the chain attackers actually go after: source, build, dependencies, signing, and maintenance.
 As [OpenSSF puts it](https://openssf.org/projects/scorecard/), a lot of open source is run by small teams with limited resources, which is exactly the soft target supply-chain attacks look for.
 And a [Sonatype analysis](https://github.com/ossf/scorecard) found a project's Scorecard score was one of the best available predictors of whether it carried known vulnerabilities.
 
-From my experience, that is the question worth asking before you install anything an agent will run: how much of your app are you handing to code you did not write, and can you prove where it came from?
+From my experience, that's the question worth asking before you install anything an agent will run: how much of your app are you handing to code you didn't write, and can you prove where it came from?
 
-## The work behind the grade
+## What earned the grade?
 
 The grade is the output.
-Here is the input — the boring, unglamorous hygiene that earns it.
+Here's the input: the boring, unglamorous hygiene that earns it.
 
 - **OSSF Scorecard 7.7/10** — branch protection, signed releases, dependency review, code review, run continuously.
 - **MIT licensed** — a declared, OSI-approved, permissive license. No ambiguity about what you can do with it.
@@ -101,17 +107,16 @@ Here is the input — the boring, unglamorous hygiene that earns it.
 - **Verifiable provenance** — a traceable line from the npm package back to the build that produced it.
 - **Active maintenance** — the repo was pushed to within the last day when it was scored.
 
-None of these are exotic. Doing all of them, and keeping them done, is what moves a project from "probably fine" to "you can check."
+None of these are exotic.
+Doing all of them, and keeping them done, is what moves a project from "probably fine" to "you can check."
 
 ## Open by default
 
-Threadplane is MIT-licensed open source. The framework — including the chat UI,
-runtime adapters, generative-UI runtime, and protocol types — is free for
-commercial and noncommercial use.
+Threadplane is MIT-licensed open source.
+The framework (including the chat UI, runtime adapters, generative-UI runtime, and protocol types) is free for commercial and noncommercial use.
 
-Commercial support and delivery engagements fund continued maintenance without
-restricting the packages. The trust signals above apply to the same open code
-every user runs.
+Commercial support and delivery engagements fund continued maintenance without restricting the packages.
+The trust signals above apply to the same open code every user runs.
 
 <Callout type="info" title="Don't take my word for it">
 The full breakdown — every dimension, the Scorecard checks, and the raw JSON — is public on the [Threadplane HVTracker listing](https://hvtracker.net/agents/threadplane/). Take their word, then go verify it.
@@ -119,9 +124,10 @@ The full breakdown — every dimension, the Scorecard checks, and the raw JSON �
 
 ## Conclusion
 
-A trust grade is a starting point, not a finish line. The real way to evaluate a framework is to build something with it.
+A trust grade is a starting point, not a finish line.
+I think the real way to evaluate a framework is to build something with it.
 
-So if you are curious: read the [listing](https://hvtracker.net/agents/threadplane/) and the [Agent Frameworks leaderboard](https://hvtracker.net/categories/agent-frameworks/), browse the [source on GitHub](https://github.com/cacheplane/threadplane) (all of it — it is almost all open), and ship your first streaming agent UI with the [quickstart](/docs/chat/getting-started/quickstart).
+So if you're curious: read the [listing](https://hvtracker.net/agents/threadplane/) and the [Agent Frameworks leaderboard](https://hvtracker.net/categories/agent-frameworks/), browse the [source on GitHub](https://github.com/cacheplane/threadplane) (all of it — it's almost all open), and ship your first streaming agent UI with the [quickstart](/docs/chat/getting-started/quickstart).
 
-We will keep the signals fresh, keep the framework open, and keep working on the one number I am not proud of yet.
-The rest, you can verify.
+We'll keep the signals fresh, keep the framework open, and keep working on the one number I'm not proud of yet.
+The rest, you can verify, and if you find something that doesn't hold up, please let me know.

@@ -7,11 +7,11 @@ author: brian
 featured: true
 ---
 
-This is how to build a fullstack agentic Angular app on the AG-UI protocol, from the backend event stream to a signal-driven chat surface in your component.
+Let's build a fullstack agentic Angular app on the AG-UI protocol, from the backend event stream to a signal-driven chat surface in your component.
 
-The protocol between the agent and the UI is the durable piece of an agentic app.
+I think the protocol between the agent and the UI is the durable piece of an agentic app.
 The model and the framework get the attention, but an open, shared wire format is what makes the work portable.
-AG-UI's event model maps onto Angular signals cleanly, which is what this post builds on.
+AG-UI's event model maps onto Angular signals cleanly, and that's what we'll build on.
 
 ## Goals
 
@@ -22,42 +22,42 @@ AG-UI's event model maps onto Angular signals cleanly, which is what this post b
 ## What is AG-UI?
 
 AG-UI is the **Agent-User Interaction Protocol**.
-It is an open, event-based protocol for streaming an agent's state to a user-facing app over plain HTTP.
+It's an open, event-based protocol for streaming an agent's state to a user-facing app over plain HTTP.
 
 The official one-liner from the docs:
 
 > An open, lightweight, event-based protocol that standardizes how AI agents connect to user-facing applications.
 
-That is the whole pitch.
-It standardizes the wire so the agent does not care what frontend you use, and the frontend does not care what backend you wrote.
+That's the whole pitch.
+It standardizes the wire so the agent doesn't care what frontend you use, and the frontend doesn't care what backend you wrote.
 
 It was introduced in 2025 and open-sourced after years of integrating agent runtimes into frontend apps.
 The wire format became the durable piece.
-It is now the third member of an emerging triad of agent protocols:
+It's now the third member of an emerging triad of agent protocols:
 
 - **MCP**: agent ↔ tools.
 - **A2A**: agent ↔ other agents.
 - **AG-UI**: agent ↔ user.
 
 A real production agent typically speaks all three.
-The interesting one for us is AG-UI, because it is the one your *users* see.
+The interesting one for us is AG-UI, because it's the one your *users* see.
 
-### Why Angular devs should care
+### Why should Angular devs care?
 
 For the last two years, the most visible agentic UI libraries have been React-first.
 If you were building an Angular app, your options were:
 
 1. Reach for `EventSource`, hand-roll the SSE parsing, and reinvent message lists, status, tool cards, and interrupts for the fifth time.
-2. Iframe a React app into your Angular app. (Please do not.)
+2. Iframe a React app into your Angular app. (Please don't. 😆)
 3. Wait.
 
 AG-UI changes the math.
-The protocol is framework-agnostic, the official `@ag-ui/client` SDK is plain TypeScript with RxJS, and the event model is a sequence of small writes to a growing list — exactly what Angular signals are.
+The protocol is framework-agnostic, the official `@ag-ui/client` SDK is plain TypeScript with RxJS, and the event model is a sequence of small writes to a growing list, which is exactly what Angular signals are.
 The whole protocol is seventeen events; you can hold it in your head.
 
-## The fullstack picture
+## What does the fullstack picture look like?
 
-The seams come first, before any code.
+Let's look at the seams first, before any code.
 
 <StackDiagram highlight="ag-ui" caption="Backend speaks AG-UI over SSE → the adapter exposes the Agent contract → the chat UI renders." />
 
@@ -65,20 +65,23 @@ Two seams: the wire, and the contract.
 
 **The backend.** Whatever you want, as long as it can emit AG-UI events.
 LangGraph, CrewAI, Mastra, Microsoft Agent Framework, Pydantic AI, AG2, AWS Strands, Agno. They all have first-party or partnership adapters.
-If your backend is not on that list, you write a small middleware that yields AG-UI events. The [middleware guide](https://docs.ag-ui.com/quickstart/middleware) walks through it.
+If your backend isn't on that list, you write a small middleware that yields AG-UI events.
+The [middleware guide](https://docs.ag-ui.com/quickstart/middleware) walks through it.
 
 **The wire.** Server-Sent Events.
 Plain HTTP, no WebSocket gymnastics, no custom binary framing.
 Your firewall, load balancer, and reverse proxy already know what to do with it.
 
 **The Angular side.** This is what Threadplane provides.
-`@threadplane/ag-ui` is the adapter. It consumes the AG-UI event stream and exposes a runtime-neutral `Agent` contract built from signals.
-`@threadplane/chat` is the UI. It reads from that contract and renders.
-The two are decoupled on purpose. We will get to why.
+`@threadplane/ag-ui` is the adapter.
+It consumes the AG-UI event stream and exposes a runtime-neutral `Agent` contract built from signals.
+`@threadplane/chat` is the UI.
+It reads from that contract and renders.
+The two are decoupled on purpose (we'll get to why).
 
 ## Let's wire it up
 
-Start with a fresh Angular 20–22 app, or use an existing one — `ng new` if you need to spin one up.
+Start with a fresh Angular 20–22 app, or use an existing one (`ng new` if you need to spin one up).
 
 ### Install the packages
 
@@ -107,7 +110,7 @@ yarn add @threadplane/ag-ui @threadplane/chat marked
 </Tabs>
 
 `marked` is the markdown renderer the chat uses for assistant messages.
-It is a peer dep so you can swap it.
+It's a peer dep so you can swap it.
 
 ### Provide the agent
 
@@ -123,14 +126,15 @@ export const appConfig: ApplicationConfig = {
 };
 ```
 
-That is the whole bootstrap.
-`provideAgent` is the AG-UI transport. It wraps the official `@ag-ui/client` `HttpAgent` and exposes the signal-shaped contract via DI.
-It is the only provider the chat components need.
+That's the whole bootstrap.
+`provideAgent` is the AG-UI transport.
+It wraps the official `@ag-ui/client` `HttpAgent` and exposes the signal-shaped contract via DI.
+It's the only provider the chat components need.
 
 Notice how little the two layers know about each other.
-`@threadplane/chat` does not know it is talking to an AG-UI backend.
+`@threadplane/chat` doesn't know it's talking to an AG-UI backend.
 It just reads from the `Agent` contract.
-We will lean on that boundary later.
+We'll lean on that boundary later.
 
 ### Render the chat
 
@@ -156,7 +160,7 @@ export class ChatPageComponent {
 }
 ```
 
-That is it.
+That's it!
 Three files, maybe twenty lines of code, and you have a working streaming chat backed by any AG-UI-compatible agent.
 
 <figure>
@@ -218,13 +222,13 @@ No `async` pipe gymnastics.
 No `OnDestroy` to clean up a subscription.
 No manual change-detection plumbing.
 
-This works because streaming, at the data-shape level, is a sequence of small writes to a growing list — and so are signals.
+This works because streaming, at the data-shape level, is a sequence of small writes to a growing list, and so are signals.
 For me, the shape of the state is what makes Angular a good fit for agentic UIs, more than the templates or standalone components.
 
-## Tool calls and interrupts
+## What about tool calls and interrupts?
 
 Two surfaces separate a "chat with a model" from a "real agent": tool calls and interrupts.
-Both are worth a close look.
+Let's look at both.
 
 ### Tool calls
 
@@ -240,7 +244,7 @@ TOOL_CALL_RESULT { id: "1", result: { files: [...] } }
 ```
 
 The `<chat>` component renders this as a tool-call card by default.
-A small block in the message list showing the tool name, the args (formatted, even mid-stream), a spinner while it is running, and the result when it returns.
+A small block in the message list showing the tool name, the args (formatted, even mid-stream), a spinner while it's running, and the result when it returns.
 
 I think you almost never want the default forever.
 You want *your* card for your most important tools: branded, with a click-through to the data, an approve/reject button, whatever your product needs.
@@ -274,9 +278,9 @@ AG-UI surfaces interrupts as state on the agent, and `@threadplane/chat` renders
 ```
 
 The agent stays paused until you call `resume()`.
-On the backend, your graph picks up exactly where it left off — which is the entire point of human-in-the-loop.
+On the backend, your graph picks up exactly where it left off, which is the entire point of human-in-the-loop.
 
-## Threads, persistence, and the things demos skip
+## What about threads, persistence, and the things demos skip?
 
 A single-thread chat is a demo.
 A real product remembers conversations across sessions and across devices.
@@ -304,8 +308,8 @@ constructor() {
 }
 ```
 
-How you scope threads — per project, per task, per user session — is a product decision.
-The one thing to avoid is shipping a chat where every refresh starts from zero.
+How you scope threads (per project, per task, per user session) is a product decision.
+For me, the one thing to avoid is shipping a chat where every refresh starts from zero.
 
 If you want a starting point, `@threadplane/chat` exposes a `<chat-sidebar>` primitive that handles the layout without locking you into a persistence model.
 
@@ -314,8 +318,8 @@ If you want a starting point, `@threadplane/chat` exposes a `<chat-sidebar>` pri
 This is the part that pays off the protocol bet.
 
 Say you started with a Python LangGraph backend, shipped to production, and a quarter later you decide you want to migrate one graph to Mastra because the team writing it lives in TypeScript.
-With AG-UI, that is a backend change.
-Your Angular code does not move.
+With AG-UI, that's a backend change.
+Your Angular code doesn't move.
 
 ```ts
 // before
@@ -325,37 +329,42 @@ provideAgent({ url: '/agents/langgraph' }),
 provideAgent({ url: '/agents/mastra' }),
 ```
 
-That is the diff.
+That's the diff.
 
 The same applies in reverse.
-If you are already on a LangGraph stack and want tighter coupling than AG-UI gives you, `@threadplane/langgraph` is a direct adapter for LangGraph's native streaming API.
-It speaks the same `Agent` contract to `@threadplane/chat`, so your UI does not change either way.
-Pick whichever fits your team — the list of backends that already speak AG-UI covers most of what you would reach for, and the protocol is small enough to stay stable.
+If you're already on a LangGraph stack and want tighter coupling than AG-UI gives you, `@threadplane/langgraph` is a direct adapter for LangGraph's native streaming API.
+It speaks the same `Agent` contract to `@threadplane/chat`, so your UI doesn't change either way.
+Pick whichever fits your team.
+The list of backends that already speak AG-UI covers most of what you'd reach for, and the protocol is small enough to stay stable.
 
-## A note on the rest of the iceberg
+## What about the rest of the iceberg?
 
 The scaffold above is *short* on purpose.
-The framework intentionally hides the parts you do not want to think about on day one.
+The framework intentionally hides the parts you don't want to think about on day one.
 
-The parts you will want on day thirty:
+Here are the parts you'll want on day thirty:
 
 - **Errors and retries.** Per-message retry, transport-level backoff for transient SSE drops, graceful degradation when streaming is unavailable.
   Some corporate proxies buffer SSE.
-  You will find out the hard way if you do not plan for it.
+  You'll find out the hard way if you don't plan for it.
 - **Generative UI.** When the agent wants to render a richer surface than a tool-call card, `@threadplane/render` lets the backend stream a UI spec and the frontend resolves it against a registry of your approved Angular components.
   No arbitrary code, no `eval`, no design-system bypass.
   The agent picks from a menu you control.
-- **Observability.** `@threadplane/telemetry` ships a PostHog-shaped sink your application supplies and configures per environment. Point it at your own analytics rather than at a vendor you did not pick.
-- **Testing.** Because the contract is signals all the way down, the testing story is "write a signal, the chat re-renders." `@threadplane/ag-ui` ships a `FakeAgent` you can hand-feed events to in a unit test. No SSE harness, no fixture loader, no test-only DI dance.
+- **Observability.** `@threadplane/telemetry` ships a PostHog-shaped sink your application supplies and configures per environment.
+  Point it at your own analytics rather than at a vendor you didn't pick.
+- **Testing.** Because the contract is signals all the way down, the testing story is "write a signal, the chat re-renders."
+  `@threadplane/ag-ui` ships a `FakeAgent` you can hand-feed events to in a unit test.
+  No SSE harness, no fixture loader, no test-only DI dance.
 
 Each of those is its own post.
 The point here is just that the protocol-to-signal-to-template chain is the *spine*, and everything else hangs off it.
 
 ## Conclusion
 
-AG-UI standardizes the wire between the agent and the UI: it is small enough to hold in your head, and the event model maps onto Angular signals cleanly.
-With Threadplane (`@threadplane/ag-ui` and `@threadplane/chat` on npm), the wiring is three lines — a provider, an inject, and a `<chat>` — which leaves the interesting work (tool cards, interrupt flows, generative UI, your design system) as the part you spend the day on.
-That is the trade the protocol buys you.
+AG-UI standardizes the wire between the agent and the UI: it's small enough to hold in your head, and the event model maps onto Angular signals cleanly.
+With Threadplane (`@threadplane/ag-ui` and `@threadplane/chat` on npm), the wiring is three lines (a provider, an inject, and a `<chat>`), which leaves the interesting work (tool cards, interrupt flows, generative UI, your design system) as the part you spend the day on.
+In my opinion, that's the trade the protocol buys you.
 
 Every Threadplane package is MIT-licensed.
-If you are building this inside an enterprise Angular app and want production assurance or delivery support, [talk to us](/contact?source=blog_ag_ui_pillar&track=enterprise).
+If you're building this inside an enterprise Angular app and want production assurance or delivery support, [talk to us](/contact?source=blog_ag_ui_pillar&track=enterprise).
+Otherwise, point it at your backend and let me know what you build.
