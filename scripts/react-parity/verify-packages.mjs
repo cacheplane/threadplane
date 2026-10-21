@@ -218,10 +218,27 @@ export function assertHeadlessInputs(inputs) {
   if (markdown.length) throw new Error(`Headless framework root includes Markdown feature: ${markdown.join(', ')}`);
 }
 
+export function plainExportTypes(specifiers) {
+  const namespaces = specifiers.map((specifier, index) => `import * as entry${index} from ${JSON.stringify(specifier)};\nexport type Entry${index} = typeof entry${index};`).join('\n');
+  if (!specifiers.includes('@threadplane/react/chat')) return namespaces;
+  return `${namespaces}
+import type { ChatSidenavMode, ChatSidenavProps } from '@threadplane/react/chat';
+type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
+type Assert<T extends true> = T;
+type Controlled = Pick<ChatSidenavProps, 'mode' | 'open' | 'onOpenChange' | 'onModeChange'>;
+export type SidenavModeContract = Assert<Equal<ChatSidenavMode, 'expanded' | 'collapsed' | 'drawer'>>;
+export type SidenavRequiredContract = Assert<Equal<Controlled, Required<Controlled>>>;
+export type SidenavModePropContract = Assert<Equal<ChatSidenavProps['mode'], ChatSidenavMode>>;
+export type SidenavOpenPropContract = Assert<Equal<ChatSidenavProps['open'], boolean>>;
+export type SidenavModeCallbackContract = Assert<Equal<ChatSidenavProps['onModeChange'], (mode: Exclude<ChatSidenavMode, 'drawer'>) => void>>;
+export type SidenavOpenCallbackContract = Assert<Equal<ChatSidenavProps['onOpenChange'], (open: boolean) => void>>;
+`;
+}
+
 function verifyPlainExports(root, consumer, projects) {
   const specifiers = projects.flatMap((project) => consumerSpecifiers(JSON.parse(readFileSync(join(consumer, 'node_modules/@threadplane', project, 'package.json'), 'utf8'))));
   writeFileSync(join(consumer, 'index.mjs'), `${assertSupportedExports.toString()}\n` + specifiers.map((specifier) => `assertSupportedExports(${JSON.stringify(specifier.slice('@threadplane/'.length))}, await import(${JSON.stringify(specifier)}));`).join('\n'));
-  writeFileSync(join(consumer, 'index.ts'), specifiers.map((specifier, index) => `import * as entry${index} from ${JSON.stringify(specifier)};\nexport type Entry${index} = typeof entry${index};`).join('\n'));
+  writeFileSync(join(consumer, 'index.ts'), plainExportTypes(specifiers));
   writeFileSync(join(consumer, 'tsconfig.json'), JSON.stringify({ compilerOptions: { target: 'ES2022', module: 'NodeNext', moduleResolution: 'NodeNext', lib: ['ES2022', 'DOM'], types: [], strict: true, skipLibCheck: false, noEmit: true }, files: ['index.ts'] }));
   runConsumer(process.execPath, ['index.mjs'], consumer);
   runConsumer(process.execPath, [join(root, 'node_modules/typescript/bin/tsc'), '-p', 'tsconfig.json'], consumer);
@@ -320,6 +337,7 @@ export function assertSupportedExports(project, entry) {
         'Chat',
         'ChatPopup',
         'ChatSidebar',
+        'ChatSidenav',
         'ChatInput',
         'Citations',
         'MessageList',

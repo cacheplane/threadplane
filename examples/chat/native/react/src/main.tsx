@@ -13,6 +13,7 @@ import '../../shared/tokens.css';
 import '@threadplane/react/chat/styles.css';
 import '../../shared/styles.css';
 import './popup.css';
+import './sidenav.css';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Application root is missing');
@@ -40,7 +41,9 @@ createRoot(root).render(
     <App
       application={application}
       presentation={
-        presentation === 'popup' || presentation === 'sidebar'
+        presentation === 'popup' ||
+        presentation === 'sidebar' ||
+        presentation === 'sidenav'
           ? presentation
           : 'page'
       }

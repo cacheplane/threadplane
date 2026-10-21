@@ -426,6 +426,30 @@ desktop geometry, and 390px/600px layouts with reachable Close and Send. It does
 not use a live model. These are bounded overlay slices, not complete Angular
 popup/sidebar/sidenav parity or a published package.
 
+## React conversation navigation presentation
+
+Exact `?presentation=sidenav` opts into the installed private `ChatSidenav`
+shell around the existing loaded-conversation directory. The selected
+conversation stays inline. Desktop navigation can expand to 18rem or collapse
+to 4rem; at widths of 700px and below the application chooses a non-modal
+inline-start drawer, at most 20rem wide, without a scrim or focus trap. Returning to
+desktop restores the previous expanded/collapsed choice. The default and unknown
+presentation values retain the page layout.
+
+The application owns mode, drawer visibility, selection, filtering, Refresh and
+New. Breakpoint changes and accepted conversation selection close the drawer.
+Closing, expanding, collapsing and resizing retain the same directory filter,
+composer DOM and unsent draft, and send no conversation commands. An active
+response continues through these navigation changes. Selecting a different
+conversation retains the existing deliberate composer draft reset.
+
+The drawer launcher, Close and scoped Escape request controlled changes; focus
+moves only after accepted visibility/mode changes. Hidden directory content is
+inert, and Tab can reach the surrounding page. This bounded children-based
+navigation does not implement Angular project/archive menus, global shortcuts,
+debug ownership or full T30 parity. Popup and sidebar remain separate overlay
+presentations.
+
 ## React message actions
 
 Assistant answers expose the installed private `MessageActions` view. Copy writes

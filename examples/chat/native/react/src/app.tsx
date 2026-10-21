@@ -21,6 +21,9 @@ import { Approval } from './approval';
 import { BackgroundActivity } from './background-activity';
 import { CopyAnswer } from './copy-answer';
 import { TripSummary } from './trip-summary';
+import { NativeNavigation } from './native-navigation';
+
+type Presentation = 'page' | 'popup' | 'sidebar' | 'sidenav';
 
 const literal = (value: unknown) =>
   typeof value === 'string' ? value : JSON.stringify(value, null, 2) ?? '';
@@ -112,7 +115,7 @@ function ConversationSurface({
   presentation,
   children,
 }: {
-  presentation: 'page' | 'popup' | 'sidebar';
+  presentation: Exclude<Presentation, 'sidenav'>;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -136,76 +139,91 @@ function Conversation({
   presentation,
 }: {
   application: Application;
-  presentation: 'page' | 'popup' | 'sidebar';
+  presentation: Presentation;
 }) {
   const snapshot = useAgent(application);
   const [filter, setFilter] = useState('');
   const rows = filterLoadedTitles(snapshot.list.rows, filter);
   const selection = snapshot.selection;
-  return (
-    <div className="conversation-layout">
-      <aside aria-labelledby="conversations-title">
-        <h2 id="conversations-title">Loaded conversations</h2>
-        <p className="muted">
-          Browse up to 50 loaded conversations. The filter searches only loaded
-          titles.
+  const directory = (
+    <aside aria-labelledby="conversations-title">
+      <h2 id="conversations-title">Loaded conversations</h2>
+      <p className="muted">
+        Browse up to 50 loaded conversations. The filter searches only loaded
+        titles.
+      </p>
+      <div className="directory-actions">
+        <button
+          type="button"
+          onClick={() => application.refresh()}
+          disabled={snapshot.list.status === 'pending'}
+        >
+          Refresh
+        </button>
+        <button
+          type="button"
+          onClick={() => application.newConversation()}
+          disabled={snapshot.creation.status === 'pending'}
+        >
+          New
+        </button>
+      </div>
+      <label htmlFor="filter">Filter loaded conversations by title</label>
+      <input
+        id="filter"
+        type="search"
+        value={filter}
+        onChange={(event) => setFilter(event.target.value)}
+      />
+      {snapshot.list.status === 'pending' && (
+        <p role="status">Refreshing conversations…</p>
+      )}
+      {snapshot.list.status === 'error' && (
+        <p role="alert">Could not refresh loaded conversations.</p>
+      )}
+      {snapshot.creation.status === 'pending' && (
+        <p role="status">Creating conversation…</p>
+      )}
+      {snapshot.creation.status === 'unconfirmed' && (
+        <p role="alert">
+          Creation could not be confirmed. A conversation may have been created;
+          refresh before trying again.
         </p>
-        <div className="directory-actions">
-          <button
-            type="button"
-            onClick={() => application.refresh()}
-            disabled={snapshot.list.status === 'pending'}
-          >
-            Refresh
-          </button>
-          <button
-            type="button"
-            onClick={() => application.newConversation()}
-            disabled={snapshot.creation.status === 'pending'}
-          >
-            New
-          </button>
-        </div>
-        <label htmlFor="filter">Filter loaded conversations by title</label>
-        <input
-          id="filter"
-          type="search"
-          value={filter}
-          onChange={(event) => setFilter(event.target.value)}
-        />
-        {snapshot.list.status === 'pending' && (
-          <p role="status">Refreshing conversations…</p>
-        )}
-        {snapshot.list.status === 'error' && (
-          <p role="alert">Could not refresh loaded conversations.</p>
-        )}
-        {snapshot.creation.status === 'pending' && (
-          <p role="status">Creating conversation…</p>
-        )}
-        {snapshot.creation.status === 'unconfirmed' && (
-          <p role="alert">
-            Creation could not be confirmed. A conversation may have been
-            created; refresh before trying again.
-          </p>
-        )}
-        <ul className="conversation-list" aria-label="Loaded conversations">
-          {rows.map((row) => (
-            <li key={row.id}>
-              <button
-                type="button"
-                aria-current={row.id === selection.id ? 'true' : undefined}
-                onClick={() => application.select(row.id)}
-              >
-                {row.title}
-              </button>
-            </li>
-          ))}
-        </ul>
-        {snapshot.list.status !== 'pending' && rows.length === 0 && (
-          <p className="muted">No loaded conversations match.</p>
-        )}
-      </aside>
-      <ConversationSurface presentation={presentation}>
+      )}
+      <ul className="conversation-list" aria-label="Loaded conversations">
+        {rows.map((row) => (
+          <li key={row.id}>
+            <button
+              type="button"
+              aria-current={row.id === selection.id ? 'true' : undefined}
+              onClick={() => application.select(row.id)}
+            >
+              {row.title}
+            </button>
+          </li>
+        ))}
+      </ul>
+      {snapshot.list.status !== 'pending' && rows.length === 0 && (
+        <p className="muted">No loaded conversations match.</p>
+      )}
+    </aside>
+  );
+  return (
+    <div
+      className={`conversation-layout${
+        presentation === 'sidenav' ? ' conversation-layout--sidenav' : ''
+      }`}
+    >
+      {presentation === 'sidenav' ? (
+        <NativeNavigation selectedId={selection.id}>
+          {directory}
+        </NativeNavigation>
+      ) : (
+        directory
+      )}
+      <ConversationSurface
+        presentation={presentation === 'sidenav' ? 'page' : presentation}
+      >
         <section className="conversation" aria-labelledby="conversation-title">
           <div className="conversation-heading">
             <p className="eyebrow">React example</p>
@@ -275,7 +293,7 @@ export function App({
   presentation = 'page',
 }: {
   application: Application | null;
-  presentation?: 'page' | 'popup' | 'sidebar';
+  presentation?: Presentation;
 }) {
   return (
     <div className="application">
