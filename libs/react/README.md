@@ -302,9 +302,25 @@ launcher hides while open; Close and scoped Escape request closure, then focus
 returns to the launcher when appropriate. The surrounding page stays interactive
 and Tab can leave the panel.
 
-The sidebar overlays the page. Content-pushing conversation layouts, peer-panel
-edge claims, SSR, hydration and public release remain separate work. Both panels
-are private contributor APIs.
+The sidebar overlays the page by default. To keep page content beside the open
+panel on wider screens, pass that content as `pageContent` and set `pushContent`:
+
+```tsx
+<ChatSidebar open={open} onOpenChange={setOpen} title="Conversation"
+  pageContent={<ConversationDirectory />} pushContent>
+  <ConversationView />
+</ChatSidebar>
+```
+
+`children` remains the chat panel content. The persistent page slot and panel
+retain their mounted children when visibility or the layout preference changes.
+The layout reserves 28rem at the inline end only while open with `pushContent`;
+closing or disabling it restores the page width. At 640px and below it always
+overlays with no reservation. Reservation applies only inside this sidebar's
+layout wrapper; it does not coordinate peer panels or claim global page edges.
+`className` still customizes the popup shell. Peer-panel edge claims, SSR,
+hydration and public release remain separate work. Both panels are private
+contributor APIs.
 
 ### Controlled conversation navigation
 

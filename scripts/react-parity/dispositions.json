@@ -1588,7 +1588,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/chat-sidebar.tsx",
-      "reason": "Private controlled non-modal full-height overlay reuses ChatPopup visibility, focus and retained children, with installed native dogfood. Content pushing, peer edge claims and full legacy parity remain open."
+      "reason": "Private controlled non-modal full-height sidebar reuses ChatPopup visibility, focus and retained children, with optional persistent page content and desktop content pushing in installed native dogfood. Peer edge claims and full legacy parity remain open."
     },
     {
       "id": "component:libs/chat/src/lib/compositions/chat-sidenav/chat-sidenav.component.ts#ChatSidenavComponent",
@@ -5512,7 +5512,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/chat-sidebar.tsx",
-      "reason": "Private controlled non-modal full-height overlay export; application owns execution and visibility. Content pushing and full legacy parity remain open."
+      "reason": "Private controlled non-modal full-height sidebar export with optional page content and desktop content pushing; application owns execution and visibility. Peer edge claims and full legacy parity remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatSidenavComponent",
@@ -9759,7 +9759,9 @@
         "T30"
       ],
       "treatment": "react",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/react/src/chat/chat-sidebar.tsx",
+      "reason": "Bounded private React sidebar includes optional persistent page content and desktop content pushing; peer edge claims and full composition parity remain open. Existing Angular implementation and release path remain unchanged."
     },
     {
       "id": "source:libs/chat/src/lib/compositions/chat-sidenav/chat-debug-gate.ts",
@@ -15540,21 +15542,21 @@
       "taskIds": ["T30"],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Private controlled non-modal full-height overlay; application owns visibility and execution. Native dogfood preserves retained views."
+      "reason": "Private controlled non-modal full-height sidebar with optional persistent page content and desktop content pushing; application owns visibility and execution. Native dogfood preserves retained views."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ChatSidebarProps",
       "taskIds": ["T30"],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Same readonly controlled visibility, labels and children as ChatPopup; no session or disposal ownership."
+      "reason": "Extends readonly controlled ChatPopup props with optional pageContent and pushContent layout preferences; no session, global edge or disposal ownership."
     },
     {
       "id": "source:libs/react/src/chat/chat-sidebar.tsx",
       "taskIds": ["T30"],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Full-height ChatPopup composition with scoped responsive sidebar styles; content pushing, peer edge claims and full composition parity remain open."
+      "reason": "Full-height ChatPopup composition with persistent page slot and optional desktop content pushing; mobile remains an overlay. Peer edge claims and full composition parity remain open."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ChatSidenav",

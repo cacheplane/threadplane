@@ -6,6 +6,110 @@ import { ChatSidebar } from './index';
 afterEach(cleanup);
 
 describe('ChatSidebar', () => {
+  it('reserves page space only for accepted open and opt-in push props', () => {
+    const change = vi.fn();
+    const sidebar = (open: boolean, pushContent?: boolean) => (
+      <ChatSidebar
+        open={open}
+        pushContent={pushContent}
+        title="Support"
+        onOpenChange={change}
+        pageContent={<input aria-label="Page filter" />}
+      />
+    );
+    const view = render(sidebar(false));
+    const layout = view.container.querySelector('.tp-chat-sidebar-layout');
+    const page = view.container.querySelector('.tp-chat-sidebar-layout__page');
+    expect(layout).toBeTruthy();
+    expect(page?.contains(view.getByRole('textbox'))).toBe(true);
+    expect(layout?.classList.contains('tp-chat-sidebar-layout--push')).toBe(
+      false
+    );
+    fireEvent.click(view.getByRole('button', { name: 'Chat' }));
+    expect(change).toHaveBeenLastCalledWith(true);
+    expect(layout?.classList.contains('tp-chat-sidebar-layout--push')).toBe(
+      false
+    );
+    view.rerender(sidebar(true));
+    expect(layout?.classList.contains('tp-chat-sidebar-layout--push')).toBe(
+      false
+    );
+    view.rerender(sidebar(true, true));
+    expect(layout?.classList.contains('tp-chat-sidebar-layout--push')).toBe(
+      true
+    );
+    view.rerender(sidebar(false, true));
+    expect(layout?.classList.contains('tp-chat-sidebar-layout--push')).toBe(
+      false
+    );
+    view.rerender(sidebar(true, false));
+    expect(layout?.classList.contains('tp-chat-sidebar-layout--push')).toBe(
+      false
+    );
+  });
+
+  it('retains the page, panel and drafts across layout and page-presence changes', () => {
+    const sidebar = (open: boolean, pushContent: boolean, hasPage = true) => (
+      <StrictMode>
+        <ChatSidebar
+          open={open}
+          pushContent={pushContent}
+          title="Support"
+          onOpenChange={vi.fn()}
+          pageContent={
+            hasPage ? (
+              <input aria-label="Page filter" defaultValue="" />
+            ) : undefined
+          }
+        >
+          <textarea aria-label="Panel draft" defaultValue="" />
+        </ChatSidebar>
+      </StrictMode>
+    );
+    const view = render(sidebar(true, true));
+    const page = view.container.querySelector('.tp-chat-sidebar-layout__page');
+    const panel = view.getByRole('dialog');
+    const filter = view.getByRole('textbox', {
+      name: 'Page filter',
+    }) as HTMLInputElement;
+    const draft = view.getByRole('textbox', {
+      name: 'Panel draft',
+    }) as HTMLTextAreaElement;
+    fireEvent.change(filter, { target: { value: 'Saved filter' } });
+    fireEvent.change(draft, { target: { value: 'Unsent draft' } });
+    filter.focus();
+    for (const [open, push] of [
+      [true, false],
+      [false, false],
+      [false, true],
+      [true, true],
+    ]) {
+      view.rerender(sidebar(open, push));
+      expect(
+        view.container.querySelector('.tp-chat-sidebar-layout__page')
+      ).toBe(page);
+      expect(view.container.querySelector('[role="dialog"]')).toBe(panel);
+      expect(view.getByRole('textbox', { name: 'Page filter' })).toBe(filter);
+      expect(filter.closest('[hidden], [inert], [role="dialog"]')).toBeNull();
+      expect(filter.value).toBe('Saved filter');
+      expect(view.container.querySelector('textarea')).toBe(draft);
+      expect(draft.value).toBe('Unsent draft');
+      // Accepted opening focuses the close button; layout-only changes do not.
+      if (!open) expect(document.activeElement).toBe(filter);
+      filter.focus();
+    }
+    view.rerender(sidebar(false, true, false));
+    expect(view.container.querySelector('.tp-chat-sidebar-layout__page')).toBe(
+      page
+    );
+    expect(page?.childNodes).toHaveLength(0);
+    expect(view.container.querySelector('textarea')).toBe(draft);
+    view.rerender(sidebar(true, false));
+    expect(view.container.querySelector('[role="dialog"]')).toBe(panel);
+    expect(view.container.querySelector('textarea')).toBe(draft);
+    expect(draft.value).toBe('Unsent draft');
+  });
+
   it('forwards labels, title, children and classes onto one non-modal popup with stable unique IDs', () => {
     const sidebar = (open: boolean) => (
       <>
@@ -24,7 +128,7 @@ describe('ChatSidebar', () => {
     );
     const view = render(sidebar(true));
     expect(view.container.children).toHaveLength(2);
-    const root = view.container.firstElementChild;
+    const root = view.container.querySelector('.tp-chat-popup');
     expect(root?.classList.contains('tp-chat-popup')).toBe(true);
     expect(root?.classList.contains('tp-chat-sidebar')).toBe(true);
     expect(root?.classList.contains('custom')).toBe(true);
@@ -54,7 +158,7 @@ describe('ChatSidebar', () => {
       </ChatSidebar>
     );
     const view = render(sidebar(false));
-    const root = view.container.firstElementChild;
+    const root = view.container.querySelector('.tp-chat-popup');
     const launcher = view.getByRole('button', { name: 'Chat' });
     const panel = view.container.querySelector('[role="dialog"]');
     launcher.focus();

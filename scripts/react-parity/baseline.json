@@ -1,15 +1,13 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "bbaa098751c5be3ee6381548e72742f69ca59c8f",
+  "baselineHead": "033a8d59d6f6d9a6b4477f9eb65d24762ffee028",
   "sourceState": {
     "modified": [
       "libs/react/README.md",
-      "libs/react/src/chat/index.ts",
+      "libs/react/src/chat/chat-sidebar.tsx",
       "libs/react/src/chat/styles.css"
     ],
-    "untracked": [
-      "libs/react/src/chat/chat-sidenav-scrim.tsx"
-    ]
+    "untracked": []
   },
   "scope": {
     "libraries": [
@@ -855,7 +853,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "644f7fcdd78699b8822c445d2593907ee4ad9332814efe2464b45d9efd286d82"
+      "sha256": "a3f8486d2561a07cd720b1076600595ef3008dc59dedee1b643c64d2b62edacb"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -873,7 +871,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "4ed1dd332a3352cd5e771d7e84a0e2af48960ad374d5de0e31400b34af0988e2"
+      "sha256": "670270400a53626ef0d2493395dd9095a44c4ec816e3809c53827b5cff777d04"
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -10374,7 +10372,7 @@
           "path": "libs/react/src/chat/chat-sidebar.tsx",
           "symbol": "ChatSidebar",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function ChatSidebar({ className, open, ...props }: ChatSidebarProps) {\n    return (<ChatPopup {...props} open={open} className={['tp-chat-sidebar', open && 'tp-chat-sidebar--open', className]\n            .filter(Boolean)\n            .join(' ')}/>);\n}"
+          "signature": "export function ChatSidebar({ className, open, pageContent, pushContent = false, ...props }: ChatSidebarProps) {\n    return (<div className={[\n            'tp-chat-sidebar-layout',\n            open && pushContent && 'tp-chat-sidebar-layout--push',\n        ]\n            .filter(Boolean)\n            .join(' ')}>\n      <div className=\"tp-chat-sidebar-layout__page\">{pageContent}</div>\n      <ChatPopup {...props} open={open} className={[\n            'tp-chat-sidebar',\n            open && 'tp-chat-sidebar--open',\n            className,\n        ]\n            .filter(Boolean)\n            .join(' ')}/>\n    </div>);\n}"
         }
       ]
     },
@@ -10387,8 +10385,8 @@
         {
           "path": "libs/react/src/chat/chat-sidebar.tsx",
           "symbol": "ChatSidebarProps",
-          "syntaxKind": "TypeAliasDeclaration",
-          "signature": "export type ChatSidebarProps = ChatPopupProps;"
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface ChatSidebarProps extends ChatPopupProps {\n    readonly pageContent?: ReactNode;\n    readonly pushContent?: boolean;\n}"
         }
       ]
     },
@@ -14902,7 +14900,7 @@
       "id": "source:libs/react/src/chat/chat-sidebar.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/chat-sidebar.tsx",
-      "sha256": "6513629da3aaa787d27b335b860b323335c177db6c4f4c1130cb0bd148e70a61"
+      "sha256": "bfcd318f1778e2e706a18db667240d76959ddbc8f11fd9242070276ec8d94c8b"
     },
     {
       "id": "source:libs/react/src/chat/chat-sidenav-scrim.tsx",

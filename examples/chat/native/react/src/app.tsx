@@ -113,22 +113,54 @@ function Composer({
 
 function ConversationSurface({
   presentation,
+  directory,
   children,
 }: {
   presentation: Exclude<Presentation, 'sidenav'>;
+  directory?: ReactNode;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
-  const Panel = presentation === 'sidebar' ? ChatSidebar : ChatPopup;
+  const [pushContent, setPushContent] = useState(true);
+  if (presentation === 'sidebar') {
+    return (
+      <ChatSidebar
+        open={open}
+        onOpenChange={setOpen}
+        pushContent={pushContent}
+        title="Conversation"
+        className="native-conversation-panel"
+        pageContent={
+          <div className="native-sidebar-page">
+            {directory}
+            <label className="native-sidebar-preference">
+              <input
+                type="checkbox"
+                checked={pushContent}
+                onChange={(event) => setPushContent(event.target.checked)}
+                aria-describedby="sidebar-layout-hint"
+              />
+              <span>Keep page beside chat</span>
+            </label>
+            <p id="sidebar-layout-hint" className="muted">
+              On wide screens, make room for chat beside the page.
+            </p>
+          </div>
+        }
+      >
+        {children}
+      </ChatSidebar>
+    );
+  }
   return presentation !== 'page' ? (
-    <Panel
+    <ChatPopup
       open={open}
       onOpenChange={setOpen}
       title="Conversation"
       className="native-conversation-panel"
     >
       {children}
-    </Panel>
+    </ChatPopup>
   ) : (
     <>{children}</>
   );
@@ -211,18 +243,23 @@ function Conversation({
   return (
     <div
       className={`conversation-layout${
-        presentation === 'sidenav' ? ' conversation-layout--sidenav' : ''
+        presentation === 'sidenav'
+          ? ' conversation-layout--sidenav'
+          : presentation === 'sidebar'
+          ? ' conversation-layout--sidebar'
+          : ''
       }`}
     >
       {presentation === 'sidenav' ? (
         <NativeNavigation selectedId={selection.id}>
           {directory}
         </NativeNavigation>
-      ) : (
+      ) : presentation !== 'sidebar' ? (
         directory
-      )}
+      ) : null}
       <ConversationSurface
         presentation={presentation === 'sidenav' ? 'page' : presentation}
+        directory={presentation === 'sidebar' ? directory : undefined}
       >
         <section className="conversation" aria-labelledby="conversation-title">
           <div className="conversation-heading">
