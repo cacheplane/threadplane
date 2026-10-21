@@ -308,24 +308,31 @@ are private contributor APIs.
 
 ### Controlled conversation navigation
 
-The private `/chat` entry also exports `ChatSidenav`, `ChatSidenavMode` and
-`ChatSidenavProps`. This shell accepts application-owned navigation as `children`:
+The private `/chat` entry also exports `ChatSidenav`, `ChatSidenavMode`,
+`ChatSidenavProps`, `ChatSidenavScrim` and `ChatSidenavScrimProps`. The navigation
+shell accepts application-owned navigation as `children`:
 
 ```tsx
-<ChatSidenav
-  mode={mode}
-  open={drawerOpen}
-  onModeChange={setDesktopMode}
-  onOpenChange={setDrawerOpen}
->
-  <ConversationDirectory />
-</ChatSidenav>
+<>
+  <ChatSidenavScrim
+    open={mode === 'drawer' && drawerOpen}
+    onDismiss={() => setDrawerOpen(false)}
+  />
+  <ChatSidenav
+    mode={mode}
+    open={drawerOpen}
+    onModeChange={setDesktopMode}
+    onOpenChange={setDrawerOpen}
+  >
+    <ConversationDirectory />
+  </ChatSidenav>
+</>
 ```
 
 Required `mode` selects `expanded`, `collapsed` or `drawer`; `open` controls only
 the drawer. Expanded and collapsed navigation stay in normal flow at 18rem and
 4rem. The drawer sits at the viewport's inline-start edge, is at most 20rem wide, and
-uses a named non-modal navigation landmark with no scrim or focus trap. The
+uses a named non-modal navigation landmark with no built-in scrim or focus trap. The
 application chooses modes and owns responsive breakpoints and persistence.
 The consumer provides a bounded desktop height and lays out sibling content.
 `onModeChange` requests only `expanded` or `collapsed`; the launcher, Close and
@@ -342,8 +349,20 @@ listeners. Optional `label`, `launcherLabel`, `closeLabel`, `expandLabel`,
 Defaults are Conversations, Open conversations, Close conversations, Expand
 conversations and Collapse conversations. Use the existing scoped chat stylesheet.
 
+`ChatSidenavScrim` is an optional sibling backdrop, rendered only when its required
+`open` prop is true. It is an ordinary keyboard-accessible button; activation calls
+the required `onDismiss` callback without changing visibility itself. Optional
+`label` defaults to Close conversation navigation backdrop; `className` customizes
+styling. Its fixed viewport coverage sits below the drawer and above the page.
+Mount both outside transformed or clipping ancestors and enclosing stacking
+contexts. The application owns visibility and focus restoration when the focused
+backdrop is removed. The primitive adds no Escape listener, focus trap, background
+inertness, portal or session behavior; adding it does not make navigation modal.
+
 The native React example opts in with exact `?presentation=sidenav`, keeps the
 conversation inline, and chooses drawer mode at widths of 700px and below.
+It composes the sibling scrim only while the drawer is open, restores local focus
+after backdrop dismissal, and removes the backdrop on desktop mode changes.
 Its directory filter and composer survive navigation visibility and breakpoint
 changes; selecting a different conversation deliberately resets that composer's
 draft. This is a bounded children-based navigation slice. Project/archive menus,

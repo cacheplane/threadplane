@@ -1,5 +1,15 @@
-import { useEffect, useState, type ReactNode } from 'react';
-import { ChatSidenav, type ChatSidenavMode } from '@threadplane/react/chat';
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
+import {
+  ChatSidenav,
+  ChatSidenavScrim,
+  type ChatSidenavMode,
+} from '@threadplane/react/chat';
 
 const narrowQuery = '(max-width: 700px)';
 
@@ -17,6 +27,9 @@ export function NativeNavigation({
     () => window.matchMedia(narrowQuery).matches
   );
   const [open, setOpen] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+  const scrimFocused = useRef(false);
+  const scrimOpen = narrow && open;
 
   useEffect(() => {
     const media = window.matchMedia(narrowQuery);
@@ -31,15 +44,45 @@ export function NativeNavigation({
 
   useEffect(() => setOpen(false), [selectedId]);
 
+  useLayoutEffect(() => {
+    if (scrimOpen || !scrimFocused.current) return;
+    scrimFocused.current = false;
+    const document = root.current?.ownerDocument;
+    if (document?.activeElement !== document?.body) return;
+    root.current
+      ?.querySelector<HTMLButtonElement>(
+        narrow ? '.tp-chat-sidenav__launcher' : '.tp-chat-sidenav__toggle'
+      )
+      ?.focus();
+  }, [scrimOpen, narrow]);
+
   return (
-    <ChatSidenav
-      mode={narrow ? 'drawer' : desktopMode}
-      open={open}
-      onOpenChange={setOpen}
-      onModeChange={setDesktopMode}
-      className="native-conversation-sidenav"
+    <div
+      ref={root}
+      onFocusCapture={(event) => {
+        scrimFocused.current = event.target.classList.contains(
+          'tp-chat-sidenav-scrim'
+        );
+      }}
+      onBlurCapture={(event) => {
+        if (
+          event.relatedTarget &&
+          !event.currentTarget.contains(event.relatedTarget)
+        ) {
+          scrimFocused.current = false;
+        }
+      }}
     >
-      {children}
-    </ChatSidenav>
+      <ChatSidenavScrim open={scrimOpen} onDismiss={() => setOpen(false)} />
+      <ChatSidenav
+        mode={narrow ? 'drawer' : desktopMode}
+        open={open}
+        onOpenChange={setOpen}
+        onModeChange={setDesktopMode}
+        className="native-conversation-sidenav"
+      >
+        {children}
+      </ChatSidenav>
+    </div>
   );
 }

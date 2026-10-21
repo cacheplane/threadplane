@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "28a8e449c25e54b1d6b13edce8572d3d3cb72772",
+  "baselineHead": "bbaa098751c5be3ee6381548e72742f69ca59c8f",
   "sourceState": {
     "modified": [
       "libs/react/README.md",
@@ -8,7 +8,7 @@
       "libs/react/src/chat/styles.css"
     ],
     "untracked": [
-      "libs/react/src/chat/chat-sidenav.tsx"
+      "libs/react/src/chat/chat-sidenav-scrim.tsx"
     ]
   },
   "scope": {
@@ -855,7 +855,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "724a51bd21455971e16104dc04c09178dee62abe419bed0af2773c955f8c49d5"
+      "sha256": "644f7fcdd78699b8822c445d2593907ee4ad9332814efe2464b45d9efd286d82"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -873,7 +873,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "779b78129415c368203bdd6b9232bce33ffb4bb1f021e046e199a5659cede0b7"
+      "sha256": "4ed1dd332a3352cd5e771d7e84a0e2af48960ad374d5de0e31400b34af0988e2"
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -10435,6 +10435,34 @@
       ]
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidenavScrim",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ChatSidenavScrim",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/chat-sidenav-scrim.tsx",
+          "symbol": "ChatSidenavScrim",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function ChatSidenavScrim({ open, onDismiss, label = 'Close conversation navigation backdrop', className, }: ChatSidenavScrimProps) {\n    if (!open)\n        return null;\n    return (<button type=\"button\" aria-label={label} className={['tp-chat', 'tp-chat-sidenav-scrim', className]\n            .filter(Boolean)\n            .join(' ')} onClick={onDismiss}/>);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidenavScrimProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ChatSidenavScrimProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/chat-sidenav-scrim.tsx",
+          "symbol": "ChatSidenavScrimProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface ChatSidenavScrimProps {\n    readonly open: boolean;\n    readonly onDismiss: () => void;\n    readonly label?: string;\n    readonly className?: string;\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/react/src/chat/index.ts#Citations",
       "kind": "export",
       "path": "libs/react/src/chat/index.ts",
@@ -14877,6 +14905,12 @@
       "sha256": "6513629da3aaa787d27b335b860b323335c177db6c4f4c1130cb0bd148e70a61"
     },
     {
+      "id": "source:libs/react/src/chat/chat-sidenav-scrim.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/chat-sidenav-scrim.tsx",
+      "sha256": "ed0421501d48be76e84710878fd187c4e8a316e035bde51a2d9b3664e733d970"
+    },
+    {
       "id": "source:libs/react/src/chat/chat-sidenav.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/chat-sidenav.tsx",
@@ -14898,7 +14932,7 @@
       "id": "source:libs/react/src/chat/index.ts",
       "kind": "source",
       "path": "libs/react/src/chat/index.ts",
-      "sha256": "bc29ef7d7f24d2c6272ba7604fa5df1d779e495e735182e3a6ad9b31d0f67572"
+      "sha256": "a2fb7ce0b791e0bac907e200b1eded55c5f220a410aeffd6225c124f9cf05ed9"
     },
     {
       "id": "source:libs/react/src/chat/internal/isomorphic-layout-effect.ts",

@@ -2137,9 +2137,9 @@
         "T30"
       ],
       "treatment": "react",
-      "status": "planned",
-      "target": "libs/react/src/chat/sidenav-scrim.tsx",
-      "reason": "Native component. Accessible dismissal behavior, layering and pointer handling."
+      "status": "in-progress",
+      "target": "libs/react/src/chat/chat-sidenav-scrim.tsx",
+      "reason": "Private controlled sibling backdrop button with accessible dismissal requests and viewport layering. Native composition owns focus restoration; full T30 parity remains open."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-subagents/chat-subagents.component.ts#ChatSubagentsComponent",
@@ -5540,9 +5540,9 @@
         "T30"
       ],
       "treatment": "react",
-      "status": "planned",
-      "target": "libs/react/src/chat/sidenav-scrim.tsx",
-      "reason": "Native component. Accessible dismissal behavior, layering and pointer handling."
+      "status": "in-progress",
+      "target": "libs/react/src/chat/chat-sidenav-scrim.tsx",
+      "reason": "Private controlled sibling backdrop button with accessible dismissal requests and viewport layering. Native composition owns focus restoration; full T30 parity remains open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatStreamingMdComponent",
@@ -10312,7 +10312,9 @@
         "T30"
       ],
       "treatment": "react",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/react/src/chat/chat-sidenav-scrim.tsx",
+      "reason": "Private sibling backdrop presentation and request-only dismissal; application owns focus and visibility. Full T30 composition parity remains open."
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-subagents/chat-subagents.component.ts",
@@ -15581,6 +15583,27 @@
       "treatment": "react",
       "status": "in-progress",
       "reason": "Bounded private named navigation shell with persistent hidden/inert children, accepted-transition local focus and scoped Escape. No scrim, global listeners, media query ownership or full Angular composition parity."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidenavScrim",
+      "taskIds": ["T30"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Optional controlled sibling backdrop with semantic keyboard dismissal. Native example composes only for open narrow drawers; no modal or runtime ownership."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidenavScrimProps",
+      "taskIds": ["T30"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly required open and onDismiss, optional label and className. Application owns visibility and focus restoration."
+    },
+    {
+      "id": "source:libs/react/src/chat/chat-sidenav-scrim.tsx",
+      "taskIds": ["T30"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Separate controlled backdrop button with scoped viewport layering; no focus trap, portal, global listener or session behavior."
     }
   ]
 }

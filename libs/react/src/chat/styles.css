@@ -255,6 +255,22 @@
 .tp-chat-sidebar--open .tp-chat-popup__launcher {
   display: none;
 }
+.tp-chat.tp-chat-sidenav-scrim,
+.tp-chat.tp-chat-sidenav-scrim:hover {
+  position: fixed;
+  inset: 0;
+  z-index: 105;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
+.tp-chat-sidenav-scrim:focus-visible {
+  outline: 2px solid var(--tp-chat-accent);
+  outline-offset: -4px;
+}
 .tp-chat-sidenav {
   min-height: 0;
   height: 100%;
