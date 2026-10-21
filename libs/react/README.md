@@ -258,6 +258,34 @@ Reading above the bottom preserves position. The observer disconnects on unmount
 without it, row-update following remains available. The list uses one unstyled
 content wrapper inside its existing scroll region.
 
+## Controlled conversation lists
+
+The private `ThreadList` view from `@threadplane/react/chat` renders supplied
+conversation rows without owning their data or selection:
+
+```tsx
+<ThreadList
+  threads={loadedThreads}
+  activeThreadId={selectedId}
+  onSelect={selectThread}
+  label="Loaded conversations"
+/>
+```
+
+`ThreadListItem` has a readonly `id` and optional plain-text `title`; a missing
+or empty title falls back to the full ID. The readonly collection keeps its
+supplied order. Provide unique stable IDs so surviving rows retain their DOM
+through reordering and updates. Selection requests pass the exact ID to
+`onSelect`; only the supplied `activeThreadId` controls `aria-current`. There
+are no automatic commands on mount, rerender or removal.
+
+The view renders a named semantic list of ordinary buttons, with default label
+“Conversations”, scoped wrapping/focus styles and optional root `className`.
+An empty collection renders an empty list. The application owns loaded-title
+filtering, loading/error/empty notices, data fetching and execution. Rename,
+delete, archive, pin/project actions, drag reordering, relative timestamps and
+custom row rendering remain future work. This is a bounded private T29 slice.
+
 ## Controlled chat panels
 
 `ChatPopup` is a private non-modal shell from `@threadplane/react/chat`:

@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import test from 'node:test';
 import ts from 'typescript';
 
-test('plain declaration proof checks navigation and sidebar layout type-only contracts', t => {
+test('plain declaration proof checks navigation, sidebar and thread-list type-only contracts', t => {
   const consumer = mkdtempSync(join(tmpdir(), 'threadplane-sidenav-types-'));
   t.after(() => rmSync(consumer, { recursive: true, force: true }));
   const directory = join(consumer, 'node_modules/@threadplane/react');
@@ -19,7 +19,9 @@ test('plain declaration proof checks navigation and sidebar layout type-only con
   const declaration = `export type ChatSidenavMode = 'expanded' | 'collapsed' | 'drawer';
 export interface ChatSidenavProps { readonly mode: ChatSidenavMode; readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly onModeChange: (mode: Exclude<ChatSidenavMode, 'drawer'>) => void; }
 export interface ChatSidenavScrimProps { readonly open: boolean; readonly onDismiss: () => void; readonly label?: string; readonly className?: string; }
-export interface ChatSidebarProps { readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly title: string; readonly pageContent?: import('react').ReactNode; readonly pushContent?: boolean; }`;
+export interface ChatSidebarProps { readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly title: string; readonly pageContent?: import('react').ReactNode; readonly pushContent?: boolean; }
+export interface ThreadListItem { readonly id: string; readonly title?: string; }
+export interface ThreadListProps { readonly threads: readonly ThreadListItem[]; readonly onSelect: (threadId: string) => void; readonly activeThreadId?: string | null; readonly label?: string; readonly className?: string; }`;
   const source = join(consumer, 'index.ts');
   writeFileSync(source, packageVerifier.plainExportTypes(['@threadplane/react/chat']));
   const compile = text => {
@@ -58,7 +60,25 @@ export interface ChatSidebarProps { readonly open: boolean; readonly onOpenChang
     ['readonly pushContent?: boolean', 'readonly pushContent?: boolean | string'],
     ['readonly pushContent?: boolean', 'pushContent?: boolean'],
   ]) assert.match(compile(mutateSidebar(before, after)), /false.*true/);
-  assert.doesNotMatch(packageVerifier.plainExportTypes(['@threadplane/core']), /ChatSidenav/);
+  assert.match(compile(declaration.replaceAll('ThreadListItem', 'HiddenThreadListItem')), /ThreadListItem/);
+  assert.match(compile(declaration.replace('ThreadListProps', 'HiddenThreadListProps')), /ThreadListProps/);
+  const threadList = declaration.indexOf('export interface ThreadListItem');
+  const mutateThreadList = (before, after) => declaration.slice(0, threadList) + declaration.slice(threadList).replace(before, after);
+  for (const [before, after] of [
+    ['readonly id: string', 'readonly id?: string'],
+    ['readonly id: string', 'id: string'],
+    ['readonly title?: string', 'readonly title: string'],
+    ['readonly title?: string', 'readonly title?: string | number'],
+    ['readonly threads: readonly ThreadListItem[]', 'readonly threads?: readonly ThreadListItem[]'],
+    ['readonly threads: readonly ThreadListItem[]', 'readonly threads: ThreadListItem[]'],
+    ['readonly onSelect: (threadId: string) => void', 'readonly onSelect?: (threadId: string) => void'],
+    ['readonly onSelect: (threadId: string) => void', 'readonly onSelect: (threadId: number) => void'],
+    ['readonly activeThreadId?: string | null', 'readonly activeThreadId: string | null'],
+    ['readonly activeThreadId?: string | null', 'readonly activeThreadId?: string'],
+    ['readonly label?: string', 'readonly label?: number'],
+    ['readonly className?: string', 'className?: string'],
+  ]) assert.match(compile(mutateThreadList(before, after)), /false.*true/);
+  assert.doesNotMatch(packageVerifier.plainExportTypes(['@threadplane/core']), /ChatSidenav|ThreadList|from 'react'/);
 });
 
 test('JSON feature exposes only its owned factory', () => {
@@ -268,7 +288,7 @@ for (const [name, entry, files] of [
 });
 test('React chat requires its real supported export', () => {
   const component = () => undefined;
-  const supported = { ApprovalCard: component, Chat: component, ChatPopup: component, ChatSidebar: component, ChatSidenav: component, ChatSidenavScrim: component, ChatInput: component, Citations: component, MessageList: component, MessageActions: component, Reasoning: component, TextTranscript: component, ToolObservation: component };
+  const supported = { ApprovalCard: component, Chat: component, ChatPopup: component, ChatSidebar: component, ChatSidenav: component, ChatSidenavScrim: component, ChatInput: component, Citations: component, MessageList: component, MessageActions: component, Reasoning: component, TextTranscript: component, ToolObservation: component, ThreadList: component };
   assert.throws(() => packageVerifier.assertSupportedExports('react/chat', {}), /ApprovalCard/);
   for (const name of Object.keys(supported)) {
     const { [name]: _omitted, ...rest } = supported;

@@ -8,6 +8,7 @@ import {
   Citations,
   MessageList,
   Reasoning,
+  ThreadList,
   ToolObservation,
 } from '@threadplane/react/chat';
 import type {
@@ -222,19 +223,13 @@ function Conversation({
           refresh before trying again.
         </p>
       )}
-      <ul className="conversation-list" aria-label="Loaded conversations">
-        {rows.map((row) => (
-          <li key={row.id}>
-            <button
-              type="button"
-              aria-current={row.id === selection.id ? 'true' : undefined}
-              onClick={() => application.select(row.id)}
-            >
-              {row.title}
-            </button>
-          </li>
-        ))}
-      </ul>
+      <ThreadList
+        threads={rows}
+        activeThreadId={selection.id}
+        onSelect={application.select}
+        label="Loaded conversations"
+        className="conversation-list"
+      />
       {snapshot.list.status !== 'pending' && rows.length === 0 && (
         <p className="muted">No loaded conversations match.</p>
       )}
