@@ -222,7 +222,7 @@ export function plainExportTypes(specifiers) {
   const namespaces = specifiers.map((specifier, index) => `import * as entry${index} from ${JSON.stringify(specifier)};\nexport type Entry${index} = typeof entry${index};`).join('\n');
   if (!specifiers.includes('@threadplane/react/chat')) return namespaces;
   return `${namespaces}
-import type { ChatSidenavMode, ChatSidenavProps } from '@threadplane/react/chat';
+import type { ChatSidenavMode, ChatSidenavProps, ChatSidenavScrimProps } from '@threadplane/react/chat';
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
 type Assert<T extends true> = T;
 type Controlled = Pick<ChatSidenavProps, 'mode' | 'open' | 'onOpenChange' | 'onModeChange'>;
@@ -232,6 +232,11 @@ export type SidenavModePropContract = Assert<Equal<ChatSidenavProps['mode'], Cha
 export type SidenavOpenPropContract = Assert<Equal<ChatSidenavProps['open'], boolean>>;
 export type SidenavModeCallbackContract = Assert<Equal<ChatSidenavProps['onModeChange'], (mode: Exclude<ChatSidenavMode, 'drawer'>) => void>>;
 export type SidenavOpenCallbackContract = Assert<Equal<ChatSidenavProps['onOpenChange'], (open: boolean) => void>>;
+type ScrimControlled = Pick<ChatSidenavScrimProps, 'open' | 'onDismiss'>;
+export type ScrimRequiredContract = Assert<Equal<ScrimControlled, Required<ScrimControlled>>>;
+export type ScrimOpenContract = Assert<Equal<ChatSidenavScrimProps['open'], boolean>>;
+export type ScrimDismissContract = Assert<Equal<ChatSidenavScrimProps['onDismiss'], () => void>>;
+export type ScrimOptionsContract = Assert<Equal<Pick<ChatSidenavScrimProps, 'label' | 'className'>, { readonly label?: string; readonly className?: string }>>;
 `;
 }
 
@@ -338,6 +343,7 @@ export function assertSupportedExports(project, entry) {
         'ChatPopup',
         'ChatSidebar',
         'ChatSidenav',
+        'ChatSidenavScrim',
         'ChatInput',
         'Citations',
         'MessageList',

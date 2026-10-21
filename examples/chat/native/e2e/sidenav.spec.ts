@@ -143,6 +143,34 @@ test('installed React sidenav retains navigation, draft and a running response a
       name: 'Close conversations',
       exact: true,
     });
+    const scrim = page.getByRole('button', {
+      name: 'Close conversation navigation backdrop',
+      exact: true,
+    });
+    const expectFullBackdrop = async (edge: 'left' | 'right') => {
+      const viewport = page.viewportSize();
+      assert.ok(viewport);
+      const x = edge === 'left' ? 1 : viewport.width - 1;
+      await page.mouse.move(edge === 'left' ? 24 : viewport.width - 24, 820);
+      expect(
+        await scrim.evaluate((node, x) => {
+          const style = getComputedStyle(node);
+          return {
+            borderRadius: style.borderRadius,
+            backgroundColor: style.backgroundColor,
+            topCornerCovered: document.elementFromPoint(x, 1) === node,
+            bottomCornerCovered:
+              document.elementFromPoint(x, innerHeight - 1) === node,
+          };
+        }, x)
+      ).toEqual({
+        borderRadius: '0px',
+        backgroundColor: 'rgba(0, 0, 0, 0.4)',
+        topCornerCovered: true,
+        bottomCornerCovered: true,
+      });
+    };
+    await expect(scrim).toHaveCount(0);
     await expect(draft).toBeEnabled();
     await expect(
       page.getByText('Saved answer a.', { exact: true })
@@ -216,6 +244,62 @@ test('installed React sidenav retains navigation, draft and a running response a
       );
       expect(rect.width).toBeCloseTo(Math.min(20 * rem, width), 0);
       expect(rect.height).toBe(844);
+      const backdrop = await scrim.boundingBox();
+      expect(backdrop).toEqual({ x: 0, y: 0, width, height: 844 });
+      await expectFullBackdrop('right');
+      expect(
+        await scrim.evaluate((node) => getComputedStyle(node).position)
+      ).toBe('fixed');
+      expect(
+        await scrim.evaluate((node) => Number(getComputedStyle(node).zIndex))
+      ).toBeLessThan(
+        await panel.evaluate((node) => Number(getComputedStyle(node).zIndex))
+      );
+      // A real underlying control proves the full-viewport backdrop wins hit testing.
+      await page.evaluate(() => {
+        const probe = document.createElement('button');
+        probe.id = 'scrim-underlying-probe';
+        probe.textContent = 'Underlying control';
+        probe.style.cssText =
+          'position:fixed;right:12px;bottom:12px;width:24px;height:24px;z-index:100';
+        probe.dataset.activations = '0';
+        probe.onclick = () => {
+          probe.dataset.activations = String(
+            Number(probe.dataset.activations) + 1
+          );
+        };
+        document.body.append(probe);
+      });
+      expect(
+        await scrim.evaluate(
+          (node) => document.elementFromPoint(innerWidth - 24, 820) === node
+        )
+      ).toBe(true);
+      expect(
+        await panel.evaluate((node) =>
+          node.contains(document.elementFromPoint(8, 8))
+        )
+      ).toBe(true);
+      await page.mouse.click(width - 24, 820);
+      await expect(nav).toBeHidden();
+      await expect(scrim).toHaveCount(0);
+      await expect(launcher).toBeFocused();
+      await expect(page.locator('#scrim-underlying-probe')).toHaveAttribute(
+        'data-activations',
+        '0'
+      );
+      await page
+        .locator('#scrim-underlying-probe')
+        .evaluate((node) => node.remove());
+      expect(backend.requests).toHaveLength(6);
+      await launcher.click();
+      await scrim.focus();
+      await page.keyboard.press(width === 390 ? 'Enter' : 'Space');
+      await expect(nav).toBeHidden();
+      await expect(launcher).toBeFocused();
+      expect(backend.requests).toHaveLength(6);
+      await launcher.click();
+      await expect(close).toBeFocused();
       await page.keyboard.press('Tab');
       await expect(
         nav.getByRole('button', { name: 'Refresh', exact: true })
@@ -253,9 +337,18 @@ test('installed React sidenav retains navigation, draft and a running response a
           () => document.documentElement.scrollWidth <= innerWidth
         )
       ).toBe(true);
-      // Focus on a disappearing drawer control must move to the desktop toggle.
+      // Keep the drawer's own disappearing-control focus coverage too.
+      await close.focus();
       await page.setViewportSize({ width: 1280, height: 900 });
       await expect(expand).toBeFocused();
+      await expect(scrim).toHaveCount(0);
+      await page.setViewportSize({ width, height: 844 });
+      await launcher.click();
+      // Focus on the removed sibling backdrop must move to the desktop toggle.
+      await scrim.focus();
+      await page.setViewportSize({ width: 1280, height: 900 });
+      await expect(expand).toBeFocused();
+      await expect(scrim).toHaveCount(0);
       await expect(filter).toBeHidden();
       expect(
         await retainedDraft.evaluate(
@@ -276,8 +369,28 @@ test('installed React sidenav retains navigation, draft and a running response a
     const rtl = await panel.boundingBox();
     assert.ok(rtl);
     expect(rtl.x + rtl.width).toBe(600);
-    await close.click();
+    await expectFullBackdrop('left');
+    expect(await scrim.boundingBox()).toEqual({
+      x: 0,
+      y: 0,
+      width: 600,
+      height: 844,
+    });
+    expect(
+      await scrim.evaluate(
+        (node) => document.elementFromPoint(24, 820) === node
+      )
+    ).toBe(true);
+    expect(
+      await panel.evaluate((node) =>
+        node.contains(document.elementFromPoint(592, 8))
+      )
+    ).toBe(true);
+    await page.mouse.click(24, 820);
+    await expect(nav).toBeHidden();
+    await expect(scrim).toHaveCount(0);
     await expect(launcher).toBeFocused();
+    expect(backend.requests).toHaveLength(6);
     await page.locator('html').evaluate((node) => node.removeAttribute('dir'));
     await page.setViewportSize({ width: 1280, height: 900 });
     await expand.click();

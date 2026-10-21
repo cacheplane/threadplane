@@ -432,7 +432,8 @@ Exact `?presentation=sidenav` opts into the installed private `ChatSidenav`
 shell around the existing loaded-conversation directory. The selected
 conversation stays inline. Desktop navigation can expand to 18rem or collapse
 to 4rem; at widths of 700px and below the application chooses a non-modal
-inline-start drawer, at most 20rem wide, without a scrim or focus trap. Returning to
+inline-start drawer, at most 20rem wide, with the optional sibling
+`ChatSidenavScrim` backdrop. Navigation remains non-modal with no focus trap. Returning to
 desktop restores the previous expanded/collapsed choice. The default and unknown
 presentation values retain the page layout.
 
@@ -443,9 +444,12 @@ composer DOM and unsent draft, and send no conversation commands. An active
 response continues through these navigation changes. Selecting a different
 conversation retains the existing deliberate composer draft reset.
 
-The drawer launcher, Close and scoped Escape request controlled changes; focus
+The drawer launcher, Close, scoped Escape and backdrop activation request controlled changes; focus
 moves only after accepted visibility/mode changes. Hidden directory content is
-inert, and Tab can reach the surrounding page. This bounded children-based
+inert, and Tab can reach the surrounding page. Focus returns to the launcher when a focused backdrop is dismissed,
+or to the desktop toggle when a breakpoint removes it; an already focused page
+control retains focus. The backdrop covers page pointer targets while open.
+This bounded children-based
 navigation does not implement Angular project/archive menus, global shortcuts,
 debug ownership or full T30 parity. Popup and sidebar remain separate overlay
 presentations.

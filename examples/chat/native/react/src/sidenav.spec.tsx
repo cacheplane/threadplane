@@ -10,6 +10,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { createReactApplication } from './application';
 import { applicationFixture } from './application-fixture';
 import { App } from './app';
+import { NativeNavigation } from './native-navigation';
 
 afterEach(() => {
   cleanup();
@@ -69,6 +70,11 @@ it('sidenav mode changes retain the filter, conversation draft and owners and cl
       </StrictMode>
     );
     const nav = view.getByRole('navigation', { name: 'Conversations' });
+    expect(
+      view.queryByRole('button', {
+        name: 'Close conversation navigation backdrop',
+      })
+    ).toBeNull();
     const filter = view.getByRole('searchbox') as HTMLInputElement;
     const input = view.getByRole('textbox', {
       name: 'Message',
@@ -90,6 +96,14 @@ it('sidenav mode changes retain the filter, conversation draft and owners and cl
     const launcher = view.getByRole('button', { name: 'Open conversations' });
     fireEvent.click(launcher);
     expect(view.getByRole('navigation')).toBe(nav);
+    const scrim = view.getByRole('button', {
+      name: 'Close conversation navigation backdrop',
+    });
+    scrim.focus();
+    fireEvent.click(scrim);
+    expect(view.queryByRole('navigation')).toBeNull();
+    expect(document.activeElement).toBe(launcher);
+    fireEvent.click(launcher);
     fireEvent.click(view.getByRole('button', { name: 'Close conversations' }));
     expect(document.activeElement).toBe(launcher);
     act(() => media.resize(false));
@@ -116,6 +130,90 @@ it('sidenav mode changes retain the filter, conversation draft and owners and cl
     application.dispose();
   }
   expect(fixture.counters.disposals).toBe(fixture.counters.owners);
+});
+
+it.each(['expanded', 'collapsed'] as const)(
+  'returns focused scrim removal to the %s desktop toggle and keeps external focus',
+  (desktopMode) => {
+    const { media, listeners, application } = navigationFixture();
+    const view = render(
+      <StrictMode>
+        <button>Outside</button>
+        <NativeNavigation selectedId="a">
+          <input aria-label="Local filter" />
+        </NativeNavigation>
+      </StrictMode>
+    );
+    if (desktopMode === 'collapsed')
+      fireEvent.click(
+        view.getByRole('button', { name: 'Collapse conversations' })
+      );
+    act(() => media.resize(true));
+    fireEvent.click(view.getByRole('button', { name: 'Open conversations' }));
+    view
+      .getByRole('button', { name: 'Close conversation navigation backdrop' })
+      .focus();
+    act(() => media.resize(false));
+    expect(
+      view.queryByRole('button', {
+        name: 'Close conversation navigation backdrop',
+      })
+    ).toBeNull();
+    expect(document.activeElement).toBe(
+      view.getByRole('button', {
+        name:
+          desktopMode === 'expanded'
+            ? 'Collapse conversations'
+            : 'Expand conversations',
+      })
+    );
+    act(() => media.resize(true));
+    fireEvent.click(view.getByRole('button', { name: 'Open conversations' }));
+    view
+      .getByRole('button', { name: 'Close conversation navigation backdrop' })
+      .focus();
+    const outside = view.getByRole('button', { name: 'Outside' });
+    outside.focus();
+    act(() => media.resize(false));
+    expect(document.activeElement).toBe(outside);
+    // A real transfer clears ownership even if the external control later blurs.
+    act(() => media.resize(true));
+    fireEvent.click(view.getByRole('button', { name: 'Open conversations' }));
+    view
+      .getByRole('button', { name: 'Close conversation navigation backdrop' })
+      .focus();
+    outside.focus();
+    outside.blur();
+    act(() => media.resize(false));
+    expect(document.activeElement).toBe(document.body);
+    view.unmount();
+    expect(listeners.size).toBe(0);
+    application.dispose();
+  }
+);
+
+it('returns focused scrim removal on accepted selection to the local launcher', () => {
+  const { application } = navigationFixture(true);
+  const shell = (selectedId: string) => (
+    <StrictMode>
+      <NativeNavigation selectedId={selectedId}>Rows</NativeNavigation>
+    </StrictMode>
+  );
+  const view = render(shell('a'));
+  fireEvent.click(view.getByRole('button', { name: 'Open conversations' }));
+  view
+    .getByRole('button', { name: 'Close conversation navigation backdrop' })
+    .focus();
+  view.rerender(shell('b'));
+  expect(document.activeElement).toBe(
+    view.getByRole('button', { name: 'Open conversations' })
+  );
+  expect(
+    view.queryByRole('button', {
+      name: 'Close conversation navigation backdrop',
+    })
+  ).toBeNull();
+  application.dispose();
 });
 
 it('explicit sidenav selection updates the application and closes the drawer, resetting only the selected composer', async () => {

@@ -13,7 +13,8 @@ test('plain declaration proof checks sidenav type-only exports and required cont
   writeFileSync(join(directory, 'package.json'), JSON.stringify({ name: '@threadplane/react', type: 'module', exports: { './chat': { types: './chat.d.ts' } } }));
   writeFileSync(join(consumer, 'package.json'), '{"type":"module"}');
   const declaration = `export type ChatSidenavMode = 'expanded' | 'collapsed' | 'drawer';
-export interface ChatSidenavProps { readonly mode: ChatSidenavMode; readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly onModeChange: (mode: Exclude<ChatSidenavMode, 'drawer'>) => void; }`;
+export interface ChatSidenavProps { readonly mode: ChatSidenavMode; readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly onModeChange: (mode: Exclude<ChatSidenavMode, 'drawer'>) => void; }
+export interface ChatSidenavScrimProps { readonly open: boolean; readonly onDismiss: () => void; readonly label?: string; readonly className?: string; }`;
   const source = join(consumer, 'index.ts');
   writeFileSync(source, packageVerifier.plainExportTypes(['@threadplane/react/chat']));
   const compile = text => {
@@ -26,6 +27,18 @@ export interface ChatSidenavProps { readonly mode: ChatSidenavMode; readonly ope
   assert.match(compile(declaration.replaceAll('ChatSidenavProps', 'HiddenProps')), /ChatSidenavProps/);
   assert.match(compile(declaration.replace('readonly open: boolean', 'readonly open?: boolean')), /false.*true/);
   assert.match(compile(declaration.replace("Exclude<ChatSidenavMode, 'drawer'>", 'ChatSidenavMode')), /false.*true/);
+  assert.match(compile(declaration.replace('ChatSidenavScrimProps', 'HiddenScrimProps')), /ChatSidenavScrimProps/);
+  const scrim = declaration.indexOf('export interface ChatSidenavScrimProps');
+  const mutateScrim = (before, after) => declaration.slice(0, scrim) + declaration.slice(scrim).replace(before, after);
+  for (const [before, after] of [
+    ['readonly open: boolean', 'readonly open?: boolean'],
+    ['readonly open: boolean', 'readonly open: boolean | null'],
+    ['readonly onDismiss: () => void', 'readonly onDismiss?: () => void'],
+    ['readonly onDismiss: () => void', 'readonly onDismiss: (open: boolean) => void'],
+    ['readonly onDismiss: () => void', 'readonly onDismiss: () => unknown'],
+    ['readonly label?: string', 'readonly label: string'],
+    ['readonly className?: string', 'readonly className?: number'],
+  ]) assert.match(compile(mutateScrim(before, after)), /false.*true/);
   assert.doesNotMatch(packageVerifier.plainExportTypes(['@threadplane/core']), /ChatSidenav/);
 });
 
@@ -236,7 +249,7 @@ for (const [name, entry, files] of [
 });
 test('React chat requires its real supported export', () => {
   const component = () => undefined;
-  const supported = { ApprovalCard: component, Chat: component, ChatPopup: component, ChatSidebar: component, ChatSidenav: component, ChatInput: component, Citations: component, MessageList: component, MessageActions: component, Reasoning: component, TextTranscript: component, ToolObservation: component };
+  const supported = { ApprovalCard: component, Chat: component, ChatPopup: component, ChatSidebar: component, ChatSidenav: component, ChatSidenavScrim: component, ChatInput: component, Citations: component, MessageList: component, MessageActions: component, Reasoning: component, TextTranscript: component, ToolObservation: component };
   assert.throws(() => packageVerifier.assertSupportedExports('react/chat', {}), /ApprovalCard/);
   for (const name of Object.keys(supported)) {
     const { [name]: _omitted, ...rest } = supported;

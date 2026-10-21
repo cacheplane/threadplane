@@ -30,3 +30,7 @@ export {
   type ChatSidenavMode,
   type ChatSidenavProps,
 } from './chat-sidenav.js';
+export {
+  ChatSidenavScrim,
+  type ChatSidenavScrimProps,
+} from './chat-sidenav-scrim.js';
