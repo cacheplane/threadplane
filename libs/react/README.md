@@ -302,9 +302,53 @@ launcher hides while open; Close and scoped Escape request closure, then focus
 returns to the launcher when appropriate. The surrounding page stays interactive
 and Tab can leave the panel.
 
-The sidebar overlays the page. Content-pushing layouts, peer-panel edge claims,
-the conversation-navigation sidenav, SSR, hydration and public release remain
-separate work. Both panels are private contributor APIs.
+The sidebar overlays the page. Content-pushing conversation layouts, peer-panel
+edge claims, SSR, hydration and public release remain separate work. Both panels
+are private contributor APIs.
+
+### Controlled conversation navigation
+
+The private `/chat` entry also exports `ChatSidenav`, `ChatSidenavMode` and
+`ChatSidenavProps`. This shell accepts application-owned navigation as `children`:
+
+```tsx
+<ChatSidenav
+  mode={mode}
+  open={drawerOpen}
+  onModeChange={setDesktopMode}
+  onOpenChange={setDrawerOpen}
+>
+  <ConversationDirectory />
+</ChatSidenav>
+```
+
+Required `mode` selects `expanded`, `collapsed` or `drawer`; `open` controls only
+the drawer. Expanded and collapsed navigation stay in normal flow at 18rem and
+4rem. The drawer sits at the viewport's inline-start edge, is at most 20rem wide, and
+uses a named non-modal navigation landmark with no scrim or focus trap. The
+application chooses modes and owns responsive breakpoints and persistence.
+The consumer provides a bounded desktop height and lays out sibling content.
+`onModeChange` requests only `expanded` or `collapsed`; the launcher, Close and
+scoped Escape request drawer visibility through `onOpenChange`. Accepted props
+determine visibility and focus. An open drawer focuses Close; hiding focused
+content returns focus to the visible launcher or toggle while preserving external
+control focus.
+
+Children stay mounted across every mode. Collapsed content and closed drawers are
+hidden and inert, retaining filters, drafts and borrowed subscriptions. The shell
+does not select conversations, send commands, own session data or add global
+listeners. Optional `label`, `launcherLabel`, `closeLabel`, `expandLabel`,
+`collapseLabel` and `className` customize its accessible labels and styling.
+Defaults are Conversations, Open conversations, Close conversations, Expand
+conversations and Collapse conversations. Use the existing scoped chat stylesheet.
+
+The native React example opts in with exact `?presentation=sidenav`, keeps the
+conversation inline, and chooses drawer mode at widths of 700px and below.
+Its directory filter and composer survive navigation visibility and breakpoint
+changes; selecting a different conversation deliberately resets that composer's
+draft. This is a bounded children-based navigation slice. Project/archive menus,
+global shortcuts, debug ownership and full Angular composition parity remain
+open under T30.
 
 ## Read-only render trees
 

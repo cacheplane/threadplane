@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "7bc7c11c7777c3cc67b8f4f6cdac162e03af1413",
+  "baselineHead": "28a8e449c25e54b1d6b13edce8572d3d3cb72772",
   "sourceState": {
     "modified": [
       "libs/react/README.md",
@@ -8,7 +8,7 @@
       "libs/react/src/chat/styles.css"
     ],
     "untracked": [
-      "libs/react/src/chat/chat-sidebar.tsx"
+      "libs/react/src/chat/chat-sidenav.tsx"
     ]
   },
   "scope": {
@@ -855,7 +855,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "803a420aafafb167bb259e32caeec222c4f5480ff23ed36c9e7a8cec61e7f875"
+      "sha256": "724a51bd21455971e16104dc04c09178dee62abe419bed0af2773c955f8c49d5"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -873,7 +873,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "35705248029ed61802ad31d7f4591dabc2f31fa4705681e6f0fc66e9826d6708"
+      "sha256": "779b78129415c368203bdd6b9232bce33ffb4bb1f021e046e199a5659cede0b7"
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -10393,6 +10393,48 @@
       ]
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidenav",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ChatSidenav",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/chat-sidenav.tsx",
+          "symbol": "ChatSidenav",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function ChatSidenav({ mode, open, onOpenChange, onModeChange, children, className, label = 'Conversations', launcherLabel = 'Open conversations', closeLabel = 'Close conversations', expandLabel = 'Expand conversations', collapseLabel = 'Collapse conversations', }: ChatSidenavProps) {\n    const id = useId();\n    const navId = `${id}-nav`;\n    const bodyId = `${id}-body`;\n    const root = useRef<HTMLDivElement>(null);\n    const body = useRef<HTMLDivElement>(null);\n    const launcher = useRef<HTMLButtonElement>(null);\n    const close = useRef<HTMLButtonElement>(null);\n    const toggle = useRef<HTMLButtonElement>(null);\n    const ownedFocus = useRef<Element | null>(null);\n    const previous = useRef<{\n        mode: ChatSidenavMode;\n        open: boolean;\n    } | null>(null);\n    const drawer = mode === 'drawer';\n    const closedDrawer = drawer && !open;\n    const collapsed = mode === 'collapsed';\n    useIsomorphicLayoutEffect(() => {\n        const prior = previous.current;\n        previous.current = { mode, open };\n        if (prior?.mode === mode && prior.open === open)\n            return;\n        if (drawer && open && (!prior || prior.mode !== 'drawer' || !prior.open)) {\n            close.current?.focus();\n            return;\n        }\n        if (!prior)\n            return;\n        const document = root.current?.ownerDocument;\n        const active = document?.activeElement;\n        const focused = active === document?.body ? ownedFocus.current : active;\n        if (!focused || !root.current?.contains(focused))\n            return;\n        const disappeared = (focused === launcher.current && !closedDrawer) ||\n            (focused === close.current && !(drawer && open)) ||\n            (focused === toggle.current && drawer) ||\n            (body.current?.contains(focused) && (collapsed || closedDrawer));\n        if (disappeared) {\n            (closedDrawer ? launcher.current : toggle.current)?.focus();\n        }\n    }, [mode, open, drawer, closedDrawer, collapsed]);\n    return (<div ref={root} className={[\n            'tp-chat',\n            'tp-chat-sidenav',\n            `tp-chat-sidenav--${mode}`,\n            className,\n        ]\n            .filter(Boolean)\n            .join(' ')} onFocusCapture={(event) => {\n            ownedFocus.current = event.target;\n        }} onBlurCapture={(event) => {\n            if (event.relatedTarget &&\n                !event.currentTarget.contains(event.relatedTarget)) {\n                ownedFocus.current = null;\n            }\n        }}>\n      <button ref={launcher} type=\"button\" className=\"tp-chat-sidenav__launcher\" aria-label={launcherLabel} aria-controls={navId} aria-expanded={drawer && open} hidden={!closedDrawer} onClick={() => onOpenChange(true)}>\n        {launcherLabel}\n      </button>\n      <nav id={navId} aria-label={label} className=\"tp-chat-sidenav__panel\" hidden={closedDrawer} inert={closedDrawer} onKeyDown={(event) => {\n            if (!drawer ||\n                !open ||\n                event.key !== 'Escape' ||\n                event.defaultPrevented ||\n                event.nativeEvent.isComposing ||\n                event.nativeEvent.keyCode === 229)\n                return;\n            event.preventDefault();\n            event.stopPropagation();\n            onOpenChange(false);\n        }}>\n        <div className=\"tp-chat-sidenav__header\">\n          <button ref={toggle} type=\"button\" className=\"tp-chat-sidenav__toggle\" aria-label={collapsed ? expandLabel : collapseLabel} aria-controls={bodyId} aria-expanded={!collapsed} hidden={drawer} onClick={() => onModeChange(collapsed ? 'expanded' : 'collapsed')}>\n            {collapsed ? expandLabel : collapseLabel}\n          </button>\n          <button ref={close} type=\"button\" className=\"tp-chat-sidenav__close\" aria-label={closeLabel} hidden={!drawer || !open} onClick={() => onOpenChange(false)}>\n            {closeLabel}\n          </button>\n        </div>\n        <div ref={body} id={bodyId} className=\"tp-chat-sidenav__body\" hidden={collapsed} inert={collapsed}>\n          {children}\n        </div>\n      </nav>\n    </div>);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidenavMode",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ChatSidenavMode",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/chat-sidenav.tsx",
+          "symbol": "ChatSidenavMode",
+          "syntaxKind": "TypeAliasDeclaration",
+          "signature": "export type ChatSidenavMode = 'expanded' | 'collapsed' | 'drawer';"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidenavProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ChatSidenavProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/chat-sidenav.tsx",
+          "symbol": "ChatSidenavProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface ChatSidenavProps {\n    readonly mode: ChatSidenavMode;\n    readonly open: boolean;\n    readonly onOpenChange: (open: boolean) => void;\n    readonly onModeChange: (mode: Exclude<ChatSidenavMode, 'drawer'>) => void;\n    readonly children?: ReactNode;\n    readonly className?: string;\n    readonly label?: string;\n    readonly launcherLabel?: string;\n    readonly closeLabel?: string;\n    readonly expandLabel?: string;\n    readonly collapseLabel?: string;\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/react/src/chat/index.ts#Citations",
       "kind": "export",
       "path": "libs/react/src/chat/index.ts",
@@ -14835,6 +14877,12 @@
       "sha256": "6513629da3aaa787d27b335b860b323335c177db6c4f4c1130cb0bd148e70a61"
     },
     {
+      "id": "source:libs/react/src/chat/chat-sidenav.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/chat-sidenav.tsx",
+      "sha256": "72f03e5542bed7d7fa6cc48beb346e227a32cd73eda39dba6ae6531770b5ecaa"
+    },
+    {
       "id": "source:libs/react/src/chat/chat.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/chat.tsx",
@@ -14850,7 +14898,7 @@
       "id": "source:libs/react/src/chat/index.ts",
       "kind": "source",
       "path": "libs/react/src/chat/index.ts",
-      "sha256": "ed317358f5919d7a93b9f8f0fe7ef5320a5d3eda4e0789e636f50250bf080666"
+      "sha256": "bc29ef7d7f24d2c6272ba7604fa5df1d779e495e735182e3a6ad9b31d0f67572"
     },
     {
       "id": "source:libs/react/src/chat/internal/isomorphic-layout-effect.ts",

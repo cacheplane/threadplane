@@ -1596,9 +1596,9 @@
         "T30"
       ],
       "treatment": "react",
-      "status": "planned",
-      "target": "libs/react/src/chat/sidenav.tsx",
-      "reason": "Native component. Mode-specific responsive navigation, widths, selected content and controlled state."
+      "status": "in-progress",
+      "target": "libs/react/src/chat/chat-sidenav.tsx",
+      "reason": "Bounded private controlled children-based navigation implements expanded/collapsed in-flow modes and a non-modal drawer without a scrim. Native composition owns responsive mode and selection; project/archive menus, global shortcuts, debug ownership and full T30 parity remain open."
     },
     {
       "id": "component:libs/chat/src/lib/compositions/chat-subagent-card/chat-subagent-card.component.ts#ChatSubagentCardComponent",
@@ -5520,9 +5520,9 @@
         "T30"
       ],
       "treatment": "react",
-      "status": "planned",
-      "target": "libs/react/src/chat/sidenav.tsx",
-      "reason": "Native component. Mode-specific responsive navigation, widths, selected content and controlled state."
+      "status": "in-progress",
+      "target": "libs/react/src/chat/chat-sidenav.tsx",
+      "reason": "Private controlled children-based navigation export with expanded/collapsed/drawer presentation, retained hidden/inert children and accepted-transition focus. Native application owns breakpoints, commands and selected content; full T30 parity remains open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatSidenavMode",
@@ -5530,7 +5530,9 @@
         "T30"
       ],
       "treatment": "react",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/react/src/chat/chat-sidenav.tsx",
+      "reason": "Private React expanded/collapsed/drawer union; the application owns responsive mode selection and receives only expanded/collapsed toggle requests."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatSidenavScrimComponent",
@@ -9773,7 +9775,9 @@
         "T30"
       ],
       "treatment": "react",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/react/src/chat/chat-sidenav.tsx",
+      "reason": "Bounded controlled navigation shell implemented with persistent children, scoped Escape and local focus ownership. Legacy directory/project/archive/debug behaviors remain outside this private slice."
     },
     {
       "id": "source:libs/chat/src/lib/compositions/chat-subagent-card/chat-subagent-card.component.ts",
@@ -15548,7 +15552,35 @@
       "taskIds": ["T30"],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Full-height ChatPopup composition with scoped responsive sidebar styles; content pushing, peer edge claims and navigation sidenav remain open."
+      "reason": "Full-height ChatPopup composition with scoped responsive sidebar styles; content pushing, peer edge claims and full composition parity remain open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidenav",
+      "taskIds": ["T30"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private controlled children-based navigation; expanded/collapsed normal flow and a non-modal drawer retain mounted content. Application owns responsive modes, selection and commands; full T30 parity remains open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidenavMode",
+      "taskIds": ["T30"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private expanded/collapsed/drawer presentation union; no implicit responsive behavior."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidenavProps",
+      "taskIds": ["T30"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly required mode/open and request callbacks, optional labels/className/children; no inferred session, directory or command ownership."
+    },
+    {
+      "id": "source:libs/react/src/chat/chat-sidenav.tsx",
+      "taskIds": ["T30"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Bounded private named navigation shell with persistent hidden/inert children, accepted-transition local focus and scoped Escape. No scrim, global listeners, media query ownership or full Angular composition parity."
     }
   ]
 }

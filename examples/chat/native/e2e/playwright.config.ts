@@ -12,6 +12,7 @@ export default defineConfig({
     'reasoning.spec.ts',
     'message-actions.spec.ts',
     'popup.spec.ts',
+    'sidenav.spec.ts',
   ],
   fullyParallel: false,
   workers: 1,

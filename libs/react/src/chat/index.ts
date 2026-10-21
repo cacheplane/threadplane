@@ -25,3 +25,8 @@ export {
 export { Chat, type ChatProps } from './chat.js';
 export { ChatPopup, type ChatPopupProps } from './chat-popup.js';
 export { ChatSidebar, type ChatSidebarProps } from './chat-sidebar.js';
+export {
+  ChatSidenav,
+  type ChatSidenavMode,
+  type ChatSidenavProps,
+} from './chat-sidenav.js';

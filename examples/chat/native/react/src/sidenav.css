@@ -1,0 +1,28 @@
+.conversation-layout--sidenav {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
+}
+
+.native-conversation-sidenav:not(.tp-chat-sidenav--drawer)
+  .tp-chat-sidenav__panel {
+  height: calc(100dvh - 10rem);
+}
+
+.native-conversation-sidenav aside {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.native-conversation-sidenav .conversation-list {
+  max-height: none;
+  overflow: visible;
+}
+
+@media (max-width: 700px) {
+  .conversation-layout--sidenav {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+}

@@ -3,6 +3,31 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
+import ts from 'typescript';
+
+test('plain declaration proof checks sidenav type-only exports and required controlled props', t => {
+  const consumer = mkdtempSync(join(tmpdir(), 'threadplane-sidenav-types-'));
+  t.after(() => rmSync(consumer, { recursive: true, force: true }));
+  const directory = join(consumer, 'node_modules/@threadplane/react');
+  mkdirSync(directory, { recursive: true });
+  writeFileSync(join(directory, 'package.json'), JSON.stringify({ name: '@threadplane/react', type: 'module', exports: { './chat': { types: './chat.d.ts' } } }));
+  writeFileSync(join(consumer, 'package.json'), '{"type":"module"}');
+  const declaration = `export type ChatSidenavMode = 'expanded' | 'collapsed' | 'drawer';
+export interface ChatSidenavProps { readonly mode: ChatSidenavMode; readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly onModeChange: (mode: Exclude<ChatSidenavMode, 'drawer'>) => void; }`;
+  const source = join(consumer, 'index.ts');
+  writeFileSync(source, packageVerifier.plainExportTypes(['@threadplane/react/chat']));
+  const compile = text => {
+    writeFileSync(join(directory, 'chat.d.ts'), text);
+    const program = ts.createProgram([source], { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.NodeNext, moduleResolution: ts.ModuleResolutionKind.NodeNext, strict: true, skipLibCheck: false, noEmit: true, types: [] });
+    return ts.getPreEmitDiagnostics(program).map(error => ts.flattenDiagnosticMessageText(error.messageText, '\n')).join('\n');
+  };
+  assert.equal(compile(declaration), '');
+  assert.match(compile(declaration.replaceAll('ChatSidenavMode', 'HiddenMode')), /ChatSidenavMode/);
+  assert.match(compile(declaration.replaceAll('ChatSidenavProps', 'HiddenProps')), /ChatSidenavProps/);
+  assert.match(compile(declaration.replace('readonly open: boolean', 'readonly open?: boolean')), /false.*true/);
+  assert.match(compile(declaration.replace("Exclude<ChatSidenavMode, 'drawer'>", 'ChatSidenavMode')), /false.*true/);
+  assert.doesNotMatch(packageVerifier.plainExportTypes(['@threadplane/core']), /ChatSidenav/);
+});
 
 test('JSON feature exposes only its owned factory', () => {
   assert.throws(() => packageVerifier.assertSupportedExports('content/json', {}), /createJson/);
@@ -211,7 +236,7 @@ for (const [name, entry, files] of [
 });
 test('React chat requires its real supported export', () => {
   const component = () => undefined;
-  const supported = { ApprovalCard: component, Chat: component, ChatPopup: component, ChatSidebar: component, ChatInput: component, Citations: component, MessageList: component, MessageActions: component, Reasoning: component, TextTranscript: component, ToolObservation: component };
+  const supported = { ApprovalCard: component, Chat: component, ChatPopup: component, ChatSidebar: component, ChatSidenav: component, ChatInput: component, Citations: component, MessageList: component, MessageActions: component, Reasoning: component, TextTranscript: component, ToolObservation: component };
   assert.throws(() => packageVerifier.assertSupportedExports('react/chat', {}), /ApprovalCard/);
   for (const name of Object.keys(supported)) {
     const { [name]: _omitted, ...rest } = supported;
