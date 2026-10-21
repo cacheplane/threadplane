@@ -2167,9 +2167,9 @@
         "T29"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/thread-list.tsx",
-      "reason": "Native component. Rename/delete/archive/pin/project/reorder, pending overlays, keyboard and drag paths."
+      "reason": "Private controlled semantic ThreadList selection view with retained keyed rows and installed native dogfood. Rename/delete/archive/pin/project/reorder, pending overlays, custom rows and full parity remain open."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-timeline/chat-timeline.component.ts#ChatTimelineComponent",
@@ -5590,9 +5590,9 @@
         "T29"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/thread-list.tsx",
-      "reason": "Native component. Rename/delete/archive/pin/project/reorder, pending overlays, keyboard and drag paths."
+      "reason": "Private controlled semantic ThreadList selection export; application owns data and execution. Lifecycle actions, project/reorder menus and full parity remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatTimelineComponent",
@@ -10340,7 +10340,9 @@
         "T29"
       ],
       "treatment": "react",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/react/src/chat/thread-list.tsx",
+      "reason": "Bounded private React selection view preserves supplied order and explicit controlled requests; full Angular lifecycle, drag and row-template parity remain open. Existing Angular source is unchanged."
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-timeline/chat-timeline.component.ts",
@@ -10674,7 +10676,9 @@
         "T29"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/react/src/chat/styles.css",
+      "reason": "Scoped React selection-list styling with token fallbacks, wrapping, logical alignment and keyboard focus; full Angular lifecycle-action styling parity remains open. Existing Angular styles are unchanged."
     },
     {
       "id": "source:libs/chat/src/lib/styles/chat-tokens.ts",
@@ -15606,6 +15610,34 @@
       "treatment": "react",
       "status": "in-progress",
       "reason": "Separate controlled backdrop button with scoped viewport layering; no focus trap, portal, global listener or session behavior."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ThreadList",
+      "taskIds": ["T29"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private semantic controlled selection view with no automatic I/O, sorting or execution ownership. Native directory dogfoods installed component; full lifecycle-action parity remains open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ThreadListItem",
+      "taskIds": ["T29"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly supplied ID and optional plain title for the bounded selection view; lifecycle/project/timestamp row fields and full parity remain open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ThreadListProps",
+      "taskIds": ["T29"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly collection and required explicit selection callback with optional controlled active ID, accessible label and root class. Application owns filtering, statuses and execution."
+    },
+    {
+      "id": "source:libs/react/src/chat/thread-list.tsx",
+      "taskIds": ["T29"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private keyed semantic list with safe plain labels, exact-ID callbacks, supplied selection and scoped responsive styles; full lifecycle-action and composition parity remain open."
     }
   ]
 }

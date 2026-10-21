@@ -222,10 +222,13 @@ export function plainExportTypes(specifiers) {
   const namespaces = specifiers.map((specifier, index) => `import * as entry${index} from ${JSON.stringify(specifier)};\nexport type Entry${index} = typeof entry${index};`).join('\n');
   if (!specifiers.includes('@threadplane/react/chat')) return namespaces;
   return `${namespaces}
-import type { ChatSidebarProps, ChatSidenavMode, ChatSidenavProps, ChatSidenavScrimProps } from '@threadplane/react/chat';
+import type { ChatSidebarProps, ChatSidenavMode, ChatSidenavProps, ChatSidenavScrimProps, ThreadListItem, ThreadListProps } from '@threadplane/react/chat';
 import type { ReactNode } from 'react';
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
 type Assert<T extends true> = T;
+export type ThreadListItemContract = Assert<Equal<ThreadListItem, { readonly id: string; readonly title?: string }>>;
+export type ThreadListRequiredContract = Assert<Equal<Pick<ThreadListProps, 'threads' | 'onSelect'>, { readonly threads: readonly ThreadListItem[]; readonly onSelect: (threadId: string) => void }>>;
+export type ThreadListOptionsContract = Assert<Equal<Pick<ThreadListProps, 'activeThreadId' | 'label' | 'className'>, { readonly activeThreadId?: string | null; readonly label?: string; readonly className?: string }>>;
 export type SidebarControlledContract = Assert<Equal<Pick<ChatSidebarProps, 'open' | 'onOpenChange' | 'title'>, { readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly title: string }>>;
 export type SidebarLayoutOptionsContract = Assert<Equal<Pick<ChatSidebarProps, 'pageContent' | 'pushContent'>, { readonly pageContent?: ReactNode; readonly pushContent?: boolean }>>;
 type Controlled = Pick<ChatSidenavProps, 'mode' | 'open' | 'onOpenChange' | 'onModeChange'>;
@@ -353,6 +356,7 @@ export function assertSupportedExports(project, entry) {
         'MessageActions',
         'Reasoning',
         'TextTranscript',
+        'ThreadList',
         'ToolObservation',
       ],
       'react/debug': ['ChatDebug'],

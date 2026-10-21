@@ -1,13 +1,15 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "033a8d59d6f6d9a6b4477f9eb65d24762ffee028",
+  "baselineHead": "823b41e2874c758f6ebec4717473215a7c7f01c8",
   "sourceState": {
     "modified": [
       "libs/react/README.md",
-      "libs/react/src/chat/chat-sidebar.tsx",
+      "libs/react/src/chat/index.ts",
       "libs/react/src/chat/styles.css"
     ],
-    "untracked": []
+    "untracked": [
+      "libs/react/src/chat/thread-list.tsx"
+    ]
   },
   "scope": {
     "libraries": [
@@ -853,7 +855,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "a3f8486d2561a07cd720b1076600595ef3008dc59dedee1b643c64d2b62edacb"
+      "sha256": "cfe565e3a25e20b14ff132b5513b549878bc235a38ae7868444367f298d87619"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -871,7 +873,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "670270400a53626ef0d2493395dd9095a44c4ec816e3809c53827b5cff777d04"
+      "sha256": "909db43c6e7e498e6ff1ad4c3b7f39b822baf79b6017b776b6bb1b7346a7bd0c"
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -10615,6 +10617,48 @@
       ]
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#ThreadList",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ThreadList",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/thread-list.tsx",
+          "symbol": "ThreadList",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function ThreadList({ threads, onSelect, activeThreadId, label = 'Conversations', className, }: ThreadListProps) {\n    return (<ul className={`tp-thread-list${className ? ` ${className}` : ''}`} aria-label={label}>\n      {threads.map((thread) => {\n            const title = thread.title || thread.id;\n            return (<li key={thread.id} className=\"tp-thread-list__item\">\n            <button type=\"button\" className=\"tp-thread-list__button\" title={title} aria-current={thread.id === activeThreadId ? 'true' : undefined} onClick={() => onSelect(thread.id)}>\n              {title}\n            </button>\n          </li>);\n        })}\n    </ul>);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ThreadListItem",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ThreadListItem",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/thread-list.tsx",
+          "symbol": "ThreadListItem",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface ThreadListItem {\n    readonly id: string;\n    readonly title?: string;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ThreadListProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ThreadListProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/thread-list.tsx",
+          "symbol": "ThreadListProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface ThreadListProps {\n    readonly threads: readonly ThreadListItem[];\n    readonly onSelect: (threadId: string) => void;\n    readonly activeThreadId?: string | null;\n    readonly label?: string;\n    readonly className?: string;\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/react/src/chat/index.ts#ToolObservation",
       "kind": "export",
       "path": "libs/react/src/chat/index.ts",
@@ -14930,7 +14974,7 @@
       "id": "source:libs/react/src/chat/index.ts",
       "kind": "source",
       "path": "libs/react/src/chat/index.ts",
-      "sha256": "a2fb7ce0b791e0bac907e200b1eded55c5f220a410aeffd6225c124f9cf05ed9"
+      "sha256": "35e2be2514de5036963f35160f4f11d289e51188742497e44835dcf8db01fe19"
     },
     {
       "id": "source:libs/react/src/chat/internal/isomorphic-layout-effect.ts",
@@ -14967,6 +15011,12 @@
       "kind": "source",
       "path": "libs/react/src/chat/text-transcript.tsx",
       "sha256": "13c651497f0792ff3d8cd6108c7faa586d121c9527047851f93ede94c68d03f6"
+    },
+    {
+      "id": "source:libs/react/src/chat/thread-list.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/thread-list.tsx",
+      "sha256": "f75bed31ce8b19ccd90ae334beece6a642fd63edb819eb0ca211f4596337bac2"
     },
     {
       "id": "source:libs/react/src/chat/tool-observation.tsx",

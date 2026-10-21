@@ -172,11 +172,58 @@ test('installed React sidenav retains navigation, draft and a running response a
     };
     await expect(scrim).toHaveCount(0);
     await expect(draft).toBeEnabled();
+    const threadList = nav.getByRole('list', { name: 'Loaded conversations' });
+    await expect(threadList).toHaveClass(/tp-thread-list/);
+    const alpha = threadList.getByRole('button', {
+      name: 'Alpha notes',
+      exact: true,
+    });
+    const beta = threadList.getByRole('button', {
+      name: 'Beta notes',
+      exact: true,
+    });
+    await expect(alpha).toHaveAttribute('aria-current', 'true');
+    await expect(beta).not.toHaveAttribute('aria-current');
+    const alphaNode = await alpha.elementHandle();
+    assert.ok(alphaNode);
     await expect(
       page.getByText('Saved answer a.', { exact: true })
     ).toBeVisible();
     expect(backend.requests).toHaveLength(3);
+    // Filtering only the loaded titles must not issue a request or select a row.
+    await filter.fill('Alpha');
+    await expect(threadList.getByRole('button')).toHaveCount(1);
+    await expect(alpha).toHaveAttribute('aria-current', 'true');
+    expect(await alphaNode.evaluate((node) => node.isConnected)).toBe(true);
+    expect(backend.requests).toHaveLength(3);
     await filter.fill('notes');
+    // Beta was filtered out and is newly mounted; retain its current node below.
+    const retainedBetaNode = await beta.elementHandle();
+    assert.ok(retainedBetaNode);
+    const expectRetainedThreadList = async () => {
+      expect(
+        await alphaNode.evaluate(
+          (node) =>
+            node ===
+            document.querySelector(
+              '.tp-thread-list__button[title="Alpha notes"]'
+            )
+        )
+      ).toBe(true);
+      expect(
+        await retainedBetaNode.evaluate(
+          (node) =>
+            node ===
+            document.querySelector(
+              '.tp-thread-list__button[title="Beta notes"]'
+            )
+        )
+      ).toBe(true);
+    };
+    await page.screenshot({
+      path: testInfo.outputPath('thread-list-desktop.png'),
+      fullPage: true,
+    });
     await draft.fill('Retain this draft.');
     const filterNode = await filter.elementHandle();
     const firstDraft = await draft.elementHandle();
@@ -203,9 +250,13 @@ test('installed React sidenav retains navigation, draft and a running response a
       )
     ).toBe(true);
     expect(backend.requests).toHaveLength(3);
-    await nav.getByRole('button', { name: 'Beta notes', exact: true }).click();
+    await expectRetainedThreadList();
+    await beta.focus();
+    await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/thread=b/);
     await expect(nav.locator('[aria-current="true"]')).toHaveText('Beta notes');
+    await expect(alpha).not.toHaveAttribute('aria-current');
+    await expectRetainedThreadList();
     await expect(
       page.getByText('Saved answer b.', { exact: true })
     ).toBeVisible();
@@ -292,6 +343,7 @@ test('installed React sidenav retains navigation, draft and a running response a
         .locator('#scrim-underlying-probe')
         .evaluate((node) => node.remove());
       expect(backend.requests).toHaveLength(6);
+      await expectRetainedThreadList();
       await launcher.click();
       await scrim.focus();
       await page.keyboard.press(width === 390 ? 'Enter' : 'Space');
@@ -369,6 +421,9 @@ test('installed React sidenav retains navigation, draft and a running response a
     const rtl = await panel.boundingBox();
     assert.ok(rtl);
     expect(rtl.x + rtl.width).toBe(600);
+    expect(
+      await beta.evaluate((node) => getComputedStyle(node).textAlign)
+    ).toBe('start');
     await expectFullBackdrop('left');
     expect(await scrim.boundingBox()).toEqual({
       x: 0,
@@ -395,6 +450,7 @@ test('installed React sidenav retains navigation, draft and a running response a
     await page.setViewportSize({ width: 1280, height: 900 });
     await expand.click();
     await expect(filter).toHaveValue('notes');
+    await expectRetainedThreadList();
     backend.steps[5].releaseHeaders();
     await backend.steps[5].headersSent;
     backend.steps[5].releaseBody();
@@ -411,6 +467,7 @@ test('installed React sidenav retains navigation, draft and a running response a
       )
     ).toBe(true);
     expect(backend.requests).toHaveLength(6);
+    await expectRetainedThreadList();
     backend.verify();
     for (const step of backend.steps)
       expect((await step.closed).finished).toBe(true);

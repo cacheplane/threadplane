@@ -82,6 +82,14 @@ dispatches a command implicitly. Production tests exercise keyboard decisions,
 disabled pending actions, retained uncertain decisions and exact resume payloads;
 provenance requires the installed card's runtime and declarations.
 
+The React loaded-conversation directory uses the installed private `ThreadList`
+view for its selection rows in page, popup, sidebar and sidenav presentations.
+The application still owns the supplied order, loaded-title filtering, selection,
+Refresh/New commands and all status/empty text. The list issues no commands on
+mount or rerender. Retained rows keep their button DOM through navigation modes;
+the existing deliberate composer reset still applies when selecting another
+conversation. This does not add thread lifecycle actions or full T29 parity.
+
 ## Setup and commands
 
 Run commands from the repository root using **Node 22 and npm 10** (locally
