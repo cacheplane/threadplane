@@ -406,8 +406,11 @@ an interactive session against a live endpoint.
 Add `?presentation=popup` to the native React example URL to keep the loaded
 conversation directory on the page and show the selected conversation in the
 installed private `ChatPopup` composition. Use `?presentation=sidebar` for the
-full-height private `ChatSidebar` instead. It overlays the page, fills the viewport
-width at 640px and below, and hides its launcher while open. Both modes use the
+full-height private `ChatSidebar` instead. Its directory uses the persistent page
+slot, with “Keep page beside chat” enabled initially. On wider screens this
+reserves room beside the open panel; disabling the checkbox restores overlay
+mode. At 640px and below the panel always overlays at full viewport width with no
+reserved page space. Its launcher hides while open. Both modes use the
 same selected application and conversation view. The default presentation stays inline;
 unknown presentation values also use the page layout.
 
@@ -422,8 +425,10 @@ can leave this non-modal dialog for the surrounding page.
 `npx nx e2e native-conversation-react --grep 'installed React (popup|sidebar)'` verifies the installed
 production component against an owned local HTTP/SSE fixture, including hidden
 completion, retained DOM/draft, keyboard access, a hidden open-sidebar launcher,
-desktop geometry, and 390px/600px layouts with reachable Close and Send. It does
-not use a live model. These are bounded overlay slices, not complete Angular
+desktop geometry, layout preference changes, RTL placement, the 641px/640px
+boundary, and 390px/600px layouts with reachable Close and Send. Layout changes
+retain the directory filter, composer and active response without extra requests.
+It does not use a live model. These are bounded compositions, not complete Angular
 popup/sidebar/sidenav parity or a published package.
 
 ## React conversation navigation presentation
@@ -451,7 +456,7 @@ or to the desktop toggle when a breakpoint removes it; an already focused page
 control retains focus. The backdrop covers page pointer targets while open.
 This bounded children-based
 navigation does not implement Angular project/archive menus, global shortcuts,
-debug ownership or full T30 parity. Popup and sidebar remain separate overlay
+debug ownership or full T30 parity. Popup and sidebar remain separate
 presentations.
 
 ## React message actions

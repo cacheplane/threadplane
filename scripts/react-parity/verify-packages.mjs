@@ -222,9 +222,12 @@ export function plainExportTypes(specifiers) {
   const namespaces = specifiers.map((specifier, index) => `import * as entry${index} from ${JSON.stringify(specifier)};\nexport type Entry${index} = typeof entry${index};`).join('\n');
   if (!specifiers.includes('@threadplane/react/chat')) return namespaces;
   return `${namespaces}
-import type { ChatSidenavMode, ChatSidenavProps, ChatSidenavScrimProps } from '@threadplane/react/chat';
+import type { ChatSidebarProps, ChatSidenavMode, ChatSidenavProps, ChatSidenavScrimProps } from '@threadplane/react/chat';
+import type { ReactNode } from 'react';
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
 type Assert<T extends true> = T;
+export type SidebarControlledContract = Assert<Equal<Pick<ChatSidebarProps, 'open' | 'onOpenChange' | 'title'>, { readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly title: string }>>;
+export type SidebarLayoutOptionsContract = Assert<Equal<Pick<ChatSidebarProps, 'pageContent' | 'pushContent'>, { readonly pageContent?: ReactNode; readonly pushContent?: boolean }>>;
 type Controlled = Pick<ChatSidenavProps, 'mode' | 'open' | 'onOpenChange' | 'onModeChange'>;
 export type SidenavModeContract = Assert<Equal<ChatSidenavMode, 'expanded' | 'collapsed' | 'drawer'>>;
 export type SidenavRequiredContract = Assert<Equal<Controlled, Required<Controlled>>>;

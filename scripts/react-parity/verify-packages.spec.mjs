@@ -5,16 +5,21 @@ import { dirname, join } from 'node:path';
 import test from 'node:test';
 import ts from 'typescript';
 
-test('plain declaration proof checks sidenav type-only exports and required controlled props', t => {
+test('plain declaration proof checks navigation and sidebar layout type-only contracts', t => {
   const consumer = mkdtempSync(join(tmpdir(), 'threadplane-sidenav-types-'));
   t.after(() => rmSync(consumer, { recursive: true, force: true }));
   const directory = join(consumer, 'node_modules/@threadplane/react');
   mkdirSync(directory, { recursive: true });
+  const react = join(consumer, 'node_modules/react');
+  mkdirSync(react, { recursive: true });
+  writeFileSync(join(react, 'package.json'), JSON.stringify({ name: 'react', type: 'module', exports: { '.': { types: './index.d.ts' } } }));
+  writeFileSync(join(react, 'index.d.ts'), 'export type ReactNode = string | number | boolean | null | undefined | readonly ReactNode[];');
   writeFileSync(join(directory, 'package.json'), JSON.stringify({ name: '@threadplane/react', type: 'module', exports: { './chat': { types: './chat.d.ts' } } }));
   writeFileSync(join(consumer, 'package.json'), '{"type":"module"}');
   const declaration = `export type ChatSidenavMode = 'expanded' | 'collapsed' | 'drawer';
 export interface ChatSidenavProps { readonly mode: ChatSidenavMode; readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly onModeChange: (mode: Exclude<ChatSidenavMode, 'drawer'>) => void; }
-export interface ChatSidenavScrimProps { readonly open: boolean; readonly onDismiss: () => void; readonly label?: string; readonly className?: string; }`;
+export interface ChatSidenavScrimProps { readonly open: boolean; readonly onDismiss: () => void; readonly label?: string; readonly className?: string; }
+export interface ChatSidebarProps { readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly title: string; readonly pageContent?: import('react').ReactNode; readonly pushContent?: boolean; }`;
   const source = join(consumer, 'index.ts');
   writeFileSync(source, packageVerifier.plainExportTypes(['@threadplane/react/chat']));
   const compile = text => {
@@ -39,6 +44,20 @@ export interface ChatSidenavScrimProps { readonly open: boolean; readonly onDism
     ['readonly label?: string', 'readonly label: string'],
     ['readonly className?: string', 'readonly className?: number'],
   ]) assert.match(compile(mutateScrim(before, after)), /false.*true/);
+  assert.match(compile(declaration.replace('ChatSidebarProps', 'HiddenSidebarProps')), /ChatSidebarProps/);
+  const sidebar = declaration.indexOf('export interface ChatSidebarProps');
+  const mutateSidebar = (before, after) => declaration.slice(0, sidebar) + declaration.slice(sidebar).replace(before, after);
+  for (const [before, after] of [
+    ['readonly open: boolean', 'readonly open?: boolean'],
+    ['readonly onOpenChange: (open: boolean) => void', 'readonly onOpenChange?: (open: boolean) => void'],
+    ['readonly onOpenChange: (open: boolean) => void', 'readonly onOpenChange: (open: string) => void'],
+    ['readonly title: string', 'readonly title?: string'],
+    ['readonly pageContent?:', 'readonly pageContent:'],
+    ["readonly pageContent?: import('react').ReactNode", 'readonly pageContent?: string'],
+    ['readonly pushContent?: boolean', 'readonly pushContent: boolean'],
+    ['readonly pushContent?: boolean', 'readonly pushContent?: boolean | string'],
+    ['readonly pushContent?: boolean', 'pushContent?: boolean'],
+  ]) assert.match(compile(mutateSidebar(before, after)), /false.*true/);
   assert.doesNotMatch(packageVerifier.plainExportTypes(['@threadplane/core']), /ChatSidenav/);
 });
 
