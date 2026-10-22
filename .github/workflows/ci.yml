@@ -99,7 +99,7 @@ jobs:
       # classifier walk.
       - run: npm ci
       - name: Test CI scope classifier
-        run: node --test scripts/ci-scope.spec.mjs scripts/cockpit-matrix.spec.mjs scripts/cockpit-frontend-matrix.spec.mjs scripts/cockpit-ports.spec.mjs scripts/cockpit-runtime-bridge-coverage.spec.mjs scripts/react-cockpit/ag-ui-client-tools-configuration.spec.mjs scripts/react-cockpit/ag-ui-client-tools-preparation.spec.mjs scripts/react-cockpit/runtimes-microsoft-agent-framework-configuration.spec.mjs scripts/react-cockpit/prepare-native-maf-fixture.spec.mjs scripts/react-cockpit/runtimes-aws-strands-configuration.spec.mjs scripts/react-cockpit/prepare-native-strands-fixture.spec.mjs scripts/react-cockpit/chat-theming-configuration.spec.mjs
+        run: node --test scripts/configure-ci-apt.spec.mjs scripts/ci-scope.spec.mjs scripts/cockpit-matrix.spec.mjs scripts/cockpit-frontend-matrix.spec.mjs scripts/cockpit-ports.spec.mjs scripts/cockpit-runtime-bridge-coverage.spec.mjs scripts/react-cockpit/ag-ui-client-tools-configuration.spec.mjs scripts/react-cockpit/ag-ui-client-tools-preparation.spec.mjs scripts/react-cockpit/runtimes-microsoft-agent-framework-configuration.spec.mjs scripts/react-cockpit/prepare-native-maf-fixture.spec.mjs scripts/react-cockpit/runtimes-aws-strands-configuration.spec.mjs scripts/react-cockpit/prepare-native-strands-fixture.spec.mjs scripts/react-cockpit/chat-theming-configuration.spec.mjs
       - name: Test Debug static configuration without Python workers
         run: node --test --test-name-pattern='^debug ' scripts/react-cockpit/chat-debug-configuration.spec.mjs
       - name: Detect changed CI surfaces
@@ -252,7 +252,10 @@ jobs:
             A2UI_FIXTURE_ENV="$A2UI_FIXTURE_ENV" A2UI_FIXTURE_CACHE="$A2UI_FIXTURE_CACHE" \
             PYTHONDONTWRITEBYTECODE=1 LANGSMITH_TRACING=false LANGCHAIN_TRACING_V2=false \
             "$node_path" --test --test-concurrency=1 scripts/react-cockpit/chat-a2ui-fixture.spec.mjs
+      - name: Configure bounded Ubuntu package downloads
+        run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
       - name: Install Chromium for packed runtime consumers
+        timeout-minutes: 10
         run: npx playwright install --with-deps chromium
       - name: Verify native conversation example
         run: |
@@ -367,7 +370,10 @@ jobs:
         with:
           name: threadplane-library-dist
           path: dist/libs
+      - name: Configure bounded Ubuntu package downloads
+        run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
       - name: Install Chromium
+        timeout-minutes: 10
         run: npx playwright install --with-deps chromium
       - name: Generate, install, build, and run consumer
         run: >-
@@ -636,7 +642,11 @@ jobs:
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             playwright-${{ runner.os }}-
-      - run: npx playwright install --with-deps chromium
+      - name: Configure bounded Ubuntu package downloads
+        run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
+      - name: Install Chromium
+        timeout-minutes: 10
+        run: npx playwright install --with-deps chromium
       - run: npx nx e2e examples-chat-angular --skip-nx-cache -- --shard=${{ matrix.shard }}/4
       - name: Upload Playwright trace on failure
         if: failure()
@@ -715,7 +725,11 @@ jobs:
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             playwright-${{ runner.os }}-
-      - run: npx playwright install --with-deps chromium
+      - name: Configure bounded Ubuntu package downloads
+        run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
+      - name: Install Chromium
+        timeout-minutes: 10
+        run: npx playwright install --with-deps chromium
       - run: npx nx e2e examples-ag-ui-angular --skip-nx-cache
       - name: Upload Playwright trace on failure
         if: failure()
@@ -844,7 +858,11 @@ jobs:
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             playwright-${{ runner.os }}-
-      - run: npx playwright install --with-deps chromium
+      - name: Configure bounded Ubuntu package downloads
+        run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
+      - name: Install Chromium
+        timeout-minutes: 10
+        run: npx playwright install --with-deps chromium
       - name: Verify React cockpit source
         if: endsWith(matrix.cap.angular, '-react')
         run: |
@@ -965,7 +983,11 @@ jobs:
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             playwright-${{ runner.os }}-
-      - run: npx playwright install --with-deps chromium
+      - name: Configure bounded Ubuntu package downloads
+        run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
+      - name: Install Chromium
+        timeout-minutes: 10
+        run: npx playwright install --with-deps chromium
       - run: npx nx e2e website --skip-nx-cache
         timeout-minutes: 45
       # The public-copy gate reads served output, and `next dev` serves a
@@ -992,7 +1014,7 @@ jobs:
           SCROLLCRAFT_CHROME: /usr/bin/google-chrome
           NEXT_PUBLIC_STAGE_DEMO_ORIGIN: http://localhost:4200
         run: |
-          command -v ffmpeg > /dev/null || (sudo apt-get update && sudo apt-get install -y ffmpeg)
+          command -v ffmpeg > /dev/null || sudo timeout --signal=TERM --kill-after=10s 590s bash -c 'apt-get update && apt-get install -y ffmpeg'
           # Verify this commit's recording, not the older production demo.
           (npx nx serve examples-chat-angular --configuration=production --port=4200 > /tmp/stage-demo.log 2>&1 &)
           for i in $(seq 1 60); do curl -sf http://localhost:4200/stage > /dev/null && break; sleep 2; done
@@ -1060,7 +1082,11 @@ jobs:
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             playwright-${{ runner.os }}-
-      - run: npx playwright install --with-deps chromium
+      - name: Configure bounded Ubuntu package downloads
+        run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
+      - name: Install Chromium
+        timeout-minutes: 10
+        run: npx playwright install --with-deps chromium
       - name: Derive deterministic preview aliases
         id: aliases
         run: |
@@ -1489,8 +1515,12 @@ jobs:
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             playwright-${{ runner.os }}-
+      - name: Configure bounded Ubuntu package downloads
+        if: steps.freshness.outputs.stale != 'true' && steps.affected.outputs.website == 'true'
+        run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
       - name: Install Playwright browsers
         if: steps.freshness.outputs.stale != 'true' && steps.affected.outputs.website == 'true'
+        timeout-minutes: 10
         run: npx playwright install --with-deps chromium
       - name: Prepare website Vercel project
         if: steps.freshness.outputs.stale != 'true' && steps.affected.outputs.website == 'true'
@@ -1869,7 +1899,11 @@ jobs:
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             playwright-${{ runner.os }}-
-      - run: npx playwright install --with-deps chromium
+      - name: Configure bounded Ubuntu package downloads
+        run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
+      - name: Install Chromium
+        timeout-minutes: 10
+        run: npx playwright install --with-deps chromium
       - name: Run production smoke tests
         run: npx playwright test apps/website/e2e/platform-production-smoke.spec.ts --config apps/website/playwright.config.ts --reporter=list
         env:
