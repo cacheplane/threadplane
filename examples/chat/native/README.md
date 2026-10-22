@@ -85,10 +85,12 @@ provenance requires the installed card's runtime and declarations.
 The React loaded-conversation directory uses the installed private `ThreadList`
 view for its selection rows in page, popup, sidebar and sidenav presentations.
 The application still owns the supplied order, loaded-title filtering, selection,
-Refresh/New commands and all status/empty text. The list issues no commands on
-mount or rerender. Retained rows keep their button DOM through navigation modes;
+Refresh commands and all status/empty text. Its optional New action delegates
+to the same application creation owner, with only that action disabled while
+creation is pending. The application still owns creation and resulting selection.
+The list issues no commands on mount or rerender. Retained rows keep their button DOM through navigation modes;
 the existing deliberate composer reset still applies when selecting another
-conversation. This does not add thread lifecycle actions or full T29 parity.
+conversation. Other thread lifecycle actions and full T29 parity remain open.
 
 ## Setup and commands
 
