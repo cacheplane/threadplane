@@ -451,8 +451,6 @@ jobs:
       - run: npx nx test growth
       - run: npx nx run growth:test-operator-cli
       - run: npx nx build growth
-      - run: npx nx test google-mailbox-poller
-      - run: npx nx lint google-mailbox-poller
 
   lifecycle:
     name: Lifecycle — Node 24

@@ -698,7 +698,6 @@ describe('growth lifecycle project ownership', () => {
   for (const projectFile of [
     'libs/growth/project.json',
     'apps/lifecycle/project.json',
-    'tools/google-mailbox-poller/project.json',
   ]) {
     it(`${projectFile} owns the growth lifecycle scope`, async () => {
       const project = JSON.parse(await readFile(projectFile, 'utf8'));
@@ -709,7 +708,8 @@ describe('growth lifecycle project ownership', () => {
   for (const [file, owner] of [
     ['libs/growth/src/lib/jobs.ts', 'growth'],
     ['apps/lifecycle/src/dispatcher.ts', 'lifecycle'],
-    ['tools/google-mailbox-poller/Code.gs', 'google-mailbox-poller'],
+    ['libs/growth/src/lib/inbox-recovery.ts', 'growth'],
+    ['scripts/resend-receiving.mts', 'growth'],
     ['scripts/apply-migrations.mts', 'growth'],
     ['scripts/growth-control.mts', 'growth'],
     ['scripts/growth-observability.mts', 'growth'],

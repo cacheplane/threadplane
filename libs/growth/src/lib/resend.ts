@@ -354,6 +354,7 @@ function campaignTags(
   campaignTemplate: unknown
 ): { name: string; value: string }[] {
   const tags = [
+    { name: 'app', value: 'threadplane' },
     { name: 'environment', value: environment },
     { name: 'job_kind', value: kind },
   ];
