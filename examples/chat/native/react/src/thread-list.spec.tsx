@@ -17,6 +17,63 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+it('requests creation through ThreadList and disables only its New action while pending', async () => {
+  const fixture = applicationFixture();
+  let finish!: (value: { kind: 'failed' }) => void;
+  const create = vi.fn(
+    () =>
+      new Promise<{ kind: 'failed' }>((resolve) => {
+        finish = resolve;
+      })
+  );
+  const application = createReactApplication({
+    ...fixture.options,
+    directory: {
+      ...fixture.options.directory,
+      async list() {
+        return { kind: 'ready', value: [{ id: 'a', title: 'Alpha' }] };
+      },
+      create,
+    },
+  });
+  try {
+    application.start();
+    await waitFor(() =>
+      expect(application.getSnapshot().selection.status).toBe('ready')
+    );
+    const view = render(<App application={application} presentation="page" />);
+    const list = view.getByRole('list', { name: 'Loaded conversations' });
+    const action = view.getByRole('button', {
+      name: 'New',
+      exact: true,
+    }) as HTMLButtonElement;
+    const alpha = within(list).getByRole('button', {
+      name: 'Alpha',
+    }) as HTMLButtonElement;
+    expect(action.classList.contains('tp-thread-list__new')).toBe(true);
+    expect(list.contains(action)).toBe(false);
+    expect(create).not.toHaveBeenCalled();
+    fireEvent.click(action);
+    await waitFor(() => expect(action.disabled).toBe(true));
+    expect(view.getByText('Creating conversation…')).toBeTruthy();
+    expect(alpha.disabled).toBe(false);
+    expect(application.getSnapshot().selection.id).toBe('a');
+    fireEvent.click(action);
+    expect(create).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      finish({ kind: 'failed' });
+    });
+    await waitFor(() => expect(action.disabled).toBe(false));
+    expect(view.getByRole('alert').textContent).toContain(
+      'Creation could not be confirmed'
+    );
+    expect(within(list).getByRole('button', { name: 'Alpha' })).toBe(alpha);
+    expect(application.getSnapshot().selection.id).toBe('a');
+  } finally {
+    application.dispose();
+  }
+});
+
 it('uses ThreadList while refresh, loaded-title filtering and navigation retain the selected draft and owners', async () => {
   vi.stubGlobal('matchMedia', () => ({
     matches: false,

@@ -6,6 +6,63 @@ import { ThreadList } from './index';
 afterEach(cleanup);
 
 describe('ThreadList', () => {
+  it('omits the optional creation action without a callback', () => {
+    const view = render(<ThreadList threads={[]} onSelect={() => undefined} />);
+    expect(view.container.firstElementChild).toBe(view.getByRole('list'));
+    expect(view.queryByRole('button')).toBeNull();
+  });
+
+  it('requests creation without changing controlled selection or replacing rows', () => {
+    const onNewThread = vi.fn();
+    const onSelect = vi.fn();
+    const props = {
+      threads: [{ id: 'a', title: 'Alpha' }],
+      activeThreadId: 'a',
+      onSelect,
+    };
+    const view = render(
+      <ThreadList
+        {...props}
+        onNewThread={onNewThread}
+        className="custom-list"
+      />,
+      { wrapper: StrictMode }
+    );
+    const list = view.getByRole('list', { name: 'Conversations' });
+    const alpha = view.getByRole('button', { name: 'Alpha' });
+    const create = view.getByRole('button', { name: '+ New thread' });
+    expect(create.getAttribute('type')).toBe('button');
+    expect(list.contains(create)).toBe(false);
+    expect(list.classList.contains('custom-list')).toBe(true);
+    expect(onNewThread).not.toHaveBeenCalled();
+    fireEvent.click(create);
+    expect(onNewThread.mock.calls).toEqual([[]]);
+    expect(alpha.getAttribute('aria-current')).toBe('true');
+    expect(onSelect).not.toHaveBeenCalled();
+    const replacement = vi.fn();
+    view.rerender(
+      <ThreadList
+        {...props}
+        onNewThread={replacement}
+        newThreadLabel={'<b>Create</b>'}
+        newThreadDisabled
+      />
+    );
+    const disabled = view.getByRole('button', { name: '<b>Create</b>' });
+    expect(disabled.querySelector('b')).toBeNull();
+    expect((disabled as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(disabled);
+    expect(replacement).not.toHaveBeenCalled();
+    expect(view.getByRole('button', { name: 'Alpha' })).toBe(alpha);
+    fireEvent.click(alpha);
+    expect(onSelect.mock.calls).toEqual([['a']]);
+    view.rerender(<ThreadList {...props} onNewThread={replacement} />);
+    fireEvent.click(view.getByRole('button', { name: '+ New thread' }));
+    expect(replacement.mock.calls).toEqual([[]]);
+    expect(onNewThread).toHaveBeenCalledTimes(1);
+    expect(view.getByRole('list')).toBe(list);
+  });
+
   it('renders ordered plain labels with full ID fallbacks and native semantics', () => {
     const onSelect = vi.fn();
     const threads = Object.freeze([

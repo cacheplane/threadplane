@@ -1,15 +1,13 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "823b41e2874c758f6ebec4717473215a7c7f01c8",
+  "baselineHead": "03b2ccd627ada2c04aa9a538cb037cb06e96a026",
   "sourceState": {
     "modified": [
       "libs/react/README.md",
-      "libs/react/src/chat/index.ts",
-      "libs/react/src/chat/styles.css"
-    ],
-    "untracked": [
+      "libs/react/src/chat/styles.css",
       "libs/react/src/chat/thread-list.tsx"
-    ]
+    ],
+    "untracked": []
   },
   "scope": {
     "libraries": [
@@ -855,7 +853,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "cfe565e3a25e20b14ff132b5513b549878bc235a38ae7868444367f298d87619"
+      "sha256": "e9ef00f726584bed8660a34f2bd84687b202e9de255a5f4dbca43505930238f3"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -873,7 +871,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "909db43c6e7e498e6ff1ad4c3b7f39b822baf79b6017b776b6bb1b7346a7bd0c"
+      "sha256": "d09dba66000f2ba04424ea32fc3347f8473fc9c722ecbfab58ec971f66775424"
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -10626,7 +10624,7 @@
           "path": "libs/react/src/chat/thread-list.tsx",
           "symbol": "ThreadList",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function ThreadList({ threads, onSelect, activeThreadId, label = 'Conversations', className, }: ThreadListProps) {\n    return (<ul className={`tp-thread-list${className ? ` ${className}` : ''}`} aria-label={label}>\n      {threads.map((thread) => {\n            const title = thread.title || thread.id;\n            return (<li key={thread.id} className=\"tp-thread-list__item\">\n            <button type=\"button\" className=\"tp-thread-list__button\" title={title} aria-current={thread.id === activeThreadId ? 'true' : undefined} onClick={() => onSelect(thread.id)}>\n              {title}\n            </button>\n          </li>);\n        })}\n    </ul>);\n}"
+          "signature": "export function ThreadList({ threads, onSelect, activeThreadId, label = 'Conversations', className, onNewThread, newThreadDisabled = false, newThreadLabel = '+ New thread', }: ThreadListProps) {\n    const list = (<ul className={`tp-thread-list${className ? ` ${className}` : ''}`} aria-label={label}>\n      {threads.map((thread) => {\n            const title = thread.title || thread.id;\n            return (<li key={thread.id} className=\"tp-thread-list__item\">\n            <button type=\"button\" className=\"tp-thread-list__button\" title={title} aria-current={thread.id === activeThreadId ? 'true' : undefined} onClick={() => onSelect(thread.id)}>\n              {title}\n            </button>\n          </li>);\n        })}\n    </ul>);\n    return onNewThread ? (<div className=\"tp-thread-list__container\">\n      <button type=\"button\" className=\"tp-thread-list__new\" onClick={() => onNewThread()} disabled={newThreadDisabled}>\n        {newThreadLabel}\n      </button>\n      {list}\n    </div>) : (list);\n}"
         }
       ]
     },
@@ -10654,7 +10652,7 @@
           "path": "libs/react/src/chat/thread-list.tsx",
           "symbol": "ThreadListProps",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface ThreadListProps {\n    readonly threads: readonly ThreadListItem[];\n    readonly onSelect: (threadId: string) => void;\n    readonly activeThreadId?: string | null;\n    readonly label?: string;\n    readonly className?: string;\n}"
+          "signature": "export interface ThreadListProps {\n    readonly threads: readonly ThreadListItem[];\n    readonly onSelect: (threadId: string) => void;\n    readonly activeThreadId?: string | null;\n    readonly label?: string;\n    readonly className?: string;\n    readonly onNewThread?: () => void;\n    readonly newThreadDisabled?: boolean;\n    readonly newThreadLabel?: string;\n}"
         }
       ]
     },
@@ -15016,7 +15014,7 @@
       "id": "source:libs/react/src/chat/thread-list.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/thread-list.tsx",
-      "sha256": "f75bed31ce8b19ccd90ae334beece6a642fd63edb819eb0ca211f4596337bac2"
+      "sha256": "e5cc0ec7fdab30407ebb2a16b5c2fba8352c4bb7aeb07545ea6003a736cb9a1f"
     },
     {
       "id": "source:libs/react/src/chat/tool-observation.tsx",

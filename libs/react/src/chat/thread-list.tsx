@@ -11,6 +11,9 @@ export interface ThreadListProps {
   readonly activeThreadId?: string | null;
   readonly label?: string;
   readonly className?: string;
+  readonly onNewThread?: () => void;
+  readonly newThreadDisabled?: boolean;
+  readonly newThreadLabel?: string;
 }
 
 /** A controlled view of the supplied conversation order and selection. */
@@ -20,8 +23,11 @@ export function ThreadList({
   activeThreadId,
   label = 'Conversations',
   className,
+  onNewThread,
+  newThreadDisabled = false,
+  newThreadLabel = '+ New thread',
 }: ThreadListProps) {
-  return (
+  const list = (
     <ul
       className={`tp-thread-list${className ? ` ${className}` : ''}`}
       aria-label={label}
@@ -43,5 +49,20 @@ export function ThreadList({
         );
       })}
     </ul>
+  );
+  return onNewThread ? (
+    <div className="tp-thread-list__container">
+      <button
+        type="button"
+        className="tp-thread-list__new"
+        onClick={() => onNewThread()}
+        disabled={newThreadDisabled}
+      >
+        {newThreadLabel}
+      </button>
+      {list}
+    </div>
+  ) : (
+    list
   );
 }

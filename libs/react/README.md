@@ -268,6 +268,9 @@ conversation rows without owning their data or selection:
   threads={loadedThreads}
   activeThreadId={selectedId}
   onSelect={selectThread}
+  onNewThread={requestNewThread}
+  newThreadDisabled={creating}
+  newThreadLabel="New"
   label="Loaded conversations"
 />
 ```
@@ -280,7 +283,14 @@ through reordering and updates. Selection requests pass the exact ID to
 are no automatic commands on mount, rerender or removal.
 
 The view renders a named semantic list of ordinary buttons, with default label
-“Conversations”, scoped wrapping/focus styles and optional root `className`.
+“Conversations”, scoped wrapping/focus styles and optional list `className`.
+Supplying `onNewThread` adds a native creation button before the list, inside an
+outer wrapper. Without that callback, only the list is rendered. Its default
+plain-text label is “+ New thread”; `newThreadLabel` customizes it and
+`newThreadDisabled` disables only that action. Activation synchronously requests
+creation without changing rows or selection. The application owns creation,
+pending state and any resulting selection; callback identity changes preserve
+existing rows.
 An empty collection renders an empty list. The application owns loaded-title
 filtering, loading/error/empty notices, data fetching and execution. Rename,
 delete, archive, pin/project actions, drag reordering, relative timestamps and

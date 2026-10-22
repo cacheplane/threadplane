@@ -17,7 +17,22 @@ const props: ThreadListProps = {
   activeThreadId="a"
   label="Threads"
   className="custom"
+  onNewThread={() => undefined}
+  newThreadDisabled={false}
+  newThreadLabel="New"
 />;
+// @ts-expect-error Creation callbacks are readonly.
+props.onNewThread = () => undefined;
+// @ts-expect-error Creation disabled state is readonly.
+props.newThreadDisabled = true;
+// @ts-expect-error Creation labels are readonly.
+props.newThreadLabel = 'Changed';
+// @ts-expect-error Creation disabled state is boolean.
+<ThreadList {...props} newThreadDisabled="yes" />;
+// @ts-expect-error Creation labels are plain text.
+<ThreadList {...props} newThreadLabel={<b>Rich</b>} />;
+// @ts-expect-error Creation callbacks receive no arguments.
+<ThreadList {...props} onNewThread={(id: string) => void id} />;
 // @ts-expect-error Item IDs are readonly.
 item.id = 'changed';
 // @ts-expect-error Item titles are readonly.

@@ -26,6 +26,12 @@
   min-height: 0;
   font-family: inherit;
 }
+.tp-thread-list__container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
 .tp-thread-list {
   list-style: none;
   margin: 0;
@@ -38,7 +44,8 @@
 .tp-thread-list__item {
   min-width: 0;
 }
-.tp-thread-list .tp-thread-list__button {
+.tp-thread-list .tp-thread-list__button,
+.tp-thread-list__container .tp-thread-list__new {
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
@@ -59,7 +66,12 @@
   background: var(--tp-chat-accent, var(--ds-accent, Highlight));
   color: var(--tp-chat-on-accent, var(--ds-surface, HighlightText));
 }
-.tp-thread-list .tp-thread-list__button:focus-visible {
+.tp-thread-list__container .tp-thread-list__new:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.tp-thread-list .tp-thread-list__button:focus-visible,
+.tp-thread-list__container .tp-thread-list__new:focus-visible {
   outline: 2px solid var(--tp-chat-accent, var(--ds-accent, Highlight));
   outline-offset: 3px;
 }

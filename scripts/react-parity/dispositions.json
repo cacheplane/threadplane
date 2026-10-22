@@ -2169,7 +2169,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/thread-list.tsx",
-      "reason": "Private controlled semantic ThreadList selection view with retained keyed rows and installed native dogfood. Rename/delete/archive/pin/project/reorder, pending overlays, custom rows and full parity remain open."
+      "reason": "Private controlled semantic ThreadList selection and optional new-conversation request with retained keyed rows and installed native dogfood. Rename/delete/archive/pin/project/reorder, pending overlays, custom rows and full parity remain open."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-timeline/chat-timeline.component.ts#ChatTimelineComponent",
@@ -5592,7 +5592,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/thread-list.tsx",
-      "reason": "Private controlled semantic ThreadList selection export; application owns data and execution. Lifecycle actions, project/reorder menus and full parity remain open."
+      "reason": "Private controlled semantic ThreadList selection and optional new-conversation request export; application owns data, creation and execution. Lifecycle actions, project/reorder menus and full parity remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatTimelineComponent",
@@ -15616,7 +15616,7 @@
       "taskIds": ["T29"],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Private semantic controlled selection view with no automatic I/O, sorting or execution ownership. Native directory dogfoods installed component; full lifecycle-action parity remains open."
+      "reason": "Private semantic controlled selection view and optional new-conversation request with no automatic I/O, sorting or execution ownership. Native directory dogfoods installed component; full lifecycle-action parity remains open."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ThreadListItem",
@@ -15630,14 +15630,14 @@
       "taskIds": ["T29"],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Readonly collection and required explicit selection callback with optional controlled active ID, accessible label and root class. Application owns filtering, statuses and execution."
+      "reason": "Readonly collection and required explicit selection callback with optional controlled active ID, accessible list label/class and readonly creation callback, disabled state and plain label. Application owns filtering, statuses and execution."
     },
     {
       "id": "source:libs/react/src/chat/thread-list.tsx",
       "taskIds": ["T29"],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Private keyed semantic list with safe plain labels, exact-ID callbacks, supplied selection and scoped responsive styles; full lifecycle-action and composition parity remain open."
+      "reason": "Private keyed semantic list with safe plain labels, exact-ID callbacks, supplied selection, optional app-owned new-conversation request and scoped responsive styles; full lifecycle-action and composition parity remain open."
     }
   ]
 }
