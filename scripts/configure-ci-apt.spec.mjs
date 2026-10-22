@@ -35,20 +35,20 @@ test('rewrites only active exact official Ubuntu URLs and preserves source metad
   assert.equal(await readFile(join(root, 'sources.list.d/ubuntu.sources'), 'utf8'), files['sources.list.d/ubuntu.sources'].replace('http://archive.ubuntu.com', 'https://archive.ubuntu.com').replace('https://azure.archive.ubuntu.com', 'https://archive.ubuntu.com'));
   for (const path of ['sources.list.d/custom.list', 'sources.list.d/ignored.save', 'apt.conf.d/99custom', 'apt.conf']) assert.equal(await readFile(join(root, path), 'utf8'), files[path]);
   assert.equal((await stat(join(root, 'sources.list'))).mode & 0o777, 0o640);
-  const config = await readFile(join(root, 'apt.conf.d/99zz-threadplane-ci-downloads'), 'utf8');
+  const config = await readFile(join(root, 'apt.conf.d/zz-threadplane-ci-downloads'), 'utf8');
   assert.equal(config, 'Acquire::Retries "2";\nAcquire::http::Timeout "30";\nAcquire::https::Timeout "30";\n');
-  assert.equal((await stat(join(root, 'apt.conf.d/99zz-threadplane-ci-downloads'))).mode & 0o777, 0o644);
+  assert.equal((await stat(join(root, 'apt.conf.d/zz-threadplane-ci-downloads'))).mode & 0o777, 0o644);
   const first = await readFile(join(root, 'sources.list.d/ubuntu.sources'), 'utf8');
   await configureCiApt(root);
   assert.equal(await readFile(join(root, 'sources.list.d/ubuntu.sources'), 'utf8'), first);
-  assert.equal(await readFile(join(root, 'apt.conf.d/99zz-threadplane-ci-downloads'), 'utf8'), config);
+  assert.equal(await readFile(join(root, 'apt.conf.d/zz-threadplane-ci-downloads'), 'utf8'), config);
 });
 
 test('handles missing optional source files and surfaces filesystem errors', async (t) => {
   const root = await fixture(t);
   await rm(join(root, 'sources.list.d'), { recursive: true });
   await configureCiApt(root);
-  assert.match(await readFile(join(root, 'apt.conf.d/99zz-threadplane-ci-downloads'), 'utf8'), /Timeout "30"/);
+  assert.match(await readFile(join(root, 'apt.conf.d/zz-threadplane-ci-downloads'), 'utf8'), /Timeout "30"/);
   await writeFile(join(root, 'sources.list'), '\0', 'utf8');
   await rm(join(root, 'apt.conf.d'), { recursive: true });
   await writeFile(join(root, 'apt.conf.d'), 'not a directory');
@@ -65,4 +65,27 @@ test('CLI rejects arbitrary filesystem overrides before accessing APT', () => {
   assert.equal(result.status, 1);
   assert.match(result.stderr, /accepts no arguments/);
   assert.equal(result.stdout, '');
+});
+
+test('failed validation reports only selected bounded integers or safe markers', () => {
+  assert.throws(() => validateEffectiveAptConfig("CI_RETRIES='5'\nCI_HTTP_TIMEOUT='30'\n"), /retries=5, http=30, https=missing/);
+  const credential = 'https://user:never-print-this@proxy.example';
+  assert.throws(() => validateEffectiveAptConfig(`CI_RETRIES='2'\nCI_HTTP_TIMEOUT='${credential}'\nCI_HTTPS_TIMEOUT='30'\n`), (error) => {
+    assert.match(error.message, /retries=2, http=nonnumeric, https=30/);
+    assert.ok(!error.message.includes(credential));
+    return true;
+  });
+});
+
+test('actual Linux APT parser applies limits after the hosted Ubuntu runner zz-retries file', { skip: process.platform !== 'linux' }, async (t) => {
+  const root = await fixture(t);
+  // Pinned ubuntu24/20261012.334 configure-apt.sh writes this late override.
+  await writeFile(join(root, 'apt.conf.d/zz-retries'), 'Acquire::Retries "1";\nAcquire::http::Timeout "15";\nAcquire::https::Timeout "15";\n');
+  const bootstrap = join(root, 'bootstrap.conf');
+  await writeFile(bootstrap, `Dir::Etc::parts "${root}/apt.conf.d";\nDir::Etc::main "${root}/apt.conf";\n`);
+  await configureCiApt(root);
+  const result = spawnSync('apt-config', ['shell', 'CI_RETRIES', 'Acquire::Retries', 'CI_HTTP_TIMEOUT', 'Acquire::http::Timeout', 'CI_HTTPS_TIMEOUT', 'Acquire::https::Timeout'], { encoding: 'utf8', env: { PATH: process.env.PATH, APT_CONFIG: bootstrap } });
+  assert.equal(result.status, 0, 'actual APT parser must be available on Linux CI');
+  validateEffectiveAptConfig(result.stdout);
+  assert.equal(await readFile(join(root, 'apt.conf.d/zz-retries'), 'utf8'), 'Acquire::Retries "1";\nAcquire::http::Timeout "15";\nAcquire::https::Timeout "15";\n');
 });

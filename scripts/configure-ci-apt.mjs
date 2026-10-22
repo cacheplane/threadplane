@@ -43,12 +43,19 @@ export async function configureCiApt(aptRoot) {
     if (after !== before) await writeFile(fullPath, after);
   }
   await mkdir(join(aptRoot, 'apt.conf.d'), { recursive: true });
-  await writeFile(join(aptRoot, 'apt.conf.d/99zz-threadplane-ci-downloads'), downloadConfig, { mode: 0o644 });
+  // Hosted Ubuntu runners already have zz-retries; NN-prefixed files load first.
+  await writeFile(join(aptRoot, 'apt.conf.d/zz-threadplane-ci-downloads'), downloadConfig, { mode: 0o644 });
 }
 
 export function validateEffectiveAptConfig(output) {
-  for (const [key, expected] of [['CI_RETRIES', '2'], ['CI_HTTP_TIMEOUT', '30'], ['CI_HTTPS_TIMEOUT', '30']]) {
-    if (!output.split('\n').includes(`${key}='${expected}'`)) throw new Error('Unexpected effective APT download limits');
+  const values = ['CI_RETRIES', 'CI_HTTP_TIMEOUT', 'CI_HTTPS_TIMEOUT'].map((key) => {
+    const line = output.split('\n').find((entry) => entry.startsWith(`${key}=`));
+    if (line === undefined) return 'missing';
+    const match = line.match(/^[A-Z_]+='([0-9]{1,10})'$/);
+    return match ? match[1] : 'nonnumeric';
+  });
+  if (values.join('/') !== '2/30/30') {
+    throw new Error(`Unexpected effective APT download limits: retries=${values[0]}, http=${values[1]}, https=${values[2]}`);
   }
 }
 
