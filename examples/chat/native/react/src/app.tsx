@@ -193,13 +193,6 @@ function Conversation({
         >
           Refresh
         </button>
-        <button
-          type="button"
-          onClick={() => application.newConversation()}
-          disabled={snapshot.creation.status === 'pending'}
-        >
-          New
-        </button>
       </div>
       <label htmlFor="filter">Filter loaded conversations by title</label>
       <input
@@ -229,6 +222,9 @@ function Conversation({
         onSelect={application.select}
         label="Loaded conversations"
         className="conversation-list"
+        onNewThread={() => application.newConversation()}
+        newThreadDisabled={snapshot.creation.status === 'pending'}
+        newThreadLabel="New"
       />
       {snapshot.list.status !== 'pending' && rows.length === 0 && (
         <p className="muted">No loaded conversations match.</p>

@@ -174,6 +174,11 @@ test('installed React sidenav retains navigation, draft and a running response a
     await expect(draft).toBeEnabled();
     const threadList = nav.getByRole('list', { name: 'Loaded conversations' });
     await expect(threadList).toHaveClass(/tp-thread-list/);
+    const newThread = nav.getByRole('button', { name: 'New', exact: true });
+    await expect(newThread).toHaveClass('tp-thread-list__new');
+    await expect(
+      threadList.getByRole('button', { name: 'New', exact: true })
+    ).toHaveCount(0);
     const alpha = threadList.getByRole('button', {
       name: 'Alpha notes',
       exact: true,

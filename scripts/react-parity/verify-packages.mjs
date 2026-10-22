@@ -228,7 +228,7 @@ type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B 
 type Assert<T extends true> = T;
 export type ThreadListItemContract = Assert<Equal<ThreadListItem, { readonly id: string; readonly title?: string }>>;
 export type ThreadListRequiredContract = Assert<Equal<Pick<ThreadListProps, 'threads' | 'onSelect'>, { readonly threads: readonly ThreadListItem[]; readonly onSelect: (threadId: string) => void }>>;
-export type ThreadListOptionsContract = Assert<Equal<Pick<ThreadListProps, 'activeThreadId' | 'label' | 'className'>, { readonly activeThreadId?: string | null; readonly label?: string; readonly className?: string }>>;
+export type ThreadListOptionsContract = Assert<Equal<Pick<ThreadListProps, 'activeThreadId' | 'label' | 'className' | 'onNewThread' | 'newThreadDisabled' | 'newThreadLabel'>, { readonly activeThreadId?: string | null; readonly label?: string; readonly className?: string; readonly onNewThread?: () => void; readonly newThreadDisabled?: boolean; readonly newThreadLabel?: string }>>;
 export type SidebarControlledContract = Assert<Equal<Pick<ChatSidebarProps, 'open' | 'onOpenChange' | 'title'>, { readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly title: string }>>;
 export type SidebarLayoutOptionsContract = Assert<Equal<Pick<ChatSidebarProps, 'pageContent' | 'pushContent'>, { readonly pageContent?: ReactNode; readonly pushContent?: boolean }>>;
 type Controlled = Pick<ChatSidenavProps, 'mode' | 'open' | 'onOpenChange' | 'onModeChange'>;

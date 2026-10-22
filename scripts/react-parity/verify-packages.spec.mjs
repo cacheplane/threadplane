@@ -21,7 +21,7 @@ export interface ChatSidenavProps { readonly mode: ChatSidenavMode; readonly ope
 export interface ChatSidenavScrimProps { readonly open: boolean; readonly onDismiss: () => void; readonly label?: string; readonly className?: string; }
 export interface ChatSidebarProps { readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly title: string; readonly pageContent?: import('react').ReactNode; readonly pushContent?: boolean; }
 export interface ThreadListItem { readonly id: string; readonly title?: string; }
-export interface ThreadListProps { readonly threads: readonly ThreadListItem[]; readonly onSelect: (threadId: string) => void; readonly activeThreadId?: string | null; readonly label?: string; readonly className?: string; }`;
+export interface ThreadListProps { readonly threads: readonly ThreadListItem[]; readonly onSelect: (threadId: string) => void; readonly activeThreadId?: string | null; readonly label?: string; readonly className?: string; readonly onNewThread?: () => void; readonly newThreadDisabled?: boolean; readonly newThreadLabel?: string; }`;
   const source = join(consumer, 'index.ts');
   writeFileSync(source, packageVerifier.plainExportTypes(['@threadplane/react/chat']));
   const compile = text => {
@@ -77,6 +77,15 @@ export interface ThreadListProps { readonly threads: readonly ThreadListItem[]; 
     ['readonly activeThreadId?: string | null', 'readonly activeThreadId?: string'],
     ['readonly label?: string', 'readonly label?: number'],
     ['readonly className?: string', 'className?: string'],
+    ['readonly onNewThread?: () => void', 'readonly onNewThread: () => void'],
+    ['readonly onNewThread?: () => void', 'onNewThread?: () => void'],
+    ['readonly onNewThread?: () => void', 'readonly onNewThread?: (id: string) => void'],
+    ['readonly newThreadDisabled?: boolean', 'readonly newThreadDisabled: boolean'],
+    ['readonly newThreadDisabled?: boolean', 'newThreadDisabled?: boolean'],
+    ['readonly newThreadDisabled?: boolean', 'readonly newThreadDisabled?: string'],
+    ['readonly newThreadLabel?: string', 'readonly newThreadLabel: string'],
+    ['readonly newThreadLabel?: string', 'newThreadLabel?: string'],
+    ['readonly newThreadLabel?: string', 'readonly newThreadLabel?: number'],
   ]) assert.match(compile(mutateThreadList(before, after)), /false.*true/);
   assert.doesNotMatch(packageVerifier.plainExportTypes(['@threadplane/core']), /ChatSidenav|ThreadList|from 'react'/);
 });
