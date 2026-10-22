@@ -79,6 +79,22 @@ test('folded RFC reference headers are unfolded without accepting bare newlines'
   ).toThrow();
 });
 
+test('reference parsing consumes only complete IDs and whitespace', () => {
+  expect(
+    parseReplyHeaders({ References: '<one@example.com><two@example.com>' })
+      .references
+  ).toEqual(['<one@example.com>', '<two@example.com>']);
+  for (const value of [
+    '<<script>reader@example.com>',
+    '<script>',
+    'prefix <one@example.com>',
+    '<one@example.com>junk<two@example.com>',
+    '<one@example.com> suffix',
+  ]) {
+    expect(() => parseReplyHeaders({ References: value })).toThrow();
+  }
+});
+
 test('matched reply uses provider receipt time and canonical mailbox stop, once', async () => {
   const stop = vi.fn(async () => ({ applied: true }));
   const { executor, calls } = executorWith({

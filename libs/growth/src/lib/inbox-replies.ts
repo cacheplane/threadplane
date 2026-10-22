@@ -73,14 +73,17 @@ export function parseReplyHeaders(value: unknown): {
   };
   const ids = (text: string): string[] => {
     if (!text) return [];
-    const tokens = text.match(/<[^<>]+>/g) ?? [];
-    if (
-      tokens.length === 0 ||
-      tokens.length > 100 ||
-      text.replace(/<[^<>]+>/g, '').trim()
-    )
+    const tokens: string[] = [];
+    let end = 0;
+    for (const match of text.matchAll(/<[^<>]+>/g)) {
+      if (text.slice(end, match.index).trim() || tokens.length === 100)
+        throw new Error('Invalid reference headers');
+      tokens.push(inboxMessageId(match[0]));
+      end = match.index + match[0].length;
+    }
+    if (tokens.length === 0 || text.slice(end).trim())
       throw new Error('Invalid reference headers');
-    return tokens.map(inboxMessageId);
+    return tokens;
   };
   const directIds = ids(read('in-reply-to'));
   if (directIds.length > 1) throw new Error('Ambiguous direct reference');
