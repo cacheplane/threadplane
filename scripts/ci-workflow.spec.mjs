@@ -1874,3 +1874,22 @@ it('requires installed native React readiness immediately after owned render sta
   assert.equal(job.slice(job.indexOf(owner) + owner.length, job.indexOf(step)).trim(), '', 'readiness immediately follows owner proof');
   for (const prerequisite of ['Build and validate private React foundations', 'Install Chromium for packed runtime consumers', 'npx playwright install --with-deps chromium']) assert.ok(job.indexOf(prerequisite) >= 0 && job.indexOf(prerequisite) < job.indexOf(step));
 });
+
+
+it('bounds every Playwright dependency install and configures Ubuntu downloads first', async () => {
+  for (const file of ['ci.yml', 'aimock-drift.yml']) {
+    const workflow = withoutYamlCommentLines(await readFile(`.github/workflows/${file}`, 'utf8'));
+    const steps = workflow.split(/(?=^      - )/m);
+    const installs = steps.map((step, index) => ({ step, index })).filter(({ step }) => /npx playwright install.*--with-deps/.test(step));
+    assert.equal(installs.length, file === 'ci.yml' ? 9 : 1, `enumerate actual install callers in ${file}`);
+    for (const { step, index } of installs) {
+      assert.match(step, /timeout-minutes: 10/);
+      assert.match(steps[index - 1], /name: Configure bounded Ubuntu package downloads/);
+      assert.match(steps[index - 1], /sudo "\$\(command -v node\)" scripts\/configure-ci-apt\.mjs/);
+      assert.equal(steps[index - 1].match(/^        if: (.*)$/m)?.[1], step.match(/^        if: (.*)$/m)?.[1], 'setup and installation share any existing guard');
+    }
+  }
+  const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+  assert.match(readNamedStep(readJobBlock(workflow, 'ci-scope'), 'Test CI scope classifier'), /scripts\/configure-ci-apt\.spec\.mjs/);
+  assert.match(workflow, /sudo timeout --signal=TERM --kill-after=10s 590s bash -c 'apt-get update && apt-get install -y ffmpeg'/);
+});
