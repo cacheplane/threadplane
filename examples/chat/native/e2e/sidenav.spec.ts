@@ -17,10 +17,21 @@ test('installed React sidenav retains navigation, draft and a running response a
   const work = realpathSync(mkdtempSync(join(tmpdir(), 'native-sidenav-')));
   const rows = [
     threadEnvelope('a', 'Alpha notes'),
-    threadEnvelope('b', 'Beta notes'),
+    {
+      ...threadEnvelope('b', 'Beta notes'),
+      metadata: { title: 'Beta notes', pinned: true },
+    },
   ];
   const fixedNow = new Date('2026-09-28T00:02:01.000Z');
-  const refreshedAlpha = { ...rows[0], updated_at: '2026-09-28T00:01:01.000Z' };
+  const refreshedAlpha = {
+    ...rows[0],
+    metadata: { title: 'Alpha notes', pinned: true },
+    updated_at: '2026-09-28T00:01:01.000Z',
+  };
+  const refreshedBeta = {
+    ...rows[1],
+    metadata: { title: 'Beta notes', pinned: false },
+  };
   const saved = (id: string) => [
     { type: 'ai', id: `saved-${id}`, content: `Saved answer ${id}.` },
   ];
@@ -99,7 +110,7 @@ test('installed React sidenav retains navigation, draft and a running response a
       method: 'POST',
       path: '/api/threads/search',
       payload: { limit: 50, offset: 0 },
-      body: [refreshedAlpha, rows[1]],
+      body: [refreshedAlpha, refreshedBeta],
     },
   ]);
   let server: Awaited<ReturnType<typeof startCheckedServer>> | undefined;
@@ -204,7 +215,19 @@ test('installed React sidenav retains navigation, draft and a running response a
       'datetime',
       rows[0].updated_at
     );
-    await expect(beta).toHaveAccessibleDescription('2 min ago');
+    await expect(beta).toHaveAccessibleDescription(
+      'Pinned conversation 2 min ago'
+    );
+    await expect(threadList.getByRole('button')).toHaveText([
+      /Alpha notes/,
+      /Beta notes/,
+    ]);
+    await expect(alpha.locator('.tp-thread-list__pin')).toHaveCount(0);
+    const pin = beta.locator('.tp-thread-list__pin');
+    await expect(pin).toHaveCount(1);
+    await expect(pin).toHaveAttribute('aria-hidden', 'true');
+    await expect(pin).toHaveAttribute('focusable', 'false');
+    await expect(pin).not.toHaveAttribute('tabindex');
     const alphaNode = await alpha.elementHandle();
     assert.ok(alphaNode);
     await expect(
@@ -296,7 +319,7 @@ test('installed React sidenav retains navigation, draft and a running response a
     );
     await expect(
       nav.locator('[aria-current="true"]')
-    ).toHaveAccessibleDescription('2 min ago');
+    ).toHaveAccessibleDescription('Pinned conversation 2 min ago');
     await expect(alpha).not.toHaveAttribute('aria-current');
     await expectRetainedThreadList();
     await expect(
@@ -432,11 +455,40 @@ test('installed React sidenav retains navigation, draft and a running response a
       expect(highlightLayout.contained).toBe(true);
       expect(highlightLayout.contrast).toBeGreaterThanOrEqual(4.5);
       await expect(beta).toHaveAccessibleName('Beta notes');
-      await expect(beta).toHaveAccessibleDescription('2 min ago');
+      await expect(beta).toHaveAccessibleDescription(
+        'Pinned conversation 2 min ago'
+      );
       await expect(beta.locator('time')).toHaveAttribute(
         'datetime',
         rows[1].updated_at
       );
+      expect(
+        await beta.evaluate((button) => {
+          const icon = button.querySelector('.tp-thread-list__pin')!;
+          const title = button.querySelector('mark')!;
+          const outer = button.getBoundingClientRect();
+          const rect = icon.getBoundingClientRect();
+          const text = title.getBoundingClientRect();
+          const style = getComputedStyle(icon);
+          return {
+            contained:
+              rect.left >= outer.left &&
+              rect.right <= outer.right &&
+              rect.top >= outer.top &&
+              rect.bottom <= outer.bottom,
+            aligned: rect.top < text.bottom && rect.bottom > text.top,
+            inheritsColor:
+              style.fill === getComputedStyle(button).color &&
+              style.color === getComputedStyle(button).color,
+            inline: style.display === 'inline-block',
+          };
+        })
+      ).toEqual({
+        contained: true,
+        aligned: true,
+        inheritsColor: true,
+        inline: true,
+      });
       const timeLayout = await beta.evaluate((button) => {
         const time = button.querySelector('time')!;
         const title = button.querySelector('span')!;
@@ -574,7 +626,16 @@ test('installed React sidenav retains navigation, draft and a running response a
       (button) => button.parentElement
     );
     await nav.getByRole('button', { name: 'Refresh', exact: true }).click();
-    await expect(alpha).toHaveAccessibleDescription('1 min ago');
+    await expect(alpha).toHaveAccessibleDescription(
+      'Pinned conversation 1 min ago'
+    );
+    await expect(beta).toHaveAccessibleDescription('2 min ago');
+    await expect(beta.locator('.tp-thread-list__pin')).toHaveCount(0);
+    await expect(alpha.locator('.tp-thread-list__pin')).toHaveCount(1);
+    await expect(threadList.getByRole('button')).toHaveText([
+      /Alpha notes/,
+      /Beta notes/,
+    ]);
     await expect(alpha).toHaveAccessibleName('Alpha notes');
     await expect(alpha.locator('time')).toHaveAttribute(
       'datetime',

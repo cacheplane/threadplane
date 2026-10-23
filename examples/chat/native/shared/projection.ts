@@ -9,6 +9,7 @@ export function projectThread(thread: Thread): ThreadRow {
     id: thread.thread_id,
     title:
       typeof title === 'string' && title.trim() ? title.trim() : 'Untitled',
+    ...(thread.metadata?.['pinned'] === true ? { pinned: true } : {}),
     ...(Number.isFinite(updatedAt) ? { updatedAt } : {}),
   });
 }

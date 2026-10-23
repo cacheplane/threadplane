@@ -10,6 +10,168 @@ afterEach(() => {
 });
 
 describe('ThreadList', () => {
+  it.each([true, false, undefined, 'true', 1, {}, []].map((value) => [value]))(
+    'presents only strict true pinned values: %s',
+    (value) => {
+      const pinned = value === true;
+      const view = render(
+        <ThreadList
+          threads={[
+            { id: 'fallback', title: '', pinned: value } as ThreadListItem,
+          ]}
+          onSelect={() => undefined}
+        />
+      );
+      const button = view.getByRole('button', {
+        name: 'fallback',
+        ...(pinned ? { description: 'Pinned conversation' } : {}),
+      });
+      expect(button.getAttribute('title')).toBe('fallback');
+      expect(button.querySelectorAll('.tp-thread-list__pin')).toHaveLength(
+        pinned ? 1 : 0
+      );
+      if (pinned) {
+        const icon = button.querySelector('svg');
+        if (!icon) throw new Error('Missing decorative pin');
+        expect(icon.getAttribute('aria-hidden')).toBe('true');
+        expect(icon.getAttribute('focusable')).toBe('false');
+        expect(icon.hasAttribute('tabindex')).toBe(false);
+        expect(button.lastElementChild?.className).toBe(
+          'tp-thread-list__status'
+        );
+      } else expect(button.innerHTML).toBe('fallback');
+    }
+  );
+
+  it('owns pin status across empty renderers, invalid dates and keyed updates without requests or sorting', () => {
+    const rows = Object.freeze([
+      Object.freeze({ id: 'a', title: 'Alpha' }),
+      Object.freeze({ id: 'b', title: 'Beta', pinned: true, updatedAt: 0 }),
+    ]);
+    const onSelect = vi.fn();
+    const onNewThread = vi.fn();
+    const renderTitle = vi.fn((item: ThreadListItem) => <mark>{item.id}</mark>);
+    const props = {
+      threads: rows,
+      onSelect,
+      onNewThread,
+      now: 120000,
+      activeThreadId: 'b',
+    };
+    const view = render(<ThreadList {...props} renderTitle={renderTitle} />);
+    const beta = view.getByRole('button', {
+      name: 'Beta',
+      description: 'Pinned conversation 2 min ago',
+    });
+    const row = beta.parentElement;
+    expect(renderTitle.mock.calls[1][0]).toBe(rows[1]);
+    expect(
+      view
+        .getAllByRole('listitem')
+        .map((node) => node.querySelector('button')?.title)
+    ).toEqual(['Alpha', 'Beta']);
+    const ids = (beta.getAttribute('aria-describedby') ?? '').split(' ');
+    expect(ids).toHaveLength(2);
+    expect(ids.map((id) => document.getElementById(id)?.textContent)).toEqual([
+      'Pinned conversation',
+      '2 min ago',
+    ]);
+    expect(beta.hasAttribute('aria-labelledby')).toBe(false);
+    beta.focus();
+    for (const content of [null, false] as const) {
+      view.rerender(<ThreadList {...props} renderTitle={() => content} />);
+      expect(
+        view.getByRole('button', {
+          name: 'Beta',
+          description: 'Pinned conversation 2 min ago',
+        })
+      ).toBe(beta);
+      expect(beta.querySelector('svg')).not.toBeNull();
+      expect(document.activeElement).toBe(beta);
+    }
+    view.rerender(<ThreadList {...props} />);
+    expect(
+      view.getByRole('button', {
+        name: 'Beta',
+        description: 'Pinned conversation 2 min ago',
+      })
+    ).toBe(beta);
+    expect(beta.getAttribute('aria-label')).toBe('Beta');
+    expect(beta.hasAttribute('aria-labelledby')).toBe(false);
+    for (const updatedAt of [undefined, NaN, Infinity]) {
+      view.rerender(
+        <ThreadList
+          {...props}
+          threads={[
+            { id: 'b', title: 'Changed', pinned: true, updatedAt },
+            rows[0],
+          ]}
+        />
+      );
+      expect(
+        view.getByRole('button', {
+          name: 'Changed',
+          description: 'Pinned conversation',
+        })
+      ).toBe(beta);
+      expect(beta.parentElement).toBe(row);
+      expect(beta.getAttribute('title')).toBe('Changed');
+      expect(beta.querySelector('time')).toBeNull();
+      expect(document.activeElement).toBe(beta);
+    }
+    view.rerender(
+      <ThreadList
+        {...props}
+        threads={[{ id: 'b', title: 'Changed', pinned: true, updatedAt: 0 }]}
+        now={NaN}
+      />
+    );
+    expect(
+      view.getByRole('button', {
+        name: 'Changed',
+        description: 'Pinned conversation',
+      })
+    ).toBe(beta);
+    view.rerender(
+      <ThreadList
+        {...props}
+        threads={[
+          { id: 'b', title: 'Changed', pinned: false, updatedAt: 60000 },
+        ]}
+      />
+    );
+    expect(
+      view.getByRole('button', { name: 'Changed', description: '1 min ago' })
+    ).toBe(beta);
+    expect(beta.querySelector('svg')).toBeNull();
+    expect(beta.hasAttribute('aria-label')).toBe(false);
+    expect(document.activeElement).toBe(beta);
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(onNewThread).not.toHaveBeenCalled();
+    fireEvent.click(beta);
+    fireEvent.click(view.getByRole('button', { name: '+ New thread' }));
+    expect(onSelect.mock.calls).toEqual([['b']]);
+    expect(onNewThread.mock.calls).toEqual([[]]);
+    expect(beta.getAttribute('aria-current')).toBe('true');
+    view.rerender(
+      <>
+        <ThreadList {...props} />
+        <ThreadList {...props} />
+      </>
+    );
+    const descriptions = view
+      .getAllByRole('button', { name: 'Beta' })
+      .flatMap((button) => {
+        const references = (
+          button.getAttribute('aria-describedby') ?? ''
+        ).split(' ');
+        for (const id of references)
+          expect(button.contains(document.getElementById(id))).toBe(true);
+        return references;
+      });
+    expect(new Set(descriptions).size).toBe(4);
+  });
+
   it('renders supplied items with independent labels and retains keyed focus across renderer changes', () => {
     const rows = Object.freeze([
       Object.freeze({ id: 'a', title: 'Alpha', updatedAt: 0 }),

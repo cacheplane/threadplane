@@ -20,7 +20,7 @@ test('plain declaration proof checks navigation, sidebar and thread-list type-on
 export interface ChatSidenavProps { readonly mode: ChatSidenavMode; readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly onModeChange: (mode: Exclude<ChatSidenavMode, 'drawer'>) => void; }
 export interface ChatSidenavScrimProps { readonly open: boolean; readonly onDismiss: () => void; readonly label?: string; readonly className?: string; }
 export interface ChatSidebarProps { readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly title: string; readonly pageContent?: import('react').ReactNode; readonly pushContent?: boolean; }
-export interface ThreadListItem { readonly id: string; readonly title?: string; readonly updatedAt?: number; }
+export interface ThreadListItem { readonly id: string; readonly title?: string; readonly updatedAt?: number; readonly pinned?: boolean; }
 export interface ThreadListProps { readonly threads: readonly ThreadListItem[]; readonly onSelect: (threadId: string) => void; readonly activeThreadId?: string | null; readonly label?: string; readonly className?: string; readonly onNewThread?: () => void; readonly newThreadDisabled?: boolean; readonly newThreadLabel?: string; readonly now?: number; readonly renderTitle?: (thread: ThreadListItem) => import('react').ReactNode; }`;
   const source = join(consumer, 'index.ts');
   writeFileSync(source, packageVerifier.plainExportTypes(['@threadplane/react/chat']));
@@ -65,6 +65,10 @@ export interface ThreadListProps { readonly threads: readonly ThreadListItem[]; 
   const threadList = declaration.indexOf('export interface ThreadListItem');
   const mutateThreadList = (before, after) => declaration.slice(0, threadList) + declaration.slice(threadList).replace(before, after);
   for (const [before, after] of [
+    ['readonly pinned?: boolean;', ''],
+    ['readonly pinned?: boolean', 'readonly pinned: boolean'],
+    ['readonly pinned?: boolean', 'pinned?: boolean'],
+    ['readonly pinned?: boolean', 'readonly pinned?: string'],
     ['readonly id: string', 'readonly id?: string'],
     ['readonly updatedAt?: number;', ''],
     ['readonly updatedAt?: number', 'readonly updatedAt: number'],
