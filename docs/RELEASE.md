@@ -144,6 +144,16 @@ git diff --cached package-lock.json | grep -E '^-' | grep -icE 'linux|darwin|mus
 
 If it prints anything else, revert the lockfile and re-apply the version lines by hand.
 
+The native AG-UI A2UI application proof pins the root lockfile's exact SHA-256
+in `scripts/react-cockpit/ag-ui-a2ui-native-probe.mjs`. After reviewing the
+lockfile diff, refresh that fixed `lockHash` literal for the release. Keep the
+graph pin and both runtime hash assertions intact. The lightweight binding check
+must pass before the installed application proof runs:
+
+```bash
+node --test scripts/react-cockpit/ag-ui-a2ui-native-probe.spec.mjs
+```
+
 ## First `@threadplane` release
 
 The first publish under the `@threadplane` npm org is manual. The packages must exist on npm before trusted publishing can be configured package-by-package. Run this from a clean, merged `main` branch.
