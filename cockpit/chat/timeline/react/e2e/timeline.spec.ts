@@ -148,11 +148,9 @@ test('installed SDK previews A, sends C at tip, forks D from A, and extends fork
       'messages-tuple',
       'updates',
       'custom',
-      ...(index >= 3 ? ['checkpoints'] : []),
+      'checkpoints',
     ]);
-    if (index < 3)
-      expect(streamBodies[index]).not.toContain('event: checkpoints\n');
-    else expect(streamBodies[index]).toContain('event: checkpoints\n');
+    expect(streamBodies[index]).toContain('event: checkpoints\n');
   }
   writeFileSync(
     testInfo.outputPath('stream-mode-proof.json'),

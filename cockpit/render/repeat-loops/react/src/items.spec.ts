@@ -1,7 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { createRenderState } from '@threadplane/content/render-state';
 import {
   addItem,
   createItems,
+  createItemCommands,
   MAX_ITEMS,
   removeItem,
   reverseItems,
@@ -100,5 +102,116 @@ describe('caller-owned keyed items', () => {
     }
     const duplicate = { items: [{ id: 'item-1', label: 'Kept' }], nextId: 1 };
     expect(addItem(duplicate)).toBe(duplicate);
+  });
+});
+
+describe('application owner commands', () => {
+  it('publishes Add once with a complete list and counter, preserving old snapshots', () => {
+    const owner = createRenderState(createItems());
+    const update = vi.spyOn(owner, 'update');
+    const set = vi.spyOn(owner, 'set');
+    const snapshots: unknown[] = [];
+    const release = owner.subscribe(() => snapshots.push(owner.getSnapshot()));
+    const before = owner.getSnapshot();
+    const commands = createItemCommands(owner);
+    commands.add();
+    const expected = addItem(createItems());
+    expect(update).toHaveBeenCalledExactlyOnceWith({
+      '/items': expected.items,
+      '/nextId': 2,
+    });
+    expect(set).not.toHaveBeenCalled();
+    expect(snapshots).toEqual([expected]);
+    expect(owner.getSnapshot()).toEqual(expected);
+    expect(before).toEqual(createItems());
+    expect(owner.lastChange()).toEqual({ path: '/nextId', value: 2 });
+    release();
+    owner.dispose();
+  });
+
+  it('reads latest external writes for every command and uses one items set for remove/reverse', () => {
+    const owner = createRenderState(createItems());
+    const commands = createItemCommands(owner);
+    const latest = {
+      items: [
+        { id: 'custom', label: 'Custom' },
+        { id: 'other', label: 'Other' },
+      ],
+      nextId: 12,
+    };
+    owner.update({ '/items': latest.items, '/nextId': latest.nextId });
+    const set = vi.spyOn(owner, 'set');
+    const update = vi.spyOn(owner, 'update');
+    const notify = vi.fn();
+    const release = owner.subscribe(notify);
+    commands.add();
+    expect(owner.getSnapshot()).toEqual(addItem(latest));
+    expect(update).toHaveBeenCalledTimes(1);
+    commands.remove('custom');
+    const removed = removeItem(addItem(latest), 'custom');
+    expect(set).toHaveBeenCalledExactlyOnceWith('/items', removed.items);
+    expect(owner.getSnapshot()).toEqual(removed);
+    expect(owner.lastChange()).toEqual({
+      path: '/items',
+      value: removed.items,
+    });
+    set.mockClear();
+    commands.reverse();
+    const reversed = reverseItems(removed);
+    expect(set).toHaveBeenCalledExactlyOnceWith('/items', reversed.items);
+    expect(owner.getSnapshot()).toEqual(reversed);
+    expect(notify).toHaveBeenCalledTimes(3);
+    release();
+    owner.dispose();
+  });
+
+  it('issues no owner commands or notifications for every helper reference no-op', () => {
+    let full = createItems();
+    while (full.items.length < MAX_ITEMS) full = addItem(full);
+    // The actual owner rejects nonfinite numbers at capture; the pure helper's
+    // Infinity refusal remains covered above. Exercise accepted owner values here.
+    expect(() =>
+      createRenderState({ ...createItems(), nextId: Infinity })
+    ).toThrow('Unsupported render-state value');
+    const cases = [
+      full,
+      ...[0, -1, 1.5, Number.MAX_SAFE_INTEGER].map((nextId) => ({
+        ...createItems(),
+        nextId,
+      })),
+      { items: [{ id: 'item-1', label: 'Kept' }], nextId: 1 },
+    ];
+    for (const state of cases) {
+      const owner = createRenderState(state);
+      const before = owner.getSnapshot();
+      const set = vi.spyOn(owner, 'set'),
+        update = vi.spyOn(owner, 'update'),
+        notify = vi.fn();
+      const release = owner.subscribe(notify);
+      createItemCommands(owner).add();
+      expect(owner.getSnapshot()).toBe(before);
+      expect(set).not.toHaveBeenCalled();
+      expect(update).not.toHaveBeenCalled();
+      expect(notify).not.toHaveBeenCalled();
+      release();
+      owner.dispose();
+    }
+    for (const items of [[], [{ id: 'only', label: 'Only' }]]) {
+      const owner = createRenderState({ items, nextId: 8 });
+      const before = owner.getSnapshot();
+      const set = vi.spyOn(owner, 'set'),
+        update = vi.spyOn(owner, 'update'),
+        notify = vi.fn();
+      const release = owner.subscribe(notify);
+      const commands = createItemCommands(owner);
+      commands.remove('missing');
+      commands.reverse();
+      expect(owner.getSnapshot()).toBe(before);
+      expect(set).not.toHaveBeenCalled();
+      expect(update).not.toHaveBeenCalled();
+      expect(notify).not.toHaveBeenCalled();
+      release();
+      owner.dispose();
+    }
   });
 });

@@ -319,7 +319,8 @@ export function createSession(
   let pendingToolSettlements = 0;
   let branch: CheckpointOwner | undefined;
   let preparing: Preparation | undefined;
-  const branchStreamModes = [
+  // Owned streams need saved root values after auxiliary model callbacks.
+  const checkpointStreamModes = [
     'values',
     'messages-tuple',
     'updates',
@@ -819,8 +820,8 @@ export function createSession(
                 run.evidence.runId,
                 joining,
                 attempt.controller.signal,
-                ...(attempt.branch
-                  ? [{ streamMode: [...branchStreamModes] }]
+                ...(!suppliedTransport || attempt.branch
+                  ? [{ streamMode: [...checkpointStreamModes] }]
                   : [])
               )
             : transport.stream(
@@ -828,18 +829,17 @@ export function createSession(
                 threadId,
                 payload,
                 attempt.controller.signal,
-                attempt.runOptions ||
+                !suppliedTransport ||
+                  attempt.runOptions ||
                   canReconnect ||
                   (resuming &&
                     attempt.input.kind === 'resume' &&
                     attempt.input.value !== undefined)
                   ? {
                       ...attempt.runOptions,
-                      ...(from
-                        ? {
-                            checkpoint: from,
-                            streamMode: [...branchStreamModes],
-                          }
+                      ...(from ? { checkpoint: from } : {}),
+                      ...(!suppliedTransport || from
+                        ? { streamMode: [...checkpointStreamModes] }
                         : {}),
                       ...(canReconnect
                         ? {

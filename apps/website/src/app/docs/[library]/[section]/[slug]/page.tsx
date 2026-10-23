@@ -12,6 +12,10 @@ import { ReactTimeTravelPreview } from '../../../../../components/docs/ReactTime
 import { ReactDeploymentRuntimePreview } from '../../../../../components/docs/ReactDeploymentRuntimePreview';
 import { ReactAgUiStreamingPreview } from '../../../../../components/docs/ReactAgUiStreamingPreview';
 import { ReactAgUiInterruptsPreview } from '../../../../../components/docs/ReactAgUiInterruptsPreview';
+import { ReactAgUiClientToolsPreview } from '../../../../../components/docs/ReactAgUiClientToolsPreview';
+import { ReactMastraPreview } from '../../../../../components/docs/ReactMastraPreview';
+import { ReactStrandsPreview } from '../../../../../components/docs/ReactStrandsPreview';
+import { ReactMafPreview } from '../../../../../components/docs/ReactMafPreview';
 import { ReactAgUiToolViewsPreview } from '../../../../../components/docs/ReactAgUiToolViewsPreview';
 import { ReactAgUiJsonRenderPreview } from '../../../../../components/docs/ReactAgUiJsonRenderPreview';
 import { ReactAgUiSubagentsPreview } from '../../../../../components/docs/ReactAgUiSubagentsPreview';
@@ -22,6 +26,16 @@ import { ReactRepeatLoopsPreview } from '../../../../../components/docs/ReactRep
 import { ReactStateManagementPreview } from '../../../../../components/docs/ReactStateManagementPreview';
 import { ReactComputedFunctionsPreview } from '../../../../../components/docs/ReactComputedFunctionsPreview';
 import { ReactChatMessagesPreview } from '../../../../../components/docs/ReactChatMessagesPreview';
+import { ReactChatThemingPreview } from '../../../../../components/docs/ReactChatThemingPreview';
+import { ReactChatDebugPreview } from '../../../../../components/docs/ReactChatDebugPreview';
+import { ReactChatGenerativeUiPreview } from '../../../../../components/docs/ReactChatGenerativeUiPreview';
+import { ReactChatA2uiPreview } from '../../../../../components/docs/ReactChatA2uiPreview';
+import { ReactAgUiA2uiPreview } from '../../../../../components/docs/ReactAgUiA2uiPreview';
+import { ReactDeepAgentsSkillsPreview } from '../../../../../components/docs/ReactDeepAgentsSkillsPreview';
+import { ReactDeepAgentsMemoryPreview } from '../../../../../components/docs/ReactDeepAgentsMemoryPreview';
+import { ReactDeepAgentsSubagentsPreview } from '../../../../../components/docs/ReactDeepAgentsSubagentsPreview';
+import { ReactDeepAgentsFilesystemPreview } from '../../../../../components/docs/ReactDeepAgentsFilesystemPreview';
+import { ReactDeepAgentsPlanningPreview } from '../../../../../components/docs/ReactDeepAgentsPlanningPreview';
 import { ReactChatTimelinePreview } from '../../../../../components/docs/ReactChatTimelinePreview';
 import { ReactChatThreadsPreview } from '../../../../../components/docs/ReactChatThreadsPreview';
 import { ReactChatSubagentsPreview } from '../../../../../components/docs/ReactChatSubagentsPreview';
@@ -281,10 +295,33 @@ export default async function DocsPage({ params }: DocsRouteProps) {
         reactDocsSlot={
           workspacePage.frontendVariants?.react &&
           (library === 'langgraph' ||
+            (library === 'a2ui' && section === 'getting-started' && slug === 'introduction') ||
+            (library === 'runtimes' && section === 'aws-strands' && slug === 'overview') ||
+            (library === 'runtimes' && section === 'mastra' && slug === 'overview') ||
+            (library === 'runtimes' && section === 'microsoft-agent-framework' && slug === 'overview') ||
+            (library === 'deep-agents' && section === 'capabilities' && ['planning', 'filesystem', 'subagents', 'skills', 'memory'].includes(slug)) ||
             (library === 'render' && ((section === 'guides' && ['specs','state-store','repeat-loops','registry'].includes(slug)) || (section === 'api' && ['render-spec-component','provide-render'].includes(slug)))) ||
-            (library === 'ag-ui' && ((section === 'reference' && slug === 'event-mapping') || (section === 'guides' && ['interrupts','tool-views','json-render','subagents'].includes(slug)))) ||
-            (library === 'chat' && ((section === 'guides' && slug === 'thread-routing') || slug === 'client-tools' || (section === 'concepts' && slug === 'message-model') || (section === 'components' && ['chat-trace', 'chat-input', 'chat-interrupt-panel', 'chat-tool-calls', 'chat-subagent-card'].includes(slug))))) ? (
-            library === 'render' ? (
+            (library === 'ag-ui' && ((section === 'reference' && slug === 'event-mapping') || (section === 'guides' && ['interrupts','tool-views','client-tools','json-render','subagents'].includes(slug)))) ||
+            (library === 'chat' && ((section === 'a2ui' && slug === 'overview') || (section === 'guides' && ['thread-routing', 'generative-ui', 'theming'].includes(slug)) || slug === 'client-tools' || (section === 'concepts' && slug === 'message-model') || (section === 'components' && ['chat-debug', 'chat-trace', 'chat-input', 'chat-interrupt-panel', 'chat-tool-calls', 'chat-subagent-card'].includes(slug))))) ? (
+            library === 'a2ui' && section === 'getting-started' && slug === 'introduction' ? (
+              <ReactAgUiA2uiPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />
+            ) : library === 'runtimes' && section === 'aws-strands' && slug === 'overview' ? (
+              <ReactStrandsPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />
+            ) : library === 'runtimes' && section === 'microsoft-agent-framework' && slug === 'overview' ? (
+              <ReactMafPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />
+            ) : library === 'runtimes' && section === 'mastra' && slug === 'overview' ? (
+              <ReactMastraPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />
+            ) : library === 'deep-agents' && section === 'capabilities' && slug === 'memory' ? (
+              <ReactDeepAgentsMemoryPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />
+            ) : library === 'deep-agents' && section === 'capabilities' && slug === 'skills' ? (
+              <ReactDeepAgentsSkillsPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />
+            ) : library === 'deep-agents' && section === 'capabilities' && slug === 'subagents' ? (
+              <ReactDeepAgentsSubagentsPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />
+            ) : library === 'deep-agents' && section === 'capabilities' && slug === 'filesystem' ? (
+              <ReactDeepAgentsFilesystemPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />
+            ) : library === 'deep-agents' && section === 'capabilities' && slug === 'planning' ? (
+              <ReactDeepAgentsPlanningPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />
+            ) : library === 'render' ? (
               slug === 'provide-render' ? <ReactComputedFunctionsPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} /> :
               slug === 'render-spec-component' ? <ReactElementRenderingPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} /> :
               slug === 'registry' ? <ReactRegistryPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} /> :
@@ -292,11 +329,20 @@ export default async function DocsPage({ params }: DocsRouteProps) {
               slug === 'state-store' ? <ReactStateManagementPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} /> :
               <ReactRenderSpecPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />
             ) : library === 'ag-ui' ? (
+              slug === 'client-tools' ? <ReactAgUiClientToolsPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} /> :
               slug === 'subagents' ? <ReactAgUiSubagentsPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} /> :
               slug === 'json-render' ? <ReactAgUiJsonRenderPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} /> :
               slug === 'tool-views' ? <ReactAgUiToolViewsPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} /> :
               slug === 'interrupts' ? <ReactAgUiInterruptsPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} /> :
               <ReactAgUiStreamingPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />
+            ) : library === 'chat' && section === 'a2ui' && slug === 'overview' ? (
+              <ReactChatA2uiPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />
+            ) : library === 'chat' && section === 'components' && slug === 'chat-debug' ? (
+              <ReactChatDebugPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />
+            ) : library === 'chat' && section === 'guides' && slug === 'theming' ? (
+              <ReactChatThemingPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />
+            ) : library === 'chat' && section === 'guides' && slug === 'generative-ui' ? (
+              <ReactChatGenerativeUiPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />
             ) : library === 'chat' && section === 'components' && slug === 'chat-trace' ? (
               <ReactChatTimelinePreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />
             ) : library === 'chat' && section === 'guides' && slug === 'thread-routing' ? (

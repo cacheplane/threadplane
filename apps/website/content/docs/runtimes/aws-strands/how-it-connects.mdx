@@ -72,6 +72,10 @@ Because the adapter applies a snapshot as a full replacement, both hooks return 
 An in-tree emitter registered as the delegation tool's `ToolBehavior.tool_stream_event_handler` consumes the specialist's re-yielded `stream_async` events as they cross the bridge.
 It emits `SUBAGENT_STARTED`, the specialist's tokens as `TEXT_MESSAGE_*` deltas attributed with `subagentRunId`, and `SUBAGENT_FINISHED`, nested between the delegation tool call's `TOOL_CALL_END` and `TOOL_CALL_RESULT`.
 
+## Native React preview
+
+The bounded React preview uses a native Session with a generic `book_meeting` interrupt. `metadata.reason` contains the topic and slot, with no tool-call id or approval schema. It preserves the opaque pause id and sends the resolved `{ approved }` decision through top-level native resume. Confirmation requires the distinct resumed run, matching normal root terminal, settled continuation, and matching canonical tool result decoded through exactly one JSON layer. The observed schedule snapshot and assistant prose are separate display evidence. Research specialist rendering remains in the canonical Angular example.
+
 ## Next steps
 
 - [Overview](/docs/runtimes/aws-strands/overview) — what the integration supports.

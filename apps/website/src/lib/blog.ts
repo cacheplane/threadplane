@@ -11,6 +11,8 @@ export interface PostFrontmatter {
   author: string;
   featured?: boolean;
   draft?: boolean;
+  /** A picture of the work for feeds; defaults to the post's first image. */
+  image?: string;
 }
 
 export interface Post {

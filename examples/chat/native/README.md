@@ -12,11 +12,32 @@ session. It adds authored trip-summary cards to the shared rows while preserving
 their Markdown and tool observations. View removal does not release that content;
 retiring the selection disposes it.
 
-React trip recaps compose the private `@threadplane/react/render` `RenderSpec`.
-Application composition prepares and caches a readonly tree and explicit state;
-an authored registry presents the supplied title, day/place repeats, counts and
-optional note. The view does not parse tool arguments or own render state,
-actions or effects. Angular retains its existing supplied-card presentation.
+React trip recaps use the application-authored custom catalog
+`urn:threadplane:native:trip-summary:v1`. For associated completed typed tool
+calls, the application owns one private `createA2uiSurfaces` instance per
+assistant message ID and delivery generation. It applies literal A2UI v0.9
+descriptions with root `root` and seven component types: `Trip`, `Counts`,
+`Days`, `Day`, `Places`, `Place` and `Note`. Strict application validation and
+raw snapshot projection produce a frozen `@threadplane/react/render`
+`RenderSpec` with direct props, static children and empty state. The existing
+authored registry renders one card per call, preserving order, duplicate labels,
+empty lists and literal text.
+The view borrows prepared descriptions; it does not parse tool arguments,
+apply raw commands or own render actions or effects. Angular retains its
+existing supplied-card presentation.
+
+Shared content still owns Markdown, reasoning and tool association. React's
+raw owners survive StrictMode, unmounting and updates while the view is absent;
+selection retirement, generation replacement and application disposal release
+them once. If validation, raw application or projection fails, the last combined
+snapshot remains visible and all raw owners are disposed. Identical complete
+input can rebuild fresh owners. Initial failure becomes a selection error;
+later publication failures are contained without automatically issuing commands.
+This is completed typed-tool data authored by the application, not generic
+wire-message classification or a generic A2UI interpreter. Arbitrary data-model
+bindings, the basic catalog, forms, actions, functions, templates, URLs,
+protocol parsing, readiness and public catalog registration remain outside this
+example.
 
 React assistant rows compose `Citations` from explicitly supplied message
 metadata. Sources preserve their order, indices and literal title/snippet/type
@@ -60,6 +81,25 @@ and owns pending, consumed and uncertain states. The card never hides itself or
 dispatches a command implicitly. Production tests exercise keyboard decisions,
 disabled pending actions, retained uncertain decisions and exact resume payloads;
 provenance requires the installed card's runtime and declarations.
+
+The React loaded-conversation directory uses the installed private `ThreadList`
+view for its selection rows in page, popup, sidebar and sidenav presentations.
+The application still owns the supplied order, loaded-title filtering, selection,
+Refresh commands and all status/empty text. Its optional New action delegates
+to the same application creation owner, with only that action disabled while
+creation is pending. The application still owns creation and resulting selection.
+The list issues no commands on mount or rerender. Retained rows keep their button DOM through navigation modes;
+the existing deliberate composer reset still applies when selecting another
+conversation. Other thread lifecycle actions and full T29 parity remain open.
+
+The shared directory projection copies valid backend `updated_at` strings into
+immutable optional epoch-millisecond `updatedAt` fields. Native React passes these
+rows directly to the installed list, which renders relative time and an exact ISO
+instant while preserving each button's title-based accessible name. Invalid or
+missing backend timestamps omit metadata. Relative labels use the render-time
+clock; explicit application Refresh and creation outcomes supply new timestamps.
+There is no periodic timer or background request. Angular receives the optional
+row field through the shared projection and retains its existing title-only UI.
 
 ## Setup and commands
 
@@ -116,7 +156,9 @@ node examples/chat/native/tooling/verify.mjs --framework=angular
 ```
 
 The single tooling target runs the shared import-safe Node tests for both
-frameworks without building or installing an app. The test and build targets
+frameworks without building or installing an app. It uses the existing `tsx`
+dependency explicitly to load the authored Vite TypeScript configuration instead
+of relying on Node's default TypeScript stripping. The test and build targets
 prepare isolated consumers from locally
 built candidate tarballs and the root lockfile, using exact `npm ci`
 installation. They compile against those installed declarations and runtimes.
@@ -197,16 +239,34 @@ The view proof checks that removing the view releases only its subscription,
 the owner still receives a held response while absent, remounting preserves
 snapshot/Markdown and two completed summary-card identities without another
 terminal write, and explicit owner disposal physically closes the stream.
+That original lifecycle records six requests and one terminal write. A separate
+React lifecycle records nine requests and two writes: a held completed-summary
+response creates raw surfaces while the view is absent, remount preserves the
+same prepared descriptions and raw owner. Navigation retires the first owner;
+an explicit recap request in another conversation completes a tool call with
+the same assistant message ID and a new delivery generation, creating the
+second owner. Loading history does not reconstruct rich cards. Both owners
+are disposed exactly once. The React app and view proof use the same production
+application factory, catalog and snapshot projector against
+installed candidate packages; the extra observation helper is proof-only.
 Real Back/Forward navigation and synthetic pagehide checks do not
 claim actual browser BFCache coverage.
 
 ## Working on the example
 
-Each development session selects one framework and builds/installs its fixed
-four local candidate packages (core, content, LangGraph and React or Angular)
-once. Source edits use that same installed consumer and derived lockfile; they
-do not reinstall packages. A configured browser document owns its application
-and selected session; framework views borrow that owner.
+Each development session selects one framework and prepares its fixed installed
+candidate profile once. Native React build, serve and default tests use five
+packages: core, content, A2UI protocol, React and LangGraph
+(`react-native-a2ui-langgraph`). Native Angular uses four: core, content, Angular
+and LangGraph (`angular-langgraph`). The explicit ordinary React shared-test
+profile still uses four packages without protocol declarations. Separately,
+each isolated foundation build runs four ordered library builds: core, A2UI
+protocol, content, then the selected binding. Installed package counts do not
+count these build steps. React consumes protocol declarations; neither native
+production bundle includes protocol JavaScript. Source edits use that same
+installed consumer and derived lockfile; they do not reinstall packages.
+A configured browser document owns its application and selected session;
+framework views borrow that owner.
 
 Edits, additions and deletions in the selected `react/src`, `react/public`,
 `react/index.html` or `angular/src`, `angular/public`, plus supported `shared`
@@ -286,9 +346,11 @@ text with `followUp:false` independently of either view. Rendering never execute
 or acknowledges the tool. The typed catalog narrows tool-call observations;
 unknown tools' saved ToolMessage text remains readable as literal text.
 
-There is no argument validator or schema engine. Normal string/array/number
+The tool handler has no argument validator or schema engine. Normal string/array/number
 formatting operations use the authored TypeScript contract; malformed values
-can throw and become ordinary tool errors with no partial card. Metadata may
+can throw and become ordinary tool errors with no partial card. React separately
+validates its authored literal surface before projecting a raw snapshot; this
+does not validate arbitrary tool input or enforce itinerary rules. Metadata may
 describe positive integral days, but formatting does not enforce that domain.
 Completed local calls render one card at their assistant row, including empty
 lists and repeated labels. Pending and failed calls remain ordinary observations.
@@ -338,7 +400,10 @@ and its literal-text, keyboard, draft, repeated-pause, physical-cancellation and
 mobile-layout facts. It also requires the nine-request summary persistence and
 restoration proof, the eight-request failed-write proof, and the six-request
 actual view lifecycle with two preserved card identities and exactly one
-terminal write. Missing or contradictory material evidence fails review. It serves
+terminal write. React additionally requires the separate nine-request,
+two-write raw-owner lifecycle, installed raw implementation and declaration
+evidence, and matching production app/view inputs. Missing or contradictory
+material evidence fails review. It serves
 immutable copies of the checked bytes. These hashes establish local
 integrity, not authenticity or a replayable build-tool installation. Review does
 not rebuild or install anything, and it uses a deterministic local fixture,
@@ -354,6 +419,64 @@ Start a fresh `--review` process for each browser walkthrough. Closing review
 stops only its owned servers and leaves the retained directory intact. Keep or
 remove that directory yourself after review; use development serving above for
 an interactive session against a live endpoint.
+
+## React popup and sidebar presentations
+
+Add `?presentation=popup` to the native React example URL to keep the loaded
+conversation directory on the page and show the selected conversation in the
+installed private `ChatPopup` composition. Use `?presentation=sidebar` for the
+full-height private `ChatSidebar` instead. Its directory uses the persistent page
+slot, with “Keep page beside chat” enabled initially. On wider screens this
+reserves room beside the open panel; disabling the checkbox restores overlay
+mode. At 640px and below the panel always overlays at full viewport width with no
+reserved page space. Its launcher hides while open. Both modes use the
+same selected application and conversation view. The default presentation stays inline;
+unknown presentation values also use the page layout.
+
+The application owns the open state. Closing hides the same mounted conversation,
+preserving its unsent draft, content owners and subscriptions. Responses continue
+while hidden; opening and closing send no conversation commands. Stop and changing
+the selected conversation retain their existing meanings. The Close button and
+Escape inside the panel request closure, focus returns to the launcher when
+appropriate, and Tab
+can leave this non-modal dialog for the surrounding page.
+
+`npx nx e2e native-conversation-react --grep 'installed React (popup|sidebar)'` verifies the installed
+production component against an owned local HTTP/SSE fixture, including hidden
+completion, retained DOM/draft, keyboard access, a hidden open-sidebar launcher,
+desktop geometry, layout preference changes, RTL placement, the 641px/640px
+boundary, and 390px/600px layouts with reachable Close and Send. Layout changes
+retain the directory filter, composer and active response without extra requests.
+It does not use a live model. These are bounded compositions, not complete Angular
+popup/sidebar/sidenav parity or a published package.
+
+## React conversation navigation presentation
+
+Exact `?presentation=sidenav` opts into the installed private `ChatSidenav`
+shell around the existing loaded-conversation directory. The selected
+conversation stays inline. Desktop navigation can expand to 18rem or collapse
+to 4rem; at widths of 700px and below the application chooses a non-modal
+inline-start drawer, at most 20rem wide, with the optional sibling
+`ChatSidenavScrim` backdrop. Navigation remains non-modal with no focus trap. Returning to
+desktop restores the previous expanded/collapsed choice. The default and unknown
+presentation values retain the page layout.
+
+The application owns mode, drawer visibility, selection, filtering, Refresh and
+New. Breakpoint changes and accepted conversation selection close the drawer.
+Closing, expanding, collapsing and resizing retain the same directory filter,
+composer DOM and unsent draft, and send no conversation commands. An active
+response continues through these navigation changes. Selecting a different
+conversation retains the existing deliberate composer draft reset.
+
+The drawer launcher, Close, scoped Escape and backdrop activation request controlled changes; focus
+moves only after accepted visibility/mode changes. Hidden directory content is
+inert, and Tab can reach the surrounding page. Focus returns to the launcher when a focused backdrop is dismissed,
+or to the desktop toggle when a breakpoint removes it; an already focused page
+control retains focus. The backdrop covers page pointer targets while open.
+This bounded children-based
+navigation does not implement Angular project/archive menus, global shortcuts,
+debug ownership or full T30 parity. Popup and sidebar remain separate
+presentations.
 
 ## React message actions
 

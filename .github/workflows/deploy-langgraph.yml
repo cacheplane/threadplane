@@ -7,9 +7,12 @@ on:
       - '.github/workflows/deploy-langgraph.yml'
       - 'cockpit/langgraph/**/python/**'
       - 'cockpit/deep-agents/**/python/**'
+      - 'cockpit/chat/**/python/**'
+      - 'cockpit/render/**/python/**'
       - 'examples/chat/python/**'
       - 'libs/cockpit-registry/src/lib/capability-registry.ts'
       - 'scripts/generate-shared-deployment-config.ts'
+      - 'scripts/pin_shared_deployment_image.py'
       - 'deployments/shared-dev/langgraph.json'
   workflow_dispatch:
     inputs:
@@ -64,6 +67,20 @@ jobs:
       # lookup can create a paid replacement, so never use --name here.
       - name: Update existing cockpit-dev-free
         working-directory: deployments/shared-dev
-        run: uv run --with langgraph-cli==0.4.21 langgraph deploy --config langgraph.json --deployment-id 6d350054-14ea-4031-8463-010ec27f9059 --no-wait
+        run: uv run --with langgraph-cli==0.4.21 langgraph deploy --config langgraph.json --deployment-id 6d350054-14ea-4031-8463-010ec27f9059 --no-wait --tag "$GITHUB_SHA"
         env:
+          LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+
+      # Local push evidence only; --no-wait does not establish provider readiness.
+      - name: Record shared deployment image evidence
+        id: image_evidence
+        shell: bash
+        run: python3 scripts/pin_shared_deployment_image.py evidence
+
+      # Desired configuration only. A separate provider check must establish
+      # active == latest, DEPLOYED, and the exact immutable image before proof.
+      - name: Pin existing shared deployment image
+        run: python3 scripts/pin_shared_deployment_image.py pin
+        env:
+          IMAGE_URI: ${{ steps.image_evidence.outputs.image_uri }}
           LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}

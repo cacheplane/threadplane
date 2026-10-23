@@ -270,6 +270,68 @@ export class SubagentTracker {
     this.onSubagentChange?.();
   }
 
+  /** Ids of every registered delegation tool call, including hidden pending ones. */
+  getToolChildIds(): Set<string> {
+    const ids = new Set<string>();
+    for (const [id, subagent] of this.subagents) {
+      if (subagent.kind === 'tool') ids.add(id);
+    }
+    return ids;
+  }
+
+  /**
+   * Seed a delegation child's execution from persisted thread history.
+   *
+   * `namespaceId` is the child's stream key (the id after `tools:`), bound the
+   * same way a server announcement binds it, so a run that resumes after a
+   * reload streams into this card instead of opening a second one. A child
+   * whose task is still outstanding is `running`; one whose outstanding task
+   * failed is `error`. A child already settled by its tool result keeps that
+   * status.
+   */
+  restoreExecution(
+    toolCallId: string,
+    execution: { namespaceId?: string; outstanding: boolean; failed: boolean },
+  ): void {
+    const subagent = this.subagents.get(toolCallId);
+    if (!subagent || subagent.kind !== 'tool') return;
+    if (execution.namespaceId && !this.namespaceToToolCallId.has(execution.namespaceId)) {
+      this.namespaceToToolCallId.set(execution.namespaceId, toolCallId);
+      this.pendingMatches.delete(execution.namespaceId);
+    }
+    if (subagent.status === 'complete' || subagent.status === 'error' || !execution.outstanding) return;
+    this.subagents.set(toolCallId, { ...subagent, status: execution.failed ? 'error' : 'running' });
+    this.onSubagentChange?.();
+  }
+
+  /** True when a registered child has no transcript yet. */
+  needsTranscript(toolCallId: string): boolean {
+    const subagent = this.subagents.get(toolCallId);
+    return subagent !== undefined && subagent.messages.length === 0;
+  }
+
+  /**
+   * Fill an empty child card with the transcript read from the child's own
+   * checkpoint namespace. Never overwrites messages that are already present —
+   * a live stream that reached the card first is the fresher account. Returns
+   * whether the transcript was applied.
+   */
+  restoreTranscript(
+    toolCallId: string,
+    messages: BaseMessage[],
+    values: Record<string, unknown>,
+  ): boolean {
+    const subagent = this.subagents.get(toolCallId);
+    if (!subagent || subagent.messages.length > 0 || messages.length === 0) return false;
+    this.subagents.set(toolCallId, {
+      ...subagent,
+      values: { ...values, ...subagent.values },
+      messages,
+    });
+    this.onSubagentChange?.();
+    return true;
+  }
+
   /**
    * Attribute a `tools:` child stream to its parent tool call as soon as the
    * child is seen, without requiring a description to match on.

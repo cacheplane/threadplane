@@ -1,6 +1,8 @@
+import { forwardRef, memo } from 'react';
 import {
   RenderSpec,
   type RenderElementData,
+  type RenderReadinessEntry,
   type RenderSpecData,
   type RenderViewProps,
   type ReactRenderRegistry,
@@ -53,4 +55,42 @@ export function readonlyContracts(
   // @ts-expect-error schema validation is not a renderer capability
   const schema = <RenderSpec spec={spec} registry={registry} schema={{}} />;
   return { raw, handlers, schema };
+}
+
+const InstalledView = ({ props }: RenderViewProps) => (
+  <p>{String(props['value'])}</p>
+);
+const InstalledMemo = memo(InstalledView);
+const InstalledRef = forwardRef<HTMLParagraphElement, RenderViewProps>(
+  ({ props }, ref) => <p ref={ref}>{String(props['value'])}</p>
+);
+const readiness: RenderReadinessEntry = {
+  kind: 'readiness',
+  component: InstalledMemo,
+  fallback: InstalledRef,
+  isReady: (props) => {
+    // @ts-expect-error contextually typed predicate props are readonly
+    props['changed'] = 1;
+    return props['value'] !== undefined;
+  },
+};
+export const readinessRegistry: ReactRenderRegistry = {
+  DirectMemo: InstalledMemo,
+  DirectRef: InstalledRef,
+  Ready: readiness,
+  RefReady: {
+    kind: 'readiness',
+    component: InstalledRef,
+    fallback: InstalledMemo,
+    isReady: (props) => props['value'] !== undefined,
+  },
+};
+export function readinessContracts(config: RenderReadinessEntry) {
+  // @ts-expect-error descriptors are readonly
+  config.kind = 'readiness';
+  // @ts-expect-error synchronous boolean required
+  const asynchronous: RenderReadinessEntry['isReady'] = async () => true;
+  // @ts-expect-error nonboolean admission is rejected
+  const nonboolean: RenderReadinessEntry['isReady'] = () => 'ready';
+  return { asynchronous, nonboolean };
 }

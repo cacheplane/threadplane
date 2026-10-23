@@ -134,3 +134,64 @@ test('fits mobile and exposes no backend API fixture', async ({
     expect((await request.get(route)).status()).toBe(404);
   expect((await request.post('/api/native/threads')).status()).toBe(405);
 });
+
+test('admits a pending Value prefix and retains the committed native view on seek', async ({
+  page,
+}, testInfo) => {
+  await page.goto(base);
+  await page.getByRole('button', { name: 'Finish' }).click();
+  const source = (await page
+    .getByRole('region', { name: 'Streaming JSON' })
+    .locator('pre')
+    .textContent()) ?? '';
+  expect(source).toContain('hello world');
+  const incomplete = source.indexOf('hello world') + 'hello'.length;
+  await page.getByRole('button', { name: 'Reset' }).click();
+  const position = page.getByRole('slider');
+  await position.fill(String(incomplete));
+  const pending = output(page).getByRole('group', {
+    name: 'Uppercase pending',
+  });
+  await expect(pending).toBeVisible();
+  await expect(pending).toHaveText('Uppercase…');
+  await expect(pending).toHaveAttribute('aria-busy', 'true');
+  await expect(
+    output(page).getByText('HELLO WORLD', { exact: true })
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('region', { name: 'Streaming JSON' }).locator('pre')
+  ).toHaveText(source.slice(0, incomplete));
+  await page.screenshot({
+    path: testInfo.outputPath('computed-functions-pending-desktop.png'),
+  });
+
+  await page.getByRole('button', { name: 'Finish' }).click();
+  await expect(pending).toHaveCount(0);
+  const realView = output(page).locator('dl').filter({ hasText: 'HELLO WORLD' });
+  await expect(realView).toHaveAttribute('aria-busy', 'false');
+  const committed = await realView.elementHandle();
+  expect(committed).not.toBeNull();
+  if (!committed) throw new Error('Expected the committed native Value view');
+  await position.fill(String(incomplete));
+  await expect(pending).toHaveCount(0);
+  const retained = output(page).locator('dl').filter({ hasText: 'Uppercase' });
+  await expect(retained).toHaveText('Uppercase…');
+  await expect(retained).toHaveAttribute('aria-busy', 'true');
+  expect(
+    await retained.evaluate((node, previous) => node === previous, committed)
+  ).toBe(true);
+  await committed.dispose();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole('button', { name: 'Reset' }).click();
+  await position.fill(String(incomplete));
+  await expect(pending).toBeVisible();
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)
+  ).toBe(true);
+  await page.screenshot({
+    path: testInfo.outputPath('computed-functions-pending-mobile.png'),
+  });
+  await page.reload();
+  await expect(position).toHaveValue('0');
+  await expect(output(page).locator('dl')).toHaveCount(0);
+});

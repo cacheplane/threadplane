@@ -29,6 +29,10 @@ function fixture(framework = 'angular') {
   );
   const app = {
     framework,
+    profile:
+      framework === 'react'
+        ? 'react-native-a2ui-langgraph'
+        : 'angular-langgraph',
     tools,
     provenance: {
       framework,
@@ -41,10 +45,47 @@ function fixture(framework = 'angular') {
   };
   const view = {
     framework,
+    profile: app.profile,
     inputs: { ...common, ...tools },
     source: { path: source, sha256: 'entry' },
     helper: { path: helper, sha256: 'helper' },
   };
+  if (framework === 'react') {
+    for (const path of [
+      'react/src/application.ts',
+      'react/src/a2ui-message-content.ts',
+      'react/src/a2ui-trip-catalog.ts',
+    ]) {
+      common[path] = path;
+      app.provenance.inputs['examples/chat/native/' + path] = path;
+      app.provenance.copied[path] = path;
+      view.inputs[path] = path;
+    }
+    for (const path of [
+      'node_modules/@threadplane/content/src/a2ui/create-surfaces.d.ts',
+      'node_modules/@threadplane/content/src/a2ui/create-surfaces.js',
+      'node_modules/@threadplane/a2ui/src/index.d.ts',
+    ]) {
+      common[path] = path;
+      view.inputs[path] = path;
+    }
+    view.compiler = {
+      inputs: Object.keys(common).filter((p) => !p.endsWith('.js')),
+    };
+    view.runtime = Object.keys(common).filter((p) => !p.endsWith('.d.ts'));
+    app.provenance.compiler.inputs = Object.fromEntries(
+      Object.entries(common).filter(([p]) => !p.endsWith('.js'))
+    );
+    app.provenance.bundler.inputs = Object.fromEntries(
+      Object.entries(common).filter(([p]) => !p.endsWith('.d.ts'))
+    );
+    app.provenance.inputs['examples/chat/native/tooling/view-owner.react.ts'] =
+      'react helper';
+    view.reactHelper = {
+      path: 'examples/chat/native/tooling/view-owner.react.ts',
+      sha256: 'react helper',
+    };
+  }
   const names = [
     'deep link, reload, Back and Forward',
     'bare and query-only browser navigation',
@@ -138,6 +179,94 @@ function fixture(framework = 'angular') {
       },
     },
   };
+  if (framework === 'react') {
+    const raw = {
+      created: 1,
+      applies: 4,
+      disposed: 0,
+      active: 1,
+      disposalCounts: [0],
+      titles: ['<img src=x onerror=alert(1)> Supplied recap', 'Empty recap'],
+    };
+    for (const phase of ['before', 'absent', 'updated', 'remounted']) {
+      results.browser.view.evidence[phase] ??= {};
+      Object.assign(results.browser.view.evidence[phase], {
+        raw,
+        preparedCardCount: 2,
+      });
+    }
+    results.browser.view.evidence.disposed.raw = {
+      ...raw,
+      disposed: 1,
+      active: 0,
+      disposalCounts: [1],
+    };
+    results.browser.view.evidence.rawSnapshotIdentity = true;
+    results.browser.view.evidence.preparedCardIdentity = true;
+    results.browser.view.evidence.rawSnapshotRenderedText = true;
+    results.browser.a2ui = {
+      name: 'production React A2UI ownership while absent and across navigation',
+      passed: true,
+      requests: [
+        ['POST', '/api/threads/search'],
+        ['GET', '/api/threads/a'],
+        ['POST', '/api/threads/a/history'],
+        ['POST', '/api/threads/a/runs/stream'],
+        ['POST', '/api/threads/a/state'],
+        ['GET', '/api/threads/b'],
+        ['POST', '/api/threads/b/history'],
+        ['POST', '/api/threads/b/runs/stream'],
+        ['POST', '/api/threads/b/state'],
+      ].map(([method, path]) => ({ method, path })),
+      evidence: {
+        exactRequestCount: 9,
+        terminalWriteCount: 2,
+        rawSnapshotRenderedText: true,
+        preparedCardIdentity: true,
+        rawSnapshotIdentity: true,
+        retainedSnapshotsReadable: true,
+        before: {
+          created: 0,
+          applies: 0,
+          disposed: 0,
+          active: 0,
+          disposalCounts: [],
+          titles: [],
+        },
+        absent: raw,
+        remounted: raw,
+        navigated: { ...raw, disposed: 1, active: 0, disposalCounts: [1] },
+        second: {
+          created: 2,
+          applies: 8,
+          disposed: 1,
+          active: 1,
+          disposalCounts: [1, 0],
+          titles: [...raw.titles, ...raw.titles],
+        },
+        disposed: {
+          created: 2,
+          applies: 8,
+          disposed: 2,
+          active: 0,
+          disposalCounts: [1, 1],
+          titles: [...raw.titles, ...raw.titles],
+        },
+        generations: [
+          { id: 'summary-message', generation: 'first-generation' },
+          { id: 'summary-message', generation: 'second-generation' },
+        ],
+        ownerEpochs: [
+          { id: 1, disposed: true, surfaces: ['summary-one', 'summary-empty'] },
+          {
+            id: 2,
+            disposed: false,
+            surfaces: ['summary-one', 'summary-empty'],
+          },
+        ],
+      },
+    };
+  }
   return { app, view, results };
 }
 for (const framework of ['react', 'angular'])
@@ -367,5 +496,103 @@ for (const [name, change] of [
     assert.equal(typeof module.assertVerification, 'function');
     const f = fixture();
     change(f);
+    assert.throws(() => module.assertVerification(f.app, f.view, f.results));
+  });
+
+for (const path of [
+  'react/src/application.ts',
+  'react/src/a2ui-message-content.ts',
+  'react/src/a2ui-trip-catalog.ts',
+])
+  for (const graph of [
+    'compiler',
+    'bundler',
+    'copied',
+    'viewCompiler',
+    'viewRuntime',
+  ])
+    test(`React verification positively requires ${graph} ${path}`, () => {
+      const f = fixture('react');
+      if (graph === 'viewCompiler')
+        f.view.compiler.inputs = f.view.compiler.inputs.filter(
+          (p) => p !== path
+        );
+      else if (graph === 'viewRuntime')
+        f.view.runtime = f.view.runtime.filter((p) => p !== path);
+      else
+        delete (
+          graph === 'copied'
+            ? f.app.provenance.copied
+            : f.app.provenance[graph].inputs
+        )[path];
+      assert.throws(() => module.assertVerification(f.app, f.view, f.results));
+    });
+for (const [name, mutate] of [
+  ['profile substitution', (f) => (f.view.profile = 'react-langgraph')],
+  ['missing React helper', (f) => delete f.view.reactHelper],
+  [
+    'missing protocol declarations',
+    (f) => {
+      f.view.compiler.inputs = f.view.compiler.inputs.filter(
+        (p) => !p.includes('/a2ui/')
+      );
+    },
+  ],
+  [
+    'protocol runtime',
+    (f) => f.view.runtime.push('node_modules/@threadplane/a2ui/src/index.js'),
+  ],
+  ['missing lifecycle', (f) => delete f.results.browser.a2ui],
+  [
+    'forged raw apply count',
+    (f) =>
+      (f.results.browser.view.evidence.updated.raw = {
+        ...f.results.browser.view.evidence.updated.raw,
+        applies: 5,
+      }),
+  ],
+  [
+    'forged prepared identity',
+    (f) => (f.results.browser.view.evidence.preparedCardIdentity = false),
+  ],
+  [
+    'forged absent work',
+    (f) =>
+      (f.results.browser.a2ui.evidence.absent = {
+        ...f.results.browser.a2ui.evidence.absent,
+        applies: 0,
+      }),
+  ],
+  [
+    'forged navigation disposal',
+    (f) =>
+      (f.results.browser.a2ui.evidence.navigated = {
+        ...f.results.browser.a2ui.evidence.navigated,
+        disposed: 0,
+      }),
+  ],
+  [
+    'duplicate disposal',
+    (f) => (f.results.browser.a2ui.evidence.disposed.disposalCounts = [2, 0]),
+  ],
+  ['extra lifecycle request', (f) => f.results.browser.a2ui.requests.push({})],
+  [
+    'substituted lifecycle request',
+    (f) => (f.results.browser.a2ui.requests[4].path = '/api/threads/b/state'),
+  ],
+  [
+    'same generation',
+    (f) =>
+      (f.results.browser.a2ui.evidence.generations[1].generation =
+        'first-generation'),
+  ],
+  [
+    'forged owner epoch',
+    (f) => (f.results.browser.a2ui.evidence.ownerEpochs[1].id = 1),
+  ],
+])
+  test('React verification rejects ' + name, () => {
+    const f = fixture('react');
+    mutate(f);
     assert.throws(() => module.assertVerification(f.app, f.view, f.results));
   });

@@ -20,11 +20,13 @@ interface Decision extends Approval {
   readonly canRespond: boolean;
 }
 
-export interface ApplicationSnapshot {
+export interface ApplicationSnapshot<
+  TRow extends MessageContent = MessageContent
+> {
   readonly decision: Decision | null;
   // Retained after settlement so views can describe an uncertain decision.
   readonly submissionKind: 'text' | 'decision' | null;
-  readonly messages: readonly MessageContent[];
+  readonly messages: readonly TRow[];
   readonly submission: Readonly<{
     active: boolean;
     outcome: CompleteOutcome | null;
@@ -45,7 +47,20 @@ export interface ApplicationSnapshot {
   readonly runtime: ReturnType<ApplicationSession['getSnapshot']> | null;
 }
 
-export interface ApplicationOptions {
+export interface ApplicationContent<
+  TRow extends MessageContent = MessageContent
+> {
+  getSnapshot(): readonly TRow[];
+  update(
+    messages: Parameters<ReturnType<typeof createMessageContent>['update']>[0],
+    toolCalls: Parameters<ReturnType<typeof createMessageContent>['update']>[1]
+  ): void;
+  dispose(): void;
+}
+
+export interface ApplicationOptions<
+  TRow extends MessageContent = MessageContent
+> {
   readonly history: BrowserHistory;
   readonly directory: ThreadDirectory;
   readonly assistantId: string;
@@ -54,15 +69,8 @@ export interface ApplicationOptions {
   readonly sessionFactory?: (id: string) => ApplicationSession;
   // Private composition seam around the installed Markdown owner.
   readonly markdownFactory?: typeof createMarkdown;
-}
-
-interface Admission {
-  readonly intent: number;
-  readonly id: string;
-  readonly controller: AbortController;
-  session?: ApplicationSession;
-  release?: () => void;
-  content?: ReturnType<typeof createMessageContent>;
+  // Private composition seam around the session's content owner.
+  readonly contentFactory?: () => ApplicationContent<TRow>;
 }
 
 interface Creation {
@@ -71,23 +79,53 @@ interface Creation {
   readonly controller: AbortController;
 }
 
-interface Submission {
-  readonly admission: Admission;
-  readonly session: ApplicationSession;
-  readonly controller: AbortController;
-}
-
-interface DecisionOccurrence {
-  readonly admission: Admission;
-  readonly evidence: NonNullable<ApplicationSnapshot['runtime']>['interrupts'];
-  readonly approval: Approval;
-  readonly token: symbol;
-  consumed: boolean;
-  card?: Decision;
-}
-
+export function createApplication<TRow extends MessageContent>(
+  options: ApplicationOptions<TRow> & {
+    readonly contentFactory: () => ApplicationContent<TRow>;
+  }
+): ReturnType<typeof createApplicationOwner<TRow>>;
+export function createApplication(
+  options: ApplicationOptions
+): ReturnType<typeof createApplicationOwner<MessageContent>>;
 export function createApplication(options: ApplicationOptions) {
-  let snapshot: ApplicationSnapshot = Object.freeze({
+  return createApplicationOwner(
+    options,
+    options.contentFactory ??
+      (() => createMessageContent(options.markdownFactory))
+  );
+}
+
+function createApplicationOwner<TRow extends MessageContent>(
+  options: ApplicationOptions,
+  contentFactory: () => ApplicationContent<TRow>
+) {
+  interface Admission {
+    readonly intent: number;
+    readonly id: string;
+    readonly controller: AbortController;
+    session?: ApplicationSession;
+    release?: () => void;
+    content?: ApplicationContent<TRow>;
+  }
+
+  interface Submission {
+    readonly admission: Admission;
+    readonly session: ApplicationSession;
+    readonly controller: AbortController;
+  }
+
+  interface DecisionOccurrence {
+    readonly admission: Admission;
+    readonly evidence: NonNullable<
+      ApplicationSnapshot['runtime']
+    >['interrupts'];
+    readonly approval: Approval;
+    readonly token: symbol;
+    consumed: boolean;
+    card?: Decision;
+  }
+
+  let snapshot: ApplicationSnapshot<TRow> = Object.freeze({
     decision: null,
     submissionKind: null,
     messages: Object.freeze([]),
@@ -120,7 +158,7 @@ export function createApplication(options: ApplicationOptions) {
         clientOptions: { maxRetries: 0 },
       }));
 
-  function publish(next: ApplicationSnapshot) {
+  function publish(next: ApplicationSnapshot<TRow>) {
     if (disposed) return;
     next = { ...next, decision: projectDecision(next) };
     if (
@@ -169,7 +207,7 @@ export function createApplication(options: ApplicationOptions) {
     );
   }
 
-  function projectDecision(next: ApplicationSnapshot): Decision | null {
+  function projectDecision(next: ApplicationSnapshot<TRow>): Decision | null {
     const evidence = next.runtime?.interrupts;
     if (!admission || !owns(admission) || !evidence?.length) {
       occurrence = undefined;
@@ -252,7 +290,12 @@ export function createApplication(options: ApplicationOptions) {
         return;
       }
       current.session = session;
-      const content = createMessageContent(options.markdownFactory);
+      const content = contentFactory();
+      // Construction may synchronously select a replacement before attachment.
+      if (!owns(current) || current.session !== session) {
+        content.dispose();
+        return;
+      }
       current.content = content;
       const observe = () => {
         if (!owns(current) || current.session !== session) return;

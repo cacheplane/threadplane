@@ -51,6 +51,12 @@
       "types": "./src/index.d.ts",
       "import": "./src/index.js",
       "default": "./src/index.js"
-    }
+    },
+    "./debug": {
+      "types": "./src/debug/index.d.ts",
+      "import": "./src/debug/index.js",
+      "default": "./src/debug/index.js"
+    },
+    "./debug/styles.css": "./src/debug/styles.css"
   }
 }

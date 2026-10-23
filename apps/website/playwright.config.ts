@@ -63,9 +63,13 @@ export const createWebsitePlaywrightConfig = (
   const testIgnore = shouldStartLocalServer
     ? [...modeIgnores]
     : [...new Set([...modeIgnores, ...fixtureDrivenSpecs])];
+  if (!shouldStartLocalServer || productionMode) testIgnore.push('**/react-ag-ui-a2ui-preview.spec.ts');
 
-  return defineConfig({
+  const config = defineConfig({
     testDir: './e2e',
+    globalTimeout: shouldStartLocalServer && !productionMode && !bfcacheRuntimeTest
+      ? 30 * 60 * 1000
+      : undefined,
     testMatch: bfcacheRuntimeTest
       ? '**/custom-runtime-bfcache.spec.ts'
       : undefined,
@@ -161,6 +165,12 @@ export const createWebsitePlaywrightConfig = (
             url: runtimeURL,
             reuseExistingServer,
           },
+          ...(!productionMode && !bfcacheRuntimeTest ? [{
+            command: 'node scripts/react-cockpit/prepare-ag-ui-a2ui-fixture.mjs --serve',
+            cwd: '../..', url: 'http://127.0.0.1:4647',
+            reuseExistingServer: false, timeout: 330_000,
+            gracefulShutdown: { signal: 'SIGTERM' as const, timeout: 15000 },
+          }] : []),
           ...(!bfcacheRuntimeTest
             ? [
                 {
@@ -181,6 +191,12 @@ export const createWebsitePlaywrightConfig = (
                   command: 'npx nx run cockpit-ag-ui-tool-views-angular:serve:cockpit --port 4322',
                   cwd: '../..',
                   url: 'http://localhost:4322',
+                  reuseExistingServer,
+                },
+                {
+                  command: 'npx nx run cockpit-ag-ui-client-tools-angular:serve:cockpit --port 4325',
+                  cwd: '../..',
+                  url: 'http://localhost:4325',
                   reuseExistingServer,
                 },
                 {
@@ -319,6 +335,35 @@ export const createWebsitePlaywrightConfig = (
                   timeout: 180_000,
                 },
                 {
+                  command: 'node scripts/react-cockpit/prepare-ag-ui-client-tools-fixture.mjs --serve',
+                  cwd: '../..',
+                  url: 'http://127.0.0.1:4640',
+                  // A reused listener cannot establish canonical worker ownership.
+                  reuseExistingServer: false,
+                  timeout: 180_000,
+                },
+                {
+                  command: 'node scripts/react-cockpit/serve.mjs runtimes-mastra --no-parent',
+                  cwd: '../..',
+                  url: 'http://127.0.0.1:4641',
+                  reuseExistingServer: false,
+                  timeout: 180_000,
+                },
+                {
+                  command: 'node scripts/react-cockpit/serve.mjs runtimes-microsoft-agent-framework --no-parent',
+                  cwd: '../..',
+                  url: 'http://127.0.0.1:4642',
+                  reuseExistingServer: false,
+                  timeout: 180_000,
+                },
+                {
+                  command: 'node scripts/react-cockpit/serve.mjs runtimes-aws-strands --no-parent',
+                  cwd: '../..',
+                  url: 'http://127.0.0.1:4643',
+                  reuseExistingServer: false,
+                  timeout: 180_000,
+                },
+                {
                   command: 'npx nx run cockpit-ag-ui-json-render-python:smoke && node scripts/react-cockpit/serve.mjs ag-ui-json-render --no-parent',
                   cwd: '../..',
                   url: 'http://127.0.0.1:4612',
@@ -382,6 +427,30 @@ export const createWebsitePlaywrightConfig = (
                   timeout: 180_000,
                 },
                 {
+                  command: 'node scripts/react-cockpit/serve.mjs chat-theming --no-parent',
+                  cwd: '../..',
+                  url: 'http://127.0.0.1:4644',
+                  reuseExistingServer: false,
+                  gracefulShutdown: { signal: 'SIGTERM' as const, timeout: 5000 },
+                  timeout: 180_000,
+                },
+                {
+                  command: 'node scripts/react-cockpit/serve.mjs chat-debug --no-parent',
+                  cwd: '../..',
+                  url: 'http://127.0.0.1:4645',
+                  reuseExistingServer: false,
+                  gracefulShutdown: { signal: 'SIGTERM' as const, timeout: 5000 },
+                  timeout: 180_000,
+                },
+                {
+                  command: 'node scripts/react-cockpit/serve.mjs chat-a2ui --no-parent',
+                  cwd: '../..',
+                  url: 'http://127.0.0.1:4646',
+                  reuseExistingServer: false,
+                  gracefulShutdown: { signal: 'SIGTERM' as const, timeout: 5000 },
+                  timeout: 180_000,
+                },
+                {
                   command: 'npx nx run cockpit-chat-input-python:smoke && node scripts/react-cockpit/serve.mjs chat-input --no-parent',
                   cwd: '../..',
                   url: 'http://127.0.0.1:4621',
@@ -399,6 +468,48 @@ export const createWebsitePlaywrightConfig = (
                   command: 'npx nx run cockpit-chat-tool-calls-python:smoke && node scripts/react-cockpit/serve.mjs chat-tool-calls --no-parent',
                   cwd: '../..',
                   url: 'http://127.0.0.1:4623',
+                  reuseExistingServer,
+                  timeout: 180_000,
+                },
+                {
+                  command: 'npx nx run cockpit-deep-agents-planning-python:smoke && node scripts/react-cockpit/serve.mjs deep-agents-planning --no-parent',
+                  cwd: '../..',
+                  url: 'http://127.0.0.1:4628',
+                  reuseExistingServer,
+                  timeout: 180_000,
+                },
+                {
+                  command: 'npx nx run cockpit-deep-agents-filesystem-python:smoke && node scripts/react-cockpit/serve.mjs deep-agents-filesystem --no-parent',
+                  cwd: '../..',
+                  url: 'http://127.0.0.1:4629',
+                  reuseExistingServer,
+                  timeout: 180_000,
+                },
+                {
+                  command: 'npx nx run cockpit-deep-agents-subagents-python:smoke && node scripts/react-cockpit/serve.mjs deep-agents-subagents --no-parent',
+                  cwd: '../..',
+                  url: 'http://127.0.0.1:4630',
+                  reuseExistingServer,
+                  timeout: 180_000,
+                },
+                {
+                  command: 'npx nx run cockpit-deep-agents-skills-python:smoke && node scripts/react-cockpit/serve.mjs deep-agents-skills --no-parent',
+                  cwd: '../..',
+                  url: 'http://127.0.0.1:4631',
+                  reuseExistingServer,
+                  timeout: 180_000,
+                },
+                {
+                  command: 'npx nx run cockpit-deep-agents-memory-python:smoke && node scripts/react-cockpit/serve.mjs deep-agents-memory --no-parent',
+                  cwd: '../..',
+                  url: 'http://127.0.0.1:4632',
+                  reuseExistingServer,
+                  timeout: 180_000,
+                },
+                {
+                  command: 'npx nx run cockpit-chat-generative-ui-python:smoke && node scripts/react-cockpit/serve.mjs chat-generative-ui --no-parent',
+                  cwd: '../..',
+                  url: 'http://127.0.0.1:4627',
                   reuseExistingServer,
                   timeout: 180_000,
                 },
@@ -428,6 +539,93 @@ export const createWebsitePlaywrightConfig = (
         ]
       : undefined,
   });
+  if (environment['WEBSITE_E2E_REACT_TOPIC'] === 'ag-ui-client-tools') {
+    config.testMatch = '**/react-ag-ui-client-tools-preview.spec.ts';
+    if (Array.isArray(config.webServer)) {
+      config.webServer = config.webServer.filter(server =>
+        [localURL, 'http://localhost:4325', 'http://127.0.0.1:4640'].includes(server.url ?? '')
+      );
+    }
+  }
+  if (environment['WEBSITE_E2E_REACT_TOPIC'] === 'runtimes-mastra') {
+    config.testMatch = '**/react-mastra-preview.spec.ts';
+    if (Array.isArray(config.webServer)) {
+      config.webServer = config.webServer.filter(server =>
+        [localURL, 'http://127.0.0.1:4641'].includes(server.url ?? '')
+      );
+    }
+  }
+  if (environment['WEBSITE_E2E_REACT_TOPIC'] === 'runtimes-microsoft-agent-framework') {
+    config.testMatch = '**/react-maf-preview.spec.ts';
+    config.workers = 1;
+    config.fullyParallel = false;
+    config.retries = 0;
+    config.outputDir = resolve(__dirname, '../../test-results/native-maf-website');
+    if (Array.isArray(config.webServer)) {
+      config.webServer = config.webServer.filter(server =>
+        [localURL, 'http://127.0.0.1:4642'].includes(server.url ?? '')
+      );
+    }
+  }
+  if (environment['WEBSITE_E2E_REACT_TOPIC'] === 'runtimes-aws-strands') {
+    config.testMatch = '**/react-strands-preview.spec.ts';
+    config.workers = 1;
+    config.fullyParallel = false;
+    config.retries = 0;
+    config.outputDir = resolve(__dirname, '../../test-results/native-strands-website');
+    if (Array.isArray(config.webServer)) {
+      config.webServer = config.webServer.filter(server =>
+        [localURL, 'http://127.0.0.1:4643'].includes(server.url ?? '')
+      );
+    }
+  }
+  if (environment['WEBSITE_E2E_REACT_TOPIC'] === 'chat-theming') {
+    config.testMatch = '**/react-theming-preview.spec.ts';
+    config.workers = 1;
+    config.fullyParallel = false;
+    config.retries = 0;
+    config.outputDir = resolve(__dirname, '../../output/playwright/chat-theming-website');
+    if (Array.isArray(config.webServer)) {
+      config.webServer = config.webServer.filter(server => [localURL, 'http://127.0.0.1:4644'].includes(server.url ?? '')).map(server => ({ ...server, reuseExistingServer: false, gracefulShutdown: { signal: 'SIGTERM' as const, timeout: 5000 } }));
+    }
+  }
+  if (environment['WEBSITE_E2E_REACT_TOPIC'] === 'chat-debug') {
+    config.testMatch = '**/react-debug-preview.spec.ts';
+    config.workers = 1;
+    config.fullyParallel = false;
+    config.retries = 0;
+    config.outputDir = resolve(__dirname, '../../output/playwright/chat-debug-website');
+    if (Array.isArray(config.webServer)) {
+      config.webServer = config.webServer
+        .filter(server => [localURL, 'http://127.0.0.1:4645'].includes(server.url ?? ''))
+        .map(server => ({ ...server, reuseExistingServer: false, gracefulShutdown: { signal: 'SIGTERM' as const, timeout: 5000 } }));
+    }
+  }
+  if (environment['WEBSITE_E2E_REACT_TOPIC'] === 'ag-ui-a2ui' && shouldStartLocalServer && !productionMode) {
+    config.testMatch = '**/react-ag-ui-a2ui-preview.spec.ts';
+    config.workers = 1;
+    config.fullyParallel = false;
+    config.retries = 0;
+    config.outputDir = resolve(__dirname, '../../output/playwright/ag-ui-a2ui-website');
+    if (Array.isArray(config.webServer)) {
+      config.webServer = config.webServer
+        .filter(server => [localURL, 'http://127.0.0.1:4647'].includes(server.url ?? ''))
+        .map(server => ({ ...server, reuseExistingServer: false, gracefulShutdown: { signal: 'SIGTERM' as const, timeout: 15000 } }));
+    }
+  }
+  if (environment['WEBSITE_E2E_REACT_TOPIC'] === 'chat-a2ui') {
+    config.testMatch = '**/react-chat-a2ui-preview.spec.ts';
+    config.workers = 1;
+    config.fullyParallel = false;
+    config.retries = 0;
+    config.outputDir = resolve(__dirname, '../../output/playwright/chat-a2ui-website');
+    if (Array.isArray(config.webServer)) {
+      config.webServer = config.webServer
+        .filter(server => [localURL, 'http://127.0.0.1:4646'].includes(server.url ?? ''))
+        .map(server => ({ ...server, reuseExistingServer: false, gracefulShutdown: { signal: 'SIGTERM' as const, timeout: 5000 } }));
+    }
+  }
+  return config;
 };
 
 export default createWebsitePlaywrightConfig();

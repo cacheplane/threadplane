@@ -1,7 +1,7 @@
 import type { SqlExecutor } from './database.ts';
 import type { GrowthJob } from './models.ts';
 import {
-  isGoogleMailboxRecoveryPaused,
+  isMailboxRecoveryPaused,
   settleGoogleReplyReconciliation,
   type ProcessGoogleMailboxEventDependencies,
 } from './replies.ts';
@@ -69,7 +69,7 @@ export async function dispatchGrowthLeasedJob(
   }
   if (
     (job.kind === 'reply_reconcile' || job.kind === 'send_step') &&
-    (await isGoogleMailboxRecoveryPaused(executor))
+    (await isMailboxRecoveryPaused(executor))
   ) {
     return 'recovery_paused';
   }

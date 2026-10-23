@@ -31,9 +31,13 @@ export const deepAgentsMemoryPythonModule: CockpitCapabilityModule = {
   codeAssetPaths: [
     'cockpit/deep-agents/memory/angular/src/app/memory.component.ts',
     'cockpit/deep-agents/memory/angular/src/app/app.config.ts',
+    'cockpit/deep-agents/memory/angular/src/app/memory-scope.ts',
+    'cockpit/deep-agents/memory/angular/src/app/memory-transport.ts',
+    'cockpit/deep-agents/memory/angular/src/app/memory-agent-gate.ts',
   ],
   backendAssetPaths: [
     'cockpit/deep-agents/memory/python/src/graph.py',
+    'cockpit/deep-agents/memory/python/src/memory_observation.py',
   ],
   runtimeUrl: 'deep-agents/memory',
   devPort: 4313,

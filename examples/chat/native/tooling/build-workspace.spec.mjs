@@ -19,6 +19,7 @@ function fixture(t) {
   t.after(() => rmSync(root, { recursive: true, force: true }));
   for (const path of [
     'libs/core/src/index.ts',
+    'libs/a2ui/src/index.ts',
     'libs/telemetry/project.json',
     'fixtures/react-parity/traces/langgraph-text-state.sse',
   ]) {
@@ -37,6 +38,9 @@ test('selected input hashes exclude private, generated and unrelated files', (t)
     'libs/core/.cache/stale',
     'libs/core/node_modules/stale.js',
     'libs/core/.install-collector/stale.mjs',
+    'libs/a2ui/.env.local',
+    'libs/a2ui/src/private.key',
+    'libs/a2ui/dist/stale.js',
     'libs/unrelated/src/index.ts',
   ]) {
     mkdirSync(dirname(join(root, path)), { recursive: true });
@@ -44,17 +48,21 @@ test('selected input hashes exclude private, generated and unrelated files', (t)
   }
   assert.deepEqual(Object.keys(inputFingerprint(root)).sort(), [
     'fixtures/react-parity/traces/langgraph-text-state.sse',
+    'libs/a2ui/src/index.ts',
     'libs/core/src/index.ts',
     'libs/telemetry/project.json',
   ]);
 });
 
 for (const local of [
+  'libs/a2ui/src/index.ts',
   'libs/telemetry/project.json',
   'fixtures/react-parity/traces/langgraph-text-state.sse',
 ])
   test(`auxiliary input is frozen: ${local}`, (t) => {
     const root = fixture(t);
+    mkdirSync(dirname(join(root, local)), { recursive: true });
+    writeFileSync(join(root, local), 'original');
     const before = frozenInputFingerprint(root);
     writeFileSync(
       join(root, local),
@@ -63,7 +71,13 @@ for (const local of [
     assert.notDeepEqual(frozenInputFingerprint(root), before);
   });
 
-for (const local of ['libs/core/src/index.ts', 'libs', 'fixtures/react-parity'])
+for (const local of [
+  'libs/core/src/index.ts',
+  'libs/a2ui/src/index.ts',
+  'libs/a2ui',
+  'libs',
+  'fixtures/react-parity',
+])
   test(`selected input rejects source or ancestor symlinks: ${local}`, (t) => {
     const root = fixture(t);
     const target = join(root, 'external');

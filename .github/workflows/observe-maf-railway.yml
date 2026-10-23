@@ -1,0 +1,109 @@
+name: Railway MAF observer
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/observe-maf-railway.yml'
+      - 'scripts/railway-observation/observe-maf.mjs'
+      - 'scripts/railway-observation/observe-maf.spec.mjs'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Read-only observation mode
+        type: choice
+        options: [observe]
+        default: observe
+        required: true
+      expectedMain:
+        description: Independently admitted reviewed main SHA
+        type: string
+        required: true
+      expectedDeploymentId:
+        description: Deployment UUID from independently admitted producer evidence
+        type: string
+        required: true
+      producerRun:
+        description: Admitted producer run ID
+        type: string
+        required: true
+      producerAttempt:
+        description: Admitted producer run attempt
+        type: string
+        required: true
+      producerJob:
+        description: Admitted producer job ID
+        type: string
+        required: true
+      producerProjectId:
+        description: Project UUID from admitted producer evidence
+        type: string
+        required: true
+      producerServiceId:
+        description: Service UUID from admitted producer evidence
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    name: Railway MAF observer — unit
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: 22
+      - run: node --test scripts/railway-observation/observe-maf.spec.mjs
+
+  observe:
+    name: Railway MAF observer — observe
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.sha == inputs.expectedMain && inputs.mode == 'observe'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    concurrency:
+      group: railway-maf-observer-${{ github.ref }}
+      cancel-in-progress: false
+    # GITHUB_EVENT_NAME, GITHUB_REF, GITHUB_SHA, GITHUB_RUN_ID and
+    # GITHUB_RUN_ATTEMPT remain the runner's actual context, never inputs.
+    env:
+      OBSERVER_MODE: ${{ inputs.mode }}
+      EXPECTED_MAIN: ${{ inputs.expectedMain }}
+      EXPECTED_DEPLOYMENT_ID: ${{ inputs.expectedDeploymentId }}
+      PRODUCER_PROJECT_ID: ${{ inputs.producerProjectId }}
+      PRODUCER_SERVICE_ID: ${{ inputs.producerServiceId }}
+      PRODUCER_RUN: ${{ inputs.producerRun }}
+      PRODUCER_ATTEMPT: ${{ inputs.producerAttempt }}
+      PRODUCER_JOB: ${{ inputs.producerJob }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: 22
+      - name: Validate trusted main context before secret access
+        id: guard
+        run: node scripts/railway-observation/observe-maf.mjs --guard
+      - name: Observe fixed Railway deployment
+        id: observe
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: node scripts/railway-observation/observe-maf.mjs
+      - name: Upload curated observation
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: maf-railway-observation
+          retention-days: 1
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/maf-observation.json
+            ${{ runner.temp }}/maf-observation-before.json
+            ${{ runner.temp }}/maf-observation-after.json

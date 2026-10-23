@@ -78,14 +78,21 @@ const mdxComponents = {
       />
     );
   },
-  table: ({ children, ...rest }: React.HTMLAttributes<HTMLTableElement>) => (
-    // tabIndex + role: a scrollable region must be keyboard-reachable
-    // (WCAG 2.1.1) — without it, keyboard users can never see the clipped
-    // columns the scroller hides.
-    <div className="docs-table-scroll" tabIndex={0} role="region" aria-label="Table, scrolls horizontally">
-      <table {...rest}>{children}</table>
-    </div>
-  ),
+  table: ({ children, ...rest }: React.HTMLAttributes<HTMLTableElement>) =>
+    // A reference table renders as entries at every width (docs.css), so it
+    // never scrolls and must not be announced or tabbed to as a scroller.
+    (rest as Record<string, unknown>)['data-shape'] === 'reference' ? (
+      <div className="docs-table-scroll">
+        <table {...rest}>{children}</table>
+      </div>
+    ) : (
+      // tabIndex + role: a scrollable region must be keyboard-reachable
+      // (WCAG 2.1.1) — without it, keyboard users can never see the clipped
+      // columns the scroller hides.
+      <div className="docs-table-scroll" tabIndex={0} role="region" aria-label="Table, scrolls horizontally">
+        <table {...rest}>{children}</table>
+      </div>
+    ),
   ...mdxHeadingComponents,
 };
 

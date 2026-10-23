@@ -669,9 +669,14 @@ test.describe('workspace shell', () => {
       'data-workspace-modal-hidden',
       ''
     );
+    await expect(announcement).toBeHidden();
+    await expect(lateAnnouncement).toBeHidden();
+    await expect(trigger).toBeFocused();
+    await trigger.click();
+    await dialog.getByRole('button', { name: 'Docs', exact: true }).click();
+    await expectMode(page, 'Docs');
     await expect(announcement).toBeVisible();
     await expect(lateAnnouncement).toBeVisible();
-    await expect(trigger).toBeFocused();
     await announcement.evaluate((element) => element.remove());
     await lateAnnouncement.evaluate((element) => element.remove());
   });

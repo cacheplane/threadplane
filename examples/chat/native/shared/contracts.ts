@@ -3,6 +3,7 @@
 export interface ThreadRow {
   readonly id: string;
   readonly title: string;
+  readonly updatedAt?: number;
 }
 
 export type DirectoryResult<T> =

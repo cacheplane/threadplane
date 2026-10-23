@@ -1,5 +1,7 @@
 # Deep Agents Skills (Angular)
 
-This capability shows progressive disclosure happening. A skill is a folder with a `SKILL.md` whose YAML frontmatter carries a name and a description; `SkillsMiddleware` puts only that frontmatter in the system prompt and leaves the body on the filesystem until a request matches. A reference file inside the skill stays unread until the `SKILL.md` sends the agent to it.
+SkillsMiddleware puts a metadata index — name, description, and instruction path — in the system prompt. Skill bodies and references are loaded through read_file when requested. The shared /skills/ mount is enforced read-only; thread-local notes remain writable.
 
-The sidebar therefore has two halves. The index comes from `skills_metadata`, which is annotated `PrivateStateAttr` and so never reaches the `values` stream — the graph republishes it as a `custom` stream event, and the checkpoint covers a reopened thread. The files the agent actually opened come from the ordinary tool-call stream, because `read_file` is not private at all.
+PrivateStateAttr excludes Skills metadata and load errors from declared input/output schemas. In the pinned graph these keys can still appear in root values and checkpoints. A named custom event is an additional live source. The Angular panel prefers that event and falls back to agent.value(); its checkpoint label names the fallback rather than proving a reopened thread.
+
+The Angular path projection uses read_file arguments only: it shows requested paths, including failed requests, without validating tool results. Its body not read label means no matching request was observed. The React preview separately marks successfully inspected results. This Skills contract makes no inference about Memory.

@@ -14,6 +14,12 @@ function-tool execution. Both native bindings borrow the application-owned
 session: subscribing or mounting does not submit work, and unmounting does not
 implicitly dispose the owner.
 
+Session-owned native SDK streams and same-run joins request canonical checkpoint
+events; supplied custom transports and legacy defaults remain unchanged.
+Exact-run failure and uncertainty still prevent successful completion. Unsaved
+title and schema callbacks are not canonical application data and still need
+separate application admission work.
+
 Explicit fixed-thread history loading replaces the transcript from the latest
 checkpoint. Equal reads preserve identity, failures preserve the previous
 snapshot, and loaded tools never execute. Readonly application `values` and full
@@ -199,9 +205,9 @@ node scripts/react-parity/verify-packages.mjs
 node scripts/react-parity/verify-angular-package.mjs
 ```
 
-The plain packaging check packs core, content and React, validates their thirteen export
-paths, README/license inclusion and production exclusions, then imports and
-type-checks the tarballs outside workspace aliases with `skipLibCheck: false`.
+The plain packaging check packs core, content, React and the legacy A2UI protocol,
+validates the sixteen plain ESM export paths, README/license inclusion and
+production exclusions, then imports and type-checks the tarballs outside workspace aliases with `skipLibCheck: false`.
 Its core-only consumer checks all three core exports and rejects extra dependencies.
 The separate Angular check packs the one Angular APF entry and proves CLI
 compilation/linking with `skipLibCheck: false`. Both frameworks now run installed
@@ -311,23 +317,84 @@ This bounded runtime proof does not establish complete migration parity.
 | T17 | Separate neutral telemetry from framework integration |
 | T18 | Extract Markdown documents and citation projections |
 | T19 | Extract JSON classification and A2UI surface processing |
-| T20 | Extract render state, readiness and form-session helpers |
+| T20 | In progress: private application-owned render state and bounded React readiness; form sessions and full parity remain open |
 | T21 | Introduce safe SSR dehydration and browser boundaries |
 | T22 | Build React component foundations, styles and overlays |
 | T23 | Implement transcript, composer and basic chat composition |
-| T24 | Implement React render registry, context and element lifecycle |
+| T24 | In progress: private read-only React registry and committed readiness lifecycle; broader context and full element parity remain open |
 | T25 | Implement render actions, host events and tool views |
 | T26 | Implement all Markdown views and citation UI |
 | T27 | Implement A2UI surface and all 18 catalog views |
 | T28 | Implement approvals, tools, reasoning and subagent UI |
-| T29 | Implement thread/project/search/history/timeline/debug surfaces |
-| T30 | Implement popup, sidebar and sidenav compositions |
+| T29 | In progress: private controlled ThreadList selection view, optional app-owned new-conversation request and render-time relative updated timestamps with exact ISO metadata, dogfooded from backend timestamps in native React directory presentations; application owns data/filtering/execution/refresh. No timer or live ticking. Thread lifecycle actions, project/search/history/timeline surfaces and full parity remain open; private Debug is a separate bounded surface |
+| T30 | In progress: private controlled non-modal ChatPopup, full-height ChatSidebar with optional persistent page content and desktop content pushing, children-based ChatSidenav and optional sibling ChatSidenavScrim, dogfooded by the native conversation example. Sidenav supports expanded/collapsed navigation and a non-modal drawer, retaining mounted content; native exact `presentation=sidenav` chooses drawer with a dismissible backdrop at widths <=700px. Peer-panel edge claims, project/archive menus, global shortcuts, debug ownership and full composition parity remain open |
 | T31 | Create canonical React applications and public testing utilities |
-| T32 | In progress: nine LangGraph and native AG-UI Streaming/Interrupts/Tool Views frontend/runtime identities; existing bridges reused |
-| T33 | In progress: twelve installed React previews across LangGraph and AG-UI; remaining 29 topic frontends pending |
-| T34 | In progress: public selectors and frontend URL state for nine LangGraph and three AG-UI previews; broader navigation/search parity pending |
-| T35 | In progress: authored docs and public agent guidance for twelve React previews; full React docs pending |
+| T32 | In progress: 41 registered native React and 41 Angular frontend identities across LangGraph, Deep Agents, Chat, AG-UI, Render and Runtimes; Chat and AG-UI A2UI reuse their existing shared backends, existing runtimes and bridges are reused, Render playback stays local |
+| T33 | In progress: 41 installed React previews (9 LangGraph, 5 Deep Agents, 11 Chat, 7 AG-UI, 6 Render, 3 Runtimes). Chat and AG-UI A2UI share the closed ten-view booking presentation; generic all-18 A2UI parity remains pending |
+| T34 | In progress: public selectors and frontend URL state for registered React previews, including native Chat A2UI on its canonical overview; broader navigation/search parity pending |
+| T35 | In progress: docs and public agent guidance for native React previews, including the bounded Chat A2UI profile and private package limits; full React docs pending |
 | T36 | Expand CI and packed consumer compatibility |
 | T37 | Prepare prerelease, publishing, provenance and rollback |
 | T38 | Measure and optimize streaming, bundles and retention |
 | T39 | Complete accessibility, parity audit and maintenance handoff |
+
+## Private application-owned render state
+
+The optional `@threadplane/content/render-state` entry exports `createRenderState`
+and four readonly types. Its bounded T20 owner captures immutable plain data,
+uses strict own-data paths, preserves reference no-ops, commits ordered batches
+atomically and retains readable state after terminal disposal. See
+[the content contract](../../libs/content/README.md) for exact data, path, reference,
+notification and lifetime semantics and an application-owned example.
+
+The real installed fixture in `render-state/` borrows the same owner with React
+`useAgent` under development StrictMode and Angular `observeAgent`. Application
+controls prove external writes while either view is absent, remount identity,
+owner replacement, observer release without commands/disposal, and explicit
+application disposal. The owner-only bundle excludes framework, backend SDK,
+parser and protocol inputs; the mixed presentation installs actual package
+artifacts and framework runtimes. SDK assignment is a strict installed type proof
+of structural compatibility. It is not complete SDK behavior parity.
+
+Build the actual core, protocol, content and React artifacts, then the Angular
+artifact required by the mixed browser fixture. The native React and Angular
+profiles each retain their separate four-step foundation build sequence. Run:
+
+```sh
+npx nx run-many -t build --projects=core,a2ui,content,react,angular --parallel=1 --skip-nx-cache
+node scripts/react-parity/verify-packages.mjs
+node scripts/react-parity/verify-render-state.mjs --retain /tmp/new-render-state-proof
+```
+
+The retained browser proof records actual installed inputs, tarballs, locks,
+compiler/runtime output, snapshots and owner observations, GET-only same-origin
+requests, and lifecycle cleanup. Use a new retain directory for each run. The
+existing standalone A2UI proof remains separate. The global `--built` boundary
+scan above requires all ten fresh package builds; this narrow five-artifact
+quickstart does not satisfy that prerequisite.
+
+## Private React readiness
+
+The distinct [readiness fixture](./react-readiness/README.md) proves bounded
+T20/T24 admission through the existing `react-render` profile, installing exactly
+core, content and React. It compiles the type-only `RenderReadinessEntry` against
+installed declarations and observes the actual owner in development React
+StrictMode. Pending fallback, real-view commit, retained DOM/local state,
+contract replacement, repeated keys and abandoned suspension are checked through
+explicit application controls. See the [render contract](../../libs/react/README.md#read-only-render-trees).
+
+```sh
+npx nx run-many -t build --projects=core,content,react --parallel=1 --skip-nx-cache
+node scripts/react-parity/verify-react-readiness.mjs --retain /tmp/new-react-readiness-proof
+```
+
+Use a new retain directory. The proof records installed dependencies separately
+from build module inputs and emitted executable modules: installed parser packages
+do not imply parser execution. It retains three local artifacts, installed strict
+type/browser evidence, source and lock fingerprints, screenshots and owned
+process/profile/socket cleanup. The original `render-state` proof remains the
+separate mixed React/Angular four-artifact owner proof with its no-SDK contract.
+Readiness does not replace it or establish SDK behavior parity.
+
+T20/T24 stay in progress: form sessions, validation, actions, all catalog views,
+SSR, hydration, public release and full legacy/SDK/RFC parity remain open.

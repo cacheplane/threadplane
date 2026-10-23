@@ -409,8 +409,11 @@ export class DemoShell {
    */
   readonly model = signal<string>(this.persistence.read('model') ?? 'gpt-5-mini');
 
-  /** Reasoning effort for the next submit. Persisted across reloads. */
-  readonly effort = signal<string>(this.persistence.read('effort') ?? 'minimal');
+  /**
+   * Reasoning effort for the next submit. Persisted across reloads.
+   * `'default'` sends no effort, so the model's own default applies.
+   */
+  readonly effort = signal<string>(this.persistence.read('effort') ?? 'default');
 
   /**
    * GenUI dispatch mode for the next UI-render prompt. Controls which
@@ -504,6 +507,7 @@ export class DemoShell {
   ]);
 
   protected readonly effortOptions = signal<readonly { value: string; label: string }[]>([
+    { value: 'default', label: 'model default' },
     { value: 'minimal', label: 'minimal (fast)' },
     { value: 'low',     label: 'low' },
     { value: 'medium',  label: 'medium' },
@@ -609,7 +613,7 @@ export class DemoShell {
           state: {
             ...((input as { state?: Record<string, unknown> })?.state ?? {}),
             model: this.model(),
-            reasoning_effort: this.effort(),
+            reasoning_effort: this.effort() === 'default' ? null : this.effort(),
             gen_ui_mode: this.genUiMode(),
             itinerary: this.itinerary.stops(),
           },
@@ -686,7 +690,7 @@ export class DemoShell {
   private buildQueryParams(): Record<string, string | null> {
     return {
       model:   this.model()             === 'gpt-5-mini'    ? null : this.model(),
-      effort:  this.effort()            === 'minimal'       ? null : this.effort(),
+      effort:  this.effort()            === 'default'       ? null : this.effort(),
       genui:   this.genUiMode()         === 'a2ui'          ? null : this.genUiMode(),
       theme:   this.theme()             === 'default-dark'  ? null : this.theme(),
       color:   this.colorScheme()       === 'dark'          ? null : this.colorScheme(),

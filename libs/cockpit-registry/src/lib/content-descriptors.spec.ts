@@ -44,6 +44,84 @@ import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { capabilityModules, getFrontendCapabilityDescriptor } from './content-descriptors';
 import { cockpitManifest } from './manifest';
+it('keeps native AG-UI A2UI assets frozen, resolvable and free of private proof inputs', () => {
+  const canonical=capabilityModules.find(entry=>entry.id==='ag-ui-a2ui-python')!;
+  const react=getFrontendCapabilityDescriptor(canonical.manifestIdentity as never,'react')!;
+  expect(react.backendAssetPaths).toEqual(canonical.backendAssetPaths);
+  expect(react.promptAssetPaths).toEqual(canonical.promptAssetPaths);
+  expect(react.docsPath).toBe('/docs/a2ui/getting-started/introduction');
+  expect(Object.isFrozen(react)).toBe(true); expect(Object.isFrozen(react.codeAssetPaths)).toBe(true);
+  for(const path of [...react.codeAssetPaths,...react.backendAssetPaths,...react.promptAssetPaths]) expect(existsSync(new URL('../../../../'+path,import.meta.url))).toBe(true);
+  expect(react.codeAssetPaths.some(path=>/fixture|probe|testing|\.spec\./.test(path))).toBe(false);
+});
+it('includes the required MAF snapshot compatibility source in both registrations', () => {
+  const helper = 'cockpit/runtimes/microsoft-agent-framework/python/src/snapshot_compat.py';
+  expect(runtimesMicrosoftAgentFrameworkPythonModule.backendAssetPaths).toContain(helper);
+  expect(capabilityModules.find(entry => entry.id === 'runtimes-microsoft-agent-framework-python')?.backendAssetPaths).toContain(helper);
+});
+it('registers one frozen native Subagents variant with the canonical backend and exact product sources', () => {
+  const canonical = capabilityModules.find(entry => entry.id === 'deep-agents-subagents-python');
+  if (!canonical) throw new Error('Missing canonical Subagents');
+  const react = getFrontendCapabilityDescriptor(canonical.manifestIdentity as never, 'react');
+  expect(react).toBeDefined();
+  expect(react?.manifestIdentity).toEqual(canonical.manifestIdentity);
+  expect(react?.backendAssetPaths).toEqual(deepAgentsSubagentsPythonModule.backendAssetPaths);
+  expect(react?.promptAssetPaths).toEqual(deepAgentsSubagentsPythonModule.promptAssetPaths);
+  expect(react?.runtimeUrl).toBe('deep-agents/subagents/react');
+  expect(react?.devPort).toBe(4630);
+  expect(react?.codeAssetPaths).toEqual([...['app.tsx', 'application.ts', 'connection.ts', 'authority.ts', 'projection.ts', 'children.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/deep-agents/subagents/react/src/${file}`), 'cockpit/deep-agents/subagents/react/project.json']);
+  expect(Object.isFrozen(react)).toBe(true);
+  expect(Object.isFrozen(react?.codeAssetPaths)).toBe(true);
+  expect(getFrontendCapabilityDescriptor(canonical.manifestIdentity as never, 'angular')).toBe(canonical);
+  expect(capabilityModules.filter(entry => entry.id === canonical.id)).toHaveLength(1);
+  for (const path of [...(react?.codeAssetPaths ?? []), ...(react?.backendAssetPaths ?? [])]) {
+    expect(path).not.toMatch(/fixture|wire\.py|\.spec\.|proof/);
+    expect(existsSync(new URL('../../../../' + path, import.meta.url))).toBe(true);
+  }
+});
+it('registers one frozen native Filesystem variant with the canonical backend and exact product sources', () => {
+  const canonical = capabilityModules.find(entry => entry.id === 'deep-agents-filesystem-python');
+  if (!canonical) throw new Error('Missing canonical Filesystem');
+  const react = getFrontendCapabilityDescriptor(canonical.manifestIdentity as never, 'react');
+  expect(react).toBeDefined();
+  expect(react?.manifestIdentity).toEqual(canonical.manifestIdentity);
+  expect(react?.backendAssetPaths).toEqual(deepAgentsFilesystemPythonModule.backendAssetPaths);
+  expect(react?.promptAssetPaths).toEqual(deepAgentsFilesystemPythonModule.promptAssetPaths);
+  expect(react?.runtimeUrl).toBe('deep-agents/filesystem/react');
+  expect(react?.devPort).toBe(4629);
+  expect(react?.codeAssetPaths).toEqual(['app.tsx', 'application.ts', 'connection.ts', 'workspace-state.ts', 'approval-state.ts', 'authority.ts', 'workspace-panel.tsx', 'approval-panel.tsx', 'main.tsx', 'styles.css'].map(file => `cockpit/deep-agents/filesystem/react/src/${file}`));
+  expect(Object.isFrozen(react)).toBe(true);
+  expect(Object.isFrozen(react?.codeAssetPaths)).toBe(true);
+  expect(getFrontendCapabilityDescriptor(canonical.manifestIdentity as never, 'angular')).toBe(canonical);
+  expect(capabilityModules.filter(entry => entry.id === canonical.id)).toHaveLength(1);
+  for (const path of [...(react?.codeAssetPaths ?? []), ...(react?.backendAssetPaths ?? [])]) {
+    expect(path).not.toMatch(/fixture|wire\.py|\.spec\.|proof/);
+    expect(existsSync(new URL('../../../../' + path, import.meta.url))).toBe(true);
+  }
+});
+it('registers one frozen native Planning variant with the canonical backend and exact sources', () => {
+  const canonical = capabilityModules.find(entry => entry.id === 'deep-agents-planning-python')!;
+  const react = getFrontendCapabilityDescriptor(canonical.manifestIdentity as never, 'react');
+  expect(react).toBeDefined();
+  expect(react?.manifestIdentity).toEqual(canonical.manifestIdentity);
+  expect(react?.backendAssetPaths).toEqual(deepAgentsPlanningPythonModule.backendAssetPaths);
+  expect(react?.promptAssetPaths).toEqual(deepAgentsPlanningPythonModule.promptAssetPaths);
+  expect(react?.runtimeUrl).toBe('deep-agents/planning/react');
+  expect(react?.devPort).toBe(4628);
+  expect(react?.codeAssetPaths).toEqual(['app.tsx', 'application.ts', 'connection.ts', 'plan-state.ts', 'tool-evidence.ts', 'terminal.ts', 'plan-panel.tsx', 'main.tsx', 'styles.css'].map(file => `cockpit/deep-agents/planning/react/src/${file}`));
+  expect(Object.isFrozen(react)).toBe(true);
+  expect(Object.isFrozen(react?.codeAssetPaths)).toBe(true);
+  expect(capabilityModules.filter(entry => entry.id === canonical.id)).toHaveLength(1);
+});
+it('keeps native Chat Generative UI attached to the original backend descriptor assets', () => {
+  const canonical=capabilityModules.find(entry=>entry.id==='chat-generative-ui-python');
+  if (!canonical) throw new Error('Missing canonical Chat Generative UI');
+  const react=getFrontendCapabilityDescriptor(canonical.manifestIdentity as never,'react');
+  expect(react?.backendAssetPaths).toEqual(chatGenerativeUiPythonModule.backendAssetPaths);
+  expect(react?.promptAssetPaths).toEqual(chatGenerativeUiPythonModule.promptAssetPaths);
+  expect(react?.manifestIdentity).toEqual(canonical.manifestIdentity);
+  expect(Object.isFrozen(react)).toBe(true);
+});
 it('keeps native Chat Timeline attached to the original backend descriptor assets', () => {
   const canonical=capabilityModules.find(entry=>entry.id==='chat-timeline-python');
   if (!canonical) throw new Error('Missing canonical Chat Timeline');
@@ -104,6 +182,16 @@ it('keeps native Chat Messages attached to the original backend descriptor asset
   const react=getFrontendCapabilityDescriptor(canonical.manifestIdentity as never,'react');
   expect(react?.backendAssetPaths).toEqual(chatMessagesPythonModule.backendAssetPaths);
   expect(react?.promptAssetPaths).toEqual(chatMessagesPythonModule.promptAssetPaths);
+  expect(react?.manifestIdentity).toEqual(canonical.manifestIdentity);
+  expect(Object.isFrozen(react)).toBe(true);
+});
+
+it('keeps the native Theming descriptor attached to its canonical Python module', () => {
+  const canonical = capabilityModules.find(entry => entry.id === 'chat-theming-python');
+  if (!canonical) throw Error('Missing canonical Theming');
+  const react = getFrontendCapabilityDescriptor(canonical.manifestIdentity as never, 'react');
+  expect(react?.backendAssetPaths).toEqual(chatThemingPythonModule.backendAssetPaths);
+  expect(react?.promptAssetPaths).toEqual(chatThemingPythonModule.promptAssetPaths);
   expect(react?.manifestIdentity).toEqual(canonical.manifestIdentity);
   expect(Object.isFrozen(react)).toBe(true);
 });
@@ -365,4 +453,51 @@ describe('registry content descriptors', () => {
       );
     }
   });
+});
+
+it('registers native Memory with complete shared source and Angular default', () => {
+  const canonical = capabilityModules.find(entry => entry.id === 'deep-agents-memory-python')!;
+  const react = getFrontendCapabilityDescriptor(canonical.manifestIdentity as never, 'react');
+  const backend = ['graph.py', 'memory_observation.py'].map(file => `cockpit/deep-agents/memory/python/src/${file}`);
+  expect(canonical.backendAssetPaths).toEqual(backend);
+  expect(deepAgentsMemoryPythonModule.backendAssetPaths).toEqual(backend);
+  expect(canonical.codeAssetPaths).toEqual(['memory.component.ts', 'app.config.ts', 'memory-scope.ts', 'memory-transport.ts', 'memory-agent-gate.ts'].map(file => `cockpit/deep-agents/memory/angular/src/app/${file}`));
+  expect(react).toMatchObject({ frontend: 'react', runtimeUrl: 'deep-agents/memory/react', devPort: 4632, backendAssetPaths: backend, promptAssetPaths: canonical.promptAssetPaths });
+  expect(react?.codeAssetPaths).toEqual([...['app.tsx', 'application.ts', 'connection.ts', 'authority.ts', 'browser-scope.ts', 'memory-projection.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/deep-agents/memory/react/src/${file}`), 'cockpit/deep-agents/memory/react/project.json']);
+  expect(getFrontendCapabilityDescriptor(canonical.manifestIdentity as never, 'angular')).toBe(canonical);
+  for (const path of [...(react?.codeAssetPaths ?? []), ...(react?.backendAssetPaths ?? [])]) {
+    expect(path).not.toMatch(/fixture|wire\.py|\.spec\.|proof/);
+    expect(existsSync(new URL('../../../../' + path, import.meta.url))).toBe(true);
+  }
+});
+
+it('registers native Skills with the complete shared backend and product-only assets', () => {
+  const canonical = capabilityModules.find(entry => entry.id === 'deep-agents-skills-python');
+  if (!canonical) throw new Error('Missing canonical Skills');
+  const react = getFrontendCapabilityDescriptor(canonical.manifestIdentity as never, 'react');
+  const backend = ['src/graph.py', 'src/skills_readonly.py', 'skills/runway-analysis/SKILL.md', 'skills/runway-analysis/reference/margins.md', 'skills/weather-brief/SKILL.md'].map(file => `cockpit/deep-agents/skills/python/${file}`);
+  expect(canonical.backendAssetPaths).toEqual(backend);
+  expect(deepAgentsSkillsPythonModule.backendAssetPaths).toEqual(backend);
+  expect(react).toMatchObject({ frontend: 'react', runtimeUrl: 'deep-agents/skills/react', devPort: 4631, backendAssetPaths: backend, promptAssetPaths: canonical.promptAssetPaths });
+  expect(react?.codeAssetPaths).toEqual([...['app.tsx', 'application.ts', 'connection.ts', 'authority.ts', 'index-projection.ts', 'read-projection.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/deep-agents/skills/react/src/${file}`), 'cockpit/deep-agents/skills/react/project.json']);
+  expect(Object.isFrozen(react)).toBe(true);
+  expect(Object.isFrozen(react?.codeAssetPaths)).toBe(true);
+  expect(getFrontendCapabilityDescriptor(canonical.manifestIdentity as never, 'angular')).toBe(canonical);
+  for (const path of [...(react?.codeAssetPaths ?? []), ...(react?.backendAssetPaths ?? [])]) {
+    expect(path).not.toMatch(/fixture|wire\.py|\.spec\.|proof/);
+    expect(existsSync(new URL('../../../../' + path, import.meta.url))).toBe(true);
+  }
+});
+
+it('exposes the actual moved private Chat aviation presentation sources', () => {
+  const canonical=capabilityModules.find(entry=>entry.id==='chat-a2ui-python')!;
+  const react=getFrontendCapabilityDescriptor(canonical.manifestIdentity as never,'react');
+  expect(react?.codeAssetPaths).toEqual([
+    ...['app.tsx','application.ts','connection.ts','terminal.ts','main.tsx','styles.css'].map(file=>`cockpit/chat/a2ui/react/src/${file}`),
+    ...['index.ts','data.ts','protocol.ts','form.ts','actions.ts','views.tsx','surface.ts'].map(file=>`libs/cockpit-a2ui-react/src/${file}`),
+  ]);
+  for(const path of react?.codeAssetPaths ?? []) {
+    expect(path).not.toMatch(/fixture|testing|\.spec\./);
+    expect(existsSync(new URL('../../../../'+path,import.meta.url))).toBe(true);
+  }
 });

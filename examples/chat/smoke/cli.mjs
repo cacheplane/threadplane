@@ -18,6 +18,7 @@ import { fileURLToPath } from 'node:url';
 
 import { getAngularLane } from './angular-versions.mjs';
 import { applyAngularLane, strictNpmEnv } from './consumer-package.mjs';
+import { requireSmokeNpm } from './toolchain-policy.mjs';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const TEMPLATE_DIR = join(SCRIPT_DIR, 'template');
@@ -142,16 +143,6 @@ async function main() {
     version = versionAnswer.replace(/^[v^~]+/, '');
   }
 
-  const packageSpecs = new Map(options.packageSpecs);
-  if (options.localDistRoot) {
-    for (const [name, spec] of await packLocalPackages(
-      options.localDistRoot,
-      options.packDestination
-    )) {
-      packageSpecs.set(name, spec);
-    }
-  }
-
   const installAnswer =
     options.install === undefined
       ? await ask('Run `npm install` now? [Y/n]:', 'Y')
@@ -173,6 +164,18 @@ async function main() {
       : false);
 
   rl?.close();
+
+  if (doInstall) requireSmokeNpm();
+
+  const packageSpecs = new Map(options.packageSpecs);
+  if (options.localDistRoot) {
+    for (const [name, spec] of await packLocalPackages(
+      options.localDistRoot,
+      options.packDestination
+    )) {
+      packageSpecs.set(name, spec);
+    }
+  }
 
   if (action === 'fresh') {
     console.log(`\n→ Removing ${target} ...`);

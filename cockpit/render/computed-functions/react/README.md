@@ -4,6 +4,8 @@ Three authored local JSON samples use the installed `@threadplane/react/render` 
 
 The bounded private projection admits Heading/Card/Value and the authored argument domain. It waits for complete expression nodes before calculating, owns the display data, and rejects executable fields. Playback starts paused; Play/Pause, Finish, Reset and seek control the source prefix. Sample changes and page exit revoke the previous animation generation. This static preview creates no agent executions.
 
+Value alone opts into the native React readiness descriptor. Its app-owned, module-stable predicate admits strings or finite numbers after native computation; while an admitted Value is waiting for its complete expression, an authored pending view preserves its label and shows an ellipsis. After the real view commits, seeking back to an unfinished expression retains that same view and updates its loading display. Removing the element through Reset clears that lifetime. Heading and Card keep direct component registrations. No schema, form or backend behavior is added.
+
 ```sh
 npx nx test cockpit-render-computed-functions-react
 npx nx build cockpit-render-computed-functions-react

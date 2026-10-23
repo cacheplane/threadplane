@@ -1,0 +1,43 @@
+.native-conversation-panel .tp-chat-popup__header {
+  min-height: 0;
+}
+.native-conversation-panel .conversation-heading h1 {
+  font-size: 1.5rem;
+}
+.native-conversation-panel .conversation .tp-chat-list {
+  max-height: 16rem;
+}
+.conversation-layout.conversation-layout--sidebar {
+  grid-template-columns: minmax(0, 1fr);
+}
+.native-sidebar-page {
+  width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.native-sidebar-page aside {
+  min-width: 0;
+  border-inline-end: 0;
+  padding-inline-end: 0;
+}
+.native-sidebar-page .directory-actions {
+  flex-wrap: wrap;
+}
+.native-sidebar-page button {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.native-sidebar-preference {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.native-sidebar-preference input[type='checkbox'] {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 1rem;
+  padding: 0;
+  margin: 0.15rem 0 0;
+}

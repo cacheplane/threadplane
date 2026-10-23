@@ -75,11 +75,11 @@ const savedHistory = [{
 /** A strict wire fixture: malformed/extra operations fail the browser run. */
 export function runtimeResponse(body) {
   assert.equal(body.assistant_id, 'fixture-assistant');
-  assert.deepEqual(body.stream_mode, ['values', 'messages-tuple', 'updates', 'custom']);
+  assert.deepEqual(body.stream_mode, ['values', 'messages-tuple', 'updates', 'custom', 'checkpoints']);
   assert.equal(body.stream_subgraphs, true);
   if (body.input === null) {
     const response = body.command?.resume;
-    assert.deepEqual(body, { assistant_id: 'fixture-assistant', input: null, command: { resume: response }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom'], stream_subgraphs: true, ...resumableRunFields, ...configuredRunFields }, 'exact resume run fields');
+    assert.deepEqual(body, { assistant_id: 'fixture-assistant', input: null, command: { resume: response }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom', 'checkpoints'], stream_subgraphs: true, ...resumableRunFields, ...configuredRunFields }, 'exact resume run fields');
     if (Object.hasOwn(response ?? {}, 'live-approval')) {
       assert.deepEqual(response, { 'live-approval': 'yes', 'live-confirmation': false }, 'exact initial response map');
       return sse('values', { stage: 'final-approval', messages: [{ type: 'ai', id: 'resume-answer', content: 'One final approval', additional_kwargs: { reasoning_content: 'Approval reasoning', citations: [{ id: 'approval-source', title: 'Approval reference', publishedAt: 0 }] } }] })
@@ -98,7 +98,7 @@ export function runtimeResponse(body) {
     ? { model: 'gpt-5-mini', reasoning_effort: 'minimal', gen_ui_mode: 'a2ui', itinerary: [{ id: 'paris', day: 1, place: 'Paris', note: 'Check the weather' }] }
     : {};
   const execution = message.type === 'tool' || ['Tool', 'Drop'].includes(message.content) ? configuredRunFields : {};
-  assert.deepEqual(body, { assistant_id: 'fixture-assistant', input: { ...initialState, messages: [message], client_tools: catalog }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom'], stream_subgraphs: true, ...resumableRunFields, ...execution }, 'unexpected run fields');
+  assert.deepEqual(body, { assistant_id: 'fixture-assistant', input: { ...initialState, messages: [message], client_tools: catalog }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom', 'checkpoints'], stream_subgraphs: true, ...resumableRunFields, ...execution }, 'unexpected run fields');
   if (message.type === 'tool') {
     assert.deepEqual(message, { id: 'client-tool-result-call-weather', type: 'tool', role: 'tool', tool_call_id: 'call-weather', content: '{"city":"Paris","temperature":20}' }, 'actual handler result continuation');
     return sse('values', { messages: [toolCall, message, { type: 'ai', id: 'answer', content: '20 degrees' }] });
@@ -475,7 +475,7 @@ export async function serveRuntimeConsumer(directory) {
             response.writeHead(200, { 'content-type': 'application/json' });
             return response.end(JSON.stringify({ run_id: 'drop-run', thread_id: 'fixture-thread', status }));
           }
-          assert.equal(url.search, '?cancel_on_disconnect=0');
+          assert.deepEqual([...url.searchParams], [['cancel_on_disconnect', '0'], ['stream_mode', JSON.stringify(['values', 'messages-tuple', 'updates', 'custom', 'checkpoints'])]]);
           assert.equal(request.headers['last-event-id'], '2', 'exact committed cursor');
           assert.deepEqual(statusRequests, ['running'], 'initial closure must inspect the running run');
           assert.equal(joined, false, 'one explicit join, no replay');

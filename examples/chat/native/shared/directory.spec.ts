@@ -63,15 +63,21 @@ test('directory lookup, search and explicit creation use real SDK envelopes and 
   });
   assert.deepEqual(await keyed.get('thread-1', signal()), {
     kind: 'ready',
-    value: { id: 'thread-1', title: 'First conversation' },
+    value: {
+      id: 'thread-1',
+      title: 'First conversation',
+      updatedAt: 1790553601000,
+    },
   });
   assert.deepEqual(await directory.list(signal()), {
     kind: 'ready',
-    value: [{ id: 'thread-1', title: 'First conversation' }],
+    value: [
+      { id: 'thread-1', title: 'First conversation', updatedAt: 1790553601000 },
+    ],
   });
   assert.deepEqual(await directory.create(signal()), {
     kind: 'ready',
-    value: { id: 'new', title: 'Untitled' },
+    value: { id: 'new', title: 'Untitled', updatedAt: 1790553601000 },
   });
   server.verify();
   for (const request of server.requests)
@@ -114,7 +120,7 @@ for (const [id, path] of [
     ]);
     assert.deepEqual(await directory.get(id, signal()), {
       kind: 'ready',
-      value: { id, title: 'Delimiter ID' },
+      value: { id, title: 'Delimiter ID', updatedAt: 1790553601000 },
     });
     server.verify();
   });

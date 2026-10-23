@@ -5,6 +5,7 @@ export type {
   ReactRenderRegistry,
   RenderComputedFunction,
   RenderElementData,
+  RenderReadinessEntry,
   RenderSpecData,
   RenderSpecProps,
   RenderValue,

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, test, vi } from 'vitest';
 
 // The website intentionally consumes the growth library through its internal boundary.
 // eslint-disable-next-line @nx/enforce-module-boundaries
@@ -527,9 +527,7 @@ describe('/api/unsubscribe', () => {
     });
 
     const response = await route.GET(
-      request(
-        `/api/unsubscribe?token=${encodeURIComponent(hostile)}`
-      ) as never
+      request(`/api/unsubscribe?token=${encodeURIComponent(hostile)}`) as never
     );
     const body = await response.text();
 
@@ -538,4 +536,37 @@ describe('/api/unsubscribe', () => {
     vi.doUnmock('@threadplane-internal/growth');
     vi.resetModules();
   });
+});
+
+test('accepts a bounded multipart one-click request with the signed query token', async () => {
+  const h = routeHarness();
+  const body = new FormData();
+  body.set('List-Unsubscribe', 'One-Click');
+
+  const response = await h.POST(
+    request(`/api/unsubscribe?token=${unsubscribeToken()}`, {
+      method: 'POST',
+      body,
+    }) as never
+  );
+
+  expect(response.status).toBe(200);
+  expect(h.stopContact).toHaveBeenCalledOnce();
+});
+
+test('rejects duplicate multipart one-click fields before opening the database', async () => {
+  const h = routeHarness();
+  const body = new FormData();
+  body.append('List-Unsubscribe', 'One-Click');
+  body.append('List-Unsubscribe', 'One-Click');
+
+  const response = await h.POST(
+    request(`/api/unsubscribe?token=${unsubscribeToken()}`, {
+      method: 'POST',
+      body,
+    }) as never
+  );
+
+  expect(response.status).toBe(400);
+  expect(h.createDatabase).not.toHaveBeenCalled();
 });

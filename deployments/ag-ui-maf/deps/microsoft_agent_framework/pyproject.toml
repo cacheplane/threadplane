@@ -6,6 +6,7 @@ dependencies = [
     "agent-framework-core>=1.16.0",
     "agent-framework-openai>=1.14.1",
     "agent-framework-ag-ui>=1.2.1",
+    "anyio>=4,<5",
     "fastapi>=0.110",
     "uvicorn[standard]>=0.29",
 ]

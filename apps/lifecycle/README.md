@@ -1,5 +1,8 @@
 # Threadplane lifecycle service
 
+Inbound replies use Resend receiving at `brian@threadplane.ai`, forwarding human
+correspondence to `brian@cacheplane.ai`. See the [receiving cutover guide](../../docs/growth/resend-receiving.md).
+
 Part of [Growth architecture and operations](../../docs/growth/README.md).
 
 This Node 24 service builds Dawn 0.8.26's native Vercel target and adds a thin app-owned service boundary. The Vercel adapter requires the exact `LIFECYCLE_SERVICE_SECRET` bearer token on every Dawn path. Dawn route middleware repeats the same check for execution routes.

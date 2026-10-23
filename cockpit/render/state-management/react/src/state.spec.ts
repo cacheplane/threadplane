@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
-import { createInitialState, editState } from './state';
+import { describe, expect, it, vi } from 'vitest';
+import { createRenderState } from '@threadplane/content/render-state';
+import { createInitialState, editState, createStateEditor } from './state';
 
 describe('caller-owned state', () => {
   it('starts with independent frozen nested data', () => {
@@ -94,5 +95,93 @@ describe('caller-owned state', () => {
       expect(invalid.state).toBe(before);
       expect(invalid.error).toBe('Choose Dark or Light.');
     }
+  });
+});
+
+describe('application owner commands', () => {
+  function fixture() {
+    const owner = createRenderState(createInitialState());
+    const set = vi.fn(owner.set);
+    const edit = createStateEditor({ set });
+    return { owner, set, edit };
+  }
+  it('writes accepted scalar paths, normalizes age and retains old snapshots', () => {
+    const { owner, set, edit } = fixture();
+    const old = owner.getSnapshot();
+    const notify = vi.fn();
+    const release = owner.subscribe(notify);
+    for (const [field, value, path, scalar] of [
+      ['name', '', '/user/name', ''],
+      ['name', 'x'.repeat(256), '/user/name', 'x'.repeat(256)],
+      ['age', '042', '/user/age', 42],
+      ['age', '0', '/user/age', 0],
+      ['age', '150', '/user/age', 150],
+      ['theme', 'light', '/settings/theme', 'light'],
+      ['theme', 'dark', '/settings/theme', 'dark'],
+    ] as const) {
+      expect(edit(field, value)).toBeNull();
+      expect(set).toHaveBeenLastCalledWith(path, scalar);
+      expect(owner.get(path)).toBe(scalar);
+    }
+    expect(set).toHaveBeenCalledTimes(7);
+    expect(notify).toHaveBeenCalledTimes(7);
+    expect(old).toEqual(createInitialState());
+    expect(Object.isFrozen(old.user)).toBe(true);
+    release();
+    owner.dispose();
+  });
+  it('rejects invalid drafts without owner commands or opaque conversion', () => {
+    const { owner, set, edit } = fixture();
+    const old = owner.getSnapshot();
+    const conversion = vi.fn(() => '42');
+    const opaque = { toString: conversion, valueOf: conversion };
+    for (const value of ['x'.repeat(257), null, 42, opaque])
+      expect(edit('name', value)).toBe(
+        'Use at most 256 characters for the name.'
+      );
+    for (const value of [
+      '',
+      ' ',
+      '-1',
+      '151',
+      '1.5',
+      '0000',
+      'Infinity',
+      'NaN',
+      '0x10',
+      '1e2',
+      31,
+      null,
+      opaque,
+    ])
+      expect(edit('age', value)).toBe('Enter a whole age from 0 to 150.');
+    for (const value of ['system', '', null, opaque])
+      expect(edit('theme', value)).toBe('Choose Dark or Light.');
+    expect(conversion).not.toHaveBeenCalled();
+    expect(set).not.toHaveBeenCalled();
+    expect(owner.getSnapshot()).toBe(old);
+    owner.dispose();
+  });
+  it('lets the actual owner suppress equal writes without fresh snapshots', () => {
+    const { owner, set, edit } = fixture();
+    const notify = vi.fn();
+    const release = owner.subscribe(notify);
+    const old = owner.getSnapshot();
+    expect(edit('name', 'Alice')).toBeNull();
+    expect(edit('age', '030')).toBeNull();
+    expect(edit('theme', 'dark')).toBeNull();
+    expect(set.mock.calls).toEqual([
+      ['/user/name', 'Alice'],
+      ['/user/age', 30],
+      ['/settings/theme', 'dark'],
+    ]);
+    expect(owner.getSnapshot()).toBe(old);
+    expect(notify).not.toHaveBeenCalled();
+    owner.set('/user/name', 'External');
+    expect(edit('age', '042')).toBeNull();
+    expect(owner.get('/user/name')).toBe('External');
+    expect(old.user).toEqual({ name: 'Alice', age: 30 });
+    release();
+    owner.dispose();
   });
 });

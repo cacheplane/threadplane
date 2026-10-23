@@ -258,6 +258,181 @@ Reading above the bottom preserves position. The observer disconnects on unmount
 without it, row-update following remains available. The list uses one unstyled
 content wrapper inside its existing scroll region.
 
+## Controlled conversation lists
+
+The private `ThreadList` view from `@threadplane/react/chat` renders supplied
+conversation rows without owning their data or selection:
+
+```tsx
+<ThreadList
+  threads={loadedThreads}
+  activeThreadId={selectedId}
+  onSelect={selectThread}
+  onNewThread={requestNewThread}
+  newThreadDisabled={creating}
+  newThreadLabel="New"
+  label="Loaded conversations"
+/>
+```
+
+`ThreadListItem` has a readonly `id` and optional plain-text `title`; a missing
+or empty title falls back to the full ID. The readonly collection keeps its
+supplied order. Provide unique stable IDs so surviving rows retain their DOM
+through reordering and updates. Selection requests pass the exact ID to
+`onSelect`; only the supplied `activeThreadId` controls `aria-current`. There
+are no automatic commands on mount, rerender or removal.
+
+The view renders a named semantic list of ordinary buttons, with default label
+“Conversations”, scoped wrapping/focus styles and optional list `className`.
+Supplying `onNewThread` adds a native creation button before the list, inside an
+outer wrapper. Without that callback, only the list is rendered. Its default
+plain-text label is “+ New thread”; `newThreadLabel` customizes it and
+`newThreadDisabled` disables only that action. Activation synchronously requests
+creation without changing rows or selection. The application owns creation,
+pending state and any resulting selection; callback identity changes preserve
+existing rows.
+
+Optional readonly `updatedAt` values are epoch milliseconds. Valid timestamps
+render on a second line as “just now”, floored minutes or hours, then singular
+or plural days. The semantic `time` includes its exact ISO instant and describes
+the button without changing its title-based accessible name. Missing or invalid
+dates omit this metadata, including when the reference time is invalid. Epoch
+zero and negative dates are supported. Optional readonly `now` supplies a numeric
+reference time; otherwise `Date.now()` is sampled once per render. The owner
+rerenders to refresh relative labels. The view owns no timer or data refresh.
+
+An empty collection renders an empty list. The application owns loaded-title
+filtering, loading/error/empty notices, data fetching and execution. Rename,
+delete, archive, pin/project actions, drag reordering, live timestamp refresh and
+custom row rendering remain future work. This is a bounded private T29 slice.
+
+## Controlled chat panels
+
+`ChatPopup` is a private non-modal shell from `@threadplane/react/chat`:
+
+```tsx
+import { useState } from 'react';
+import { Chat, ChatPopup } from '@threadplane/react/chat';
+import '@threadplane/react/chat/styles.css';
+
+function Support() {
+  const [open, setOpen] = useState(false);
+  return (
+    <ChatPopup open={open} onOpenChange={setOpen} title="Support">
+      <Chat session={session} content={content} />
+    </ChatPopup>
+  );
+}
+```
+
+The application owns visibility. The launcher, Close button and unclaimed Escape
+inside the panel request changes through `onOpenChange`; accepted `open` changes
+control visibility and focus. Opening focuses Close; closing returns focus to the
+launcher unless another page control already has focus. `launcherLabel`,
+`closeLabel`, `closeOnEscape` and `className` customize the shell.
+
+Closed children remain mounted, hidden and inert. Drafts and borrowed subscriptions
+survive closing; a running response continues. Closing never stops or disposes the
+session or app-owned content. The application still owns Stop and final disposal.
+Changing the selected conversation can independently reset its composer.
+
+The dialog has a generated title relationship, ordinary non-modal Tab order and
+viewport-bounded scrolling. It uses the same scoped chat stylesheet and tokens.
+Mount it outside transformed or clipping ancestors: this first slice uses fixed
+positioning in its existing DOM location, with no portal, backdrop, focus trap,
+global shortcut or persisted open state.
+
+`ChatSidebar` uses the same controlled props and retained-child behavior as
+`ChatPopup`. Import it from the same `/chat` entry and replace `ChatPopup` in the
+example above to use a full-height panel at the viewport's inline end. Its width
+is 28rem on larger screens and the full viewport width at 640px and below. The
+launcher hides while open; Close and scoped Escape request closure, then focus
+returns to the launcher when appropriate. The surrounding page stays interactive
+and Tab can leave the panel.
+
+The sidebar overlays the page by default. To keep page content beside the open
+panel on wider screens, pass that content as `pageContent` and set `pushContent`:
+
+```tsx
+<ChatSidebar open={open} onOpenChange={setOpen} title="Conversation"
+  pageContent={<ConversationDirectory />} pushContent>
+  <ConversationView />
+</ChatSidebar>
+```
+
+`children` remains the chat panel content. The persistent page slot and panel
+retain their mounted children when visibility or the layout preference changes.
+The layout reserves 28rem at the inline end only while open with `pushContent`;
+closing or disabling it restores the page width. At 640px and below it always
+overlays with no reservation. Reservation applies only inside this sidebar's
+layout wrapper; it does not coordinate peer panels or claim global page edges.
+`className` still customizes the popup shell. Peer-panel edge claims, SSR,
+hydration and public release remain separate work. Both panels are private
+contributor APIs.
+
+### Controlled conversation navigation
+
+The private `/chat` entry also exports `ChatSidenav`, `ChatSidenavMode`,
+`ChatSidenavProps`, `ChatSidenavScrim` and `ChatSidenavScrimProps`. The navigation
+shell accepts application-owned navigation as `children`:
+
+```tsx
+<>
+  <ChatSidenavScrim
+    open={mode === 'drawer' && drawerOpen}
+    onDismiss={() => setDrawerOpen(false)}
+  />
+  <ChatSidenav
+    mode={mode}
+    open={drawerOpen}
+    onModeChange={setDesktopMode}
+    onOpenChange={setDrawerOpen}
+  >
+    <ConversationDirectory />
+  </ChatSidenav>
+</>
+```
+
+Required `mode` selects `expanded`, `collapsed` or `drawer`; `open` controls only
+the drawer. Expanded and collapsed navigation stay in normal flow at 18rem and
+4rem. The drawer sits at the viewport's inline-start edge, is at most 20rem wide, and
+uses a named non-modal navigation landmark with no built-in scrim or focus trap. The
+application chooses modes and owns responsive breakpoints and persistence.
+The consumer provides a bounded desktop height and lays out sibling content.
+`onModeChange` requests only `expanded` or `collapsed`; the launcher, Close and
+scoped Escape request drawer visibility through `onOpenChange`. Accepted props
+determine visibility and focus. An open drawer focuses Close; hiding focused
+content returns focus to the visible launcher or toggle while preserving external
+control focus.
+
+Children stay mounted across every mode. Collapsed content and closed drawers are
+hidden and inert, retaining filters, drafts and borrowed subscriptions. The shell
+does not select conversations, send commands, own session data or add global
+listeners. Optional `label`, `launcherLabel`, `closeLabel`, `expandLabel`,
+`collapseLabel` and `className` customize its accessible labels and styling.
+Defaults are Conversations, Open conversations, Close conversations, Expand
+conversations and Collapse conversations. Use the existing scoped chat stylesheet.
+
+`ChatSidenavScrim` is an optional sibling backdrop, rendered only when its required
+`open` prop is true. It is an ordinary keyboard-accessible button; activation calls
+the required `onDismiss` callback without changing visibility itself. Optional
+`label` defaults to Close conversation navigation backdrop; `className` customizes
+styling. Its fixed viewport coverage sits below the drawer and above the page.
+Mount both outside transformed or clipping ancestors and enclosing stacking
+contexts. The application owns visibility and focus restoration when the focused
+backdrop is removed. The primitive adds no Escape listener, focus trap, background
+inertness, portal or session behavior; adding it does not make navigation modal.
+
+The native React example opts in with exact `?presentation=sidenav`, keeps the
+conversation inline, and chooses drawer mode at widths of 700px and below.
+It composes the sibling scrim only while the drawer is open, restores local focus
+after backdrop dismissal, and removes the backdrop on desktop mode changes.
+Its directory filter and composer survive navigation visibility and breakpoint
+changes; selecting a different conversation deliberately resets that composer's
+draft. This is a bounded children-based navigation slice. Project/archive menus,
+global shortcuts, debug ownership and full Angular composition parity remain
+open under T30.
+
 ## Read-only render trees
 
 The private `@threadplane/react/render` client entry exports `RenderSpec`.
@@ -328,6 +503,53 @@ unfrozen and unmodified. Unknown function names resolve to `undefined` with the
 upstream warning behavior. This optional host map does not permit executable
 callbacks in raw specs or add actions, watchers or state ownership.
 
+The same entry exports the type-only `RenderReadinessEntry`. Direct function,
+`memo` and `forwardRef` registrations still receive missing values as `undefined`.
+An optional readiness descriptor delays one view's initial admission:
+
+```tsx
+import type {
+  ReactRenderRegistry, RenderReadinessEntry, RenderViewProps,
+} from '@threadplane/react/render';
+
+// Keep the component and predicate identities stable outside rendering.
+function Value({ props }: RenderViewProps) {
+  return <output>{String(props['value'] ?? '')}</output>;
+}
+const valueEntry: RenderReadinessEntry = {
+  kind: 'readiness',
+  component: Value,
+  isReady: (props) => typeof props['value'] === 'number',
+  fallback: () => <span>Waiting for a value…</span>,
+};
+const readinessRegistry: ReactRenderRegistry = { Value: valueEntry };
+```
+
+`isReady` receives the owned, recursively frozen resolved prop record. It must be
+pure and return a synchronous boolean; React may evaluate it repeatedly. Errors
+propagate, and promises or other non-boolean results throw `TypeError`. This is
+app-authored admission, without automatic Standard Schema or all-props-defined
+validation. While pending, the descriptor fallback receives current `props`,
+`bindings`, `elementKey` and `loading`, without children; absent fallback renders
+nothing. The top-level `RenderSpec` fallback remains separate and handles unknown
+registry types.
+
+Only a successful real-view commit latches admission. Later ordinary missing
+values, prop, binding or loading updates retain that view's actual DOM and local
+state and skip further predicate calls. An initially suspended or abandoned
+candidate cannot latch. Element key, element type, component or predicate identity
+changes reset admission and remount even when the component is otherwise the
+same. Equivalent registry/descriptor objects and fallback-only changes retain
+admission; a committed pending replacement retires the old lifetime even if its
+contract later returns. Hidden or missing elements, null specs, removal and
+transitions to direct registrations reset the lifetime. Stable repeated keys retain
+it. StrictMode effect cleanup does not reset admission or issue owner commands.
+
+This private client contract adds no observation or owner lifetime: the app owns
+state writes, commands and disposal. Forms, catalog views, actions, automatic
+schema validation, SSR, hydration, public release and full legacy parity remain
+outside this readiness slice.
+
 State and resolved values must be finite, acyclic plain data. Functions, symbols,
 accessors and non-plain objects are rejected. Raw props also reject `undefined`
 and own `__proto__` keys because the upstream raw-prop resolver cannot preserve
@@ -340,3 +562,52 @@ automatic schema validation, A2UI, telemetry, SSR and hydration. Native React
 dogfoods this bounded feature by preparing the existing typed terminal trip
 recap outside rendering. This is not arbitrary streamed JSON rendering or full
 render parity. The root entry stays headless.
+
+## Private Debug first slice
+
+`@threadplane/react/debug` exports `ChatDebug` and narrow readonly data types.
+Import `@threadplane/react/debug/styles.css` explicitly for the scoped panel CSS.
+Root and chat imports carry no Debug JavaScript or styles.
+
+```tsx
+import { ChatDebug } from '@threadplane/react/debug';
+import '@threadplane/react/debug/styles.css';
+
+<ChatDebug
+  contextKey="application-owner"
+  current={{ contextKey: 'application-owner', status: 'ready', values: {} }}
+  storageKey="my-app:debug-ui"
+/>;
+```
+
+This passive, nonmodal view presents current application values and an app-owned
+checkpoint page of at most ten metadata rows. Unknown/unavailable current state
+is distinct from observed `{}`; an unloaded page is distinct from an empty page.
+The app controls `selection` and supplies separately keyed `inspection` results.
+Context, page generation and row key must match before historical values/errors
+are displayed. The UI never interprets SDK checkpoint objects.
+
+`onRefresh` and `onInspect` are synchronous notifications returning `undefined`.
+Each explicit action supplies its complete ownership token; application code
+validates it and starts any separately owned read. Rendering, mounting, opening,
+tabs, docking, closing and unmounting issue no reads, runs or disposal. The app
+owns network access, stale-result validation, selection and resource lifetime.
+History order is as supplied, with no automatic paging or live branch-tree claim.
+Fork, replay, diff and full T29 parity remain outside this first private slice.
+
+Displayed plain JSON is bounded to depth 6, 200 entries, 2,000 Unicode code points
+per string/key and 32 KiB of UTF-8 output. Truncation is disclosed separately from
+valid JSON. Copy awaits clipboard success/failure and copies exactly the displayed
+projection, never a complete-raw-state promise. Only visited prefixes are validated;
+SDK decoding and caller allocation happen before this display bound. Invalid
+visited data is unavailable. Plain app-owned data excludes executable objects,
+accessors and proxies; this view is not an SDK validation boundary.
+
+The panel's own data/default props produce deterministic server markup and can
+hydrate independently of `useAgent`; this does not extend the hook's SSR contract.
+After hydration, a supplied application-scoped `storageKey` restores only open,
+dock and tab preferences, tolerating denied storage. Defaults never overwrite saved
+preferences during hydration. State, history, IDs, target and selection are never
+persisted. Use separate keys for independent panels. Scoped Escape handling and
+outside-pointer close retain outside focus; user-close restores the launcher only
+while focus remains owned by that panel.

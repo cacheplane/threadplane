@@ -1,7 +1,44 @@
+import type { RenderState } from '@threadplane/content/render-state';
+
 export type ItemState = {
   readonly items: readonly { readonly id: string; readonly label: string }[];
   readonly nextId: number;
 };
+// Closed application shape, seeded by createItems and maintained by these
+// commands or shape-preserving external writes; not arbitrary schema validation.
+export type ItemsObserver = {
+  readonly getSnapshot: () => ItemState;
+  readonly subscribe: (notify: () => void) => () => void;
+};
+export type ItemCommands = {
+  readonly add: () => void;
+  readonly remove: (id: string) => void;
+  readonly reverse: () => void;
+};
+
+export function createItemCommands(
+  owner: Pick<RenderState, 'getSnapshot' | 'set' | 'update'>
+): ItemCommands {
+  const read = owner.getSnapshot as ItemsObserver['getSnapshot'];
+  return {
+    add: () => {
+      const before = read();
+      const after = addItem(before);
+      if (after === before) return;
+      owner.update({ '/items': after.items, '/nextId': after.nextId });
+    },
+    remove: (id) => {
+      const before = read();
+      const after = removeItem(before, id);
+      if (after !== before) owner.set('/items', after.items);
+    },
+    reverse: () => {
+      const before = read();
+      const after = reverseItems(before);
+      if (after !== before) owner.set('/items', after.items);
+    },
+  };
+}
 export const MAX_ITEMS = 32;
 function own(state: ItemState): ItemState {
   return Object.freeze({

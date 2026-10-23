@@ -332,6 +332,10 @@
 [data-announcement-region][data-workspace-modal-hidden] {
   display: none;
 }
+/* Keep the announcement away from live controls in the actual active Run mode. */
+html:has([data-website-workspace-host] [data-workspace-shell][data-workspace-mode='Run']) [data-announcement-region] {
+  display: none;
+}
 /* On phones the 360px right-hugging card read as a wall (327px of a
  * 375px screen, findings §6): present it as a centered bottom sheet
  * with even margins instead. */

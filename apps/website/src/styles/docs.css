@@ -271,15 +271,174 @@ body:has([data-website-workspace-host]) {
   box-shadow: var(--shadow-focus);
   border-radius: var(--radius-sm);
 }
-/* width:100% alone meant the table always fit its container, so the scroller
- * had nothing to scroll — at 375px the props table crushed `agent` into a
- * 49px column across three lines (findings §4). A floor makes narrow
- * viewports scroll instead of crush; wide viewports are unaffected. */
-.docs-table-scroll table { min-width: 560px; }
+/* Tables. Markdown tables are annotated at compile time by
+ * rehype-readable-tables (column kinds, data-label, data-shape); hand-built
+ * tables opt in with the same `tp-table` classes. Without the annotation, the
+ * inherited `.docs-prose` word-break let auto layout starve short columns and
+ * split "Yes" into "Ye/s" (tables audit, 2026-10). */
+:root {
+  --docs-status-yes: #1a7a40;
+  --docs-status-partial: #8a5a00;
+  --docs-status-no: #b8002a;
+  --docs-status-none: var(--color-text-muted);
+}
 .docs-prose table { width: 100%; border-collapse: collapse; font-size: 0.875rem; margin: 0; }
-.docs-prose th { text-align: left; padding: 0.5rem 0.75rem; font-family: var(--font-mono); font-size: 0.75rem; text-transform: uppercase; color: var(--color-text-muted); border-bottom: 1px solid var(--color-accent-border); }
-.docs-prose td { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--docs-accent-tint-soft); color: var(--color-text-secondary); }
+.docs-prose th { text-align: left; vertical-align: bottom; padding: 0.5rem 0.75rem; font-size: 0.8125rem; font-weight: 600; line-height: 1.35; color: var(--color-text-primary); border-bottom: 1px solid var(--color-accent-border); }
+.docs-prose td { vertical-align: top; padding: 0.625rem 0.75rem; line-height: 1.55; border-bottom: 1px solid var(--docs-accent-tint-soft); color: var(--color-text-secondary); }
 .docs-prose td code { font-size: 0.8em; }
+/* Break a word only when that one word is wider than its column — never to
+ * squeeze a short column narrower than its words. */
+.tp-table th, .tp-table td { word-break: normal; overflow-wrap: break-word; }
+.tp-table .tp-col-key { color: var(--color-text-primary); }
+.tp-table .tp-col-status, .tp-table .tp-col-short { white-space: nowrap; }
+.tp-table .tp-col-status { text-align: center; }
+/* The trailing prose column (usually the description) next to several nowrap
+ * columns would otherwise be squeezed to a word per line; past this floor the
+ * table scrolls instead. Only when it is the one prose column: a floor on
+ * several made comparison tables scroll on a desktop. */
+.tp-table[data-prose-cols='1'] td.tp-col-prose:last-child { min-width: 12rem; }
+.tp-table code.tp-token { white-space: nowrap; }
+.tp-table td[data-status]::before {
+  display: inline-block;
+  min-width: 1em;
+  margin-right: 0.3em;
+  font-weight: 700;
+  /* The glyph repeats the cell's word; the `/ ''` alt text keeps screen
+   * readers from announcing it twice. */
+  content: var(--tp-status-glyph);
+  content: var(--tp-status-glyph) / '';
+  color: var(--tp-status-color);
+}
+.tp-table td[data-status] { --tp-status-color: var(--docs-status-none); }
+.tp-table td[data-status='yes'] { --tp-status-glyph: '✓'; --tp-status-color: var(--docs-status-yes); }
+.tp-table td[data-status='partial'] { --tp-status-glyph: '◐'; --tp-status-color: var(--docs-status-partial); }
+.tp-table td[data-status='no'] { --tp-status-glyph: '✕'; --tp-status-color: var(--docs-status-no); }
+.tp-table td[data-status='none'] { --tp-status-glyph: ''; }
+
+/* API reference tables (data-shape=reference) render as entries at every
+ * width: name, then each middle column as a labelled inline value, then the
+ * description on its own line. A long name, a long type and a sentence could
+ * not share one row of the 70ch column without a sideways scroll. */
+.docs-table-scroll:has(> .tp-table[data-shape='reference']) { overflow: visible; background: none; }
+.tp-table[data-shape='reference'],
+.tp-table[data-shape='reference'] tbody,
+.tp-table[data-shape='reference'] tr { display: block; width: 100%; }
+.tp-table[data-shape='reference'] thead {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.tp-table[data-shape='reference'] tbody { border-top: 1px solid var(--color-accent-border); }
+.tp-table[data-shape='reference'] tr { padding: 0.75rem 0; border-bottom: 1px solid var(--docs-accent-tint-soft); }
+.tp-table[data-shape='reference'] td {
+  display: inline;
+  padding: 0;
+  border: 0;
+  white-space: normal;
+  text-align: left;
+}
+.tp-table[data-shape='reference'] td:first-child { margin-right: 0.75rem; font-weight: 600; }
+.tp-table[data-shape='reference'] td:not(:first-child):not(:last-child) { margin-right: 0.75rem; }
+.tp-table[data-shape='reference'] td:not(:first-child):not(:last-child)::before {
+  content: attr(data-label) ' ';
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+.tp-table[data-shape='reference'] td:last-child { display: block; margin-top: 0.3rem; }
+.tp-table[data-shape='reference'] td.tp-col-prose:last-child { min-width: 0; }
+
+/* Phones: a table with three or more columns becomes one card per row — the
+ * first cell is the card title, the rest are label/value pairs. A matrix's
+ * status cells collapse into a row of tinted chips. Two-column tables still
+ * fit as a grid and stay one. */
+@media (max-width: 40rem) {
+  .docs-table-scroll:has(> .tp-table:is([data-shape='stack'], [data-shape='matrix'])) { overflow: visible; background: none; }
+  .tp-table:is([data-shape='stack'], [data-shape='matrix']),
+  .tp-table:is([data-shape='stack'], [data-shape='matrix']) tbody,
+  .tp-table:is([data-shape='stack'], [data-shape='matrix']) tr,
+  .tp-table:is([data-shape='stack'], [data-shape='matrix']) td { display: block; width: 100%; }
+  .tp-table:is([data-shape='stack'], [data-shape='matrix']) thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .tp-table:is([data-shape='stack'], [data-shape='matrix']) tr {
+    margin-bottom: 0.75rem;
+    padding: 0.75rem 0.875rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+  /* The label is positioned, not a grid track: a grid would turn each text
+   * run and inline <code> in the value into its own grid item. */
+  .tp-table:is([data-shape='stack'], [data-shape='matrix']) td {
+    position: relative;
+    min-width: 0;
+    padding: 0.3rem 0 0.3rem calc(34% + 0.75rem);
+    border: 0;
+    white-space: normal;
+    text-align: left;
+  }
+  .tp-table:is([data-shape='stack'], [data-shape='matrix']) td::before {
+    position: absolute;
+    top: 0.3rem;
+    left: 0;
+    width: 34%;
+    content: attr(data-label);
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.9;
+    color: var(--color-text-muted);
+  }
+  .tp-table:is([data-shape='stack'], [data-shape='matrix']) td:first-child {
+    padding: 0 0 0.375rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+  }
+  .tp-table:is([data-shape='stack'], [data-shape='matrix']) td:first-child::before { content: none; }
+  .tp-table[data-shape='matrix'] td.tp-col-status {
+    display: inline-flex;
+    width: auto;
+    gap: 0.35rem;
+    align-items: baseline;
+    margin: 0.375rem 0.375rem 0 0;
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.8125rem;
+    color: var(--tp-status-color);
+    background: color-mix(in srgb, var(--tp-status-color) 9%, transparent);
+  }
+  /* Two columns: the first cell is a title and the second runs full width
+   * beneath it, so a long identifier in either never forces a scroll. */
+  .docs-table-scroll:has(> .tp-table[data-shape='compact']) { overflow: visible; background: none; }
+  .tp-table[data-shape='compact'],
+  .tp-table[data-shape='compact'] tbody,
+  .tp-table[data-shape='compact'] tr,
+  .tp-table[data-shape='compact'] th,
+  .tp-table[data-shape='compact'] td { display: block; width: 100%; }
+  .tp-table[data-shape='compact'] thead tr { display: flex; gap: 0.5rem; }
+  .tp-table[data-shape='compact'] thead th { width: auto; padding: 0 0 0.375rem; border: 0; }
+  .tp-table[data-shape='compact'] thead th + th::before { content: '/ '; color: var(--color-text-muted); }
+  .tp-table[data-shape='compact'] thead tr { border-bottom: 1px solid var(--color-accent-border); }
+  .tp-table[data-shape='compact'] tbody tr { padding: 0.625rem 0; border-bottom: 1px solid var(--docs-accent-tint-soft); }
+  .tp-table[data-shape='compact'] td { padding: 0; border: 0; white-space: normal; }
+  .tp-table[data-shape='compact'] td:first-child { padding-bottom: 0.2rem; font-weight: 600; }
+  .tp-table code.tp-token { white-space: normal; }
+  .tp-table[data-shape='matrix'] td.tp-col-status::before {
+    position: static;
+    width: auto;
+    color: var(--color-text-secondary);
+    line-height: inherit;
+  }
+}
 
 /* Docs — readable column max-width */
 .docs-prose {

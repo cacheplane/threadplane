@@ -32,6 +32,91 @@ const COCKPIT_CAP_PYTHON_TAGS = [
   'scope:cockpit-smoke',
 ];
 const WEBSITE_TAGS = ['scope:website', 'scope:website-e2e'];
+
+describe('Debug actual CI owners', () => {
+  for (const [file, projectPath, expected] of [
+    ['cockpit/chat/debug/react/src/app.tsx', 'cockpit/chat/debug/react/project.json', ['cockpit_examples', 'cockpit_e2e']],
+    ['cockpit/chat/debug/python/src/graph.py', 'cockpit/chat/debug/python/project.json', ['cockpit_examples', 'cockpit_e2e', 'cockpit_smoke']],
+    ['apps/website/src/components/docs/ReactChatDebugPreview.tsx', 'apps/website/project.json', ['website', 'website_e2e']],
+  ]) it(`attributes ${file} through actual source tags`, async () => {
+    const project = JSON.parse(await readFile(projectPath, 'utf8'));
+    const scope = classifyFromAffected([file], [project]);
+    for (const key of expected) assert.equal(scope[key], true, key);
+  });
+
+  it('runs the real Python test before its uncached export smoke', async () => {
+    const project = JSON.parse(await readFile('cockpit/chat/debug/python/project.json', 'utf8'));
+    assert.equal(project.targets.test.options.command, 'uv run --frozen --python 3.12 python -E -B -m unittest discover -s tests');
+    const smoke = project.targets.smoke;
+    assert.ok(smoke, 'Debug Python smoke target');
+    assert.equal(smoke.cache, false);
+    assert.deepEqual(smoke.dependsOn, ['test']);
+    assert.equal(smoke.options.cwd, 'cockpit/chat/debug/python');
+    assert.match(smoke.options.command, /chatDebugPythonModule/);
+    assert.match(smoke.options.command, /chat-debug-python/);
+    assert.match(smoke.options.command, /Chat Debug \(Python\)/);
+  });
+
+  it('splits Node-only static preflight from the Python-equipped full Debug proof', async () => {
+    const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+    const scope = workflow.split('  ci-scope:')[1].split('\n  scripts-tests:')[0];
+    assert.match(scope, /node --test --test-name-pattern='\^debug ' scripts\/react-cockpit\/chat-debug-configuration.spec.mjs/);
+    const debugPreflight = scope.split('\n').filter(line => line.includes('chat-debug-configuration.spec.mjs'));
+    assert.equal(debugPreflight.length, 1, 'Exactly one filtered Debug static preflight');
+    assert.doesNotMatch(scope, /setup-uv|chat-debug-fixture.spec.mjs/);
+    const cockpit = workflow.split('  cockpit-e2e:')[1].split('\n  cockpit-e2e-summary:')[0];
+    const debug = cockpit.split("if: matrix.cap.angular == 'cockpit-chat-debug-react'")[1]?.split('      - name:')[0];
+    assert.ok(debug, 'conditional Debug proof');
+    const commands = [
+      'npx nx run cockpit-chat-debug-python:test --skip-nx-cache',
+      'node --test --test-concurrency=1 scripts/react-cockpit/chat-debug-configuration.spec.mjs scripts/react-cockpit/chat-debug-fixture.spec.mjs',
+      'npx nx build core --skip-nx-cache',
+      'node scripts/react-cockpit/chat-debug-native-session-probe.mjs',
+    ];
+    let previous = -1;
+    for (const command of commands) {
+      const position = debug.indexOf(command);
+      assert.ok(position > previous, `ordered Debug proof: ${command}`);
+      previous = position;
+    }
+    assert.match(cockpit, /python-version: '3.12'/);
+    assert.match(cockpit, /name: Prepare frozen Debug Python fixture\n        if: matrix.cap.python == 'cockpit\/chat\/debug\/python'\n        working-directory: \$\{\{ matrix.cap.python \}\}\n        run: uv sync --frozen --python 3.12/);
+    assert.match(cockpit, /output\/playwright\/chat-debug-react\//);
+    const smoke = workflow.split('  cockpit-smoke:')[1].split('\n  cockpit-examples:')[0];
+    assert.match(smoke, /--projects=[^\n]*cockpit-chat-debug-python/);
+  });
+
+  it('retains Website discovery, Debug build prerequisites, and private package gates', async () => {
+    const website = JSON.parse(await readFile('apps/website/project.json', 'utf8'));
+    const prerequisites = website.targets.e2e.dependsOn;
+    assert.ok(prerequisites.some(item => item.target === 'build' && item.projects.includes('cockpit-chat-debug-react')));
+    assert.ok(prerequisites.some(item => item.target === 'test' && item.projects.includes('cockpit-chat-debug-python')));
+    const config = await readFile('apps/website/playwright.config.ts', 'utf8');
+    assert.match(config, /testDir: '\.\/e2e'/);
+    assert.match(config, /node scripts\/react-cockpit\/serve.mjs chat-debug --no-parent/);
+    const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+    const library = workflow.split('\n  library:\n')[1].split('\n  angular-compatibility:')[0];
+    for (const command of [
+      'node --test scripts/react-parity/*.spec.mjs',
+      'node scripts/react-parity/verify-boundaries.mjs',
+      'npx nx run-many -t lint test type-tests build --projects=$FOUNDATIONS',
+      'node scripts/react-parity/verify-boundaries.mjs --built',
+      'node scripts/react-parity/verify-packages.mjs',
+    ]) assert.ok(library.includes(command), command);
+  });
+});
+
+describe('Theming actual project CI owners', () => {
+  for (const [file, projectPath, expected] of [
+    ['cockpit/chat/theming/react/src/styles.css', 'cockpit/chat/theming/react/project.json', ['cockpit_examples', 'cockpit_e2e']],
+    ['cockpit/chat/theming/python/src/graph.py', 'cockpit/chat/theming/python/project.json', ['cockpit_examples', 'cockpit_e2e', 'cockpit_smoke']],
+    ['apps/website/src/components/docs/ReactChatThemingPreview.tsx', 'apps/website/project.json', ['website', 'website_e2e']],
+  ]) it(`attributes ${file} through actual source tags`, async () => {
+    const project = JSON.parse(await readFile(projectPath, 'utf8'));
+    const scope = classifyFromAffected([file], [project]);
+    for (const key of expected) assert.equal(scope[key], true, key);
+  });
+});
 const EXAMPLES_CHAT_TAGS = [
   'scope:angular-compatibility',
   'scope:examples-chat',
@@ -94,6 +179,261 @@ describe('native canonical provider inputs', () => {
     });
 });
 
+describe('canonical A2UI native regression CI ownership', () => {
+  const inputs = [
+    'scripts/react-cockpit/chat-a2ui-wire.py',
+    'scripts/react-cockpit/chat-a2ui-fixture.mjs',
+    'scripts/react-cockpit/chat-a2ui-fixture.spec.mjs',
+    'scripts/react-cockpit/chat-a2ui-native-probe.mjs',
+    'cockpit/chat/a2ui/python/src/graph.py',
+    'cockpit/chat/a2ui/python/src/nested/helper.py',
+    'cockpit/chat/a2ui/python/tests/test_booking_form.py',
+    'cockpit/chat/a2ui/python/tests/test_graph.py',
+    'cockpit/chat/a2ui/python/tests/nested/test_graph.py',
+    'cockpit/ag-ui/a2ui/python/src/graph.py',
+    'cockpit/chat/a2ui/python/uv.lock',
+    'cockpit/chat/a2ui/python/pyproject.toml',
+  ];
+  for (const file of inputs) {
+    it(`selects Library independently for ${file} and preserves actual owner scopes`, async () => {
+      const projectPath = file.startsWith('scripts/')
+        ? 'scripts/project.json'
+        : file.startsWith('cockpit/ag-ui/')
+        ? 'cockpit/ag-ui/a2ui/python/project.json'
+        : 'cockpit/chat/a2ui/python/project.json';
+      const project = JSON.parse(await readFile(projectPath, 'utf8'));
+      assert.equal(hasGlobalCiFileChange([file]), false);
+      for (const projects of [[], [project]]) {
+        const expected = emptyScope();
+        for (const tag of project.tags.filter(tag => tag.startsWith('scope:'))) {
+          const key = tag.slice(6).replaceAll('-', '_');
+          if (projects.length && SCOPE_KEYS.includes(key)) expected[key] = true;
+        }
+        expected.library = true;
+        assert.deepEqual(classifyFromAffected([file], projects), expected);
+      }
+    });
+  }
+  for (const file of [
+    'scripts/react-cockpit/chat-a2ui-wire.py.bak',
+    'scripts/react-cockpit/chat-a2ui-fixture-other.mjs',
+    'scripts/react-cockpit/chat-a2ui-fixture.spec.mjs/extra',
+    'scripts/react-cockpit/chat-a2ui-native-probe.mjs.bak',
+    'scripts/react-cockpit/chat-debug-fixture.mjs',
+    'other/scripts/react-cockpit/chat-a2ui-wire.py',
+    'cockpit/chat/a2ui/python-other/src/graph.py',
+    'cockpit/chat/a2ui/python/src-other/graph.py',
+    'cockpit/chat/a2ui/python/uv.lock.bak',
+    'cockpit/chat/a2ui/python/pyproject.toml/extra',
+    'cockpit/chat/a2ui/python/project.json',
+    'cockpit/chat/a2ui/python/tests-other/test_booking_form.py',
+    'cockpit/chat/a2ui/python/tests.py',
+    'other/cockpit/chat/a2ui/python/tests/test_booking_form.py',
+    'cockpit/ag-ui/a2ui/python/src/graph.py.bak',
+    'cockpit/ag-ui/a2ui/python/src/graph.py/extra',
+    'cockpit/ag-ui/a2ui/python/src/helper.py',
+    'cockpit/ag-ui/a2ui/python/tests/test_booking_form.py',
+    'cockpit/ag-ui/a2ui/python-other/src/graph.py',
+    'cockpit/chat/other/python/src/graph.py',
+  ]) it(`keeps unrelated input outside Library: ${file}`, () => {
+    assert.deepEqual(classifyFromAffected([file], []), emptyScope());
+  });
+
+  it('runs the frozen closed-environment regression in the PR Library lane after its build prerequisites', async () => {
+    const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+    const library = workflow.split('\n  library:\n')[1].split('\n  angular-compatibility:')[0];
+    assert.match(library, /if: github.event_name == 'push' \|\| needs.ci-scope.outputs.library == 'true'/);
+    const setup = library.indexOf('uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57');
+    assert.ok(setup >= 0);
+    assert.match(library.slice(setup).split('      - name:')[0], /python-version: '3.12'/);
+    const foundations = library.indexOf('npx nx run-many -t lint test type-tests build --projects=$FOUNDATIONS');
+    assert.ok(foundations >= 0, 'foundation build prerequisite is present');
+    assert.match(library, /FOUNDATIONS: core,content,angular,react/);
+    assert.match(library, /LIBS: chat,langgraph,ag-ui,render,a2ui,telemetry,middleware/);
+    const builds = library.indexOf('npx nx run-many -t build --projects=$LIBS --configuration=production');
+    assert.ok(builds >= 0, 'all-library production build prerequisite is present');
+    const marker = '      - name: Verify canonical A2UI native fixtures';
+    const position = library.indexOf(marker);
+    assert.ok(position > setup && position > foundations && position > builds, 'A2UI regression follows Python and all required builds');
+    const proof = library.slice(position).split('\n      - name:')[0];
+    assert.match(proof, /timeout-minutes: 15/);
+    assert.doesNotMatch(proof, /continue-on-error|\|\| true|\bsecrets\.|\n        if:/);
+    assert.match(proof, /A2UI_FIXTURE_ENV: \$\{\{ runner.temp \}\}\/threadplane-a2ui-environment/);
+    assert.match(proof, /A2UI_FIXTURE_CACHE: \$\{\{ runner.temp \}\}\/threadplane-a2ui-cache/);
+    assert.match(proof, /uv_path="\$\(command -v uv\)"/);
+    assert.match(proof, /python_path="\$\("\$uv_path" python find --no-project --no-config --no-python-downloads 3.12\)"/);
+    assert.equal((proof.match(/env -i /g) ?? []).length, 3, 'preparation, unit tests and native fixtures each close inherited environment');
+    const prepare = proof.indexOf('"$uv_path" run --frozen --python "$python_path" --no-env-file --no-config --no-python-downloads');
+    const unit = proof.indexOf('"$A2UI_FIXTURE_ENV/bin/python" -E -B -m unittest discover -s cockpit/chat/a2ui/python/tests -p test_booking_form.py');
+    const execute = proof.indexOf('"$node_path" --test --test-concurrency=1 scripts/react-cockpit/chat-a2ui-fixture.spec.mjs');
+    assert.ok(prepare >= 0 && unit > prepare && execute > unit, 'frozen preparation precedes exact unit discovery and then the maintained native regression');
+    const unitBlock = proof.slice(proof.lastIndexOf('env -i ', unit), unit);
+    assert.match(unitBlock, /^env -i HOME="\$fixture_home" PATH="\$fixture_path" LANG=C.UTF-8 \\\n/);
+    assert.match(unitBlock, /PYTHONDONTWRITEBYTECODE=1 LANGSMITH_TRACING=false LANGCHAIN_TRACING_V2=false \\\n/);
+    assert.doesNotMatch(unitBlock, /\b(?:OPENAI|ANTHROPIC|LANGSMITH_API|LANGCHAIN_API)[A-Z_]*=/);
+    assert.match(proof, /--project cockpit\/chat\/a2ui\/python python -E -B -c 'import langgraph'/);
+    for (const configuration of [
+      'A2UI_FIXTURE_UV="$uv_path"',
+      'A2UI_FIXTURE_PYTHON="$python_path"',
+      'A2UI_FIXTURE_ENV="$A2UI_FIXTURE_ENV"',
+      'A2UI_FIXTURE_CACHE="$A2UI_FIXTURE_CACHE"',
+    ]) assert.ok(proof.includes(configuration), configuration);
+  });
+});
+
+describe('native AG-UI A2UI proof CI ownership', () => {
+  for (const file of [
+    'scripts/react-parity/verify-ag-ui-a2ui.mjs',
+    'scripts/react-parity/ag-ui-a2ui-proof-policy.mjs',
+    'fixtures/react-parity/native-ag-ui-a2ui/compiled_worker.py',
+    'fixtures/react-parity/native-ag-ui-a2ui/README.md',
+    'cockpit/ag-ui/a2ui/python/src/graph.py',
+    'cockpit/ag-ui/a2ui/python/src/__init__.py',
+    'cockpit/ag-ui/a2ui/python/src/server.py',
+    'cockpit/ag-ui/a2ui/python/pyproject.toml',
+    'cockpit/ag-ui/a2ui/python/uv.lock',
+  ])
+    it(`selects only Library without Nx owners for ${file}`, () => {
+      assert.deepEqual(classifyFromAffected([file], []), {
+        ...emptyScope(),
+        library: true,
+      });
+    });
+
+  for (const file of [
+    'cockpit/ag-ui/a2ui/python/src/helper.py',
+    'cockpit/ag-ui/a2ui/python/src/server.py.bak',
+    'cockpit/ag-ui/a2ui/python/src/__init__.py/extra',
+    'cockpit/ag-ui/a2ui/python/uv.lock.bak',
+    'cockpit/ag-ui/a2ui/python/pyproject.toml/extra',
+    'cockpit/ag-ui/a2ui/python/project.json',
+    'cockpit/ag-ui/a2ui/python/tests/test_graph.py',
+    'cockpit/ag-ui/other/python/src/server.py',
+  ])
+    it(`preserves unrelated scopes for ${file}`, () => {
+      assert.deepEqual(classifyFromAffected([file], []), emptyScope());
+    });
+
+  it('runs a separate closed locked proof after prerequisites and retains complete owned evidence', async () => {
+    const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+    const library = workflow
+      .split('\n  library:\n')[1]
+      .split('\n  angular-compatibility:')[0];
+    const steps = library.split(/\n      - /);
+    const proof = steps.find((step) =>
+      step.startsWith('name: Verify installed native AG-UI A2UI')
+    );
+    assert.ok(proof, 'dedicated AG-UI A2UI proof step');
+    const position = library.indexOf(proof);
+    for (const prerequisite of [
+      "python-version: '3.12'",
+      'npx nx run-many -t lint test type-tests build --projects=$FOUNDATIONS',
+      'node scripts/react-parity/verify-ag-ui-candidate.mjs',
+    ])
+      assert.ok(
+        library.indexOf(prerequisite) >= 0 &&
+          library.indexOf(prerequisite) < position,
+        prerequisite
+      );
+    assert.match(proof, /timeout-minutes: (?:[1-9]|1[0-5])\b/);
+    assert.doesNotMatch(
+      proof,
+      /continue-on-error|\|\| true|\bsecrets\.|\n        if:/
+    );
+    assert.match(
+      proof,
+      /AG_UI_A2UI_ROOT: \$\{\{ runner.temp \}\}\/threadplane-agui-a2ui/
+    );
+    for (const owned of ['environment', 'home', 'cache', 'tmp', 'proof']) {
+      assert.ok(proof.includes(`$AG_UI_A2UI_ROOT/${owned}`), `owned ${owned}`);
+    }
+    // Inspect shell commands rather than requiring a particular multiline layout.
+    const commands = proof
+      .replace(/\\\n\s*/g, ' ')
+      .split('\n')
+      .map((line) => line.trim());
+    const closed = commands.filter((line) => line.startsWith('env -i '));
+    const find = closed.find((line) => line.includes('python find '));
+    const sync = closed.find((line) => line.includes(' sync '));
+    const unit = closed.find((line) => line.includes(' --test '));
+    const verify = closed.find(
+      (line) =>
+        line.includes('node_path') && line.includes('verify-ag-ui-a2ui.mjs')
+    );
+    assert.equal(
+      closed.length,
+      4,
+      'Python discovery, sync, unit and installed proof close inheritance'
+    );
+    for (const command of closed) {
+      assert.ok(command.includes('HOME="$fixture_home"'));
+      assert.ok(command.includes('TMPDIR="$fixture_tmp"'));
+      assert.ok(command.includes('PATH="$fixture_path"'));
+      assert.doesNotMatch(
+        command,
+        /NODE_OPTIONS=|(?:OPENAI|ANTHROPIC|LANGSMITH_API|LANGCHAIN_API)[A-Z_]*=/
+      );
+    }
+    for (const flag of [
+      '--no-project',
+      '--no-config',
+      '--no-python-downloads',
+      '3.12',
+    ])
+      assert.ok(find?.includes(flag), flag);
+    for (const flag of [
+      '--frozen',
+      '--no-install-project',
+      '--no-config',
+      '--no-python-downloads',
+      '--python "$python_path"',
+      '--project cockpit/ag-ui/a2ui/python',
+    ])
+      assert.ok(sync?.includes(flag), flag);
+    assert.doesNotMatch(sync, /--(?:no-)?env-file\b/);
+    assert.ok(sync.includes('UV_PROJECT_ENVIRONMENT="$fixture_environment"'));
+    assert.ok(sync.includes('UV_CACHE_DIR="$fixture_cache/uv"'));
+    assert.ok(
+      unit?.includes('fixtures/react-parity/native-ag-ui-a2ui/server.spec.mjs')
+    );
+    for (const flag of [
+      '--retain "$AG_UI_A2UI_ROOT/proof"',
+      '--python "$fixture_environment/bin/python"',
+      '--environment "$fixture_environment"',
+      '--home "$fixture_home"',
+      '--tmpdir "$fixture_tmp"',
+      'NX_LOAD_DOT_ENV_FILES=false',
+      'npm_config_userconfig="$fixture_home/npm-user"',
+      'npm_config_globalconfig="$fixture_home/npm-global"',
+      'npm_config_cache="$fixture_cache/npm"',
+    ])
+      assert.ok(verify?.includes(flag), flag);
+    assert.ok(
+      commands.indexOf(sync) < commands.indexOf(unit) &&
+        commands.indexOf(unit) < commands.indexOf(verify)
+    );
+    assert.match(
+      library,
+      /UV_PROJECT_ENVIRONMENT="\$THREADPLANE_AG_UI_FIXTURE_ENVIRONMENT" uv sync --frozen --no-install-project --project cockpit\/ag-ui\/client-tools\/python/
+    );
+    const upload = steps.find((step) =>
+      step.startsWith('name: Upload native AG-UI A2UI proof')
+    );
+    assert.ok(upload);
+    assert.match(upload, /if: always\(\)/);
+    assert.match(
+      upload,
+      /uses: actions\/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02/
+    );
+    assert.match(
+      upload,
+      /path: \$\{\{ runner.temp \}\}\/threadplane-agui-a2ui\/proof\s*\n/
+    );
+    assert.match(upload, /include-hidden-files: true/);
+    assert.doesNotMatch(upload, /\/environment|\/home|\/cache/);
+  });
+});
+
 describe('React migration baseline scope', () => {
   for (const file of [
     'examples/chat/native/react/src/app.tsx',
@@ -143,6 +483,8 @@ describe('React migration baseline scope', () => {
     'scripts/react-parity/ag-ui-candidate-package.mjs',
     'scripts/react-parity/verify-ag-ui-candidate.mjs',
     'scripts/react-parity/verify-markdown.mjs',
+    'fixtures/react-parity/native-strands-react/model.py',
+    'fixtures/react-parity/native-strands-react/server.mjs',
     'fixtures/react-parity/markdown/browser.tsx',
     'fixtures/react-parity/markdown/installed-types.ts',
     'libs/content/src/markdown/create-markdown.ts',
@@ -277,6 +619,13 @@ describe('classifyFromAffected — short-circuit', () => {
 });
 
 describe('classifyFromAffected — lint-only files', () => {
+  it('runs scripts contracts for the rootless LangGraph deployment workflow', () => {
+    assert.equal(
+      classifyFromAffected(['.github/workflows/deploy-langgraph.yml'], [])
+        .scripts_tests,
+      true
+    );
+  });
   it('eslint.config.mjs flips only lint-running scopes, NOT e2e/smoke/deploy', () => {
     const scope = classifyFromAffected(['eslint.config.mjs'], []);
     // Lint-running scopes: true
@@ -349,7 +698,6 @@ describe('growth lifecycle project ownership', () => {
   for (const projectFile of [
     'libs/growth/project.json',
     'apps/lifecycle/project.json',
-    'tools/google-mailbox-poller/project.json',
   ]) {
     it(`${projectFile} owns the growth lifecycle scope`, async () => {
       const project = JSON.parse(await readFile(projectFile, 'utf8'));
@@ -360,7 +708,8 @@ describe('growth lifecycle project ownership', () => {
   for (const [file, owner] of [
     ['libs/growth/src/lib/jobs.ts', 'growth'],
     ['apps/lifecycle/src/dispatcher.ts', 'lifecycle'],
-    ['tools/google-mailbox-poller/Code.gs', 'google-mailbox-poller'],
+    ['libs/growth/src/lib/inbox-recovery.ts', 'growth'],
+    ['scripts/resend-receiving.mts', 'growth'],
     ['scripts/apply-migrations.mts', 'growth'],
     ['scripts/growth-control.mts', 'growth'],
     ['scripts/growth-observability.mts', 'growth'],
@@ -824,5 +1173,23 @@ describe('classifyFromAffected — cockpit e2e matrix stays scoped to its own ca
     );
 
     assert.equal(scope.cockpit_e2e, true);
+  });
+});
+
+// This package-less private project owns all three CI surfaces and propagates
+// to the Chat consumer through its explicit Nx dependency.
+describe('shared private aviation presentation scope', () => {
+  it('selects cockpit, examples and e2e from actual shared project tags', async () => {
+    const project = JSON.parse(await readFile('libs/cockpit-a2ui-react/project.json', 'utf8'));
+    const scope = classifyFromAffected(['libs/cockpit-a2ui-react/src/surface.ts'], [project]);
+    for (const key of ['cockpit','cockpit_examples','cockpit_e2e']) assert.equal(scope[key], true, key);
+    assert.equal(project.projectType, 'library');
+    const workflow = await readFile('.github/workflows/ci.yml','utf8');
+    const cockpit = workflow.split('\n  cockpit:\n')[1].split('\n  cockpit-examples-build:')[0];
+    assert.match(cockpit, /npx nx lint cockpit-a2ui-react/);
+    assert.match(cockpit, /npx nx test cockpit-a2ui-react --skip-nx-cache/);
+  });
+  it('affects the real Chat consumer for shared source changes', () => {
+    assert.ok(nxAffectedFiles('libs/cockpit-a2ui-react/src/surface.ts').includes('cockpit-chat-a2ui-react'));
   });
 });

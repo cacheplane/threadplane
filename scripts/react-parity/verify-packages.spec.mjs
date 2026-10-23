@@ -1,8 +1,102 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
+import ts from 'typescript';
+
+test('plain declaration proof checks navigation, sidebar and thread-list type-only contracts', t => {
+  const consumer = mkdtempSync(join(tmpdir(), 'threadplane-sidenav-types-'));
+  t.after(() => rmSync(consumer, { recursive: true, force: true }));
+  const directory = join(consumer, 'node_modules/@threadplane/react');
+  mkdirSync(directory, { recursive: true });
+  const react = join(consumer, 'node_modules/react');
+  mkdirSync(react, { recursive: true });
+  writeFileSync(join(react, 'package.json'), JSON.stringify({ name: 'react', type: 'module', exports: { '.': { types: './index.d.ts' } } }));
+  writeFileSync(join(react, 'index.d.ts'), 'export type ReactNode = string | number | boolean | null | undefined | readonly ReactNode[];');
+  writeFileSync(join(directory, 'package.json'), JSON.stringify({ name: '@threadplane/react', type: 'module', exports: { './chat': { types: './chat.d.ts' } } }));
+  writeFileSync(join(consumer, 'package.json'), '{"type":"module"}');
+  const declaration = `export type ChatSidenavMode = 'expanded' | 'collapsed' | 'drawer';
+export interface ChatSidenavProps { readonly mode: ChatSidenavMode; readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly onModeChange: (mode: Exclude<ChatSidenavMode, 'drawer'>) => void; }
+export interface ChatSidenavScrimProps { readonly open: boolean; readonly onDismiss: () => void; readonly label?: string; readonly className?: string; }
+export interface ChatSidebarProps { readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly title: string; readonly pageContent?: import('react').ReactNode; readonly pushContent?: boolean; }
+export interface ThreadListItem { readonly id: string; readonly title?: string; readonly updatedAt?: number; }
+export interface ThreadListProps { readonly threads: readonly ThreadListItem[]; readonly onSelect: (threadId: string) => void; readonly activeThreadId?: string | null; readonly label?: string; readonly className?: string; readonly onNewThread?: () => void; readonly newThreadDisabled?: boolean; readonly newThreadLabel?: string; readonly now?: number; }`;
+  const source = join(consumer, 'index.ts');
+  writeFileSync(source, packageVerifier.plainExportTypes(['@threadplane/react/chat']));
+  const compile = text => {
+    writeFileSync(join(directory, 'chat.d.ts'), text);
+    const program = ts.createProgram([source], { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.NodeNext, moduleResolution: ts.ModuleResolutionKind.NodeNext, strict: true, skipLibCheck: false, noEmit: true, types: [] });
+    return ts.getPreEmitDiagnostics(program).map(error => ts.flattenDiagnosticMessageText(error.messageText, '\n')).join('\n');
+  };
+  assert.equal(compile(declaration), '');
+  assert.match(compile(declaration.replaceAll('ChatSidenavMode', 'HiddenMode')), /ChatSidenavMode/);
+  assert.match(compile(declaration.replaceAll('ChatSidenavProps', 'HiddenProps')), /ChatSidenavProps/);
+  assert.match(compile(declaration.replace('readonly open: boolean', 'readonly open?: boolean')), /false.*true/);
+  assert.match(compile(declaration.replace("Exclude<ChatSidenavMode, 'drawer'>", 'ChatSidenavMode')), /false.*true/);
+  assert.match(compile(declaration.replace('ChatSidenavScrimProps', 'HiddenScrimProps')), /ChatSidenavScrimProps/);
+  const scrim = declaration.indexOf('export interface ChatSidenavScrimProps');
+  const mutateScrim = (before, after) => declaration.slice(0, scrim) + declaration.slice(scrim).replace(before, after);
+  for (const [before, after] of [
+    ['readonly open: boolean', 'readonly open?: boolean'],
+    ['readonly open: boolean', 'readonly open: boolean | null'],
+    ['readonly onDismiss: () => void', 'readonly onDismiss?: () => void'],
+    ['readonly onDismiss: () => void', 'readonly onDismiss: (open: boolean) => void'],
+    ['readonly onDismiss: () => void', 'readonly onDismiss: () => unknown'],
+    ['readonly label?: string', 'readonly label: string'],
+    ['readonly className?: string', 'readonly className?: number'],
+  ]) assert.match(compile(mutateScrim(before, after)), /false.*true/);
+  assert.match(compile(declaration.replace('ChatSidebarProps', 'HiddenSidebarProps')), /ChatSidebarProps/);
+  const sidebar = declaration.indexOf('export interface ChatSidebarProps');
+  const mutateSidebar = (before, after) => declaration.slice(0, sidebar) + declaration.slice(sidebar).replace(before, after);
+  for (const [before, after] of [
+    ['readonly open: boolean', 'readonly open?: boolean'],
+    ['readonly onOpenChange: (open: boolean) => void', 'readonly onOpenChange?: (open: boolean) => void'],
+    ['readonly onOpenChange: (open: boolean) => void', 'readonly onOpenChange: (open: string) => void'],
+    ['readonly title: string', 'readonly title?: string'],
+    ['readonly pageContent?:', 'readonly pageContent:'],
+    ["readonly pageContent?: import('react').ReactNode", 'readonly pageContent?: string'],
+    ['readonly pushContent?: boolean', 'readonly pushContent: boolean'],
+    ['readonly pushContent?: boolean', 'readonly pushContent?: boolean | string'],
+    ['readonly pushContent?: boolean', 'pushContent?: boolean'],
+  ]) assert.match(compile(mutateSidebar(before, after)), /false.*true/);
+  assert.match(compile(declaration.replaceAll('ThreadListItem', 'HiddenThreadListItem')), /ThreadListItem/);
+  assert.match(compile(declaration.replace('ThreadListProps', 'HiddenThreadListProps')), /ThreadListProps/);
+  const threadList = declaration.indexOf('export interface ThreadListItem');
+  const mutateThreadList = (before, after) => declaration.slice(0, threadList) + declaration.slice(threadList).replace(before, after);
+  for (const [before, after] of [
+    ['readonly id: string', 'readonly id?: string'],
+    ['readonly updatedAt?: number;', ''],
+    ['readonly updatedAt?: number', 'readonly updatedAt: number'],
+    ['readonly updatedAt?: number', 'readonly updatedAt?: string'],
+    ['readonly updatedAt?: number', 'updatedAt?: number'],
+    ['readonly now?: number;', ''],
+    ['readonly now?: number', 'readonly now: number'],
+    ['readonly now?: number', 'readonly now?: string'],
+    ['readonly now?: number', 'now?: number'],
+    ['readonly id: string', 'id: string'],
+    ['readonly title?: string', 'readonly title: string'],
+    ['readonly title?: string', 'readonly title?: string | number'],
+    ['readonly threads: readonly ThreadListItem[]', 'readonly threads?: readonly ThreadListItem[]'],
+    ['readonly threads: readonly ThreadListItem[]', 'readonly threads: ThreadListItem[]'],
+    ['readonly onSelect: (threadId: string) => void', 'readonly onSelect?: (threadId: string) => void'],
+    ['readonly onSelect: (threadId: string) => void', 'readonly onSelect: (threadId: number) => void'],
+    ['readonly activeThreadId?: string | null', 'readonly activeThreadId: string | null'],
+    ['readonly activeThreadId?: string | null', 'readonly activeThreadId?: string'],
+    ['readonly label?: string', 'readonly label?: number'],
+    ['readonly className?: string', 'className?: string'],
+    ['readonly onNewThread?: () => void', 'readonly onNewThread: () => void'],
+    ['readonly onNewThread?: () => void', 'onNewThread?: () => void'],
+    ['readonly onNewThread?: () => void', 'readonly onNewThread?: (id: string) => void'],
+    ['readonly newThreadDisabled?: boolean', 'readonly newThreadDisabled: boolean'],
+    ['readonly newThreadDisabled?: boolean', 'newThreadDisabled?: boolean'],
+    ['readonly newThreadDisabled?: boolean', 'readonly newThreadDisabled?: string'],
+    ['readonly newThreadLabel?: string', 'readonly newThreadLabel: string'],
+    ['readonly newThreadLabel?: string', 'newThreadLabel?: string'],
+    ['readonly newThreadLabel?: string', 'readonly newThreadLabel?: number'],
+  ]) assert.match(compile(mutateThreadList(before, after)), /false.*true/);
+  assert.doesNotMatch(packageVerifier.plainExportTypes(['@threadplane/core']), /ChatSidenav|ThreadList|from 'react'/);
+});
 
 test('JSON feature exposes only its owned factory', () => {
   assert.throws(() => packageVerifier.assertSupportedExports('content/json', {}), /createJson/);
@@ -10,6 +104,92 @@ test('JSON feature exposes only its owned factory', () => {
   assert.throws(() => packageVerifier.assertSupportedExports('content/json', { createJson() {}, createJsonOwner() {} }), /unexpected/);
 });
 import * as packageVerifier from './verify-packages.mjs';
+test('render-state exposes exactly its owned factory', () => {
+  assert.throws(() => packageVerifier.assertSupportedExports('content/render-state', {}), /createRenderState/);
+  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('content/render-state', { createRenderState() {} }));
+  assert.throws(() => packageVerifier.assertSupportedExports('content/render-state', { createRenderState() {}, createStateStore() {} }), /unexpected/);
+});
+const renderStateTypes = ['RenderState', 'RenderStateValue', 'RenderStateSnapshot', 'RenderStateChange'];
+function installedOwner(t, declaration) {
+  const consumer = mkdtempSync(join(tmpdir(), 'threadplane-owner-types-'));
+  t.after(() => rmSync(consumer, { recursive: true, force: true }));
+  const directory = join(consumer, 'node_modules/@threadplane/content');
+  mkdirSync(directory, { recursive: true });
+  writeFileSync(join(directory, 'package.json'), JSON.stringify({ name: '@threadplane/content', type: 'module', exports: { './render-state': { types: './index.d.ts', import: './index.js' } } }));
+  writeFileSync(join(directory, 'index.d.ts'), declaration);
+  writeFileSync(join(consumer, 'package.json'), '{"type":"module"}');
+  return { consumer, directory };
+}
+const ownerDeclaration = 'export declare function createRenderState(): void;\n' + renderStateTypes.map(name => `export interface ${name} { readonly value?: string }`).join('\n');
+test('resolved installed declarations expose exactly four types and the factory through reexports', t => {
+  const { consumer, directory } = installedOwner(t, "export * from './public.js';");
+  writeFileSync(join(directory, 'public.d.ts'), ownerDeclaration);
+  const result = packageVerifier.verifyRenderStateDeclarations(consumer);
+  assert.deepEqual(result.types, [...renderStateTypes].sort());
+  assert.deepEqual(result.runtime, ['createRenderState']);
+  assert.ok(result.declaration.endsWith('/node_modules/@threadplane/content/index.d.ts'));
+  // Runtime keys cannot reveal this accidental public type.
+  writeFileSync(join(directory, 'public.d.ts'), ownerDeclaration + '\nexport interface LeakedSdkType {}');
+  assert.throws(() => packageVerifier.verifyRenderStateDeclarations(consumer), /unexpected.*LeakedSdkType/);
+  writeFileSync(join(directory, 'public.d.ts'), ownerDeclaration + '\nexport declare namespace LeakedNamespace { type Extra = string; }');
+  assert.throws(() => packageVerifier.verifyRenderStateDeclarations(consumer), /unexpected.*LeakedNamespace/);
+});
+test('mandatory installed render-state import rejects a missing manifest entry and broken strict declarations', t => {
+  const { consumer, directory } = installedOwner(t, ownerDeclaration);
+  writeFileSync(join(directory, 'package.json'), '{"name":"@threadplane/content","type":"module","exports":{".":"./index.js"}}');
+  assert.throws(() => packageVerifier.verifyRenderStateDeclarations(consumer), /Cannot find module|resolve/);
+  writeFileSync(join(directory, 'package.json'), '{"name":"@threadplane/content","type":"module","exports":{"./render-state":{"types":"./index.d.ts"}}}');
+  writeFileSync(join(directory, 'index.d.ts'), ownerDeclaration + '\nexport interface Invalid { value: MissingDependency }');
+  assert.throws(() => packageVerifier.verifyRenderStateDeclarations(consumer), /MissingDependency/);
+});
+test('owner-only inputs require installed emitted implementation and reject every external or optional feature edge', () => {
+  const owner = Object.fromEntries(['index', 'create-render-state', 'pointer', 'owned-value'].map(name => [`node_modules/@threadplane/content/src/render-state/${name}.js`, {}]));
+  assert.doesNotThrow(() => packageVerifier.assertRenderStateInputs(owner));
+  assert.throws(() => packageVerifier.assertRenderStateInputs({ 'render-state-owner.mjs': {} }), /emitted.*owner/);
+  for (const path of ['node_modules/@json-render/core/dist/index.js', 'node_modules/react/index.js', 'node_modules/@angular/core/index.js', 'node_modules/@langchain/core/index.js', 'node_modules/marked/index.js', 'node_modules/@threadplane/content/src/a2ui/index.js', 'node_modules/@threadplane/a2ui/src/index.js']) {
+    for (const candidate of [path, path.replaceAll('/', '\\')]) assert.throws(() => packageVerifier.assertRenderStateInputs({ ...owner, [candidate]: {} }), /forbidden/);
+  }
+});
+test('private SDK compile graph derives the SDK and its Zod version from the root lock', () => {
+  const lock = { packages: { 'node_modules/@json-render/core': { version: '0.16.0' }, 'node_modules/@json-render/core/node_modules/zod': { version: '4.3.6' } } };
+  assert.deepEqual(packageVerifier.lockedRenderStateSdk(lock), { '@json-render/core': '0.16.0', zod: '4.3.6' });
+  assert.throws(() => packageVerifier.lockedRenderStateSdk({ packages: {} }), /Missing root lock/);
+});
+test('selected public protocol package enumerates its actual legacy ESM root without inventing subpaths', () => {
+  const protocol = { name: '@threadplane/a2ui', type: 'module', types: './src/index.d.ts', module: './src/index.js', main: './src/index.js' };
+  assert.deepEqual(packageVerifier.consumerSpecifiers(protocol), ['@threadplane/a2ui']);
+  for (const key of ['types', 'main']) assert.throws(() => packageVerifier.consumerSpecifiers({ ...protocol, [key]: undefined }));
+  assert.throws(() => packageVerifier.consumerSpecifiers({ ...protocol, name: '@threadplane/content' }));
+  assert.throws(() => packageVerifier.consumerSpecifiers({ ...protocol, type: 'commonjs' }));
+  for (const fields of [{ main: './src/../outside.js' }, { types: './src/../index.d.ts' }, { main: './src\\index.js' }, { main: 'index.js' }, { types: './src/index.ts' }]) assert.throws(() => packageVerifier.consumerSpecifiers({ ...protocol, ...fields }));
+});
+test('A2UI feature exposes exactly its owned factory', () => {
+  assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', {}), /createA2uiSurfaces/);
+  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {} }));
+  assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {}, createOwner() {} }), /unexpected/);
+});
+test('optional local peers require explicit selection and validate selected artifacts independent of traversal order', () => {
+  const manifests = {
+    content: { version: '0.0.0', peerDependencies: { '@threadplane/a2ui': '^0.3.2' }, peerDependenciesMeta: { '@threadplane/a2ui': { optional: true } } },
+    a2ui: { version: '0.3.2' },
+  };
+  const read = name => manifests[name];
+  assert.deepEqual(packageVerifier.localDependencyProjects(['content'], read), ['content']);
+  assert.deepEqual(new Set(packageVerifier.localDependencyProjects(['content'], read, { optionalPeers: ['a2ui'] })), new Set(['content', 'a2ui']));
+  for (const projects of [['content', 'a2ui'], ['a2ui', 'content']]) {
+    manifests.a2ui.version = '0.2.0';
+    assert.throws(() => packageVerifier.localDependencyProjects(projects, read, { optionalPeers: ['a2ui'] }), /does not satisfy/);
+    assert.throws(() => packageVerifier.localDependencyProjects(projects, read), /does not satisfy/);
+  }
+  manifests.react = { dependencies: { '@threadplane/a2ui': '^0.2.0', '@threadplane/content': '0.0.0' } };
+  assert.throws(() => packageVerifier.localDependencyProjects(['react'], read), /does not satisfy content peerDependencies/);
+  manifests.react.dependencies = { '@threadplane/content': '0.0.0', '@threadplane/a2ui': '^0.2.0' };
+  assert.throws(() => packageVerifier.localDependencyProjects(['react'], read), /does not satisfy content peerDependencies/);
+  delete manifests.a2ui;
+  assert.deepEqual(packageVerifier.localDependencyProjects(['content'], read), ['content']);
+  assert.throws(() => packageVerifier.localDependencyProjects(['content'], read, { optionalPeers: ['a2ui'] }), /Missing local artifact manifest/);
+  assert.throws(() => packageVerifier.localDependencyProjects(['content'], read, { optionalPeers: ['unknown'] }), /No local artifact policy/);
+});
 const { validatePackage } = packageVerifier;
 test('consumer commands accept an explicit environment without inheriting a backend credential', () => {
   const previous = process.env.NATIVE_LANGGRAPH_API_KEY;
@@ -78,7 +258,8 @@ function fixture(t, change = {}) {
   const manifest = { name: '@threadplane/react', private: true, type: 'module', license: 'MIT', exports: { '.': { types: './src/index.d.ts', import: './src/index.js', default: './src/index.js' }, './markdown': reactMarkdown }, ...change.manifest };
   // Keep unrelated export mutations valid now that Markdown is mandatory.
   if (manifest.name === '@threadplane/react' && !change.omitMarkdown) manifest.exports = { './markdown': reactMarkdown, ...manifest.exports };
-  const files = { 'package.json': JSON.stringify(manifest), 'README.md': 'Private scaffolding', 'LICENSE.md': 'MIT', 'src/index.js': "'use client';\nexport {};", 'src/index.d.ts': 'export {};', 'src/markdown/index.js': "'use client';\nexport function Markdown() {}", 'src/markdown/index.d.ts': 'export declare function Markdown(): void;', ...change.files };
+  if (manifest.name === '@threadplane/react' && !change.omitDebug) manifest.exports = { './debug': reactDebug, './debug/styles.css': './src/debug/styles.css', ...manifest.exports };
+  const files = { 'src/debug/index.js': "'use client';\nexport function ChatDebug() {}", 'src/debug/index.d.ts': 'export declare function ChatDebug(): void;', 'src/debug/styles.css': '.tp-debug {}', 'package.json': JSON.stringify(manifest), 'README.md': 'Private scaffolding', 'LICENSE.md': 'MIT', 'src/index.js': "'use client';\nexport {};", 'src/index.d.ts': 'export {};', 'src/markdown/index.js': "'use client';\nexport function Markdown() {}", 'src/markdown/index.d.ts': 'export declare function Markdown(): void;', ...change.files };
   for (const [path, text] of Object.entries(files)) if (text !== null) { mkdirSync(dirname(join(directory, path)), { recursive: true }); writeFileSync(join(directory, path), text); }
   return directory;
 }
@@ -124,7 +305,7 @@ for (const [name, entry, files] of [
 });
 test('React chat requires its real supported export', () => {
   const component = () => undefined;
-  const supported = { ApprovalCard: component, Chat: component, ChatInput: component, Citations: component, MessageList: component, MessageActions: component, Reasoning: component, TextTranscript: component, ToolObservation: component };
+  const supported = { ApprovalCard: component, Chat: component, ChatPopup: component, ChatSidebar: component, ChatSidenav: component, ChatSidenavScrim: component, ChatInput: component, Citations: component, MessageList: component, MessageActions: component, Reasoning: component, TextTranscript: component, ToolObservation: component, ThreadList: component };
   assert.throws(() => packageVerifier.assertSupportedExports('react/chat', {}), /ApprovalCard/);
   for (const name of Object.keys(supported)) {
     const { [name]: _omitted, ...rest } = supported;
@@ -200,13 +381,13 @@ test('stylesheet exports are static assets outside consumer imports', (t) => {
   for (const entry of ['./src/chat/styles.css', { default: './src/chat/styles.css' }]) {
     const manifest = { name: '@threadplane/react', exports: { ...cssRoot, './chat/styles.css': entry } };
     assert.deepEqual(validatePackage(fixture(t, { manifest, files: { 'src/chat/styles.css': '.x{}' } })), []);
-    assert.ok(!packageVerifier.consumerSpecifiers({ ...manifest, exports: { './markdown': reactMarkdown, ...manifest.exports } }).includes('@threadplane/react/chat/styles.css'));
+    assert.ok(!packageVerifier.consumerSpecifiers({ ...manifest, exports: { './debug': reactDebug, './debug/styles.css': './src/debug/styles.css', './markdown': reactMarkdown, ...manifest.exports } }).includes('@threadplane/react/chat/styles.css'));
   }
 });
 test('stylesheet subpaths cannot disguise a JavaScript runtime', (t) => {
   const manifest = { name: '@threadplane/react', exports: { ...cssRoot, './chat/styles.css': './src/index.js' } };
   assert.ok(validatePackage(fixture(t, { manifest })).length > 0);
-  assert.ok(packageVerifier.consumerSpecifiers({ ...manifest, exports: { './markdown': reactMarkdown, ...manifest.exports } }).includes('@threadplane/react/chat/styles.css'));
+  assert.ok(packageVerifier.consumerSpecifiers({ ...manifest, exports: { './debug': reactDebug, './debug/styles.css': './src/debug/styles.css', './markdown': reactMarkdown, ...manifest.exports } }).includes('@threadplane/react/chat/styles.css'));
 });
 test('stylesheet exports require their target file', (t) => {
   const manifest = { name: '@threadplane/react', exports: { ...cssRoot, './chat/styles.css': './src/chat/styles.css' } };
@@ -276,4 +457,41 @@ test('installation footprint counts actual package files and bytes separately fr
   writeFileSync(join(directory, 'node_modules/core/package.json'), '{}');
   writeFileSync(join(directory, 'node_modules/core/index.js'), 'abc');
   assert.deepEqual(packageVerifier.installFootprint(directory, lockFor(['core', 'optional-platform'])), { installedPackages: 1, lockedPackages: 2, fileBytes: 5 });
+});
+
+const reactDebug = { types: './src/debug/index.d.ts', import: './src/debug/index.js', default: './src/debug/index.js' };
+test('React Debug exposes exactly the passive component', () => {
+ assert.throws(() => packageVerifier.assertSupportedExports('react/debug', {}), /ChatDebug/);
+ assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/debug', { ChatDebug() {} }));
+ assert.throws(() => packageVerifier.assertSupportedExports('react/debug', { ChatDebug() {}, createSession() {} }), /unexpected/);
+});
+test('production root and chat bundle evidence rejects Debug JS or CSS', () => {
+ for (const suffix of ['index.js', 'chat-debug.js', 'styles.css']) {
+  const path = `node_modules/@threadplane/react/src/debug/${suffix}`;
+  for (const input of [path, path.replaceAll('/', '\\')]) assert.throws(() => packageVerifier.assertDebugFreeInputs({ [input]: {} }), /Debug/);
+ }
+ assert.doesNotThrow(() => packageVerifier.assertDebugFreeInputs({ 'node_modules/@threadplane/react/src/chat/index.js': {} }));
+});
+test('React Debug cannot disappear from validation or consumer enumeration', (t) => {
+ const exports = { '.': cssRoot['.'], './markdown': reactMarkdown };
+ assert.ok(validatePackage(fixture(t, { manifest: { exports }, omitDebug: true })).some(error => /debug/.test(error)));
+ assert.throws(() => packageVerifier.consumerSpecifiers({ name: '@threadplane/react', exports }), /debug/);
+});
+for (const [name, files, diagnostic] of [
+ ['missing client directive', { 'src/debug/index.js': 'export function ChatDebug() {}' }, /debug.*use client/],
+ ['missing declaration', { 'src/debug/index.d.ts': null }, /debug.*missing export target/],
+ ['missing runtime', { 'src/debug/index.js': null }, /debug.*missing export target/],
+ ['missing CSS', { 'src/debug/styles.css': null }, /debug.*missing export target/],
+]) test(`Debug rejects ${name}`, (t) => assert.ok(validatePackage(fixture(t, { files })).some(error => diagnostic.test(error))));
+
+test('Debug CSS uses the established chat theme tokens and scopes every rule', () => {
+ const css = readFileSync(new URL('../../libs/react/src/debug/styles.css', import.meta.url), 'utf8');
+ const supported = new Set(['text', 'surface', 'border', 'accent', 'on-accent', 'muted', 'danger', 'gap']);
+ for (const [, token] of css.matchAll(/var\(--tp-chat-([a-z-]+)/g)) assert.ok(supported.has(token), `Unknown chat token: ${token}`);
+ for (const token of ['text', 'surface', 'border', 'accent', 'on-accent']) assert.ok(css.includes(`--tp-chat-${token},`), `Expected established ${token} token`);
+ for (const [, selector] of css.matchAll(/(?:^|})\s*([^{}]+)\{/g)) {
+  if (selector.trim().startsWith('@media')) continue;
+  for (const part of selector.split(',')) assert.ok(part.trim().startsWith('.tp-debug'), `Unscoped selector: ${part}`);
+ }
+ assert.ok(!/\b(?:html|body)\s*[{,]/.test(css));
 });

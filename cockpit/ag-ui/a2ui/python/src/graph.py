@@ -28,7 +28,7 @@ from langgraph.graph import StateGraph, MessagesState, END
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.types import Command
 from langgraph_sdk import get_client
-from pydantic import BaseModel, Field, ValidationError, field_validator
+from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator
 
 
 # Inlined flight fixtures - standalone has no aviation_data module.
@@ -150,7 +150,60 @@ class _SurfaceSpec(BaseModel):
 
 
 class BookingFormSpec(_SurfaceSpec):
-    pass
+    @model_validator(mode="after")
+    def _booking_picker_domains(self) -> "BookingFormSpec":
+        for component_id, path, domain in (
+            ("origin", "/origin", AIRPORT_CODES),
+            ("dest", "/dest", AIRPORT_CODES),
+            ("fare", "/fare_class", FARE_CLASSES),
+        ):
+            # Count both the intended id and any picker claiming its binding.
+            # Inspect extras before comparing domains: malformed values may be
+            # dictionaries/lists, and must raise ValidationError, not TypeError.
+            matches = []
+            for component in self.components:
+                binding = getattr(component, "value", None)
+                if component.id == component_id or (
+                    component.component == "ChoicePicker"
+                    and isinstance(binding, dict)
+                    and binding.get("path") == path
+                ):
+                    matches.append(component)
+            if len(matches) != 1:
+                raise ValueError(
+                    f"Booking picker '{component_id}' must occur exactly once "
+                    f"as ChoicePicker bound to {path}"
+                )
+            component = matches[0]
+            binding = getattr(component, "value", None)
+            if (
+                component.id != component_id
+                or component.component != "ChoicePicker"
+                or not isinstance(binding, dict)
+                or binding.get("path") != path
+            ):
+                raise ValueError(
+                    f"Booking picker '{component_id}' must be a ChoicePicker "
+                    f"with value={{'path': '{path}'}}"
+                )
+            options = getattr(component, "options", None)
+            if not isinstance(options, list) or any(
+                not isinstance(option, dict)
+                or not isinstance(option.get("label"), str)
+                or not isinstance(option.get("value"), str)
+                for option in options
+            ):
+                raise ValueError(
+                    f"Booking picker '{component_id}' options must be a list "
+                    "of objects with string labels and values"
+                )
+            values = [option["value"] for option in options]
+            if len(values) != len(domain) or set(values) != set(domain):
+                raise ValueError(
+                    f"Booking picker '{component_id}' must contain each value "
+                    f"exactly once from {domain}; got {values}"
+                )
+        return self
 
 
 class FlightResultsSpec(_SurfaceSpec):

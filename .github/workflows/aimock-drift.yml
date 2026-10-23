@@ -40,7 +40,11 @@ jobs:
       - name: Sync examples-chat python
         working-directory: examples/chat/python
         run: uv sync
-      - run: npx playwright install --with-deps chromium
+      - name: Configure bounded Ubuntu package downloads
+        run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
+      - name: Install Chromium
+        timeout-minutes: 10
+        run: npx playwright install --with-deps chromium
       - name: Run @drift subset against the live provider
         id: drift-run
         env:

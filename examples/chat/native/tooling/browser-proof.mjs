@@ -194,7 +194,7 @@ const run = (id, text, events = [values('A response')], extra = {}) => ({
         messages: [{ type: 'human', id: messageId, content: text }],
         client_tools: expectedClientTools,
       },
-      stream_mode: ['values', 'messages-tuple', 'updates', 'custom'],
+      stream_mode: ['values', 'messages-tuple', 'updates', 'custom', 'checkpoints'],
       stream_subgraphs: true,
       stream_resumable: true,
       on_disconnect: 'continue',
@@ -236,7 +236,7 @@ const resume = (id, answer, events, extra = {}) => ({
     assistant_id: 'assistant',
     input: null,
     command: { resume: { [approvalId]: answer } },
-    stream_mode: ['values', 'messages-tuple', 'updates', 'custom'],
+    stream_mode: ['values', 'messages-tuple', 'updates', 'custom', 'checkpoints'],
     stream_subgraphs: true,
     stream_resumable: true,
     on_disconnect: 'continue',
@@ -474,6 +474,9 @@ export async function runViewProof(browser, retained) {
           reasoning: true,
           owner: true,
           tripSummaries: true,
+          ...(retained.framework === 'react'
+            ? { rawSnapshots: true, preparedCards: true }
+            : {}),
         }
       );
       // A successfully delivered response after unmount proves transport survived.
@@ -536,9 +539,22 @@ export async function runViewProof(browser, retained) {
           reasoning: true,
           owner: true,
           tripSummaries: true,
+          ...(retained.framework === 'react'
+            ? { rawSnapshots: true, preparedCards: true }
+            : {}),
         }
       );
       await page.evaluate(() => window.nativeViewProof.dispose());
+      if (retained.framework === 'react') {
+        assert.deepEqual(before.raw.titles, [summaryTitle, 'Empty recap']);
+        for (const title of remounted.raw.titles)
+          await expect(
+            page.getByRole('heading', { name: title, exact: true })
+          ).toBeVisible();
+        for (const phase of [absent, updated, remounted])
+          assert.deepEqual(phase.raw, before.raw);
+        assert.equal(remounted.preparedCardCount, 2);
+      }
       await physicallyClosed(backend.steps[5]);
       const disposed = await page.evaluate(() =>
         window.nativeViewProof.inspect()
@@ -560,11 +576,165 @@ export async function runViewProof(browser, retained) {
         disposed,
         physicalCloseBeforeCleanup: true,
         tripSummaryIdentity: true,
+        ...(retained.framework === 'react'
+          ? {
+              rawSnapshotIdentity: true,
+              preparedCardIdentity: true,
+              rawSnapshotRenderedText: true,
+            }
+          : {}),
         terminalWriteCount: 1,
         exactRequestCount: 6,
         [retained.framework === 'angular'
           ? 'actualAngularComponentDestroy'
           : 'actualCreateRootUnmount']: true,
+      };
+    }
+  );
+}
+
+export async function runA2uiOwnershipProof(browser, retained) {
+  assert.equal(retained.framework, 'react');
+  return scenario(
+    browser,
+    retained,
+    'production React A2UI ownership while absent and across navigation',
+    [
+      ...initial(),
+      run('a', 'Create a recap while absent.', [summaryEvent], {
+        holdHeaders: true,
+      }),
+      summaryWrite(),
+      lookup('b'),
+      history('b'),
+      run('b', 'Create another recap.', [summaryEvent]),
+      { ...summaryWrite(), path: '/api/threads/b/state' },
+    ],
+    async ({ page, expect, backend, url }) => {
+      const inspect = () =>
+        page.evaluate(() => window.nativeViewProof.inspect());
+      await page.goto(url + '/?thread=a');
+      await ready(page, expect);
+      const before = (await inspect()).raw;
+      assert.deepEqual(before, {
+        created: 0,
+        applies: 0,
+        disposed: 0,
+        active: 0,
+        disposalCounts: [],
+        titles: [],
+      });
+      await submit(page, 'Create a recap while absent.');
+      await deadline(backend.steps[3].received, 'held A2UI lifecycle request');
+      await page.evaluate(() => window.nativeViewProof.unmount());
+      await expect(page.locator('#root')).toBeEmpty();
+      assert.deepEqual((await inspect()).raw, before);
+      backend.steps[3].releaseHeaders();
+      await expect
+        .poll(async () => (await inspect()).preparedCardCount)
+        .toBe(2);
+      await deadline(backend.steps[4].received, 'absent terminal persistence');
+      const absentState = await inspect();
+      assert.equal(absentState.active, 0);
+      assert.deepEqual(absentState.raw, {
+        created: 1,
+        applies: 4,
+        disposed: 0,
+        active: 1,
+        disposalCounts: [0],
+        titles: [summaryTitle, 'Empty recap'],
+      });
+      await page.evaluate(() => window.nativeViewProof.mark('created-absent'));
+      await page.evaluate(() => window.nativeViewProof.mount());
+      await expect(
+        page.getByText('Response complete.', { exact: true })
+      ).toBeVisible();
+      for (const title of absentState.raw.titles)
+        await expect(
+          page.getByRole('heading', { name: title, exact: true })
+        ).toBeVisible();
+      const remountedState = await inspect();
+      const comparison = await page.evaluate(() =>
+        window.nativeViewProof.compare('created-absent')
+      );
+      assert.equal(comparison.preparedCards, true);
+      assert.equal(comparison.rawSnapshots, true);
+      assert.deepEqual(remountedState.raw, absentState.raw);
+      await page.evaluate(() => window.nativeViewProof.select(null));
+      await expect(
+        page.getByRole('region', { name: 'Trip summary', exact: true })
+      ).toHaveCount(0);
+      const navigated = (await inspect()).raw;
+      assert.deepEqual(navigated, {
+        ...absentState.raw,
+        disposed: 1,
+        active: 0,
+        disposalCounts: [1],
+      });
+      await page.evaluate(() => window.nativeViewProof.select('b'));
+      await expect(page.getByText('Saved B', { exact: true })).toBeVisible();
+      await submit(page, 'Create another recap.');
+      await expect(
+        page.getByText('Response complete.', { exact: true })
+      ).toBeVisible();
+      await expect(
+        page.getByRole('region', { name: 'Trip summary', exact: true })
+      ).toHaveCount(2);
+      const secondState = await inspect();
+      assert.deepEqual(secondState.raw, {
+        created: 2,
+        applies: 8,
+        disposed: 1,
+        active: 1,
+        disposalCounts: [1, 0],
+        titles: [summaryTitle, 'Empty recap', summaryTitle, 'Empty recap'],
+      });
+      assert.deepEqual(
+        secondState.ownerEpochs.map((owner) => ({
+          id: owner.id,
+          disposed: owner.disposed,
+        })),
+        [
+          { id: 1, disposed: true },
+          { id: 2, disposed: false },
+        ]
+      );
+      assert.equal(absentState.generations.length, 1);
+      assert.equal(secondState.generations.length, 1);
+      assert.notEqual(
+        absentState.generations[0].generation,
+        secondState.generations[0].generation
+      );
+      await page.evaluate(() => window.nativeViewProof.dispose());
+      const disposed = (await inspect()).raw;
+      assert.deepEqual(disposed, {
+        ...secondState.raw,
+        disposed: 2,
+        active: 0,
+        disposalCounts: [1, 1],
+      });
+      assert.deepEqual(disposed.titles, secondState.raw.titles);
+      assert.equal(backend.requests.length, 9);
+      assert.equal(
+        backend.requests.filter((request) => request.path.endsWith('/state'))
+          .length,
+        2
+      );
+      return {
+        before,
+        absent: absentState.raw,
+        remounted: remountedState.raw,
+        navigated,
+        second: secondState.raw,
+        disposed,
+        generations: [absentState.generations[0], secondState.generations[0]],
+        ownerEpochs: secondState.ownerEpochs,
+        exactRequestCount: 9,
+        terminalWriteCount: 2,
+        rawSnapshotRenderedText: true,
+        preparedCardIdentity: true,
+        rawSnapshotIdentity: true,
+        retainedSnapshotsReadable: true,
       };
     }
   );
@@ -1396,10 +1566,15 @@ export async function runBrowserProofs(directory) {
       'App/view framework mismatch'
     );
     const view = await runViewProof(browser, checkedView);
+    const a2ui =
+      app.framework === 'react'
+        ? await runA2uiOwnershipProof(browser, checkedView)
+        : undefined;
     return {
       framework: app.framework,
       production,
       view,
+      ...(a2ui ? { a2ui } : {}),
       coverage: {
         installedOwnerTests:
           'Exhaustive synchronous command reentry and delayed actual SDK promise completion matrix. Browser cases cover user-reachable controls and physical HTTP cancellation.',

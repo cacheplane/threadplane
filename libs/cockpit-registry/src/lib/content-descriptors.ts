@@ -431,8 +431,11 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
     codeAssetPaths: [
       'cockpit/deep-agents/memory/angular/src/app/memory.component.ts',
       'cockpit/deep-agents/memory/angular/src/app/app.config.ts',
+      'cockpit/deep-agents/memory/angular/src/app/memory-scope.ts',
+      'cockpit/deep-agents/memory/angular/src/app/memory-transport.ts',
+      'cockpit/deep-agents/memory/angular/src/app/memory-agent-gate.ts',
     ],
-    backendAssetPaths: ['cockpit/deep-agents/memory/python/src/graph.py'],
+    backendAssetPaths: ['cockpit/deep-agents/memory/python/src/graph.py', 'cockpit/deep-agents/memory/python/src/memory_observation.py'],
     runtimeUrl: 'deep-agents/memory',
     devPort: 4313,
   },
@@ -522,7 +525,13 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       'cockpit/deep-agents/skills/angular/src/app/skills.component.ts',
       'cockpit/deep-agents/skills/angular/src/app/app.config.ts',
     ],
-    backendAssetPaths: ['cockpit/deep-agents/skills/python/src/graph.py'],
+    backendAssetPaths: [
+      'cockpit/deep-agents/skills/python/src/graph.py',
+      'cockpit/deep-agents/skills/python/src/skills_readonly.py',
+      'cockpit/deep-agents/skills/python/skills/runway-analysis/SKILL.md',
+      'cockpit/deep-agents/skills/python/skills/runway-analysis/reference/margins.md',
+      'cockpit/deep-agents/skills/python/skills/weather-brief/SKILL.md',
+    ],
     runtimeUrl: 'deep-agents/skills',
     devPort: 4314,
   },
@@ -830,7 +839,12 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       'cockpit/chat/generative-ui/angular/src/app/generative-ui.component.ts',
       'cockpit/chat/generative-ui/angular/src/app/app.config.ts',
     ],
-    backendAssetPaths: ['cockpit/chat/generative-ui/python/src/graph.py'],
+    backendAssetPaths: [
+      'cockpit/chat/generative-ui/python/src/graph.py',
+      'cockpit/chat/generative-ui/python/src/dashboard_tools.py',
+      'cockpit/chat/generative-ui/python/src/operations.py',
+      'cockpit/chat/generative-ui/python/src/dashboard_contract.py',
+    ],
     runtimeUrl: 'chat/generative-ui',
     devPort: 4508,
   },
@@ -919,6 +933,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
     backendAssetPaths: [
       'cockpit/runtimes/microsoft-agent-framework/python/src/agent.py',
       'cockpit/runtimes/microsoft-agent-framework/python/src/server.py',
+      'cockpit/runtimes/microsoft-agent-framework/python/src/snapshot_compat.py',
     ],
     runtimeUrl: 'runtimes/microsoft-agent-framework',
     devPort: 4330,
@@ -945,6 +960,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
     backendAssetPaths: [
       'cockpit/runtimes/aws-strands/python/src/agent.py',
       'cockpit/runtimes/aws-strands/python/src/server.py',
+      'cockpit/runtimes/aws-strands/python/src/subagent_emitter.py',
     ],
     runtimeUrl: 'runtimes/aws-strands',
     devPort: 4331,
@@ -1021,6 +1037,17 @@ const agUiStreamingReact = (() => {
     runtimeUrl: frontend.runtimePath, devPort: frontend.port,
   });
 })();
+const chatGenerativeUiReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'chat-generative-ui-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-chat-generative-ui-react');
+  if (!canonical || !frontend) throw new Error('Chat Generative UI frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical, id: 'chat-generative-ui-python-react', frontend: 'react', title: 'Chat Generative UI (React preview)',
+    codeAssetPaths: ['app.tsx', 'application.ts', 'connection.ts', 'dashboard-views.tsx', 'dashboard-data.ts', 'dashboard-spec.ts', 'tool-evidence.ts', 'observation.ts', 'terminal.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/chat/generative-ui/react/src/${file}`),
+    runtimeUrl: frontend.runtimePath, devPort: frontend.port,
+  });
+})();
+
 const chatTimelineReact = (() => {
   const canonical = capabilityModules.find(descriptor => descriptor.id === 'chat-timeline-python');
   const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-chat-timeline-react');
@@ -1087,6 +1114,50 @@ const chatInputReact = (() => {
   });
 })();
 
+const agUiA2uiReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'ag-ui-a2ui-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-ag-ui-a2ui-react');
+  if (!canonical || !frontend) throw new Error('AG-UI A2UI frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical, id: 'ag-ui-a2ui-python-react', frontend: 'react', title: 'AG-UI A2UI (React preview)',
+    codeAssetPaths: [...['app.tsx', 'application.ts', 'connection.ts', 'terminal.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/ag-ui/a2ui/react/src/${file}`), ...['index.ts', 'data.ts', 'protocol.ts', 'form.ts', 'actions.ts', 'views.tsx', 'surface.ts'].map(file => `libs/cockpit-a2ui-react/src/${file}`)],
+    runtimeUrl: frontend.runtimePath, devPort: frontend.port,
+  });
+})();
+
+const chatA2uiReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'chat-a2ui-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-chat-a2ui-react');
+  if (!canonical || !frontend) throw new Error('Chat A2UI frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical, id: 'chat-a2ui-python-react', frontend: 'react', title: 'Chat A2UI (React preview)',
+    codeAssetPaths: [...['app.tsx', 'application.ts', 'connection.ts', 'terminal.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/chat/a2ui/react/src/${file}`), ...['index.ts', 'data.ts', 'protocol.ts', 'form.ts', 'actions.ts', 'views.tsx', 'surface.ts'].map(file => `libs/cockpit-a2ui-react/src/${file}`)],
+    runtimeUrl: frontend.runtimePath, devPort: frontend.port,
+  });
+})();
+
+const chatDebugReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'chat-debug-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-chat-debug-react');
+  if (!canonical || !frontend) throw new Error('Chat Debug frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical, id: 'chat-debug-python-react', frontend: 'react', title: 'Chat Debug (React preview)',
+    codeAssetPaths: [...['app.tsx', 'application.ts', 'authority.ts', 'checkpoint-page.ts', 'inspection-values.ts', 'connection.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/chat/debug/react/src/${file}`), 'cockpit/chat/debug/react/project.json'],
+    runtimeUrl: frontend.runtimePath, devPort: frontend.port,
+  });
+})();
+
+const chatThemingReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'chat-theming-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-chat-theming-react');
+  if (!canonical || !frontend) throw new Error('Chat Theming frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical, id: 'chat-theming-python-react', frontend: 'react', title: 'Chat Theming (React preview)',
+    codeAssetPaths: [...['app.tsx', 'application.ts', 'connection.ts', 'themes.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/chat/theming/react/src/${file}`), 'cockpit/chat/theming/react/project.json'],
+    runtimeUrl: frontend.runtimePath, devPort: frontend.port,
+  });
+})();
+
 const chatMessagesReact = (() => {
   const canonical = capabilityModules.find(descriptor => descriptor.id === 'chat-messages-python');
   const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-chat-messages-react');
@@ -1120,6 +1191,70 @@ const agUiToolViewsReact = (() => {
     title: 'AG-UI Tool Views (React preview)',
     codeAssetPaths: ['app.tsx','application.ts','tool-view-policy.ts','weather-card.tsx','connection.ts','main.tsx'].map(file => `cockpit/ag-ui/tool-views/react/src/${file}`),
     backendAssetPaths: ['graph.py','server.py'].map(file => `cockpit/ag-ui/tool-views/python/src/${file}`),
+    runtimeUrl: frontend.runtimePath, devPort: frontend.port,
+  });
+})();
+
+const agUiClientToolsReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'ag-ui-client-tools-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-ag-ui-client-tools-react');
+  if (!canonical || !frontend) throw new Error('AG-UI Client Tools frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical, id: 'ag-ui-client-tools-python-react', frontend: 'react',
+    title: 'AG-UI Client Tools (React preview)',
+    codeAssetPaths: [
+      ...['app.tsx', 'tools.ts', 'application.ts', 'projection.ts', 'weather-card.tsx', 'confirm-booking.tsx', 'connection.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/ag-ui/client-tools/react/src/${file}`),
+      'cockpit/ag-ui/client-tools/react/project.json',
+      ...canonical.promptAssetPaths,
+    ],
+    runtimeUrl: frontend.runtimePath, devPort: frontend.port,
+  });
+})();
+
+const mafReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'runtimes-microsoft-agent-framework-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-runtimes-microsoft-agent-framework-react');
+  if (!canonical || !frontend) throw new Error('MAF React frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical, id: 'runtimes-microsoft-agent-framework-react', frontend: 'react',
+    title: 'Microsoft Agent Framework expenses (React preview)',
+    codeAssetPaths: [
+      ...['app.tsx', 'application.ts', 'approval-policy.ts', 'expense-projection.ts', 'connection.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/runtimes/microsoft-agent-framework/react/src/${file}`),
+      'cockpit/runtimes/microsoft-agent-framework/react/project.json',
+      ...canonical.promptAssetPaths,
+    ],
+    runtimeUrl: frontend.runtimePath, devPort: frontend.port,
+  });
+})();
+
+const strandsReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'runtimes-aws-strands-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-runtimes-aws-strands-react');
+  if (!canonical || !frontend) throw new Error('Strands React frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical, id: 'runtimes-aws-strands-react', frontend: 'react',
+    title: 'AWS Strands meetings (React preview)',
+    codeAssetPaths: [
+      ...['app.tsx', 'application.ts', 'approval-policy.ts', 'schedule-projection.ts', 'connection.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/runtimes/aws-strands/react/src/${file}`),
+      'cockpit/runtimes/aws-strands/react/project.json',
+      ...canonical.promptAssetPaths,
+    ],
+    runtimeUrl: frontend.runtimePath, devPort: frontend.port,
+  });
+})();
+
+const mastraReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'runtimes-mastra-angular');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-runtimes-mastra-react');
+  if (!canonical || !frontend) throw new Error('Mastra React frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical, id: 'runtimes-mastra-react', frontend: 'react',
+    title: 'Mastra reservations (React preview)',
+    codeAssetPaths: [
+      ...['app.tsx', 'application.ts', 'approval-policy.ts', 'connection.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/runtimes/mastra/react/src/${file}`),
+      'cockpit/runtimes/mastra/react/project.json',
+      ...canonical.promptAssetPaths,
+    ],
     runtimeUrl: frontend.runtimePath, devPort: frontend.port,
   });
 })();
@@ -1238,19 +1373,117 @@ const computedFunctionsReact = (() => {
   });
 })();
 
+const deepAgentsPlanningReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'deep-agents-planning-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-deep-agents-planning-react');
+  if (!canonical || !frontend) throw new Error('Planning frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical,
+    id: 'deep-agents-planning-python-react',
+    frontend: 'react',
+    title: 'Planning (React preview)',
+    codeAssetPaths: ['app.tsx', 'application.ts', 'connection.ts', 'plan-state.ts', 'tool-evidence.ts', 'terminal.ts', 'plan-panel.tsx', 'main.tsx', 'styles.css'].map(file => `cockpit/deep-agents/planning/react/src/${file}`),
+    runtimeUrl: frontend.runtimePath,
+    devPort: frontend.port,
+  });
+})();
+
+const deepAgentsFilesystemReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'deep-agents-filesystem-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-deep-agents-filesystem-react');
+  if (!canonical || !frontend) throw new Error('Filesystem frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical,
+    id: 'deep-agents-filesystem-python-react',
+    frontend: 'react',
+    title: 'Filesystem (React preview)',
+    codeAssetPaths: ['app.tsx', 'application.ts', 'connection.ts', 'workspace-state.ts', 'approval-state.ts', 'authority.ts', 'workspace-panel.tsx', 'approval-panel.tsx', 'main.tsx', 'styles.css'].map(file => `cockpit/deep-agents/filesystem/react/src/${file}`),
+    runtimeUrl: frontend.runtimePath,
+    devPort: frontend.port,
+  });
+})();
+
+const deepAgentsSubagentsReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'deep-agents-subagents-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-deep-agents-subagents-react');
+  if (!canonical || !frontend) throw new Error('Subagents frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical,
+    id: 'deep-agents-subagents-python-react',
+    frontend: 'react',
+    title: 'Subagents (React preview)',
+    codeAssetPaths: [
+      ...['app.tsx', 'application.ts', 'connection.ts', 'authority.ts', 'projection.ts', 'children.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/deep-agents/subagents/react/src/${file}`),
+      'cockpit/deep-agents/subagents/react/project.json',
+    ],
+    runtimeUrl: frontend.runtimePath,
+    devPort: frontend.port,
+  });
+})();
+
+const deepAgentsMemoryReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'deep-agents-memory-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-deep-agents-memory-react');
+  if (!canonical || !frontend) throw new Error('Memory frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical,
+    id: 'deep-agents-memory-python-react',
+    frontend: 'react',
+    title: 'Memory (React preview)',
+    codeAssetPaths: [
+      ...['app.tsx', 'application.ts', 'connection.ts', 'authority.ts', 'browser-scope.ts', 'memory-projection.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/deep-agents/memory/react/src/${file}`),
+      'cockpit/deep-agents/memory/react/project.json',
+    ],
+    runtimeUrl: frontend.runtimePath,
+    devPort: frontend.port,
+  });
+})();
+
+const deepAgentsSkillsReact = (() => {
+  const canonical = capabilityModules.find(descriptor => descriptor.id === 'deep-agents-skills-python');
+  const frontend = getCockpitFrontends().find(entry => entry.project === 'cockpit-deep-agents-skills-react');
+  if (!canonical || !frontend) throw new Error('Skills frontend registration is missing');
+  return freezeCapabilityDescriptor({
+    ...canonical,
+    id: 'deep-agents-skills-python-react',
+    frontend: 'react',
+    title: 'Skills (React preview)',
+    codeAssetPaths: [
+      ...['app.tsx', 'application.ts', 'connection.ts', 'authority.ts', 'index-projection.ts', 'read-projection.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/deep-agents/skills/react/src/${file}`),
+      'cockpit/deep-agents/skills/react/project.json',
+    ],
+    runtimeUrl: frontend.runtimePath,
+    devPort: frontend.port,
+  });
+})();
+
 export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
   Object.freeze([
     ...capabilityModules,
+    deepAgentsPlanningReact,
+    deepAgentsFilesystemReact,
+    deepAgentsSubagentsReact,
+    deepAgentsSkillsReact,
+    deepAgentsMemoryReact,
     chatThreadsReact,
     chatTimelineReact,
+    chatGenerativeUiReact,
     chatSubagentsReact,
     chatToolCallsReact,
     chatInterruptsReact,
     chatInputReact,
     chatMessagesReact,
+    chatThemingReact,
+    chatA2uiReact,
+    agUiA2uiReact,
+    chatDebugReact,
     agUiStreamingReact,
     agUiInterruptsReact,
     agUiToolViewsReact,
+    agUiClientToolsReact,
+    mastraReact,
+    mafReact,
+    strandsReact,
     agUiJsonRenderReact,
     agUiSubagentsReact,
     renderSpecReact,

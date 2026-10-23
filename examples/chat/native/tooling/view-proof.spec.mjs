@@ -28,6 +28,7 @@ function fixture(t, framework) {
     ? ['typescript', '@angular/compiler-cli', '@angular/cli', '@angular/build']
     : ['typescript', 'vite'];
   const packages = [
+    ...(!angular ? ['@threadplane/a2ui'] : []),
     ...tools,
     ...(angular
       ? ['@angular/core', '@angular/platform-browser']
@@ -39,6 +40,15 @@ function fixture(t, framework) {
     '@threadplane/' + framework,
   ];
   const runtime = [
+    ...(!angular
+      ? [
+          'view-proof/view-owner.react.ts',
+          'react/src/application.ts',
+          'react/src/a2ui-message-content.ts',
+          'react/src/a2ui-trip-catalog.ts',
+          'node_modules/@threadplane/content/src/a2ui/create-surfaces.js',
+        ]
+      : []),
     entry,
     'view-proof/view-owner.ts',
     app,
@@ -72,6 +82,12 @@ function fixture(t, framework) {
         ].map((n) => 'node_modules/@threadplane/react/src/' + n)),
   ];
   const types = [
+    ...(!angular
+      ? [
+          'node_modules/@threadplane/content/src/a2ui/create-surfaces.d.ts',
+          'node_modules/@threadplane/a2ui/src/index.d.ts',
+        ]
+      : []),
     ...runtime.filter((p) => !p.endsWith('.js') && !p.endsWith('.mjs')),
     'node_modules/@threadplane/langgraph/runtime/create-session.d.ts',
     'node_modules/@threadplane/content/src/markdown/create-markdown.d.ts',
@@ -152,6 +168,15 @@ function fixture(t, framework) {
   const record = {
     version: 2,
     framework,
+    profile: angular ? 'angular-langgraph' : 'react-native-a2ui-langgraph',
+    ...(!angular
+      ? {
+          reactHelper: {
+            path: 'examples/chat/native/tooling/view-owner.react.ts',
+            sha256: inputs['view-proof/view-owner.react.ts'],
+          },
+        }
+      : {}),
     entry,
     source: {
       path:
@@ -478,4 +503,35 @@ for (const [name, mutate] of [
     mutate(f.record);
     f.save();
     assert.throws(() => readViewProof(f.root));
+  });
+
+for (const graph of ['runtime', 'compiler'])
+  for (const path of [
+    'view-proof/view-owner.react.ts',
+    'react/src/application.ts',
+    'react/src/a2ui-message-content.ts',
+    'react/src/a2ui-trip-catalog.ts',
+    'node_modules/@threadplane/content/src/a2ui/create-surfaces' +
+      (graph === 'runtime' ? '.js' : '.d.ts'),
+  ])
+    test(`React requires production A2UI ${graph}: ${path}`, (t) => {
+      const f = fixture(t, 'react');
+      if (graph === 'runtime')
+        f.record.runtime = f.record.runtime.filter((p) => p !== path);
+      else
+        f.record.compiler.inputs = f.record.compiler.inputs.filter(
+          (p) => p !== path
+        );
+      f.save();
+      assert.throws(
+        () => readViewProof(f.root),
+        /composition|A2UI|create-surfaces/
+      );
+    });
+for (const profile of [undefined, 'react-langgraph', 'angular-langgraph'])
+  test(`React rejects substituted profile ${profile}`, (t) => {
+    const f = fixture(t, 'react');
+    f.record.profile = profile;
+    f.save();
+    assert.throws(() => readViewProof(f.root), /profile/);
   });

@@ -20,6 +20,45 @@ function envelope(title: unknown): Thread {
   };
 }
 
+test('projection parses backend timestamps into frozen independent epoch snapshots', () => {
+  for (const updated_at of [
+    '2026-09-28T00:00:01.000Z',
+    '1970-01-01T00:00:00.000Z',
+    '1969-12-31T23:59:59.000Z',
+    '-271821-04-20T00:00:00.000Z',
+    '+275760-09-13T00:00:00.000Z',
+  ]) {
+    const source = { ...envelope('Title'), updated_at };
+    const row = projectThread(source);
+    assert.deepEqual(row, {
+      id: 'one',
+      title: 'Title',
+      updatedAt: Date.parse(updated_at),
+    });
+    source.updated_at = '';
+    assert.equal(row.updatedAt, Date.parse(updated_at));
+    assert.ok(Object.isFrozen(row));
+    assert.equal(Reflect.set(row, 'updatedAt', 1), false);
+  }
+});
+
+test('projection omits missing, invalid and non-string backend timestamps', () => {
+  for (const updated_at of [
+    undefined,
+    null,
+    '',
+    'invalid',
+    '+275760-09-13T00:00:00.001Z',
+    0,
+    Infinity,
+    {},
+    new Date(0),
+  ]) {
+    const source = { ...envelope('Title'), updated_at } as unknown as Thread;
+    assert.deepEqual(projectThread(source), { id: 'one', title: 'Title' });
+  }
+});
+
 test('projection copies only display fields and retains immutable snapshots', () => {
   const source = envelope(' Original ');
   const input = [source];
