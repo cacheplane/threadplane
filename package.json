@@ -17,6 +17,7 @@
     "growth:observability": "tsx scripts/growth-observability.mts",
     "growth:cancel-resend": "tsx scripts/cancel-resend-lifecycle.mts",
     "growth:import-resend": "tsx scripts/import-resend-lifecycle.mts",
+    "growth:receiving": "tsx scripts/resend-receiving.mts",
     "marketing:channels:x:auth": "tsx --env-file=.env marketing/channels/src/x/auth-cli.ts",
     "marketing:channels:x:smoke": "tsx --env-file=.env marketing/channels/scripts/smoke.ts",
     "marketing:channels:devto:smoke": "tsx --env-file=.env marketing/channels/scripts/smoke.ts --channel=devto",

@@ -189,6 +189,7 @@ describe('sendRecipientEmail', () => {
           'X-Threadplane-Job-ID': jobId,
         },
         tags: [
+          { name: 'app', value: 'threadplane' },
           { name: 'environment', value: 'production' },
           { name: 'job_kind', value: 'send_step' },
           { name: 'campaign_version', value: 'v1' },
@@ -378,6 +379,7 @@ describe('sendRecipientEmail', () => {
 
     expect(test.send.mock.calls[0]?.[0]).toMatchObject({
       tags: [
+        { name: 'app', value: 'threadplane' },
         { name: 'environment', value: 'production' },
         { name: 'job_kind', value: 'fulfill' },
       ],

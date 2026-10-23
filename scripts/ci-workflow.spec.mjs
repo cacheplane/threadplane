@@ -1363,8 +1363,7 @@ describe('CI workflow', () => {
     assert.match(job, /npx nx test growth(?:\s|$)/m);
     assert.match(job, /npx nx run growth:test-operator-cli(?:\s|$)/m);
     assert.match(job, /npx nx build growth(?:\s|$)/m);
-    assert.match(job, /npx nx test google-mailbox-poller(?:\s|$)/m);
-    assert.match(job, /npx nx lint google-mailbox-poller(?:\s|$)/m);
+    assert.doesNotMatch(job, /google-mailbox-poller/);
     assert.doesNotMatch(job, /test-integration/);
   });
 

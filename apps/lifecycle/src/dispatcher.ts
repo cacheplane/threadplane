@@ -3,7 +3,7 @@ import {
   dispatchGrowthLeasedJob,
   enqueueInstallDigestJob,
   failLeasedJob,
-  isGoogleMailboxRecoveryPaused,
+  isMailboxRecoveryPaused,
   leaseDueJobs,
   materializeCampaignEnrollment,
   pacificCalendarDate,
@@ -69,7 +69,7 @@ export interface LifecycleDispatcherDependencies {
     job: GrowthJob,
     dependencies: GrowthDispatchDependencies
   ) => Promise<GrowthDispatchResult>;
-  isRecoveryPaused: typeof isGoogleMailboxRecoveryPaused;
+  isRecoveryPaused: typeof isMailboxRecoveryPaused;
   leaseDueJobs: typeof leaseDueJobs;
   materializeCampaignEnrollment: typeof materializeCampaignEnrollment;
   enqueueInstallDigestJob: typeof enqueueInstallDigestJob;
@@ -89,7 +89,7 @@ const defaultDependencies: LifecycleDispatcherDependencies = {
   appHandlers: createLifecycleAppJobHandlers(),
   createDatabase: () => createDatabaseExecutor(),
   dispatchLeasedJob: dispatchGrowthLeasedJob,
-  isRecoveryPaused: isGoogleMailboxRecoveryPaused,
+  isRecoveryPaused: isMailboxRecoveryPaused,
   leaseDueJobs,
   materializeCampaignEnrollment,
   enqueueInstallDigestJob,

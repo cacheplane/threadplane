@@ -12,7 +12,8 @@
       "{workspaceRoot}/scripts/growth-control*",
       "{workspaceRoot}/scripts/growth-observability*",
       "{workspaceRoot}/scripts/import-resend-lifecycle*",
-      "{workspaceRoot}/scripts/cancel-resend-lifecycle*"
+      "{workspaceRoot}/scripts/cancel-resend-lifecycle*",
+      "{workspaceRoot}/scripts/resend-receiving*"
     ]
   },
   "targets": {

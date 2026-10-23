@@ -129,6 +129,7 @@ describe('legacy delivery surface', () => {
     expect(Object.keys(manifest.dependencies ?? {})).toContain('resend');
     expect(importers.map((path) => path.replace(WEBSITE_ROOT, ''))).toEqual([
       '/src/app/api/webhooks/resend/route.ts',
+      '/src/app/api/webhooks/resend-inbound/route.ts',
     ]);
   });
 });

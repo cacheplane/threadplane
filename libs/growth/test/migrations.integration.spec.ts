@@ -65,6 +65,9 @@ describeDatabase(
         'growth_observation_work',
         'growth_observations',
         'growth_projects',
+        'growth_provider_attempts',
+        'growth_reply_mailboxes',
+        'growth_reply_receipts',
       ]);
 
       const views = await executor.execute<{ table_name: string }>(`
@@ -102,6 +105,7 @@ describeDatabase(
         { checksum_length: 64, name: '0006_growth_form_observations.sql' },
         { checksum_length: 64, name: '0007_growth_install_runtime.sql' },
         { checksum_length: 64, name: '0008_growth_install_digest.sql' },
+        { checksum_length: 64, name: '0009_growth_resend_receiving.sql' },
       ]);
     });
 

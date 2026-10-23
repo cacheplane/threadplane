@@ -2175,7 +2175,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "f62cbf461da296e1f26a49189b62e0eb7453d263caad3057cb1938d6fbf183a9"
+      "sha256": "357239bc32d9cbc4f8f4054f5d09d5eaf689acd0a8d333b1926acc2fc2c3c52e"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -2235,7 +2235,7 @@
       "id": "config:package.json",
       "kind": "config",
       "path": "package.json",
-      "sha256": "57a704e340fa62a1e0bb57d73be20a6ca6e590c772dd0b5e8635c46569ea83ba"
+      "sha256": "db7b67432af69c907af7c096dcce1efdbd767af867dec0a85a6da0f68b931e55"
     },
     {
       "id": "config:scripts/assemble-examples.ts",
