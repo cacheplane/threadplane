@@ -21,9 +21,10 @@ jobs were cancelled through the audited retirement operation.
 
 A controlled incoming message was automatically forwarded to `brian@cacheplane.ai`
 and reported delivered by Resend. Its Reply-To retained the original sender and
-`original.eml` retained the test attachment. Google Admin reports no subscriptions;
-Apps Script is inaccessible because Workspace was already cancelled. Permanent
-deletion of the remaining Google organization is a separate irreversible step.
+`original.eml` retained the test attachment. Workspace had no active subscriptions.
+After explicit operator confirmation and fresh Google password verification, the
+Threadplane Google organization was deleted on 2026-10-22. Google's sign-in page
+confirmed "Account deleted" for `brian@threadplane.ai`.
 The deployed five-minute recovery cron refreshed mailbox health at
 `2026-10-22T20:40:24.365Z`, with no recovery in progress and no active legacy
 `reply_reconcile` jobs.
