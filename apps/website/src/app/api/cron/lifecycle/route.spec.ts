@@ -58,7 +58,7 @@ describe('GET /api/cron/lifecycle', () => {
     expect(invoke).toHaveBeenCalledWith({
       baseUrl: 'https://lifecycle.example',
       serviceSecret: 'service-secret',
-      timeoutMs: 15_000,
+      timeoutMs: 55_000,
       trigger: 'cron',
     });
   });

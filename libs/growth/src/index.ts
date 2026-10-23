@@ -78,3 +78,11 @@ export type {
   InstallDigestPackage,
 } from './lib/observability/install-digest.ts';
 export { pacificCalendarDate } from './lib/campaign-schedule.ts';
+
+export {
+  providerIdempotencyKey,
+  reserveProviderAttempt,
+  completeProviderAttempt,
+} from './lib/provider-attempts.ts';
+
+export * from './lib/health-alerts.ts';

@@ -2,6 +2,7 @@ import {
   createDatabaseExecutor,
   dispatchGrowthLeasedJob,
   enqueueInstallDigestJob,
+  deferLeasedJob,
   failLeasedJob,
   isMailboxRecoveryPaused,
   leaseDueJobs,
@@ -26,6 +27,9 @@ import { loadEmailHmacKeyring } from './email-keyring.js';
 export { DeterministicLifecycleJobError } from './job-errors.js';
 
 const MAX_BATCH_SIZE = 25;
+// Leave time for a bounded provider request and durable outcome writes.
+const TICK_JOB_START_BUDGET_MS = 30_000;
+const TICK_DEADLINE_MS = 50_000;
 const OBSERVATION_PROJECTION_MAX_LIMIT = 100;
 const LEASE_DURATION_MS = 60_000;
 const LEASE_RENEWAL_INTERVAL_MS = 20_000;
@@ -81,6 +85,7 @@ export interface LifecycleDispatcherDependencies {
   now: () => Date;
   renewJobLease: typeof renewJobLease;
   quarantineJob: typeof failLeasedJob;
+  deferJob?: typeof deferLeasedJob;
   clearTimeout: typeof globalThis.clearTimeout;
   setTimeout: typeof globalThis.setTimeout;
 }
@@ -101,6 +106,7 @@ const defaultDependencies: LifecycleDispatcherDependencies = {
   now: () => new Date(),
   renewJobLease,
   quarantineJob: failLeasedJob,
+  deferJob: deferLeasedJob,
   clearTimeout: globalThis.clearTimeout,
   setTimeout: globalThis.setTimeout,
 };
@@ -174,15 +180,22 @@ export async function dispatchLifecycleJobs(
   input: LifecycleDispatcherInput,
   dependencies: LifecycleDispatcherDependencies = defaultDependencies
 ): Promise<LifecycleDispatcherResult> {
+  const startedAt = dependencies.now().getTime();
+  const budgetSpent = () =>
+    dependencies.now().getTime() - startedAt >= TICK_JOB_START_BUDGET_MS;
   const batchSize = validBatchSize(input.batchSize);
   input.signal.throwIfAborted();
+  const tickSignal = AbortSignal.any([
+    input.signal,
+    AbortSignal.timeout(TICK_DEADLINE_MS),
+  ]);
   const executor = dependencies.createDatabase();
   try {
     await dependencies.reconcileMessageIds?.(executor, {
       now: dependencies.now(),
-      signal: input.signal,
+      signal: tickSignal,
     });
-    input.signal.throwIfAborted();
+    tickSignal.throwIfAborted();
     const operatorAlerts: LifecycleOperatorAlert[] = [];
     if (input.observationProcessingEnabled === true) {
       // The projection cap is 100; the dispatcher batch is already <= 25.
@@ -197,7 +210,7 @@ export async function dispatchLifecycleJobs(
       } catch {
         projectionFailed = true;
       }
-      input.signal.throwIfAborted();
+      tickSignal.throwIfAborted();
       try {
         await dependencies.projectFormObservations(executor, {
           enabled: true,
@@ -207,7 +220,7 @@ export async function dispatchLifecycleJobs(
       } catch {
         projectionFailed = true;
       }
-      input.signal.throwIfAborted();
+      tickSignal.throwIfAborted();
       if (projectionFailed) {
         operatorAlerts.push('observation_projection_failed');
       }
@@ -228,7 +241,7 @@ export async function dispatchLifecycleJobs(
           now: dependencies.now(),
           keyring: dependencies.loadEmailKeyring(),
         });
-        input.signal.throwIfAborted();
+        tickSignal.throwIfAborted();
       }
       await dependencies.materializeCampaignEnrollment(executor, {
         enrollmentEnabled: true,
@@ -247,11 +260,20 @@ export async function dispatchLifecycleJobs(
           businessDate: calendar.date,
           keyring: dependencies.loadEmailKeyring(),
         });
-        input.signal.throwIfAborted();
+        tickSignal.throwIfAborted();
       }
     }
     const recoveryWasPaused = await dependencies.isRecoveryPaused(executor);
-    input.signal.throwIfAborted();
+    tickSignal.throwIfAborted();
+    if (budgetSpent())
+      return {
+        leased: 0,
+        dispatched: 0,
+        recoveryPaused: recoveryWasPaused,
+        operatorAlerts: recoveryWasPaused
+          ? [...operatorAlerts, 'mailbox_recovery_required']
+          : operatorAlerts,
+      };
     const jobs = await dependencies.leaseDueJobs(executor, {
       kinds: [...LEASED_KINDS],
       now: dependencies.now(),
@@ -266,7 +288,7 @@ export async function dispatchLifecycleJobs(
       leaseFailureReason = error;
       leaseFailure.abort(error);
     };
-    const dispatchSignal = AbortSignal.any([input.signal, leaseFailure.signal]);
+    const dispatchSignal = AbortSignal.any([tickSignal, leaseFailure.signal]);
     const heartbeats = new Map(
       jobs.map((job) => [
         job.id,
@@ -274,10 +296,26 @@ export async function dispatchLifecycleJobs(
       ])
     );
     let dispatched = 0;
+    let budgetExhausted = false;
     let recoveryPaused = recoveryWasPaused;
     try {
       for (const job of jobs) {
         dispatchSignal.throwIfAborted();
+        if (budgetExhausted || budgetSpent()) {
+          budgetExhausted = true;
+          const heartbeat = heartbeats.get(job.id);
+          heartbeats.delete(job.id);
+          await heartbeat?.stop();
+          const now = dependencies.now();
+          await (dependencies.deferJob ?? deferLeasedJob)(executor, {
+            jobId: job.id,
+            leaseToken: job.leaseToken as string,
+            now,
+            availableAt: now,
+            errorCode: 'tick_budget_exhausted',
+          });
+          continue;
+        }
         try {
           try {
             const result = await dependencies.dispatchLeasedJob(executor, job, {

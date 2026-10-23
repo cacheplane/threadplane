@@ -95,3 +95,104 @@ export async function retireGoogleMailbox(
     );
   });
 }
+
+/** Closed operational signals; no addresses, provider IDs or message content. */
+export type ReceivingHealthAlert =
+  | 'mailbox_coverage_stale'
+  | 'mailbox_recovering'
+  | 'unread_receipts'
+  | 'reply_review_required'
+  | 'forwarding_backlog'
+  | 'reply_binding_pending'
+  | 'send_outcome_unknown'
+  | 'provider_attempt_expired';
+
+/** Reads an aggregate receiving health snapshot suitable for logs and monitoring. */
+export async function readReceivingHealth(
+  db: SqlExecutor,
+  now: Date
+): Promise<{
+  checkedAt: string;
+  healthyThrough: string | null;
+  alerts: ReceivingHealthAlert[];
+  counts: {
+    unread: number;
+    pendingReview: number;
+    unforwarded: number;
+    unbound: number;
+    unknownSends: number;
+    expiredAttempts: number;
+  };
+}> {
+  if (!Number.isFinite(now.getTime())) throw new Error('Invalid health clock');
+  const result = await db.execute<{
+    enabled: boolean;
+    recovering: boolean;
+    healthy_through: Date | string | null;
+    unread: number;
+    pending_review: number;
+    unforwarded: number;
+    unbound: number;
+    unknown_sends: number;
+    expired_attempts: number;
+  }>(
+    `/* growth:inbox-operator-health */
+    select coalesce((select enabled from growth_reply_mailboxes where address = $1), false) as enabled,
+      coalesce((select recovery_id is not null from growth_reply_mailboxes where address = $1), false) as recovering,
+      (select healthy_through from growth_reply_mailboxes where address = $1) as healthy_through,
+      (select count(*)::integer from growth_reply_receipts where recipient = $1 and status = 'pending' and (reference_ids is null or contact_id is null)) as unread,
+      (select count(*)::integer from growth_reply_receipts where recipient = $1 and status = 'pending' and reference_ids is not null and contact_id is not null) as pending_review,
+      (select count(*)::integer from growth_reply_receipts where recipient = $1 and forward_provider_id is null
+        and (last_error_code is null or last_error_code not in ('contact_deleted','forward_loop_suppressed'))) as unforwarded,
+      (select count(*)::integer from growth_jobs j join growth_contacts c on c.id = j.contact_id
+        where c.deleted_at is null and j.kind in ('fulfill','send_step') and j.status = 'completed'
+        and j.provider_email_id is not null and j.rfc_message_id is null
+        and (j.created_at >= (select started_at from growth_reply_mailboxes where address = $1)
+          or exists (select 1 from growth_activity a where a.event_key = 'job:' || j.id::text || ':provider-accepted'
+            and a.occurred_at >= (select started_at from growth_reply_mailboxes where address = $1)))) as unbound,
+      (select count(*)::integer from growth_jobs where delivery_status = 'unknown') as unknown_sends,
+      (select count(*)::integer from growth_provider_attempts where provider_email_id is null
+        and first_attempted_at <= $2::timestamptz - interval '23 hours') as expired_attempts`,
+    [INBOX_ADDRESS, now]
+  );
+  const row = result.rows[0];
+  if (!row) throw new Error('Missing receiving health result');
+  const count = (value: number): number => {
+    if (!Number.isSafeInteger(value) || value < 0)
+      throw new Error('Invalid health count');
+    return value;
+  };
+  const counts = {
+    unread: count(row.unread),
+    pendingReview: count(row.pending_review),
+    unforwarded: count(row.unforwarded),
+    unbound: count(row.unbound),
+    unknownSends: count(row.unknown_sends),
+    expiredAttempts: count(row.expired_attempts),
+  };
+  const healthy =
+    row.healthy_through === null ? null : new Date(row.healthy_through);
+  const healthTime = healthy?.getTime() ?? NaN;
+  const alerts: ReceivingHealthAlert[] = [];
+  if (
+    row.enabled !== true ||
+    !Number.isFinite(healthTime) ||
+    now.getTime() - healthTime > 600000 ||
+    healthTime > now.getTime()
+  )
+    alerts.push('mailbox_coverage_stale');
+  if (row.recovering) alerts.push('mailbox_recovering');
+  if (counts.unread) alerts.push('unread_receipts');
+  if (counts.pendingReview) alerts.push('reply_review_required');
+  if (counts.unforwarded) alerts.push('forwarding_backlog');
+  if (counts.unbound) alerts.push('reply_binding_pending');
+  if (counts.unknownSends) alerts.push('send_outcome_unknown');
+  if (counts.expiredAttempts) alerts.push('provider_attempt_expired');
+  return {
+    checkedAt: now.toISOString(),
+    healthyThrough:
+      healthy && Number.isFinite(healthTime) ? healthy.toISOString() : null,
+    alerts,
+    counts,
+  };
+}

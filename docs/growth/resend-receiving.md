@@ -21,16 +21,18 @@ jobs were cancelled through the audited retirement operation.
 
 A controlled incoming message was automatically forwarded to `brian@cacheplane.ai`
 and reported delivered by Resend. Its Reply-To retained the original sender and
-`original.eml` retained the test attachment. Google Admin reports no subscriptions;
-Apps Script is inaccessible because Workspace was already cancelled. Permanent
-deletion of the remaining Google organization is a separate irreversible step.
+`original.eml` retained the test attachment. Workspace had no active subscriptions.
+After explicit operator confirmation and fresh Google password verification, the
+Threadplane Google organization was deleted on 2026-10-22. Google's sign-in page
+confirmed "Account deleted" for `brian@threadplane.ai`.
 The deployed five-minute recovery cron refreshed mailbox health at
 `2026-10-22T20:40:24.365Z`, with no recovery in progress and no active legacy
 `reply_reconcile` jobs.
 
 ## Configuration
 
-Apply migration `0009_growth_resend_receiving.sql` before deploying: deletion
+Apply migrations `0009_growth_resend_receiving.sql` and
+`0010_growth_health_alerts.sql` before deploying: deletion
 scrubs receipts even when receiving is disabled. Preview receiving stays disabled.
 Never connect the same receiving address to multiple databases.
 
@@ -108,3 +110,43 @@ The decision is audited; never manually advance health or bulk-complete receipts
 Pause campaigns if receiving fails. Restore saved root MX to return inbound mail to Google
 only if that account still exists. Restoring its retired collector requires deliberate code
 and configuration rollback. Preserve receipt, attempt and retirement evidence.
+
+## Deployment regression and operational hardening
+
+A later deployment from main replaced the pre-merge receiving deployment and
+removed its routes. Receiving configuration and DNS alone do not install a route.
+Keep the campaign switch disabled while integrating this change into main; verify
+the production inbound endpoint rejects an unsigned request with 400 and that
+scheduled recovery refreshes coverage before considering campaign resumption.
+No MX changes are part of this repair. Existing Resend coverage is recovered from
+the immutable start above; historical Google collection remains retired.
+
+Parsed pending replies without an attributable contact now fence all campaigns,
+just like unread receipts. Review one receipt with bounded operator/evidence
+references before ignoring it; do not bulk-clear the mailbox gate.
+
+`growth:receiving status` returns aggregate counts and closed alert codes for
+stale/recovering coverage, unread or review-required receipts, forwarding and
+reply-binding backlogs, unknown send outcomes, and expired provider attempts.
+The recovery cron returns the same health snapshot and logs actionable codes.
+Production recovery cron emails `brian@cacheplane.ai` on unhealthy changes and
+recovery when `GROWTH_HEALTH_ALERTS_ENABLED=true`,
+`GROWTH_HEALTH_ALERT_RECIPIENT=brian@cacheplane.ai`, and both
+`DELIVERY_ENVIRONMENT` and `GROWTH_DATABASE_ENVIRONMENT` are `production`.
+Preview alerts stay disabled. Initial healthy state and unchanged canonical
+codes are silent. Durable outbox order and immutable payloads preserve causal
+transitions across retries; each invocation submits at most one pending alert.
+The existing provider-attempt ledger limits ambiguous retries to 23 hours.
+Expired attempts retain terminal evidence without blocking later recovery mail.
+Recovery/health-read failures remain unsuccessful and generate closed failure
+alerts. Database outages may prevent outbox writes, so retain deployment
+monitoring for failed cron invocations.
+
+Recipient and internal messages carry the Threadplane product tag and use
+product/environment-scoped provider keys. The attempt ledger records immutable
+payload digests and refuses unresolved resubmission after 23 hours. Existing
+unknown-outcome quarantine and internal at-most-once claims remain in force.
+Provider requests have a ten-second deadline; dispatcher job starts stop after
+30 seconds and defer unused leases. The cron bridge allows 55 seconds within a
+60-second route. One-click unsubscribe accepts bounded multipart as well as
+URL-encoded POSTs.

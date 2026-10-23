@@ -53,6 +53,8 @@ describeDatabase(
         'growth_artifacts',
         'growth_collection_budgets',
         'growth_contacts',
+        'growth_health_alert_outbox',
+        'growth_health_alert_state',
         'growth_install_digest_reports',
         'growth_install_runtime_links',
         'growth_jobs',
@@ -106,6 +108,7 @@ describeDatabase(
         { checksum_length: 64, name: '0007_growth_install_runtime.sql' },
         { checksum_length: 64, name: '0008_growth_install_digest.sql' },
         { checksum_length: 64, name: '0009_growth_resend_receiving.sql' },
+        { checksum_length: 64, name: '0010_growth_health_alerts.sql' },
       ]);
     });
 

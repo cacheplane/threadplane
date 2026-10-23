@@ -53,3 +53,13 @@ test('the historical waiver excludes old unbound sends but includes pre-created 
   expect(sql).toContain('accepted.occurred_at');
   expect(sql).toContain(':provider-accepted');
 });
+
+test('campaign leasing globally fences parsed replies without a contact attribution', () => {
+  enableReceiving();
+
+  const sql = receivingCampaignGuardSql('j.contact_id', '$2');
+
+  expect(sql).toMatch(
+    /reference_ids is null or contact_id is null or contact_id = j\.contact_id/u
+  );
+});

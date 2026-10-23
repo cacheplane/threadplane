@@ -381,4 +381,48 @@ describeDatabase('Resend receiving against TEST_DATABASE_URL', () => {
     expect(send).not.toHaveBeenCalled();
     expect(isErasedSender).not.toHaveBeenCalled();
   });
+
+  test('blocks leasing and final authorization for a parsed reply with no attributable contact', async () => {
+    const contact = await createEnrolledContact();
+    const leased = (await lease()).find(({ id }) => id === contact.jobId);
+    if (!leased?.leaseToken)
+      throw new Error('Expected eligible baseline lease');
+    const reply = await admitReply(
+      'unverified-alias@example.net',
+      '<unknown@resend.com>'
+    );
+
+    expect(
+      await processInboxReceipt(executor, reply.id, config, {
+        getReceived: reply.getReceived,
+        stopContact,
+      })
+    ).toBe('pending');
+    const receipt = await executor.execute(
+      'select contact_id, reference_ids from growth_reply_receipts where id = $1',
+      [reply.id]
+    );
+    expect(receipt.rows[0]).toMatchObject({
+      contact_id: null,
+      reference_ids: ['<unknown@resend.com>'],
+    });
+    await expect(
+      authorizeLeasedJobForSubmission(executor, {
+        jobId: contact.jobId,
+        leaseToken: leased.leaseToken,
+        now,
+        campaignEnabled: true,
+        deliveryEnabled: true,
+      })
+    ).resolves.toMatchObject({
+      authorized: false,
+      reason: 'mailbox_recovery_required',
+    });
+    await executor.execute(
+      "update growth_jobs set status = 'pending', lease_token = null, lease_until = null where id = $1",
+      [contact.jobId]
+    );
+
+    expect((await lease()).map(({ id }) => id)).not.toContain(contact.jobId);
+  });
 });
