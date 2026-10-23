@@ -4,6 +4,7 @@ export interface ThreadRow {
   readonly id: string;
   readonly title: string;
   readonly updatedAt?: number;
+  readonly pinned?: boolean;
 }
 
 export type DirectoryResult<T> =

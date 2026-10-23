@@ -301,6 +301,13 @@ zero and negative dates are supported. Optional readonly `now` supplies a numeri
 reference time; otherwise `Date.now()` is sampled once per render. The owner
 rerenders to refresh relative labels. The view owns no timer or data refresh.
 
+Optional readonly boolean `pinned` presents a pin only for strict `true`. A
+decorative current-color icon precedes title content, and “Pinned conversation”
+describes the button before any relative time. Its accessible name and tooltip
+remain the original title or ID, including with custom or empty title content.
+Invalid timestamps still leave pin status available. Pin presentation preserves
+supplied order and adds no action, mutation, sorting or focus target.
+
 Optional readonly `renderTitle` receives the original supplied `ThreadListItem`
 and returns ReactNode title content inside the existing button. Supply only
 noninteractive phrasing content (for example `mark` or `em`); do not nest links,

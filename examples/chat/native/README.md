@@ -101,6 +101,15 @@ label and timestamp description remain accessible. The library honors `null` and
 `false` output without fallback. Broader row templates, lifecycle, project,
 search and history surfaces remain open; this is no public release or full T29 claim.
 
+The shared directory projection copies only `metadata.pinned === true` into an
+optional readonly boolean `pinned: true`; false, missing and invalid values are
+omitted. React forwards rows directly and presents a decorative current-color pin
+plus an accessible “Pinned conversation” description before relative time. The
+original name, tooltip and supplied order remain intact, including highlighting
+and pin toggles on Refresh. This is readonly presentation with no sorting or pin
+writes. Broader pin menus/actions and row templates remain future work. Angular
+also receives this optional metadata through the shared projection.
+
 The shared directory projection copies valid backend `updated_at` strings into
 immutable optional epoch-millisecond `updatedAt` fields. Native React passes these
 rows directly to the installed list, which renders relative time and an exact ISO

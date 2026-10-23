@@ -11,6 +11,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { createReactApplication } from './application';
 import { applicationFixture } from './application-fixture';
 import { App } from './app';
+import { projectThreads } from '../../shared/projection';
 
 afterEach(() => {
   cleanup();
@@ -86,8 +87,8 @@ it('uses ThreadList while refresh, loaded-title filtering and navigation retain 
   const fixture = applicationFixture();
   const io = { list: 0, get: 0 };
   const rows = [
-    { id: 'a', title: 'Alpha notes', updatedAt: now - 120000 },
-    { id: 'b', title: 'Beta notes', updatedAt: now - 86400000 },
+    { id: 'a', title: 'Alpha notes', updatedAt: now - 120000, pinned: false },
+    { id: 'b', title: 'Beta notes', updatedAt: now - 86400000, pinned: true },
   ];
   const application = createReactApplication({
     ...fixture.options,
@@ -95,7 +96,19 @@ it('uses ThreadList while refresh, loaded-title filtering and navigation retain 
       ...fixture.options.directory,
       async list() {
         io.list++;
-        return { kind: 'ready', value: rows.map((row) => ({ ...row })) };
+        return {
+          kind: 'ready',
+          value: projectThreads(
+            rows.map(
+              (row) =>
+                ({
+                  thread_id: row.id,
+                  metadata: { title: row.title, pinned: row.pinned },
+                  updated_at: new Date(row.updatedAt).toISOString(),
+                } as Parameters<typeof projectThreads>[0][number])
+            )
+          ),
+        };
       },
       async get(id) {
         io.get++;
@@ -133,7 +146,7 @@ it('uses ThreadList while refresh, loaded-title filtering and navigation retain 
     expect(
       within(list).getByRole('button', {
         name: 'Beta notes',
-        description: '1 day ago',
+        description: 'Pinned conversation 1 day ago',
       })
     ).toBe(beta);
     expect(alpha.getAttribute('aria-current')).toBe('true');
@@ -144,7 +157,10 @@ it('uses ThreadList while refresh, loaded-title filtering and navigation retain 
     fireEvent.change(draft, { target: { value: 'Unsent draft' } });
     const counters = { ...fixture.counters };
     alpha.focus();
+    const alphaRow = alpha.parentElement;
     rows[0].updatedAt = now - 60000;
+    rows[0].pinned = true;
+    rows[1].pinned = false;
     await act(async () => {
       application.refresh();
     });
@@ -158,12 +174,22 @@ it('uses ThreadList while refresh, loaded-title filtering and navigation retain 
     expect(
       within(list).getByRole('button', {
         name: 'Alpha notes',
-        description: '1 min ago',
+        description: 'Pinned conversation 1 min ago',
       })
     ).toBe(alpha);
     expect(alpha.querySelector('time')?.dateTime).toBe(
       '2026-09-28T00:01:01.000Z'
     );
+    expect(alpha.parentElement).toBe(alphaRow);
+    expect(within(list).getAllByRole('button')).toEqual([alpha, beta]);
+    expect(alpha.querySelectorAll('.tp-thread-list__pin')).toHaveLength(1);
+    expect(beta.querySelector('.tp-thread-list__pin')).toBeNull();
+    expect(
+      within(list).getByRole('button', {
+        name: 'Beta notes',
+        description: '1 day ago',
+      })
+    ).toBe(beta);
     const filter = view.getByRole('searchbox');
     fireEvent.change(filter, { target: { value: 'Alpha' } });
     expect(within(list).getAllByRole('button')).toEqual([alpha]);
@@ -177,7 +203,7 @@ it('uses ThreadList while refresh, loaded-title filtering and navigation retain 
     expect(
       within(list).getByRole('button', {
         name: 'Alpha notes',
-        description: '1 min ago',
+        description: 'Pinned conversation 1 min ago',
       })
     ).toBe(alpha);
     expect(alpha.querySelector('mark')?.textContent).toBe('notes');

@@ -6,6 +6,7 @@ export interface ThreadListItem {
   readonly id: string;
   readonly title?: string;
   readonly updatedAt?: number;
+  readonly pinned?: boolean;
 }
 
 export interface ThreadListProps {
@@ -57,6 +58,7 @@ export function ThreadList({
       aria-label={label}
     >
       {threads.map((thread, index) => {
+        const pinned = thread.pinned === true;
         const title = thread.title || thread.id;
         const content = renderTitle ? renderTitle(thread) : title;
         const updated = validDate(thread.updatedAt);
@@ -71,14 +73,31 @@ export function ThreadList({
               type="button"
               className="tp-thread-list__button"
               title={title}
-              aria-label={renderTitle ? title : undefined}
+              aria-label={renderTitle || pinned ? title : undefined}
               aria-labelledby={
-                time && !renderTitle ? `${rowId}-title` : undefined
+                time && !renderTitle && !pinned ? `${rowId}-title` : undefined
               }
-              aria-describedby={time ? `${rowId}-time` : undefined}
+              aria-describedby={
+                pinned
+                  ? `${rowId}-pinned${time ? ` ${rowId}-time` : ''}`
+                  : time
+                  ? `${rowId}-time`
+                  : undefined
+              }
               aria-current={thread.id === activeThreadId ? 'true' : undefined}
               onClick={() => onSelect(thread.id)}
             >
+              {pinned && (
+                <svg
+                  className="tp-thread-list__pin"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z" />
+                </svg>
+              )}
               {time && updated ? (
                 <>
                   <span id={`${rowId}-title`}>{content}</span>
@@ -92,6 +111,11 @@ export function ThreadList({
                 </>
               ) : (
                 content
+              )}
+              {pinned && (
+                <span id={`${rowId}-pinned`} className="tp-thread-list__status">
+                  Pinned conversation
+                </span>
               )}
             </button>
           </li>

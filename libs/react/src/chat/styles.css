@@ -66,6 +66,26 @@
   background: var(--tp-chat-accent, var(--ds-accent, Highlight));
   color: var(--tp-chat-on-accent, var(--ds-surface, HighlightText));
 }
+.tp-thread-list .tp-thread-list__pin {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-inline-end: 0.375em;
+  vertical-align: -0.125em;
+  fill: currentColor;
+}
+.tp-thread-list .tp-thread-list__status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
 .tp-thread-list .tp-thread-list__time {
   display: block;
   margin-block-start: 0.25rem;

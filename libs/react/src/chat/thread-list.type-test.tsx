@@ -103,3 +103,15 @@ props.renderTitle = () => null;
 <ThreadList {...props} renderTitle={(thread: string) => thread} />;
 // @ts-expect-error Arbitrary objects are not ReactNode.
 <ThreadList {...props} renderTitle={() => ({ arbitrary: true })} />;
+
+const pinnedItem: ThreadListItem = { id: 'pin', pinned: true };
+const unpinnedItem: ThreadListItem = { id: 'plain', pinned: false };
+// @ts-expect-error Pinned metadata is readonly.
+pinnedItem.pinned = false;
+// @ts-expect-error Pinned metadata is boolean.
+const invalidPin: ThreadListItem = { id: 'invalid', pinned: 'true' };
+void unpinnedItem;
+void invalidPin;
+export type PinnedContract = Assert<
+  Equal<Pick<ThreadListItem, 'pinned'>, { readonly pinned?: boolean }>
+>;

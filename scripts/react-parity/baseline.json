@@ -1,9 +1,10 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "346b500a678ed68c4ab5b59d49e656c454847dbb",
+  "baselineHead": "0b1e4a6b4c8dd00b24dfdbdec0b6b5ca9a42e8e3",
   "sourceState": {
     "modified": [
       "libs/react/README.md",
+      "libs/react/src/chat/styles.css",
       "libs/react/src/chat/thread-list.tsx"
     ],
     "untracked": []
@@ -852,7 +853,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "9c74fec21af04222ad469bc052e221c57b54c39b8958ababff4b041d7c3ba374"
+      "sha256": "7094200cb581532cc2bc38fb0cfe253b938f80ac2a5af30314ae79c20b48431b"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -870,7 +871,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "f837369f21329fb04ec751ea9d14203d4ad59969678acc87988c2a86b6fb56ea"
+      "sha256": "2f73e51263f97bf3707075213f5a40ab533611323b7a69a0153d682127c863b5"
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -10623,7 +10624,7 @@
           "path": "libs/react/src/chat/thread-list.tsx",
           "symbol": "ThreadList",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function ThreadList({ threads, onSelect, activeThreadId, label = 'Conversations', className, onNewThread, newThreadDisabled = false, newThreadLabel = '+ New thread', now = Date.now(), renderTitle, }: ThreadListProps) {\n    const listId = useId();\n    const reference = validDate(now);\n    const list = (<ul className={`tp-thread-list${className ? ` ${className}` : ''}`} aria-label={label}>\n      {threads.map((thread, index) => {\n            const title = thread.title || thread.id;\n            const content = renderTitle ? renderTitle(thread) : title;\n            const updated = validDate(thread.updatedAt);\n            const time = reference && updated && thread.updatedAt !== undefined\n                ? relativeTime(now - thread.updatedAt)\n                : undefined;\n            const rowId = `${listId}-${index}`;\n            return (<li key={thread.id} className=\"tp-thread-list__item\">\n            <button type=\"button\" className=\"tp-thread-list__button\" title={title} aria-label={renderTitle ? title : undefined} aria-labelledby={time && !renderTitle ? `${rowId}-title` : undefined} aria-describedby={time ? `${rowId}-time` : undefined} aria-current={thread.id === activeThreadId ? 'true' : undefined} onClick={() => onSelect(thread.id)}>\n              {time && updated ? (<>\n                  <span id={`${rowId}-title`}>{content}</span>\n                  <time id={`${rowId}-time`} className=\"tp-thread-list__time\" dateTime={updated.toISOString()}>\n                    {time}\n                  </time>\n                </>) : (content)}\n            </button>\n          </li>);\n        })}\n    </ul>);\n    return onNewThread ? (<div className=\"tp-thread-list__container\">\n      <button type=\"button\" className=\"tp-thread-list__new\" onClick={() => onNewThread()} disabled={newThreadDisabled}>\n        {newThreadLabel}\n      </button>\n      {list}\n    </div>) : (list);\n}"
+          "signature": "export function ThreadList({ threads, onSelect, activeThreadId, label = 'Conversations', className, onNewThread, newThreadDisabled = false, newThreadLabel = '+ New thread', now = Date.now(), renderTitle, }: ThreadListProps) {\n    const listId = useId();\n    const reference = validDate(now);\n    const list = (<ul className={`tp-thread-list${className ? ` ${className}` : ''}`} aria-label={label}>\n      {threads.map((thread, index) => {\n            const pinned = thread.pinned === true;\n            const title = thread.title || thread.id;\n            const content = renderTitle ? renderTitle(thread) : title;\n            const updated = validDate(thread.updatedAt);\n            const time = reference && updated && thread.updatedAt !== undefined\n                ? relativeTime(now - thread.updatedAt)\n                : undefined;\n            const rowId = `${listId}-${index}`;\n            return (<li key={thread.id} className=\"tp-thread-list__item\">\n            <button type=\"button\" className=\"tp-thread-list__button\" title={title} aria-label={renderTitle || pinned ? title : undefined} aria-labelledby={time && !renderTitle && !pinned ? `${rowId}-title` : undefined} aria-describedby={pinned\n                    ? `${rowId}-pinned${time ? ` ${rowId}-time` : ''}`\n                    : time\n                        ? `${rowId}-time`\n                        : undefined} aria-current={thread.id === activeThreadId ? 'true' : undefined} onClick={() => onSelect(thread.id)}>\n              {pinned && (<svg className=\"tp-thread-list__pin\" viewBox=\"0 0 24 24\" fill=\"currentColor\" aria-hidden=\"true\" focusable=\"false\">\n                  <path d=\"M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z\"/>\n                </svg>)}\n              {time && updated ? (<>\n                  <span id={`${rowId}-title`}>{content}</span>\n                  <time id={`${rowId}-time`} className=\"tp-thread-list__time\" dateTime={updated.toISOString()}>\n                    {time}\n                  </time>\n                </>) : (content)}\n              {pinned && (<span id={`${rowId}-pinned`} className=\"tp-thread-list__status\">\n                  Pinned conversation\n                </span>)}\n            </button>\n          </li>);\n        })}\n    </ul>);\n    return onNewThread ? (<div className=\"tp-thread-list__container\">\n      <button type=\"button\" className=\"tp-thread-list__new\" onClick={() => onNewThread()} disabled={newThreadDisabled}>\n        {newThreadLabel}\n      </button>\n      {list}\n    </div>) : (list);\n}"
         }
       ]
     },
@@ -10637,7 +10638,7 @@
           "path": "libs/react/src/chat/thread-list.tsx",
           "symbol": "ThreadListItem",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface ThreadListItem {\n    readonly id: string;\n    readonly title?: string;\n    readonly updatedAt?: number;\n}"
+          "signature": "export interface ThreadListItem {\n    readonly id: string;\n    readonly title?: string;\n    readonly updatedAt?: number;\n    readonly pinned?: boolean;\n}"
         }
       ]
     },
@@ -15013,7 +15014,7 @@
       "id": "source:libs/react/src/chat/thread-list.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/thread-list.tsx",
-      "sha256": "8e31c1ba873b8e014e8085543b61a2e0b139edba76445821075de8d9fa19d699"
+      "sha256": "8ce7da46a0999f1e02bf55eae41a91cf73eaa9598276a0d57381a049253eae21"
     },
     {
       "id": "source:libs/react/src/chat/tool-observation.tsx",
