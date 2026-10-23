@@ -5,14 +5,12 @@ import {
   type GrowthJob,
   type SqlExecutor,
 } from '@threadplane-internal/growth';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, test, vi } from 'vitest';
 
 const resendSend = vi.hoisted(() => vi.fn());
 
-vi.mock('resend', () => ({
-  Resend: class {
-    emails = { send: resendSend };
-  },
+vi.mock('../resend-client.js', () => ({
+  createResendFetchClient: () => ({ emails: { send: resendSend } }),
 }));
 
 import {
@@ -787,6 +785,7 @@ describe('dispatchLifecycleAppOwnedJob', () => {
     expect(deps.sendInternalNotification).toHaveBeenCalledWith(
       expect.objectContaining({
         idempotencyKey: notify.idempotencyKey,
+        signal: expect.any(AbortSignal),
         text: expect.stringContaining('does not authorize or schedule'),
         to: 'founder@threadplane.ai',
       })
@@ -1100,6 +1099,26 @@ describe('loadLifecycleRuntimeConfiguration', () => {
   });
 
   it('classifies a malformed internal Resend success shape as unknown', async () => {
+    let digest = '';
+    const executor = {
+      execute: vi.fn(async (query: string, parameters: unknown[]) => {
+        if (query.includes('provider-attempt-insert'))
+          digest = parameters[2] as string;
+        if (query.includes('provider-attempt-lock'))
+          return {
+            rows: [
+              {
+                first_attempted_at: new Date(),
+                payload_sha256: digest,
+                provider_email_id: null,
+              },
+            ],
+          };
+        return { rows: [{ idempotency_key: parameters[0] }] };
+      }),
+      transaction: async (operation: (tx: unknown) => unknown) =>
+        operation(executor),
+    } as unknown as SqlExecutor;
     resendSend.mockResolvedValueOnce({ data: null, error: null });
     const dependencies = createDefaultLifecycleJobDependencies({
       CAMPAIGN_ENABLED: 'false',
@@ -1126,6 +1145,7 @@ describe('loadLifecycleRuntimeConfiguration', () => {
         subject: 'Review',
         text: 'Bounded review.',
         idempotencyKey: 'notify:test',
+        executor,
       })
     ).resolves.toEqual({ outcome: 'unknown' });
 
@@ -1139,8 +1159,19 @@ describe('loadLifecycleRuntimeConfiguration', () => {
         subject: 'Review',
         text: 'Bounded review.',
         idempotencyKey: 'notify:test:accepted',
+        executor,
       })
     ).resolves.toEqual({ outcome: 'accepted' });
+    expect(resendSend).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        tags: expect.arrayContaining([{ name: 'app', value: 'threadplane' }]),
+      }),
+      { idempotencyKey: expect.stringMatching(/^threadplane:test:/u) }
+    );
+    expect(executor.execute).toHaveBeenCalledWith(
+      expect.stringContaining('provider-attempt-complete'),
+      [expect.stringMatching(/^threadplane:test:/u), 'resend-internal-1']
+    );
   });
 });
 
@@ -1185,6 +1216,7 @@ describe('install digest jobs', () => {
           'dev@corp.example (Dev Person) — corp.example'
         ),
         idempotencyKey: digest().idempotencyKey,
+        signal: expect.any(AbortSignal),
         kind: 'digest',
       })
     );
@@ -1277,4 +1309,60 @@ describe('install digest jobs', () => {
     );
     expect(unknown.markInstallDigestReported).not.toHaveBeenCalled();
   });
+});
+
+test('internal ledger cancellation preserves the claim without submitting a notification', async () => {
+  resendSend.mockClear();
+  const controller = new AbortController();
+  let digest = '';
+  const executor = {
+    execute: vi.fn(async (query: string, parameters: unknown[]) => {
+      if (query.includes('provider-attempt-insert'))
+        digest = parameters[2] as string;
+      if (query.includes('provider-attempt-lock')) {
+        controller.abort(new Error('tick deadline'));
+        return {
+          rows: [
+            {
+              first_attempted_at: new Date(),
+              payload_sha256: digest,
+              provider_email_id: null,
+            },
+          ],
+        };
+      }
+      return { rows: [] };
+    }),
+    transaction: async (operation: (tx: unknown) => unknown) =>
+      operation(executor),
+  } as unknown as SqlExecutor;
+  const configured = createDefaultLifecycleJobDependencies({
+    CAMPAIGN_ENABLED: 'false',
+    CAMPAIGN_ENROLLMENT_ENABLED: 'false',
+    DELIVERY_ENABLED: 'true',
+    DELIVERY_ENVIRONMENT: 'test',
+    GROWTH_DATABASE_ENVIRONMENT: 'test',
+    RESEND_API_KEY: 'test-key',
+    RESEND_SENDER_VERIFIED: 'true',
+    RESEND_TRACKING_DISABLED: 'true',
+    RESEND_NON_PRODUCTION_ALLOWLIST:
+      'brian@threadplane.ai,founder@threadplane.ai',
+    FOUNDER_NOTIFICATION_EMAIL: 'founder@threadplane.ai',
+    GROWTH_PUBLIC_ACTION_ORIGIN: 'https://website.test',
+    GROWTH_ACTION_TOKEN_ACTIVE_VERSION: '1',
+    GROWTH_ACTION_TOKEN_ACTIVE_SECRET:
+      'runtime-policy-test-token-secret-material',
+  });
+
+  const result = await configured.sendInternalNotification({
+    to: 'founder@threadplane.ai',
+    subject: 'Review',
+    text: 'Review',
+    idempotencyKey: 'notify:cancelled-ledger',
+    executor,
+    signal: controller.signal,
+  });
+
+  expect(result).toEqual({ outcome: 'unknown' });
+  expect(resendSend).not.toHaveBeenCalled();
 });

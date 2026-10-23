@@ -25,11 +25,12 @@ export function receivingCampaignGuardSql(
 ): string {
   if (!loadInboxConfig().enabled) return 'true';
   // Both fragments are internal SQL identifiers/placeholders, never request data.
+  // Parsed mail without contact attribution cannot safely fence just one contact.
   return `(exists (select 1 from growth_reply_mailboxes
       where address = 'brian@threadplane.ai' and enabled and recovery_id is null
         and healthy_through >= ${clock}::timestamptz - interval '10 minutes'
         and healthy_through <= ${clock}::timestamptz)
     and not exists (select 1 from growth_reply_receipts
       where recipient = 'brian@threadplane.ai' and status = 'pending'
-        and (reference_ids is null or contact_id = ${contact})))`;
+        and (reference_ids is null or contact_id is null or contact_id = ${contact})))`;
 }

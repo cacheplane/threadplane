@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, test, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
@@ -515,4 +515,21 @@ describe('invokeLifecycle', () => {
       ).rejects.toThrow(/base URL/u);
     }
   );
+});
+
+test('accepts the cron bridge deadline needed to finish a bounded dispatcher tick', async () => {
+  const fetch = vi.fn().mockResolvedValue(new Response(VALID_CRON_STATE));
+
+  const result = await invokeLifecycle(
+    {
+      baseUrl: 'https://lifecycle.example',
+      serviceSecret: 'secret',
+      timeoutMs: 55_000,
+      trigger: 'cron',
+    },
+    { fetch }
+  );
+
+  expect(result.operatorAlerts).toEqual([]);
+  expect(fetch).toHaveBeenCalledOnce();
 });

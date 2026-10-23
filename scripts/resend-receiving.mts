@@ -4,6 +4,7 @@ import {
   createInboxRuntime,
   loadInboxConfig,
   recoverInbox,
+  readReceivingHealth,
   retireGoogleMailbox,
   reviewInboxReceipt,
 } from '../libs/growth/src/index.ts';
@@ -42,20 +43,7 @@ try {
       JSON.stringify(await recoverInbox(db, config, createInboxRuntime()))
     );
   } else if (command === 'status') {
-    const health = await db.execute(
-      `select address, enabled, started_at, healthy_through,
-      recovery_id is not null as recovering, google_retired_at from growth_reply_mailboxes where address = $1`,
-      [config.address]
-    );
-    const receipts = await db.execute(
-      `select status, last_error_code, count(*)::integer as count,
-      count(*) filter (where forward_provider_id is null)::integer as unforwarded
-      from growth_reply_receipts where recipient = $1 group by status, last_error_code order by status, last_error_code`,
-      [config.address]
-    );
-    console.log(
-      JSON.stringify({ mailboxes: health.rows, receipts: receipts.rows })
-    );
+    console.log(JSON.stringify(await readReceivingHealth(db, new Date())));
   } else {
     const evidence = {
       actor: values.actor ?? '',

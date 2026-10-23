@@ -67,3 +67,95 @@ test('Google retirement records the explicit cutover without historical coverage
     calls.find((c) => c.marker === 'inbox-retire-cancel-legacy')?.sql
   ).toContain("kind = 'reply_reconcile'");
 });
+
+test('receiving health surfaces stale coverage and actionable queues without identifiers', async () => {
+  const { readReceivingHealth } = await import('./receiving-operations.ts');
+  const { executor } = executorWith({
+    'inbox-operator-health': () => ({
+      rows: [
+        {
+          enabled: true,
+          recovering: false,
+          healthy_through: new Date(now.getTime() - 11 * 60000),
+          unread: 1,
+          pending_review: 2,
+          unforwarded: 3,
+          unbound: 4,
+          unknown_sends: 5,
+          expired_attempts: 6,
+        },
+      ],
+    }),
+  });
+
+  const result = await readReceivingHealth(executor, now);
+
+  expect(result.alerts).toEqual([
+    'mailbox_coverage_stale',
+    'unread_receipts',
+    'reply_review_required',
+    'forwarding_backlog',
+    'reply_binding_pending',
+    'send_outcome_unknown',
+    'provider_attempt_expired',
+  ]);
+  expect(result.counts).toEqual({
+    unread: 1,
+    pendingReview: 2,
+    unforwarded: 3,
+    unbound: 4,
+    unknownSends: 5,
+    expiredAttempts: 6,
+  });
+  expect(JSON.stringify(result)).not.toContain('@');
+});
+
+test('receiving health reports healthy coverage with empty queues', async () => {
+  const { readReceivingHealth } = await import('./receiving-operations.ts');
+  const { executor } = executorWith({
+    'inbox-operator-health': () => ({
+      rows: [
+        {
+          enabled: true,
+          recovering: false,
+          healthy_through: now,
+          unread: 0,
+          pending_review: 0,
+          unforwarded: 0,
+          unbound: 0,
+          unknown_sends: 0,
+          expired_attempts: 0,
+        },
+      ],
+    }),
+  });
+
+  const result = await readReceivingHealth(executor, now);
+
+  expect(result.alerts).toEqual([]);
+});
+
+test('receiving health fails closed when the mailbox is missing or health is in the future', async () => {
+  const { readReceivingHealth } = await import('./receiving-operations.ts');
+  const { executor } = executorWith({
+    'inbox-operator-health': () => ({
+      rows: [
+        {
+          enabled: false,
+          recovering: false,
+          healthy_through: null,
+          unread: 0,
+          pending_review: 0,
+          unforwarded: 0,
+          unbound: 0,
+          unknown_sends: 0,
+          expired_attempts: 0,
+        },
+      ],
+    }),
+  });
+
+  const result = await readReceivingHealth(executor, now);
+
+  expect(result.alerts).toContain('mailbox_coverage_stale');
+});

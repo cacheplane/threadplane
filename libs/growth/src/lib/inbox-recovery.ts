@@ -269,7 +269,7 @@ export async function recoverInbox(
       covered_head_id = coalesce(scan_head_id, covered_head_id)
     where address = $1 and recovery_id = $2::uuid and scan_complete
       and not exists (select 1 from growth_reply_receipts where recipient = $1
-        and status = 'pending' and reference_ids is null)
+        and status = 'pending' and (reference_ids is null or contact_id is null))
       and not exists (select 1 from growth_reply_receipts where recipient = $1 and forward_provider_id is null
         and (last_error_code is null or last_error_code not in ('contact_deleted','forward_loop_suppressed')))
       and not exists (select 1 from growth_jobs j join growth_contacts c on c.id = j.contact_id where ${UNBOUND_PREDICATE} and ${activeReceivingSendSql(
@@ -298,7 +298,7 @@ export async function readInboxRecoveryPaused(
          or healthy_through < $2::timestamptz - interval '10 minutes'
          or healthy_through > $2))
       or exists (select 1 from growth_reply_receipts where recipient = $1
-        and status = 'pending' and reference_ids is null)
+        and status = 'pending' and (reference_ids is null or contact_id is null))
     ) as paused`,
     ['brian@threadplane.ai', now]
   );
