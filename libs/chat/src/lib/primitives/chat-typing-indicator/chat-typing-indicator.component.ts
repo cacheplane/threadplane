@@ -35,6 +35,9 @@ export function isTyping(agent: Agent): boolean {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [CHAT_HOST_TOKENS, CHAT_TYPING_INDICATOR_STYLES],
+  host: {
+    '[style.display]': "visible() ? null : 'none'",
+  },
   template: `
     @if (visible()) {
       <div class="chat-typing__dots" role="status" aria-label="Assistant is typing">
