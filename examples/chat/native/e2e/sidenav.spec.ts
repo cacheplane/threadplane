@@ -217,7 +217,23 @@ test('installed React sidenav retains navigation, draft and a running response a
     await expect(alpha).toHaveAttribute('aria-current', 'true');
     expect(await alphaNode.evaluate((node) => node.isConnected)).toBe(true);
     expect(backend.requests).toHaveLength(3);
+    await expect(alpha.locator('mark')).toHaveText('Alpha');
+    await expect(alpha).toHaveAccessibleName('Alpha notes');
+    await expect(alpha).toHaveAccessibleDescription('2 min ago');
+    await expect(alpha.locator('time')).toHaveAttribute(
+      'datetime',
+      rows[0].updated_at
+    );
     await filter.fill('notes');
+    await expect(alpha.locator('mark')).toHaveText('notes');
+    await expect(beta.locator('mark')).toHaveText('notes');
+    await expect(alpha).toHaveAccessibleName('Alpha notes');
+    await expect(beta).toHaveAccessibleName('Beta notes');
+    await expect(alpha).toHaveAccessibleDescription('2 min ago');
+    await expect(alpha.locator('time')).toHaveAttribute(
+      'datetime',
+      rows[0].updated_at
+    );
     // Beta was filtered out and is newly mounted; retain its current node below.
     const retainedBetaNode = await beta.elementHandle();
     assert.ok(retainedBetaNode);
@@ -386,6 +402,41 @@ test('installed React sidenav retains navigation, draft and a running response a
       await expect(filter).toHaveValue('notes');
       await nav.locator('[aria-current="true"]').scrollIntoViewIfNeeded();
       await expect(nav.locator('[aria-current="true"]')).toBeVisible();
+      const highlightLayout = await beta.locator('mark').evaluate((mark) => {
+        const button = mark.closest('button')!;
+        const outer = button.getBoundingClientRect();
+        const style = getComputedStyle(mark);
+        const colors = [style.color, style.backgroundColor].map((color) => {
+          const [r, g, b] = color
+            .match(/\d+/g)!
+            .slice(0, 3)
+            .map(Number)
+            .map((channel) => {
+              const value = channel / 255;
+              return value <= 0.04045
+                ? value / 12.92
+                : ((value + 0.055) / 1.055) ** 2.4;
+            });
+          return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        });
+        return {
+          contained: Array.from(mark.getClientRects()).every(
+            (rect) =>
+              rect.left >= outer.left &&
+              rect.right <= outer.right &&
+              rect.bottom <= outer.bottom
+          ),
+          contrast: (Math.max(...colors) + 0.05) / (Math.min(...colors) + 0.05),
+        };
+      });
+      expect(highlightLayout.contained).toBe(true);
+      expect(highlightLayout.contrast).toBeGreaterThanOrEqual(4.5);
+      await expect(beta).toHaveAccessibleName('Beta notes');
+      await expect(beta).toHaveAccessibleDescription('2 min ago');
+      await expect(beta.locator('time')).toHaveAttribute(
+        'datetime',
+        rows[1].updated_at
+      );
       const timeLayout = await beta.evaluate((button) => {
         const time = button.querySelector('time')!;
         const title = button.querySelector('span')!;

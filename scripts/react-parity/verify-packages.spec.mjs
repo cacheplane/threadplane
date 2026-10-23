@@ -21,7 +21,7 @@ export interface ChatSidenavProps { readonly mode: ChatSidenavMode; readonly ope
 export interface ChatSidenavScrimProps { readonly open: boolean; readonly onDismiss: () => void; readonly label?: string; readonly className?: string; }
 export interface ChatSidebarProps { readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly title: string; readonly pageContent?: import('react').ReactNode; readonly pushContent?: boolean; }
 export interface ThreadListItem { readonly id: string; readonly title?: string; readonly updatedAt?: number; }
-export interface ThreadListProps { readonly threads: readonly ThreadListItem[]; readonly onSelect: (threadId: string) => void; readonly activeThreadId?: string | null; readonly label?: string; readonly className?: string; readonly onNewThread?: () => void; readonly newThreadDisabled?: boolean; readonly newThreadLabel?: string; readonly now?: number; }`;
+export interface ThreadListProps { readonly threads: readonly ThreadListItem[]; readonly onSelect: (threadId: string) => void; readonly activeThreadId?: string | null; readonly label?: string; readonly className?: string; readonly onNewThread?: () => void; readonly newThreadDisabled?: boolean; readonly newThreadLabel?: string; readonly now?: number; readonly renderTitle?: (thread: ThreadListItem) => import('react').ReactNode; }`;
   const source = join(consumer, 'index.ts');
   writeFileSync(source, packageVerifier.plainExportTypes(['@threadplane/react/chat']));
   const compile = text => {
@@ -70,6 +70,11 @@ export interface ThreadListProps { readonly threads: readonly ThreadListItem[]; 
     ['readonly updatedAt?: number', 'readonly updatedAt: number'],
     ['readonly updatedAt?: number', 'readonly updatedAt?: string'],
     ['readonly updatedAt?: number', 'updatedAt?: number'],
+    ["readonly renderTitle?: (thread: ThreadListItem) => import('react').ReactNode;", ''],
+    ['readonly renderTitle?:', 'readonly renderTitle:'],
+    ['readonly renderTitle?:', 'renderTitle?:'],
+    ["readonly renderTitle?: (thread: ThreadListItem)", "readonly renderTitle?: (thread: string)"],
+    ["=> import('react').ReactNode", '=> string'],
     ['readonly now?: number;', ''],
     ['readonly now?: number', 'readonly now: number'],
     ['readonly now?: number', 'readonly now?: string'],

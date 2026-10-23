@@ -26,3 +26,15 @@
     gap: 16px;
   }
 }
+
+.conversation-list .tp-thread-list__button mark {
+  background: #fde68a;
+  color: #1f2937;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.conversation-list .tp-thread-list__button[aria-current='true'] mark {
+  background: #fef3c7;
+  color: #111827;
+}

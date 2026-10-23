@@ -92,6 +92,15 @@ The list issues no commands on mount or rerender. Retained rows keep their butto
 the existing deliberate composer reset still applies when selecting another
 conversation. Other thread lifecycle actions and full T29 parity remain open.
 
+Native React uses the list's bounded `renderTitle` callback to highlight the first
+literal case-insensitive match for the trimmed loaded-title filter with `mark`.
+Blank queries and absent matches preserve the plain original title (or full ID).
+Source text and React escaping remain intact, including Unicode case expansions.
+The callback supplies noninteractive phrasing content only; the original full
+label and timestamp description remain accessible. The library honors `null` and
+`false` output without fallback. Broader row templates, lifecycle, project,
+search and history surfaces remain open; this is no public release or full T29 claim.
+
 The shared directory projection copies valid backend `updated_at` strings into
 immutable optional epoch-millisecond `updatedAt` fields. Native React passes these
 rows directly to the installed list, which renders relative time and an exact ISO

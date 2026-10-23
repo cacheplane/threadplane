@@ -170,6 +170,21 @@ it('uses ThreadList while refresh, loaded-title filtering and navigation retain 
     expect(within(list).getByRole('button', { name: 'Alpha notes' })).toBe(
       alpha
     );
+    expect(alpha.querySelector('mark')?.textContent).toBe('Alpha');
+    expect(alpha.getAttribute('title')).toBe('Alpha notes');
+    expect(document.activeElement).toBe(alpha);
+    fireEvent.change(filter, { target: { value: ' notes ' } });
+    expect(
+      within(list).getByRole('button', {
+        name: 'Alpha notes',
+        description: '1 min ago',
+      })
+    ).toBe(alpha);
+    expect(alpha.querySelector('mark')?.textContent).toBe('notes');
+    expect(document.activeElement).toBe(alpha);
+    expect(draft.value).toBe('Unsent draft');
+    expect(fixture.counters).toEqual(counters);
+    expect(io).toEqual({ list: 2, get: 1 });
     fireEvent.change(filter, { target: { value: 'not a loaded title' } });
     expect(list.childElementCount).toBe(0);
     expect(view.getByText('No loaded conversations match.')).toBeTruthy();
