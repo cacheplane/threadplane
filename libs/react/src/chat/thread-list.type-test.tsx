@@ -1,6 +1,13 @@
 import { ThreadList, type ThreadListItem, type ThreadListProps } from './index';
 
 const item: ThreadListItem = { id: 'a' };
+const timestamped: ThreadListItem = { id: 'time', updatedAt: 0 };
+<ThreadList threads={[timestamped]} now={0} onSelect={() => undefined} />;
+// @ts-expect-error Updated timestamps are readonly.
+item.updatedAt = 0;
+// @ts-expect-error Updated timestamps are numeric epoch milliseconds.
+const invalidTime: ThreadListItem = { id: 'a', updatedAt: '2026-01-01' };
+void invalidTime;
 const threads: readonly ThreadListItem[] = [item, { id: 'b', title: 'Beta' }];
 const props: ThreadListProps = {
   threads,
@@ -11,6 +18,10 @@ const props: ThreadListProps = {
   activeThreadId: null,
 };
 <ThreadList {...props} />;
+// @ts-expect-error Reference time is readonly.
+props.now = 0;
+// @ts-expect-error Reference time is numeric epoch milliseconds.
+<ThreadList {...props} now="today" />;
 <ThreadList
   threads={threads}
   onSelect={() => undefined}

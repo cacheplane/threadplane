@@ -291,9 +291,19 @@ plain-text label is “+ New thread”; `newThreadLabel` customizes it and
 creation without changing rows or selection. The application owns creation,
 pending state and any resulting selection; callback identity changes preserve
 existing rows.
+
+Optional readonly `updatedAt` values are epoch milliseconds. Valid timestamps
+render on a second line as “just now”, floored minutes or hours, then singular
+or plural days. The semantic `time` includes its exact ISO instant and describes
+the button without changing its title-based accessible name. Missing or invalid
+dates omit this metadata, including when the reference time is invalid. Epoch
+zero and negative dates are supported. Optional readonly `now` supplies a numeric
+reference time; otherwise `Date.now()` is sampled once per render. The owner
+rerenders to refresh relative labels. The view owns no timer or data refresh.
+
 An empty collection renders an empty list. The application owns loaded-title
 filtering, loading/error/empty notices, data fetching and execution. Rename,
-delete, archive, pin/project actions, drag reordering, relative timestamps and
+delete, archive, pin/project actions, drag reordering, live timestamp refresh and
 custom row rendering remain future work. This is a bounded private T29 slice.
 
 ## Controlled chat panels

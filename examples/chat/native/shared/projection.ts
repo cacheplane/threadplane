@@ -3,10 +3,13 @@ import type { ThreadRow } from './contracts.js';
 
 export function projectThread(thread: Thread): ThreadRow {
   const title = thread.metadata?.['title'];
+  const updatedAt =
+    typeof thread.updated_at === 'string' ? Date.parse(thread.updated_at) : NaN;
   return Object.freeze({
     id: thread.thread_id,
     title:
       typeof title === 'string' && title.trim() ? title.trim() : 'Untitled',
+    ...(Number.isFinite(updatedAt) ? { updatedAt } : {}),
   });
 }
 
