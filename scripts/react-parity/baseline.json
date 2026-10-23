@@ -1,11 +1,8 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "346b500a678ed68c4ab5b59d49e656c454847dbb",
+  "baselineHead": "9cef5eae5b1da4b1cb3035b567c147b3917afc9e",
   "sourceState": {
-    "modified": [
-      "libs/react/README.md",
-      "libs/react/src/chat/thread-list.tsx"
-    ],
+    "modified": [],
     "untracked": []
   },
   "scope": {
@@ -2062,7 +2059,7 @@
       "decorators": [
         "Component"
       ],
-      "signature": "@Component({\n    selector: 'chat-typing-indicator',\n    standalone: true,\n    changeDetection: ChangeDetectionStrategy.OnPush,\n    styles: [CHAT_HOST_TOKENS, CHAT_TYPING_INDICATOR_STYLES],\n    template: `\n    @if (visible()) {\n      <div class=\"chat-typing__dots\" role=\"status\" aria-label=\"Assistant is typing\">\n        <span class=\"chat-typing__dot\"></span>\n        <span class=\"chat-typing__dot\"></span>\n        <span class=\"chat-typing__dot\"></span>\n      </div>\n    }\n  `,\n})\nexport class ChatTypingIndicatorComponent {\n    readonly agent = input.required<Agent>();\n    readonly visible = computed(() => isTyping(this.agent()));\n}"
+      "signature": "@Component({\n    selector: 'chat-typing-indicator',\n    standalone: true,\n    changeDetection: ChangeDetectionStrategy.OnPush,\n    styles: [CHAT_HOST_TOKENS, CHAT_TYPING_INDICATOR_STYLES],\n    host: {\n        '[style.display]': \"visible() ? null : 'none'\",\n    },\n    template: `\n    @if (visible()) {\n      <div class=\"chat-typing__dots\" role=\"status\" aria-label=\"Assistant is typing\">\n        <span class=\"chat-typing__dot\"></span>\n        <span class=\"chat-typing__dot\"></span>\n        <span class=\"chat-typing__dot\"></span>\n      </div>\n    }\n  `,\n})\nexport class ChatTypingIndicatorComponent {\n    readonly agent = input.required<Agent>();\n    readonly visible = computed(() => isTyping(this.agent()));\n}"
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-welcome/chat-welcome-suggestion.component.ts#ChatWelcomeSuggestionComponent",
@@ -6239,7 +6236,7 @@
           "path": "libs/chat/src/lib/primitives/chat-typing-indicator/chat-typing-indicator.component.ts",
           "symbol": "ChatTypingIndicatorComponent",
           "syntaxKind": "ClassDeclaration",
-          "signature": "@Component({\n    selector: 'chat-typing-indicator',\n    standalone: true,\n    changeDetection: ChangeDetectionStrategy.OnPush,\n    styles: [CHAT_HOST_TOKENS, CHAT_TYPING_INDICATOR_STYLES],\n    template: `\n    @if (visible()) {\n      <div class=\"chat-typing__dots\" role=\"status\" aria-label=\"Assistant is typing\">\n        <span class=\"chat-typing__dot\"></span>\n        <span class=\"chat-typing__dot\"></span>\n        <span class=\"chat-typing__dot\"></span>\n      </div>\n    }\n  `,\n})\nexport class ChatTypingIndicatorComponent {\n    readonly agent = input.required<Agent>();\n    readonly visible = computed(() => isTyping(this.agent()));\n}"
+          "signature": "@Component({\n    selector: 'chat-typing-indicator',\n    standalone: true,\n    changeDetection: ChangeDetectionStrategy.OnPush,\n    styles: [CHAT_HOST_TOKENS, CHAT_TYPING_INDICATOR_STYLES],\n    host: {\n        '[style.display]': \"visible() ? null : 'none'\",\n    },\n    template: `\n    @if (visible()) {\n      <div class=\"chat-typing__dots\" role=\"status\" aria-label=\"Assistant is typing\">\n        <span class=\"chat-typing__dot\"></span>\n        <span class=\"chat-typing__dot\"></span>\n        <span class=\"chat-typing__dot\"></span>\n      </div>\n    }\n  `,\n})\nexport class ChatTypingIndicatorComponent {\n    readonly agent = input.required<Agent>();\n    readonly visible = computed(() => isTyping(this.agent()));\n}"
         }
       ]
     },
@@ -13531,7 +13528,7 @@
       "id": "source:libs/chat/src/lib/primitives/chat-typing-indicator/chat-typing-indicator.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/chat-typing-indicator/chat-typing-indicator.component.ts",
-      "sha256": "388d00cd70e7b1229a01ed2ade080e292c39dab66fe87dee2339f560e8cb1320"
+      "sha256": "2206e827692494534e6568fa768a5d84ef517c002f0c4ef2abf81aec7c498405"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-welcome/chat-welcome-suggestion.component.ts",
