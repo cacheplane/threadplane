@@ -15,6 +15,7 @@ import { App } from './app';
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 it('requests creation through ThreadList and disables only its New action while pending', async () => {
@@ -75,6 +76,8 @@ it('requests creation through ThreadList and disables only its New action while 
 });
 
 it('uses ThreadList while refresh, loaded-title filtering and navigation retain the selected draft and owners', async () => {
+  const now = Date.parse('2026-09-28T00:02:01.000Z');
+  vi.spyOn(Date, 'now').mockReturnValue(now);
   vi.stubGlobal('matchMedia', () => ({
     matches: false,
     addEventListener() {},
@@ -83,8 +86,8 @@ it('uses ThreadList while refresh, loaded-title filtering and navigation retain 
   const fixture = applicationFixture();
   const io = { list: 0, get: 0 };
   const rows = [
-    { id: 'a', title: 'Alpha notes' },
-    { id: 'b', title: 'Beta notes' },
+    { id: 'a', title: 'Alpha notes', updatedAt: now - 120000 },
+    { id: 'b', title: 'Beta notes', updatedAt: now - 86400000 },
   ];
   const application = createReactApplication({
     ...fixture.options,
@@ -118,6 +121,21 @@ it('uses ThreadList while refresh, loaded-title filtering and navigation retain 
     expect(list.classList.contains('conversation-list')).toBe(true);
     const alpha = within(list).getByRole('button', { name: 'Alpha notes' });
     const beta = within(list).getByRole('button', { name: 'Beta notes' });
+    expect(
+      within(list).getByRole('button', {
+        name: 'Alpha notes',
+        description: '2 min ago',
+      })
+    ).toBe(alpha);
+    expect(alpha.querySelector('time')?.dateTime).toBe(
+      '2026-09-28T00:00:01.000Z'
+    );
+    expect(
+      within(list).getByRole('button', {
+        name: 'Beta notes',
+        description: '1 day ago',
+      })
+    ).toBe(beta);
     expect(alpha.getAttribute('aria-current')).toBe('true');
     expect(beta.hasAttribute('aria-current')).toBe(false);
     const draft = view.getByRole('textbox', {
@@ -126,6 +144,7 @@ it('uses ThreadList while refresh, loaded-title filtering and navigation retain 
     fireEvent.change(draft, { target: { value: 'Unsent draft' } });
     const counters = { ...fixture.counters };
     alpha.focus();
+    rows[0].updatedAt = now - 60000;
     await act(async () => {
       application.refresh();
     });
@@ -136,6 +155,15 @@ it('uses ThreadList while refresh, loaded-title filtering and navigation retain 
       alpha
     );
     expect(document.activeElement).toBe(alpha);
+    expect(
+      within(list).getByRole('button', {
+        name: 'Alpha notes',
+        description: '1 min ago',
+      })
+    ).toBe(alpha);
+    expect(alpha.querySelector('time')?.dateTime).toBe(
+      '2026-09-28T00:01:01.000Z'
+    );
     const filter = view.getByRole('searchbox');
     fireEvent.change(filter, { target: { value: 'Alpha' } });
     expect(within(list).getAllByRole('button')).toEqual([alpha]);

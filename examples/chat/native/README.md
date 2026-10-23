@@ -92,6 +92,15 @@ The list issues no commands on mount or rerender. Retained rows keep their butto
 the existing deliberate composer reset still applies when selecting another
 conversation. Other thread lifecycle actions and full T29 parity remain open.
 
+The shared directory projection copies valid backend `updated_at` strings into
+immutable optional epoch-millisecond `updatedAt` fields. Native React passes these
+rows directly to the installed list, which renders relative time and an exact ISO
+instant while preserving each button's title-based accessible name. Invalid or
+missing backend timestamps omit metadata. Relative labels use the render-time
+clock; explicit application Refresh and creation outcomes supply new timestamps.
+There is no periodic timer or background request. Angular receives the optional
+row field through the shared projection and retains its existing title-only UI.
+
 ## Setup and commands
 
 Run commands from the repository root using **Node 22 and npm 10** (locally

@@ -19,6 +19,8 @@ test('installed React sidenav retains navigation, draft and a running response a
     threadEnvelope('a', 'Alpha notes'),
     threadEnvelope('b', 'Beta notes'),
   ];
+  const fixedNow = new Date('2026-09-28T00:02:01.000Z');
+  const refreshedAlpha = { ...rows[0], updated_at: '2026-09-28T00:01:01.000Z' };
   const saved = (id: string) => [
     { type: 'ai', id: `saved-${id}`, content: `Saved answer ${id}.` },
   ];
@@ -93,6 +95,12 @@ test('installed React sidenav retains navigation, draft and a running response a
         assert.equal(payload.on_disconnect, 'continue');
       },
     },
+    {
+      method: 'POST',
+      path: '/api/threads/search',
+      payload: { limit: 50, offset: 0 },
+      body: [refreshedAlpha, rows[1]],
+    },
   ]);
   let server: Awaited<ReturnType<typeof startCheckedServer>> | undefined;
   const errors: string[] = [];
@@ -117,6 +125,7 @@ test('installed React sidenav retains navigation, draft and a running response a
       return route.abort();
     });
     await page.setViewportSize({ width: 1280, height: 900 });
+    await page.clock.setFixedTime(fixedNow);
     await page.goto(origin + '/?presentation=sidenav&thread=a');
     const nav = page.getByRole('navigation', {
       name: 'Conversations',
@@ -189,6 +198,13 @@ test('installed React sidenav retains navigation, draft and a running response a
     });
     await expect(alpha).toHaveAttribute('aria-current', 'true');
     await expect(beta).not.toHaveAttribute('aria-current');
+    await expect(alpha).toHaveAccessibleName('Alpha notes');
+    await expect(alpha).toHaveAccessibleDescription('2 min ago');
+    await expect(alpha.locator('time')).toHaveAttribute(
+      'datetime',
+      rows[0].updated_at
+    );
+    await expect(beta).toHaveAccessibleDescription('2 min ago');
     const alphaNode = await alpha.elementHandle();
     assert.ok(alphaNode);
     await expect(
@@ -259,7 +275,12 @@ test('installed React sidenav retains navigation, draft and a running response a
     await beta.focus();
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/thread=b/);
-    await expect(nav.locator('[aria-current="true"]')).toHaveText('Beta notes');
+    await expect(nav.locator('[aria-current="true"]')).toHaveAccessibleName(
+      'Beta notes'
+    );
+    await expect(
+      nav.locator('[aria-current="true"]')
+    ).toHaveAccessibleDescription('2 min ago');
     await expect(alpha).not.toHaveAttribute('aria-current');
     await expectRetainedThreadList();
     await expect(
@@ -365,6 +386,30 @@ test('installed React sidenav retains navigation, draft and a running response a
       await expect(filter).toHaveValue('notes');
       await nav.locator('[aria-current="true"]').scrollIntoViewIfNeeded();
       await expect(nav.locator('[aria-current="true"]')).toBeVisible();
+      const timeLayout = await beta.evaluate((button) => {
+        const time = button.querySelector('time')!;
+        const title = button.querySelector('span')!;
+        const outer = button.getBoundingClientRect();
+        const inner = time.getBoundingClientRect();
+        return {
+          secondLine: inner.top >= title.getBoundingClientRect().bottom,
+          contained:
+            inner.left >= outer.left &&
+            inner.right <= outer.right &&
+            inner.bottom <= outer.bottom,
+          wraps:
+            getComputedStyle(time).overflowWrap === 'anywhere' &&
+            getComputedStyle(time).whiteSpace === 'normal',
+          inheritsContrast:
+            getComputedStyle(time).color === getComputedStyle(button).color,
+        };
+      });
+      expect(timeLayout).toEqual({
+        secondLine: true,
+        contained: true,
+        wraps: true,
+        inheritsContrast: true,
+      });
       // Escape outside the nonmodal nav leaves it open.
       await page.locator('h1').evaluate((node) => {
         node.setAttribute('tabindex', '-1');
@@ -473,6 +518,28 @@ test('installed React sidenav retains navigation, draft and a running response a
     ).toBe(true);
     expect(backend.requests).toHaveLength(6);
     await expectRetainedThreadList();
+    // Refresh after the held stream completes keeps its request indices intact.
+    const alphaRow = await alpha.evaluateHandle(
+      (button) => button.parentElement
+    );
+    await nav.getByRole('button', { name: 'Refresh', exact: true }).click();
+    await expect(alpha).toHaveAccessibleDescription('1 min ago');
+    await expect(alpha).toHaveAccessibleName('Alpha notes');
+    await expect(alpha.locator('time')).toHaveAttribute(
+      'datetime',
+      refreshedAlpha.updated_at
+    );
+    expect(
+      await alphaRow.evaluate(
+        (row) =>
+          row ===
+          document.querySelector('.tp-thread-list__button[title="Alpha notes"]')
+            ?.parentElement
+      )
+    ).toBe(true);
+    await expectRetainedThreadList();
+    await expect(beta).toHaveAttribute('aria-current', 'true');
+    expect(backend.requests).toHaveLength(7);
     backend.verify();
     for (const step of backend.steps)
       expect((await step.closed).finished).toBe(true);

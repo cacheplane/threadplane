@@ -66,6 +66,14 @@
   background: var(--tp-chat-accent, var(--ds-accent, Highlight));
   color: var(--tp-chat-on-accent, var(--ds-surface, HighlightText));
 }
+.tp-thread-list .tp-thread-list__time {
+  display: block;
+  margin-block-start: 0.25rem;
+  color: inherit;
+  font-size: 0.875em;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
 .tp-thread-list__container .tp-thread-list__new:disabled {
   cursor: default;
   opacity: 0.6;
