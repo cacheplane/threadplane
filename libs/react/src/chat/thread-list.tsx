@@ -1,6 +1,6 @@
 'use client';
 
-import { useId } from 'react';
+import { useId, type ReactNode } from 'react';
 
 export interface ThreadListItem {
   readonly id: string;
@@ -18,6 +18,8 @@ export interface ThreadListProps {
   readonly newThreadDisabled?: boolean;
   readonly newThreadLabel?: string;
   readonly now?: number;
+  /** Noninteractive phrasing content inside the row button. Original title/id labels remain. */
+  readonly renderTitle?: (thread: ThreadListItem) => ReactNode;
 }
 
 function validDate(value: number | undefined): Date | undefined {
@@ -45,6 +47,7 @@ export function ThreadList({
   newThreadDisabled = false,
   newThreadLabel = '+ New thread',
   now = Date.now(),
+  renderTitle,
 }: ThreadListProps) {
   const listId = useId();
   const reference = validDate(now);
@@ -55,6 +58,7 @@ export function ThreadList({
     >
       {threads.map((thread, index) => {
         const title = thread.title || thread.id;
+        const content = renderTitle ? renderTitle(thread) : title;
         const updated = validDate(thread.updatedAt);
         const time =
           reference && updated && thread.updatedAt !== undefined
@@ -67,14 +71,17 @@ export function ThreadList({
               type="button"
               className="tp-thread-list__button"
               title={title}
-              aria-labelledby={time ? `${rowId}-title` : undefined}
+              aria-label={renderTitle ? title : undefined}
+              aria-labelledby={
+                time && !renderTitle ? `${rowId}-title` : undefined
+              }
               aria-describedby={time ? `${rowId}-time` : undefined}
               aria-current={thread.id === activeThreadId ? 'true' : undefined}
               onClick={() => onSelect(thread.id)}
             >
               {time && updated ? (
                 <>
-                  <span id={`${rowId}-title`}>{title}</span>
+                  <span id={`${rowId}-title`}>{content}</span>
                   <time
                     id={`${rowId}-time`}
                     className="tp-thread-list__time"
@@ -84,7 +91,7 @@ export function ThreadList({
                   </time>
                 </>
               ) : (
-                title
+                content
               )}
             </button>
           </li>

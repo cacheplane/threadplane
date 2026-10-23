@@ -301,6 +301,15 @@ zero and negative dates are supported. Optional readonly `now` supplies a numeri
 reference time; otherwise `Date.now()` is sampled once per render. The owner
 rerenders to refresh relative labels. The view owns no timer or data refresh.
 
+Optional readonly `renderTitle` receives the original supplied `ThreadListItem`
+and returns ReactNode title content inside the existing button. Supply only
+noninteractive phrasing content (for example `mark` or `em`); do not nest links,
+buttons or focusable controls. The original `title || id` remains the tooltip and
+accessible name regardless of custom content. `null` and `false` intentionally
+render no title content, with no fallback; timestamp descriptions remain intact.
+Omitting the callback preserves the default markup. This supports bounded title
+content, while broader row templates remain open.
+
 An empty collection renders an empty list. The application owns loaded-title
 filtering, loading/error/empty notices, data fetching and execution. Rename,
 delete, archive, pin/project actions, drag reordering, live timestamp refresh and

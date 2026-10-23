@@ -1,7 +1,7 @@
 import { StrictMode } from 'react';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ThreadList } from './index';
+import { ThreadList, type ThreadListItem } from './index';
 
 afterEach(() => {
   cleanup();
@@ -10,6 +10,66 @@ afterEach(() => {
 });
 
 describe('ThreadList', () => {
+  it('renders supplied items with independent labels and retains keyed focus across renderer changes', () => {
+    const rows = Object.freeze([
+      Object.freeze({ id: 'a', title: 'Alpha', updatedAt: 0 }),
+      Object.freeze({ id: 'b', title: '', updatedAt: 0 }),
+    ]);
+    const onSelect = vi.fn();
+    const onNewThread = vi.fn();
+    const renderTitle = vi.fn((item: ThreadListItem) => <mark>{item.id}</mark>);
+    const props = {
+      threads: rows,
+      onSelect,
+      onNewThread,
+      activeThreadId: 'a',
+      now: 60000,
+    };
+    const view = render(<ThreadList {...props} renderTitle={renderTitle} />);
+    const alpha = view.getByRole('button', {
+      name: 'Alpha',
+      description: '1 min ago',
+    });
+    const row = alpha.parentElement;
+    expect(renderTitle).toHaveBeenCalledTimes(2);
+    expect(renderTitle.mock.calls[0][0]).toBe(rows[0]);
+    expect(renderTitle.mock.calls[1][0]).toBe(rows[1]);
+    expect(alpha.querySelector('mark')?.textContent).toBe('a');
+    expect(alpha.getAttribute('title')).toBe('Alpha');
+    expect(alpha.hasAttribute('aria-labelledby')).toBe(false);
+    expect(view.getByRole('button', { name: 'b' }).getAttribute('title')).toBe(
+      'b'
+    );
+    alpha.focus();
+    for (const empty of [null, false] as const) {
+      view.rerender(<ThreadList {...props} renderTitle={() => empty} />);
+      expect(view.getByRole('button', { name: 'Alpha' })).toBe(alpha);
+      expect(alpha.textContent).toBe('1 min ago');
+      expect(document.activeElement).toBe(alpha);
+    }
+    view.rerender(
+      <ThreadList
+        {...props}
+        threads={[rows[1], { id: 'a', title: 'Changed' }]}
+        renderTitle={() => <em>replacement</em>}
+      />
+    );
+    expect(view.getByRole('button', { name: 'Changed' })).toBe(alpha);
+    expect(alpha.parentElement).toBe(row);
+    expect(alpha.querySelector('em')?.textContent).toBe('replacement');
+    expect(alpha.hasAttribute('aria-describedby')).toBe(false);
+    expect(document.activeElement).toBe(alpha);
+    fireEvent.click(alpha);
+    fireEvent.click(view.getByRole('button', { name: '+ New thread' }));
+    expect(onSelect.mock.calls).toEqual([['a']]);
+    expect(onNewThread.mock.calls).toEqual([[]]);
+    expect(alpha.getAttribute('aria-current')).toBe('true');
+    view.rerender(<ThreadList {...props} />);
+    expect(view.getByRole('button', { name: 'Alpha' })).toBe(alpha);
+    expect(alpha.hasAttribute('aria-label')).toBe(false);
+    expect(document.activeElement).toBe(alpha);
+  });
+
   it.each([
     [0, 0, 'just now'],
     [-1, 0, 'just now'],

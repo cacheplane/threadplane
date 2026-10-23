@@ -16,6 +16,7 @@ import type {
   ReactApplicationSnapshot as ApplicationSnapshot,
 } from './application';
 import type { A2uiMessageContent as MessageContent } from './a2ui-message-content';
+import { renderThreadTitle } from './thread-title';
 import { filterLoadedTitles } from '../../shared/projection';
 import { submissionStatus } from '../../shared/submission-status';
 import { Approval } from './approval';
@@ -218,6 +219,9 @@ function Conversation({
       )}
       <ThreadList
         threads={rows}
+        renderTitle={(thread) =>
+          renderThreadTitle(thread.title || thread.id, filter)
+        }
         activeThreadId={selection.id}
         onSelect={application.select}
         label="Loaded conversations"

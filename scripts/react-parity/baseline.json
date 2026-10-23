@@ -1,10 +1,9 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "e4ea16307b5c0f3df3a7265ce0470a72e26cdbb1",
+  "baselineHead": "346b500a678ed68c4ab5b59d49e656c454847dbb",
   "sourceState": {
     "modified": [
       "libs/react/README.md",
-      "libs/react/src/chat/styles.css",
       "libs/react/src/chat/thread-list.tsx"
     ],
     "untracked": []
@@ -853,7 +852,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "a00a1ce9a7d300c610a6fd0aae6e0160230e2b2609180cc3ba634462ab819ab1"
+      "sha256": "9c74fec21af04222ad469bc052e221c57b54c39b8958ababff4b041d7c3ba374"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -10624,7 +10623,7 @@
           "path": "libs/react/src/chat/thread-list.tsx",
           "symbol": "ThreadList",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function ThreadList({ threads, onSelect, activeThreadId, label = 'Conversations', className, onNewThread, newThreadDisabled = false, newThreadLabel = '+ New thread', now = Date.now(), }: ThreadListProps) {\n    const listId = useId();\n    const reference = validDate(now);\n    const list = (<ul className={`tp-thread-list${className ? ` ${className}` : ''}`} aria-label={label}>\n      {threads.map((thread, index) => {\n            const title = thread.title || thread.id;\n            const updated = validDate(thread.updatedAt);\n            const time = reference && updated && thread.updatedAt !== undefined\n                ? relativeTime(now - thread.updatedAt)\n                : undefined;\n            const rowId = `${listId}-${index}`;\n            return (<li key={thread.id} className=\"tp-thread-list__item\">\n            <button type=\"button\" className=\"tp-thread-list__button\" title={title} aria-labelledby={time ? `${rowId}-title` : undefined} aria-describedby={time ? `${rowId}-time` : undefined} aria-current={thread.id === activeThreadId ? 'true' : undefined} onClick={() => onSelect(thread.id)}>\n              {time && updated ? (<>\n                  <span id={`${rowId}-title`}>{title}</span>\n                  <time id={`${rowId}-time`} className=\"tp-thread-list__time\" dateTime={updated.toISOString()}>\n                    {time}\n                  </time>\n                </>) : (title)}\n            </button>\n          </li>);\n        })}\n    </ul>);\n    return onNewThread ? (<div className=\"tp-thread-list__container\">\n      <button type=\"button\" className=\"tp-thread-list__new\" onClick={() => onNewThread()} disabled={newThreadDisabled}>\n        {newThreadLabel}\n      </button>\n      {list}\n    </div>) : (list);\n}"
+          "signature": "export function ThreadList({ threads, onSelect, activeThreadId, label = 'Conversations', className, onNewThread, newThreadDisabled = false, newThreadLabel = '+ New thread', now = Date.now(), renderTitle, }: ThreadListProps) {\n    const listId = useId();\n    const reference = validDate(now);\n    const list = (<ul className={`tp-thread-list${className ? ` ${className}` : ''}`} aria-label={label}>\n      {threads.map((thread, index) => {\n            const title = thread.title || thread.id;\n            const content = renderTitle ? renderTitle(thread) : title;\n            const updated = validDate(thread.updatedAt);\n            const time = reference && updated && thread.updatedAt !== undefined\n                ? relativeTime(now - thread.updatedAt)\n                : undefined;\n            const rowId = `${listId}-${index}`;\n            return (<li key={thread.id} className=\"tp-thread-list__item\">\n            <button type=\"button\" className=\"tp-thread-list__button\" title={title} aria-label={renderTitle ? title : undefined} aria-labelledby={time && !renderTitle ? `${rowId}-title` : undefined} aria-describedby={time ? `${rowId}-time` : undefined} aria-current={thread.id === activeThreadId ? 'true' : undefined} onClick={() => onSelect(thread.id)}>\n              {time && updated ? (<>\n                  <span id={`${rowId}-title`}>{content}</span>\n                  <time id={`${rowId}-time`} className=\"tp-thread-list__time\" dateTime={updated.toISOString()}>\n                    {time}\n                  </time>\n                </>) : (content)}\n            </button>\n          </li>);\n        })}\n    </ul>);\n    return onNewThread ? (<div className=\"tp-thread-list__container\">\n      <button type=\"button\" className=\"tp-thread-list__new\" onClick={() => onNewThread()} disabled={newThreadDisabled}>\n        {newThreadLabel}\n      </button>\n      {list}\n    </div>) : (list);\n}"
         }
       ]
     },
@@ -10652,7 +10651,7 @@
           "path": "libs/react/src/chat/thread-list.tsx",
           "symbol": "ThreadListProps",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface ThreadListProps {\n    readonly threads: readonly ThreadListItem[];\n    readonly onSelect: (threadId: string) => void;\n    readonly activeThreadId?: string | null;\n    readonly label?: string;\n    readonly className?: string;\n    readonly onNewThread?: () => void;\n    readonly newThreadDisabled?: boolean;\n    readonly newThreadLabel?: string;\n    readonly now?: number;\n}"
+          "signature": "export interface ThreadListProps {\n    readonly threads: readonly ThreadListItem[];\n    readonly onSelect: (threadId: string) => void;\n    readonly activeThreadId?: string | null;\n    readonly label?: string;\n    readonly className?: string;\n    readonly onNewThread?: () => void;\n    readonly newThreadDisabled?: boolean;\n    readonly newThreadLabel?: string;\n    readonly now?: number;\n    readonly renderTitle?: (thread: ThreadListItem) => ReactNode;\n}"
         }
       ]
     },
@@ -15014,7 +15013,7 @@
       "id": "source:libs/react/src/chat/thread-list.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/thread-list.tsx",
-      "sha256": "56b5ae11b0e758c20bc33b00d8ba71cfe33d00663df3d49b21c9ec34492182c4"
+      "sha256": "8e31c1ba873b8e014e8085543b61a2e0b139edba76445821075de8d9fa19d699"
     },
     {
       "id": "source:libs/react/src/chat/tool-observation.tsx",

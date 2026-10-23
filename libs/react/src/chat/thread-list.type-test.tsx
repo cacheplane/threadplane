@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { ThreadList, type ThreadListItem, type ThreadListProps } from './index';
 
 const item: ThreadListItem = { id: 'a' };
@@ -77,3 +78,28 @@ props.className = 'changed';
 <ThreadList threads={threads} activeThreadId={1} onSelect={() => undefined} />;
 // @ts-expect-error The callback receives a string ID.
 <ThreadList threads={threads} onSelect={(id: number) => void id} />;
+
+type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B
+  ? 1
+  : 2
+  ? true
+  : false;
+type Assert<T extends true> = T;
+export type RendererContract = Assert<
+  Equal<
+    Pick<ThreadListProps, 'renderTitle'>,
+    { readonly renderTitle?: (thread: ThreadListItem) => ReactNode }
+  >
+>;
+<ThreadList
+  {...props}
+  renderTitle={(thread) => <mark>{thread.title || thread.id}</mark>}
+/>;
+<ThreadList {...props} renderTitle={() => null} />;
+<ThreadList {...props} renderTitle={() => false} />;
+// @ts-expect-error Renderers are readonly.
+props.renderTitle = () => null;
+// @ts-expect-error Renderers receive a thread item.
+<ThreadList {...props} renderTitle={(thread: string) => thread} />;
+// @ts-expect-error Arbitrary objects are not ReactNode.
+<ThreadList {...props} renderTitle={() => ({ arbitrary: true })} />;
