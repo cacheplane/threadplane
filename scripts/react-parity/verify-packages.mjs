@@ -234,6 +234,9 @@ export type SidebarLayoutOptionsContract = Assert<Equal<Pick<ChatSidebarProps, '
 type Controlled = Pick<ChatSidenavProps, 'mode' | 'open' | 'onOpenChange' | 'onModeChange'>;
 export type SidenavCollapsedContentContract = Assert<Equal<Pick<ChatSidenavProps, 'collapsedContent'>, { readonly collapsedContent?: ReactNode }>>;
 export type SidenavToggleShortcutContract = Assert<Equal<Pick<ChatSidenavProps, 'toggleShortcut'>, { readonly toggleShortcut?: boolean }>>;
+export type SidenavSearchRequestContract = Assert<Equal<Pick<ChatSidenavProps, 'onSearch'>, { readonly onSearch?: () => void }>>;
+export type SidenavSearchLabelContract = Assert<Equal<Pick<ChatSidenavProps, 'searchLabel'>, { readonly searchLabel?: string }>>;
+export type SidenavSearchShortcutContract = Assert<Equal<Pick<ChatSidenavProps, 'searchShortcut'>, { readonly searchShortcut?: boolean }>>;
 export type SidenavModeContract = Assert<Equal<ChatSidenavMode, 'expanded' | 'collapsed' | 'drawer'>>;
 export type SidenavRequiredContract = Assert<Equal<Controlled, Required<Controlled>>>;
 export type SidenavModePropContract = Assert<Equal<ChatSidenavProps['mode'], ChatSidenavMode>>;
@@ -411,6 +414,8 @@ export async function verifyPackedConsumers(root = process.cwd(), { retain = fal
     const installedLock = JSON.parse(readFileSync(join(plain, 'package-lock.json'), 'utf8'));
     console.log(`Installed local candidate resolutions: ${JSON.stringify(Object.fromEntries(Object.entries(installedLock.packages).filter(([path]) => path.includes('node_modules/@threadplane/')).map(([path, entry]) => [path, { version: entry.version, resolved: entry.resolved, integrity: entry.integrity }])) )}`);
     const count = verifyPlainExports(root, plain, Object.keys(tarballs).map((name) => name.slice('@threadplane/'.length)));
+    cpSync(join(root, 'fixtures/react-parity/runtime/sidenav-ssr.mjs'), join(plain, 'sidenav-ssr.mjs'));
+    console.log(runConsumer(process.execPath, ['sidenav-ssr.mjs'], plain));
     cpSync(join(root, 'fixtures/react-parity/runtime/json-runtime.mjs'), join(plain, 'json-runtime.mjs'));
     console.log(runConsumer(process.execPath, ['json-runtime.mjs'], plain));
     cpSync(join(root, 'fixtures/react-parity/runtime/render-runtime.mjs'), join(plain, 'render-runtime.mjs'));

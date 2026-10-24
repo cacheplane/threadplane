@@ -59,6 +59,123 @@ function navigationFixture(
   return { fixture, media, listeners, io, application };
 }
 
+it('search requests reveal the retained filter and focus it again without extra I/O', async () => {
+  const { fixture, application, media, io } = navigationFixture();
+  try {
+    application.start();
+    await waitFor(() =>
+      expect(application.getSnapshot().selection.status).toBe('ready')
+    );
+    const view = render(
+      <App application={application} presentation="sidenav" />
+    );
+    const filter = view.getByRole('searchbox') as HTMLInputElement;
+    const input = view.getByRole('textbox', {
+      name: 'Message',
+    }) as HTMLTextAreaElement;
+    fireEvent.change(filter, { target: { value: 'notes' } });
+    fireEvent.change(input, { target: { value: 'Kept draft' } });
+    const before = { io: { ...io }, counters: { ...fixture.counters } };
+    const search = view.getByRole('button', {
+      name: 'Search loaded conversations',
+    });
+    fireEvent.click(search);
+    expect(document.activeElement).toBe(filter);
+    input.focus();
+    view.rerender(<App application={application} presentation="sidenav" />);
+    expect(document.activeElement).toBe(input);
+    search.focus();
+    fireEvent.keyDown(search, { key: 'k', metaKey: true });
+    expect(document.activeElement).toBe(filter);
+    fireEvent.click(
+      view.getByRole('button', { name: 'Collapse conversations' })
+    );
+    fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
+    expect(document.activeElement).toBe(filter);
+    expect(view.getByRole('searchbox')).toBe(filter);
+    fireEvent.click(
+      view.getByRole('button', { name: 'Collapse conversations' })
+    );
+    act(() => media.resize(true));
+    fireEvent.keyDown(window, { key: 'k', metaKey: true });
+    expect(document.activeElement).toBe(filter);
+    expect(view.getByRole('searchbox')).toBe(filter);
+    search.focus();
+    fireEvent.click(search);
+    expect(document.activeElement).toBe(filter);
+    fireEvent.click(view.getByRole('button', { name: 'Close conversations' }));
+    fireEvent.click(view.getByRole('button', { name: 'Open conversations' }));
+    expect(document.activeElement).toBe(
+      view.getByRole('button', { name: 'Close conversations' })
+    );
+    act(() => media.resize(false));
+    expect(
+      view.getByRole('button', { name: 'Expand conversations' })
+    ).toBeTruthy();
+    expect(filter.value).toBe('notes');
+    expect(input.value).toBe('Kept draft');
+    expect(view.getByRole('textbox', { name: 'Message' })).toBe(input);
+    expect({ io, counters: fixture.counters }).toEqual(before);
+  } finally {
+    application.dispose();
+  }
+});
+
+it('coalesces native search requests and discards pending work if its owner disappears', () => {
+  const { application } = navigationFixture();
+  try {
+    const first = vi.fn();
+    const latest = vi.fn();
+    const content = <input aria-label="Filter" />;
+    const view = render(
+      <NativeNavigation selectedId={null} onSearch={first}>
+        {content}
+      </NativeNavigation>
+    );
+    const search = view.getByRole('button', {
+      name: 'Search loaded conversations',
+    });
+    fireEvent.click(
+      view.getByRole('button', { name: 'Collapse conversations' })
+    );
+    act(() => {
+      search.click();
+      search.click();
+    });
+    expect(first).toHaveBeenCalledTimes(1);
+    const external = document.createElement('button');
+    document.body.append(external);
+    external.focus();
+    view.rerender(
+      <NativeNavigation selectedId={null} onSearch={latest}>
+        {content}
+        <span>Unrelated stream update</span>
+      </NativeNavigation>
+    );
+    expect(latest).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(external);
+    fireEvent.click(search);
+    expect(latest).toHaveBeenCalledTimes(1);
+    act(() => {
+      search.click();
+      view.rerender(
+        <NativeNavigation selectedId={null}>{content}</NativeNavigation>
+      );
+    });
+    expect(latest).toHaveBeenCalledTimes(1);
+    view.rerender(
+      <NativeNavigation selectedId={null} onSearch={latest}>
+        {content}
+      </NativeNavigation>
+    );
+    expect(latest).toHaveBeenCalledTimes(1);
+    expect(document.activeElement).toBe(external);
+    external.remove();
+  } finally {
+    application.dispose();
+  }
+});
+
 it('sidenav mode changes retain the filter, conversation draft and owners and clean up media listeners', async () => {
   const { fixture, media, listeners, io, application } = navigationFixture();
   try {

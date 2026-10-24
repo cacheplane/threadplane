@@ -168,11 +168,42 @@ test('installed React sidenav retains navigation, draft and a running response a
       exact: true,
     });
     const persistentToggle = page.locator('.tp-chat-sidenav__toggle');
-    const expectShortcutUnclaimed = async () => {
+    const search = page.getByRole('button', {
+      name: 'Search loaded conversations',
+      exact: true,
+    });
+    const expectSearchGeometry = async () => {
+      const geometry = await search.evaluate((button) => {
+        const box = button.getBoundingClientRect();
+        const icon = button.querySelector('svg')!.getBoundingClientRect();
+        const panel = button.closest('nav')!.getBoundingClientRect();
+        return {
+          width: box.width,
+          height: box.height,
+          iconWidth: icon.width,
+          iconHeight: icon.height,
+          contained:
+            icon.left >= box.left &&
+            icon.right <= box.right &&
+            icon.top >= box.top &&
+            icon.bottom <= box.bottom,
+          inPanel: box.left >= panel.left && box.right <= panel.right,
+          noOverflow: document.documentElement.scrollWidth <= innerWidth,
+        };
+      });
+      expect(geometry.width).toBeGreaterThanOrEqual(40);
+      expect(geometry.height).toBeGreaterThanOrEqual(40);
+      expect(geometry.iconWidth).toBe(20);
+      expect(geometry.iconHeight).toBe(20);
+      expect(geometry.contained).toBe(true);
+      expect(geometry.inPanel).toBe(true);
+      expect(geometry.noOverflow).toBe(true);
+    };
+    const expectShortcutUnclaimed = async (key = 'b') => {
       expect(
-        await page.evaluate(() => {
+        await page.evaluate((key) => {
           const event = new KeyboardEvent('keydown', {
-            key: 'b',
+            key,
             ctrlKey: true,
             bubbles: true,
             cancelable: true,
@@ -180,7 +211,7 @@ test('installed React sidenav retains navigation, draft and a running response a
           });
           document.activeElement!.dispatchEvent(event);
           return event.defaultPrevented;
-        })
+        }, key)
       ).toBe(false);
     };
     const expectFullBackdrop = async (edge: 'left' | 'right') => {
@@ -304,6 +335,32 @@ test('installed React sidenav retains navigation, draft and a running response a
     const filterNode = await filter.elementHandle();
     const firstDraft = await draft.elementHandle();
     assert.ok(filterNode && firstDraft);
+    await expect(search).toHaveAttribute(
+      'aria-keyshortcuts',
+      'Control+K Meta+K'
+    );
+    await search.click();
+    await expect(filter).toBeFocused();
+    for (const chord of ['Control+k', 'Meta+k']) {
+      await collapse.focus();
+      await page.keyboard.press(chord);
+      await expect(filter).toBeFocused();
+    }
+    for (const activation of ['Enter', 'Space']) {
+      await search.focus();
+      await page.keyboard.press(activation);
+      await expect(filter).toBeFocused();
+    }
+    for (const editor of [filter, draft]) {
+      await editor.focus();
+      await page.keyboard.press('Control+k');
+      await expect(editor).toBeFocused();
+      await expectShortcutUnclaimed('k');
+      await page.keyboard.press('Meta+k');
+      await expect(editor).toBeFocused();
+      await expectShortcutUnclaimed('k');
+    }
+    await expectSearchGeometry();
     await expect(collapse).toHaveAttribute(
       'aria-keyshortcuts',
       'Control+B Meta+B'
@@ -347,6 +404,22 @@ test('installed React sidenav retains navigation, draft and a running response a
     ).toBe(true);
     expect(backend.requests).toHaveLength(3);
     await expectRetainedThreadList();
+    await collapse.click();
+    await expectSearchGeometry();
+    await page.screenshot({
+      path: testInfo.outputPath('sidenav-search-rail.png'),
+      fullPage: true,
+    });
+    await search.click();
+    await expect(filter).toBeFocused();
+    await collapse.click();
+    await expand.focus();
+    await page.keyboard.press('Control+k');
+    await expect(filter).toBeFocused();
+    await collapse.click();
+    await expand.focus();
+    await page.keyboard.press('Meta+k');
+    await expect(filter).toBeFocused();
     await collapse.click();
     const compact = page.locator('.tp-chat-sidenav__collapsed-content');
     const compactAlpha = compact.getByRole('button', {
@@ -453,10 +526,30 @@ test('installed React sidenav retains navigation, draft and a running response a
     await collapse.focus();
     await page.keyboard.press('Meta+b');
     await expect(expand).toBeFocused();
+    await page.keyboard.press('Control+k');
+    await expect(filter).toBeFocused();
+    await expect(page.locator('.submission-status')).toHaveText(
+      'Response in progress…'
+    );
+    expect(backend.requests).toHaveLength(6);
+    expect(
+      await retainedDraft.evaluate(
+        (node) => node === document.querySelector('#message')
+      )
+    ).toBe(true);
+    await collapse.click();
     // Both resize directions occur while the same admitted request is held.
     for (const width of [390, 600]) {
       await page.setViewportSize({ width, height: 844 });
       await expect(nav).toBeHidden();
+      for (const chord of ['Control+k', 'Meta+k']) {
+        await launcher.focus();
+        await page.keyboard.press(chord);
+        await expect(filter).toBeFocused();
+        await expectSearchGeometry();
+        await close.click();
+        await expect(nav).toBeHidden();
+      }
       await expect(compact).toBeHidden();
       await expect(compact).toHaveAttribute('inert', '');
       await expect(panel).toHaveAttribute('inert', '');
@@ -470,6 +563,15 @@ test('installed React sidenav retains navigation, draft and a running response a
       await expect(compact).toBeHidden();
       await expect(compact).toHaveAttribute('inert', '');
       await expect(close).toBeFocused();
+      for (const chord of ['Control+k', 'Meta+k']) {
+        await close.focus();
+        await page.keyboard.press(chord);
+        await expect(filter).toBeFocused();
+      }
+      await search.click();
+      await expect(filter).toBeFocused();
+      await expectSearchGeometry();
+      await close.focus();
       await page.keyboard.press('Meta+b');
       await expectShortcutUnclaimed();
       await expect(nav).toBeVisible();
@@ -552,6 +654,8 @@ test('installed React sidenav retains navigation, draft and a running response a
       await expect(compact).toBeHidden();
       await expect(compact).toHaveAttribute('inert', '');
       await expect(close).toBeFocused();
+      await page.keyboard.press('Tab');
+      await expect(search).toBeFocused();
       await page.keyboard.press('Tab');
       await expect(
         nav.getByRole('button', { name: 'Refresh', exact: true })
@@ -717,6 +821,11 @@ test('installed React sidenav retains navigation, draft and a running response a
     const rtl = await panel.boundingBox();
     assert.ok(rtl);
     expect(rtl.x + rtl.width).toBe(600);
+    await expectSearchGeometry();
+    await page.screenshot({
+      path: testInfo.outputPath('sidenav-search-rtl.png'),
+      fullPage: true,
+    });
     expect(
       await beta.evaluate((node) => getComputedStyle(node).textAlign)
     ).toBe('start');

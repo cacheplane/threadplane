@@ -18,6 +18,9 @@ export interface ChatSidenavProps {
   readonly expandLabel?: string;
   readonly collapseLabel?: string;
   readonly toggleShortcut?: boolean;
+  readonly onSearch?: () => void;
+  readonly searchLabel?: string;
+  readonly searchShortcut?: boolean;
 }
 
 function composedParent(element: Element): Element | null {
@@ -57,6 +60,9 @@ export function ChatSidenav({
   expandLabel = 'Expand conversations',
   collapseLabel = 'Collapse conversations',
   toggleShortcut,
+  onSearch,
+  searchLabel = 'Search conversations',
+  searchShortcut,
 }: ChatSidenavProps) {
   const id = useId();
   const navId = `${id}-nav`;
@@ -67,6 +73,7 @@ export function ChatSidenav({
   const launcher = useRef<HTMLButtonElement>(null);
   const close = useRef<HTMLButtonElement>(null);
   const toggle = useRef<HTMLButtonElement>(null);
+  const search = useRef<HTMLButtonElement>(null);
   const ownedFocus = useRef<Element | null>(null);
   const previous = useRef<{ mode: ChatSidenavMode; open: boolean } | null>(
     null
@@ -75,21 +82,41 @@ export function ChatSidenav({
   const closedDrawer = drawer && !open;
   const collapsed = mode === 'collapsed';
   const shortcutEnabled = toggleShortcut === true;
-  const committed = useRef({ mode, onModeChange });
+  const searchShortcutEnabled = searchShortcut === true && !!onSearch;
+  const listenerEnabled = shortcutEnabled || searchShortcutEnabled;
+  const committed = useRef({
+    mode,
+    onModeChange,
+    onSearch,
+    shortcutEnabled,
+    searchShortcutEnabled,
+  });
 
   useIsomorphicLayoutEffect(() => {
-    committed.current = { mode, onModeChange };
-  }, [mode, onModeChange]);
+    committed.current = {
+      mode,
+      onModeChange,
+      onSearch,
+      shortcutEnabled,
+      searchShortcutEnabled,
+    };
+  }, [mode, onModeChange, onSearch, shortcutEnabled, searchShortcutEnabled]);
 
   useIsomorphicLayoutEffect(() => {
-    if (!shortcutEnabled) return;
+    if (!listenerEnabled) return;
     const element = root.current;
     const owner = element?.ownerDocument.defaultView;
     if (!element || !owner) return;
     const handleKeyDown = (event: KeyboardEvent) => {
       const current = committed.current;
+      const toggleKey = event.key === 'b' || event.key === 'B';
+      const searchKey = event.key === 'k' || event.key === 'K';
       if (
-        current.mode === 'drawer' ||
+        !(toggleKey && current.shortcutEnabled && current.mode !== 'drawer') &&
+        !(searchKey && current.searchShortcutEnabled && current.onSearch)
+      )
+        return;
+      if (
         !element.isConnected ||
         !event.cancelable ||
         event.defaultPrevented ||
@@ -99,7 +126,6 @@ export function ChatSidenav({
         event.altKey ||
         event.shiftKey ||
         !(event.ctrlKey || event.metaKey) ||
-        (event.key !== 'b' && event.key !== 'B') ||
         shortcutTargetIsEditable(event)
       )
         return;
@@ -113,13 +139,15 @@ export function ChatSidenav({
       }
       // Claim before calling controlled owners so later window listeners cannot also win.
       event.preventDefault();
-      current.onModeChange(
-        current.mode === 'collapsed' ? 'expanded' : 'collapsed'
-      );
+      if (searchKey) current.onSearch?.();
+      else
+        current.onModeChange(
+          current.mode === 'collapsed' ? 'expanded' : 'collapsed'
+        );
     };
     owner.addEventListener('keydown', handleKeyDown);
     return () => owner.removeEventListener('keydown', handleKeyDown);
-  }, [shortcutEnabled]);
+  }, [listenerEnabled]);
 
   useIsomorphicLayoutEffect(() => {
     const prior = previous.current;
@@ -140,6 +168,7 @@ export function ChatSidenav({
       (focused === launcher.current && !closedDrawer) ||
       (focused === close.current && !(drawer && open)) ||
       (focused === toggle.current && drawer) ||
+      (focused === search.current && closedDrawer) ||
       (body.current?.contains(focused) && (collapsed || closedDrawer)) ||
       (compact.current?.contains(focused) && !collapsed);
     if (disappeared) {
@@ -235,6 +264,42 @@ export function ChatSidenav({
             {closeLabel}
           </button>
         </div>
+        {onSearch && (
+          <div className="tp-chat-sidenav__search-row">
+            <button
+              ref={search}
+              type="button"
+              className="tp-chat-sidenav__search"
+              aria-label={searchLabel}
+              aria-keyshortcuts={
+                searchShortcutEnabled ? 'Control+K Meta+K' : undefined
+              }
+              title={
+                searchShortcutEnabled
+                  ? `${searchLabel} (Ctrl/Command+K)`
+                  : searchLabel
+              }
+              onClick={() => onSearch()}
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <circle cx="8.5" cy="8.5" r="5.75" />
+                <path d="m13 13 4.25 4.25" />
+              </svg>
+              <span className="tp-chat-sidenav__search-label">
+                {searchLabel}
+              </span>
+            </button>
+          </div>
+        )}
         <div
           ref={body}
           id={bodyId}

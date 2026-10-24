@@ -1,4 +1,4 @@
-import { memo, useState, type ReactNode } from 'react';
+import { memo, useRef, useState, type ReactNode } from 'react';
 import { useAgent } from '@threadplane/react';
 import { Markdown } from '@threadplane/react/markdown';
 import {
@@ -177,6 +177,7 @@ function Conversation({
 }) {
   const snapshot = useAgent(application);
   const [filter, setFilter] = useState('');
+  const filterInput = useRef<HTMLInputElement>(null);
   const rows = filterLoadedTitles(snapshot.list.rows, filter);
   const selection = snapshot.selection;
   const directory = (
@@ -197,6 +198,7 @@ function Conversation({
       </div>
       <label htmlFor="filter">Filter loaded conversations by title</label>
       <input
+        ref={filterInput}
         id="filter"
         type="search"
         value={filter}
@@ -248,6 +250,7 @@ function Conversation({
       {presentation === 'sidenav' ? (
         <NativeNavigation
           selectedId={selection.id}
+          onSearch={() => filterInput.current?.focus()}
           collapsedContent={
             <ThreadList
               threads={rows}

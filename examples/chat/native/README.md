@@ -493,6 +493,15 @@ behavior; drawer mode, composition, repeats, Alt/Shift-modified chords and
 already handled events leave the chord unclaimed. The shortcut retains the same
 draft, directory and active response and sends no conversation command.
 
+Search loaded conversations and the opt-in Ctrl+K / Command+K shortcut reveal
+the existing directory and focus its loaded-title filter. Desktop search expands
+the rail; drawer search opens navigation while preserving the remembered desktop
+mode. Normal launcher activation still focuses Close. Repeated explicit search
+requests can refocus the filter; streaming and unrelated renders do not. Filter
+text, composer draft, selected conversation and active response remain owned by
+the same application, with no new requests or backend search. Editable fields and
+already handled or excluded chords retain their normal keyboard behavior.
+
 The drawer launcher, Close, scoped Escape and backdrop activation request controlled changes; focus
 moves only after accepted visibility/mode changes. Hidden directory content is
 inert, and Tab can reach the surrounding page. Focus returns to the launcher when a focused backdrop is dismissed,
@@ -505,7 +514,7 @@ full accessible names, tooltips and pin/time descriptions. It has no extra New,
 filter or Refresh controls. The full directory remains mounted; compact rows
 remain mounted and hidden/inert when expanded or in either drawer state.
 This bounded composed
-navigation does not implement Angular project/archive menus, search or other global shortcuts,
+navigation does not implement Angular project/archive menus, backend search, search dialogs or other global shortcuts,
 debug ownership or full T30 parity. Popup and sidebar remain separate
 presentations.
 
