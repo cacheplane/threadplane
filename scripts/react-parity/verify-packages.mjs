@@ -233,6 +233,7 @@ export type SidebarControlledContract = Assert<Equal<Pick<ChatSidebarProps, 'ope
 export type SidebarLayoutOptionsContract = Assert<Equal<Pick<ChatSidebarProps, 'pageContent' | 'pushContent'>, { readonly pageContent?: ReactNode; readonly pushContent?: boolean }>>;
 type Controlled = Pick<ChatSidenavProps, 'mode' | 'open' | 'onOpenChange' | 'onModeChange'>;
 export type SidenavCollapsedContentContract = Assert<Equal<Pick<ChatSidenavProps, 'collapsedContent'>, { readonly collapsedContent?: ReactNode }>>;
+export type SidenavToggleShortcutContract = Assert<Equal<Pick<ChatSidenavProps, 'toggleShortcut'>, { readonly toggleShortcut?: boolean }>>;
 export type SidenavModeContract = Assert<Equal<ChatSidenavMode, 'expanded' | 'collapsed' | 'drawer'>>;
 export type SidenavRequiredContract = Assert<Equal<Controlled, Required<Controlled>>>;
 export type SidenavModePropContract = Assert<Equal<ChatSidenavProps['mode'], ChatSidenavMode>>;

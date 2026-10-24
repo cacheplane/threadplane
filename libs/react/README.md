@@ -423,8 +423,8 @@ control focus.
 
 Children stay mounted across every mode. Collapsed content and closed drawers are
 hidden and inert, retaining filters, drafts and borrowed subscriptions. The shell
-does not select conversations, send commands, own session data or add global
-listeners. Optional `label`, `launcherLabel`, `closeLabel`, `expandLabel`,
+does not select conversations, send commands or own session data. Optional
+`label`, `launcherLabel`, `closeLabel`, `expandLabel`,
 `collapseLabel` and `className` customize its accessible labels and styling.
 Defaults are Conversations, Open conversations, Close conversations, Expand
 conversations and Collapse conversations. Use the existing scoped chat stylesheet.
@@ -437,6 +437,16 @@ the prop renders no compact wrapper; explicit `null` or `false` stays empty.
 The shell owns no compact selection or data. Focus from disappearing compact
 content moves to the expanded toggle or closed-drawer launcher; opening a drawer
 continues to focus Close. External focus is preserved.
+
+Optional readonly `toggleShortcut?: boolean` enables Ctrl+B or Command+B only
+when explicitly `true`. It requests the opposite desktop mode through
+`onModeChange`; the application still decides whether to accept that change.
+The desktop toggle advertises `Control+B Meta+B` through `aria-keyshortcuts` and
+an action tooltip. Drawer mode leaves the chord unclaimed. Editable fields,
+composition, repeats, Alt/Shift-modified chords and already handled events are
+ignored. Only a connected shell outside hidden/inert ancestors can claim it;
+the first eligible opted-in shell in the same window handles the event. Omitting
+the option adds no global shortcut listener or shortcut attributes.
 
 `ChatSidenavScrim` is an optional sibling backdrop, rendered only when its required
 `open` prop is true. It is an ordinary keyboard-accessible button; activation calls
@@ -454,8 +464,9 @@ It composes the sibling scrim only while the drawer is open, restores local focu
 after backdrop dismissal, and removes the backdrop on desktop mode changes.
 Its directory filter and composer survive navigation visibility and breakpoint
 changes; selecting a different conversation deliberately resets that composer's
-draft. This is a bounded children-based navigation slice. Project/archive menus,
-global shortcuts, debug ownership and full Angular composition parity remain
+draft. It opts into the desktop toggle shortcut while preserving those owners.
+This is a bounded children-based navigation slice. Project/archive menus,
+search and other global shortcuts, debug ownership and full Angular composition parity remain
 open under T30.
 
 ## Read-only render trees

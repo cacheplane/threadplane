@@ -17,6 +17,29 @@ export interface ChatSidenavProps {
   readonly closeLabel?: string;
   readonly expandLabel?: string;
   readonly collapseLabel?: string;
+  readonly toggleShortcut?: boolean;
+}
+
+function composedParent(element: Element): Element | null {
+  return (
+    element.parentElement ?? (element.getRootNode() as ShadowRoot).host ?? null
+  );
+}
+
+function shortcutTargetIsEditable(event: KeyboardEvent): boolean {
+  let editable: boolean | undefined;
+  // The composed path retains shadow form controls that window event retargeting hides.
+  for (const target of event.composedPath()) {
+    if ((target as Node).nodeType !== 1) continue;
+    const element = target as Element;
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(element.tagName)) return true;
+    if (editable !== undefined) continue;
+    const value = element.getAttribute('contenteditable')?.toLowerCase();
+    if (value === 'false') editable = false;
+    else if (value === '' || value === 'true' || value === 'plaintext-only')
+      editable = true;
+  }
+  return editable === true;
 }
 
 /** Controlled navigation presentation; children remain mounted in every mode. */
@@ -33,6 +56,7 @@ export function ChatSidenav({
   closeLabel = 'Close conversations',
   expandLabel = 'Expand conversations',
   collapseLabel = 'Collapse conversations',
+  toggleShortcut,
 }: ChatSidenavProps) {
   const id = useId();
   const navId = `${id}-nav`;
@@ -50,6 +74,52 @@ export function ChatSidenav({
   const drawer = mode === 'drawer';
   const closedDrawer = drawer && !open;
   const collapsed = mode === 'collapsed';
+  const shortcutEnabled = toggleShortcut === true;
+  const committed = useRef({ mode, onModeChange });
+
+  useIsomorphicLayoutEffect(() => {
+    committed.current = { mode, onModeChange };
+  }, [mode, onModeChange]);
+
+  useIsomorphicLayoutEffect(() => {
+    if (!shortcutEnabled) return;
+    const element = root.current;
+    const owner = element?.ownerDocument.defaultView;
+    if (!element || !owner) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const current = committed.current;
+      if (
+        current.mode === 'drawer' ||
+        !element.isConnected ||
+        !event.cancelable ||
+        event.defaultPrevented ||
+        event.repeat ||
+        event.isComposing ||
+        event.keyCode === 229 ||
+        event.altKey ||
+        event.shiftKey ||
+        !(event.ctrlKey || event.metaKey) ||
+        (event.key !== 'b' && event.key !== 'B') ||
+        shortcutTargetIsEditable(event)
+      )
+        return;
+      for (
+        let ancestor: Element | null = element;
+        ancestor;
+        ancestor = composedParent(ancestor)
+      ) {
+        if (ancestor.hasAttribute('hidden') || ancestor.hasAttribute('inert'))
+          return;
+      }
+      // Claim before calling controlled owners so later window listeners cannot also win.
+      event.preventDefault();
+      current.onModeChange(
+        current.mode === 'collapsed' ? 'expanded' : 'collapsed'
+      );
+    };
+    owner.addEventListener('keydown', handleKeyDown);
+    return () => owner.removeEventListener('keydown', handleKeyDown);
+  }, [shortcutEnabled]);
 
   useIsomorphicLayoutEffect(() => {
     const prior = previous.current;
@@ -141,6 +211,14 @@ export function ChatSidenav({
             aria-label={collapsed ? expandLabel : collapseLabel}
             aria-controls={bodyId}
             aria-expanded={!collapsed}
+            aria-keyshortcuts={
+              shortcutEnabled && !drawer ? 'Control+B Meta+B' : undefined
+            }
+            title={
+              shortcutEnabled && !drawer
+                ? `${collapsed ? expandLabel : collapseLabel} (Ctrl/Command+B)`
+                : undefined
+            }
             hidden={drawer}
             onClick={() => onModeChange(collapsed ? 'expanded' : 'collapsed')}
           >

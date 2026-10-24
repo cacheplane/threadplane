@@ -167,6 +167,22 @@ test('installed React sidenav retains navigation, draft and a running response a
       name: 'Close conversation navigation backdrop',
       exact: true,
     });
+    const persistentToggle = page.locator('.tp-chat-sidenav__toggle');
+    const expectShortcutUnclaimed = async () => {
+      expect(
+        await page.evaluate(() => {
+          const event = new KeyboardEvent('keydown', {
+            key: 'b',
+            ctrlKey: true,
+            bubbles: true,
+            cancelable: true,
+            composed: true,
+          });
+          document.activeElement!.dispatchEvent(event);
+          return event.defaultPrevented;
+        })
+      ).toBe(false);
+    };
     const expectFullBackdrop = async (edge: 'left' | 'right') => {
       const viewport = page.viewportSize();
       assert.ok(viewport);
@@ -288,15 +304,35 @@ test('installed React sidenav retains navigation, draft and a running response a
     const filterNode = await filter.elementHandle();
     const firstDraft = await draft.elementHandle();
     assert.ok(filterNode && firstDraft);
+    await expect(collapse).toHaveAttribute(
+      'aria-keyshortcuts',
+      'Control+B Meta+B'
+    );
+    await expect(collapse).toHaveAttribute(
+      'title',
+      'Collapse conversations (Ctrl/Command+B)'
+    );
+    await filter.focus();
+    await page.keyboard.press('Control+b');
+    await expectShortcutUnclaimed();
+    await expect(filter).toHaveValue('notes');
+    await draft.focus();
+    await page.keyboard.press('Meta+b');
+    await expectShortcutUnclaimed();
+    await expect(draft).toHaveValue('Retain this draft.');
     await collapse.focus();
-    await page.keyboard.press('Enter');
+    await page.keyboard.press('Control+b');
     await expect(filter).toBeHidden();
     await expect(page.locator('.tp-chat-sidenav__body')).toHaveAttribute(
       'inert',
       ''
     );
     await expect(expand).toBeFocused();
-    await page.keyboard.press('Space');
+    await expect(expand).toHaveAttribute(
+      'title',
+      'Expand conversations (Ctrl/Command+B)'
+    );
+    await page.keyboard.press('Control+b');
     await expect(filter).toHaveValue('notes');
     await expect(draft).toHaveValue('Retain this draft.');
     expect(
@@ -414,7 +450,9 @@ test('installed React sidenav retains navigation, draft and a running response a
     await expect(page.locator('.submission-status')).toHaveText(
       'Response in progress…'
     );
-    await collapse.click();
+    await collapse.focus();
+    await page.keyboard.press('Meta+b');
+    await expect(expand).toBeFocused();
     // Both resize directions occur while the same admitted request is held.
     for (const width of [390, 600]) {
       await page.setViewportSize({ width, height: 844 });
@@ -423,10 +461,21 @@ test('installed React sidenav retains navigation, draft and a running response a
       await expect(compact).toHaveAttribute('inert', '');
       await expect(panel).toHaveAttribute('inert', '');
       await launcher.focus();
+      await expect(persistentToggle).not.toHaveAttribute('aria-keyshortcuts');
+      await expect(persistentToggle).not.toHaveAttribute('title');
+      await page.keyboard.press('Control+b');
+      await expectShortcutUnclaimed();
+      await expect(nav).toBeHidden();
       await page.keyboard.press('Enter');
       await expect(compact).toBeHidden();
       await expect(compact).toHaveAttribute('inert', '');
       await expect(close).toBeFocused();
+      await page.keyboard.press('Meta+b');
+      await expectShortcutUnclaimed();
+      await expect(nav).toBeVisible();
+      await expect(close).toBeFocused();
+      await expect(persistentToggle).not.toHaveAttribute('aria-keyshortcuts');
+      await expect(persistentToggle).not.toHaveAttribute('title');
       await expect(launcher).toBeHidden();
       await expect(nav).not.toHaveAttribute('aria-modal');
       const rect = await panel.boundingBox();

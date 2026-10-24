@@ -38,3 +38,9 @@ export type CompactContentContract = Assert<
     { readonly collapsedContent?: ReactNode }
   >
 >;
+export type ToggleShortcutContract = Assert<
+  Equal<
+    Pick<ChatSidenavProps, 'toggleShortcut'>,
+    { readonly toggleShortcut?: boolean }
+  >
+>;

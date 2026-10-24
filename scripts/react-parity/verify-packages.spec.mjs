@@ -17,7 +17,7 @@ test('plain declaration proof checks navigation, sidebar and thread-list type-on
   writeFileSync(join(directory, 'package.json'), JSON.stringify({ name: '@threadplane/react', type: 'module', exports: { './chat': { types: './chat.d.ts' } } }));
   writeFileSync(join(consumer, 'package.json'), '{"type":"module"}');
   const declaration = `export type ChatSidenavMode = 'expanded' | 'collapsed' | 'drawer';
-export interface ChatSidenavProps { readonly collapsedContent?: import('react').ReactNode; readonly mode: ChatSidenavMode; readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly onModeChange: (mode: Exclude<ChatSidenavMode, 'drawer'>) => void; }
+export interface ChatSidenavProps { readonly toggleShortcut?: boolean; readonly collapsedContent?: import('react').ReactNode; readonly mode: ChatSidenavMode; readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly onModeChange: (mode: Exclude<ChatSidenavMode, 'drawer'>) => void; }
 export interface ChatSidenavScrimProps { readonly open: boolean; readonly onDismiss: () => void; readonly label?: string; readonly className?: string; }
 export interface ChatSidebarProps { readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly title: string; readonly pageContent?: import('react').ReactNode; readonly pushContent?: boolean; }
 export interface ThreadListItem { readonly id: string; readonly title?: string; readonly updatedAt?: number; readonly pinned?: boolean; }
@@ -37,6 +37,9 @@ export interface ThreadListProps { readonly threads: readonly ThreadListItem[]; 
   assert.match(compile(declaration.replace('ChatSidenavScrimProps', 'HiddenScrimProps')), /ChatSidenavScrimProps/);
   for (const replacement of ['', "collapsedContent?: import('react').ReactNode;", "readonly collapsedContent: import('react').ReactNode;", 'readonly collapsedContent?: string;']) {
     assert.match(compile(declaration.replace("readonly collapsedContent?: import('react').ReactNode;", replacement)), /collapsedContent|false.*true/);
+  }
+  for (const replacement of ['', 'toggleShortcut?: boolean;', 'readonly toggleShortcut: boolean;', 'readonly toggleShortcut?: string;']) {
+    assert.match(compile(declaration.replace('readonly toggleShortcut?: boolean;', replacement)), /toggleShortcut|false.*true/);
   }
   const scrim = declaration.indexOf('export interface ChatSidenavScrimProps');
   const mutateScrim = (before, after) => declaration.slice(0, scrim) + declaration.slice(scrim).replace(before, after);
