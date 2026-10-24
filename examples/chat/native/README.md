@@ -491,7 +491,13 @@ moves only after accepted visibility/mode changes. Hidden directory content is
 inert, and Tab can reach the surrounding page. Focus returns to the launcher when a focused backdrop is dismissed,
 or to the desktop toggle when a breakpoint removes it; an already focused page
 control retains focus. The backdrop covers page pointer targets while open.
-This bounded children-based
+The compact rail composes a second `ThreadList` from the same filtered rows,
+active ID and application selection callback. It shows the uppercase first Unicode
+code point of the trimmed title (or ID), with `?` for empty content, while keeping
+full accessible names, tooltips and pin/time descriptions. It has no extra New,
+filter or Refresh controls. The full directory remains mounted; compact rows
+remain mounted and hidden/inert when expanded or in either drawer state.
+This bounded composed
 navigation does not implement Angular project/archive menus, global shortcuts,
 debug ownership or full T30 parity. Popup and sidebar remain separate
 presentations.

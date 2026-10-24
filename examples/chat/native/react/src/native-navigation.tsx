@@ -17,9 +17,11 @@ const narrowQuery = '(max-width: 700px)';
 export function NativeNavigation({
   selectedId,
   children,
+  collapsedContent,
 }: {
   selectedId: string | null;
   children: ReactNode;
+  collapsedContent?: ReactNode;
 }) {
   const [desktopMode, setDesktopMode] =
     useState<Exclude<ChatSidenavMode, 'drawer'>>('expanded');
@@ -80,6 +82,7 @@ export function NativeNavigation({
         onOpenChange={setOpen}
         onModeChange={setDesktopMode}
         className="native-conversation-sidenav"
+        collapsedContent={collapsedContent}
       >
         {children}
       </ChatSidenav>

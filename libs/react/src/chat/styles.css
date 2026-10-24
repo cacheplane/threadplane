@@ -407,6 +407,14 @@
   padding: 0.75rem;
   overflow-wrap: anywhere;
 }
+.tp-chat-sidenav .tp-chat-sidenav__collapsed-content {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+  padding: 0.25rem;
+  overflow-wrap: anywhere;
+}
 .tp-chat-sidenav .tp-chat-sidenav__launcher,
 .tp-chat-sidenav .tp-chat-sidenav__toggle,
 .tp-chat-sidenav .tp-chat-sidenav__close {

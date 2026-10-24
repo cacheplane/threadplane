@@ -17,7 +17,13 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-function navigationFixture(narrow = false) {
+function navigationFixture(
+  narrow = false,
+  rows = [
+    { id: 'a', title: 'Alpha notes' },
+    { id: 'b', title: 'Beta notes' },
+  ]
+) {
   const fixture = applicationFixture();
   const listeners = new Set<() => void>();
   const media = {
@@ -32,10 +38,6 @@ function navigationFixture(narrow = false) {
     },
   };
   vi.stubGlobal('matchMedia', () => media);
-  const rows = [
-    { id: 'a', title: 'Alpha notes' },
-    { id: 'b', title: 'Beta notes' },
-  ];
   const io = { list: 0, get: 0, create: 0 };
   const application = createReactApplication({
     ...fixture.options,
@@ -252,4 +254,83 @@ it('explicit sidenav selection updates the application and closes the drawer, re
     application.dispose();
   }
   expect(fixture.counters.disposals).toBe(fixture.counters.owners);
+});
+
+it('uses filtered compact initials with full names and controlled application selection', async () => {
+  const { application, io } = navigationFixture();
+  try {
+    application.start();
+    await waitFor(() =>
+      expect(application.getSnapshot().selection.status).toBe('ready')
+    );
+    const view = render(
+      <App application={application} presentation="sidenav" />
+    );
+    const filter = view.getByRole('searchbox');
+    fireEvent.change(filter, { target: { value: 'Beta' } });
+    fireEvent.click(
+      view.getByRole('button', { name: 'Collapse conversations' })
+    );
+    const beta = view.getByRole('button', { name: 'Beta notes' });
+    expect(beta.textContent).toBe('B');
+    expect(beta.getAttribute('title')).toBe('Beta notes');
+    expect(view.queryByRole('button', { name: 'Alpha notes' })).toBeNull();
+    expect(view.queryByRole('button', { name: 'New', exact: true })).toBeNull();
+    expect(
+      view.queryByRole('button', { name: 'Refresh', exact: true })
+    ).toBeNull();
+    fireEvent.click(beta);
+    await waitFor(() =>
+      expect(application.getSnapshot().selection.id).toBe('b')
+    );
+    expect(beta.getAttribute('aria-current')).toBe('true');
+    fireEvent.click(view.getByRole('button', { name: 'Expand conversations' }));
+    expect(view.getByRole('searchbox')).toBe(filter);
+    expect((filter as HTMLInputElement).value).toBe('Beta');
+    expect(
+      view
+        .getByRole('button', { name: 'Beta notes' })
+        .getAttribute('aria-current')
+    ).toBe('true');
+    expect(io).toEqual({ list: 1, get: 2, create: 0 });
+  } finally {
+    application.dispose();
+  }
+});
+
+it('renders compact Unicode initials and the empty fallback from original titles or IDs', async () => {
+  const { application } = navigationFixture(false, [
+    { id: 'a', title: '  élan  ' },
+    { id: 'b', title: ' 🛰 launch' },
+    { id: 'charlie', title: '' },
+    { id: 'd', title: '   ' },
+  ]);
+  try {
+    application.start();
+    await waitFor(() =>
+      expect(application.getSnapshot().selection.status).toBe('ready')
+    );
+    const view = render(
+      <App application={application} presentation="sidenav" />
+    );
+    fireEvent.click(
+      view.getByRole('button', { name: 'Collapse conversations' })
+    );
+    for (const [title, initial] of [
+      ['élan', 'É'],
+      ['🛰 launch', '🛰'],
+      ['charlie', 'C'],
+      ['d', '?'],
+    ]) {
+      const button =
+        title === 'd'
+          ? view.container.querySelector(
+              '.conversation-list--compact button[title="   "]'
+            )!
+          : view.getByRole('button', { name: title });
+      expect(button.textContent).toBe(initial);
+    }
+  } finally {
+    application.dispose();
+  }
 });

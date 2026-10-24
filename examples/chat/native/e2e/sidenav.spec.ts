@@ -266,7 +266,7 @@ test('installed React sidenav retains navigation, draft and a running response a
           (node) =>
             node ===
             document.querySelector(
-              '.tp-thread-list__button[title="Alpha notes"]'
+              '.tp-chat-sidenav__body .tp-thread-list__button[title="Alpha notes"]'
             )
         )
       ).toBe(true);
@@ -275,7 +275,7 @@ test('installed React sidenav retains navigation, draft and a running response a
           (node) =>
             node ===
             document.querySelector(
-              '.tp-thread-list__button[title="Beta notes"]'
+              '.tp-chat-sidenav__body .tp-thread-list__button[title="Beta notes"]'
             )
         )
       ).toBe(true);
@@ -311,17 +311,92 @@ test('installed React sidenav retains navigation, draft and a running response a
     ).toBe(true);
     expect(backend.requests).toHaveLength(3);
     await expectRetainedThreadList();
-    await beta.focus();
-    await page.keyboard.press('Enter');
-    await expect(page).toHaveURL(/thread=b/);
-    await expect(nav.locator('[aria-current="true"]')).toHaveAccessibleName(
-      'Beta notes'
+    await collapse.click();
+    const compact = page.locator('.tp-chat-sidenav__collapsed-content');
+    const compactAlpha = compact.getByRole('button', {
+      name: 'Alpha notes',
+      exact: true,
+    });
+    const compactBeta = compact.getByRole('button', {
+      name: 'Beta notes',
+      exact: true,
+    });
+    await expect(compact).toBeVisible();
+    await expect(expand).toHaveAccessibleName('Expand conversations');
+    expect(
+      await expand.evaluate((button) => button.getBoundingClientRect().height)
+    ).toBeLessThanOrEqual(48);
+    await expect(compact).not.toHaveAttribute('inert');
+    await expect(compactAlpha).toHaveAccessibleName('Alpha notes');
+    await expect(compactAlpha).toHaveAccessibleDescription('2 min ago');
+    await expect(compactBeta).toHaveAttribute('title', 'Beta notes');
+    await expect(compactBeta).toHaveAccessibleDescription(
+      'Pinned conversation 2 min ago'
     );
+    await expect(compactBeta.locator('time')).toBeHidden();
+    await expect(compactBeta.locator('span').first()).toHaveText('B');
+    const compactAlphaNode = await compactAlpha.elementHandle();
+    const compactBetaNode = await compactBeta.elementHandle();
+    assert.ok(compactAlphaNode && compactBetaNode);
+    const expectRetainedCompact = async () => {
+      for (const [handle, title] of [
+        [compactAlphaNode, 'Alpha notes'],
+        [compactBetaNode, 'Beta notes'],
+      ] as const) {
+        expect(
+          await handle.evaluate(
+            (node, title) =>
+              node ===
+              document.querySelector(
+                `.tp-chat-sidenav__collapsed-content .tp-thread-list__button[title="${title}"]`
+              ),
+            title
+          )
+        ).toBe(true);
+      }
+    };
+    const railLayout = await compactBeta.evaluate((button) => {
+      const compact = button.closest('.tp-chat-sidenav__collapsed-content')!;
+      const panel = button.closest('nav')!;
+      const bounds = button.getBoundingClientRect();
+      const title = button.querySelector('span')!.getBoundingClientRect();
+      const pin = button.querySelector('svg')!.getBoundingClientRect();
+      return {
+        width: panel.getBoundingClientRect().width,
+        rem: parseFloat(getComputedStyle(document.documentElement).fontSize),
+        overflow:
+          compact.scrollWidth > compact.clientWidth ||
+          button.scrollWidth > button.clientWidth,
+        contained:
+          pin.left >= bounds.left &&
+          pin.right <= title.left &&
+          title.right <= bounds.right,
+      };
+    });
+    expect(railLayout.width).toBeCloseTo(4 * railLayout.rem, 0);
+    expect(railLayout.overflow).toBe(false);
+    expect(railLayout.contained).toBe(true);
+    await page.screenshot({
+      path: testInfo.outputPath('sidenav-compact-desktop.png'),
+      fullPage: true,
+    });
+    expect(backend.requests).toHaveLength(3);
+    await compactBeta.focus();
+    await page.keyboard.press('Enter');
+    await expect(compactBeta).toHaveAttribute('aria-current', 'true');
+    await expand.click();
+    await expect(compact).toBeHidden();
+    await expect(compact).toHaveAttribute('inert', '');
+    await expect(page).toHaveURL(/thread=b/);
     await expect(
-      nav.locator('[aria-current="true"]')
+      nav.locator('.tp-chat-sidenav__body [aria-current="true"]')
+    ).toHaveAccessibleName('Beta notes');
+    await expect(
+      nav.locator('.tp-chat-sidenav__body [aria-current="true"]')
     ).toHaveAccessibleDescription('Pinned conversation 2 min ago');
     await expect(alpha).not.toHaveAttribute('aria-current');
     await expectRetainedThreadList();
+    await expectRetainedCompact();
     await expect(
       page.getByText('Saved answer b.', { exact: true })
     ).toBeVisible();
@@ -344,9 +419,13 @@ test('installed React sidenav retains navigation, draft and a running response a
     for (const width of [390, 600]) {
       await page.setViewportSize({ width, height: 844 });
       await expect(nav).toBeHidden();
+      await expect(compact).toBeHidden();
+      await expect(compact).toHaveAttribute('inert', '');
       await expect(panel).toHaveAttribute('inert', '');
       await launcher.focus();
       await page.keyboard.press('Enter');
+      await expect(compact).toBeHidden();
+      await expect(compact).toHaveAttribute('inert', '');
       await expect(close).toBeFocused();
       await expect(launcher).toBeHidden();
       await expect(nav).not.toHaveAttribute('aria-modal');
@@ -398,6 +477,8 @@ test('installed React sidenav retains navigation, draft and a running response a
       ).toBe(true);
       await page.mouse.click(width - 24, 820);
       await expect(nav).toBeHidden();
+      await expect(compact).toBeHidden();
+      await expect(compact).toHaveAttribute('inert', '');
       await expect(scrim).toHaveCount(0);
       await expect(launcher).toBeFocused();
       await expect(page.locator('#scrim-underlying-probe')).toHaveAttribute(
@@ -409,13 +490,18 @@ test('installed React sidenav retains navigation, draft and a running response a
         .evaluate((node) => node.remove());
       expect(backend.requests).toHaveLength(6);
       await expectRetainedThreadList();
+      await expectRetainedCompact();
       await launcher.click();
       await scrim.focus();
       await page.keyboard.press(width === 390 ? 'Enter' : 'Space');
       await expect(nav).toBeHidden();
+      await expect(compact).toBeHidden();
+      await expect(compact).toHaveAttribute('inert', '');
       await expect(launcher).toBeFocused();
       expect(backend.requests).toHaveLength(6);
       await launcher.click();
+      await expect(compact).toBeHidden();
+      await expect(compact).toHaveAttribute('inert', '');
       await expect(close).toBeFocused();
       await page.keyboard.press('Tab');
       await expect(
@@ -423,8 +509,12 @@ test('installed React sidenav retains navigation, draft and a running response a
       ).toBeFocused();
       await filter.scrollIntoViewIfNeeded();
       await expect(filter).toHaveValue('notes');
-      await nav.locator('[aria-current="true"]').scrollIntoViewIfNeeded();
-      await expect(nav.locator('[aria-current="true"]')).toBeVisible();
+      await nav
+        .locator('.tp-chat-sidenav__body [aria-current="true"]')
+        .scrollIntoViewIfNeeded();
+      await expect(
+        nav.locator('.tp-chat-sidenav__body [aria-current="true"]')
+      ).toBeVisible();
       const highlightLayout = await beta.locator('mark').evaluate((mark) => {
         const button = mark.closest('button')!;
         const outer = button.getBoundingClientRect();
@@ -523,6 +613,8 @@ test('installed React sidenav retains navigation, draft and a running response a
       await filter.focus();
       await page.keyboard.press('Escape');
       await expect(nav).toBeHidden();
+      await expect(compact).toBeHidden();
+      await expect(compact).toHaveAttribute('inert', '');
       await expect(launcher).toBeFocused();
       for (let index = 0; index < 5; index++) {
         await page.keyboard.press('Tab');
@@ -532,6 +624,8 @@ test('installed React sidenav retains navigation, draft and a running response a
       }
       await launcher.focus();
       await page.keyboard.press('Space');
+      await expect(compact).toBeHidden();
+      await expect(compact).toHaveAttribute('inert', '');
       await expect(close).toBeFocused();
       await page.screenshot({
         path: testInfo.outputPath(`sidenav-mobile-${width}.png`),
@@ -604,6 +698,7 @@ test('installed React sidenav retains navigation, draft and a running response a
     await expand.click();
     await expect(filter).toHaveValue('notes');
     await expectRetainedThreadList();
+    await expectRetainedCompact();
     backend.steps[5].releaseHeaders();
     await backend.steps[5].headersSent;
     backend.steps[5].releaseBody();
@@ -621,6 +716,7 @@ test('installed React sidenav retains navigation, draft and a running response a
     ).toBe(true);
     expect(backend.requests).toHaveLength(6);
     await expectRetainedThreadList();
+    await expectRetainedCompact();
     // Refresh after the held stream completes keeps its request indices intact.
     const alphaRow = await alpha.evaluateHandle(
       (button) => button.parentElement
@@ -645,11 +741,13 @@ test('installed React sidenav retains navigation, draft and a running response a
       await alphaRow.evaluate(
         (row) =>
           row ===
-          document.querySelector('.tp-thread-list__button[title="Alpha notes"]')
-            ?.parentElement
+          document.querySelector(
+            '.tp-chat-sidenav__body .tp-thread-list__button[title="Alpha notes"]'
+          )?.parentElement
       )
     ).toBe(true);
     await expectRetainedThreadList();
+    await expectRetainedCompact();
     await expect(beta).toHaveAttribute('aria-current', 'true');
     expect(backend.requests).toHaveLength(7);
     backend.verify();
