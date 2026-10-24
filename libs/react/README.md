@@ -448,6 +448,24 @@ ignored. Only a connected shell outside hidden/inert ancestors can claim it;
 the first eligible opted-in shell in the same window handles the event. Omitting
 the option adds no global shortcut listener or shortcut attributes.
 
+Optional readonly `onSearch?: () => void` adds a Search conversations button.
+The callback receives no arguments and owns what searching means; the shell does
+not change mode, open a dialog, focus a field or run a query. Optional readonly
+`searchLabel?: string` changes the full accessible name, visible label and tooltip.
+The collapsed rail shows a magnifier while retaining the full accessible name.
+The action remains mounted inside the navigation and is hidden/inert with a
+closed drawer.
+
+Optional readonly `searchShortcut?: boolean` enables Ctrl+K or Command+K only
+when explicitly `true` and `onSearch` is supplied. It requests search in every
+mode, including a closed drawer. The button advertises `Control+K Meta+K` and a
+tooltip hint when enabled. It shares the toggle shortcut's editable, composition,
+repeat, modifier, claimed-event and eligible-owner protections. Both shortcuts
+use one listener per shell while either is enabled; callback replacements and
+mode changes preserve its registration priority. Supplying a label or shortcut flag without a callback
+adds no Search button and claims no search chord. Accepted drawer closure returns
+focus from Search to the launcher; the application owns search focus otherwise.
+
 `ChatSidenavScrim` is an optional sibling backdrop, rendered only when its required
 `open` prop is true. It is an ordinary keyboard-accessible button; activation calls
 the required `onDismiss` callback without changing visibility itself. Optional
@@ -466,8 +484,10 @@ Its directory filter and composer survive navigation visibility and breakpoint
 changes; selecting a different conversation deliberately resets that composer's
 draft. It opts into the desktop toggle shortcut while preserving those owners.
 This is a bounded children-based navigation slice. Project/archive menus,
-search and other global shortcuts, debug ownership and full Angular composition parity remain
-open under T30.
+backend search, search dialogs, other global shortcuts, debug ownership and full
+Angular composition parity remain open under T30. The native Search loaded
+conversations action reveals navigation and focuses its existing loaded-title
+filter once per explicit request, without adding backend search or commands.
 
 ## Read-only render trees
 

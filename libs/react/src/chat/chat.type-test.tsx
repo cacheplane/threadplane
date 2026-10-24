@@ -44,3 +44,18 @@ export type ToggleShortcutContract = Assert<
     { readonly toggleShortcut?: boolean }
   >
 >;
+export type SearchRequestContract = Assert<
+  Equal<Pick<ChatSidenavProps, 'onSearch'>, { readonly onSearch?: () => void }>
+>;
+export type SearchLabelContract = Assert<
+  Equal<
+    Pick<ChatSidenavProps, 'searchLabel'>,
+    { readonly searchLabel?: string }
+  >
+>;
+export type SearchShortcutContract = Assert<
+  Equal<
+    Pick<ChatSidenavProps, 'searchShortcut'>,
+    { readonly searchShortcut?: boolean }
+  >
+>;

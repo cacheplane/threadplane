@@ -407,6 +407,50 @@
   padding: 0.75rem;
   overflow-wrap: anywhere;
 }
+.tp-chat-sidenav .tp-chat-sidenav__search-row {
+  flex-shrink: 0;
+  padding: 0 0.5rem 0.5rem;
+  min-width: 0;
+}
+.tp-chat-sidenav .tp-chat-sidenav__search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 40px;
+  min-width: 40px;
+  padding: 0.5rem;
+  border: 1px solid var(--tp-chat-border);
+  border-radius: 0.5rem;
+  background: var(--tp-chat-surface);
+  color: var(--tp-chat-text);
+  font: inherit;
+  text-align: start;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.tp-chat-sidenav .tp-chat-sidenav__search svg {
+  flex: 0 0 20px;
+}
+.tp-chat-sidenav--collapsed .tp-chat-sidenav__search {
+  justify-content: center;
+}
+.tp-chat-sidenav--collapsed .tp-chat-sidenav__search-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+.tp-chat-sidenav .tp-chat-sidenav__search:focus-visible {
+  outline: 2px solid var(--tp-chat-accent);
+  outline-offset: 3px;
+}
 .tp-chat-sidenav .tp-chat-sidenav__collapsed-content {
   flex: 1;
   min-height: 0;
