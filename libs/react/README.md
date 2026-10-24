@@ -429,6 +429,15 @@ listeners. Optional `label`, `launcherLabel`, `closeLabel`, `expandLabel`,
 Defaults are Conversations, Open conversations, Close conversations, Expand
 conversations and Collapse conversations. Use the existing scoped chat stylesheet.
 
+Optional readonly `collapsedContent?: ReactNode` supplies a persistent compact
+content tree, visible only in collapsed mode independently of `open`. The full
+children tree stays mounted, hidden and inert while collapsed; compact content
+stays mounted, hidden and inert when expanded or in either drawer state. Omitting
+the prop renders no compact wrapper; explicit `null` or `false` stays empty.
+The shell owns no compact selection or data. Focus from disappearing compact
+content moves to the expanded toggle or closed-drawer launcher; opening a drawer
+continues to focus Close. External focus is preserved.
+
 `ChatSidenavScrim` is an optional sibling backdrop, rendered only when its required
 `open` prop is true. It is an ordinary keyboard-accessible button; activation calls
 the required `onDismiss` callback without changing visibility itself. Optional

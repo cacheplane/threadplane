@@ -1,7 +1,11 @@
 import { StrictMode, useEffect, useState } from 'react';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ChatSidenav, type ChatSidenavMode } from './index';
+import {
+  ChatSidenav,
+  type ChatSidenavMode,
+  type ChatSidenavProps,
+} from './index';
 
 afterEach(cleanup);
 
@@ -384,5 +388,106 @@ describe('ChatSidenav', () => {
       fireEvent.keyDown(input, { key: 'Escape' });
     }
     expect(change).not.toHaveBeenCalled();
+  });
+});
+
+describe('ChatSidenav compact content', () => {
+  const shell = (
+    mode: ChatSidenavMode,
+    open = false,
+    collapsedContent: ChatSidenavProps['collapsedContent'] = (
+      <input aria-label="Compact draft" />
+    )
+  ) => (
+    <>
+      <button>External</button>
+      <ChatSidenav
+        mode={mode}
+        open={open}
+        onModeChange={vi.fn()}
+        onOpenChange={vi.fn()}
+        collapsedContent={collapsedContent}
+      >
+        <input aria-label="Full draft" />
+      </ChatSidenav>
+    </>
+  );
+  it.each(['expanded', 'collapsed', 'drawer'] as const)(
+    'keeps compact and full trees mounted in %s with either open value',
+    (mode) => {
+      const view = render(shell('expanded'));
+      const full = view.getByLabelText('Full draft') as HTMLInputElement;
+      const compact = view.getByLabelText('Compact draft') as HTMLInputElement;
+      fireEvent.change(full, { target: { value: 'full retained' } });
+      fireEvent.change(compact, { target: { value: 'compact retained' } });
+      for (const open of [false, true]) {
+        view.rerender(shell(mode, open));
+        const wrapper = view.container.querySelector(
+          '.tp-chat-sidenav__collapsed-content'
+        ) as HTMLElement;
+        expect(wrapper).not.toBeNull();
+        expect(wrapper.hidden).toBe(mode !== 'collapsed');
+        expect(wrapper.hasAttribute('inert')).toBe(mode !== 'collapsed');
+        expect(view.getByLabelText('Full draft')).toBe(full);
+        expect(view.getByLabelText('Compact draft')).toBe(compact);
+        expect(full.value).toBe('full retained');
+        expect(compact.value).toBe('compact retained');
+        expect(
+          view.queryByRole('textbox', { name: 'Compact draft' }) !== null
+        ).toBe(mode === 'collapsed');
+      }
+    }
+  );
+  it('omits the wrapper by default and preserves explicitly empty compact slots', () => {
+    const view = setup('collapsed');
+    expect(
+      view.container.querySelector('.tp-chat-sidenav__collapsed-content')
+    ).toBeNull();
+    view.unmount();
+    const compact = render(shell('collapsed', false, null));
+    for (const value of [null, false]) {
+      compact.rerender(shell('collapsed', false, value));
+      expect(
+        compact.container.querySelector('.tp-chat-sidenav__collapsed-content')
+          ?.childNodes.length
+      ).toBe(0);
+      expect(compact.queryByRole('textbox')).toBeNull();
+    }
+  });
+  it.each([
+    ['expanded', false, 'Collapse conversations'],
+    ['drawer', false, 'Open conversations'],
+    ['drawer', true, 'Close conversations'],
+  ] as const)(
+    'restores disappearing compact focus to %s/%s control',
+    (mode, open, label) => {
+      const view = render(shell('collapsed'));
+      view.getByLabelText('Compact draft').focus();
+      view.rerender(shell(mode, open));
+      expect(document.activeElement).toBe(
+        view.getByRole('button', { name: label })
+      );
+    }
+  );
+  it('retains compact ownership after browser blur but clears it on external transfer', () => {
+    const view = render(shell('collapsed'));
+    view.getByLabelText('Compact draft').focus();
+    view.getByLabelText('Compact draft').blur();
+    view.rerender(shell('expanded'));
+    expect(document.activeElement).toBe(
+      view.getByRole('button', { name: 'Collapse conversations' })
+    );
+    view.rerender(shell('collapsed'));
+    view.getByLabelText('Compact draft').focus();
+    const external = view.getByRole('button', { name: 'External' });
+    external.focus();
+    view.rerender(shell('expanded'));
+    expect(document.activeElement).toBe(external);
+    view.rerender(shell('collapsed'));
+    view.getByLabelText('Compact draft').focus();
+    external.focus();
+    external.blur();
+    view.rerender(shell('drawer'));
+    expect(document.activeElement).toBe(document.body);
   });
 });

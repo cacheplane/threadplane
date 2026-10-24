@@ -38,3 +38,49 @@
   background: #fef3c7;
   color: #111827;
 }
+
+.native-conversation-sidenav
+  .conversation-list--compact
+  .tp-thread-list__button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.125rem;
+  padding: 0.5rem 0.125rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.native-conversation-sidenav .conversation-list--compact .tp-thread-list__time {
+  display: none;
+}
+
+.native-conversation-sidenav.tp-chat-sidenav--collapsed
+  .tp-chat-sidenav__header {
+  justify-content: center;
+}
+
+.native-conversation-sidenav.tp-chat-sidenav--collapsed
+  .tp-chat-sidenav__toggle {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 0;
+  line-height: 0;
+}
+
+.native-conversation-sidenav.tp-chat-sidenav--collapsed
+  .tp-chat-sidenav__toggle::before {
+  content: '';
+  width: 0.5rem;
+  height: 0.5rem;
+  border-top: 2px solid currentColor;
+  border-right: 2px solid currentColor;
+  transform: translateX(-2px) rotate(45deg);
+}
+
+.native-conversation-sidenav.tp-chat-sidenav--collapsed
+  .tp-chat-sidenav__toggle:dir(rtl)::before {
+  transform: translateX(2px) rotate(225deg);
+}

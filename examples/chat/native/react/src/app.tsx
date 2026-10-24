@@ -246,7 +246,23 @@ function Conversation({
       }`}
     >
       {presentation === 'sidenav' ? (
-        <NativeNavigation selectedId={selection.id}>
+        <NativeNavigation
+          selectedId={selection.id}
+          collapsedContent={
+            <ThreadList
+              threads={rows}
+              activeThreadId={selection.id}
+              onSelect={application.select}
+              label="Loaded conversations"
+              className="conversation-list conversation-list--compact"
+              renderTitle={(thread) =>
+                Array.from(
+                  (thread.title || thread.id).trim()
+                )[0]?.toUpperCase() || '?'
+              }
+            />
+          }
+        >
           {directory}
         </NativeNavigation>
       ) : presentation !== 'sidebar' ? (

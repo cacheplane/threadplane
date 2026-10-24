@@ -10,6 +10,7 @@ export interface ChatSidenavProps {
   readonly onOpenChange: (open: boolean) => void;
   readonly onModeChange: (mode: Exclude<ChatSidenavMode, 'drawer'>) => void;
   readonly children?: ReactNode;
+  readonly collapsedContent?: ReactNode;
   readonly className?: string;
   readonly label?: string;
   readonly launcherLabel?: string;
@@ -25,6 +26,7 @@ export function ChatSidenav({
   onOpenChange,
   onModeChange,
   children,
+  collapsedContent,
   className,
   label = 'Conversations',
   launcherLabel = 'Open conversations',
@@ -37,6 +39,7 @@ export function ChatSidenav({
   const bodyId = `${id}-body`;
   const root = useRef<HTMLDivElement>(null);
   const body = useRef<HTMLDivElement>(null);
+  const compact = useRef<HTMLDivElement>(null);
   const launcher = useRef<HTMLButtonElement>(null);
   const close = useRef<HTMLButtonElement>(null);
   const toggle = useRef<HTMLButtonElement>(null);
@@ -67,7 +70,8 @@ export function ChatSidenav({
       (focused === launcher.current && !closedDrawer) ||
       (focused === close.current && !(drawer && open)) ||
       (focused === toggle.current && drawer) ||
-      (body.current?.contains(focused) && (collapsed || closedDrawer));
+      (body.current?.contains(focused) && (collapsed || closedDrawer)) ||
+      (compact.current?.contains(focused) && !collapsed);
     if (disappeared) {
       (closedDrawer ? launcher.current : toggle.current)?.focus();
     }
@@ -162,6 +166,16 @@ export function ChatSidenav({
         >
           {children}
         </div>
+        {collapsedContent !== undefined && (
+          <div
+            ref={compact}
+            className="tp-chat-sidenav__collapsed-content"
+            hidden={!collapsed}
+            inert={!collapsed}
+          >
+            {collapsedContent}
+          </div>
+        )}
       </nav>
     </div>
   );
