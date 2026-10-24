@@ -85,18 +85,34 @@ it('sidenav mode changes retain the filter, conversation draft and owners and cl
     fireEvent.change(filter, { target: { value: 'notes' } });
     fireEvent.change(input, { target: { value: 'Retain this draft.' } });
     const work = { counters: { ...fixture.counters }, io: { ...io } };
-    fireEvent.click(
-      view.getByRole('button', { name: 'Collapse conversations' })
-    );
+    const toggle = view.getByRole('button', { name: 'Collapse conversations' });
+    expect(toggle.getAttribute('aria-keyshortcuts')).toBe('Control+B Meta+B');
+    for (const target of [filter, input]) {
+      expect(fireEvent.keyDown(target, { key: 'b', ctrlKey: true })).toBe(true);
+      expect(view.queryByRole('searchbox')).toBe(filter);
+    }
+    toggle.focus();
+    expect(fireEvent.keyDown(toggle, { key: 'b', ctrlKey: true })).toBe(false);
     expect(view.queryByRole('searchbox')).toBeNull();
     expect(filter.isConnected).toBe(true);
-    fireEvent.click(view.getByRole('button', { name: 'Expand conversations' }));
+    expect(fireEvent.keyDown(toggle, { key: 'b', metaKey: true })).toBe(false);
     expect(view.getByRole('searchbox')).toBe(filter);
     expect(filter.value).toBe('notes');
     act(() => media.resize(true));
     expect(view.queryByRole('navigation')).toBeNull();
     const launcher = view.getByRole('button', { name: 'Open conversations' });
+    expect(toggle.hasAttribute('aria-keyshortcuts')).toBe(false);
+    expect(toggle.hasAttribute('title')).toBe(false);
+    expect(fireEvent.keyDown(launcher, { key: 'b', ctrlKey: true })).toBe(true);
+    expect(view.queryByRole('navigation')).toBeNull();
     fireEvent.click(launcher);
+    expect(view.getByRole('navigation')).toBe(nav);
+    expect(
+      fireEvent.keyDown(
+        view.getByRole('button', { name: 'Close conversations' }),
+        { key: 'b', metaKey: true }
+      )
+    ).toBe(true);
     expect(view.getByRole('navigation')).toBe(nav);
     const scrim = view.getByRole('button', {
       name: 'Close conversation navigation backdrop',

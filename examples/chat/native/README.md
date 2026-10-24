@@ -486,6 +486,13 @@ composer DOM and unsent draft, and send no conversation commands. An active
 response continues through these navigation changes. Selecting a different
 conversation retains the existing deliberate composer draft reset.
 
+Desktop navigation opts into Ctrl+B or Command+B to request expanded/collapsed
+mode. The toggle exposes the shortcut through `aria-keyshortcuts` and its action
+tooltip. Filter, composer and other editable fields keep their normal keyboard
+behavior; drawer mode, composition, repeats, Alt/Shift-modified chords and
+already handled events leave the chord unclaimed. The shortcut retains the same
+draft, directory and active response and sends no conversation command.
+
 The drawer launcher, Close, scoped Escape and backdrop activation request controlled changes; focus
 moves only after accepted visibility/mode changes. Hidden directory content is
 inert, and Tab can reach the surrounding page. Focus returns to the launcher when a focused backdrop is dismissed,
@@ -498,7 +505,7 @@ full accessible names, tooltips and pin/time descriptions. It has no extra New,
 filter or Refresh controls. The full directory remains mounted; compact rows
 remain mounted and hidden/inert when expanded or in either drawer state.
 This bounded composed
-navigation does not implement Angular project/archive menus, global shortcuts,
+navigation does not implement Angular project/archive menus, search or other global shortcuts,
 debug ownership or full T30 parity. Popup and sidebar remain separate
 presentations.
 

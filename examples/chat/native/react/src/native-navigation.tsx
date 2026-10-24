@@ -77,6 +77,7 @@ export function NativeNavigation({
     >
       <ChatSidenavScrim open={scrimOpen} onDismiss={() => setOpen(false)} />
       <ChatSidenav
+        toggleShortcut
         mode={narrow ? 'drawer' : desktopMode}
         open={open}
         onOpenChange={setOpen}
