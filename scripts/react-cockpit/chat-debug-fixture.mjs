@@ -11,6 +11,7 @@ const PYTHON = fileURLToPath(
 );
 const FRAME = 65536,
   TOTAL = 2 * 1024 * 1024;
+const GRACEFUL_EXIT_MS = 2000;
 const encode = (kind, data) =>
   `event: ${kind}\ndata: ${JSON.stringify(data)}\n\n`;
 const hash = (value) => createHash('sha256').update(value).digest('hex');
@@ -42,6 +43,8 @@ export function createDebugWorker({
       'stderr-overflow',
       'ignore-term',
       'late-result',
+      'delayed-close',
+      'hung-close',
       'spawn-failure',
     ].includes(fault) ||
     !['natural', 'unicode'].includes(providerVariant) ||
@@ -227,7 +230,7 @@ export function createDebugWorker({
           await Promise.race([
             ended,
             new Promise((resolve) => {
-              graceful = setTimeout(resolve, 250);
+              graceful = setTimeout(resolve, GRACEFUL_EXIT_MS);
             }),
           ]);
           clearTimeout(graceful);
