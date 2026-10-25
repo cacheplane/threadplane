@@ -137,6 +137,19 @@ test('installed React sidenav retains navigation, draft and a running response a
     });
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.clock.setFixedTime(fixedNow);
+    await page.addInitScript(() => {
+      const state = { writes: [] as string[], fail: false };
+      Object.assign(window, { conversationClipboard: state });
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value: {
+          writeText: async (text: string) => {
+            state.writes.push(text);
+            if (state.fail) throw Error('Clipboard denied');
+          },
+        },
+      });
+    });
     await page.goto(origin + '/?presentation=sidenav&thread=a');
     const nav = page.getByRole('navigation', {
       name: 'Conversations',
@@ -254,6 +267,52 @@ test('installed React sidenav retains navigation, draft and a running response a
       name: 'Beta notes',
       exact: true,
     });
+    const copyAlpha = threadList.getByRole('button', {
+      name: 'Copy conversation ID for Alpha notes (a)',
+      exact: true,
+    });
+    const copyBeta = threadList.getByRole('button', {
+      name: 'Copy conversation ID for Beta notes (b)',
+      exact: true,
+    });
+    const clipboardState = () =>
+      page.evaluate(
+        () =>
+          (
+            window as unknown as {
+              conversationClipboard: { writes: string[]; fail: boolean };
+            }
+          ).conversationClipboard
+      );
+    const expectCopyGeometry = async () => {
+      const geometry = await copyBeta.evaluate((button) => {
+        const box = button.getBoundingClientRect();
+        const row = button.closest('li')!;
+        const outer = row.getBoundingClientRect();
+        const select = row
+          .querySelector('.tp-thread-list__button')!
+          .getBoundingClientRect();
+        const panel = button.closest('nav')!.getBoundingClientRect();
+        return {
+          width: box.width,
+          height: box.height,
+          contained:
+            box.left >= outer.left &&
+            box.right <= outer.right &&
+            box.left >= panel.left &&
+            box.right <= panel.right,
+          separate: box.left >= select.right || box.right <= select.left,
+          noOverflow:
+            row.scrollWidth <= row.clientWidth &&
+            document.documentElement.scrollWidth <= innerWidth,
+        };
+      });
+      expect(geometry.width).toBeGreaterThanOrEqual(40);
+      expect(geometry.height).toBeGreaterThanOrEqual(40);
+      expect(geometry.contained).toBe(true);
+      expect(geometry.separate).toBe(true);
+      expect(geometry.noOverflow).toBe(true);
+    };
     await expect(alpha).toHaveAttribute('aria-current', 'true');
     await expect(beta).not.toHaveAttribute('aria-current');
     await expect(alpha).toHaveAccessibleName('Alpha notes');
@@ -265,7 +324,7 @@ test('installed React sidenav retains navigation, draft and a running response a
     await expect(beta).toHaveAccessibleDescription(
       'Pinned conversation 2 min ago'
     );
-    await expect(threadList.getByRole('button')).toHaveText([
+    await expect(threadList.locator('.tp-thread-list__button')).toHaveText([
       /Alpha notes/,
       /Beta notes/,
     ]);
@@ -281,9 +340,44 @@ test('installed React sidenav retains navigation, draft and a running response a
       page.getByText('Saved answer a.', { exact: true })
     ).toBeVisible();
     expect(backend.requests).toHaveLength(3);
+    expect((await clipboardState()).writes).toEqual([]);
+    await draft.fill('Copy preserves this draft.');
+    await copyBeta.click();
+    await expect(copyBeta.locator('..').getByRole('status')).toHaveText(
+      'Conversation ID copied.'
+    );
+    expect((await clipboardState()).writes).toEqual(['b']);
+    await copyAlpha.focus();
+    await page.keyboard.press('Enter');
+    expect((await clipboardState()).writes).toEqual(['b', 'a']);
+    await page.evaluate(() => {
+      (
+        window as unknown as { conversationClipboard: { fail: boolean } }
+      ).conversationClipboard.fail = true;
+    });
+    await copyBeta.focus();
+    await page.keyboard.press('Space');
+    await expect(copyBeta.locator('..').getByRole('status')).toHaveText(
+      'Could not copy conversation ID.'
+    );
+    await page.evaluate(() => {
+      (
+        window as unknown as { conversationClipboard: { fail: boolean } }
+      ).conversationClipboard.fail = false;
+    });
+    await copyBeta.click();
+    await expect(copyBeta.locator('..').getByRole('status')).toHaveText(
+      'Conversation ID copied.'
+    );
+    expect((await clipboardState()).writes).toEqual(['b', 'a', 'b', 'b']);
+    await expect(alpha).toHaveAttribute('aria-current', 'true');
+    await expect(page).toHaveURL(/thread=a/);
+    await expect(draft).toHaveValue('Copy preserves this draft.');
+    await expectCopyGeometry();
+    expect(backend.requests).toHaveLength(3);
     // Filtering only the loaded titles must not issue a request or select a row.
     await filter.fill('Alpha');
-    await expect(threadList.getByRole('button')).toHaveCount(1);
+    await expect(threadList.locator('.tp-thread-list__button')).toHaveCount(1);
     await expect(alpha).toHaveAttribute('aria-current', 'true');
     expect(await alphaNode.evaluate((node) => node.isConnected)).toBe(true);
     expect(backend.requests).toHaveLength(3);
@@ -431,6 +525,9 @@ test('installed React sidenav retains navigation, draft and a running response a
       exact: true,
     });
     await expect(compact).toBeVisible();
+    await expect(
+      compact.getByRole('button', { name: /^Copy conversation ID/ })
+    ).toHaveCount(0);
     await expect(expand).toHaveAccessibleName('Expand conversations');
     expect(
       await expand.evaluate((button) => button.getBoundingClientRect().height)
@@ -532,6 +629,20 @@ test('installed React sidenav retains navigation, draft and a running response a
       'Response in progress…'
     );
     expect(backend.requests).toHaveLength(6);
+    const heldDraftValue = await draft.inputValue();
+    await copyAlpha.focus();
+    await page.keyboard.press('Space');
+    await expect(copyAlpha.locator('..').getByRole('status')).toHaveText(
+      'Conversation ID copied.'
+    );
+    expect((await clipboardState()).writes).toEqual(['b', 'a', 'b', 'b', 'a']);
+    await expect(beta).toHaveAttribute('aria-current', 'true');
+    await expect(page).toHaveURL(/thread=b/);
+    await expect(draft).toHaveValue(heldDraftValue);
+    await expect(page.locator('.submission-status')).toHaveText(
+      'Response in progress…'
+    );
+    expect(backend.requests).toHaveLength(6);
     expect(
       await retainedDraft.evaluate(
         (node) => node === document.querySelector('#message')
@@ -571,6 +682,7 @@ test('installed React sidenav retains navigation, draft and a running response a
       await search.click();
       await expect(filter).toBeFocused();
       await expectSearchGeometry();
+      await expectCopyGeometry();
       await close.focus();
       await page.keyboard.press('Meta+b');
       await expectShortcutUnclaimed();
@@ -822,6 +934,7 @@ test('installed React sidenav retains navigation, draft and a running response a
     assert.ok(rtl);
     expect(rtl.x + rtl.width).toBe(600);
     await expectSearchGeometry();
+    await expectCopyGeometry();
     await page.screenshot({
       path: testInfo.outputPath('sidenav-search-rtl.png'),
       fullPage: true,
@@ -886,7 +999,7 @@ test('installed React sidenav retains navigation, draft and a running response a
     await expect(beta).toHaveAccessibleDescription('2 min ago');
     await expect(beta.locator('.tp-thread-list__pin')).toHaveCount(0);
     await expect(alpha.locator('.tp-thread-list__pin')).toHaveCount(1);
-    await expect(threadList.getByRole('button')).toHaveText([
+    await expect(threadList.locator('.tp-thread-list__button')).toHaveText([
       /Alpha notes/,
       /Beta notes/,
     ]);

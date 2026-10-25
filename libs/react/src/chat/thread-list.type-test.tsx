@@ -91,6 +91,23 @@ export type RendererContract = Assert<
     { readonly renderTitle?: (thread: ThreadListItem) => ReactNode }
   >
 >;
+export type ActionsContract = Assert<
+  Equal<
+    Pick<ThreadListProps, 'renderActions'>,
+    { readonly renderActions?: (thread: ThreadListItem) => ReactNode }
+  >
+>;
+<ThreadList
+  {...props}
+  renderActions={(thread) => <button>{thread.id}</button>}
+/>;
+<ThreadList {...props} renderActions={() => null} />;
+// @ts-expect-error Action renderers are readonly.
+props.renderActions = () => null;
+// @ts-expect-error Action renderers receive the original thread item.
+<ThreadList {...props} renderActions={(thread: string) => thread} />;
+// @ts-expect-error Arbitrary objects are not ReactNodes.
+<ThreadList {...props} renderActions={() => ({ arbitrary: true })} />;
 <ThreadList
   {...props}
   renderTitle={(thread) => <mark>{thread.title || thread.id}</mark>}

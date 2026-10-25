@@ -34,6 +34,28 @@
   white-space: normal;
 }
 
+.copy-conversation-id > button {
+  display: grid;
+  place-items: center;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 8px;
+}
+.copy-conversation-id svg {
+  width: 20px;
+  height: 20px;
+}
+.copy-conversation-id__status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .conversation-list .tp-thread-list__button[aria-current='true'] mark {
   background: #fef3c7;
   color: #111827;

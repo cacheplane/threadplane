@@ -21,6 +21,8 @@ export interface ThreadListProps {
   readonly now?: number;
   /** Noninteractive phrasing content inside the row button. Original title/id labels remain. */
   readonly renderTitle?: (thread: ThreadListItem) => ReactNode;
+  /** App-owned controls rendered beside the selection button. */
+  readonly renderActions?: (thread: ThreadListItem) => ReactNode;
 }
 
 function validDate(value: number | undefined): Date | undefined {
@@ -49,6 +51,7 @@ export function ThreadList({
   newThreadLabel = '+ New thread',
   now = Date.now(),
   renderTitle,
+  renderActions,
 }: ThreadListProps) {
   const listId = useId();
   const reference = validDate(now);
@@ -61,6 +64,9 @@ export function ThreadList({
         const pinned = thread.pinned === true;
         const title = thread.title || thread.id;
         const content = renderTitle ? renderTitle(thread) : title;
+        const actions = renderActions?.(thread);
+        const hasActions =
+          actions !== null && actions !== false && actions !== undefined;
         const updated = validDate(thread.updatedAt);
         const time =
           reference && updated && thread.updatedAt !== undefined
@@ -68,7 +74,12 @@ export function ThreadList({
             : undefined;
         const rowId = `${listId}-${index}`;
         return (
-          <li key={thread.id} className="tp-thread-list__item">
+          <li
+            key={thread.id}
+            className={`tp-thread-list__item${
+              hasActions ? ' tp-thread-list__item--actions' : ''
+            }`}
+          >
             <button
               type="button"
               className="tp-thread-list__button"
@@ -118,6 +129,9 @@ export function ThreadList({
                 </span>
               )}
             </button>
+            {hasActions && (
+              <div className="tp-thread-list__actions">{actions}</div>
+            )}
           </li>
         );
       })}
