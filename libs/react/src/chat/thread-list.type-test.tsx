@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, MouseEvent, KeyboardEvent } from 'react';
 import { ThreadList, type ThreadListItem, type ThreadListProps } from './index';
 
 const item: ThreadListItem = { id: 'a' };
@@ -132,3 +132,44 @@ void invalidPin;
 export type PinnedContract = Assert<
   Equal<Pick<ThreadListItem, 'pinned'>, { readonly pinned?: boolean }>
 >;
+
+export type CompletePropsContract = Assert<
+  Equal<
+    ThreadListProps,
+    {
+      readonly threads: readonly ThreadListItem[];
+      readonly onSelect: (threadId: string) => void;
+      readonly activeThreadId?: string | null;
+      readonly label?: string;
+      readonly className?: string;
+      readonly onNewThread?: () => void;
+      readonly newThreadDisabled?: boolean;
+      readonly newThreadLabel?: string;
+      readonly now?: number;
+      readonly renderTitle?: (thread: ThreadListItem) => ReactNode;
+      readonly renderActions?: (thread: ThreadListItem) => ReactNode;
+      readonly onContextMenu?: (
+        threadId: string,
+        event: MouseEvent<HTMLButtonElement> | KeyboardEvent<HTMLButtonElement>
+      ) => void;
+    }
+  >
+>;
+<ThreadList
+  {...props}
+  onContextMenu={(id, event) => {
+    const exact: string = id;
+    const button: HTMLButtonElement = event.currentTarget;
+    void exact;
+    void button;
+  }}
+/>;
+// @ts-expect-error Context callbacks are readonly.
+props.onContextMenu = () => undefined;
+<ThreadList
+  {...props}
+  // @ts-expect-error Context callbacks must accept keyboard as well as mouse events.
+  onContextMenu={(_id, event: MouseEvent<HTMLButtonElement>) => void event}
+/>;
+// @ts-expect-error Context callback IDs are exact strings.
+<ThreadList {...props} onContextMenu={(id: number) => void id} />;

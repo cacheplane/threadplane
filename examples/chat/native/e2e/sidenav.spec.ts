@@ -322,6 +322,47 @@ test('installed React sidenav retains navigation, draft and a running response a
         fullPage: false,
       });
     };
+    const openBetaContext = async (suffix: string) => {
+      const row = await beta.boundingBox();
+      assert.ok(row);
+      const point = {
+        x: Math.floor(row.x + row.width - 16),
+        y: Math.floor(row.y + row.height - 10),
+      };
+      await page.mouse.click(point.x, point.y, { button: 'right' });
+      await expect(copyItem).toBeFocused();
+      await expect(copyItem).toHaveText(
+        'Copy conversation ID for Beta notes (b)'
+      );
+      await expect(menu).toHaveCount(1);
+      const placed = await menu.evaluate((node) => {
+        const box = node.getBoundingClientRect();
+        return {
+          left: box.left,
+          top: box.top,
+          width: box.width,
+          height: box.height,
+          viewportWidth: innerWidth,
+          viewportHeight: innerHeight,
+          rtl: getComputedStyle(node).direction === 'rtl',
+        };
+      });
+      const left = placed.rtl ? point.x - placed.width : point.x;
+      const below = point.y + 4;
+      const top =
+        below + placed.height > placed.viewportHeight - 8
+          ? point.y - placed.height - 4
+          : below;
+      expect(placed.left).toBeCloseTo(
+        Math.max(8, Math.min(left, placed.viewportWidth - placed.width - 8)),
+        1
+      );
+      expect(placed.top).toBeCloseTo(
+        Math.max(8, Math.min(top, placed.viewportHeight - placed.height - 8)),
+        1
+      );
+      await expectMenuGeometry(`context-${suffix}`);
+    };
     const expectCopyGeometry = async () => {
       const geometry = await copyBeta.evaluate((button) => {
         const box = button.getBoundingClientRect();
@@ -467,6 +508,53 @@ test('installed React sidenav retains navigation, draft and a running response a
     await expect(alpha).toBeFocused();
     expect(backend.requests).toHaveLength(3);
     await draft.fill('Copy preserves this draft.');
+    const contextDraft = await draft.elementHandle();
+    assert.ok(contextDraft);
+    await openBetaContext('desktop');
+    await expect(alpha).toHaveAttribute('aria-current', 'true');
+    await expect(beta).not.toHaveAttribute('aria-current');
+    await expect(page).toHaveURL(/thread=a/);
+    await expect(draft).toHaveValue('Copy preserves this draft.');
+    expect((await clipboardState()).writes).toEqual([]);
+    expect(backend.requests).toHaveLength(3);
+    await page.keyboard.press('Escape');
+    await expect(menu).toHaveCount(0);
+    await expect(beta).toBeFocused();
+    for (const key of ['Shift+F10', 'ContextMenu']) {
+      await beta.focus();
+      await page.keyboard.press(key);
+      await expect(menu).toHaveCount(1);
+      await expect(copyItem).toBeFocused();
+      await expect(copyItem).toHaveText(
+        'Copy conversation ID for Beta notes (b)'
+      );
+      if (key === 'ContextMenu') {
+        await page.keyboard.press('Tab');
+        await expect(copyBeta).toBeFocused();
+      } else {
+        await page.keyboard.press('Escape');
+        await expect(beta).toBeFocused();
+      }
+      await expect(menu).toHaveCount(0);
+    }
+    // A genuine pointer request immediately after keyboard requests is retained.
+    await openBetaContext('after-keyboard');
+    await alpha.click({ button: 'right', position: { x: 20, y: 12 } });
+    await expect(menu).toHaveCount(1);
+    await expect(copyItem).toHaveText(
+      'Copy conversation ID for Alpha notes (a)'
+    );
+    await page.keyboard.press('Escape');
+    await expect(menu).toHaveCount(0);
+    await expect(alpha).toBeFocused();
+    await expect(draft).toHaveValue('Copy preserves this draft.');
+    expect(
+      await contextDraft.evaluate(
+        (node) => node === document.querySelector('#message')
+      )
+    ).toBe(true);
+    expect((await clipboardState()).writes).toEqual([]);
+    expect(backend.requests).toHaveLength(3);
     await page.evaluate(() => {
       (
         window as unknown as { conversationClipboard: { hold: boolean } }
@@ -847,6 +935,18 @@ test('installed React sidenav retains navigation, draft and a running response a
       await expect(filter).toBeFocused();
       await expectSearchGeometry();
       await expectCopyGeometry();
+      const beforeContext = (await clipboardState()).writes;
+      await openBetaContext(`mobile-${width}`);
+      await page.keyboard.press('Escape');
+      await expect(menu).toHaveCount(0);
+      await expect(beta).toBeFocused();
+      expect((await clipboardState()).writes).toEqual(beforeContext);
+      await expect(beta).toHaveAttribute('aria-current', 'true');
+      await expect(draft).toHaveValue(heldDraftValue);
+      await expect(page.locator('.submission-status')).toHaveText(
+        'Response in progress…'
+      );
+      expect(backend.requests).toHaveLength(6);
       await copyBeta.click();
       await expectMenuGeometry(`mobile-${width}`);
       await copyItem.click();
@@ -1114,9 +1214,18 @@ test('installed React sidenav retains navigation, draft and a running response a
     expect(rtl.x + rtl.width).toBe(600);
     await expectSearchGeometry();
     await expectCopyGeometry();
-    await copyBeta.click();
-    await expectMenuGeometry('rtl');
+    const beforeContextCopy = (await clipboardState()).writes;
+    await openBetaContext('rtl');
     await copyItem.click();
+    await expect(menu).toHaveCount(0);
+    await expect(beta).toBeFocused();
+    expect((await clipboardState()).writes).toEqual([
+      ...beforeContextCopy,
+      'b',
+    ]);
+    await expect(beta).toHaveAttribute('aria-current', 'true');
+    await expect(draft).toHaveValue(heldDraftValue);
+    expect(backend.requests).toHaveLength(6);
     await expectCopyFeedback('Copied');
     await page.screenshot({
       path: testInfo.outputPath('sidenav-search-rtl.png'),

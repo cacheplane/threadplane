@@ -584,7 +584,7 @@ export async function runOverflowMenuScenarios(page, url) {
       };
     });
     assert.deepEqual(evidence, { contained: true, targets: true, rtl: 'rtl', font: 'monospace', fontSize: '18px', surface: 'rgb(241, 242, 243)', text: 'rgb(11, 22, 33)', rootDirection: 'ltr' });
-    await page.screenshot({ path: join(tmpdir(), `react-overflow-menu-plain-${width}.png`), fullPage: true });
+    await page.screenshot({ path: join(tmpdir(), `react-overflow-menu-plain-${width}.png`), fullPage: false });
     const survivingLast = await last.elementHandle();
     await page.keyboard.press('F2');
     await expect(last).toContainText('Expanded literal <&>');
@@ -594,7 +594,7 @@ export async function runOverflowMenuScenarios(page, url) {
       const box = node.getBoundingClientRect();
       return box.left >= 8 && box.top >= 8 && box.right <= innerWidth - 8 && box.bottom <= innerHeight - 8 && node.scrollWidth <= node.clientWidth;
     })).toBe(true);
-    await page.screenshot({ path: join(tmpdir(), `react-overflow-menu-plain-grown-${width}.png`), fullPage: true });
+    await page.screenshot({ path: join(tmpdir(), `react-overflow-menu-plain-grown-${width}.png`), fullPage: false });
     await page.keyboard.press('F2');
     await expect(last).not.toContainText('Expanded literal <&>');
     await expect(last).toBeFocused();
@@ -617,7 +617,7 @@ export async function runOverflowMenuScenarios(page, url) {
   const toggle = page.getByRole('button', { name: 'Toggle anchor availability' });
   await toggle.click();
   await expect(menu).toHaveCount(0); await expect(toggle).toBeFocused();
-  const hiddenTrigger = page.locator('.tp-overflow-menu__trigger');
+  const hiddenTrigger = page.locator('.tp-overflow-menu__trigger[aria-label="Fixture actions for full ID"]');
   await expect(hiddenTrigger).toHaveAttribute('aria-expanded', 'false');
   await expect(hiddenTrigger).not.toHaveAttribute('aria-controls');
   await toggle.click(); await expect(menu).toHaveCount(0);
@@ -630,6 +630,103 @@ export async function runOverflowMenuScenarios(page, url) {
   await page.setViewportSize({ width: 601, height: 844 });
   await expect(menu).toHaveCount(0);
   console.log('Installed React overflow menu: keyboard, literal commands, Tab destinations, unavailable-anchor suppression, local RTL/theme/font and 1280/390/600 viewport placement passed.');
+}
+
+
+/** Real installed ThreadList → owner → OverflowMenu context requests. */
+export async function runContextMenuScenarios(page, url) {
+  await page.goto(`${url}/?menu`);
+  const owner = page.getByRole('region', { name: 'Installed row context owner' });
+  const row = owner.getByRole('button', { name: 'Beta context', exact: true });
+  const trigger = owner.getByRole('button', { name: 'Context actions for Beta context (context-b<&)' });
+  const alphaTrigger = owner.getByRole('button', { name: 'Context actions for Alpha context (context-a)' });
+  const menu = page.getByRole('menu', { name: 'Context actions for Beta context (context-b<&)' });
+  const first = page.getByRole('menuitem', { name: 'Context first literal <&>' });
+  const last = page.getByRole('menuitem', { name: 'Context last command' });
+  for (const [width, rtl] of [[1280, false], [390, false], [600, true]]) {
+    if (page.viewportSize()?.width !== width || page.viewportSize()?.height !== 844) {
+      await page.evaluate(() => {
+        window.contextViewportReady = new Promise(resolve => window.addEventListener('resize', () => resolve(), { once: true }));
+      });
+      await page.setViewportSize({ width, height: 844 });
+      await handshake(page.evaluate(() => window.contextViewportReady), 'context viewport resize');
+    }
+    await owner.getByRole('checkbox', { name: 'Context RTL' }).setChecked(rtl);
+    const rowBox = await row.boundingBox();
+    assert.ok(rowBox);
+    const position = { x: rtl ? rowBox.width - 16 : 16, y: rowBox.height / 2 };
+    const point = { x: Math.floor(rowBox.x + position.x), y: Math.floor(rowBox.y + position.y) };
+    const count = Number(await owner.getByTestId('context-requests').textContent());
+    await page.mouse.click(point.x, point.y, { button: 'right' });
+    await expect(first).toBeFocused();
+    await expect(owner.getByTestId('context-requests')).toHaveText(String(count + 1));
+    await expect(owner.getByTestId('context-selected')).toHaveText('context-a');
+    await expect(owner.getByTestId('context-commands')).toHaveText('[]');
+    await expect.poll(() => menu.evaluate((node, { point, rtl }) => {
+      const box = node.getBoundingClientRect();
+      const left = Math.max(8, Math.min(point.x - (rtl ? box.width : 0), innerWidth - box.width - 8));
+      const preferred = point.y + 4 + box.height > innerHeight - 8 ? point.y - box.height - 4 : point.y + 4;
+      const top = Math.max(8, Math.min(preferred, innerHeight - box.height - 8));
+      return Math.abs(box.left - left) < 1 && Math.abs(box.top - top) < 1 && box.left >= 8 && box.right <= innerWidth - 8 && box.top >= 8 && box.bottom <= innerHeight - 8;
+    }, { point, rtl })).toBe(true);
+    await page.screenshot({ path: join(tmpdir(), `react-context-menu-plain-${width}.png`), fullPage: false });
+    const survivingMenu = await menu.elementHandle();
+    const survivingLast = await last.elementHandle();
+    await page.keyboard.press('End');
+    await expect(last).toBeFocused();
+    await page.keyboard.press('F3');
+    await expect(last).toBeFocused();
+    assert.equal(await survivingMenu.evaluate(node => node === document.querySelector('[role="menu"]')), true, 'point update keeps menu DOM');
+    assert.equal(await survivingLast.evaluate(node => node === document.activeElement), true, 'point update keeps focused command DOM');
+    await expect.poll(() => menu.evaluate(node => {
+      const box = node.getBoundingClientRect();
+      return Math.abs(box.right - (innerWidth - 8)) < 1 && box.top >= 8 && Math.abs(box.bottom - (innerHeight - 8)) < 1;
+    })).toBe(true);
+    await page.screenshot({ path: join(tmpdir(), `react-context-menu-plain-edge-${width}.png`), fullPage: false });
+    await page.keyboard.press('Escape');
+    await expect(menu).toHaveCount(0);
+    await expect(row).toBeFocused();
+    for (const key of ['Shift+F10', 'ContextMenu']) {
+      const before = Number(await owner.getByTestId('context-requests').textContent());
+      await row.press(key);
+      await expect(first).toBeFocused();
+      await expect(owner.getByTestId('context-requests')).toHaveText(String(before + 1));
+      await page.keyboard.press('Escape');
+      await expect(row).toBeFocused();
+    }
+    // A real right-click after both keyboard gestures must still open once.
+    await page.mouse.click(point.x, point.y, { button: 'right' });
+    await expect(first).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(menu).toHaveCount(0);
+    await expect(trigger).toBeFocused();
+    await row.press('ContextMenu');
+    await page.keyboard.press('Shift+Tab');
+    await expect(alphaTrigger).toBeFocused();
+    await expect(menu).toHaveCount(0);
+    await trigger.click();
+    await expect(first).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(trigger).toBeFocused();
+  }
+  await row.press('ContextMenu');
+  await first.press('Enter');
+  await expect(owner.getByTestId('context-commands')).toHaveText(JSON.stringify(['context-b<&:literal<&']));
+  await expect(row).toBeFocused();
+  await row.press('ContextMenu');
+  const invokerHandle = await row.elementHandle();
+  await invokerHandle.evaluate(node => { node.hidden = true; });
+  await page.keyboard.press('Escape');
+  await expect(trigger).toBeFocused();
+  await invokerHandle.evaluate(node => { node.hidden = false; });
+  await row.press('ContextMenu');
+  const triggerHandle = await trigger.elementHandle();
+  await triggerHandle.evaluate(node => { node.parentElement.hidden = true; });
+  await expect(menu).toHaveCount(0);
+  await triggerHandle.evaluate(node => { node.parentElement.hidden = false; });
+  await expect(menu).toHaveCount(0);
+  await expect(owner.getByTestId('context-selected')).toHaveText('context-a');
+  console.log('Installed React row contexts: original pointer/keyboard requests, viewport/RTL placement, live point and focus identity, invoker Escape/Tab, exact commands and anchor suppression passed.');
 }
 
 export async function runRuntimeScenarios(directory, kind) {
@@ -945,7 +1042,10 @@ export async function runRuntimeScenarios(directory, kind) {
     completed.push('unmount and explicit disposal');
     completed.push(...await runThreadScenarios(page, server));
     completed.push(...await runCheckpointScenarios(page, server));
-    if (/react/i.test(kind)) await runOverflowMenuScenarios(page, server.url);
+    if (/react/i.test(kind)) {
+      await runOverflowMenuScenarios(page, server.url);
+      await runContextMenuScenarios(page, server.url);
+    }
     assert.deepEqual(server.errors.map(String), []);
     assert.deepEqual(pageErrors, []);
     assert.deepEqual(consoleFailures, [], 'browser console has no warnings or errors');

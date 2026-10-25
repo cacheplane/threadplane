@@ -1,6 +1,12 @@
 'use client';
 
-import { useId, type ReactNode } from 'react';
+import {
+  useId,
+  useRef,
+  type ReactNode,
+  type MouseEvent,
+  type KeyboardEvent,
+} from 'react';
 
 export interface ThreadListItem {
   readonly id: string;
@@ -23,6 +29,11 @@ export interface ThreadListProps {
   readonly renderTitle?: (thread: ThreadListItem) => ReactNode;
   /** App-owned controls rendered beside the selection button. */
   readonly renderActions?: (thread: ThreadListItem) => ReactNode;
+  /** Synchronous context request from the selection button; the owner claims input. */
+  readonly onContextMenu?: (
+    threadId: string,
+    event: MouseEvent<HTMLButtonElement> | KeyboardEvent<HTMLButtonElement>
+  ) => void;
 }
 
 function validDate(value: number | undefined): Date | undefined {
@@ -52,8 +63,10 @@ export function ThreadList({
   now = Date.now(),
   renderTitle,
   renderActions,
+  onContextMenu,
 }: ThreadListProps) {
   const listId = useId();
+  const keyboardContext = useRef<HTMLButtonElement | null>(null);
   const reference = validDate(now);
   const list = (
     <ul
@@ -97,6 +110,56 @@ export function ThreadList({
               }
               aria-current={thread.id === activeThreadId ? 'true' : undefined}
               onClick={() => onSelect(thread.id)}
+              onPointerDown={
+                onContextMenu
+                  ? () => {
+                      keyboardContext.current = null;
+                    }
+                  : undefined
+              }
+              onContextMenu={
+                onContextMenu
+                  ? (event) => {
+                      if (event.defaultPrevented) return;
+                      const duplicate =
+                        keyboardContext.current === event.currentTarget &&
+                        event.button === 0;
+                      keyboardContext.current = null;
+                      if (duplicate) {
+                        event.preventDefault();
+                        return;
+                      }
+                      onContextMenu(thread.id, event);
+                    }
+                  : undefined
+              }
+              onKeyDown={
+                onContextMenu
+                  ? (event) => {
+                      if (
+                        event.defaultPrevented ||
+                        event.repeat ||
+                        event.nativeEvent.isComposing ||
+                        event.ctrlKey ||
+                        event.metaKey ||
+                        event.altKey
+                      )
+                        return;
+                      if (
+                        !(
+                          (event.key === 'ContextMenu' && !event.shiftKey) ||
+                          (event.key === 'F10' && event.shiftKey)
+                        )
+                      )
+                        return;
+                      const button = event.currentTarget;
+                      onContextMenu(thread.id, event);
+                      keyboardContext.current = event.defaultPrevented
+                        ? button
+                        : null;
+                    }
+                  : undefined
+              }
             >
               {pinned && (
                 <svg

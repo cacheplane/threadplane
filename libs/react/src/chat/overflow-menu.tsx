@@ -26,6 +26,8 @@ export interface OverflowMenuProps {
   readonly label: string;
   readonly className?: string;
   readonly disabled?: boolean;
+  readonly anchorPoint?: { readonly x: number; readonly y: number } | null;
+  readonly returnFocusTo?: HTMLElement | null;
 }
 
 const tokens = [
@@ -48,8 +50,12 @@ function ancestors(anchor: HTMLElement): HTMLElement[] {
     result.push(node);
   return result;
 }
-function available(anchor: HTMLButtonElement): boolean {
-  if (!anchor.isConnected || anchor.disabled || !anchor.getClientRects().length)
+function available(anchor: HTMLElement): boolean {
+  if (
+    !anchor.isConnected ||
+    anchor.matches(':disabled') ||
+    !anchor.getClientRects().length
+  )
     return false;
   const win = anchor.ownerDocument.defaultView;
   return (
@@ -99,6 +105,8 @@ export function OverflowMenu({
   label,
   className,
   disabled,
+  anchorPoint,
+  returnFocusTo,
 }: OverflowMenuProps) {
   const id = useId();
   const trigger = useRef<HTMLButtonElement>(null);
@@ -115,6 +123,32 @@ export function OverflowMenu({
   const focusedPortal = useRef<typeof portal>(null);
   const suppressed = useRef(false);
   const restore = useRef(false);
+  const context = useRef({ anchorPoint, returnFocusTo });
+  context.current = { anchorPoint, returnFocusTo };
+  const restoreTarget = useRef<HTMLElement | null | undefined>(null);
+  const returningFocus = useRef(false);
+  const focusInvoker = (target = context.current.returnFocusTo) => {
+    const anchor = trigger.current;
+    if (!anchor) return;
+    returningFocus.current = true;
+    try {
+      if (
+        target &&
+        target.ownerDocument === anchor.ownerDocument &&
+        available(target)
+      ) {
+        try {
+          target.focus();
+        } catch {
+          /* Fall back when an invoker refuses focus. */
+        }
+        if (anchor.ownerDocument.activeElement === target) return;
+      }
+      if (available(anchor)) anchor.focus();
+    } finally {
+      returningFocus.current = false;
+    }
+  };
   const initial = useRef<'first' | 'last'>('first');
   const [openingRequest, setOpeningRequest] = useState(0);
   const focused = useRef<string | null>(null);
@@ -133,6 +167,7 @@ export function OverflowMenu({
   };
   const close = (returnFocus = false) => {
     restore.current = returnFocus;
+    if (returnFocus) restoreTarget.current = context.current.returnFocusTo;
     callbacks.current.onOpenChange(false);
   };
   const measure = () => {
@@ -144,11 +179,19 @@ export function OverflowMenu({
     const box = panel.getBoundingClientRect();
     const width = Math.min(box.width, Math.max(0, win.innerWidth - 16));
     const height = Math.min(box.height, Math.max(0, win.innerHeight - 16));
-    const aligned =
-      portal.style.direction === 'rtl' ? rect.left : rect.right - width;
-    const below = rect.bottom + 4;
+    const point = context.current.anchorPoint;
+    const usePoint =
+      point && Number.isFinite(point.x) && Number.isFinite(point.y);
+    const aligned = usePoint
+      ? point.x - (portal.style.direction === 'rtl' ? width : 0)
+      : portal.style.direction === 'rtl'
+      ? rect.left
+      : rect.right - width;
+    const below = (usePoint ? point.y : rect.bottom) + 4;
     const preferred =
-      below + height > win.innerHeight - 8 ? rect.top - height - 4 : below;
+      below + height > win.innerHeight - 8
+        ? (usePoint ? point.y : rect.top) - height - 4
+        : below;
     const left = Math.max(8, Math.min(aligned, win.innerWidth - width - 8));
     const top = Math.max(8, Math.min(preferred, win.innerHeight - height - 8));
     setPlacement((previous) =>
@@ -163,14 +206,15 @@ export function OverflowMenu({
   useIsomorphicLayoutEffect(() => {
     const anchor = trigger.current;
     if (!open) {
-      if (restore.current && anchor && available(anchor)) {
+      if (restore.current && anchor) {
         const active = anchor.ownerDocument.activeElement;
         if (
           active === anchor.ownerDocument.body ||
           (active && menu.current?.contains(active))
         )
-          anchor.focus();
+          focusInvoker(restoreTarget.current);
       }
+      restoreTarget.current = null;
       restore.current = false;
       suppressed.current = false;
       ownedFocus.current = false;
@@ -194,7 +238,7 @@ export function OverflowMenu({
   useIsomorphicLayoutEffect(() => {
     measure();
     // Item updates can change the portal dimensions without a new open cycle.
-  }, [portal, items]);
+  }, [portal, items, anchorPoint?.x, anchorPoint?.y]);
 
   useIsomorphicLayoutEffect(() => {
     if (!portal || !menu.current || !trigger.current) return;
@@ -207,7 +251,12 @@ export function OverflowMenu({
       target instanceof win.Node &&
       (panel.contains(target) || anchor.contains(target));
     const outside = (event: Event) => {
-      if (!event.defaultPrevented && !inside(event.target)) close();
+      if (
+        !returningFocus.current &&
+        !event.defaultPrevented &&
+        !inside(event.target)
+      )
+        close();
     };
     const scroll = (event: Event) => {
       if (
@@ -376,7 +425,7 @@ export function OverflowMenu({
                 event.stopPropagation();
                 close(true);
               } else if (event.key === 'Tab') {
-                trigger.current?.focus();
+                focusInvoker();
                 close();
               } else if (
                 ['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)

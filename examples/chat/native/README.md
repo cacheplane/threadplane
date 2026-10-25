@@ -105,8 +105,15 @@ reopening shows a disabled pending item. Arrow/Home/End navigation, native
 Enter/Space, Escape before drawer dismissal, Tab/Shift+Tab and outside dismissal
 belong to the private menu. The app owns open state, clipboard execution and all
 feedback. Portals retain local theme/font/direction and suppress unavailable
-anchors during retained navigation collapse or drawer closure. Context menus,
-typeahead and lifecycle/project/archive commands remain open.
+anchors during retained navigation collapse or drawer closure.
+Right-clicking a full-directory selection row opens the same command at the
+pointer; the Context Menu key and Shift+F10 open it from the focused row. Opening
+does not select, copy, or fetch. Escape and accepted command closure return focus
+to that row, while Tab continues from its natural order. Ordinary Actions-button
+activation retains its trigger-based behavior. The application associates each
+request with its own identity, preventing an old close callback from dismissing
+a newer request even when the conversation ID is reused. Filtering a row out
+invalidates its request. Typeahead and lifecycle/project/archive commands remain open.
 The compact sidenav rail retains selection-only rows. Clipboard access may be
 unavailable or denied by the browser; the example reports that failure locally.
 

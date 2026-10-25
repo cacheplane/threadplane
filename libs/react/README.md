@@ -326,6 +326,15 @@ does not select the conversation. `null`, `false` and `undefined` omit the actio
 wrapper; other ReactNode values are preserved. Omitting the callback preserves
 the original row markup. The view owns no menu or action execution.
 
+Optional readonly `onContextMenu` receives the exact conversation ID and original
+React mouse or keyboard event from the selection button. Right-click, the
+Context Menu key, and Shift+F10 request it without selecting the row. The owner
+decides whether to call `preventDefault()` and open a menu. Claimed, repeated,
+composing, and unrelated modified keyboard events are ignored. Action siblings
+and the New button are not intercepted. Omitting the callback preserves native
+context-menu behavior. Capture `event.currentTarget` synchronously when it will
+serve as the menu's invoking element.
+
 An empty collection renders an empty list. The application owns loaded-title
 filtering, loading/error/empty notices, data fetching and execution. Rename,
 delete, archive, pin/project actions, drag reordering, live timestamp refresh and
@@ -366,11 +375,25 @@ ARIA reflects the mounted portal. Opening snapshots local direction, font,
 color-scheme and chat/design tokens; ancestor theme changes dismiss the menu.
 Import the chat stylesheet for fixed viewport-clamped placement and 40px targets.
 
+Optional readonly `anchorPoint` supplies readonly numeric `x`/`y` coordinates in
+the trigger document's viewport. A finite point places the menu beside that point,
+following local direction, flipping above when needed and retaining the 8px
+viewport margin. Missing, null or nonfinite coordinates use the trigger instead.
+Point changes remeasure the existing menu without replacing its focused item.
+The trigger must still be available, including for point-anchored menus.
+
+Optional readonly `returnFocusTo` supplies an invoking `HTMLElement` for accepted
+command/Escape closure and natural Tab/Shift+Tab traversal. It must be available
+in the trigger's document and able to take focus; otherwise the trigger is used
+when available. Deliberate focus outside the menu is preserved. The owner controls
+the point, invoker and open state, and should associate close callbacks with the
+current request so an old callback cannot dismiss a newer menu for the same ID.
+
 The Node rendering check covers DOM-free import and pre-mount trigger rendering,
 including `open=true`; it is a bounded check, with no broader hydration claim.
-Context menus, typeahead, lifecycle/project/archive commands and full parity
-remain open. Native full directories compose one exact-ID clipboard command;
-compact navigation remains selection-only.
+Native full directories compose pointer and keyboard context menus for one
+exact-ID clipboard command; compact navigation remains selection-only. Typeahead,
+lifecycle/project/archive commands and full parity remain open.
 
 ## Controlled chat panels
 

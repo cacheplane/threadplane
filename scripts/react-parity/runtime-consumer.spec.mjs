@@ -28,6 +28,12 @@ test('shared view preparation copies the complete views without composing a priv
   assert.equal(existsSync(join(consumer, 'runtime-entry.d.ts')), false, 'no surrogate declarations');
   assert.match(readFileSync(join(consumer, 'main.tsx'), 'utf8'), /checkpoints/);
   assert.match(readFileSync(join(consumer, 'main.tsx'), 'utf8'), /threads/);
+  const contextView = readFileSync(join(consumer, 'react-overflow-menu.tsx'), 'utf8');
+  assert.equal(contextView, readFileSync('fixtures/react-parity/runtime/react-overflow-menu.tsx', 'utf8'));
+  assert.match(contextView, /<ThreadList/);
+  assert.match(contextView, /onContextMenu=/);
+  assert.match(contextView, /returnFocusTo=/);
+  assert.match(contextView, /anchorPoint=/);
 });
 
 const versions = { react: '19.2.4', 'react-dom': '19.2.4', '@types/react': '19.2.14', '@types/react-dom': '19.2.3', vite: '7.3.1', typescript: '5.9.3' };
