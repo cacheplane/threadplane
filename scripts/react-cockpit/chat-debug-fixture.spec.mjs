@@ -281,6 +281,68 @@ test('worker fault controls reject malformed/partial oversized output and reap t
   }
 });
 
+for (const fault of ['delayed-close', 'hung-close']) {
+  test(
+    `acknowledged ${fault} preserves bounded graceful worker shutdown`,
+    { timeout: 8000 },
+    async () => {
+      const { createDebugWorker } = await import('./chat-debug-fixture.mjs');
+      const worker = track(createDebugWorker({ fault }));
+      // Independent cleanup if close accidentally loses its own finite deadline.
+      const watchdog = setTimeout(() => {
+        if (!worker.receipt.reaped)
+          process.kill(-worker.receipt.pgid, 'SIGKILL');
+      }, 6000);
+      try {
+        const started = performance.now();
+        const closing = worker.close();
+        await until(() => worker.receipt.stdoutFrames === 1);
+        const acknowledged = performance.now();
+        await closing;
+        const finished = performance.now();
+        assert.ok(
+          finished - started < 5000,
+          'Close must finish before the independent watchdog'
+        );
+        assert.equal(worker.receipt.reaped, true);
+        assert.equal(worker.receipt.stdoutFrames, 1);
+        assert.equal(worker.receipt.protocolErrors, 0);
+        assert.equal(worker.receipt.activeCommands, 0);
+        assert.equal(worker.receipt.stderrBytes, 0);
+        assert.equal(
+          worker.receipt.stderrSha256,
+          createHash('sha256').update('').digest('hex')
+        );
+        for (const pid of [worker.receipt.pid, -worker.receipt.pgid])
+          assert.throws(() => process.kill(pid, 0), { code: 'ESRCH' });
+        if (fault === 'delayed-close') {
+          assert.equal(worker.receipt.exitCode, 0);
+          assert.equal(worker.receipt.signal, null);
+          assert.deepEqual(worker.receipt.signals, []);
+        } else {
+          assert.ok(
+            finished - started >= 2000,
+            'Acknowledged close must receive its full graceful exit budget'
+          );
+          assert.ok(
+            finished - acknowledged >= 2000,
+            'Grace must follow the acknowledgement, independent of worker startup'
+          );
+          assert.equal(worker.receipt.exitCode, null);
+          assert.equal(worker.receipt.signal, 'SIGKILL');
+          assert.deepEqual(worker.receipt.signals, [
+            { signal: 'SIGTERM', result: 'sent' },
+            { signal: 'SIGKILL', result: 'sent' },
+          ]);
+        }
+      } finally {
+        await worker.close();
+        clearTimeout(watchdog);
+      }
+    }
+  );
+}
+
 test('late result after a deadline cannot resolve a revoked worker command', async () => {
   const { createDebugWorker } = await import('./chat-debug-fixture.mjs');
   const worker = track(
