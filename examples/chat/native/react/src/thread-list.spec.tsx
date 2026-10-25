@@ -284,3 +284,90 @@ it('uses ThreadList while refresh, loaded-title filtering and navigation retain 
   }
   expect(fixture.counters.disposals).toBe(fixture.counters.owners);
 });
+
+it('owns a nonselected row context request without selection, copying or directory work and discards filtered requests', async () => {
+  const fixture = applicationFixture();
+  const rows = [
+    { id: 'a', title: 'Alpha' },
+    { id: 'b', title: 'Beta' },
+  ];
+  const listRows = vi.fn(async () => ({ kind: 'ready' as const, value: rows }));
+  const application = createReactApplication({
+    ...fixture.options,
+    directory: { ...fixture.options.directory, list: listRows },
+  });
+  const write = vi.fn(async () => {});
+  Object.defineProperty(navigator, 'clipboard', {
+    configurable: true,
+    get: () => ({ writeText: write }),
+  });
+  try {
+    application.start();
+    await waitFor(() =>
+      expect(application.getSnapshot().selection.status).toBe('ready')
+    );
+    const view = render(<App application={application} presentation="page" />);
+    const list = view.getByRole('list', { name: 'Loaded conversations' });
+    const beta = within(list).getByRole('button', { name: 'Beta' });
+    const draft = view.getByRole('textbox', { name: 'Message' });
+    fireEvent.change(draft, { target: { value: 'Keep my draft' } });
+    const counters = { ...fixture.counters };
+    const request = new MouseEvent('contextmenu', {
+      bubbles: true,
+      cancelable: true,
+      clientX: 77,
+      clientY: 81,
+    });
+    fireEvent(beta, request);
+    expect(request.defaultPrevented).toBe(true);
+    const menu = view.getByRole('menu');
+    expect(menu.style.left).toBe('77px');
+    expect(menu.style.top).toBe('85px');
+    expect(write).not.toHaveBeenCalled();
+    expect(application.getSnapshot().selection.id).toBe('a');
+    expect(fixture.counters).toEqual(counters);
+    expect(listRows).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(menu, { key: 'Escape' });
+    expect(view.queryByRole('menu')).toBeNull();
+    expect(document.activeElement).toBe(beta);
+    for (const key of ['ContextMenu', 'F10']) {
+      const request = new KeyboardEvent('keydown', {
+        key,
+        shiftKey: key === 'F10',
+        bubbles: true,
+        cancelable: true,
+      });
+      fireEvent(beta, request);
+      expect(request.defaultPrevented).toBe(true);
+      fireEvent.keyDown(view.getByRole('menu'), { key: 'Escape' });
+      expect(document.activeElement).toBe(beta);
+    }
+    fireEvent.contextMenu(beta, { button: 2, clientX: 77, clientY: 81 });
+    fireEvent.click(
+      view.getByRole('menuitem', { name: 'Copy conversation ID for Beta (b)' })
+    );
+    await act(async () => {});
+    expect(write.mock.calls).toEqual([['b']]);
+    expect(document.activeElement).toBe(beta);
+    expect(view.getByRole('textbox', { name: 'Message' })).toBe(draft);
+    expect((draft as HTMLTextAreaElement).value).toBe('Keep my draft');
+    expect(application.getSnapshot().selection.id).toBe('a');
+    expect(fixture.counters).toEqual(counters);
+    fireEvent.contextMenu(beta, { button: 2, clientX: 120, clientY: 130 });
+    fireEvent.change(view.getByRole('searchbox'), {
+      target: { value: 'Alpha' },
+    });
+    expect(view.queryByRole('menu')).toBeNull();
+    fireEvent.change(view.getByRole('searchbox'), { target: { value: '' } });
+    expect(view.queryByRole('menu')).toBeNull();
+    const trigger = within(list).getByRole('button', {
+      name: 'Actions for Beta (b)',
+    });
+    fireEvent.click(trigger);
+    expect(view.getByRole('menu').style.left).not.toBe('120px');
+    fireEvent.keyDown(view.getByRole('menu'), { key: 'Escape' });
+    expect(document.activeElement).toBe(trigger);
+  } finally {
+    application.dispose();
+  }
+});

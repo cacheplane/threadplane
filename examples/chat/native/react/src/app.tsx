@@ -23,6 +23,7 @@ import { Approval } from './approval';
 import { BackgroundActivity } from './background-activity';
 import { CopyAnswer } from './copy-answer';
 import { CopyConversationId } from './copy-conversation-id';
+import { useConversationMenu } from './use-conversation-menu';
 import { TripSummary } from './trip-summary';
 import { NativeNavigation } from './native-navigation';
 
@@ -181,6 +182,7 @@ function Conversation({
   const filterInput = useRef<HTMLInputElement>(null);
   const rows = filterLoadedTitles(snapshot.list.rows, filter);
   const selection = snapshot.selection;
+  const menus = useConversationMenu(rows);
   const directory = (
     <aside aria-labelledby="conversations-title">
       <h2 id="conversations-title">Loaded conversations</h2>
@@ -222,8 +224,13 @@ function Conversation({
       )}
       <ThreadList
         threads={rows}
+        onContextMenu={menus.onContextMenu}
         renderActions={(thread) => (
-          <CopyConversationId id={thread.id} title={thread.title} />
+          <CopyConversationId
+            id={thread.id}
+            title={thread.title}
+            menu={menus.forThread(thread.id)}
+          />
         )}
         renderTitle={(thread) =>
           renderThreadTitle(thread.title || thread.id, filter)

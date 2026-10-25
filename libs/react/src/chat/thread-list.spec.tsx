@@ -570,3 +570,121 @@ describe('ThreadList', () => {
     expect(onSelect).not.toHaveBeenCalled();
   });
 });
+
+it('requests context for the exact row and original pointer event without selecting or claiming it', () => {
+  const select = vi.fn();
+  const context = vi.fn((id, event) => {
+    expect(id).toBe(' exact <ID> ');
+    expect(event.currentTarget).toBe(row);
+    expect(event.nativeEvent).toBe(native);
+  });
+  const view = render(
+    <ThreadList
+      threads={[{ id: ' exact <ID> ' }]}
+      onSelect={select}
+      onContextMenu={context}
+      renderActions={() => <button>Action</button>}
+      onNewThread={() => undefined}
+    />
+  );
+  const row = view.getByRole('button', { name: 'exact <ID>' });
+  const native = new MouseEvent('contextmenu', {
+    bubbles: true,
+    cancelable: true,
+    clientX: 112,
+    clientY: 94,
+    button: 2,
+  });
+  fireEvent(row, native);
+  expect(context).toHaveBeenCalledTimes(1);
+  expect(native.defaultPrevented).toBe(false);
+  fireEvent.contextMenu(view.getByRole('button', { name: 'Action' }));
+  fireEvent.contextMenu(view.getByRole('button', { name: '+ New thread' }));
+  expect(context).toHaveBeenCalledTimes(1);
+  expect(select).not.toHaveBeenCalled();
+});
+
+it.each([{ key: 'ContextMenu' }, { key: 'F10', shiftKey: true }])(
+  'requests a keyboard context once and suppresses its native duplicate but preserves the next pointer: %s',
+  (key) => {
+    const context = vi.fn((_id, event) => event.preventDefault());
+    const view = render(
+      <ThreadList
+        threads={[{ id: 'a' }]}
+        onSelect={vi.fn()}
+        onContextMenu={context}
+      />
+    );
+    const row = view.getByRole('button');
+    const native = new KeyboardEvent('keydown', {
+      ...key,
+      bubbles: true,
+      cancelable: true,
+    });
+    fireEvent(row, native);
+    expect(context).toHaveBeenCalledTimes(1);
+    expect(context.mock.calls[0][1].nativeEvent).toBe(native);
+    fireEvent.contextMenu(row, { button: 0, clientX: 0, clientY: 0 });
+    expect(context).toHaveBeenCalledTimes(1);
+    fireEvent.pointerDown(row, { button: 2 });
+    fireEvent.contextMenu(row, { button: 2, clientX: 0, clientY: 0 });
+    expect(context).toHaveBeenCalledTimes(2);
+  }
+);
+
+it.each([
+  { key: 'ContextMenu', shiftKey: true },
+  { key: 'ContextMenu', ctrlKey: true },
+  { key: 'ContextMenu', metaKey: true },
+  { key: 'ContextMenu', altKey: true },
+  { key: 'ContextMenu', repeat: true },
+  { key: 'ContextMenu', isComposing: true },
+  { key: 'F10' },
+  { key: 'F10', shiftKey: true, ctrlKey: true },
+  { key: 'Enter' },
+])('leaves guarded context key input alone: %s', (key) => {
+  const context = vi.fn();
+  const view = render(
+    <ThreadList
+      threads={[{ id: 'a' }]}
+      onSelect={vi.fn()}
+      onContextMenu={context}
+    />
+  );
+  const event = new KeyboardEvent('keydown', {
+    ...key,
+    bubbles: true,
+    cancelable: true,
+  });
+  fireEvent(view.getByRole('button'), event);
+  expect(context).not.toHaveBeenCalled();
+  expect(event.defaultPrevented).toBe(false);
+});
+
+it('leaves omitted and already claimed context input alone', () => {
+  const context = vi.fn();
+  const view = render(
+    <ThreadList
+      threads={[{ id: 'a' }]}
+      onSelect={vi.fn()}
+      onContextMenu={context}
+    />
+  );
+  for (const event of [
+    new MouseEvent('contextmenu', { bubbles: true, cancelable: true }),
+    new KeyboardEvent('keydown', {
+      key: 'ContextMenu',
+      bubbles: true,
+      cancelable: true,
+    }),
+  ]) {
+    event.preventDefault();
+    fireEvent(view.getByRole('button'), event);
+  }
+  expect(context).not.toHaveBeenCalled();
+  view.rerender(<ThreadList threads={[{ id: 'a' }]} onSelect={vi.fn()} />);
+  expect(fireEvent.contextMenu(view.getByRole('button'))).toBe(true);
+  expect(
+    fireEvent.keyDown(view.getByRole('button'), { key: 'ContextMenu' })
+  ).toBe(true);
+});

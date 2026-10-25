@@ -35,6 +35,8 @@ export type PropsContract = Assert<
       readonly label: string;
       readonly disabled?: boolean;
       readonly className?: string;
+      readonly anchorPoint?: { readonly x: number; readonly y: number } | null;
+      readonly returnFocusTo?: HTMLElement | null;
     }
   >
 >;
@@ -67,3 +69,27 @@ props.items[0].id = 'x';
 <OverflowMenu {...props} disabled="true" />;
 // @ts-expect-error Tone is bounded.
 <OverflowMenu {...props} items={[{ id: 'a', label: 'A', tone: 'danger' }]} />;
+
+<OverflowMenu {...props} anchorPoint={null} returnFocusTo={null} />;
+<OverflowMenu
+  {...props}
+  anchorPoint={{ x: 1, y: 2 }}
+  returnFocusTo={document.createElement('button')}
+/>;
+// @ts-expect-error The point prop is readonly.
+props.anchorPoint = null;
+// @ts-expect-error The invoker prop is readonly.
+props.returnFocusTo = null;
+if (props.anchorPoint) {
+  // @ts-expect-error Point coordinates are readonly.
+  props.anchorPoint.x = 1;
+  // @ts-expect-error Point coordinates are readonly.
+  props.anchorPoint.y = 1;
+}
+// @ts-expect-error Point coordinates are numeric.
+<OverflowMenu {...props} anchorPoint={{ x: '1', y: 2 }} />;
+<OverflowMenu
+  {...props}
+  // @ts-expect-error Invokers are HTML elements.
+  returnFocusTo={document.createElementNS('http://www.w3.org/2000/svg', 'svg')}
+/>;

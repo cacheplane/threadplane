@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createElement } from 'react';
 import { renderToString } from 'react-dom/server';
-import { ChatSidenav, OverflowMenu } from '@threadplane/react/chat';
+import { ChatSidenav, OverflowMenu, ThreadList } from '@threadplane/react/chat';
 
 assert.equal(typeof window, 'undefined');
 assert.equal(typeof document, 'undefined');
@@ -35,10 +35,29 @@ for (const mode of ['expanded', 'collapsed', 'drawer']) {
 }
 assert.equal(requests, 0);
 for (const open of [false, true]) {
-  const html = renderToString(createElement(OverflowMenu, { label: 'Actions <ID>', open, items: [{ id: 'copy', label: 'Copy' }], onOpenChange: request, onSelect: request }));
+  const html = renderToString(
+    createElement(OverflowMenu, {
+      label: 'Actions <ID>',
+      open,
+      anchorPoint: { x: 41, y: 52 },
+      returnFocusTo: null,
+      items: [{ id: 'copy', label: 'Copy' }],
+      onOpenChange: request,
+      onSelect: request,
+    })
+  );
   assert.match(html, /aria-expanded="false"/);
   assert.match(html, /aria-haspopup="menu"/);
   assert.doesNotMatch(html, /aria-controls|role="menu"|role="menuitem"/);
 }
+const contextRows = renderToString(
+  createElement(ThreadList, {
+    threads: [{ id: 'context<&', title: 'Context row' }],
+    onSelect: request,
+    onContextMenu: request,
+  })
+);
+assert.match(contextRows, /Context row/);
+assert.doesNotMatch(contextRows, /role="menu"/);
 assert.equal(requests, 0);
 console.log('Installed React sidenav SSR: default and three search modes rendered without DOM globals or requests.');

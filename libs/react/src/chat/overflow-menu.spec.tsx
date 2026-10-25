@@ -670,3 +670,280 @@ it('portals into the trigger document and releases owner listeners on unmount', 
   expect(change).not.toHaveBeenCalled();
   frame.remove();
 });
+
+it.each([
+  ['ltr', { x: 100, y: 200 }, 100, 204],
+  ['rtl', { x: 300, y: 200 }, 120, 204],
+  ['ltr', { x: -40, y: -20 }, 8, 8],
+  ['ltr', { x: 9999, y: 9999 }, 836, 640],
+  ['ltr', { x: NaN, y: 200 }, 240, 84],
+  ['ltr', { x: 100, y: Infinity }, 240, 84],
+] as const)(
+  'places context points with direction, flip, clamp and trigger fallback: %s %s',
+  (direction, anchorPoint, left, top) => {
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(
+      function (this: HTMLElement) {
+        return (
+          this.getAttribute('role') === 'menu'
+            ? {
+                width: 180,
+                height: 120,
+                left: 0,
+                right: 180,
+                top: 0,
+                bottom: 120,
+              }
+            : {
+                width: 40,
+                height: 40,
+                left: 380,
+                right: 420,
+                top: 40,
+                bottom: 80,
+              }
+        ) as DOMRect;
+      }
+    );
+    const view = render(
+      <div dir={direction} style={{ direction }}>
+        <chat.OverflowMenu
+          label="Actions"
+          items={items}
+          open
+          onOpenChange={vi.fn()}
+          onSelect={vi.fn()}
+          anchorPoint={anchorPoint}
+        />
+      </div>
+    );
+    const menu = view.getByRole('menu');
+    expect(menu.style.left).toBe(`${left}px`);
+    expect(menu.style.top).toBe(`${top}px`);
+  }
+);
+
+it('remeasures changed points without remounting or resetting focus and observes latest coordinates', () => {
+  let resize: (() => void) | undefined;
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      constructor(callback: () => void) {
+        resize = callback;
+      }
+      observe() {
+        /* Observer callbacks are driven explicitly by the test. */
+      }
+      disconnect() {
+        /* No native observer resources are allocated. */
+      }
+    }
+  );
+  let width = 100;
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(
+    function (this: HTMLElement) {
+      return (
+        this.getAttribute('role') === 'menu'
+          ? { width, height: 40, left: 0, right: width, top: 0, bottom: 40 }
+          : { width: 40, height: 40, left: 0, right: 40, top: 0, bottom: 40 }
+      ) as DOMRect;
+    }
+  );
+  const props = {
+    label: 'Actions',
+    items,
+    open: true,
+    onOpenChange: vi.fn(),
+    onSelect: vi.fn(),
+  };
+  const view = render(
+    <chat.OverflowMenu {...props} anchorPoint={{ x: 50, y: 60 }} />
+  );
+  const menu = view.getByRole('menu');
+  const beta = view.getByRole('menuitem', { name: 'Beta' });
+  beta.focus();
+  view.rerender(
+    <chat.OverflowMenu {...props} anchorPoint={{ x: 900, y: 100 }} />
+  );
+  expect(view.getByRole('menu')).toBe(menu);
+  expect(menu.style.left).toBe('900px');
+  expect(menu.style.top).toBe('104px');
+  expect(document.activeElement).toBe(beta);
+  width = 200;
+  act(() => resize?.());
+  expect(menu.style.left).toBe('816px');
+  expect(menu.style.top).toBe('104px');
+  expect(document.activeElement).toBe(beta);
+});
+
+it.each(['Escape', 'Tab', 'ShiftTab', 'command'])(
+  'returns to the invoking row on %s',
+  (kind) => {
+    const invoker = document.createElement('button');
+    document.body.append(invoker);
+    function App() {
+      const [open, setOpen] = useState(true);
+      return (
+        <chat.OverflowMenu
+          label="Actions"
+          items={items}
+          open={open}
+          onOpenChange={setOpen}
+          onSelect={vi.fn()}
+          returnFocusTo={invoker}
+        />
+      );
+    }
+    const view = render(<App />);
+    const item = view.getByRole('menuitem', { name: 'Alpha' });
+    if (kind === 'command') fireEvent.click(item);
+    else
+      fireEvent.keyDown(item, {
+        key: kind === 'ShiftTab' ? 'Tab' : kind,
+        shiftKey: kind === 'ShiftTab',
+      });
+    expect(document.activeElement).toBe(invoker);
+    invoker.remove();
+  }
+);
+
+it.each([
+  'hidden',
+  'inert',
+  'disabled',
+  'disconnected',
+  'foreign',
+  'unfocusable',
+])('falls back from an unavailable %s invoker to the trigger', (kind) => {
+  const frame = document.createElement('iframe');
+  document.body.append(frame);
+  const foreignDocument = frame.contentDocument;
+  if (!foreignDocument) throw Error('Missing iframe document');
+  const invoker = (
+    kind === 'foreign' ? foreignDocument : document
+  ).createElement(kind === 'unfocusable' ? 'div' : 'button');
+  invoker.ownerDocument.body.append(invoker);
+  if (kind === 'hidden') invoker.hidden = true;
+  if (kind === 'inert') invoker.setAttribute('inert', '');
+  if (kind === 'disabled') invoker.setAttribute('disabled', '');
+  if (kind === 'disconnected') invoker.remove();
+  function App() {
+    const [open, setOpen] = useState(true);
+    return (
+      <chat.OverflowMenu
+        label="Actions"
+        items={items}
+        open={open}
+        onOpenChange={setOpen}
+        onSelect={vi.fn()}
+        returnFocusTo={invoker}
+      />
+    );
+  }
+  const view = render(<App />);
+  fireEvent.keyDown(view.getByRole('menuitem', { name: 'Alpha' }), {
+    key: 'Escape',
+  });
+  expect(document.activeElement).toBe(
+    view.getByRole('button', { name: 'Actions' })
+  );
+  invoker.remove();
+  frame.remove();
+});
+
+it.each(['Escape', 'Tab', 'command'])(
+  'issues one controlled close while returning to an invoker for %s',
+  (kind) => {
+    const invoker = document.createElement('button');
+    document.body.append(invoker);
+    const change = vi.fn();
+    function App() {
+      const [open, setOpen] = useState(true);
+      return (
+        <chat.OverflowMenu
+          label="Actions"
+          items={items}
+          open={open}
+          onOpenChange={(next) => {
+            change(next);
+            setOpen(next);
+          }}
+          onSelect={vi.fn()}
+          returnFocusTo={open ? invoker : null}
+        />
+      );
+    }
+    const view = render(<App />);
+    const item = view.getByRole('menuitem', { name: 'Alpha' });
+    if (kind === 'command') fireEvent.click(item);
+    else fireEvent.keyDown(item, { key: kind });
+    expect(document.activeElement).toBe(invoker);
+    expect(change.mock.calls).toEqual([[false]]);
+    invoker.remove();
+  }
+);
+
+it('keeps deliberate external focus when an accepted command closes a context menu', () => {
+  const invoker = document.createElement('button');
+  document.body.append(invoker);
+  function App() {
+    const [open, setOpen] = useState(true);
+    return (
+      <>
+        <input aria-label="Destination" />
+        <chat.OverflowMenu
+          label="Actions"
+          items={items}
+          open={open}
+          onOpenChange={setOpen}
+          returnFocusTo={invoker}
+          onSelect={() =>
+            document.querySelector<HTMLInputElement>('input')?.focus()
+          }
+        />
+      </>
+    );
+  }
+  const view = render(<App />);
+  fireEvent.click(view.getByRole('menuitem', { name: 'Alpha' }));
+  expect(document.activeElement).toBe(view.getByRole('textbox'));
+  invoker.remove();
+});
+
+it('does not return focus to the context invoker while controlled closure is refused', () => {
+  const invoker = document.createElement('button');
+  document.body.append(invoker);
+  const props = {
+    label: 'Actions',
+    items,
+    open: true,
+    onOpenChange: vi.fn(),
+    onSelect: vi.fn(),
+    returnFocusTo: invoker,
+  };
+  const view = render(<chat.OverflowMenu {...props} />);
+  const item = view.getByRole('menuitem', { name: 'Alpha' });
+  fireEvent.keyDown(item, { key: 'Escape' });
+  expect(document.activeElement).toBe(item);
+  view.rerender(
+    <chat.OverflowMenu {...props} open={false} returnFocusTo={null} />
+  );
+  expect(document.activeElement).toBe(invoker);
+  invoker.remove();
+});
+
+it('suppresses point menus when their real trigger is unavailable', () => {
+  const change = vi.fn();
+  const view = render(
+    <chat.OverflowMenu
+      label="Actions"
+      items={items}
+      open
+      disabled
+      anchorPoint={{ x: 200, y: 300 }}
+      onOpenChange={change}
+      onSelect={vi.fn()}
+    />
+  );
+  expect(view.queryByRole('menu')).toBeNull();
+  expect(change.mock.calls).toEqual([[false]]);
+});

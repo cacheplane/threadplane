@@ -13,17 +13,17 @@ test('plain declaration proof checks navigation, sidebar and thread-list type-on
   const react = join(consumer, 'node_modules/react');
   mkdirSync(react, { recursive: true });
   writeFileSync(join(react, 'package.json'), JSON.stringify({ name: 'react', type: 'module', exports: { '.': { types: './index.d.ts' } } }));
-  writeFileSync(join(react, 'index.d.ts'), 'export interface MouseEvent<T> { readonly currentTarget: T; } export type ReactNode = string | number | boolean | null | undefined | readonly ReactNode[];');
+  writeFileSync(join(react, 'index.d.ts'), 'export interface MouseEvent<T> { readonly currentTarget: T; readonly clientX: number; } export interface KeyboardEvent<T> { readonly currentTarget: T; readonly key: string; } export type ReactNode = string | number | boolean | null | undefined | readonly ReactNode[];');
   writeFileSync(join(directory, 'package.json'), JSON.stringify({ name: '@threadplane/react', type: 'module', exports: { './chat': { types: './chat.d.ts' } } }));
   writeFileSync(join(consumer, 'package.json'), '{"type":"module"}');
   const declaration = `export interface OverflowMenuItem { readonly id: string; readonly label: string; readonly disabled?: boolean; readonly tone?: 'normal' | 'destructive'; }
-export interface OverflowMenuProps { readonly items: readonly OverflowMenuItem[]; readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly onSelect: (itemId: string, event: import('react').MouseEvent<HTMLButtonElement>) => void; readonly label: string; readonly className?: string; readonly disabled?: boolean; }
+export interface OverflowMenuProps { readonly items: readonly OverflowMenuItem[]; readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly onSelect: (itemId: string, event: import('react').MouseEvent<HTMLButtonElement>) => void; readonly label: string; readonly className?: string; readonly disabled?: boolean; readonly anchorPoint?: { readonly x: number; readonly y: number } | null; readonly returnFocusTo?: HTMLElement | null; }
 export type ChatSidenavMode = 'expanded' | 'collapsed' | 'drawer';
 export interface ChatSidenavProps { readonly onSearch?: () => void; readonly searchLabel?: string; readonly searchShortcut?: boolean; readonly toggleShortcut?: boolean; readonly collapsedContent?: import('react').ReactNode; readonly mode: ChatSidenavMode; readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly onModeChange: (mode: Exclude<ChatSidenavMode, 'drawer'>) => void; }
 export interface ChatSidenavScrimProps { readonly open: boolean; readonly onDismiss: () => void; readonly label?: string; readonly className?: string; }
 export interface ChatSidebarProps { readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly title: string; readonly pageContent?: import('react').ReactNode; readonly pushContent?: boolean; }
 export interface ThreadListItem { readonly id: string; readonly title?: string; readonly updatedAt?: number; readonly pinned?: boolean; }
-export interface ThreadListProps { readonly threads: readonly ThreadListItem[]; readonly onSelect: (threadId: string) => void; readonly activeThreadId?: string | null; readonly label?: string; readonly className?: string; readonly onNewThread?: () => void; readonly newThreadDisabled?: boolean; readonly newThreadLabel?: string; readonly now?: number; readonly renderTitle?: (thread: ThreadListItem) => import('react').ReactNode; readonly renderActions?: (thread: ThreadListItem) => import('react').ReactNode; }`;
+export interface ThreadListProps { readonly threads: readonly ThreadListItem[]; readonly onSelect: (threadId: string) => void; readonly activeThreadId?: string | null; readonly label?: string; readonly className?: string; readonly onNewThread?: () => void; readonly newThreadDisabled?: boolean; readonly newThreadLabel?: string; readonly now?: number; readonly renderTitle?: (thread: ThreadListItem) => import('react').ReactNode; readonly renderActions?: (thread: ThreadListItem) => import('react').ReactNode; readonly onContextMenu?: (threadId: string, event: import('react').MouseEvent<HTMLButtonElement> | import('react').KeyboardEvent<HTMLButtonElement>) => void; }`;
   const source = join(consumer, 'index.ts');
   writeFileSync(source, packageVerifier.plainExportTypes(['@threadplane/react/chat']));
   const compile = text => {
@@ -47,6 +47,39 @@ export interface ThreadListProps { readonly threads: readonly ThreadListItem[]; 
     ['readonly label: string', 'readonly label?: string'],
     ['readonly disabled?: boolean', 'readonly disabled: boolean'],
   ]) assert.match(compile(declaration.replace(before, after)), /OverflowMenu|false.*true/, `${before} → ${after}`);
+  const mutateInterface = (name, before, after) => {
+    const start = declaration.indexOf(`export interface ${name} {`);
+    const next = declaration.indexOf('\nexport ', start);
+    const end = next < 0 ? declaration.length : next;
+    assert.ok(declaration.slice(start, end).includes(before), `mutation target ${name}: ${before}`);
+    return declaration.slice(0, start) + declaration.slice(start, end).replace(before, after) + declaration.slice(end);
+  };
+  for (const [name, before, alternatives] of [
+    ['OverflowMenuProps', 'readonly anchorPoint?: { readonly x: number; readonly y: number } | null;', [
+      '', 'anchorPoint?: { readonly x: number; readonly y: number } | null;',
+      'readonly anchorPoint: { readonly x: number; readonly y: number } | null;',
+      'readonly anchorPoint?: { x: number; readonly y: number } | null;',
+      'readonly anchorPoint?: { readonly x: number; y: number } | null;',
+      'readonly anchorPoint?: { readonly x: string; readonly y: number } | null;',
+      'readonly anchorPoint?: { readonly x: number; readonly y: string } | null;',
+      'readonly anchorPoint?: { readonly x: number; readonly y: number };',
+    ]],
+    ['OverflowMenuProps', 'readonly returnFocusTo?: HTMLElement | null;', [
+      '', 'returnFocusTo?: HTMLElement | null;', 'readonly returnFocusTo: HTMLElement | null;',
+      'readonly returnFocusTo?: HTMLButtonElement | null;', 'readonly returnFocusTo?: Element | null;',
+      'readonly returnFocusTo?: HTMLElement;',
+    ]],
+    ['ThreadListProps', "readonly onContextMenu?: (threadId: string, event: import('react').MouseEvent<HTMLButtonElement> | import('react').KeyboardEvent<HTMLButtonElement>) => void;", [
+      '', "onContextMenu?: (threadId: string, event: import('react').MouseEvent<HTMLButtonElement> | import('react').KeyboardEvent<HTMLButtonElement>) => void;",
+      "readonly onContextMenu: (threadId: string, event: import('react').MouseEvent<HTMLButtonElement> | import('react').KeyboardEvent<HTMLButtonElement>) => void;",
+      "readonly onContextMenu?: (threadId: string, event: import('react').MouseEvent<HTMLButtonElement>) => void;",
+      "readonly onContextMenu?: (threadId: string, event: import('react').KeyboardEvent<HTMLButtonElement>) => void;",
+      "readonly onContextMenu?: (threadId: number, event: import('react').MouseEvent<HTMLButtonElement> | import('react').KeyboardEvent<HTMLButtonElement>) => void;",
+      "readonly onContextMenu?: (threadId: string, event: import('react').MouseEvent<HTMLDivElement> | import('react').KeyboardEvent<HTMLDivElement>) => void;",
+    ]],
+  ]) {
+    for (const after of alternatives) assert.match(compile(mutateInterface(name, before, after)), /false.*true|onContextMenu/, `${name}: ${before} → ${after}`);
+  }
   assert.match(compile(declaration.replaceAll('ChatSidenavMode', 'HiddenMode')), /ChatSidenavMode/);
   assert.match(compile(declaration.replaceAll('ChatSidenavProps', 'HiddenProps')), /ChatSidenavProps/);
   const sidenav = declaration.indexOf('export interface ChatSidenavProps');

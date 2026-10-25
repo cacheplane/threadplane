@@ -33,10 +33,12 @@ permissions:
 env:
   DO_NOT_TRACK: '1'
 
+# Keep the locked Playwright native recipes and canonical Python 3.12 fixtures
+# on their supported runner baseline; ubuntu-latest may move ahead of both.
 jobs:
   ci-scope:
     name: CI scope
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       main_run: ${{ steps.scope.outputs.main_run }}
       library: ${{ steps.scope.outputs.library }}
@@ -144,7 +146,7 @@ jobs:
     name: Scripts — generator / proxy vitest suites
     needs: ci-scope
     if: github.event_name == 'push' || needs.ci-scope.outputs.scripts_tests == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
@@ -163,7 +165,7 @@ jobs:
     name: Library — lint / test / build
     needs: ci-scope
     if: github.event_name == 'push' || needs.ci-scope.outputs.library == 'true' || needs.ci-scope.outputs.angular_compatibility == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       LIBS: chat,langgraph,ag-ui,render,a2ui,telemetry,middleware
       FOUNDATIONS: core,content,angular,react
@@ -352,7 +354,7 @@ jobs:
     name: 'Angular ${{ matrix.angular }} — packaged consumer'
     needs: [ci-scope, library]
     if: github.event_name == 'push' || needs.ci-scope.outputs.angular_compatibility == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -400,7 +402,7 @@ jobs:
     name: Website — lint / test / build
     needs: ci-scope
     if: github.event_name == 'push' || needs.ci-scope.outputs.website == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     env:
@@ -445,7 +447,7 @@ jobs:
     name: Growth lifecycle — Node 22
     needs: ci-scope
     if: github.event_name == 'push' || needs.ci-scope.outputs.growth_lifecycle == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
@@ -462,7 +464,7 @@ jobs:
     name: Lifecycle — Node 24
     needs: ci-scope
     if: github.event_name == 'push' || needs.ci-scope.outputs.growth_lifecycle == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
@@ -482,7 +484,7 @@ jobs:
     name: Growth Research — Node 24
     needs: ci-scope
     if: github.event_name == 'push' || needs.ci-scope.outputs.growth_research == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -500,7 +502,7 @@ jobs:
     name: Workspace libraries — lint / test
     needs: ci-scope
     if: github.event_name == 'push' || needs.ci-scope.outputs.cockpit == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
@@ -531,7 +533,7 @@ jobs:
     name: Cockpit — build all examples
     needs: ci-scope
     if: github.event_name == 'push' || needs.ci-scope.outputs.cockpit_examples == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -562,7 +564,7 @@ jobs:
     name: Cockpit — representative capability smoke
     needs: ci-scope
     if: github.event_name == 'push' || needs.ci-scope.outputs.cockpit_smoke == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
@@ -581,7 +583,7 @@ jobs:
     name: examples/chat — python smoke
     needs: ci-scope
     if: github.event_name == 'push' || needs.ci-scope.outputs.examples_chat == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
@@ -609,7 +611,7 @@ jobs:
     name: 'examples/chat — e2e (${{ matrix.shard }}/4)'
     needs: ci-scope
     if: github.event_name == 'push' || needs.ci-scope.outputs.examples_chat == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 35
     strategy:
       fail-fast: false
@@ -660,7 +662,7 @@ jobs:
     name: 'examples/chat — e2e'
     needs: [ci-scope, examples-chat-e2e]
     if: always() && (github.event_name == 'push' || needs.ci-scope.outputs.examples_chat == 'true')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Aggregate matrix outcome
         run: |
@@ -674,7 +676,7 @@ jobs:
     name: 'examples/ag-ui — e2e'
     needs: ci-scope
     if: github.event_name == 'push' || needs.ci-scope.outputs.examples_ag_ui == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -743,7 +745,7 @@ jobs:
     name: Cockpit — e2e dispatcher
     needs: ci-scope
     if: github.event_name == 'push' || needs.ci-scope.outputs.cockpit_e2e == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       caps: ${{ steps.matrix.outputs.caps }}
     steps:
@@ -779,7 +781,7 @@ jobs:
     name: 'Cockpit — e2e (${{ matrix.cap.angular }})'
     needs: [ci-scope, cockpit-e2e-dispatcher]
     if: github.event_name == 'push' || needs.ci-scope.outputs.cockpit_e2e == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       max-parallel: 5
@@ -944,7 +946,7 @@ jobs:
     name: 'Cockpit — e2e'
     needs: [ci-scope, cockpit-e2e]
     if: always() && (github.event_name == 'push' || needs.ci-scope.outputs.cockpit_e2e == 'true')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Aggregate matrix outcome
         run: |
@@ -958,7 +960,7 @@ jobs:
     name: Website — e2e
     needs: ci-scope
     if: github.event_name == 'push' || needs.ci-scope.outputs.website_e2e == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
@@ -1061,7 +1063,7 @@ jobs:
       (github.event_name == 'pull_request' || github.event_name == 'merge_group') &&
       needs.ci-scope.outputs.website_e2e == 'true' &&
       (github.event_name == 'merge_group' || github.event.pull_request.head.repo.full_name == github.repository)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
@@ -1177,7 +1179,7 @@ jobs:
     # waits on it for each candidate, so it must report on merge_group too —
     # otherwise every queued merge blocks forever on a check that never runs.
     if: ${{ always() && (github.event_name == 'pull_request' || github.event_name == 'merge_group') }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Verify scoped CI jobs
         env:
@@ -1324,7 +1326,7 @@ jobs:
       - website-e2e
       - growth-lifecycle
       - lifecycle
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       runtime_parent_preview_origin: ${{ steps.deploy_website.outputs.preview_origin }}
     # Only verified main push/manual runs may enter the existing production path
@@ -1610,7 +1612,7 @@ jobs:
     name: Canonical demo → Vercel
     timeout-minutes: 30 # fail fast instead of blocking the main concurrency group on a hang
     needs: [ci-scope, examples-chat-smoke, examples-chat-e2e]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: ${{ always() && !cancelled() && needs.ci-scope.result == 'success' && needs.ci-scope.outputs.main_run == 'true' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
     steps:
       - name: Require demo prerequisite jobs
@@ -1717,7 +1719,7 @@ jobs:
     name: AG-UI demo → Vercel
     timeout-minutes: 30 # fail fast instead of blocking the main concurrency group on a hang
     needs: [ci-scope, examples-ag-ui-e2e]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: ${{ always() && !cancelled() && needs.ci-scope.result == 'success' && needs.ci-scope.outputs.main_run == 'true' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
     permissions:
       # Needed to advance refs/deploy/ag-ui-demo-last-promoted. Nothing else in
@@ -1873,7 +1875,7 @@ jobs:
   production-smoke:
     name: Production smoke
     needs: [ci-scope, deploy, demo-deploy, ag-ui-demo-deploy]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: needs.ci-scope.result == 'success' && needs.ci-scope.outputs.main_run == 'true' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     permissions:
       contents: write
@@ -1936,7 +1938,7 @@ jobs:
     name: PostHog — dashboards-as-code drift check
     needs: ci-scope
     if: github.event_name == 'push' || needs.ci-scope.outputs.posthog == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:

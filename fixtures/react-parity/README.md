@@ -7,9 +7,14 @@ item while retaining app-owned command lifetime and feedback; compact rails stay
 selection-only. The installed plain-package fixture additionally checks multi-item
 keyboard navigation, natural Tab destinations, local RTL/theme/font across the
 portal, unavailable-anchor suppression and edge placement at 1280/390/600px.
+Context-menu requests compose `ThreadList` with the same controlled menu. The
+application supplies pointer coordinates, invoking rows and open state; the menu
+manages focus return and natural Tab traversal. Point changes preserve the
+mounted menu and surviving focused item. Native composition keeps request
+identity separate from conversation ID and retains existing clipboard/session lifetimes.
 The Node check proves DOM-free module import and pre-mount menu trigger rendering
 with either controlled open value. These bounded proofs do not establish general
-SSR/hydration or release parity. Context menu/typeahead and thread lifecycle,
+SSR/hydration or release parity. Typeahead and thread lifecycle,
 project/archive commands remain future work.
 
 This directory records the historical package foundations and the bounded shared

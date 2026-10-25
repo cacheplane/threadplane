@@ -1,23 +1,28 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react';
 import { OverflowMenu } from '@threadplane/react/chat';
+import type { ConversationMenuControl } from './use-conversation-menu';
 
 /** Key the command lifetime by ID, including when a caller replaces its item. */
 export function CopyConversationId({
   id,
   title,
+  menu,
 }: {
   readonly id: string;
   readonly title?: string;
+  readonly menu?: ConversationMenuControl;
 }) {
-  return <CopyCommand key={id} id={id} title={title} />;
+  return <CopyCommand key={id} id={id} title={title} menu={menu} />;
 }
 
 function CopyCommand({
   id,
   title,
+  menu,
 }: {
   readonly id: string;
   readonly title?: string;
+  readonly menu?: ConversationMenuControl;
 }) {
   const pending = useRef(false);
   const mounted = useRef(false);
@@ -51,8 +56,10 @@ function CopyCommand({
       <OverflowMenu
         label={`Actions for ${title ? `${title} (${id})` : id}`}
         items={[{ id: 'copy', label, disabled: status === 'pending' }]}
-        open={open}
-        onOpenChange={setOpen}
+        open={menu?.open ?? open}
+        onOpenChange={menu?.onOpenChange ?? setOpen}
+        anchorPoint={menu?.anchorPoint}
+        returnFocusTo={menu?.returnFocusTo}
         onSelect={(_, event) => void copy(event)}
       />
       {status && (
