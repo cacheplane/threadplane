@@ -15612,6 +15612,34 @@
       "reason": "Separate controlled backdrop button with scoped viewport layering; no focus trap, portal, global listener or session behavior."
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#OverflowMenu",
+      "taskIds": ["T29", "T30"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Bounded private controlled command menu with owner-document portal, keyboard/focus and unavailable-anchor suppression; native dogfoods exact-ID copying. Lifecycle, project/archive and full parity remain open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#OverflowMenuItem",
+      "taskIds": ["T29", "T30"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly stable ID, literal label, optional strict disabled state and normal/destructive tone for application-owned commands."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#OverflowMenuProps",
+      "taskIds": ["T29", "T30"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly required controlled open/change, items, label and synchronous original mouse-event selection; app owns async work and feedback."
+    },
+    {
+      "id": "source:libs/react/src/chat/overflow-menu.tsx",
+      "taskIds": ["T29", "T30"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Scoped portal placement, local theme snapshot and controlled focus/dismissal without backend or execution ownership. Context menu/typeahead and full parity remain open."
+    },
+    {
       "id": "export:libs/react/src/chat/index.ts#ThreadList",
       "taskIds": ["T29"],
       "treatment": "react",

@@ -1,5 +1,17 @@
 # React parity foundations
 
+The private chat package includes a bounded controlled `OverflowMenu` with exact
+readonly item/prop contracts and a required React DOM ^19.2.4 peer. The headless
+root remains DOM-import-free. Native full directories compose an exact-ID copy
+item while retaining app-owned command lifetime and feedback; compact rails stay
+selection-only. The installed plain-package fixture additionally checks multi-item
+keyboard navigation, natural Tab destinations, local RTL/theme/font across the
+portal, unavailable-anchor suppression and edge placement at 1280/390/600px.
+The Node check proves DOM-free module import and pre-mount menu trigger rendering
+with either controlled open value. These bounded proofs do not establish general
+SSR/hydration or release parity. Context menu/typeahead and thread lifecycle,
+project/archive commands remain future work.
+
 This directory records the historical package foundations and the bounded shared
 LangGraph runtime proof. Core now exposes framework-free contracts; private Angular
 and React packages expose native observation bindings. A fixture-only private

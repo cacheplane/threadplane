@@ -434,6 +434,7 @@ export function prepareRuntimeViews(root, consumer, kind) {
     writeFileSync(index, readFileSync(index, 'utf8').replace('<head>', '<head><meta name="viewport" content="width=device-width, initial-scale=1">'));
   }
   if (kind === 'react') {
+    cpSync(join(fixture, 'react-overflow-menu.tsx'), join(destination, 'react-overflow-menu.tsx'));
     cpSync(join(fixture, 'vite.config.mts'), join(consumer, 'vite.config.mts'));
     writeFileSync(join(consumer, 'index.html'), '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>React installed consumer</title></head><body><div id="root"></div><script type="module" src="/main.tsx"></script></body></html>');
     writeFileSync(join(consumer, 'tsconfig.app.json'), JSON.stringify({ compilerOptions: { target: 'ES2022', module: 'ESNext', moduleResolution: 'Bundler', lib: ['ES2022', 'DOM'], types: [], strict: true, skipLibCheck: false, jsx: 'react-jsx', noEmit: true }, files: ['main.tsx'] }));
@@ -549,6 +550,86 @@ export async function serveRuntimeConsumer(directory) {
 function handshake(promise, label) {
   let timeout;
   return Promise.race([promise, new Promise((_, reject) => { timeout = setTimeout(() => reject(new Error(`Timed out awaiting ${label}`)), 10_000); })]).finally(() => clearTimeout(timeout));
+}
+
+export async function runOverflowMenuScenarios(page, url) {
+  await page.goto(`${url}/?menu`);
+  const trigger = page.getByRole('button', { name: 'Fixture actions for full ID' });
+  const menu = page.getByRole('menu', { name: 'Fixture actions for full ID' });
+  const first = page.getByRole('menuitem', { name: 'First literal <&>' });
+  const last = page.getByRole('menuitem', { name: /^Last destructive/ });
+  await expect(menu).toHaveCount(0);
+  for (const width of [1280, 390, 600]) {
+    // setViewportSize can finish before its resize event is dispatched. That
+    // event legitimately dismisses an open menu, so complete it before opening.
+    if (page.viewportSize()?.width !== width || page.viewportSize()?.height !== 844) {
+      await page.evaluate(() => {
+        window.overflowMenuViewportReady = new Promise(resolve => window.addEventListener('resize', () => resolve(), { once: true }));
+      });
+      await page.setViewportSize({ width, height: 844 });
+      await handshake(page.evaluate(() => window.overflowMenuViewportReady), 'menu fixture viewport resize');
+    }
+    await trigger.focus();
+    await page.keyboard.press('ArrowUp');
+    await expect(last).toBeFocused();
+    const evidence = await menu.evaluate((node) => {
+      const box = node.getBoundingClientRect();
+      const style = getComputedStyle(node);
+      return {
+        contained: box.left >= 8 && box.top >= 8 && box.right <= innerWidth - 8 && box.bottom <= innerHeight - 8,
+        targets: Array.from(node.querySelectorAll('button')).every(button => button.getBoundingClientRect().height >= 40),
+        rtl: style.direction, font: style.fontFamily, fontSize: style.fontSize,
+        surface: style.backgroundColor, text: style.color,
+        rootDirection: getComputedStyle(document.documentElement).direction,
+      };
+    });
+    assert.deepEqual(evidence, { contained: true, targets: true, rtl: 'rtl', font: 'monospace', fontSize: '18px', surface: 'rgb(241, 242, 243)', text: 'rgb(11, 22, 33)', rootDirection: 'ltr' });
+    await page.screenshot({ path: join(tmpdir(), `react-overflow-menu-plain-${width}.png`), fullPage: true });
+    const survivingLast = await last.elementHandle();
+    await page.keyboard.press('F2');
+    await expect(last).toContainText('Expanded literal <&>');
+    await expect(last).toBeFocused();
+    assert.equal(await survivingLast.evaluate(node => node === document.activeElement), true, 'label growth preserves focused item DOM');
+    await expect.poll(() => menu.evaluate(node => {
+      const box = node.getBoundingClientRect();
+      return box.left >= 8 && box.top >= 8 && box.right <= innerWidth - 8 && box.bottom <= innerHeight - 8 && node.scrollWidth <= node.clientWidth;
+    })).toBe(true);
+    await page.screenshot({ path: join(tmpdir(), `react-overflow-menu-plain-grown-${width}.png`), fullPage: true });
+    await page.keyboard.press('F2');
+    await expect(last).not.toContainText('Expanded literal <&>');
+    await expect(last).toBeFocused();
+    await page.keyboard.press('ArrowDown'); await expect(first).toBeFocused();
+    await page.keyboard.press('ArrowUp'); await expect(last).toBeFocused();
+    await page.keyboard.press('Home'); await expect(first).toBeFocused();
+    await page.keyboard.press('End'); await expect(last).toBeFocused();
+    await page.keyboard.press('Escape'); await expect(menu).toHaveCount(0); await expect(trigger).toBeFocused();
+    await trigger.press('Enter'); await expect(first).toBeFocused();
+    await page.keyboard.press('Tab'); await expect(page.getByRole('button', { name: 'After menu' })).toBeFocused();
+    await expect(menu).toHaveCount(0);
+    await trigger.press('Space'); await expect(first).toBeFocused();
+    await page.keyboard.press('Shift+Tab'); await expect(page.getByRole('button', { name: 'Before menu' })).toBeFocused();
+    await trigger.click();
+    await first.press('Enter'); await expect(trigger).toBeFocused();
+  }
+  await expect(page.getByTestId('menu-selected')).toHaveText(JSON.stringify(['literal<&', 'literal<&', 'literal<&']));
+  await page.getByRole('checkbox', { name: 'Refuse closing' }).check();
+  await trigger.click();
+  const toggle = page.getByRole('button', { name: 'Toggle anchor availability' });
+  await toggle.click();
+  await expect(menu).toHaveCount(0); await expect(toggle).toBeFocused();
+  const hiddenTrigger = page.locator('.tp-overflow-menu__trigger');
+  await expect(hiddenTrigger).toHaveAttribute('aria-expanded', 'false');
+  await expect(hiddenTrigger).not.toHaveAttribute('aria-controls');
+  await toggle.click(); await expect(menu).toHaveCount(0);
+  await page.getByRole('button', { name: 'Reset open cycle' }).click();
+  await page.getByRole('checkbox', { name: 'Refuse closing' }).uncheck();
+  await trigger.click(); await expect(first).toBeFocused();
+  await menu.evaluate(node => node.parentElement?.setAttribute('data-theme', 'changed'));
+  await expect(menu).toHaveCount(0);
+  await trigger.click();
+  await page.setViewportSize({ width: 601, height: 844 });
+  await expect(menu).toHaveCount(0);
+  console.log('Installed React overflow menu: keyboard, literal commands, Tab destinations, unavailable-anchor suppression, local RTL/theme/font and 1280/390/600 viewport placement passed.');
 }
 
 export async function runRuntimeScenarios(directory, kind) {
@@ -864,6 +945,7 @@ export async function runRuntimeScenarios(directory, kind) {
     completed.push('unmount and explicit disposal');
     completed.push(...await runThreadScenarios(page, server));
     completed.push(...await runCheckpointScenarios(page, server));
+    if (/react/i.test(kind)) await runOverflowMenuScenarios(page, server.url);
     assert.deepEqual(server.errors.map(String), []);
     assert.deepEqual(pageErrors, []);
     assert.deepEqual(consoleFailures, [], 'browser console has no warnings or errors');

@@ -93,11 +93,20 @@ the existing deliberate composer reset still applies when selecting another
 conversation. Other thread lifecycle actions and full T29 parity remain open.
 
 The full React directory also uses `renderActions` to place an application-owned
-Copy conversation ID control beside each selection button. Explicit activation
-copies the exact row ID through that button's document clipboard, with pending,
+controlled `OverflowMenu` beside each selection button. Its full Actions label
+identifies the row; opening it exposes the full Copy conversation ID item. Explicit
+item activation copies the exact row ID through that item's document clipboard, with pending,
 success and failure feedback, both visible and announced, and retry after failure.
 Copying does not select a conversation or issue backend commands, and retains the
 draft and active response.
+Pending disables only the copy item. The Actions trigger remains focusable and
+accepted selection closure returns focus before the clipboard promise settles;
+reopening shows a disabled pending item. Arrow/Home/End navigation, native
+Enter/Space, Escape before drawer dismissal, Tab/Shift+Tab and outside dismissal
+belong to the private menu. The app owns open state, clipboard execution and all
+feedback. Portals retain local theme/font/direction and suppress unavailable
+anchors during retained navigation collapse or drawer closure. Context menus,
+typeahead and lifecycle/project/archive commands remain open.
 The compact sidenav rail retains selection-only rows. Clipboard access may be
 unavailable or denied by the browser; the example reports that failure locally.
 

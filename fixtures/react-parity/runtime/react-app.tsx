@@ -4,6 +4,7 @@ import { useAgent } from '@threadplane/react';
 import { TextTranscript, ToolObservation } from '@threadplane/react/chat';
 import { createFixtureSession } from './runtime-entry.js';
 import './review.css';
+import { OverflowMenuFixture } from './react-overflow-menu';
 import {
   attachOwner,
   display,
@@ -303,7 +304,7 @@ if (!container) throw new Error('Missing fixture root');
 const root = createRoot(container);
 root.render(
   <StrictMode>
-    <App />
+    {new URLSearchParams(location.search).has('menu') ? <OverflowMenuFixture /> : <App />}
   </StrictMode>
 );
 attachOwner(session, () => root.unmount());

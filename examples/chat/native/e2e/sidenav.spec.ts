@@ -277,11 +277,11 @@ test('installed React sidenav retains navigation, draft and a running response a
       exact: true,
     });
     const copyAlpha = threadList.getByRole('button', {
-      name: 'Copy conversation ID for Alpha notes (a)',
+      name: 'Actions for Alpha notes (a)',
       exact: true,
     });
     const copyBeta = threadList.getByRole('button', {
-      name: 'Copy conversation ID for Beta notes (b)',
+      name: 'Actions for Beta notes (b)',
       exact: true,
     });
     const clipboardState = () =>
@@ -293,6 +293,35 @@ test('installed React sidenav retains navigation, draft and a running response a
             }
           ).conversationClipboard
       );
+    const menu = page.getByRole('menu');
+    const copyItem = page.getByRole('menuitem', {
+      name: /^Copy conversation ID/,
+    });
+    const expectMenuGeometry = async (suffix: string) => {
+      await expect(menu).toBeVisible();
+      const bounds = await menu.evaluate((node) => {
+        const box = node.getBoundingClientRect();
+        const item = node.querySelector('button')!.getBoundingClientRect();
+        return {
+          contained:
+            box.left >= 8 &&
+            box.top >= 8 &&
+            box.right <= innerWidth - 8 &&
+            box.bottom <= innerHeight - 8,
+          target: item.height >= 40 && item.width >= 40,
+          noOverflow: node.scrollWidth <= node.clientWidth,
+        };
+      });
+      expect(bounds).toEqual({
+        contained: true,
+        target: true,
+        noOverflow: true,
+      });
+      await page.screenshot({
+        path: testInfo.outputPath(`react-overflow-menu-native-${suffix}.png`),
+        fullPage: false,
+      });
+    };
     const expectCopyGeometry = async () => {
       const geometry = await copyBeta.evaluate((button) => {
         const box = button.getBoundingClientRect();
@@ -391,6 +420,52 @@ test('installed React sidenav retains navigation, draft and a running response a
     ).toBeVisible();
     expect(backend.requests).toHaveLength(3);
     expect((await clipboardState()).writes).toEqual([]);
+    await copyAlpha.evaluate((node) => {
+      const wrapper = node.parentElement!;
+      wrapper.dir = 'rtl';
+      wrapper.style.fontFamily = 'monospace';
+      wrapper.style.setProperty('--tp-chat-surface', 'rgb(241, 242, 243)');
+      wrapper.style.setProperty('--tp-chat-text', 'rgb(11, 22, 33)');
+    });
+    await copyAlpha.focus();
+    await page.keyboard.press('ArrowDown');
+    await expect(copyItem).toBeFocused();
+    await expectMenuGeometry('desktop');
+    expect(
+      await menu.evaluate((node) => {
+        const style = getComputedStyle(node);
+        return [
+          style.direction,
+          style.fontFamily,
+          style.backgroundColor,
+          style.color,
+          getComputedStyle(document.documentElement).direction,
+        ];
+      })
+    ).toEqual([
+      'rtl',
+      'monospace',
+      'rgb(241, 242, 243)',
+      'rgb(11, 22, 33)',
+      'ltr',
+    ]);
+    await page.keyboard.press('Tab');
+    await expect(menu).toHaveCount(0);
+    await expect(beta).toBeFocused();
+    await copyAlpha.evaluate((node) => {
+      node.parentElement!.removeAttribute('dir');
+      node.parentElement!.removeAttribute('style');
+    });
+    await copyBeta.focus();
+    await page.keyboard.press('ArrowUp');
+    await expect(copyItem).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
+    await expect(beta).toBeFocused();
+    await copyBeta.click();
+    await alpha.click();
+    await expect(menu).toHaveCount(0);
+    await expect(alpha).toBeFocused();
+    expect(backend.requests).toHaveLength(3);
     await draft.fill('Copy preserves this draft.');
     await page.evaluate(() => {
       (
@@ -398,7 +473,15 @@ test('installed React sidenav retains navigation, draft and a running response a
       ).conversationClipboard.hold = true;
     });
     await copyBeta.click();
-    await expect(copyBeta).toBeDisabled();
+    await copyItem.click();
+    await expect(menu).toHaveCount(0);
+    await expect(copyBeta).toBeEnabled();
+    await expect(copyBeta).toBeFocused();
+    await copyBeta.click();
+    await expect(copyItem).toBeDisabled();
+    await page.keyboard.press('Escape');
+    await expect(copyBeta).toBeFocused();
+    expect((await clipboardState()).writes).toEqual(['b']);
     await expect(copyBeta.locator('..').getByRole('status')).toHaveText(
       'Copying conversation ID…'
     );
@@ -419,6 +502,7 @@ test('installed React sidenav retains navigation, draft and a running response a
     expect((await clipboardState()).writes).toEqual(['b']);
     await copyAlpha.focus();
     await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
     expect((await clipboardState()).writes).toEqual(['b', 'a']);
     await page.evaluate(() => {
       (
@@ -426,6 +510,7 @@ test('installed React sidenav retains navigation, draft and a running response a
       ).conversationClipboard.fail = true;
     });
     await copyBeta.focus();
+    await page.keyboard.press('Space');
     await page.keyboard.press('Space');
     await expect(copyBeta.locator('..').getByRole('status')).toHaveText(
       'Could not copy conversation ID.'
@@ -437,6 +522,7 @@ test('installed React sidenav retains navigation, draft and a running response a
       ).conversationClipboard.fail = false;
     });
     await copyBeta.click();
+    await copyItem.click();
     await expect(copyBeta.locator('..').getByRole('status')).toHaveText(
       'Conversation ID copied.'
     );
@@ -544,7 +630,10 @@ test('installed React sidenav retains navigation, draft and a running response a
     await expectShortcutUnclaimed();
     await expect(draft).toHaveValue('Retain this draft.');
     await collapse.focus();
+    await copyBeta.click();
+    await expect(menu).toBeVisible();
     await page.keyboard.press('Control+b');
+    await expect(menu).toHaveCount(0);
     await expect(filter).toBeHidden();
     await expect(page.locator('.tp-chat-sidenav__body')).toHaveAttribute(
       'inert',
@@ -598,7 +687,9 @@ test('installed React sidenav retains navigation, draft and a running response a
     });
     await expect(compact).toBeVisible();
     await expect(
-      compact.getByRole('button', { name: /^Copy conversation ID/ })
+      compact.getByRole('button', {
+        name: /^(Copy conversation ID|Actions for)/,
+      })
     ).toHaveCount(0);
     await expect(expand).toHaveAccessibleName('Expand conversations');
     expect(
@@ -704,6 +795,7 @@ test('installed React sidenav retains navigation, draft and a running response a
     const heldDraftValue = await draft.inputValue();
     await copyAlpha.focus();
     await page.keyboard.press('Space');
+    await page.keyboard.press('Space');
     await expect(copyAlpha.locator('..').getByRole('status')).toHaveText(
       'Conversation ID copied.'
     );
@@ -756,6 +848,8 @@ test('installed React sidenav retains navigation, draft and a running response a
       await expectSearchGeometry();
       await expectCopyGeometry();
       await copyBeta.click();
+      await expectMenuGeometry(`mobile-${width}`);
+      await copyItem.click();
       await expectCopyFeedback('Copied');
       await close.focus();
       await page.keyboard.press('Meta+b');
@@ -950,6 +1044,11 @@ test('installed React sidenav retains navigation, draft and a running response a
       await page.keyboard.press('Escape');
       await expect(nav).toBeVisible();
       await filter.focus();
+      await copyBeta.click();
+      await page.keyboard.press('Escape');
+      await expect(menu).toHaveCount(0);
+      await expect(nav).toBeVisible();
+      await expect(copyBeta).toBeFocused();
       await page.keyboard.press('Escape');
       await expect(nav).toBeHidden();
       await expect(compact).toBeHidden();
@@ -982,6 +1081,12 @@ test('installed React sidenav retains navigation, draft and a running response a
       await expect(scrim).toHaveCount(0);
       await page.setViewportSize({ width, height: 844 });
       await launcher.click();
+      await copyBeta.click();
+      await expect(menu).toBeVisible();
+      await close.click();
+      await expect(menu).toHaveCount(0);
+      await expect(launcher).toBeFocused();
+      await launcher.click();
       // Focus on the removed sibling backdrop must move to the desktop toggle.
       await scrim.focus();
       await page.setViewportSize({ width: 1280, height: 900 });
@@ -1010,6 +1115,8 @@ test('installed React sidenav retains navigation, draft and a running response a
     await expectSearchGeometry();
     await expectCopyGeometry();
     await copyBeta.click();
+    await expectMenuGeometry('rtl');
+    await copyItem.click();
     await expectCopyFeedback('Copied');
     await page.screenshot({
       path: testInfo.outputPath('sidenav-search-rtl.png'),

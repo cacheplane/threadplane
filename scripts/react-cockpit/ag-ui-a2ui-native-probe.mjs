@@ -372,7 +372,7 @@ export async function runInstalledApplicationProof(options) {
     const graphHash =
         '9464b3361282252102ffead838724f24e20cc69607859029f98203aaeb5a8390',
       lockHash =
-        '2dd19214b3703a6a28d6bea51bd589037cf93946a56478e3d0c297ed7b409215';
+        '72f58549ddcbc30ae7c94bf078385c800e8d7efbef34a23a9e63b3075beb3250';
     assert.equal(hash(readFileSync(graph)), graphHash);
     assert.equal(hash(readFileSync(lock)), lockHash);
     const inputs = {},

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react';
+import { OverflowMenu } from '@threadplane/react/chat';
 
 /** Key the command lifetime by ID, including when a caller replaces its item. */
 export function CopyConversationId({
@@ -21,6 +22,7 @@ function CopyCommand({
   const pending = useRef(false);
   const mounted = useRef(false);
   const [status, setStatus] = useState<'pending' | 'success' | 'failure'>();
+  const [open, setOpen] = useState(false);
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -46,25 +48,13 @@ function CopyCommand({
   };
   return (
     <div className="copy-conversation-id">
-      <button
-        type="button"
-        aria-label={label}
-        title={label}
-        disabled={status === 'pending'}
-        onClick={(event) => void copy(event)}
-      >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          aria-hidden="true"
-          focusable="false"
-        >
-          <rect x="8" y="8" width="12" height="12" rx="2" />
-          <path d="M16 8V4H4v12h4" />
-        </svg>
-      </button>
+      <OverflowMenu
+        label={`Actions for ${title ? `${title} (${id})` : id}`}
+        items={[{ id: 'copy', label, disabled: status === 'pending' }]}
+        open={open}
+        onOpenChange={setOpen}
+        onSelect={(_, event) => void copy(event)}
+      />
       {status && (
         <span className="copy-conversation-id__feedback" aria-hidden="true">
           {status === 'pending'
