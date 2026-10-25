@@ -1,11 +1,9 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "d42221caebd423d5ca6cf158beed44c03b3a9095",
+  "baselineHead": "4e814bd4ef42919ace69612644e4d4e13d8cd3c2",
   "sourceState": {
     "modified": [
-      "libs/react/README.md",
-      "libs/react/src/chat/overflow-menu.tsx",
-      "libs/react/src/chat/thread-list.tsx"
+      ".github/workflows/ci.yml"
     ],
     "untracked": []
   },
@@ -2179,7 +2177,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "357239bc32d9cbc4f8f4054f5d09d5eaf689acd0a8d333b1926acc2fc2c3c52e"
+      "sha256": "0c4ac2ec9df75e6c81f87ba8d3fcc9e53666191545b8bde26aa60431e2796e5f"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",

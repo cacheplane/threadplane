@@ -1,5 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
+import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
@@ -10,6 +12,36 @@ import {
   isAngularCompatibilityChange,
   SCOPE_KEYS,
 } from './ci-scope.mjs';
+
+it('pins CI runners to the installed browser recipe and canonical Python baseline', async () => {
+  const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+  // GitHub's Ubuntu 24.04 image supplies Python 3.12 for the closed fixture.
+  const runner = 'ubuntu-24.04';
+  const runners = [...workflow.matchAll(/^    runs-on: (.+)$/gm)].map(match => match[1]);
+  assert.ok(runners.length > 0, 'CI jobs declare their runner');
+  assert.deepEqual([...new Set(runners)], [runner], 'all CI jobs use the explicit supported image');
+
+  const require = createRequire(import.meta.url);
+  const installed = require('playwright-core/package.json');
+  const lock = JSON.parse(await readFile('package-lock.json', 'utf8'));
+  assert.equal(installed.version, lock.packages['node_modules/playwright-core'].version, 'check the locked installed browser');
+  const { deps } = require(join(dirname(require.resolve('playwright-core/package.json')), 'lib/server/registry/nativeDeps.js'));
+  const recipe = deps[`${runner.replace('ubuntu-', 'ubuntu')}-x64`];
+  assert.ok(recipe, `locked Playwright ${installed.version} supports ${runner}`);
+  for (const browser of ['chromium', 'firefox', 'webkit']) {
+    assert.ok(recipe[browser]?.length > 0, `${browser} has native dependencies on ${runner}`);
+  }
+
+  const library = workflow.split('\n  library:\n')[1].split('\n  angular-compatibility:')[0];
+  const setup = library.split('uses: astral-sh/setup-uv@')[1]?.split('      - name:')[0];
+  assert.match(setup ?? '', /python-version: '3\.12'/);
+  const provider = await readFile('cockpit/chat/a2ui/python/pyproject.toml', 'utf8');
+  assert.match(provider, /requires-python = ">=3\.12"/);
+  const proof = library.split('      - name: Verify canonical A2UI native fixtures')[1]?.split('\n      - name:')[0];
+  assert.match(proof ?? '', /python find --no-project --no-config --no-python-downloads 3\.12/);
+  assert.match(proof ?? '', /env -i HOME=/);
+  assert.doesNotMatch(proof ?? '', /UV_PYTHON_INSTALL_DIR=/);
+});
 
 const PUBLISHABLE_LIB_TAGS = [
   'scope:angular-compatibility',
