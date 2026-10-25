@@ -21,7 +21,7 @@ export interface ChatSidenavProps { readonly onSearch?: () => void; readonly sea
 export interface ChatSidenavScrimProps { readonly open: boolean; readonly onDismiss: () => void; readonly label?: string; readonly className?: string; }
 export interface ChatSidebarProps { readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly title: string; readonly pageContent?: import('react').ReactNode; readonly pushContent?: boolean; }
 export interface ThreadListItem { readonly id: string; readonly title?: string; readonly updatedAt?: number; readonly pinned?: boolean; }
-export interface ThreadListProps { readonly threads: readonly ThreadListItem[]; readonly onSelect: (threadId: string) => void; readonly activeThreadId?: string | null; readonly label?: string; readonly className?: string; readonly onNewThread?: () => void; readonly newThreadDisabled?: boolean; readonly newThreadLabel?: string; readonly now?: number; readonly renderTitle?: (thread: ThreadListItem) => import('react').ReactNode; }`;
+export interface ThreadListProps { readonly threads: readonly ThreadListItem[]; readonly onSelect: (threadId: string) => void; readonly activeThreadId?: string | null; readonly label?: string; readonly className?: string; readonly onNewThread?: () => void; readonly newThreadDisabled?: boolean; readonly newThreadLabel?: string; readonly now?: number; readonly renderTitle?: (thread: ThreadListItem) => import('react').ReactNode; readonly renderActions?: (thread: ThreadListItem) => import('react').ReactNode; }`;
   const source = join(consumer, 'index.ts');
   writeFileSync(source, packageVerifier.plainExportTypes(['@threadplane/react/chat']));
   const compile = text => {
@@ -79,6 +79,9 @@ export interface ThreadListProps { readonly threads: readonly ThreadListItem[]; 
   assert.match(compile(declaration.replace('ThreadListProps', 'HiddenThreadListProps')), /ThreadListProps/);
   const threadList = declaration.indexOf('export interface ThreadListItem');
   const mutateThreadList = (before, after) => declaration.slice(0, threadList) + declaration.slice(threadList).replace(before, after);
+  for (const replacement of ['', "renderActions?: (thread: ThreadListItem) => import('react').ReactNode;", "readonly renderActions: (thread: ThreadListItem) => import('react').ReactNode;", "readonly renderActions?: (thread: string) => import('react').ReactNode;", "readonly renderActions?: (thread: ThreadListItem) => string;"]) {
+    assert.match(compile(mutateThreadList("readonly renderActions?: (thread: ThreadListItem) => import('react').ReactNode;", replacement)), /renderActions|false.*true/);
+  }
   for (const [before, after] of [
     ['readonly pinned?: boolean;', ''],
     ['readonly pinned?: boolean', 'readonly pinned: boolean'],

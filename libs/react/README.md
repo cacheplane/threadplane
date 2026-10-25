@@ -317,6 +317,14 @@ render no title content, with no fallback; timestamp descriptions remain intact.
 Omitting the callback preserves the default markup. This supports bounded title
 content, while broader row templates remain open.
 
+Optional readonly `renderActions` receives the original supplied `ThreadListItem`
+and returns ReactNode content beside the selection button, in a separate sibling
+wrapper. Use it for application-owned interactive controls with their own
+accessible names, callbacks and pending/error feedback. Activating these controls
+does not select the conversation. `null`, `false` and `undefined` omit the action
+wrapper; other ReactNode values are preserved. Omitting the callback preserves
+the original row markup. The view owns no menu or action execution.
+
 An empty collection renders an empty list. The application owns loaded-title
 filtering, loading/error/empty notices, data fetching and execution. Rename,
 delete, archive, pin/project actions, drag reordering, live timestamp refresh and

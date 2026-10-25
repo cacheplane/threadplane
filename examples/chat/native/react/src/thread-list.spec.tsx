@@ -155,6 +155,24 @@ it('uses ThreadList while refresh, loaded-title filtering and navigation retain 
       name: 'Message',
     }) as HTMLTextAreaElement;
     fireEvent.change(draft, { target: { value: 'Unsent draft' } });
+    const copy = vi.fn(async () => {});
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      get: () => ({ writeText: copy }),
+    });
+    const beforeCopy = { ...fixture.counters };
+    const beforeCopyIo = { ...io };
+    fireEvent.click(
+      within(list).getByRole('button', {
+        name: 'Copy conversation ID for Beta notes (b)',
+      })
+    );
+    await act(async () => {});
+    expect(copy.mock.calls).toEqual([['b']]);
+    expect(application.getSnapshot().selection.id).toBe('a');
+    expect(draft.value).toBe('Unsent draft');
+    expect(fixture.counters).toEqual(beforeCopy);
+    expect(io).toEqual(beforeCopyIo);
     const counters = { ...fixture.counters };
     alpha.focus();
     const alphaRow = alpha.parentElement;
@@ -181,7 +199,9 @@ it('uses ThreadList while refresh, loaded-title filtering and navigation retain 
       '2026-09-28T00:01:01.000Z'
     );
     expect(alpha.parentElement).toBe(alphaRow);
-    expect(within(list).getAllByRole('button')).toEqual([alpha, beta]);
+    expect(
+      Array.from(list.querySelectorAll('.tp-thread-list__button'))
+    ).toEqual([alpha, beta]);
     expect(alpha.querySelectorAll('.tp-thread-list__pin')).toHaveLength(1);
     expect(beta.querySelector('.tp-thread-list__pin')).toBeNull();
     expect(
@@ -192,7 +212,9 @@ it('uses ThreadList while refresh, loaded-title filtering and navigation retain 
     ).toBe(beta);
     const filter = view.getByRole('searchbox');
     fireEvent.change(filter, { target: { value: 'Alpha' } });
-    expect(within(list).getAllByRole('button')).toEqual([alpha]);
+    expect(
+      Array.from(list.querySelectorAll('.tp-thread-list__button'))
+    ).toEqual([alpha]);
     expect(within(list).getByRole('button', { name: 'Alpha notes' })).toBe(
       alpha
     );

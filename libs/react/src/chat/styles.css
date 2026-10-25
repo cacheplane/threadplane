@@ -44,6 +44,19 @@
 .tp-thread-list__item {
   min-width: 0;
 }
+.tp-thread-list__item--actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.tp-thread-list__item--actions > .tp-thread-list__button {
+  flex: 1 1 0%;
+  width: auto;
+}
+.tp-thread-list__actions {
+  flex: 0 0 auto;
+  min-width: 0;
+}
 .tp-thread-list .tp-thread-list__button,
 .tp-thread-list__container .tp-thread-list__new {
   box-sizing: border-box;

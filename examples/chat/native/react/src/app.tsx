@@ -22,6 +22,7 @@ import { submissionStatus } from '../../shared/submission-status';
 import { Approval } from './approval';
 import { BackgroundActivity } from './background-activity';
 import { CopyAnswer } from './copy-answer';
+import { CopyConversationId } from './copy-conversation-id';
 import { TripSummary } from './trip-summary';
 import { NativeNavigation } from './native-navigation';
 
@@ -221,6 +222,9 @@ function Conversation({
       )}
       <ThreadList
         threads={rows}
+        renderActions={(thread) => (
+          <CopyConversationId id={thread.id} title={thread.title} />
+        )}
         renderTitle={(thread) =>
           renderThreadTitle(thread.title || thread.id, filter)
         }

@@ -92,6 +92,15 @@ The list issues no commands on mount or rerender. Retained rows keep their butto
 the existing deliberate composer reset still applies when selecting another
 conversation. Other thread lifecycle actions and full T29 parity remain open.
 
+The full React directory also uses `renderActions` to place an application-owned
+Copy conversation ID control beside each selection button. Explicit activation
+copies the exact row ID through that button's document clipboard, with pending,
+success and failure feedback, both visible and announced, and retry after failure.
+Copying does not select a conversation or issue backend commands, and retains the
+draft and active response.
+The compact sidenav rail retains selection-only rows. Clipboard access may be
+unavailable or denied by the browser; the example reports that failure locally.
+
 Native React uses the list's bounded `renderTitle` callback to highlight the first
 literal case-insensitive match for the trimmed loaded-title filter with `mark`.
 Blank queries and absent matches preserve the plain original title (or full ID).
