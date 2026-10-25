@@ -17,6 +17,7 @@ it('reports a denied clipboard getter and permits retry', async () => {
   expect(view.getByRole('status').textContent).toBe(
     'Could not copy conversation ID.'
   );
+  expect(view.getByText('Failed').getAttribute('aria-hidden')).toBe('true');
   const write = vi.fn(async () => {});
   clipboard(write);
   fireEvent.click(view.getByRole('button'));
@@ -55,6 +56,7 @@ it('copies the literal ID only on explicit activation, blocks immediate reentry 
   }) as HTMLButtonElement;
   expect(button.title).toBe('Copy conversation ID for Full title (a<&)');
   expect(attempt.write).not.toHaveBeenCalled();
+  expect(view.queryByText(/^(Copying…|Copied|Failed)$/)).toBeNull();
   act(() => {
     button.click();
     button.click();
@@ -62,9 +64,11 @@ it('copies the literal ID only on explicit activation, blocks immediate reentry 
   expect(attempt.write.mock.calls).toEqual([['a<&']]);
   expect(button.disabled).toBe(true);
   expect(view.getByRole('status').textContent).toBe('Copying conversation ID…');
+  expect(view.getByText('Copying…').getAttribute('aria-hidden')).toBe('true');
   await act(async () => attempt.resolve());
   expect(button.disabled).toBe(false);
   expect(view.getByRole('status').textContent).toBe('Conversation ID copied.');
+  expect(view.getByText('Copied').getAttribute('aria-hidden')).toBe('true');
 });
 it('reports unavailable clipboard and rejection and permits an explicit retry', async () => {
   const view = render(<CopyConversationId id="a" />);
@@ -73,18 +77,21 @@ it('reports unavailable clipboard and rejection and permits an explicit retry', 
   expect(view.getByRole('status').textContent).toBe(
     'Could not copy conversation ID.'
   );
+  expect(view.getByText('Failed').getAttribute('aria-hidden')).toBe('true');
   const attempt = pending();
   fireEvent.click(view.getByRole('button'));
   await act(async () => attempt.reject());
   expect(view.getByRole('status').textContent).toBe(
     'Could not copy conversation ID.'
   );
+  expect(view.getByText('Failed').getAttribute('aria-hidden')).toBe('true');
   const success = vi.fn(async () => {});
   clipboard(success);
   fireEvent.click(view.getByRole('button'));
   await act(async () => {});
   expect(success.mock.calls).toEqual([['a']]);
   expect(view.getByRole('status').textContent).toBe('Conversation ID copied.');
+  expect(view.getByText('Copied').getAttribute('aria-hidden')).toBe('true');
 });
 it.each(['resolve', 'reject'] as const)(
   'discards stale %s after an A→B→A identity replacement',
@@ -95,8 +102,10 @@ it.each(['resolve', 'reject'] as const)(
     view.rerender(<CopyConversationId id="b" />);
     view.rerender(<CopyConversationId id="a" />);
     expect(view.getByRole('status').textContent).toBe('');
+    expect(view.queryByText(/^(Copying…|Copied|Failed)$/)).toBeNull();
     await act(async () => attempt[settle]());
     expect(view.getByRole('status').textContent).toBe('');
+    expect(view.queryByText(/^(Copying…|Copied|Failed)$/)).toBeNull();
     expect((view.getByRole('button') as HTMLButtonElement).disabled).toBe(
       false
     );

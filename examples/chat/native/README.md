@@ -95,8 +95,9 @@ conversation. Other thread lifecycle actions and full T29 parity remain open.
 The full React directory also uses `renderActions` to place an application-owned
 Copy conversation ID control beside each selection button. Explicit activation
 copies the exact row ID through that button's document clipboard, with pending,
-success and failure feedback and retry after failure. Copying does not select a
-conversation or issue backend commands, and retains the draft and active response.
+success and failure feedback, both visible and announced, and retry after failure.
+Copying does not select a conversation or issue backend commands, and retains the
+draft and active response.
 The compact sidenav rail retains selection-only rows. Clipboard access may be
 unavailable or denied by the browser; the example reports that failure locally.
 

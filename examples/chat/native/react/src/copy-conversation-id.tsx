@@ -65,6 +65,15 @@ function CopyCommand({
           <path d="M16 8V4H4v12h4" />
         </svg>
       </button>
+      {status && (
+        <span className="copy-conversation-id__feedback" aria-hidden="true">
+          {status === 'pending'
+            ? 'Copying…'
+            : status === 'success'
+            ? 'Copied'
+            : 'Failed'}
+        </span>
+      )}
       <span role="status" className="copy-conversation-id__status">
         {status === 'pending'
           ? 'Copying conversation ID…'

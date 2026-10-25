@@ -138,13 +138,22 @@ test('installed React sidenav retains navigation, draft and a running response a
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.clock.setFixedTime(fixedNow);
     await page.addInitScript(() => {
-      const state = { writes: [] as string[], fail: false };
+      const state = {
+        writes: [] as string[],
+        fail: false,
+        hold: false,
+        release: undefined as (() => void) | undefined,
+      };
       Object.assign(window, { conversationClipboard: state });
       Object.defineProperty(navigator, 'clipboard', {
         configurable: true,
         value: {
           writeText: async (text: string) => {
             state.writes.push(text);
+            if (state.hold)
+              await new Promise<void>((resolve) => {
+                state.release = resolve;
+              });
             if (state.fail) throw Error('Clipboard denied');
           },
         },
@@ -313,6 +322,47 @@ test('installed React sidenav retains navigation, draft and a running response a
       expect(geometry.separate).toBe(true);
       expect(geometry.noOverflow).toBe(true);
     };
+    const expectCopyFeedback = async (
+      text: 'Copying…' | 'Copied' | 'Failed'
+    ) => {
+      const feedback = copyBeta.locator('..').getByText(text, { exact: true });
+      await expect(feedback).toBeVisible();
+      await expect(feedback).toHaveAttribute('aria-hidden', 'true');
+      const geometry = await feedback.evaluate((label) => {
+        const box = label.getBoundingClientRect();
+        const wrapper = label.parentElement!;
+        const row = label.closest('li')!;
+        const panel = label.closest('nav')!;
+        const contains = (element: Element) => {
+          const outer = element.getBoundingClientRect();
+          return (
+            box.left >= outer.left &&
+            box.right <= outer.right &&
+            box.top >= outer.top &&
+            box.bottom <= outer.bottom
+          );
+        };
+        const style = getComputedStyle(label);
+        return {
+          height: box.height,
+          width: box.width,
+          bounded:
+            wrapper.getBoundingClientRect().width <=
+            4 * parseFloat(getComputedStyle(document.documentElement).fontSize),
+          contained: [wrapper, row, panel].every(contains),
+          unclipped:
+            style.clipPath === 'none' &&
+            label.scrollWidth <= label.clientWidth &&
+            label.scrollHeight <= label.clientHeight,
+        };
+      });
+      expect(geometry.height).toBeGreaterThan(8);
+      expect(geometry.width).toBeGreaterThan(8);
+      expect(geometry.bounded).toBe(true);
+      expect(geometry.contained).toBe(true);
+      expect(geometry.unclipped).toBe(true);
+      await expectCopyGeometry();
+    };
     await expect(alpha).toHaveAttribute('aria-current', 'true');
     await expect(beta).not.toHaveAttribute('aria-current');
     await expect(alpha).toHaveAccessibleName('Alpha notes');
@@ -342,10 +392,30 @@ test('installed React sidenav retains navigation, draft and a running response a
     expect(backend.requests).toHaveLength(3);
     expect((await clipboardState()).writes).toEqual([]);
     await draft.fill('Copy preserves this draft.');
+    await page.evaluate(() => {
+      (
+        window as unknown as { conversationClipboard: { hold: boolean } }
+      ).conversationClipboard.hold = true;
+    });
     await copyBeta.click();
+    await expect(copyBeta).toBeDisabled();
+    await expect(copyBeta.locator('..').getByRole('status')).toHaveText(
+      'Copying conversation ID…'
+    );
+    await expectCopyFeedback('Copying…');
+    await page.evaluate(() => {
+      const state = (
+        window as unknown as {
+          conversationClipboard: { hold: boolean; release?: () => void };
+        }
+      ).conversationClipboard;
+      state.hold = false;
+      state.release!();
+    });
     await expect(copyBeta.locator('..').getByRole('status')).toHaveText(
       'Conversation ID copied.'
     );
+    await expectCopyFeedback('Copied');
     expect((await clipboardState()).writes).toEqual(['b']);
     await copyAlpha.focus();
     await page.keyboard.press('Enter');
@@ -360,6 +430,7 @@ test('installed React sidenav retains navigation, draft and a running response a
     await expect(copyBeta.locator('..').getByRole('status')).toHaveText(
       'Could not copy conversation ID.'
     );
+    await expectCopyFeedback('Failed');
     await page.evaluate(() => {
       (
         window as unknown as { conversationClipboard: { fail: boolean } }
@@ -369,6 +440,7 @@ test('installed React sidenav retains navigation, draft and a running response a
     await expect(copyBeta.locator('..').getByRole('status')).toHaveText(
       'Conversation ID copied.'
     );
+    await expectCopyFeedback('Copied');
     expect((await clipboardState()).writes).toEqual(['b', 'a', 'b', 'b']);
     await expect(alpha).toHaveAttribute('aria-current', 'true');
     await expect(page).toHaveURL(/thread=a/);
@@ -683,6 +755,8 @@ test('installed React sidenav retains navigation, draft and a running response a
       await expect(filter).toBeFocused();
       await expectSearchGeometry();
       await expectCopyGeometry();
+      await copyBeta.click();
+      await expectCopyFeedback('Copied');
       await close.focus();
       await page.keyboard.press('Meta+b');
       await expectShortcutUnclaimed();
@@ -935,6 +1009,8 @@ test('installed React sidenav retains navigation, draft and a running response a
     expect(rtl.x + rtl.width).toBe(600);
     await expectSearchGeometry();
     await expectCopyGeometry();
+    await copyBeta.click();
+    await expectCopyFeedback('Copied');
     await page.screenshot({
       path: testInfo.outputPath('sidenav-search-rtl.png'),
       fullPage: true,
