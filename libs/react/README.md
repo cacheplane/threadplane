@@ -63,7 +63,8 @@ under development and is not a published compatibility or feature-parity claim.
 
 Build with `npx nx build react`; run `npx nx test react` and
 `npx nx run react:type-tests` for real-session and strict type coverage. React
-19.2.4 is the tested runtime; React DOM is used only by the test host.
+19.2.4 is the tested runtime. React DOM ^19.2.4 is a required peer for chat
+portals; the headless root does not import React DOM.
 
 `@threadplane/react/chat` is a separate client entry for a plain-text conversation:
 
@@ -329,6 +330,47 @@ An empty collection renders an empty list. The application owns loaded-title
 filtering, loading/error/empty notices, data fetching and execution. Rename,
 delete, archive, pin/project actions, drag reordering, live timestamp refresh and
 custom row rendering remain future work. This is a bounded private T29 slice.
+
+## Controlled command menu
+
+The private chat entry also exports `OverflowMenu`, `OverflowMenuProps` and
+`OverflowMenuItem`. Supply readonly ordered items with unique stable string IDs
+and literal labels, required `label`, controlled `open`/`onOpenChange`, and
+`onSelect(itemId, event)`:
+
+```tsx
+<OverflowMenu
+  label="Conversation actions"
+  items={[{ id: 'copy', label: 'Copy conversation ID' }]}
+  open={open}
+  onOpenChange={setOpen}
+  onSelect={(itemId, event) => copyFromGesture(itemId, event)}
+/>
+```
+
+Optional `disabled`, `className` and item `disabled`/`tone: 'normal' | 'destructive'`
+control presentation. Only strict `true` disables controls. Selection requests
+closure and synchronously passes the original React button mouse event,
+preserving user-gesture capabilities such as the item's
+`currentTarget.ownerDocument` clipboard. The app owns async work, errors and
+status; the component never awaits command promises.
+
+The named menu portals to the trigger document body. Arrow keys wrap enabled
+items, Home/End select edges, and native Enter/Space activate. Escape closes the
+menu before a containing drawer; accepted command/Escape closure returns focus
+when still menu-owned. Tab/Shift+Tab continue from the trigger's natural order.
+Outside pointer/focus, external scroll and viewport resize request dismissal.
+Hidden, inert, disabled, disconnected or unlaid-out anchors suppress the portal
+until an accepted closed/open cycle, even if the owner refuses closure. Effective
+ARIA reflects the mounted portal. Opening snapshots local direction, font,
+color-scheme and chat/design tokens; ancestor theme changes dismiss the menu.
+Import the chat stylesheet for fixed viewport-clamped placement and 40px targets.
+
+The Node rendering check covers DOM-free import and pre-mount trigger rendering,
+including `open=true`; it is a bounded check, with no broader hydration claim.
+Context menus, typeahead, lifecycle/project/archive commands and full parity
+remain open. Native full directories compose one exact-ID clipboard command;
+compact navigation remains selection-only.
 
 ## Controlled chat panels
 

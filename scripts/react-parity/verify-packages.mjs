@@ -52,6 +52,7 @@ export function validatePackage(directory, { angularTransitions = angularTransit
   const errors = [];
   const manifest = JSON.parse(readFileSync(join(directory, 'package.json'), 'utf8'));
   const project = manifest.name?.replace(/^@threadplane\//, '');
+  if (project === 'react' && (manifest.peerDependencies?.['react-dom'] !== '^19.2.4' || manifest.peerDependenciesMeta?.['react-dom']?.optional === true)) errors.push('React requires compatible nonoptional react-dom peer ^19.2.4.');
   const scaffold = privateScaffoldProjects.includes(project);
   errors.push(...manifestViolations(project, manifest, { angularTransitions, telemetryBrowserTransition }));
   if (scaffold && manifest.private !== true) errors.push('Foundation package must remain private.');
@@ -210,6 +211,8 @@ export function assertDebugFreeInputs(inputs) {
 export function assertHeadlessInputs(inputs) {
   assertDebugFreeInputs(inputs);
   assertParserFreeInputs(inputs);
+  const dom = Object.keys(inputs).filter(path => /(?:^|\/)node_modules\/react-dom(?:\/|$)/.test(path.replaceAll('\\', '/')));
+  if (dom.length) throw new Error(`Headless framework root includes DOM inputs: ${dom.join(', ')}`);
   const render = Object.keys(inputs).filter((path) => /(?:@threadplane\/react\/src\/render\/|node_modules\/@json-render\/)/.test(path.replaceAll('\\', '/')));
   if (render.length) throw new Error(`Headless framework root includes render feature: ${render.join(', ')}`);
   const chat = Object.keys(inputs).filter((path) => /@threadplane\/(?:react\/src\/chat\/|angular\/fesm2022\/threadplane-angular-chat\.mjs)/.test(path.replaceAll('\\', '/')));
@@ -222,10 +225,12 @@ export function plainExportTypes(specifiers) {
   const namespaces = specifiers.map((specifier, index) => `import * as entry${index} from ${JSON.stringify(specifier)};\nexport type Entry${index} = typeof entry${index};`).join('\n');
   if (!specifiers.includes('@threadplane/react/chat')) return namespaces;
   return `${namespaces}
-import type { ChatSidebarProps, ChatSidenavMode, ChatSidenavProps, ChatSidenavScrimProps, ThreadListItem, ThreadListProps } from '@threadplane/react/chat';
-import type { ReactNode } from 'react';
+import type { ChatSidebarProps, ChatSidenavMode, ChatSidenavProps, ChatSidenavScrimProps, ThreadListItem, ThreadListProps, OverflowMenuItem, OverflowMenuProps } from '@threadplane/react/chat';
+import type { ReactNode, MouseEvent } from 'react';
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
 type Assert<T extends true> = T;
+export type OverflowMenuItemContract = Assert<Equal<OverflowMenuItem, { readonly id: string; readonly label: string; readonly disabled?: boolean; readonly tone?: 'normal' | 'destructive' }>>;
+export type OverflowMenuPropsContract = Assert<Equal<OverflowMenuProps, { readonly items: readonly OverflowMenuItem[]; readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly onSelect: (itemId: string, event: MouseEvent<HTMLButtonElement>) => void; readonly label: string; readonly className?: string; readonly disabled?: boolean }>>;
 export type ThreadListItemContract = Assert<Equal<ThreadListItem, { readonly id: string; readonly title?: string; readonly updatedAt?: number; readonly pinned?: boolean }>>;
 export type ThreadListRequiredContract = Assert<Equal<Pick<ThreadListProps, 'threads' | 'onSelect'>, { readonly threads: readonly ThreadListItem[]; readonly onSelect: (threadId: string) => void }>>;
 export type ThreadListActionsContract = Assert<Equal<Pick<ThreadListProps, 'renderActions'>, { readonly renderActions?: (thread: ThreadListItem) => ReactNode }>>;
@@ -360,6 +365,7 @@ export function assertSupportedExports(project, entry) {
         'Citations',
         'MessageList',
         'MessageActions',
+        'OverflowMenu',
         'Reasoning',
         'TextTranscript',
         'ThreadList',
@@ -383,7 +389,7 @@ export function assertSupportedExports(project, entry) {
     if (!supported(entry[name]))
       throw new Error(`${project} missing supported contract ${name}`);
   if (
-    ['react/debug', 'react/chat', 'react/markdown', 'react/render', 'content/json', 'content/a2ui', 'content/render-state'].includes(project) &&
+    ['react', 'react/debug', 'react/chat', 'react/markdown', 'react/render', 'content/json', 'content/a2ui', 'content/render-state'].includes(project) &&
     Object.keys(entry).some((name) => !expected.includes(name))
   )
     throw new Error(`${project} has unexpected exports`);

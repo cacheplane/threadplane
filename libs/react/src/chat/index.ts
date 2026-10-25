@@ -1,5 +1,10 @@
 'use client';
 export {
+  OverflowMenu,
+  type OverflowMenuProps,
+  type OverflowMenuItem,
+} from './overflow-menu.js';
+export {
   ThreadList,
   type ThreadListItem,
   type ThreadListProps,

@@ -75,6 +75,7 @@ export function ChatSidenav({
   const toggle = useRef<HTMLButtonElement>(null);
   const search = useRef<HTMLButtonElement>(null);
   const ownedFocus = useRef<Element | null>(null);
+  const ownedRegion = useRef<'body' | 'compact' | null>(null);
   const previous = useRef<{ mode: ChatSidenavMode; open: boolean } | null>(
     null
   );
@@ -163,14 +164,23 @@ export function ChatSidenav({
     // Browsers can blur a newly hidden element before layout effects run.
     // Remember local ownership, but never override an external focused control.
     const focused = active === document?.body ? ownedFocus.current : active;
-    if (!focused || !root.current?.contains(focused)) return;
+    const captured = focused === ownedFocus.current;
+    if (!focused || (!root.current?.contains(focused) && !captured)) return;
+    // React focus capture follows logical slot ownership across body portals.
+    // Physical containment remains useful for ordinary and shadow-host focus.
+    const inBody =
+      body.current?.contains(focused) ||
+      (captured && ownedRegion.current === 'body');
+    const inCompact =
+      compact.current?.contains(focused) ||
+      (captured && ownedRegion.current === 'compact');
     const disappeared =
       (focused === launcher.current && !closedDrawer) ||
       (focused === close.current && !(drawer && open)) ||
       (focused === toggle.current && drawer) ||
       (focused === search.current && closedDrawer) ||
-      (body.current?.contains(focused) && (collapsed || closedDrawer)) ||
-      (compact.current?.contains(focused) && !collapsed);
+      (inBody && (collapsed || closedDrawer)) ||
+      (inCompact && !collapsed);
     if (disappeared) {
       (closedDrawer ? launcher.current : toggle.current)?.focus();
     }
@@ -189,6 +199,7 @@ export function ChatSidenav({
         .join(' ')}
       onFocusCapture={(event) => {
         ownedFocus.current = event.target;
+        ownedRegion.current = null;
       }}
       onBlurCapture={(event) => {
         if (
@@ -196,6 +207,7 @@ export function ChatSidenav({
           !event.currentTarget.contains(event.relatedTarget)
         ) {
           ownedFocus.current = null;
+          ownedRegion.current = null;
         }
       }}
     >
@@ -306,6 +318,9 @@ export function ChatSidenav({
           className="tp-chat-sidenav__body"
           hidden={collapsed}
           inert={collapsed}
+          onFocusCapture={() => {
+            ownedRegion.current = 'body';
+          }}
         >
           {children}
         </div>
@@ -315,6 +330,9 @@ export function ChatSidenav({
             className="tp-chat-sidenav__collapsed-content"
             hidden={!collapsed}
             inert={!collapsed}
+            onFocusCapture={() => {
+              ownedRegion.current = 'compact';
+            }}
           >
             {collapsedContent}
           </div>

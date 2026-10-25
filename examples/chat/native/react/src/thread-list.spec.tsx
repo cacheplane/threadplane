@@ -7,11 +7,16 @@ import {
   waitFor,
   within,
 } from '@testing-library/react';
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createReactApplication } from './application';
 import { applicationFixture } from './application-fixture';
 import { App } from './app';
 import { projectThreads } from '../../shared/projection';
+beforeEach(() => {
+  vi.spyOn(HTMLElement.prototype, 'getClientRects').mockReturnValue([
+    {},
+  ] as unknown as DOMRectList);
+});
 
 afterEach(() => {
   cleanup();
@@ -164,6 +169,11 @@ it('uses ThreadList while refresh, loaded-title filtering and navigation retain 
     const beforeCopyIo = { ...io };
     fireEvent.click(
       within(list).getByRole('button', {
+        name: 'Actions for Beta notes (b)',
+      })
+    );
+    fireEvent.click(
+      view.getByRole('menuitem', {
         name: 'Copy conversation ID for Beta notes (b)',
       })
     );

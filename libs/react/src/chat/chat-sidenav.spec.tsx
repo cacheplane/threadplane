@@ -1,4 +1,5 @@
 import { StrictMode, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -8,6 +9,96 @@ import {
 } from './index';
 
 afterEach(cleanup);
+
+describe('ChatSidenav logical portal focus ownership', () => {
+  const shell = (mode: ChatSidenavMode, open = false) => (
+    <>
+      <button>External control</button>
+      {createPortal(<button>External portal control</button>, document.body)}
+      <ChatSidenav
+        mode={mode}
+        open={open}
+        onOpenChange={vi.fn()}
+        onModeChange={vi.fn()}
+        collapsedContent={createPortal(
+          <button>Portalled compact</button>,
+          document.body
+        )}
+      >
+        {createPortal(<button>Portalled body</button>, document.body)}
+      </ChatSidenav>
+    </>
+  );
+
+  it.each([
+    [
+      'expanded',
+      false,
+      'Portalled body',
+      'collapsed',
+      false,
+      'Expand conversations',
+    ],
+    ['drawer', true, 'Portalled body', 'drawer', false, 'Open conversations'],
+    [
+      'collapsed',
+      false,
+      'Portalled compact',
+      'expanded',
+      false,
+      'Collapse conversations',
+    ],
+    [
+      'collapsed',
+      false,
+      'Portalled compact',
+      'drawer',
+      false,
+      'Open conversations',
+    ],
+  ] as const)(
+    'hands off logically owned %s/%s/%s focus after accepting %s/%s',
+    (from, fromOpen, label, to, toOpen, expected) => {
+      const view = render(shell(from, fromOpen));
+      const child = view.getByRole('button', { name: label });
+      child.focus();
+      expect(view.container.contains(child)).toBe(false);
+      view.rerender(shell(to, toOpen));
+      expect(document.activeElement).toBe(
+        view.getByRole('button', { name: expected })
+      );
+    }
+  );
+
+  it('remembers logically owned portal focus when hidden content blurs to body', () => {
+    const view = render(shell('expanded'));
+    const child = view.getByRole('button', { name: 'Portalled body' });
+    child.focus();
+    child.blur();
+    expect(document.activeElement).toBe(document.body);
+    view.rerender(shell('collapsed'));
+    expect(document.activeElement).toBe(
+      view.getByRole('button', { name: 'Expand conversations' })
+    );
+  });
+
+  it.each(['External control', 'External portal control'])(
+    'does not steal deliberately external %s focus after portal ownership',
+    (label) => {
+      const view = render(shell('expanded'));
+      view.getByRole('button', { name: 'Portalled body' }).focus();
+      const external = view.getByRole('button', { name: label });
+      external.focus();
+      view.rerender(shell('collapsed'));
+      expect(document.activeElement).toBe(external);
+      view.rerender(shell('drawer', true));
+      view.getByRole('button', { name: 'Portalled body' }).focus();
+      external.focus();
+      view.rerender(shell('drawer', false));
+      expect(document.activeElement).toBe(external);
+    }
+  );
+});
 
 function shortcut(target: EventTarget = window, init: KeyboardEventInit = {}) {
   const event = new KeyboardEvent('keydown', {

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createElement } from 'react';
 import { renderToString } from 'react-dom/server';
-import { ChatSidenav } from '@threadplane/react/chat';
+import { ChatSidenav, OverflowMenu } from '@threadplane/react/chat';
 
 assert.equal(typeof window, 'undefined');
 assert.equal(typeof document, 'undefined');
@@ -32,6 +32,13 @@ for (const mode of ['expanded', 'collapsed', 'drawer']) {
   assert.match(html, /aria-keyshortcuts="Control\+K Meta\+K"/);
   assert.match(html, /Retained directory/);
   if (mode === 'drawer') assert.match(html, /<nav[^>]*hidden=""[^>]*inert=""/);
+}
+assert.equal(requests, 0);
+for (const open of [false, true]) {
+  const html = renderToString(createElement(OverflowMenu, { label: 'Actions <ID>', open, items: [{ id: 'copy', label: 'Copy' }], onOpenChange: request, onSelect: request }));
+  assert.match(html, /aria-expanded="false"/);
+  assert.match(html, /aria-haspopup="menu"/);
+  assert.doesNotMatch(html, /aria-controls|role="menu"|role="menuitem"/);
 }
 assert.equal(requests, 0);
 console.log('Installed React sidenav SSR: default and three search modes rendered without DOM globals or requests.');
