@@ -137,7 +137,8 @@ correlates it by the submitted user message. An in-flight run leaves the snapsho
 untouched so the check can be repeated; a failed run is reported as such and
 withdraws every recovery; a committed answer or a pending interrupt settles the
 turn. Close-time settlement performs the same read once, automatically, unless the
-exact run is known to be still in flight. Fork attempts and tool follow-ups after
+exact run is known to be still in flight; a stream that throws instead of closing
+gets that same single read, and a conclusive answer settles the attempt itself. Fork attempts and tool follow-ups after
 a resume are never reconciled from history and report `recovery: 'none'`.
 
 A first-group resume is reconciled too, anchored on the turn's existing user

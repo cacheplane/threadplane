@@ -181,9 +181,9 @@ describe('explicit interrupt resume', () => {
         recovery: 'check',
         retryable: false,
       });
-      // Only a stream that opened and then closed is read at close; a thrown
-      // open and an explicit error leave the read to the explicit check.
-      const closeReads = kind === 'empty' ? 1 : 0;
+      // A stream that closed or threw is read once at close; an explicit
+      // server error is not an interruption and leaves the read to the check.
+      const closeReads = kind === 'error' ? 0 : 1;
       expect(f.getHistory).toHaveBeenCalledTimes(closeReads);
       const before = f.session.getSnapshot();
       await f.session.checkStatus?.();
