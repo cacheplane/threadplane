@@ -18,6 +18,7 @@ import type {
 import type { A2uiMessageContent as MessageContent } from './a2ui-message-content';
 import { renderThreadTitle } from './thread-title';
 import { filterLoadedTitles } from '../../shared/projection';
+import type { ThreadRow } from '../../shared/contracts';
 import { submissionStatus } from '../../shared/submission-status';
 import { Approval } from './approval';
 import { BackgroundActivity } from './background-activity';
@@ -184,14 +185,130 @@ function Conversation({
   const [filter, setFilter] = useState('');
   const filterInput = useRef<HTMLInputElement>(null);
   const rows = filterLoadedTitles(snapshot.list.rows, filter);
+  const activeRows = rows.filter((row) => row.archived !== true);
+  const archivedRows = rows.filter((row) => row.archived === true);
   const selection = snapshot.selection;
-  const menus = useConversationMenu(rows);
+  const [archiveOpen, setArchiveOpen] = useState(false);
+  const menus = useConversationMenu(
+    (archiveOpen ? rows : activeRows).map((row) => ({
+      id: row.id,
+      occurrenceKey: row.archived === true ? 'archived' : 'active',
+    }))
+  );
+  const archiveRequests = useRef(new Map<string, object>());
+  const mounted = useRef(false);
+  const [archiveFeedback, setArchiveFeedback] = useState<
+    Readonly<
+      Record<
+        string,
+        {
+          readonly title: string;
+          readonly archived: boolean;
+          readonly status: 'pending' | 'confirmed' | 'failed';
+        }
+      >
+    >
+  >({});
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      archiveRequests.current.clear();
+    };
+  }, []);
+  const archive = async (row: ThreadRow) => {
+    if (
+      archiveRequests.current.has(row.id) ||
+      snapshot.archives[row.id]?.status === 'pending'
+    )
+      return;
+    const request = {};
+    const archived = row.archived !== true;
+    archiveRequests.current.set(row.id, request);
+    setArchiveFeedback((latest) => ({
+      ...latest,
+      [row.id]: { title: row.title, archived, status: 'pending' },
+    }));
+    let confirmed = false;
+    try {
+      confirmed = await application.setArchived(row.id, archived);
+    } catch {
+      /* Optional commands may reject. */
+    }
+    if (!mounted.current || archiveRequests.current.get(row.id) !== request)
+      return;
+    archiveRequests.current.delete(row.id);
+    setArchiveFeedback((latest) => ({
+      ...latest,
+      [row.id]: {
+        title: row.title,
+        archived,
+        status: confirmed ? 'confirmed' : 'failed',
+      },
+    }));
+  };
+  // Only live pending state is shared across UI occurrences. Settled feedback
+  // belongs to commands started by this mounted directory, never replayed history.
+  const feedback = { ...archiveFeedback };
+  for (const [id, state] of Object.entries(snapshot.archives)) {
+    if (state.status === 'pending')
+      feedback[id] = {
+        ...state,
+        title:
+          archiveFeedback[id]?.title ??
+          snapshot.list.rows.find((row) => row.id === id)?.title ??
+          id,
+      };
+  }
   const [editor, setEditor] = useState<RenameEditorRequest | null>(null);
   const editorSequence = useRef(0);
   useEffect(() => {
-    if (editor && !rows.some((row) => row.id === editor.id))
+    if (editor && !activeRows.some((row) => row.id === editor.id))
       setEditor((latest) => (latest === editor ? null : latest));
-  }, [rows, editor]);
+  }, [activeRows, editor]);
+  const renderActions = (thread: {
+    readonly id: string;
+    readonly title?: string;
+    readonly pinned?: boolean;
+  }) => (
+    <ConversationActions
+      id={thread.id}
+      archived={
+        snapshot.list.rows.find((row) => row.id === thread.id)?.archived
+      }
+      archivePending={snapshot.archives[thread.id]?.status === 'pending'}
+      onArchive={
+        application.canSetArchived()
+          ? () => {
+              const row = snapshot.list.rows.find(
+                (row) => row.id === thread.id
+              );
+              if (row) void archive(row);
+            }
+          : undefined
+      }
+      title={thread.title ?? ''}
+      menu={menus.forThread(thread.id)}
+      canRename={application.canRename()}
+      canSetPinned={application.canSetPinned()}
+      pinned={thread.pinned}
+      pinState={snapshot.pins[thread.id]}
+      setPinned={application.setPinned}
+      pending={snapshot.renames[thread.id]?.status === 'pending'}
+      rename={application.rename}
+      editor={rows.some((row) => row.id === editor?.id) ? editor : null}
+      onRename={(target) =>
+        setEditor({
+          id: thread.id,
+          token: ++editorSequence.current,
+          returnFocusTo: target,
+        })
+      }
+      onClose={(request) =>
+        setEditor((latest) => (latest === request ? null : latest))
+      }
+    />
+  );
   const directory = (
     <aside aria-labelledby="conversations-title">
       <h2 id="conversations-title">Loaded conversations</h2>
@@ -232,36 +349,12 @@ function Conversation({
         </p>
       )}
       <ThreadList
-        threads={rows}
+        threads={activeRows}
         onContextMenu={(id, event) => {
           setEditor(null);
           menus.onContextMenu(id, event);
         }}
-        renderActions={(thread) => (
-          <ConversationActions
-            id={thread.id}
-            title={thread.title ?? ''}
-            menu={menus.forThread(thread.id)}
-            canRename={application.canRename()}
-            canSetPinned={application.canSetPinned()}
-            pinned={thread.pinned}
-            pinState={snapshot.pins[thread.id]}
-            setPinned={application.setPinned}
-            pending={snapshot.renames[thread.id]?.status === 'pending'}
-            rename={application.rename}
-            editor={rows.some((row) => row.id === editor?.id) ? editor : null}
-            onRename={(target) =>
-              setEditor({
-                id: thread.id,
-                token: ++editorSequence.current,
-                returnFocusTo: target,
-              })
-            }
-            onClose={(request) =>
-              setEditor((latest) => (latest === request ? null : latest))
-            }
-          />
-        )}
+        renderActions={renderActions}
         renderTitle={(thread) =>
           renderThreadTitle(thread.title || thread.id, filter)
         }
@@ -273,9 +366,52 @@ function Conversation({
         newThreadDisabled={snapshot.creation.status === 'pending'}
         newThreadLabel="New"
       />
-      {snapshot.list.status !== 'pending' && rows.length === 0 && (
+      {snapshot.list.status !== 'pending' && activeRows.length === 0 && (
         <p className="muted">No loaded conversations match.</p>
       )}
+      <details
+        className="archived-conversations"
+        open={archiveOpen}
+        onToggle={(event) => setArchiveOpen(event.currentTarget.open)}
+      >
+        <summary>Archived conversations</summary>
+        <p className="muted">
+          Archived conversations among the loaded rows. The same title filter
+          applies.
+        </p>
+        <ThreadList
+          threads={archivedRows}
+          onContextMenu={(id, event) => {
+            setEditor(null);
+            menus.onContextMenu(id, event);
+          }}
+          renderActions={renderActions}
+          renderTitle={(thread) =>
+            renderThreadTitle(thread.title || thread.id, filter)
+          }
+          activeThreadId={selection.id}
+          onSelect={application.select}
+          label="Archived loaded conversations"
+          className="conversation-list"
+        />
+        {snapshot.list.status !== 'pending' && archivedRows.length === 0 && (
+          <p className="muted">No archived loaded conversations match.</p>
+        )}
+      </details>
+      <div className="conversation-archive-feedback">
+        {Object.entries(feedback).map(([id, state]) => (
+          <p key={id} role="status">
+            {state.status === 'pending'
+              ? `${state.archived ? 'Archiving' : 'Unarchiving'} conversation`
+              : state.status === 'confirmed'
+              ? `Conversation ${state.archived ? 'archived' : 'unarchived'}`
+              : `Could not ${
+                  state.archived ? 'archive' : 'unarchive'
+                } conversation. Try again.`}
+            {` ${state.title} (${id})`}
+          </p>
+        ))}
+      </div>
     </aside>
   );
   return (
@@ -294,7 +430,7 @@ function Conversation({
           onSearch={() => filterInput.current?.focus()}
           collapsedContent={
             <ThreadList
-              threads={rows}
+              threads={activeRows}
               activeThreadId={selection.id}
               onSelect={application.select}
               label="Loaded conversations"

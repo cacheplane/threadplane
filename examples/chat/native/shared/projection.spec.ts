@@ -133,3 +133,41 @@ test('projection copies only strict true pin metadata into independent frozen sn
   assert.equal(filtered[0], rows[1]);
   assert.ok(Object.isFrozen(filtered));
 });
+
+test('projection copies only strict true archive metadata into independent frozen snapshots without sorting', () => {
+  for (const archived of [true, false, undefined, null, 'true', 1, {}, []]) {
+    const source = {
+      ...envelope('Title'),
+      metadata: { title: 'Title', archived },
+    };
+    const row = projectThread(source);
+    assert.deepEqual(row, {
+      id: 'one',
+      title: 'Title',
+      ...(archived === true ? { archived: true } : {}),
+    });
+    source.metadata.archived = archived === true ? false : true;
+    assert.equal(row.archived, archived === true ? true : undefined);
+    assert.ok(Object.isFrozen(row));
+    assert.equal(Reflect.set(row, 'archived', false), false);
+  }
+  assert.deepEqual(projectThread({ ...envelope('ignored'), metadata: null }), {
+    id: 'one',
+    title: 'Untitled',
+  });
+  const rows = projectThreads([
+    envelope('Plain'),
+    {
+      ...envelope('Archived'),
+      thread_id: 'two',
+      metadata: { title: 'Archived', archived: true },
+    },
+  ]);
+  assert.deepEqual(
+    rows.map((row) => row.id),
+    ['one', 'two']
+  );
+  const filtered = filterLoadedTitles(rows, 'archive');
+  assert.equal(filtered[0], rows[1]);
+  assert.ok(Object.isFrozen(filtered));
+});

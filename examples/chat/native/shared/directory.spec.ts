@@ -536,3 +536,161 @@ test('directory rename is inert when preaborted, blank, or an unrepresentable do
   });
   server.verify();
 });
+
+for (const archived of [true, false]) {
+  for (const [id, path] of [
+    ['literal', '/api/threads/literal'],
+    ['one/two?x#y', '/api/threads/one%2Ftwo%3Fx%23y'],
+    ['one%2Ftwo', '/api/threads/one%252Ftwo'],
+  ])
+    test(`archive ${archived} encodes exact target ${id} and patches only its metadata field`, async (t) => {
+      const { directory, server } = await fixture(t, [
+        {
+          method: 'PATCH',
+          path,
+          payload: { metadata: { archived } },
+          body: {
+            ...threadEnvelope(id, 'Unchanged'),
+            metadata: { title: 'Unchanged', archived, other: 'kept' },
+          },
+        },
+      ]);
+      const result = await directory.setArchived!(id, archived, signal());
+      assert.deepEqual(result, {
+        kind: 'ready',
+        value: { id, title: 'Unchanged', updatedAt: 1790553601000, archived },
+      });
+      assert.ok(Object.isFrozen(result));
+      server.verify();
+    });
+  for (const body of [
+    { thread_id: 'wrong', metadata: { archived } },
+    { thread_id: 'a', metadata: { archived: !archived } },
+    { thread_id: 'a', metadata: {} },
+    { thread_id: 'a' },
+    { thread_id: 'a', metadata: { archived: archived ? 'true' : 0 } },
+  ])
+    test(`archive ${archived} requires raw exact ID and boolean confirmation ${JSON.stringify(
+      body
+    )}`, async (t) => {
+      const { directory, server } = await fixture(t, [
+        {
+          method: 'PATCH',
+          path: '/api/threads/a',
+          payload: { metadata: { archived } },
+          body,
+        },
+      ]);
+      assert.deepEqual(await directory.setArchived!('a', archived, signal()), {
+        kind: 'failed',
+      });
+      server.verify();
+    });
+}
+for (const status of [404, 500])
+  test(
+    `archive HTTP ${status} cancels hostile held body without retry`,
+    { timeout: 5000 },
+    async (t) => {
+      const { directory, server } = await fixture(t, [
+        {
+          method: 'PATCH',
+          path: '/api/threads/a',
+          payload: { metadata: { archived: true } },
+          status,
+          holdBody: true,
+        },
+      ]);
+      assert.deepEqual(await directory.setArchived!('a', true, signal()), {
+        kind: 'failed',
+      });
+      assert.deepEqual(await server.steps[0].closed, { finished: false });
+      server.verify();
+    }
+  );
+for (const phase of ['headers', 'body'])
+  test(`archive abort releases held ${phase}`, { timeout: 5000 }, async (t) => {
+    const { directory, server } = await fixture(t, [
+      {
+        method: 'PATCH',
+        path: '/api/threads/a',
+        payload: { metadata: { archived: false } },
+        holdHeaders: phase === 'headers',
+        holdBody: true,
+      },
+    ]);
+    const controller = new AbortController();
+    const result = directory.setArchived!('a', false, controller.signal);
+    await server.steps[0].received;
+    if (phase === 'body') await server.steps[0].headersSent;
+    controller.abort();
+    assert.deepEqual(await result, { kind: 'cancelled' });
+    assert.deepEqual(await server.steps[0].closed, { finished: false });
+    server.verify();
+  });
+test('archive invalid booleans, dot IDs and preaborted requests do no network work', async (t) => {
+  const { directory, server } = await fixture(t, []);
+  for (const id of ['.', '..'])
+    assert.deepEqual(await directory.setArchived!(id, true, signal()), {
+      kind: 'failed',
+    });
+  for (const value of [undefined, null, 0, 1, 'true'])
+    assert.deepEqual(
+      await directory.setArchived!('a', value as unknown as boolean, signal()),
+      { kind: 'failed' }
+    );
+  const controller = new AbortController();
+  controller.abort();
+  assert.deepEqual(await directory.setArchived!('a', true, controller.signal), {
+    kind: 'cancelled',
+  });
+  server.verify();
+});
+test('archive thrown transport errors are contained with one attempt', async () => {
+  let calls = 0;
+  const directory = createThreadDirectory({
+    apiBase: 'http://localhost/api',
+    browserOrigin: 'http://localhost',
+    fetch: async () => {
+      calls++;
+      throw { status: 404, message: 'hostile' };
+    },
+  });
+  assert.deepEqual(await directory.setArchived!('a', true, signal()), {
+    kind: 'failed',
+  });
+  assert.equal(calls, 1);
+});
+
+test('archive capability writes and confirms explicit false through the SDK boundary', async (t) => {
+  const { directory, server } = await fixture(t, [
+    {
+      method: 'PATCH',
+      path: '/api/threads/a',
+      payload: { metadata: { archived: false } },
+      body: {
+        ...threadEnvelope('a', 'Alpha'),
+        metadata: { title: 'Alpha', archived: false },
+      },
+    },
+  ]);
+  const archive = (
+    directory as typeof directory & {
+      setArchived?: (
+        id: string,
+        archived: boolean,
+        signal: AbortSignal
+      ) => Promise<unknown>;
+    }
+  ).setArchived;
+  assert.deepEqual(await archive?.('a', false, signal()), {
+    kind: 'ready',
+    value: {
+      id: 'a',
+      title: 'Alpha',
+      updatedAt: 1790553601000,
+      archived: false,
+    },
+  });
+  server.verify();
+});

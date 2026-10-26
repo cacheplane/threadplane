@@ -337,7 +337,7 @@ serve as the menu's invoking element.
 
 An empty collection renders an empty list. The application owns loaded-title
 filtering, loading/error/empty notices, data fetching and execution. Delete,
-archive, project actions, drag reordering, live timestamp refresh and
+project actions, drag reordering, live timestamp refresh and
 custom row rendering remain future work. This is a bounded private T29 slice.
 
 ## Controlled conversation rename editor
@@ -357,7 +357,7 @@ no backend requests and does not await command promises. Compose it in the
 ThreadList action sibling, outside the selection button. The native example
 uses it for confirmed metadata renames without selecting or reloading a session.
 Cancelling a pending editor ends local editing interest; it cannot promise a
-remote write was rolled back. Archive/delete/project mutation and full
+remote write was rolled back. Delete/project mutation and full
 thread lifecycle parity remain open.
 
 The native example also composes app-owned Pin/Unpin commands through the same
@@ -368,6 +368,15 @@ while its mutation is pending, and the same command permits explicit retry after
 failure. Copy, Rename and selection remain available. Pin/unpin preserves supplied
 row order and never starts, reloads or stops a session. The compact rail reflects
 the shared pinned state while keeping selection-only controls.
+
+The native application also composes confirmed Archive/Unarchive through the same
+slots. It partitions its loaded rows into active and archived lists, shares the
+loaded-title filter, and keeps the compact rail active-only. Archive metadata and
+commands belong to the native application, with strict boolean write confirmation,
+per-target pending state, retry after failure and feedback retained across row
+migration. Archiving the selected row preserves its transcript, draft, session and
+active response. This adds no ThreadList field, lifecycle API or export; delete,
+project actions, sorting and full T29/T30 parity remain open.
 
 ## Controlled command menu
 
@@ -422,7 +431,7 @@ The Node rendering check covers DOM-free import and pre-mount trigger rendering,
 including `open=true`; it is a bounded check, with no broader hydration claim.
 Native full directories compose pointer and keyboard context menus for one
 exact-ID clipboard command and an app-owned rename editor; compact navigation
-remains selection-only. Typeahead, further lifecycle/project/archive commands
+remains selection-only. Typeahead, further lifecycle/project commands
 and full parity remain open.
 
 ## Controlled chat panels
@@ -586,7 +595,7 @@ after backdrop dismissal, and removes the backdrop on desktop mode changes.
 Its directory filter and composer survive navigation visibility and breakpoint
 changes; selecting a different conversation deliberately resets that composer's
 draft. It opts into the desktop toggle shortcut while preserving those owners.
-This is a bounded children-based navigation slice. Project/archive menus,
+This is a bounded children-based navigation slice. Project menus,
 backend search, search dialogs, other global shortcuts, debug ownership and full
 Angular composition parity remain open under T30. The native Search loaded
 conversations action reveals navigation and focuses its existing loaded-title
