@@ -292,6 +292,7 @@ export function createSession(
   const canCheck = !!getHistory;
   const joinStream = transport.joinStream?.bind(transport);
   const getRunStatus = transport.getRunStatus?.bind(transport);
+  type RunStatus = Awaited<ReturnType<NonNullable<typeof getRunStatus>>>;
   const getState = transport.getState?.bind(transport);
   const canReconnect = !!joinStream && !!getRunStatus;
   const publication = createPublication({
@@ -340,6 +341,19 @@ export function createSession(
   function assertInvocationIdentity() {
     if (hasInvocationConflict(state.invocations))
       throw new Error(invocationConflictError().message);
+  }
+
+  /** The exact run ended without success: nothing is pending and nothing can
+   * be checked again, so no recovery is offered. */
+  function runFailureError(
+    status: 'error' | 'timeout' | 'interrupted'
+  ): AgentError {
+    return {
+      kind: status === 'interrupted' ? 'interrupted' : 'server',
+      message: 'The LangGraph run did not complete successfully.',
+      retryable: false,
+      recovery: 'none',
+    };
   }
 
   function unsettledToolError(): AgentError {
@@ -750,11 +764,14 @@ export function createSession(
 
   async function execute(attempt: Attempt): Promise<void> {
     if (!owns(attempt)) return;
+    // A captured run id does not bar the read-only history check: the check
+    // correlates by this turn's own user message, not by run identity, and it
+    // is the only portable recovery the core contract can surface. Exact-run
+    // status, when available, decides whether history is conclusive yet.
     const attemptCanCheck = () =>
       !attempt.branch &&
       attempt.input.kind === 'submit' &&
       canCheck &&
-      !attempt.physical?.evidence.runId &&
       !attempt.physical?.evidence.unsafe;
     try {
       let groups = attempt.groups;
@@ -945,8 +962,9 @@ export function createSession(
           : attempt.projection.terminal
           ? 'success'
           : 'interrupted';
+        let status: RunStatus | undefined;
+        let historyChecked = false;
         if (run.evidence.runId && !run.evidence.unsafe && getRunStatus) {
-          let status: Awaited<ReturnType<typeof getRunStatus>> | undefined;
           try {
             status = await getRunStatus(
               threadId,
@@ -1008,27 +1026,52 @@ export function createSession(
             status === 'interrupted'
           ) {
             run.confirmed = true;
-            settle(
-              attempt,
-              status === 'interrupted' ? 'interrupted' : 'error',
-              {
-                kind: status === 'interrupted' ? 'interrupted' : 'server',
-                message: 'The LangGraph run did not complete successfully.',
-                retryable: false,
-                recovery: 'none',
+            // 'interrupted' is ambiguous: the pause event may have been lost
+            // when the stream dropped, or a newer run cancelled this one.
+            // Only this turn's saved checkpoint tells the two apart.
+            let recovered: ReturnType<typeof reconcile>;
+            if (status === 'interrupted' && attemptCanCheck() && getHistory) {
+              historyChecked = true;
+              try {
+                const history = await getHistory(
+                  threadId,
+                  attempt.controller.signal
+                );
+                if (!owns(attempt)) return;
+                recovered = reconcile(attempt, history);
+                if (!owns(attempt)) return;
+              } catch {
+                if (!owns(attempt)) return;
               }
-            );
-            return;
+            }
+            if (!recovered) {
+              settle(
+                attempt,
+                status === 'interrupted' ? 'interrupted' : 'error',
+                runFailureError(status)
+              );
+              return;
+            }
+            state = recovered.state;
+            values = recovered.values;
+            interrupts = recovered.interrupts;
+            attempt.projection = recovered.projection;
+            outcome = recovered.outcome;
           } else outcome = 'interrupted';
         } else if (run.evidence.unsafe || attempt.branch)
           outcome = 'interrupted';
+        // While the exact run is known to be in flight, its saved state is
+        // not conclusive yet; the check stays available for later instead.
         if (
           outcome === 'interrupted' &&
+          !historyChecked &&
+          status !== 'pending' &&
+          status !== 'running' &&
           attemptCanCheck() &&
-          transport.getHistory
+          getHistory
         ) {
           try {
-            const history = await transport.getHistory(
+            const history = await getHistory(
               threadId,
               attempt.controller.signal
             );
@@ -1812,6 +1855,34 @@ export function createSession(
     if (!checking || disposed || checking.revision !== revision) return;
     const captured = checking;
     try {
+      // The exact run answers first. In flight means history is not
+      // conclusive yet; a failed run is reported as such and needs no read.
+      const run = captured.attempt.physical;
+      let status: RunStatus | undefined;
+      if (run?.evidence.runId && !run.evidence.unsafe && getRunStatus) {
+        try {
+          status = await getRunStatus(
+            threadId,
+            run.evidence.runId,
+            captured.controller.signal
+          );
+        } catch {
+          /* Unknown exact status; history may still be conclusive. */
+        }
+        if (status === 'pending' || status === 'running') return;
+        if (status === 'error' || status === 'timeout') {
+          const failed = status;
+          await publication.command(() => {
+            if (disposed || captured.revision !== revision) return;
+            run.confirmed = true;
+            recoveryAttempt = undefined;
+            checkController = undefined;
+            retained = undefined;
+            publish('error', runFailureError(failed));
+          });
+          return;
+        }
+      }
       const history = await transport.getHistory?.(
         threadId,
         captured.controller.signal
@@ -1847,6 +1918,7 @@ export function createSession(
         if (disposed || captured.revision !== revision) return;
         recoveryAttempt = undefined;
         checkController = undefined;
+        retained = undefined;
         state = recoveredState;
         values = recovered.values;
         interrupts = recovered.interrupts;
