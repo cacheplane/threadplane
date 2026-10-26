@@ -1,8 +1,30 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator } from '@playwright/test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, realpathSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+
+// Finish scrolling before opening a viewport-anchored menu: ancestor scroll
+// intentionally dismisses it, including delayed scroll events after automation.
+async function settleMenuTarget(target: Locator) {
+  await target.scrollIntoViewIfNeeded();
+  await target.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      })
+  );
+}
+
+async function openRowMenu(target: Locator) {
+  await settleMenuTarget(target);
+  await target.click({ button: 'right' });
+}
+
+async function openActions(target: Locator) {
+  await settleMenuTarget(target);
+  await target.click();
+}
 
 test('installed React conversation archive and unarchive preserve independent metadata, draft and a running selection', async ({
   page,
@@ -160,7 +182,7 @@ test('installed React conversation archive and unarchive preserve independent me
       errors.push('Unexpected external request: ' + route.request().url());
       return route.abort();
     });
-    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.setViewportSize({ width: 1280, height: 700 });
     await page.goto(origin + '/?presentation=sidenav&thread=a');
     const list = page.getByRole('list', {
       name: 'Loaded conversations',
@@ -180,7 +202,7 @@ test('installed React conversation archive and unarchive preserve independent me
     const draftNode = await draft.elementHandle();
     assert.ok(draftNode);
     await draft.fill('Retain this archive draft.');
-    await betaRow.click({ button: 'right' });
+    await openRowMenu(betaRow);
     const archiveBeta = page.getByRole('menuitem', {
       name: /^Archive conversation for Beta/,
     });
@@ -207,6 +229,7 @@ test('installed React conversation archive and unarchive preserve independent me
     assert.ok(responseNode);
     const heldDraft = await draft.inputValue();
     const stop = page.getByRole('button', { name: 'Stop', exact: true });
+    await settleMenuTarget(betaRow);
     await betaRow.focus();
     await betaRow.press('Shift+F10');
     await archiveBeta.click();
@@ -217,9 +240,12 @@ test('installed React conversation archive and unarchive preserve independent me
     ).toBeVisible();
     await expect(betaRow).toBeVisible();
     expect(backend.requests).toHaveLength(5);
-    await list
-      .getByRole('button', { name: 'Actions for Beta notes (b)', exact: true })
-      .click();
+    await openActions(
+      list.getByRole('button', {
+        name: 'Actions for Beta notes (b)',
+        exact: true,
+      })
+    );
     await archiveBeta.click();
     await backend.steps[5].received;
     const filter = page.getByRole('searchbox', {
@@ -228,7 +254,7 @@ test('installed React conversation archive and unarchive preserve independent me
     await filter.fill('Alpha');
     await expect(betaRow).toHaveCount(0);
     await filter.fill('');
-    await betaRow.click({ button: 'right' });
+    await openRowMenu(betaRow);
     await expect(archiveBeta).toBeDisabled();
     await expect(
       page.getByRole('menuitem', { name: /^Copy conversation ID for Beta/ })
@@ -251,7 +277,7 @@ test('installed React conversation archive and unarchive preserve independent me
       name: 'Beta renamed while archiving',
       exact: true,
     });
-    await betaRow.click({ button: 'right' });
+    await openRowMenu(betaRow);
     await page
       .getByRole('menuitem', { name: /^Pin conversation for Beta/ })
       .click();
@@ -272,7 +298,7 @@ test('installed React conversation archive and unarchive preserve independent me
         .filter({ hasText: /Conversation archived.*\(b\)/ })
     ).toBeVisible();
     await expect(filter).toBeFocused();
-    await restoredBeta.click({ button: 'right' });
+    await openRowMenu(restoredBeta);
     await expect(
       page.getByRole('menuitem', { name: /^Rename conversation for Beta/ })
     ).toHaveCount(0);
@@ -291,9 +317,12 @@ test('installed React conversation archive and unarchive preserve independent me
     await expect(restoredBeta).toHaveAccessibleDescription(
       /Pinned conversation/
     );
-    await list
-      .getByRole('button', { name: 'Actions for Alpha notes (a)', exact: true })
-      .click();
+    await openActions(
+      list.getByRole('button', {
+        name: 'Actions for Alpha notes (a)',
+        exact: true,
+      })
+    );
     const archiveAlpha = page.getByRole('menuitem', {
       name: /^Archive conversation for Alpha/,
     });
@@ -337,7 +366,7 @@ test('installed React conversation archive and unarchive preserve independent me
     await page
       .getByRole('button', { name: 'Open conversations', exact: true })
       .click();
-    await archivedAlpha.click({ button: 'right' });
+    await openRowMenu(archivedAlpha);
     const unarchiveAlpha = page.getByRole('menuitem', {
       name: /^Unarchive conversation for Alpha/,
     });
@@ -355,16 +384,7 @@ test('installed React conversation archive and unarchive preserve independent me
       name: 'Actions for Gamma archived (c)',
       exact: true,
     });
-    // The menu intentionally dismisses on ancestor scroll. Finish bringing its
-    // trigger into the drawer viewport before opening a viewport-anchored menu.
-    await gammaActions.scrollIntoViewIfNeeded();
-    await gammaActions.evaluate(
-      () =>
-        new Promise<void>((resolve) => {
-          requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
-        })
-    );
-    await gammaActions.click();
+    await openActions(gammaActions);
     await page
       .getByRole('menuitem', { name: /^Unarchive conversation for Gamma/ })
       .click();
