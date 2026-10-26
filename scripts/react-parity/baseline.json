@@ -1,11 +1,15 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "4e814bd4ef42919ace69612644e4d4e13d8cd3c2",
+  "baselineHead": "58eef638209bce7d405d16f62f8e5560edc9063a",
   "sourceState": {
     "modified": [
-      ".github/workflows/ci.yml"
+      "libs/react/README.md",
+      "libs/react/src/chat/index.ts",
+      "libs/react/src/chat/styles.css"
     ],
-    "untracked": []
+    "untracked": [
+      "libs/react/src/chat/thread-rename-form.tsx"
+    ]
   },
   "scope": {
     "libraries": [
@@ -851,7 +855,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "cdcc95d3ecb1b9a84f38879af44ecebbad29fa35eba38a0fda8cb6e44889991e"
+      "sha256": "abc4dc76694b955cf309aad17d02a9640e66ce6cd152ff161904803e90187e6f"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -869,7 +873,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "3a3a552a9063222aa8a07bcd92975d94c82eb129a7e907a1a2cd6a901b2a588e"
+      "sha256": "7ef6c346e1b62bfc1a5567c6488046dc0b98ab81f67ac173ae4aa2a146d7c30f"
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -10697,6 +10701,34 @@
       ]
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#ThreadRenameForm",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ThreadRenameForm",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/thread-rename-form.tsx",
+          "symbol": "ThreadRenameForm",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function ThreadRenameForm({ value, onValueChange, onSubmit, onCancel, pending = false, error, label = 'Conversation title', className, }: ThreadRenameFormProps) {\n    const id = useId();\n    const input = useRef<HTMLInputElement>(null);\n    const composing = useRef(false);\n    const cancel = useRef<HTMLButtonElement>(null);\n    useIsomorphicLayoutEffect(() => {\n        if (input.current?.disabled)\n            cancel.current?.focus();\n        else {\n            input.current?.focus();\n            input.current?.select();\n        }\n    }, []);\n    const canSubmit = !pending && value.trim().length > 0;\n    const submit = () => {\n        if (canSubmit && !composing.current)\n            onSubmit();\n    };\n    return (<form className={['tp-thread-rename-form', className].filter(Boolean).join(' ')} aria-busy={pending || undefined} onSubmit={(event) => {\n            event.preventDefault();\n            submit();\n        }} onKeyDown={(event) => {\n            if (event.key === 'Escape') {\n                event.preventDefault();\n                event.stopPropagation();\n                onCancel();\n            }\n        }}>\n      <label htmlFor={`${id}-title`}>{label}</label>\n      <input ref={input} id={`${id}-title`} type=\"text\" value={value} disabled={pending} aria-invalid={error ? true : undefined} aria-describedby={error ? `${id}-error` : undefined} onChange={(event) => onValueChange(event.target.value)} onCompositionStart={() => {\n            composing.current = true;\n        }} onCompositionEnd={() => {\n            composing.current = false;\n        }} onKeyDown={(event) => {\n            if (event.key !== 'Enter')\n                return;\n            event.preventDefault();\n            if (event.nativeEvent.isComposing ||\n                event.nativeEvent.keyCode === 229)\n                return;\n            submit();\n        }}/>\n      <div className=\"tp-thread-rename-form__actions\">\n        <button type=\"submit\" disabled={!canSubmit}>\n          Save\n        </button>\n        <button ref={cancel} type=\"button\" onClick={onCancel}>\n          Cancel\n        </button>\n      </div>\n      {pending && <p role=\"status\">Saving conversation title…</p>}\n      {error && (<p id={`${id}-error`} role=\"alert\">\n          {error}\n        </p>)}\n    </form>);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ThreadRenameFormProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ThreadRenameFormProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/thread-rename-form.tsx",
+          "symbol": "ThreadRenameFormProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface ThreadRenameFormProps {\n    readonly value: string;\n    readonly onValueChange: (value: string) => void;\n    readonly onSubmit: () => void;\n    readonly onCancel: () => void;\n    readonly pending?: boolean;\n    readonly error?: string;\n    readonly label?: string;\n    readonly className?: string;\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/react/src/chat/index.ts#ToolObservation",
       "kind": "export",
       "path": "libs/react/src/chat/index.ts",
@@ -15012,7 +15044,7 @@
       "id": "source:libs/react/src/chat/index.ts",
       "kind": "source",
       "path": "libs/react/src/chat/index.ts",
-      "sha256": "df263ab6b278a64619c18d9496e01378183bd290415e964e0ca09b8ee49b5c1f"
+      "sha256": "5e17763375a55262522597e89e988434ac25201489203eda92010f6d72aa97cf"
     },
     {
       "id": "source:libs/react/src/chat/internal/isomorphic-layout-effect.ts",
@@ -15061,6 +15093,12 @@
       "kind": "source",
       "path": "libs/react/src/chat/thread-list.tsx",
       "sha256": "330e4c918ff2b7e5ee3930a415546a03b6654752b77ba93dd71ec3d52c722747"
+    },
+    {
+      "id": "source:libs/react/src/chat/thread-rename-form.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/thread-rename-form.tsx",
+      "sha256": "8caf19bf99363c6f61e65af76e4e7b86e37a706201c0bd691c36ea0317cb445a"
     },
     {
       "id": "source:libs/react/src/chat/tool-observation.tsx",

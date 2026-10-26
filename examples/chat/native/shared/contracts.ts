@@ -16,6 +16,11 @@ export type ThreadLookupResult =
   | Readonly<{ kind: 'missing' }>;
 
 export interface ThreadDirectory {
+  rename?(
+    id: string,
+    title: string,
+    signal: AbortSignal
+  ): Promise<DirectoryResult<ThreadRow>>;
   get(id: string, signal: AbortSignal): Promise<ThreadLookupResult>;
   list(signal: AbortSignal): Promise<DirectoryResult<readonly ThreadRow[]>>;
   create(signal: AbortSignal): Promise<DirectoryResult<ThreadRow>>;

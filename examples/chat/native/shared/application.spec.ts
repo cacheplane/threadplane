@@ -79,7 +79,13 @@ const run = (id: string, text: string, extra = {}) => ({
         messages: [{ type: 'human', id: message.id, content: text }],
         client_tools: expectedClientTools,
       },
-      stream_mode: ['values', 'messages-tuple', 'updates', 'custom', 'checkpoints'],
+      stream_mode: [
+        'values',
+        'messages-tuple',
+        'updates',
+        'custom',
+        'checkpoints',
+      ],
       stream_subgraphs: true,
       stream_resumable: true,
       on_disconnect: 'continue',
@@ -1881,3 +1887,342 @@ for (const action of ['navigate', 'new', 'dispose'] as const) {
     server.verify();
   });
 }
+
+test('rename reconciles only metadata without replacing selected runtime or session', async (t) => {
+  const { app, server, nav, sessions } = await fixture(
+    t,
+    [
+      search([threadEnvelope('a', 'a')]),
+      lookup('a'),
+      history('a'),
+      {
+        method: 'PATCH',
+        path: '/api/threads/a',
+        payload: { metadata: { title: 'New title' } },
+        body: threadEnvelope('a', 'New title'),
+      },
+    ],
+    '?thread=a'
+  );
+  app.start();
+  await ready(app, 'a');
+  await listed(app);
+  const before = app.getSnapshot();
+  const pushes = nav.pushes.length;
+  assert.equal(app.canRename(), true);
+  assert.equal(await app.rename('a', '   '), false);
+  assert.equal(await app.rename('a', ' a '), false);
+  assert.equal(await app.rename('a', ' New title '), true);
+  const after = app.getSnapshot();
+  assert.equal(after.selection.row?.title, 'New title');
+  assert.equal(after.list.rows[0].title, 'New title');
+  for (const key of ['messages', 'submission', 'runtime', 'creation'] as const)
+    assert.equal(after[key], before[key]);
+  assert.equal(sessions.length, 1);
+  assert.equal(nav.pushes.length, pushes);
+  server.verify();
+});
+
+test('rename reserves before observers reenter, rejects duplicate and preserves confirmation against old list and lookup', async (t) => {
+  let finishList!: (value: unknown) => void;
+  let finishGet!: (value: unknown) => void;
+  let finishRename!: (value: unknown) => void;
+  let calls = 0;
+  const row = { id: 'a', title: 'Old', pinned: true };
+  const { app } = await fixture(t, [], '', (options) => ({
+    ...options,
+    directory: {
+      list: () =>
+        new Promise((resolve) => {
+          finishList = resolve as typeof finishList;
+        }),
+      get: () =>
+        new Promise((resolve) => {
+          finishGet = resolve as typeof finishGet;
+        }),
+      create: async () => ({ kind: 'failed' }),
+      rename: () => {
+        calls++;
+        return new Promise((resolve) => {
+          finishRename = resolve as typeof finishRename;
+        });
+      },
+    },
+  }));
+  app.start();
+  app.select('a');
+  let duplicate: Promise<boolean> | undefined;
+  const release = app.subscribe(() => {
+    if (app.getSnapshot().renames['a']?.status === 'pending')
+      duplicate = app.rename('a', 'Other');
+  });
+  const pending = app.rename('a', 'New');
+  assert.equal(await duplicate, false);
+  assert.equal(await app.rename('a', 'Again'), false);
+  assert.equal(calls, 1);
+  finishRename({ kind: 'ready', value: { ...row, title: 'New' } });
+  assert.equal(await pending, true);
+  release();
+  finishList({ kind: 'ready', value: [row] });
+  await listed(app);
+  assert.equal(app.getSnapshot().list.rows[0].title, 'New');
+  finishGet({ kind: 'missing' });
+  await until(() => app.getSnapshot().selection.status === 'missing');
+});
+
+for (const mode of [
+  'failed',
+  'cancelled',
+  'mismatch',
+  'throw',
+  'dispose',
+] as const)
+  test(`rename ${mode} never fabricates confirmation and disposal aborts`, async (t) => {
+    let signal: AbortSignal | undefined;
+    let settle!: (value: unknown) => void;
+    const { app } = await fixture(t, [], '', (options) => ({
+      ...options,
+      directory: {
+        list: async () => ({
+          kind: 'ready',
+          value: [{ id: 'a', title: 'Old' }],
+        }),
+        get: async () => ({ kind: 'missing' }),
+        create: async () => ({ kind: 'failed' }),
+        rename: async (_id, _title, s) => {
+          signal = s;
+          if (mode === 'throw') throw Error('private');
+          return new Promise((resolve) => {
+            settle = resolve as typeof settle;
+          });
+        },
+      },
+    }));
+    app.start();
+    await listed(app);
+    const pending = app.rename('a', 'New');
+    if (mode === 'dispose') app.dispose();
+    if (mode !== 'throw')
+      settle(
+        mode === 'failed' || mode === 'cancelled'
+          ? { kind: mode }
+          : {
+              kind: 'ready',
+              value: { id: mode === 'mismatch' ? 'wrong' : 'a', title: 'New' },
+            }
+      );
+    assert.equal(await pending, false);
+    assert.equal(app.getSnapshot().list.rows[0].title, 'Old');
+    if (mode === 'dispose') assert.equal(signal?.aborted, true);
+  });
+
+test('rename confirmation wins over an older lookup through history load; later explicit refresh is authoritative', async (t) => {
+  let get!: (value: unknown) => void;
+  let title = 'Old';
+  const { app, sessions, server } = await fixture(
+    t,
+    [history('a')],
+    '?thread=a',
+    (options) => ({
+      ...options,
+      directory: {
+        list: async () => ({
+          kind: 'ready',
+          value: [{ id: 'a', title, pinned: true }],
+        }),
+        get: () =>
+          new Promise((resolve) => {
+            get = resolve as typeof get;
+          }),
+        create: async () => ({ kind: 'failed' }),
+        rename: async (id, title) => ({
+          kind: 'ready',
+          value: { id, title, updatedAt: 100 },
+        }),
+      },
+    })
+  );
+  app.start();
+  await listed(app);
+  assert.equal(await app.rename('a', 'New'), true);
+  get({ kind: 'ready', value: { id: 'a', title: 'Old' } });
+  await ready(app, 'a');
+  assert.equal(app.getSnapshot().selection.row?.title, 'New');
+  assert.equal(sessions.length, 1);
+  const before = app.getSnapshot();
+  title = 'Authoritative later';
+  app.refresh();
+  await listed(app);
+  assert.equal(app.getSnapshot().list.rows[0].title, title);
+  assert.equal(app.getSnapshot().selection.row?.title, title);
+  assert.equal(app.getSnapshot().runtime, before.runtime);
+  assert.equal(app.getSnapshot().messages, before.messages);
+  assert.equal(sessions.length, 1);
+  server.verify();
+});
+
+test('rename concurrent targets retain unrelated row metadata/order, and transport reentry cannot duplicate a target', async (t) => {
+  const settlements = new Map<string, (value: unknown) => void>();
+  const calls: string[] = [];
+  let nested: Promise<boolean> | undefined;
+  const { app } = await fixture(t, [], '', (options) => ({
+    ...options,
+    directory: {
+      list: async () => ({
+        kind: 'ready',
+        value: [
+          { id: 'b', title: 'Bee', pinned: true, updatedAt: 21 },
+          { id: 'a', title: 'Ay', updatedAt: 22 },
+        ],
+      }),
+      get: async () => ({ kind: 'missing' }),
+      create: async () => ({ kind: 'failed' }),
+      rename: (id) => {
+        calls.push(id);
+        nested = app.rename(id, 'Duplicate');
+        return new Promise((resolve) =>
+          settlements.set(id, resolve as (value: unknown) => void)
+        );
+      },
+    },
+  }));
+  app.start();
+  await listed(app);
+  const a = app.rename('a', 'New A');
+  assert.equal(await nested, false);
+  const b = app.rename('b', 'New B');
+  assert.equal(await nested, false);
+  settlements.get('b')!({
+    kind: 'ready',
+    value: { id: 'b', title: 'New B', updatedAt: 999 },
+  });
+  assert.equal(await b, true);
+  settlements.get('a')!({
+    kind: 'ready',
+    value: { id: 'a', title: 'New A', pinned: false },
+  });
+  assert.equal(await a, true);
+  assert.deepEqual(calls, ['a', 'b']);
+  assert.deepEqual(app.getSnapshot().list.rows, [
+    { id: 'b', title: 'New B', pinned: true, updatedAt: 21 },
+    { id: 'a', title: 'New A', updatedAt: 22 },
+  ]);
+});
+
+test('rename reservation observer disposal prevents transport and optional capability remains compatible', async (t) => {
+  let writes = 0;
+  const { app } = await fixture(t, [], '', (options) => ({
+    ...options,
+    directory: {
+      list: async () => ({ kind: 'ready', value: [{ id: 'a', title: 'Old' }] }),
+      get: async () => ({ kind: 'missing' }),
+      create: async () => ({ kind: 'failed' }),
+      rename: async () => {
+        writes++;
+        return { kind: 'failed' };
+      },
+    },
+  }));
+  app.start();
+  await listed(app);
+  app.subscribe(() => {
+    if (app.getSnapshot().renames['a']?.status === 'pending') app.dispose();
+  });
+  assert.equal(await app.rename('a', 'New'), false);
+  assert.equal(writes, 0);
+  const { app: legacy } = await fixture(t, [], '', (options) => ({
+    ...options,
+    directory: {
+      list: async () => ({ kind: 'ready', value: [] }),
+      get: async () => ({ kind: 'missing' }),
+      create: async () => ({ kind: 'failed' }),
+    },
+  }));
+  legacy.start();
+  assert.equal(legacy.canRename(), false);
+  assert.equal(await legacy.rename('a', 'New'), false);
+});
+
+for (const admissionTiming of ['before-write', 'after-write'] as const) {
+  for (const heldPhase of ['lookup', 'history'] as const) {
+    test(`rename later authoritative refresh supersedes ${admissionTiming} pending ${heldPhase}`, async (t) => {
+      let releaseGet!: (result: {
+        kind: 'ready';
+        value: { id: string; title: string };
+      }) => void;
+      let title = 'Old';
+      const { app, server, sessions } = await fixture(
+        t,
+        [history('a', { holdHeaders: heldPhase === 'history' })],
+        '',
+        (options) => ({
+          ...options,
+          directory: {
+            list: async () => ({ kind: 'ready', value: [{ id: 'a', title }] }),
+            get: () =>
+              new Promise((resolve) => {
+                releaseGet = resolve;
+              }),
+            create: async () => ({ kind: 'failed' }),
+            rename: async (id, title) => ({
+              kind: 'ready',
+              value: { id, title },
+            }),
+          },
+        })
+      );
+      app.start();
+      await listed(app);
+      if (admissionTiming === 'before-write') app.select('a');
+      assert.equal(await app.rename('a', 'New'), true);
+      if (admissionTiming === 'after-write') app.select('a');
+      if (heldPhase === 'history') {
+        releaseGet({ kind: 'ready', value: { id: 'a', title: 'Old' } });
+        await server.steps[0].received;
+      }
+      title = 'Authoritative later';
+      app.refresh();
+      await listed(app);
+      assert.equal(app.getSnapshot().list.rows[0].title, title);
+      if (heldPhase === 'lookup')
+        releaseGet({ kind: 'ready', value: { id: 'a', title: 'Old' } });
+      else server.steps[0].releaseHeaders();
+      await ready(app, 'a');
+      assert.equal(app.getSnapshot().selection.row?.title, title);
+      assert.equal(app.getSnapshot().list.rows[0].title, title);
+      assert.equal(sessions.length, 1);
+      server.verify();
+    });
+  }
+}
+
+test('rename authoritative lookup supersedes an older pending refresh without advancing mutation version', async (t) => {
+  let releaseList!: (result: {
+    kind: 'ready';
+    value: { id: string; title: string }[];
+  }) => void;
+  const { app, server } = await fixture(t, [history('a')], '', (options) => ({
+    ...options,
+    directory: {
+      list: () =>
+        new Promise((resolve) => {
+          releaseList = resolve;
+        }),
+      get: async (id) => ({
+        kind: 'ready',
+        value: { id, title: 'Authoritative lookup' },
+      }),
+      create: async () => ({ kind: 'failed' }),
+      rename: async (id, title) => ({ kind: 'ready', value: { id, title } }),
+    },
+  }));
+  app.start();
+  assert.equal(await app.rename('a', 'New'), true);
+  app.select('a');
+  await ready(app, 'a');
+  releaseList({ kind: 'ready', value: [{ id: 'a', title: 'Old' }] });
+  await listed(app);
+  assert.equal(app.getSnapshot().list.rows[0].title, 'Authoritative lookup');
+  assert.equal(app.getSnapshot().selection.row?.title, 'Authoritative lookup');
+  server.verify();
+});

@@ -164,3 +164,17 @@ it('uses the control owner document clipboard', async () => {
   view.unmount();
   frame.remove();
 });
+
+it('offers optional Rename as a distinct command without touching clipboard', () => {
+  const onRename = vi.fn();
+  const write = vi.fn(async () => {});
+  clipboard(write);
+  const props = { id: 'a', title: 'Old', onRename };
+  const view = render(<CopyConversationId {...props} />);
+  fireEvent.click(view.getByRole('button', { name: /Actions for/ }));
+  fireEvent.click(
+    view.getByRole('menuitem', { name: 'Rename conversation for Old (a)' })
+  );
+  expect(onRename).toHaveBeenCalledOnce();
+  expect(write).not.toHaveBeenCalled();
+});

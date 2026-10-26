@@ -121,3 +121,34 @@
   .tp-chat-sidenav__toggle:dir(rtl)::before {
   transform: translateX(2px) rotate(225deg);
 }
+
+.conversation-actions {
+  min-width: 0;
+}
+.conversation-rename {
+  position: relative;
+  z-index: 1;
+  width: min(19rem, calc(100vw - 4rem));
+  padding: 0.5rem;
+  background: var(--tp-chat-surface, #fff);
+  border: 1px solid var(--tp-chat-border, #ccc);
+  border-radius: 0.5rem;
+}
+.conversation-list .tp-thread-list__item--actions:has(.conversation-rename) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.tp-thread-list__actions:has(.conversation-rename),
+.conversation-actions:has(.conversation-rename) {
+  display: contents;
+}
+.conversation-actions:has(.conversation-rename) > .copy-conversation-id {
+  grid-column: 2;
+  grid-row: 1;
+}
+.conversation-actions > .conversation-rename {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  width: auto;
+  min-width: 0;
+}

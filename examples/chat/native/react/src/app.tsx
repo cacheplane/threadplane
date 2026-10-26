@@ -1,4 +1,4 @@
-import { memo, useRef, useState, type ReactNode } from 'react';
+import { memo, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useAgent } from '@threadplane/react';
 import { Markdown } from '@threadplane/react/markdown';
 import {
@@ -22,7 +22,10 @@ import { submissionStatus } from '../../shared/submission-status';
 import { Approval } from './approval';
 import { BackgroundActivity } from './background-activity';
 import { CopyAnswer } from './copy-answer';
-import { CopyConversationId } from './copy-conversation-id';
+import {
+  ConversationActions,
+  type RenameEditorRequest,
+} from './conversation-actions';
 import { useConversationMenu } from './use-conversation-menu';
 import { TripSummary } from './trip-summary';
 import { NativeNavigation } from './native-navigation';
@@ -183,6 +186,12 @@ function Conversation({
   const rows = filterLoadedTitles(snapshot.list.rows, filter);
   const selection = snapshot.selection;
   const menus = useConversationMenu(rows);
+  const [editor, setEditor] = useState<RenameEditorRequest | null>(null);
+  const editorSequence = useRef(0);
+  useEffect(() => {
+    if (editor && !rows.some((row) => row.id === editor.id))
+      setEditor((latest) => (latest === editor ? null : latest));
+  }, [rows, editor]);
   const directory = (
     <aside aria-labelledby="conversations-title">
       <h2 id="conversations-title">Loaded conversations</h2>
@@ -224,12 +233,29 @@ function Conversation({
       )}
       <ThreadList
         threads={rows}
-        onContextMenu={menus.onContextMenu}
+        onContextMenu={(id, event) => {
+          setEditor(null);
+          menus.onContextMenu(id, event);
+        }}
         renderActions={(thread) => (
-          <CopyConversationId
+          <ConversationActions
             id={thread.id}
-            title={thread.title}
+            title={thread.title ?? ''}
             menu={menus.forThread(thread.id)}
+            canRename={application.canRename()}
+            pending={snapshot.renames[thread.id]?.status === 'pending'}
+            rename={application.rename}
+            editor={rows.some((row) => row.id === editor?.id) ? editor : null}
+            onRename={(target) =>
+              setEditor({
+                id: thread.id,
+                token: ++editorSequence.current,
+                returnFocusTo: target,
+              })
+            }
+            onClose={(request) =>
+              setEditor((latest) => (latest === request ? null : latest))
+            }
           />
         )}
         renderTitle={(thread) =>

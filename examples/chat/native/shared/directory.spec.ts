@@ -284,3 +284,102 @@ test('directory requires an explicit absolute same-origin browser API base', () 
       createThreadDirectory({ apiBase, browserOrigin: 'http://localhost' })
     );
 });
+
+test('directory rename confirms exact encoded target and title through one SDK PATCH', async (t) => {
+  const id = 'one/two?x#y';
+  const { server, directory } = await fixture(t, [
+    {
+      method: 'PATCH',
+      path: '/api/threads/one%2Ftwo%3Fx%23y',
+      payload: { metadata: { title: 'New title' } },
+      body: threadEnvelope(id, 'New title'),
+    },
+  ]);
+  assert.deepEqual(await directory.rename!(id, 'New title', signal()), {
+    kind: 'ready',
+    value: { id, title: 'New title', updatedAt: 1790553601000 },
+  });
+  server.verify();
+});
+
+for (const body of [
+  threadEnvelope('wrong', 'New title'),
+  threadEnvelope('one', 'Old title'),
+  { thread_id: 'one', metadata: {} },
+])
+  test('directory rename rejects missing or mismatched raw confirmation', async (t) => {
+    const { server, directory } = await fixture(t, [
+      {
+        method: 'PATCH',
+        path: '/api/threads/one',
+        payload: { metadata: { title: 'New title' } },
+        body,
+      },
+    ]);
+    assert.deepEqual(await directory.rename!('one', 'New title', signal()), {
+      kind: 'failed',
+    });
+    server.verify();
+  });
+
+for (const status of [401, 404, 422, 503])
+  test(
+    `directory rename HTTP ${status} cancels hostile body without retry`,
+    { timeout: 5000 },
+    async (t) => {
+      const { server, directory } = await fixture(t, [
+        {
+          method: 'PATCH',
+          path: '/api/threads/a',
+          payload: { metadata: { title: 'New' } },
+          status,
+          holdBody: true,
+        },
+      ]);
+      assert.deepEqual(await directory.rename!('a', 'New', signal()), {
+        kind: 'failed',
+      });
+      server.verify();
+      assert.deepEqual(await server.steps[0].closed, { finished: false });
+    }
+  );
+for (const phase of ['headers', 'body'] as const)
+  test(
+    `directory rename abort releases held ${phase}`,
+    { timeout: 5000 },
+    async (t) => {
+      const { server, directory } = await fixture(t, [
+        {
+          method: 'PATCH',
+          path: '/api/threads/a',
+          payload: { metadata: { title: 'New' } },
+          holdHeaders: phase === 'headers',
+          holdBody: true,
+        },
+      ]);
+      const controller = new AbortController();
+      const pending = directory.rename!('a', 'New', controller.signal);
+      await server.steps[0].received;
+      if (phase === 'body') await server.steps[0].headersSent;
+      controller.abort();
+      assert.deepEqual(await pending, { kind: 'cancelled' });
+      assert.deepEqual(await server.steps[0].closed, { finished: false });
+      server.verify();
+    }
+  );
+test('directory rename is inert when preaborted, blank, or an unrepresentable dot ID', async (t) => {
+  const { server, directory } = await fixture(t, []);
+  const controller = new AbortController();
+  controller.abort();
+  assert.deepEqual(await directory.rename!('a', 'New', controller.signal), {
+    kind: 'cancelled',
+  });
+  for (const id of ['.', '..'])
+    assert.deepEqual(await directory.rename!(id, 'New', signal()), {
+      kind: 'failed',
+    });
+  assert.deepEqual(await directory.rename!('a', '   ', signal()), {
+    kind: 'failed',
+  });
+  server.verify();
+});
