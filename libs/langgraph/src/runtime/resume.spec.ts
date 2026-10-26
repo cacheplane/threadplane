@@ -174,14 +174,26 @@ describe('explicit interrupt resume', () => {
       expect(await f.session.resume(true)).toBe(
         kind === 'error' ? 'error' : 'interrupted'
       );
+      // History is readable, so the check is offered, but the old checkpoint
+      // still shows the very pause the decision answered with nothing new:
+      // that is inconclusive, never a recovered pause or completion.
       expect(f.session.getSnapshot().error).toMatchObject({
-        recovery: 'none',
+        recovery: 'check',
         retryable: false,
       });
+      // Only a stream that opened and then closed is read at close; a thrown
+      // open and an explicit error leave the read to the explicit check.
+      const closeReads = kind === 'empty' ? 1 : 0;
+      expect(f.getHistory).toHaveBeenCalledTimes(closeReads);
+      const before = f.session.getSnapshot();
       await f.session.checkStatus?.();
-      expect(f.getHistory).not.toHaveBeenCalled();
+      expect(f.getHistory).toHaveBeenCalledTimes(closeReads + 1);
+      expect(f.session.getSnapshot()).toBe(before);
       await f.session.load?.();
-      expect(f.getHistory).toHaveBeenCalledTimes(1);
+      expect(f.getHistory).toHaveBeenCalledTimes(closeReads + 2);
+      expect(f.session.getSnapshot().interrupts).toEqual([
+        { id: 'approve', value: 'Proceed?' },
+      ]);
       expect(f.handler).not.toHaveBeenCalled();
       expect(f.stream).toHaveBeenCalledTimes(1);
     }
