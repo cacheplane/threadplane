@@ -75,6 +75,19 @@ export function createThreadDirectory(
     }
   }
   return Object.freeze({
+    setPinned(id: string, pinned: boolean, signal: AbortSignal) {
+      if (id === '.' || id === '..' || typeof pinned !== 'boolean')
+        return Promise.resolve(failure(signal));
+      return perform(signal, async () => {
+        const raw = await client.threads.update(encodeURIComponent(id), {
+          metadata: { pinned },
+          signal,
+        });
+        if (raw.thread_id !== id || raw.metadata?.['pinned'] !== pinned)
+          throw new Error('Pin not confirmed');
+        return Object.freeze({ ...projectThread(raw), pinned });
+      });
+    },
     rename(id: string, title: string, signal: AbortSignal) {
       if (id === '.' || id === '..' || !title.trim())
         return Promise.resolve(failure(signal));

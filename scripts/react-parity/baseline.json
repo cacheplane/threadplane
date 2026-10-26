@@ -1,12 +1,11 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "65e546f3d86e29bfaaccff6f3b71425f074bcfcf",
+  "baselineHead": "2374423a0c0901364d40a68174ec87ff90fa0556",
   "sourceState": {
     "modified": [
-      "libs/react/README.md",
-      "libs/react/src/chat/index.ts",
-      "libs/react/src/chat/styles.css",
-      "libs/react/src/chat/thread-rename-form.tsx"
+      "libs/langgraph/src/runtime/README.md",
+      "libs/langgraph/src/runtime/create-session.ts",
+      "libs/langgraph/src/runtime/stream-projection.ts"
     ],
     "untracked": []
   },
@@ -854,7 +853,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "abc4dc76694b955cf309aad17d02a9640e66ce6cd152ff161904803e90187e6f"
+      "sha256": "15312cf0c7dca4b7342519dd16c09567be567f8a7f1ab281035c98376cd0f19f"
     },
     {
       "id": "asset:libs/react/package.json",

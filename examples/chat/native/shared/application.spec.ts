@@ -8,6 +8,11 @@ import { startProofServer, threadEnvelope } from '../tooling/proof-server.mjs';
 import { createApplication, type ApplicationOptions } from './application.js';
 import { createThreadDirectory } from './directory.js';
 import type { BrowserHistory } from './route.js';
+import type {
+  ThreadDirectory,
+  ThreadRow,
+  DirectoryResult,
+} from './contracts.js';
 
 const search = (body: unknown = [], extra = {}) => ({
   method: 'POST',
@@ -224,6 +229,38 @@ async function fixture(
   return { app, nav, server, sessions, disposed };
 }
 type App = ReturnType<typeof createApplication>;
+test('pin capability updates the supplied row without selection or runtime work', async (t) => {
+  const { app, sessions, nav } = await fixture(t, [], '', (options) => ({
+    ...options,
+    directory: {
+      list: async () => ({
+        kind: 'ready',
+        value: [{ id: 'a', title: 'Alpha' }],
+      }),
+      get: async () => ({ kind: 'missing' }),
+      create: async () => ({ kind: 'failed' }),
+      ...{
+        setPinned: async (id: string, pinned: boolean) => ({
+          kind: 'ready' as const,
+          value: { id, title: 'Ignored server title', pinned },
+        }),
+      },
+    },
+  }));
+  app.start();
+  await listed(app);
+  const pin = (
+    app as typeof app & {
+      setPinned?: (id: string, pinned: boolean) => Promise<boolean>;
+    }
+  ).setPinned;
+  assert.equal(await pin?.('a', true), true);
+  assert.deepEqual(app.getSnapshot().list.rows, [
+    { id: 'a', title: 'Alpha', pinned: true },
+  ]);
+  assert.equal(sessions.length, 0);
+  assert.equal(nav.pushes.length, 0);
+});
 const ready = (app: App, id: string) =>
   until(
     () =>
@@ -232,6 +269,339 @@ const ready = (app: App, id: string) =>
   );
 const listed = (app: App) =>
   until(() => app.getSnapshot().list.status === 'ready');
+
+function pinDirectory(
+  overrides: Partial<ThreadDirectory> = {}
+): ThreadDirectory {
+  return {
+    list: async () => ({
+      kind: 'ready',
+      value: [
+        { id: 'a', title: 'Alpha', updatedAt: 42 },
+        { id: 'b', title: 'Beta', pinned: true },
+      ],
+    }),
+    get: async (id) => ({ kind: 'ready', value: { id, title: id } }),
+    create: async () => ({ kind: 'failed' }),
+    setPinned: async (id, pinned) => ({
+      kind: 'ready',
+      value: { id, title: 'Unowned title', pinned },
+    }),
+    ...overrides,
+  };
+}
+async function pinFixture(t: TestContext, directory: ThreadDirectory) {
+  return fixture(t, [], '', (options) => ({ ...options, directory }));
+}
+
+test('pin reserves before observer and transport reentry, rejects duplicate/opposite and isolates targets', async (t) => {
+  const pending = new Map<
+    string,
+    (result: DirectoryResult<ThreadRow>) => void
+  >();
+  const signals: AbortSignal[] = [];
+  const calls: string[] = [];
+  let nested: Promise<boolean> | undefined;
+  const { app } = await pinFixture(
+    t,
+    pinDirectory({
+      setPinned: (id, _pinned, signal) => {
+        calls.push(id);
+        signals.push(signal);
+        nested = app.setPinned(id, false);
+        return new Promise((resolve) => pending.set(id, resolve));
+      },
+    })
+  );
+  app.start();
+  await listed(app);
+  assert.equal(await app.setPinned('a', false), false);
+  assert.equal(await app.setPinned('a', 1 as unknown as boolean), false);
+  let duplicate: Promise<boolean> | undefined;
+  const release = app.subscribe(() => {
+    if (app.getSnapshot().pins['a']?.status === 'pending')
+      duplicate = app.setPinned('a', true);
+  });
+  const before = app.getSnapshot();
+  const first = app.setPinned('a', true);
+  assert.equal(await duplicate, false);
+  assert.equal(await nested, false);
+  assert.equal(await app.setPinned('a', false), false);
+  const second = app.setPinned('b', false);
+  assert.deepEqual(calls, ['a', 'b']);
+  assert.ok(Object.isFrozen(app.getSnapshot().pins));
+  assert.ok(Object.isFrozen(app.getSnapshot().pins['a']));
+  pending.get('b')!({
+    kind: 'ready',
+    value: { id: 'b', title: 'ignored', pinned: false },
+  });
+  assert.equal(await second, true);
+  pending.get('a')!({
+    kind: 'ready',
+    value: { id: 'a', title: 'ignored', pinned: true },
+  });
+  assert.equal(await first, true);
+  release();
+  const after = app.getSnapshot();
+  assert.deepEqual(after.list.rows, [
+    { id: 'a', title: 'Alpha', updatedAt: 42, pinned: true },
+    { id: 'b', title: 'Beta', pinned: false },
+  ]);
+  for (const key of [
+    'runtime',
+    'messages',
+    'selection',
+    'submission',
+    'creation',
+  ] as const)
+    assert.equal(after[key], before[key]);
+  assert.equal(
+    signals.some((s) => s.aborted),
+    false
+  );
+  assert.equal(await app.setPinned('a', true), false);
+});
+
+for (const mode of [
+  'failed',
+  'cancelled',
+  'throw',
+  'wrong-id',
+  'missing-pin',
+  'wrong-pin',
+  'dispose',
+] as const)
+  test(`pin ${mode} preserves rows, contains errors and supports explicit retry`, async (t) => {
+    let resolve!: (value: DirectoryResult<ThreadRow>) => void;
+    let signal!: AbortSignal;
+    let calls = 0;
+    const { app } = await pinFixture(
+      t,
+      pinDirectory({
+        setPinned: async (id, pinned, s) => {
+          signal = s;
+          calls++;
+          if (calls > 1)
+            return { kind: 'ready', value: { id, title: 'ignored', pinned } };
+          if (mode === 'throw') throw new Error('hostile');
+          return new Promise((done) => (resolve = done));
+        },
+      })
+    );
+    app.start();
+    await listed(app);
+    const rows = app.getSnapshot().list.rows;
+    const result = app.setPinned('a', true);
+    if (mode === 'dispose') app.dispose();
+    if (mode !== 'throw')
+      resolve(
+        mode === 'failed' || mode === 'cancelled'
+          ? { kind: mode }
+          : {
+              kind: 'ready',
+              value: {
+                id: mode === 'wrong-id' ? 'other' : 'a',
+                title: 'ignored',
+                ...(mode === 'missing-pin'
+                  ? {}
+                  : { pinned: mode === 'wrong-pin' ? false : true }),
+              },
+            }
+      );
+    assert.equal(await result, false);
+    assert.equal(app.getSnapshot().list.rows, rows);
+    if (mode === 'dispose') {
+      assert.equal(signal.aborted, true);
+      assert.equal(await app.setPinned('a', true), false);
+    } else {
+      assert.deepEqual(app.getSnapshot().pins['a'], {
+        status: 'failed',
+        pinned: true,
+      });
+      assert.equal(await app.setPinned('a', true), true);
+      assert.equal(calls, 2);
+    }
+  });
+
+test('pin observer disposal prevents transport and optional capability remains compatible', async (t) => {
+  let calls = 0;
+  const { app } = await pinFixture(
+    t,
+    pinDirectory({
+      setPinned: async () => {
+        calls++;
+        return { kind: 'failed' };
+      },
+    })
+  );
+  assert.equal(app.canSetPinned(), false);
+  app.start();
+  await listed(app);
+  app.subscribe(() => {
+    if (app.getSnapshot().pins['a']?.status === 'pending') app.dispose();
+  });
+  assert.equal(await app.setPinned('a', true), false);
+  assert.equal(calls, 0);
+  const { app: legacy } = await pinFixture(
+    t,
+    pinDirectory({ setPinned: undefined })
+  );
+  legacy.start();
+  assert.equal(legacy.canSetPinned(), false);
+  assert.equal(await legacy.setPinned('a', true), false);
+});
+
+for (const first of ['pin', 'rename'])
+  test(`pin and rename responses patch independent fields when ${first} finishes first`, async (t) => {
+    let finishPin!: (value: DirectoryResult<ThreadRow>) => void;
+    let finishRename!: (value: DirectoryResult<ThreadRow>) => void;
+    const { app } = await pinFixture(
+      t,
+      pinDirectory({
+        setPinned: () => new Promise((resolve) => (finishPin = resolve)),
+        rename: () => new Promise((resolve) => (finishRename = resolve)),
+      })
+    );
+    app.start();
+    await listed(app);
+    const pin = app.setPinned('a', true);
+    const rename = app.rename('a', 'New Alpha');
+    const settlePin = () =>
+      finishPin({
+        kind: 'ready',
+        value: { id: 'a', title: 'OLD', pinned: true },
+      });
+    const settleRename = () =>
+      finishRename({
+        kind: 'ready',
+        value: { id: 'a', title: 'New Alpha', pinned: false },
+      });
+    if (first === 'pin') {
+      settlePin();
+      await pin;
+      settleRename();
+    } else {
+      settleRename();
+      await rename;
+      settlePin();
+    }
+    assert.equal(await pin, true);
+    assert.equal(await rename, true);
+    assert.deepEqual(app.getSnapshot().list.rows[0], {
+      id: 'a',
+      title: 'New Alpha',
+      updatedAt: 42,
+      pinned: true,
+    });
+  });
+
+for (const timing of ['before-write', 'after-write'] as const)
+  for (const phase of ['lookup', 'history'] as const)
+    test(`pin authoritative refresh supersedes ${timing} delayed ${phase} independently of title writes`, async (t) => {
+      let finishGet!: (value: DirectoryResult<ThreadRow>) => void;
+      let row: ThreadRow = { id: 'a', title: 'Old', pinned: false };
+      const { app, server } = await fixture(
+        t,
+        [history('a', { holdHeaders: phase === 'history' })],
+        '',
+        (options) => ({
+          ...options,
+          directory: pinDirectory({
+            list: async () => ({ kind: 'ready', value: [row] }),
+            get: () => new Promise((resolve) => (finishGet = resolve)),
+            rename: async (id, title) => ({
+              kind: 'ready',
+              value: { id, title },
+            }),
+          }),
+        })
+      );
+      app.start();
+      await listed(app);
+      if (timing === 'before-write') app.select('a');
+      assert.equal(await app.setPinned('a', true), true);
+      if (timing === 'after-write') app.select('a');
+      if (phase === 'history') {
+        finishGet({ kind: 'ready', value: row });
+        await server.steps[0].received;
+      }
+      row = { id: 'a', title: 'Authority', pinned: false };
+      app.refresh();
+      await listed(app);
+      assert.equal(await app.rename('a', 'Newest title'), true);
+      if (phase === 'lookup')
+        finishGet({
+          kind: 'ready',
+          value: { id: 'a', title: 'Stale', pinned: true },
+        });
+      else server.steps[0].releaseHeaders();
+      await ready(app, 'a');
+      assert.equal(app.getSnapshot().selection.row?.pinned, false);
+      assert.equal(app.getSnapshot().selection.row?.title, 'Newest title');
+      server.verify();
+    });
+
+test('pin authoritative lookup supersedes older same-version list and preserves selected runtime on refresh', async (t) => {
+  let finishList!: (value: DirectoryResult<readonly ThreadRow[]>) => void;
+  const { app, server } = await fixture(t, [history('a')], '', (options) => ({
+    ...options,
+    directory: pinDirectory({
+      list: () => new Promise((resolve) => (finishList = resolve)),
+      get: async (id) => ({
+        kind: 'ready',
+        value: { id, title: 'Authority', pinned: false },
+      }),
+    }),
+  }));
+  app.start();
+  assert.equal(await app.setPinned('a', true), true);
+  app.refresh();
+  app.select('a');
+  await ready(app, 'a');
+  const runtime = app.getSnapshot().runtime;
+  finishList({
+    kind: 'ready',
+    value: [{ id: 'a', title: 'Stale', pinned: true }],
+  });
+  await listed(app);
+  assert.equal(app.getSnapshot().list.rows[0].pinned, false);
+  assert.equal(app.getSnapshot().selection.row?.pinned, false);
+  assert.equal(app.getSnapshot().runtime, runtime);
+  server.verify();
+});
+
+test('pin old list and history-delayed lookup cannot undo confirmation', async (t) => {
+  let finishList!: (value: DirectoryResult<readonly ThreadRow[]>) => void;
+  const { app, server } = await fixture(
+    t,
+    [history('a', { holdHeaders: true })],
+    '',
+    (options) => ({
+      ...options,
+      directory: pinDirectory({
+        list: () => new Promise((resolve) => (finishList = resolve)),
+        get: async (id) => ({
+          kind: 'ready',
+          value: { id, title: 'Alpha', pinned: false },
+        }),
+      }),
+    })
+  );
+  app.start();
+  app.select('a');
+  await server.steps[0].received;
+  assert.equal(await app.setPinned('a', true), true);
+  finishList({
+    kind: 'ready',
+    value: [{ id: 'a', title: 'Alpha', pinned: false }],
+  });
+  await listed(app);
+  server.steps[0].releaseHeaders();
+  await ready(app, 'a');
+  assert.equal(app.getSnapshot().list.rows[0].pinned, true);
+  assert.equal(app.getSnapshot().selection.row?.pinned, true);
+  server.verify();
+});
 
 for (const unavailable of [
   'empty',

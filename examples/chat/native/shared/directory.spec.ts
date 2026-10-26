@@ -5,6 +5,159 @@ import { startProofServer, threadEnvelope } from '../tooling/proof-server.mjs';
 import { createThreadDirectory } from './directory.js';
 
 const signal = () => new AbortController().signal;
+
+for (const pinned of [true, false]) {
+  for (const [id, path] of [
+    ['literal', '/api/threads/literal'],
+    ['one/two?x#y', '/api/threads/one%2Ftwo%3Fx%23y'],
+    ['one%2Ftwo', '/api/threads/one%252Ftwo'],
+  ])
+    test(`pin ${pinned} encodes exact target ${id} and patches only its metadata field`, async (t) => {
+      const { directory, server } = await fixture(t, [
+        {
+          method: 'PATCH',
+          path,
+          payload: { metadata: { pinned } },
+          body: {
+            ...threadEnvelope(id, 'Unchanged'),
+            metadata: { title: 'Unchanged', pinned, other: 'kept' },
+          },
+        },
+      ]);
+      const result = await directory.setPinned!(id, pinned, signal());
+      assert.deepEqual(result, {
+        kind: 'ready',
+        value: { id, title: 'Unchanged', updatedAt: 1790553601000, pinned },
+      });
+      assert.ok(Object.isFrozen(result));
+      server.verify();
+    });
+  for (const body of [
+    { thread_id: 'wrong', metadata: { pinned } },
+    { thread_id: 'a', metadata: { pinned: !pinned } },
+    { thread_id: 'a', metadata: {} },
+    { thread_id: 'a' },
+    { thread_id: 'a', metadata: { pinned: pinned ? 'true' : 0 } },
+  ])
+    test(`pin ${pinned} requires raw exact ID and boolean confirmation ${JSON.stringify(
+      body
+    )}`, async (t) => {
+      const { directory, server } = await fixture(t, [
+        {
+          method: 'PATCH',
+          path: '/api/threads/a',
+          payload: { metadata: { pinned } },
+          body,
+        },
+      ]);
+      assert.deepEqual(await directory.setPinned!('a', pinned, signal()), {
+        kind: 'failed',
+      });
+      server.verify();
+    });
+}
+for (const status of [404, 500])
+  test(
+    `pin HTTP ${status} cancels hostile held body without retry`,
+    { timeout: 5000 },
+    async (t) => {
+      const { directory, server } = await fixture(t, [
+        {
+          method: 'PATCH',
+          path: '/api/threads/a',
+          payload: { metadata: { pinned: true } },
+          status,
+          holdBody: true,
+        },
+      ]);
+      assert.deepEqual(await directory.setPinned!('a', true, signal()), {
+        kind: 'failed',
+      });
+      assert.deepEqual(await server.steps[0].closed, { finished: false });
+      server.verify();
+    }
+  );
+for (const phase of ['headers', 'body'])
+  test(`pin abort releases held ${phase}`, { timeout: 5000 }, async (t) => {
+    const { directory, server } = await fixture(t, [
+      {
+        method: 'PATCH',
+        path: '/api/threads/a',
+        payload: { metadata: { pinned: false } },
+        holdHeaders: phase === 'headers',
+        holdBody: true,
+      },
+    ]);
+    const controller = new AbortController();
+    const result = directory.setPinned!('a', false, controller.signal);
+    await server.steps[0].received;
+    if (phase === 'body') await server.steps[0].headersSent;
+    controller.abort();
+    assert.deepEqual(await result, { kind: 'cancelled' });
+    assert.deepEqual(await server.steps[0].closed, { finished: false });
+    server.verify();
+  });
+test('pin invalid booleans, dot IDs and preaborted requests do no network work', async (t) => {
+  const { directory, server } = await fixture(t, []);
+  for (const id of ['.', '..'])
+    assert.deepEqual(await directory.setPinned!(id, true, signal()), {
+      kind: 'failed',
+    });
+  for (const value of [undefined, null, 0, 1, 'true'])
+    assert.deepEqual(
+      await directory.setPinned!('a', value as unknown as boolean, signal()),
+      { kind: 'failed' }
+    );
+  const controller = new AbortController();
+  controller.abort();
+  assert.deepEqual(await directory.setPinned!('a', true, controller.signal), {
+    kind: 'cancelled',
+  });
+  server.verify();
+});
+test('pin thrown transport errors are contained with one attempt', async () => {
+  let calls = 0;
+  const directory = createThreadDirectory({
+    apiBase: 'http://localhost/api',
+    browserOrigin: 'http://localhost',
+    fetch: async () => {
+      calls++;
+      throw { status: 404, message: 'hostile' };
+    },
+  });
+  assert.deepEqual(await directory.setPinned!('a', true, signal()), {
+    kind: 'failed',
+  });
+  assert.equal(calls, 1);
+});
+
+test('pin capability writes and confirms explicit false through the SDK boundary', async (t) => {
+  const { directory, server } = await fixture(t, [
+    {
+      method: 'PATCH',
+      path: '/api/threads/a',
+      payload: { metadata: { pinned: false } },
+      body: {
+        ...threadEnvelope('a', 'Alpha'),
+        metadata: { title: 'Alpha', pinned: false },
+      },
+    },
+  ]);
+  const pin = (
+    directory as typeof directory & {
+      setPinned?: (
+        id: string,
+        pinned: boolean,
+        signal: AbortSignal
+      ) => Promise<unknown>;
+    }
+  ).setPinned;
+  assert.deepEqual(await pin?.('a', false, signal()), {
+    kind: 'ready',
+    value: { id: 'a', title: 'Alpha', updatedAt: 1790553601000, pinned: false },
+  });
+  server.verify();
+});
 async function fixture(
   t: TestContext,
   expectations: Parameters<typeof startProofServer>[0]

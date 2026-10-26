@@ -9,6 +9,13 @@ export interface RenameEditorRequest {
   readonly returnFocusTo: HTMLElement | null;
 }
 interface Props {
+  readonly canSetPinned?: boolean;
+  readonly pinned?: boolean;
+  readonly pinState?: Readonly<{
+    status: 'pending' | 'confirmed' | 'failed';
+    pinned: boolean;
+  }>;
+  readonly setPinned?: (id: string, pinned: boolean) => Promise<boolean>;
   readonly id: string;
   readonly title: string;
   readonly menu?: ConversationMenuControl;
@@ -21,7 +28,46 @@ interface Props {
 }
 
 export function ConversationActions(props: Props) {
+  return <ConversationActionsOwner key={props.id} {...props} />;
+}
+
+function ConversationActionsOwner(props: Props) {
   const root = useRef<HTMLDivElement>(null);
+  const mounted = useRef(false);
+  const request = useRef<object | null>(null);
+  const [pinFeedback, setPinFeedback] = useState<Props['pinState']>();
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      request.current = null;
+    };
+  }, []);
+  const pin = async () => {
+    if (
+      !props.setPinned ||
+      request.current ||
+      props.pinState?.status === 'pending'
+    )
+      return;
+    const current = {};
+    const pinned = props.pinned !== true;
+    request.current = current;
+    setPinFeedback({ status: 'pending', pinned });
+    let confirmed = false;
+    try {
+      confirmed = await props.setPinned(props.id, pinned);
+    } catch {
+      /* Optional callbacks may throw as well as reject. */
+    }
+    if (!mounted.current || request.current !== current) return;
+    request.current = null;
+    setPinFeedback({ status: confirmed ? 'confirmed' : 'failed', pinned });
+  };
+  // Shared pending state survives replacement views; completion belongs only
+  // to the request started in this keyed UI occurrence.
+  const feedback =
+    props.pinState?.status === 'pending' ? props.pinState : pinFeedback;
   const menu = props.menu;
   const controlledMenu = menu && {
     ...menu,
@@ -36,6 +82,18 @@ export function ConversationActions(props: Props) {
         id={props.id}
         title={props.title}
         menu={controlledMenu}
+        pinned={props.pinned}
+        pinPending={
+          props.pinState?.status === 'pending' ||
+          pinFeedback?.status === 'pending'
+        }
+        onPin={
+          props.canSetPinned && props.setPinned
+            ? () => {
+                void pin();
+              }
+            : undefined
+        }
         onRename={
           props.canRename
             ? () =>
@@ -47,6 +105,21 @@ export function ConversationActions(props: Props) {
             : undefined
         }
       />
+      {feedback && (
+        <span role="status" className="conversation-pin-status">
+          {feedback.status === 'pending'
+            ? feedback.pinned
+              ? 'Pinning conversation…'
+              : 'Unpinning conversation…'
+            : feedback.status === 'confirmed'
+            ? feedback.pinned
+              ? 'Conversation pinned.'
+              : 'Conversation unpinned.'
+            : feedback.pinned
+            ? 'Could not pin conversation. Try again.'
+            : 'Could not unpin conversation. Try again.'}
+        </span>
+      )}
       {props.editor?.id === props.id && (
         <RenameEditor
           key={props.editor.token}

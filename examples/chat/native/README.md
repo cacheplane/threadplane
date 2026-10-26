@@ -149,8 +149,19 @@ optional readonly boolean `pinned: true`; false, missing and invalid values are
 omitted. React forwards rows directly and presents a decorative current-color pin
 plus an accessible “Pinned conversation” description before relative time. The
 original name, tooltip and supplied order remain intact, including highlighting
-and pin toggles on Refresh. This is readonly presentation with no sorting or pin
-writes. Broader pin menus/actions and row templates remain future work. Angular
+and pin toggles on Refresh. The controlled ThreadList preserves supplied order;
+the application owns mutation. Native full-directory Actions and row context
+menus offer Pin for unpinned rows and Unpin for strict `true`, with visible and
+announced pending, success and failure feedback. Explicit activation writes only
+`metadata.pinned`, with no automatic retry or implicit refresh. Success requires
+the exact returned ID and raw boolean, including explicit `false` for unpin.
+Failed or unconfirmed requests retain prior state and permit explicit retry.
+Only the pending pin item is disabled; Copy, Rename and selection remain usable.
+Confirmed pin state updates the shared full and compact row presentations without
+sorting, session replacement, navigation, draft loss or interruption of a response.
+Independent title/pin reconciliation preserves concurrent renames and newer
+authoritative reads, including delayed list, lookup and history responses.
+Broader ordering/reorder actions and row templates remain future work. Angular
 also receives this optional metadata through the shared projection.
 
 The shared directory projection copies valid backend `updated_at` strings into
