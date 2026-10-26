@@ -336,9 +336,29 @@ context-menu behavior. Capture `event.currentTarget` synchronously when it will
 serve as the menu's invoking element.
 
 An empty collection renders an empty list. The application owns loaded-title
-filtering, loading/error/empty notices, data fetching and execution. Rename,
-delete, archive, pin/project actions, drag reordering, live timestamp refresh and
+filtering, loading/error/empty notices, data fetching and execution. Delete,
+archive, pin/project actions, drag reordering, live timestamp refresh and
 custom row rendering remain future work. This is a bounded private T29 slice.
+
+## Controlled conversation rename editor
+
+`ThreadRenameForm` is a private controlled inline editor from
+`@threadplane/react/chat`. Supply `value`, `onValueChange`, `onSubmit` and
+`onCancel`; optional `label`, `className`, `pending` and `error` describe the
+application-owned operation. The form focuses and selects its input on mount,
+retains that input across controlled updates, and provides Save and Cancel.
+Whitespace-only values cannot submit. Enter submits outside IME composition;
+Escape requests cancellation before an enclosing drawer handles it. Blur never
+submits. Pending disables input and Save while leaving Cancel available.
+
+The application trims and validates the requested title, compares it with the
+current title, persists it and owns pending/error/retry state. The form makes
+no backend requests and does not await command promises. Compose it in the
+ThreadList action sibling, outside the selection button. The native example
+uses it for confirmed metadata renames without selecting or reloading a session.
+Cancelling a pending editor ends local editing interest; it cannot promise a
+remote write was rolled back. Archive/delete/project/pin mutation and full
+thread lifecycle parity remain open.
 
 ## Controlled command menu
 
@@ -392,8 +412,9 @@ current request so an old callback cannot dismiss a newer menu for the same ID.
 The Node rendering check covers DOM-free import and pre-mount trigger rendering,
 including `open=true`; it is a bounded check, with no broader hydration claim.
 Native full directories compose pointer and keyboard context menus for one
-exact-ID clipboard command; compact navigation remains selection-only. Typeahead,
-lifecycle/project/archive commands and full parity remain open.
+exact-ID clipboard command and an app-owned rename editor; compact navigation
+remains selection-only. Typeahead, further lifecycle/project/archive commands
+and full parity remain open.
 
 ## Controlled chat panels
 

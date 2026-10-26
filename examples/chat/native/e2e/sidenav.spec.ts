@@ -499,7 +499,7 @@ test('installed React sidenav retains navigation, draft and a running response a
     });
     await copyBeta.focus();
     await page.keyboard.press('ArrowUp');
-    await expect(copyItem).toBeFocused();
+    await expect(page.getByRole('menuitem', { name: /^Rename conversation for Beta notes/ })).toBeFocused();
     await page.keyboard.press('Shift+Tab');
     await expect(beta).toBeFocused();
     await copyBeta.click();

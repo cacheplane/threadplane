@@ -15689,7 +15689,28 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Private keyed semantic selection list with original-event context requests on selection buttons and app-owned actions; supplied order/selection and row identity remain. Lifecycle and broader composition parity remain open."
+      "reason": "Private keyed semantic selection list with original-event context requests on selection buttons and app-owned actions; supplied order/selection and row identity remain. Native composes bounded confirmed renaming in action siblings; built-in lifecycle and broader composition parity remain open."
+    },
+    {
+      "id": "source:libs/react/src/chat/thread-rename-form.tsx",
+      "taskIds": ["T29"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private controlled semantic inline rename editor with explicit IME-safe submit/cancel, pending/error presentation and retained input. Native application owns exact-ID persistence, confirmation, stale reads and editor occurrence lifetime; full thread lifecycle parity remains open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ThreadRenameForm",
+      "taskIds": ["T29"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private controlled rename form dogfooded by native full directory actions/context menus; it owns no I/O, session or mutation lifetime. Further lifecycle and full parity remain open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ThreadRenameFormProps",
+      "taskIds": ["T29"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly controlled title and synchronous input/submit/cancel notifications with optional pending/error/label/class. Application owns validation, persistence, retry and focus restoration; no SDK capability enters the view."
     }
   ]
 }

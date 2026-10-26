@@ -23,6 +23,12 @@ interface Decision extends Approval {
 export interface ApplicationSnapshot<
   TRow extends MessageContent = MessageContent
 > {
+  readonly renames: Readonly<
+    Record<
+      string,
+      Readonly<{ status: 'pending' | 'confirmed' | 'failed'; title: string }>
+    >
+  >;
   readonly decision: Decision | null;
   // Retained after settlement so views can describe an uncertain decision.
   readonly submissionKind: 'text' | 'decision' | null;
@@ -126,6 +132,7 @@ function createApplicationOwner<TRow extends MessageContent>(
   }
 
   let snapshot: ApplicationSnapshot<TRow> = Object.freeze({
+    renames: Object.freeze({}),
     decision: null,
     submissionKind: null,
     messages: Object.freeze([]),
@@ -135,6 +142,34 @@ function createApplicationOwner<TRow extends MessageContent>(
     selection: Object.freeze({ status: 'empty', id: null }),
     runtime: null,
   });
+  let writeVersion = 0;
+  let readOrder = 0;
+  const confirmedTitles = new Map<
+    string,
+    { version: number; title: string; readOrder: number }
+  >();
+  const renaming = new Map<string, AbortController>();
+  function reconcile(
+    row: ThreadRow,
+    readVersion: number,
+    order: number
+  ): ThreadRow {
+    const confirmed = confirmedTitles.get(row.id);
+    if (!confirmed) return row;
+    if (confirmed.version > readVersion || confirmed.readOrder > order)
+      return row.title !== confirmed.title
+        ? Object.freeze({ ...row, title: confirmed.title })
+        : row;
+    // Accepted post-write reads supersede the overlay for older admissions.
+    // Request order resolves reads sharing a mutation version; reads never
+    // advance the mutation clock or supersede a concurrent newer write.
+    confirmedTitles.set(row.id, {
+      ...confirmed,
+      title: row.title,
+      readOrder: order,
+    });
+    return row;
+  }
   let started = false;
   let disposed = false;
   let selectionIntent = 0;
@@ -162,6 +197,7 @@ function createApplicationOwner<TRow extends MessageContent>(
     if (disposed) return;
     next = { ...next, decision: projectDecision(next) };
     if (
+      next.renames === snapshot.renames &&
       next.list === snapshot.list &&
       next.decision === snapshot.decision &&
       next.submissionKind === snapshot.submissionKind &&
@@ -271,6 +307,8 @@ function createApplicationOwner<TRow extends MessageContent>(
   }
 
   async function admit(current: Admission) {
+    const readVersion = writeVersion;
+    const order = ++readOrder;
     try {
       const result = await options.directory.get(
         current.id,
@@ -317,7 +355,12 @@ function createApplicationOwner<TRow extends MessageContent>(
         return;
       }
       observe();
-      selectionStatus(current, 'ready', result.value);
+      if (!owns(current) || current.session !== session) return;
+      selectionStatus(
+        current,
+        'ready',
+        reconcile(result.value, readVersion, order)
+      );
     } catch {
       selectionStatus(current, 'error');
     }
@@ -415,6 +458,8 @@ function createApplicationOwner<TRow extends MessageContent>(
 
   function refresh() {
     if (!started || disposed) return;
+    const readVersion = writeVersion;
+    const order = ++readOrder;
     // Capture before abort/publication reentry can replace the admission.
     const selected =
       admission &&
@@ -442,6 +487,12 @@ function createApplicationOwner<TRow extends MessageContent>(
       try {
         const result = await options.directory.list(controller.signal);
         if (!current()) return;
+        const rows =
+          result.kind === 'ready'
+            ? Object.freeze(
+                result.value.map((row) => reconcile(row, readVersion, order))
+              )
+            : snapshot.list.rows;
         // A matching row renames the same ready selection; omission is not deletion.
         let selection = snapshot.selection;
         const row =
@@ -450,7 +501,7 @@ function createApplicationOwner<TRow extends MessageContent>(
           owns(selected) &&
           selection.status === 'ready' &&
           selection.id === selected.id
-            ? result.value.find((item) => item.id === selected.id)
+            ? rows.find((item) => item.id === selected.id)
             : undefined;
         if (row && row.title !== selection.row?.title)
           selection = Object.freeze({ ...selection, row });
@@ -459,7 +510,7 @@ function createApplicationOwner<TRow extends MessageContent>(
           selection,
           list: Object.freeze({
             status: result.kind === 'ready' ? 'ready' : 'error',
-            rows: result.kind === 'ready' ? result.value : snapshot.list.rows,
+            rows,
           }),
         });
       } catch {
@@ -470,6 +521,80 @@ function createApplicationOwner<TRow extends MessageContent>(
           });
       }
     })();
+  }
+
+  function canRename() {
+    return (
+      started && !disposed && typeof options.directory.rename === 'function'
+    );
+  }
+
+  async function rename(id: string, value: string): Promise<boolean> {
+    const title = value.trim();
+    const existing =
+      snapshot.list.rows.find((row) => row.id === id) ??
+      (snapshot.selection.id === id ? snapshot.selection.row : undefined);
+    if (
+      !canRename() ||
+      !title ||
+      title === existing?.title.trim() ||
+      renaming.has(id)
+    )
+      return false;
+    const controller = new AbortController();
+    // A target is reserved before synchronous observer or transport reentry.
+    renaming.set(id, controller);
+    const ownsRename = () =>
+      !disposed &&
+      renaming.get(id) === controller &&
+      !controller.signal.aborted;
+    const state = (status: 'pending' | 'confirmed' | 'failed') =>
+      Object.freeze({
+        ...snapshot.renames,
+        [id]: Object.freeze({ status, title }),
+      });
+    publish({ ...snapshot, renames: state('pending') });
+    if (!ownsRename()) return false;
+    let confirmed = false;
+    try {
+      const result = await options.directory.rename!(
+        id,
+        title,
+        controller.signal
+      );
+      if (!ownsRename()) return false;
+      confirmed =
+        result.kind === 'ready' &&
+        result.value.id === id &&
+        result.value.title === title;
+    } catch {
+      if (!ownsRename()) return false;
+    }
+    renaming.delete(id);
+    if (!confirmed) {
+      publish({ ...snapshot, renames: state('failed') });
+      return false;
+    }
+    confirmedTitles.set(id, { version: ++writeVersion, title, readOrder: 0 });
+    const replaceTitle = (row: ThreadRow) =>
+      row.id === id && row.title !== title
+        ? Object.freeze({ ...row, title })
+        : row;
+    const rows = snapshot.list.rows.map(replaceTitle);
+    const selection =
+      snapshot.selection.id === id && snapshot.selection.row
+        ? Object.freeze({
+            ...snapshot.selection,
+            row: replaceTitle(snapshot.selection.row),
+          })
+        : snapshot.selection;
+    publish({
+      ...snapshot,
+      selection,
+      list: Object.freeze({ ...snapshot.list, rows: Object.freeze(rows) }),
+      renames: state('confirmed'),
+    });
+    return true;
   }
 
   function canSubmit() {
@@ -575,6 +700,8 @@ function createApplicationOwner<TRow extends MessageContent>(
   }
 
   return Object.freeze({
+    canRename,
+    rename,
     canSubmit,
     submit,
     respond,
@@ -608,6 +735,8 @@ function createApplicationOwner<TRow extends MessageContent>(
     dispose() {
       if (disposed) return;
       disposed = true;
+      for (const controller of renaming.values()) controller.abort();
+      renaming.clear();
       selectionIntent++;
       refreshIntent++;
       cancelCreation();

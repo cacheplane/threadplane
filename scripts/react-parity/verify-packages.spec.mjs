@@ -16,7 +16,8 @@ test('plain declaration proof checks navigation, sidebar and thread-list type-on
   writeFileSync(join(react, 'index.d.ts'), 'export interface MouseEvent<T> { readonly currentTarget: T; readonly clientX: number; } export interface KeyboardEvent<T> { readonly currentTarget: T; readonly key: string; } export type ReactNode = string | number | boolean | null | undefined | readonly ReactNode[];');
   writeFileSync(join(directory, 'package.json'), JSON.stringify({ name: '@threadplane/react', type: 'module', exports: { './chat': { types: './chat.d.ts' } } }));
   writeFileSync(join(consumer, 'package.json'), '{"type":"module"}');
-  const declaration = `export interface OverflowMenuItem { readonly id: string; readonly label: string; readonly disabled?: boolean; readonly tone?: 'normal' | 'destructive'; }
+  const declaration = `export interface ThreadRenameFormProps { readonly value: string; readonly onValueChange: (value: string) => void; readonly onSubmit: () => void; readonly onCancel: () => void; readonly pending?: boolean; readonly error?: string; readonly label?: string; readonly className?: string; }
+export interface OverflowMenuItem { readonly id: string; readonly label: string; readonly disabled?: boolean; readonly tone?: 'normal' | 'destructive'; }
 export interface OverflowMenuProps { readonly items: readonly OverflowMenuItem[]; readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly onSelect: (itemId: string, event: import('react').MouseEvent<HTMLButtonElement>) => void; readonly label: string; readonly className?: string; readonly disabled?: boolean; readonly anchorPoint?: { readonly x: number; readonly y: number } | null; readonly returnFocusTo?: HTMLElement | null; }
 export type ChatSidenavMode = 'expanded' | 'collapsed' | 'drawer';
 export interface ChatSidenavProps { readonly onSearch?: () => void; readonly searchLabel?: string; readonly searchShortcut?: boolean; readonly toggleShortcut?: boolean; readonly collapsedContent?: import('react').ReactNode; readonly mode: ChatSidenavMode; readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly onModeChange: (mode: Exclude<ChatSidenavMode, 'drawer'>) => void; }
@@ -32,6 +33,22 @@ export interface ThreadListProps { readonly threads: readonly ThreadListItem[]; 
     return ts.getPreEmitDiagnostics(program).map(error => ts.flattenDiagnosticMessageText(error.messageText, '\n')).join('\n');
   };
   assert.equal(compile(declaration), '');
+  assert.match(compile(declaration.replaceAll('ThreadRenameFormProps', 'MissingRenameFormProps')), /ThreadRenameFormProps/);
+  const renameEnd = declaration.indexOf('export interface OverflowMenuItem');
+  for (const [before, after] of [
+    ['readonly value: string;', 'readonly value?: string;'],
+    ['readonly value: string;', 'value: string;'],
+    ['readonly onValueChange: (value: string) => void;', 'readonly onValueChange: (value: number) => void;'],
+    ['readonly onSubmit: () => void;', 'readonly onSubmit?: () => void;'],
+    ['readonly onCancel: () => void;', 'readonly onCancel: (reason: string) => void;'],
+    ['readonly pending?: boolean;', 'readonly pending: boolean;'],
+    ['readonly error?: string;', 'readonly error?: Error;'],
+    ['readonly label?: string;', 'label?: string;'],
+    ['readonly className?: string;', ''],
+  ]) {
+    const mutated = declaration.slice(0, renameEnd).replace(before, after) + declaration.slice(renameEnd);
+    assert.match(compile(mutated), /ThreadRenameForm|false.*true/, `${before} → ${after}`);
+  }
   for (const [before, after] of [
     ['OverflowMenuItem', 'MissingMenuItem'],
     ['OverflowMenuProps', 'MissingMenuProps'],
@@ -394,7 +411,7 @@ for (const [name, entry, files] of [
 });
 test('React chat requires its real supported export', () => {
   const component = () => undefined;
-  const supported = { OverflowMenu: component, ApprovalCard: component, Chat: component, ChatPopup: component, ChatSidebar: component, ChatSidenav: component, ChatSidenavScrim: component, ChatInput: component, Citations: component, MessageList: component, MessageActions: component, Reasoning: component, TextTranscript: component, ToolObservation: component, ThreadList: component };
+  const supported = { OverflowMenu: component, ApprovalCard: component, Chat: component, ChatPopup: component, ChatSidebar: component, ChatSidenav: component, ChatSidenavScrim: component, ChatInput: component, Citations: component, MessageList: component, MessageActions: component, Reasoning: component, TextTranscript: component, ToolObservation: component, ThreadList: component, ThreadRenameForm: component };
   assert.throws(() => packageVerifier.assertSupportedExports('react/chat', {}), /ApprovalCard/);
   for (const name of Object.keys(supported)) {
     const { [name]: _omitted, ...rest } = supported;

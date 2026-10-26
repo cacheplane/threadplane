@@ -552,6 +552,50 @@ function handshake(promise, label) {
   return Promise.race([promise, new Promise((_, reject) => { timeout = setTimeout(() => reject(new Error(`Timed out awaiting ${label}`)), 10_000); })]).finally(() => clearTimeout(timeout));
 }
 
+export async function runRenameFormScenarios(page, url) {
+  await page.goto(`${url}/?menu&rename`);
+  const fixture = page.getByRole('region', { name: 'Installed rename editor' });
+  const input = fixture.getByRole('textbox', { name: 'Rename fixture title' });
+  const save = fixture.getByRole('button', { name: 'Save', exact: true });
+  const cancel = fixture.getByRole('button', { name: 'Cancel', exact: true });
+  const submitted = page.getByTestId('rename-submissions');
+  const cancelled = page.getByTestId('rename-cancels');
+  await expect(input).toBeFocused();
+  const node = await input.elementHandle();
+  assert.ok(node);
+  await input.fill('   ');
+  await expect(save).toBeDisabled();
+  await input.press('Enter');
+  await expect(submitted).toHaveText('[]');
+  await input.fill('  Literal <&> title  ');
+  await input.press('Enter');
+  await expect(submitted).toHaveText('["Literal <&> title"]');
+  await input.dispatchEvent('keydown', { key: 'Enter', isComposing: true, bubbles: true });
+  await expect(submitted).toHaveText('["Literal <&> title"]');
+  await input.press('Escape');
+  await expect(cancelled).toHaveText('1');
+  await fixture.getByRole('checkbox', { name: 'Rename fixture error' }).check();
+  await expect(fixture.getByRole('alert')).toHaveText('Rename fixture failure');
+  await expect(input).toHaveValue('  Literal <&> title  ');
+  await fixture.getByRole('checkbox', { name: 'Rename fixture pending' }).check();
+  await expect(input).toBeDisabled();
+  await expect(save).toBeDisabled();
+  await expect(cancel).toBeEnabled();
+  await cancel.click();
+  await expect(cancelled).toHaveText('2');
+  await fixture.getByRole('checkbox', { name: 'Rename fixture pending' }).uncheck();
+  await fixture.getByRole('checkbox', { name: 'Rename fixture error' }).uncheck();
+  await save.click();
+  await expect(submitted).toHaveText('["Literal <&> title","Literal <&> title"]');
+  assert.equal(await node.evaluate((node) => node.isConnected), true);
+  for (const width of [390, 600, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    const box = await input.boundingBox();
+    assert.ok(box && box.x >= 0 && box.x + box.width <= width, `Rename input fits viewport ${width}`);
+  }
+  console.log('Installed rename editor: explicit submit/cancel, literal title, blank and IME guards, pending/error/retry, retained input and responsive containment passed.');
+}
+
 export async function runOverflowMenuScenarios(page, url) {
   await page.goto(`${url}/?menu`);
   const trigger = page.getByRole('button', { name: 'Fixture actions for full ID' });
@@ -1043,6 +1087,7 @@ export async function runRuntimeScenarios(directory, kind) {
     completed.push(...await runThreadScenarios(page, server));
     completed.push(...await runCheckpointScenarios(page, server));
     if (/react/i.test(kind)) {
+      await runRenameFormScenarios(page, server.url);
       await runOverflowMenuScenarios(page, server.url);
       await runContextMenuScenarios(page, server.url);
     }

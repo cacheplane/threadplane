@@ -1,7 +1,8 @@
 :where(
     .tp-chat,
     .tp-chat-list:not(.tp-chat .tp-chat-list),
-    .tp-chat-input:not(.tp-chat .tp-chat-input)
+    .tp-chat-input:not(.tp-chat .tp-chat-input),
+    .tp-thread-rename-form:not(.tp-chat .tp-thread-rename-form)
   ) {
   /* Standalone parts get tokens too; nested parts inherit .tp-chat overrides. */
   --tp-chat-text: var(--ds-text-primary, CanvasText);
@@ -18,6 +19,43 @@
   --tp-chat-gap: 1rem;
   color-scheme: light dark;
   color: var(--tp-chat-text);
+}
+.tp-thread-rename-form {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0.5rem;
+  color: var(--tp-chat-text);
+  background: var(--tp-chat-surface);
+  border: 1px solid var(--tp-chat-border);
+  border-radius: 0.375rem;
+}
+.tp-thread-rename-form input {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+}
+.tp-thread-rename-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.tp-thread-rename-form button {
+  min-height: 40px;
+  font: inherit;
+}
+.tp-thread-rename-form p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.tp-thread-rename-form [role='alert'] {
+  color: var(--tp-chat-danger);
+}
+.tp-thread-rename-form :focus-visible {
+  outline: 2px solid var(--tp-chat-accent);
+  outline-offset: 2px;
 }
 .tp-overflow-menu__trigger {
   min-width: 40px;

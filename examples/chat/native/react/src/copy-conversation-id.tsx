@@ -7,22 +7,34 @@ export function CopyConversationId({
   id,
   title,
   menu,
+  onRename,
 }: {
   readonly id: string;
   readonly title?: string;
   readonly menu?: ConversationMenuControl;
+  readonly onRename?: () => void;
 }) {
-  return <CopyCommand key={id} id={id} title={title} menu={menu} />;
+  return (
+    <CopyCommand
+      key={id}
+      id={id}
+      title={title}
+      menu={menu}
+      onRename={onRename}
+    />
+  );
 }
 
 function CopyCommand({
   id,
   title,
   menu,
+  onRename,
 }: {
   readonly id: string;
   readonly title?: string;
   readonly menu?: ConversationMenuControl;
+  readonly onRename?: () => void;
 }) {
   const pending = useRef(false);
   const mounted = useRef(false);
@@ -55,12 +67,27 @@ function CopyCommand({
     <div className="copy-conversation-id">
       <OverflowMenu
         label={`Actions for ${title ? `${title} (${id})` : id}`}
-        items={[{ id: 'copy', label, disabled: status === 'pending' }]}
+        items={[
+          { id: 'copy', label, disabled: status === 'pending' },
+          ...(onRename
+            ? [
+                {
+                  id: 'rename',
+                  label: `Rename conversation for ${
+                    title ? `${title} (${id})` : id
+                  }`,
+                },
+              ]
+            : []),
+        ]}
         open={menu?.open ?? open}
         onOpenChange={menu?.onOpenChange ?? setOpen}
         anchorPoint={menu?.anchorPoint}
         returnFocusTo={menu?.returnFocusTo}
-        onSelect={(_, event) => void copy(event)}
+        onSelect={(command, event) => {
+          if (command === 'rename') onRename?.();
+          else void copy(event);
+        }}
       />
       {status && (
         <span className="copy-conversation-id__feedback" aria-hidden="true">
