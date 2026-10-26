@@ -172,7 +172,10 @@ function server(
             options.checkpoint
           )
         );
-      // Exact-run inspection only: any history/state read is an unexpected failure.
+      // The read-only recovery check answers with nothing conclusive.
+      if (request.method === 'POST' && parsed.pathname === '/threads/t/history')
+        return Response.json([]);
+      // Exact-run inspection only: any other state read is an unexpected failure.
       const run = posts > 1 ? 'r-2' : 'r';
       expect(request.url).toBe(`${origin}/threads/t/runs/${run}`);
       expect(request.method).toBe('GET');
@@ -295,7 +298,13 @@ describe('owned native checkpoint stream through the real SDK', () => {
       const requests = server({ checkpoint });
       const session = native();
       expect(await session.submit('Question')).toBe('interrupted');
-      expect(requests.map((r) => r.method)).toEqual(['POST', 'GET']);
+      // Exact success without the final frames: history is read once, read-only.
+      expect(requests.map((r) => [r.method, new URL(r.url).pathname])).toEqual([
+        ['POST', '/threads/t/runs/stream'],
+        ['GET', '/threads/t/runs/r'],
+        ['POST', '/threads/t/history'],
+      ]);
+      expect(session.getSnapshot().error?.recovery).toBe('check');
       await session.dispose();
     }
   );
@@ -320,8 +329,12 @@ describe('owned native checkpoint stream through the real SDK', () => {
       expect(await session.submit('Question')).toBe(
         status === 'error' || status === 'timeout' ? 'error' : 'interrupted'
       );
+      // A failed or in-flight exact run is never second-guessed from history;
+      // an ambiguous or unreadable one is disambiguated by one read-only read.
+      const history =
+        status === 'interrupted' || status === 'read-failure' ? ['POST'] : [];
       expect(requests.map((r) => r.method)).toEqual(
-        status === 'unsafe-identity' ? ['POST'] : ['POST', 'GET']
+        status === 'unsafe-identity' ? ['POST'] : ['POST', 'GET', ...history]
       );
       await session.dispose();
     }
@@ -442,7 +455,9 @@ describe('supplied transport and legacy contracts', () => {
     expect(new URL(requests[2].url).searchParams.has('stream_mode')).toBe(
       false
     );
-    expect(requests.filter((r) => r.method === 'POST')).toHaveLength(1);
+    expect(
+      requests.filter((r) => r.url === `${origin}/threads/t/runs/stream`)
+    ).toHaveLength(1);
     await session.dispose();
   });
 
