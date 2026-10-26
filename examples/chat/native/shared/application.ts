@@ -23,6 +23,15 @@ interface Decision extends Approval {
 export interface ApplicationSnapshot<
   TRow extends MessageContent = MessageContent
 > {
+  readonly archives: Readonly<
+    Record<
+      string,
+      Readonly<{
+        status: 'pending' | 'confirmed' | 'failed';
+        archived: boolean;
+      }>
+    >
+  >;
   readonly pins: Readonly<
     Record<
       string,
@@ -141,6 +150,7 @@ function createApplicationOwner<TRow extends MessageContent>(
   }
 
   let snapshot: ApplicationSnapshot<TRow> = Object.freeze({
+    archives: Object.freeze({}),
     pins: Object.freeze({}),
     renames: Object.freeze({}),
     decision: null,
@@ -159,6 +169,11 @@ function createApplicationOwner<TRow extends MessageContent>(
     { version: number; title: string; readOrder: number }
   >();
   const renaming = new Map<string, AbortController>();
+  const archiving = new Map<string, AbortController>();
+  const confirmedArchives = new Map<
+    string,
+    { version: number; archived: boolean | undefined; readOrder: number }
+  >();
   const pinning = new Map<string, AbortController>();
   const confirmedPins = new Map<
     string,
@@ -200,6 +215,20 @@ function createApplicationOwner<TRow extends MessageContent>(
           readOrder: order,
         });
     }
+    const archive = confirmedArchives.get(row.id);
+    if (archive) {
+      if (archive.version > readVersion || archive.readOrder > order)
+        row =
+          row.archived !== archive.archived
+            ? Object.freeze({ ...row, archived: archive.archived })
+            : row;
+      else
+        confirmedArchives.set(row.id, {
+          ...archive,
+          archived: row.archived,
+          readOrder: order,
+        });
+    }
     return row;
   }
   let started = false;
@@ -230,6 +259,7 @@ function createApplicationOwner<TRow extends MessageContent>(
     next = { ...next, decision: projectDecision(next) };
     if (
       next.renames === snapshot.renames &&
+      next.archives === snapshot.archives &&
       next.pins === snapshot.pins &&
       next.list === snapshot.list &&
       next.decision === snapshot.decision &&
@@ -539,7 +569,8 @@ function createApplicationOwner<TRow extends MessageContent>(
         if (
           row &&
           (row.title !== selection.row?.title ||
-            row.pinned !== selection.row?.pinned)
+            row.pinned !== selection.row?.pinned ||
+            row.archived !== selection.row?.archived)
         )
           selection = Object.freeze({ ...selection, row });
         publish({
@@ -564,6 +595,86 @@ function createApplicationOwner<TRow extends MessageContent>(
     return (
       started && !disposed && typeof options.directory.rename === 'function'
     );
+  }
+
+  function canSetArchived() {
+    return (
+      started &&
+      !disposed &&
+      typeof options.directory.setArchived === 'function'
+    );
+  }
+
+  async function setArchived(id: string, archived: boolean): Promise<boolean> {
+    const existing =
+      snapshot.list.rows.find((row) => row.id === id) ??
+      (snapshot.selection.id === id ? snapshot.selection.row : undefined);
+    if (
+      !canSetArchived() ||
+      typeof archived !== 'boolean' ||
+      archiving.has(id) ||
+      (existing && (existing.archived === true) === archived)
+    )
+      return false;
+    const controller = new AbortController();
+    archiving.set(id, controller);
+    const ownsArchive = () =>
+      !disposed &&
+      archiving.get(id) === controller &&
+      !controller.signal.aborted;
+    const state = (status: 'pending' | 'confirmed' | 'failed') =>
+      Object.freeze({
+        ...snapshot.archives,
+        [id]: Object.freeze({ status, archived }),
+      });
+    publish({ ...snapshot, archives: state('pending') });
+    if (!ownsArchive()) return false;
+    let confirmed = false;
+    try {
+      const result = await options.directory.setArchived!(
+        id,
+        archived,
+        controller.signal
+      );
+      if (!ownsArchive()) return false;
+      confirmed =
+        result.kind === 'ready' &&
+        result.value.id === id &&
+        result.value.archived === archived;
+    } catch {
+      if (!ownsArchive()) return false;
+    }
+    archiving.delete(id);
+    if (!confirmed) {
+      publish({ ...snapshot, archives: state('failed') });
+      return false;
+    }
+    confirmedArchives.set(id, {
+      version: ++writeVersion,
+      archived,
+      readOrder: 0,
+    });
+    const replaceArchive = (row: ThreadRow) =>
+      row.id === id && row.archived !== archived
+        ? Object.freeze({ ...row, archived })
+        : row;
+    const selection =
+      snapshot.selection.id === id && snapshot.selection.row
+        ? Object.freeze({
+            ...snapshot.selection,
+            row: replaceArchive(snapshot.selection.row),
+          })
+        : snapshot.selection;
+    publish({
+      ...snapshot,
+      selection,
+      list: Object.freeze({
+        ...snapshot.list,
+        rows: Object.freeze(snapshot.list.rows.map(replaceArchive)),
+      }),
+      archives: state('confirmed'),
+    });
+    return true;
   }
 
   function canSetPinned() {
@@ -809,6 +920,8 @@ function createApplicationOwner<TRow extends MessageContent>(
   }
 
   return Object.freeze({
+    canSetArchived,
+    setArchived,
     canSetPinned,
     setPinned,
     canRename,
@@ -846,6 +959,8 @@ function createApplicationOwner<TRow extends MessageContent>(
     dispose() {
       if (disposed) return;
       disposed = true;
+      for (const controller of archiving.values()) controller.abort();
+      archiving.clear();
       for (const controller of pinning.values()) controller.abort();
       pinning.clear();
       for (const controller of renaming.values()) controller.abort();

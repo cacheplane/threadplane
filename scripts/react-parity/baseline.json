@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "c815c274fc0a216a91fa5407570cb26f169dd25a",
+  "baselineHead": "dc0bf5e5723025a4a0243de6df267cff554c916d",
   "sourceState": {
     "modified": [
-      "libs/react/README.md"
+      ".github/workflows/ci.yml"
     ],
     "untracked": []
   },
@@ -851,7 +851,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "15312cf0c7dca4b7342519dd16c09567be567f8a7f1ab281035c98376cd0f19f"
+      "sha256": "50c83f44350ba30109eefbfb5a5a9aba4ede1a93a410d0a23cfcbb5463d112c9"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -2177,7 +2177,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "0c4ac2ec9df75e6c81f87ba8d3fcc9e53666191545b8bde26aa60431e2796e5f"
+      "sha256": "f77783419fe1c95b19a63df176a523acd5082635eb193354702cb5f01bfc379a"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",

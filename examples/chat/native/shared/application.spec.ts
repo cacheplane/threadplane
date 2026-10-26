@@ -2596,3 +2596,445 @@ test('rename authoritative lookup supersedes an older pending refresh without ad
   assert.equal(app.getSnapshot().selection.row?.title, 'Authoritative lookup');
   server.verify();
 });
+
+test('archive capability updates the supplied row without selection or runtime work', async (t) => {
+  const { app, sessions, nav } = await fixture(t, [], '', (options) => ({
+    ...options,
+    directory: {
+      list: async () => ({
+        kind: 'ready',
+        value: [{ id: 'a', title: 'Alpha' }],
+      }),
+      get: async () => ({ kind: 'missing' }),
+      create: async () => ({ kind: 'failed' }),
+      ...{
+        setArchived: async (id: string, archived: boolean) => ({
+          kind: 'ready' as const,
+          value: { id, title: 'Ignored server title', archived },
+        }),
+      },
+    },
+  }));
+  app.start();
+  await listed(app);
+  const archive = (
+    app as typeof app & {
+      setArchived?: (id: string, archived: boolean) => Promise<boolean>;
+    }
+  ).setArchived;
+  assert.equal(await archive?.('a', true), true);
+  assert.deepEqual(app.getSnapshot().list.rows, [
+    { id: 'a', title: 'Alpha', archived: true },
+  ]);
+  assert.equal(sessions.length, 0);
+  assert.equal(nav.pushes.length, 0);
+});
+function archiveDirectory(
+  overrides: Partial<ThreadDirectory> = {}
+): ThreadDirectory {
+  return {
+    list: async () => ({
+      kind: 'ready',
+      value: [
+        { id: 'a', title: 'Alpha', updatedAt: 42 },
+        { id: 'b', title: 'Beta', archived: true },
+      ],
+    }),
+    get: async (id) => ({ kind: 'ready', value: { id, title: id } }),
+    create: async () => ({ kind: 'failed' }),
+    setArchived: async (id, archived) => ({
+      kind: 'ready',
+      value: { id, title: 'Unowned title', archived },
+    }),
+    ...overrides,
+  };
+}
+async function archiveFixture(t: TestContext, directory: ThreadDirectory) {
+  return fixture(t, [], '', (options) => ({ ...options, directory }));
+}
+
+test('archive reserves before observer and transport reentry, rejects duplicate/opposite and isolates targets', async (t) => {
+  const pending = new Map<
+    string,
+    (result: DirectoryResult<ThreadRow>) => void
+  >();
+  const signals: AbortSignal[] = [];
+  const calls: string[] = [];
+  let nested: Promise<boolean> | undefined;
+  const { app } = await archiveFixture(
+    t,
+    archiveDirectory({
+      setArchived: (id, _archived, signal) => {
+        calls.push(id);
+        signals.push(signal);
+        nested = app.setArchived(id, false);
+        return new Promise((resolve) => pending.set(id, resolve));
+      },
+    })
+  );
+  app.start();
+  await listed(app);
+  assert.equal(await app.setArchived('a', false), false);
+  assert.equal(await app.setArchived('a', 1 as unknown as boolean), false);
+  let duplicate: Promise<boolean> | undefined;
+  const release = app.subscribe(() => {
+    if (app.getSnapshot().archives['a']?.status === 'pending')
+      duplicate = app.setArchived('a', true);
+  });
+  const before = app.getSnapshot();
+  const first = app.setArchived('a', true);
+  assert.equal(await duplicate, false);
+  assert.equal(await nested, false);
+  assert.equal(await app.setArchived('a', false), false);
+  const second = app.setArchived('b', false);
+  assert.deepEqual(calls, ['a', 'b']);
+  assert.ok(Object.isFrozen(app.getSnapshot().archives));
+  assert.ok(Object.isFrozen(app.getSnapshot().archives['a']));
+  pending.get('b')!({
+    kind: 'ready',
+    value: { id: 'b', title: 'ignored', archived: false },
+  });
+  assert.equal(await second, true);
+  pending.get('a')!({
+    kind: 'ready',
+    value: { id: 'a', title: 'ignored', archived: true },
+  });
+  assert.equal(await first, true);
+  release();
+  const after = app.getSnapshot();
+  assert.deepEqual(after.list.rows, [
+    { id: 'a', title: 'Alpha', updatedAt: 42, archived: true },
+    { id: 'b', title: 'Beta', archived: false },
+  ]);
+  for (const key of [
+    'runtime',
+    'messages',
+    'selection',
+    'submission',
+    'creation',
+  ] as const)
+    assert.equal(after[key], before[key]);
+  assert.equal(
+    signals.some((s) => s.aborted),
+    false
+  );
+  assert.equal(await app.setArchived('a', true), false);
+});
+
+for (const mode of [
+  'failed',
+  'cancelled',
+  'throw',
+  'wrong-id',
+  'missing-archive',
+  'wrong-archive',
+  'dispose',
+] as const)
+  test(`archive ${mode} preserves rows, contains errors and supports explicit retry`, async (t) => {
+    let resolve!: (value: DirectoryResult<ThreadRow>) => void;
+    let signal!: AbortSignal;
+    let calls = 0;
+    const { app } = await archiveFixture(
+      t,
+      archiveDirectory({
+        setArchived: async (id, archived, s) => {
+          signal = s;
+          calls++;
+          if (calls > 1)
+            return { kind: 'ready', value: { id, title: 'ignored', archived } };
+          if (mode === 'throw') throw new Error('hostile');
+          return new Promise((done) => (resolve = done));
+        },
+      })
+    );
+    app.start();
+    await listed(app);
+    const rows = app.getSnapshot().list.rows;
+    const result = app.setArchived('a', true);
+    if (mode === 'dispose') app.dispose();
+    if (mode !== 'throw')
+      resolve(
+        mode === 'failed' || mode === 'cancelled'
+          ? { kind: mode }
+          : {
+              kind: 'ready',
+              value: {
+                id: mode === 'wrong-id' ? 'other' : 'a',
+                title: 'ignored',
+                ...(mode === 'missing-archive'
+                  ? {}
+                  : { archived: mode === 'wrong-archive' ? false : true }),
+              },
+            }
+      );
+    assert.equal(await result, false);
+    assert.equal(app.getSnapshot().list.rows, rows);
+    if (mode === 'dispose') {
+      assert.equal(signal.aborted, true);
+      assert.equal(await app.setArchived('a', true), false);
+    } else {
+      assert.deepEqual(app.getSnapshot().archives['a'], {
+        status: 'failed',
+        archived: true,
+      });
+      assert.equal(await app.setArchived('a', true), true);
+      assert.equal(calls, 2);
+    }
+  });
+
+test('archive observer disposal prevents transport and optional capability remains compatible', async (t) => {
+  let calls = 0;
+  const { app } = await archiveFixture(
+    t,
+    archiveDirectory({
+      setArchived: async () => {
+        calls++;
+        return { kind: 'failed' };
+      },
+    })
+  );
+  assert.equal(app.canSetArchived(), false);
+  app.start();
+  await listed(app);
+  app.subscribe(() => {
+    if (app.getSnapshot().archives['a']?.status === 'pending') app.dispose();
+  });
+  assert.equal(await app.setArchived('a', true), false);
+  assert.equal(calls, 0);
+  const { app: legacy } = await archiveFixture(
+    t,
+    archiveDirectory({ setArchived: undefined })
+  );
+  legacy.start();
+  assert.equal(legacy.canSetArchived(), false);
+  assert.equal(await legacy.setArchived('a', true), false);
+});
+
+for (const first of ['archive', 'rename'])
+  test(`archive and rename responses patch independent fields when ${first} finishes first`, async (t) => {
+    let finishPin!: (value: DirectoryResult<ThreadRow>) => void;
+    let finishRename!: (value: DirectoryResult<ThreadRow>) => void;
+    const { app } = await archiveFixture(
+      t,
+      archiveDirectory({
+        setArchived: () => new Promise((resolve) => (finishPin = resolve)),
+        rename: () => new Promise((resolve) => (finishRename = resolve)),
+      })
+    );
+    app.start();
+    await listed(app);
+    const archive = app.setArchived('a', true);
+    const rename = app.rename('a', 'New Alpha');
+    const settlePin = () =>
+      finishPin({
+        kind: 'ready',
+        value: { id: 'a', title: 'OLD', archived: true },
+      });
+    const settleRename = () =>
+      finishRename({
+        kind: 'ready',
+        value: { id: 'a', title: 'New Alpha', archived: false },
+      });
+    if (first === 'archive') {
+      settlePin();
+      await archive;
+      settleRename();
+    } else {
+      settleRename();
+      await rename;
+      settlePin();
+    }
+    assert.equal(await archive, true);
+    assert.equal(await rename, true);
+    assert.deepEqual(app.getSnapshot().list.rows[0], {
+      id: 'a',
+      title: 'New Alpha',
+      updatedAt: 42,
+      archived: true,
+    });
+  });
+
+for (const timing of ['before-write', 'after-write'] as const)
+  for (const phase of ['lookup', 'history'] as const)
+    test(`archive authoritative refresh supersedes ${timing} delayed ${phase} independently of title writes`, async (t) => {
+      let finishGet!: (value: DirectoryResult<ThreadRow>) => void;
+      let row: ThreadRow = { id: 'a', title: 'Old', archived: false };
+      const { app, server } = await fixture(
+        t,
+        [history('a', { holdHeaders: phase === 'history' })],
+        '',
+        (options) => ({
+          ...options,
+          directory: archiveDirectory({
+            list: async () => ({ kind: 'ready', value: [row] }),
+            get: () => new Promise((resolve) => (finishGet = resolve)),
+            rename: async (id, title) => ({
+              kind: 'ready',
+              value: { id, title },
+            }),
+          }),
+        })
+      );
+      app.start();
+      await listed(app);
+      if (timing === 'before-write') app.select('a');
+      assert.equal(await app.setArchived('a', true), true);
+      if (timing === 'after-write') app.select('a');
+      if (phase === 'history') {
+        finishGet({ kind: 'ready', value: row });
+        await server.steps[0].received;
+      }
+      row = { id: 'a', title: 'Authority', archived: false };
+      app.refresh();
+      await listed(app);
+      assert.equal(await app.rename('a', 'Newest title'), true);
+      if (phase === 'lookup')
+        finishGet({
+          kind: 'ready',
+          value: { id: 'a', title: 'Stale', archived: true },
+        });
+      else server.steps[0].releaseHeaders();
+      await ready(app, 'a');
+      assert.equal(app.getSnapshot().selection.row?.archived, false);
+      assert.equal(app.getSnapshot().selection.row?.title, 'Newest title');
+      server.verify();
+    });
+
+test('archive authoritative lookup supersedes older same-version list and preserves selected runtime on refresh', async (t) => {
+  let finishList!: (value: DirectoryResult<readonly ThreadRow[]>) => void;
+  const { app, server } = await fixture(t, [history('a')], '', (options) => ({
+    ...options,
+    directory: archiveDirectory({
+      list: () => new Promise((resolve) => (finishList = resolve)),
+      get: async (id) => ({
+        kind: 'ready',
+        value: { id, title: 'Authority', archived: false },
+      }),
+    }),
+  }));
+  app.start();
+  assert.equal(await app.setArchived('a', true), true);
+  app.refresh();
+  app.select('a');
+  await ready(app, 'a');
+  const runtime = app.getSnapshot().runtime;
+  finishList({
+    kind: 'ready',
+    value: [{ id: 'a', title: 'Stale', archived: true }],
+  });
+  await listed(app);
+  assert.equal(app.getSnapshot().list.rows[0].archived, false);
+  assert.equal(app.getSnapshot().selection.row?.archived, false);
+  assert.equal(app.getSnapshot().runtime, runtime);
+  server.verify();
+});
+
+test('archive old list and history-delayed lookup cannot undo confirmation', async (t) => {
+  let finishList!: (value: DirectoryResult<readonly ThreadRow[]>) => void;
+  const { app, server } = await fixture(
+    t,
+    [history('a', { holdHeaders: true })],
+    '',
+    (options) => ({
+      ...options,
+      directory: archiveDirectory({
+        list: () => new Promise((resolve) => (finishList = resolve)),
+        get: async (id) => ({
+          kind: 'ready',
+          value: { id, title: 'Alpha', archived: false },
+        }),
+      }),
+    })
+  );
+  app.start();
+  app.select('a');
+  await server.steps[0].received;
+  assert.equal(await app.setArchived('a', true), true);
+  finishList({
+    kind: 'ready',
+    value: [{ id: 'a', title: 'Alpha', archived: false }],
+  });
+  await listed(app);
+  server.steps[0].releaseHeaders();
+  await ready(app, 'a');
+  assert.equal(app.getSnapshot().list.rows[0].archived, true);
+  assert.equal(app.getSnapshot().selection.row?.archived, true);
+  server.verify();
+});
+
+for (const order of [
+  ['archive', 'pin', 'rename'],
+  ['archive', 'rename', 'pin'],
+  ['pin', 'archive', 'rename'],
+  ['pin', 'rename', 'archive'],
+  ['rename', 'archive', 'pin'],
+  ['rename', 'pin', 'archive'],
+])
+  test(`archive, pin and rename preserve independent selected fields in order ${order.join(
+    ', '
+  )}`, async (t) => {
+    const settles = new Map<
+      string,
+      (value: DirectoryResult<ThreadRow>) => void
+    >();
+    const { app, sessions, nav, server } = await fixture(
+      t,
+      [history('a')],
+      '',
+      (options) => ({
+        ...options,
+        directory: archiveDirectory({
+          setArchived: () =>
+            new Promise((resolve) => settles.set('archive', resolve)),
+          setPinned: () =>
+            new Promise((resolve) => settles.set('pin', resolve)),
+          rename: () =>
+            new Promise((resolve) => settles.set('rename', resolve)),
+        }),
+      })
+    );
+    app.start();
+    await listed(app);
+    app.select('a');
+    await ready(app, 'a');
+    const before = app.getSnapshot();
+    const calls = [
+      app.setArchived('a', true),
+      app.setPinned('a', true),
+      app.rename('a', 'New'),
+    ];
+    for (const field of order) {
+      settles.get(field)!({
+        kind: 'ready',
+        value: {
+          id: 'a',
+          title: field === 'rename' ? 'New' : 'Stale',
+          archived: field === 'archive',
+          pinned: field === 'pin',
+        },
+      });
+      await Promise.resolve();
+    }
+    assert.deepEqual(await Promise.all(calls), [true, true, true]);
+    const after = app.getSnapshot();
+    assert.equal(after.selection.row?.archived, true);
+    assert.equal(after.selection.row?.pinned, true);
+    assert.equal(after.selection.row?.title, 'New');
+    assert.deepEqual(after.list.rows[0], {
+      id: 'a',
+      title: 'New',
+      updatedAt: 42,
+      archived: true,
+      pinned: true,
+    });
+    for (const key of [
+      'runtime',
+      'messages',
+      'submission',
+      'creation',
+    ] as const)
+      assert.strictEqual(after[key], before[key]);
+    assert.equal(sessions.length, 1);
+    assert.equal(nav.pushes.length, 1);
+    server.verify();
+  });

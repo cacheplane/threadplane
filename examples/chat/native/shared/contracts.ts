@@ -5,6 +5,7 @@ export interface ThreadRow {
   readonly title: string;
   readonly updatedAt?: number;
   readonly pinned?: boolean;
+  readonly archived?: boolean;
 }
 
 export type DirectoryResult<T> =
@@ -16,6 +17,11 @@ export type ThreadLookupResult =
   | Readonly<{ kind: 'missing' }>;
 
 export interface ThreadDirectory {
+  setArchived?(
+    id: string,
+    archived: boolean,
+    signal: AbortSignal
+  ): Promise<DirectoryResult<ThreadRow>>;
   setPinned?(
     id: string,
     pinned: boolean,

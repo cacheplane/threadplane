@@ -14,6 +14,6 @@ test('closed native Subagents selection', () => {
 import { readFileSync } from 'node:fs';
 test('native fixture participates in awaited serve shutdown', () => {
   const source = readFileSync(new URL('./serve.mjs', import.meta.url), 'utf8');
-  assert.match(source, /if \((?:\w+Fixture \|\| )*deepAgentsSubagentsFixture(?: \|\| \w+Fixture)*\)/);
+  assert.match(source, /if \((?:(?:\w+Fixture|isChatA2ui) \|\| )*deepAgentsSubagentsFixture(?: \|\| (?:\w+Fixture|isChatA2ui))*\)/);
   assert.match(source, /await \((?:\w+Fixture \?\? )*deepAgentsSubagentsFixture(?: \?\? \w+Fixture)*\)\.close\(\)/);
 });

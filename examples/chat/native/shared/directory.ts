@@ -75,6 +75,19 @@ export function createThreadDirectory(
     }
   }
   return Object.freeze({
+    setArchived(id: string, archived: boolean, signal: AbortSignal) {
+      if (id === '.' || id === '..' || typeof archived !== 'boolean')
+        return Promise.resolve(failure(signal));
+      return perform(signal, async () => {
+        const raw = await client.threads.update(encodeURIComponent(id), {
+          metadata: { archived },
+          signal,
+        });
+        if (raw.thread_id !== id || raw.metadata?.['archived'] !== archived)
+          throw new Error('Archive not confirmed');
+        return Object.freeze({ ...projectThread(raw), archived });
+      });
+    },
     setPinned(id: string, pinned: boolean, signal: AbortSignal) {
       if (id === '.' || id === '..' || typeof pinned !== 'boolean')
         return Promise.resolve(failure(signal));

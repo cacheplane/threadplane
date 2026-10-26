@@ -11,6 +11,9 @@ export function CopyConversationId({
   onPin,
   pinned,
   pinPending,
+  onArchive,
+  archived,
+  archivePending,
 }: {
   readonly id: string;
   readonly title?: string;
@@ -19,6 +22,9 @@ export function CopyConversationId({
   readonly onPin?: () => void;
   readonly pinned?: boolean;
   readonly pinPending?: boolean;
+  readonly onArchive?: () => void;
+  readonly archived?: boolean;
+  readonly archivePending?: boolean;
 }) {
   return (
     <CopyCommand
@@ -30,6 +36,9 @@ export function CopyConversationId({
       onPin={onPin}
       pinned={pinned}
       pinPending={pinPending}
+      onArchive={onArchive}
+      archived={archived}
+      archivePending={archivePending}
     />
   );
 }
@@ -42,6 +51,9 @@ function CopyCommand({
   onPin,
   pinned,
   pinPending,
+  onArchive,
+  archived,
+  archivePending,
 }: {
   readonly id: string;
   readonly title?: string;
@@ -50,6 +62,9 @@ function CopyCommand({
   readonly onPin?: () => void;
   readonly pinned?: boolean;
   readonly pinPending?: boolean;
+  readonly onArchive?: () => void;
+  readonly archived?: boolean;
+  readonly archivePending?: boolean;
 }) {
   const pending = useRef(false);
   const mounted = useRef(false);
@@ -105,6 +120,17 @@ function CopyCommand({
                 },
               ]
             : []),
+          ...(onArchive
+            ? [
+                {
+                  id: 'archive',
+                  label: `${
+                    archived === true ? 'Unarchive' : 'Archive'
+                  } conversation for ${title ? `${title} (${id})` : id}`,
+                  disabled: archivePending,
+                },
+              ]
+            : []),
         ]}
         open={menu?.open ?? open}
         onOpenChange={menu?.onOpenChange ?? setOpen}
@@ -113,6 +139,7 @@ function CopyCommand({
         onSelect={(command, event) => {
           if (command === 'rename') onRename?.();
           else if (command === 'pin') onPin?.();
+          else if (command === 'archive') onArchive?.();
           else void copy(event);
         }}
       />

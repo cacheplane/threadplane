@@ -113,7 +113,7 @@ to that row, while Tab continues from its natural order. Ordinary Actions-button
 activation retains its trigger-based behavior. The application associates each
 request with its own identity, preventing an old close callback from dismissing
 a newer request even when the conversation ID is reused. Filtering a row out
-invalidates its request. Typeahead and further lifecycle/project/archive commands remain open.
+invalidates its request. Typeahead and further lifecycle/project commands remain open.
 The compact sidenav rail retains selection-only rows. Clipboard access may be
 unavailable or denied by the browser; the example reports that failure locally.
 
@@ -159,10 +159,38 @@ Failed or unconfirmed requests retain prior state and permit explicit retry.
 Only the pending pin item is disabled; Copy, Rename and selection remain usable.
 Confirmed pin state updates the shared full and compact row presentations without
 sorting, session replacement, navigation, draft loss or interruption of a response.
-Independent title/pin reconciliation preserves concurrent renames and newer
+Independent title/pin/archive reconciliation preserves concurrent renames and newer
 authoritative reads, including delayed list, lookup and history responses.
 Broader ordering/reorder actions and row templates remain future work. Angular
 also receives this optional metadata through the shared projection.
+
+Native React also composes reversible Archive and Unarchive in its full directory.
+Only strict `metadata.archived === true` classifies ordinary loaded rows as archived.
+The existing Loaded conversations list and its New action contain active rows;
+Archived conversations expands a separate Archived loaded conversations list with
+no New action. Both preserve supplied relative order and share the loaded-title
+filter. These are at most 50 loaded rows, not a backend-wide archive search.
+The compact rail contains active rows only; expand navigation to restore archived
+rows. Active menus offer Copy, Rename, Pin/Unpin and Archive; archived menus offer
+Copy and Unarchive.
+
+Explicit activation patches only exact-target `metadata.archived`, with no retry
+or implicit read. Both true and false require the exact raw returned ID and boolean
+before classification changes. Failed or unconfirmed writes keep the row in place
+and allow explicit retry. Per-target pending state survives filtered rows and view
+remounts; only that lifecycle command is disabled. Visible announced feedback
+includes the target title and ID and belongs to the stable directory owner, so
+confirmation remains readable after row migration. Historical completions are not
+replayed on remount, and late completions do not focus or close replacement views.
+Concurrent title, pin and archive confirmations preserve independent fields;
+prewrite reads cannot undo confirmation and newer authoritative reads can supersede it.
+
+Archiving or restoring a selected conversation changes directory classification
+only. The selected transcript, composer draft, session and running response stay
+mounted and selected, with no reload, stop or navigation. Archived rows remain
+selectable. This deliberately differs from the Angular demo clearing selection
+when it archives. Permanent deletion, project actions, pin sorting and full
+thread lifecycle/T29 parity remain open; no library API or export is added.
 
 The shared directory projection copies valid backend `updated_at` strings into
 immutable optional epoch-millisecond `updatedAt` fields. Native React passes these
@@ -437,7 +465,7 @@ tools. An unresolved saved call may remain a pending observation. An explicit
 new submit can still be refused while the existing session has an unresolved
 terminal write.
 
-Arbitrary generated tools/UI, directory mutations beyond create, AG-UI
+Arbitrary generated tools/UI, directory mutations beyond create/rename/pin/archive, AG-UI
 persistence, canonical-mode cutover and package retirement remain later work.
 
 ## Retain and review a verified build
@@ -568,7 +596,7 @@ full accessible names, tooltips and pin/time descriptions. It has no extra New,
 filter or Refresh controls. The full directory remains mounted; compact rows
 remain mounted and hidden/inert when expanded or in either drawer state.
 This bounded composed
-navigation does not implement Angular project/archive menus, backend search, search dialogs or other global shortcuts,
+navigation does not implement Angular project menus, backend search, search dialogs or other global shortcuts,
 debug ownership or full T30 parity. Popup and sidebar remain separate
 presentations.
 
