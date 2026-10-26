@@ -1,10 +1,8 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "4e814bd4ef42919ace69612644e4d4e13d8cd3c2",
+  "baselineHead": "b39f8e1e1ff97e45de7db7c41010e6ed38b98db4",
   "sourceState": {
-    "modified": [
-      ".github/workflows/ci.yml"
-    ],
+    "modified": [],
     "untracked": []
   },
   "scope": {
@@ -755,7 +753,7 @@
       "id": "asset:libs/langgraph/src/runtime/README.md",
       "kind": "asset",
       "path": "libs/langgraph/src/runtime/README.md",
-      "sha256": "c012f29e3d7d00b4182474d97741bd055be3ec0a97490fff6ab3eaf855f1e972"
+      "sha256": "33dc8f135c4d5cde69566d44c86a1ec8c7f27c3362456003a91d966b4266f16d"
     },
     {
       "id": "asset:libs/langgraph/test/fixtures/reloaded-subagent-thread.json",
@@ -14712,7 +14710,7 @@
       "id": "source:libs/langgraph/src/runtime/create-session.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/create-session.ts",
-      "sha256": "1443a9e440f85a98d92917624041666f555bf0ec0302011079a4a45c9e735a1a"
+      "sha256": "d7f88ebf9b76af15fd64fbe396aab53404afa01df0d6b89877ed71d2712e5c5a"
     },
     {
       "id": "source:libs/langgraph/src/runtime/function-tools.ts",
@@ -14790,7 +14788,7 @@
       "id": "source:libs/langgraph/src/runtime/stream-projection.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/stream-projection.ts",
-      "sha256": "a52721b6c381039c219eb243326721a52c384b9bd1fd4d6ddec2fd048fd9b3de"
+      "sha256": "bfdf7012b1af0f32d6f11998175cdb34ce4f1ba224d35f1d2ba65aa78242e43b"
     },
     {
       "id": "source:libs/langgraph/src/runtime/subgraph-projection.ts",
