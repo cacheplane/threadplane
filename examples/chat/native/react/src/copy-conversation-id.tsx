@@ -8,11 +8,17 @@ export function CopyConversationId({
   title,
   menu,
   onRename,
+  onPin,
+  pinned,
+  pinPending,
 }: {
   readonly id: string;
   readonly title?: string;
   readonly menu?: ConversationMenuControl;
   readonly onRename?: () => void;
+  readonly onPin?: () => void;
+  readonly pinned?: boolean;
+  readonly pinPending?: boolean;
 }) {
   return (
     <CopyCommand
@@ -21,6 +27,9 @@ export function CopyConversationId({
       title={title}
       menu={menu}
       onRename={onRename}
+      onPin={onPin}
+      pinned={pinned}
+      pinPending={pinPending}
     />
   );
 }
@@ -30,11 +39,17 @@ function CopyCommand({
   title,
   menu,
   onRename,
+  onPin,
+  pinned,
+  pinPending,
 }: {
   readonly id: string;
   readonly title?: string;
   readonly menu?: ConversationMenuControl;
   readonly onRename?: () => void;
+  readonly onPin?: () => void;
+  readonly pinned?: boolean;
+  readonly pinPending?: boolean;
 }) {
   const pending = useRef(false);
   const mounted = useRef(false);
@@ -79,6 +94,17 @@ function CopyCommand({
                 },
               ]
             : []),
+          ...(onPin
+            ? [
+                {
+                  id: 'pin',
+                  label: `${
+                    pinned === true ? 'Unpin' : 'Pin'
+                  } conversation for ${title ? `${title} (${id})` : id}`,
+                  disabled: pinPending,
+                },
+              ]
+            : []),
         ]}
         open={menu?.open ?? open}
         onOpenChange={menu?.onOpenChange ?? setOpen}
@@ -86,6 +112,7 @@ function CopyCommand({
         returnFocusTo={menu?.returnFocusTo}
         onSelect={(command, event) => {
           if (command === 'rename') onRename?.();
+          else if (command === 'pin') onPin?.();
           else void copy(event);
         }}
       />

@@ -243,6 +243,10 @@ function Conversation({
             title={thread.title ?? ''}
             menu={menus.forThread(thread.id)}
             canRename={application.canRename()}
+            canSetPinned={application.canSetPinned()}
+            pinned={thread.pinned}
+            pinState={snapshot.pins[thread.id]}
+            setPinned={application.setPinned}
             pending={snapshot.renames[thread.id]?.status === 'pending'}
             rename={application.rename}
             editor={rows.some((row) => row.id === editor?.id) ? editor : null}
