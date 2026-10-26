@@ -4,7 +4,7 @@ import { once } from 'node:events';
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
 import test from 'node:test';
@@ -19,6 +19,7 @@ async function until(predicate, message) {
 async function listening(port) {
   try {
     await fetch(`http://127.0.0.1:${port}/`, {
+      redirect: 'manual',
       signal: AbortSignal.timeout(200),
     });
     return true;
@@ -41,6 +42,9 @@ async function host(t, mode, portOverride) {
   const port = portOverride ?? (await freePort()),
     parentPort = await freePort();
   const owned = mkdtempSync(join(tmpdir(), 'a2ui-host-'));
+  // Library CI runs before static assets are built. Keep readiness independent of dist.
+  const unbuiltAppPath = 'test-only-unbuilt/' + basename(owned);
+  assert.equal(existsSync(join('dist', unbuiltAppPath)), false);
   const marker = join(owned, 'worker.json');
   const release = join(owned, 'release');
   const closed = join(owned, 'closed.json');
@@ -95,7 +99,9 @@ async function host(t, mode, portOverride) {
   }
   export async function load(url,context,next){
     const result=await next(url,context);
-    if(url.endsWith('/scripts/react-cockpit/serve.mjs')) return {...result,source:String(result.source).replaceAll('configuration.port',String(${port})).replaceAll(\"listen(3000,\",\"listen(${parentPort},\")};
+    if(url.endsWith('/scripts/react-cockpit/serve.mjs')) return {...result,source:String(result.source).replaceAll('configuration.appPath',${JSON.stringify(
+      JSON.stringify(unbuiltAppPath)
+    )}).replaceAll('configuration.port',String(${port})).replaceAll(\"listen(3000,\",\"listen(${parentPort},\")};
     return result;
   }`
   );
