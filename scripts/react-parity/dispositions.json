@@ -15689,7 +15689,7 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Private keyed semantic selection list with original-event context requests on selection buttons and app-owned actions; supplied order/selection and row identity remain. Native composes bounded confirmed renaming in action siblings; built-in lifecycle and broader composition parity remain open."
+      "reason": "Private keyed semantic selection list with original-event context requests on selection buttons and app-owned actions; supplied order/selection and row identity remain. Native composes bounded confirmed renaming and Pin/Unpin in action siblings, with application-owned metadata confirmation and pending/error handling; supplied order remains and further lifecycle/reorder parity stays open."
     },
     {
       "id": "source:libs/react/src/chat/thread-rename-form.tsx",

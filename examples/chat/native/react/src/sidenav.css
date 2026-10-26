@@ -49,6 +49,13 @@
   overflow-wrap: anywhere;
   white-space: normal;
 }
+.conversation-pin-status {
+  display: block;
+  font-size: 0.75rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
 .copy-conversation-id > button {
   display: grid;
   place-items: center;
@@ -134,15 +141,20 @@
   border: 1px solid var(--tp-chat-border, #ccc);
   border-radius: 0.5rem;
 }
-.conversation-list .tp-thread-list__item--actions:has(.conversation-rename) {
+.conversation-list .tp-thread-list__item--actions:has(.conversation-rename),
+.conversation-list
+  .tp-thread-list__item--actions:has(.conversation-pin-status) {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
 }
 .tp-thread-list__actions:has(.conversation-rename),
-.conversation-actions:has(.conversation-rename) {
+.conversation-actions:has(.conversation-rename),
+.tp-thread-list__actions:has(.conversation-pin-status),
+.conversation-actions:has(.conversation-pin-status) {
   display: contents;
 }
-.conversation-actions:has(.conversation-rename) > .copy-conversation-id {
+.conversation-actions:has(.conversation-rename) > .copy-conversation-id,
+.conversation-actions:has(.conversation-pin-status) > .copy-conversation-id {
   grid-column: 2;
   grid-row: 1;
 }
@@ -151,4 +163,12 @@
   grid-row: 2;
   width: auto;
   min-width: 0;
+}
+.conversation-actions > .conversation-pin-status {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  min-width: 0;
+}
+.conversation-actions:has(.conversation-rename) > .conversation-pin-status {
+  grid-row: 3;
 }

@@ -337,7 +337,7 @@ serve as the menu's invoking element.
 
 An empty collection renders an empty list. The application owns loaded-title
 filtering, loading/error/empty notices, data fetching and execution. Delete,
-archive, pin/project actions, drag reordering, live timestamp refresh and
+archive, project actions, drag reordering, live timestamp refresh and
 custom row rendering remain future work. This is a bounded private T29 slice.
 
 ## Controlled conversation rename editor
@@ -357,8 +357,17 @@ no backend requests and does not await command promises. Compose it in the
 ThreadList action sibling, outside the selection button. The native example
 uses it for confirmed metadata renames without selecting or reloading a session.
 Cancelling a pending editor ends local editing interest; it cannot promise a
-remote write was rolled back. Archive/delete/project/pin mutation and full
+remote write was rolled back. Archive/delete/project mutation and full
 thread lifecycle parity remain open.
+
+The native example also composes app-owned Pin/Unpin commands through the same
+action slot and controlled menu. It updates supplied `pinned` metadata only after
+the exact target and strict boolean value are confirmed by the backend. Pending,
+success and failure feedback belong to the application; the pin item is disabled
+while its mutation is pending, and the same command permits explicit retry after
+failure. Copy, Rename and selection remain available. Pin/unpin preserves supplied
+row order and never starts, reloads or stops a session. The compact rail reflects
+the shared pinned state while keeping selection-only controls.
 
 ## Controlled command menu
 

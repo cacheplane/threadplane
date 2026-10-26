@@ -23,6 +23,15 @@ interface Decision extends Approval {
 export interface ApplicationSnapshot<
   TRow extends MessageContent = MessageContent
 > {
+  readonly pins: Readonly<
+    Record<
+      string,
+      Readonly<{
+        status: 'pending' | 'confirmed' | 'failed';
+        pinned: boolean;
+      }>
+    >
+  >;
   readonly renames: Readonly<
     Record<
       string,
@@ -132,6 +141,7 @@ function createApplicationOwner<TRow extends MessageContent>(
   }
 
   let snapshot: ApplicationSnapshot<TRow> = Object.freeze({
+    pins: Object.freeze({}),
     renames: Object.freeze({}),
     decision: null,
     submissionKind: null,
@@ -149,25 +159,47 @@ function createApplicationOwner<TRow extends MessageContent>(
     { version: number; title: string; readOrder: number }
   >();
   const renaming = new Map<string, AbortController>();
+  const pinning = new Map<string, AbortController>();
+  const confirmedPins = new Map<
+    string,
+    { version: number; pinned: boolean | undefined; readOrder: number }
+  >();
   function reconcile(
     row: ThreadRow,
     readVersion: number,
     order: number
   ): ThreadRow {
     const confirmed = confirmedTitles.get(row.id);
-    if (!confirmed) return row;
-    if (confirmed.version > readVersion || confirmed.readOrder > order)
-      return row.title !== confirmed.title
-        ? Object.freeze({ ...row, title: confirmed.title })
-        : row;
-    // Accepted post-write reads supersede the overlay for older admissions.
-    // Request order resolves reads sharing a mutation version; reads never
-    // advance the mutation clock or supersede a concurrent newer write.
-    confirmedTitles.set(row.id, {
-      ...confirmed,
-      title: row.title,
-      readOrder: order,
-    });
+    if (confirmed) {
+      if (confirmed.version > readVersion || confirmed.readOrder > order)
+        row =
+          row.title !== confirmed.title
+            ? Object.freeze({ ...row, title: confirmed.title })
+            : row;
+      // Accepted post-write reads supersede the overlay for older admissions.
+      // Request order resolves reads sharing a mutation version; reads never
+      // advance the mutation clock or supersede a concurrent newer write.
+      else
+        confirmedTitles.set(row.id, {
+          ...confirmed,
+          title: row.title,
+          readOrder: order,
+        });
+    }
+    const pin = confirmedPins.get(row.id);
+    if (pin) {
+      if (pin.version > readVersion || pin.readOrder > order)
+        row =
+          row.pinned !== pin.pinned
+            ? Object.freeze({ ...row, pinned: pin.pinned })
+            : row;
+      else
+        confirmedPins.set(row.id, {
+          ...pin,
+          pinned: row.pinned,
+          readOrder: order,
+        });
+    }
     return row;
   }
   let started = false;
@@ -198,6 +230,7 @@ function createApplicationOwner<TRow extends MessageContent>(
     next = { ...next, decision: projectDecision(next) };
     if (
       next.renames === snapshot.renames &&
+      next.pins === snapshot.pins &&
       next.list === snapshot.list &&
       next.decision === snapshot.decision &&
       next.submissionKind === snapshot.submissionKind &&
@@ -503,7 +536,11 @@ function createApplicationOwner<TRow extends MessageContent>(
           selection.id === selected.id
             ? rows.find((item) => item.id === selected.id)
             : undefined;
-        if (row && row.title !== selection.row?.title)
+        if (
+          row &&
+          (row.title !== selection.row?.title ||
+            row.pinned !== selection.row?.pinned)
+        )
           selection = Object.freeze({ ...selection, row });
         publish({
           ...snapshot,
@@ -527,6 +564,78 @@ function createApplicationOwner<TRow extends MessageContent>(
     return (
       started && !disposed && typeof options.directory.rename === 'function'
     );
+  }
+
+  function canSetPinned() {
+    return (
+      started && !disposed && typeof options.directory.setPinned === 'function'
+    );
+  }
+
+  async function setPinned(id: string, pinned: boolean): Promise<boolean> {
+    const existing =
+      snapshot.list.rows.find((row) => row.id === id) ??
+      (snapshot.selection.id === id ? snapshot.selection.row : undefined);
+    if (
+      !canSetPinned() ||
+      typeof pinned !== 'boolean' ||
+      pinning.has(id) ||
+      (existing && (existing.pinned === true) === pinned)
+    )
+      return false;
+    const controller = new AbortController();
+    pinning.set(id, controller);
+    const ownsPin = () =>
+      !disposed && pinning.get(id) === controller && !controller.signal.aborted;
+    const state = (status: 'pending' | 'confirmed' | 'failed') =>
+      Object.freeze({
+        ...snapshot.pins,
+        [id]: Object.freeze({ status, pinned }),
+      });
+    publish({ ...snapshot, pins: state('pending') });
+    if (!ownsPin()) return false;
+    let confirmed = false;
+    try {
+      const result = await options.directory.setPinned!(
+        id,
+        pinned,
+        controller.signal
+      );
+      if (!ownsPin()) return false;
+      confirmed =
+        result.kind === 'ready' &&
+        result.value.id === id &&
+        result.value.pinned === pinned;
+    } catch {
+      if (!ownsPin()) return false;
+    }
+    pinning.delete(id);
+    if (!confirmed) {
+      publish({ ...snapshot, pins: state('failed') });
+      return false;
+    }
+    confirmedPins.set(id, { version: ++writeVersion, pinned, readOrder: 0 });
+    const replacePin = (row: ThreadRow) =>
+      row.id === id && row.pinned !== pinned
+        ? Object.freeze({ ...row, pinned })
+        : row;
+    const selection =
+      snapshot.selection.id === id && snapshot.selection.row
+        ? Object.freeze({
+            ...snapshot.selection,
+            row: replacePin(snapshot.selection.row),
+          })
+        : snapshot.selection;
+    publish({
+      ...snapshot,
+      selection,
+      list: Object.freeze({
+        ...snapshot.list,
+        rows: Object.freeze(snapshot.list.rows.map(replacePin)),
+      }),
+      pins: state('confirmed'),
+    });
+    return true;
   }
 
   async function rename(id: string, value: string): Promise<boolean> {
@@ -700,6 +809,8 @@ function createApplicationOwner<TRow extends MessageContent>(
   }
 
   return Object.freeze({
+    canSetPinned,
+    setPinned,
     canRename,
     rename,
     canSubmit,
@@ -735,6 +846,8 @@ function createApplicationOwner<TRow extends MessageContent>(
     dispose() {
       if (disposed) return;
       disposed = true;
+      for (const controller of pinning.values()) controller.abort();
+      pinning.clear();
       for (const controller of renaming.values()) controller.abort();
       renaming.clear();
       selectionIntent++;

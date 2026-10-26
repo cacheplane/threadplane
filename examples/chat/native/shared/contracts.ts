@@ -16,6 +16,11 @@ export type ThreadLookupResult =
   | Readonly<{ kind: 'missing' }>;
 
 export interface ThreadDirectory {
+  setPinned?(
+    id: string,
+    pinned: boolean,
+    signal: AbortSignal
+  ): Promise<DirectoryResult<ThreadRow>>;
   rename?(
     id: string,
     title: string,
