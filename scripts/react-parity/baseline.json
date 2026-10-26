@@ -1,9 +1,10 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "3ca322986f8cb1abdd6f8d9918951284ccc7e2ce",
+  "baselineHead": "5053d6eeae943809ea5736d6e99eb8c729596e2e",
   "sourceState": {
     "modified": [
-      "libs/react/README.md"
+      "libs/langgraph/src/runtime/README.md",
+      "libs/langgraph/src/runtime/create-session.ts"
     ],
     "untracked": []
   },
@@ -755,7 +756,7 @@
       "id": "asset:libs/langgraph/src/runtime/README.md",
       "kind": "asset",
       "path": "libs/langgraph/src/runtime/README.md",
-      "sha256": "33dc8f135c4d5cde69566d44c86a1ec8c7f27c3362456003a91d966b4266f16d"
+      "sha256": "f6abe99550dceacc05fb1188fa8f0e577a38805a07c74f4161efdd2452a2b0b0"
     },
     {
       "id": "asset:libs/langgraph/test/fixtures/reloaded-subagent-thread.json",
@@ -14740,7 +14741,7 @@
       "id": "source:libs/langgraph/src/runtime/create-session.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/create-session.ts",
-      "sha256": "d7f88ebf9b76af15fd64fbe396aab53404afa01df0d6b89877ed71d2712e5c5a"
+      "sha256": "e057371ea975ebd9e49b5e203983516b8ebaa73efdbb6b345f14d1156e2b7144"
     },
     {
       "id": "source:libs/langgraph/src/runtime/function-tools.ts",

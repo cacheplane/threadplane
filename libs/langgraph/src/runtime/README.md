@@ -137,8 +137,21 @@ correlates it by the submitted user message. An in-flight run leaves the snapsho
 untouched so the check can be repeated; a failed run is reported as such and
 withdraws every recovery; a committed answer or a pending interrupt settles the
 turn. Close-time settlement performs the same read once, automatically, unless the
-exact run is known to be still in flight. Resume and fork attempts are never
-reconciled from history and report `recovery: 'none'`.
+exact run is known to be still in flight. Fork attempts and tool follow-ups after
+a resume are never reconciled from history and report `recovery: 'none'`.
+
+A first-group resume is reconciled too, anchored on the turn's existing user
+message rather than a new one. Its evidence is activity the turn did not have
+when the decision was sent (message ids outside the captured turn), or a pause
+the thread did not have (a different interrupt id or payload). A different or
+recurring pause after new activity settles as paused on that pause; new activity
+on an idle thread, or a newer user turn, settles as success. The same pause with
+nothing new is inconclusive: the decision may never have landed, or may still be
+executing before its first checkpoint, so the runtime neither restores the pause
+nor replays the decision. An uncertain resume does not strand the user: `load()`
+and `resume()` withdraw a check owned by an earlier resume (one owned by an
+uncertain submit still blocks them), reloading restores the still-pending pause,
+and the decision can be sent again.
 
 An exact `interrupted` run status is ambiguous: the pause event may have been lost
 when the stream dropped, or a newer run may have cancelled this one. The runtime
