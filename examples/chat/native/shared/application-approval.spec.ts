@@ -603,6 +603,10 @@ for (const outcome of ['error', 'interrupted'] as const) {
         'approved',
         outcome === 'error' ? { events } : { disconnect: true }
       ),
+      // A disconnected decision gets one read-only history check. The same
+      // pause with nothing new is inconclusive: it must not re-enable the
+      // replaced pause evidence, and the decision is never replayed.
+      ...(outcome === 'interrupted' ? [history('a')] : []),
       search(),
     ]);
     app.start();
