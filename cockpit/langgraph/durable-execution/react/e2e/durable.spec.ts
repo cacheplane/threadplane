@@ -320,22 +320,44 @@ for (const action of ['Stop', 'pagehide'])
     } else await expect(page.locator('main')).toHaveCount(0);
     expect(runs(await wire(request))).toHaveLength(1);
   });
-test('a known physical run with an unknown outcome does not offer check recovery', async ({
+test('a known physical run with an unknown outcome offers only a read-only status check', async ({
   page,
   request,
 }) => {
   await send(page, 'Known uncertain');
   await expect(page.getByRole('status')).toHaveText(
-    'Start a new conversation to continue.'
+    'The outcome is uncertain. Check its saved status.'
   );
-  await expect(page.getByRole('button', { name: 'Check status' })).toHaveCount(
-    0
-  );
-  const entries = await wire(request);
+  // While the exact run is still in flight, close and check read its status
+  // only: saved history is not conclusive yet and is never consulted.
+  let entries = await wire(request);
   expect(entries.filter((entry) => entry.method === 'GET')).toHaveLength(1);
   expect(
     entries.filter((entry) => entry.path.endsWith('/history'))
   ).toHaveLength(0);
+  await page.getByRole('button', { name: 'Check status' }).click();
+  await expect(page.getByRole('status')).toHaveText(
+    'The outcome is uncertain. Check its saved status.'
+  );
+  entries = await wire(request);
+  expect(entries.filter((entry) => entry.method === 'GET')).toHaveLength(2);
+  expect(
+    entries.filter((entry) => entry.path.endsWith('/history'))
+  ).toHaveLength(0);
+  // Once the exact run has ended, the same check reads the saved outcome and
+  // concludes the turn without creating or replaying anything.
+  await request.post('/__finish-run');
+  await request.post('/__publish-final');
+  await page.getByRole('button', { name: 'Check status' }).click();
+  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(transcript(page).getByRole('article')).toHaveCount(2);
+  await expect(checkpoints(page)).toContainText('Generate — complete');
+  entries = await wire(request);
+  expect(runs(entries)).toHaveLength(1);
+  expect(entries.filter((entry) => entry.method === 'GET')).toHaveLength(3);
+  expect(
+    entries.filter((entry) => entry.path.endsWith('/history'))
+  ).toHaveLength(1);
 });
 test('uncertain creation cannot construct a run or replay', async ({
   page,

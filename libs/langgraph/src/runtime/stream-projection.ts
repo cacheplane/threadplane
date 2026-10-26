@@ -2,6 +2,7 @@ import {
   completeDelivery,
   streamingDelivery,
   type AgentError,
+  type AgentRecovery,
   type Message,
   type PlainValue,
 } from '@threadplane/core';
@@ -387,23 +388,50 @@ export function finalizeProjection(
   return state;
 }
 
+/** The shared interruption vocabulary, keyed by recovery value. The neutral
+ * runtime cannot import `@threadplane/chat`, so this is a copy of that
+ * package's `AGENT_RECOVERY_MESSAGES` / `AGENT_RECOVERY_DETAILS`; a parity
+ * spec under the Angular test target fails when the two drift. The runtime
+ * never emits `retry`: it cannot prove a request was undispatched. */
+export const RECOVERY_COPY = Object.freeze({
+  messages: Object.freeze({
+    retry: 'The response was interrupted before it started. Try again.',
+    check:
+      'The connection dropped. The request may still have completed on the server.',
+    none: 'The connection dropped. We could not confirm whether the request completed.',
+  }),
+  details: Object.freeze({
+    retry: 'Nothing reached the server, so nothing was duplicated.',
+    check: 'Checking will tell you whether it did.',
+    none: 'Trying again could repeat it.',
+  }),
+}) satisfies {
+  readonly messages: Readonly<Record<AgentRecovery, string>>;
+  readonly details: Readonly<Record<AgentRecovery, string>>;
+};
+
 export function interruptionError(canCheck: boolean): AgentError {
+  const recovery: AgentRecovery = canCheck ? 'check' : 'none';
   return {
     kind: 'interrupted',
     retryable: false,
-    recovery: canCheck ? 'check' : 'none',
-    message: canCheck
-      ? 'The connection dropped. The request may still have completed on the server.'
-      : 'The connection dropped. We could not confirm whether the request completed.',
-    detail: canCheck
-      ? 'Checking will tell you whether it did.'
-      : 'Trying again could repeat it.',
+    recovery,
+    message: RECOVERY_COPY.messages[recovery],
+    detail: RECOVERY_COPY.details[recovery],
   };
 }
 
-/** Bounded staging duplication of the legacy display vocabulary. This neutral
- * slice never copies causes and never infers undispatched work from first-byte
- * absence. Protected SDK errors (including raw SSE error payloads) stay generic. */
+/** Classifies a raw stream failure into the plain display projection.
+ *
+ * A failure before any response (an offline `fetch`, DNS, a refused or reset
+ * connection) is deliberately an `interrupted` error, never a retryable
+ * `connection` one. The legacy Angular bridge and the AG-UI adapter report
+ * `connection` there because their transports observe the connect phase; this
+ * runtime only sees a thrown iterator. A browser `TypeError: fetch failed`
+ * carries no cause, and a reset after the server accepted the request looks
+ * identical to one that never left, so dispatch cannot be ruled out and Retry
+ * could replay a run. Protected SDK errors (including raw SSE error payloads)
+ * stay generic. */
 export function failureProjection(
   raw: unknown,
   protectedTransport: boolean,
