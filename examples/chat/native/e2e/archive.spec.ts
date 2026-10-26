@@ -398,8 +398,8 @@ test('installed React conversation archive and unarchive preserve independent me
           buttons.map((button) => button.getAttribute('title'))
         )
     ).toEqual([
-      'Alpha notes',
       'Beta renamed while archiving',
+      'Alpha notes',
       'Gamma archived',
     ]);
     await page

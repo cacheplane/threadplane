@@ -11,6 +11,9 @@ export interface RenameEditorRequest {
 interface Props {
   readonly archived?: boolean;
   readonly archivePending?: boolean;
+  readonly onMoveUp?: () => void;
+  readonly onMoveDown?: () => void;
+  readonly reorderPending?: boolean;
   readonly onArchive?: () => void;
   readonly canSetPinned?: boolean;
   readonly pinned?: boolean;
@@ -88,6 +91,9 @@ function ConversationActionsOwner(props: Props) {
         pinned={props.pinned}
         archived={props.archived}
         archivePending={props.archivePending}
+        onMoveUp={props.onMoveUp}
+        onMoveDown={props.onMoveDown}
+        reorderPending={props.reorderPending}
         onArchive={props.onArchive}
         pinPending={
           props.pinState?.status === 'pending' ||

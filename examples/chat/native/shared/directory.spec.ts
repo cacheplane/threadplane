@@ -694,3 +694,114 @@ test('archive capability writes and confirms explicit false through the SDK boun
   });
   server.verify();
 });
+
+test('pinned ordering SDK writes rank alone and requires exact raw confirmation without retries or reads', async (t) => {
+  for (const [id, rawId, rawRank, expected] of [
+    ['one/two', 'one/two', 2, 'ready'],
+    ['a', 'wrong', 2, 'failed'],
+    ['a', 'a', '2', 'failed'],
+    ['a', 'a', undefined, 'failed'],
+  ] as const) {
+    const { directory, server } = await fixture(t, [
+      {
+        method: 'PATCH',
+        path: '/api/threads/' + encodeURIComponent(id),
+        payload: { metadata: { pinnedOrder: 2 } },
+        body: {
+          ...threadEnvelope(rawId, 'Title'),
+          metadata: { pinnedOrder: rawRank },
+        },
+      },
+    ]);
+    const write = directory.setPinnedOrder;
+    assert.equal(typeof write, 'function');
+    assert.equal((await write!(id, 2, signal())).kind, expected);
+    server.verify();
+  }
+});
+test('pinned ordering rejects invalid ranks and IDs before I/O', async (t) => {
+  const { directory, server } = await fixture(t, []);
+  const write = directory.setPinnedOrder;
+  assert.equal(typeof write, 'function');
+  for (const id of ['', '.', '..', undefined, 2])
+    assert.equal((await write!(id as string, 0, signal())).kind, 'failed');
+  for (const rank of [
+    -1,
+    0.5,
+    NaN,
+    Infinity,
+    Number.MAX_SAFE_INTEGER + 1,
+    '0',
+    undefined,
+  ])
+    assert.equal((await write!('a', rank as number, signal())).kind, 'failed');
+  server.verify();
+});
+
+for (const status of [404, 500])
+  test(
+    `pinned ordering HTTP ${status} cancels hostile held error body with exactly one attempt`,
+    { timeout: 5000 },
+    async (t) => {
+      const { directory, server } = await fixture(t, [
+        {
+          method: 'PATCH',
+          path: '/api/threads/a',
+          payload: { metadata: { pinnedOrder: 0 } },
+          status,
+          holdBody: true,
+        },
+      ]);
+      assert.deepEqual(await directory.setPinnedOrder!('a', 0, signal()), {
+        kind: 'failed',
+      });
+      assert.deepEqual(await server.steps[0].closed, { finished: false });
+      server.verify();
+    }
+  );
+for (const phase of ['headers', 'body'])
+  test(
+    `pinned ordering abort releases held ${phase} without retry or lookup`,
+    { timeout: 5000 },
+    async (t) => {
+      const { directory, server } = await fixture(t, [
+        {
+          method: 'PATCH',
+          path: '/api/threads/a',
+          payload: { metadata: { pinnedOrder: 0 } },
+          holdHeaders: phase === 'headers',
+          holdBody: true,
+        },
+      ]);
+      const controller = new AbortController();
+      const result = directory.setPinnedOrder!('a', 0, controller.signal);
+      await server.steps[0].received;
+      if (phase === 'body') await server.steps[0].headersSent;
+      controller.abort();
+      assert.deepEqual(await result, { kind: 'cancelled' });
+      assert.deepEqual(await server.steps[0].closed, { finished: false });
+      server.verify();
+    }
+  );
+test('pinned ordering SDK preabort is inert and thrown transport errors are contained without retry', async (t) => {
+  const { directory, server } = await fixture(t, []);
+  const controller = new AbortController();
+  controller.abort();
+  assert.deepEqual(await directory.setPinnedOrder!('a', 0, controller.signal), {
+    kind: 'cancelled',
+  });
+  server.verify();
+  let calls = 0;
+  const throwing = createThreadDirectory({
+    apiBase: 'http://localhost/api',
+    browserOrigin: 'http://localhost',
+    fetch: async () => {
+      calls++;
+      throw { message: 'hostile', status: 404 };
+    },
+  });
+  assert.deepEqual(await throwing.setPinnedOrder!('a', 0, signal()), {
+    kind: 'failed',
+  });
+  assert.equal(calls, 1);
+});

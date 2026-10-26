@@ -16,6 +16,7 @@ export default defineConfig({
     'rename.spec.ts',
     'pin.spec.ts',
     'archive.spec.ts',
+    'ordering.spec.ts',
   ],
   fullyParallel: false,
   workers: 1,

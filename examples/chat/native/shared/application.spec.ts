@@ -3038,3 +3038,165 @@ for (const order of [
     assert.equal(nav.pushes.length, 1);
     server.verify();
   });
+
+test('pinned ordering rank-only confirmation and refresh retain selected runtime, messages and submission identities', async (t) => {
+  let rows: readonly ThreadRow[] = [
+    { id: 'a', title: 'A', pinned: true, pinnedOrder: 0 },
+    { id: 'b', title: 'B', pinned: true, pinnedOrder: 1 },
+  ];
+  const { app, server, sessions } = await fixture(
+    t,
+    [history('a')],
+    '',
+    (options) => ({
+      ...options,
+      directory: {
+        list: async () => ({ kind: 'ready', value: rows }),
+        get: async () => ({ kind: 'ready', value: rows[0] }),
+        create: async () => ({ kind: 'failed' }),
+        setPinnedOrder: async (id, pinnedOrder) => ({
+          kind: 'ready',
+          value: { id, title: 'stale', pinnedOrder },
+        }),
+      },
+    })
+  );
+  app.start();
+  await listed(app);
+  app.select('a');
+  await ready(app, 'a');
+  const before = app.getSnapshot();
+  assert.equal(await app.reorderPinned('b', 'a'), true);
+  assert.equal(app.getSnapshot().selection.row?.pinnedOrder, 1);
+  assert.equal(app.getSnapshot().runtime, before.runtime);
+  assert.equal(app.getSnapshot().messages, before.messages);
+  assert.equal(app.getSnapshot().submission, before.submission);
+  rows = rows.map((row) => ({ ...row, pinnedOrder: 42 }));
+  app.refresh();
+  await listed(app);
+  assert.equal(app.getSnapshot().selection.row?.pinnedOrder, 42);
+  assert.equal(app.getSnapshot().runtime, before.runtime);
+  assert.equal(app.getSnapshot().messages, before.messages);
+  assert.equal(app.getSnapshot().submission, before.submission);
+  assert.equal(sessions.length, 1);
+  server.verify();
+});
+
+for (const phase of ['lookup', 'history'] as const)
+  test(`pinned ordering ${phase}-delayed admission cannot undo confirmation or newer same-version rank authority`, async (t) => {
+    const old: readonly ThreadRow[] = [
+      { id: 'a', title: 'A', pinned: true, pinnedOrder: 0 },
+      { id: 'b', title: 'B', pinned: true, pinnedOrder: 1 },
+    ];
+    let rows = old;
+    let finishGet!: (value: DirectoryResult<ThreadRow>) => void;
+    const { app, server } = await fixture(
+      t,
+      [history('a', { holdHeaders: phase === 'history' })],
+      '',
+      (options) => ({
+        ...options,
+        directory: {
+          list: async () => ({ kind: 'ready', value: rows }),
+          get: () =>
+            new Promise((resolve) => {
+              finishGet = resolve;
+            }),
+          create: async () => ({ kind: 'failed' }),
+          setPinnedOrder: async (id, pinnedOrder) => ({
+            kind: 'ready',
+            value: { id, title: 'stale', pinnedOrder },
+          }),
+        },
+      })
+    );
+    app.start();
+    await listed(app);
+    app.select('a');
+    if (phase === 'history') {
+      finishGet({ kind: 'ready', value: old[0] });
+      await server.steps[0].received;
+    }
+    assert.equal(await app.reorderPinned('b', 'a'), true);
+    rows = old.map((row) => ({ ...row, pinnedOrder: 42 }));
+    app.refresh();
+    await listed(app);
+    if (phase === 'lookup') finishGet({ kind: 'ready', value: old[0] });
+    else server.steps[0].releaseHeaders();
+    await ready(app, 'a');
+    assert.equal(app.getSnapshot().selection.row?.pinnedOrder, 42);
+    assert.equal(app.getSnapshot().list.rows[0].pinnedOrder, 42);
+    server.verify();
+  });
+
+test('pinned ordering authoritative lookup supersedes an older same-version list without clearing an unconfirmed barrier', async (t) => {
+  const rows: readonly ThreadRow[] = [
+    { id: 'a', title: 'A', pinned: true, pinnedOrder: 0 },
+    { id: 'b', title: 'B', pinned: true, pinnedOrder: 1 },
+  ];
+  let finishList!: (value: DirectoryResult<readonly ThreadRow[]>) => void;
+  let reads = 0;
+  const { app, server } = await fixture(t, [history('a')], '', (options) => ({
+    ...options,
+    directory: {
+      list: () =>
+        ++reads === 1
+          ? Promise.resolve({ kind: 'ready', value: rows })
+          : new Promise((resolve) => {
+              finishList = resolve;
+            }),
+      get: async () => ({
+        kind: 'ready',
+        value: { ...rows[0], pinnedOrder: 42 },
+      }),
+      create: async () => ({ kind: 'failed' }),
+      setPinnedOrder: async () => ({ kind: 'failed' }),
+    },
+  }));
+  app.start();
+  await listed(app);
+  assert.equal(await app.reorderPinned('b', 'a'), false);
+  app.refresh();
+  app.select('a');
+  await ready(app, 'a');
+  assert.equal(app.getSnapshot().ordering.status, 'unconfirmed');
+  finishList({ kind: 'ready', value: rows });
+  await listed(app);
+  assert.equal(app.getSnapshot().ordering.status, 'idle');
+  assert.equal(app.getSnapshot().selection.row?.pinnedOrder, 42);
+  assert.equal(app.getSnapshot().list.rows[0].pinnedOrder, 42);
+  server.verify();
+});
+
+test('pinned ordering preserves the selected row identity when its captured rank remains unchanged', async (t) => {
+  const rows: readonly ThreadRow[] = [
+    { id: 'a', title: 'A', pinned: true, pinnedOrder: 0 },
+    { id: 'b', title: 'B', pinned: true, pinnedOrder: 1 },
+    { id: 'c', title: 'C', pinned: true, pinnedOrder: 2 },
+  ];
+  const { app, server } = await fixture(t, [history('c')], '', (options) => ({
+    ...options,
+    directory: {
+      list: async () => ({ kind: 'ready', value: rows }),
+      get: async (id) => ({
+        kind: 'ready',
+        value: rows.find((row) => row.id === id)!,
+      }),
+      create: async () => ({ kind: 'failed' }),
+      setPinnedOrder: async (id, pinnedOrder) => ({
+        kind: 'ready',
+        value: { id, title: 'stale', pinnedOrder },
+      }),
+    },
+  }));
+  app.start();
+  await listed(app);
+  app.select('c');
+  await ready(app, 'c');
+  const before = app.getSnapshot();
+  assert.equal(await app.reorderPinned('b', 'a'), true);
+  assert.equal(app.getSnapshot().selection, before.selection);
+  assert.equal(app.getSnapshot().runtime, before.runtime);
+  assert.equal(app.getSnapshot().messages, before.messages);
+  server.verify();
+});

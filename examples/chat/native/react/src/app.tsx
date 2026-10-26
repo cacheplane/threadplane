@@ -17,7 +17,10 @@ import type {
 } from './application';
 import type { A2uiMessageContent as MessageContent } from './a2ui-message-content';
 import { renderThreadTitle } from './thread-title';
-import { filterLoadedTitles } from '../../shared/projection';
+import {
+  filterLoadedTitles,
+  orderActiveThreads,
+} from '../../shared/projection';
 import type { ThreadRow } from '../../shared/contracts';
 import { submissionStatus } from '../../shared/submission-status';
 import { Approval } from './approval';
@@ -185,16 +188,62 @@ function Conversation({
   const [filter, setFilter] = useState('');
   const filterInput = useRef<HTMLInputElement>(null);
   const rows = filterLoadedTitles(snapshot.list.rows, filter);
-  const activeRows = rows.filter((row) => row.archived !== true);
+  const orderedActiveRows = orderActiveThreads(snapshot.list.rows);
+  const pinnedRows = orderedActiveRows.filter((row) => row.pinned === true);
+  const activeRows = filterLoadedTitles(orderedActiveRows, filter);
   const archivedRows = rows.filter((row) => row.archived === true);
   const selection = snapshot.selection;
   const [archiveOpen, setArchiveOpen] = useState(false);
   const menus = useConversationMenu(
-    (archiveOpen ? rows : activeRows).map((row) => ({
+    [...activeRows, ...(archiveOpen ? archivedRows : [])].map((row) => ({
       id: row.id,
       occurrenceKey: row.archived === true ? 'archived' : 'active',
     }))
   );
+  const reorderRequest = useRef<object | null>(null);
+  const [reorderFeedback, setReorderFeedback] = useState<{
+    readonly id: string;
+    readonly title: string;
+    readonly status: 'pending' | 'confirmed' | 'failed';
+  } | null>(null);
+  const reorderBlocked =
+    snapshot.ordering.status === 'pending' ||
+    snapshot.ordering.status === 'unconfirmed';
+  const reorderAvailable = application.canReorderPinned() || reorderBlocked;
+  const reorder = async (row: ThreadRow, beforeId: string | null) => {
+    if (reorderRequest.current || reorderBlocked) return;
+    const request = {};
+    reorderRequest.current = request;
+    setReorderFeedback({ id: row.id, title: row.title, status: 'pending' });
+    let confirmed = false;
+    try {
+      confirmed = await application.reorderPinned(row.id, beforeId);
+    } catch {
+      /* Optional callbacks may throw as well as reject. */
+    }
+    if (!mounted.current || reorderRequest.current !== request) return;
+    reorderRequest.current = null;
+    setReorderFeedback(
+      application.getSnapshot().ordering.status === 'unconfirmed'
+        ? null
+        : {
+            id: row.id,
+            title: row.title,
+            status: confirmed ? 'confirmed' : 'failed',
+          }
+    );
+  };
+  const sharedOrdering = reorderBlocked ? snapshot.ordering : null;
+  const reorderIdentity = sharedOrdering?.id
+    ? `${
+        reorderFeedback?.id === sharedOrdering.id
+          ? reorderFeedback.title
+          : snapshot.list.rows.find((row) => row.id === sharedOrdering.id)
+              ?.title || sharedOrdering.id
+      } (${sharedOrdering.id})`
+    : reorderFeedback
+    ? `${reorderFeedback.title} (${reorderFeedback.id})`
+    : '';
   const archiveRequests = useRef(new Map<string, object>());
   const mounted = useRef(false);
   const [archiveFeedback, setArchiveFeedback] = useState<
@@ -214,6 +263,7 @@ function Conversation({
     return () => {
       mounted.current = false;
       archiveRequests.current.clear();
+      reorderRequest.current = null;
     };
   }, []);
   const archive = async (row: ThreadRow) => {
@@ -277,6 +327,30 @@ function Conversation({
         snapshot.list.rows.find((row) => row.id === thread.id)?.archived
       }
       archivePending={snapshot.archives[thread.id]?.status === 'pending'}
+      reorderPending={reorderBlocked}
+      onMoveUp={
+        reorderAvailable &&
+        pinnedRows.findIndex((row) => row.id === thread.id) > 0
+          ? () => {
+              const index = pinnedRows.findIndex((row) => row.id === thread.id);
+              void reorder(pinnedRows[index], pinnedRows[index - 1].id);
+            }
+          : undefined
+      }
+      onMoveDown={
+        reorderAvailable &&
+        pinnedRows.some(
+          (row, index) => row.id === thread.id && index < pinnedRows.length - 1
+        )
+          ? () => {
+              const index = pinnedRows.findIndex((row) => row.id === thread.id);
+              void reorder(
+                pinnedRows[index],
+                pinnedRows[index + 2]?.id ?? null
+              );
+            }
+          : undefined
+      }
       onArchive={
         application.canSetArchived()
           ? () => {
@@ -314,7 +388,8 @@ function Conversation({
       <h2 id="conversations-title">Loaded conversations</h2>
       <p className="muted">
         Browse up to 50 loaded conversations. The filter searches only loaded
-        titles.
+        titles. Pinned conversations appear first. Moves apply to all loaded
+        pinned conversations, including those hidden by the filter.
       </p>
       <div className="directory-actions">
         <button
@@ -346,6 +421,18 @@ function Conversation({
         <p role="alert">
           Creation could not be confirmed. A conversation may have been created;
           refresh before trying again.
+        </p>
+      )}
+      {(sharedOrdering || reorderFeedback) && (
+        <p role="status" className="conversation-order-feedback">
+          {sharedOrdering?.status === 'unconfirmed'
+            ? `Conversation order unconfirmed for ${reorderIdentity}. Refresh before reordering again.`
+            : sharedOrdering?.status === 'pending' ||
+              reorderFeedback?.status === 'pending'
+            ? `Moving conversation ${reorderIdentity}…`
+            : reorderFeedback?.status === 'confirmed'
+            ? `Moved conversation ${reorderIdentity}.`
+            : `Could not move conversation ${reorderIdentity}. Try again.`}
         </p>
       )}
       <ThreadList

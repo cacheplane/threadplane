@@ -19,6 +19,7 @@ export function useConversationMenu(
   const [request, setRequest] = useState<{
     readonly id: string;
     readonly occurrenceKey: string | undefined;
+    readonly position: number;
     readonly anchorPoint: { readonly x: number; readonly y: number } | null;
     readonly returnFocusTo: HTMLElement | null;
   } | null>(null);
@@ -28,8 +29,10 @@ export function useConversationMenu(
   const visible =
     request !== null &&
     rows.some(
-      (row) =>
-        row.id === request.id && row.occurrenceKey === request.occurrenceKey
+      (row, index) =>
+        row.id === request.id &&
+        row.occurrenceKey === request.occurrenceKey &&
+        index === request.position
     );
   useEffect(() => {
     if (request && !visible) setRequest(null);
@@ -43,6 +46,7 @@ export function useConversationMenu(
     setRequest({
       id,
       occurrenceKey: rows.find((row) => row.id === id)?.occurrenceKey,
+      position: rows.findIndex((row) => row.id === id),
       anchorPoint:
         'clientX' in event ? { x: event.clientX, y: event.clientY } : null,
       returnFocusTo: event.currentTarget,
@@ -59,6 +63,7 @@ export function useConversationMenu(
           setRequest({
             id,
             occurrenceKey: rows.find((row) => row.id === id)?.occurrenceKey,
+            position: rows.findIndex((row) => row.id === id),
             anchorPoint: null,
             returnFocusTo: null,
           });

@@ -75,6 +75,26 @@ export function createThreadDirectory(
     }
   }
   return Object.freeze({
+    setPinnedOrder(id: string, rank: number, signal: AbortSignal) {
+      if (
+        typeof id !== 'string' ||
+        !id ||
+        id === '.' ||
+        id === '..' ||
+        !Number.isSafeInteger(rank) ||
+        rank < 0
+      )
+        return Promise.resolve(failure(signal));
+      return perform(signal, async () => {
+        const raw = await client.threads.update(encodeURIComponent(id), {
+          metadata: { pinnedOrder: rank },
+          signal,
+        });
+        if (raw.thread_id !== id || raw.metadata?.['pinnedOrder'] !== rank)
+          throw new Error('Pinned order not confirmed');
+        return projectThread(raw);
+      });
+    },
     setArchived(id: string, archived: boolean, signal: AbortSignal) {
       if (id === '.' || id === '..' || typeof archived !== 'boolean')
         return Promise.resolve(failure(signal));

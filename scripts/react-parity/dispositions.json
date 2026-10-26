@@ -2169,7 +2169,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/thread-list.tsx",
-      "reason": "Private controlled semantic ThreadList selection and optional new-conversation request with retained keyed rows and installed native dogfood. Native application composes confirmed rename, pin and reversible archive/unarchive using existing slots, with separate loaded active/archived lists, stable feedback and independent pending/stale-read protection. Delete/project/reorder, custom rows and full parity remain open."
+      "reason": "Private controlled semantic ThreadList selection and optional new-conversation request with retained keyed rows and installed native dogfood. Native application composes confirmed rename, pin and reversible archive/unarchive using existing slots, with separate loaded active/archived lists, stable feedback and independent pending/stale-read protection. Application-owned pinned-first grouping and loaded-slice Move up/down compose existing slots, with exact rank-only confirmation and an explicit refresh barrier after partial failure; the primitive retains supplied order. Delete/project/drag reorder, custom rows and full parity remain open."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-timeline/chat-timeline.component.ts#ChatTimelineComponent",
@@ -15689,7 +15689,7 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Private keyed semantic selection list with original-event context requests on selection buttons and app-owned actions; supplied order/selection and row identity remain. Native composes bounded confirmed renaming, Pin/Unpin and Archive/Unarchive in action siblings, with application-owned metadata confirmation and pending/error handling; supplied order remains and native loaded active/archived partitions retain selected transcript/draft/runtime and directory-owned completion feedback. Delete/project/reorder and full parity stay open."
+      "reason": "Private keyed semantic selection list with original-event context requests on selection buttons and app-owned actions; the primitive retains supplied order, selection and row identity. Native composes bounded confirmed renaming, Pin/Unpin, Archive/Unarchive and loaded-slice Move up/down in action siblings, with application-owned pinned-first grouping, exact rank-only confirmation and an explicit refresh barrier after partial failure. Native loaded active/archived partitions retain selected transcript/draft/runtime and directory-owned completion feedback. Delete/project/drag reorder, custom rows and full parity remain open."
     },
     {
       "id": "source:libs/react/src/chat/thread-rename-form.tsx",

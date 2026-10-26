@@ -1,11 +1,8 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "6a6dde21e3e812434b11b589e7ac686d3e7c13ce",
+  "baselineHead": "7fd4fbcaf548abede293fd6dece094550d5e6c6c",
   "sourceState": {
-    "modified": [
-      "libs/langgraph/src/runtime/README.md",
-      "libs/langgraph/src/runtime/create-session.ts"
-    ],
+    "modified": [],
     "untracked": []
   },
   "scope": {
@@ -852,7 +849,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "50c83f44350ba30109eefbfb5a5a9aba4ede1a93a410d0a23cfcbb5463d112c9"
+      "sha256": "0159c82eb8630849ca2686847a8d894374d5751e1e81cdcdae7063a2a553687b"
     },
     {
       "id": "asset:libs/react/package.json",
