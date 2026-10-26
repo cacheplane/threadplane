@@ -113,9 +113,27 @@ to that row, while Tab continues from its natural order. Ordinary Actions-button
 activation retains its trigger-based behavior. The application associates each
 request with its own identity, preventing an old close callback from dismissing
 a newer request even when the conversation ID is reused. Filtering a row out
-invalidates its request. Typeahead and lifecycle/project/archive commands remain open.
+invalidates its request. Typeahead and further lifecycle/project/archive commands remain open.
 The compact sidenav rail retains selection-only rows. Clipboard access may be
 unavailable or denied by the browser; the example reports that failure locally.
+
+The full directory's Actions and row context menus also offer Rename. The
+installed controlled `ThreadRenameForm` supplies a labelled inline title editor,
+Save, Cancel, IME-safe Enter and Escape. Opening or cancelling it makes no
+backend request. The application trims nonempty changed titles and writes only
+that exact thread's `metadata.title`, with no automatic retry or implicit read.
+Success requires the returned ID and actual title to confirm the requested
+mutation; missing or mismatched evidence is reported as failure. Errors retain
+the entered title for explicit retry. Successful renames update the row and
+matching selected heading while retaining the session, draft and active response.
+
+Pending Save is reserved by target ID and disables duplicate submission.
+Cancel/Escape may close the editor while a request is pending; the reservation
+remains until settlement and the UI makes no rollback promise. Reopening that
+target reflects pending state. Late confirmation can reconcile acknowledged
+metadata, but an old editor cannot dismiss, rewrite or focus a replacement.
+Stale directory reads cannot overwrite an acknowledged title; a later explicit
+refresh remains authoritative. The compact rail remains selection-only.
 
 Native React uses the list's bounded `renderTitle` callback to highlight the first
 literal case-insensitive match for the trimmed loaded-title filter with `mark`.

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createElement } from 'react';
 import { renderToString } from 'react-dom/server';
-import { ChatSidenav, OverflowMenu, ThreadList } from '@threadplane/react/chat';
+import { ChatSidenav, OverflowMenu, ThreadList, ThreadRenameForm } from '@threadplane/react/chat';
 
 assert.equal(typeof window, 'undefined');
 assert.equal(typeof document, 'undefined');
@@ -61,3 +61,17 @@ assert.match(contextRows, /Context row/);
 assert.doesNotMatch(contextRows, /role="menu"/);
 assert.equal(requests, 0);
 console.log('Installed React sidenav SSR: default and three search modes rendered without DOM globals or requests.');
+const rename = renderToString(createElement(ThreadRenameForm, {
+  value: 'Literal <title> & details',
+  onValueChange: request,
+  onSubmit: request,
+  onCancel: request,
+  error: 'Literal <failure>',
+}));
+assert.match(rename, /<form/);
+assert.match(rename, /Literal &lt;title&gt; &amp; details/);
+assert.match(rename, /Literal &lt;failure&gt;/);
+assert.match(rename, /Save/);
+assert.match(rename, /Cancel/);
+assert.equal(requests, 0);
+console.log('Installed controlled rename editor SSR: no DOM globals or command requests.');

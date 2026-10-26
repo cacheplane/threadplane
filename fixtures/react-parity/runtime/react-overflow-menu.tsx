@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { OverflowMenu, ThreadList } from '@threadplane/react/chat';
+import { OverflowMenu, ThreadList, ThreadRenameForm } from '@threadplane/react/chat';
 import '@threadplane/react/chat/styles.css';
 
 /** Installed plain-package command fixture; no backend or session commands. */
@@ -9,6 +9,8 @@ export function OverflowMenuFixture() {
   const [refuse, setRefuse] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [expandedLabel, setExpandedLabel] = useState(false);
+  if (new URLSearchParams(window.location.search).has('rename'))
+    return <main><h1>Installed rename editor</h1><ThreadRenameFormFixture /></main>;
   return (
     <main>
       <h1>Installed overflow menu</h1>
@@ -80,6 +82,31 @@ export function OverflowMenuFixture() {
         <button>After menu</button>
       </div>
     </main>
+  );
+}
+
+function ThreadRenameFormFixture() {
+  const [value, setValue] = useState('Original title');
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState(false);
+  const [submissions, setSubmissions] = useState<string[]>([]);
+  const [cancels, setCancels] = useState(0);
+  return (
+    <section aria-label="Installed rename editor">
+      <ThreadRenameForm
+        label="Rename fixture title"
+        value={value}
+        onValueChange={setValue}
+        onSubmit={() => setSubmissions((values) => [...values, value.trim()])}
+        onCancel={() => setCancels((count) => count + 1)}
+        pending={pending}
+        error={error ? 'Rename fixture failure' : undefined}
+      />
+      <label><input type="checkbox" checked={pending} onChange={(event) => setPending(event.currentTarget.checked)} />Rename fixture pending</label>
+      <label><input type="checkbox" checked={error} onChange={(event) => setError(event.currentTarget.checked)} />Rename fixture error</label>
+      <output data-testid="rename-submissions">{JSON.stringify(submissions)}</output>
+      <output data-testid="rename-cancels">{cancels}</output>
+    </section>
   );
 }
 

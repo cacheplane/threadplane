@@ -75,6 +75,20 @@ export function createThreadDirectory(
     }
   }
   return Object.freeze({
+    rename(id: string, title: string, signal: AbortSignal) {
+      if (id === '.' || id === '..' || !title.trim())
+        return Promise.resolve(failure(signal));
+      return perform(signal, async () => {
+        const raw = await client.threads.update(encodeURIComponent(id), {
+          metadata: { title },
+          signal,
+        });
+        // Projection supplies fallbacks; only raw server evidence confirms writes.
+        if (raw.thread_id !== id || raw.metadata?.['title'] !== title)
+          throw new Error('Rename not confirmed');
+        return projectThread(raw);
+      });
+    },
     async get(id: string, signal: AbortSignal) {
       if (signal.aborted) return failure(signal);
       // URL normalizes these segments even if their dots are percent encoded.
