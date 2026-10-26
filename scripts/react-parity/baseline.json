@@ -1,12 +1,10 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "65e546f3d86e29bfaaccff6f3b71425f074bcfcf",
+  "baselineHead": "549da38f6257e6436612dc0556169b8975b491a7",
   "sourceState": {
     "modified": [
-      "libs/react/README.md",
-      "libs/react/src/chat/index.ts",
-      "libs/react/src/chat/styles.css",
-      "libs/react/src/chat/thread-rename-form.tsx"
+      "libs/langgraph/src/runtime/README.md",
+      "libs/langgraph/src/runtime/create-session.ts"
     ],
     "untracked": []
   },
@@ -758,7 +756,7 @@
       "id": "asset:libs/langgraph/src/runtime/README.md",
       "kind": "asset",
       "path": "libs/langgraph/src/runtime/README.md",
-      "sha256": "33dc8f135c4d5cde69566d44c86a1ec8c7f27c3362456003a91d966b4266f16d"
+      "sha256": "f6abe99550dceacc05fb1188fa8f0e577a38805a07c74f4161efdd2452a2b0b0"
     },
     {
       "id": "asset:libs/langgraph/test/fixtures/reloaded-subagent-thread.json",
@@ -14743,7 +14741,7 @@
       "id": "source:libs/langgraph/src/runtime/create-session.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/create-session.ts",
-      "sha256": "d7f88ebf9b76af15fd64fbe396aab53404afa01df0d6b89877ed71d2712e5c5a"
+      "sha256": "e057371ea975ebd9e49b5e203983516b8ebaa73efdbb6b345f14d1156e2b7144"
     },
     {
       "id": "source:libs/langgraph/src/runtime/function-tools.ts",
