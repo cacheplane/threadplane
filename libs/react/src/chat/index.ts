@@ -1,5 +1,14 @@
 'use client';
 export {
+  ThreadRenameForm,
+  type ThreadRenameFormProps,
+} from './thread-rename-form.js';
+export {
+  OverflowMenu,
+  type OverflowMenuProps,
+  type OverflowMenuItem,
+} from './overflow-menu.js';
+export {
   ThreadList,
   type ThreadListItem,
   type ThreadListProps,

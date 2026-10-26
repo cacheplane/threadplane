@@ -1366,3 +1366,156 @@ test('internal ledger cancellation preserves the claim without submitting a noti
   expect(result).toEqual({ outcome: 'unknown' });
   expect(resendSend).not.toHaveBeenCalled();
 });
+
+for (const kind of ['notify', 'digest'] as const) {
+  for (const [name, invalid, expected] of [
+    [
+      'unverified sender',
+      { RESEND_SENDER_VERIFIED: 'false' },
+      /verified.*sender/iu,
+    ],
+    [
+      'tracking enabled',
+      { RESEND_TRACKING_DISABLED: 'false' },
+      /verified.*sender/iu,
+    ],
+    ['missing credential', { RESEND_API_KEY: '' }, /RESEND_API_KEY/u],
+    ['invalid founder', { FOUNDER_NOTIFICATION_EMAIL: 'invalid' }, /email/iu],
+    [
+      'founder outside allowlist',
+      { FOUNDER_NOTIFICATION_EMAIL: 'other@example.com' },
+      /founder.*allowlist/iu,
+    ],
+    [
+      'mismatched environment',
+      { GROWTH_DATABASE_ENVIRONMENT: 'preview' },
+      /environment.*match/iu,
+    ],
+    [
+      'invalid origin',
+      { GROWTH_PUBLIC_ACTION_ORIGIN: 'http://website.test' },
+      /public action origin/iu,
+    ],
+    [
+      'missing token key',
+      { GROWTH_ACTION_TOKEN_ACTIVE_SECRET: '' },
+      /GROWTH_ACTION_TOKEN_ACTIVE_SECRET/u,
+    ],
+  ] as const) {
+    test(`${kind} rejects ${name} before claiming and can submit after correction`, async () => {
+      const environment = {
+        DELIVERY_ENABLED: 'true',
+        DELIVERY_ENVIRONMENT: 'test',
+        GROWTH_DATABASE_ENVIRONMENT: 'test',
+        RESEND_API_KEY: 'test-key',
+        RESEND_SENDER_VERIFIED: 'true',
+        RESEND_TRACKING_DISABLED: 'true',
+        RESEND_NON_PRODUCTION_ALLOWLIST: 'founder@threadplane.ai',
+        FOUNDER_NOTIFICATION_EMAIL: 'founder@threadplane.ai',
+        GROWTH_PUBLIC_ACTION_ORIGIN: 'https://website.test',
+        GROWTH_ACTION_TOKEN_ACTIVE_VERSION: '1',
+        GROWTH_ACTION_TOKEN_ACTIVE_SECRET: TOKEN_KEY.secret,
+      };
+      let payloadDigest = '';
+      const executor = {
+        execute: vi.fn(async (query: string, parameters: unknown[]) => {
+          if (query.includes('claim-internal-notification-submission'))
+            return { rows: [{ event_key: 'claimed' }] };
+          if (query.includes('provider-attempt-insert')) {
+            payloadDigest = parameters[2] as string;
+            return { rows: [] };
+          }
+          if (query.includes('provider-attempt-lock'))
+            return {
+              rows: [
+                {
+                  first_attempted_at: new Date(),
+                  payload_sha256: payloadDigest,
+                  provider_email_id: null,
+                },
+              ],
+            };
+          if (query.includes('provider-attempt-complete'))
+            return { rows: [{ idempotency_key: parameters[0] }] };
+          throw new Error('Unexpected notification SQL');
+        }),
+        transaction: async (operation: (tx: unknown) => unknown) =>
+          operation(executor),
+      } as unknown as SqlExecutor;
+      const createDependencies = (
+        values: Record<string, string>
+      ): LifecycleJobDependencies => {
+        const configured = createDefaultLifecycleJobDependencies(values);
+        return {
+          ...dependencies(),
+          get recipientPolicy() {
+            return configured.recipientPolicy;
+          },
+          get founderNotificationEmail() {
+            return configured.founderNotificationEmail;
+          },
+          get tokenKey() {
+            return configured.tokenKey;
+          },
+          get publicActionOrigin() {
+            return configured.publicActionOrigin;
+          },
+          claimInternalNotification: configured.claimInternalNotification,
+          sendInternalNotification: configured.sendInternalNotification,
+        };
+      };
+      const invalidDependencies = createDependencies({
+        ...environment,
+        ...invalid,
+      });
+      const queued =
+        kind === 'notify'
+          ? job('notify')
+          : {
+              ...job('digest', {
+                business_date: '2026-09-16',
+                digest_kind: 'install_identities',
+              }),
+              contactId: null,
+            };
+      resendSend.mockReset();
+      resendSend.mockResolvedValue({
+        data: { id: 'provider-internal-1' },
+        error: null,
+      });
+
+      const refused = dispatchLifecycleAppOwnedJob(
+        executor,
+        queued,
+        {},
+        invalidDependencies
+      );
+
+      await expect(refused).rejects.toThrow(expected);
+      expect(executor.execute).not.toHaveBeenCalled();
+      expect(resendSend).not.toHaveBeenCalled();
+      expect(
+        invalidDependencies.markInternalNotificationUnknown
+      ).not.toHaveBeenCalled();
+
+      const corrected = createDependencies(environment);
+      const result = await dispatchLifecycleAppOwnedJob(
+        executor,
+        queued,
+        {},
+        corrected
+      );
+
+      expect(result).toBe('completed');
+      const claims = vi
+        .mocked(executor.execute)
+        .mock.calls.filter(([sql]) =>
+          sql.includes('claim-internal-notification-submission')
+        );
+      expect(claims).toHaveLength(1);
+      expect(claims[0]?.[1]).toEqual([queued.id, LEASE_TOKEN, NOW, kind]);
+      expect(resendSend).toHaveBeenCalledTimes(1);
+      expect(corrected.markInternalNotificationUnknown).not.toHaveBeenCalled();
+    });
+  }
+}

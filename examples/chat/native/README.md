@@ -92,6 +92,78 @@ The list issues no commands on mount or rerender. Retained rows keep their butto
 the existing deliberate composer reset still applies when selecting another
 conversation. Other thread lifecycle actions and full T29 parity remain open.
 
+The full React directory also uses `renderActions` to place an application-owned
+controlled `OverflowMenu` beside each selection button. Its full Actions label
+identifies the row; opening it exposes the full Copy conversation ID item. Explicit
+item activation copies the exact row ID through that item's document clipboard, with pending,
+success and failure feedback, both visible and announced, and retry after failure.
+Copying does not select a conversation or issue backend commands, and retains the
+draft and active response.
+Pending disables only the copy item. The Actions trigger remains focusable and
+accepted selection closure returns focus before the clipboard promise settles;
+reopening shows a disabled pending item. Arrow/Home/End navigation, native
+Enter/Space, Escape before drawer dismissal, Tab/Shift+Tab and outside dismissal
+belong to the private menu. The app owns open state, clipboard execution and all
+feedback. Portals retain local theme/font/direction and suppress unavailable
+anchors during retained navigation collapse or drawer closure.
+Right-clicking a full-directory selection row opens the same command at the
+pointer; the Context Menu key and Shift+F10 open it from the focused row. Opening
+does not select, copy, or fetch. Escape and accepted command closure return focus
+to that row, while Tab continues from its natural order. Ordinary Actions-button
+activation retains its trigger-based behavior. The application associates each
+request with its own identity, preventing an old close callback from dismissing
+a newer request even when the conversation ID is reused. Filtering a row out
+invalidates its request. Typeahead and further lifecycle/project/archive commands remain open.
+The compact sidenav rail retains selection-only rows. Clipboard access may be
+unavailable or denied by the browser; the example reports that failure locally.
+
+The full directory's Actions and row context menus also offer Rename. The
+installed controlled `ThreadRenameForm` supplies a labelled inline title editor,
+Save, Cancel, IME-safe Enter and Escape. Opening or cancelling it makes no
+backend request. The application trims nonempty changed titles and writes only
+that exact thread's `metadata.title`, with no automatic retry or implicit read.
+Success requires the returned ID and actual title to confirm the requested
+mutation; missing or mismatched evidence is reported as failure. Errors retain
+the entered title for explicit retry. Successful renames update the row and
+matching selected heading while retaining the session, draft and active response.
+
+Pending Save is reserved by target ID and disables duplicate submission.
+Cancel/Escape may close the editor while a request is pending; the reservation
+remains until settlement and the UI makes no rollback promise. Reopening that
+target reflects pending state. Late confirmation can reconcile acknowledged
+metadata, but an old editor cannot dismiss, rewrite or focus a replacement.
+Stale directory reads cannot overwrite an acknowledged title; a later explicit
+refresh remains authoritative. The compact rail remains selection-only.
+
+Native React uses the list's bounded `renderTitle` callback to highlight the first
+literal case-insensitive match for the trimmed loaded-title filter with `mark`.
+Blank queries and absent matches preserve the plain original title (or full ID).
+Source text and React escaping remain intact, including Unicode case expansions.
+The callback supplies noninteractive phrasing content only; the original full
+label and timestamp description remain accessible. The library honors `null` and
+`false` output without fallback. Broader row templates, lifecycle, project,
+search and history surfaces remain open; this is no public release or full T29 claim.
+
+The shared directory projection copies only `metadata.pinned === true` into an
+optional readonly boolean `pinned: true`; false, missing and invalid values are
+omitted. React forwards rows directly and presents a decorative current-color pin
+plus an accessible “Pinned conversation” description before relative time. The
+original name, tooltip and supplied order remain intact, including highlighting
+and pin toggles on Refresh. The controlled ThreadList preserves supplied order;
+the application owns mutation. Native full-directory Actions and row context
+menus offer Pin for unpinned rows and Unpin for strict `true`, with visible and
+announced pending, success and failure feedback. Explicit activation writes only
+`metadata.pinned`, with no automatic retry or implicit refresh. Success requires
+the exact returned ID and raw boolean, including explicit `false` for unpin.
+Failed or unconfirmed requests retain prior state and permit explicit retry.
+Only the pending pin item is disabled; Copy, Rename and selection remain usable.
+Confirmed pin state updates the shared full and compact row presentations without
+sorting, session replacement, navigation, draft loss or interruption of a response.
+Independent title/pin reconciliation preserves concurrent renames and newer
+authoritative reads, including delayed list, lookup and history responses.
+Broader ordering/reorder actions and row templates remain future work. Angular
+also receives this optional metadata through the shared projection.
+
 The shared directory projection copies valid backend `updated_at` strings into
 immutable optional epoch-millisecond `updatedAt` fields. Native React passes these
 rows directly to the installed list, which renders relative time and an exact ISO
@@ -468,13 +540,35 @@ composer DOM and unsent draft, and send no conversation commands. An active
 response continues through these navigation changes. Selecting a different
 conversation retains the existing deliberate composer draft reset.
 
+Desktop navigation opts into Ctrl+B or Command+B to request expanded/collapsed
+mode. The toggle exposes the shortcut through `aria-keyshortcuts` and its action
+tooltip. Filter, composer and other editable fields keep their normal keyboard
+behavior; drawer mode, composition, repeats, Alt/Shift-modified chords and
+already handled events leave the chord unclaimed. The shortcut retains the same
+draft, directory and active response and sends no conversation command.
+
+Search loaded conversations and the opt-in Ctrl+K / Command+K shortcut reveal
+the existing directory and focus its loaded-title filter. Desktop search expands
+the rail; drawer search opens navigation while preserving the remembered desktop
+mode. Normal launcher activation still focuses Close. Repeated explicit search
+requests can refocus the filter; streaming and unrelated renders do not. Filter
+text, composer draft, selected conversation and active response remain owned by
+the same application, with no new requests or backend search. Editable fields and
+already handled or excluded chords retain their normal keyboard behavior.
+
 The drawer launcher, Close, scoped Escape and backdrop activation request controlled changes; focus
 moves only after accepted visibility/mode changes. Hidden directory content is
 inert, and Tab can reach the surrounding page. Focus returns to the launcher when a focused backdrop is dismissed,
 or to the desktop toggle when a breakpoint removes it; an already focused page
 control retains focus. The backdrop covers page pointer targets while open.
-This bounded children-based
-navigation does not implement Angular project/archive menus, global shortcuts,
+The compact rail composes a second `ThreadList` from the same filtered rows,
+active ID and application selection callback. It shows the uppercase first Unicode
+code point of the trimmed title (or ID), with `?` for empty content, while keeping
+full accessible names, tooltips and pin/time descriptions. It has no extra New,
+filter or Refresh controls. The full directory remains mounted; compact rows
+remain mounted and hidden/inert when expanded or in either drawer state.
+This bounded composed
+navigation does not implement Angular project/archive menus, backend search, search dialogs or other global shortcuts,
 debug ownership or full T30 parity. Popup and sidebar remain separate
 presentations.
 

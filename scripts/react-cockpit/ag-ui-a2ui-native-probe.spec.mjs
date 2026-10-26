@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
   parseProofArguments,
@@ -17,6 +19,25 @@ const args = [
   '--tmpdir',
   '/private/tmp/proof-tmp',
 ];
+test('installed proof pins match the canonical graph and release lockfile', () => {
+  const source = readFileSync(
+    new URL('./ag-ui-a2ui-native-probe.mjs', import.meta.url),
+    'utf8'
+  );
+  for (const [binding, path] of [
+    ['graphHash', '../../cockpit/ag-ui/a2ui/python/src/graph.py'],
+    ['lockHash', '../../package-lock.json'],
+  ]) {
+    const literals = [...source.matchAll(
+      new RegExp(`\\b${binding}\\s*=\\s*'([a-f0-9]{64})'`, 'g')
+    )];
+    assert.equal(literals.length, 1, `One fixed ${binding} literal required`);
+    const actual = createHash('sha256')
+      .update(readFileSync(new URL(path, import.meta.url)))
+      .digest('hex');
+    assert.equal(literals[0][1], actual, `${binding} must match its reviewed input`);
+  }
+});
 test('proof preparation rejects extra options and relative paths before any installation', async () => {
   const valid = parseProofArguments(args);
   await assert.rejects(

@@ -17,9 +17,13 @@ const narrowQuery = '(max-width: 700px)';
 export function NativeNavigation({
   selectedId,
   children,
+  collapsedContent,
+  onSearch,
 }: {
   selectedId: string | null;
   children: ReactNode;
+  collapsedContent?: ReactNode;
+  onSearch?: () => void;
 }) {
   const [desktopMode, setDesktopMode] =
     useState<Exclude<ChatSidenavMode, 'drawer'>>('expanded');
@@ -27,6 +31,8 @@ export function NativeNavigation({
     () => window.matchMedia(narrowQuery).matches
   );
   const [open, setOpen] = useState(false);
+  const [searchRequest, setSearchRequest] = useState(0);
+  const pendingSearch = useRef(false);
   const root = useRef<HTMLDivElement>(null);
   const scrimFocused = useRef(false);
   const scrimOpen = narrow && open;
@@ -43,6 +49,17 @@ export function NativeNavigation({
   }, []);
 
   useEffect(() => setOpen(false), [selectedId]);
+
+  useLayoutEffect(() => {
+    if (!onSearch) {
+      pendingSearch.current = false;
+      return;
+    }
+    if (!pendingSearch.current || (narrow ? !open : desktopMode !== 'expanded'))
+      return;
+    pendingSearch.current = false;
+    onSearch();
+  }, [searchRequest, onSearch, narrow, open, desktopMode]);
 
   useLayoutEffect(() => {
     if (scrimOpen || !scrimFocused.current) return;
@@ -75,11 +92,25 @@ export function NativeNavigation({
     >
       <ChatSidenavScrim open={scrimOpen} onDismiss={() => setOpen(false)} />
       <ChatSidenav
+        toggleShortcut
         mode={narrow ? 'drawer' : desktopMode}
         open={open}
         onOpenChange={setOpen}
         onModeChange={setDesktopMode}
         className="native-conversation-sidenav"
+        collapsedContent={collapsedContent}
+        onSearch={
+          onSearch
+            ? () => {
+                pendingSearch.current = true;
+                if (narrow) setOpen(true);
+                else setDesktopMode('expanded');
+                setSearchRequest((request) => request + 1);
+              }
+            : undefined
+        }
+        searchLabel="Search loaded conversations"
+        searchShortcut
       >
         {children}
       </ChatSidenav>

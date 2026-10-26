@@ -13,15 +13,18 @@ test('plain declaration proof checks navigation, sidebar and thread-list type-on
   const react = join(consumer, 'node_modules/react');
   mkdirSync(react, { recursive: true });
   writeFileSync(join(react, 'package.json'), JSON.stringify({ name: 'react', type: 'module', exports: { '.': { types: './index.d.ts' } } }));
-  writeFileSync(join(react, 'index.d.ts'), 'export type ReactNode = string | number | boolean | null | undefined | readonly ReactNode[];');
+  writeFileSync(join(react, 'index.d.ts'), 'export interface MouseEvent<T> { readonly currentTarget: T; readonly clientX: number; } export interface KeyboardEvent<T> { readonly currentTarget: T; readonly key: string; } export type ReactNode = string | number | boolean | null | undefined | readonly ReactNode[];');
   writeFileSync(join(directory, 'package.json'), JSON.stringify({ name: '@threadplane/react', type: 'module', exports: { './chat': { types: './chat.d.ts' } } }));
   writeFileSync(join(consumer, 'package.json'), '{"type":"module"}');
-  const declaration = `export type ChatSidenavMode = 'expanded' | 'collapsed' | 'drawer';
-export interface ChatSidenavProps { readonly mode: ChatSidenavMode; readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly onModeChange: (mode: Exclude<ChatSidenavMode, 'drawer'>) => void; }
+  const declaration = `export interface ThreadRenameFormProps { readonly value: string; readonly onValueChange: (value: string) => void; readonly onSubmit: () => void; readonly onCancel: () => void; readonly pending?: boolean; readonly error?: string; readonly label?: string; readonly className?: string; }
+export interface OverflowMenuItem { readonly id: string; readonly label: string; readonly disabled?: boolean; readonly tone?: 'normal' | 'destructive'; }
+export interface OverflowMenuProps { readonly items: readonly OverflowMenuItem[]; readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly onSelect: (itemId: string, event: import('react').MouseEvent<HTMLButtonElement>) => void; readonly label: string; readonly className?: string; readonly disabled?: boolean; readonly anchorPoint?: { readonly x: number; readonly y: number } | null; readonly returnFocusTo?: HTMLElement | null; }
+export type ChatSidenavMode = 'expanded' | 'collapsed' | 'drawer';
+export interface ChatSidenavProps { readonly onSearch?: () => void; readonly searchLabel?: string; readonly searchShortcut?: boolean; readonly toggleShortcut?: boolean; readonly collapsedContent?: import('react').ReactNode; readonly mode: ChatSidenavMode; readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly onModeChange: (mode: Exclude<ChatSidenavMode, 'drawer'>) => void; }
 export interface ChatSidenavScrimProps { readonly open: boolean; readonly onDismiss: () => void; readonly label?: string; readonly className?: string; }
 export interface ChatSidebarProps { readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly title: string; readonly pageContent?: import('react').ReactNode; readonly pushContent?: boolean; }
-export interface ThreadListItem { readonly id: string; readonly title?: string; readonly updatedAt?: number; }
-export interface ThreadListProps { readonly threads: readonly ThreadListItem[]; readonly onSelect: (threadId: string) => void; readonly activeThreadId?: string | null; readonly label?: string; readonly className?: string; readonly onNewThread?: () => void; readonly newThreadDisabled?: boolean; readonly newThreadLabel?: string; readonly now?: number; }`;
+export interface ThreadListItem { readonly id: string; readonly title?: string; readonly updatedAt?: number; readonly pinned?: boolean; }
+export interface ThreadListProps { readonly threads: readonly ThreadListItem[]; readonly onSelect: (threadId: string) => void; readonly activeThreadId?: string | null; readonly label?: string; readonly className?: string; readonly onNewThread?: () => void; readonly newThreadDisabled?: boolean; readonly newThreadLabel?: string; readonly now?: number; readonly renderTitle?: (thread: ThreadListItem) => import('react').ReactNode; readonly renderActions?: (thread: ThreadListItem) => import('react').ReactNode; readonly onContextMenu?: (threadId: string, event: import('react').MouseEvent<HTMLButtonElement> | import('react').KeyboardEvent<HTMLButtonElement>) => void; }`;
   const source = join(consumer, 'index.ts');
   writeFileSync(source, packageVerifier.plainExportTypes(['@threadplane/react/chat']));
   const compile = text => {
@@ -30,11 +33,92 @@ export interface ThreadListProps { readonly threads: readonly ThreadListItem[]; 
     return ts.getPreEmitDiagnostics(program).map(error => ts.flattenDiagnosticMessageText(error.messageText, '\n')).join('\n');
   };
   assert.equal(compile(declaration), '');
+  assert.match(compile(declaration.replaceAll('ThreadRenameFormProps', 'MissingRenameFormProps')), /ThreadRenameFormProps/);
+  const renameEnd = declaration.indexOf('export interface OverflowMenuItem');
+  for (const [before, after] of [
+    ['readonly value: string;', 'readonly value?: string;'],
+    ['readonly value: string;', 'value: string;'],
+    ['readonly onValueChange: (value: string) => void;', 'readonly onValueChange: (value: number) => void;'],
+    ['readonly onSubmit: () => void;', 'readonly onSubmit?: () => void;'],
+    ['readonly onCancel: () => void;', 'readonly onCancel: (reason: string) => void;'],
+    ['readonly pending?: boolean;', 'readonly pending: boolean;'],
+    ['readonly error?: string;', 'readonly error?: Error;'],
+    ['readonly label?: string;', 'label?: string;'],
+    ['readonly className?: string;', ''],
+  ]) {
+    const mutated = declaration.slice(0, renameEnd).replace(before, after) + declaration.slice(renameEnd);
+    assert.match(compile(mutated), /ThreadRenameForm|false.*true/, `${before} → ${after}`);
+  }
+  for (const [before, after] of [
+    ['OverflowMenuItem', 'MissingMenuItem'],
+    ['OverflowMenuProps', 'MissingMenuProps'],
+    ['readonly items: readonly OverflowMenuItem[]', 'readonly items?: readonly OverflowMenuItem[]'],
+    ['readonly items: readonly OverflowMenuItem[]', 'items: readonly OverflowMenuItem[]'],
+    ['readonly items: readonly OverflowMenuItem[]', 'readonly items: OverflowMenuItem[]'],
+    ['readonly open: boolean', 'readonly open?: boolean'],
+    ['readonly onOpenChange: (open: boolean) => void', 'readonly onOpenChange: (open: string) => void'],
+    ["readonly onSelect: (itemId: string, event: import('react').MouseEvent<HTMLButtonElement>) => void", 'readonly onSelect: (itemId: string) => void'],
+    ['MouseEvent<HTMLButtonElement>', 'MouseEvent<HTMLDivElement>'],
+    ["readonly tone?: 'normal' | 'destructive'", "readonly tone?: 'normal' | 'danger'"],
+    ['readonly label: string', 'label: string'],
+    ['readonly label: string', 'readonly label?: string'],
+    ['readonly disabled?: boolean', 'readonly disabled: boolean'],
+  ]) assert.match(compile(declaration.replace(before, after)), /OverflowMenu|false.*true/, `${before} → ${after}`);
+  const mutateInterface = (name, before, after) => {
+    const start = declaration.indexOf(`export interface ${name} {`);
+    const next = declaration.indexOf('\nexport ', start);
+    const end = next < 0 ? declaration.length : next;
+    assert.ok(declaration.slice(start, end).includes(before), `mutation target ${name}: ${before}`);
+    return declaration.slice(0, start) + declaration.slice(start, end).replace(before, after) + declaration.slice(end);
+  };
+  for (const [name, before, alternatives] of [
+    ['OverflowMenuProps', 'readonly anchorPoint?: { readonly x: number; readonly y: number } | null;', [
+      '', 'anchorPoint?: { readonly x: number; readonly y: number } | null;',
+      'readonly anchorPoint: { readonly x: number; readonly y: number } | null;',
+      'readonly anchorPoint?: { x: number; readonly y: number } | null;',
+      'readonly anchorPoint?: { readonly x: number; y: number } | null;',
+      'readonly anchorPoint?: { readonly x: string; readonly y: number } | null;',
+      'readonly anchorPoint?: { readonly x: number; readonly y: string } | null;',
+      'readonly anchorPoint?: { readonly x: number; readonly y: number };',
+    ]],
+    ['OverflowMenuProps', 'readonly returnFocusTo?: HTMLElement | null;', [
+      '', 'returnFocusTo?: HTMLElement | null;', 'readonly returnFocusTo: HTMLElement | null;',
+      'readonly returnFocusTo?: HTMLButtonElement | null;', 'readonly returnFocusTo?: Element | null;',
+      'readonly returnFocusTo?: HTMLElement;',
+    ]],
+    ['ThreadListProps', "readonly onContextMenu?: (threadId: string, event: import('react').MouseEvent<HTMLButtonElement> | import('react').KeyboardEvent<HTMLButtonElement>) => void;", [
+      '', "onContextMenu?: (threadId: string, event: import('react').MouseEvent<HTMLButtonElement> | import('react').KeyboardEvent<HTMLButtonElement>) => void;",
+      "readonly onContextMenu: (threadId: string, event: import('react').MouseEvent<HTMLButtonElement> | import('react').KeyboardEvent<HTMLButtonElement>) => void;",
+      "readonly onContextMenu?: (threadId: string, event: import('react').MouseEvent<HTMLButtonElement>) => void;",
+      "readonly onContextMenu?: (threadId: string, event: import('react').KeyboardEvent<HTMLButtonElement>) => void;",
+      "readonly onContextMenu?: (threadId: number, event: import('react').MouseEvent<HTMLButtonElement> | import('react').KeyboardEvent<HTMLButtonElement>) => void;",
+      "readonly onContextMenu?: (threadId: string, event: import('react').MouseEvent<HTMLDivElement> | import('react').KeyboardEvent<HTMLDivElement>) => void;",
+    ]],
+  ]) {
+    for (const after of alternatives) assert.match(compile(mutateInterface(name, before, after)), /false.*true|onContextMenu/, `${name}: ${before} → ${after}`);
+  }
   assert.match(compile(declaration.replaceAll('ChatSidenavMode', 'HiddenMode')), /ChatSidenavMode/);
   assert.match(compile(declaration.replaceAll('ChatSidenavProps', 'HiddenProps')), /ChatSidenavProps/);
-  assert.match(compile(declaration.replace('readonly open: boolean', 'readonly open?: boolean')), /false.*true/);
+  const sidenav = declaration.indexOf('export interface ChatSidenavProps');
+  const mutateSidenav = (before, after) => declaration.slice(0, sidenav) + declaration.slice(sidenav).replace(before, after);
+  assert.match(compile(mutateSidenav('readonly open: boolean', 'readonly open?: boolean')), /false.*true/);
   assert.match(compile(declaration.replace("Exclude<ChatSidenavMode, 'drawer'>", 'ChatSidenavMode')), /false.*true/);
   assert.match(compile(declaration.replace('ChatSidenavScrimProps', 'HiddenScrimProps')), /ChatSidenavScrimProps/);
+  for (const replacement of ['', "collapsedContent?: import('react').ReactNode;", "readonly collapsedContent: import('react').ReactNode;", 'readonly collapsedContent?: string;']) {
+    assert.match(compile(declaration.replace("readonly collapsedContent?: import('react').ReactNode;", replacement)), /collapsedContent|false.*true/);
+  }
+  for (const replacement of ['', 'toggleShortcut?: boolean;', 'readonly toggleShortcut: boolean;', 'readonly toggleShortcut?: string;']) {
+    assert.match(compile(declaration.replace('readonly toggleShortcut?: boolean;', replacement)), /toggleShortcut|false.*true/);
+  }
+  for (const [before, replacements] of [
+    ['readonly onSearch?: () => void;', ['', 'onSearch?: () => void;', 'readonly onSearch: () => void;', 'readonly onSearch?: (query: string) => void;', 'readonly onSearch?: () => unknown;']],
+    ['readonly searchLabel?: string;', ['', 'searchLabel?: string;', 'readonly searchLabel: string;', 'readonly searchLabel?: number;']],
+    ['readonly searchShortcut?: boolean;', ['', 'searchShortcut?: boolean;', 'readonly searchShortcut: boolean;', 'readonly searchShortcut?: string;']],
+  ]) {
+    for (const replacement of replacements) {
+      assert.match(compile(declaration.replace(before, replacement)), /onSearch|searchLabel|searchShortcut|false.*true/);
+    }
+  }
   const scrim = declaration.indexOf('export interface ChatSidenavScrimProps');
   const mutateScrim = (before, after) => declaration.slice(0, scrim) + declaration.slice(scrim).replace(before, after);
   for (const [before, after] of [
@@ -64,12 +148,24 @@ export interface ThreadListProps { readonly threads: readonly ThreadListItem[]; 
   assert.match(compile(declaration.replace('ThreadListProps', 'HiddenThreadListProps')), /ThreadListProps/);
   const threadList = declaration.indexOf('export interface ThreadListItem');
   const mutateThreadList = (before, after) => declaration.slice(0, threadList) + declaration.slice(threadList).replace(before, after);
+  for (const replacement of ['', "renderActions?: (thread: ThreadListItem) => import('react').ReactNode;", "readonly renderActions: (thread: ThreadListItem) => import('react').ReactNode;", "readonly renderActions?: (thread: string) => import('react').ReactNode;", "readonly renderActions?: (thread: ThreadListItem) => string;"]) {
+    assert.match(compile(mutateThreadList("readonly renderActions?: (thread: ThreadListItem) => import('react').ReactNode;", replacement)), /renderActions|false.*true/);
+  }
   for (const [before, after] of [
+    ['readonly pinned?: boolean;', ''],
+    ['readonly pinned?: boolean', 'readonly pinned: boolean'],
+    ['readonly pinned?: boolean', 'pinned?: boolean'],
+    ['readonly pinned?: boolean', 'readonly pinned?: string'],
     ['readonly id: string', 'readonly id?: string'],
     ['readonly updatedAt?: number;', ''],
     ['readonly updatedAt?: number', 'readonly updatedAt: number'],
     ['readonly updatedAt?: number', 'readonly updatedAt?: string'],
     ['readonly updatedAt?: number', 'updatedAt?: number'],
+    ["readonly renderTitle?: (thread: ThreadListItem) => import('react').ReactNode;", ''],
+    ['readonly renderTitle?:', 'readonly renderTitle:'],
+    ['readonly renderTitle?:', 'renderTitle?:'],
+    ["readonly renderTitle?: (thread: ThreadListItem)", "readonly renderTitle?: (thread: string)"],
+    ["=> import('react').ReactNode", '=> string'],
     ['readonly now?: number;', ''],
     ['readonly now?: number', 'readonly now: number'],
     ['readonly now?: number', 'readonly now?: string'],
@@ -250,12 +346,14 @@ test('installed native contracts reject the former empty scaffold exports', () =
   assert.throws(() => packageVerifier.assertSupportedExports('core', {}), /completeDelivery/);
   assert.throws(() => packageVerifier.assertSupportedExports('react', {}), /useAgent/);
   assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react', { useAgent: () => undefined }));
+  assert.throws(() => packageVerifier.assertSupportedExports('react', { useAgent: () => undefined, OverflowMenu: () => undefined }), /unexpected/);
 });
 
 function fixture(t, change = {}) {
   const directory = mkdtempSync(join(tmpdir(), 'threadplane-package-'));
   t.after(() => rmSync(directory, { recursive: true, force: true }));
   const manifest = { name: '@threadplane/react', private: true, type: 'module', license: 'MIT', exports: { '.': { types: './src/index.d.ts', import: './src/index.js', default: './src/index.js' }, './markdown': reactMarkdown }, ...change.manifest };
+  if (manifest.name === '@threadplane/react' && !Object.hasOwn(change.manifest ?? {}, 'peerDependencies')) manifest.peerDependencies = { 'react-dom': '^19.2.4' };
   // Keep unrelated export mutations valid now that Markdown is mandatory.
   if (manifest.name === '@threadplane/react' && !change.omitMarkdown) manifest.exports = { './markdown': reactMarkdown, ...manifest.exports };
   if (manifest.name === '@threadplane/react' && !change.omitDebug) manifest.exports = { './debug': reactDebug, './debug/styles.css': './src/debug/styles.css', ...manifest.exports };
@@ -264,6 +362,14 @@ function fixture(t, change = {}) {
   return directory;
 }
 test('accepts private ESM exports with declarations and client directive', (t) => assert.deepEqual(validatePackage(fixture(t)), []));
+for (const [peer, meta] of [[undefined, undefined], ['*', undefined], ['^18.0.0', undefined], ['^19.2.4', { 'react-dom': { optional: true } }]]) {
+  test(`React requires compatible nonoptional react-dom peer ${peer} ${JSON.stringify(meta)}`, (t) => {
+    assert.ok(validatePackage(fixture(t, { manifest: { peerDependencies: peer ? { 'react-dom': peer } : {}, peerDependenciesMeta: meta } })).some(error => /react-dom peer/.test(error)));
+  });
+}
+test('headless root rejects direct react-dom imports on either separator style', () => {
+  for (const path of ['node_modules/react-dom/index.js', 'node_modules\\react-dom\\client.js']) assert.throws(() => packageVerifier.assertHeadlessInputs({ [path]: {} }), /DOM/);
+});
 test('private core rejects CommonJS executable exports', (t) => {
   const directory = fixture(t, { manifest: { name: '@threadplane/core', exports: { '.': { types: './src/index.d.ts', import: './src/index.cjs', default: './src/index.cjs' } } }, files: { 'src/index.cjs': 'module.exports = {};' } });
   assert.ok(validatePackage(directory).some((error) => error.includes('runtime must resolve to JavaScript')));
@@ -305,7 +411,7 @@ for (const [name, entry, files] of [
 });
 test('React chat requires its real supported export', () => {
   const component = () => undefined;
-  const supported = { ApprovalCard: component, Chat: component, ChatPopup: component, ChatSidebar: component, ChatSidenav: component, ChatSidenavScrim: component, ChatInput: component, Citations: component, MessageList: component, MessageActions: component, Reasoning: component, TextTranscript: component, ToolObservation: component, ThreadList: component };
+  const supported = { OverflowMenu: component, ApprovalCard: component, Chat: component, ChatPopup: component, ChatSidebar: component, ChatSidenav: component, ChatSidenavScrim: component, ChatInput: component, Citations: component, MessageList: component, MessageActions: component, Reasoning: component, TextTranscript: component, ToolObservation: component, ThreadList: component, ThreadRenameForm: component };
   assert.throws(() => packageVerifier.assertSupportedExports('react/chat', {}), /ApprovalCard/);
   for (const name of Object.keys(supported)) {
     const { [name]: _omitted, ...rest } = supported;

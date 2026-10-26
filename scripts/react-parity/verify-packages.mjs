@@ -52,6 +52,7 @@ export function validatePackage(directory, { angularTransitions = angularTransit
   const errors = [];
   const manifest = JSON.parse(readFileSync(join(directory, 'package.json'), 'utf8'));
   const project = manifest.name?.replace(/^@threadplane\//, '');
+  if (project === 'react' && (manifest.peerDependencies?.['react-dom'] !== '^19.2.4' || manifest.peerDependenciesMeta?.['react-dom']?.optional === true)) errors.push('React requires compatible nonoptional react-dom peer ^19.2.4.');
   const scaffold = privateScaffoldProjects.includes(project);
   errors.push(...manifestViolations(project, manifest, { angularTransitions, telemetryBrowserTransition }));
   if (scaffold && manifest.private !== true) errors.push('Foundation package must remain private.');
@@ -210,6 +211,8 @@ export function assertDebugFreeInputs(inputs) {
 export function assertHeadlessInputs(inputs) {
   assertDebugFreeInputs(inputs);
   assertParserFreeInputs(inputs);
+  const dom = Object.keys(inputs).filter(path => /(?:^|\/)node_modules\/react-dom(?:\/|$)/.test(path.replaceAll('\\', '/')));
+  if (dom.length) throw new Error(`Headless framework root includes DOM inputs: ${dom.join(', ')}`);
   const render = Object.keys(inputs).filter((path) => /(?:@threadplane\/react\/src\/render\/|node_modules\/@json-render\/)/.test(path.replaceAll('\\', '/')));
   if (render.length) throw new Error(`Headless framework root includes render feature: ${render.join(', ')}`);
   const chat = Object.keys(inputs).filter((path) => /@threadplane\/(?:react\/src\/chat\/|angular\/fesm2022\/threadplane-angular-chat\.mjs)/.test(path.replaceAll('\\', '/')));
@@ -222,16 +225,26 @@ export function plainExportTypes(specifiers) {
   const namespaces = specifiers.map((specifier, index) => `import * as entry${index} from ${JSON.stringify(specifier)};\nexport type Entry${index} = typeof entry${index};`).join('\n');
   if (!specifiers.includes('@threadplane/react/chat')) return namespaces;
   return `${namespaces}
-import type { ChatSidebarProps, ChatSidenavMode, ChatSidenavProps, ChatSidenavScrimProps, ThreadListItem, ThreadListProps } from '@threadplane/react/chat';
-import type { ReactNode } from 'react';
+import type { ChatSidebarProps, ChatSidenavMode, ChatSidenavProps, ChatSidenavScrimProps, ThreadListItem, ThreadListProps, ThreadRenameFormProps, OverflowMenuItem, OverflowMenuProps } from '@threadplane/react/chat';
+import type { ReactNode, MouseEvent, KeyboardEvent } from 'react';
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
 type Assert<T extends true> = T;
-export type ThreadListItemContract = Assert<Equal<ThreadListItem, { readonly id: string; readonly title?: string; readonly updatedAt?: number }>>;
+export type ThreadRenameFormContract = Assert<Equal<ThreadRenameFormProps, { readonly value: string; readonly onValueChange: (value: string) => void; readonly onSubmit: () => void; readonly onCancel: () => void; readonly pending?: boolean; readonly error?: string; readonly label?: string; readonly className?: string }>>;
+export type OverflowMenuItemContract = Assert<Equal<OverflowMenuItem, { readonly id: string; readonly label: string; readonly disabled?: boolean; readonly tone?: 'normal' | 'destructive' }>>;
+export type OverflowMenuPropsContract = Assert<Equal<OverflowMenuProps, { readonly items: readonly OverflowMenuItem[]; readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly onSelect: (itemId: string, event: MouseEvent<HTMLButtonElement>) => void; readonly label: string; readonly className?: string; readonly disabled?: boolean; readonly anchorPoint?: { readonly x: number; readonly y: number } | null; readonly returnFocusTo?: HTMLElement | null }>>;
+export type ThreadListItemContract = Assert<Equal<ThreadListItem, { readonly id: string; readonly title?: string; readonly updatedAt?: number; readonly pinned?: boolean }>>;
 export type ThreadListRequiredContract = Assert<Equal<Pick<ThreadListProps, 'threads' | 'onSelect'>, { readonly threads: readonly ThreadListItem[]; readonly onSelect: (threadId: string) => void }>>;
-export type ThreadListOptionsContract = Assert<Equal<Pick<ThreadListProps, 'activeThreadId' | 'label' | 'className' | 'onNewThread' | 'newThreadDisabled' | 'newThreadLabel' | 'now'>, { readonly activeThreadId?: string | null; readonly label?: string; readonly className?: string; readonly onNewThread?: () => void; readonly newThreadDisabled?: boolean; readonly newThreadLabel?: string; readonly now?: number }>>;
+export type ThreadListContextContract = Assert<Equal<Pick<ThreadListProps, 'onContextMenu'>, { readonly onContextMenu?: (threadId: string, event: MouseEvent<HTMLButtonElement> | KeyboardEvent<HTMLButtonElement>) => void }>>;
+export type ThreadListActionsContract = Assert<Equal<Pick<ThreadListProps, 'renderActions'>, { readonly renderActions?: (thread: ThreadListItem) => ReactNode }>>;
+export type ThreadListOptionsContract = Assert<Equal<Pick<ThreadListProps, 'activeThreadId' | 'label' | 'className' | 'onNewThread' | 'newThreadDisabled' | 'newThreadLabel' | 'now' | 'renderTitle'>, { readonly activeThreadId?: string | null; readonly label?: string; readonly className?: string; readonly onNewThread?: () => void; readonly newThreadDisabled?: boolean; readonly newThreadLabel?: string; readonly now?: number; readonly renderTitle?: (thread: ThreadListItem) => ReactNode }>>;
 export type SidebarControlledContract = Assert<Equal<Pick<ChatSidebarProps, 'open' | 'onOpenChange' | 'title'>, { readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly title: string }>>;
 export type SidebarLayoutOptionsContract = Assert<Equal<Pick<ChatSidebarProps, 'pageContent' | 'pushContent'>, { readonly pageContent?: ReactNode; readonly pushContent?: boolean }>>;
 type Controlled = Pick<ChatSidenavProps, 'mode' | 'open' | 'onOpenChange' | 'onModeChange'>;
+export type SidenavCollapsedContentContract = Assert<Equal<Pick<ChatSidenavProps, 'collapsedContent'>, { readonly collapsedContent?: ReactNode }>>;
+export type SidenavToggleShortcutContract = Assert<Equal<Pick<ChatSidenavProps, 'toggleShortcut'>, { readonly toggleShortcut?: boolean }>>;
+export type SidenavSearchRequestContract = Assert<Equal<Pick<ChatSidenavProps, 'onSearch'>, { readonly onSearch?: () => void }>>;
+export type SidenavSearchLabelContract = Assert<Equal<Pick<ChatSidenavProps, 'searchLabel'>, { readonly searchLabel?: string }>>;
+export type SidenavSearchShortcutContract = Assert<Equal<Pick<ChatSidenavProps, 'searchShortcut'>, { readonly searchShortcut?: boolean }>>;
 export type SidenavModeContract = Assert<Equal<ChatSidenavMode, 'expanded' | 'collapsed' | 'drawer'>>;
 export type SidenavRequiredContract = Assert<Equal<Controlled, Required<Controlled>>>;
 export type SidenavModePropContract = Assert<Equal<ChatSidenavProps['mode'], ChatSidenavMode>>;
@@ -354,9 +367,11 @@ export function assertSupportedExports(project, entry) {
         'Citations',
         'MessageList',
         'MessageActions',
+        'OverflowMenu',
         'Reasoning',
         'TextTranscript',
         'ThreadList',
+        'ThreadRenameForm',
         'ToolObservation',
       ],
       'react/debug': ['ChatDebug'],
@@ -377,7 +392,7 @@ export function assertSupportedExports(project, entry) {
     if (!supported(entry[name]))
       throw new Error(`${project} missing supported contract ${name}`);
   if (
-    ['react/debug', 'react/chat', 'react/markdown', 'react/render', 'content/json', 'content/a2ui', 'content/render-state'].includes(project) &&
+    ['react', 'react/debug', 'react/chat', 'react/markdown', 'react/render', 'content/json', 'content/a2ui', 'content/render-state'].includes(project) &&
     Object.keys(entry).some((name) => !expected.includes(name))
   )
     throw new Error(`${project} has unexpected exports`);
@@ -409,6 +424,8 @@ export async function verifyPackedConsumers(root = process.cwd(), { retain = fal
     const installedLock = JSON.parse(readFileSync(join(plain, 'package-lock.json'), 'utf8'));
     console.log(`Installed local candidate resolutions: ${JSON.stringify(Object.fromEntries(Object.entries(installedLock.packages).filter(([path]) => path.includes('node_modules/@threadplane/')).map(([path, entry]) => [path, { version: entry.version, resolved: entry.resolved, integrity: entry.integrity }])) )}`);
     const count = verifyPlainExports(root, plain, Object.keys(tarballs).map((name) => name.slice('@threadplane/'.length)));
+    cpSync(join(root, 'fixtures/react-parity/runtime/sidenav-ssr.mjs'), join(plain, 'sidenav-ssr.mjs'));
+    console.log(runConsumer(process.execPath, ['sidenav-ssr.mjs'], plain));
     cpSync(join(root, 'fixtures/react-parity/runtime/json-runtime.mjs'), join(plain, 'json-runtime.mjs'));
     console.log(runConsumer(process.execPath, ['json-runtime.mjs'], plain));
     cpSync(join(root, 'fixtures/react-parity/runtime/render-runtime.mjs'), join(plain, 'render-runtime.mjs'));

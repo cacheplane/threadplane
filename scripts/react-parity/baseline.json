@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "e4ea16307b5c0f3df3a7265ce0470a72e26cdbb1",
+  "baselineHead": "2374423a0c0901364d40a68174ec87ff90fa0556",
   "sourceState": {
     "modified": [
-      "libs/react/README.md",
-      "libs/react/src/chat/styles.css",
-      "libs/react/src/chat/thread-list.tsx"
+      "libs/langgraph/src/runtime/README.md",
+      "libs/langgraph/src/runtime/create-session.ts",
+      "libs/langgraph/src/runtime/stream-projection.ts"
     ],
     "untracked": []
   },
@@ -97,7 +97,7 @@
       "id": "asset:libs/a2ui/package.json",
       "kind": "asset",
       "path": "libs/a2ui/package.json",
-      "sha256": "2b7bd77ad53eb4c4e27037021c895d1c266760a715000f2cb0f05a4d0d0279d8"
+      "sha256": "a8bc1ab0064f858bbebfe501484ee221cc02c19a1854eec1c83d13ce1e6db2dd"
     },
     {
       "id": "asset:libs/a2ui/project.json",
@@ -217,7 +217,7 @@
       "id": "asset:libs/ag-ui/package.json",
       "kind": "asset",
       "path": "libs/ag-ui/package.json",
-      "sha256": "31099672ac63bde416180930102cc688604d8cb865812991976c6aa6f5bbfbe2"
+      "sha256": "f08ed9579d3c57cdaced0108ffb7d6e8e7a39068a81adb2b2c1de16b14dab35a"
     },
     {
       "id": "asset:libs/ag-ui/project.json",
@@ -367,7 +367,7 @@
       "id": "asset:libs/chat/package.json",
       "kind": "asset",
       "path": "libs/chat/package.json",
-      "sha256": "36408c7c85a1c383fd4402a3d8bf6e742f74828272b6aa666810c8eb5ab5ce91"
+      "sha256": "0dfb2089db441c29b6001a8c4f34245cc100939b2c7bbc8a38631b4958cd12d8"
     },
     {
       "id": "asset:libs/chat/project.json",
@@ -745,7 +745,7 @@
       "id": "asset:libs/langgraph/package.json",
       "kind": "asset",
       "path": "libs/langgraph/package.json",
-      "sha256": "c32cb17640ebd7e7ee31b0b9c2329e07a8768c3bdd2a3c629e629a47c4d2bfc8"
+      "sha256": "c33e72d3651980cc2d21fbc4a5da43037ee0b66161cae7885a641919b543cad8"
     },
     {
       "id": "asset:libs/langgraph/project.json",
@@ -757,7 +757,7 @@
       "id": "asset:libs/langgraph/src/runtime/README.md",
       "kind": "asset",
       "path": "libs/langgraph/src/runtime/README.md",
-      "sha256": "c012f29e3d7d00b4182474d97741bd055be3ec0a97490fff6ab3eaf855f1e972"
+      "sha256": "33dc8f135c4d5cde69566d44c86a1ec8c7f27c3362456003a91d966b4266f16d"
     },
     {
       "id": "asset:libs/langgraph/test/fixtures/reloaded-subagent-thread.json",
@@ -853,13 +853,13 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "a00a1ce9a7d300c610a6fd0aae6e0160230e2b2609180cc3ba634462ab819ab1"
+      "sha256": "15312cf0c7dca4b7342519dd16c09567be567f8a7f1ab281035c98376cd0f19f"
     },
     {
       "id": "asset:libs/react/package.json",
       "kind": "asset",
       "path": "libs/react/package.json",
-      "sha256": "4c9655563abbc5b413767f89b8a1050e1892e0b52e1e8c3876bb385710d54dc3"
+      "sha256": "ebf39f6c799df8d7a2465e32d2f28bde0500ff2075d77e62246114fa1f6f6b91"
     },
     {
       "id": "asset:libs/react/project.json",
@@ -871,7 +871,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "f837369f21329fb04ec751ea9d14203d4ad59969678acc87988c2a86b6fb56ea"
+      "sha256": "7ef6c346e1b62bfc1a5567c6488046dc0b98ab81f67ac173ae4aa2a146d7c30f"
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -919,7 +919,7 @@
       "id": "asset:libs/render/package.json",
       "kind": "asset",
       "path": "libs/render/package.json",
-      "sha256": "2b6b3a95b466c7b1b3c24e53b71df1a2d322fb1402ab266fa563d0fe69a22c62"
+      "sha256": "bc5ddff055c485dc0eed43d07972343d909abbc6562a406fb757e45f6cf7e71b"
     },
     {
       "id": "asset:libs/render/project.json",
@@ -973,7 +973,7 @@
       "id": "asset:libs/telemetry/package.json",
       "kind": "asset",
       "path": "libs/telemetry/package.json",
-      "sha256": "538ab741e48c869d1450047c5c248116db209b1d58e40e6ffec3ac9e5ea9772d"
+      "sha256": "6fd4b532eb246e1e692dfc1e6ddfdf0a2eebc0f8c86f88830a76f315fa70c1bf"
     },
     {
       "id": "asset:libs/telemetry/project.json",
@@ -2063,7 +2063,7 @@
       "decorators": [
         "Component"
       ],
-      "signature": "@Component({\n    selector: 'chat-typing-indicator',\n    standalone: true,\n    changeDetection: ChangeDetectionStrategy.OnPush,\n    styles: [CHAT_HOST_TOKENS, CHAT_TYPING_INDICATOR_STYLES],\n    template: `\n    @if (visible()) {\n      <div class=\"chat-typing__dots\" role=\"status\" aria-label=\"Assistant is typing\">\n        <span class=\"chat-typing__dot\"></span>\n        <span class=\"chat-typing__dot\"></span>\n        <span class=\"chat-typing__dot\"></span>\n      </div>\n    }\n  `,\n})\nexport class ChatTypingIndicatorComponent {\n    readonly agent = input.required<Agent>();\n    readonly visible = computed(() => isTyping(this.agent()));\n}"
+      "signature": "@Component({\n    selector: 'chat-typing-indicator',\n    standalone: true,\n    changeDetection: ChangeDetectionStrategy.OnPush,\n    styles: [CHAT_HOST_TOKENS, CHAT_TYPING_INDICATOR_STYLES],\n    host: {\n        '[style.display]': \"visible() ? null : 'none'\",\n    },\n    template: `\n    @if (visible()) {\n      <div class=\"chat-typing__dots\" role=\"status\" aria-label=\"Assistant is typing\">\n        <span class=\"chat-typing__dot\"></span>\n        <span class=\"chat-typing__dot\"></span>\n        <span class=\"chat-typing__dot\"></span>\n      </div>\n    }\n  `,\n})\nexport class ChatTypingIndicatorComponent {\n    readonly agent = input.required<Agent>();\n    readonly visible = computed(() => isTyping(this.agent()));\n}"
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-welcome/chat-welcome-suggestion.component.ts#ChatWelcomeSuggestionComponent",
@@ -2179,7 +2179,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "357239bc32d9cbc4f8f4054f5d09d5eaf689acd0a8d333b1926acc2fc2c3c52e"
+      "sha256": "0c4ac2ec9df75e6c81f87ba8d3fcc9e53666191545b8bde26aa60431e2796e5f"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -2233,7 +2233,7 @@
       "id": "config:package-lock.json",
       "kind": "config",
       "path": "package-lock.json",
-      "sha256": "7d321076f790911480ec8fa21356034c06d0ce2d80b45806bd8f3786beadb12c"
+      "sha256": "72f58549ddcbc30ae7c94bf078385c800e8d7efbef34a23a9e63b3075beb3250"
     },
     {
       "id": "config:package.json",
@@ -2347,7 +2347,7 @@
       "id": "doc:apps/website/content/docs/ag-ui/getting-started/installation.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/getting-started/installation.mdx",
-      "sha256": "ed5a1ac105ff8344a7487e557e440720674f1b7c2e62c7e8f6ad235ca99dcb98"
+      "sha256": "a39202635504008e9cc3e0d8a9c8b5b87ca2f3926531df7563f72f2d5b2d4940"
     },
     {
       "id": "doc:apps/website/content/docs/ag-ui/getting-started/introduction.mdx",
@@ -2599,7 +2599,7 @@
       "id": "doc:apps/website/content/docs/chat/getting-started/changelog.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/getting-started/changelog.mdx",
-      "sha256": "88e3e57fb7d239f068bd86032ab8f847de9faaf1ac1a7be1e70f82afcda82a5e"
+      "sha256": "371bac872fc68a508784831de2cfc98a84993082c7dfaec5077f7d823e63fcd7"
     },
     {
       "id": "doc:apps/website/content/docs/chat/getting-started/coding-agents.mdx",
@@ -2611,7 +2611,7 @@
       "id": "doc:apps/website/content/docs/chat/getting-started/installation.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/getting-started/installation.mdx",
-      "sha256": "1c22b6eaf2e6b75b7c71cd45379a6462d00df0bc660d72327d6990c842e05de9"
+      "sha256": "c304d03885cb19669f348a91a59251863e82383b975cc1f9220275a05d1f7a4f"
     },
     {
       "id": "doc:apps/website/content/docs/chat/getting-started/introduction.mdx",
@@ -2695,7 +2695,7 @@
       "id": "doc:apps/website/content/docs/chat/guides/writing-an-adapter.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/guides/writing-an-adapter.mdx",
-      "sha256": "402661d01a28feb8a1239f628bab9efe9cf240d8e50ae6a47ea0f2fed52c80e4"
+      "sha256": "8dd938690b1d8a3c9857eaa52ba55b69481ef720c5f3120732424802e06c837d"
     },
     {
       "id": "doc:apps/website/content/docs/choosing-an-adapter/index.mdx",
@@ -2803,7 +2803,7 @@
       "id": "doc:apps/website/content/docs/langgraph/getting-started/installation.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/langgraph/getting-started/installation.mdx",
-      "sha256": "54fa5c4b61c37dcf8503a99f753084907ec617c187b6b003ba6ba9d1c78559d9"
+      "sha256": "4d569615d87a1645bad76a5eecd1c615a97ac1b1edd401c75c0c7b6bba54d178"
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/getting-started/introduction.mdx",
@@ -2947,7 +2947,7 @@
       "id": "doc:apps/website/content/docs/render/getting-started/installation.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/render/getting-started/installation.mdx",
-      "sha256": "81b620c43fe9a7f48c6c6de56ec0fee0507199dda0d7f1ecebd2fa8fcf2e6b2b"
+      "sha256": "e81adbbb278804ae4d5304de1dd880cbd3ae1ae5d1fc554e7a7acd84a6421616"
     },
     {
       "id": "doc:apps/website/content/docs/render/getting-started/introduction.mdx",
@@ -6240,7 +6240,7 @@
           "path": "libs/chat/src/lib/primitives/chat-typing-indicator/chat-typing-indicator.component.ts",
           "symbol": "ChatTypingIndicatorComponent",
           "syntaxKind": "ClassDeclaration",
-          "signature": "@Component({\n    selector: 'chat-typing-indicator',\n    standalone: true,\n    changeDetection: ChangeDetectionStrategy.OnPush,\n    styles: [CHAT_HOST_TOKENS, CHAT_TYPING_INDICATOR_STYLES],\n    template: `\n    @if (visible()) {\n      <div class=\"chat-typing__dots\" role=\"status\" aria-label=\"Assistant is typing\">\n        <span class=\"chat-typing__dot\"></span>\n        <span class=\"chat-typing__dot\"></span>\n        <span class=\"chat-typing__dot\"></span>\n      </div>\n    }\n  `,\n})\nexport class ChatTypingIndicatorComponent {\n    readonly agent = input.required<Agent>();\n    readonly visible = computed(() => isTyping(this.agent()));\n}"
+          "signature": "@Component({\n    selector: 'chat-typing-indicator',\n    standalone: true,\n    changeDetection: ChangeDetectionStrategy.OnPush,\n    styles: [CHAT_HOST_TOKENS, CHAT_TYPING_INDICATOR_STYLES],\n    host: {\n        '[style.display]': \"visible() ? null : 'none'\",\n    },\n    template: `\n    @if (visible()) {\n      <div class=\"chat-typing__dots\" role=\"status\" aria-label=\"Assistant is typing\">\n        <span class=\"chat-typing__dot\"></span>\n        <span class=\"chat-typing__dot\"></span>\n        <span class=\"chat-typing__dot\"></span>\n      </div>\n    }\n  `,\n})\nexport class ChatTypingIndicatorComponent {\n    readonly agent = input.required<Agent>();\n    readonly visible = computed(() => isTyping(this.agent()));\n}"
         }
       ]
     },
@@ -10400,7 +10400,7 @@
           "path": "libs/react/src/chat/chat-sidenav.tsx",
           "symbol": "ChatSidenav",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function ChatSidenav({ mode, open, onOpenChange, onModeChange, children, className, label = 'Conversations', launcherLabel = 'Open conversations', closeLabel = 'Close conversations', expandLabel = 'Expand conversations', collapseLabel = 'Collapse conversations', }: ChatSidenavProps) {\n    const id = useId();\n    const navId = `${id}-nav`;\n    const bodyId = `${id}-body`;\n    const root = useRef<HTMLDivElement>(null);\n    const body = useRef<HTMLDivElement>(null);\n    const launcher = useRef<HTMLButtonElement>(null);\n    const close = useRef<HTMLButtonElement>(null);\n    const toggle = useRef<HTMLButtonElement>(null);\n    const ownedFocus = useRef<Element | null>(null);\n    const previous = useRef<{\n        mode: ChatSidenavMode;\n        open: boolean;\n    } | null>(null);\n    const drawer = mode === 'drawer';\n    const closedDrawer = drawer && !open;\n    const collapsed = mode === 'collapsed';\n    useIsomorphicLayoutEffect(() => {\n        const prior = previous.current;\n        previous.current = { mode, open };\n        if (prior?.mode === mode && prior.open === open)\n            return;\n        if (drawer && open && (!prior || prior.mode !== 'drawer' || !prior.open)) {\n            close.current?.focus();\n            return;\n        }\n        if (!prior)\n            return;\n        const document = root.current?.ownerDocument;\n        const active = document?.activeElement;\n        const focused = active === document?.body ? ownedFocus.current : active;\n        if (!focused || !root.current?.contains(focused))\n            return;\n        const disappeared = (focused === launcher.current && !closedDrawer) ||\n            (focused === close.current && !(drawer && open)) ||\n            (focused === toggle.current && drawer) ||\n            (body.current?.contains(focused) && (collapsed || closedDrawer));\n        if (disappeared) {\n            (closedDrawer ? launcher.current : toggle.current)?.focus();\n        }\n    }, [mode, open, drawer, closedDrawer, collapsed]);\n    return (<div ref={root} className={[\n            'tp-chat',\n            'tp-chat-sidenav',\n            `tp-chat-sidenav--${mode}`,\n            className,\n        ]\n            .filter(Boolean)\n            .join(' ')} onFocusCapture={(event) => {\n            ownedFocus.current = event.target;\n        }} onBlurCapture={(event) => {\n            if (event.relatedTarget &&\n                !event.currentTarget.contains(event.relatedTarget)) {\n                ownedFocus.current = null;\n            }\n        }}>\n      <button ref={launcher} type=\"button\" className=\"tp-chat-sidenav__launcher\" aria-label={launcherLabel} aria-controls={navId} aria-expanded={drawer && open} hidden={!closedDrawer} onClick={() => onOpenChange(true)}>\n        {launcherLabel}\n      </button>\n      <nav id={navId} aria-label={label} className=\"tp-chat-sidenav__panel\" hidden={closedDrawer} inert={closedDrawer} onKeyDown={(event) => {\n            if (!drawer ||\n                !open ||\n                event.key !== 'Escape' ||\n                event.defaultPrevented ||\n                event.nativeEvent.isComposing ||\n                event.nativeEvent.keyCode === 229)\n                return;\n            event.preventDefault();\n            event.stopPropagation();\n            onOpenChange(false);\n        }}>\n        <div className=\"tp-chat-sidenav__header\">\n          <button ref={toggle} type=\"button\" className=\"tp-chat-sidenav__toggle\" aria-label={collapsed ? expandLabel : collapseLabel} aria-controls={bodyId} aria-expanded={!collapsed} hidden={drawer} onClick={() => onModeChange(collapsed ? 'expanded' : 'collapsed')}>\n            {collapsed ? expandLabel : collapseLabel}\n          </button>\n          <button ref={close} type=\"button\" className=\"tp-chat-sidenav__close\" aria-label={closeLabel} hidden={!drawer || !open} onClick={() => onOpenChange(false)}>\n            {closeLabel}\n          </button>\n        </div>\n        <div ref={body} id={bodyId} className=\"tp-chat-sidenav__body\" hidden={collapsed} inert={collapsed}>\n          {children}\n        </div>\n      </nav>\n    </div>);\n}"
+          "signature": "export function ChatSidenav({ mode, open, onOpenChange, onModeChange, children, collapsedContent, className, label = 'Conversations', launcherLabel = 'Open conversations', closeLabel = 'Close conversations', expandLabel = 'Expand conversations', collapseLabel = 'Collapse conversations', toggleShortcut, onSearch, searchLabel = 'Search conversations', searchShortcut, }: ChatSidenavProps) {\n    const id = useId();\n    const navId = `${id}-nav`;\n    const bodyId = `${id}-body`;\n    const root = useRef<HTMLDivElement>(null);\n    const body = useRef<HTMLDivElement>(null);\n    const compact = useRef<HTMLDivElement>(null);\n    const launcher = useRef<HTMLButtonElement>(null);\n    const close = useRef<HTMLButtonElement>(null);\n    const toggle = useRef<HTMLButtonElement>(null);\n    const search = useRef<HTMLButtonElement>(null);\n    const ownedFocus = useRef<Element | null>(null);\n    const ownedRegion = useRef<'body' | 'compact' | null>(null);\n    const previous = useRef<{\n        mode: ChatSidenavMode;\n        open: boolean;\n    } | null>(null);\n    const drawer = mode === 'drawer';\n    const closedDrawer = drawer && !open;\n    const collapsed = mode === 'collapsed';\n    const shortcutEnabled = toggleShortcut === true;\n    const searchShortcutEnabled = searchShortcut === true && !!onSearch;\n    const listenerEnabled = shortcutEnabled || searchShortcutEnabled;\n    const committed = useRef({\n        mode,\n        onModeChange,\n        onSearch,\n        shortcutEnabled,\n        searchShortcutEnabled,\n    });\n    useIsomorphicLayoutEffect(() => {\n        committed.current = {\n            mode,\n            onModeChange,\n            onSearch,\n            shortcutEnabled,\n            searchShortcutEnabled,\n        };\n    }, [mode, onModeChange, onSearch, shortcutEnabled, searchShortcutEnabled]);\n    useIsomorphicLayoutEffect(() => {\n        if (!listenerEnabled)\n            return;\n        const element = root.current;\n        const owner = element?.ownerDocument.defaultView;\n        if (!element || !owner)\n            return;\n        const handleKeyDown = (event: KeyboardEvent) => {\n            const current = committed.current;\n            const toggleKey = event.key === 'b' || event.key === 'B';\n            const searchKey = event.key === 'k' || event.key === 'K';\n            if (!(toggleKey && current.shortcutEnabled && current.mode !== 'drawer') &&\n                !(searchKey && current.searchShortcutEnabled && current.onSearch))\n                return;\n            if (!element.isConnected ||\n                !event.cancelable ||\n                event.defaultPrevented ||\n                event.repeat ||\n                event.isComposing ||\n                event.keyCode === 229 ||\n                event.altKey ||\n                event.shiftKey ||\n                !(event.ctrlKey || event.metaKey) ||\n                shortcutTargetIsEditable(event))\n                return;\n            for (let ancestor: Element | null = element; ancestor; ancestor = composedParent(ancestor)) {\n                if (ancestor.hasAttribute('hidden') || ancestor.hasAttribute('inert'))\n                    return;\n            }\n            event.preventDefault();\n            if (searchKey)\n                current.onSearch?.();\n            else\n                current.onModeChange(current.mode === 'collapsed' ? 'expanded' : 'collapsed');\n        };\n        owner.addEventListener('keydown', handleKeyDown);\n        return () => owner.removeEventListener('keydown', handleKeyDown);\n    }, [listenerEnabled]);\n    useIsomorphicLayoutEffect(() => {\n        const prior = previous.current;\n        previous.current = { mode, open };\n        if (prior?.mode === mode && prior.open === open)\n            return;\n        if (drawer && open && (!prior || prior.mode !== 'drawer' || !prior.open)) {\n            close.current?.focus();\n            return;\n        }\n        if (!prior)\n            return;\n        const document = root.current?.ownerDocument;\n        const active = document?.activeElement;\n        const focused = active === document?.body ? ownedFocus.current : active;\n        const captured = focused === ownedFocus.current;\n        if (!focused || (!root.current?.contains(focused) && !captured))\n            return;\n        const inBody = body.current?.contains(focused) ||\n            (captured && ownedRegion.current === 'body');\n        const inCompact = compact.current?.contains(focused) ||\n            (captured && ownedRegion.current === 'compact');\n        const disappeared = (focused === launcher.current && !closedDrawer) ||\n            (focused === close.current && !(drawer && open)) ||\n            (focused === toggle.current && drawer) ||\n            (focused === search.current && closedDrawer) ||\n            (inBody && (collapsed || closedDrawer)) ||\n            (inCompact && !collapsed);\n        if (disappeared) {\n            (closedDrawer ? launcher.current : toggle.current)?.focus();\n        }\n    }, [mode, open, drawer, closedDrawer, collapsed]);\n    return (<div ref={root} className={[\n            'tp-chat',\n            'tp-chat-sidenav',\n            `tp-chat-sidenav--${mode}`,\n            className,\n        ]\n            .filter(Boolean)\n            .join(' ')} onFocusCapture={(event) => {\n            ownedFocus.current = event.target;\n            ownedRegion.current = null;\n        }} onBlurCapture={(event) => {\n            if (event.relatedTarget &&\n                !event.currentTarget.contains(event.relatedTarget)) {\n                ownedFocus.current = null;\n                ownedRegion.current = null;\n            }\n        }}>\n      <button ref={launcher} type=\"button\" className=\"tp-chat-sidenav__launcher\" aria-label={launcherLabel} aria-controls={navId} aria-expanded={drawer && open} hidden={!closedDrawer} onClick={() => onOpenChange(true)}>\n        {launcherLabel}\n      </button>\n      <nav id={navId} aria-label={label} className=\"tp-chat-sidenav__panel\" hidden={closedDrawer} inert={closedDrawer} onKeyDown={(event) => {\n            if (!drawer ||\n                !open ||\n                event.key !== 'Escape' ||\n                event.defaultPrevented ||\n                event.nativeEvent.isComposing ||\n                event.nativeEvent.keyCode === 229)\n                return;\n            event.preventDefault();\n            event.stopPropagation();\n            onOpenChange(false);\n        }}>\n        <div className=\"tp-chat-sidenav__header\">\n          <button ref={toggle} type=\"button\" className=\"tp-chat-sidenav__toggle\" aria-label={collapsed ? expandLabel : collapseLabel} aria-controls={bodyId} aria-expanded={!collapsed} aria-keyshortcuts={shortcutEnabled && !drawer ? 'Control+B Meta+B' : undefined} title={shortcutEnabled && !drawer\n            ? `${collapsed ? expandLabel : collapseLabel} (Ctrl/Command+B)`\n            : undefined} hidden={drawer} onClick={() => onModeChange(collapsed ? 'expanded' : 'collapsed')}>\n            {collapsed ? expandLabel : collapseLabel}\n          </button>\n          <button ref={close} type=\"button\" className=\"tp-chat-sidenav__close\" aria-label={closeLabel} hidden={!drawer || !open} onClick={() => onOpenChange(false)}>\n            {closeLabel}\n          </button>\n        </div>\n        {onSearch && (<div className=\"tp-chat-sidenav__search-row\">\n            <button ref={search} type=\"button\" className=\"tp-chat-sidenav__search\" aria-label={searchLabel} aria-keyshortcuts={searchShortcutEnabled ? 'Control+K Meta+K' : undefined} title={searchShortcutEnabled\n                ? `${searchLabel} (Ctrl/Command+K)`\n                : searchLabel} onClick={() => onSearch()}>\n              <svg width=\"20\" height=\"20\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"currentColor\" strokeWidth=\"1.75\" aria-hidden=\"true\" focusable=\"false\">\n                <circle cx=\"8.5\" cy=\"8.5\" r=\"5.75\"/>\n                <path d=\"m13 13 4.25 4.25\"/>\n              </svg>\n              <span className=\"tp-chat-sidenav__search-label\">\n                {searchLabel}\n              </span>\n            </button>\n          </div>)}\n        <div ref={body} id={bodyId} className=\"tp-chat-sidenav__body\" hidden={collapsed} inert={collapsed} onFocusCapture={() => {\n            ownedRegion.current = 'body';\n        }}>\n          {children}\n        </div>\n        {collapsedContent !== undefined && (<div ref={compact} className=\"tp-chat-sidenav__collapsed-content\" hidden={!collapsed} inert={!collapsed} onFocusCapture={() => {\n                ownedRegion.current = 'compact';\n            }}>\n            {collapsedContent}\n          </div>)}\n      </nav>\n    </div>);\n}"
         }
       ]
     },
@@ -10428,7 +10428,7 @@
           "path": "libs/react/src/chat/chat-sidenav.tsx",
           "symbol": "ChatSidenavProps",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface ChatSidenavProps {\n    readonly mode: ChatSidenavMode;\n    readonly open: boolean;\n    readonly onOpenChange: (open: boolean) => void;\n    readonly onModeChange: (mode: Exclude<ChatSidenavMode, 'drawer'>) => void;\n    readonly children?: ReactNode;\n    readonly className?: string;\n    readonly label?: string;\n    readonly launcherLabel?: string;\n    readonly closeLabel?: string;\n    readonly expandLabel?: string;\n    readonly collapseLabel?: string;\n}"
+          "signature": "export interface ChatSidenavProps {\n    readonly mode: ChatSidenavMode;\n    readonly open: boolean;\n    readonly onOpenChange: (open: boolean) => void;\n    readonly onModeChange: (mode: Exclude<ChatSidenavMode, 'drawer'>) => void;\n    readonly children?: ReactNode;\n    readonly collapsedContent?: ReactNode;\n    readonly className?: string;\n    readonly label?: string;\n    readonly launcherLabel?: string;\n    readonly closeLabel?: string;\n    readonly expandLabel?: string;\n    readonly collapseLabel?: string;\n    readonly toggleShortcut?: boolean;\n    readonly onSearch?: () => void;\n    readonly searchLabel?: string;\n    readonly searchShortcut?: boolean;\n}"
         }
       ]
     },
@@ -10559,6 +10559,48 @@
       ]
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#OverflowMenu",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "OverflowMenu",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/overflow-menu.tsx",
+          "symbol": "OverflowMenu",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function OverflowMenu({ items, open, onOpenChange, onSelect, label, className, disabled, anchorPoint, returnFocusTo, }: OverflowMenuProps) {\n    const id = useId();\n    const trigger = useRef<HTMLButtonElement>(null);\n    const menu = useRef<HTMLDivElement>(null);\n    const callbacks = useRef({ onOpenChange, onSelect });\n    callbacks.current = { onOpenChange, onSelect };\n    const [portal, setPortal] = useState<{\n        document: Document;\n        style: CSSProperties;\n    } | null>(null);\n    const [placement, setPlacement] = useState<CSSProperties>({\n        visibility: 'hidden',\n    });\n    const focusedPortal = useRef<typeof portal>(null);\n    const suppressed = useRef(false);\n    const restore = useRef(false);\n    const context = useRef({ anchorPoint, returnFocusTo });\n    context.current = { anchorPoint, returnFocusTo };\n    const restoreTarget = useRef<HTMLElement | null | undefined>(null);\n    const returningFocus = useRef(false);\n    const focusInvoker = (target = context.current.returnFocusTo) => {\n        const anchor = trigger.current;\n        if (!anchor)\n            return;\n        returningFocus.current = true;\n        try {\n            if (target &&\n                target.ownerDocument === anchor.ownerDocument &&\n                available(target)) {\n                try {\n                    target.focus();\n                }\n                catch {\n                }\n                if (anchor.ownerDocument.activeElement === target)\n                    return;\n            }\n            if (available(anchor))\n                anchor.focus();\n        }\n        finally {\n            returningFocus.current = false;\n        }\n    };\n    const initial = useRef<'first' | 'last'>('first');\n    const [openingRequest, setOpeningRequest] = useState(0);\n    const focused = useRef<string | null>(null);\n    const ownedFocus = useRef(false);\n    const enabled = () => Array.from(menu.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') ?? []);\n    const focusEdge = (edge: 'first' | 'last') => {\n        const buttons = enabled();\n        (buttons[edge === 'first' ? 0 : buttons.length - 1] ?? menu.current)?.focus();\n    };\n    const close = (returnFocus = false) => {\n        restore.current = returnFocus;\n        if (returnFocus)\n            restoreTarget.current = context.current.returnFocusTo;\n        callbacks.current.onOpenChange(false);\n    };\n    const measure = () => {\n        const anchor = trigger.current;\n        const panel = menu.current;\n        const win = portal?.document.defaultView;\n        if (!anchor || !panel || !win)\n            return;\n        const rect = anchor.getBoundingClientRect();\n        const box = panel.getBoundingClientRect();\n        const width = Math.min(box.width, Math.max(0, win.innerWidth - 16));\n        const height = Math.min(box.height, Math.max(0, win.innerHeight - 16));\n        const point = context.current.anchorPoint;\n        const usePoint = point && Number.isFinite(point.x) && Number.isFinite(point.y);\n        const aligned = usePoint\n            ? point.x - (portal.style.direction === 'rtl' ? width : 0)\n            : portal.style.direction === 'rtl'\n                ? rect.left\n                : rect.right - width;\n        const below = (usePoint ? point.y : rect.bottom) + 4;\n        const preferred = below + height > win.innerHeight - 8\n            ? (usePoint ? point.y : rect.top) - height - 4\n            : below;\n        const left = Math.max(8, Math.min(aligned, win.innerWidth - width - 8));\n        const top = Math.max(8, Math.min(preferred, win.innerHeight - height - 8));\n        setPlacement((previous) => previous.visibility !== 'hidden' &&\n            previous.left === left &&\n            previous.top === top\n            ? previous\n            : { left, top });\n    };\n    useIsomorphicLayoutEffect(() => {\n        const anchor = trigger.current;\n        if (!open) {\n            if (restore.current && anchor) {\n                const active = anchor.ownerDocument.activeElement;\n                if (active === anchor.ownerDocument.body ||\n                    (active && menu.current?.contains(active)))\n                    focusInvoker(restoreTarget.current);\n            }\n            restoreTarget.current = null;\n            restore.current = false;\n            suppressed.current = false;\n            ownedFocus.current = false;\n            focused.current = null;\n            focusedPortal.current = null;\n            initial.current = 'first';\n            setPortal(null);\n            return;\n        }\n        if (!anchor || suppressed.current)\n            return;\n        if (!available(anchor)) {\n            suppressed.current = true;\n            setPortal(null);\n            callbacks.current.onOpenChange(false);\n            return;\n        }\n        setPlacement({ visibility: 'hidden' });\n        setPortal({ document: anchor.ownerDocument, style: snapshot(anchor) });\n    }, [open, disabled, openingRequest]);\n    useIsomorphicLayoutEffect(() => {\n        measure();\n    }, [portal, items, anchorPoint?.x, anchorPoint?.y]);\n    useIsomorphicLayoutEffect(() => {\n        if (!portal || !menu.current || !trigger.current)\n            return;\n        const anchor = trigger.current;\n        const panel = menu.current;\n        const doc = portal.document;\n        const win = doc.defaultView;\n        if (!win)\n            return;\n        const inside = (target: EventTarget | null) => target instanceof win.Node &&\n            (panel.contains(target) || anchor.contains(target));\n        const outside = (event: Event) => {\n            if (!returningFocus.current &&\n                !event.defaultPrevented &&\n                !inside(event.target))\n                close();\n        };\n        const scroll = (event: Event) => {\n            if (!event.defaultPrevented &&\n                !(event.target instanceof win.Node && panel.contains(event.target)))\n                close();\n        };\n        const suppress = () => {\n            if (!suppressed.current) {\n                suppressed.current = true;\n                restore.current = false;\n                setPortal(null);\n                callbacks.current.onOpenChange(false);\n            }\n        };\n        const check = () => {\n            if (!available(anchor))\n                suppress();\n            else\n                measure();\n        };\n        const chain = ancestors(anchor);\n        const observer = new win.MutationObserver((records) => {\n            if (!available(anchor))\n                suppress();\n            else {\n                const presentation = snapshot(anchor);\n                const presentationChanged = Object.entries(portal.style).some(([name, value]) => Reflect.get(presentation, name) !== value);\n                const themeAttributeChanged = records.some((record) => record.type === 'attributes' &&\n                    (record.attributeName === 'dir' ||\n                        record.attributeName === 'data-theme') &&\n                    record.oldValue !==\n                        (record.target as Element).getAttribute(record.attributeName));\n                if (presentationChanged || themeAttributeChanged)\n                    close();\n                else\n                    measure();\n            }\n        });\n        for (const node of chain)\n            observer.observe(node, {\n                attributes: true,\n                attributeOldValue: true,\n                childList: true,\n            });\n        const layout = typeof win.ResizeObserver === 'function'\n            ? new win.ResizeObserver(check)\n            : null;\n        for (const node of chain)\n            layout?.observe(node);\n        layout?.observe(panel);\n        doc.addEventListener('pointerdown', outside);\n        doc.addEventListener('focusin', outside);\n        doc.addEventListener('scroll', scroll, true);\n        const resize = () => {\n            check();\n            close();\n        };\n        win.addEventListener('resize', resize);\n        return () => {\n            observer.disconnect();\n            layout?.disconnect();\n            doc.removeEventListener('pointerdown', outside);\n            doc.removeEventListener('focusin', outside);\n            doc.removeEventListener('scroll', scroll, true);\n            win.removeEventListener('resize', resize);\n        };\n    }, [portal]);\n    useIsomorphicLayoutEffect(() => {\n        if (!portal ||\n            placement.visibility === 'hidden' ||\n            focusedPortal.current === portal)\n            return;\n        focusedPortal.current = portal;\n        focusEdge(initial.current);\n        initial.current = 'first';\n    }, [portal, placement]);\n    useIsomorphicLayoutEffect(() => {\n        if (!portal || !ownedFocus.current || !menu.current)\n            return;\n        const doc = portal.document;\n        const active = doc.activeElement;\n        if (active !== doc.body &&\n            active !== menu.current &&\n            !menu.current.contains(active))\n            return;\n        const survivor = enabled().find((button) => button.dataset['itemId'] === focused.current);\n        if (!survivor)\n            focusEdge('first');\n    }, [items, portal]);\n    const effective = open && portal !== null && !suppressed.current;\n    return (<>\n      <button ref={trigger} type=\"button\" className={['tp-overflow-menu__trigger', className]\n            .filter(Boolean)\n            .join(' ')} aria-label={label} title={label} disabled={disabled === true} aria-haspopup=\"menu\" aria-expanded={effective} aria-controls={effective ? `${id}-menu` : undefined} id={`${id}-trigger`} onClick={(event) => {\n            event.stopPropagation();\n            if (!event.defaultPrevented) {\n                initial.current = 'first';\n                restore.current = true;\n                callbacks.current.onOpenChange(!open);\n            }\n        }} onKeyDown={(event) => {\n            if (event.defaultPrevented)\n                return;\n            if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {\n                event.preventDefault();\n                event.stopPropagation();\n                initial.current = event.key === 'ArrowUp' ? 'last' : 'first';\n                if (effective)\n                    focusEdge(initial.current);\n                else {\n                    setOpeningRequest((request) => request + 1);\n                    callbacks.current.onOpenChange(true);\n                }\n            }\n        }}>\n        <span aria-hidden=\"true\">⋯</span>\n      </button>\n      {effective &&\n            createPortal(<div ref={menu} id={`${id}-menu`} role=\"menu\" aria-labelledby={`${id}-trigger`} tabIndex={-1} dir={portal.style.direction === 'rtl' ? 'rtl' : 'ltr'} className=\"tp-overflow-menu\" style={{ ...portal.style, ...placement }} onFocus={(event) => {\n                    ownedFocus.current = true;\n                    focused.current =\n                        (event.target as HTMLElement).dataset['itemId'] ?? null;\n                    for (const button of enabled())\n                        button.tabIndex =\n                            button === (event.target as HTMLElement) ? 0 : -1;\n                }} onKeyDown={(event) => {\n                    if (event.defaultPrevented)\n                        return;\n                    if (event.key === 'Escape') {\n                        event.preventDefault();\n                        event.stopPropagation();\n                        close(true);\n                    }\n                    else if (event.key === 'Tab') {\n                        focusInvoker();\n                        close();\n                    }\n                    else if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {\n                        event.preventDefault();\n                        event.stopPropagation();\n                        const buttons = enabled();\n                        const index = buttons.indexOf(portal.document.activeElement as HTMLButtonElement);\n                        const next = event.key === 'Home'\n                            ? 0\n                            : event.key === 'End'\n                                ? buttons.length - 1\n                                : (index +\n                                    (event.key === 'ArrowDown' ? 1 : -1) +\n                                    buttons.length) %\n                                    buttons.length;\n                        (buttons[next] ?? menu.current)?.focus();\n                    }\n                }}>\n            <ul role=\"presentation\">\n              {items.map((item) => (<li key={item.id} role=\"presentation\">\n                  <button type=\"button\" role=\"menuitem\" tabIndex={-1} data-item-id={item.id} disabled={item.disabled === true} className={item.tone === 'destructive'\n                        ? 'tp-overflow-menu__item tp-overflow-menu__item--destructive'\n                        : 'tp-overflow-menu__item'} onClick={(event) => {\n                        event.stopPropagation();\n                        if (event.defaultPrevented || item.disabled === true)\n                            return;\n                        close(true);\n                        callbacks.current.onSelect(item.id, event);\n                    }}>\n                    {item.label}\n                  </button>\n                </li>))}\n            </ul>\n          </div>, portal.document.body)}\n    </>);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#OverflowMenuItem",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "OverflowMenuItem",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/overflow-menu.tsx",
+          "symbol": "OverflowMenuItem",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface OverflowMenuItem {\n    readonly id: string;\n    readonly label: string;\n    readonly disabled?: boolean;\n    readonly tone?: 'normal' | 'destructive';\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#OverflowMenuProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "OverflowMenuProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/overflow-menu.tsx",
+          "symbol": "OverflowMenuProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface OverflowMenuProps {\n    readonly items: readonly OverflowMenuItem[];\n    readonly open: boolean;\n    readonly onOpenChange: (open: boolean) => void;\n    readonly onSelect: (itemId: string, event: MouseEvent<HTMLButtonElement>) => void;\n    readonly label: string;\n    readonly className?: string;\n    readonly disabled?: boolean;\n    readonly anchorPoint?: {\n        readonly x: number;\n        readonly y: number;\n    } | null;\n    readonly returnFocusTo?: HTMLElement | null;\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/react/src/chat/index.ts#Reasoning",
       "kind": "export",
       "path": "libs/react/src/chat/index.ts",
@@ -10624,7 +10666,7 @@
           "path": "libs/react/src/chat/thread-list.tsx",
           "symbol": "ThreadList",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function ThreadList({ threads, onSelect, activeThreadId, label = 'Conversations', className, onNewThread, newThreadDisabled = false, newThreadLabel = '+ New thread', now = Date.now(), }: ThreadListProps) {\n    const listId = useId();\n    const reference = validDate(now);\n    const list = (<ul className={`tp-thread-list${className ? ` ${className}` : ''}`} aria-label={label}>\n      {threads.map((thread, index) => {\n            const title = thread.title || thread.id;\n            const updated = validDate(thread.updatedAt);\n            const time = reference && updated && thread.updatedAt !== undefined\n                ? relativeTime(now - thread.updatedAt)\n                : undefined;\n            const rowId = `${listId}-${index}`;\n            return (<li key={thread.id} className=\"tp-thread-list__item\">\n            <button type=\"button\" className=\"tp-thread-list__button\" title={title} aria-labelledby={time ? `${rowId}-title` : undefined} aria-describedby={time ? `${rowId}-time` : undefined} aria-current={thread.id === activeThreadId ? 'true' : undefined} onClick={() => onSelect(thread.id)}>\n              {time && updated ? (<>\n                  <span id={`${rowId}-title`}>{title}</span>\n                  <time id={`${rowId}-time`} className=\"tp-thread-list__time\" dateTime={updated.toISOString()}>\n                    {time}\n                  </time>\n                </>) : (title)}\n            </button>\n          </li>);\n        })}\n    </ul>);\n    return onNewThread ? (<div className=\"tp-thread-list__container\">\n      <button type=\"button\" className=\"tp-thread-list__new\" onClick={() => onNewThread()} disabled={newThreadDisabled}>\n        {newThreadLabel}\n      </button>\n      {list}\n    </div>) : (list);\n}"
+          "signature": "export function ThreadList({ threads, onSelect, activeThreadId, label = 'Conversations', className, onNewThread, newThreadDisabled = false, newThreadLabel = '+ New thread', now = Date.now(), renderTitle, renderActions, onContextMenu, }: ThreadListProps) {\n    const listId = useId();\n    const keyboardContext = useRef<HTMLButtonElement | null>(null);\n    const reference = validDate(now);\n    const list = (<ul className={`tp-thread-list${className ? ` ${className}` : ''}`} aria-label={label}>\n      {threads.map((thread, index) => {\n            const pinned = thread.pinned === true;\n            const title = thread.title || thread.id;\n            const content = renderTitle ? renderTitle(thread) : title;\n            const actions = renderActions?.(thread);\n            const hasActions = actions !== null && actions !== false && actions !== undefined;\n            const updated = validDate(thread.updatedAt);\n            const time = reference && updated && thread.updatedAt !== undefined\n                ? relativeTime(now - thread.updatedAt)\n                : undefined;\n            const rowId = `${listId}-${index}`;\n            return (<li key={thread.id} className={`tp-thread-list__item${hasActions ? ' tp-thread-list__item--actions' : ''}`}>\n            <button type=\"button\" className=\"tp-thread-list__button\" title={title} aria-label={renderTitle || pinned ? title : undefined} aria-labelledby={time && !renderTitle && !pinned ? `${rowId}-title` : undefined} aria-describedby={pinned\n                    ? `${rowId}-pinned${time ? ` ${rowId}-time` : ''}`\n                    : time\n                        ? `${rowId}-time`\n                        : undefined} aria-current={thread.id === activeThreadId ? 'true' : undefined} onClick={() => onSelect(thread.id)} onPointerDown={onContextMenu\n                    ? () => {\n                        keyboardContext.current = null;\n                    }\n                    : undefined} onContextMenu={onContextMenu\n                    ? (event) => {\n                        if (event.defaultPrevented)\n                            return;\n                        const duplicate = keyboardContext.current === event.currentTarget &&\n                            event.button === 0;\n                        keyboardContext.current = null;\n                        if (duplicate) {\n                            event.preventDefault();\n                            return;\n                        }\n                        onContextMenu(thread.id, event);\n                    }\n                    : undefined} onKeyDown={onContextMenu\n                    ? (event) => {\n                        if (event.defaultPrevented ||\n                            event.repeat ||\n                            event.nativeEvent.isComposing ||\n                            event.ctrlKey ||\n                            event.metaKey ||\n                            event.altKey)\n                            return;\n                        if (!((event.key === 'ContextMenu' && !event.shiftKey) ||\n                            (event.key === 'F10' && event.shiftKey)))\n                            return;\n                        const button = event.currentTarget;\n                        onContextMenu(thread.id, event);\n                        keyboardContext.current = event.defaultPrevented\n                            ? button\n                            : null;\n                    }\n                    : undefined}>\n              {pinned && (<svg className=\"tp-thread-list__pin\" viewBox=\"0 0 24 24\" fill=\"currentColor\" aria-hidden=\"true\" focusable=\"false\">\n                  <path d=\"M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z\"/>\n                </svg>)}\n              {time && updated ? (<>\n                  <span id={`${rowId}-title`}>{content}</span>\n                  <time id={`${rowId}-time`} className=\"tp-thread-list__time\" dateTime={updated.toISOString()}>\n                    {time}\n                  </time>\n                </>) : (content)}\n              {pinned && (<span id={`${rowId}-pinned`} className=\"tp-thread-list__status\">\n                  Pinned conversation\n                </span>)}\n            </button>\n            {hasActions && (<div className=\"tp-thread-list__actions\">{actions}</div>)}\n          </li>);\n        })}\n    </ul>);\n    return onNewThread ? (<div className=\"tp-thread-list__container\">\n      <button type=\"button\" className=\"tp-thread-list__new\" onClick={() => onNewThread()} disabled={newThreadDisabled}>\n        {newThreadLabel}\n      </button>\n      {list}\n    </div>) : (list);\n}"
         }
       ]
     },
@@ -10638,7 +10680,7 @@
           "path": "libs/react/src/chat/thread-list.tsx",
           "symbol": "ThreadListItem",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface ThreadListItem {\n    readonly id: string;\n    readonly title?: string;\n    readonly updatedAt?: number;\n}"
+          "signature": "export interface ThreadListItem {\n    readonly id: string;\n    readonly title?: string;\n    readonly updatedAt?: number;\n    readonly pinned?: boolean;\n}"
         }
       ]
     },
@@ -10652,7 +10694,35 @@
           "path": "libs/react/src/chat/thread-list.tsx",
           "symbol": "ThreadListProps",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface ThreadListProps {\n    readonly threads: readonly ThreadListItem[];\n    readonly onSelect: (threadId: string) => void;\n    readonly activeThreadId?: string | null;\n    readonly label?: string;\n    readonly className?: string;\n    readonly onNewThread?: () => void;\n    readonly newThreadDisabled?: boolean;\n    readonly newThreadLabel?: string;\n    readonly now?: number;\n}"
+          "signature": "export interface ThreadListProps {\n    readonly threads: readonly ThreadListItem[];\n    readonly onSelect: (threadId: string) => void;\n    readonly activeThreadId?: string | null;\n    readonly label?: string;\n    readonly className?: string;\n    readonly onNewThread?: () => void;\n    readonly newThreadDisabled?: boolean;\n    readonly newThreadLabel?: string;\n    readonly now?: number;\n    readonly renderTitle?: (thread: ThreadListItem) => ReactNode;\n    readonly renderActions?: (thread: ThreadListItem) => ReactNode;\n    readonly onContextMenu?: (threadId: string, event: MouseEvent<HTMLButtonElement> | KeyboardEvent<HTMLButtonElement>) => void;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ThreadRenameForm",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ThreadRenameForm",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/thread-rename-form.tsx",
+          "symbol": "ThreadRenameForm",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function ThreadRenameForm({ value, onValueChange, onSubmit, onCancel, pending = false, error, label = 'Conversation title', className, }: ThreadRenameFormProps) {\n    const id = useId();\n    const input = useRef<HTMLInputElement>(null);\n    const composing = useRef(false);\n    const cancel = useRef<HTMLButtonElement>(null);\n    useIsomorphicLayoutEffect(() => {\n        if (input.current?.disabled)\n            cancel.current?.focus();\n        else {\n            input.current?.focus();\n            input.current?.select();\n        }\n    }, []);\n    const canSubmit = !pending && value.trim().length > 0;\n    const submit = () => {\n        if (canSubmit && !composing.current)\n            onSubmit();\n    };\n    return (<form className={['tp-thread-rename-form', className].filter(Boolean).join(' ')} aria-busy={pending || undefined} onSubmit={(event) => {\n            event.preventDefault();\n            submit();\n        }} onKeyDown={(event) => {\n            if (event.key === 'Escape') {\n                event.preventDefault();\n                event.stopPropagation();\n                onCancel();\n            }\n        }}>\n      <label htmlFor={`${id}-title`}>{label}</label>\n      <input ref={input} id={`${id}-title`} type=\"text\" value={value} disabled={pending} aria-invalid={error ? true : undefined} aria-describedby={error ? `${id}-error` : undefined} onChange={(event) => onValueChange(event.target.value)} onCompositionStart={() => {\n            composing.current = true;\n        }} onCompositionEnd={() => {\n            composing.current = false;\n        }} onKeyDown={(event) => {\n            if (event.key !== 'Enter')\n                return;\n            event.preventDefault();\n            if (event.nativeEvent.isComposing ||\n                event.nativeEvent.keyCode === 229)\n                return;\n            submit();\n        }}/>\n      <div className=\"tp-thread-rename-form__actions\">\n        <button type=\"submit\" disabled={!canSubmit}>\n          Save\n        </button>\n        <button ref={cancel} type=\"button\" onClick={onCancel}>\n          Cancel\n        </button>\n      </div>\n      {pending && <p role=\"status\">Saving conversation title…</p>}\n      {error && (<p id={`${id}-error`} role=\"alert\">\n          {error}\n        </p>)}\n    </form>);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ThreadRenameFormProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ThreadRenameFormProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/thread-rename-form.tsx",
+          "symbol": "ThreadRenameFormProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface ThreadRenameFormProps {\n    readonly value: string;\n    readonly onValueChange: (value: string) => void;\n    readonly onSubmit: () => void;\n    readonly onCancel: () => void;\n    readonly pending?: boolean;\n    readonly error?: string;\n    readonly label?: string;\n    readonly className?: string;\n}"
         }
       ]
     },
@@ -12278,7 +12348,7 @@
       "id": "source:libs/ag-ui/src/lib/package-version.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/package-version.ts",
-      "sha256": "c93e06e801409fc1f7c3c838455c8803c0cba5d238bb058ac27c6471820ff931"
+      "sha256": "f0688a419b11a04b92f068975c7d3d6a9a28d126b74bf4ce52858e84acb9ecf4"
     },
     {
       "id": "source:libs/ag-ui/src/lib/provide-agent.ts",
@@ -13328,7 +13398,7 @@
       "id": "source:libs/chat/src/lib/package-version.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/package-version.ts",
-      "sha256": "c93e06e801409fc1f7c3c838455c8803c0cba5d238bb058ac27c6471820ff931"
+      "sha256": "f0688a419b11a04b92f068975c7d3d6a9a28d126b74bf4ce52858e84acb9ecf4"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-citations/chat-citation-preview.component.ts",
@@ -13532,7 +13602,7 @@
       "id": "source:libs/chat/src/lib/primitives/chat-typing-indicator/chat-typing-indicator.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/chat-typing-indicator/chat-typing-indicator.component.ts",
-      "sha256": "388d00cd70e7b1229a01ed2ade080e292c39dab66fe87dee2339f560e8cb1320"
+      "sha256": "2206e827692494534e6568fa768a5d84ef517c002f0c4ef2abf81aec7c498405"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-welcome/chat-welcome-suggestion.component.ts",
@@ -14570,7 +14640,7 @@
       "id": "source:libs/langgraph/src/lib/package-version.ts",
       "kind": "source",
       "path": "libs/langgraph/src/lib/package-version.ts",
-      "sha256": "c93e06e801409fc1f7c3c838455c8803c0cba5d238bb058ac27c6471820ff931"
+      "sha256": "f0688a419b11a04b92f068975c7d3d6a9a28d126b74bf4ce52858e84acb9ecf4"
     },
     {
       "id": "source:libs/langgraph/src/lib/runtime-operation-reporter.ts",
@@ -14672,7 +14742,7 @@
       "id": "source:libs/langgraph/src/runtime/create-session.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/create-session.ts",
-      "sha256": "1443a9e440f85a98d92917624041666f555bf0ec0302011079a4a45c9e735a1a"
+      "sha256": "d7f88ebf9b76af15fd64fbe396aab53404afa01df0d6b89877ed71d2712e5c5a"
     },
     {
       "id": "source:libs/langgraph/src/runtime/function-tools.ts",
@@ -14750,7 +14820,7 @@
       "id": "source:libs/langgraph/src/runtime/stream-projection.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/stream-projection.ts",
-      "sha256": "a52721b6c381039c219eb243326721a52c384b9bd1fd4d6ddec2fd048fd9b3de"
+      "sha256": "bfdf7012b1af0f32d6f11998175cdb34ce4f1ba224d35f1d2ba65aa78242e43b"
     },
     {
       "id": "source:libs/langgraph/src/runtime/subgraph-projection.ts",
@@ -14954,7 +15024,7 @@
       "id": "source:libs/react/src/chat/chat-sidenav.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/chat-sidenav.tsx",
-      "sha256": "72f03e5542bed7d7fa6cc48beb346e227a32cd73eda39dba6ae6531770b5ecaa"
+      "sha256": "9342ac693d7bf80574eca2158ce23ba1f06feeed19e5f98c29ff7c3c5ae119cc"
     },
     {
       "id": "source:libs/react/src/chat/chat.tsx",
@@ -14972,7 +15042,7 @@
       "id": "source:libs/react/src/chat/index.ts",
       "kind": "source",
       "path": "libs/react/src/chat/index.ts",
-      "sha256": "35e2be2514de5036963f35160f4f11d289e51188742497e44835dcf8db01fe19"
+      "sha256": "5e17763375a55262522597e89e988434ac25201489203eda92010f6d72aa97cf"
     },
     {
       "id": "source:libs/react/src/chat/internal/isomorphic-layout-effect.ts",
@@ -14999,6 +15069,12 @@
       "sha256": "2804774aad423197db665558e50c22ad3574f844fd709630a47ae94389bb2e09"
     },
     {
+      "id": "source:libs/react/src/chat/overflow-menu.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/overflow-menu.tsx",
+      "sha256": "d01ae80a2d5291b779d4c6c65b9563e75dce99914789fa8af5aa350c1946e5dd"
+    },
+    {
       "id": "source:libs/react/src/chat/reasoning.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/reasoning.tsx",
@@ -15014,7 +15090,13 @@
       "id": "source:libs/react/src/chat/thread-list.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/thread-list.tsx",
-      "sha256": "56b5ae11b0e758c20bc33b00d8ba71cfe33d00663df3d49b21c9ec34492182c4"
+      "sha256": "330e4c918ff2b7e5ee3930a415546a03b6654752b77ba93dd71ec3d52c722747"
+    },
+    {
+      "id": "source:libs/react/src/chat/thread-rename-form.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/thread-rename-form.tsx",
+      "sha256": "8caf19bf99363c6f61e65af76e4e7b86e37a706201c0bd691c36ea0317cb445a"
     },
     {
       "id": "source:libs/react/src/chat/tool-observation.tsx",
@@ -15206,7 +15288,7 @@
       "id": "source:libs/render/src/lib/package-version.ts",
       "kind": "source",
       "path": "libs/render/src/lib/package-version.ts",
-      "sha256": "c93e06e801409fc1f7c3c838455c8803c0cba5d238bb058ac27c6471820ff931"
+      "sha256": "f0688a419b11a04b92f068975c7d3d6a9a28d126b74bf4ce52858e84acb9ecf4"
     },
     {
       "id": "source:libs/render/src/lib/provide-render.ts",

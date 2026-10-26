@@ -1,7 +1,7 @@
 import { StrictMode } from 'react';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ThreadList } from './index';
+import { ThreadList, type ThreadListItem } from './index';
 
 afterEach(() => {
   cleanup();
@@ -10,6 +10,228 @@ afterEach(() => {
 });
 
 describe('ThreadList', () => {
+  it.each([true, false, undefined, 'true', 1, {}, []].map((value) => [value]))(
+    'presents only strict true pinned values: %s',
+    (value) => {
+      const pinned = value === true;
+      const view = render(
+        <ThreadList
+          threads={[
+            { id: 'fallback', title: '', pinned: value } as ThreadListItem,
+          ]}
+          onSelect={() => undefined}
+        />
+      );
+      const button = view.getByRole('button', {
+        name: 'fallback',
+        ...(pinned ? { description: 'Pinned conversation' } : {}),
+      });
+      expect(button.getAttribute('title')).toBe('fallback');
+      expect(button.querySelectorAll('.tp-thread-list__pin')).toHaveLength(
+        pinned ? 1 : 0
+      );
+      if (pinned) {
+        const icon = button.querySelector('svg');
+        if (!icon) throw new Error('Missing decorative pin');
+        expect(icon.getAttribute('aria-hidden')).toBe('true');
+        expect(icon.getAttribute('focusable')).toBe('false');
+        expect(icon.hasAttribute('tabindex')).toBe(false);
+        expect(button.lastElementChild?.className).toBe(
+          'tp-thread-list__status'
+        );
+      } else expect(button.innerHTML).toBe('fallback');
+    }
+  );
+
+  it('owns pin status across empty renderers, invalid dates and keyed updates without requests or sorting', () => {
+    const rows = Object.freeze([
+      Object.freeze({ id: 'a', title: 'Alpha' }),
+      Object.freeze({ id: 'b', title: 'Beta', pinned: true, updatedAt: 0 }),
+    ]);
+    const onSelect = vi.fn();
+    const onNewThread = vi.fn();
+    const renderTitle = vi.fn((item: ThreadListItem) => <mark>{item.id}</mark>);
+    const props = {
+      threads: rows,
+      onSelect,
+      onNewThread,
+      now: 120000,
+      activeThreadId: 'b',
+    };
+    const view = render(<ThreadList {...props} renderTitle={renderTitle} />);
+    const beta = view.getByRole('button', {
+      name: 'Beta',
+      description: 'Pinned conversation 2 min ago',
+    });
+    const row = beta.parentElement;
+    expect(renderTitle.mock.calls[1][0]).toBe(rows[1]);
+    expect(
+      view
+        .getAllByRole('listitem')
+        .map((node) => node.querySelector('button')?.title)
+    ).toEqual(['Alpha', 'Beta']);
+    const ids = (beta.getAttribute('aria-describedby') ?? '').split(' ');
+    expect(ids).toHaveLength(2);
+    expect(ids.map((id) => document.getElementById(id)?.textContent)).toEqual([
+      'Pinned conversation',
+      '2 min ago',
+    ]);
+    expect(beta.hasAttribute('aria-labelledby')).toBe(false);
+    beta.focus();
+    for (const content of [null, false] as const) {
+      view.rerender(<ThreadList {...props} renderTitle={() => content} />);
+      expect(
+        view.getByRole('button', {
+          name: 'Beta',
+          description: 'Pinned conversation 2 min ago',
+        })
+      ).toBe(beta);
+      expect(beta.querySelector('svg')).not.toBeNull();
+      expect(document.activeElement).toBe(beta);
+    }
+    view.rerender(<ThreadList {...props} />);
+    expect(
+      view.getByRole('button', {
+        name: 'Beta',
+        description: 'Pinned conversation 2 min ago',
+      })
+    ).toBe(beta);
+    expect(beta.getAttribute('aria-label')).toBe('Beta');
+    expect(beta.hasAttribute('aria-labelledby')).toBe(false);
+    for (const updatedAt of [undefined, NaN, Infinity]) {
+      view.rerender(
+        <ThreadList
+          {...props}
+          threads={[
+            { id: 'b', title: 'Changed', pinned: true, updatedAt },
+            rows[0],
+          ]}
+        />
+      );
+      expect(
+        view.getByRole('button', {
+          name: 'Changed',
+          description: 'Pinned conversation',
+        })
+      ).toBe(beta);
+      expect(beta.parentElement).toBe(row);
+      expect(beta.getAttribute('title')).toBe('Changed');
+      expect(beta.querySelector('time')).toBeNull();
+      expect(document.activeElement).toBe(beta);
+    }
+    view.rerender(
+      <ThreadList
+        {...props}
+        threads={[{ id: 'b', title: 'Changed', pinned: true, updatedAt: 0 }]}
+        now={NaN}
+      />
+    );
+    expect(
+      view.getByRole('button', {
+        name: 'Changed',
+        description: 'Pinned conversation',
+      })
+    ).toBe(beta);
+    view.rerender(
+      <ThreadList
+        {...props}
+        threads={[
+          { id: 'b', title: 'Changed', pinned: false, updatedAt: 60000 },
+        ]}
+      />
+    );
+    expect(
+      view.getByRole('button', { name: 'Changed', description: '1 min ago' })
+    ).toBe(beta);
+    expect(beta.querySelector('svg')).toBeNull();
+    expect(beta.hasAttribute('aria-label')).toBe(false);
+    expect(document.activeElement).toBe(beta);
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(onNewThread).not.toHaveBeenCalled();
+    fireEvent.click(beta);
+    fireEvent.click(view.getByRole('button', { name: '+ New thread' }));
+    expect(onSelect.mock.calls).toEqual([['b']]);
+    expect(onNewThread.mock.calls).toEqual([[]]);
+    expect(beta.getAttribute('aria-current')).toBe('true');
+    view.rerender(
+      <>
+        <ThreadList {...props} />
+        <ThreadList {...props} />
+      </>
+    );
+    const descriptions = view
+      .getAllByRole('button', { name: 'Beta' })
+      .flatMap((button) => {
+        const references = (
+          button.getAttribute('aria-describedby') ?? ''
+        ).split(' ');
+        for (const id of references)
+          expect(button.contains(document.getElementById(id))).toBe(true);
+        return references;
+      });
+    expect(new Set(descriptions).size).toBe(4);
+  });
+
+  it('renders supplied items with independent labels and retains keyed focus across renderer changes', () => {
+    const rows = Object.freeze([
+      Object.freeze({ id: 'a', title: 'Alpha', updatedAt: 0 }),
+      Object.freeze({ id: 'b', title: '', updatedAt: 0 }),
+    ]);
+    const onSelect = vi.fn();
+    const onNewThread = vi.fn();
+    const renderTitle = vi.fn((item: ThreadListItem) => <mark>{item.id}</mark>);
+    const props = {
+      threads: rows,
+      onSelect,
+      onNewThread,
+      activeThreadId: 'a',
+      now: 60000,
+    };
+    const view = render(<ThreadList {...props} renderTitle={renderTitle} />);
+    const alpha = view.getByRole('button', {
+      name: 'Alpha',
+      description: '1 min ago',
+    });
+    const row = alpha.parentElement;
+    expect(renderTitle).toHaveBeenCalledTimes(2);
+    expect(renderTitle.mock.calls[0][0]).toBe(rows[0]);
+    expect(renderTitle.mock.calls[1][0]).toBe(rows[1]);
+    expect(alpha.querySelector('mark')?.textContent).toBe('a');
+    expect(alpha.getAttribute('title')).toBe('Alpha');
+    expect(alpha.hasAttribute('aria-labelledby')).toBe(false);
+    expect(view.getByRole('button', { name: 'b' }).getAttribute('title')).toBe(
+      'b'
+    );
+    alpha.focus();
+    for (const empty of [null, false] as const) {
+      view.rerender(<ThreadList {...props} renderTitle={() => empty} />);
+      expect(view.getByRole('button', { name: 'Alpha' })).toBe(alpha);
+      expect(alpha.textContent).toBe('1 min ago');
+      expect(document.activeElement).toBe(alpha);
+    }
+    view.rerender(
+      <ThreadList
+        {...props}
+        threads={[rows[1], { id: 'a', title: 'Changed' }]}
+        renderTitle={() => <em>replacement</em>}
+      />
+    );
+    expect(view.getByRole('button', { name: 'Changed' })).toBe(alpha);
+    expect(alpha.parentElement).toBe(row);
+    expect(alpha.querySelector('em')?.textContent).toBe('replacement');
+    expect(alpha.hasAttribute('aria-describedby')).toBe(false);
+    expect(document.activeElement).toBe(alpha);
+    fireEvent.click(alpha);
+    fireEvent.click(view.getByRole('button', { name: '+ New thread' }));
+    expect(onSelect.mock.calls).toEqual([['a']]);
+    expect(onNewThread.mock.calls).toEqual([[]]);
+    expect(alpha.getAttribute('aria-current')).toBe('true');
+    view.rerender(<ThreadList {...props} />);
+    expect(view.getByRole('button', { name: 'Alpha' })).toBe(alpha);
+    expect(alpha.hasAttribute('aria-label')).toBe(false);
+    expect(document.activeElement).toBe(alpha);
+  });
+
   it.each([
     [0, 0, 'just now'],
     [-1, 0, 'just now'],
@@ -347,4 +569,122 @@ describe('ThreadList', () => {
     expect(button.isConnected).toBe(false);
     expect(onSelect).not.toHaveBeenCalled();
   });
+});
+
+it('requests context for the exact row and original pointer event without selecting or claiming it', () => {
+  const select = vi.fn();
+  const context = vi.fn((id, event) => {
+    expect(id).toBe(' exact <ID> ');
+    expect(event.currentTarget).toBe(row);
+    expect(event.nativeEvent).toBe(native);
+  });
+  const view = render(
+    <ThreadList
+      threads={[{ id: ' exact <ID> ' }]}
+      onSelect={select}
+      onContextMenu={context}
+      renderActions={() => <button>Action</button>}
+      onNewThread={() => undefined}
+    />
+  );
+  const row = view.getByRole('button', { name: 'exact <ID>' });
+  const native = new MouseEvent('contextmenu', {
+    bubbles: true,
+    cancelable: true,
+    clientX: 112,
+    clientY: 94,
+    button: 2,
+  });
+  fireEvent(row, native);
+  expect(context).toHaveBeenCalledTimes(1);
+  expect(native.defaultPrevented).toBe(false);
+  fireEvent.contextMenu(view.getByRole('button', { name: 'Action' }));
+  fireEvent.contextMenu(view.getByRole('button', { name: '+ New thread' }));
+  expect(context).toHaveBeenCalledTimes(1);
+  expect(select).not.toHaveBeenCalled();
+});
+
+it.each([{ key: 'ContextMenu' }, { key: 'F10', shiftKey: true }])(
+  'requests a keyboard context once and suppresses its native duplicate but preserves the next pointer: %s',
+  (key) => {
+    const context = vi.fn((_id, event) => event.preventDefault());
+    const view = render(
+      <ThreadList
+        threads={[{ id: 'a' }]}
+        onSelect={vi.fn()}
+        onContextMenu={context}
+      />
+    );
+    const row = view.getByRole('button');
+    const native = new KeyboardEvent('keydown', {
+      ...key,
+      bubbles: true,
+      cancelable: true,
+    });
+    fireEvent(row, native);
+    expect(context).toHaveBeenCalledTimes(1);
+    expect(context.mock.calls[0][1].nativeEvent).toBe(native);
+    fireEvent.contextMenu(row, { button: 0, clientX: 0, clientY: 0 });
+    expect(context).toHaveBeenCalledTimes(1);
+    fireEvent.pointerDown(row, { button: 2 });
+    fireEvent.contextMenu(row, { button: 2, clientX: 0, clientY: 0 });
+    expect(context).toHaveBeenCalledTimes(2);
+  }
+);
+
+it.each([
+  { key: 'ContextMenu', shiftKey: true },
+  { key: 'ContextMenu', ctrlKey: true },
+  { key: 'ContextMenu', metaKey: true },
+  { key: 'ContextMenu', altKey: true },
+  { key: 'ContextMenu', repeat: true },
+  { key: 'ContextMenu', isComposing: true },
+  { key: 'F10' },
+  { key: 'F10', shiftKey: true, ctrlKey: true },
+  { key: 'Enter' },
+])('leaves guarded context key input alone: %s', (key) => {
+  const context = vi.fn();
+  const view = render(
+    <ThreadList
+      threads={[{ id: 'a' }]}
+      onSelect={vi.fn()}
+      onContextMenu={context}
+    />
+  );
+  const event = new KeyboardEvent('keydown', {
+    ...key,
+    bubbles: true,
+    cancelable: true,
+  });
+  fireEvent(view.getByRole('button'), event);
+  expect(context).not.toHaveBeenCalled();
+  expect(event.defaultPrevented).toBe(false);
+});
+
+it('leaves omitted and already claimed context input alone', () => {
+  const context = vi.fn();
+  const view = render(
+    <ThreadList
+      threads={[{ id: 'a' }]}
+      onSelect={vi.fn()}
+      onContextMenu={context}
+    />
+  );
+  for (const event of [
+    new MouseEvent('contextmenu', { bubbles: true, cancelable: true }),
+    new KeyboardEvent('keydown', {
+      key: 'ContextMenu',
+      bubbles: true,
+      cancelable: true,
+    }),
+  ]) {
+    event.preventDefault();
+    fireEvent(view.getByRole('button'), event);
+  }
+  expect(context).not.toHaveBeenCalled();
+  view.rerender(<ThreadList threads={[{ id: 'a' }]} onSelect={vi.fn()} />);
+  expect(fireEvent.contextMenu(view.getByRole('button'))).toBe(true);
+  expect(
+    fireEvent.keyDown(view.getByRole('button'), { key: 'ContextMenu' })
+  ).toBe(true);
 });

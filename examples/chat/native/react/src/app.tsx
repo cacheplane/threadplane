@@ -1,4 +1,4 @@
-import { memo, useState, type ReactNode } from 'react';
+import { memo, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useAgent } from '@threadplane/react';
 import { Markdown } from '@threadplane/react/markdown';
 import {
@@ -16,11 +16,17 @@ import type {
   ReactApplicationSnapshot as ApplicationSnapshot,
 } from './application';
 import type { A2uiMessageContent as MessageContent } from './a2ui-message-content';
+import { renderThreadTitle } from './thread-title';
 import { filterLoadedTitles } from '../../shared/projection';
 import { submissionStatus } from '../../shared/submission-status';
 import { Approval } from './approval';
 import { BackgroundActivity } from './background-activity';
 import { CopyAnswer } from './copy-answer';
+import {
+  ConversationActions,
+  type RenameEditorRequest,
+} from './conversation-actions';
+import { useConversationMenu } from './use-conversation-menu';
 import { TripSummary } from './trip-summary';
 import { NativeNavigation } from './native-navigation';
 
@@ -176,8 +182,16 @@ function Conversation({
 }) {
   const snapshot = useAgent(application);
   const [filter, setFilter] = useState('');
+  const filterInput = useRef<HTMLInputElement>(null);
   const rows = filterLoadedTitles(snapshot.list.rows, filter);
   const selection = snapshot.selection;
+  const menus = useConversationMenu(rows);
+  const [editor, setEditor] = useState<RenameEditorRequest | null>(null);
+  const editorSequence = useRef(0);
+  useEffect(() => {
+    if (editor && !rows.some((row) => row.id === editor.id))
+      setEditor((latest) => (latest === editor ? null : latest));
+  }, [rows, editor]);
   const directory = (
     <aside aria-labelledby="conversations-title">
       <h2 id="conversations-title">Loaded conversations</h2>
@@ -196,6 +210,7 @@ function Conversation({
       </div>
       <label htmlFor="filter">Filter loaded conversations by title</label>
       <input
+        ref={filterInput}
         id="filter"
         type="search"
         value={filter}
@@ -218,6 +233,38 @@ function Conversation({
       )}
       <ThreadList
         threads={rows}
+        onContextMenu={(id, event) => {
+          setEditor(null);
+          menus.onContextMenu(id, event);
+        }}
+        renderActions={(thread) => (
+          <ConversationActions
+            id={thread.id}
+            title={thread.title ?? ''}
+            menu={menus.forThread(thread.id)}
+            canRename={application.canRename()}
+            canSetPinned={application.canSetPinned()}
+            pinned={thread.pinned}
+            pinState={snapshot.pins[thread.id]}
+            setPinned={application.setPinned}
+            pending={snapshot.renames[thread.id]?.status === 'pending'}
+            rename={application.rename}
+            editor={rows.some((row) => row.id === editor?.id) ? editor : null}
+            onRename={(target) =>
+              setEditor({
+                id: thread.id,
+                token: ++editorSequence.current,
+                returnFocusTo: target,
+              })
+            }
+            onClose={(request) =>
+              setEditor((latest) => (latest === request ? null : latest))
+            }
+          />
+        )}
+        renderTitle={(thread) =>
+          renderThreadTitle(thread.title || thread.id, filter)
+        }
         activeThreadId={selection.id}
         onSelect={application.select}
         label="Loaded conversations"
@@ -242,7 +289,24 @@ function Conversation({
       }`}
     >
       {presentation === 'sidenav' ? (
-        <NativeNavigation selectedId={selection.id}>
+        <NativeNavigation
+          selectedId={selection.id}
+          onSearch={() => filterInput.current?.focus()}
+          collapsedContent={
+            <ThreadList
+              threads={rows}
+              activeThreadId={selection.id}
+              onSelect={application.select}
+              label="Loaded conversations"
+              className="conversation-list conversation-list--compact"
+              renderTitle={(thread) =>
+                Array.from(
+                  (thread.title || thread.id).trim()
+                )[0]?.toUpperCase() || '?'
+              }
+            />
+          }
+        >
           {directory}
         </NativeNavigation>
       ) : presentation !== 'sidebar' ? (

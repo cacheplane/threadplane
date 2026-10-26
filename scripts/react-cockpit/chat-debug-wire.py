@@ -31,6 +31,25 @@ if len(sys.argv) == 2 and sys.argv[1].startswith("--fault="):
         time.sleep(0.2)
         sys.stdout.write('{"requestId":1,"result":{"late":true}}\n')
         sys.stdout.flush()
+    elif fault in {"delayed-close", "hung-close"}:
+        import json
+        if fault == "hung-close":
+            signal.signal(signal.SIGTERM, signal.SIG_IGN)
+        raw = sys.stdin.buffer.readline(65537)
+        if len(raw) > 65536 or not raw.endswith(b"\n"):
+            sys.exit(2)
+        request = json.loads(raw)
+        if (not isinstance(request, dict)
+                or set(request) != {"requestId", "command"}
+                or request["command"] != "close"
+                or type(request["requestId"]) is not int
+                or request["requestId"] < 1):
+            sys.exit(2)
+        sys.stdout.write(json.dumps({"requestId": request["requestId"], "result": {}}) + "\n")
+        sys.stdout.flush()
+        if fault == "delayed-close":
+            time.sleep(0.75)
+            sys.exit(0)
     else:
         sys.exit(2)
     time.sleep(30)

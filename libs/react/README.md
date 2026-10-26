@@ -63,7 +63,8 @@ under development and is not a published compatibility or feature-parity claim.
 
 Build with `npx nx build react`; run `npx nx test react` and
 `npx nx run react:type-tests` for real-session and strict type coverage. React
-19.2.4 is the tested runtime; React DOM is used only by the test host.
+19.2.4 is the tested runtime. React DOM ^19.2.4 is a required peer for chat
+portals; the headless root does not import React DOM.
 
 `@threadplane/react/chat` is a separate client entry for a plain-text conversation:
 
@@ -301,10 +302,128 @@ zero and negative dates are supported. Optional readonly `now` supplies a numeri
 reference time; otherwise `Date.now()` is sampled once per render. The owner
 rerenders to refresh relative labels. The view owns no timer or data refresh.
 
+Optional readonly boolean `pinned` presents a pin only for strict `true`. A
+decorative current-color icon precedes title content, and “Pinned conversation”
+describes the button before any relative time. Its accessible name and tooltip
+remain the original title or ID, including with custom or empty title content.
+Invalid timestamps still leave pin status available. Pin presentation preserves
+supplied order and adds no action, mutation, sorting or focus target.
+
+Optional readonly `renderTitle` receives the original supplied `ThreadListItem`
+and returns ReactNode title content inside the existing button. Supply only
+noninteractive phrasing content (for example `mark` or `em`); do not nest links,
+buttons or focusable controls. The original `title || id` remains the tooltip and
+accessible name regardless of custom content. `null` and `false` intentionally
+render no title content, with no fallback; timestamp descriptions remain intact.
+Omitting the callback preserves the default markup. This supports bounded title
+content, while broader row templates remain open.
+
+Optional readonly `renderActions` receives the original supplied `ThreadListItem`
+and returns ReactNode content beside the selection button, in a separate sibling
+wrapper. Use it for application-owned interactive controls with their own
+accessible names, callbacks and pending/error feedback. Activating these controls
+does not select the conversation. `null`, `false` and `undefined` omit the action
+wrapper; other ReactNode values are preserved. Omitting the callback preserves
+the original row markup. The view owns no menu or action execution.
+
+Optional readonly `onContextMenu` receives the exact conversation ID and original
+React mouse or keyboard event from the selection button. Right-click, the
+Context Menu key, and Shift+F10 request it without selecting the row. The owner
+decides whether to call `preventDefault()` and open a menu. Claimed, repeated,
+composing, and unrelated modified keyboard events are ignored. Action siblings
+and the New button are not intercepted. Omitting the callback preserves native
+context-menu behavior. Capture `event.currentTarget` synchronously when it will
+serve as the menu's invoking element.
+
 An empty collection renders an empty list. The application owns loaded-title
-filtering, loading/error/empty notices, data fetching and execution. Rename,
-delete, archive, pin/project actions, drag reordering, live timestamp refresh and
+filtering, loading/error/empty notices, data fetching and execution. Delete,
+archive, project actions, drag reordering, live timestamp refresh and
 custom row rendering remain future work. This is a bounded private T29 slice.
+
+## Controlled conversation rename editor
+
+`ThreadRenameForm` is a private controlled inline editor from
+`@threadplane/react/chat`. Supply `value`, `onValueChange`, `onSubmit` and
+`onCancel`; optional `label`, `className`, `pending` and `error` describe the
+application-owned operation. The form focuses and selects its input on mount,
+retains that input across controlled updates, and provides Save and Cancel.
+Whitespace-only values cannot submit. Enter submits outside IME composition;
+Escape requests cancellation before an enclosing drawer handles it. Blur never
+submits. Pending disables input and Save while leaving Cancel available.
+
+The application trims and validates the requested title, compares it with the
+current title, persists it and owns pending/error/retry state. The form makes
+no backend requests and does not await command promises. Compose it in the
+ThreadList action sibling, outside the selection button. The native example
+uses it for confirmed metadata renames without selecting or reloading a session.
+Cancelling a pending editor ends local editing interest; it cannot promise a
+remote write was rolled back. Archive/delete/project mutation and full
+thread lifecycle parity remain open.
+
+The native example also composes app-owned Pin/Unpin commands through the same
+action slot and controlled menu. It updates supplied `pinned` metadata only after
+the exact target and strict boolean value are confirmed by the backend. Pending,
+success and failure feedback belong to the application; the pin item is disabled
+while its mutation is pending, and the same command permits explicit retry after
+failure. Copy, Rename and selection remain available. Pin/unpin preserves supplied
+row order and never starts, reloads or stops a session. The compact rail reflects
+the shared pinned state while keeping selection-only controls.
+
+## Controlled command menu
+
+The private chat entry also exports `OverflowMenu`, `OverflowMenuProps` and
+`OverflowMenuItem`. Supply readonly ordered items with unique stable string IDs
+and literal labels, required `label`, controlled `open`/`onOpenChange`, and
+`onSelect(itemId, event)`:
+
+```tsx
+<OverflowMenu
+  label="Conversation actions"
+  items={[{ id: 'copy', label: 'Copy conversation ID' }]}
+  open={open}
+  onOpenChange={setOpen}
+  onSelect={(itemId, event) => copyFromGesture(itemId, event)}
+/>
+```
+
+Optional `disabled`, `className` and item `disabled`/`tone: 'normal' | 'destructive'`
+control presentation. Only strict `true` disables controls. Selection requests
+closure and synchronously passes the original React button mouse event,
+preserving user-gesture capabilities such as the item's
+`currentTarget.ownerDocument` clipboard. The app owns async work, errors and
+status; the component never awaits command promises.
+
+The named menu portals to the trigger document body. Arrow keys wrap enabled
+items, Home/End select edges, and native Enter/Space activate. Escape closes the
+menu before a containing drawer; accepted command/Escape closure returns focus
+when still menu-owned. Tab/Shift+Tab continue from the trigger's natural order.
+Outside pointer/focus, external scroll and viewport resize request dismissal.
+Hidden, inert, disabled, disconnected or unlaid-out anchors suppress the portal
+until an accepted closed/open cycle, even if the owner refuses closure. Effective
+ARIA reflects the mounted portal. Opening snapshots local direction, font,
+color-scheme and chat/design tokens; ancestor theme changes dismiss the menu.
+Import the chat stylesheet for fixed viewport-clamped placement and 40px targets.
+
+Optional readonly `anchorPoint` supplies readonly numeric `x`/`y` coordinates in
+the trigger document's viewport. A finite point places the menu beside that point,
+following local direction, flipping above when needed and retaining the 8px
+viewport margin. Missing, null or nonfinite coordinates use the trigger instead.
+Point changes remeasure the existing menu without replacing its focused item.
+The trigger must still be available, including for point-anchored menus.
+
+Optional readonly `returnFocusTo` supplies an invoking `HTMLElement` for accepted
+command/Escape closure and natural Tab/Shift+Tab traversal. It must be available
+in the trigger's document and able to take focus; otherwise the trigger is used
+when available. Deliberate focus outside the menu is preserved. The owner controls
+the point, invoker and open state, and should associate close callbacks with the
+current request so an old callback cannot dismiss a newer menu for the same ID.
+
+The Node rendering check covers DOM-free import and pre-mount trigger rendering,
+including `open=true`; it is a bounded check, with no broader hydration claim.
+Native full directories compose pointer and keyboard context menus for one
+exact-ID clipboard command and an app-owned rename editor; compact navigation
+remains selection-only. Typeahead, further lifecycle/project/archive commands
+and full parity remain open.
 
 ## Controlled chat panels
 
@@ -407,11 +526,48 @@ control focus.
 
 Children stay mounted across every mode. Collapsed content and closed drawers are
 hidden and inert, retaining filters, drafts and borrowed subscriptions. The shell
-does not select conversations, send commands, own session data or add global
-listeners. Optional `label`, `launcherLabel`, `closeLabel`, `expandLabel`,
+does not select conversations, send commands or own session data. Optional
+`label`, `launcherLabel`, `closeLabel`, `expandLabel`,
 `collapseLabel` and `className` customize its accessible labels and styling.
 Defaults are Conversations, Open conversations, Close conversations, Expand
 conversations and Collapse conversations. Use the existing scoped chat stylesheet.
+
+Optional readonly `collapsedContent?: ReactNode` supplies a persistent compact
+content tree, visible only in collapsed mode independently of `open`. The full
+children tree stays mounted, hidden and inert while collapsed; compact content
+stays mounted, hidden and inert when expanded or in either drawer state. Omitting
+the prop renders no compact wrapper; explicit `null` or `false` stays empty.
+The shell owns no compact selection or data. Focus from disappearing compact
+content moves to the expanded toggle or closed-drawer launcher; opening a drawer
+continues to focus Close. External focus is preserved.
+
+Optional readonly `toggleShortcut?: boolean` enables Ctrl+B or Command+B only
+when explicitly `true`. It requests the opposite desktop mode through
+`onModeChange`; the application still decides whether to accept that change.
+The desktop toggle advertises `Control+B Meta+B` through `aria-keyshortcuts` and
+an action tooltip. Drawer mode leaves the chord unclaimed. Editable fields,
+composition, repeats, Alt/Shift-modified chords and already handled events are
+ignored. Only a connected shell outside hidden/inert ancestors can claim it;
+the first eligible opted-in shell in the same window handles the event. Omitting
+the option adds no global shortcut listener or shortcut attributes.
+
+Optional readonly `onSearch?: () => void` adds a Search conversations button.
+The callback receives no arguments and owns what searching means; the shell does
+not change mode, open a dialog, focus a field or run a query. Optional readonly
+`searchLabel?: string` changes the full accessible name, visible label and tooltip.
+The collapsed rail shows a magnifier while retaining the full accessible name.
+The action remains mounted inside the navigation and is hidden/inert with a
+closed drawer.
+
+Optional readonly `searchShortcut?: boolean` enables Ctrl+K or Command+K only
+when explicitly `true` and `onSearch` is supplied. It requests search in every
+mode, including a closed drawer. The button advertises `Control+K Meta+K` and a
+tooltip hint when enabled. It shares the toggle shortcut's editable, composition,
+repeat, modifier, claimed-event and eligible-owner protections. Both shortcuts
+use one listener per shell while either is enabled; callback replacements and
+mode changes preserve its registration priority. Supplying a label or shortcut flag without a callback
+adds no Search button and claims no search chord. Accepted drawer closure returns
+focus from Search to the launcher; the application owns search focus otherwise.
 
 `ChatSidenavScrim` is an optional sibling backdrop, rendered only when its required
 `open` prop is true. It is an ordinary keyboard-accessible button; activation calls
@@ -429,9 +585,12 @@ It composes the sibling scrim only while the drawer is open, restores local focu
 after backdrop dismissal, and removes the backdrop on desktop mode changes.
 Its directory filter and composer survive navigation visibility and breakpoint
 changes; selecting a different conversation deliberately resets that composer's
-draft. This is a bounded children-based navigation slice. Project/archive menus,
-global shortcuts, debug ownership and full Angular composition parity remain
-open under T30.
+draft. It opts into the desktop toggle shortcut while preserving those owners.
+This is a bounded children-based navigation slice. Project/archive menus,
+backend search, search dialogs, other global shortcuts, debug ownership and full
+Angular composition parity remain open under T30. The native Search loaded
+conversations action reveals navigation and focuses its existing loaded-title
+filter once per explicit request, without adding backend search or commands.
 
 ## Read-only render trees
 

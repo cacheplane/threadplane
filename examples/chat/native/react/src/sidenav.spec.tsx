@@ -17,7 +17,13 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-function navigationFixture(narrow = false) {
+function navigationFixture(
+  narrow = false,
+  rows = [
+    { id: 'a', title: 'Alpha notes' },
+    { id: 'b', title: 'Beta notes' },
+  ]
+) {
   const fixture = applicationFixture();
   const listeners = new Set<() => void>();
   const media = {
@@ -32,10 +38,6 @@ function navigationFixture(narrow = false) {
     },
   };
   vi.stubGlobal('matchMedia', () => media);
-  const rows = [
-    { id: 'a', title: 'Alpha notes' },
-    { id: 'b', title: 'Beta notes' },
-  ];
   const io = { list: 0, get: 0, create: 0 };
   const application = createReactApplication({
     ...fixture.options,
@@ -56,6 +58,123 @@ function navigationFixture(narrow = false) {
   });
   return { fixture, media, listeners, io, application };
 }
+
+it('search requests reveal the retained filter and focus it again without extra I/O', async () => {
+  const { fixture, application, media, io } = navigationFixture();
+  try {
+    application.start();
+    await waitFor(() =>
+      expect(application.getSnapshot().selection.status).toBe('ready')
+    );
+    const view = render(
+      <App application={application} presentation="sidenav" />
+    );
+    const filter = view.getByRole('searchbox') as HTMLInputElement;
+    const input = view.getByRole('textbox', {
+      name: 'Message',
+    }) as HTMLTextAreaElement;
+    fireEvent.change(filter, { target: { value: 'notes' } });
+    fireEvent.change(input, { target: { value: 'Kept draft' } });
+    const before = { io: { ...io }, counters: { ...fixture.counters } };
+    const search = view.getByRole('button', {
+      name: 'Search loaded conversations',
+    });
+    fireEvent.click(search);
+    expect(document.activeElement).toBe(filter);
+    input.focus();
+    view.rerender(<App application={application} presentation="sidenav" />);
+    expect(document.activeElement).toBe(input);
+    search.focus();
+    fireEvent.keyDown(search, { key: 'k', metaKey: true });
+    expect(document.activeElement).toBe(filter);
+    fireEvent.click(
+      view.getByRole('button', { name: 'Collapse conversations' })
+    );
+    fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
+    expect(document.activeElement).toBe(filter);
+    expect(view.getByRole('searchbox')).toBe(filter);
+    fireEvent.click(
+      view.getByRole('button', { name: 'Collapse conversations' })
+    );
+    act(() => media.resize(true));
+    fireEvent.keyDown(window, { key: 'k', metaKey: true });
+    expect(document.activeElement).toBe(filter);
+    expect(view.getByRole('searchbox')).toBe(filter);
+    search.focus();
+    fireEvent.click(search);
+    expect(document.activeElement).toBe(filter);
+    fireEvent.click(view.getByRole('button', { name: 'Close conversations' }));
+    fireEvent.click(view.getByRole('button', { name: 'Open conversations' }));
+    expect(document.activeElement).toBe(
+      view.getByRole('button', { name: 'Close conversations' })
+    );
+    act(() => media.resize(false));
+    expect(
+      view.getByRole('button', { name: 'Expand conversations' })
+    ).toBeTruthy();
+    expect(filter.value).toBe('notes');
+    expect(input.value).toBe('Kept draft');
+    expect(view.getByRole('textbox', { name: 'Message' })).toBe(input);
+    expect({ io, counters: fixture.counters }).toEqual(before);
+  } finally {
+    application.dispose();
+  }
+});
+
+it('coalesces native search requests and discards pending work if its owner disappears', () => {
+  const { application } = navigationFixture();
+  try {
+    const first = vi.fn();
+    const latest = vi.fn();
+    const content = <input aria-label="Filter" />;
+    const view = render(
+      <NativeNavigation selectedId={null} onSearch={first}>
+        {content}
+      </NativeNavigation>
+    );
+    const search = view.getByRole('button', {
+      name: 'Search loaded conversations',
+    });
+    fireEvent.click(
+      view.getByRole('button', { name: 'Collapse conversations' })
+    );
+    act(() => {
+      search.click();
+      search.click();
+    });
+    expect(first).toHaveBeenCalledTimes(1);
+    const external = document.createElement('button');
+    document.body.append(external);
+    external.focus();
+    view.rerender(
+      <NativeNavigation selectedId={null} onSearch={latest}>
+        {content}
+        <span>Unrelated stream update</span>
+      </NativeNavigation>
+    );
+    expect(latest).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(external);
+    fireEvent.click(search);
+    expect(latest).toHaveBeenCalledTimes(1);
+    act(() => {
+      search.click();
+      view.rerender(
+        <NativeNavigation selectedId={null}>{content}</NativeNavigation>
+      );
+    });
+    expect(latest).toHaveBeenCalledTimes(1);
+    view.rerender(
+      <NativeNavigation selectedId={null} onSearch={latest}>
+        {content}
+      </NativeNavigation>
+    );
+    expect(latest).toHaveBeenCalledTimes(1);
+    expect(document.activeElement).toBe(external);
+    external.remove();
+  } finally {
+    application.dispose();
+  }
+});
 
 it('sidenav mode changes retain the filter, conversation draft and owners and clean up media listeners', async () => {
   const { fixture, media, listeners, io, application } = navigationFixture();
@@ -83,18 +202,34 @@ it('sidenav mode changes retain the filter, conversation draft and owners and cl
     fireEvent.change(filter, { target: { value: 'notes' } });
     fireEvent.change(input, { target: { value: 'Retain this draft.' } });
     const work = { counters: { ...fixture.counters }, io: { ...io } };
-    fireEvent.click(
-      view.getByRole('button', { name: 'Collapse conversations' })
-    );
+    const toggle = view.getByRole('button', { name: 'Collapse conversations' });
+    expect(toggle.getAttribute('aria-keyshortcuts')).toBe('Control+B Meta+B');
+    for (const target of [filter, input]) {
+      expect(fireEvent.keyDown(target, { key: 'b', ctrlKey: true })).toBe(true);
+      expect(view.queryByRole('searchbox')).toBe(filter);
+    }
+    toggle.focus();
+    expect(fireEvent.keyDown(toggle, { key: 'b', ctrlKey: true })).toBe(false);
     expect(view.queryByRole('searchbox')).toBeNull();
     expect(filter.isConnected).toBe(true);
-    fireEvent.click(view.getByRole('button', { name: 'Expand conversations' }));
+    expect(fireEvent.keyDown(toggle, { key: 'b', metaKey: true })).toBe(false);
     expect(view.getByRole('searchbox')).toBe(filter);
     expect(filter.value).toBe('notes');
     act(() => media.resize(true));
     expect(view.queryByRole('navigation')).toBeNull();
     const launcher = view.getByRole('button', { name: 'Open conversations' });
+    expect(toggle.hasAttribute('aria-keyshortcuts')).toBe(false);
+    expect(toggle.hasAttribute('title')).toBe(false);
+    expect(fireEvent.keyDown(launcher, { key: 'b', ctrlKey: true })).toBe(true);
+    expect(view.queryByRole('navigation')).toBeNull();
     fireEvent.click(launcher);
+    expect(view.getByRole('navigation')).toBe(nav);
+    expect(
+      fireEvent.keyDown(
+        view.getByRole('button', { name: 'Close conversations' }),
+        { key: 'b', metaKey: true }
+      )
+    ).toBe(true);
     expect(view.getByRole('navigation')).toBe(nav);
     const scrim = view.getByRole('button', {
       name: 'Close conversation navigation backdrop',
@@ -252,4 +387,83 @@ it('explicit sidenav selection updates the application and closes the drawer, re
     application.dispose();
   }
   expect(fixture.counters.disposals).toBe(fixture.counters.owners);
+});
+
+it('uses filtered compact initials with full names and controlled application selection', async () => {
+  const { application, io } = navigationFixture();
+  try {
+    application.start();
+    await waitFor(() =>
+      expect(application.getSnapshot().selection.status).toBe('ready')
+    );
+    const view = render(
+      <App application={application} presentation="sidenav" />
+    );
+    const filter = view.getByRole('searchbox');
+    fireEvent.change(filter, { target: { value: 'Beta' } });
+    fireEvent.click(
+      view.getByRole('button', { name: 'Collapse conversations' })
+    );
+    const beta = view.getByRole('button', { name: 'Beta notes' });
+    expect(beta.textContent).toBe('B');
+    expect(beta.getAttribute('title')).toBe('Beta notes');
+    expect(view.queryByRole('button', { name: 'Alpha notes' })).toBeNull();
+    expect(view.queryByRole('button', { name: 'New', exact: true })).toBeNull();
+    expect(
+      view.queryByRole('button', { name: 'Refresh', exact: true })
+    ).toBeNull();
+    fireEvent.click(beta);
+    await waitFor(() =>
+      expect(application.getSnapshot().selection.id).toBe('b')
+    );
+    expect(beta.getAttribute('aria-current')).toBe('true');
+    fireEvent.click(view.getByRole('button', { name: 'Expand conversations' }));
+    expect(view.getByRole('searchbox')).toBe(filter);
+    expect((filter as HTMLInputElement).value).toBe('Beta');
+    expect(
+      view
+        .getByRole('button', { name: 'Beta notes' })
+        .getAttribute('aria-current')
+    ).toBe('true');
+    expect(io).toEqual({ list: 1, get: 2, create: 0 });
+  } finally {
+    application.dispose();
+  }
+});
+
+it('renders compact Unicode initials and the empty fallback from original titles or IDs', async () => {
+  const { application } = navigationFixture(false, [
+    { id: 'a', title: '  élan  ' },
+    { id: 'b', title: ' 🛰 launch' },
+    { id: 'charlie', title: '' },
+    { id: 'd', title: '   ' },
+  ]);
+  try {
+    application.start();
+    await waitFor(() =>
+      expect(application.getSnapshot().selection.status).toBe('ready')
+    );
+    const view = render(
+      <App application={application} presentation="sidenav" />
+    );
+    fireEvent.click(
+      view.getByRole('button', { name: 'Collapse conversations' })
+    );
+    for (const [title, initial] of [
+      ['élan', 'É'],
+      ['🛰 launch', '🛰'],
+      ['charlie', 'C'],
+      ['d', '?'],
+    ]) {
+      const button =
+        title === 'd'
+          ? view.container.querySelector(
+              '.conversation-list--compact button[title="   "]'
+            )!
+          : view.getByRole('button', { name: title });
+      expect(button.textContent).toBe(initial);
+    }
+  } finally {
+    application.dispose();
+  }
 });

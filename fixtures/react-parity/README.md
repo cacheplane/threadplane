@@ -1,5 +1,22 @@
 # React parity foundations
 
+The private chat package includes a bounded controlled `OverflowMenu` with exact
+readonly item/prop contracts and a required React DOM ^19.2.4 peer. The headless
+root remains DOM-import-free. Native full directories compose an exact-ID copy
+item while retaining app-owned command lifetime and feedback; compact rails stay
+selection-only. The installed plain-package fixture additionally checks multi-item
+keyboard navigation, natural Tab destinations, local RTL/theme/font across the
+portal, unavailable-anchor suppression and edge placement at 1280/390/600px.
+Context-menu requests compose `ThreadList` with the same controlled menu. The
+application supplies pointer coordinates, invoking rows and open state; the menu
+manages focus return and natural Tab traversal. Point changes preserve the
+mounted menu and surviving focused item. Native composition keeps request
+identity separate from conversation ID and retains existing clipboard/session lifetimes.
+The Node check proves DOM-free module import and pre-mount menu trigger rendering
+with either controlled open value. These bounded proofs do not establish general
+SSR/hydration or release parity. Typeahead and thread lifecycle,
+project/archive commands remain future work.
+
 This directory records the historical package foundations and the bounded shared
 LangGraph runtime proof. Core now exposes framework-free contracts; private Angular
 and React packages expose native observation bindings. A fixture-only private
@@ -326,8 +343,8 @@ This bounded runtime proof does not establish complete migration parity.
 | T26 | Implement all Markdown views and citation UI |
 | T27 | Implement A2UI surface and all 18 catalog views |
 | T28 | Implement approvals, tools, reasoning and subagent UI |
-| T29 | In progress: private controlled ThreadList selection view, optional app-owned new-conversation request and render-time relative updated timestamps with exact ISO metadata, dogfooded from backend timestamps in native React directory presentations; application owns data/filtering/execution/refresh. No timer or live ticking. Thread lifecycle actions, project/search/history/timeline surfaces and full parity remain open; private Debug is a separate bounded surface |
-| T30 | In progress: private controlled non-modal ChatPopup, full-height ChatSidebar with optional persistent page content and desktop content pushing, children-based ChatSidenav and optional sibling ChatSidenavScrim, dogfooded by the native conversation example. Sidenav supports expanded/collapsed navigation and a non-modal drawer, retaining mounted content; native exact `presentation=sidenav` chooses drawer with a dismissible backdrop at widths <=700px. Peer-panel edge claims, project/archive menus, global shortcuts, debug ownership and full composition parity remain open |
+| T29  | In progress: private controlled ThreadList selection view, optional app-owned new-conversation request and render-time relative updated timestamps with exact ISO metadata, dogfooded from backend timestamps in native React directory presentations; application owns data/filtering/execution/refresh. Bounded readonly title-content callback receives the original item and returns noninteractive ReactNode phrasing content; original accessible labels survive and null/false output is honored. Native React highlights the first literal loaded-title filter match. No timer or live ticking. Optional readonly boolean pinned metadata presents only strict true with a decorative icon and accessible status before time, preserving original names and supplied order without sorting or writes. Optional readonly `renderActions` receives the original item and composes application-owned interactive controls beside the selection button without changing selection; absent/null/false/undefined output omits its wrapper. Native full directories dogfood exact-ID clipboard copying, app-owned confirmed renaming through the private controlled ThreadRenameForm, and confirmed Pin/Unpin commands with pending/error/retry and independent title/pin reconciliation; compact rails stay selection-only and reflect shared pin state. Supplied row order and runtime/session ownership remain unchanged. Installed form types, SSR and browser checks cover explicit Save/Cancel, IME, literal titles and responsive containment. Broader ordering/reorder actions, full row templates and further thread lifecycle actions, project/search/history/timeline surfaces and full parity remain open; private Debug is a separate bounded surface |
+| T30 | In progress: private controlled non-modal ChatPopup, full-height ChatSidebar with optional persistent page content and desktop content pushing, children-based ChatSidenav and optional sibling ChatSidenavScrim, dogfooded by the native conversation example. Sidenav supports expanded/collapsed navigation and a non-modal drawer, retaining mounted content with an optional readonly ReactNode `collapsedContent` slot; native composes a compact ThreadList using shared filtered rows/selection and full accessible names with pin/time descriptions, while retaining both trees. Optional readonly boolean `toggleShortcut` opts into desktop Ctrl/Command+B controlled mode requests, with editable/claimed-event exclusions and drawer no-op; native dogfoods it across retained draft and active response. This is a bounded private T30 slice; native exact `presentation=sidenav` chooses drawer with a dismissible backdrop at widths <=700px. Optional readonly `onSearch`, `searchLabel` and strict opt-in `searchShortcut` add an application-owned Search request action and Ctrl/Command+K in all modes; native reveals navigation and focuses only the existing loaded-title filter without backend search or extra commands. Peer-panel edge claims, project/archive menus, backend search/search dialogs and other global shortcuts, debug ownership and full composition parity remain open |
 | T31 | Create canonical React applications and public testing utilities |
 | T32 | In progress: 41 registered native React and 41 Angular frontend identities across LangGraph, Deep Agents, Chat, AG-UI, Render and Runtimes; Chat and AG-UI A2UI reuse their existing shared backends, existing runtimes and bridges are reused, Render playback stays local |
 | T33 | In progress: 41 installed React previews (9 LangGraph, 5 Deep Agents, 11 Chat, 7 AG-UI, 6 Render, 3 Runtimes). Chat and AG-UI A2UI share the closed ten-view booking presentation; generic all-18 A2UI parity remains pending |

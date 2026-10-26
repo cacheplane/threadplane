@@ -2086,9 +2086,9 @@
         "T22"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/overflow-menu.tsx",
-      "reason": "Native component. Accessible menu positioning, navigation, disabled/destructive items and close rules."
+      "reason": "Bounded private React controlled menu presents disabled/destructive commands, pointer placement, explicit keyboard requests, focus return and dismissal. Typeahead, broader composition and full migration remain open; legacy Angular source and API stay unchanged."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-project-list/chat-project-list.component.ts#ChatProjectListComponent",
@@ -5360,9 +5360,9 @@
         "T22"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/overflow-menu.tsx",
-      "reason": "Native component. Accessible menu positioning, navigation, disabled/destructive items and close rules."
+      "reason": "Bounded private React controlled menu presents disabled/destructive commands, pointer placement, explicit keyboard requests, focus return and dismissal. Typeahead, broader composition and full migration remain open; legacy Angular source and API stay unchanged."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatOverlayOriginDirective",
@@ -6375,7 +6375,9 @@
         "T22"
       ],
       "treatment": "react",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/react/src/chat/overflow-menu.tsx",
+      "reason": "Bounded private React controlled menu presents disabled/destructive commands, pointer placement, explicit keyboard requests, focus return and dismissal. Typeahead, broader composition and full migration remain open; legacy Angular source and API stay unchanged."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#OverlayPositionResult",
@@ -10272,7 +10274,9 @@
         "T22"
       ],
       "treatment": "react",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/react/src/chat/overflow-menu.tsx",
+      "reason": "Bounded private React controlled menu presents disabled/destructive commands, pointer placement, explicit keyboard requests, focus return and dismissal. Typeahead, broader composition and full migration remain open; legacy Angular source and API stay unchanged."
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-project-list/chat-project-list.component.ts",
@@ -15612,6 +15616,50 @@
       "reason": "Separate controlled backdrop button with scoped viewport layering; no focus trap, portal, global listener or session behavior."
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#OverflowMenu",
+      "taskIds": [
+        "T29",
+        "T30",
+        "T22"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Bounded private controlled menu with owner-document portal, pointer context placement, keyboard/focus and unavailable-anchor suppression; native dogfoods exact-ID copying through row context requests. Typeahead, lifecycle and full parity remain open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#OverflowMenuItem",
+      "taskIds": [
+        "T29",
+        "T30",
+        "T22"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly stable ID, literal label, optional strict disabled state and normal/destructive tone for application-owned commands."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#OverflowMenuProps",
+      "taskIds": [
+        "T29",
+        "T30",
+        "T22"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly controlled menu with optional finite viewport anchor point and explicit same-document invoker; original mouse-event selection leaves async command work with the app. Full menu and lifecycle parity remain open."
+    },
+    {
+      "id": "source:libs/react/src/chat/overflow-menu.tsx",
+      "taskIds": [
+        "T29",
+        "T30",
+        "T22"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Scoped point/trigger portal placement, local theme snapshot, invoker-aware focus/Tab and unavailable-anchor suppression without backend execution ownership. Typeahead and full parity remain open."
+    },
+    {
       "id": "export:libs/react/src/chat/index.ts#ThreadList",
       "taskIds": ["T29"],
       "treatment": "react",
@@ -15627,17 +15675,42 @@
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ThreadListProps",
-      "taskIds": ["T29"],
+      "taskIds": [
+        "T29"
+      ],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Readonly collection and required explicit selection callback with optional controlled active ID, accessible list label/class and readonly creation callback, disabled state and plain label. Application owns filtering, statuses and execution."
+      "reason": "Readonly explicit selection and creation options, title/action slots and original pointer/keyboard context-request callback. Application owns current menu request, filtering, statuses and execution; broader lifecycle parity remains open."
     },
     {
       "id": "source:libs/react/src/chat/thread-list.tsx",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private keyed semantic selection list with original-event context requests on selection buttons and app-owned actions; supplied order/selection and row identity remain. Native composes bounded confirmed renaming and Pin/Unpin in action siblings, with application-owned metadata confirmation and pending/error handling; supplied order remains and further lifecycle/reorder parity stays open."
+    },
+    {
+      "id": "source:libs/react/src/chat/thread-rename-form.tsx",
       "taskIds": ["T29"],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Private keyed semantic list with safe plain labels, exact-ID callbacks, supplied selection, optional app-owned new-conversation request and scoped responsive styles; full lifecycle-action and composition parity remain open."
+      "reason": "Private controlled semantic inline rename editor with explicit IME-safe submit/cancel, pending/error presentation and retained input. Native application owns exact-ID persistence, confirmation, stale reads and editor occurrence lifetime; full thread lifecycle parity remains open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ThreadRenameForm",
+      "taskIds": ["T29"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private controlled rename form dogfooded by native full directory actions/context menus; it owns no I/O, session or mutation lifetime. Further lifecycle and full parity remain open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ThreadRenameFormProps",
+      "taskIds": ["T29"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly controlled title and synchronous input/submit/cancel notifications with optional pending/error/label/class. Application owns validation, persistence, retry and focus restoration; no SDK capability enters the view."
     }
   ]
 }

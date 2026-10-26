@@ -95,3 +95,41 @@ test('projection explicitly filters loaded titles case insensitively without cha
   assert.deepEqual(filterLoadedTitles(rows, 'two'), []);
   assert.deepEqual(filterLoadedTitles(rows, ' '), rows);
 });
+
+test('projection copies only strict true pin metadata into independent frozen snapshots without sorting', () => {
+  for (const pinned of [true, false, undefined, null, 'true', 1, {}, []]) {
+    const source = {
+      ...envelope('Title'),
+      metadata: { title: 'Title', pinned },
+    };
+    const row = projectThread(source);
+    assert.deepEqual(row, {
+      id: 'one',
+      title: 'Title',
+      ...(pinned === true ? { pinned: true } : {}),
+    });
+    source.metadata.pinned = pinned === true ? false : true;
+    assert.equal(row.pinned, pinned === true ? true : undefined);
+    assert.ok(Object.isFrozen(row));
+    assert.equal(Reflect.set(row, 'pinned', false), false);
+  }
+  assert.deepEqual(projectThread({ ...envelope('ignored'), metadata: null }), {
+    id: 'one',
+    title: 'Untitled',
+  });
+  const rows = projectThreads([
+    envelope('Plain'),
+    {
+      ...envelope('Pinned'),
+      thread_id: 'two',
+      metadata: { title: 'Pinned', pinned: true },
+    },
+  ]);
+  assert.deepEqual(
+    rows.map((row) => row.id),
+    ['one', 'two']
+  );
+  const filtered = filterLoadedTitles(rows, 'pin');
+  assert.equal(filtered[0], rows[1]);
+  assert.ok(Object.isFrozen(filtered));
+});

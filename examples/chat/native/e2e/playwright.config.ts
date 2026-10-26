@@ -13,6 +13,8 @@ export default defineConfig({
     'message-actions.spec.ts',
     'popup.spec.ts',
     'sidenav.spec.ts',
+    'rename.spec.ts',
+    'pin.spec.ts',
   ],
   fullyParallel: false,
   workers: 1,
