@@ -12,6 +12,7 @@ import {
 import type { ThreadDirectory, ThreadRow } from './contracts.js';
 import { selectedThread, threadUrl, type BrowserHistory } from './route.js';
 import { projectApproval, type Approval } from './approval.js';
+import { orderActiveThreads } from './projection.js';
 
 export type ApplicationSession = LangGraphSession<ApplicationToolContracts>;
 
@@ -23,6 +24,12 @@ interface Decision extends Approval {
 export interface ApplicationSnapshot<
   TRow extends MessageContent = MessageContent
 > {
+  readonly ordering: Readonly<{
+    status: 'idle' | 'pending' | 'confirmed' | 'unconfirmed';
+    id: string | null;
+    beforeId: string | null;
+    intent: number;
+  }>;
   readonly archives: Readonly<
     Record<
       string,
@@ -150,6 +157,12 @@ function createApplicationOwner<TRow extends MessageContent>(
   }
 
   let snapshot: ApplicationSnapshot<TRow> = Object.freeze({
+    ordering: Object.freeze({
+      status: 'idle',
+      id: null,
+      beforeId: null,
+      intent: 0,
+    }),
     archives: Object.freeze({}),
     pins: Object.freeze({}),
     renames: Object.freeze({}),
@@ -164,6 +177,12 @@ function createApplicationOwner<TRow extends MessageContent>(
   });
   let writeVersion = 0;
   let readOrder = 0;
+  let orderingIntent = 0;
+  let ordering: AbortController | undefined;
+  const rankEvidence = new Map<
+    string,
+    { version: number; pinnedOrder: number | undefined; readOrder: number }
+  >();
   const confirmedTitles = new Map<
     string,
     { version: number; title: string; readOrder: number }
@@ -229,6 +248,20 @@ function createApplicationOwner<TRow extends MessageContent>(
           readOrder: order,
         });
     }
+    const rank = rankEvidence.get(row.id);
+    if (rank) {
+      if (rank.version > readVersion || rank.readOrder > order)
+        row =
+          row.pinnedOrder !== rank.pinnedOrder
+            ? Object.freeze({ ...row, pinnedOrder: rank.pinnedOrder })
+            : row;
+      else
+        rankEvidence.set(row.id, {
+          ...rank,
+          pinnedOrder: row.pinnedOrder,
+          readOrder: order,
+        });
+    }
     return row;
   }
   let started = false;
@@ -258,6 +291,7 @@ function createApplicationOwner<TRow extends MessageContent>(
     if (disposed) return;
     next = { ...next, decision: projectDecision(next) };
     if (
+      next.ordering === snapshot.ordering &&
       next.renames === snapshot.renames &&
       next.archives === snapshot.archives &&
       next.pins === snapshot.pins &&
@@ -523,6 +557,11 @@ function createApplicationOwner<TRow extends MessageContent>(
     if (!started || disposed) return;
     const readVersion = writeVersion;
     const order = ++readOrder;
+    // Only admission after uncertain settlement can reconcile its barrier.
+    const barrier =
+      snapshot.ordering.status === 'unconfirmed'
+        ? snapshot.ordering
+        : undefined;
     // Capture before abort/publication reentry can replace the admission.
     const selected =
       admission &&
@@ -570,12 +609,22 @@ function createApplicationOwner<TRow extends MessageContent>(
           row &&
           (row.title !== selection.row?.title ||
             row.pinned !== selection.row?.pinned ||
-            row.archived !== selection.row?.archived)
+            row.archived !== selection.row?.archived ||
+            row.pinnedOrder !== selection.row?.pinnedOrder)
         )
           selection = Object.freeze({ ...selection, row });
         publish({
           ...snapshot,
           selection,
+          ordering:
+            result.kind === 'ready' && barrier && snapshot.ordering === barrier
+              ? Object.freeze({
+                  status: 'idle',
+                  id: null,
+                  beforeId: null,
+                  intent: barrier.intent,
+                })
+              : snapshot.ordering,
           list: Object.freeze({
             status: result.kind === 'ready' ? 'ready' : 'error',
             rows,
@@ -589,6 +638,120 @@ function createApplicationOwner<TRow extends MessageContent>(
           });
       }
     })();
+  }
+
+  function canReorderPinned() {
+    return (
+      started &&
+      !disposed &&
+      !ordering &&
+      snapshot.ordering.status !== 'unconfirmed' &&
+      typeof options.directory.setPinnedOrder === 'function'
+    );
+  }
+
+  async function reorderPinned(
+    id: string,
+    beforeId: string | null
+  ): Promise<boolean> {
+    if (!canReorderPinned()) return false;
+    const captured = orderActiveThreads(snapshot.list.rows).filter(
+      (row) => row.pinned === true
+    );
+    const source = captured.find((row) => row.id === id);
+    if (
+      !source ||
+      captured.length > 50 ||
+      id === beforeId ||
+      (beforeId !== null && !captured.some((row) => row.id === beforeId))
+    )
+      return false;
+    const desired = captured.filter((row) => row.id !== id);
+    desired.splice(
+      beforeId === null
+        ? desired.length
+        : desired.findIndex((row) => row.id === beforeId),
+      0,
+      source
+    );
+    // Detect semantic no-ops before normalizing legacy/missing ranks.
+    if (desired.every((row, index) => row.id === captured[index].id))
+      return false;
+    const writes = desired
+      .map((row, rank) => ({ row, rank }))
+      .filter(({ row, rank }) => row.pinnedOrder !== rank);
+    const controller = new AbortController();
+    const intent = ++orderingIntent;
+    ordering = controller;
+    const ownsOrdering = () =>
+      !disposed && ordering === controller && !controller.signal.aborted;
+    const state = (status: 'pending' | 'confirmed' | 'unconfirmed') =>
+      Object.freeze({ status, id, beforeId, intent });
+    publish({ ...snapshot, ordering: state('pending') });
+    if (!ownsOrdering()) return false;
+    let confirmed = true;
+    // Serialize this bounded restamp. Every dispatched write is awaited, even
+    // after an earlier failure, and disposal prevents the next dispatch.
+    for (const { row, rank } of writes) {
+      if (!ownsOrdering()) return false;
+      try {
+        const result = await options.directory.setPinnedOrder!(
+          row.id,
+          rank,
+          controller.signal
+        );
+        if (!ownsOrdering()) return false;
+        if (
+          result.kind !== 'ready' ||
+          result.value.id !== row.id ||
+          result.value.pinnedOrder !== rank
+        )
+          confirmed = false;
+      } catch {
+        if (!ownsOrdering()) return false;
+        confirmed = false;
+      }
+    }
+    if (!ownsOrdering()) return false;
+    const version = ++writeVersion;
+    const ranks = new Map<string, number | undefined>();
+    for (const [rank, row] of desired.entries()) {
+      const displayed =
+        snapshot.list.rows.find((item) => item.id === row.id) ??
+        (snapshot.selection.id === row.id
+          ? snapshot.selection.row
+          : undefined) ??
+        row;
+      const pinnedOrder = confirmed ? rank : displayed.pinnedOrder;
+      ranks.set(row.id, pinnedOrder);
+      // Absence is evidence too. Fence every captured ID, including unchanged
+      // ranks and members independently unpinned/archived during this request.
+      rankEvidence.set(row.id, { version, pinnedOrder, readOrder: 0 });
+    }
+    const replaceRank = (row: ThreadRow) =>
+      ranks.has(row.id) && row.pinnedOrder !== ranks.get(row.id)
+        ? Object.freeze({ ...row, pinnedOrder: ranks.get(row.id) })
+        : row;
+    const selectedRow = snapshot.selection.row;
+    const rankedSelection =
+      confirmed && selectedRow ? replaceRank(selectedRow) : selectedRow;
+    const selection =
+      rankedSelection !== selectedRow
+        ? Object.freeze({ ...snapshot.selection, row: rankedSelection })
+        : snapshot.selection;
+    ordering = undefined;
+    publish({
+      ...snapshot,
+      selection,
+      list: confirmed
+        ? Object.freeze({
+            ...snapshot.list,
+            rows: Object.freeze(snapshot.list.rows.map(replaceRank)),
+          })
+        : snapshot.list,
+      ordering: state(confirmed ? 'confirmed' : 'unconfirmed'),
+    });
+    return confirmed;
   }
 
   function canRename() {
@@ -920,6 +1083,8 @@ function createApplicationOwner<TRow extends MessageContent>(
   }
 
   return Object.freeze({
+    canReorderPinned,
+    reorderPinned,
     canSetArchived,
     setArchived,
     canSetPinned,
@@ -959,6 +1124,8 @@ function createApplicationOwner<TRow extends MessageContent>(
     dispose() {
       if (disposed) return;
       disposed = true;
+      ordering?.abort();
+      ordering = undefined;
       for (const controller of archiving.values()) controller.abort();
       archiving.clear();
       for (const controller of pinning.values()) controller.abort();

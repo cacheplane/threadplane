@@ -365,8 +365,8 @@ action slot and controlled menu. It updates supplied `pinned` metadata only afte
 the exact target and strict boolean value are confirmed by the backend. Pending,
 success and failure feedback belong to the application; the pin item is disabled
 while its mutation is pending, and the same command permits explicit retry after
-failure. Copy, Rename and selection remain available. Pin/unpin preserves supplied
-row order and never starts, reloads or stops a session. The compact rail reflects
+failure. Copy, Rename and selection remain available. Confirmed pin/unpin updates
+application-owned grouping and never starts, reloads or stops a session. The compact rail reflects
 the shared pinned state while keeping selection-only controls.
 
 The native application also composes confirmed Archive/Unarchive through the same
@@ -376,7 +376,21 @@ commands belong to the native application, with strict boolean write confirmatio
 per-target pending state, retry after failure and feedback retained across row
 migration. Archiving the selected row preserves its transcript, draft, session and
 active response. This adds no ThreadList field, lifecycle API or export; delete,
-project actions, sorting and full T29/T30 parity remain open.
+project actions, drag reordering and full T29/T30 parity remain open.
+
+The native application orders active loaded pins first by finite numeric
+`metadata.pinnedOrder`, retaining stable ties, placing unranked pins last and
+preserving unpinned relative order. Full and compact views filter after ordering;
+archived rows retain supplied order. Move up/down commands use all loaded pinned
+neighbors, including hidden filtered rows, and patch only changed ranks within
+that captured slice of at most 50 loaded conversations. This is application-owned
+composition; ThreadList still renders supplied order unchanged. It adds no library
+API or export. Rank writes are not atomic: partial or unconfirmed results preserve
+the last locally known order and require an explicit successful Refresh admitted
+after settlement before another move. Only moves are blocked during pending or
+unconfirmed ordering. Directory-owned target feedback survives filtering and
+movement; remounts share active recovery state without replaying completed outcomes.
+Moves preserve keyed rows, selected session, draft and running response.
 
 ## Controlled command menu
 
