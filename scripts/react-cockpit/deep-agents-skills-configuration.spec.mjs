@@ -29,7 +29,7 @@ test('Skills fixture uses only closed authored selection and awaited shutdown', 
   );
   assert.match(
     source,
-    /if \((?:\w+Fixture \|\| )*deepAgentsSkillsFixture(?: \|\| \w+Fixture)*\)/
+    /if \((?:(?:\w+Fixture|isChatA2ui) \|\| )*deepAgentsSkillsFixture(?: \|\| (?:\w+Fixture|isChatA2ui))*\)/
   );
   assert.match(
     source,

@@ -1,10 +1,9 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "5053d6eeae943809ea5736d6e99eb8c729596e2e",
+  "baselineHead": "dc0bf5e5723025a4a0243de6df267cff554c916d",
   "sourceState": {
     "modified": [
-      "libs/langgraph/src/runtime/README.md",
-      "libs/langgraph/src/runtime/create-session.ts"
+      ".github/workflows/ci.yml"
     ],
     "untracked": []
   },
@@ -2178,7 +2177,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "0c4ac2ec9df75e6c81f87ba8d3fcc9e53666191545b8bde26aa60431e2796e5f"
+      "sha256": "f77783419fe1c95b19a63df176a523acd5082635eb193354702cb5f01bfc379a"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",

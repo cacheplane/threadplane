@@ -37,9 +37,9 @@ test('A2UI build and e2e depend on the installed package and terminal admission 
 });
 test('only the A2UI topic packs its optional peer and selects the native A2UI profile', () => {
   const build = read('scripts/react-cockpit/build.mjs');
-  assert.match(build, /library === 'chat' && topic === 'a2ui'/);
+  assert.match(build, /const nativeA2ui = topic === 'a2ui'/);
   assert.match(build, /optionalPeers: nativeA2ui \? \['a2ui'\] : \[\]/);
-  assert.match(build, /nativeA2ui \? 'react-native-a2ui-langgraph'/);
+  assert.match(build, /'react-native-a2ui-langgraph'/);
   for (const file of ['create-surfaces.js', 'parser.js', 'create-render-state.js', 'render-spec.js'])
     assert.ok(build.includes(file), 'Emitted implementation assertion: ' + file);
   assert.match(build, /module\.renderedLength > 0/);
@@ -55,7 +55,9 @@ test('production source copying excludes testing and preserves private fixture i
   assert.doesNotMatch(build, /chat-a2ui-(?:fixture|wire)/);
   assert.match(build, /testing/);
   const serve = read('scripts/react-cockpit/serve.mjs');
-  assert.match(serve, /configuration.library === 'chat' && configuration.topic === 'a2ui' \? createChatA2uiFixture\(\)/);
+  assert.match(serve, /const isChatA2ui = configuration.library === 'chat' && configuration.topic === 'a2ui'/);
+  assert.equal((serve.match(/createChatA2uiFixture\(\{ configuration: chatA2uiConfiguration \}\)/g) ?? []).length, 2);
+  assert.match(serve, /chatA2uiConfiguration = Object.freeze\(fixtureConfiguration\(\)\)/);
   assert.match(serve, /await chatA2uiFixture.close\(\)/);
   assert.match(serve, /'\/__hold\/stream'/);
   assert.match(serve, /heldStreams/);
