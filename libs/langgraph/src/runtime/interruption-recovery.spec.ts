@@ -533,3 +533,159 @@ describe('read-only recovery for a resume attempt', () => {
     expect(f.session.getSnapshot().error).toMatchObject({ recovery: 'check' });
   });
 });
+
+describe('automatic read-only recovery when the stream throws', () => {
+  const user = { type: 'human', id: 'saved-user', content: 'Question' };
+  const waiting = { type: 'ai', id: 'saved-answer', content: 'Waiting' };
+  const answer = { type: 'ai', id: 'resumed-answer', content: 'Approved work' };
+  const approve = { id: 'approve', value: 'Proceed?' };
+  const again = { id: 'again', value: 'Once more?' };
+  function thrownFixture(options: { status?: Run['status']; exact?: boolean }) {
+    const stream = vi.fn<AgentTransport['stream']>(async function* (
+      _a,
+      _t,
+      _input,
+      _signal,
+      settings
+    ) {
+      if (options.exact !== false)
+        settings?.onRunCreated?.({ run_id: 'run-1', thread_id: 't' });
+      // The open itself fails: nothing is ever yielded.
+      yield* [];
+      throw new TypeError('fetch failed');
+    });
+    const joinStream = vi.fn<NonNullable<AgentTransport['joinStream']>>(
+      async function* () {
+        yield* [];
+      }
+    );
+    const getRunStatus = vi.fn<NonNullable<AgentTransport['getRunStatus']>>(
+      async () => options.status ?? 'running'
+    );
+    const getHistory = vi.fn(async (): Promise<ThreadState[]> => []);
+    const session = createSession({
+      assistantId: 'a',
+      threadId: 't',
+      transport: {
+        stream,
+        getHistory,
+        ...(options.exact === false ? {} : { joinStream, getRunStatus }),
+      },
+    });
+    return { session, stream, getRunStatus, getHistory };
+  }
+
+  it('settles a thrown submit from conclusive history at once', async () => {
+    const f = thrownFixture({ exact: false });
+    f.getHistory.mockImplementation(async () => {
+      const messages = [
+        (f.stream.mock.calls.at(-1)?.[2] as { messages: unknown[] })
+          .messages[0],
+        committed,
+      ];
+      return [
+        {
+          ...checkpoint(messages),
+          values: { messages, step: 'done' } as ThreadState['values'],
+        },
+      ];
+    });
+    expect(await f.session.submit('Question')).toBe('success');
+    expect(f.getHistory).toHaveBeenCalledTimes(1);
+    expect(f.session.getSnapshot()).toMatchObject({
+      status: 'idle',
+      error: undefined,
+      values: { step: 'done' },
+    });
+    expect(f.session.getSnapshot().messages.at(-1)).toMatchObject({
+      content: committed.content,
+      delivery: { outcome: 'success' },
+    });
+    expect(f.stream).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves a thrown submit checkable when history is inconclusive', async () => {
+    const f = thrownFixture({ exact: false });
+    expect(await f.session.submit('Question')).toBe('interrupted');
+    expect(f.getHistory).toHaveBeenCalledTimes(1);
+    expect(f.session.getSnapshot().error).toMatchObject({
+      kind: 'interrupted',
+      recovery: 'check',
+      retryable: false,
+    });
+    expect(f.stream).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not read history for a thrown submit whose exact run is still in flight', async () => {
+    const f = thrownFixture({ status: 'running' });
+    expect(await f.session.submit('Question')).toBe('interrupted');
+    expect(f.getRunStatus).toHaveBeenCalledTimes(1);
+    expect(f.getHistory).not.toHaveBeenCalled();
+    expect(f.session.getSnapshot().error).toMatchObject({ recovery: 'check' });
+  });
+
+  it('settles a thrown submit whose exact run succeeded from history', async () => {
+    const f = thrownFixture({ status: 'success' });
+    f.getHistory.mockImplementation(async () => [
+      checkpoint([
+        (f.stream.mock.calls.at(-1)?.[2] as { messages: unknown[] })
+          .messages[0],
+        committed,
+      ]),
+    ]);
+    expect(await f.session.submit('Question')).toBe('success');
+    expect(f.getHistory).toHaveBeenCalledTimes(1);
+    expect(f.session.getSnapshot().error).toBeUndefined();
+  });
+
+  it('settles a thrown resume as paused on a new interrupt reached after the decision landed', async () => {
+    const f = thrownFixture({ exact: false });
+    f.getHistory.mockResolvedValueOnce([
+      {
+        ...checkpoint([user, waiting]),
+        next: ['approval'],
+        tasks: [
+          {
+            id: 'task',
+            name: 'approval',
+            error: null,
+            interrupts: [approve],
+            checkpoint: null,
+            state: null,
+            result: null,
+          },
+        ],
+      },
+    ]);
+    await f.session.load?.();
+    expect(f.session.getSnapshot().interrupts).toEqual([approve]);
+    f.getHistory.mockResolvedValue([
+      {
+        ...checkpoint([user, waiting, answer]),
+        next: ['approval'],
+        tasks: [
+          {
+            id: 'task',
+            name: 'approval',
+            error: null,
+            interrupts: [again],
+            checkpoint: null,
+            state: null,
+            result: null,
+          },
+        ],
+      },
+    ]);
+    expect(await f.session.resume(true)).toBe('paused');
+    expect(f.session.getSnapshot()).toMatchObject({
+      status: 'idle',
+      error: undefined,
+    });
+    expect(f.session.getSnapshot().interrupts).toEqual([again]);
+    expect(f.session.getSnapshot().messages.at(-1)).toMatchObject({
+      id: 'resumed-answer',
+      delivery: { outcome: 'paused' },
+    });
+    expect(f.stream).toHaveBeenCalledTimes(1);
+  });
+});

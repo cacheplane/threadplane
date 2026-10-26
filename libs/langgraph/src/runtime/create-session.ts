@@ -1249,6 +1249,50 @@ export function createSession(
         false,
         attemptCanCheck()
       );
+      // A thrown stream gets the same single read-only reconciliation a closed
+      // one gets, unless the exact run is known to be still in flight. A
+      // conclusive answer settles the attempt itself; nothing is retried.
+      if (
+        error.kind === 'interrupted' &&
+        error.recovery === 'check' &&
+        getHistory
+      ) {
+        const run = attempt.physical;
+        let status: RunStatus | undefined;
+        if (run?.evidence.runId && !run.evidence.unsafe && getRunStatus) {
+          try {
+            status = await getRunStatus(
+              threadId,
+              run.evidence.runId,
+              attempt.controller.signal
+            );
+          } catch {
+            /* Unknown exact status; history may still be conclusive. */
+          }
+          if (!owns(attempt)) return;
+        }
+        if (status !== 'pending' && status !== 'running') {
+          try {
+            const history = await getHistory(
+              threadId,
+              attempt.controller.signal
+            );
+            if (!owns(attempt)) return;
+            const recovered = reconcile(attempt, history);
+            if (!owns(attempt)) return;
+            if (recovered) {
+              // Settlement stamps deliveries and subgraphs with this outcome.
+              state = recovered.state;
+              values = recovered.values;
+              interrupts = recovered.interrupts;
+              settle(attempt, recovered.outcome);
+              return;
+            }
+          } catch {
+            if (!owns(attempt)) return;
+          }
+        }
+      }
       settle(
         attempt,
         error.kind === 'interrupted' ? 'interrupted' : 'error',
