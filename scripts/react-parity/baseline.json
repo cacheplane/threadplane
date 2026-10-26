@@ -1,11 +1,8 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "549da38f6257e6436612dc0556169b8975b491a7",
+  "baselineHead": "dd9b691374a989eb12c1cfc93fd3039ffabeef68",
   "sourceState": {
-    "modified": [
-      "libs/langgraph/src/runtime/README.md",
-      "libs/langgraph/src/runtime/create-session.ts"
-    ],
+    "modified": [],
     "untracked": []
   },
   "scope": {
