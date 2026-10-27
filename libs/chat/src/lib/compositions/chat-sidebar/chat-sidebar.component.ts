@@ -7,6 +7,7 @@ import {
   inject,
   input,
   model,
+  output,
 } from '@angular/core';
 import type { Agent } from '../../agent';
 import type { ViewRegistry } from '@threadplane/render';
@@ -125,6 +126,9 @@ import { CHAT_HOST_TOKENS, ensureChatRootStyles } from '../../styles/chat-tokens
         [showModelPicker]="showModelPicker()"
         [selectedModel]="selectedModel()"
         (selectedModelChange)="selectedModel.set($event)"
+        (regenerate)="regenerate.emit()"
+        (rate)="rate.emit($event)"
+        (messageCopy)="messageCopy.emit($event)"
       >
         <ng-content select="[chatHeader]" chatHeader />
         <ng-content select="[chatWelcomeSuggestions]" chatWelcomeSuggestions />
@@ -157,6 +161,12 @@ export class ChatSidebarComponent {
   /** Close the sidebar on Escape (default true). */
   readonly closeOnEscape = input<boolean>(true);
   readonly pushContent = input<boolean>(false);
+  /** Emitted when the user clicks the regenerate button on an assistant message. */
+  readonly regenerate = output<void>();
+  /** Emitted when the user rates an assistant message. */
+  readonly rate = output<{ messageIndex: number; rating: 'up' | 'down' }>();
+  /** Emitted when the user copies an assistant message. */
+  readonly messageCopy = output<{ messageIndex: number; content: string }>();
 
   private readonly document = inject(DOCUMENT);
 
