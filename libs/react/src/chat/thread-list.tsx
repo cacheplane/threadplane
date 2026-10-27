@@ -25,6 +25,11 @@ export interface ThreadListProps {
   readonly newThreadDisabled?: boolean;
   readonly newThreadLabel?: string;
   readonly now?: number;
+  /** Replaces the complete row content; owner supplies controls and accessibility. */
+  readonly renderItem?: (
+    thread: ThreadListItem,
+    isActive: boolean
+  ) => ReactNode;
   /** Noninteractive phrasing content inside the row button. Original title/id labels remain. */
   readonly renderTitle?: (thread: ThreadListItem) => ReactNode;
   /** App-owned controls rendered beside the selection button. */
@@ -61,6 +66,7 @@ export function ThreadList({
   newThreadDisabled = false,
   newThreadLabel = '+ New thread',
   now = Date.now(),
+  renderItem,
   renderTitle,
   renderActions,
   onContextMenu,
@@ -74,6 +80,13 @@ export function ThreadList({
       aria-label={label}
     >
       {threads.map((thread, index) => {
+        if (renderItem) {
+          return (
+            <li key={thread.id} className="tp-thread-list__item">
+              {renderItem(thread, thread.id === activeThreadId)}
+            </li>
+          );
+        }
         const pinned = thread.pinned === true;
         const title = thread.title || thread.id;
         const content = renderTitle ? renderTitle(thread) : title;

@@ -90,3 +90,15 @@ for (const open of [false, true]) {
 }
 assert.equal(requests, 0);
 console.log('Installed controlled confirmation SSR: closed and requested-open states are DOM-free and issue no commands.');
+
+const customRows = renderToString(createElement(ThreadList, {
+  threads: [{ id: 'custom<&', title: 'Unused title', pinned: true, updatedAt: 0 }],
+  activeThreadId: 'custom<&', onSelect: request,
+  renderItem: (thread, active) => createElement('button', { 'aria-current': active ? 'true' : undefined }, thread.id),
+  renderTitle: () => { throw Error('Unexpected default title renderer'); },
+  renderActions: () => { throw Error('Unexpected default action renderer'); },
+}));
+assert.match(customRows, /<li class="tp-thread-list__item"><button aria-current="true">custom&lt;&amp;<\/button><\/li>/);
+assert.doesNotMatch(customRows, /Unused title|Pinned conversation|<time/);
+assert.equal(requests, 0);
+console.log('Installed custom ThreadList row SSR: literal data, app-owned controls, no default callbacks or commands.');

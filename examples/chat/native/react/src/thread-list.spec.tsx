@@ -134,6 +134,11 @@ it('uses ThreadList while refresh, loaded-title filtering and navigation retain 
         <App application={application} presentation="sidenav" />
       </StrictMode>
     );
+    expect(
+      view.container.querySelectorAll(
+        '.conversation-list--compact .native-compact-thread'
+      )
+    ).toHaveLength(2);
     const list = view.getByRole('list', { name: 'Loaded conversations' });
     expect(list.classList.contains('tp-thread-list')).toBe(true);
     expect(list.classList.contains('conversation-list')).toBe(true);

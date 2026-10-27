@@ -263,6 +263,9 @@ test('installed React sidenav retains navigation, draft and a running response a
     await expect(draft).toBeEnabled();
     const threadList = nav.getByRole('list', { name: 'Loaded conversations' });
     await expect(threadList).toHaveClass(/tp-thread-list/);
+    await expect(
+      page.locator('.conversation-list--compact .native-compact-thread')
+    ).toHaveCount(2);
     const newThread = nav.getByRole('button', { name: 'New', exact: true });
     await expect(newThread).toHaveClass('tp-thread-list__new');
     await expect(
@@ -503,7 +506,11 @@ test('installed React sidenav retains navigation, draft and a running response a
     });
     await copyBeta.focus();
     await page.keyboard.press('ArrowUp');
-    await expect(page.getByRole('menuitem', { name: /^Archive conversation for Beta notes/ })).toBeFocused();
+    await expect(
+      page.getByRole('menuitem', {
+        name: /^Archive conversation for Beta notes/,
+      })
+    ).toBeFocused();
     await page.keyboard.press('Shift+Tab');
     await expect(beta).toBeFocused();
     // Open Alpha's own menu so its selected-row button remains outside it;

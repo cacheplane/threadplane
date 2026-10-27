@@ -35,6 +35,7 @@ import {
 import { useConversationMenu } from './use-conversation-menu';
 import { TripSummary } from './trip-summary';
 import { NativeNavigation } from './native-navigation';
+import { CompactThreadRow } from './compact-thread-row';
 
 type Presentation = 'page' | 'popup' | 'sidebar' | 'sidenav';
 
@@ -728,11 +729,13 @@ function Conversation({
               onSelect={application.select}
               label="Loaded conversations"
               className="conversation-list conversation-list--compact"
-              renderTitle={(thread) =>
-                Array.from(
-                  (thread.title || thread.id).trim()
-                )[0]?.toUpperCase() || '?'
-              }
+              renderItem={(thread, active) => (
+                <CompactThreadRow
+                  thread={thread}
+                  active={active}
+                  onSelect={application.select}
+                />
+              )}
             />
           }
         >

@@ -630,6 +630,13 @@ moves only after accepted visibility/mode changes. Hidden directory content is
 inert, and Tab can reach the surrounding page. Focus returns to the launcher when a focused backdrop is dismissed,
 or to the desktop toggle when a breakpoint removes it; an already focused page
 control retains focus. The backdrop covers page pointer targets while open.
+The compact rail uses the private `ThreadList.renderItem` full-row callback to
+return an application-owned `CompactThreadRow`. It owns the exact-ID selection
+button, full accessible name and tooltip, active state, decorative initial/pin and
+semantic timestamp description. Default full-directory action/title renderers are
+not called for these rows. Custom rows preserve the existing compact geometry,
+loaded filtering/order, draft and running response; they add no backend requests.
+
 The compact rail composes a second `ThreadList` from the same filtered rows,
 active ID and application selection callback. It shows the uppercase first Unicode
 code point of the trimmed title (or ID), with `?` for empty content, while keeping

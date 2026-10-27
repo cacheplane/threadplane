@@ -2169,7 +2169,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/thread-list.tsx",
-      "reason": "Private controlled semantic ThreadList selection and optional new-conversation request with retained keyed rows and installed native dogfood. Native application composes confirmed rename, pin and reversible archive/unarchive using existing slots, with separate loaded active/archived lists, stable feedback and independent pending/stale-read protection. Application-owned pinned-first grouping and loaded-slice Move up/down compose existing slots, with exact rank-only confirmation and an explicit refresh barrier after partial failure; the primitive retains supplied order. Native confirmed Delete composes immutable modal intent, exact-target acknowledgement or explicit inspection recovery and lifetime tombstones, preserving unrelated selected sessions/drafts/responses. Project/drag reorder, custom rows and full parity remain open."
+      "reason": "Private controlled semantic ThreadList selection and optional new-conversation request with retained keyed rows and installed native dogfood. Native application composes confirmed rename, pin and reversible archive/unarchive using existing slots, with separate loaded active/archived lists, stable feedback and independent pending/stale-read protection. Application-owned pinned-first grouping and loaded-slice Move up/down compose existing slots, with exact rank-only confirmation and an explicit refresh barrier after partial failure; the primitive retains supplied order. Native confirmed Delete composes immutable modal intent, exact-target acknowledgement or explicit inspection recovery and lifetime tombstones, preserving unrelated selected sessions/drafts/responses. Project/drag reorder, full parity remain open. Optional private renderItem(thread, isActive) replaces full row content inside the keyed list item, bypassing default title/actions/context controls; native compact navigation owns accessible selection, pin/time descriptions and retained state. Rendering is pure and does not execute commands."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-timeline/chat-timeline.component.ts#ChatTimelineComponent",
@@ -5592,7 +5592,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/thread-list.tsx",
-      "reason": "Private controlled semantic ThreadList selection and optional new-conversation request export; application owns data, creation and execution. Native application composes confirmed rename/pin/archive/Delete and pinned grouping/manual loaded-slice moves through existing slots; the primitive preserves supplied order. Project/drag reorder, custom rows and full parity remain open."
+      "reason": "Private controlled semantic ThreadList selection and optional new-conversation request export; application owns data, creation and execution. Native application composes confirmed rename/pin/archive/Delete and pinned grouping/manual loaded-slice moves through existing slots; the primitive preserves supplied order. Project/drag reorder, full parity remain open. Optional private renderItem(thread, isActive) replaces full row content inside the keyed list item, bypassing default title/actions/context controls; native compact navigation owns accessible selection, pin/time descriptions and retained state. Rendering is pure and does not execute commands."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatTimelineComponent",
@@ -10552,7 +10552,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/thread-list.tsx",
-      "reason": "Bounded private React selection view preserves supplied order and explicit controlled requests; full Angular lifecycle, drag and row-template parity remain open. Existing Angular source is unchanged."
+      "reason": "Bounded private React selection view preserves supplied order and explicit controlled requests; full Angular lifecycle, drag and row-template parity remain open. Existing Angular source is unchanged. Optional private renderItem(thread, isActive) replaces full row content inside the keyed list item, bypassing default title/actions/context controls; native compact navigation owns accessible selection, pin/time descriptions and retained state. Rendering is pure and does not execute commands."
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-timeline/chat-timeline.component.ts",
@@ -15913,7 +15913,7 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Private keyed semantic selection list with original-event context requests on selection buttons and app-owned actions; the primitive retains supplied order, selection and row identity. Native composes bounded confirmed renaming, Pin/Unpin, Archive/Unarchive and loaded-slice Move up/down in action siblings, with application-owned pinned-first grouping, exact rank-only confirmation and an explicit refresh barrier after partial failure. Native loaded active/archived partitions retain selected transcript/draft/runtime and directory-owned completion feedback. Native confirmed Delete composes immutable modal intent, exact-target acknowledgement or explicit inspection recovery and lifetime tombstones, preserving unrelated selected sessions/drafts/responses. Project/drag reorder, custom rows and full parity remain open."
+      "reason": "Private keyed semantic selection list with original-event context requests on selection buttons and app-owned actions; the primitive retains supplied order, selection and row identity. Native composes bounded confirmed renaming, Pin/Unpin, Archive/Unarchive and loaded-slice Move up/down in action siblings, with application-owned pinned-first grouping, exact rank-only confirmation and an explicit refresh barrier after partial failure. Native loaded active/archived partitions retain selected transcript/draft/runtime and directory-owned completion feedback. Native confirmed Delete composes immutable modal intent, exact-target acknowledgement or explicit inspection recovery and lifetime tombstones, preserving unrelated selected sessions/drafts/responses. Project/drag reorder, full parity remain open. Optional private renderItem(thread, isActive) replaces full row content inside the keyed list item, bypassing default title/actions/context controls; native compact navigation owns accessible selection, pin/time descriptions and retained state. Rendering is pure and does not execute commands."
     },
     {
       "id": "source:libs/react/src/chat/thread-rename-form.tsx",
