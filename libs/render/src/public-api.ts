@@ -54,3 +54,13 @@ export type { RenderLifecycle } from './lib/lifecycle';
 // Fallback
 export { DefaultFallbackComponent } from './lib/default-fallback.component';
 export type { RenderViewEntry } from './lib/render.types';
+
+// Development-only devtools hook: `@threadplane/chat` provides it to report
+// which spec elements mounted, fell back, did not resolve, or did not render.
+export { ɵRENDER_DEVTOOLS } from './lib/devtools/render-devtools';
+export type {
+  RenderDevtoolsHook as ɵRenderDevtoolsHook,
+  RenderResolution as ɵRenderResolution,
+  RenderResolvedElement as ɵRenderResolvedElement,
+  RenderElementState as ɵRenderElementState,
+} from './lib/devtools/render-devtools';

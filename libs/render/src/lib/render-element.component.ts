@@ -43,6 +43,7 @@ import type { RepeatScope } from './contexts/repeat-scope';
 import { buildPropResolutionContext } from './internals/prop-signal';
 import { isElementReady } from './internals/element-readiness';
 import type { AngularComponentRenderer, NormalizedEntry } from './render.types';
+import { elementDevtoolsState, RENDER_DEVTOOLS_TRACKER } from './devtools/render-devtools';
 
 /** Cache of declared input names per component class. NgComponentOutlet
  * passes every key in its `inputs` prop to the target; Angular dev mode
@@ -153,6 +154,7 @@ export class RenderElementComponent implements OnInit {
   private readonly collectionPolicy = inject(DEVELOPMENT_COLLECTION_POLICY, { optional: true });
   private readonly outlets = viewChildren(NgComponentOutlet);
   private readonly observedInstances = new WeakSet<object>();
+  private readonly devtoolsTracker = inject(RENDER_DEVTOOLS_TRACKER, { optional: true });
   private readonly development = createDevelopmentRuntime({
     integration: 'render', packageName: '@threadplane/render', packageVersion,
     installationToken: (typeof ngDevMode === 'undefined' || ngDevMode) && isDevMode() ? installationToken : null,
@@ -162,6 +164,17 @@ export class RenderElementComponent implements OnInit {
   private destroyed = false;
 
   constructor() {
+    // Development only, and only under a <render-spec> whose devtools hook is
+    // on: report this instance's state from the signals the template renders
+    // from. Production builds fold the branch away.
+    if ((typeof ngDevMode === 'undefined' || ngDevMode) && this.devtoolsTracker) {
+      const unregister = this.devtoolsTracker.register({
+        key: this.elementKey,
+        state: computed(() => elementDevtoolsState(this)),
+      });
+      this.destroyRef.onDestroy(unregister);
+    }
+
     // One session observation per boot; guards and dedupe live inside touch().
     this.development.touch();
     this.destroyRef.onDestroy(() => this.development.dispose());

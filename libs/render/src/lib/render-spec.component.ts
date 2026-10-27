@@ -23,6 +23,14 @@ import { signalStateStore, type SignalStateStore } from './signal-state-store';
 import type { RenderEvent } from './render-event';
 import { RenderLifecycleService } from './render-lifecycle.service';
 import { makeGuardedEmit } from './internals/guarded-emit';
+import {
+  connectRenderDevtools,
+  createRenderDevtoolsTracker,
+  RENDER_DEVTOOLS_TRACKER,
+  ɵRENDER_DEVTOOLS,
+  type RenderDevtoolsTracker,
+} from './devtools/render-devtools';
+declare const ngDevMode: boolean;
 
 /**
  * Top-level entry point for rendering a json-render spec.
@@ -58,6 +66,13 @@ import { makeGuardedEmit } from './internals/guarded-emit';
       provide: RENDER_CONTEXT,
       useFactory: () => inject(RenderSpecComponent)._context(),
     },
+    {
+      provide: RENDER_DEVTOOLS_TRACKER,
+      useFactory: () => inject(RenderSpecComponent)._devtoolsTracker,
+    },
+    // A spec nested inside one of this spec's views reports only through a
+    // hook provided closer to it, never through this spec's.
+    { provide: ɵRENDER_DEVTOOLS, useValue: null },
   ],
   template: `
     @if (spec()?.root; as rootKey) {
@@ -80,6 +95,15 @@ export class RenderSpecComponent implements OnInit {
   private readonly viewRegistry = inject(VIEW_REGISTRY, { optional: true });
   private readonly destroyRef = inject(DestroyRef);
   private readonly lifecycle = inject(RenderLifecycleService, { optional: true });
+  private readonly devtoolsHook = inject(ɵRENDER_DEVTOOLS, { optional: true, skipSelf: true });
+
+  /** Development only: the live elements the devtools hook reports, or null
+   * when no hook is provided. Production builds fold this to null.
+   * @internal */
+  readonly _devtoolsTracker: RenderDevtoolsTracker | null =
+    (typeof ngDevMode === 'undefined' || ngDevMode) && this.devtoolsHook
+      ? createRenderDevtoolsTracker()
+      : null;
 
   private destroyed = false;
 
@@ -200,6 +224,14 @@ export class RenderSpecComponent implements OnInit {
   }));
 
   constructor() {
+    if ((typeof ngDevMode === 'undefined' || ngDevMode) && this.devtoolsHook && this._devtoolsTracker) {
+      connectRenderDevtools(this.devtoolsHook, this._devtoolsTracker, {
+        spec: this.spec,
+        registry: this.resolvedRegistry,
+        destroyed: () => this.isDestroyed(),
+      });
+    }
+
     // Subscribe to store changes and emit state change events
     effect(() => {
       const store = this.resolvedStore();
