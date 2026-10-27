@@ -1,4 +1,5 @@
 'use client';
+export { ConfirmDialog, type ConfirmDialogProps } from './confirm-dialog.js';
 export {
   ThreadRenameForm,
   type ThreadRenameFormProps,

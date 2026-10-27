@@ -7,7 +7,7 @@ author: brian
 featured: true
 ---
 
-This is how to pause a LangGraph agent in Angular for human approval before it runs a high-stakes tool, using LangGraph's `interrupt()` and the `<chat-approval-card>` composition from `@threadplane/chat`.
+Let's pause a LangGraph agent in Angular for human approval before it runs a high-stakes tool, using LangGraph's `interrupt()` and the `<chat-approval-card>` composition from `@threadplane/chat`.
 
 The example is a refund agent: it drafts a refund, then stops and asks an operator to approve, edit, or cancel before any charge is reversed.
 
@@ -29,28 +29,30 @@ Clone the repo, run `nx serve cockpit-langgraph-interrupts-angular`, and follow 
 
 - Wire a refund-approval gate using LangGraph's `interrupt()` primitive.
 - Render the approval dialog in Angular with the `<chat-approval-card>` composition.
-- Resume, reject, or edit-then-resume — with a distinct path for each.
+- Resume, reject, or edit-then-resume, with a distinct path for each.
 
 ## When should you use an interrupt?
 
-Most tool calls do not need approval.
+Most tool calls don't need approval.
 Reads, searches, and lookups can run unattended.
-Reach for an interrupt when a tool does something the operator would not want to undo by hand: moves money, sends a customer-facing message, deletes a record, or triggers a deploy.
+Reach for an interrupt when a tool does something the operator wouldn't want to undo by hand: moves money, sends a customer-facing message, deletes a record, or triggers a deploy.
 
 For me, there are two practical reasons.
 It caps the cost of a misfiring agent looping over a write API.
 And it gives the operator a checkpoint to catch a wrong action before it lands.
 
-## The architecture
+## What does the architecture look like?
 
-Three pieces:
+There are three pieces:
 
-- **LangGraph backend.** A node calls `interrupt({ kind: 'refund_approval', amount, customer_id, reason })` instead of calling Stripe directly. The run pauses and the thread checkpointer persists the pending interrupt until something resumes it.
-- **`@threadplane/langgraph` adapter.** Surfaces the pending interrupt on an `agent.interrupt()` signal. `agent.submit({ resume })` writes a value back to the paused graph.
+- **LangGraph backend.** A node calls `interrupt({ kind: 'refund_approval', amount, customer_id, reason })` instead of calling Stripe directly.
+  The run pauses and the thread checkpointer persists the pending interrupt until something resumes it.
+- **`@threadplane/langgraph` adapter.** Surfaces the pending interrupt on an `agent.interrupt()` signal.
+  `agent.submit({ resume })` writes a value back to the paused graph.
 - **`@threadplane/chat` UI.** `<chat-approval-card>` reads the pending interrupt, opens a native `<dialog>` modal, and emits `'approve' | 'edit' | 'cancel'`.
 
-The LangGraph node does not know how the UI renders, and the Angular component does not know which graph it is paused inside.
-That lets you reuse one approval dialog across multiple agents.
+The LangGraph node doesn't know how the UI renders, and the Angular component doesn't know which graph it's paused inside.
+I like that, because it lets you reuse one approval dialog across multiple agents.
 
 <figure>
   <img src="/blog/2026-05-28-human-in-the-loop-langgraph-agents-in-angular/1.png" alt="The refund agent's welcome screen with two suggestion chips: 'Refund a duplicate charge' and 'Refund a chargeback.'" width="1280" height="800" />
@@ -59,6 +61,7 @@ That lets you reuse one approval dialog across multiple agents.
 
 ## Scaffold
 
+Let's build it.
 Three files.
 
 <Steps>
@@ -108,8 +111,8 @@ def request_approval(state: RefundState) -> dict:
 ```
 
 `interrupt()` pauses the graph and persists its payload.
-The graph stays paused until `agent.submit({ resume })` runs against the same thread — and that value becomes the return value of `interrupt()` when the node re-executes.
-That is why `request_approval` can branch on `decision["approved"]` and pick up an edited `amount`.
+The graph stays paused until `agent.submit({ resume })` runs against the same thread, and that value becomes the return value of `interrupt()` when the node re-executes.
+That's why `request_approval` can branch on `decision["approved"]` and pick up an edited `amount`.
 
 </Step>
 <Step title="Wire the providers">
@@ -175,10 +178,10 @@ export class InterruptsComponent {
 ```
 
 `<chat-approval-card>` reads `agent.interrupt()`, matches the `kind` you pass to `matchKind`, opens a native `<dialog>`, and emits an action on each button click.
-The body is a content-projected template — render whatever fits the payload.
+The body is a content-projected template, so render whatever fits the payload.
 
 Approve and Cancel are terminal: they resolve the interrupt and close the dialog.
-Edit is not.
+Edit isn't.
 Clicking Edit leaves the dialog open so you can reveal an inline editor and submit the resume yourself.
 That distinction lives in the composition.
 
@@ -190,7 +193,7 @@ That distinction lives in the composition.
   <figcaption>The native &lt;dialog&gt; modal. The structured payload renders through the body template slot.</figcaption>
 </figure>
 
-## The round trip
+## What does the round trip look like?
 
 1. User: "Refund $47.50 to customer cus_a8x2k — they were charged twice."
 2. `draft_refund` extracts `amount`, `customer_id`, `reason` into state and posts an acknowledgement.
@@ -202,25 +205,27 @@ That distinction lives in the composition.
 8. `request_approval` re-runs; `interrupt()` returns `{ approved: true }` instead of pausing.
 9. The graph continues to `issue_refund` and finishes.
 
-It is one thread and one persisted state.
-If the operator returns to the same thread and its server checkpoint is retained, the interrupt can still be pending. Preserve the thread ID and use durable backend storage; closing the tab does not itself configure restoration.
+It's one thread and one persisted state.
+If the operator returns to the same thread and its server checkpoint is retained, the interrupt can still be pending.
+Preserve the thread ID and use durable backend storage (closing the tab doesn't itself configure restoration).
 
 <figure>
   <img src="/blog/2026-05-28-human-in-the-loop-langgraph-agents-in-angular/3.png" alt="The chat after approval, showing the agent's draft summary and a confirmation: 'Refund of $47.50 issued to cus_a8x2k. Refund ID: re_demo__a8x2k.'" width="1280" height="800" />
   <figcaption>After Approve, the run continues into issue_refund and posts confirmation.</figcaption>
 </figure>
 
-## Production patterns
+## What does production need?
 
 ### Idempotency
 
 `interrupt()` re-executes the node on resume.
 Side effects before the call have already run; side effects after run again on resume.
-Put the write (the Stripe `refund.create`) on the resumed side, and pass an idempotency key through state so a double-click does not issue two refunds.
+Put the write (the Stripe `refund.create`) on the resumed side, and pass an idempotency key through state so a double-click doesn't issue two refunds.
 
 ### Audit trail
 
-Log who approved, when, and what payload they saw — in the action handler, before `agent.submit`:
+Log who approved, when, and what payload they saw.
+Do it in the action handler, before `agent.submit`:
 
 ```ts
 protected async onAction(action: ChatApprovalAction): Promise<void> {
@@ -236,9 +241,13 @@ protected async onAction(action: ChatApprovalAction): Promise<void> {
 
 ### What not to interrupt
 
-My rule is simple: interrupt on writes the operator would not want to undo by hand — money movement, customer-facing messages, destructive deletes.
+My rule is simple: interrupt on writes the operator wouldn't want to undo by hand (money movement, customer-facing messages, destructive deletes).
 If you can undo it with a script in under a minute, let the agent run.
 
-## Next
+## Conclusion
+
+LangGraph's `interrupt()` pauses the run and persists the payload, `@threadplane/langgraph` surfaces it on `agent.interrupt()`, and `<chat-approval-card>` gives the operator approve, edit, and cancel paths before any money moves.
+For me, the line is simple: gate the writes you can't easily undo, and let the rest run.
 
 The next post covers durable threads, so the conversation and any pending interrupt survive a reload or a different device.
+In the meantime, run the example and let me know how the approval flow feels.

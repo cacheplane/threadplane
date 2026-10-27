@@ -805,3 +805,136 @@ test('pinned ordering SDK preabort is inert and thrown transport errors are cont
   });
   assert.equal(calls, 1);
 });
+
+for (const status of [204, 202, 200, 404, 422, 500])
+  test(`deletion requires exact HTTP204; status ${status}`, async () => {
+    const calls: { input: string; init?: RequestInit }[] = [];
+    const directory = createThreadDirectory({
+      apiBase: 'http://localhost/api',
+      browserOrigin: 'http://localhost',
+      fetch: async (input, init) => {
+        calls.push({ input: String(input), init });
+        return new Response(status === 204 ? null : 'hostile', { status });
+      },
+    });
+    const remove = Reflect.get(directory, 'remove')!;
+    assert.equal(typeof remove, 'function');
+    assert.deepEqual(
+      await remove('one/two%2F', signal()),
+      status === 204
+        ? { kind: 'ready', value: { id: 'one/two%2F' } }
+        : { kind: 'failed' }
+    );
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].input, 'http://localhost/api/threads/one%2Ftwo%252F');
+    assert.equal(calls[0].init?.method, 'DELETE');
+    assert.equal(calls[0].init?.redirect, 'error');
+    assert.equal(calls[0].init?.body, undefined);
+  });
+for (const [status, raw, expected] of [
+  [404, null, 'missing'],
+  [422, null, 'failed'],
+  [200, { thread_id: 'a', metadata: { title: 'Fresh' } }, 'ready'],
+  [200, { thread_id: 'wrong' }, 'failed'],
+  [202, null, 'failed'],
+] as const)
+  test(`deletion inspection raw status ${status} identity ${raw?.thread_id}`, async () => {
+    const directory = createThreadDirectory({
+      apiBase: 'http://localhost/api',
+      browserOrigin: 'http://localhost',
+      fetch: async () => new Response(JSON.stringify(raw), { status }),
+    });
+    const inspect = Reflect.get(directory, 'inspectRemoval')!;
+    assert.equal(typeof inspect, 'function');
+    const result = await inspect('a', signal());
+    assert.equal(result.kind, expected);
+    if (result.kind === 'missing') assert.equal(result.id, 'a');
+    if (result.kind === 'ready') assert.equal(result.value.id, 'a');
+  });
+test(
+  'deletion invalid/preaborted input and hostile cancellation remain bounded',
+  { timeout: 1000 },
+  async () => {
+    let calls = 0;
+    const directory = createThreadDirectory({
+      apiBase: 'http://localhost/api',
+      browserOrigin: 'http://localhost',
+      fetch: async () => {
+        calls++;
+        return new Response(
+          new ReadableStream({ cancel: () => new Promise(() => {}) }),
+          { status: 500 }
+        );
+      },
+    });
+    const remove = Reflect.get(directory, 'remove')!;
+    assert.equal(typeof remove, 'function');
+    for (const id of ['', '.', '..', null, 7])
+      assert.equal((await remove(id as string, signal())).kind, 'failed');
+    const controller = new AbortController();
+    controller.abort();
+    assert.equal((await remove('a', controller.signal)).kind, 'cancelled');
+    assert.equal(calls, 0);
+    assert.equal((await remove('a', signal())).kind, 'failed');
+    assert.equal(calls, 1);
+  }
+);
+
+test('deletion malformed encoded IDs return failed for both capabilities without I/O', async () => {
+  let calls = 0;
+  const directory = createThreadDirectory({
+    apiBase: 'http://localhost/api',
+    browserOrigin: 'http://localhost',
+    fetch: async () => {
+      calls++;
+      throw new Error();
+    },
+  });
+  for (const operation of [directory.remove!, directory.inspectRemoval!])
+    assert.deepEqual(await operation('\ud800', signal()), { kind: 'failed' });
+  assert.equal(calls, 0);
+});
+
+test('deletion inspection is fresh with explicit signals and cannot accept thrown status404', async () => {
+  const calls: RequestInit[] = [];
+  let count = 0;
+  const directory = createThreadDirectory({
+    apiBase: 'http://localhost/api',
+    browserOrigin: 'http://localhost',
+    fetch: async (_input, init) => {
+      calls.push(init!);
+      if (++count === 3) throw { status: 404 };
+      return new Response(null, { status: 404 });
+    },
+  });
+  assert.equal((await directory.get('a', signal())).kind, 'missing');
+  assert.equal(
+    (await directory.inspectRemoval!('a', signal())).kind,
+    'missing'
+  );
+  assert.equal((await directory.inspectRemoval!('a', signal())).kind, 'failed');
+  assert.equal(calls.length, 3);
+  for (const call of calls) assert.ok(call.signal);
+});
+test('deletion concurrent operations preserve isolated raw response evidence', async () => {
+  let finish!: (response: Response) => void;
+  const directory = createThreadDirectory({
+    apiBase: 'http://localhost/api',
+    browserOrigin: 'http://localhost',
+    fetch: async (_input, init) =>
+      init?.method === 'DELETE'
+        ? new Promise<Response>((done) => {
+            finish = done;
+          })
+        : new Response(null, { status: 404 }),
+  });
+  const removing = directory.remove!('a', signal());
+  // The SDK dispatches asynchronously; wait until the delete owns transport.
+  for (let i = 0; i < 30 && !finish; i++) await Promise.resolve();
+  assert.equal(
+    (await directory.inspectRemoval!('b', signal())).kind,
+    'missing'
+  );
+  finish(new Response(null, { status: 202 }));
+  assert.equal((await removing).kind, 'failed');
+});

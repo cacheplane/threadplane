@@ -225,16 +225,18 @@ export function plainExportTypes(specifiers) {
   const namespaces = specifiers.map((specifier, index) => `import * as entry${index} from ${JSON.stringify(specifier)};\nexport type Entry${index} = typeof entry${index};`).join('\n');
   if (!specifiers.includes('@threadplane/react/chat')) return namespaces;
   return `${namespaces}
-import type { ChatSidebarProps, ChatSidenavMode, ChatSidenavProps, ChatSidenavScrimProps, ThreadListItem, ThreadListProps, ThreadRenameFormProps, OverflowMenuItem, OverflowMenuProps } from '@threadplane/react/chat';
+import type { ConfirmDialogProps, ChatSidebarProps, ChatSidenavMode, ChatSidenavProps, ChatSidenavScrimProps, ThreadListItem, ThreadListProps, ThreadRenameFormProps, OverflowMenuItem, OverflowMenuProps } from '@threadplane/react/chat';
 import type { ReactNode, MouseEvent, KeyboardEvent } from 'react';
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
 type Assert<T extends true> = T;
+export type ConfirmDialogContract = Assert<Equal<ConfirmDialogProps, { readonly open: boolean; readonly title: string; readonly onConfirm: () => void; readonly onCancel: () => void; readonly body?: string; readonly confirmLabel?: string; readonly cancelLabel?: string; readonly tone?: 'normal' | 'destructive'; readonly pending?: boolean; readonly className?: string; readonly returnFocusTo?: HTMLElement | null }>>;
 export type ThreadRenameFormContract = Assert<Equal<ThreadRenameFormProps, { readonly value: string; readonly onValueChange: (value: string) => void; readonly onSubmit: () => void; readonly onCancel: () => void; readonly pending?: boolean; readonly error?: string; readonly label?: string; readonly className?: string }>>;
 export type OverflowMenuItemContract = Assert<Equal<OverflowMenuItem, { readonly id: string; readonly label: string; readonly disabled?: boolean; readonly tone?: 'normal' | 'destructive' }>>;
 export type OverflowMenuPropsContract = Assert<Equal<OverflowMenuProps, { readonly items: readonly OverflowMenuItem[]; readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly onSelect: (itemId: string, event: MouseEvent<HTMLButtonElement>) => void; readonly label: string; readonly className?: string; readonly disabled?: boolean; readonly anchorPoint?: { readonly x: number; readonly y: number } | null; readonly returnFocusTo?: HTMLElement | null }>>;
 export type ThreadListItemContract = Assert<Equal<ThreadListItem, { readonly id: string; readonly title?: string; readonly updatedAt?: number; readonly pinned?: boolean }>>;
 export type ThreadListRequiredContract = Assert<Equal<Pick<ThreadListProps, 'threads' | 'onSelect'>, { readonly threads: readonly ThreadListItem[]; readonly onSelect: (threadId: string) => void }>>;
 export type ThreadListContextContract = Assert<Equal<Pick<ThreadListProps, 'onContextMenu'>, { readonly onContextMenu?: (threadId: string, event: MouseEvent<HTMLButtonElement> | KeyboardEvent<HTMLButtonElement>) => void }>>;
+export type ThreadListItemRendererContract = Assert<Equal<Pick<ThreadListProps, 'renderItem'>, { readonly renderItem?: (thread: ThreadListItem, isActive: boolean) => ReactNode }>>;
 export type ThreadListActionsContract = Assert<Equal<Pick<ThreadListProps, 'renderActions'>, { readonly renderActions?: (thread: ThreadListItem) => ReactNode }>>;
 export type ThreadListOptionsContract = Assert<Equal<Pick<ThreadListProps, 'activeThreadId' | 'label' | 'className' | 'onNewThread' | 'newThreadDisabled' | 'newThreadLabel' | 'now' | 'renderTitle'>, { readonly activeThreadId?: string | null; readonly label?: string; readonly className?: string; readonly onNewThread?: () => void; readonly newThreadDisabled?: boolean; readonly newThreadLabel?: string; readonly now?: number; readonly renderTitle?: (thread: ThreadListItem) => ReactNode }>>;
 export type SidebarControlledContract = Assert<Equal<Pick<ChatSidebarProps, 'open' | 'onOpenChange' | 'title'>, { readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly title: string }>>;
@@ -365,6 +367,7 @@ export function assertSupportedExports(project, entry) {
         'ChatSidenavScrim',
         'ChatInput',
         'Citations',
+        'ConfirmDialog',
         'MessageList',
         'MessageActions',
         'OverflowMenu',

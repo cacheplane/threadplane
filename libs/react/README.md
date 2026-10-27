@@ -309,6 +309,22 @@ remain the original title or ID, including with custom or empty title content.
 Invalid timestamps still leave pin status available. Pin presentation preserves
 supplied order and adds no action, mutation, sorting or focus target.
 
+Optional readonly `renderItem(thread, isActive)` replaces the entire content of
+its ID-keyed list item. It receives the original supplied item and exact active-ID
+comparison, and returns ReactNode content. `null`, `false` and `undefined` leave an
+empty item without default fallback. The default selection button, pin/time
+presentation, `renderTitle`, `renderActions` and `onContextMenu` are bypassed for
+custom rows. The outer list and optional New button retain their behavior.
+
+The application supplies its own controls, accessible names, active indicators,
+selection callbacks and context handling. Return list-item content, rather than
+another `li`. Render callbacks must be pure; React may evaluate them repeatedly.
+Put hooks inside a returned component. Normal keyed React reconciliation preserves
+surviving same-type content when a callback changes; switching between default and
+custom rows may replace the subtree. Omit `renderItem` to retain the default rows.
+Native compact navigation dogfoods complete application-owned selection rows while
+preserving full names, pin/time descriptions, supplied order and retained sessions.
+
 Optional readonly `renderTitle` receives the original supplied `ThreadListItem`
 and returns ReactNode title content inside the existing button. Supply only
 noninteractive phrasing content (for example `mark` or `em`); do not nest links,
@@ -336,9 +352,8 @@ context-menu behavior. Capture `event.currentTarget` synchronously when it will
 serve as the menu's invoking element.
 
 An empty collection renders an empty list. The application owns loaded-title
-filtering, loading/error/empty notices, data fetching and execution. Delete,
-project actions, drag reordering, live timestamp refresh and
-custom row rendering remain future work. This is a bounded private T29 slice.
+filtering, loading/error/empty notices, data fetching and execution. Native Delete
+uses the existing action slot; project actions, drag reordering, live timestamp refresh remain future work. This is a bounded private T29 slice.
 
 ## Controlled conversation rename editor
 
@@ -357,7 +372,7 @@ no backend requests and does not await command promises. Compose it in the
 ThreadList action sibling, outside the selection button. The native example
 uses it for confirmed metadata renames without selecting or reloading a session.
 Cancelling a pending editor ends local editing interest; it cannot promise a
-remote write was rolled back. Delete/project mutation and full
+remote write was rolled back. Project mutation and full
 thread lifecycle parity remain open.
 
 The native example also composes app-owned Pin/Unpin commands through the same
@@ -375,7 +390,7 @@ loaded-title filter, and keeps the compact rail active-only. Archive metadata an
 commands belong to the native application, with strict boolean write confirmation,
 per-target pending state, retry after failure and feedback retained across row
 migration. Archiving the selected row preserves its transcript, draft, session and
-active response. This adds no ThreadList field, lifecycle API or export; delete,
+active response. This adds no ThreadList field, lifecycle API or export;
 project actions, drag reordering and full T29/T30 parity remain open.
 
 The native application orders active loaded pins first by finite numeric
@@ -391,6 +406,36 @@ after settlement before another move. Only moves are blocked during pending or
 unconfirmed ordering. Directory-owned target feedback survives filtering and
 movement; remounts share active recovery state without replaying completed outcomes.
 Moves preserve keyed rows, selected session, draft and running response.
+
+## Controlled confirmation dialog
+
+The private chat entry exports `ConfirmDialog` and readonly `ConfirmDialogProps`.
+Supply controlled `open`, literal `title`, synchronous `onConfirm` and `onCancel`;
+optional `body`, `confirmLabel`, `cancelLabel`, `tone` (`normal` or `destructive`),
+`pending`, `className` and `returnFocusTo` customize the intent UI. Opt-in chat CSS
+styles the dialog and backdrop. Native `showModal()` provides top-layer background
+inertness; Cancel receives initial focus, enabled buttons wrap at Tab boundaries,
+and Escape or an outside-bounds backdrop click requests cancellation. Pending
+marks busy and disables Confirm while leaving Cancel available. Controlled refusal
+to close retains modal ownership. The component owns no HTTP or command promises.
+
+A hidden marker supplies the owner document and local theme, font and direction;
+the dialog portals to that document's body. SSR renders no open modal. Stable nodes
+survive controlled updates. Cleanup restores an available same-document invoker
+only while the modal owns focus, preserving deliberate focus elsewhere. This is a
+bounded private T22 primitive, not a complete overlay-stack manager.
+
+Native React composes permanent conversation Delete through this dialog with an
+immutable title/ID/request identity and closes it before dispatch. Cancel never
+implies rollback of an admitted delete. Exact-target 204 acknowledgement or explicit
+status-check 404 retires a conversation; uncertain outcomes retain a shared barrier
+and **Check deletion status** recovery. Exact-ID presence restores writes without
+reloading the selected session. Pending/uncertain deletion blocks global Delete and
+reorder, plus matching metadata/composer writes; other rows stay usable. Selected
+running/reconnect evidence refuses deletion. Retirement tombstones survive stale
+reads for the owner lifetime; confirmed selected idle deletion clears only matching
+selection/session/route, while nonselected deletion preserves the current draft
+and running response. The ThreadList row API is unchanged; full T29 parity remains open.
 
 ## Controlled command menu
 

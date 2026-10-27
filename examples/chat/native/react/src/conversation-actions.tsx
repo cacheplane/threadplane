@@ -10,6 +10,10 @@ export interface RenameEditorRequest {
 }
 interface Props {
   readonly archived?: boolean;
+  readonly onDelete?: (target: HTMLElement | null) => void;
+  readonly deleteDisabled?: boolean;
+  readonly deleteReason?: string;
+  readonly mutationBlocked?: boolean;
   readonly archivePending?: boolean;
   readonly onMoveUp?: () => void;
   readonly onMoveDown?: () => void;
@@ -95,6 +99,19 @@ function ConversationActionsOwner(props: Props) {
         onMoveDown={props.onMoveDown}
         reorderPending={props.reorderPending}
         onArchive={props.onArchive}
+        onDelete={
+          props.onDelete
+            ? () =>
+                props.onDelete?.(
+                  props.menu?.returnFocusTo ??
+                    root.current?.querySelector('button') ??
+                    null
+                )
+            : undefined
+        }
+        deleteDisabled={props.deleteDisabled}
+        deleteReason={props.deleteReason}
+        mutationBlocked={props.mutationBlocked}
         pinPending={
           props.pinState?.status === 'pending' ||
           pinFeedback?.status === 'pending'
@@ -136,6 +153,7 @@ function ConversationActionsOwner(props: Props) {
         <RenameEditor
           key={props.editor.token}
           {...props}
+          pending={props.pending || props.mutationBlocked === true}
           request={props.editor}
         />
       )}

@@ -208,8 +208,30 @@ Archiving or restoring a selected conversation changes directory classification
 only. The selected transcript, composer draft, session and running response stay
 mounted and selected, with no reload, stop or navigation. Archived rows remain
 selectable. This deliberately differs from the Angular demo clearing selection
-when it archives. Permanent deletion, project actions, drag reordering and full
-thread lifecycle/T29 parity remain open; no library API or export is added.
+when it archives. Project actions, drag reordering and full thread lifecycle/T29
+parity remain open; the ThreadList row API is unchanged.
+
+Native React full directories also compose permanent Delete through the private
+controlled `ConfirmDialog`. Active menus keep Archive last; archived menus offer
+Copy, Unarchive and Delete. Compact rails remain selection-only. Confirmation
+captures the literal title and ID, warns about permanence and a selected draft,
+and defaults to Cancel. Cancel, Escape and backdrop dismissal make no request.
+Confirm closes the modal before dispatch; it does not offer cancellation or rollback
+of an admitted remote deletion. Selected running or retained reconnect evidence
+requires resolving the current run before deletion.
+
+Only an exact-target HTTP 204 or a fresh explicit status inspection returning 404
+retires a row. Pending or unconfirmed deletion keeps rows and selected content,
+blocks another delete and reordering, and blocks the target's metadata and composer
+writes while leaving other conversations' actions usable. Shared pending/recovery
+feedback survives filtering and remounts. Use **Check deletion status** explicitly:
+an exact-ID 200 restores writes without replacing the selected session or draft;
+404 retires it. Refresh never confirms deletion, and no automatic read or DELETE
+retry occurs. Confirmed IDs stay retired for the application owner's lifetime,
+including stale later reads. Deleting a nonselected conversation preserves the
+selected draft and running response; confirmed selected idle deletion clears only
+the still-matching selection, session and route. This is bounded private T22/T29
+composition, with no full overlay-stack or thread lifecycle parity claim.
 
 The shared directory projection copies valid backend `updated_at` strings into
 immutable optional epoch-millisecond `updatedAt` fields. Native React passes these
@@ -608,6 +630,13 @@ moves only after accepted visibility/mode changes. Hidden directory content is
 inert, and Tab can reach the surrounding page. Focus returns to the launcher when a focused backdrop is dismissed,
 or to the desktop toggle when a breakpoint removes it; an already focused page
 control retains focus. The backdrop covers page pointer targets while open.
+The compact rail uses the private `ThreadList.renderItem` full-row callback to
+return an application-owned `CompactThreadRow`. It owns the exact-ID selection
+button, full accessible name and tooltip, active state, decorative initial/pin and
+semantic timestamp description. Default full-directory action/title renderers are
+not called for these rows. Custom rows preserve the existing compact geometry,
+loaded filtering/order, draft and running response; they add no backend requests.
+
 The compact rail composes a second `ThreadList` from the same filtered rows,
 active ID and application selection callback. It shows the uppercase first Unicode
 code point of the trimmed title (or ID), with `?` for empty content, while keeping

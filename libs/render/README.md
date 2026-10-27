@@ -83,6 +83,45 @@ export class AgentUiComponent {
 
 **Fallback** — `DefaultFallbackComponent` renders when no component is registered for a spec node; individual entries in a `ViewRegistry` can supply their own `fallback` component via `RenderViewEntry`.
 
+## DevTools render report (development only)
+
+In Angular development mode, `<a2ui-surface>` and `<chat-generative-ui>` from
+`@threadplane/chat` report how each spec they render resolved, so the AG-UI
+DevTools Chrome extension's UI tab can show which components mounted and which
+did not. When a surface's resolution changes, it dispatches
+
+```ts
+window.dispatchEvent(new CustomEvent('threadplane:devtools', {
+  detail: { v: 1, kind: 'render', surface, seq, registry, elements, tMs },
+}));
+```
+
+- `surface` is the A2UI `surfaceId`, or `'spec:' + root key` for a json-render
+  spec (1–128 characters; a longer id is not reported).
+- `seq` counts render reports per page from 1; `tMs` is `performance.now()`.
+- `registry` lists the registry's names, at most 500.
+- `elements` lists `{ key, type, state }` for every spec element, root first,
+  at most 2,000. `state` is `unresolved` (no registry entry for `type`),
+  `fallback` (the entry's fallback is shown because the props are not ready),
+  `hidden` (it does not render: `visible` is false, an empty repeat, or it sits
+  under an element that rendered no children, such as an unresolved one), or
+  `mounted`.
+
+Past the caps, extras are dropped in that order; a name, key or type longer
+than 128 characters is left out rather than shortened. Changes within 50 ms
+coalesce, and nothing is sent when the resolution is unchanged. Two surfaces
+with the same id (two json-render specs with the same root key) share a name in
+the report.
+
+Prop values are never read or sent: the state comes from the renderer's own
+mount decision, and the report carries names, keys, types and states only.
+`<render-spec>` reports only when an ancestor provides the private
+`ɵRENDER_DEVTOOLS` hook, which the chat components do; a spec rendered inside
+another spec's view reports only through a hook provided closer to it.
+Production builds remove the reporter and the element tracker (CI verifies the
+bundle). The signals report's opt-out applies:
+`window.__THREADPLANE_DEVTOOLS_DISABLED__ = true`.
+
 ## Reliability
 
 Powers `@threadplane/chat` generative-UI rendering in production. Patch-only `0.0.x` releases. Validated by the CI job "Library — lint / test / build" on every commit.

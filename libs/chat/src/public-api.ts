@@ -302,3 +302,29 @@ export type { MockAgent, MockAgentOptions } from './lib/testing/mock-agent';
 
 // Conformance helpers ship from the secondary entry point @threadplane/chat/testing
 // (they import vitest at module level; keeping them out of the main bundle).
+
+// Development-only devtools hook: the adapters report which signals each event
+// wrote (names and timing, never values). Private (ɵ) — an adapter seam, not API.
+export { ɵcreateDevtoolsEmitter } from './lib/devtools/devtools-emitter';
+export type {
+  DevtoolsEmitter as ɵDevtoolsEmitter,
+  DevtoolsPseudoEvent as ɵDevtoolsPseudoEvent,
+  LangGraphDevtoolsSignal as ɵLangGraphDevtoolsSignal,
+  AgUiDevtoolsSignal as ɵAgUiDevtoolsSignal,
+} from './lib/devtools/devtools-emitter';
+// Development-only render report: which spec elements mounted, fell back, did
+// not resolve, or did not render, per surface (AG-UI DevTools UI tab).
+export { ɵcreateRenderDevtoolsReporter, ɵprovideRenderDevtools } from './lib/devtools/devtools-render-report';
+export type {
+  RenderDevtoolsReport as ɵRenderDevtoolsReport,
+  RenderDevtoolsReporter as ɵRenderDevtoolsReporter,
+} from './lib/devtools/devtools-render-report';
+// Development-only scripted runs: the AG-UI DevTools run simulator arms the
+// next run(s) of an adapter with protocol events in place of the network.
+// Private (ɵ) — an adapter seam, not API.
+export { ɵdevtoolsScriptedRuns } from './lib/devtools/devtools-scripted-runs';
+export type {
+  DevtoolsScriptedRuns as ɵDevtoolsScriptedRuns,
+  LangGraphScriptedRun as ɵLangGraphScriptedRun,
+  AgUiScriptedRun as ɵAgUiScriptedRun,
+} from './lib/devtools/devtools-scripted-runs';

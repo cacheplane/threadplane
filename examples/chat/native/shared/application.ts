@@ -24,6 +24,13 @@ interface Decision extends Approval {
 export interface ApplicationSnapshot<
   TRow extends MessageContent = MessageContent
 > {
+  readonly deletion: Readonly<{
+    status: 'idle' | 'pending' | 'confirmed' | 'unconfirmed';
+    id: string | null;
+    title: string | null;
+    intent: number;
+    checking: boolean;
+  }>;
   readonly ordering: Readonly<{
     status: 'idle' | 'pending' | 'confirmed' | 'unconfirmed';
     id: string | null;
@@ -157,6 +164,13 @@ function createApplicationOwner<TRow extends MessageContent>(
   }
 
   let snapshot: ApplicationSnapshot<TRow> = Object.freeze({
+    deletion: Object.freeze({
+      status: 'idle',
+      id: null,
+      title: null,
+      intent: 0,
+      checking: false,
+    }),
     ordering: Object.freeze({
       status: 'idle',
       id: null,
@@ -175,6 +189,19 @@ function createApplicationOwner<TRow extends MessageContent>(
     selection: Object.freeze({ status: 'empty', id: null }),
     runtime: null,
   });
+  const retiredIds = new Set<string>();
+  let deletionIntent = 0;
+  let deleting:
+    | {
+        id: string;
+        title: string;
+        intent: number;
+        controller: AbortController;
+        inspection?: AbortController;
+      }
+    | undefined;
+  const blocksTarget = (id: string) =>
+    retiredIds.has(id) || deleting?.id === id;
   let writeVersion = 0;
   let readOrder = 0;
   let orderingIntent = 0;
@@ -289,22 +316,32 @@ function createApplicationOwner<TRow extends MessageContent>(
 
   function publish(next: ApplicationSnapshot<TRow>) {
     if (disposed) return;
-    next = { ...next, decision: projectDecision(next) };
+    const previous = snapshot;
+    // Install the immutable operation state before invoking the live runtime
+    // projection. Reentrant navigation must inherit completed retirements.
+    const supplied = Object.freeze(next);
+    snapshot = supplied;
+    const decision = projectDecision(supplied);
+    if (disposed || snapshot !== supplied) return;
+    next = { ...supplied, decision };
     if (
-      next.ordering === snapshot.ordering &&
-      next.renames === snapshot.renames &&
-      next.archives === snapshot.archives &&
-      next.pins === snapshot.pins &&
-      next.list === snapshot.list &&
-      next.decision === snapshot.decision &&
-      next.submissionKind === snapshot.submissionKind &&
-      next.selection === snapshot.selection &&
-      next.creation === snapshot.creation &&
-      next.submission === snapshot.submission &&
-      next.messages === snapshot.messages &&
-      next.runtime === snapshot.runtime
-    )
+      next.deletion === previous.deletion &&
+      next.ordering === previous.ordering &&
+      next.renames === previous.renames &&
+      next.archives === previous.archives &&
+      next.pins === previous.pins &&
+      next.list === previous.list &&
+      next.decision === previous.decision &&
+      next.submissionKind === previous.submissionKind &&
+      next.selection === previous.selection &&
+      next.creation === previous.creation &&
+      next.submission === previous.submission &&
+      next.messages === previous.messages &&
+      next.runtime === previous.runtime
+    ) {
+      snapshot = previous;
       return;
+    }
     snapshot = Object.freeze(next);
     for (const listener of [...listeners]) {
       // Reentry may already have published the next selection to everyone.
@@ -322,21 +359,37 @@ function createApplicationOwner<TRow extends MessageContent>(
     return (
       !disposed &&
       admission === current &&
+      !retiredIds.has(current.id) &&
       selectionIntent === current.intent &&
       !current.controller.signal.aborted
     );
   }
 
-  function canOperate(next = snapshot) {
+  function readyToOperate(
+    current: Admission,
+    session: ApplicationSession,
+    next = snapshot
+  ) {
     return !!(
       started &&
-      admission &&
-      owns(admission) &&
-      admission.session &&
+      owns(current) &&
+      current.session === session &&
       next.selection.status === 'ready' &&
-      next.selection.id === admission.id &&
-      admission.session.getSnapshot().history !== undefined &&
+      next.selection.id === current.id &&
+      !blocksTarget(current.id) &&
       !submitting
+    );
+  }
+
+  function canOperate(next = snapshot) {
+    const current = admission;
+    const session = current?.session;
+    if (!current || !session || !readyToOperate(current, session, next))
+      return false;
+    const runtime = session.getSnapshot();
+    // A live runtime getter is a callback boundary, not a reservation.
+    return (
+      runtime.history !== undefined && readyToOperate(current, session, next)
     );
   }
 
@@ -364,17 +417,24 @@ function createApplicationOwner<TRow extends MessageContent>(
         : undefined;
     }
     if (!occurrence) return null;
+    const current = occurrence;
+    const selected = admission;
     const canRespond =
-      !occurrence.consumed &&
-      canOperate(next) &&
-      next.runtime?.status === 'idle';
-    if (!occurrence.card || occurrence.card.canRespond !== canRespond)
-      occurrence.card = Object.freeze({
-        ...occurrence.approval,
-        token: occurrence.token,
+      !current.consumed && canOperate(next) && next.runtime?.status === 'idle';
+    if (
+      occurrence !== current ||
+      admission !== selected ||
+      !selected ||
+      !owns(selected)
+    )
+      return null;
+    if (!current.card || current.card.canRespond !== canRespond)
+      current.card = Object.freeze({
+        ...current.approval,
+        token: current.token,
         canRespond,
       });
-    return occurrence.card;
+    return current.card;
   }
 
   function retire(previous: Admission | undefined) {
@@ -435,10 +495,19 @@ function createApplicationOwner<TRow extends MessageContent>(
       const observe = () => {
         if (!owns(current) || current.session !== session) return;
         const runtime = session.getSnapshot();
+        if (!owns(current) || current.session !== session) return;
         content.update(runtime.messages, runtime.toolCalls);
-        publish({ ...snapshot, runtime, messages: content.getSnapshot() });
+        if (!owns(current) || current.session !== session) return;
+        const messages = content.getSnapshot();
+        if (!owns(current) || current.session !== session) return;
+        publish({ ...snapshot, runtime, messages });
       };
-      current.release = session.subscribe(observe);
+      const release = session.subscribe(observe);
+      if (!owns(current) || current.session !== session) {
+        release();
+        return;
+      }
+      current.release = release;
       observe();
       // Publishing the initial runtime can synchronously select another thread.
       if (!owns(current) || current.session !== session) return;
@@ -478,19 +547,27 @@ function createApplicationOwner<TRow extends MessageContent>(
     const creation = cancelCreation();
     retire(previous);
     if (disposed || selectionIntent !== intent) return;
-    if (push) options.history.push(threadUrl(options.history.currentUrl(), id));
+    if (push) {
+      const url = options.history.currentUrl();
+      if (disposed || selectionIntent !== intent) return;
+      options.history.push(threadUrl(url, id));
+      if (disposed || selectionIntent !== intent) return;
+    }
     publish({
       ...snapshot,
       creation,
       submission: Object.freeze({ active: false, outcome: null }),
       submissionKind: null,
       selection: Object.freeze({
-        status: id === null ? 'empty' : 'pending',
+        status:
+          id === null ? 'empty' : retiredIds.has(id) ? 'missing' : 'pending',
         id,
       }),
       runtime: null,
       messages: Object.freeze([]),
     });
+    if (current && retiredIds.has(current.id) && admission === current)
+      admission = undefined;
     if (current && owns(current)) void admit(current);
   }
 
@@ -533,14 +610,18 @@ function createApplicationOwner<TRow extends MessageContent>(
         publish({
           ...snapshot,
           creation: Object.freeze(
-            result.kind === 'ready'
+            result.kind === 'ready' && !retiredIds.has(result.value.id)
               ? { status: 'confirmed', id: result.value.id }
               : { status: 'unconfirmed', id: null }
           ),
         });
         // Confirmation observers may navigate, dispose, or explicitly start
         // another creation. Only the still-current intent can adopt this ID.
-        if (result.kind === 'ready' && interested())
+        if (
+          result.kind === 'ready' &&
+          !retiredIds.has(result.value.id) &&
+          interested()
+        )
           select(result.value.id, true);
       } catch {
         if (!ownsCreation()) return;
@@ -592,7 +673,9 @@ function createApplicationOwner<TRow extends MessageContent>(
         const rows =
           result.kind === 'ready'
             ? Object.freeze(
-                result.value.map((row) => reconcile(row, readVersion, order))
+                result.value
+                  .filter((row) => !retiredIds.has(row.id))
+                  .map((row) => reconcile(row, readVersion, order))
               )
             : snapshot.list.rows;
         // A matching row renames the same ready selection; omission is not deletion.
@@ -640,11 +723,248 @@ function createApplicationOwner<TRow extends MessageContent>(
     })();
   }
 
+  function canRemove(id: string) {
+    if (
+      !started ||
+      disposed ||
+      deleting ||
+      ordering ||
+      retiredIds.has(id) ||
+      typeof id !== 'string' ||
+      !id ||
+      id === '.' ||
+      id === '..' ||
+      typeof options.directory.remove !== 'function' ||
+      typeof options.directory.inspectRemoval !== 'function' ||
+      renaming.has(id) ||
+      pinning.has(id) ||
+      archiving.has(id)
+    )
+      return false;
+    const row =
+      snapshot.list.rows.find((item) => item.id === id) ??
+      (snapshot.selection.id === id ? snapshot.selection.row : undefined);
+    if (!row) return false;
+    if (snapshot.selection.id === id) {
+      const selected = admission;
+      if (
+        !selected ||
+        !owns(selected) ||
+        snapshot.selection.status !== 'ready' ||
+        !selected.session ||
+        submitting
+      )
+        return false;
+      const runtime = selected.session.getSnapshot();
+      if (
+        !owns(selected) ||
+        submitting ||
+        snapshot.selection.status !== 'ready' ||
+        snapshot.selection.id !== id ||
+        deleting ||
+        runtime.status === 'running' ||
+        runtime.reconnect?.runId
+      )
+        return false;
+    }
+    return (
+      !disposed &&
+      !deleting &&
+      !ordering &&
+      !renaming.has(id) &&
+      !pinning.has(id) &&
+      !archiving.has(id)
+    );
+  }
+
+  function deletionState(
+    current: NonNullable<typeof deleting>,
+    status: ApplicationSnapshot['deletion']['status'],
+    checking = false
+  ) {
+    return Object.freeze({
+      status,
+      id: current.id,
+      title: current.title,
+      intent: current.intent,
+      checking,
+    });
+  }
+
+  function confirmRemoval(current: NonNullable<typeof deleting>) {
+    // Lifetime retirement is installed before any observer, disposal or history callback.
+    retiredIds.add(current.id);
+    const previous = admission?.id === current.id ? admission : undefined;
+    const selected = snapshot.selection.id === current.id;
+    const intent = selected ? ++selectionIntent : selectionIntent;
+    if (previous) admission = undefined;
+    if (selected) {
+      occurrence = undefined;
+      retireSubmission();
+    }
+    deleting = undefined;
+    publish({
+      ...snapshot,
+      deletion: deletionState(current, 'confirmed'),
+      list: Object.freeze({
+        ...snapshot.list,
+        rows: Object.freeze(
+          snapshot.list.rows.filter((row) => row.id !== current.id)
+        ),
+      }),
+      ...(selected
+        ? {
+            selection: Object.freeze({ status: 'empty' as const, id: null }),
+            runtime: null,
+            messages: Object.freeze([]),
+            submissionKind: null,
+            submission: Object.freeze({ active: false, outcome: null }),
+          }
+        : {}),
+    });
+    // Reentry from publication/history must not clear a newer admission or route.
+    if (
+      selected &&
+      !disposed &&
+      selectionIntent === intent &&
+      !admission &&
+      snapshot.selection.id === null
+    ) {
+      const url = options.history.currentUrl();
+      if (
+        !disposed &&
+        selectionIntent === intent &&
+        !admission &&
+        snapshot.selection.id === null
+      )
+        options.history.push(threadUrl(url, null));
+    }
+    retire(previous);
+  }
+
+  async function remove(id: string): Promise<boolean> {
+    if (!canRemove(id)) return false;
+    const row =
+      snapshot.list.rows.find((item) => item.id === id) ??
+      snapshot.selection.row!;
+    const current = {
+      id,
+      title: row.title,
+      intent: ++deletionIntent,
+      controller: new AbortController(),
+    };
+    deleting = current;
+    const owned = () =>
+      !disposed && deleting === current && !current.controller.signal.aborted;
+    publish({ ...snapshot, deletion: deletionState(current, 'pending') });
+    if (!owned()) return false;
+    let confirmed = false;
+    try {
+      const result = await options.directory.remove!(
+        id,
+        current.controller.signal
+      );
+      if (!owned()) return false;
+      confirmed = result.kind === 'ready' && result.value.id === id;
+    } catch {
+      if (!owned()) return false;
+    }
+    if (confirmed) confirmRemoval(current);
+    else
+      publish({ ...snapshot, deletion: deletionState(current, 'unconfirmed') });
+    return confirmed;
+  }
+
+  async function checkRemoval(id: string, intent: number): Promise<boolean> {
+    const current = deleting;
+    if (
+      !started ||
+      disposed ||
+      !current ||
+      current.id !== id ||
+      current.intent !== intent ||
+      snapshot.deletion.status !== 'unconfirmed' ||
+      current.inspection
+    )
+      return false;
+    const controller = new AbortController();
+    current.inspection = controller;
+    const readVersion = writeVersion,
+      order = ++readOrder;
+    const owned = () =>
+      !disposed &&
+      deleting === current &&
+      current.inspection === controller &&
+      !controller.signal.aborted;
+    publish({
+      ...snapshot,
+      deletion: deletionState(current, 'unconfirmed', true),
+    });
+    if (!owned()) return false;
+    try {
+      const result = await options.directory.inspectRemoval!(
+        id,
+        controller.signal
+      );
+      if (!owned()) return false;
+      if (result.kind === 'missing' && result.id === id) {
+        confirmRemoval(current);
+        return true;
+      }
+      if (result.kind === 'ready' && result.value.id === id) {
+        const row = reconcile(result.value, readVersion, order);
+        // Read evidence uses the same independent clocks as ordinary metadata reads.
+        for (const [map, value] of [
+          [confirmedTitles, { title: row.title }],
+          [confirmedPins, { pinned: row.pinned }],
+          [confirmedArchives, { archived: row.archived }],
+          [rankEvidence, { pinnedOrder: row.pinnedOrder }],
+        ] as const) {
+          // Each field has already passed its own reconciliation above.
+          const previous = map.get(id);
+          (map as Map<string, object>).set(id, {
+            ...value,
+            version: previous?.version ?? readVersion,
+            readOrder: Math.max(previous?.readOrder ?? 0, order),
+          });
+        }
+        deleting = undefined;
+        publish({
+          ...snapshot,
+          deletion: Object.freeze({
+            status: 'idle',
+            id: null,
+            title: null,
+            intent: current.intent,
+            checking: false,
+          }),
+          list: Object.freeze({
+            ...snapshot.list,
+            rows: Object.freeze(
+              snapshot.list.rows.map((item) => (item.id === id ? row : item))
+            ),
+          }),
+          selection:
+            snapshot.selection.id === id && snapshot.selection.row
+              ? Object.freeze({ ...snapshot.selection, row })
+              : snapshot.selection,
+        });
+        return true;
+      }
+    } catch {
+      if (!owned()) return false;
+    }
+    current.inspection = undefined;
+    publish({ ...snapshot, deletion: deletionState(current, 'unconfirmed') });
+    return false;
+  }
+
   function canReorderPinned() {
     return (
       started &&
       !disposed &&
       !ordering &&
+      !deleting &&
       snapshot.ordering.status !== 'unconfirmed' &&
       typeof options.directory.setPinnedOrder === 'function'
     );
@@ -774,6 +1094,7 @@ function createApplicationOwner<TRow extends MessageContent>(
       (snapshot.selection.id === id ? snapshot.selection.row : undefined);
     if (
       !canSetArchived() ||
+      blocksTarget(id) ||
       typeof archived !== 'boolean' ||
       archiving.has(id) ||
       (existing && (existing.archived === true) === archived)
@@ -852,6 +1173,7 @@ function createApplicationOwner<TRow extends MessageContent>(
       (snapshot.selection.id === id ? snapshot.selection.row : undefined);
     if (
       !canSetPinned() ||
+      blocksTarget(id) ||
       typeof pinned !== 'boolean' ||
       pinning.has(id) ||
       (existing && (existing.pinned === true) === pinned)
@@ -919,6 +1241,7 @@ function createApplicationOwner<TRow extends MessageContent>(
       (snapshot.selection.id === id ? snapshot.selection.row : undefined);
     if (
       !canRename() ||
+      blocksTarget(id) ||
       !title ||
       title === existing?.title.trim() ||
       renaming.has(id)
@@ -981,7 +1304,15 @@ function createApplicationOwner<TRow extends MessageContent>(
   }
 
   function canSubmit() {
-    return canOperate() && !admission!.session!.getSnapshot().interrupts.length;
+    const current = admission;
+    const session = current?.session;
+    if (!current || !session || !canOperate()) return false;
+    const runtime = session.getSnapshot();
+    return (
+      readyToOperate(current, session) &&
+      runtime.history !== undefined &&
+      !runtime.interrupts.length
+    );
   }
 
   function ownsSubmission(current: Submission) {
@@ -1052,22 +1383,35 @@ function createApplicationOwner<TRow extends MessageContent>(
   }
 
   function respond(token: symbol, action: 'approve' | 'decline') {
+    const current = admission;
+    const session = current?.session;
+    const decision = occurrence;
     if (
       (action !== 'approve' && action !== 'decline') ||
-      !canOperate() ||
-      !occurrence ||
-      occurrence.consumed ||
-      occurrence.admission !== admission ||
-      occurrence.token !== token ||
-      !snapshot.decision?.canRespond ||
-      admission!.session!.getSnapshot().interrupts !== occurrence.evidence
+      !current ||
+      !session ||
+      !decision ||
+      !canOperate()
+    )
+      return false;
+    const runtime = session.getSnapshot();
+    if (
+      !readyToOperate(current, session) ||
+      occurrence !== decision ||
+      decision.consumed ||
+      decision.admission !== current ||
+      decision.token !== token ||
+      snapshot.decision?.token !== token ||
+      !snapshot.decision.canRespond ||
+      runtime.history === undefined ||
+      runtime.interrupts !== decision.evidence
     )
       return false;
     const response = {
-      [occurrence.approval.id]: action === 'approve' ? 'approved' : 'denied',
+      [decision.approval.id]: action === 'approve' ? 'approved' : 'denied',
     };
-    return execute('decision', (session, signal) =>
-      session.resume(response, { signal })
+    return execute('decision', (runtimeSession, signal) =>
+      runtimeSession.resume(response, { signal })
     );
   }
 
@@ -1083,6 +1427,9 @@ function createApplicationOwner<TRow extends MessageContent>(
   }
 
   return Object.freeze({
+    canRemove,
+    remove,
+    checkRemoval,
     canReorderPinned,
     reorderPinned,
     canSetArchived,
@@ -1124,6 +1471,9 @@ function createApplicationOwner<TRow extends MessageContent>(
     dispose() {
       if (disposed) return;
       disposed = true;
+      deleting?.controller.abort();
+      deleting?.inspection?.abort();
+      deleting = undefined;
       ordering?.abort();
       ordering = undefined;
       for (const controller of archiving.values()) controller.abort();

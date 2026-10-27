@@ -74,7 +74,94 @@ export function createThreadDirectory(
       return failure(signal);
     }
   }
+  function exactOperation(
+    id: string,
+    signal: AbortSignal,
+    method: 'GET' | 'DELETE'
+  ) {
+    const encoded = encodeURIComponent(id);
+    const expected = api.href.replace(/\/$/, '') + '/threads/' + encoded;
+    let evidence: number | undefined;
+    const operation = new Client({
+      apiUrl: api.href,
+      apiKey: null,
+      callerOptions: {
+        maxRetries: 0,
+        fetch: async (
+          input: Parameters<typeof fetch>[0],
+          init?: RequestInit
+        ) => {
+          if (
+            signal.aborted ||
+            String(input) !== expected ||
+            (init?.method ?? 'GET') !== method
+          )
+            throw new Error('Invalid deletion request');
+          let response: Response;
+          try {
+            response = await fetchRequest(input, {
+              ...init,
+              redirect: 'error',
+            });
+          } catch {
+            throw new Error('Directory request failed');
+          }
+          evidence = response.status;
+          if (
+            (method === 'DELETE' && response.status !== 204) ||
+            (method === 'GET' && response.status !== 200)
+          ) {
+            // Request release, but a transport-owned cancel promise cannot block settlement.
+            try {
+              void response.body?.cancel().catch(() => {});
+            } catch {
+              /* release best effort */
+            }
+            throw new Error('Deletion evidence unavailable');
+          }
+          return response;
+        },
+      },
+    });
+    return { operation, encoded, status: () => evidence };
+  }
+  const validId = (id: string) =>
+    typeof id === 'string' && !!id && id !== '.' && id !== '..';
   return Object.freeze({
+    async remove(id: string, signal: AbortSignal) {
+      if (!validId(id) || signal.aborted) return failure(signal);
+      try {
+        const owned = exactOperation(id, signal, 'DELETE');
+        await owned.operation.threads.delete(owned.encoded, { signal });
+        if (!signal.aborted && owned.status() === 204)
+          return Object.freeze({
+            kind: 'ready' as const,
+            value: Object.freeze({ id }),
+          });
+      } catch {
+        /* Only owned raw evidence confirms deletion. */
+      }
+      return failure(signal);
+    },
+    async inspectRemoval(id: string, signal: AbortSignal) {
+      if (!validId(id) || signal.aborted) return failure(signal);
+      let owned: ReturnType<typeof exactOperation> | undefined;
+      try {
+        owned = exactOperation(id, signal, 'GET');
+        const raw = await owned.operation.threads.get(owned.encoded, {
+          signal,
+        });
+        if (!signal.aborted && owned.status() === 200 && raw.thread_id === id)
+          return Object.freeze({
+            kind: 'ready' as const,
+            value: projectThread(raw),
+          });
+      } catch {
+        if (!signal.aborted && owned?.status() === 404)
+          return Object.freeze({ kind: 'missing' as const, id });
+      }
+      return failure(signal);
+    },
     setPinnedOrder(id: string, rank: number, signal: AbortSignal) {
       if (
         typeof id !== 'string' ||
