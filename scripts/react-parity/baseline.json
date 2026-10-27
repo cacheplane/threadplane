@@ -1,13 +1,176 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "044fc0b375007d7f6c4fa43a06e8eba933fdc908",
+  "baselineHead": "a82d847186f4fd937253bad48720960dd661107f",
   "sourceState": {
     "modified": [
+      ".github/workflows/ci.yml",
+      "apps/website/content/docs/a2ui/getting-started/introduction.mdx",
+      "apps/website/content/docs/ag-ui/api/inject-agent.mdx",
+      "apps/website/content/docs/ag-ui/api/provide-agent.mdx",
+      "apps/website/content/docs/ag-ui/api/to-agent.mdx",
+      "apps/website/content/docs/ag-ui/concepts/architecture.mdx",
+      "apps/website/content/docs/ag-ui/getting-started/installation.mdx",
+      "apps/website/content/docs/ag-ui/guides/interrupts.mdx",
+      "apps/website/content/docs/ag-ui/guides/json-render.mdx",
+      "apps/website/content/docs/ag-ui/guides/testing.mdx",
+      "apps/website/content/docs/ag-ui/guides/tool-views.mdx",
+      "apps/website/content/docs/ag-ui/reference/event-mapping.mdx",
+      "apps/website/content/docs/chat/a2ui/overview.mdx",
+      "apps/website/content/docs/chat/components/chat-activity-template.mdx",
+      "apps/website/content/docs/chat/components/chat-debug.mdx",
+      "apps/website/content/docs/chat/components/chat-interrupt-panel.mdx",
+      "apps/website/content/docs/chat/components/chat-interrupt-template.mdx",
+      "apps/website/content/docs/chat/components/chat-run-activity-template.mdx",
+      "apps/website/content/docs/chat/components/chat-subagent-card.mdx",
+      "apps/website/content/docs/chat/components/chat-tool-call-template.mdx",
+      "apps/website/content/docs/chat/components/chat-tool-calls.mdx",
+      "apps/website/content/docs/chat/components/chat.mdx",
+      "apps/website/content/docs/chat/getting-started/changelog.mdx",
+      "apps/website/content/docs/chat/getting-started/installation.mdx",
+      "apps/website/content/docs/chat/guides/client-tools.mdx",
+      "apps/website/content/docs/chat/guides/generative-ui.mdx",
+      "apps/website/content/docs/chat/guides/theming.mdx",
+      "apps/website/content/docs/chat/guides/writing-an-adapter.mdx",
+      "apps/website/content/docs/choosing-an-adapter/index.mdx",
+      "apps/website/content/docs/deep-agents/capabilities/filesystem.mdx",
+      "apps/website/content/docs/deep-agents/capabilities/memory.mdx",
+      "apps/website/content/docs/deep-agents/capabilities/planning.mdx",
+      "apps/website/content/docs/deep-agents/capabilities/skills.mdx",
+      "apps/website/content/docs/deep-agents/capabilities/subagents.mdx",
+      "apps/website/content/docs/deep-agents/getting-started/introduction.mdx",
+      "apps/website/content/docs/langgraph/api/fetch-stream-transport.mdx",
+      "apps/website/content/docs/langgraph/getting-started/installation.mdx",
+      "apps/website/content/docs/langgraph/guides/persistence.mdx",
+      "apps/website/content/docs/render/getting-started/installation.mdx",
+      "apps/website/content/docs/runtimes/aws-strands/how-it-connects.mdx",
+      "apps/website/content/docs/runtimes/aws-strands/overview.mdx",
+      "apps/website/content/docs/runtimes/aws-strands/quickstart.mdx",
+      "apps/website/content/docs/runtimes/mastra/how-it-connects.mdx",
+      "apps/website/content/docs/runtimes/mastra/overview.mdx",
+      "apps/website/content/docs/runtimes/mastra/quickstart.mdx",
+      "apps/website/content/docs/runtimes/microsoft-agent-framework/how-it-connects.mdx",
+      "apps/website/content/docs/runtimes/microsoft-agent-framework/overview.mdx",
+      "apps/website/content/docs/runtimes/microsoft-agent-framework/quickstart.mdx",
+      "libs/a2ui/package.json",
+      "libs/a2ui/project.json",
+      "libs/ag-ui/README.md",
+      "libs/ag-ui/package.json",
+      "libs/ag-ui/src/lib/package-version.ts",
+      "libs/ag-ui/src/lib/provide-agent.ts",
+      "libs/ag-ui/src/lib/reducer.ts",
+      "libs/ag-ui/src/lib/replay.ts",
+      "libs/ag-ui/src/lib/testing/provide-fake-agent.ts",
+      "libs/ag-ui/src/lib/to-agent.ts",
+      "libs/ag-ui/src/public-api.ts",
+      "libs/ag-ui/src/runtime/client-tool-ledger.ts",
+      "libs/ag-ui/src/runtime/client-tools.ts",
+      "libs/ag-ui/src/runtime/create-run.ts",
+      "libs/ag-ui/src/runtime/create-session.ts",
+      "libs/chat/README.md",
+      "libs/chat/ng-package.json",
+      "libs/chat/package.json",
+      "libs/chat/src/chat.css",
       "libs/chat/src/lib/compositions/chat-popup/chat-popup.component.ts",
+      "libs/chat/src/lib/compositions/chat-subagent-card/chat-subagent-card.component.ts",
+      "libs/chat/src/lib/compositions/chat/chat-activity-template.directive.ts",
+      "libs/chat/src/lib/compositions/chat/chat-interrupt-template.directive.ts",
+      "libs/chat/src/lib/compositions/chat/chat-run-activity-template.directive.ts",
+      "libs/chat/src/lib/compositions/chat/chat.component.ts",
+      "libs/chat/src/lib/package-version.ts",
+      "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
+      "libs/chat/src/lib/primitives/chat-typing-indicator/chat-typing-indicator.component.ts",
+      "libs/chat/src/lib/styles/chat-reasoning.styles.ts",
+      "libs/chat/src/lib/styles/chat-tokens.ts",
+      "libs/chat/src/lib/styles/chat-trace.styles.ts",
+      "libs/chat/src/public-api.ts",
+      "libs/cockpit-a2ui-react/eslint.config.mjs",
+      "libs/cockpit-a2ui-react/project.json",
+      "libs/cockpit-a2ui-react/src/actions.ts",
+      "libs/cockpit-a2ui-react/src/data.ts",
+      "libs/cockpit-a2ui-react/src/form.ts",
+      "libs/cockpit-a2ui-react/src/index.ts",
+      "libs/cockpit-a2ui-react/src/protocol.ts",
+      "libs/cockpit-a2ui-react/src/surface.ts",
+      "libs/cockpit-a2ui-react/src/views.tsx",
+      "libs/cockpit-a2ui-react/tsconfig.json",
+      "libs/cockpit-a2ui-react/tsconfig.lib.json",
+      "libs/cockpit-a2ui-react/vite.config.mts",
+      "libs/cockpit-registry/project.json",
+      "libs/cockpit-registry/src/lib/capability-registry.ts",
+      "libs/cockpit-registry/src/lib/content-descriptors.ts",
+      "libs/cockpit-registry/src/lib/manifest.types.ts",
+      "libs/cockpit-shell/project.json",
+      "libs/cockpit-shell/src/lib/workspace-presentation.ts",
+      "libs/content/README.md",
+      "libs/content/package.json",
+      "libs/content/src/a2ui/create-surfaces.ts",
+      "libs/content/src/a2ui/index.ts",
+      "libs/content/src/a2ui/owned-value.ts",
+      "libs/content/src/a2ui/transition.ts",
+      "libs/content/src/a2ui/types.ts",
+      "libs/content/src/json/create-json.ts",
+      "libs/content/src/json/index.ts",
+      "libs/content/src/json/projection.ts",
+      "libs/content/src/json/transition.ts",
+      "libs/content/src/json/types.ts",
+      "libs/content/src/render-state/create-render-state.ts",
+      "libs/content/src/render-state/index.ts",
+      "libs/content/src/render-state/owned-value.ts",
+      "libs/content/src/render-state/pointer.ts",
+      "libs/content/src/render-state/types.ts",
+      "libs/langgraph/package.json",
+      "libs/langgraph/src/lib/internals/history-restore.ts",
+      "libs/langgraph/src/lib/internals/stream-manager.bridge.ts",
+      "libs/langgraph/src/lib/internals/subagent-tracker.ts",
+      "libs/langgraph/src/lib/package-version.ts",
+      "libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
+      "libs/langgraph/src/lib/transport/mock-stream.transport.ts",
+      "libs/langgraph/src/runtime/README.md",
+      "libs/langgraph/src/runtime/checkpoint-authority.ts",
+      "libs/langgraph/src/runtime/create-session.ts",
+      "libs/langgraph/src/runtime/stream-projection.ts",
+      "libs/langgraph/src/runtime/transport.types.ts",
+      "libs/langgraph/test/fixtures/reloaded-subagent-thread.json",
       "libs/react/README.md",
+      "libs/react/package.json",
+      "libs/react/project.json",
+      "libs/react/src/chat/chat-popup.tsx",
+      "libs/react/src/chat/chat-sidebar.tsx",
+      "libs/react/src/chat/chat-sidenav-scrim.tsx",
+      "libs/react/src/chat/chat-sidenav.tsx",
+      "libs/react/src/chat/citations.tsx",
       "libs/react/src/chat/confirm-dialog.tsx",
       "libs/react/src/chat/index.ts",
-      "libs/react/src/chat/styles.css"
+      "libs/react/src/chat/message-actions.tsx",
+      "libs/react/src/chat/message-list.tsx",
+      "libs/react/src/chat/overflow-menu.tsx",
+      "libs/react/src/chat/styles.css",
+      "libs/react/src/chat/thread-list.tsx",
+      "libs/react/src/chat/thread-rename-form.tsx",
+      "libs/react/src/debug/bounded-value.ts",
+      "libs/react/src/debug/chat-debug.tsx",
+      "libs/react/src/debug/index.ts",
+      "libs/react/src/debug/persistence.ts",
+      "libs/react/src/debug/styles.css",
+      "libs/react/src/debug/types.ts",
+      "libs/react/src/render/functions.ts",
+      "libs/react/src/render/index.ts",
+      "libs/react/src/render/readiness.tsx",
+      "libs/react/src/render/render-spec.tsx",
+      "libs/react/src/render/types.ts",
+      "libs/react/src/render/values.ts",
+      "libs/render/package.json",
+      "libs/render/src/lib/package-version.ts",
+      "libs/telemetry/install/verify-pack.mjs",
+      "libs/telemetry/package.json",
+      "libs/workspace-react/src/lib/components/code-mode/code-mode.tsx",
+      "libs/workspace-react/src/lib/components/control-plane/cockpit-control-plane.tsx",
+      "libs/workspace-react/src/lib/runtime/runtime-target-session.ts",
+      "package-lock.json",
+      "package.json",
+      "scripts/assemble-examples.ts",
+      "scripts/cockpit-matrix.mjs",
+      "tsconfig.base.json"
     ],
     "untracked": []
   },
@@ -153,7 +316,7 @@
       "id": "asset:libs/ag-ui/README.md",
       "kind": "asset",
       "path": "libs/ag-ui/README.md",
-      "sha256": "aa056265bc5ccb69d52a1254525daee8af8985c327a0eb6d493bd7e8876b996c"
+      "sha256": "f8b60be08785f3b71c5d60eedadc97808998aa2b86a5e84268246a9c0b8f1b9a"
     },
     {
       "id": "asset:libs/ag-ui/fixtures/runtime-transcripts/maf-hitl-interrupt.sse",
@@ -333,7 +496,7 @@
       "id": "asset:libs/chat/CHANGELOG.md",
       "kind": "asset",
       "path": "libs/chat/CHANGELOG.md",
-      "sha256": "ef8ebf1f99a66ee128aebd7ab20bf1262b061a30286187427c626879488949cd"
+      "sha256": "5064e9218dc7bc2b2fb1d36a58fee02061b944e99868eedda8e330ffba182180"
     },
     {
       "id": "asset:libs/chat/LICENSE.md",
@@ -735,7 +898,7 @@
       "id": "asset:libs/langgraph/README.md",
       "kind": "asset",
       "path": "libs/langgraph/README.md",
-      "sha256": "d0e2dace696e31fd4e84f2432ac071c890eb2b19fa3daaad0c8e56d96cb0ba4f"
+      "sha256": "0e62717bd1562c3a9ab5c7649a11fb6f10c5e85ba5c826314deb10cfa4d4a0ef"
     },
     {
       "id": "asset:libs/langgraph/ng-package.json",
@@ -8599,6 +8762,20 @@
       ]
     },
     {
+      "id": "export:libs/chat/src/public-api.ts#ɵAgUiScriptedRun",
+      "kind": "export",
+      "path": "libs/chat/src/public-api.ts",
+      "symbol": "ɵAgUiScriptedRun",
+      "declarations": [
+        {
+          "path": "libs/chat/src/lib/devtools/devtools-scripted-runs.ts",
+          "symbol": "AgUiScriptedRun",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface AgUiScriptedRun {\n    events: {\n        type: string;\n        [key: string]: unknown;\n    }[];\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/chat/src/public-api.ts#ɵDevtoolsEmitter",
       "kind": "export",
       "path": "libs/chat/src/public-api.ts",
@@ -8627,6 +8804,20 @@
       ]
     },
     {
+      "id": "export:libs/chat/src/public-api.ts#ɵDevtoolsScriptedRuns",
+      "kind": "export",
+      "path": "libs/chat/src/public-api.ts",
+      "symbol": "ɵDevtoolsScriptedRuns",
+      "declarations": [
+        {
+          "path": "libs/chat/src/lib/devtools/devtools-scripted-runs.ts",
+          "symbol": "DevtoolsScriptedRuns",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface DevtoolsScriptedRuns<A extends DevtoolsAdapter = DevtoolsAdapter> {\n    take(): ScriptedRunFor<A> | null;\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/chat/src/public-api.ts#ɵLangGraphDevtoolsSignal",
       "kind": "export",
       "path": "libs/chat/src/public-api.ts",
@@ -8641,6 +8832,20 @@
       ]
     },
     {
+      "id": "export:libs/chat/src/public-api.ts#ɵLangGraphScriptedRun",
+      "kind": "export",
+      "path": "libs/chat/src/public-api.ts",
+      "symbol": "ɵLangGraphScriptedRun",
+      "declarations": [
+        {
+          "path": "libs/chat/src/lib/devtools/devtools-scripted-runs.ts",
+          "symbol": "LangGraphScriptedRun",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface LangGraphScriptedRun {\n    frames: {\n        event: string;\n        data: unknown;\n    }[];\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/chat/src/public-api.ts#ɵcreateDevtoolsEmitter",
       "kind": "export",
       "path": "libs/chat/src/public-api.ts",
@@ -8651,6 +8856,20 @@
           "symbol": "ɵcreateDevtoolsEmitter",
           "syntaxKind": "FunctionDeclaration",
           "signature": "export function ɵcreateDevtoolsEmitter<A extends DevtoolsAdapter>(adapter: A): EmitterFor<A> | null {\n    if ((typeof ngDevMode === 'undefined' || ngDevMode) && isDevMode()) {\n        return createDevelopmentEmitter(adapter) as EmitterFor<A> | null;\n    }\n    return null;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ɵdevtoolsScriptedRuns",
+      "kind": "export",
+      "path": "libs/chat/src/public-api.ts",
+      "symbol": "ɵdevtoolsScriptedRuns",
+      "declarations": [
+        {
+          "path": "libs/chat/src/lib/devtools/devtools-scripted-runs.ts",
+          "symbol": "ɵdevtoolsScriptedRuns",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function ɵdevtoolsScriptedRuns<A extends DevtoolsAdapter>(adapter: A): DevtoolsScriptedRuns<A> | null {\n    if ((typeof ngDevMode === 'undefined' || ngDevMode) && isDevMode()) {\n        return developmentScriptedRuns(adapter) as DevtoolsScriptedRuns<A> | null;\n    }\n    return null;\n}"
         }
       ]
     },
@@ -12430,7 +12649,7 @@
       "id": "source:libs/ag-ui/src/lib/internal/devtools.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/internal/devtools.ts",
-      "sha256": "55abab807540e57f17bcdb649301f85d15c7be87f03a37b1ee809e90a5148deb"
+      "sha256": "f502305d0732bcfa8f3e73a9140c3928e78d9f08481475b4f4a7cc2c7952b131"
     },
     {
       "id": "source:libs/ag-ui/src/lib/interrupt-persistence.ts",
@@ -12502,7 +12721,7 @@
       "id": "source:libs/ag-ui/src/lib/to-agent.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/to-agent.ts",
-      "sha256": "a8c95f0c4789bf2ece308ef25f6a81a8c1d0a86ffe5b4853834e002f76d86a4e"
+      "sha256": "47634e4ab531043873efc440813673a58d1f698c6c08f800ea8a15cffaaa3913"
     },
     {
       "id": "source:libs/ag-ui/src/public-api.ts",
@@ -12832,7 +13051,7 @@
       "id": "source:libs/chat/scripts/verify-devtools-bundle.mjs",
       "kind": "source",
       "path": "libs/chat/scripts/verify-devtools-bundle.mjs",
-      "sha256": "83b9655689bb5ecd082874ff9230388c098ba3b60af5a4987e4ce03f78fab4e2"
+      "sha256": "7ef21aaef5d059a13128132c4716b8a71c08596d1309d7298e2dafd14ad3666a"
     },
     {
       "id": "source:libs/chat/src/index.ts",
@@ -13319,6 +13538,12 @@
       "kind": "source",
       "path": "libs/chat/src/lib/devtools/devtools-emitter.ts",
       "sha256": "8cfa6d0f3d52bbcc6b8eb7dd3c217619174178eecdd9a36ac294ac26fb137669"
+    },
+    {
+      "id": "source:libs/chat/src/lib/devtools/devtools-scripted-runs.ts",
+      "kind": "source",
+      "path": "libs/chat/src/lib/devtools/devtools-scripted-runs.ts",
+      "sha256": "2c27f62837013f6112231ca963e517c4f51606a44ebf6fed4824788ccb1ee950"
     },
     {
       "id": "source:libs/chat/src/lib/internals/prettify.ts",
@@ -13966,7 +14191,7 @@
       "id": "source:libs/chat/src/public-api.ts",
       "kind": "source",
       "path": "libs/chat/src/public-api.ts",
-      "sha256": "91920d04a9b6114a7bd1d4762b70a40f635bc7e80510452a3df0e5ad581fa8fd"
+      "sha256": "f1961798cf3e3dd534052bfd198045ceaf4b0b90e70c3ab21d5559b7f1da8b71"
     },
     {
       "id": "source:libs/chat/src/test-setup.ts",
@@ -14680,7 +14905,7 @@
       "id": "source:libs/langgraph/src/lib/agent.fn.ts",
       "kind": "source",
       "path": "libs/langgraph/src/lib/agent.fn.ts",
-      "sha256": "4be1665e1865c4332916a1c7f5027cc4e52bf1ce9982cfde9b8c907554874c85"
+      "sha256": "923e541fe5365584bfa67e1c047d67046fa8427ad83fe4618648233be85cdbd6"
     },
     {
       "id": "source:libs/langgraph/src/lib/agent.provider.ts",
@@ -14746,7 +14971,7 @@
       "id": "source:libs/langgraph/src/lib/internals/stream-manager.bridge.ts",
       "kind": "source",
       "path": "libs/langgraph/src/lib/internals/stream-manager.bridge.ts",
-      "sha256": "3ece3d605b450de7110da818fbec5392ed51ad2fc72a15944b2b99085c90bd4b"
+      "sha256": "a2f46259891a796b9bf2528afb14ad8dd677bbd9e160046ade8e863c48ee388b"
     },
     {
       "id": "source:libs/langgraph/src/lib/internals/subagent-tracker.ts",
@@ -14812,7 +15037,7 @@
       "id": "source:libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
       "kind": "source",
       "path": "libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
-      "sha256": "406acbc19b1c98fc9509b21b46cd020a9a438827786308773bf589d568fbd8f3"
+      "sha256": "b1b199ef0b1ac764b97a63faa5f467da7fe283da55139cf5b2f684b8dcd7aed3"
     },
     {
       "id": "source:libs/langgraph/src/lib/transport/mock-stream.transport.ts",
