@@ -101,9 +101,14 @@
  *
  * layout.tsx loads the fonts via next/font, which defines those three
  * vars on <html> with self-hosted, size-adjusted stacks ("Inter",
- * "Inter Fallback", etc.). Raw literals like `Inter, system-ui` only
- * matched a locally-installed Inter (next/font registers its family
- * under a hashed name), so they silently fell back to system fonts.
+ * "Inter Fallback", etc.). Raw literals like `Inter, system-ui` are how
+ * this went wrong: the next/font of the time registered families under
+ * hashed names, so a raw name matched only a locally-installed Inter and
+ * those sites silently fell back to system fonts. next/font 16 registers
+ * the real family name (verified in the built CSS: `font-family:Inter`),
+ * so a raw literal would now match while the loader is present. The vars
+ * remain the rule anyway: they carry the size-adjusted fallback stacks
+ * and keep one source of truth.
  * The 2026-08-30 unification (findings audit §10) moved all sites onto
  * the vars — a deliberate visual change: real webfonts everywhere, no
  * more mixed stacks. theme.css also defines the same var names from
@@ -111,9 +116,11 @@
  * the intended resolution, and they guarantee the vars always resolve.
  *
  * --font-diagram is diagram-only and MUST keep being supplied by next/font in
- * layout.tsx. theme.css emits it as a raw `Inter, ...` stack, which next/font's
- * hashed family never matches — so if the loader is removed, diagrams silently
- * fall back to system-ui, every glyph width shifts, and
+ * layout.tsx. theme.css emits it as a raw `Inter, ...` stack, and that stack
+ * only NAMES the family — the font file exists only because next/font loads
+ * it. Remove the loader and nothing supplies an `Inter` face, so diagrams
+ * silently fall back to system-ui (or whatever Inter happens to be installed
+ * locally), every glyph width shifts, and
  * e2e/home-architecture.spec.ts (which measures text runs against their cards)
  * is the only thing that will notice.
  */

@@ -1,0 +1,9 @@
+@import '../../shared/tokens.css';
+@import '../../shared/styles.css';
+
+native-conversation,
+native-conversation-view,
+native-message,
+native-composer {
+  display: block;
+}

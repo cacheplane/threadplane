@@ -1,0 +1,472 @@
+import {
+  completeDelivery,
+  streamingDelivery,
+  type AgentError,
+  type AgentRecovery,
+  type Message,
+  type PlainValue,
+} from '@threadplane/core';
+import {
+  reduceMessages,
+  type MessageEvent,
+  type MessageState,
+} from './message-reducer.js';
+import type { StreamEvent } from './transport.types.js';
+import { ownMessage, ownToolCall } from './ownership.js';
+import { record, roleOf, textContent } from './wire-message.js';
+import { projectCitations } from './citation-projection.js';
+import { projectReasoning } from './reasoning-projection.js';
+import {
+  observeResponseIdentity,
+  responseChunkId,
+  type ResponseIdentity,
+} from './response-identity.js';
+
+export { record } from './wire-message.js';
+
+type CanonicalMessage = Extract<MessageEvent, { type: 'message' }>;
+
+export interface StreamProjection {
+  readonly responseIdentity?: ResponseIdentity;
+  readonly generation: string;
+  /** Anonymous wire identities belong to a physical run, while delivery
+   * generations change when that same run is reconnected. */
+  readonly messageIdPrefix?: string;
+  readonly userId?: string;
+  /** Captured latest-turn membership permits finalized paused calls while
+   * excluding historical baselines even when the stream omits its user anchor. */
+  readonly resume?: {
+    readonly turnIds: readonly string[];
+    readonly turnEnded?: boolean;
+    readonly excludedIds?: readonly string[];
+  };
+  readonly baselineIds: readonly string[];
+  /** Historical completed calls may echo, but cannot become a new invocation. */
+  readonly baselineCallIds?: readonly string[];
+  readonly currentAssistantId?: string;
+  readonly sawAssistant: boolean;
+  readonly terminal: boolean;
+  readonly paused: boolean;
+  readonly canonical: readonly CanonicalMessage[];
+  readonly toolAssistantIds?: readonly string[];
+  readonly toolCallIds?: readonly string[];
+}
+
+/** Pure projection of text and finalized tool data from root stream events.
+ * Values are interim while the stream is open. EOF or a distinct next assistant
+ * confirms a terminal candidate. Same-ID chunks invalidate only that message's
+ * candidate, while any new assistant activity invalidates overall completion. */
+export function projectStream(
+  state: MessageState,
+  projection: StreamProjection,
+  event: StreamEvent
+) {
+  if ((event.namespace?.length ?? 0) > 0 || event.type.includes('|'))
+    return { state, projection };
+  const type = event.type;
+  const data = record(event['data']);
+  const values = type === 'checkpoints' ? record(data?.['values']) : data;
+  const messages = event.messages ?? values?.['messages'];
+  const messageEvent = type === 'messages' || type.startsWith('messages/');
+  const terminal =
+    type === 'values' || type === 'messages/complete' || type === 'checkpoints';
+  if (!terminal && !messageEvent) return { state, projection };
+  const mode = messageEvent && event.messageMetadata ? 'delta' : 'snapshot';
+  const messageIdPrefix = projection.messageIdPrefix ?? projection.generation;
+  const incoming = Array.isArray(messages)
+    ? messages.map(record).filter((m): m is Record<string, unknown> => !!m)
+    : [];
+  const identity = observeResponseIdentity(
+    projection.responseIdentity,
+    incoming,
+    terminal,
+    projection.baselineIds
+  );
+  const canonicalId = (id: string) => responseChunkId(identity.evidence, id);
+  const projectedId = (raw: Record<string, unknown>, id: string) =>
+    raw['type'] === 'AIMessageChunk' &&
+    record(raw['response_metadata'])?.['model_provider'] === 'openai'
+      ? canonicalId(id)
+      : id;
+  const normalizeIds = (ids: readonly string[]) => [
+    ...new Set(ids.map(canonicalId)),
+  ];
+  projection = {
+    ...projection,
+    responseIdentity: identity.evidence,
+    ...(projection.currentAssistantId
+      ? { currentAssistantId: canonicalId(projection.currentAssistantId) }
+      : {}),
+    canonical: projection.canonical.filter(
+      (candidate) =>
+        !identity.merges.some(
+          (binding) =>
+            binding.from === candidate.message.id ||
+            binding.to === candidate.message.id
+        )
+    ),
+    ...(projection.toolAssistantIds
+      ? { toolAssistantIds: normalizeIds(projection.toolAssistantIds) }
+      : {}),
+    ...(projection.resume
+      ? {
+          resume: {
+            ...projection.resume,
+            turnIds: normalizeIds(projection.resume.turnIds),
+            ...(projection.resume.excludedIds
+              ? { excludedIds: normalizeIds(projection.resume.excludedIds) }
+              : {}),
+          },
+        }
+      : {}),
+  };
+  const candidates: CanonicalMessage[] = [];
+  const removedToolIds: string[] = [];
+  const anchor =
+    projection.userId === undefined
+      ? -1
+      : incoming.findIndex((message) => message['id'] === projection.userId);
+  const nextUser = incoming.findIndex(
+    (message, index) => index > anchor && roleOf(message) === 'user'
+  );
+  const turnEnded = projection.resume?.turnEnded;
+  if (projection.resume && nextUser >= 0) {
+    const excludedIds = [
+      ...new Set([
+        ...(projection.resume.excludedIds ?? []),
+        ...incoming
+          .slice(nextUser + 1)
+          .flatMap((message) =>
+            roleOf(message) === 'assistant'
+              ? [
+                  typeof message['id'] === 'string'
+                    ? projectedId(message, message['id'])
+                    : `${messageIdPrefix}-assistant`,
+                ]
+              : []
+          ),
+      ]),
+    ];
+    projection = {
+      ...projection,
+      resume: { ...projection.resume, turnEnded: true, excludedIds },
+      toolAssistantIds: projection.toolAssistantIds?.filter(
+        (id) => !excludedIds.includes(id)
+      ),
+    };
+  }
+  for (const raw of incoming) {
+    const role = roleOf(raw);
+    if (!role) continue;
+    const wireId =
+      typeof raw['id'] === 'string' ? raw['id'] : `${messageIdPrefix}-${role}`;
+    // Only a proven provider item binding can replace a wire ID. Equal text,
+    // node/task metadata and adjacent chunks never establish identity.
+    const id = projectedId(raw, wireId);
+    const previous = state.messages.find((m) => m.id === id);
+    const baseline = projection.baselineIds.includes(id);
+    const calls = Array.isArray(raw['tool_calls'])
+      ? raw['tool_calls']
+          .map(record)
+          .filter((c): c is Record<string, unknown> => !!c)
+      : [];
+    const finalizedCalls =
+      terminal &&
+      role === 'assistant' &&
+      raw['type'] !== 'AIMessageChunk' &&
+      Array.isArray(raw['tool_calls']);
+    const position = incoming.indexOf(raw);
+    const content = textContent(raw['content']);
+    const executionCandidate =
+      (!baseline || projection.resume?.turnIds.includes(id)) &&
+      !projection.resume?.excludedIds?.includes(id) &&
+      (!turnEnded ||
+        anchor >= 0 ||
+        projection.resume?.turnIds.includes(id) ||
+        projection.toolAssistantIds?.includes(id)) &&
+      (anchor < 0 || position > anchor) &&
+      (nextUser < 0 || position < nextUser);
+    if (
+      finalizedCalls &&
+      (executionCandidate ||
+        (baseline && content !== previous?.content) ||
+        (anchor >= 0 &&
+          position > anchor &&
+          (nextUser < 0 || position < nextUser)))
+    )
+      for (const call of calls)
+        if (
+          typeof call['id'] === 'string' &&
+          projection.baselineCallIds?.includes(call['id'])
+        )
+          state = reduceMessages(state, {
+            type: 'tool-conflict',
+            id: call['id'],
+          });
+    const callIds = calls.flatMap((call) =>
+      typeof call['id'] === 'string' ? [call['id']] : []
+    );
+    if (finalizedCalls)
+      removedToolIds.push(
+        ...(previous?.toolCallIds ?? []).filter(
+          (callId) => !callIds.includes(callId)
+        )
+      );
+    const current =
+      !baseline ||
+      (!!projection.resume &&
+        role === 'assistant' &&
+        (mode === 'delta' ||
+          content !== previous?.content ||
+          previous?.delivery.generation === projection.generation));
+    const message: Message = {
+      id,
+      role,
+      content,
+      citations: projectCitations(raw),
+      reasoning: projectReasoning(raw),
+      delivery:
+        !current && previous
+          ? previous.delivery
+          : role === 'assistant'
+          ? streamingDelivery(projection.generation)
+          : completeDelivery(projection.generation, 'success'),
+      ...(typeof raw['name'] === 'string' ? { name: raw['name'] } : {}),
+      ...(typeof raw['tool_call_id'] === 'string'
+        ? { toolCallId: raw['tool_call_id'] }
+        : {}),
+      ...(finalizedCalls ? { toolCallIds: callIds } : {}),
+    };
+    if (
+      role === 'assistant' &&
+      current &&
+      (!previous || id === projection.currentAssistantId || !!projection.resume)
+    ) {
+      if (
+        projection.currentAssistantId &&
+        projection.currentAssistantId !== id
+      ) {
+        // A terminal batch can introduce several steps at once. Its already
+        // projected candidates take precedence over candidates from prior events.
+        const completedStep =
+          (terminal
+            ? candidates.find(
+                (candidate) =>
+                  candidate.message.id === projection.currentAssistantId
+              )
+            : undefined) ??
+          projection.canonical.find(
+            (candidate) =>
+              candidate.message.id === projection.currentAssistantId
+          );
+        if (completedStep)
+          state = reduceMessages(state, {
+            ...completedStep,
+            message: {
+              ...completedStep.message,
+              delivery: completeDelivery(projection.generation, 'success'),
+            },
+          });
+      }
+      projection = {
+        ...projection,
+        currentAssistantId: id,
+        sawAssistant: true,
+        ...(!terminal
+          ? {
+              terminal: false,
+              canonical: projection.canonical.filter(
+                (candidate) => candidate.message.id !== id
+              ),
+            }
+          : {}),
+      };
+    }
+    const binding = identity.merges.find(
+      (entry) =>
+        entry.to === id &&
+        state.messages.some((message) => message.id === entry.from)
+    );
+    state = binding
+      ? reduceMessages(state, {
+          type: 'reconcile-message',
+          provisionalId: binding.from,
+          message,
+        })
+      : reduceMessages(state, { type: 'message', mode, message });
+    candidates.push({
+      type: 'message',
+      mode: 'canonical',
+      message: ownMessage(message),
+    });
+    // Only full messages from terminal state carry finalized arguments here.
+    // AIMessageChunk/tool_call_chunks remain private until that final state.
+    if (finalizedCalls) {
+      for (const call of calls) {
+        if (typeof call['id'] !== 'string' || typeof call['name'] !== 'string')
+          continue;
+        // Final tool arguments belong to this call, independently of a later
+        // text step. Execution belongs to successful command closure, never
+        // projection; finalized primitive strings are already authored data.
+        state = reduceMessages(state, {
+          type: 'tool',
+          toolCall: ownToolCall({
+            id: call['id'],
+            name: call['name'],
+            args: call['args'] as PlainValue,
+            status: 'pending',
+          }),
+        });
+      }
+      if (executionCandidate)
+        projection = {
+          ...projection,
+          toolAssistantIds: [
+            ...new Set([...(projection.toolAssistantIds ?? []), id]),
+          ],
+        };
+    }
+  }
+  // A ToolMessage is conclusive execution evidence, even when it precedes its
+  // matching AI message in a batch. Its string content remains wire text.
+  for (const message of state.messages) {
+    if (message.role !== 'tool' || !message.toolCallId) continue;
+    const call = state.toolCalls.find(
+      (entry) => entry.id === message.toolCallId
+    );
+    if (call?.status === 'pending')
+      state = reduceMessages(state, {
+        type: 'tool',
+        toolCall: { ...call, status: 'complete', result: message.content },
+      });
+  }
+  // Settle wire evidence before pruning so ToolMessages later in this same
+  // batch remain conclusive. Only obsolete pending calls lose their projection.
+  state = reduceMessages(state, {
+    type: 'remove-pending-tools',
+    ids: removedToolIds,
+  });
+  if (projection.toolAssistantIds)
+    projection = {
+      ...projection,
+      toolCallIds: [
+        ...new Set(
+          state.messages.flatMap((message) =>
+            message.role === 'assistant' &&
+            projection.toolAssistantIds?.includes(message.id)
+              ? message.toolCallIds ?? []
+              : []
+          )
+        ),
+      ],
+    };
+  if (terminal) {
+    const payload = event['data'] != null || (event.messages?.length ?? 0) > 0;
+    projection = {
+      ...projection,
+      terminal: projection.sawAssistant || payload,
+      canonical: [
+        ...projection.canonical.filter(
+          (previous) =>
+            !candidates.some(
+              (candidate) => candidate.message.id === previous.message.id
+            )
+        ),
+        ...candidates,
+      ],
+    };
+  }
+  return { state, projection };
+}
+
+export function finalizeProjection(
+  state: MessageState,
+  projection: StreamProjection
+) {
+  for (const event of projection.canonical)
+    state = reduceMessages(state, event);
+  return state;
+}
+
+/** The shared interruption vocabulary, keyed by recovery value. The neutral
+ * runtime cannot import `@threadplane/chat`, so this is a copy of that
+ * package's `AGENT_RECOVERY_MESSAGES` / `AGENT_RECOVERY_DETAILS`; a parity
+ * spec under the Angular test target fails when the two drift. The runtime
+ * never emits `retry`: it cannot prove a request was undispatched. */
+export const RECOVERY_COPY = Object.freeze({
+  messages: Object.freeze({
+    retry: 'The response was interrupted before it started. Try again.',
+    check:
+      'The connection dropped. The request may still have completed on the server.',
+    none: 'The connection dropped. We could not confirm whether the request completed.',
+  }),
+  details: Object.freeze({
+    retry: 'Nothing reached the server, so nothing was duplicated.',
+    check: 'Checking will tell you whether it did.',
+    none: 'Trying again could repeat it.',
+  }),
+}) satisfies {
+  readonly messages: Readonly<Record<AgentRecovery, string>>;
+  readonly details: Readonly<Record<AgentRecovery, string>>;
+};
+
+export function interruptionError(canCheck: boolean): AgentError {
+  const recovery: AgentRecovery = canCheck ? 'check' : 'none';
+  return {
+    kind: 'interrupted',
+    retryable: false,
+    recovery,
+    message: RECOVERY_COPY.messages[recovery],
+    detail: RECOVERY_COPY.details[recovery],
+  };
+}
+
+/** Classifies a raw stream failure into the plain display projection.
+ *
+ * A failure before any response (an offline `fetch`, DNS, a refused or reset
+ * connection) is deliberately an `interrupted` error, never a retryable
+ * `connection` one. The legacy Angular bridge and the AG-UI adapter report
+ * `connection` there because their transports observe the connect phase; this
+ * runtime only sees a thrown iterator. A browser `TypeError: fetch failed`
+ * carries no cause, and a reset after the server accepted the request looks
+ * identical to one that never left, so dispatch cannot be ruled out and Retry
+ * could replay a run. Protected SDK errors (including raw SSE error payloads)
+ * stay generic. */
+export function failureProjection(
+  raw: unknown,
+  protectedTransport: boolean,
+  explicit: boolean,
+  canCheck: boolean
+): AgentError {
+  if (protectedTransport)
+    return {
+      kind: 'server',
+      message: 'The LangGraph request failed.',
+      retryable: false,
+      recovery: canCheck ? 'check' : 'none',
+    };
+  const object = record(raw);
+  const status =
+    typeof object?.['status'] === 'number' ? object['status'] : undefined;
+  if (status === 401 || status === 403)
+    return {
+      kind: 'auth',
+      message: 'Authentication failed. Check your credentials.',
+      status,
+      retryable: false,
+      recovery: 'none',
+    };
+  if (explicit || raw instanceof SyntaxError || status !== undefined) {
+    return {
+      kind: 'server',
+      message:
+        typeof object?.['message'] === 'string'
+          ? object['message']
+          : 'The LangGraph request failed.',
+      status,
+      retryable: false,
+      recovery: canCheck ? 'check' : 'none',
+    };
+  }
+  return interruptionError(canCheck);
+}

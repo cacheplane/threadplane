@@ -55,5 +55,15 @@ export const brand = {
   display: 'Archivo Black',
   sans: 'Archivo',
   mono: 'JetBrains Mono',
+  /**
+   * Deliberately still names Angular, where the website's own cards no longer
+   * do. `apps/website/src/app/opengraph-image.tsx` and `github-card/route.tsx`
+   * dropped it in 2026-09 because their H1 is the hero headline, which now
+   * reads "…for Angular agents" — the eyebrow was repeating the line below it.
+   * These cards carry a BLOG TITLE instead, with no tagline, so here the word
+   * is the only thing naming the stack. Dropping it would remove information,
+   * not de-duplicate it. Do not "fix" this to match the website in a brand
+   * sweep.
+   */
   defaultEyebrow: 'OPEN SOURCE · ANGULAR',
 } as const;

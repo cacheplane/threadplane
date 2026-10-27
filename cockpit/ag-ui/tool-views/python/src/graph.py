@@ -11,9 +11,11 @@ Flow: START -> agent <-> tools -> agent (loop) -> END
 """
 
 from pathlib import Path
+import json
+from typing import Annotated
 
-from langchain_core.messages import SystemMessage
-from langchain_core.tools import tool
+from langchain_core.messages import SystemMessage, ToolMessage
+from langchain_core.tools import tool, InjectedToolCallId
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, MessagesState, END
 from langgraph.prebuilt import ToolNode
@@ -24,7 +26,7 @@ PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
 
 # region weather-tool
 @tool
-async def weather_card(location: str) -> dict:
+async def weather_card(location: str, tool_call_id: Annotated[str, InjectedToolCallId]) -> ToolMessage:
     """Look up the current weather for a location.
 
     Returns plain JSON data. The frontend renders a component registered
@@ -34,16 +36,24 @@ async def weather_card(location: str) -> dict:
         location: The city or place to look up weather for.
 
     Returns:
-        A dict with location, temperatureF, conditions, humidity, windMph.
+        A tool message containing location, temperatureF, conditions, humidity, windMph.
     """
     # Deterministic demo data so e2e fixtures stay stable.
-    return {
+    reading = {
         "location": location,
         "temperatureF": 68,
         "conditions": "Sunny",
         "humidity": 55,
         "windMph": 8,
     }
+    # Set the result ID before the bridge streams it; add_messages otherwise
+    # assigns a different ID later, after native clients have placed the result.
+    return ToolMessage(
+        id=tool_call_id,
+        tool_call_id=tool_call_id,
+        name="weather_card",
+        content=json.dumps(reading),
+    )
 # endregion
 
 

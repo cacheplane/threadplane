@@ -1329,6 +1329,14 @@ export async function deleteContact(
 
     await insertActivityOnce(transaction, deletionActivity);
     await redactContactObservationEvidence(transaction, contactId, occurredAt);
+    await transaction.execute(
+      `/* growth:scrub-reply-receipts */
+       update growth_reply_receipts set status = 'ignored', reference_ids = null,
+         rfc_message_id = null, contact_id = null,
+         last_error_code = 'contact_deleted', updated_at = $2
+       where contact_id = $1`,
+      [contactId, occurredAt]
+    );
 
     const jobs = await transaction.execute<{
       id: string;

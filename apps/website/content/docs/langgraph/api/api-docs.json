@@ -275,6 +275,31 @@
         ]
       },
       {
+        "name": "getChildState",
+        "signature": "getChildState(threadId: string, checkpointNs: string, signal: AbortSignal): Promise<ThreadState<DefaultValues> | undefined>",
+        "description": "Read the newest checkpoint saved under one child checkpoint namespace.",
+        "params": [
+          {
+            "name": "threadId",
+            "type": "string",
+            "description": "",
+            "optional": false
+          },
+          {
+            "name": "checkpointNs",
+            "type": "string",
+            "description": "",
+            "optional": false
+          },
+          {
+            "name": "signal",
+            "type": "AbortSignal",
+            "description": "",
+            "optional": false
+          }
+        ]
+      },
+      {
         "name": "getHistory",
         "signature": "getHistory(threadId: string, signal: AbortSignal): Promise<ThreadState<DefaultValues>[]>",
         "description": "Load persisted checkpoint history for a thread.",
@@ -294,8 +319,33 @@
         ]
       },
       {
+        "name": "getState",
+        "signature": "getState(threadId: string, checkpoint: OwnedCheckpointPosition, signal: AbortSignal): Promise<ThreadState<DefaultValues>>",
+        "description": "Read one exact saved checkpoint with the command's cancellation signal.",
+        "params": [
+          {
+            "name": "threadId",
+            "type": "string",
+            "description": "",
+            "optional": false
+          },
+          {
+            "name": "checkpoint",
+            "type": "OwnedCheckpointPosition",
+            "description": "",
+            "optional": false
+          },
+          {
+            "name": "signal",
+            "type": "AbortSignal",
+            "description": "",
+            "optional": false
+          }
+        ]
+      },
+      {
         "name": "joinStream",
-        "signature": "joinStream(threadId: string, runId: string, lastEventId: string | undefined, signal: AbortSignal): AsyncIterable<StreamEvent>",
+        "signature": "joinStream(threadId: string, runId: string, lastEventId: string | undefined, signal: AbortSignal, options: object): AsyncIterable<StreamEvent>",
         "description": "Join an already-started run without creating a new thread.",
         "params": [
           {
@@ -321,6 +371,12 @@
             "type": "AbortSignal",
             "description": "",
             "optional": false
+          },
+          {
+            "name": "options",
+            "type": "object",
+            "description": "",
+            "optional": true
           }
         ]
       },
@@ -363,8 +419,8 @@
       },
       {
         "name": "updateState",
-        "signature": "updateState(threadId: string, values: Record<string, unknown>, _signal: AbortSignal, options: object): Promise<void>",
-        "description": "Update server-side thread state, e.g. to remove messages for regenerate rollback.",
+        "signature": "updateState(threadId: string, values: Record<string, unknown>, signal: AbortSignal, options: object): Promise<void | OwnedCheckpointPosition>",
+        "description": "Update state once and return only usable root routing, when supplied.",
         "params": [
           {
             "name": "threadId",
@@ -379,7 +435,7 @@
             "optional": false
           },
           {
-            "name": "_signal",
+            "name": "signal",
             "type": "AbortSignal",
             "description": "",
             "optional": false
@@ -596,6 +652,18 @@
         "optional": false
       },
       {
+        "name": "childStateCalls",
+        "type": "object[]",
+        "description": "",
+        "optional": false
+      },
+      {
+        "name": "childStates",
+        "type": "Map<string, ThreadState<DefaultValues>>",
+        "description": "Child-namespace checkpoints served by `getChildState`, keyed by checkpoint namespace.",
+        "optional": false
+      },
+      {
         "name": "createdQueuedRuns",
         "type": "AgentQueueEntry<unknown>[]",
         "description": "",
@@ -726,6 +794,31 @@
         "signature": "flush(): Promise<void>",
         "description": "Resolve once everything emitted so far has been consumed, without emitting\nanything new. Useful after driving the agent by some other route (a\n`submit()`, a `switchThread()`) that has to reach the transport first.",
         "params": []
+      },
+      {
+        "name": "getChildState",
+        "signature": "getChildState(threadId: string, checkpointNs: string, signal: AbortSignal): Promise<ThreadState<DefaultValues> | undefined>",
+        "description": "Optional: read the newest checkpoint a child graph saved under one\ncheckpoint namespace of a thread (for a delegation tool call, `tools:<task\nid>`). Used to restore a subagent's transcript when a thread is reloaded;\nwithout it, a reloaded subagent shows its status and result but no\nmessages. Resolve `undefined` when the namespace has no saved state.",
+        "params": [
+          {
+            "name": "threadId",
+            "type": "string",
+            "description": "",
+            "optional": false
+          },
+          {
+            "name": "checkpointNs",
+            "type": "string",
+            "description": "",
+            "optional": false
+          },
+          {
+            "name": "signal",
+            "type": "AbortSignal",
+            "description": "",
+            "optional": false
+          }
+        ]
       },
       {
         "name": "getHistory",
@@ -1033,7 +1126,7 @@
   {
     "name": "AgentOptions",
     "kind": "interface",
-    "description": "",
+    "description": "Options for creating a LangGraph-backed agent via agent.",
     "properties": [
       {
         "name": "a2uiClientCapabilities",
@@ -1255,6 +1348,31 @@
         ]
       },
       {
+        "name": "getChildState",
+        "signature": "getChildState(threadId: string, checkpointNs: string, signal: AbortSignal): Promise<ThreadState<DefaultValues> | undefined>",
+        "description": "Optional: read the newest checkpoint a child graph saved under one\ncheckpoint namespace of a thread (for a delegation tool call, `tools:<task\nid>`). Used to restore a subagent's transcript when a thread is reloaded;\nwithout it, a reloaded subagent shows its status and result but no\nmessages. Resolve `undefined` when the namespace has no saved state.",
+        "params": [
+          {
+            "name": "threadId",
+            "type": "string",
+            "description": "",
+            "optional": false
+          },
+          {
+            "name": "checkpointNs",
+            "type": "string",
+            "description": "",
+            "optional": false
+          },
+          {
+            "name": "signal",
+            "type": "AbortSignal",
+            "description": "",
+            "optional": false
+          }
+        ]
+      },
+      {
         "name": "getHistory",
         "signature": "getHistory(threadId: string, signal: AbortSignal): Promise<ThreadState<DefaultValues>[]>",
         "description": "Optional: load persisted checkpoint history for a thread.",
@@ -1274,8 +1392,33 @@
         ]
       },
       {
+        "name": "getState",
+        "signature": "getState(threadId: string, checkpoint: OwnedCheckpointPosition, signal: AbortSignal): Promise<ThreadState<DefaultValues>>",
+        "description": "Exact saved root read. Branch effects must not infer authority from latest.",
+        "params": [
+          {
+            "name": "threadId",
+            "type": "string",
+            "description": "",
+            "optional": false
+          },
+          {
+            "name": "checkpoint",
+            "type": "OwnedCheckpointPosition",
+            "description": "",
+            "optional": false
+          },
+          {
+            "name": "signal",
+            "type": "AbortSignal",
+            "description": "",
+            "optional": false
+          }
+        ]
+      },
+      {
         "name": "joinStream",
-        "signature": "joinStream(threadId: string, runId: string, lastEventId: string | undefined, signal: AbortSignal): AsyncIterable<StreamEvent>",
+        "signature": "joinStream(threadId: string, runId: string, lastEventId: string | undefined, signal: AbortSignal, options: object): AsyncIterable<StreamEvent>",
         "description": "Optional: join an already-started run without creating a new one.",
         "params": [
           {
@@ -1301,6 +1444,12 @@
             "type": "AbortSignal",
             "description": "",
             "optional": false
+          },
+          {
+            "name": "options",
+            "type": "object",
+            "description": "",
+            "optional": true
           }
         ]
       },
@@ -1343,7 +1492,7 @@
       },
       {
         "name": "updateState",
-        "signature": "updateState(threadId: string, values: Record<string, unknown>, signal: AbortSignal, options: object): Promise<void>",
+        "signature": "updateState(threadId: string, values: Record<string, unknown>, signal: AbortSignal, options: object): Promise<void | OwnedCheckpointPosition>",
         "description": "Optional: update server-side thread state (e.g. to emit RemoveMessage\nentries for regenerate rollback). Forwards to the LangGraph\n`threads.updateState` API.\n\n`options.asNode` corresponds to LangGraph's `as_node` parameter — the\nserver treats the update as if that node had just produced the values,\nwhich determines what the next pull resumes. `regenerate()` passes\n`asNode: '__start__'` so the next `submit(null)` resumes at the entry\nnode and re-runs `generate` against the rolled-back state.",
         "params": [
           {
@@ -1683,6 +1832,12 @@
         "type": "Signal<ToolProgress[]>",
         "description": "Progress updates for currently executing tools.",
         "optional": false
+      },
+      {
+        "name": "usage",
+        "type": "Signal<AgentUsage | undefined>",
+        "description": "Optional token usage for the most recent completed or errored run.\nAdapters whose runtime reports usage set it at the run boundary; it is\n`undefined` while a run is in flight and after a run that reported none.",
+        "optional": true
       },
       {
         "name": "value",
@@ -2141,6 +2296,12 @@
         "type": "WritableSignal<ToolProgress[]>",
         "description": "Progress updates for currently executing tools.",
         "optional": false
+      },
+      {
+        "name": "usage",
+        "type": "Signal<AgentUsage | undefined>",
+        "description": "Optional token usage for the most recent completed or errored run.\nAdapters whose runtime reports usage set it at the run boundary; it is\n`undefined` while a run is in flight and after a run that reported none.",
+        "optional": true
       },
       {
         "name": "value",

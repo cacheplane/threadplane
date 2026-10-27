@@ -1,0 +1,53 @@
+{
+  "name": "cockpit-langgraph-deployment-runtime-react",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "cockpit/langgraph/deployment-runtime/react/src",
+  "projectType": "application",
+  "tags": [
+    "scope:cockpit-examples",
+    "scope:cockpit-e2e",
+    "framework:react"
+  ],
+  "targets": {
+    "test": {
+      "executor": "@nx/vitest:test",
+      "options": {
+        "configFile": "cockpit/langgraph/deployment-runtime/react/vite.config.mts"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [
+        {
+          "target": "build",
+          "projects": [
+            "core",
+            "content",
+            "react"
+          ]
+        }
+      ],
+      "outputs": [
+        "{workspaceRoot}/dist/cockpit/langgraph/deployment-runtime/react"
+      ],
+      "options": {
+        "command": "node scripts/react-cockpit/build.mjs deployment-runtime"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "e2e": {
+      "executor": "@nx/playwright:playwright",
+      "cache": false,
+      "dependsOn": [
+        "build"
+      ],
+      "options": {
+        "config": "cockpit/langgraph/deployment-runtime/react/e2e/playwright.config.ts",
+        "skipInstall": true
+      }
+    }
+  }
+}

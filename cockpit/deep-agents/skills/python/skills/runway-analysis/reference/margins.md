@@ -11,6 +11,6 @@ per 1,000 ft of field elevation.
 | Regional turboprop  | 4,200 ft                 | 10%                  |
 
 Apply the penalty linearly: a mid-size jet at 7,820 ft needs
-4,800 x (1 + 0.14 x 7.82) = 10,057 ft.
+4,800 x (1 + 0.14 x 7.82) = 10,055.04 ft (10,055 ft rounded).
 
 Add a further 15% for a wet runway.

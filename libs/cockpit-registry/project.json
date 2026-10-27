@@ -40,7 +40,10 @@
     "descriptorAssets": [
       "{workspaceRoot}/cockpit/**/prompts/**",
       "{workspaceRoot}/cockpit/**/angular/src/**",
+      "{workspaceRoot}/cockpit/**/react/src/**",
+      "{workspaceRoot}/libs/cockpit-a2ui-react/src/**",
       "{workspaceRoot}/cockpit/**/python/src/**",
+      "{workspaceRoot}/cockpit/**/python/skills/**",
       "{workspaceRoot}/cockpit/**/docs/**",
       "{workspaceRoot}/deployments/ag-ui-mastra/*.mjs"
     ]

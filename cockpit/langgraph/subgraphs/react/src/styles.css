@@ -1,0 +1,96 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color: #202832;
+  background: #fafafa;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+.subgraphs-demo {
+  max-width: 56rem;
+  margin: auto;
+  padding: 1.5rem;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  overflow-wrap: anywhere;
+}
+.subgraphs-demo header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+.subgraphs-demo h1 {
+  font-size: 1.5rem;
+  margin: 0;
+}
+.subgraphs-demo p {
+  margin: 0;
+}
+.subgraphs-demo .eyebrow {
+  color: #606b76;
+  font-size: 0.8rem;
+  margin-bottom: 0.4rem;
+}
+.subgraphs-demo button {
+  font: inherit;
+  cursor: pointer;
+}
+.subgraphs-demo button:disabled {
+  cursor: default;
+}
+.subgraphs-demo .tp-chat-list {
+  flex: 1;
+  min-height: 8rem;
+  max-height: 40dvh;
+}
+.subgraphs-demo section {
+  border: 1px solid #dce1e6;
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+.subgraphs-demo section h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+}
+.subgraphs-demo section p + p {
+  margin-top: 0.5rem;
+}
+.subgraphs-demo section dl {
+  display: block;
+  margin: 0.75rem 0;
+}
+.subgraphs-demo section dt {
+  font-weight: 600;
+}
+.subgraphs-demo section dd {
+  margin: 0.3rem 0 0.8rem;
+  white-space: pre-wrap;
+}
+.subgraphs-demo section ol {
+  padding-left: 1.5rem;
+}
+.subgraphs-demo section code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.subgraphs-demo [role='alert'] {
+  color: #a52323;
+}
+.subgraphs-demo [role='status'] {
+  font-size: 0.85rem;
+  color: #606b76;
+}
+@media (max-width: 32rem) {
+  .subgraphs-demo {
+    padding: 1rem;
+  }
+  .subgraphs-demo header {
+    align-items: flex-start;
+  }
+}

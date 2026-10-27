@@ -181,11 +181,13 @@ describe('runtime target URL validation', () => {
 
 describe('effective target identity and display', () => {
   it('compares adapter, normalized URL, target kind, and LangSmith key', () => {
+    const normalizedAgUi = validateAgUiTarget('HTTPS://AG.EXAMPLE.TEST:443/agent');
+    const sameNormalizedAgUi = validateAgUiTarget('https://ag.example.test/agent');
     const agUi = getEffectiveRuntimeTarget(
       {
         ...createDefaultRuntimeTargetSession(),
-        agUi: validateAgUiTarget('HTTPS://AG.EXAMPLE.TEST:443/agent').ok
-          ? validateAgUiTarget('HTTPS://AG.EXAMPLE.TEST:443/agent').value
+        agUi: normalizedAgUi.ok
+          ? normalizedAgUi.value
           : { kind: 'shared' },
       },
       'ag-ui',
@@ -193,8 +195,8 @@ describe('effective target identity and display', () => {
     const sameAgUi = getEffectiveRuntimeTarget(
       {
         ...createDefaultRuntimeTargetSession(),
-        agUi: validateAgUiTarget('https://ag.example.test/agent').ok
-          ? validateAgUiTarget('https://ag.example.test/agent').value
+        agUi: sameNormalizedAgUi.ok
+          ? sameNormalizedAgUi.value
           : { kind: 'shared' },
       },
       'ag-ui',
@@ -262,12 +264,28 @@ describe('effective target identity and display', () => {
       getSanitizedRuntimeTargetDisplay({ adapter: 'none', target: null }),
     ).toEqual({
       kind: 'none',
-      label: 'Runtime target unavailable',
+      label: 'Runs in your browser',
       origin: null,
       pathname: null,
       location: null,
     });
   });
+
+  it.each(['ag-ui', 'langgraph'] as const)(
+    'keeps an absent %s runtime target unavailable',
+    (adapter) => {
+      const missingTarget = { adapter, target: null } as unknown as Parameters<
+        typeof getSanitizedRuntimeTargetDisplay
+      >[0];
+      expect(getSanitizedRuntimeTargetDisplay(missingTarget)).toEqual({
+        kind: 'none',
+        label: 'Runtime target unavailable',
+        origin: null,
+        pathname: null,
+        location: null,
+      });
+    }
+  );
 
   it.each([
     {

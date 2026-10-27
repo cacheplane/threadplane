@@ -5,6 +5,8 @@ description: How the Microsoft Agent Framework example is built, from the approv
 
 # Microsoft Agent Framework Overview
 
+This page describes the canonical Angular/provider example, including its wrapped specialist streaming. Select React for the bounded fictional expense preview using the native Session against the same generated service directly. That private source-build preview correlates native approvals and literal backend results; it does not claim the Angular wrapper's specialist streaming or public npm availability.
+
 [Microsoft Agent Framework](https://github.com/microsoft/agent-framework) is Microsoft's Python and .NET agent SDK. Its AG-UI bridge turns an `Agent` into an AG-UI event stream, which is all `@threadplane/ag-ui` needs in order to bind it to `<chat>`. The running example is an expense assistant, and this page walks the four files that make it work.
 
 ## What the demo does
@@ -47,6 +49,8 @@ The `delegation_*` helpers close that gap. They live in `src/subagent_emitter.py
 
 The wire capture behind the design is committed next to the module as [`python/docs/wire-capture-subagents.md`](https://github.com/cacheplane/threadplane/blob/main/cockpit/runtimes/microsoft-agent-framework/python/docs/wire-capture-subagents.md).
 
+The run wrapper shields its cleanup from enclosing AnyIO cancellation scopes so it can cancel and await its pump, await the inner iterator's close, and restore the consumer's context. The regression tests exercise awaited cleanup with synthetic streams; they do not establish HTTP disconnect behavior or protection against arbitrary direct task cancellation.
+
 ### Choosing the model client
 
 Azure OpenAI is the default path, and the choice is made by one environment variable.
@@ -62,6 +66,12 @@ Passing `azure_endpoint` explicitly is the constructor's strongest Azure signal,
 <ExampleCode file="agent.py" region="bridge" title="agent.py — the AG-UI agent" />
 
 With that mapping in place the bridge streams the `expense` argument of `submit_expense` into frontend state as the model generates it, over `STATE_SNAPSHOT` and `STATE_DELTA`, rather than waiting for the tool call to complete.
+
+### Historical tool snapshot compatibility
+
+The example uses `HistoricalToolSnapshotAgent`, a small subclass of the public `AgentFrameworkAgent`. The pinned `agent-framework-ag-ui` 1.2.1 bridge can repeat a historical policy tool result in the final approval-resume message snapshot. This helper removes only later identical copies of a unique root tool message already present in the request history. Conflicting, new, assistant, or child identities pass through unchanged for the client's identity checks. It preserves literal approval and rejection results and emits no replacement tool-result or terminal events. This is an example-owned compatibility correction; it does not establish an upstream fixed version.
+
+<ExampleCode file="snapshot_compat.py" />
 
 ### Serving the agent
 

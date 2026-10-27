@@ -1,7 +1,9 @@
 import {
   getCapabilityDescriptor,
+  getFrontendCapabilityDescriptor,
   resolveManifestLanguage,
   type CockpitLanguage,
+  type CockpitFrontend,
   type CockpitManifestEntry,
   type CockpitManifestIdentity,
   type WorkspaceIdentity,
@@ -219,7 +221,8 @@ export const getCapabilityPresentation = (
  * importing either application. Descriptor-backed arrays are mutable clones.
  */
 export const getWorkspacePresentation = (
-  resolution: WorkspaceResolution
+  resolution: WorkspaceResolution,
+  frontend: CockpitFrontend = 'angular'
 ): WorkspacePresentation => {
   if (resolution.kind === 'docs-only') {
     return {
@@ -232,8 +235,9 @@ export const getWorkspacePresentation = (
 
   // WorkspaceIdentity is registry-derived from CockpitManifestIdentity, but
   // intentionally exposes string section/page fields to general consumers.
-  const descriptor = getCapabilityDescriptor(
-    resolution.identity as CockpitManifestIdentity
+  const descriptor = getFrontendCapabilityDescriptor(
+    resolution.identity as CockpitManifestIdentity,
+    frontend
   );
 
   if (!descriptor) {

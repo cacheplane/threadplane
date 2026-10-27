@@ -19,6 +19,17 @@
       "executor": "nx:run-commands",
       "options": {
         "command": "npx tsx -e \"import { deepAgentsSubagentsPythonModule } from './cockpit/deep-agents/subagents/python/src/index.ts'; const mod = deepAgentsSubagentsPythonModule; if (mod.id !== 'deep-agents-subagents-python') throw new Error('Unexpected id: ' + mod.id); if (mod.title !== 'Deep Agents Subagents (Python)') throw new Error('Unexpected title: ' + mod.title); console.log(JSON.stringify({ id: mod.id, title: mod.title }));\""
+      },
+      "dependsOn": [
+        "test"
+      ]
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "cwd": "cockpit/deep-agents/subagents/python",
+        "command": "uv run --frozen --python 3.12 python -m unittest discover -s tests"
       }
     }
   },

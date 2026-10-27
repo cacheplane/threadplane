@@ -1,10 +1,7 @@
 # GENERATED — do not edit. Source: scripts/generate-ag-ui-deployment-config.ts
-ag-ui-langgraph==0.0.41
-ag-ui-protocol==0.1.22
-ag-ui-strands @ git+https://github.com/ag-ui-protocol/ag-ui.git@363d3878e30887e88c1fd5ca1916ec3a5962b6be#subdirectory=integrations/aws-strands/python
-agent-framework-ag-ui==1.2.1
-agent-framework-core==1.16.0
-agent-framework-openai==1.14.1
+ag-ui-langgraph==0.0.45
+ag-ui-protocol==1.0.0
+ag-ui-strands==0.4.1
 fastapi==0.139.2
 langchain-openai==1.2.2
 langgraph==1.2.4

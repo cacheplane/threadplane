@@ -6,19 +6,36 @@
 
 > For Angular teams building AI agents on LangGraph, AG-UI, or custom backends, Threadplane is the open-source thread-plane for agents: it turns streaming agent events into production-ready Angular experiences: chat, durable threads, interrupts, subagents, planning, memory, generative UI, fallbacks, observability, and tests. Unlike React-first agent UI stacks or raw streaming SDKs, Threadplane is Angular-native, DI-friendly, design-system-first, self-hostable, and built for enterprise Angular apps.
 
-## Hero (locked for Spec 2 to implement)
+## Hero (as shipped)
 
-**H1:** Ship production agent UIs in Angular.
+**H1:** The open-source thread-plane for Angular agents.
 
-**Subhead:** Build enterprise-grade agent experiences in Angular: headless chat, durable threads, interrupts, subagents, planning, memory, and generative UI for LangGraph, AG-UI, json-render, and A2UI-compatible backends.
+**Eyebrow:** `LangGraph & AG-UI`
 
-**Primary CTA:** `Install @threadplane/chat` (copy-to-clipboard, fires `marketing:cta_click` with `cta_id=hero_install`, `track=developer`).
+**Subhead:** Make agent work persistent, durable, visible, reviewable, and resumable. (Each capability links to its documentation.)
 
-**Secondary CTA:** `Talk to our engineers` (routes to `/contact?source=home_hero&track=enterprise`, fires `marketing:cta_click` with `cta_id=hero_talk_to_engineers`, `track=enterprise`).
+**Primary CTA:** `Install Threadplane` — opens the install dialog, which carries
+the per-runtime commands. Fires `marketing:cta_click` with
+`cta_id=hero_install_open`, `track=developer`, `surface=home`.
 
-**Proof row:** `LangGraph + AG-UI · Durable threads · Interrupts · Subagents · Planning + memory · json-render + A2UI`
+**Secondary CTA:** `See it running in the docs →` — routes to
+`/docs/chat/guides/generative-ui?mode=run`, fires `marketing:cta_click` with
+`cta_id=hero_live_demo`, `track=developer`, `surface=home`, and the destination
+URL.
 
-**Subline under proof row:** *Not another backend agent runtime. Keep LangGraph, Genkit, Mastra, CrewAI, or your own service. Threadplane solves the production Angular UI layer.*
+**Trust line:** `MIT · Angular <range> · no account, no cloud` (the range is
+generated from the supported majors, not typed). It is not rendered in the hero
+itself: it appears in the install dialog the primary CTA opens, on the proof
+masthead, and on the live stage.
+
+> Copy is single-sourced in `apps/website/src/lib/positioning.ts`. Change it
+> there; this section records what ships, and is not itself the source.
+>
+> This replaces an earlier locked hero — H1 "Ship production agent UIs in
+> Angular." with a `Talk to our engineers` enterprise CTA fork — which the site
+> had drifted away from. The drift was resolved deliberately in
+> `docs/superpowers/specs/2026-09-18-mobile-above-fold-design.md` §4: keep the
+> category claim and add the stack to it.
 
 ## The five durable differentiation points
 

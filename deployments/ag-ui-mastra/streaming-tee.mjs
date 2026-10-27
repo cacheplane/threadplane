@@ -1,7 +1,7 @@
 // Delegation stream tee: observe a Mastra Agent's `fullStream` chunks before
 // the @ag-ui/mastra bridge consumes them.
 //
-// Why a Proxy and not a bridge subclass: the bridge (1.1.2) reads the agent
+// Why a Proxy and not a bridge subclass: the bridge (1.1.5) reads the agent
 // only through public members — `'getMemory' in agent`, `stream()`,
 // `resumeStream()`, `getMemory()`, `listTools()`, `model` — and consumes
 // `stream()`'s `.fullStream` in a private chunk processor that DROPS every

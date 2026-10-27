@@ -1,0 +1,59 @@
+{
+  "name": "content",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/content/src",
+  "projectType": "library",
+  "tags": [
+    "scope:react-parity",
+    "type:lib",
+    "layer:content",
+    "scope:library"
+  ],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "cache": true,
+      "dependsOn": [
+        "^build"
+      ],
+      "inputs": [
+        "production",
+        "^production"
+      ],
+      "outputs": [
+        "{workspaceRoot}/dist/libs/content"
+      ],
+      "options": {
+        "outputPath": "dist/libs/content",
+        "main": "libs/content/src/index.ts",
+        "tsConfig": "libs/content/tsconfig.lib.json",
+        "generatePackageJson": false,
+        "assets": [
+          "libs/content/package.json",
+          "libs/content/LICENSE.md",
+          "libs/content/README.md"
+        ]
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "test": {
+      "executor": "@nx/vitest:test",
+      "options": {
+        "configFile": "libs/content/vite.config.mts"
+      }
+    },
+    "type-tests": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": [
+        "default",
+        "^production"
+      ],
+      "options": {
+        "command": "node node_modules/typescript/bin/tsc --project libs/content/tsconfig.spec.json --noEmit --emitDeclarationOnly false --composite false --incremental false"
+      }
+    }
+  }
+}

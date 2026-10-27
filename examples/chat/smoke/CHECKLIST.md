@@ -6,6 +6,8 @@ changes land in libs/chat, libs/langgraph, libs/render, libs/ag-ui.
 
 ## Pre-flight
 
+- [ ] Node >=22.22.3 and exactly npm 11.6.0 for installation; run the generator with `npm exec --yes --package=npm@11.6.0 -- node examples/chat/smoke/cli.mjs` to select npm for this command.
+
 - [ ] `OPENAI_API_KEY` present in the repository root `.env`
 - [ ] `nx run examples-chat-python:serve` running on :2024 — `curl localhost:2024/ok` returns `{"ok":true}`
 - [ ] Smoke consumer started — page loads at :4200
@@ -210,9 +212,10 @@ renders correctly both during streaming and after completion.
 
 ## Reasoning blocks
 
-- [ ] Palette "Effort" dropdown lists 4 options
-      (minimal (fast) / low / medium / high (visible reasoning))
-- [ ] Default value is `minimal` on first load
+- [ ] Palette "Effort" dropdown lists 5 options
+      (model default / minimal (fast) / low / medium / high (visible reasoning))
+- [ ] Default value is `model default` on first load, and the submitted
+      state carries `reasoning_effort: null` (the model's own default applies)
 - [ ] Effort selection persists across reload
 - [ ] With model = gpt-5-mini and effort = high, send the puzzle prompt
       ("Solve a multi-step puzzle (try Effort = high)" welcome suggestion):

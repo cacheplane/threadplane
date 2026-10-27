@@ -1,4 +1,7 @@
 import {
+  completeProviderAttempt,
+  providerIdempotencyKey,
+  reserveProviderAttempt,
   authorizeLeasedJobForSubmission,
   assertRecipientDeliveryPolicy,
   cancelLeasedJob,
@@ -34,13 +37,14 @@ import {
   type RecipientDeliveryPolicy,
   type RecipientAttachment,
   type RecipientEmailInput,
+  type RecipientResendClient,
   type RecipientSendResult,
   type SqlExecutor,
   type SqlTransaction,
   type CampaignTemplateId,
   type UnsubscribeActionUrl,
 } from '../growth.js';
-import { Resend } from 'resend';
+import { createResendFetchClient } from '../resend-client.js';
 
 import {
   createDawnJobHandlers,
@@ -95,6 +99,22 @@ interface DeferLeasedJobInput extends LeasedTransitionInput {
 
 type EmailHmacKeyring = ReturnType<typeof parseEmailHmacKeyring>;
 type InternalNotificationKind = 'notify' | 'digest';
+
+/** Provider interface shared by recipient and internal notification delivery. */
+export interface LifecycleResendClient {
+  emails: {
+    send(
+      payload: {
+        from: string;
+        to: string;
+        subject: string;
+        text: string;
+        tags: { name: string; value: string }[];
+      },
+      options: { idempotencyKey: string; signal?: AbortSignal }
+    ): ReturnType<RecipientResendClient['emails']['send']>;
+  };
+}
 
 export interface LifecycleJobDependencies {
   now: () => Date;
@@ -152,6 +172,8 @@ export interface LifecycleJobDependencies {
     text: string;
     idempotencyKey: string;
     kind?: InternalNotificationKind;
+    executor?: SqlExecutor;
+    signal?: AbortSignal;
   }) => Promise<{ outcome: 'accepted' | 'rejected' | 'unknown' }>;
   readInstallDigestCandidates: (
     executor: SqlExecutor,
@@ -180,6 +202,7 @@ export interface LifecycleRuntimeConfiguration {
   campaignEnrollmentEnabled: boolean;
   installRuntimeHelloEnabled: boolean;
   installDigestEnabled: boolean;
+  observationProcessingEnabled: boolean;
   campaignEnrollmentStartAt?: Date;
   campaignEnabled: boolean;
   deliveryEnabled: boolean;
@@ -613,6 +636,8 @@ export async function dispatchLifecycleAppOwnedJob(
     signal.throwIfAborted();
     const sent = await dependencies.sendInternalNotification({
       to: dependencies.founderNotificationEmail,
+      executor,
+      signal,
       subject: 'Threadplane lifecycle review',
       text,
       idempotencyKey: job.idempotencyKey,
@@ -746,6 +771,8 @@ async function dispatchInstallDigestJob(
   signal.throwIfAborted();
   const sent = await dependencies.sendInternalNotification({
     to: dependencies.founderNotificationEmail,
+    executor,
+    signal,
     subject: `Threadplane install digest for ${businessDate}: ${
       candidates.length
     } new ${candidates.length === 1 ? 'identity' : 'identities'}`,
@@ -813,6 +840,10 @@ export function loadLifecycleRuntimeConfiguration(
     environment,
     'GROWTH_INSTALL_DIGEST_ENABLED'
   );
+  const observationProcessingEnabled = exactBoolean(
+    environment,
+    'GROWTH_OBSERVATION_PROCESSING_ENABLED'
+  );
   const deliveryEnabled = exactBoolean(environment, 'DELIVERY_ENABLED');
   let campaignEnrollmentStartAt: Date | undefined;
   if (campaignEnrollmentEnabled) {
@@ -835,6 +866,7 @@ export function loadLifecycleRuntimeConfiguration(
     campaignEnrollmentEnabled,
     installRuntimeHelloEnabled,
     installDigestEnabled,
+    observationProcessingEnabled,
     ...(campaignEnrollmentStartAt ? { campaignEnrollmentStartAt } : {}),
     campaignEnabled,
     deliveryEnabled,
@@ -913,7 +945,7 @@ export function createDefaultLifecycleJobDependencies(
         founderNotificationEmail: string;
         recipientPolicy: RecipientDeliveryPolicy;
         publicActionOrigin: string;
-        resend: Resend;
+        resend: LifecycleResendClient;
         tokenKey: GrowthTokenKey;
       }
     | undefined;
@@ -950,7 +982,7 @@ export function createDefaultLifecycleJobDependencies(
       founderNotificationEmail,
       recipientPolicy,
       publicActionOrigin,
-      resend: new Resend(apiKey),
+      resend: createResendFetchClient({ apiKey }),
       tokenKey: loadGrowthTokenKeyring(environment).active,
     };
     return cachedMailRuntime;
@@ -984,26 +1016,51 @@ export function createDefaultLifecycleJobDependencies(
       if (normalizeRecipientEmail(input.to) !== founderNotificationEmail) {
         throw new Error('Internal notification recipient is not the founder');
       }
+      const idempotencyKey = providerIdempotencyKey(
+        recipientPolicy.environment,
+        `internal:${input.idempotencyKey}`
+      );
+      const payload = {
+        from: RECIPIENT_EMAIL_SENDER,
+        to: founderNotificationEmail,
+        subject: input.subject,
+        text: input.text,
+        tags: [
+          { name: 'app', value: 'threadplane' },
+          { name: 'environment', value: recipientPolicy.environment },
+          { name: 'job_kind', value: input.kind ?? 'notify' },
+        ],
+      };
+      // The claim is at-most-once. Missing persistence must fail closed too.
+      if (!input.executor) return { outcome: 'unknown' };
       try {
-        const response = await resend.emails.send(
-          {
-            from: RECIPIENT_EMAIL_SENDER,
-            to: founderNotificationEmail,
-            subject: input.subject,
-            text: input.text,
-            tags: [
-              { name: 'environment', value: recipientPolicy.environment },
-              { name: 'job_kind', value: input.kind ?? 'notify' },
-            ],
-          },
-          { idempotencyKey: `internal:${input.idempotencyKey}` }
+        input.signal?.throwIfAborted();
+        const existingId = await reserveProviderAttempt(
+          input.executor,
+          idempotencyKey,
+          payload,
+          now()
         );
+        input.signal?.throwIfAborted();
+        const response = existingId
+          ? { data: { id: existingId }, error: null }
+          : await resend.emails.send(payload, {
+              idempotencyKey,
+              ...(input.signal ? { signal: input.signal } : {}),
+            });
         if (response.error === null) {
           const providerId = response.data?.id;
-          return typeof providerId === 'string' &&
-            /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/u.test(providerId)
-            ? { outcome: 'accepted' as const }
-            : { outcome: 'unknown' as const };
+          if (
+            typeof providerId !== 'string' ||
+            !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/u.test(providerId)
+          )
+            return { outcome: 'unknown' };
+          await completeProviderAttempt(
+            input.executor,
+            idempotencyKey,
+            providerId
+          );
+          return { outcome: 'accepted' };
         }
         return {
           outcome: classifyResendProviderError(response.error),

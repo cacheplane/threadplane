@@ -19,6 +19,7 @@ from pathlib import Path
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, MessagesState, END
+from langgraph.constants import TAG_NOSTREAM
 from langgraph_sdk import get_client
 
 PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
@@ -71,7 +72,7 @@ async def generate_title(state: MessagesState, config) -> dict:
         # Skip action-message JSON (those flow as human-role too)
         if first_user.content.lstrip().startswith("{"):
             return {}
-        llm = ChatOpenAI(model=_TITLE_MODEL, temperature=0)
+        llm = ChatOpenAI(model=_TITLE_MODEL, temperature=0, tags=[TAG_NOSTREAM])
         response = await llm.ainvoke([
             SystemMessage(content=_TITLE_PROMPT),
             HumanMessage(content=first_user.content),

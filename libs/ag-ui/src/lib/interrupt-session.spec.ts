@@ -72,6 +72,24 @@ describe('InterruptSession', () => {
       .toEqual([{ interruptId: 'one', status: 'resolved', payload: true }]);
   });
 
+  // AG-UI 1.0: a whole-optional null is absent on the wire, so a null payload never produces a `payload` key.
+  it('accepts a cancelled response with a null payload and records it without a payload key', () => {
+    const s = pending([batch[0]]);
+    const attempt = s.claim({ resume: [{ id: 'one', status: 'cancelled', payload: null }] }, 'a', 'next');
+    expect(attempt.parameters.resume).toEqual([{ interruptId: 'one', status: 'cancelled' }]);
+    expect(s.snapshot.phase).not.toBe('pending');
+  });
+
+  it('omits a null payload from a resolved response', () => {
+    const attempt = pending([batch[0]]).claim({ resume: [{ id: 'one', status: 'resolved', payload: null }] }, 'a', 'next');
+    expect(attempt.parameters.resume).toEqual([{ interruptId: 'one', status: 'resolved' }]);
+  });
+
+  it('a bare null resume value produces an entry with no payload', () => {
+    const attempt = pending([batch[0]]).claim({ resume: null }, 'a', 'next');
+    expect(attempt.parameters.resume).toEqual([{ interruptId: 'one', status: 'resolved' }]);
+  });
+
   it('copies inbound fields, snapshots, and claimed input deeply', () => {
     const entries = structuredClone(batch);
     const s = pending(entries);

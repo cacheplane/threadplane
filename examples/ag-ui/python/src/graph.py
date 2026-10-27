@@ -4,8 +4,8 @@ State the client may send via the LangGraph ``submit``'s ``state`` field:
 
   - ``model`` — OpenAI model name. Default: ``gpt-5-mini``.
   - ``reasoning_effort`` — 'minimal' | 'low' | 'medium' | 'high'.
-                           Default: 'minimal' so first-token latency
-                           stays low. Demos surface this as a palette
+                           Default: unset, so the model's own default
+                           effort applies. Demos surface this as a palette
                            dropdown so users can dial in visible reasoning.
 
 Topology:
@@ -190,11 +190,33 @@ SYSTEM_PROMPT = (
 # Reasoning-capable model prefixes. We only attach the ``reasoning``
 # parameter when the model name suggests reasoning support; setting it
 # on a non-reasoning model would be ignored anyway.
-REASONING_PREFIXES = ("gpt-5", "o1", "o3", "o4")
+REASONING_PREFIXES = ("gpt-5", "gpt-6", "o1", "o3", "o4")
 
 
 def _is_reasoning_model(name: str) -> bool:
     return any(name.startswith(p) for p in REASONING_PREFIXES)
+
+
+def _reasoning_param(model_name: str, effort: Optional[str]) -> Optional[dict]:
+    """Build the OpenAI ``reasoning`` parameter, or None for non-reasoning models.
+
+    ``effort`` is only sent when the client explicitly chose one; otherwise
+    the model's own default applies. Forcing a low effort such as 'minimal'
+    disables some tools (e.g. web search on gpt-5), tends to produce empty
+    summaries, and isn't accepted by every newer model.
+
+    ``summary='auto'`` instructs the OpenAI Responses API to emit summary
+    text inside the reasoning block (otherwise the block arrives with an
+    empty ``summary: []`` and the chat UI has nothing to render). The
+    adapter's ``extractReasoning`` reads either the legacy ``block.text``
+    field or the modern ``block.summary[].text``.
+    """
+    if not _is_reasoning_model(model_name):
+        return None
+    reasoning: dict = {"summary": "auto"}
+    if effort:
+        reasoning["effort"] = effort
+    return reasoning
 
 
 # Hardcoded corpus for the search_documents tool. Five Angular topics
@@ -572,16 +594,9 @@ class State(TypedDict):
 async def generate(state: State, config: RunnableConfig) -> dict:
     model_name = state.get("model") or "gpt-5-mini"
     kwargs = {"model": model_name, "streaming": True}
-    if _is_reasoning_model(model_name):
-        # Honor the client's effort selection when present; default to
-        # 'minimal' so first-token latency stays low for unconfigured callers.
-        effort = state.get("reasoning_effort") or "minimal"
-        # `summary='auto'` instructs the OpenAI Responses API to emit
-        # summary text inside the reasoning block (otherwise the block
-        # arrives with an empty `summary: []` and the chat UI has nothing
-        # to render). The adapter's `extractReasoning` reads either the
-        # legacy `block.text` field or the modern `block.summary[].text`.
-        kwargs["reasoning"] = {"effort": effort, "summary": "auto"}
+    reasoning = _reasoning_param(model_name, state.get("reasoning_effort"))
+    if reasoning is not None:
+        kwargs["reasoning"] = reasoning
     # Pick the GenUI tool matching the user's palette dropdown. Only ONE
     # is bound per request so the parent LLM has a single, unambiguous
     # render tool to choose. ToolNode below is bound to BOTH so either

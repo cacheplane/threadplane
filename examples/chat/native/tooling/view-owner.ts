@@ -1,0 +1,148 @@
+import { applicationTools } from '../shared/trip-summary.js';
+import { createMarkdown } from '@threadplane/content/markdown';
+import { createSession } from '@threadplane/langgraph';
+import type {
+  createApplication,
+  ApplicationOptions,
+} from '../shared/application';
+import { createThreadDirectory } from '../shared/directory';
+import { browserHistory } from '../shared/route';
+
+// Proof-only instrumentation; production entries never import this module.
+export function createViewOwner<
+  Owner extends ReturnType<typeof createApplication>
+>(factory: (options: ApplicationOptions) => Owner) {
+  const counts = {
+    subscriptions: 0,
+    releases: 0,
+    active: 0,
+    sessions: 0,
+    sessionSubscriptions: 0,
+    sessionReleases: 0,
+    sessionActive: 0,
+    sessionDisposals: 0,
+    parsers: 0,
+    updates: 0,
+    parserDisposals: 0,
+    ownerDisposals: 0,
+  };
+  const apiUrl = new URL('/api', location.origin).href;
+  const owner = factory({
+    assistantId: 'assistant',
+    apiUrl,
+    directory: createThreadDirectory({
+      apiBase: apiUrl,
+      browserOrigin: location.origin,
+    }),
+    history: browserHistory(window),
+    sessionFactory(id) {
+      counts.sessions++;
+      const session = createSession({
+        tools: applicationTools,
+        assistantId: 'assistant',
+        apiUrl,
+        threadId: id,
+        clientOptions: { maxRetries: 0 },
+      });
+      return {
+        ...session,
+        subscribe(notify) {
+          counts.sessionSubscriptions++;
+          counts.sessionActive++;
+          const release = session.subscribe(notify);
+          return () => {
+            counts.sessionReleases++;
+            counts.sessionActive--;
+            release();
+          };
+        },
+        dispose() {
+          counts.sessionDisposals++;
+          return session.dispose();
+        },
+      };
+    },
+    markdownFactory(document, options) {
+      counts.parsers++;
+      const parser = createMarkdown(document, options);
+      return {
+        ...parser,
+        update(document) {
+          counts.updates++;
+          return parser.update(document);
+        },
+        dispose() {
+          counts.parserDisposals++;
+          parser.dispose();
+        },
+      };
+    },
+  });
+  const application = {
+    ...owner,
+    subscribe(notify: () => void) {
+      counts.subscriptions++;
+      counts.active++;
+      const release = owner.subscribe(notify);
+      return () => {
+        counts.releases++;
+        counts.active--;
+        release();
+      };
+    },
+    dispose() {
+      counts.ownerDisposals++;
+      owner.dispose();
+    },
+  };
+  const marks = new Map<string, ReturnType<typeof owner.getSnapshot>>();
+  return {
+    owner,
+    application,
+    controls: {
+      dispose() {
+        application.dispose();
+      },
+      mark(name: string) {
+        marks.set(name, owner.getSnapshot());
+      },
+      inspect() {
+        return {
+          ...counts,
+          tripSummaryCount: owner
+            .getSnapshot()
+            .messages.reduce(
+              (total, row) => total + row.tripSummaries.length,
+              0
+            ),
+          texts: owner.getSnapshot().messages.map((row) => row.message.content),
+          reasoning: owner
+            .getSnapshot()
+            .messages.flatMap((row) =>
+              row.reasoning ? [row.reasoning.document.content] : []
+            ),
+        };
+      },
+      compare(name: string) {
+        const before = marks.get(name)!,
+          after = owner.getSnapshot();
+        const cards = before.messages.flatMap((row) => row.tripSummaries);
+        const current = after.messages.flatMap((row) => row.tripSummaries);
+        return {
+          tripSummaries:
+            cards.length > 0 &&
+            cards.length === current.length &&
+            cards.every((card, index) => card === current[index]),
+          snapshot: before === after,
+          markdown: before.messages.every(
+            (row, index) => row.markdown === after.messages[index]?.markdown
+          ),
+          reasoning: before.messages.every(
+            (row, index) => row.reasoning === after.messages[index]?.reasoning
+          ),
+          owner: application.getSnapshot === owner.getSnapshot,
+        };
+      },
+    },
+  };
+}

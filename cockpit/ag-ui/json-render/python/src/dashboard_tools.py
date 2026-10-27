@@ -5,7 +5,21 @@ backend has no shared aviation_data.py module. Mirrors the umbrella
 backend at cockpit/langgraph/streaming/python/src/dashboard_tools.py.
 """
 
-from langchain_core.tools import tool
+import json
+from typing import Annotated
+
+from langchain_core.messages import ToolMessage
+from langchain_core.tools import tool, InjectedToolCallId
+
+
+def _result(name: str, tool_call_id: str, payload: dict | list) -> ToolMessage:
+    """Keep streamed and finalized results at the same causal message ID."""
+    return ToolMessage(
+        id=tool_call_id,
+        tool_call_id=tool_call_id,
+        name=name,
+        content=json.dumps(payload),
+    )
 
 # ── Analytics fixtures (inlined; no aviation_data.py in standalone) ─────────
 
@@ -59,31 +73,31 @@ RECENT_DISRUPTIONS = [
 # ── Tools ───────────────────────────────────────────────────────────────────
 
 @tool
-def query_airline_kpis() -> dict:
+def query_airline_kpis(tool_call_id: Annotated[str, InjectedToolCallId]) -> ToolMessage:
     """Snapshot of operational KPIs across the fleet: on-time %, flights today,
     average delay (minutes), and load factor."""
     snap = KPI_SNAPSHOT
-    return {
+    return _result("query_airline_kpis", tool_call_id, {
         "on_time":       {"value": f"{snap['on_time_pct']}%",      "delta": snap["on_time_delta"]},
         "flights_today": {"value": snap["flights_today"],          "delta": snap["flights_today_delta"]},
         "avg_delay":     {"value": f"{snap['avg_delay_min']} min", "delta": snap["avg_delay_delta"]},
         "load_factor":   {"value": f"{snap['load_factor_pct']}%",  "delta": snap["load_factor_delta"]},
-    }
+    })
 
 
 @tool
-def query_on_time_trend(months: int = 12) -> list[dict]:
+def query_on_time_trend(months: int = 12, *, tool_call_id: Annotated[str, InjectedToolCallId]) -> ToolMessage:
     """On-time performance over time, as percentage by month.
 
     Args:
         months: Number of months to return (default 12). Valid: 3, 6, 12, 24.
     """
     months = min(months, len(ON_TIME_TREND))
-    return ON_TIME_TREND[-months:]
+    return _result("query_on_time_trend", tool_call_id, ON_TIME_TREND[-months:])
 
 
 @tool
-def query_flights_by_airline(airlines: list[str] | None = None) -> list[dict]:
+def query_flights_by_airline(airlines: list[str] | None = None, *, tool_call_id: Annotated[str, InjectedToolCallId]) -> ToolMessage:
     """Daily flight counts per airline.
 
     Args:
@@ -91,12 +105,12 @@ def query_flights_by_airline(airlines: list[str] | None = None) -> list[dict]:
                   returned if omitted.
     """
     if airlines:
-        return [a for a in FLIGHTS_BY_AIRLINE if a["airline"] in airlines]
-    return FLIGHTS_BY_AIRLINE
+        return _result("query_flights_by_airline", tool_call_id, [a for a in FLIGHTS_BY_AIRLINE if a["airline"] in airlines])
+    return _result("query_flights_by_airline", tool_call_id, FLIGHTS_BY_AIRLINE)
 
 
 @tool
-def query_recent_disruptions(limit: int = 5, type: str | None = None) -> list[dict]:
+def query_recent_disruptions(limit: int = 5, type: str | None = None, *, tool_call_id: Annotated[str, InjectedToolCallId]) -> ToolMessage:
     """Recent flight delays or cancellations.
 
     Args:
@@ -106,7 +120,7 @@ def query_recent_disruptions(limit: int = 5, type: str | None = None) -> list[di
     filtered = RECENT_DISRUPTIONS
     if type:
         filtered = [d for d in filtered if d["type"] == type]
-    return filtered[:limit]
+    return _result("query_recent_disruptions", tool_call_id, filtered[:limit])
 
 
 ALL_TOOLS = [

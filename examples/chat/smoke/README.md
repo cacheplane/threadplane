@@ -7,6 +7,18 @@ external consumer.
 
 ## Run
 
+Installation requires Node >=22.22.3 and exactly npm 11.6.0. This tested npm
+release fixes the detached-peer resolver failure affecting Angular 21/22.
+Use the scoped command below to select it without changing global npm:
+
+```bash
+npm exec --yes --package=npm@11.6.0 -- node examples/chat/smoke/cli.mjs
+```
+
+`--no-install` can generate a consumer with another npm version. The CLI checks
+npm after the installation choice and before packing or changing the target.
+The following direct commands also work when npm 11.6.0 is already on PATH.
+
 ```bash
 npx nx run examples-chat-smoke:run
 # or, equivalently:
@@ -18,7 +30,7 @@ smoke, include `--runtime`. It requires installation and automatically runs the
 production build before launching Chromium:
 
 ```bash
-node examples/chat/smoke/cli.mjs --non-interactive --install --runtime
+npm exec --yes --package=npm@11.6.0 -- node examples/chat/smoke/cli.mjs --non-interactive --install --runtime
 ```
 
 `--runtime` launches Chromium through the root `@playwright/test` dependency.

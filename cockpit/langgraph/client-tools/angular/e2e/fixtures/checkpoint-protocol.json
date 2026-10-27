@@ -1,0 +1,33 @@
+{
+  "fixtures": [
+    {
+      "match": { "userMessage": "Checkpoint branch original second turn" },
+      "response": { "content": "Original second answer." }
+    },
+    {
+      "match": { "userMessage": "Checkpoint branch competing later turn" },
+      "response": { "content": "Competing later answer." }
+    },
+    {
+      "match": { "userMessage": "Checkpoint branch fork from first turn" },
+      "response": { "content": "Fork answer from first turn." }
+    },
+    {
+      "match": { "userMessage": "Checkpoint continuity advance the competing branch" },
+      "response": { "content": "Competing branch advanced after fork completion." }
+    },
+    {
+      "match": { "userMessage": "Checkpoint continuity continue the completed fork" },
+      "response": { "content": "Completed fork follow-up answer." }
+    },
+    {
+      "match": { "userMessage": "Checkpoint protocol weather in Paris", "hasToolResult": true },
+      "response": { "content": "Protocol weather complete: Paris is 68°F." }
+    },
+    {
+      "match": { "userMessage": "Checkpoint protocol weather in Paris" },
+      "response": { "toolCalls": [{ "name": "get_weather", "arguments": { "location": "Paris" } }] },
+      "latency": 250
+    }
+  ]
+}

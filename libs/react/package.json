@@ -1,0 +1,63 @@
+{
+  "name": "@threadplane/react",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Private React binding for observing app-owned agent sessions.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "dependencies": {
+    "@json-render/core": "0.16.0"
+  },
+  "peerDependencies": {
+    "@threadplane/content": "0.0.0",
+    "@threadplane/core": "0.0.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@testing-library/react": "16.3.2",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "react-dom": "19.2.4"
+  },
+  "files": [
+    "src/**/*.js",
+    "src/**/*.d.ts",
+    "src/**/*.d.ts.map",
+    "src/**/*.css",
+    "LICENSE.md",
+    "README.md"
+  ],
+  "exports": {
+    "./render": {
+      "types": "./src/render/index.d.ts",
+      "import": "./src/render/index.js",
+      "default": "./src/render/index.js"
+    },
+    "./markdown": {
+      "types": "./src/markdown/index.d.ts",
+      "import": "./src/markdown/index.js",
+      "default": "./src/markdown/index.js"
+    },
+    "./chat": {
+      "types": "./src/chat/index.d.ts",
+      "import": "./src/chat/index.js",
+      "default": "./src/chat/index.js"
+    },
+    "./chat/styles.css": "./src/chat/styles.css",
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./src/index.js",
+      "default": "./src/index.js"
+    },
+    "./debug": {
+      "types": "./src/debug/index.d.ts",
+      "import": "./src/debug/index.js",
+      "default": "./src/debug/index.js"
+    },
+    "./debug/styles.css": "./src/debug/styles.css"
+  }
+}

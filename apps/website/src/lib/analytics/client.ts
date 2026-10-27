@@ -50,3 +50,11 @@ export function trackStageProgress(
     ...(beat ? { beat } : {}),
   });
 }
+
+/**
+ * Passive engagement. `engaged_seconds` is visible time only, so it can be
+ * read as real attention rather than a tab left open.
+ */
+export function trackEngagedTime(engaged_seconds: number) {
+  track(analyticsEvents.marketingEngagedTime, { engaged_seconds });
+}

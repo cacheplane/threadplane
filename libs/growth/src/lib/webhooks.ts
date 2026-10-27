@@ -21,6 +21,12 @@ const SUPPORTED_EVENT_TYPES = new Set([
   'email.suppressed',
   'email.failed',
 ]);
+const TERMINAL_DELIVERY_TYPES = new Set([
+  'email.bounced',
+  'email.complained',
+  'email.suppressed',
+  'email.failed',
+]);
 const DELIVERY_STATUS_PRECEDENCE: Readonly<
   Record<GrowthDeliveryStatus, number>
 > = {
@@ -87,6 +93,7 @@ export type ProcessResendWebhookResult =
       reason:
         | 'ignored_event_type'
         | 'environment_mismatch'
+        | 'app_mismatch'
         | 'unmatched_job'
         | 'retryable_unmatched_job';
     }
@@ -158,6 +165,21 @@ function boundedRecord(
 
 const MAX_DATA_KEYS = 32;
 const MAX_HEADER_ENTRIES = 32;
+const MAX_DIAGNOSTIC_CODES = 10;
+
+function validateProviderDiagnosticCode(value: unknown): void {
+  if (value == null) return;
+  if (typeof value === 'string') {
+    boundedText(value, 2_000);
+    return;
+  }
+  if (!Array.isArray(value) || value.length > MAX_DIAGNOSTIC_CODES) {
+    throw new Error('Invalid Resend webhook payload');
+  }
+  for (const code of value) {
+    if (code != null) boundedText(code, 2_000);
+  }
+}
 
 // Known keys are validated; unknown keys are ignored rather than fatal, because
 // Resend has added keys (message_id, headers) without notice and each addition
@@ -215,7 +237,7 @@ function validateClosedDetails(
     if (
       !bounce ||
       Object.keys(bounce).some(
-        (key) => !['message', 'subType', 'type'].includes(key)
+        (key) => !['message', 'subType', 'type', 'diagnosticCode'].includes(key)
       )
     ) {
       throw new Error('Invalid Resend webhook payload');
@@ -223,6 +245,7 @@ function validateClosedDetails(
     const bounceType = boundedText(bounce['type'], 100).toLowerCase();
     boundedText(bounce['subType'], 100);
     boundedText(bounce['message'], 500);
+    validateProviderDiagnosticCode(bounce['diagnosticCode']);
     if (bounceType === 'permanent' || bounceType === 'hard') return 'permanent';
     if (bounceType === 'transient' || bounceType === 'soft') return 'transient';
     return 'unknown';
@@ -238,12 +261,16 @@ function validateClosedDetails(
     const suppressed = plainObject(data['suppressed']);
     if (
       !suppressed ||
-      Object.keys(suppressed).some((key) => !['message', 'type'].includes(key))
+      Object.keys(suppressed).some(
+        (key) => !['message', 'type', 'reason', 'diagnosticCode'].includes(key)
+      )
     ) {
       throw new Error('Invalid Resend webhook payload');
     }
     boundedText(suppressed['type'], 100);
     boundedText(suppressed['message'], 500);
+    if (suppressed['reason'] != null) boundedText(suppressed['reason'], 500);
+    validateProviderDiagnosticCode(suppressed['diagnosticCode']);
   }
   return undefined;
 }
@@ -422,6 +449,7 @@ function validateCorroboration(
 }
 
 function isThreadplaneGrowthSend(tags: Record<string, string>): boolean {
+  const appTags = tags['app'] === 'threadplane' ? 1 : 0;
   const environment = tags['environment'];
   if (
     environment !== 'production' &&
@@ -432,7 +460,7 @@ function isThreadplaneGrowthSend(tags: Record<string, string>): boolean {
   }
   if (tags['job_kind'] === 'fulfill') {
     return (
-      Object.keys(tags).length === 2 &&
+      Object.keys(tags).length === 2 + appTags &&
       tags['campaign_version'] === undefined &&
       tags['campaign_step'] === undefined
     );
@@ -441,7 +469,7 @@ function isThreadplaneGrowthSend(tags: Record<string, string>): boolean {
   // Sends accepted before the template tag shipped carry four tags; newer
   // sends carry a fifth, bounded to the closed template allowlist.
   const template = tags['campaign_template'];
-  const expectedTagCount = template === undefined ? 4 : 5;
+  const expectedTagCount = (template === undefined ? 4 : 5) + appTags;
   return (
     Object.keys(tags).length === expectedTagCount &&
     tags['campaign_version'] === 'v1' &&
@@ -488,18 +516,37 @@ function defaultWebhookDependencies(): ProcessResendWebhookDependencies {
   };
 }
 
+export class ResendWebhookPayloadError extends Error {
+  constructor() {
+    super('Invalid Resend webhook payload');
+    this.name = 'ResendWebhookPayloadError';
+  }
+}
+
 export async function processVerifiedResendWebhook(
   executor: SqlExecutor,
   input: { providerEventId: string; payload: unknown },
   dependencies: ProcessResendWebhookDependencies = defaultWebhookDependencies()
 ): Promise<ProcessResendWebhookResult> {
-  const providerEventId = boundedText(
-    input.providerEventId,
-    240,
-    PROVIDER_ID_PATTERN
-  );
-  const event = parseSupportedEvent(input.payload);
+  let providerEventId: string;
+  let event: ParsedResendEvent | null;
+  try {
+    providerEventId = boundedText(
+      input.providerEventId,
+      240,
+      PROVIDER_ID_PATTERN
+    );
+    event = parseSupportedEvent(input.payload);
+  } catch {
+    throw new ResendWebhookPayloadError();
+  }
   if (!event) return { applied: false, reason: 'ignored_event_type' };
+  // Historical Threadplane messages predate app tags. Their provider ID still
+  // must resolve to an existing job below; explicit foreign tags never enter
+  // the ledger, even when products share the same Resend account.
+  if (event.tags['app'] !== undefined && event.tags['app'] !== 'threadplane') {
+    return { applied: false, reason: 'app_mismatch' };
+  }
   if (event.tags['environment'] !== dependencies.databaseEnvironment) {
     return { applied: false, reason: 'environment_mismatch' };
   }
@@ -520,14 +567,44 @@ export async function processVerifiedResendWebhook(
       event.rfcMessageId &&
       ['fulfill', 'send_step'].includes(event.tags['job_kind'] ?? '')
     ) {
-      await (dependencies.bindProviderMessageId ?? bindProviderMessageId)(
-        transactionExecutor(transaction),
-        {
-          providerEmailId: event.providerEmailId,
-          rfcMessageId: event.rfcMessageId,
-        },
-        { stopContact: dependencies.stopContact }
-      );
+      let preserveExistingBinding = false;
+      if (TERMINAL_DELIVERY_TYPES.has(event.type)) {
+        const existingBinding = await transaction.execute<{
+          kind: string;
+          status: string;
+          contact_id: string | null;
+          delivery_status: GrowthDeliveryStatus;
+          rfc_message_id: string | null;
+        }>(
+          `/* growth:inspect-resend-terminal-rfc-binding */
+           select kind, status, contact_id, delivery_status, rfc_message_id
+           from growth_jobs where provider_email_id = $1`,
+          [event.providerEmailId]
+        );
+        const job = existingBinding.rows[0];
+        // A terminal provider event can carry a different Message-ID from the
+        // sent message. Preserve the established reply binding and still apply
+        // the delivery outcome after normal job corroboration below.
+        preserveExistingBinding = Boolean(
+          job &&
+            job.status === 'completed' &&
+            job.contact_id &&
+            ['fulfill', 'send_step'].includes(job.kind) &&
+            job.delivery_status !== 'not_submitted' &&
+            job.rfc_message_id &&
+            job.rfc_message_id !== event.rfcMessageId
+        );
+      }
+      if (!preserveExistingBinding) {
+        await (dependencies.bindProviderMessageId ?? bindProviderMessageId)(
+          transactionExecutor(transaction),
+          {
+            providerEmailId: event.providerEmailId,
+            rfcMessageId: event.rfcMessageId,
+          },
+          { stopContact: dependencies.stopContact }
+        );
+      }
     }
     const existing = await transaction.execute<WebhookActivityRow>(
       `/* growth:read-resend-webhook-activity */

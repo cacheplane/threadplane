@@ -1,0 +1,16 @@
+data: {"type":"RUN_STARTED","threadId":"thread-parity","runId":"run-parity"}
+
+data: {"type":"STATE_SNAPSHOT","snapshot":{"stage":"streaming"}}
+
+data: {"type":"TEXT_MESSAGE_START","messageId":"message-parity","role":"assistant"}
+
+data: {"type":"TEXT_MESSAGE_CONTENT","messageId":"message-parity","delta":"Hello "}
+
+data: {"type":"TEXT_MESSAGE_CONTENT","messageId":"message-parity","delta":"🌍."}
+
+data: {"type":"TEXT_MESSAGE_END","messageId":"message-parity"}
+
+data: {"type":"STATE_SNAPSHOT","snapshot":{"stage":"complete"}}
+
+data: {"type":"RUN_FINISHED","threadId":"thread-parity","runId":"run-parity"}
+

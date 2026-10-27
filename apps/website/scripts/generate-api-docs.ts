@@ -2,6 +2,7 @@
 import { Application, TSConfigReader, ReflectionKind } from 'typedoc';
 import fs from 'fs';
 import path from 'path';
+import { pathToFileURL } from 'node:url';
 import {
   assertPublicDocOutput,
   projectPublicDocEntries,
@@ -48,11 +49,18 @@ function extractExamples(comment: any): string[] {
 function isInternalReflection(ref: any): boolean {
   if (typeof ref?.name === 'string' && ref.name.startsWith('ɵ')) return true;
   const modifierTags = ref?.comment?.modifierTags;
-  return (
+  if (
     modifierTags !== undefined &&
     typeof modifierTags.has === 'function' &&
     modifierTags.has('@internal')
-  );
+  ) return true;
+  // TypeDoc attaches callable comments to signatures rather than declarations.
+  // A private overload must not hide public siblings on the same declaration.
+  return !!ref?.signatures?.length && ref.signatures.every(isInternalReflection);
+}
+
+function firstPublicSignature(ref: any): any {
+  return ref?.signatures?.find((sig: any) => !isInternalReflection(sig));
 }
 
 /** Renders a single parameter for a signature string, preserving rest (`...`) syntax. */
@@ -75,7 +83,7 @@ function extractType(typeObj: any): string {
   if (typeObj.type === 'literal') return JSON.stringify(typeObj.value);
   if (typeObj.type === 'reflection') {
     // Function-typed property/value: render its call signature, e.g. `(event: RenderEvent) => void`.
-    const sig = typeObj.declaration?.signatures?.[0];
+    const sig = firstPublicSignature(typeObj.declaration);
     if (sig) {
       const params = (sig.parameters ?? []).map(paramToSigString).join(', ');
       return `(${params}) => ${extractType(sig.type)}`;
@@ -108,7 +116,7 @@ function reflectionToEntry(ref: any): ApiDocEntry | null {
   const examples = extractExamples(ref.comment);
 
   if (kind === ReflectionKind.Function) {
-    const sig = ref.signatures?.[0];
+    const sig = firstPublicSignature(ref);
     return {
       name: ref.name,
       kind: 'function',
@@ -133,10 +141,10 @@ function reflectionToEntry(ref: any): ApiDocEntry | null {
           c.kind === ReflectionKind.Method && !isInternalReflection(c)
       )
       .map((c: any) => {
-        const sig = c.signatures?.[0];
+        const sig = firstPublicSignature(c);
         return { name: c.name, signature: signatureToString(c.name, sig), description: extractDescription(c.comment) || extractDescription(sig?.comment), params: extractParams(sig) };
       });
-    const ctorSig = (ref.children ?? []).find((c: any) => c.kind === ReflectionKind.Constructor)?.signatures?.[0];
+    const ctorSig = firstPublicSignature((ref.children ?? []).find((c: any) => c.kind === ReflectionKind.Constructor));
     return {
       name: ref.name,
       kind: 'class',
@@ -167,7 +175,7 @@ function reflectionToEntry(ref: any): ApiDocEntry | null {
           c.kind === ReflectionKind.Method && !isInternalReflection(c)
       )
       .map((c: any) => {
-        const sig = c.signatures?.[0];
+        const sig = firstPublicSignature(c);
         return {
           name: c.name,
           signature: signatureToString(c.name, sig),
@@ -189,7 +197,8 @@ function reflectionToEntry(ref: any): ApiDocEntry | null {
   return null;
 }
 
-function collectApiEntries(reflections: any[]): ApiDocEntry[] {
+/** Convert exported reflections into the website's public API entries. */
+export function collectApiEntries(reflections: any[]): ApiDocEntry[] {
   return reflections.flatMap((ref) => {
     if (isInternalReflection(ref)) return [];
     const entry = reflectionToEntry(ref);
@@ -298,4 +307,6 @@ async function main() {
   }
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((e) => { console.error(e); process.exit(1); });
+}

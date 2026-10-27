@@ -1,0 +1,24 @@
+{
+  "name": "cockpit-a2ui-react",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/cockpit-a2ui-react/src",
+  "projectType": "library",
+  "tags": [
+    "scope:cockpit",
+    "scope:cockpit-examples",
+    "scope:cockpit-e2e",
+    "framework:react"
+  ],
+  "targets": {
+    "test": {
+      "executor": "@nx/vitest:test",
+      "options": {
+        "configFile": "libs/cockpit-a2ui-react/vite.config.mts",
+        "reporters": ["default"]
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}

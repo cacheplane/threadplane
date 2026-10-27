@@ -1,6 +1,7 @@
-import { describe, expect, expectTypeOf, it, vi } from 'vitest';
+import { describe, expect, expectTypeOf, it, test, vi } from 'vitest';
 import type { Resend } from 'resend';
 
+import { providerIdempotencyKey } from './provider-attempts.ts';
 import type { SqlExecutor } from './database.ts';
 import type { GrowthJob } from './models.ts';
 import {
@@ -128,6 +129,8 @@ function harness(overrides: { job?: GrowthJob; response?: unknown } = {}) {
     markProviderAcceptanceUnknown,
     markProviderRejection,
     dependencies: {
+      reserveProviderAttempt: vi.fn().mockResolvedValue(null),
+      completeProviderAttempt: vi.fn().mockResolvedValue(undefined),
       now: () => now,
       resend: { emails: { send } },
       authorizeLeasedJobForSubmission,
@@ -189,6 +192,7 @@ describe('sendRecipientEmail', () => {
           'X-Threadplane-Job-ID': jobId,
         },
         tags: [
+          { name: 'app', value: 'threadplane' },
           { name: 'environment', value: 'production' },
           { name: 'job_kind', value: 'send_step' },
           { name: 'campaign_version', value: 'v1' },
@@ -196,7 +200,12 @@ describe('sendRecipientEmail', () => {
           { name: 'campaign_template', value: 'immediate' },
         ],
       },
-      { idempotencyKey: 'campaign:v1:contact:step:1' }
+      {
+        idempotencyKey: providerIdempotencyKey(
+          'production',
+          job().idempotencyKey
+        ),
+      }
     );
     const payload = test.send.mock.calls[0]?.[0] as Record<string, unknown>;
     expect(payload).not.toHaveProperty('html');
@@ -378,6 +387,7 @@ describe('sendRecipientEmail', () => {
 
     expect(test.send.mock.calls[0]?.[0]).toMatchObject({
       tags: [
+        { name: 'app', value: 'threadplane' },
         { name: 'environment', value: 'production' },
         { name: 'job_kind', value: 'fulfill' },
       ],
@@ -1293,4 +1303,124 @@ describe('durable provider Message-ID lookup', () => {
     ).resolves.toEqual({ attempted: 1, bound: 0 });
     expect(h.bindProviderMessageId).not.toHaveBeenCalled();
   });
+});
+
+test('recipient submission persists immutable evidence and uses an environment namespace', async () => {
+  const h = harness();
+  const reserve = vi.fn().mockResolvedValue(null);
+  const complete = vi.fn().mockResolvedValue(undefined);
+
+  await sendRecipientEmail(h.database, message, productionPolicy(), {
+    ...h.dependencies,
+    reserveProviderAttempt: reserve,
+    completeProviderAttempt: complete,
+  });
+
+  expect(reserve).toHaveBeenCalledWith(
+    h.database,
+    expect.stringMatching(/^threadplane:production:/u),
+    expect.objectContaining({ subject: message.subject }),
+    now
+  );
+  expect(h.send.mock.calls[0]?.[1]).toEqual({
+    idempotencyKey: expect.stringMatching(/^threadplane:production:/u),
+  });
+  expect(complete).toHaveBeenCalledWith(
+    h.database,
+    expect.stringMatching(/^threadplane:production:/u),
+    providerEmailId
+  );
+});
+
+test('unsafe attempt evidence quarantines a recipient without submitting', async () => {
+  const h = harness();
+
+  const result = await sendRecipientEmail(
+    h.database,
+    message,
+    productionPolicy(),
+    {
+      ...h.dependencies,
+      reserveProviderAttempt: vi
+        .fn()
+        .mockRejectedValue(new Error('Provider payload changed')),
+      completeProviderAttempt: vi.fn(),
+    }
+  );
+
+  expect(result).toEqual({
+    accepted: false,
+    reason: 'provider_outcome_unknown',
+  });
+  expect(h.send).not.toHaveBeenCalled();
+  expect(h.markProviderAcceptanceUnknown).toHaveBeenCalled();
+});
+
+test('known acceptance restores local evidence without another recipient submission', async () => {
+  const h = harness();
+  const complete = vi.fn().mockResolvedValue(undefined);
+
+  const result = await sendRecipientEmail(
+    h.database,
+    message,
+    productionPolicy(),
+    {
+      ...h.dependencies,
+      reserveProviderAttempt: vi.fn().mockResolvedValue(providerEmailId),
+      completeProviderAttempt: complete,
+    }
+  );
+
+  expect(result).toEqual({ accepted: true, providerEmailId });
+  expect(h.send).not.toHaveBeenCalled();
+  expect(h.recordProviderAcceptance).toHaveBeenCalledOnce();
+});
+
+test('an abort while persisting attempt evidence quarantines without submitting', async () => {
+  const h = harness();
+  const controller = new AbortController();
+  const reserve = vi.fn(async () => {
+    controller.abort(new Error('lease lost'));
+    return null;
+  });
+
+  const result = await sendRecipientEmail(
+    h.database,
+    { ...message, signal: controller.signal },
+    productionPolicy(),
+    {
+      ...h.dependencies,
+      reserveProviderAttempt: reserve,
+    }
+  );
+
+  expect(result).toEqual({
+    accepted: false,
+    reason: 'provider_outcome_unknown',
+  });
+  expect(h.send).not.toHaveBeenCalled();
+  expect(h.markProviderAcceptanceUnknown).toHaveBeenCalledOnce();
+});
+
+test('a reservation crossing the send window defers without submitting', async () => {
+  const h = harness();
+  let current = now;
+  const reserve = vi.fn(async () => {
+    current = new Date('2026-09-01T15:00:00Z');
+    return null;
+  });
+
+  const result = await sendRecipientEmail(
+    h.database,
+    message,
+    productionPolicy(),
+    {
+      ...h.dependencies,
+      now: () => current,
+      reserveProviderAttempt: reserve,
+    }
+  );
+
+  expect(result).toEqual({ accepted: false, reason: 'outside_send_window' });
+  expect(h.send).not.toHaveBeenCalled();
 });

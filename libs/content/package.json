@@ -1,0 +1,64 @@
+{
+  "name": "@threadplane/content",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Private content preparation with owned Markdown and JSON documents and A2UI surface accumulation.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "dependencies": {
+    "@cacheplane/json-stream": "0.1.1",
+    "@cacheplane/partial-markdown": "0.5.8"
+  },
+  "peerDependencies": {
+    "@threadplane/a2ui": "^0.3.2",
+    "@threadplane/core": "0.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@threadplane/a2ui": { "optional": true }
+  },
+  "files": [
+    "src/**/*.js",
+    "src/**/*.d.ts",
+    "src/**/*.d.ts.map",
+    "LICENSE.md",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./src/index.js",
+      "default": "./src/index.js"
+    },
+    "./markdown": {
+      "types": "./src/markdown/index.d.ts",
+      "import": "./src/markdown/index.js",
+      "default": "./src/markdown/index.js"
+    },
+    "./messages": {
+      "types": "./src/messages/index.d.ts",
+      "import": "./src/messages/index.js",
+      "default": "./src/messages/index.js"
+    },
+    "./json": {
+      "types": "./src/json/index.d.ts",
+      "import": "./src/json/index.js",
+      "default": "./src/json/index.js"
+    },
+    "./a2ui": {
+      "types": "./src/a2ui/index.d.ts",
+      "import": "./src/a2ui/index.js",
+      "default": "./src/a2ui/index.js"
+    },
+    "./render-state": {
+      "types": "./src/render-state/index.d.ts",
+      "import": "./src/render-state/index.js",
+      "default": "./src/render-state/index.js"
+    },
+    "./testing": {
+      "types": "./src/testing/index.d.ts",
+      "import": "./src/testing/index.js",
+      "default": "./src/testing/index.js"
+    }
+  }
+}

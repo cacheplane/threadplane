@@ -1,0 +1,39 @@
+{
+  "fixtures": [
+    {
+      "match": {
+        "userMessage": "What was the title of the supplied trip? Answer without calling tools.",
+        "hasToolResult": false
+      },
+      "response": {
+        "content": "The supplied trip was titled City break."
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Recap this supplied trip: City break; day 1 Museum and Park; day 2 Cafe. Note: Walk between stops. Use show_trip_summary once and finish."
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "show_trip_summary",
+            "arguments": {
+              "title": "City break",
+              "days": [
+                {
+                  "day": 1,
+                  "places": ["Museum", "Park"]
+                },
+                {
+                  "day": 2,
+                  "places": ["Cafe"]
+                }
+              ],
+              "note": "Walk between stops."
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

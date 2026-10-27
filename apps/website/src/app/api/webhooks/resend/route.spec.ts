@@ -2,7 +2,10 @@ import { describe, expect, it, vi } from 'vitest';
 
 // The website intentionally consumes the growth library through its internal boundary.
 // eslint-disable-next-line @nx/enforce-module-boundaries
-import type { SqlExecutor } from '@threadplane-internal/growth';
+import {
+  ResendWebhookPayloadError,
+  type SqlExecutor,
+} from '@threadplane-internal/growth';
 
 import { createResendWebhookRoute } from './route';
 
@@ -196,14 +199,41 @@ describe('/api/webhooks/resend', () => {
     expect(test.createDatabase).not.toHaveBeenCalled();
   });
 
-  it('closes the database when verified payload processing fails', async () => {
+  it('closes the database and returns 503 when verified payload processing fails', async () => {
     const test = harness();
     test.processVerifiedResendWebhook.mockRejectedValueOnce(
       new Error('bad schema')
     );
     const response = await test.POST(request() as never);
+    expect(response.status).toBe(503);
+    expect(test.database.close).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns 400 for a typed payload validation failure', async () => {
+    const test = harness();
+    test.processVerifiedResendWebhook.mockRejectedValueOnce(
+      new ResendWebhookPayloadError()
+    );
+    const response = await test.POST(request() as never);
     expect(response.status).toBe(400);
     expect(test.database.close).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not log database error details', async () => {
+    const log = vi.spyOn(console, 'info').mockImplementation(() => undefined);
+    try {
+      const test = harness();
+      test.processVerifiedResendWebhook.mockRejectedValueOnce(
+        new Error('private database credential')
+      );
+      const response = await test.POST(request() as never);
+      expect(response.status).toBe(503);
+      expect(JSON.stringify(log.mock.calls)).not.toContain(
+        'private database credential'
+      );
+    } finally {
+      log.mockRestore();
+    }
   });
 
   it('returns 503 only for a retryable tagged provider-ID attachment race', async () => {

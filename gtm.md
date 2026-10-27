@@ -12,7 +12,7 @@ Threadplane is the open-source thread-plane for agents, built for Angular teams.
 ## 2. Category
 
 - **Primary:** Threadplane
-- **Tagline (2026-09-06):** "The open-source thread-plane for agents." The description that follows it everywhere: "The open-source thread-plane for agents: chat, durable threads, persistence, human approvals, and generative UI for Angular, on LangGraph and AG-UI."
+- **Tagline (2026-09-18):** "The open-source thread-plane for Angular agents." The description that follows it everywhere: "The open-source thread-plane for agents: chat, durable threads, persistence, human approvals, and generative UI for Angular, on LangGraph and AG-UI."
 - **Secondary (only after "Agent UI"):** Angular Agent UI Framework
 - **Do not use:** "Threadplane" (ambiguous with backend runtimes and coding agents), "Enterprise Angular agent framework" (reads sales-first).
 

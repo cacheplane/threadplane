@@ -1,0 +1,34 @@
+{
+  "name": "@threadplane/core",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Private dependency-free agent contracts, plain snapshots, and authored function-tool types.",
+  "license": "MIT",
+  "type": "module",
+  "types": "./src/index.d.ts",
+  "sideEffects": false,
+  "files": [
+    "src/**/*.js",
+    "src/**/*.d.ts",
+    "src/**/*.d.ts.map",
+    "LICENSE.md",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./src/index.js",
+      "default": "./src/index.js"
+    },
+    "./tools": {
+      "types": "./src/tools/index.d.ts",
+      "import": "./src/tools/index.js",
+      "default": "./src/tools/index.js"
+    },
+    "./testing": {
+      "types": "./src/testing/index.d.ts",
+      "import": "./src/testing/index.js",
+      "default": "./src/testing/index.js"
+    }
+  }
+}

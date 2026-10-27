@@ -17,6 +17,6 @@ import {
 
 There is no root JavaScript entry point for `@threadplane/middleware`; import from the `/langgraph` subpath. The Python package exposes equivalent snake_case helpers from `threadplane.middleware.langgraph`.
 
-The routing helpers in the same entry point include `clientToolsChannel()`, `clientToolsRouter()`, `clientToolSpecs()`, `clientToolNames()`, `hasClientToolCall()`, `hasServerToolCall()`, `routeAfterAgent()`, and `lastMessage()`. The entry point also exports a client-tool execution store and the result-deduplication helpers that use it; [Introduction](/docs/middleware/getting-started/introduction) lists both surfaces in full.
+The routing helpers in the same entry point include `clientToolsChannel()`, `clientToolsRouter()`, `clientToolSpecs()`, `clientToolNames()`, `hasClientToolCall()`, `hasServerToolCall()`, `routeAfterAgent()`, and `lastMessage()`. The entry point also exports client-tool execution stores; [Introduction](/docs/middleware/getting-started/introduction) lists the supported surface and explains the breaking removal of the receipt helpers.
 
 {/* Auto-rendered from api-docs.json — see page component */}

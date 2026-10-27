@@ -1,6 +1,9 @@
 // libs/chat/src/lib/styles/chat-tokens.spec.ts
+import { readFileSync, readdirSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { ROOT_TOKEN_STYLES } from './chat-tokens';
+import { REDUCED_MOTION_LOOP_SELECTORS, ROOT_TOKEN_STYLES } from './chat-tokens';
 
 describe('ROOT_TOKEN_STYLES — prefers-reduced-motion', () => {
   it('includes a prefers-reduced-motion media block', () => {
@@ -27,17 +30,107 @@ describe('ROOT_TOKEN_STYLES — prefers-reduced-motion', () => {
     expect(ROOT_TOKEN_STYLES).toContain('scroll-behavior: auto');
   });
 
+  it.each([...REDUCED_MOTION_LOOP_SELECTORS])(
+    'stops the looping animation on %s',
+    (selector) => {
+      const block = reducedMotionLoopBlock();
+      expect(block.selectors).toContain(selector);
+      expect(block.body).toMatch(/animation:\s*none\s*!important/);
+    },
+  );
+
+  it('covers every infinite animation the chat components render', () => {
+    const targets = loopingAnimationTargets();
+    // Guard the scan itself: a broken walk would make the check vacuous.
+    expect(targets.map(({ target }) => target)).toEqual(
+      expect.arrayContaining(['.chat-typing__dot', '.chat-message__caret', '.chat-reasoning__pulse']),
+    );
+    const uncovered = targets.filter(({ target }) =>
+      !REDUCED_MOTION_LOOP_SELECTORS.some((selector) => selector.endsWith(target)),
+    );
+    expect(uncovered).toEqual([]);
+  });
+
+  it('names only classes that exist in component styles', () => {
+    const sources = componentStyleSources().map(({ source }) => source).join('\n');
+    const missing = REDUCED_MOTION_LOOP_SELECTORS.flatMap((selector) =>
+      [...selector.matchAll(/\.([A-Za-z][\w-]*)/g)].map((match) => match[1]),
+    ).filter((className) => !new RegExp(`\\.${className}(?![\\w-])`).test(sources));
+    expect(missing).toEqual([]);
+  });
+
   it.each([
-    '.tcc__pill[data-status="running"] svg',
     '.tplane-chat-typing-dot',
     '.tplane-chat-caret',
     '.tplane-chat-welcome__pulse',
-    '.chat-genui-skeleton',
-    '.chat-debug__pill--active',
-  ])('includes static-fallback override for %s', (selector) => {
-    expect(ROOT_TOKEN_STYLES).toContain(selector);
+  ])('does not target the nonexistent class %s', (selector) => {
+    expect(ROOT_TOKEN_STYLES).not.toContain(selector);
   });
 });
+
+const LIB_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const DEBUG_ROOT = join(LIB_ROOT, '..', '..', 'debug', 'src');
+
+/** Every non-spec source file in the chat lib and its debug entry point. */
+function componentStyleSources(): { file: string; source: string }[] {
+  const out: { file: string; source: string }[] = [];
+  const walk = (dir: string): void => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) walk(path);
+      else if (
+        entry.name.endsWith('.ts') &&
+        !entry.name.endsWith('.spec.ts') &&
+        entry.name !== 'chat-tokens.ts'
+      ) {
+        out.push({ file: path, source: readFileSync(path, 'utf8') });
+      }
+    }
+  };
+  walk(LIB_ROOT);
+  walk(DEBUG_ROOT);
+  return out;
+}
+
+/**
+ * Finds each CSS rule whose `animation` loops forever and returns the
+ * element it animates: the rule's selector with any `:host(...)` prefix
+ * removed (Angular rewrites that to the host attribute, which a global
+ * stylesheet cannot name).
+ */
+function loopingAnimationTargets(): { file: string; target: string }[] {
+  const out: { file: string; target: string }[] = [];
+  for (const { file, source } of componentStyleSources()) {
+    for (const match of source.matchAll(/animation:[^;]*\binfinite\b/g)) {
+      const open = source.lastIndexOf('{', match.index);
+      const start = Math.max(
+        source.lastIndexOf('}', open),
+        source.lastIndexOf('`', open),
+        source.lastIndexOf(';', open),
+      );
+      const selectorList = source.slice(start + 1, open);
+      for (const raw of selectorList.split(',')) {
+        const target = raw.trim().replace(/^:host(\([^)]*\))?\s*/, '');
+        out.push({ file, target });
+      }
+    }
+  }
+  return out;
+}
+
+function reducedMotionLoopBlock(): { selectors: string[]; body: string } {
+  const media = ROOT_TOKEN_STYLES.slice(
+    ROOT_TOKEN_STYLES.indexOf('@media (prefers-reduced-motion: reduce)'),
+  );
+  const first = REDUCED_MOTION_LOOP_SELECTORS[0];
+  const start = media.indexOf(first);
+  const open = media.indexOf('{', start);
+  const close = media.indexOf('}', open);
+  return {
+    selectors: media.slice(start, open).split(',').map((selector) => selector.trim()),
+    body: media.slice(open + 1, close),
+  };
+}
 
 describe('ROOT_TOKEN_STYLES — edge-claim primitive', () => {
   it.each([
@@ -139,6 +232,23 @@ describe('ROOT_TOKEN_STYLES — citation tokens', () => {
     ['memory', '#67508f', '#f3effb'],
     ['generic', '#526071', '#f4f6f8'],
   ])('keeps light %s citation type text at AA contrast', (_type, fg, bg) => {
+    expect(contrastRatio(fg, bg)).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+describe('ROOT_TOKEN_STYLES — success colors', () => {
+  it('keeps the icon success color and adds a separate text success color', () => {
+    expect(ROOT_TOKEN_STYLES).toContain('--tplane-chat-success: #16a34a;');
+    expect(ROOT_TOKEN_STYLES).toContain('--tplane-chat-success-text: #15803d;');
+    expect(ROOT_TOKEN_STYLES).toContain('--tplane-chat-success-text: #4ade80;');
+  });
+
+  it.each([
+    ['light surface', '#15803d', '#ffffff'],
+    ['light surface-alt', '#15803d', '#fbfbfb'],
+    ['dark surface', '#4ade80', '#1c1c1c'],
+    ['dark surface-alt', '#4ade80', '#2c2c2c'],
+  ])('success text meets AA contrast on the %s', (_surface, fg, bg) => {
     expect(contrastRatio(fg, bg)).toBeGreaterThanOrEqual(4.5);
   });
 });

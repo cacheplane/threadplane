@@ -8,6 +8,7 @@ including keyboard handling, disabled state, and custom placeholder.
 import os
 from pathlib import Path
 from langgraph.graph import StateGraph, MessagesState, END
+from langgraph.constants import TAG_NOSTREAM
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph_sdk import get_client
@@ -48,7 +49,7 @@ async def generate_title(state: MessagesState, config) -> dict:
             return {}
         if first_user.content.lstrip().startswith("{"):
             return {}
-        llm = ChatOpenAI(model=_TITLE_MODEL, temperature=0)
+        llm = ChatOpenAI(model=_TITLE_MODEL, temperature=0, tags=[TAG_NOSTREAM])
         response = await llm.ainvoke([
             SystemMessage(content=_TITLE_PROMPT),
             HumanMessage(content=first_user.content),

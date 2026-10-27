@@ -58,7 +58,7 @@ export interface ProxyConfig {
   readonly telemetryIngestUrl?: string;
 }
 
-const DEFAULT_BACKEND_URL = 'https://cockpit-dev-219a15942c545a00a03a9a41905d7fc2.us.langgraph.app';
+const DEFAULT_BACKEND_URL = 'https://cockpit-dev-free-6957db75280055dcbbf2a4916c04b66f.us.langgraph.app';
 
 const STREAM_RUN_PATH_RE = /^\/threads\/[^/]+\/runs\/stream$/;
 
@@ -209,6 +209,13 @@ export function createProxyHandler(config: ProxyConfig = {}): (req: VercelReques
       res.status(response.status);
 
       if (contentType.includes('text/event-stream')) {
+        // The SDK captures physical run identity from this upstream header.
+        // Keep it available before streaming without forwarding other headers.
+        const location = response.headers.get('content-location');
+        if (location) {
+          res.setHeader('content-location', location);
+          res.setHeader('access-control-expose-headers', 'content-location');
+        }
         const reader = response.body?.getReader();
         if (reader) {
           const decoder = new TextDecoder();

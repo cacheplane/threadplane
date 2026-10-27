@@ -679,7 +679,7 @@ Copy constraints:
 - At most one question and at most one useful link.
 - No banner, button, HTML layout, tracking pixel, open tracking, or click rewriting.
 - Never say “I saw you…” based on telemetry.
-- The only scheduling link allowed is Brian’s Google Calendar appointment-schedule booking page (`FOUNDER_BOOKING_URL` in the campaign templates); every other calendar host or path is rejected.
+- The only scheduling link allowed is Brian’s Google Calendar appointment-schedule booking page, linked through the first-party `https://threadplane.ai/call` redirect so URLs match the sending domain (`FOUNDER_BOOKING_URL` in the campaign templates); every other calendar host or path is rejected.
 - From and Reply-To are Brian at Threadplane <brian@threadplane.ai>.
 - BCC Brian on every recipient-facing email that may begin a conversation. The email carries X-Threadplane-Job-ID so the Google poller can register the BCC seed’s actual RFC Message-ID; seed copies are never treated as recipient replies.
 

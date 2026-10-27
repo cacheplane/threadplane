@@ -589,6 +589,25 @@ describe('FetchStreamTransport', () => {
     ]);
   });
 
+  it('keeps protocol routing authoritative over colliding application fields', async () => {
+    const root = { type: 'domain', namespace: ['application'], count: 1 };
+    const child = { type: 'values', namespace: [], count: 2 };
+    mocks.runsStream.mockReturnValue(
+      (async function* () {
+        yield { event: 'values', data: root };
+        yield { event: 'values|child', data: child };
+      })(),
+    );
+    const transport = new FetchStreamTransport('http://example.test');
+    const events = await collect(
+      transport.stream('a', 't', {}, new AbortController().signal),
+    );
+    expect(events).toEqual([
+      { ...root, type: 'values', namespace: undefined, data: root },
+      { ...child, type: 'values|child', namespace: ['child'], data: child },
+    ]);
+  });
+
   it('normalizes message tuple events without dropping metadata', async () => {
     const message = { id: 'ai-1', type: 'ai', content: 'pong' };
     const metadata = { langgraph_node: 'model', run_id: 'run-1' };
@@ -767,5 +786,25 @@ describe('FetchStreamTransport', () => {
 
     expect(mocks.threadsGetHistory).toHaveBeenCalledWith('thread-1', { signal });
     expect(result).toBe(history);
+  });
+});
+
+
+describe('SDK iterator cleanup', () => {
+  it.each([false, true])('preserves the primary error when cleanup fails (protected=%s)', async (protectedErrors) => {
+    const primary = new Error('primary failure');
+    const close = vi.fn().mockRejectedValue(new Error('cleanup failure'));
+    mocks.runsStream.mockReturnValue({
+      [Symbol.asyncIterator]: () => ({ next: async () => { throw primary; }, return: close }),
+    });
+    const transport = new FetchStreamTransport('https://runtime.example', undefined, protectedErrors ? { defaultHeaders: {} } : undefined);
+    const error = await collect(transport.stream('assistant', 'thread', {}, new AbortController().signal)).catch((reason: unknown) => reason);
+    expect(close).toHaveBeenCalledTimes(1);
+    if (protectedErrors) {
+      expect(error).toMatchObject({ name: 'LangGraphRequestError', message: 'The LangGraph request failed.' });
+      expect(error).not.toHaveProperty('cause');
+    } else {
+      expect(error).toBe(primary);
+    }
   });
 });

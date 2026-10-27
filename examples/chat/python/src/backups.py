@@ -56,7 +56,7 @@ def seed_backups() -> list[Backup]:
 def inventory_of(state: dict) -> list[Backup]:
     """The thread's inventory, or the seed when the thread has none yet."""
     rows = state.get("backups") if isinstance(state, dict) else None
-    return list(rows) if rows else seed_backups()
+    return seed_backups() if rows is None else list(rows)
 
 
 def age_days(backup: Backup) -> int:
@@ -95,7 +95,10 @@ def list_backups(
     )
 
 
-_APPROVAL_WORDS = ("approve", "yes", "ok", "okay", "confirm", "proceed", "go ahead")
+_APPROVAL_WORDS = (
+    "approved", "approve", "yes", "ok", "okay", "confirm", "proceed", "go ahead",
+    "approved — go ahead",
+)
 
 
 def is_approval(response: object) -> bool:
@@ -103,10 +106,6 @@ def is_approval(response: object) -> bool:
     approval ("approve the prod ones but keep staging") is NOT a yes — the
     model gets the words back and re-plans instead."""
     text = str(response or "").strip().lower()
-    if not text:
-        return False
-    if text.startswith(("approve", "approved")):
-        return True
     return text in _APPROVAL_WORDS
 
 

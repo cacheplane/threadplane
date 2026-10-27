@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "cli": { "analytics": false, "packageManager": "npm" },
+  "projects": {
+    "native-conversation-angular": {
+      "projectType": "application",
+      "root": "",
+      "sourceRoot": "src",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:application",
+          "defaultConfiguration": "production",
+          "options": {
+            "browser": "src/main.ts",
+            "index": "src/index.html",
+            "tsConfig": "tsconfig.app.json",
+            "outputPath": "dist",
+            "styles": ["src/styles.css"],
+            "assets": [
+              { "glob": "**/*", "input": "public", "output": "assets" }
+            ],
+            "statsJson": true
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "outputHashing": "all",
+              "sourceMap": false
+            },
+            "development": { "optimization": false, "sourceMap": true }
+          }
+        },
+        "serve": {
+          "builder": "@angular/build:dev-server",
+          "defaultConfiguration": "development",
+          "configurations": {
+            "development": {
+              "buildTarget": "native-conversation-angular:build:development"
+            }
+          }
+        }
+      }
+    }
+  }
+}

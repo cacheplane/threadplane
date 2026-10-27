@@ -1,5 +1,5 @@
 //
-// Wire-level resume tests against the REAL @ag-ui/client HttpAgent (0.0.59).
+// Wire-level resume tests against the REAL @ag-ui/client HttpAgent (1.0.1).
 //
 // The stub-based specs in to-agent.resume.spec.ts assert what the adapter
 // hands to runAgent(); these specs assert what actually leaves over HTTP —
@@ -26,6 +26,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { HttpAgent } from '@ag-ui/client';
+import { PROTOCOL_VERSION } from '@ag-ui/core';
 import { toAgent } from './to-agent';
 
 const FIXTURES_DIR = join(__dirname, '../../fixtures/runtime-transcripts');
@@ -37,7 +38,7 @@ const FIXTURES_DIR = join(__dirname, '../../fixtures/runtime-transcripts');
  *  The events' TOP-LEVEL `threadId`/`runId` are re-stamped with the ids of
  *  the request being answered — exactly what the real servers do (they echo
  *  the ids the client sent; the spike drivers picked their own run ids,
- *  while the 0.0.59 client mints a uuid per run). Payloads are otherwise
+ *  while the 1.0.1 client mints a uuid per run). Payloads are otherwise
  *  verbatim from the capture. */
 function sseResponseFromFixture(name: string, request: Record<string, unknown>): Response {
   const raw = readFileSync(join(FIXTURES_DIR, name), 'utf8');
@@ -109,7 +110,7 @@ function wireHarness(
   return { agent: toAgent(source, options), source, bodies: () => bodies };
 }
 
-describe('AWS Strands resume over the wire (0.0.59 top-level resume array)', () => {
+describe('AWS Strands resume over the wire (1.0.1 top-level resume array)', () => {
   it('serializes the measured working request', async () => {
     const { agent, source, bodies } = wireHarness('th-int-555800', [
       (request) => sseResponseFromFixture('strands-interrupt.sse', request),
@@ -118,7 +119,7 @@ describe('AWS Strands resume over the wire (0.0.59 top-level resume array)', () 
 
     await agent.submit({ message: 'Schedule a meeting with Dana about the Q3 roadmap.' });
     expect(agent.interrupt!()).toBeDefined();
-    // 0.0.59 client-side ledger recorded the RUN_FINISHED interrupt outcome.
+    // 1.0.1 client-side ledger recorded the RUN_FINISHED interrupt outcome.
     expect(source.pendingInterrupts).toHaveLength(1);
 
     await agent.submit({ resume: { chosen_label: 'Tuesday 10:00' } });
@@ -130,10 +131,13 @@ describe('AWS Strands resume over the wire (0.0.59 top-level resume array)', () 
 
     // Byte-equality on everything except the documented volatile fields.
     const { runId: measuredRunId, messages: measuredMessages, ...measuredRest } = measured;
-    const { runId, messages, ...rest } = body as {
-      runId: unknown; messages: Array<Record<string, unknown>>;
+    const { runId, messages, protocolVersion, ...rest } = body as {
+      runId: unknown; messages: Array<Record<string, unknown>>; protocolVersion: unknown;
     } & Record<string, unknown>;
     expect(rest).toEqual(measuredRest);
+    // protocolVersion: the 1.0 client declares itself in-band; the measured
+    // 0.x capture has no version (a pre-1.0 peer).
+    expect(protocolVersion).toBe(PROTOCOL_VERSION);
     // runId: client-minted uuid per run; the spike driver sent 'run-2'.
     expect(typeof runId).toBe('string');
     expect(runId).not.toBe(measuredRunId);
@@ -198,12 +202,15 @@ describe('Microsoft Agent Framework resume over the wire', () => {
     );
     expect(body['forwardedProps']).toEqual({});
     expect(body['threadId']).toBe(measured['threadId']);
+    // The 1.0 client declares itself in-band; the measured 0.x capture has no
+    // version, which the spec's versioning rules treat as a pre-1.0 peer.
+    expect(body['protocolVersion']).toBe(PROTOCOL_VERSION);
   });
 });
 
 describe('Mastra resume over the wire (forwardedProps shape preserved)', () => {
   // Mastra emits BOTH the CUSTOM on_interrupt convention (first) and the
-  // RUN_FINISHED interrupt outcome — so on 0.0.59 the client ledger records
+  // RUN_FINISHED interrupt outcome — so on 1.0.1 the client ledger records
   // a pending interrupt even though the measured working resume rides
   // forwardedProps.command with NO top-level resume. The adapter must clear
   // the ledger and reproduce the 0.0.52-measured request byte-for-byte.

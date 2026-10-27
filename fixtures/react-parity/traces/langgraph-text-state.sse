@@ -1,0 +1,12 @@
+event: metadata
+data: {"run_id":"run-parity","attempt":1}
+
+event: messages
+data: [{"type":"AIMessageChunk","id":"message-parity","content":"Hello "},{"langgraph_node":"assistant"}]
+
+event: messages
+data: [{"type":"AIMessageChunk","id":"message-parity","content":"🌍."},{"langgraph_node":"assistant"}]
+
+event: values
+data: {"messages":[{"type":"ai","id":"message-parity","content":"Hello 🌍."}],"stage":"complete"}
+

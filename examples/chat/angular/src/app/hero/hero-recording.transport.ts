@@ -58,8 +58,8 @@ export class HeroRecordingTransport implements AgentTransport {
   getHistory(threadId: string, signal: AbortSignal): Promise<ThreadState[]> {
     return this.inner.getHistory ? this.inner.getHistory(threadId, signal) : Promise.resolve([]);
   }
-  updateState(threadId: string, values: Record<string, unknown>, signal: AbortSignal, options?: { asNode?: string }): Promise<void> {
-    return this.inner.updateState ? this.inner.updateState(threadId, values, signal, options) : Promise.resolve();
+  updateState(...args: Parameters<NonNullable<AgentTransport['updateState']>>): ReturnType<NonNullable<AgentTransport['updateState']>> {
+    return this.inner.updateState ? this.inner.updateState(...args) : Promise.resolve();
   }
   private publish(): void { if (typeof window !== 'undefined') window.__heroRecording = this.recording(); }
 }

@@ -3,8 +3,18 @@ name: CI
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      expectedMain:
+        description: Exact current main commit SHA to verify and promote
+        required: true
+        type: string
+      confirm_production:
+        description: Confirm full main verification and the existing production deployment path
+        required: true
+        type: boolean
+        default: false
   pull_request:
-    branches: [main]
   # A merge queue runs each candidate on a gh-readonly-queue/* ref. Every
   # verification job already falls through to the ci-scope outputs when the
   # event is not `push`, so they scope themselves here exactly as they do on a
@@ -23,11 +33,14 @@ permissions:
 env:
   DO_NOT_TRACK: '1'
 
+# Keep the locked Playwright native recipes and canonical Python 3.12 fixtures
+# on their supported runner baseline; ubuntu-latest may move ahead of both.
 jobs:
   ci-scope:
     name: CI scope
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
+      main_run: ${{ steps.scope.outputs.main_run }}
       library: ${{ steps.scope.outputs.library }}
       angular_compatibility: ${{ steps.scope.outputs.angular_compatibility }}
       website: ${{ steps.scope.outputs.website }}
@@ -43,9 +56,39 @@ jobs:
       growth_lifecycle: ${{ steps.scope.outputs.growth_lifecycle }}
       growth_research: ${{ steps.scope.outputs.growth_research }}
     steps:
+      - name: Validate manual main recovery
+        if: github.event_name == 'workflow_dispatch'
+        timeout-minutes: 1
+        env:
+          EXPECTED_MAIN: ${{ inputs.expectedMain }}
+          CONFIRM_PRODUCTION: ${{ inputs.confirm_production }}
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF" != "refs/heads/main" || ! "$EXPECTED_MAIN" =~ ^[0-9a-f]{40}$ || "$EXPECTED_MAIN" != "$GITHUB_SHA" || "$CONFIRM_PRODUCTION" != "true" ]]; then
+            echo "::error::Manual recovery requires the exact current main SHA and explicit production confirmation."
+            exit 1
+          fi
+          # One bounded public read before checkout; untrusted inputs stay in env.
+          export GIT_TERMINAL_PROMPT=0
+          remote="$(git ls-remote --exit-code "https://github.com/${GITHUB_REPOSITORY}.git" refs/heads/main && printf '.')"
+          remote="${remote%.}"
+          remote="${remote%$'\n'}"
+          main_record_pattern=$'^([0-9a-f]{40})\trefs/heads/main$'
+          if [[ ! "$remote" =~ $main_record_pattern || "${BASH_REMATCH[1]}" != "$GITHUB_SHA" ]]; then
+            echo "::error::Live main is missing, malformed, ambiguous, or has moved; refusing recovery."
+            exit 1
+          fi
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
+      - name: Validate checked-out commit
+        run: |
+          set -euo pipefail
+          git cat-file -e "$GITHUB_SHA^{commit}"
+          if [ "$(git rev-parse HEAD)" != "$GITHUB_SHA" ]; then
+            echo "::error::Checkout does not match the event-pinned commit."
+            exit 1
+          fi
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: 22
@@ -58,16 +101,19 @@ jobs:
       # classifier walk.
       - run: npm ci
       - name: Test CI scope classifier
-        run: node --test scripts/ci-scope.spec.mjs scripts/cockpit-matrix.spec.mjs scripts/cockpit-ports.spec.mjs scripts/cockpit-runtime-bridge-coverage.spec.mjs
+        run: node --test scripts/configure-ci-apt.spec.mjs scripts/ci-scope.spec.mjs scripts/cockpit-matrix.spec.mjs scripts/cockpit-frontend-matrix.spec.mjs scripts/cockpit-ports.spec.mjs scripts/cockpit-runtime-bridge-coverage.spec.mjs scripts/react-cockpit/ag-ui-client-tools-configuration.spec.mjs scripts/react-cockpit/ag-ui-client-tools-preparation.spec.mjs scripts/react-cockpit/runtimes-microsoft-agent-framework-configuration.spec.mjs scripts/react-cockpit/prepare-native-maf-fixture.spec.mjs scripts/react-cockpit/runtimes-aws-strands-configuration.spec.mjs scripts/react-cockpit/prepare-native-strands-fixture.spec.mjs scripts/react-cockpit/chat-theming-configuration.spec.mjs
+      - name: Test Debug static configuration without Python workers
+        run: node --test --test-name-pattern='^debug ' scripts/react-cockpit/chat-debug-configuration.spec.mjs
       - name: Detect changed CI surfaces
         id: scope
         run: |
           set -euo pipefail
 
-          if [ "${{ github.event_name }}" = "push" ]; then
+          if [ "${{ github.event_name }}" = "push" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             node scripts/ci-scope.mjs \
               --event push \
               --output "$GITHUB_OUTPUT"
+            echo "main_run=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -100,7 +146,7 @@ jobs:
     name: Scripts — generator / proxy vitest suites
     needs: ci-scope
     if: github.event_name == 'push' || needs.ci-scope.outputs.scripts_tests == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
@@ -119,9 +165,11 @@ jobs:
     name: Library — lint / test / build
     needs: ci-scope
     if: github.event_name == 'push' || needs.ci-scope.outputs.library == 'true' || needs.ci-scope.outputs.angular_compatibility == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
-      LIBS: chat,langgraph,ag-ui,render,a2ui,telemetry
+      LIBS: chat,langgraph,ag-ui,render,a2ui,telemetry,middleware
+      FOUNDATIONS: core,content,angular,react
+      THREADPLANE_AG_UI_FIXTURE_ENVIRONMENT: /tmp/threadplane-agui-client-tools-native-fixture-env
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
@@ -129,15 +177,179 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Verify native conversation tooling
+        run: npx nx run native-conversation-react:tooling-test
+      - name: Verify native React copy behavior
+        run: npx nx run native-conversation-react:copy-test
       - run: npx nx run-many -t lint --projects=$LIBS
+      - name: React migration baseline and boundaries
+        run: |
+          node --test scripts/react-parity/*.spec.mjs fixtures/react-parity/traces.spec.mjs
+          node scripts/react-parity/inventory.mjs --check
+          node scripts/react-parity/verify-boundaries.mjs
+      - name: Build and validate private React foundations
+        run: npx nx run-many -t lint test type-tests build --projects=$FOUNDATIONS --parallel=2
+      - name: Verify isolated backend runtimes and types
+        run: |
+          npx nx run langgraph:runtime-quality
+          npx nx run langgraph:runtime-type-tests
+          npx nx run langgraph:type-tests
+          npx nx run ag-ui:runtime-quality
+          npx nx run ag-ui:runtime-type-tests
+          npx nx run ag-ui:type-tests
+      - name: Set up pinned Python for native approval proof
+        uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57
+        with:
+          python-version: '3.12'
+          # Isolated provider children do not populate the action's cache.
+          enable-cache: false
+      - name: Verify native approval with canonical provider
+        timeout-minutes: 10
+        run: npx nx run native-conversation-react:provider-test
+      - name: Verify native trip summary with canonical provider
+        timeout-minutes: 10
+        run: npx nx run native-conversation-react:summary-provider-test
+      - name: Verify native owner with pinned Mastra service
+        run: |
+          npm ci --prefix deployments/ag-ui-mastra --no-audit --no-fund
+          npm test --prefix deployments/ag-ui-mastra
+          node node_modules/typescript/bin/tsc -p scripts/react-parity/tsconfig.native-mastra.json
+          node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.base.json scripts/react-parity/verify-native-mastra.ts
       - run: npx nx test langgraph --coverage --maxWorkers=2 --reporter=default
-      - run: npx nx run-many -t test --projects=chat,ag-ui,render,a2ui,telemetry --coverage --parallel=1 --maxWorkers=2
+      - name: Prepare pinned PostgreSQL integration image
+        run: |
+          postgres_image='public.ecr.aws/docker/library/postgres@sha256:ca0bd484cb98bf4b24eb1010e73fb3fcbd6714d240fbc1a10eea5b7dbecb641d'
+          if ! docker pull "$postgres_image"; then
+            postgres_image='docker.io/library/postgres@sha256:ca0bd484cb98bf4b24eb1010e73fb3fcbd6714d240fbc1a10eea5b7dbecb641d'
+            docker pull "$postgres_image"
+          fi
+          docker tag "$postgres_image" postgres:16
+      - name: Verify durable tool ownership and PostgreSQL migration
+        run: node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.base.json scripts/react-parity/verify-tool-claims.ts
+      - run: npx nx run-many -t test --projects=chat,ag-ui,render,a2ui,telemetry,middleware --coverage --parallel=1 --maxWorkers=2
       - run: npx nx run-many -t build --projects=$LIBS --configuration=production
+      - name: Verify canonical A2UI native fixtures
+        timeout-minutes: 15
+        env:
+          A2UI_FIXTURE_ENV: ${{ runner.temp }}/threadplane-a2ui-environment
+          A2UI_FIXTURE_CACHE: ${{ runner.temp }}/threadplane-a2ui-cache
+        run: |
+          set -euo pipefail
+          uv_path="$(command -v uv)"
+          python_path="$("$uv_path" python find --no-project --no-config --no-python-downloads 3.12)"
+          node_path="$(command -v node)"
+          fixture_home="$RUNNER_TEMP/threadplane-a2ui-home"
+          fixture_path="$(dirname "$node_path"):$(dirname "$uv_path"):/usr/bin:/bin"
+          mkdir -p "$fixture_home" "$A2UI_FIXTURE_CACHE"
+          env -i HOME="$fixture_home" PATH="$fixture_path" LANG=C.UTF-8 \
+            UV_PROJECT_ENVIRONMENT="$A2UI_FIXTURE_ENV" UV_CACHE_DIR="$A2UI_FIXTURE_CACHE" \
+            PYTHONDONTWRITEBYTECODE=1 LANGSMITH_TRACING=false LANGCHAIN_TRACING_V2=false \
+            "$uv_path" run --frozen --python "$python_path" --no-env-file --no-config --no-python-downloads \
+            --project cockpit/chat/a2ui/python python -E -B -c 'import langgraph'
+          env -i HOME="$fixture_home" PATH="$fixture_path" LANG=C.UTF-8 \
+            PYTHONDONTWRITEBYTECODE=1 LANGSMITH_TRACING=false LANGCHAIN_TRACING_V2=false \
+            "$A2UI_FIXTURE_ENV/bin/python" -E -B -m unittest discover -s cockpit/chat/a2ui/python/tests -p test_booking_form.py
+          env -i HOME="$fixture_home" PATH="$fixture_path" LANG=C.UTF-8 \
+            A2UI_FIXTURE_UV="$uv_path" A2UI_FIXTURE_PYTHON="$python_path" \
+            A2UI_FIXTURE_ENV="$A2UI_FIXTURE_ENV" A2UI_FIXTURE_CACHE="$A2UI_FIXTURE_CACHE" \
+            PYTHONDONTWRITEBYTECODE=1 LANGSMITH_TRACING=false LANGCHAIN_TRACING_V2=false \
+            "$node_path" --test --test-concurrency=1 scripts/react-cockpit/chat-a2ui-fixture.spec.mjs scripts/react-cockpit/chat-a2ui-configuration.spec.mjs scripts/react-cockpit/chat-a2ui-host.spec.mjs scripts/react-cockpit/chat-a2ui-readiness.spec.mjs
+      - name: Configure bounded Ubuntu package downloads
+        run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
+      - name: Install Chromium for packed runtime consumers
+        timeout-minutes: 10
+        run: npx playwright install --with-deps chromium
+      - name: Verify native conversation example
+        run: |
+          npx nx e2e native-conversation-react
+          node examples/chat/native/tooling/verify.mjs
+          npx nx e2e native-conversation-angular
+          node examples/chat/native/tooling/verify.mjs --framework=angular
+      - name: Verify native same-document session bindings
+        run: node scripts/react-parity/review-native-ag-ui.mjs --verify
+      - name: Verify real LangGraph candidate package
+        run: node scripts/react-parity/verify-langgraph-candidate.mjs
+      - name: Prepare canonical AG-UI client-tools fixture
+        run: UV_PYTHON=3.12 UV_PROJECT_ENVIRONMENT="$THREADPLANE_AG_UI_FIXTURE_ENVIRONMENT" uv sync --frozen --no-install-project --project cockpit/ag-ui/client-tools/python
+      - name: Verify canonical AG-UI client-tools fixtures
+        run: node --test scripts/react-parity/ag-ui-candidate-package.spec.mjs fixtures/react-parity/native-ag-ui-client-tools/server.spec.mjs
+      - name: Verify real AG-UI candidate package
+        run: node scripts/react-parity/verify-ag-ui-candidate.mjs
+      - name: Verify installed native AG-UI A2UI
+        timeout-minutes: 15
+        env:
+          AG_UI_A2UI_ROOT: ${{ runner.temp }}/threadplane-agui-a2ui
+        run: |
+          set -euo pipefail
+          uv_path="$(command -v uv)"
+          node_path="$(command -v node)"
+          python_bin="$(command -v python3.12)"
+          fixture_path="$(dirname "$node_path"):$(dirname "$uv_path"):$(dirname "$python_bin"):/usr/bin:/bin"
+          fixture_environment="$AG_UI_A2UI_ROOT/environment"
+          fixture_home="$AG_UI_A2UI_ROOT/home"
+          fixture_cache="$AG_UI_A2UI_ROOT/cache"
+          fixture_tmp="$AG_UI_A2UI_ROOT/tmp"
+          mkdir "$AG_UI_A2UI_ROOT"
+          mkdir "$fixture_home" "$fixture_cache" "$fixture_tmp"
+          : > "$fixture_home/npm-user"
+          : > "$fixture_home/npm-global"
+          python_path="$(
+            env -i HOME="$fixture_home" PATH="$fixture_path" TMPDIR="$fixture_tmp" LANG=C.UTF-8 \
+              UV_CACHE_DIR="$fixture_cache/uv" \
+              "$uv_path" python find --no-project --no-config --no-python-downloads 3.12
+          )"
+          env -i HOME="$fixture_home" PATH="$fixture_path" TMPDIR="$fixture_tmp" LANG=C.UTF-8 \
+            UV_PROJECT_ENVIRONMENT="$fixture_environment" UV_CACHE_DIR="$fixture_cache/uv" \
+            PYTHONDONTWRITEBYTECODE=1 LANGSMITH_TRACING=false LANGCHAIN_TRACING_V2=false \
+            "$uv_path" sync --frozen --no-install-project --no-config --no-python-downloads \
+            --python "$python_path" --project cockpit/ag-ui/a2ui/python
+          env -i HOME="$fixture_home" PATH="$fixture_path" TMPDIR="$fixture_tmp" LANG=C.UTF-8 \
+            NX_LOAD_DOT_ENV_FILES=false \
+            "$node_path" --test fixtures/react-parity/native-ag-ui-a2ui/server.spec.mjs
+          env -i HOME="$fixture_home" PATH="$fixture_path" TMPDIR="$fixture_tmp" LANG=C.UTF-8 \
+            NX_LOAD_DOT_ENV_FILES=false npm_config_cache="$fixture_cache/npm" \
+            npm_config_userconfig="$fixture_home/npm-user" npm_config_globalconfig="$fixture_home/npm-global" \
+            PYTHONDONTWRITEBYTECODE=1 LANGSMITH_TRACING=false LANGCHAIN_TRACING_V2=false \
+            "$node_path" scripts/react-parity/verify-ag-ui-a2ui.mjs \
+            --retain "$AG_UI_A2UI_ROOT/proof" --python "$fixture_environment/bin/python" \
+            --environment "$fixture_environment" --home "$fixture_home" --tmpdir "$fixture_tmp"
+      - name: Upload native AG-UI A2UI proof
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: threadplane-native-agui-a2ui-proof
+          path: ${{ runner.temp }}/threadplane-agui-a2ui/proof
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Verify installed owned Markdown
+        run: node scripts/react-parity/verify-markdown.mjs
+      - name: Verify installed owned A2UI surfaces
+        run: node scripts/react-parity/verify-a2ui-surfaces.mjs
+      - name: Verify installed owned render state
+        run: node scripts/react-parity/verify-render-state.mjs
+      - name: Verify installed native React readiness
+        run: node scripts/react-parity/verify-react-readiness.mjs
+      - name: Verify emitted boundaries and isolated packages
+        run: |
+          node scripts/react-parity/verify-boundaries.mjs --built
+          node scripts/react-parity/verify-packages.mjs
+          node scripts/react-parity/verify-angular-package.mjs
+          node scripts/react-parity/verify-middleware-package.mjs
+          node scripts/react-parity/verify-middleware-conformance.mjs
       - run: node scripts/verify-release-versions.mjs
       - name: DX-coverage — public dev-facing functions must have a JSDoc summary
         run: node scripts/check-dx-coverage.mjs
       - run: node --test examples/chat/smoke/*.spec.mjs scripts/verify-angular-support.spec.mjs
       - run: node scripts/verify-angular-support.mjs
+      - name: Upload native conversation React traces on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: native-conversation-react-e2e-traces
+          path: /tmp/native-conversation-react-e2e-results
+          retention-days: 7
+          if-no-files-found: warn
       - name: Upload production library artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -150,7 +362,7 @@ jobs:
     name: 'Angular ${{ matrix.angular }} — packaged consumer'
     needs: [ci-scope, library]
     if: github.event_name == 'push' || needs.ci-scope.outputs.angular_compatibility == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -168,11 +380,14 @@ jobs:
         with:
           name: threadplane-library-dist
           path: dist/libs
+      - name: Configure bounded Ubuntu package downloads
+        run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
       - name: Install Chromium
+        timeout-minutes: 10
         run: npx playwright install --with-deps chromium
       - name: Generate, install, build, and run consumer
         run: >-
-          node examples/chat/smoke/cli.mjs
+          npm exec --yes --package=npm@11.6.0 -- node examples/chat/smoke/cli.mjs
           --non-interactive --fresh
           --target "${{ runner.temp }}/threadplane-angular-${{ matrix.angular }}"
           --local-dist-root dist/libs
@@ -195,7 +410,7 @@ jobs:
     name: Website — lint / test / build
     needs: ci-scope
     if: github.event_name == 'push' || needs.ci-scope.outputs.website == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     env:
@@ -240,7 +455,7 @@ jobs:
     name: Growth lifecycle — Node 22
     needs: ci-scope
     if: github.event_name == 'push' || needs.ci-scope.outputs.growth_lifecycle == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
@@ -252,14 +467,12 @@ jobs:
       - run: npx nx test growth
       - run: npx nx run growth:test-operator-cli
       - run: npx nx build growth
-      - run: npx nx test google-mailbox-poller
-      - run: npx nx lint google-mailbox-poller
 
   lifecycle:
     name: Lifecycle — Node 24
     needs: ci-scope
     if: github.event_name == 'push' || needs.ci-scope.outputs.growth_lifecycle == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
@@ -279,7 +492,7 @@ jobs:
     name: Growth Research — Node 24
     needs: ci-scope
     if: github.event_name == 'push' || needs.ci-scope.outputs.growth_research == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -297,7 +510,7 @@ jobs:
     name: Workspace libraries — lint / test
     needs: ci-scope
     if: github.event_name == 'push' || needs.ci-scope.outputs.cockpit == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
@@ -314,13 +527,21 @@ jobs:
       # is `scope:shared`, which is not a SCOPE_KEY — adding it to LIBS would
       # not have run it, because a workspace-react change never flips
       # `library`.
+      - name: Set up Python fixture tooling
+        uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57 # v8.0.0
+        with:
+          python-version: '3.12'
+      - run: npx nx lint cockpit-a2ui-react
+      - run: npx nx test cockpit-a2ui-react --skip-nx-cache
+      - run: npx nx test cockpit-chat-a2ui-react --skip-nx-cache
+      - run: npx nx test cockpit-ag-ui-a2ui-react --skip-nx-cache
       - run: npx nx lint workspace-react
       - run: npx nx run-many -t test --projects=cockpit-registry,cockpit-shell,workspace-react --skip-nx-cache
   cockpit-examples-build:
     name: Cockpit — build all examples
     needs: ci-scope
     if: github.event_name == 'push' || needs.ci-scope.outputs.cockpit_examples == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -330,9 +551,9 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Build cockpit examples (affected on PR, all on push)
+      - name: Build cockpit examples (affected on PR, all on main)
         run: |
-          if [ "${{ github.event_name }}" = "push" ]; then
+          if [ "${{ github.event_name }}" = "push" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             npx nx run-many -t build --projects='cockpit-*-angular' --skip-nx-cache
           else
             BASE="${{ github.event.pull_request.base.sha }}"
@@ -351,7 +572,7 @@ jobs:
     name: Cockpit — representative capability smoke
     needs: ci-scope
     if: github.event_name == 'push' || needs.ci-scope.outputs.cockpit_smoke == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
@@ -359,13 +580,18 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npx nx run-many -t smoke --projects=cockpit-ag-ui-interrupts-python,cockpit-ag-ui-streaming-python,cockpit-deep-agents-planning-python,cockpit-deep-agents-filesystem-python,cockpit-deep-agents-subagents-python,cockpit-deep-agents-memory-python,cockpit-deep-agents-skills-python,cockpit-langgraph-persistence-python,cockpit-langgraph-durable-execution-python,cockpit-langgraph-streaming-python,cockpit-langgraph-interrupts-python,cockpit-langgraph-memory-python,cockpit-langgraph-subgraphs-python,cockpit-langgraph-time-travel-python,cockpit-langgraph-deployment-runtime-python,cockpit-chat-messages-python,cockpit-render-spec-rendering-python,cockpit-runtimes-microsoft-agent-framework-python,cockpit-runtimes-aws-strands-python --skip-nx-cache
+      - name: Set up Python for graph streaming regressions
+        uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57
+        with:
+          python-version: '3.12'
+          enable-cache: false
+      - run: npx nx run-many -t smoke --projects=cockpit-ag-ui-interrupts-python,cockpit-ag-ui-streaming-python,cockpit-deep-agents-planning-python,cockpit-deep-agents-filesystem-python,cockpit-deep-agents-subagents-python,cockpit-deep-agents-memory-python,cockpit-deep-agents-skills-python,cockpit-langgraph-persistence-python,cockpit-langgraph-durable-execution-python,cockpit-langgraph-streaming-python,cockpit-langgraph-interrupts-python,cockpit-langgraph-memory-python,cockpit-langgraph-subgraphs-python,cockpit-langgraph-time-travel-python,cockpit-langgraph-deployment-runtime-python,cockpit-chat-messages-python,cockpit-chat-theming-python,cockpit-chat-debug-python,cockpit-render-spec-rendering-python,cockpit-runtimes-microsoft-agent-framework-python,cockpit-runtimes-aws-strands-python --skip-nx-cache
 
   examples-chat-smoke:
     name: examples/chat — python smoke
     needs: ci-scope
     if: github.event_name == 'push' || needs.ci-scope.outputs.examples_chat == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
@@ -393,7 +619,7 @@ jobs:
     name: 'examples/chat — e2e (${{ matrix.shard }}/4)'
     needs: ci-scope
     if: github.event_name == 'push' || needs.ci-scope.outputs.examples_chat == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 35
     strategy:
       fail-fast: false
@@ -424,7 +650,11 @@ jobs:
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             playwright-${{ runner.os }}-
-      - run: npx playwright install --with-deps chromium
+      - name: Configure bounded Ubuntu package downloads
+        run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
+      - name: Install Chromium
+        timeout-minutes: 10
+        run: npx playwright install --with-deps chromium
       - run: npx nx e2e examples-chat-angular --skip-nx-cache -- --shard=${{ matrix.shard }}/4
       - name: Upload Playwright trace on failure
         if: failure()
@@ -440,7 +670,7 @@ jobs:
     name: 'examples/chat — e2e'
     needs: [ci-scope, examples-chat-e2e]
     if: always() && (github.event_name == 'push' || needs.ci-scope.outputs.examples_chat == 'true')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Aggregate matrix outcome
         run: |
@@ -454,7 +684,7 @@ jobs:
     name: 'examples/ag-ui — e2e'
     needs: ci-scope
     if: github.event_name == 'push' || needs.ci-scope.outputs.examples_ag_ui == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -503,7 +733,11 @@ jobs:
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             playwright-${{ runner.os }}-
-      - run: npx playwright install --with-deps chromium
+      - name: Configure bounded Ubuntu package downloads
+        run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
+      - name: Install Chromium
+        timeout-minutes: 10
+        run: npx playwright install --with-deps chromium
       - run: npx nx e2e examples-ag-ui-angular --skip-nx-cache
       - name: Upload Playwright trace on failure
         if: failure()
@@ -519,7 +753,7 @@ jobs:
     name: Cockpit — e2e dispatcher
     needs: ci-scope
     if: github.event_name == 'push' || needs.ci-scope.outputs.cockpit_e2e == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       caps: ${{ steps.matrix.outputs.caps }}
     steps:
@@ -555,7 +789,7 @@ jobs:
     name: 'Cockpit — e2e (${{ matrix.cap.angular }})'
     needs: [ci-scope, cockpit-e2e-dispatcher]
     if: github.event_name == 'push' || needs.ci-scope.outputs.cockpit_e2e == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       max-parallel: 5
@@ -577,15 +811,24 @@ jobs:
       # deployments/ag-ui-mastra Node service, installed by the example's
       # own e2e global setup). Skip the uv/venv steps for those.
       - name: Cache cap python venv
-        if: matrix.cap.python != ''
+        if: matrix.cap.python != '' && matrix.cap.angular != 'cockpit-ag-ui-a2ui-react'
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ${{ matrix.cap.python }}/.venv
           key: uv-venv-${{ github.repository }}-${{ runner.os }}-py3.12-${{ matrix.cap.python }}-${{ hashFiles(format('{0}/uv.lock', matrix.cap.python)) }}
       - name: uv sync per-cap python
-        if: matrix.cap.python != ''
+        if: matrix.cap.python != '' && matrix.cap.python != 'cockpit/chat/debug/python' && matrix.cap.angular != 'cockpit-ag-ui-a2ui-react'
         working-directory: ${{ matrix.cap.python }}
         run: uv sync
+      - name: Prepare frozen Debug Python fixture
+        if: matrix.cap.python == 'cockpit/chat/debug/python'
+        working-directory: ${{ matrix.cap.python }}
+        run: uv sync --frozen --python 3.12
+      - name: Test pinned MAF snapshot compatibility
+        if: matrix.cap.angular == 'cockpit-runtimes-microsoft-agent-framework-angular'
+        run: |
+          git diff --exit-code -- cockpit/runtimes/microsoft-agent-framework/python/uv.lock
+          npx nx test cockpit-runtimes-microsoft-agent-framework-python --skip-nx-cache
       - name: Check requirements.txt matches uv.lock
         if: matrix.cap.python != ''
         working-directory: ${{ matrix.cap.python }}
@@ -623,9 +866,76 @@ jobs:
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             playwright-${{ runner.os }}-
-      - run: npx playwright install --with-deps chromium
+      - name: Configure bounded Ubuntu package downloads
+        run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
+      - name: Install Chromium
+        timeout-minutes: 10
+        run: npx playwright install --with-deps chromium
+      - name: Verify React cockpit source
+        if: endsWith(matrix.cap.angular, '-react')
+        run: |
+          npx nx test "${{ matrix.cap.angular }}" --reporters=default --skip-nx-cache
+          npx nx lint "${{ matrix.cap.angular }}" --skip-nx-cache
+      - name: Verify canonical client tools fixture ownership
+        if: matrix.cap.angular == 'cockpit-ag-ui-client-tools-react'
+        run: |
+          npx nx run cockpit-ag-ui-client-tools-react:prepare-fixture --skip-nx-cache
+          node --test scripts/react-cockpit/ag-ui-client-tools-fixture.spec.mjs
+      - name: Prepare native A2UI proof ownership
+        if: matrix.cap.angular == 'cockpit-ag-ui-a2ui-react'
+        run: |
+          set -euo pipefail
+          export THREADPLANE_AGUI_A2UI_APPLICATION_ROOT="$RUNNER_TEMP/threadplane-agui-a2ui-application"
+          printf '%s\n' "THREADPLANE_AGUI_A2UI_APPLICATION_ROOT=$THREADPLANE_AGUI_A2UI_APPLICATION_ROOT" >> "$GITHUB_ENV"
+          node --input-type=module <<'NODE'
+          import { execFileSync } from 'node:child_process';
+          import { mkdirSync, writeFileSync } from 'node:fs';
+          import { join } from 'node:path';
+          const git = argument => execFileSync('git', ['rev-parse', argument], { encoding: 'utf8', timeout: 5000 }).trim();
+          const provenance = { head: git('HEAD'), tree: git('HEAD^{tree}'), workflowSha: process.env.GITHUB_SHA, runId: process.env.GITHUB_RUN_ID, runAttempt: process.env.GITHUB_RUN_ATTEMPT };
+          for (const key of ['head', 'tree', 'workflowSha']) if (!/^[a-f0-9]{40}$/.test(provenance[key] ?? '')) throw Error('Invalid source provenance');
+          for (const key of ['runId', 'runAttempt']) if (!/^[1-9][0-9]*$/.test(provenance[key] ?? '')) throw Error('Invalid run provenance');
+          if (provenance.head !== provenance.workflowSha) throw Error('Checkout does not match workflow source');
+          const retain = process.env.THREADPLANE_AGUI_A2UI_APPLICATION_ROOT;
+          mkdirSync(retain, { recursive: true });
+          writeFileSync(join(retain, 'provenance.json'), JSON.stringify(provenance, null, 2) + '\n', { flag: 'wx' });
+          NODE
+          timeout 1200s node --test --test-concurrency=1 --test-timeout=120000 scripts/react-cockpit/ag-ui-a2ui-configuration.spec.mjs scripts/react-cockpit/ag-ui-a2ui-preparation.spec.mjs scripts/react-cockpit/ag-ui-a2ui-fixture.spec.mjs scripts/react-cockpit/ag-ui-a2ui-native-probe.spec.mjs
+      - name: Verify native MAF fixture ownership
+        if: matrix.cap.angular == 'cockpit-runtimes-microsoft-agent-framework-react'
+        run: |
+          npx nx run cockpit-runtimes-microsoft-agent-framework-react:prepare-fixture --skip-nx-cache
+          node --test --test-concurrency=1 scripts/react-cockpit/native-maf-fixture.spec.mjs fixtures/react-parity/native-maf-react/server.spec.mjs
+          python -m unittest discover -s fixtures/react-parity/native-maf-react -p test_model.py
+      - name: Verify native Strands fixture ownership
+        if: matrix.cap.angular == 'cockpit-runtimes-aws-strands-react'
+        run: |
+          npx nx run cockpit-runtimes-aws-strands-react:prepare-fixture --skip-nx-cache
+          node --test --test-concurrency=1 scripts/react-cockpit/native-strands-fixture.spec.mjs fixtures/react-parity/native-strands-react/server.spec.mjs
+          python -m unittest discover -s fixtures/react-parity/native-strands-react -p test_model.py
+      - name: Verify native Theming fixture ownership
+        if: matrix.cap.angular == 'cockpit-chat-theming-react'
+        run: |
+          npx nx run cockpit-chat-theming-python:test --skip-nx-cache
+          node --test --test-concurrency=1 scripts/react-cockpit/chat-theming-fixture.spec.mjs
+      - name: Verify native Debug fixture and installed session ownership
+        if: matrix.cap.angular == 'cockpit-chat-debug-react'
+        run: |
+          npx nx run cockpit-chat-debug-python:test --skip-nx-cache
+          node --test --test-concurrency=1 scripts/react-cockpit/chat-debug-configuration.spec.mjs scripts/react-cockpit/chat-debug-fixture.spec.mjs
+          npx nx build core --skip-nx-cache
+          node scripts/react-cockpit/chat-debug-native-session-probe.mjs
       - name: nx e2e ${{ matrix.cap.angular }}
         run: npx nx e2e "${{ matrix.cap.angular }}" --skip-nx-cache
+      - name: Retain native A2UI installed application attempts
+        if: always() && matrix.cap.angular == 'cockpit-ag-ui-a2ui-react'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: threadplane-agui-a2ui-application-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/threadplane-agui-a2ui-application
+          include-hidden-files: true
+          retention-days: 7
+          if-no-files-found: warn
       - name: Upload Playwright trace on failure
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -633,13 +943,19 @@ jobs:
           name: cockpit-e2e-trace-${{ matrix.cap.angular }}
           path: |
             cockpit/**/angular/e2e/test-results/
+            cockpit/**/react/e2e/test-results/
+            output/playwright/chat-theming-react/
+            output/playwright/chat-debug-react/
+            output/playwright/chat-a2ui-react/
+            output/playwright/ag-ui-a2ui-react/
+            test-results/
           retention-days: 7
 
   cockpit-e2e-summary:
     name: 'Cockpit — e2e'
     needs: [ci-scope, cockpit-e2e]
     if: always() && (github.event_name == 'push' || needs.ci-scope.outputs.cockpit_e2e == 'true')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Aggregate matrix outcome
         run: |
@@ -653,7 +969,7 @@ jobs:
     name: Website — e2e
     needs: ci-scope
     if: github.event_name == 'push' || needs.ci-scope.outputs.website_e2e == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
@@ -661,6 +977,14 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Prepare frozen dashboard browser producer
+        uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57
+        with:
+          python-version: '3.12'
+      - name: Prepare frozen canonical client tools browser producer
+        run: node scripts/react-cockpit/prepare-ag-ui-client-tools-fixture.mjs
+      - name: Prepare frozen canonical A2UI browser producer
+        run: node scripts/react-cockpit/prepare-ag-ui-a2ui-fixture.mjs
       - name: Cache Playwright browsers
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
@@ -668,8 +992,13 @@ jobs:
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             playwright-${{ runner.os }}-
-      - run: npx playwright install --with-deps chromium
+      - name: Configure bounded Ubuntu package downloads
+        run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
+      - name: Install Chromium
+        timeout-minutes: 10
+        run: npx playwright install --with-deps chromium
       - run: npx nx e2e website --skip-nx-cache
+        timeout-minutes: 45
       # The public-copy gate reads served output, and `next dev` serves a
       # different bundle than production. Run it a second time against a real
       # production build so a claim that only appears in the built output — in a
@@ -694,7 +1023,7 @@ jobs:
           SCROLLCRAFT_CHROME: /usr/bin/google-chrome
           NEXT_PUBLIC_STAGE_DEMO_ORIGIN: http://localhost:4200
         run: |
-          command -v ffmpeg > /dev/null || (sudo apt-get update && sudo apt-get install -y ffmpeg)
+          command -v ffmpeg > /dev/null || sudo timeout --signal=TERM --kill-after=10s 590s bash -c 'apt-get update && apt-get install -y ffmpeg'
           # Verify this commit's recording, not the older production demo.
           (npx nx serve examples-chat-angular --configuration=production --port=4200 > /tmp/stage-demo.log 2>&1 &)
           for i in $(seq 1 60); do curl -sf http://localhost:4200/stage > /dev/null && break; sleep 2; done
@@ -740,16 +1069,20 @@ jobs:
     # inspection. Needs repository secrets, so same-repo PRs and merge-queue
     # candidates only.
     if: >-
-      github.event_name != 'push' &&
+      (github.event_name == 'pull_request' || github.event_name == 'merge_group') &&
       needs.ci-scope.outputs.website_e2e == 'true' &&
       (github.event_name == 'merge_group' || github.event.pull_request.head.repo.full_name == github.repository)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: 22
           cache: npm
+      - name: Set up Python for Website fixture prerequisites
+        uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57 # v8.0.0
+        with:
+          python-version: '3.12'
       - run: npm ci
       - name: Cache Playwright browsers
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
@@ -758,7 +1091,11 @@ jobs:
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             playwright-${{ runner.os }}-
-      - run: npx playwright install --with-deps chromium
+      - name: Configure bounded Ubuntu package downloads
+        run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
+      - name: Install Chromium
+        timeout-minutes: 10
+        run: npx playwright install --with-deps chromium
       - name: Derive deterministic preview aliases
         id: aliases
         run: |
@@ -796,11 +1133,11 @@ jobs:
           cat > .vercel/project.json <<'EOF'
           {"projectId":"${{ secrets.VERCEL_EXAMPLES_PROJECT_ID }}","orgId":"${{ secrets.VERCEL_ORG_ID }}","projectName":"threadplane-examples"}
           EOF
-          npx vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
-          url=$(npx vercel deploy --prebuilt --yes --token=${{ secrets.VERCEL_TOKEN }} | tail -n 1)
+          npx vercel@64.2.0 pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+          url=$(npx vercel@64.2.0 deploy --prebuilt --yes --token=${{ secrets.VERCEL_TOKEN }} | tail -n 1)
           url=$(node -e 'const parsed = new URL(process.argv[1]); if (parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.pathname !== "/" || parsed.search || parsed.hash) throw new Error("Vercel returned a non-origin examples preview URL"); process.stdout.write(parsed.origin)' "$url")
           echo "examples deployment: $url"
-          npx vercel alias set "$url" "${{ steps.aliases.outputs.examples }}" --scope=${{ secrets.VERCEL_ORG_ID }} --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel@64.2.0 alias set "$url" "${{ steps.aliases.outputs.examples }}" --scope=${{ secrets.VERCEL_ORG_ID }} --token=${{ secrets.VERCEL_TOKEN }}
       - name: Build, deploy, and alias the Website preview
         env:
           GROWTH_FORM_POLICY: growth_v1
@@ -811,13 +1148,13 @@ jobs:
           cat > .vercel/project.json <<'EOF'
           {"projectId":"${{ secrets.VERCEL_WEBSITE_PROJECT_ID }}","orgId":"${{ secrets.VERCEL_ORG_ID }}","projectName":"threadplane"}
           EOF
-          npx vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel@64.2.0 pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
           rm -rf .vercel/output
-          npx vercel build --token=${{ secrets.VERCEL_TOKEN }}
-          url=$(npx vercel deploy --prebuilt --archive=tgz --yes --token=${{ secrets.VERCEL_TOKEN }} | tail -n 1)
+          npx vercel@64.2.0 build --token=${{ secrets.VERCEL_TOKEN }}
+          url=$(npx vercel@64.2.0 deploy --prebuilt --archive=tgz --yes --token=${{ secrets.VERCEL_TOKEN }} | tail -n 1)
           url=$(node -e 'const parsed = new URL(process.argv[1]); if (parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.pathname !== "/" || parsed.search || parsed.hash) throw new Error("Vercel returned a non-origin Website preview URL"); process.stdout.write(parsed.origin)' "$url")
           echo "website deployment: $url"
-          npx vercel alias set "$url" "${{ steps.aliases.outputs.website }}" --scope=${{ secrets.VERCEL_ORG_ID }} --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel@64.2.0 alias set "$url" "${{ steps.aliases.outputs.website }}" --scope=${{ secrets.VERCEL_ORG_ID }} --token=${{ secrets.VERCEL_TOKEN }}
       - name: Run the Website suite against the aliased preview
         run: npx nx e2e website --skip-nx-cache
         env:
@@ -851,7 +1188,7 @@ jobs:
     # waits on it for each candidate, so it must report on merge_group too —
     # otherwise every queued merge blocks forever on a check that never runs.
     if: ${{ always() && (github.event_name == 'pull_request' || github.event_name == 'merge_group') }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Verify scoped CI jobs
         env:
@@ -984,8 +1321,9 @@ jobs:
 
   deploy:
     name: Deploy → Vercel
-    timeout-minutes: 30 # fail fast instead of blocking the main concurrency group on a hang
+    timeout-minutes: 45 # bounded headroom for Website assembly and preview verification
     needs:
+      - ci-scope
       - library
       - website
       - cockpit
@@ -997,11 +1335,11 @@ jobs:
       - website-e2e
       - growth-lifecycle
       - lifecycle
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       runtime_parent_preview_origin: ${{ steps.deploy_website.outputs.preview_origin }}
-    # Only deploy on pushes to main, not on pull requests
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    # Only verified main push/manual runs may enter the existing production path
+    if: needs.ci-scope.result == 'success' && needs.ci-scope.outputs.main_run == 'true' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     permissions:
       # Needed to advance refs/deploy/last-promoted (see "Resolve deploy
       # baseline"). Nothing else in this job writes to the repo.
@@ -1053,6 +1391,26 @@ jobs:
           # deploy job, so this range covers everything not yet promoted.
           # Falls back to the old behaviour when the marker is absent
           # (first run after this lands) or no longer resolves (history rewrite).
+          # Manual recovery has no push-before fallback: retain all unpromoted work.
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            export GIT_TERMINAL_PROMPT=0
+            marker_record="$(git ls-remote --exit-code origin refs/deploy/last-promoted && printf '.')"
+            marker_record="${marker_record%.}"
+            marker_record="${marker_record%$'\n'}"
+            marker_pattern=$'^([0-9a-f]{40})\trefs/deploy/last-promoted$'
+            if [[ ! "$marker_record" =~ $marker_pattern ]]; then
+              echo "::error::Manual recovery requires a single valid refs/deploy/last-promoted marker."
+              exit 1
+            fi
+            base_sha="${BASH_REMATCH[1]}"
+            if ! git cat-file -e "${base_sha}^{commit}" 2>/dev/null; then
+              git fetch --no-tags origin "$base_sha"
+            fi
+            git cat-file -e "${base_sha}^{commit}"
+            git merge-base --is-ancestor "$base_sha" "$GITHUB_SHA"
+            echo "base=$base_sha" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           base_sha=""
           marker="$(git ls-remote origin refs/deploy/last-promoted 2>/dev/null | cut -f1)"
           if [ -n "$marker" ] && git cat-file -e "${marker}^{commit}" 2>/dev/null; then
@@ -1085,7 +1443,7 @@ jobs:
 
           changed_files="$(git diff --name-only "$base_sha" "$head_sha")"
           deploy_relevant=false
-          if printf '%s\n' "$changed_files" | grep -E '^(\.github/workflows/ci\.yml|runtime-parent-origins\.json|vercel\.(json|examples\.json)|apps/website/.*|cockpit/.*|examples/chat/.*|libs/.*|scripts/(assemble-examples|prepare-example-html|demo-middleware|generate-runtime-parent-origins|langgraph-proxy|rate-limit)\.ts|scripts/assemble-demo\.ts)$' >/dev/null; then
+          if printf '%s\n' "$changed_files" | grep -E '^(\.github/workflows/ci\.yml|runtime-parent-origins\.json|vercel\.(json|examples\.json)|apps/website/.*|cockpit/.*|examples/chat/.*|libs/.*|scripts/(assemble-examples|prepare-example-html|demo-middleware|generate-runtime-parent-origins|langgraph-proxy|rate-limit)\.ts|scripts/assemble-demo\.ts|scripts/demo-routes\.ts)$' >/dev/null; then
             deploy_relevant=true
           fi
 
@@ -1117,6 +1475,10 @@ jobs:
             examples_changed=true
           fi
           echo "changed=$examples_changed" >> "$GITHUB_OUTPUT"
+      - name: Set up Python for Website fixture prerequisites
+        uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57 # v8.0.0
+        with:
+          python-version: '3.12'
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         if: steps.deploy_preflight.outputs.relevant == 'true' || steps.examples_changed.outputs.changed == 'true'
         with:
@@ -1162,8 +1524,12 @@ jobs:
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             playwright-${{ runner.os }}-
+      - name: Configure bounded Ubuntu package downloads
+        if: steps.freshness.outputs.stale != 'true' && steps.affected.outputs.website == 'true'
+        run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
       - name: Install Playwright browsers
         if: steps.freshness.outputs.stale != 'true' && steps.affected.outputs.website == 'true'
+        timeout-minutes: 10
         run: npx playwright install --with-deps chromium
       - name: Prepare website Vercel project
         if: steps.freshness.outputs.stale != 'true' && steps.affected.outputs.website == 'true'
@@ -1172,7 +1538,7 @@ jobs:
           cat > .vercel/project.json <<EOF
           {"projectId":"${{ secrets.VERCEL_WEBSITE_PROJECT_ID }}","orgId":"${{ secrets.VERCEL_ORG_ID }}","projectName":"threadplane"}
           EOF
-          npx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel@64.2.0 pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
           rm -rf .vercel/output
       - name: Deploy immutable Website preview
         if: steps.freshness.outputs.stale != 'true' && steps.affected.outputs.website == 'true'
@@ -1186,26 +1552,26 @@ jobs:
           # "GROWTH_FORM_POLICY must be growth_v1". It is not a secret.
           GROWTH_FORM_POLICY: growth_v1
         run: |
-          npx vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-          url=$(npx vercel deploy --prebuilt --archive=tgz --prod --skip-domain --yes --token=${{ secrets.VERCEL_TOKEN }} | tail -n 1)
+          npx vercel@64.2.0 build --prod --token=${{ secrets.VERCEL_TOKEN }}
+          url=$(npx vercel@64.2.0 deploy --prebuilt --archive=tgz --prod --skip-domain --yes --token=${{ secrets.VERCEL_TOKEN }} | tail -n 1)
           preview_origin=$(node -e 'const parsed = new URL(process.argv[1]); if (parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.pathname !== "/" || parsed.search || parsed.hash) throw new Error("Vercel returned a non-origin Website preview URL"); process.stdout.write(parsed.origin)' "$url")
           echo "deployment_url=$preview_origin" >> "$GITHUB_OUTPUT"
           echo "preview_origin=$preview_origin" >> "$GITHUB_OUTPUT"
       - name: Build and assemble Angular examples
-        if: steps.freshness.outputs.stale != 'true' && steps.examples_changed.outputs.changed == 'true'
+        if: steps.freshness.outputs.stale != 'true' && (steps.examples_changed.outputs.changed == 'true' || steps.affected.outputs.website == 'true')
         run: npx tsx scripts/assemble-examples.ts
         env:
           RUNTIME_PARENT_PREVIEW_ORIGINS: ${{ steps.deploy_website.outputs.preview_origin }}
       - name: Deploy Angular examples to Vercel (production)
-        if: steps.freshness.outputs.stale != 'true' && steps.examples_changed.outputs.changed == 'true'
+        if: steps.freshness.outputs.stale != 'true' && (steps.examples_changed.outputs.changed == 'true' || steps.affected.outputs.website == 'true')
         working-directory: deploy/examples
         run: |
           mkdir -p .vercel
           cat > .vercel/project.json <<EOF
           {"projectId":"${{ secrets.VERCEL_EXAMPLES_PROJECT_ID }}","orgId":"${{ secrets.VERCEL_ORG_ID }}","projectName":"threadplane-examples"}
           EOF
-          npx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-          npx vercel deploy --prebuilt --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel@64.2.0 pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel@64.2.0 deploy --prebuilt --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
       - name: Verify Website preview runtime embedding policy
         if: steps.freshness.outputs.stale != 'true' && steps.affected.outputs.website == 'true'
         run: |
@@ -1244,7 +1610,7 @@ jobs:
         # cannot read the team from .vercel/project.json and falls back to the
         # token's default team — a personal one here, which fails with
         # "Deployment doesn't belong to current team". Scope it explicitly.
-        run: npx vercel promote "${{ steps.deploy_website.outputs.deployment_url }}" --scope=${{ secrets.VERCEL_ORG_ID }} --yes --token=${{ secrets.VERCEL_TOKEN }}
+        run: npx vercel@64.2.0 promote "${{ steps.deploy_website.outputs.deployment_url }}" --scope=${{ secrets.VERCEL_ORG_ID }} --yes --token=${{ secrets.VERCEL_TOKEN }}
       - name: Verify deployed website
         if: steps.freshness.outputs.stale != 'true' && steps.affected.outputs.website == 'true' && steps.website_promotion_freshness.outputs.fresh == 'true'
         run: npx nx e2e website --skip-nx-cache
@@ -1254,9 +1620,9 @@ jobs:
   demo-deploy:
     name: Canonical demo → Vercel
     timeout-minutes: 30 # fail fast instead of blocking the main concurrency group on a hang
-    needs: [examples-chat-smoke, examples-chat-e2e]
-    runs-on: ubuntu-latest
-    if: ${{ always() && !cancelled() && github.ref == 'refs/heads/main' && github.event_name == 'push' }}
+    needs: [ci-scope, examples-chat-smoke, examples-chat-e2e]
+    runs-on: ubuntu-24.04
+    if: ${{ always() && !cancelled() && needs.ci-scope.result == 'success' && needs.ci-scope.outputs.main_run == 'true' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
     steps:
       - name: Require demo prerequisite jobs
         run: |
@@ -1312,8 +1678,8 @@ jobs:
           cat > .vercel/project.json <<EOF
           {"projectId":"${{ secrets.VERCEL_DEMO_PROJECT_ID }}","orgId":"${{ secrets.VERCEL_ORG_ID }}","projectName":"threadplane-demo"}
           EOF
-          npx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-          npx vercel deploy --prebuilt --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel@64.2.0 pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel@64.2.0 deploy --prebuilt --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
       - name: Verify canonical demo build stamp
         if: steps.freshness.outputs.stale != 'true'
         env:
@@ -1361,23 +1727,23 @@ jobs:
   ag-ui-demo-deploy:
     name: AG-UI demo → Vercel
     timeout-minutes: 30 # fail fast instead of blocking the main concurrency group on a hang
-    needs: [examples-ag-ui-e2e]
-    runs-on: ubuntu-latest
-    if: ${{ always() && !cancelled() && github.ref == 'refs/heads/main' && github.event_name == 'push' }}
+    needs: [ci-scope, examples-ag-ui-e2e]
+    runs-on: ubuntu-24.04
+    if: ${{ always() && !cancelled() && needs.ci-scope.result == 'success' && needs.ci-scope.outputs.main_run == 'true' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
     permissions:
       # Needed to advance refs/deploy/ag-ui-demo-last-promoted. Nothing else in
       # this job writes to the repo.
       contents: write
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          fetch-depth: 0
       - name: Require AG-UI demo prerequisite jobs
         run: |
           if [ "${{ needs.examples-ag-ui-e2e.result }}" != "success" ]; then
             echo "::error::examples/ag-ui — e2e finished with ${{ needs.examples-ag-ui-e2e.result }}; refusing to deploy the AG-UI demo."
             exit 1
           fi
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
       # Same staleness guard as the other production promotions.
       - name: Check this commit is still the tip of main
         id: freshness
@@ -1407,9 +1773,30 @@ jobs:
           # touch a gated path.
           #
           # refs/deploy/ag-ui-demo-last-promoted advances only after a fully
-          # successful, non-stale run of this job, so the range covers
-          # everything not yet promoted. A separate ref from the deploy job's:
+          # successful, non-stale run of this job, including a no-change run.
+          # It records the last processed baseline, so the range covers all
+          # relevant changes not yet promoted. A separate ref from the deploy job's:
           # the two promote different targets and go stale independently.
+          # Manual recovery has no push-before fallback: retain all unpromoted work.
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            export GIT_TERMINAL_PROMPT=0
+            marker_record="$(git ls-remote --exit-code origin refs/deploy/ag-ui-demo-last-promoted && printf '.')"
+            marker_record="${marker_record%.}"
+            marker_record="${marker_record%$'\n'}"
+            marker_pattern=$'^([0-9a-f]{40})\trefs/deploy/ag-ui-demo-last-promoted$'
+            if [[ ! "$marker_record" =~ $marker_pattern ]]; then
+              echo "::error::Manual recovery requires a single valid refs/deploy/ag-ui-demo-last-promoted marker."
+              exit 1
+            fi
+            base_sha="${BASH_REMATCH[1]}"
+            if ! git cat-file -e "${base_sha}^{commit}" 2>/dev/null; then
+              git fetch --no-tags origin "$base_sha"
+            fi
+            git cat-file -e "${base_sha}^{commit}"
+            git merge-base --is-ancestor "$base_sha" "$GITHUB_SHA"
+            echo "base=$base_sha" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           base_sha=""
           marker="$(git ls-remote origin refs/deploy/ag-ui-demo-last-promoted 2>/dev/null | cut -f1)"
           if [ -n "$marker" ] && git cat-file -e "${marker}^{commit}" 2>/dev/null; then
@@ -1438,7 +1825,7 @@ jobs:
           head_sha="${{ github.sha }}"
           changed_files="$(git diff --name-only "$base_sha" "$head_sha")"
           ag_ui_changed=false
-          if printf '%s\n' "$changed_files" | grep -E '^(examples/ag-ui/.*|scripts/(ag-ui-demo-middleware|assemble-ag-ui-demo)\.ts)$' >/dev/null; then
+          if printf '%s\n' "$changed_files" | grep -E '^(examples/ag-ui/.*|libs/.*|scripts/(ag-ui-demo-middleware|assemble-ag-ui-demo|demo-routes)\.ts|package\.json|package-lock\.json|nx\.json|tsconfig\.base\.json|\.github/workflows/ci\.yml)$' >/dev/null; then
             ag_ui_changed=true
           fi
           echo "changed=$ag_ui_changed" >> "$GITHUB_OUTPUT"
@@ -1475,8 +1862,8 @@ jobs:
           {"projectId":"${{ secrets.VERCEL_AG_UI_DEMO_PROJECT_ID }}","orgId":"${{ secrets.VERCEL_ORG_ID }}","projectName":"threadplane-ag-ui-demo"}
           EOF
           cd deploy/ag-ui-demo
-          npx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-          npx vercel deploy --prebuilt --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel@64.2.0 pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel@64.2.0 deploy --prebuilt --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
       - name: Deploy AG-UI backend to Railway
         if: steps.freshness.outputs.stale != 'true' && steps.ag_ui_changed.outputs.changed == 'true'
         working-directory: examples/ag-ui/python
@@ -1485,19 +1872,20 @@ jobs:
         run: |
           npx --yes @railway/cli@4 up --service ag-ui-demo --detach
 
-      # Advance only when the whole job succeeded and actually promoted. A
-      # stale run, a failure, or a partial deploy leaves the marker put, so the
-      # next run's range still covers whatever did not ship. Never `always()`:
-      # advancing past unshipped work is the bug this exists to prevent.
+      # Advance only when the whole job succeeded and is non-stale, including
+      # no-change runs that successfully processed the baseline. A stale run,
+      # a failure, or a partial deploy leaves the marker put, so the next run's
+      # range still covers whatever did not ship. Never `always()`: advancing
+      # past unshipped work is the bug this exists to prevent.
       - name: Record this commit as AG-UI demo promoted
         if: success() && steps.freshness.outputs.stale != 'true'
         run: git push origin --force "${{ github.sha }}:refs/deploy/ag-ui-demo-last-promoted"
 
   production-smoke:
     name: Production smoke
-    needs: [deploy, demo-deploy, ag-ui-demo-deploy]
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [ci-scope, deploy, demo-deploy, ag-ui-demo-deploy]
+    runs-on: ubuntu-24.04
+    if: needs.ci-scope.result == 'success' && needs.ci-scope.outputs.main_run == 'true' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     permissions:
       contents: write
     steps:
@@ -1520,7 +1908,11 @@ jobs:
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             playwright-${{ runner.os }}-
-      - run: npx playwright install --with-deps chromium
+      - name: Configure bounded Ubuntu package downloads
+        run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
+      - name: Install Chromium
+        timeout-minutes: 10
+        run: npx playwright install --with-deps chromium
       - name: Run production smoke tests
         run: npx playwright test apps/website/e2e/platform-production-smoke.spec.ts --config apps/website/playwright.config.ts --reporter=list
         env:
@@ -1555,7 +1947,7 @@ jobs:
     name: PostHog — dashboards-as-code drift check
     needs: ci-scope
     if: github.event_name == 'push' || needs.ci-scope.outputs.posthog == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -1563,6 +1955,10 @@ jobs:
       - name: Detect PostHog-relevant changes
         id: posthog_preflight
         run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           if [ "${{ github.event_name }}" = "push" ]; then
             base_sha="${{ github.event.before }}"
             head_sha="${{ github.sha }}"
@@ -1594,6 +1990,10 @@ jobs:
         if: steps.posthog_preflight.outputs.relevant == 'true'
         id: affected
         run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "is_affected=yes" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           if [ "${{ github.event_name }}" = "push" ]; then
             base_sha="${{ github.event.before }}"
             head_sha="${{ github.sha }}"
