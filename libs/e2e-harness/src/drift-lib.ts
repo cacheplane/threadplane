@@ -43,6 +43,22 @@ function entryKey(e: FixtureEntry): string {
     .join('|');
 }
 
+// Size only what the model answered. Recordings also carry `reasoning`,
+// `recordedTimings` and tool-call ids that hand-written fixtures omit, so
+// bucketing the whole response flagged every recording as longer.
+function answerOf(response: FixtureEntry['response']): unknown {
+  const toolCalls = response?.['toolCalls'];
+  return {
+    content: response?.['content'],
+    toolCalls: Array.isArray(toolCalls)
+      ? toolCalls.map((t) => {
+          const call = (t && typeof t === 'object' ? t : {}) as Record<string, unknown>;
+          return { name: call['name'], arguments: call['arguments'] };
+        })
+      : undefined,
+  };
+}
+
 export function summarizeEntry(e: FixtureEntry): EntrySummary {
   const toolCalls = e.response?.['toolCalls'];
   const names = Array.isArray(toolCalls)
@@ -56,7 +72,7 @@ export function summarizeEntry(e: FixtureEntry): EntrySummary {
     key: entryKey(e),
     kind: names.length > 0 ? 'toolCalls' : 'text',
     toolNames: names,
-    lengthBucket: Math.floor(Math.log10(Math.max(1, JSON.stringify(e.response ?? {}).length))),
+    lengthBucket: Math.floor(Math.log10(Math.max(1, JSON.stringify(answerOf(e.response)).length))),
     incomplete: names.length === 0 && (content === '' || content === undefined),
   };
   if (typeof e.metadata?.systemHash === 'string') summary.systemHash = e.metadata.systemHash;

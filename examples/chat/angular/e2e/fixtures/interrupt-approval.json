@@ -3,10 +3,28 @@
     {
       "match": {
         "userMessage": "I want to clean up old database backups older than 90 days. Walk me through what you would delete, and call request_approval before doing anything destructive so I can review your plan.",
-        "hasToolResult": true
+        "hasToolResult": true,
+        "toolResultContains": "Human response:"
       },
       "response": {
-        "content": "Approved. Here is the cleanup I would run:\n\n1. **Inventory** every backup location (S3, GCS, Azure, RDS and EBS snapshots, and the local backup table).\n2. **Dry run** a listing of everything older than 90 days so you can scan it before anything is touched.\n3. **Delete** the matched objects and snapshots, moving anything tagged `retain` to the archive bucket instead, and write an audit record for each deletion.\n\nNothing has been deleted yet \u2014 the dry-run listing comes first."
+        "content": "Approved. The three backups older than 90 days (bk-2026-05-28-prod, bk-2026-04-30-prod and bk-2026-02-01-staging) are cleared to delete, freeing about 86.5 GB. The two backups under a retention hold stay."
+      }
+    },
+    {
+      "match": {
+        "userMessage": "I want to clean up old database backups older than 90 days. Walk me through what you would delete, and call request_approval before doing anything destructive so I can review your plan.",
+        "hasToolResult": true,
+        "toolResultContains": "\"older_than_days\""
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "request_approval",
+            "arguments": {
+              "reason": "Plan: permanently delete these backups older than 90 days:\n\n- bk-2026-05-28-prod \u2014 37.8 GB \u2014 s3://acme-db-backups/prod/2026-05-28.dump.gz (created_at 2026-05-28)\n- bk-2026-04-30-prod \u2014 36.4 GB \u2014 s3://acme-db-backups/prod/2026-04-30.dump.gz (created_at 2026-04-30)\n- bk-2026-02-01-staging \u2014 12.3 GB \u2014 s3://acme-db-backups/staging/2026-02-01.dump.gz (created_at 2026-02-01)\n\nTotal expected freed space: ~86.5 GB.\n\nKeep (won't delete) because of retention:\n- bk-2026-03-15-prod (retain: true)\n- bk-2025-12-31-prod (retain: true)\n\nDo you approve permanently deleting the three deletable backups listed above?"
+            }
+          }
+        ]
       }
     },
     {
@@ -16,9 +34,9 @@
       "response": {
         "toolCalls": [
           {
-            "name": "request_approval",
+            "name": "list_backups",
             "arguments": {
-              "reason": "Requesting approval to delete database backups older than 90 days across configured storage locations. Planned actions: 1) inventory existing backups (S3/GCS/Azure/local/RDS/EBS/manual snapshots/backup DB table), 2) run dry-run listing of items matching backup patterns older than 90 days for your review, 3) after final confirmation, delete the identified objects/snapshots (or move to quarantine/archive) and record audit logs. Please approve or deny; describe any exclusions or storage locations to omit."
+              "older_than_days": 90
             }
           }
         ]
