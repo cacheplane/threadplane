@@ -42,6 +42,12 @@ import { createTraceTransport } from '../../../growth-research/src/production/tr
 
 const TERMINAL = new Set(['success', 'error', 'interrupted', 'timeout']);
 const RECOVERY_GRACE_MS = 5 * 60000;
+// The research_attempt deadline below only exists once an attempt was submitted,
+// so a job that keeps failing before submission carries no deadline at all. These
+// bounds are the payload-independent terminal condition for that case.
+const MAX_RECONCILIATION_ATTEMPTS = 20;
+const RECONCILIATION_BASE_DELAY_MS = 15_000;
+const RECONCILIATION_MAX_DELAY_MS = 15 * 60_000;
 const CLEANUP_HORIZON_MS = 7 * 86400000;
 const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
@@ -170,10 +176,19 @@ export function createDawnJobHandlers(
         input.now.getTime() >= Date.parse(expiresAt) + RECOVERY_GRACE_MS
       )
         return fail('dawn_recovery_deadline');
+      const attempts = job.attempts ?? 0;
+      if (attempts >= MAX_RECONCILIATION_ATTEMPTS)
+        return fail('dawn_reconciliation_exhausted');
       await d.defer(db, {
         ...input,
         errorCode,
-        availableAt: new Date(input.now.getTime() + 15000),
+        availableAt: new Date(
+          input.now.getTime() +
+            Math.min(
+              RECONCILIATION_MAX_DELAY_MS,
+              RECONCILIATION_BASE_DELAY_MS * 2 ** Math.min(attempts, 10)
+            )
+        ),
       });
       return 'deferred' as const;
     };
