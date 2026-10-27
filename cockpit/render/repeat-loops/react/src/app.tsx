@@ -1,25 +1,24 @@
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
+import { useAgent } from '@threadplane/react';
 import { RenderSpec } from '@threadplane/react/render';
 import type { Playback } from './playback';
 import { localRegistry } from './views';
-import {
-  createItems,
-  addItem,
-  removeItem,
-  reverseItems,
-  MAX_ITEMS,
-} from './items';
+import { MAX_ITEMS, type ItemsObserver, type ItemCommands } from './items';
 
 export function RepeatDemo({
   playback,
   samples,
   onReady,
+  renderState,
+  commands,
 }: {
   readonly playback: Playback;
   readonly samples: readonly string[];
   readonly onReady: () => void;
+  readonly renderState: ItemsObserver;
+  readonly commands: ItemCommands;
 }) {
-  const [host, setHost] = useState(createItems);
+  const host = useAgent(renderState);
   const state = useSyncExternalStore(
     playback.subscribe,
     playback.getSnapshot,
@@ -45,14 +44,14 @@ export function RepeatDemo({
           <button
             type="button"
             disabled={host.items.length >= MAX_ITEMS}
-            onClick={() => setHost(addItem)}
+            onClick={commands.add}
           >
             Add Item
           </button>
           <button
             type="button"
             disabled={host.items.length < 2}
-            onClick={() => setHost(reverseItems)}
+            onClick={commands.reverse}
           >
             Reverse items
           </button>
@@ -66,9 +65,7 @@ export function RepeatDemo({
             <button
               type="button"
               key={item.id}
-              onClick={() =>
-                setHost((previous) => removeItem(previous, item.id))
-              }
+              onClick={() => commands.remove(item.id)}
             >
               Remove {item.label}
             </button>

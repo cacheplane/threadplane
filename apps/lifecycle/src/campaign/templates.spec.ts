@@ -79,6 +79,7 @@ describe('renderCampaignTemplate', () => {
       })
     ).toEqual([]);
     for (const link of [
+      'https://calendar.app.google/nK961tWHZd21izKR6',
       'https://calendar.app.google/someone-else',
       'https://calendly.com/threadplane/demo',
       'https://cal.com/threadplane/demo',

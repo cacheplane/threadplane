@@ -36,6 +36,11 @@
             "input": "libs/react/src/chat",
             "glob": "styles.css",
             "output": "src/chat"
+          },
+          {
+            "input": "libs/react/src/debug",
+            "glob": "styles.css",
+            "output": "src/debug"
           }
         ]
       }

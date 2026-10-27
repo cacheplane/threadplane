@@ -127,7 +127,7 @@ test('installed React transcript follows only while pinned and resets on selecti
             },
           ],
         },
-        stream_mode: ['values', 'messages-tuple', 'updates', 'custom'],
+        stream_mode: ['values', 'messages-tuple', 'updates', 'custom', 'checkpoints'],
         stream_subgraphs: true,
         stream_resumable: true,
         on_disconnect: 'continue',

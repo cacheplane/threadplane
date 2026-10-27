@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { signal, computed, Component } from '@angular/core';
+import { signal, computed, Component, viewChildren } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { mockAgent } from '../../testing/mock-agent';
 import type { Agent, Message, ToolCall } from '../../agent';
@@ -560,5 +560,62 @@ describe('ChatToolCallsComponent — group header disclosure semantics', () => {
       /\.ctc__group-header(\[[^\]]*\])?:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--tplane-chat-primary\)/,
     );
     expect(css).toMatch(/\.ctc__group-header(\[[^\]]*\])?\s*\{[^}]*min-height:\s*24px/);
+  });
+});
+
+@Component({
+  standalone: true,
+  imports: [ChatToolCallsComponent, ChatToolCallTemplateDirective],
+  template: `
+    <ng-template #supplied chatToolCallTemplate="search_web" let-call>
+      <span data-tpl="input-search_web">{{ call.id }}</span>
+    </ng-template>
+    <ng-template #supplied chatToolCallTemplate="*" let-call>
+      <span data-tpl="input-wildcard">{{ call.id }}</span>
+    </ng-template>
+    <chat-tool-calls [agent]="agent" grouping="none" [toolCallTemplates]="suppliedTemplates()">
+      @if (registerOwnSearchWeb) {
+        <ng-template chatToolCallTemplate="search_web" let-call>
+          <span data-tpl="own-search_web">{{ call.id }}</span>
+        </ng-template>
+      }
+    </chat-tool-calls>
+  `,
+})
+class SuppliedTemplatesHost {
+  agent: Agent = mockAgent({
+    toolCalls: [
+      { id: 'a', name: 'search_web', args: {}, status: 'complete' },
+      { id: 'b', name: 'read_file', args: {}, status: 'complete' },
+    ],
+  });
+  registerOwnSearchWeb = false;
+  readonly suppliedTemplates = viewChildren('supplied', { read: ChatToolCallTemplateDirective });
+}
+
+describe('ChatToolCallsComponent — [toolCallTemplates] input', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({ imports: [SuppliedTemplatesHost] });
+  });
+
+  function render(registerOwn: boolean): HTMLElement {
+    const fixture = TestBed.createComponent(SuppliedTemplatesHost);
+    fixture.componentInstance.registerOwnSearchWeb = registerOwn;
+    fixture.detectChanges();
+    fixture.detectChanges();
+    return fixture.nativeElement as HTMLElement;
+  }
+
+  function rendered(host: HTMLElement): string[] {
+    return [...host.querySelectorAll<HTMLElement>('chat-tool-calls [data-tpl]')]
+      .map((el) => `${el.dataset['tpl']}:${el.textContent?.trim()}`);
+  }
+
+  it('dispatches calls to supplied named and wildcard templates', () => {
+    expect(rendered(render(false))).toEqual(['input-search_web:a', 'input-wildcard:b']);
+  });
+
+  it('lets its own content-child templates override supplied ones by name', () => {
+    expect(rendered(render(true))).toEqual(['own-search_web:a', 'input-wildcard:b']);
   });
 });

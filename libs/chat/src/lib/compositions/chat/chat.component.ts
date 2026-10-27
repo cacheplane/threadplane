@@ -1,6 +1,6 @@
 // libs/chat/src/lib/compositions/chat/chat.component.ts
 import {
-  Component, ChangeDetectionStrategy, input, model, output, computed, contentChild, effect, signal, untracked, viewChild,
+  Component, ChangeDetectionStrategy, input, model, output, computed, contentChild, contentChildren, effect, signal, untracked, viewChild,
   ElementRef, DestroyRef, inject, Injector, runInInjectionContext,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -35,6 +35,7 @@ import {
   type StreamingMarkdownDocument,
 } from '../../streaming/streaming-markdown.component';
 import { ChatToolCallsComponent } from '../../primitives/chat-tool-calls/chat-tool-calls.component';
+import { ChatToolCallTemplateDirective } from '../../primitives/chat-tool-calls/chat-tool-call-template.directive';
 import { resolveMessageToolCalls } from '../../primitives/chat-tool-calls/resolve-message-tool-calls';
 import { ChatMessageActionsComponent } from '../../primitives/chat-message-actions/chat-message-actions.component';
 import { ChatWelcomeComponent } from '../../primitives/chat-welcome/chat-welcome.component';
@@ -50,6 +51,8 @@ import { formatDuration } from '../../utils/format-duration';
 import { CHAT_HOST_TOKENS, ensureChatRootStyles } from '../../styles/chat-tokens';
 import type { ChatRenderEvent } from './chat-render-event';
 import { ChatActivityTemplateDirective, type ChatActivityTemplateContext } from './chat-activity-template.directive';
+import { ChatRunActivityTemplateDirective, type ChatRunActivityTemplateContext } from './chat-run-activity-template.directive';
+import { ChatInterruptTemplateDirective, type ChatInterruptTemplateContext } from './chat-interrupt-template.directive';
 import { CHAT_LIFECYCLE, type ChatLifecycle } from '../../lifecycle';
 
 /**
@@ -172,6 +175,7 @@ export function isPinned(
       padding-bottom: var(--tplane-chat-edge-pad);
     }
     .chat-footer-wrap { position: relative; }
+    .chat-run-activity, .chat-interrupt-region { display: block; }
   `],
   template: `
     @if (showWelcome()) {
@@ -244,11 +248,16 @@ export function isPinned(
                         [label]="run.label"
                       />
                     }
-                    <chat-tool-calls [agent]="agent()" [message]="message" [excludeToolNames]="excludedToolNames()">
-                      <ng-container ngProjectAs="[chatToolCallTemplate]">
-                        <ng-content select="[chatToolCallTemplate]" />
-                      </ng-container>
-                    </chat-tool-calls>
+                    <!-- Per-tool templates projected into <chat> are collected
+                         here and handed down as an input: a content query on
+                         <chat-tool-calls> cannot see templates re-projected
+                         through <chat>'s own ng-content. -->
+                    <chat-tool-calls
+                      [agent]="agent()"
+                      [message]="message"
+                      [excludeToolNames]="excludedToolNames()"
+                      [toolCallTemplates]="toolCallTemplates()"
+                    />
                   }
                   <chat-tool-views
                     [agent]="agent()"
@@ -316,13 +325,35 @@ export function isPinned(
               </ng-template>
             </chat-message-list>
 
-            <!-- Suppress the floor typing-indicator while the current
-                 assistant bubble is streaming: its own caret is already
-                 the loading affordance. Showing both reads as visual
-                 noise rather than richer feedback. See
-                 currentAssistantStreaming() on the component class. -->
-            @if (pinned() && !currentAssistantStreaming()) {
+            <!-- A projected chatRunActivityTemplate renders the run while
+                 it has no assistant message yet, in place of the typing
+                 indicator. The first assistant message hands the run over
+                 to the per-message activity slot. -->
+            @if (runActivityContext(); as runContext) {
+              <div #runActivityRegion class="chat-run-activity" role="status" aria-atomic="false">
+                <ng-container
+                  [ngTemplateOutlet]="runActivityTemplate()!.templateRef"
+                  [ngTemplateOutletContext]="runContext"
+                />
+              </div>
+            } @else if (pinned() && !currentAssistantStreaming()) {
+              <!-- Suppress the floor typing-indicator while the current
+                   assistant bubble is streaming: its own caret is already
+                   the loading affordance. Showing both reads as visual
+                   noise rather than richer feedback. See
+                   currentAssistantStreaming() on the component class. -->
               <chat-typing-indicator [agent]="agent()" />
+            }
+
+            <!-- A projected chatInterruptTemplate renders the pending
+                 interrupt at the end of the transcript. No default UI. -->
+            @if (interruptContext(); as pending) {
+              <div #interruptRegion class="chat-interrupt-region" role="status" aria-atomic="false">
+                <ng-container
+                  [ngTemplateOutlet]="interruptTemplate()!.templateRef"
+                  [ngTemplateOutletContext]="pending"
+                />
+              </div>
             }
           </div>
           <div chatFooter class="chat-footer-wrap">
@@ -492,7 +523,85 @@ export class ChatComponent {
    */
   readonly activityTemplate = contentChild(ChatActivityTemplateDirective);
 
+  /**
+   * Per-tool-name templates projected as `<ng-template chatToolCallTemplate>`.
+   * Collected here and passed to each message's `<chat-tool-calls>`, which
+   * cannot query templates re-projected through `<chat>`. Unused while an
+   * `activityTemplate` is present.
+   */
+  readonly toolCallTemplates = contentChildren(ChatToolCallTemplateDirective);
+
   private readonly activityContexts = new Map<string, ChatActivityTemplateContext>();
+
+  /**
+   * Optional turn-level run renderer projected as
+   * `<ng-template chatRunActivityTemplate>`. Rendered after the last message
+   * while a run is active and has no assistant message yet, in place of the
+   * typing indicator.
+   */
+  readonly runActivityTemplate = contentChild(ChatRunActivityTemplateDirective);
+
+  /**
+   * Optional interrupt renderer projected as
+   * `<ng-template chatInterruptTemplate>`. Rendered at the end of the
+   * transcript while `agent.interrupt()` is defined.
+   */
+  readonly interruptTemplate = contentChild(ChatInterruptTemplateDirective);
+
+  /**
+   * The current run's messages: every message after the last user message,
+   * or every message when there is none.
+   */
+  private readonly currentRunMessages = computed<Message[]>(
+    () => {
+      const msgs = this.agent().messages();
+      let start = msgs.length;
+      while (start > 0 && msgs[start - 1].role !== 'user') start--;
+      return msgs.slice(start);
+    },
+    { equal: sameItems },
+  );
+
+  /**
+   * Context for the run-activity template, or undefined when it should not
+   * render: no template, no active run, or the current run already has an
+   * assistant message. Reused while the agent and run messages are unchanged.
+   */
+  protected readonly runActivityContext = computed<ChatRunActivityTemplateContext | undefined>(
+    () => {
+      if (!this.runActivityTemplate()) return undefined;
+      const agent = this.agent();
+      if (!agent.isLoading()) return undefined;
+      const messages = this.currentRunMessages();
+      if (messages.some((m) => m.role === 'assistant')) return undefined;
+      return { $implicit: agent, running: true, hasAssistantMessage: false, messages };
+    },
+    {
+      equal: (a, b) =>
+        a === b ||
+        (!!a && !!b && a.$implicit === b.$implicit && sameItems(a.messages, b.messages)),
+    },
+  );
+
+  /**
+   * Context for the interrupt template, or undefined when there is no
+   * template or no pending interrupt.
+   */
+  protected readonly interruptContext = computed<ChatInterruptTemplateContext | undefined>(
+    () => {
+      if (!this.interruptTemplate()) return undefined;
+      const agent = this.agent();
+      const interrupt = agent.interrupt?.();
+      return interrupt ? { $implicit: agent, interrupt } : undefined;
+    },
+    {
+      equal: (a, b) =>
+        a === b || (!!a && !!b && a.$implicit === b.$implicit && a.interrupt === b.interrupt),
+    },
+  );
+
+  private readonly runActivityRegion = viewChild<ElementRef<HTMLElement>>('runActivityRegion');
+  private readonly interruptRegion = viewChild<ElementRef<HTMLElement>>('interruptRegion');
 
   /**
    * Builds the activity template context for one assistant message. Tool
@@ -773,6 +882,24 @@ export class ChatComponent {
       }
     });
 
+    // Keep the run-activity and interrupt regions in view while pinned. They
+    // sit below the last message and change size without a message change
+    // (a slow first model call, an approval card arriving), so the message
+    // effects above never see them. A ResizeObserver also fires once on
+    // observe, which covers the region appearing.
+    effect((onCleanup) => {
+      const regions = [this.runActivityRegion()?.nativeElement, this.interruptRegion()?.nativeElement]
+        .filter((el): el is HTMLElement => !!el);
+      if (regions.length === 0) return;
+      if (typeof ResizeObserver === 'undefined') {
+        requestAnimationFrame(() => this.followIfPinned());
+        return;
+      }
+      const observer = new ResizeObserver(() => this.followIfPinned());
+      for (const el of regions) observer.observe(el);
+      onCleanup(() => observer.disconnect());
+    });
+
     // Subscribe to a2ui-partial custom events from the LangGraph backend.
     // Each event delivers a cumulative args string keyed by tool_call_id;
     // bridge.push() re-parses and dispatches new envelopes incrementally.
@@ -882,6 +1009,16 @@ export class ChatComponent {
     el.scrollTop = el.scrollHeight;
     requestAnimationFrame(() => { this.programmaticScrollCount--; });
     this.pinned.set(true);
+  }
+
+  /** Scrolls to the newest content when the view is pinned to the bottom. */
+  private followIfPinned(): void {
+    if (!untracked(() => this.pinned())) return;
+    const el = this.scrollContainer()?.nativeElement;
+    if (!el) return;
+    this.programmaticScrollCount++;
+    el.scrollTop = el.scrollHeight;
+    requestAnimationFrame(() => { this.programmaticScrollCount--; });
   }
 
   protected onScrollBubbleClick(): void {

@@ -24,6 +24,10 @@ export function assertVerification(app, view, results) {
   const framework = selectedFramework(app.framework);
   assert.ok(app.framework, 'App framework required');
   assert.equal(view.framework, framework, 'App/view framework mismatch');
+  const profile =
+    framework === 'react' ? 'react-native-a2ui-langgraph' : 'angular-langgraph';
+  assert.equal(app.profile, profile, 'Explicit app profile required');
+  assert.equal(view.profile, profile, 'App/view profile mismatch');
   assert.equal(app.provenance.framework, framework);
   const common = {
     ...app.tools,
@@ -55,7 +59,82 @@ export function assertVerification(app, view, results) {
   for (const [path, digest] of Object.entries(view.inputs))
     if (common[path])
       assert.equal(digest, common[path], 'App/view input mismatch: ' + path);
-  for (const evidence of [view.source, view.helper])
+  if (framework === 'react') {
+    for (const path of [
+      'react/src/application.ts',
+      'react/src/a2ui-message-content.ts',
+      'react/src/a2ui-trip-catalog.ts',
+    ]) {
+      const digest = app.provenance.inputs['examples/chat/native/' + path];
+      assert.ok(digest, 'Production React source required: ' + path);
+      for (const inputs of [
+        app.provenance.copied,
+        app.provenance.compiler.inputs,
+        app.provenance.bundler.inputs,
+        view.inputs,
+      ])
+        assert.equal(
+          inputs[path],
+          digest,
+          'Production React graph hash required: ' + path
+        );
+      assert.ok(
+        view.compiler.inputs.includes(path),
+        'Production React view compiler required: ' + path
+      );
+      assert.ok(
+        view.runtime.includes(path),
+        'Production React view runtime required: ' + path
+      );
+    }
+    const raw = 'node_modules/@threadplane/content/src/a2ui/create-surfaces';
+    for (const [graph, extension, paths] of [
+      ['compiler', '.d.ts', view.compiler.inputs],
+      ['bundler', '.js', view.runtime],
+    ]) {
+      const path = raw + extension;
+      assert.ok(
+        app.provenance[graph].inputs[path] && paths.includes(path),
+        'Installed raw owner graph required'
+      );
+      assert.equal(
+        view.inputs[path],
+        app.provenance[graph].inputs[path],
+        'Installed raw owner hash required'
+      );
+    }
+    for (const paths of [
+      Object.keys(app.provenance.compiler.inputs),
+      view.compiler.inputs,
+    ])
+      assert.ok(
+        paths.some(
+          (path) =>
+            path.startsWith('node_modules/@threadplane/a2ui/') &&
+            path.endsWith('.d.ts')
+        ),
+        'Protocol declarations required'
+      );
+    for (const paths of [
+      Object.keys(app.provenance.bundler.inputs),
+      view.runtime,
+    ])
+      for (const path of paths)
+        assert.doesNotMatch(
+          path,
+          /^node_modules\/@threadplane\/a2ui\//,
+          'Protocol runtime forbidden'
+        );
+    assert.equal(
+      view.reactHelper.path,
+      'examples/chat/native/tooling/view-owner.react.ts'
+    );
+  }
+  for (const evidence of [
+    view.source,
+    view.helper,
+    ...(framework === 'react' ? [view.reactHelper] : []),
+  ])
     assert.equal(
       evidence.sha256,
       app.provenance.inputs[evidence.path],
@@ -184,5 +263,123 @@ export function assertVerification(app, view, results) {
   assert.equal(evidence.remounted.active, 1);
   assert.equal(evidence.disposed.sessionActive, 0);
   assert.equal(evidence.disposed.ownerDisposals, 1);
+  if (framework === 'react') {
+    const titles = [
+      '<img src=x onerror=alert(1)> Supplied recap',
+      'Empty recap',
+    ];
+    const first = {
+      created: 1,
+      applies: 4,
+      disposed: 0,
+      active: 1,
+      disposalCounts: [0],
+      titles,
+    };
+    for (const phase of ['before', 'absent', 'updated', 'remounted']) {
+      assert.deepEqual(
+        evidence[phase].raw,
+        first,
+        'Stable production raw owner: ' + phase
+      );
+      assert.equal(evidence[phase].preparedCardCount, 2);
+    }
+    assert.deepEqual(evidence.disposed.raw, {
+      ...first,
+      disposed: 1,
+      active: 0,
+      disposalCounts: [1],
+    });
+    for (const key of [
+      'rawSnapshotIdentity',
+      'preparedCardIdentity',
+      'rawSnapshotRenderedText',
+    ])
+      assert.equal(evidence[key], true);
+    const lifecycle = results.browser.a2ui;
+    assert.equal(
+      lifecycle.name,
+      'production React A2UI ownership while absent and across navigation'
+    );
+    assert.equal(lifecycle.passed, true);
+    assert.equal(
+      lifecycle.requests.length,
+      9,
+      'Exact A2UI lifecycle requests required'
+    );
+    assert.deepEqual(
+      lifecycle.requests.map(({ method, path }) => [method, path]),
+      [
+        ['POST', '/api/threads/search'],
+        ['GET', '/api/threads/a'],
+        ['POST', '/api/threads/a/history'],
+        ['POST', '/api/threads/a/runs/stream'],
+        ['POST', '/api/threads/a/state'],
+        ['GET', '/api/threads/b'],
+        ['POST', '/api/threads/b/history'],
+        ['POST', '/api/threads/b/runs/stream'],
+        ['POST', '/api/threads/b/state'],
+      ],
+      'Exact A2UI lifecycle wire sequence required'
+    );
+    const a = lifecycle.evidence;
+    assert.equal(a.exactRequestCount, 9);
+    assert.equal(a.terminalWriteCount, 2);
+    for (const key of [
+      'rawSnapshotRenderedText',
+      'preparedCardIdentity',
+      'rawSnapshotIdentity',
+      'retainedSnapshotsReadable',
+    ])
+      assert.equal(a[key], true);
+    assert.deepEqual(a.before, {
+      created: 0,
+      applies: 0,
+      disposed: 0,
+      active: 0,
+      disposalCounts: [],
+      titles: [],
+    });
+    assert.deepEqual(a.absent, first);
+    assert.deepEqual(a.remounted, first);
+    assert.deepEqual(a.navigated, {
+      ...first,
+      disposed: 1,
+      active: 0,
+      disposalCounts: [1],
+    });
+    assert.deepEqual(a.second, {
+      created: 2,
+      applies: 8,
+      disposed: 1,
+      active: 1,
+      disposalCounts: [1, 0],
+      titles: [...titles, ...titles],
+    });
+    assert.deepEqual(a.disposed, {
+      created: 2,
+      applies: 8,
+      disposed: 2,
+      active: 0,
+      disposalCounts: [1, 1],
+      titles: [...titles, ...titles],
+    });
+    assert.equal(a.generations.length, 2);
+    for (const value of a.generations) {
+      assert.equal(value.id, 'summary-message');
+      assert.ok(
+        typeof value.generation === 'string' && value.generation.length > 0
+      );
+    }
+    assert.notEqual(
+      a.generations[0].generation,
+      a.generations[1].generation,
+      'Navigation must create a new delivery generation'
+    );
+    assert.deepEqual(a.ownerEpochs, [
+      { id: 1, disposed: true, surfaces: ['summary-one', 'summary-empty'] },
+      { id: 2, disposed: false, surfaces: ['summary-one', 'summary-empty'] },
+    ]);
+  }
   return framework;
 }

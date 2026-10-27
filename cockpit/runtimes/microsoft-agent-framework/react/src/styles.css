@@ -1,0 +1,106 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color: #182638;
+  background: #f5f7fa;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+button,
+textarea {
+  font: inherit;
+}
+button {
+  cursor: pointer;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid #a8b4c3;
+  border-radius: 0.5rem;
+  background: white;
+  color: inherit;
+  white-space: normal;
+}
+button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.maf-demo {
+  width: min(100%, 52rem);
+  margin: auto;
+  padding: clamp(1rem, 4vw, 2rem);
+  overflow-wrap: anywhere;
+}
+header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  justify-content: space-between;
+}
+h1 {
+  font-size: clamp(1.6rem, 5vw, 2.1rem);
+  line-height: 1.15;
+  margin: 0.35rem 0;
+}
+h2 {
+  font-size: 1.1rem;
+}
+.eyebrow,
+.preview-note {
+  color: #4b5c70;
+}
+.eyebrow {
+  margin: 0;
+}
+.preset {
+  margin: 0.5rem 0 1rem;
+}
+.predictive-draft,
+.backend-result {
+  background: white;
+  border: 1px solid #b9c4d1;
+  border-radius: 0.65rem;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+.expense-details {
+  display: grid;
+  grid-template-columns: minmax(5rem, auto) minmax(0, 1fr);
+  gap: 0.5rem 1rem;
+}
+.expense-details dt {
+  font-weight: 650;
+}
+.expense-details dd {
+  margin: 0;
+  min-width: 0;
+}
+pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+}
+.tp-chat-input,
+.tp-chat-input__textarea,
+.tp-approval-card {
+  min-width: 0;
+  max-width: 100%;
+}
+.tp-chat-input__actions,
+.tp-approval-card__actions {
+  flex-wrap: wrap;
+}
+[role='status'] {
+  font-weight: 650;
+}
+@media (max-width: 420px) {
+  .expense-details {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+  .expense-details dd {
+    margin-bottom: 0.5rem;
+  }
+}

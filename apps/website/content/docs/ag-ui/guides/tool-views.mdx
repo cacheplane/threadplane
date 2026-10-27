@@ -73,7 +73,7 @@ The adapter marks a call `complete` on `TOOL_CALL_END`, which is the end of the 
 `TOOL_CALL_START` appends a call with the tool's name, empty arguments, and a status of `running`. Each `TOOL_CALL_ARGS` delta is appended to a per-call buffer and the whole buffer is parsed, so a half-arrived JSON fragment leaves the last good arguments in place. `TOOL_CALL_END` marks the call complete and `TOOL_CALL_RESULT` parses the serialized content onto it.
 </Step>
 <Step title="The call is scoped to its assistant message">
-`ag-ui-langgraph` emits a `parentMessageId` for every tool call, so the adapter links the call to that message, creating the message slot when the turn produced no text at all. Each bubble then renders only its own calls.
+When `TOOL_CALL_START` carries a `parentMessageId`, the adapter links the call to that assistant message, creating the message when the turn produced no text at all. A server may also stream a tool call with no parent message; the adapter then creates an assistant message keyed by the tool call id, matching the message the protocol client records for the call. Either way the message lists the call in `toolCallIds`, so each bubble renders only its own calls.
 </Step>
 <Step title="A registered name is bridged into a one-element spec">
 `<chat-tool-views>` keeps the calls whose name is a key in the registry and wraps each one into a synthetic render spec holding a single element of that type. Its props are the live arguments merged with the parsed result, plus `status` and a `clientTool` lifecycle object.

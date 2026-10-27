@@ -1,8 +1,10 @@
+import { getExampleCodeContext, getWebsiteWorkspacePage } from './workspace-page';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
-import { capabilityModules } from '@threadplane/cockpit-registry';
+import { capabilityModules, getFrontendCapabilityDescriptor } from '@threadplane/cockpit-registry';
 import { describe, expect, it } from 'vitest';
 import {
+  fenceFor,
   resolveExampleFile,
   sliceRegion,
   type ExampleCodeContext,
@@ -27,6 +29,62 @@ const findWorkspaceRoot = (): string => {
 };
 const WORKSPACE_ROOT = findWorkspaceRoot();
 const CONTENT_ROOT = join(WORKSPACE_ROOT, 'apps/website/content');
+
+it('resolves every native Subagents article include from its registered sources and shared backend', () => {
+  const canonical = capabilityModules.find(entry => entry.id === 'deep-agents-subagents-python');
+  if (!canonical) throw new Error('Missing canonical Subagents');
+  const react = getFrontendCapabilityDescriptor(canonical.manifestIdentity as never, 'react')!;
+  const page = { docsPath: react.docsPath, assetPaths: [...react.codeAssetPaths, ...(react.backendAssetPaths ?? [])] };
+  const context = contextFor(page);
+  const article = readFileSync(join(WORKSPACE_ROOT, 'apps/website/src/components/docs/ReactDeepAgentsSubagentsPreview.tsx'), 'utf8');
+  for (const include of includesIn(article)) {
+    expect(resolveExampleFile(include.file, context)).toBe(include.file);
+    expect(context.sources[include.file]?.length).toBeGreaterThan(0);
+  }
+  expect(includesIn(article)).toHaveLength(6);
+  expect(page.assetPaths.some(path => /fixture|wire\.py|\.spec\./.test(path))).toBe(false);
+  for (const path of page.assetPaths) expect(context.sources[path]?.length).toBeGreaterThan(0);
+});
+it('resolves every native Filesystem article include from its registered sources and shared backend', () => {
+  const canonical = capabilityModules.find(entry => entry.id === 'deep-agents-filesystem-python');
+  if (!canonical) throw new Error('Missing canonical Filesystem');
+  const react = getFrontendCapabilityDescriptor(canonical.manifestIdentity as never, 'react')!;
+  const page = { docsPath: react.docsPath, assetPaths: [...react.codeAssetPaths, ...(react.backendAssetPaths ?? [])] };
+  const context = contextFor(page);
+  const article = readFileSync(join(WORKSPACE_ROOT, 'apps/website/src/components/docs/ReactDeepAgentsFilesystemPreview.tsx'), 'utf8');
+  for (const include of includesIn(article)) {
+    expect(resolveExampleFile(include.file, context)).toBe(include.file);
+    expect(context.sources[include.file]?.length).toBeGreaterThan(0);
+  }
+  expect(includesIn(article)).toHaveLength(8);
+  expect(page.assetPaths.some(path => /fixture|wire\.py|\.spec\./.test(path))).toBe(false);
+  for (const path of page.assetPaths) expect(context.sources[path]?.length).toBeGreaterThan(0);
+});
+it('resolves every native Planning article include from its registered sources and shared backend', () => {
+  const canonical = capabilityModules.find(entry => entry.id === 'deep-agents-planning-python')!;
+  const react = getFrontendCapabilityDescriptor(canonical.manifestIdentity as never, 'react')!;
+  const page = { docsPath: react.docsPath, assetPaths: [...react.codeAssetPaths, ...(react.backendAssetPaths ?? [])] };
+  const context = contextFor(page);
+  const article = readFileSync(join(WORKSPACE_ROOT, 'apps/website/src/components/docs/ReactDeepAgentsPlanningPreview.tsx'), 'utf8');
+  for (const include of includesIn(article)) {
+    expect(resolveExampleFile(include.file, context)).toBe(include.file);
+    expect(context.sources[include.file]?.length).toBeGreaterThan(0);
+  }
+  expect(includesIn(article)).toHaveLength(7);
+  expect(page.assetPaths.some(path => /fixture|wire\.py|\.spec\./.test(path))).toBe(false);
+  for (const path of page.assetPaths) expect(context.sources[path]?.length).toBeGreaterThan(0);
+});
+
+it('uses the actual Filesystem workspace labels and distinguishes unavailable records from invalid maps', () => {
+  const article = readFileSync(join(WORKSPACE_ROOT, 'apps/website/src/components/docs/ReactDeepAgentsFilesystemPreview.tsx'), 'utf8');
+  const panel = readFileSync(join(WORKSPACE_ROOT, 'cockpit/deep-agents/filesystem/react/src/workspace-panel.tsx'), 'utf8');
+  for (const label of ['Live workspace', 'Paused · confirmed workspace', 'Saved workspace', 'Last confirmed workspace']) {
+    expect(panel).toContain(label);
+    expect(article).toContain(`**${label}**`);
+  }
+  expect(article).toContain('A malformed whole workspace map or unconfirmed checkpoint ownership blocks confirmation and decisions.');
+  expect(article).toContain('Unsupported individual file records remain visibly unavailable and never supply literal file text');
+});
 
 interface MappedPage {
   readonly docsPath: string;
@@ -140,4 +198,94 @@ describe('docs pages teach through their example', () => {
       .filter((docsPath) => includesIn(mdxFor(docsPath)).length > 0);
     expect(offenders, 'docs-only pages must not use <ExampleCode>').toEqual([]);
   });
+});
+
+it('describes the pinned Memory prompt transformation without trimming leading whitespace', () => {
+  const files = [
+    'apps/website/content/docs/deep-agents/capabilities/memory.mdx',
+    'apps/website/src/components/docs/ReactDeepAgentsMemoryPreview.tsx',
+    ...['AGENTS', 'CLAUDE'].flatMap(name => [`apps/website/content/${name}.md.template`, `apps/website/public/${name}.md`]),
+  ];
+  for (const file of files) {
+    const source = readFileSync(join(WORKSPACE_ROOT, file), 'utf8');
+    expect(source).toContain('strips HTML comments and trailing whitespace');
+    expect(source).not.toContain('trims surrounding whitespace');
+    expect(source).not.toContain('Pinned prompt text trims whitespace');
+  }
+});
+
+it('resolves every Memory article include and both complete shared backend sources', () => {
+  const canonical = capabilityModules.find(entry => entry.id === 'deep-agents-memory-python')!;
+  const react = getFrontendCapabilityDescriptor(canonical.manifestIdentity as never, 'react')!;
+  expect(react).toBeDefined();
+  for (const descriptor of [canonical, react]) {
+    const page = { docsPath: descriptor.docsPath, assetPaths: [...descriptor.codeAssetPaths, ...(descriptor.backendAssetPaths ?? [])] };
+    const context = contextFor(page);
+    const article = descriptor === react ? readFileSync(join(WORKSPACE_ROOT, 'apps/website/src/components/docs/ReactDeepAgentsMemoryPreview.tsx'), 'utf8') : mdxFor(canonical.docsPath);
+    expect(includesIn(article).length).toBeGreaterThan(5);
+    for (const include of includesIn(article)) {
+      expect(resolveExampleFile(include.file, context)).toBe(include.file);
+      expect(context.sources[include.file]).toBe(readFileSync(join(WORKSPACE_ROOT, include.file), 'utf8'));
+    }
+    expect(page.assetPaths).toContain('cockpit/deep-agents/memory/python/src/memory_observation.py');
+    expect(page.assetPaths.some(path => /fixture|wire\.py|\.spec\.|proof/.test(path))).toBe(false);
+    for (const path of page.assetPaths) expect(context.sources[path]).toBe(readFileSync(join(WORKSPACE_ROOT, path), 'utf8'));
+  }
+});
+
+it('resolves every native Skills article include and the complete read-only backend', () => {
+  const canonical = capabilityModules.find(entry => entry.id === 'deep-agents-skills-python')!;
+  const react = getFrontendCapabilityDescriptor(canonical.manifestIdentity as never, 'react')!;
+  expect(react).toBeDefined();
+  const page = { docsPath: react.docsPath, assetPaths: [...react.codeAssetPaths, ...(react.backendAssetPaths ?? [])] };
+  const context = contextFor(page);
+  const article = readFileSync(join(WORKSPACE_ROOT, 'apps/website/src/components/docs/ReactDeepAgentsSkillsPreview.tsx'), 'utf8');
+  expect(includesIn(article)).toHaveLength(8);
+  for (const include of includesIn(article)) {
+    expect(resolveExampleFile(include.file, context)).toBe(include.file);
+    expect(context.sources[include.file]?.length).toBeGreaterThan(0);
+  }
+  expect(page.assetPaths).toContain('cockpit/deep-agents/skills/python/src/skills_readonly.py');
+  expect(page.assetPaths.some(path => /fixture|wire\.py|\.spec\./.test(path))).toBe(false);
+  for (const path of page.assetPaths) expect(context.sources[path]?.length).toBeGreaterThan(0);
+});
+
+it('loads every bundled Skills Markdown asset as literal code for both frontends', async () => {
+  const model = await getWebsiteWorkspacePage({ docsPath: '/docs/deep-agents/capabilities/skills', title: 'Skills' });
+  const react = model.frontendVariants?.react;
+  expect(react).toBeDefined();
+  if (!react) throw new Error('Missing native Skills workspace');
+  const markdown = ['skills/runway-analysis/SKILL.md', 'skills/runway-analysis/reference/margins.md', 'skills/weather-brief/SKILL.md'].map(file => `cockpit/deep-agents/skills/python/${file}`);
+  const backend = ['src/graph.py', 'src/skills_readonly.py', ...markdown.map(path => path.replace('cockpit/deep-agents/skills/python/', ''))].map(file => `cockpit/deep-agents/skills/python/${file}`);
+  for (const variant of [model, react]) {
+    const context = getExampleCodeContext(variant);
+    expect(context).not.toBeNull();
+    if (!context) throw new Error('Missing Skills source context');
+    expect(variant.presentation.kind).toBe('capability');
+    if (variant.presentation.kind !== 'capability') throw new Error('Missing Skills capability');
+    expect(variant.presentation.backendAssetPaths).toEqual(backend);
+    for (const path of markdown) {
+      const literal = readFileSync(join(WORKSPACE_ROOT, path), 'utf8');
+      expect(resolveExampleFile(path, context)).toBe(path);
+      expect(context.sources[path]).toBe(literal);
+      expect(variant.contentBundle.codeFiles[path]).not.toContain('File not found:');
+      expect(fenceFor(context.sources[path], path)).toMatch(/^`{3,}md\n/);
+    }
+  }
+});
+
+it('renders every native AG-UI Client Tools include from exact registered source bytes', async () => {
+  const page = await getWebsiteWorkspacePage({ docsPath: '/docs/ag-ui/guides/client-tools', title: 'Client Tools' });
+  const react = page.frontendVariants?.react;
+  if (!react) throw new Error('Missing native AG-UI Client Tools variant');
+  const context = getExampleCodeContext(react);
+  if (!context) throw new Error('Missing native AG-UI Client Tools source context');
+  const article = readFileSync(join(WORKSPACE_ROOT, 'apps/website/src/components/docs/ReactAgUiClientToolsPreview.tsx'), 'utf8');
+  const includes = includesIn(article);
+  expect(includes).toHaveLength(11);
+  for (const include of includes) {
+    const asset = resolveExampleFile(include.file, context);
+    expect(context.sources[asset]).toBe(readFileSync(join(WORKSPACE_ROOT, asset), 'utf8'));
+    expect(asset).not.toMatch(/fixture|scripted|\.spec\.|type-test/);
+  }
 });

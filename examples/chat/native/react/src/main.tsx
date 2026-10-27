@@ -6,17 +6,20 @@ import {
   bindBrowserLifetime,
   getBrowserConfiguration,
 } from '../../shared/browser';
-import { createApplication } from '../../shared/application';
+import { createReactApplication } from './application';
 import { createThreadDirectory } from '../../shared/directory';
 import { browserHistory } from '../../shared/route';
 import '../../shared/tokens.css';
+import '@threadplane/react/chat/styles.css';
 import '../../shared/styles.css';
+import './popup.css';
+import './sidenav.css';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Application root is missing');
 const browser = getBrowserConfiguration(configuration);
 const application = browser.configured
-  ? createApplication({
+  ? createReactApplication({
       assistantId: browser.assistantId,
       apiUrl: browser.apiUrl,
       directory: createThreadDirectory({
@@ -30,8 +33,20 @@ if (application) {
   bindBrowserLifetime(application, window);
   application.start();
 }
+const presentation = new URLSearchParams(window.location.search).get(
+  'presentation'
+);
 createRoot(root).render(
   <StrictMode>
-    <App application={application} />
+    <App
+      application={application}
+      presentation={
+        presentation === 'popup' ||
+        presentation === 'sidebar' ||
+        presentation === 'sidenav'
+          ? presentation
+          : 'page'
+      }
+    />
   </StrictMode>
 );

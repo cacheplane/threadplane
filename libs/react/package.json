@@ -14,7 +14,8 @@
   "peerDependencies": {
     "@threadplane/content": "0.0.0",
     "@threadplane/core": "0.0.0",
-    "react": "^19.2.4"
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
   },
   "devDependencies": {
     "@testing-library/react": "16.3.2",
@@ -51,6 +52,12 @@
       "types": "./src/index.d.ts",
       "import": "./src/index.js",
       "default": "./src/index.js"
-    }
+    },
+    "./debug": {
+      "types": "./src/debug/index.d.ts",
+      "import": "./src/debug/index.js",
+      "default": "./src/debug/index.js"
+    },
+    "./debug/styles.css": "./src/debug/styles.css"
   }
 }

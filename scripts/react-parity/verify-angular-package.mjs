@@ -4,7 +4,8 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import assert from 'node:assert/strict';
-import { assertHeadlessInputs, assertParserFreeInputs, consumerSpecifiers, installConsumer, packLocalArtifacts, runConsumer } from './verify-packages.mjs';
+import { assertHeadlessInputs, assertParserFreeInputs, consumerSpecifiers, packLocalArtifacts, runConsumer } from './verify-packages.mjs';
+import { angularFoundationPresentationSeeds, installPresentationConsumer } from './markdown-presentation-build.mjs';
 import { buildSync } from 'esbuild';
 import { prepareInstalledTypes, prepareRuntimeConsumer, runRuntimeScenarios } from './runtime-consumer.mjs';
 
@@ -101,9 +102,10 @@ export async function verifyAngularPackage(root = process.cwd()) {
     const consumer = join(temporary, 'consumer');
     cpSync(join(root, 'fixtures/react-parity/consumers/angular'), consumer, { recursive: true });
     const template = JSON.parse(readFileSync(join(consumer, 'package.json'), 'utf8'));
-    const manifest = lockedAngularManifest(template, JSON.parse(readFileSync(join(root, 'package-lock.json'), 'utf8')));
+    const lock = JSON.parse(readFileSync(join(root, 'package-lock.json'), 'utf8'));
+    const manifest = lockedAngularManifest(template, lock);
     console.log(`Angular consumer toolchain: ${JSON.stringify({ ...manifest.dependencies, ...manifest.devDependencies })}`);
-    installConsumer(consumer, manifest, tarballs, 'angular');
+    installPresentationConsumer(consumer, lock, tarballs, { seeds: angularFoundationPresentationSeeds, profile: 'angular-foundation' });
     const rootProbe = buildSync({ absWorkingDir: consumer, stdin: { contents: "import * as angular from '@threadplane/angular'; console.log(angular);", resolveDir: consumer }, bundle: true, platform: 'browser', format: 'esm', write: false, metafile: true });
     assertHeadlessInputs(rootProbe.metafile.inputs);
     const installed = JSON.parse(readFileSync(join(consumer, 'node_modules/@threadplane/angular/package.json'), 'utf8'));

@@ -275,6 +275,31 @@
         ]
       },
       {
+        "name": "getChildState",
+        "signature": "getChildState(threadId: string, checkpointNs: string, signal: AbortSignal): Promise<ThreadState<DefaultValues> | undefined>",
+        "description": "Read the newest checkpoint saved under one child checkpoint namespace.",
+        "params": [
+          {
+            "name": "threadId",
+            "type": "string",
+            "description": "",
+            "optional": false
+          },
+          {
+            "name": "checkpointNs",
+            "type": "string",
+            "description": "",
+            "optional": false
+          },
+          {
+            "name": "signal",
+            "type": "AbortSignal",
+            "description": "",
+            "optional": false
+          }
+        ]
+      },
+      {
         "name": "getHistory",
         "signature": "getHistory(threadId: string, signal: AbortSignal): Promise<ThreadState<DefaultValues>[]>",
         "description": "Load persisted checkpoint history for a thread.",
@@ -627,6 +652,18 @@
         "optional": false
       },
       {
+        "name": "childStateCalls",
+        "type": "object[]",
+        "description": "",
+        "optional": false
+      },
+      {
+        "name": "childStates",
+        "type": "Map<string, ThreadState<DefaultValues>>",
+        "description": "Child-namespace checkpoints served by `getChildState`, keyed by checkpoint namespace.",
+        "optional": false
+      },
+      {
         "name": "createdQueuedRuns",
         "type": "AgentQueueEntry<unknown>[]",
         "description": "",
@@ -757,6 +794,31 @@
         "signature": "flush(): Promise<void>",
         "description": "Resolve once everything emitted so far has been consumed, without emitting\nanything new. Useful after driving the agent by some other route (a\n`submit()`, a `switchThread()`) that has to reach the transport first.",
         "params": []
+      },
+      {
+        "name": "getChildState",
+        "signature": "getChildState(threadId: string, checkpointNs: string, signal: AbortSignal): Promise<ThreadState<DefaultValues> | undefined>",
+        "description": "Optional: read the newest checkpoint a child graph saved under one\ncheckpoint namespace of a thread (for a delegation tool call, `tools:<task\nid>`). Used to restore a subagent's transcript when a thread is reloaded;\nwithout it, a reloaded subagent shows its status and result but no\nmessages. Resolve `undefined` when the namespace has no saved state.",
+        "params": [
+          {
+            "name": "threadId",
+            "type": "string",
+            "description": "",
+            "optional": false
+          },
+          {
+            "name": "checkpointNs",
+            "type": "string",
+            "description": "",
+            "optional": false
+          },
+          {
+            "name": "signal",
+            "type": "AbortSignal",
+            "description": "",
+            "optional": false
+          }
+        ]
       },
       {
         "name": "getHistory",
@@ -1282,6 +1344,31 @@
             "type": "LangGraphSubmitOptions",
             "description": "",
             "optional": true
+          }
+        ]
+      },
+      {
+        "name": "getChildState",
+        "signature": "getChildState(threadId: string, checkpointNs: string, signal: AbortSignal): Promise<ThreadState<DefaultValues> | undefined>",
+        "description": "Optional: read the newest checkpoint a child graph saved under one\ncheckpoint namespace of a thread (for a delegation tool call, `tools:<task\nid>`). Used to restore a subagent's transcript when a thread is reloaded;\nwithout it, a reloaded subagent shows its status and result but no\nmessages. Resolve `undefined` when the namespace has no saved state.",
+        "params": [
+          {
+            "name": "threadId",
+            "type": "string",
+            "description": "",
+            "optional": false
+          },
+          {
+            "name": "checkpointNs",
+            "type": "string",
+            "description": "",
+            "optional": false
+          },
+          {
+            "name": "signal",
+            "type": "AbortSignal",
+            "description": "",
+            "optional": false
           }
         ]
       },

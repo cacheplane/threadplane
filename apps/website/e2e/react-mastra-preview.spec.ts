@@ -1,0 +1,53 @@
+import { writeFile } from 'node:fs/promises';
+import { test, expect } from '@playwright/test';
+
+const origin = 'http://127.0.0.1:4641';
+test.describe('native Mastra Website', () => {
+  test.skip(!!process.env['BASE_URL'], 'Owned actual-service fixture is local only.');
+  test.beforeEach(async ({ request }) => { await request.post(origin + '/__reset', { data: { mode: 'normal' } }); });
+  test.afterEach(async ({ page, request }, info) => {
+    await page.goto('about:blank');
+    await writeFile(info.outputPath('private-actual-service-evidence.json'), JSON.stringify(await (await request.get(origin + '/__stats')).json(), null, 2));
+    const receipt = await (await request.get(origin + '/__finish')).json();
+    await writeFile(info.outputPath('private-owned-cleanup.json'), JSON.stringify(receipt, null, 2));
+    for (const owner of receipt.closed) expect(Object.values(owner.closure).every(Boolean)).toBe(true);
+  });
+  test('Docs Code and Run select the authored reservation implementation', async ({ page, request }, info) => {
+    await page.goto('/docs/runtimes/mastra/overview?frontend=react');
+    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-hydrated', 'true');
+    await expect(page.getByRole('heading', { name: 'React Mastra reservation preview', exact: true })).toBeVisible();
+    await expect(page.locator('[data-example-file="cockpit/runtimes/mastra/react/src/approval-policy.ts"]')).toBeVisible();
+    await page.screenshot({ path: info.outputPath('docs-desktop.png') });
+    await page.setViewportSize({ width: 390, height: 844 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.screenshot({ path: info.outputPath('docs-mobile.png') });
+    await page.setViewportSize({ width: 1280, height: 900 });
+    const navigation = page.locator('[data-workspace-desktop-navigation]');
+    await navigation.getByRole('button', { name: 'Code', exact: true }).click();
+    const tree = page.getByRole('complementary', { name: 'File tree' });
+    for (const file of ['app.tsx', 'application.ts', 'approval-policy.ts', 'connection.ts', 'main.tsx', 'styles.css', 'project.json', 'agents.mjs', 'server.mjs', 'mastra.md', 'mastra-backend.md']) await expect(tree.getByRole('button', { name: file, exact: true })).toBeVisible();
+    await expect(tree).not.toContainText(/fixture|\.spec\.|model\.mjs|probe/);
+    await tree.getByRole('button', { name: 'application.ts', exact: true }).click();
+    await expect(page.getByRole('tabpanel')).toContainText('p.session.resume');
+    await page.screenshot({ path: info.outputPath('code-desktop.png') });
+    await navigation.getByRole('button', { name: /^Run(?:,|$)/ }).click();
+    await expect(page.locator('iframe')).toHaveAttribute('src', /^http:\/\/localhost:4641\/\?cockpit_did=/);
+    const frame = page.frameLocator('iframe');
+    await expect(frame.getByRole('status')).toHaveText('Ready.');
+    await frame.getByRole('button', { name: 'Reserve the campsite', exact: true }).click();
+    expect((await (await request.get(origin + '/__stats')).json()).current.requests).toHaveLength(0);
+    await frame.getByRole('button', { name: 'Send', exact: true }).click();
+    await expect(frame.getByRole('button', { name: 'Approve', exact: true })).toBeEnabled();
+    await expect(frame.getByRole('region', { name: 'Reservation approval' })).toContainText('North Pines');
+    await frame.getByRole('button', { name: 'Approve', exact: true }).click();
+    await expect(frame.getByRole('status')).toHaveText('Fictional reservation approved.');
+    await expect(frame.getByRole('region', { name: 'Observed backend result' }).locator('pre')).toHaveText(JSON.stringify('Reserved North Pines for 2 night(s) — total $90. Confirmation TP-0288.'));
+    const wire = (await (await request.get(origin + '/__stats')).json()).current.requests;
+    expect(wire).toHaveLength(2);
+    expect(wire[1].body.resume[0]).toMatchObject({ status: 'resolved', payload: { approved: true } });
+    expect(wire[1].body.forwardedProps).not.toHaveProperty('command');
+    await page.screenshot({ path: info.outputPath('run-desktop.png') });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.screenshot({ path: info.outputPath('run-mobile.png') });
+  });
+});

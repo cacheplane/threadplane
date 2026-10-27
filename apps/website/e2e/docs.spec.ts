@@ -195,7 +195,10 @@ test.describe('Docs slug page', () => {
     await expect(dialog.getByText('In page content')).toBeVisible();
     await expect(hit.locator('.docs-search-result-snippet')).toContainText(/checkpointer/i);
 
-    await hit.click();
+    await Promise.all([
+      page.waitForURL(/\/docs\/[a-z0-9-]+\/.*#.+/),
+      hit.click(),
+    ]);
 
     // The deep link must land on a real section anchor, not just a
     // well-formed but dangling fragment that scrolls nowhere.

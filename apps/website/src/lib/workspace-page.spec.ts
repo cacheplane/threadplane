@@ -4,6 +4,7 @@ import { compile } from '@tailwindcss/node';
 import { Scanner } from '@tailwindcss/oxide';
 import { describe, expect, it } from 'vitest';
 import { nextConfig } from '../../next.config';
+import { resolveExampleFile } from './example-code';
 import {
   getExampleCodeContext,
   getWebsiteWorkspacePage,
@@ -14,6 +15,17 @@ const workspaceRoot = process.cwd().endsWith('/apps/website')
   : process.cwd();
 
 describe('getWebsiteWorkspacePage', () => {
+  it('loads the authored MAF snapshot compatibility helper into actual ExampleCode context', async () => {
+    const page = await getWebsiteWorkspacePage({ docsPath: '/docs/runtimes/microsoft-agent-framework/overview', title: 'Overview' });
+    const context = getExampleCodeContext(page);
+    const helper = 'cockpit/runtimes/microsoft-agent-framework/python/src/snapshot_compat.py';
+    if (!context) throw new Error('Missing MAF ExampleCode context');
+    expect(resolveExampleFile('snapshot_compat.py', context)).toBe(helper);
+    expect(context?.assetPaths).toContain(helper);
+    expect(context?.sources[helper]).toBe(readFileSync(resolve(workspaceRoot, helper), 'utf8'));
+    const docs = readFileSync(resolve(workspaceRoot, 'apps/website/content/docs/runtimes/microsoft-agent-framework/overview.mdx'), 'utf8');
+    expect(docs).toContain('<ExampleCode file="snapshot_compat.py"');
+  });
   it('loads the canonical Subagents React code and child bridge with the same native runtime', async () => {
     const page = await getWebsiteWorkspacePage({ docsPath: '/docs/ag-ui/guides/subagents', title: 'Subagents' });
     const react = page.frontendVariants?.react;

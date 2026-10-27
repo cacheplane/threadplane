@@ -313,10 +313,12 @@ describe('owned run reconnect', () => {
       onDisconnect: 'continue',
       onRunCreated: expect.any(Function),
     });
+    // History stays readable later, so the check is offered; while the exact
+    // run is still in flight neither close nor the check reads it.
     expect(f.session.getSnapshot()).toMatchObject({
       status: 'error',
       reconnect: { runId: 'run-1' },
-      error: { recovery: 'none', retryable: false },
+      error: { recovery: 'check', retryable: false },
     });
     expect(f.getRunStatus).toHaveBeenCalledExactlyOnceWith(
       't',
@@ -324,6 +326,7 @@ describe('owned run reconnect', () => {
       f.stream.mock.calls[0][3]
     );
     await f.session.checkStatus?.();
+    expect(f.getRunStatus).toHaveBeenCalledTimes(2);
     expect(f.getHistory).not.toHaveBeenCalled();
     off();
   });
@@ -358,7 +361,12 @@ describe('owned run reconnect', () => {
         status === 'interrupted' ? 'interrupted' : 'error'
       );
       expect(f.session.getSnapshot().reconnect).toBeUndefined();
-      expect(f.getHistory).not.toHaveBeenCalled();
+      // 'interrupted' alone cannot tell a lost pause from a cancelled run, so
+      // that status (and only that status) is disambiguated through history.
+      expect(f.getHistory).toHaveBeenCalledTimes(
+        status === 'interrupted' ? 1 : 0
+      );
+      expect(f.session.getSnapshot().error?.recovery).toBe('none');
       await expect(f.session.reconnect()).rejects.toThrow();
     }
   );

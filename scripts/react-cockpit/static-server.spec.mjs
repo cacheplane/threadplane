@@ -46,6 +46,10 @@ test('the local rendering server has no runtime or fixture execution endpoints',
     '/__release',
     '/__requests',
     '/__lifetime',
+    '/__captures',
+    '/__graph-proof',
+    '/__release-history',
+    '/__history/hold',
     '/__fail-create',
   ]) {
     const response = await fetch(origin + path, {

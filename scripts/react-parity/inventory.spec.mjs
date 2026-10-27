@@ -61,6 +61,8 @@ test('owned content features are scoped separately from renderer parity', t => {
   const { root, put } = fixture(t);
   put('libs/content/src/index.ts', 'export {};');
   put('libs/content/src/messages/index.ts', 'export {};');
+  put('libs/content/src/a2ui/index.ts', 'export {};');
+  put('libs/content/src/render-state/index.ts', 'export {};');
   put('libs/content/src/markdown/index.ts', "export { createMarkdown } from './create-markdown.js';");
   put('libs/content/src/markdown/create-markdown.ts', 'export function createMarkdown() { return {}; }');
   put('libs/content/src/json/index.ts', "export { createJson } from './create-json.js';");
@@ -69,6 +71,40 @@ test('owned content features are scoped separately from renderer parity', t => {
   assert.ok(actual.rows.some(row => row.id === 'source:libs/content/src/markdown/create-markdown.ts'));
   assert.ok(actual.rows.some(row => row.id === 'export:libs/content/src/markdown/index.ts#createMarkdown'));
   assert.ok(actual.rows.some(row => row.id === 'export:libs/content/src/json/index.ts#createJson'));
+  assert.equal(actual.rows.filter(row => row.kind === 'component').length, 0);
+});
+
+test('private render-state scope resolves owned declarations in both default and saved CLI scopes', t => {
+  const entry = 'libs/content/src/render-state/index.ts';
+  assert.ok(DEFAULT_SCOPE.entryPoints.includes(entry));
+  const baseline = JSON.parse(readFileSync(new URL('./baseline.json', import.meta.url), 'utf8'));
+  assert.ok(baseline.scope.entryPoints.includes(entry), 'CLI reuses the saved baseline scope');
+  const { root, put } = fixture(t);
+  put(entry, "export { createRenderState } from './create-render-state.js'; export type { RenderState, RenderStateValue, RenderStateSnapshot, RenderStateChange } from './types.js';");
+  put('libs/content/src/render-state/create-render-state.ts', 'export function createRenderState() { return {}; }');
+  put('libs/content/src/render-state/types.ts', 'export interface RenderState {} export type RenderStateValue = string; export interface RenderStateSnapshot {} export interface RenderStateChange {}');
+  put('libs/content/src/render-state/render-state.type-test.ts', 'export const negativeTestOnly = true;');
+  const actual = collectInventory(root, { ...scope, libraries: ['content'], entryPoints: [entry] });
+  assert.deepEqual(actual.rows.filter(row => row.kind === 'export').map(row => row.symbol).sort(), ['RenderState', 'RenderStateChange', 'RenderStateSnapshot', 'RenderStateValue', 'createRenderState']);
+  for (const row of actual.rows.filter(row => row.kind === 'export'))
+    assert.equal(row.declarations[0].path, 'libs/content/src/render-state/' + (row.symbol === 'createRenderState' ? 'create-render-state.ts' : 'types.ts'));
+  assert.equal(actual.rows.some(row => row.path?.endsWith('.type-test.ts')), false);
+  assert.equal(actual.rows.filter(row => row.kind === 'component').length, 0);
+});
+
+test('private A2UI scope resolves the factory and owned types without claiming a renderer', t => {
+  const entry = 'libs/content/src/a2ui/index.ts';
+  assert.ok(DEFAULT_SCOPE.entryPoints.includes(entry));
+  const { root, put } = fixture(t);
+  put(entry, "export { createA2uiSurfaces } from './create-surfaces.js'; export type { A2uiSurfacesSnapshot } from './types.js';");
+  put('libs/content/src/a2ui/create-surfaces.ts', 'export function createA2uiSurfaces() { return {}; }');
+  put('libs/content/src/a2ui/types.ts', 'export interface A2uiSurfacesSnapshot { readonly surfaces: readonly unknown[]; }');
+  put('libs/content/src/a2ui/ignored.spec.ts', 'export const testOnly = true;');
+  const actual = collectInventory(root, { ...scope, libraries: ['content'], entryPoints: [entry] });
+  for (const [symbol, path] of [['createA2uiSurfaces', 'create-surfaces.ts'], ['A2uiSurfacesSnapshot', 'types.ts']]) {
+    assert.equal(actual.rows.find(row => row.id === `export:${entry}#${symbol}`).declarations[0].path, 'libs/content/src/a2ui/' + path);
+  }
+  assert.equal(actual.rows.some(row => row.path?.endsWith('.spec.ts')), false);
   assert.equal(actual.rows.filter(row => row.kind === 'component').length, 0);
 });
 

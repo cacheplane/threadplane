@@ -15,7 +15,7 @@ import {
 import { dirname, join, relative, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import ts from 'typescript';
-import { satisfies } from 'semver';
+import { satisfies, validRange } from 'semver';
 import {
   installFootprint,
   runConsumer,
@@ -475,9 +475,28 @@ export function candidateInstallViolations(
   }
   return errors;
 }
+/** Map each locked `name@version` to the ranges its mandatory edges declare. */
+export function lockedEdgeRanges(lock) {
+  return Object.fromEntries(
+    Object.entries(lock.packages ?? {})
+      .filter(([path]) => path.includes('node_modules/'))
+      .map(([path, pkg]) => [
+        `${path.split('node_modules/').at(-1)}@${pkg.version}`,
+        {
+          ...pkg.dependencies,
+          ...Object.fromEntries(
+            Object.entries(pkg.peerDependencies ?? {}).filter(
+              ([name]) => !pkg.peerDependenciesMeta?.[name]?.optional
+            )
+          ),
+        },
+      ])
+  );
+}
 export function vendorOverrides(
   vendors,
-  seeds = ['@langchain/langgraph-sdk', '@langchain/core']
+  seeds = ['@langchain/langgraph-sdk', '@langchain/core'],
+  { edgeRanges = {}, rootPins = [] } = {}
 ) {
   const graph = new Map(vendors.map((v) => [`${v.name}@${v.version}`, v]));
   function pin(name, version, ancestors = []) {
@@ -485,17 +504,35 @@ export function vendorOverrides(
       vendor = graph.get(key);
     assert.ok(vendor, `Missing override vendor ${key}`);
     assert.ok(!ancestors.includes(key), `Cyclic vendor override ${key}`);
-    if (!Object.keys(vendor.dependencies).length) return version;
+    // A vendor pinned at the consumer root is pinned once. npm 11 drops the
+    // root pin's nested selectors when another owner (the SDK's peer edge to
+    // @langchain/core) re-pins the same node inside its own subtree.
+    const dependencies = Object.entries(vendor.dependencies).filter(
+      ([dependency, dependencyVersion]) =>
+        !rootPins.includes(`${dependency}@${dependencyVersion}`)
+    );
+    if (!dependencies.length) return version;
     return {
       '.': version,
       ...Object.fromEntries(
-        Object.entries(vendor.dependencies).map(
-          ([dependency, dependencyVersion]) => [
+        dependencies.map(
+          ([dependency, dependencyVersion]) => {
             // npm 10 can reuse a same-name descendant across incompatible
-            // owner subtrees unless the override selector includes its version.
-            `${dependency}@${dependencyVersion}`,
-            pin(dependency, dependencyVersion, [...ancestors, key]),
-          ]
+            // owner subtrees unless the override selector is qualified. npm 11
+            // applies a qualified selector only when the resolver's candidate
+            // satisfies it, so the owner's declared range qualifies instead of
+            // the locked version: a hoisted zod 4 still matches
+            // `zod@^3.25.76 || ^4` and is replaced by the pinned 3.25.76.
+            const range = edgeRanges[key]?.[dependency];
+            const selector =
+              range && validRange(range) && satisfies(dependencyVersion, range)
+                ? range
+                : dependencyVersion;
+            return [
+              `${dependency}@${selector}`,
+              pin(dependency, dependencyVersion, [...ancestors, key]),
+            ];
+          }
         )
       ),
     };
@@ -539,9 +576,14 @@ export function installCandidateConsumer(
     ),
   ];
   const vendors = lockedVendorGraph(rootLock);
+  const rootPins = [
+    ...Object.keys(vendorOverrides(vendors)),
+    ...Object.keys(vendorOverrides(localVendors, externalRoots)),
+  ];
+  const options = { edgeRanges: lockedEdgeRanges(rootLock), rootPins };
   const overrides = {
-    ...vendorOverrides(vendors),
-    ...vendorOverrides(localVendors, externalRoots),
+    ...vendorOverrides(vendors, undefined, options),
+    ...vendorOverrides(localVendors, externalRoots, options),
   };
   const direct = {
     ...manifest.dependencies,

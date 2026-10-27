@@ -21,10 +21,28 @@
         "cwd": "cockpit/chat/theming/python",
         "command": "uv run langgraph dev --port 5510 --no-browser"
       }
+    },
+    "smoke": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": ["test"],
+      "options": {
+        "cwd": "cockpit/chat/theming/python",
+        "command": "npx tsx -e \"import { chatThemingPythonModule } from './src/index.ts'; const module = chatThemingPythonModule; if (module.id !== 'chat-theming-python' || module.title !== 'Chat Theming (Python)') { throw new Error('Unexpected module shape for ' + module.id); }\""
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "cwd": "cockpit/chat/theming/python",
+        "command": "uv run --frozen --python 3.12 python -m unittest discover -s tests"
+      }
     }
   },
   "tags": [
     "scope:cockpit-e2e",
-    "scope:cockpit-examples"
+    "scope:cockpit-examples",
+    "scope:cockpit-smoke"
   ]
 }

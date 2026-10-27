@@ -1,15 +1,12 @@
 import { ApprovalCard } from '@threadplane/react/chat';
-import type {
-  ApplicationSnapshot,
-  createApplication,
-} from '../../shared/application';
+import type { ReactApplication, ReactApplicationSnapshot } from './application';
 
 export function Approval({
   application,
   snapshot,
 }: {
-  application: ReturnType<typeof createApplication>;
-  snapshot: ApplicationSnapshot;
+  application: Pick<ReactApplication, 'respond'>;
+  snapshot: ReactApplicationSnapshot;
 }) {
   if (snapshot.selection.status !== 'ready') return null;
   const decision = snapshot.decision;

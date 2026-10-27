@@ -40,8 +40,8 @@ test('da-skills: the index loads up front and only the matching skill is opened'
   await expect(opened.nth(1)).toHaveText('/skills/runway-analysis/reference/margins.md');
 
   // The answer used the margin table rather than a guess: 4,800 x (1 + 0.14 x
-  // 7.82) rounds to 10,057 ft, which is longer than KASE's 8,006 ft runway.
+  // 7.82) rounds to 10,055 ft, which is longer than KASE's 8,006 ft runway.
   const finalText = await bubble.innerText();
-  expect(finalText).toMatch(/10,?057/);
+  expect(finalText).toMatch(/10,?055/);
   expect(finalText.toLowerCase()).toContain('runway-analysis');
 });

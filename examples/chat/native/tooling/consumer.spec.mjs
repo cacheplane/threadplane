@@ -16,6 +16,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
+import * as consumerTools from './consumer.mjs';
 import {
   inputFingerprint,
   copyApplication,
@@ -27,11 +28,198 @@ import { frozenInputFingerprint } from './source-mirror.mjs';
 import { selectedBuildInputRoots } from './build-workspace.mjs';
 
 const repository = fileURLToPath(new URL('../../../../', import.meta.url));
+
+test('explicit native feature selection validates framework and profile before preparation effects', async (t) => {
+  assert.equal(
+    consumerTools.selectedConsumerProfile('react'),
+    'react-native-a2ui-langgraph'
+  );
+  assert.equal(
+    consumerTools.selectedConsumerProfile('angular'),
+    'angular-langgraph'
+  );
+  assert.equal(
+    consumerTools.selectedConsumerProfile(
+      'react',
+      'react-native-a2ui-langgraph'
+    ),
+    'react-native-a2ui-langgraph'
+  );
+  for (const [framework, profile] of [
+    ['angular', 'react-native-a2ui-langgraph'],
+    ['react', 'angular-langgraph'],
+    ['angular', 'react-langgraph'],
+    ['react', 'unknown'],
+    ['vue', 'react-native-a2ui-langgraph'],
+  ]) {
+    const temporary = mkdtempSync(join(tmpdir(), 'native-invalid-profile-'));
+    t.after(() => rmSync(temporary, { recursive: true, force: true }));
+    await assert.rejects(
+      prepareConsumer({
+        root: '/nonexistent-native-root',
+        temporary,
+        framework,
+        profile,
+      }),
+      /framework|profile/i
+    );
+    assert.deepEqual(readdirSync(temporary), []);
+  }
+});
+
+test('selected installed test graph preserves shared tests and admits only pure React specs for feature selection', (t) => {
+  const directory = mkdtempSync(join(tmpdir(), 'native-test-graph-'));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  for (const path of [
+    'shared/ordinary.spec.js',
+    'shared/contract.type-test.js',
+    'react/src/feature.spec.js',
+    'react/src/contract.type-test.js',
+    'react/src/component.spec.jsx',
+  ]) {
+    mkdirSync(join(directory, 'test-output', path, '..'), { recursive: true });
+    writeFileSync(join(directory, 'test-output', path), '');
+  }
+  const feature = consumerTools.installedTestGraph(
+    'react',
+    'react-native-a2ui-langgraph'
+  );
+  assert.equal(feature.config, 'tsconfig.test.react.json');
+  assert.deepEqual(
+    consumerTools
+      .collectInstalledTestSpecs(directory, feature)
+      .map((path) => path.slice(directory.length + 1)),
+    [
+      'test-output/shared/ordinary.spec.js',
+      'test-output/react/src/feature.spec.js',
+    ]
+  );
+  for (const framework of ['react', 'angular']) {
+    const ordinary = consumerTools.installedTestGraph(
+      framework,
+      framework + '-langgraph'
+    );
+    assert.equal(ordinary.config, 'tsconfig.test.json');
+    assert.equal(
+      consumerTools.collectInstalledTestSpecs(directory, ordinary).length,
+      1
+    );
+  }
+  const common = JSON.parse(
+    readFileSync(join(repository, 'examples/chat/native/tsconfig.test.json'))
+  );
+  const selected = JSON.parse(
+    readFileSync(join(repository, 'examples/chat/native', feature.config))
+  );
+  assert.equal(selected.extends, './tsconfig.test.json');
+  assert.deepEqual(selected.include, [
+    ...common.include,
+    'react/src/**/*.spec.ts',
+  ]);
+});
+
+test('preparation propagates the explicit feature profile to each selected stage', async (t) => {
+  const root = fixture(t),
+    temporary = join(root, 'selected');
+  mkdirSync(temporary);
+  const profiles = [];
+  const prepared = await prepareConsumer({
+    root,
+    temporary,
+    profile: 'react-native-a2ui-langgraph',
+    operations: {
+      build(context) {
+        profiles.push(context.profile);
+      },
+      pack(context) {
+        profiles.push(context.profile);
+        return { tarballs: {} };
+      },
+      install(context) {
+        profiles.push(context.profile);
+      },
+    },
+  });
+  assert.equal(prepared.context.profile, 'react-native-a2ui-langgraph');
+  assert.deepEqual(profiles, Array(3).fill('react-native-a2ui-langgraph'));
+});
+
+test('native production default propagates one explicit profile through every stage and retained provenance', async (t) => {
+  const root = fixture(t),
+    profiles = [];
+  const stages = {
+    build(context) {
+      profiles.push(context.profile);
+    },
+    pack(context) {
+      profiles.push(context.profile);
+      return { tarballs: {}, hashes: {}, emission: {} };
+    },
+    install(context) {
+      profiles.push(context.profile);
+      return {};
+    },
+    compile(context) {
+      profiles.push(context.profile);
+      return { inputs: {} };
+    },
+    bundle(context) {
+      profiles.push(context.profile);
+      const output = join(context.consumer, 'react/dist');
+      mkdirSync(output, { recursive: true });
+      writeFileSync(join(output, 'index.html'), 'native');
+      return { output, inputs: {} };
+    },
+  };
+  const built = await buildConsumer({ root, operations: stages });
+  assert.deepEqual(profiles, Array(5).fill('react-native-a2ui-langgraph'));
+  assert.equal(built.provenance.profile, 'react-native-a2ui-langgraph');
+});
+
+test('selected test fingerprint freezes the feature config without changing ordinary graph inputs', (t) => {
+  const root = fixture(t);
+  const path = join(root, 'examples/chat/native/tsconfig.test.react.json');
+  writeFileSync(path, '{"extends":"./tsconfig.test.json"}');
+  const feature = consumerTools.testInputFingerprint(
+    root,
+    'react',
+    'react-native-a2ui-langgraph'
+  );
+  const ordinary = consumerTools.testInputFingerprint(
+    root,
+    'react',
+    'react-langgraph'
+  );
+  const angular = consumerTools.testInputFingerprint(root, 'angular');
+  assert.ok(feature['examples/chat/native/tsconfig.test.react.json']);
+  assert.equal(
+    ordinary['examples/chat/native/tsconfig.test.react.json'],
+    undefined
+  );
+  writeFileSync(path, '{"changed":true}');
+  assert.notDeepEqual(
+    consumerTools.testInputFingerprint(
+      root,
+      'react',
+      'react-native-a2ui-langgraph'
+    ),
+    feature
+  );
+  assert.deepEqual(
+    consumerTools.testInputFingerprint(root, 'react', 'react-langgraph'),
+    ordinary
+  );
+  assert.deepEqual(
+    consumerTools.testInputFingerprint(root, 'angular'),
+    angular
+  );
+});
 function fixture(t) {
   const directory = mkdtempSync(join(tmpdir(), 'native-contract-'));
   t.after(() => rmSync(directory, { recursive: true, force: true }));
   for (const path of [
     'libs/core/src/index.ts',
+    'libs/a2ui/src/index.ts',
     'libs/content/src/index.ts',
     'libs/react/src/index.ts',
     'libs/angular/src/index.ts',
@@ -174,6 +362,8 @@ test('preparation builds and packs byte-identical selected sources in its own wo
     'libs/core/.env.local',
     'libs/core/dist/stale.js',
     'libs/core/.install-collector/stale.mjs',
+    'libs/a2ui/.env.local',
+    'libs/a2ui/dist/stale.js',
   ]) {
     mkdirSync(join(root, path, '..'), { recursive: true });
     writeFileSync(join(root, path), 'excluded');
@@ -190,6 +380,8 @@ test('preparation builds and packs byte-identical selected sources in its own wo
       'libs/core/.env.local',
       'libs/core/dist',
       'libs/core/.install-collector',
+      'libs/a2ui/.env.local',
+      'libs/a2ui/dist',
       'examples/chat/native',
       'libs/design-tokens',
       'libs/telemetry/src',
@@ -197,6 +389,10 @@ test('preparation builds and packs byte-identical selected sources in its own wo
       assert.equal(existsSync(join(buildRoot, path)), false, path);
     assert.equal(
       readFileSync(join(buildRoot, 'libs/core/src/index.ts'), 'utf8'),
+      'original'
+    );
+    assert.equal(
+      readFileSync(join(buildRoot, 'libs/a2ui/src/index.ts'), 'utf8'),
       'original'
     );
     assert.equal(
@@ -342,6 +538,13 @@ test('copies authored sources and plain tokens with standalone strict config', (
   assert.equal(config.compilerOptions.paths, undefined);
   assert.equal(config.compilerOptions.strict, true);
   assert.equal(config.compilerOptions.skipLibCheck, false);
+  const applicationConfig = JSON.parse(
+    readFileSync(join(consumer, 'react/tsconfig.app.json'))
+  );
+  assert.ok(
+    applicationConfig.exclude.includes('src/application-fixture.ts'),
+    'Production compiler excludes test-only application fixture'
+  );
   assert.equal(
     readFileSync(join(consumer, 'shared/tokens.css'), 'utf8'),
     'original'

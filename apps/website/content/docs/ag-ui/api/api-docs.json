@@ -400,6 +400,12 @@
         "optional": true
       },
       {
+        "name": "replay",
+        "type": "AgUiReplaySource",
+        "description": "Optional source of the thread's AG-UI events, replayed on hydration so a\nreopened thread comes back as the live view showed it. Called only when\n`threadId` is configured — a fresh conversation has nothing to replay.\n`httpReplay()` covers the common HTTP shape.",
+        "optional": true
+      },
+      {
         "name": "telemetry",
         "type": "false | AgentRuntimeTelemetrySink",
         "description": "Omit to enable automatic development-only collection. Set `false` to disable.\nAn app-owned sink replaces the automatic destination and receives the\nexisting runtime lifecycle callbacks.",
@@ -488,13 +494,13 @@
       {
         "name": "rawEvents$",
         "type": "Observable<BaseEvent>",
-        "description": "Every AG-UI protocol event the adapter reduced into its signals, in arrival\norder, for hosts that fold the full stream into their own view model.\n\nEmits exactly the events the signals saw: events from a superseded run,\nevents after a run was stopped or failed, and events after a terminal\noutcome are suppressed here too. Each event is emitted after the signals\nare updated for it. A run's terminal `RUN_ERROR` is always emitted once,\nafter `error()` and `status()` settle. Where `provideAgent()` protects\noperation errors, the emitted `RUN_ERROR` honours the same protection as\n`error()`: it carries only the generic message, with the server's message,\ncode and payload dropped. Hot and unbuffered — subscribe before submitting to\nsee a whole run. Completes on `dispose()`.\n\nHydration from `persistence` restores a committed snapshot rather than\nreplaying protocol events, so nothing is emitted for it; read the hydrated\n`messages()` and `state()` instead.",
+        "description": "Every AG-UI protocol event the adapter reduced into its signals, in arrival\norder, for hosts that fold the full stream into their own view model.\n\nEmits exactly the events the signals saw: events from a superseded run,\nevents after a run was stopped or failed, and events after a terminal\noutcome are suppressed here too. Each event is emitted after the signals\nare updated for it. A run's terminal `RUN_ERROR` is always emitted once,\nafter `error()` and `status()` settle. Where `provideAgent()` protects\noperation errors, the emitted `RUN_ERROR` honours the same protection as\n`error()`: it carries only the generic message, with the server's message,\ncode and payload dropped. Hot and unbuffered — subscribe before submitting to\nsee a whole run. Completes on `dispose()`.\n\nHydration from a configured `replay` source emits every replayed event, in\norder, once the whole replay has been folded into the signals; subscribe\nbefore awaiting `ready` to see them. Hydration from `persistence` restores a\ncommitted snapshot rather than replaying protocol events, so nothing is\nemitted for it; read the hydrated `messages()` and `state()` instead.",
         "optional": false
       },
       {
         "name": "ready",
         "type": "Promise<void>",
-        "description": "Resolves after persisted thread state is hydrated; actions wait for it.",
+        "description": "Resolves after replayed or persisted thread state is hydrated; actions wait for it.",
         "optional": false
       },
       {
@@ -730,6 +736,32 @@
     "examples": []
   },
   {
+    "name": "HttpReplayOptions",
+    "kind": "interface",
+    "description": "Options for httpReplay.",
+    "properties": [
+      {
+        "name": "fetch",
+        "type": "(input: RequestInfo | URL, init: RequestInit) => Promise<Response>",
+        "description": "Fetch implementation. Defaults to the global `fetch`.",
+        "optional": true
+      },
+      {
+        "name": "headers",
+        "type": "Record<string, string>",
+        "description": "Extra request headers, e.g. auth tokens.",
+        "optional": true
+      },
+      {
+        "name": "url",
+        "type": "(threadId: string) => string",
+        "description": "Builds the GET URL for a thread, e.g. `(id) => \\`/api/threads/${id}/events\\``.",
+        "optional": false
+      }
+    ],
+    "examples": []
+  },
+  {
     "name": "InterruptSessionSnapshot",
     "kind": "interface",
     "description": "",
@@ -855,12 +887,25 @@
         "optional": true
       },
       {
+        "name": "replay",
+        "type": "AgUiReplaySource",
+        "description": "Loads the thread's AG-UI events from the server when the adapter hydrates.\n\nThe replayed events are folded through the same reducer a live run uses, so\nmessages, tool calls, reasoning, subagent nesting and pending interrupts\ncome back as the live view showed them, and each event is emitted on\n`rawEvents$`. Replay wins whenever it returns at least one event; an empty\nresult, a failure, or events that cannot be folded fall back to\n`persistence` (or an empty thread). Failures never reject `ready`. The\nrequest is aborted when the adapter is disposed. See `httpReplay()` for\nthe common HTTP shape.",
+        "optional": true
+      },
+      {
         "name": "telemetry",
         "type": "false | AgentRuntimeTelemetrySink",
         "description": "Omit to enable automatic development-only collection. Set `false` to disable.\nAn app-owned sink replaces the automatic destination and receives the\nexisting runtime lifecycle callbacks.",
         "optional": true
       }
     ],
+    "examples": []
+  },
+  {
+    "name": "AgUiReplaySource",
+    "kind": "type",
+    "description": "Loads a thread's AG-UI protocol events from the server, in the order a live\nstream delivered them, so the adapter can rebuild the thread exactly as the\nlive view showed it.\n\nReturn the events as a Promise of an array or as an Observable that\ncompletes. Resolve to an empty array when the server has nothing for the\nthread; reject (or error) for any other failure. `signal` aborts when the\nadapter is disposed; honour it to cancel the request.",
+    "signature": "(threadId: string, signal: AbortSignal) => Promise<readonly BaseEvent[]> | Observable<BaseEvent>",
     "examples": []
   },
   {
@@ -909,6 +954,27 @@
     },
     "examples": [
       "```ts\nconst enriched = bridgeCitationsState(threadState, agent.messages());\n```"
+    ]
+  },
+  {
+    "name": "httpReplay",
+    "kind": "function",
+    "description": "A replay source for the common HTTP shape: `GET url(threadId)` answering\nJSON `{ events: BaseEvent[] }`.\n\nA `404` resolves to no events, so the adapter falls back to `persistence`\n(or starts empty). Any other non-2xx status, a body without an `events`\narray, or an entry without a string `type` rejects; the adapter treats that\nas a failed replay and falls back the same way.",
+    "signature": "httpReplay(options: HttpReplayOptions): AgUiReplaySource",
+    "params": [
+      {
+        "name": "options",
+        "type": "HttpReplayOptions",
+        "description": "",
+        "optional": false
+      }
+    ],
+    "returns": {
+      "type": "AgUiReplaySource",
+      "description": ""
+    },
+    "examples": [
+      "```ts\nprovideAgent({\n  url: '/api/agent',\n  threadId,\n  replay: httpReplay({ url: (id) => `/api/threads/${encodeURIComponent(id)}/events` }),\n});\n```"
     ]
   },
   {

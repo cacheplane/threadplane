@@ -1,0 +1,40 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { resolve } from 'node:path';
+import { root, project, environment } from './prepare-ag-ui-client-tools-fixture.mjs';
+const read = path => readFileSync(resolve(root,path),'utf8');
+test('native cockpit frozen prerequisite is uncached, absolute and independent of Library temp environment', () => {
+  assert.equal(project,resolve(root,'cockpit/ag-ui/client-tools/python'));
+  assert.equal(environment,resolve(project,'.venv'));
+  const config=JSON.parse(read('cockpit/ag-ui/client-tools/react/project.json'));
+  assert.equal(config.targets['prepare-fixture'].cache,false);
+  assert.deepEqual(config.targets.e2e.dependsOn,['prepare-fixture','build']);
+  assert.equal(config.targets.e2e.executor,'@nx/playwright:playwright');
+  const source=read('scripts/react-cockpit/prepare-ag-ui-client-tools-fixture.mjs');
+  assert.match(source,/\['sync', '--frozen', '--no-install-project', '--project', project\]/);
+  assert.match(source,/UV_PYTHON: '3.12', UV_PROJECT_ENVIRONMENT: environment/);
+  assert.doesNotMatch(source,/THREADPLANE_AG_UI_FIXTURE_ENVIRONMENT|\/tmp\//);
+  assert.match(read('fixtures/react-parity/native-ag-ui-client-tools/server.mjs'),/process.env.THREADPLANE_AG_UI_FIXTURE_ENVIRONMENT \?\?/);
+  assert.match(read('scripts/react-cockpit/ag-ui-client-tools-fixture.mjs'),/createClientToolsServer\(\{ root, environment, scenario: 'cockpit'/);
+  assert.match(execFileSync('git',['check-ignore','cockpit/ag-ui/client-tools/python/.venv/pyvenv.cfg'],{cwd:root,encoding:'utf8'}),/\.venv/);
+});
+test('website browser job prepares its own canonical worker after existing pinned Python setup', () => {
+  const workflow=read('.github/workflows/ci.yml');
+  const website=workflow.split('\n  website-e2e:\n')[1].split('\n  website-preview-e2e:')[0];
+  assert.equal((website.match(/astral-sh\/setup-uv@/g)??[]).length,1);
+  assert.match(website,/Prepare frozen dashboard browser producer[\s\S]*python-version: '3.12'/);
+  assert.match(website,/Prepare frozen canonical client tools browser producer\n        run: node scripts\/react-cockpit\/prepare-ag-ui-client-tools-fixture.mjs/);
+  assert.ok(website.indexOf('prepare-ag-ui-client-tools-fixture.mjs')<website.indexOf('npx nx e2e website'));
+  const library=workflow.split('\n  library:\n')[1]?.split(/^  [a-z]/m)[0] ?? workflow.slice(0,workflow.indexOf('\n  cockpit:'));
+  assert.match(library,/UV_PROJECT_ENVIRONMENT="\$THREADPLANE_AG_UI_FIXTURE_ENVIRONMENT" uv sync --frozen --no-install-project --project cockpit\/ag-ui\/client-tools\/python/);
+});
+test('proof routing scopes native and retained LangGraph fixtures and shutdown to owned handles', () => {
+  const serve=read('scripts/react-cockpit/serve.mjs');
+  assert.match(serve,/configuration.adapter === 'ag-ui' && configuration.topic === 'client-tools' \? createAgUiClientToolsFixture/);
+  assert.match(serve,/configuration.adapter !== 'ag-ui' && configuration.topic === 'client-tools' \? createClientToolsFixture/);
+  assert.match(serve,/await \(chatDebugFixture \?\? chatThemingFixture \?\? nativeStrandsFixture \?\? nativeMafFixture \?\? nativeMastraFixture \?\? agUiClientToolsFixture \?\? [^\n]+\)\.close\(\);/);
+  assert.match(read('cockpit/ag-ui/client-tools/react/e2e/playwright.config.ts'),/prepare-ag-ui-client-tools-fixture.mjs --serve/);
+  assert.match(read('scripts/react-cockpit/prepare-ag-ui-client-tools-fixture.mjs'),/'ag-ui-client-tools', '--no-parent'/);
+});

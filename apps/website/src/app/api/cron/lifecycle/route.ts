@@ -8,6 +8,7 @@ import {
 } from '../../../../lib/growth/lifecycle-client';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
 interface LifecycleCronDependencies {
   invoke: (input: InvokeLifecycleInput) => Promise<InvokeLifecycleResult>;
@@ -62,7 +63,7 @@ export function createLifecycleCronRoute(
       const result = await dependencies.invoke({
         baseUrl,
         serviceSecret,
-        timeoutMs: 15_000,
+        timeoutMs: 55_000,
         trigger: 'cron',
       });
       for (const alert of result.operatorAlerts) {

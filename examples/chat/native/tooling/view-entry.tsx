@@ -1,11 +1,11 @@
 import { StrictMode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { App } from '../react/src/app';
-import { createViewOwner } from './view-owner';
+import { createReactViewOwner } from './view-owner.react';
 import '../shared/tokens.css';
 import '../shared/styles.css';
 
-const { owner, application, controls } = createViewOwner();
+const { owner, application, controls } = createReactViewOwner();
 const container = document.getElementById('root')!;
 let root: Root | undefined;
 const mount = () => {

@@ -1,4 +1,9 @@
 export { parseEmailHmacKeyring } from './lib/email-keyring.ts';
+export * from './lib/inbox-replies.ts';
+export * from './lib/inbox-recovery.ts';
+export * from './lib/inbox-runtime.ts';
+export * from './lib/inbox-forward.ts';
+export * from './lib/receiving-operations.ts';
 export * from './lib/contacts.ts';
 export * from './lib/company-domain.ts';
 export { readInstallRuntimeEnrichmentContext } from './lib/observability/install-runtime-enrichment.ts';
@@ -52,7 +57,12 @@ export {
   readContactJourney,
 } from './lib/observability/journey-report.ts';
 export { FormRateLimitError } from './lib/form-admission.ts';
-export { assessFormAbuse, FORM_ABUSE_THRESHOLD, FORM_ABUSE_VERSION, type FormAbuseAssessment } from './lib/form-abuse.ts';
+export {
+  assessFormAbuse,
+  FORM_ABUSE_THRESHOLD,
+  FORM_ABUSE_VERSION,
+  type FormAbuseAssessment,
+} from './lib/form-abuse.ts';
 export { bindProviderMessageId } from './lib/replies.ts';
 export { reconcilePendingResendMessageIds } from './lib/resend.ts';
 export {
@@ -68,3 +78,11 @@ export type {
   InstallDigestPackage,
 } from './lib/observability/install-digest.ts';
 export { pacificCalendarDate } from './lib/campaign-schedule.ts';
+
+export {
+  providerIdempotencyKey,
+  reserveProviderAttempt,
+  completeProviderAttempt,
+} from './lib/provider-attempts.ts';
+
+export * from './lib/health-alerts.ts';

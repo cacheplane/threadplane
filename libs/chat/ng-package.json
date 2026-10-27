@@ -15,6 +15,11 @@
       "output": ".install-collector"
     },
     {
+      "input": "src",
+      "glob": "chat.css",
+      "output": "."
+    },
+    {
       "input": "src/themes",
       "glob": "*.css",
       "output": "themes"

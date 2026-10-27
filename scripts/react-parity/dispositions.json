@@ -37,10 +37,12 @@
       "taskIds": [
         "T02",
         "T36",
-        "T37"
+        "T37",
+        "T19"
       ],
       "treatment": "infrastructure",
-      "status": "planned"
+      "status": "in-progress",
+      "reason": "Retains public protocol sources; compatibility-layer tag and existing README build asset support the private T19 installed legacy/package proof. Broader migration and release work remain open."
     },
     {
       "id": "asset:libs/a2ui/schemas/README.md",
@@ -348,6 +350,14 @@
         "T02",
         "T36",
         "T37"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned"
+    },
+    {
+      "id": "asset:libs/chat/src/chat.css",
+      "taskIds": [
+        "T22"
       ],
       "treatment": "infrastructure",
       "status": "planned"
@@ -865,6 +875,14 @@
       "note": "Contributor guidance for private checkpoint authority, transport obligations and consumed-task limits; no public package migration or release claim."
     },
     {
+      "id": "asset:libs/langgraph/test/fixtures/reloaded-subagent-thread.json",
+      "taskIds": [
+        "T10"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned"
+    },
+    {
       "id": "asset:libs/langgraph/test/fixtures/streaming-reasoning-puzzle.json",
       "taskIds": [
         "T05",
@@ -1280,7 +1298,7 @@
       "treatment": "react",
       "status": "planned",
       "target": "libs/react/src/debug/chat-debug.tsx",
-      "reason": "Opt-in public component. Opt-in debug entry point; dock/open persistence and replay/fork callbacks; guard storage during SSR."
+      "reason": "Private native first slice now provides passive current and selected historical state, explicit app-owned checkpoint reads, bounded Copy and guarded open/dock/tab preferences. T29 remains partial: historical diff, Replay/Fork callbacks, full checkpoint tree and broader devtools parity remain planned."
     },
     {
       "id": "component:libs/chat/debug/src/lib/compositions/chat-debug/debug-checkpoint-card.component.ts#DebugCheckpointCardComponent",
@@ -1558,9 +1576,9 @@
         "T30"
       ],
       "treatment": "react",
-      "status": "planned",
-      "target": "libs/react/src/chat/popup.tsx",
-      "reason": "Native component. Controlled/uncontrolled open, portal positioning, focus and close behavior; ref methods if needed."
+      "status": "in-progress",
+      "target": "libs/react/src/chat/chat-popup.tsx",
+      "reason": "Private controlled non-modal popup with retained hidden/inert children, accepted-transition focus and scoped Escape, dogfooded by the installed native React example. Portal, global shortcut, uncontrolled state and full composition parity remain open."
     },
     {
       "id": "component:libs/chat/src/lib/compositions/chat-sidebar/chat-sidebar.component.ts#ChatSidebarComponent",
@@ -1568,9 +1586,9 @@
         "T30"
       ],
       "treatment": "react",
-      "status": "planned",
-      "target": "libs/react/src/chat/sidebar.tsx",
-      "reason": "Native component. Controlled/uncontrolled open and docking; focus/layout behavior and custom composition."
+      "status": "in-progress",
+      "target": "libs/react/src/chat/chat-sidebar.tsx",
+      "reason": "Private controlled non-modal full-height sidebar reuses ChatPopup visibility, focus and retained children, with optional persistent page content and desktop content pushing in installed native dogfood. Peer edge claims and full legacy parity remain open."
     },
     {
       "id": "component:libs/chat/src/lib/compositions/chat-sidenav/chat-sidenav.component.ts#ChatSidenavComponent",
@@ -1578,9 +1596,9 @@
         "T30"
       ],
       "treatment": "react",
-      "status": "planned",
-      "target": "libs/react/src/chat/sidenav.tsx",
-      "reason": "Native component. Mode-specific responsive navigation, widths, selected content and controlled state."
+      "status": "in-progress",
+      "target": "libs/react/src/chat/chat-sidenav.tsx",
+      "reason": "Bounded private controlled children-based navigation implements expanded/collapsed in-flow modes and a non-modal drawer without a scrim. Native composition owns responsive mode and selection; project menus, global shortcuts, debug ownership and full T30 parity remain open."
     },
     {
       "id": "component:libs/chat/src/lib/compositions/chat-subagent-card/chat-subagent-card.component.ts#ChatSubagentCardComponent",
@@ -1631,6 +1649,26 @@
       "status": "planned",
       "target": "libs/react/src/chat/chat.tsx",
       "reason": "Per-message activity slot. Replace the activity template directive with a typed render function on the native chat composition."
+    },
+    {
+      "id": "component:libs/chat/src/lib/compositions/chat/chat-run-activity-template.directive.ts#ChatRunActivityTemplateDirective",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "planned",
+      "target": "libs/react/src/chat/chat.tsx",
+      "reason": "Run activity slot. Replace the run activity template directive with a typed render function on the native chat composition."
+    },
+    {
+      "id": "component:libs/chat/src/lib/compositions/chat/chat-interrupt-template.directive.ts#ChatInterruptTemplateDirective",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "planned",
+      "target": "libs/react/src/chat/chat.tsx",
+      "reason": "Interrupt slot. Replace the interrupt template directive with a typed render function on the native chat composition."
     },
     {
       "id": "component:libs/chat/src/lib/markdown/markdown-children.component.ts#MarkdownChildrenComponent",
@@ -2048,9 +2086,9 @@
         "T22"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/overflow-menu.tsx",
-      "reason": "Native component. Accessible menu positioning, navigation, disabled/destructive items and close rules."
+      "reason": "Bounded private React controlled menu presents disabled/destructive commands, pointer placement, explicit keyboard requests, focus return and dismissal. Typeahead, broader composition and full migration remain open; legacy Angular source and API stay unchanged."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-project-list/chat-project-list.component.ts#ChatProjectListComponent",
@@ -2099,9 +2137,9 @@
         "T30"
       ],
       "treatment": "react",
-      "status": "planned",
-      "target": "libs/react/src/chat/sidenav-scrim.tsx",
-      "reason": "Native component. Accessible dismissal behavior, layering and pointer handling."
+      "status": "in-progress",
+      "target": "libs/react/src/chat/chat-sidenav-scrim.tsx",
+      "reason": "Private controlled sibling backdrop button with accessible dismissal requests and viewport layering. Native composition owns focus restoration; full T30 parity remains open."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-subagents/chat-subagents.component.ts#ChatSubagentsComponent",
@@ -2129,9 +2167,9 @@
         "T29"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/thread-list.tsx",
-      "reason": "Native component. Rename/delete/archive/pin/project/reorder, pending overlays, keyboard and drag paths."
+      "reason": "Private controlled semantic ThreadList selection and optional new-conversation request with retained keyed rows and installed native dogfood. Native application composes confirmed rename, pin and reversible archive/unarchive using existing slots, with separate loaded active/archived lists, stable feedback and independent pending/stale-read protection. Application-owned pinned-first grouping and loaded-slice Move up/down compose existing slots, with exact rank-only confirmation and an explicit refresh barrier after partial failure; the primitive retains supplied order. Delete/project/drag reorder, custom rows and full parity remain open."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-timeline/chat-timeline.component.ts#ChatTimelineComponent",
@@ -2307,11 +2345,13 @@
       "id": "config:.github/workflows/ci.yml",
       "taskIds": [
         "T02",
-        "T36"
+        "T36",
+        "T19"
       ],
       "treatment": "infrastructure",
       "status": "in-progress",
-      "note": "Bounded runtime verification/configuration subset updated; broader assigned migration and release work remain open."
+      "note": "Bounded runtime verification/configuration subset updated; broader assigned migration and release work remain open.",
+      "reason": "Adds backend-free installed private T19 surface observation after existing builds and Chromium installation; preserves existing matrices and verification steps. Broader migration and release work remain open."
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -2386,11 +2426,13 @@
       "taskIds": [
         "T02",
         "T36",
-        "T37"
+        "T37",
+        "T19"
       ],
       "treatment": "infrastructure",
       "status": "in-progress",
-      "note": "Bounded runtime verification/configuration subset updated; broader assigned migration and release work remain open."
+      "note": "Bounded runtime verification/configuration subset updated; broader assigned migration and release work remain open.",
+      "reason": "Records only the private content package optional A2UI protocol peer metadata for the bounded T19 foundation; no dependency version or resolution changes."
     },
     {
       "id": "config:package.json",
@@ -2861,6 +2903,24 @@
     },
     {
       "id": "doc:apps/website/content/docs/chat/components/chat-activity-template.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned"
+    },
+    {
+      "id": "doc:apps/website/content/docs/chat/components/chat-run-activity-template.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned"
+    },
+    {
+      "id": "doc:apps/website/content/docs/chat/components/chat-interrupt-template.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3559,7 +3619,8 @@
         "T35"
       ],
       "treatment": "infrastructure",
-      "status": "planned"
+      "status": "in-progress",
+      "note": "Bounded private native React Mastra reservation preview documented alongside the canonical Angular camping planner. Angular compatibility command transport is distinguished from current opaque native pause and top-level resume; broader parity and public release remain open."
     },
     {
       "id": "doc:apps/website/content/docs/runtimes/mastra/overview.mdx",
@@ -3568,7 +3629,8 @@
         "T35"
       ],
       "treatment": "infrastructure",
-      "status": "planned"
+      "status": "in-progress",
+      "note": "Bounded private native React Mastra reservation preview documented alongside the canonical Angular camping planner. Angular compatibility command transport is distinguished from current opaque native pause and top-level resume; broader parity and public release remain open."
     },
     {
       "id": "doc:apps/website/content/docs/runtimes/mastra/quickstart.mdx",
@@ -3577,7 +3639,8 @@
         "T35"
       ],
       "treatment": "infrastructure",
-      "status": "planned"
+      "status": "in-progress",
+      "note": "Bounded private native React Mastra reservation preview documented alongside the canonical Angular camping planner. Angular compatibility command transport is distinguished from current opaque native pause and top-level resume; broader parity and public release remain open."
     },
     {
       "id": "doc:apps/website/content/docs/runtimes/microsoft-agent-framework/how-it-connects.mdx",
@@ -3586,7 +3649,8 @@
         "T35"
       ],
       "treatment": "infrastructure",
-      "status": "planned"
+      "status": "in-progress",
+      "note": "Bounded private native React MAF expense preview documented alongside the canonical Angular/provider example. Native current pause correlation, top-level resume and literal backend result confirmation are distinguished from Angular wrapper specialist streaming; broader parity and public release remain open."
     },
     {
       "id": "doc:apps/website/content/docs/runtimes/microsoft-agent-framework/overview.mdx",
@@ -3595,7 +3659,8 @@
         "T35"
       ],
       "treatment": "infrastructure",
-      "status": "planned"
+      "status": "in-progress",
+      "note": "Bounded private native React MAF expense preview documented alongside the canonical Angular/provider example. Native current pause correlation, top-level resume and literal backend result confirmation are distinguished from Angular wrapper specialist streaming; broader parity and public release remain open."
     },
     {
       "id": "doc:apps/website/content/docs/runtimes/microsoft-agent-framework/quickstart.mdx",
@@ -3604,7 +3669,8 @@
         "T35"
       ],
       "treatment": "infrastructure",
-      "status": "planned"
+      "status": "in-progress",
+      "note": "Bounded private native React MAF expense preview documented alongside the canonical Angular/provider example. Native current pause correlation, top-level resume and literal backend result confirmation are distinguished from Angular wrapper specialist streaming; broader parity and public release remain open."
     },
     {
       "id": "entry:libs/a2ui/src/index.ts",
@@ -4256,6 +4322,30 @@
       "status": "planned"
     },
     {
+      "id": "export:libs/ag-ui/src/public-api.ts#AgUiReplaySource",
+      "taskIds": [
+        "T13"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#HttpReplayOptions",
+      "taskIds": [
+        "T13"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#httpReplay",
+      "taskIds": [
+        "T13"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
       "id": "export:libs/ag-ui/src/public-api.ts#AgentConfig",
       "taskIds": [
         "T14"
@@ -4405,7 +4495,7 @@
       "treatment": "react",
       "status": "planned",
       "target": "libs/react/src/debug/chat-debug.tsx",
-      "reason": "Opt-in public component. Opt-in debug entry point; dock/open persistence and replay/fork callbacks; guard storage during SSR."
+      "reason": "Private native first slice now provides passive current and selected historical state, explicit app-owned checkpoint reads, bounded Copy and guarded open/dock/tab preferences. T29 remains partial: historical diff, Replay/Fork callbacks, full checkpoint tree and broader devtools parity remain planned."
     },
     {
       "id": "export:libs/chat/debug/public-api.ts#DockPosition",
@@ -5270,9 +5360,9 @@
         "T22"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/overflow-menu.tsx",
-      "reason": "Native component. Accessible menu positioning, navigation, disabled/destructive items and close rules."
+      "reason": "Bounded private React controlled menu presents disabled/destructive commands, pointer placement, explicit keyboard requests, focus return and dismissal. Typeahead, broader composition and full migration remain open; legacy Angular source and API stay unchanged."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatOverlayOriginDirective",
@@ -5290,9 +5380,9 @@
         "T30"
       ],
       "treatment": "react",
-      "status": "planned",
-      "target": "libs/react/src/chat/popup.tsx",
-      "reason": "Native component. Controlled/uncontrolled open, portal positioning, focus and close behavior; ref methods if needed."
+      "status": "in-progress",
+      "target": "libs/react/src/chat/chat-popup.tsx",
+      "reason": "Private /chat export for the bounded controlled non-modal ChatPopup. Full legacy popup parity and public release remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatProjectListComponent",
@@ -5343,6 +5433,42 @@
       "status": "planned"
     },
     {
+      "id": "export:libs/chat/src/public-api.ts#ChatRunActivityTemplateDirective",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "planned",
+      "target": "libs/react/src/chat/chat.tsx",
+      "reason": "Run activity slot. Replace the run activity template directive with a typed render function on the native chat composition."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ChatRunActivityTemplateContext",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "planned"
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ChatInterruptTemplateDirective",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "planned",
+      "target": "libs/react/src/chat/chat.tsx",
+      "reason": "Interrupt slot. Replace the interrupt template directive with a typed render function on the native chat composition."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ChatInterruptTemplateContext",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "planned"
+    },
+    {
       "id": "export:libs/chat/src/public-api.ts#ChatScrollBubbleComponent",
       "taskIds": [
         "T23"
@@ -5384,9 +5510,9 @@
         "T30"
       ],
       "treatment": "react",
-      "status": "planned",
-      "target": "libs/react/src/chat/sidebar.tsx",
-      "reason": "Native component. Controlled/uncontrolled open and docking; focus/layout behavior and custom composition."
+      "status": "in-progress",
+      "target": "libs/react/src/chat/chat-sidebar.tsx",
+      "reason": "Private controlled non-modal full-height sidebar export with optional page content and desktop content pushing; application owns execution and visibility. Peer edge claims and full legacy parity remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatSidenavComponent",
@@ -5394,9 +5520,9 @@
         "T30"
       ],
       "treatment": "react",
-      "status": "planned",
-      "target": "libs/react/src/chat/sidenav.tsx",
-      "reason": "Native component. Mode-specific responsive navigation, widths, selected content and controlled state."
+      "status": "in-progress",
+      "target": "libs/react/src/chat/chat-sidenav.tsx",
+      "reason": "Private controlled children-based navigation export with expanded/collapsed/drawer presentation, retained hidden/inert children and accepted-transition focus. Native application owns breakpoints, commands and selected content; full T30 parity remains open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatSidenavMode",
@@ -5404,7 +5530,9 @@
         "T30"
       ],
       "treatment": "react",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/react/src/chat/chat-sidenav.tsx",
+      "reason": "Private React expanded/collapsed/drawer union; the application owns responsive mode selection and receives only expanded/collapsed toggle requests."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatSidenavScrimComponent",
@@ -5412,9 +5540,9 @@
         "T30"
       ],
       "treatment": "react",
-      "status": "planned",
-      "target": "libs/react/src/chat/sidenav-scrim.tsx",
-      "reason": "Native component. Accessible dismissal behavior, layering and pointer handling."
+      "status": "in-progress",
+      "target": "libs/react/src/chat/chat-sidenav-scrim.tsx",
+      "reason": "Private controlled sibling backdrop button with accessible dismissal requests and viewport layering. Native composition owns focus restoration; full T30 parity remains open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatStreamingMdComponent",
@@ -5462,9 +5590,9 @@
         "T29"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/thread-list.tsx",
-      "reason": "Native component. Rename/delete/archive/pin/project/reorder, pending overlays, keyboard and drag paths."
+      "reason": "Private controlled semantic ThreadList selection and optional new-conversation request export; application owns data, creation and execution. Lifecycle actions, project/reorder menus and full parity remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatTimelineComponent",
@@ -6247,7 +6375,9 @@
         "T22"
       ],
       "treatment": "react",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/react/src/chat/overflow-menu.tsx",
+      "reason": "Bounded private React controlled menu presents disabled/destructive commands, pointer placement, explicit keyboard requests, focus return and dismissal. Typeahead, broader composition and full migration remain open; legacy Angular source and API stay unchanged."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#OverlayPositionResult",
@@ -8630,6 +8760,14 @@
       "status": "planned"
     },
     {
+      "id": "source:libs/ag-ui/src/lib/replay.ts",
+      "taskIds": [
+        "T13"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
       "id": "source:libs/ag-ui/src/lib/interrupt-session.ts",
       "taskIds": [
         "T13"
@@ -8732,6 +8870,22 @@
       "status": "in-progress",
       "reason": "Private immutable activity snapshot and delta observation only; excluded from public exports and legacy Angular reachability.",
       "note": "Captures activity content, complete patches and metadata, checks selected message ambiguity, and preserves prior observations. Operational patch failure retains content/type while admitting independently owned metadata; ownership failures propagate. Actual held HTTP covers continuation, snapshot retention, egress exclusion and callback error closure. Full-history admission, routing, lifecycle, rendering, session integration and public parity remain separate migration work."
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/client-tool-ledger.ts",
+      "taskIds": ["T12", "T13"],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private session-lifetime client-tool admission, result retention and exact native echo delivery evidence; excluded from public exports and legacy Angular reachability.",
+      "note": "Tracks request baselines and finalized root invocations, rejects unsupported, conflicting or consumed calls, preserves exact locally authored results and acknowledges only matching native echoes. Private runtime and installed canonical checks cover owned execution and continuation; durable Store or replay, hosted proof and public package or React migration remain separate work."
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/client-tools.ts",
+      "taskIds": ["T12", "T13"],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private typed optional client-tool catalog and immutable local execution projection for native AG-UI sessions; excluded from public exports and legacy Angular reachability.",
+      "note": "Captures authored function definitions and opaque metadata for request catalogs and exposes typed readonly call, blocker and command-outcome evidence. The no-catalog session contract remains unchanged. Local installed declarations and offline canonical proofs do not establish public API migration, hosted model behavior or React dogfood completion."
     },
     {
       "id": "source:libs/ag-ui/src/runtime/create-http-request.ts",
@@ -9597,7 +9751,9 @@
         "T30"
       ],
       "treatment": "react",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/react/src/chat/chat-popup.tsx",
+      "reason": "Bounded private React composition only; existing Angular implementation and release path remain unchanged."
     },
     {
       "id": "source:libs/chat/src/lib/compositions/chat-sidebar/chat-sidebar.component.ts",
@@ -9605,7 +9761,9 @@
         "T30"
       ],
       "treatment": "react",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/react/src/chat/chat-sidebar.tsx",
+      "reason": "Bounded private React sidebar includes optional persistent page content and desktop content pushing; peer edge claims and full composition parity remain open. Existing Angular implementation and release path remain unchanged."
     },
     {
       "id": "source:libs/chat/src/lib/compositions/chat-sidenav/chat-debug-gate.ts",
@@ -9621,7 +9779,9 @@
         "T30"
       ],
       "treatment": "react",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/react/src/chat/chat-sidenav.tsx",
+      "reason": "Bounded controlled navigation shell implemented with persistent children, scoped Escape and local focus ownership. Legacy directory/project/archive/debug behaviors remain outside this private slice."
     },
     {
       "id": "source:libs/chat/src/lib/compositions/chat-subagent-card/chat-subagent-card.component.ts",
@@ -9658,6 +9818,22 @@
     },
     {
       "id": "source:libs/chat/src/lib/compositions/chat/chat-activity-template.directive.ts",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "planned"
+    },
+    {
+      "id": "source:libs/chat/src/lib/compositions/chat/chat-run-activity-template.directive.ts",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "planned"
+    },
+    {
+      "id": "source:libs/chat/src/lib/compositions/chat/chat-interrupt-template.directive.ts",
       "taskIds": [
         "T23"
       ],
@@ -10098,7 +10274,9 @@
         "T22"
       ],
       "treatment": "react",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/react/src/chat/overflow-menu.tsx",
+      "reason": "Bounded private React controlled menu presents disabled/destructive commands, pointer placement, explicit keyboard requests, focus return and dismissal. Typeahead, broader composition and full migration remain open; legacy Angular source and API stay unchanged."
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-project-list/chat-project-list.component.ts",
@@ -10140,7 +10318,9 @@
         "T30"
       ],
       "treatment": "react",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/react/src/chat/chat-sidenav-scrim.tsx",
+      "reason": "Private sibling backdrop presentation and request-only dismissal; application owns focus and visibility. Full T30 composition parity remains open."
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-subagents/chat-subagents.component.ts",
@@ -10164,7 +10344,9 @@
         "T29"
       ],
       "treatment": "react",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/react/src/chat/thread-list.tsx",
+      "reason": "Bounded private React selection view preserves supplied order and explicit controlled requests; full Angular lifecycle, drag and row-template parity remain open. Existing Angular source is unchanged."
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-timeline/chat-timeline.component.ts",
@@ -10498,7 +10680,9 @@
         "T29"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/react/src/chat/styles.css",
+      "reason": "Scoped React selection-list styling with token fallbacks, wrapping, logical alignment and keyboard focus; full Angular lifecycle-action styling parity remains open. Existing Angular styles are unchanged."
     },
     {
       "id": "source:libs/chat/src/lib/styles/chat-tokens.ts",
@@ -10677,8 +10861,9 @@
         "T34"
       ],
       "treatment": "internal",
-      "status": "planned",
-      "reason": "Private cockpit, example, or test infrastructure; adapt for React scenarios without adding a public package API."
+      "status": "in-progress",
+      "reason": "Private cockpit, example, or test infrastructure; adapt for React scenarios without adding a public package API.",
+      "note": "Bounded AG-UI Client Tools and native Mastra reservation private React source-build previews; Mastra retains canonical Angular backend and prompts. Native Mastra Docs/Code/Run uses current pause authority and literal correlated backend outcomes; broader parity and public release remain open. Native Chat A2UI adds its private frontend identity and canonical Docs/Code/Run source descriptor using the existing shared backend; 40 React and 41 Angular frontends are registered. The closed ten-view flight profile does not complete generic all-18 A2UI parity, T20/T25/T27, SSR or public package release."
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/content-descriptors.ts",
@@ -10687,8 +10872,9 @@
         "T34"
       ],
       "treatment": "internal",
-      "status": "planned",
-      "reason": "Private cockpit, example, or test infrastructure; adapt for React scenarios without adding a public package API."
+      "status": "in-progress",
+      "reason": "Private cockpit, example, or test infrastructure; adapt for React scenarios without adding a public package API.",
+      "note": "Bounded AG-UI Client Tools and native Mastra reservation private React source-build previews; Mastra retains canonical Angular backend and prompts. Native Mastra Docs/Code/Run uses current pause authority and literal correlated backend outcomes; broader parity and public release remain open. Native Chat A2UI adds its private frontend identity and canonical Docs/Code/Run source descriptor using the existing shared backend; 40 React and 41 Angular frontends are registered. The closed ten-view flight profile does not complete generic all-18 A2UI parity, T20/T25/T27, SSR or public package release."
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/docs-links.ts",
@@ -11446,6 +11632,14 @@
       "treatment": "shared",
       "status": "planned",
       "reason": "Carry forward terminal-event versus unexpected-close handling, dispatch uncertainty, status checks, and stale-completion suppression from v0.2.0."
+    },
+    {
+      "id": "source:libs/langgraph/src/lib/internals/history-restore.ts",
+      "taskIds": [
+        "T10"
+      ],
+      "treatment": "shared",
+      "status": "planned"
     },
     {
       "id": "source:libs/langgraph/src/lib/internals/subagent-tracker.ts",
@@ -12728,8 +12922,9 @@
         "T34"
       ],
       "treatment": "internal",
-      "status": "planned",
-      "reason": "Private cockpit, example, or test infrastructure; adapt for React scenarios without adding a public package API."
+      "status": "in-progress",
+      "reason": "Private cockpit, example, or test infrastructure; adapt for React scenarios without adding a public package API.",
+      "note": "Stable path deduplication admits canonical prompt includes without duplicate Code tree rows or tabs; broader workspace migration remains open."
     },
     {
       "id": "source:libs/workspace-react/src/lib/components/code-mode/file-tree.tsx",
@@ -13535,11 +13730,13 @@
       "id": "asset:libs/react/README.md",
       "taskIds": [
         "T02",
-        "T22"
+        "T22",
+        "T20",
+        "T24"
       ],
       "treatment": "infrastructure",
       "status": "in-progress",
-      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity. Bounded private T20/T24 React readiness admission: pure synchronous boolean over owned resolved props, pending fallback without children, successful real-view commit latch and explicit identity/lifetime resets. Direct registrations remain supported. Forms, schema validation, actions, catalog, SSR, public release and full legacy parity remain open.",
       "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
     },
     {
@@ -14127,21 +14324,23 @@
       "id": "asset:libs/content/README.md",
       "taskIds": [
         "T02",
-        "T26"
+        "T26",
+        "T19"
       ],
       "treatment": "infrastructure",
       "status": "in-progress",
-      "reason": "Private content package and empty root infrastructure for owned Markdown preparation."
+      "reason": "Documents private T19 accumulator ownership, explicit apply/dispose, immutable raw state, borrowed observation and finite plain-data limits; full T19/T20/T27 remain open."
     },
     {
       "id": "asset:libs/content/package.json",
       "taskIds": [
         "T02",
-        "T26"
+        "T26",
+        "T19"
       ],
       "treatment": "infrastructure",
       "status": "in-progress",
-      "reason": "Private content package and empty root infrastructure for owned Markdown preparation."
+      "reason": "Private T19 entry uses optional public A2UI protocol types without adding a root runtime dependency; existing owned Markdown/JSON boundaries remain separate."
     },
     {
       "id": "asset:libs/content/project.json",
@@ -14297,11 +14496,12 @@
       "id": "source:libs/content/src/a2ui/index.ts",
       "taskIds": [
         "T02",
-        "T26"
+        "T26",
+        "T19"
       ],
       "treatment": "infrastructure",
-      "status": "planned",
-      "reason": "Unchanged reserved content entry; no renderer capability claimed."
+      "status": "in-progress",
+      "reason": "Bounded private T19 accumulator foundation with owned immutable raw surfaces and borrowed generic observation; parsing, readiness, catalog/forms/actions, public registration and full T19/T20/T27 remain open."
     },
     {
       "id": "source:libs/content/src/index.ts",
@@ -14786,19 +14986,23 @@
       "id": "entry:libs/react/src/render/index.ts",
       "taskIds": [
         "T07",
-        "T24"
+        "T24",
+        "T20"
       ],
       "treatment": "react",
-      "status": "in-progress"
+      "status": "in-progress",
+      "reason": "Bounded private T20/T24 React readiness admission: pure synchronous boolean over owned resolved props, pending fallback without children, successful real-view commit latch and explicit identity/lifetime resets. Direct registrations remain supported. Forms, schema validation, actions, catalog, SSR, public release and full legacy parity remain open."
     },
     {
       "id": "export:libs/react/src/render/index.ts#ReactRenderRegistry",
       "taskIds": [
         "T07",
-        "T24"
+        "T24",
+        "T20"
       ],
       "treatment": "react",
-      "status": "in-progress"
+      "status": "in-progress",
+      "reason": "Bounded private T20/T24 React readiness admission: pure synchronous boolean over owned resolved props, pending fallback without children, successful real-view commit latch and explicit identity/lifetime resets. Direct registrations remain supported. Forms, schema validation, actions, catalog, SSR, public release and full legacy parity remain open."
     },
     {
       "id": "export:libs/react/src/render/index.ts#ReactRenderFunctions",
@@ -14831,10 +15035,12 @@
       "id": "export:libs/react/src/render/index.ts#RenderSpec",
       "taskIds": [
         "T07",
-        "T24"
+        "T24",
+        "T20"
       ],
       "treatment": "react",
-      "status": "in-progress"
+      "status": "in-progress",
+      "reason": "Bounded private T20/T24 React readiness admission: pure synchronous boolean over owned resolved props, pending fallback without children, successful real-view commit latch and explicit identity/lifetime resets. Direct registrations remain supported. Forms, schema validation, actions, catalog, SSR, public release and full legacy parity remain open."
     },
     {
       "id": "export:libs/react/src/render/index.ts#RenderSpecData",
@@ -14885,28 +15091,34 @@
       "id": "source:libs/react/src/render/index.ts",
       "taskIds": [
         "T07",
-        "T24"
+        "T24",
+        "T20"
       ],
       "treatment": "react",
-      "status": "in-progress"
+      "status": "in-progress",
+      "reason": "Bounded private T20/T24 React readiness admission: pure synchronous boolean over owned resolved props, pending fallback without children, successful real-view commit latch and explicit identity/lifetime resets. Direct registrations remain supported. Forms, schema validation, actions, catalog, SSR, public release and full legacy parity remain open."
     },
     {
       "id": "source:libs/react/src/render/render-spec.tsx",
       "taskIds": [
         "T07",
-        "T24"
+        "T24",
+        "T20"
       ],
       "treatment": "react",
-      "status": "in-progress"
+      "status": "in-progress",
+      "reason": "Bounded private T20/T24 React readiness admission: pure synchronous boolean over owned resolved props, pending fallback without children, successful real-view commit latch and explicit identity/lifetime resets. Direct registrations remain supported. Forms, schema validation, actions, catalog, SSR, public release and full legacy parity remain open."
     },
     {
       "id": "source:libs/react/src/render/types.ts",
       "taskIds": [
         "T07",
-        "T24"
+        "T24",
+        "T20"
       ],
       "treatment": "react",
-      "status": "in-progress"
+      "status": "in-progress",
+      "reason": "Bounded private T20/T24 React readiness admission: pure synchronous boolean over owned resolved props, pending fallback without children, successful real-view commit latch and explicit identity/lifetime resets. Direct registrations remain supported. Forms, schema validation, actions, catalog, SSR, public release and full legacy parity remain open."
     },
     {
       "id": "source:libs/react/src/render/values.ts",
@@ -14943,6 +15155,562 @@
       "treatment": "react",
       "status": "in-progress",
       "note": "Bounded readonly source metadata view; no legacy overlays, source fetching or full citation parity."
+    },
+    {
+      "id": "asset:libs/react/src/debug/styles.css",
+      "taskIds": ["T29"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Explicit opt-in scoped stylesheet using existing chat tokens for the private native Debug first slice; broader devtools parity remains planned."
+    },
+    {
+      "id": "source:libs/react/src/debug/bounded-value.ts",
+      "taskIds": ["T29"],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Bounded display and exact shown-JSON Copy for app-owned inspection data; not a full raw export or hostile Proxy isolation."
+    },
+    {
+      "id": "source:libs/react/src/debug/chat-debug.tsx",
+      "taskIds": ["T29"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Private passive current/selected state and explicit checkpoint notifications. Historical diff, Replay/Fork callbacks and full checkpoint tree remain planned."
+    },
+    {
+      "id": "source:libs/react/src/debug/index.ts",
+      "taskIds": ["T29"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Private opt-in secondary entry point; no root export or publication. T29 remains partial."
+    },
+    {
+      "id": "source:libs/react/src/debug/persistence.ts",
+      "taskIds": ["T29"],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Guarded open/dock/tab preferences only; no conversation, state, targets or credentials persisted."
+    },
+    {
+      "id": "source:libs/react/src/debug/types.ts",
+      "taskIds": ["T29"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Readonly app-owned DTOs and synchronous notifications; no SDK, session, read or disposal capability accepted by the view. Broader T29 contracts remain planned."
+    },
+    {
+      "id": "entry:libs/content/src/a2ui/index.ts",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private T19 accumulator foundation with owned immutable raw surfaces and borrowed generic observation; parsing, readiness, catalog/forms/actions, public registration and full T19/T20/T27 remain open."
+    },
+    {
+      "id": "export:libs/content/src/a2ui/index.ts#A2uiComponentSnapshot",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private T19 accumulator foundation with owned immutable raw surfaces and borrowed generic observation; parsing, readiness, catalog/forms/actions, public registration and full T19/T20/T27 remain open."
+    },
+    {
+      "id": "export:libs/content/src/a2ui/index.ts#A2uiSurfaceSnapshot",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private T19 accumulator foundation with owned immutable raw surfaces and borrowed generic observation; parsing, readiness, catalog/forms/actions, public registration and full T19/T20/T27 remain open."
+    },
+    {
+      "id": "export:libs/content/src/a2ui/index.ts#A2uiSurfaces",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private T19 accumulator foundation with owned immutable raw surfaces and borrowed generic observation; parsing, readiness, catalog/forms/actions, public registration and full T19/T20/T27 remain open."
+    },
+    {
+      "id": "export:libs/content/src/a2ui/index.ts#A2uiSurfacesSnapshot",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private T19 accumulator foundation with owned immutable raw surfaces and borrowed generic observation; parsing, readiness, catalog/forms/actions, public registration and full T19/T20/T27 remain open."
+    },
+    {
+      "id": "export:libs/content/src/a2ui/index.ts#A2uiValue",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private T19 accumulator foundation with owned immutable raw surfaces and borrowed generic observation; parsing, readiness, catalog/forms/actions, public registration and full T19/T20/T27 remain open."
+    },
+    {
+      "id": "export:libs/content/src/a2ui/index.ts#createA2uiSurfaces",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private T19 accumulator foundation with owned immutable raw surfaces and borrowed generic observation; parsing, readiness, catalog/forms/actions, public registration and full T19/T20/T27 remain open."
+    },
+    {
+      "id": "source:libs/content/src/a2ui/create-surfaces.ts",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private T19 accumulator foundation with owned immutable raw surfaces and borrowed generic observation; parsing, readiness, catalog/forms/actions, public registration and full T19/T20/T27 remain open."
+    },
+    {
+      "id": "source:libs/content/src/a2ui/owned-value.ts",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private T19 accumulator foundation with owned immutable raw surfaces and borrowed generic observation; parsing, readiness, catalog/forms/actions, public registration and full T19/T20/T27 remain open."
+    },
+    {
+      "id": "source:libs/content/src/a2ui/transition.ts",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private T19 accumulator foundation with owned immutable raw surfaces and borrowed generic observation; parsing, readiness, catalog/forms/actions, public registration and full T19/T20/T27 remain open."
+    },
+    {
+      "id": "source:libs/content/src/a2ui/types.ts",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private T19 accumulator foundation with owned immutable raw surfaces and borrowed generic observation; parsing, readiness, catalog/forms/actions, public registration and full T19/T20/T27 remain open."
+    },
+    {
+      "id": "entry:libs/content/src/render-state/index.ts",
+      "taskIds": [
+        "T20"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private application-owned render-state data, paths, atomic writes and lifetime with borrowed observation; readiness, form sessions, actions, catalog views, SSR, public release and full legacy/SDK/RFC parity remain open."
+    },
+    {
+      "id": "export:libs/content/src/render-state/index.ts#RenderState",
+      "taskIds": [
+        "T20"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private application-owned render-state data, paths, atomic writes and lifetime with borrowed observation; readiness, form sessions, actions, catalog views, SSR, public release and full legacy/SDK/RFC parity remain open."
+    },
+    {
+      "id": "export:libs/content/src/render-state/index.ts#RenderStateChange",
+      "taskIds": [
+        "T20"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private application-owned render-state data, paths, atomic writes and lifetime with borrowed observation; readiness, form sessions, actions, catalog views, SSR, public release and full legacy/SDK/RFC parity remain open."
+    },
+    {
+      "id": "export:libs/content/src/render-state/index.ts#RenderStateSnapshot",
+      "taskIds": [
+        "T20"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private application-owned render-state data, paths, atomic writes and lifetime with borrowed observation; readiness, form sessions, actions, catalog views, SSR, public release and full legacy/SDK/RFC parity remain open."
+    },
+    {
+      "id": "export:libs/content/src/render-state/index.ts#RenderStateValue",
+      "taskIds": [
+        "T20"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private application-owned render-state data, paths, atomic writes and lifetime with borrowed observation; readiness, form sessions, actions, catalog views, SSR, public release and full legacy/SDK/RFC parity remain open."
+    },
+    {
+      "id": "export:libs/content/src/render-state/index.ts#createRenderState",
+      "taskIds": [
+        "T20"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private application-owned render-state data, paths, atomic writes and lifetime with borrowed observation; readiness, form sessions, actions, catalog views, SSR, public release and full legacy/SDK/RFC parity remain open."
+    },
+    {
+      "id": "source:libs/content/src/render-state/create-render-state.ts",
+      "taskIds": [
+        "T20"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private application-owned render-state data, paths, atomic writes and lifetime with borrowed observation; readiness, form sessions, actions, catalog views, SSR, public release and full legacy/SDK/RFC parity remain open."
+    },
+    {
+      "id": "source:libs/content/src/render-state/index.ts",
+      "taskIds": [
+        "T20"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private application-owned render-state data, paths, atomic writes and lifetime with borrowed observation; readiness, form sessions, actions, catalog views, SSR, public release and full legacy/SDK/RFC parity remain open."
+    },
+    {
+      "id": "source:libs/content/src/render-state/owned-value.ts",
+      "taskIds": [
+        "T20"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private application-owned render-state data, paths, atomic writes and lifetime with borrowed observation; readiness, form sessions, actions, catalog views, SSR, public release and full legacy/SDK/RFC parity remain open."
+    },
+    {
+      "id": "source:libs/content/src/render-state/pointer.ts",
+      "taskIds": [
+        "T20"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private application-owned render-state data, paths, atomic writes and lifetime with borrowed observation; readiness, form sessions, actions, catalog views, SSR, public release and full legacy/SDK/RFC parity remain open."
+    },
+    {
+      "id": "source:libs/content/src/render-state/types.ts",
+      "taskIds": [
+        "T20"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Bounded private application-owned render-state data, paths, atomic writes and lifetime with borrowed observation; readiness, form sessions, actions, catalog views, SSR, public release and full legacy/SDK/RFC parity remain open."
+    },
+    {
+      "id": "export:libs/react/src/render/index.ts#RenderReadinessEntry",
+      "taskIds": [
+        "T20",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Bounded private T20/T24 React readiness admission: pure synchronous boolean over owned resolved props, pending fallback without children, successful real-view commit latch and explicit identity/lifetime resets. Direct registrations remain supported. Forms, schema validation, actions, catalog, SSR, public release and full legacy parity remain open."
+    },
+    {
+      "id": "source:libs/react/src/render/readiness.tsx",
+      "taskIds": [
+        "T20",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Bounded private T20/T24 React readiness admission: pure synchronous boolean over owned resolved props, pending fallback without children, successful real-view commit latch and explicit identity/lifetime resets. Direct registrations remain supported. Forms, schema validation, actions, catalog, SSR, public release and full legacy parity remain open."
+    },
+    {
+      "id": "asset:libs/cockpit-a2ui-react/project.json",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private closed aviation presentation and resource ownership shared by React cockpit consumers. Transport admission remains application-owned; this record makes no generic forms, SSR, publication, or completed parity claim."
+    },
+    {
+      "id": "asset:libs/cockpit-a2ui-react/tsconfig.json",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private closed aviation presentation and resource ownership shared by React cockpit consumers. Transport admission remains application-owned; this record makes no generic forms, SSR, publication, or completed parity claim."
+    },
+    {
+      "id": "asset:libs/cockpit-a2ui-react/tsconfig.lib.json",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private closed aviation presentation and resource ownership shared by React cockpit consumers. Transport admission remains application-owned; this record makes no generic forms, SSR, publication, or completed parity claim."
+    },
+    {
+      "id": "source:libs/cockpit-a2ui-react/eslint.config.mjs",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private closed aviation presentation and resource ownership shared by React cockpit consumers. Transport admission remains application-owned; this record makes no generic forms, SSR, publication, or completed parity claim."
+    },
+    {
+      "id": "source:libs/cockpit-a2ui-react/src/actions.ts",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private closed aviation presentation and resource ownership shared by React cockpit consumers. Transport admission remains application-owned; this record makes no generic forms, SSR, publication, or completed parity claim."
+    },
+    {
+      "id": "source:libs/cockpit-a2ui-react/src/data.ts",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private closed aviation presentation and resource ownership shared by React cockpit consumers. Transport admission remains application-owned; this record makes no generic forms, SSR, publication, or completed parity claim."
+    },
+    {
+      "id": "source:libs/cockpit-a2ui-react/src/form.ts",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private closed aviation presentation and resource ownership shared by React cockpit consumers. Transport admission remains application-owned; this record makes no generic forms, SSR, publication, or completed parity claim."
+    },
+    {
+      "id": "source:libs/cockpit-a2ui-react/src/index.ts",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private closed aviation presentation and resource ownership shared by React cockpit consumers. Transport admission remains application-owned; this record makes no generic forms, SSR, publication, or completed parity claim."
+    },
+    {
+      "id": "source:libs/cockpit-a2ui-react/src/protocol.ts",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private closed aviation presentation and resource ownership shared by React cockpit consumers. Transport admission remains application-owned; this record makes no generic forms, SSR, publication, or completed parity claim."
+    },
+    {
+      "id": "source:libs/cockpit-a2ui-react/src/surface.ts",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private closed aviation presentation and resource ownership shared by React cockpit consumers. Transport admission remains application-owned; this record makes no generic forms, SSR, publication, or completed parity claim."
+    },
+    {
+      "id": "source:libs/cockpit-a2ui-react/src/views.tsx",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private closed aviation presentation and resource ownership shared by React cockpit consumers. Transport admission remains application-owned; this record makes no generic forms, SSR, publication, or completed parity claim."
+    },
+    {
+      "id": "source:libs/cockpit-a2ui-react/vite.config.mts",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private closed aviation presentation and resource ownership shared by React cockpit consumers. Transport admission remains application-owned; this record makes no generic forms, SSR, publication, or completed parity claim."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatPopup",
+      "taskIds": ["T30"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private controlled non-modal popup shell; application owns visibility and execution. Installed native conversation dogfood covers retained hidden views."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatPopupProps",
+      "taskIds": ["T30"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly explicit visibility, labels and children; no inferred session commands or disposal."
+    },
+    {
+      "id": "source:libs/react/src/chat/chat-popup.tsx",
+      "taskIds": ["T30"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Bounded controlled non-modal popup with accepted-transition focus and retained hidden/inert children; full legacy composition parity remains open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidebar",
+      "taskIds": ["T30"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private controlled non-modal full-height sidebar with optional persistent page content and desktop content pushing; application owns visibility and execution. Native dogfood preserves retained views."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidebarProps",
+      "taskIds": ["T30"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Extends readonly controlled ChatPopup props with optional pageContent and pushContent layout preferences; no session, global edge or disposal ownership."
+    },
+    {
+      "id": "source:libs/react/src/chat/chat-sidebar.tsx",
+      "taskIds": ["T30"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Full-height ChatPopup composition with persistent page slot and optional desktop content pushing; mobile remains an overlay. Peer edge claims and full composition parity remain open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidenav",
+      "taskIds": ["T30"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private controlled children-based navigation; expanded/collapsed normal flow and a non-modal drawer retain mounted content. Application owns responsive modes, selection and commands; full T30 parity remains open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidenavMode",
+      "taskIds": ["T30"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private expanded/collapsed/drawer presentation union; no implicit responsive behavior."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidenavProps",
+      "taskIds": ["T30"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly required mode/open and request callbacks, optional labels/className/children; no inferred session, directory or command ownership."
+    },
+    {
+      "id": "source:libs/react/src/chat/chat-sidenav.tsx",
+      "taskIds": ["T30"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Bounded private named navigation shell with persistent hidden/inert children, accepted-transition local focus and scoped Escape. No scrim, global listeners, media query ownership or full Angular composition parity."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidenavScrim",
+      "taskIds": ["T30"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Optional controlled sibling backdrop with semantic keyboard dismissal. Native example composes only for open narrow drawers; no modal or runtime ownership."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidenavScrimProps",
+      "taskIds": ["T30"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly required open and onDismiss, optional label and className. Application owns visibility and focus restoration."
+    },
+    {
+      "id": "source:libs/react/src/chat/chat-sidenav-scrim.tsx",
+      "taskIds": ["T30"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Separate controlled backdrop button with scoped viewport layering; no focus trap, portal, global listener or session behavior."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#OverflowMenu",
+      "taskIds": [
+        "T29",
+        "T30",
+        "T22"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Bounded private controlled menu with owner-document portal, pointer context placement, keyboard/focus and unavailable-anchor suppression; native dogfoods exact-ID copying through row context requests. Typeahead, lifecycle and full parity remain open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#OverflowMenuItem",
+      "taskIds": [
+        "T29",
+        "T30",
+        "T22"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly stable ID, literal label, optional strict disabled state and normal/destructive tone for application-owned commands."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#OverflowMenuProps",
+      "taskIds": [
+        "T29",
+        "T30",
+        "T22"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly controlled menu with optional finite viewport anchor point and explicit same-document invoker; original mouse-event selection leaves async command work with the app. Full menu and lifecycle parity remain open."
+    },
+    {
+      "id": "source:libs/react/src/chat/overflow-menu.tsx",
+      "taskIds": [
+        "T29",
+        "T30",
+        "T22"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Scoped point/trigger portal placement, local theme snapshot, invoker-aware focus/Tab and unavailable-anchor suppression without backend execution ownership. Typeahead and full parity remain open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ThreadList",
+      "taskIds": ["T29"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private semantic controlled selection view and optional new-conversation request with no automatic I/O, sorting or execution ownership. Native directory dogfoods installed component; full lifecycle-action parity remains open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ThreadListItem",
+      "taskIds": ["T29"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly supplied ID and optional plain title for the bounded selection view; lifecycle/project/timestamp row fields and full parity remain open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ThreadListProps",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly explicit selection and creation options, title/action slots and original pointer/keyboard context-request callback. Application owns current menu request, filtering, statuses and execution; broader lifecycle parity remains open."
+    },
+    {
+      "id": "source:libs/react/src/chat/thread-list.tsx",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private keyed semantic selection list with original-event context requests on selection buttons and app-owned actions; the primitive retains supplied order, selection and row identity. Native composes bounded confirmed renaming, Pin/Unpin, Archive/Unarchive and loaded-slice Move up/down in action siblings, with application-owned pinned-first grouping, exact rank-only confirmation and an explicit refresh barrier after partial failure. Native loaded active/archived partitions retain selected transcript/draft/runtime and directory-owned completion feedback. Delete/project/drag reorder, custom rows and full parity remain open."
+    },
+    {
+      "id": "source:libs/react/src/chat/thread-rename-form.tsx",
+      "taskIds": ["T29"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private controlled semantic inline rename editor with explicit IME-safe submit/cancel, pending/error presentation and retained input. Native application owns exact-ID persistence, confirmation, stale reads and editor occurrence lifetime; full thread lifecycle parity remains open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ThreadRenameForm",
+      "taskIds": ["T29"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private controlled rename form dogfooded by native full directory actions/context menus; it owns no I/O, session or mutation lifetime. Further lifecycle and full parity remain open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ThreadRenameFormProps",
+      "taskIds": ["T29"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly controlled title and synchronous input/submit/cancel notifications with optional pending/error/label/class. Application owns validation, persistence, retry and focus restoration; no SDK capability enters the view."
     }
   ]
 }

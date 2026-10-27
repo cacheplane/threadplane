@@ -1,115 +1,63 @@
 ---
 title: Memory
-description: A Deep Agents memory file the agent writes itself, kept in the LangGraph store so a new thread starts already knowing, and read back through private state.
+description: Agent-authored memory shared across conversations under a captured browser identity, with fresh read-time observations.
 ---
 
 # Memory
 
-Memory in Deep Agents is a file the agent maintains about you. `memory=["/memories/AGENTS.md"]` installs `MemoryMiddleware`, which loads that file and appends it to the system message with guidance telling the model to keep it current using `edit_file`. Nothing in the application parses the conversation for facts; the agent decides what is worth remembering, and the backend decides how long it lasts. Reading it back is the part that takes work, because `memory_contents` is private state. This page walks the three files of the running example.
+Deep Agents maintains `/memories/AGENTS.md` itself through `write_file` and `edit_file`. The shared Python graph uses `StoreBackend`, so a fresh conversation can recall the file from the store rather than from an earlier transcript. Angular remains the default on this guide. The experimental React preview uses native React chat components and the same graph and prompt.
 
-## What the demo does
+## Teach and recall
 
-The Run tab shows a dispatch desk beside a panel titled Agent Memory, which starts out saying that nothing is remembered yet. The first suggested prompt tells the agent that you fly a Citation CJ3 out of KASE and always want briefings in bullet points, and the panel fills in with the lines the agent writes into `/memories/AGENTS.md`.
+In Angular Run, **Tell it about your operation** sends the suggested prompt immediately. Reload before asking what the agent remembers to start a new thread under the same browser identity. The Angular panel renders trimmed nonblank lines. In React, **Teach** and **Recall** only fill a draft; explicit **Send** or Enter authors a turn. React preserves literal blank lines, Unicode and whitespace, displays full tool arguments and results, and renders assistant Markdown.
 
-The second suggestion is the one that matters. Reload the page to start a genuinely new thread, then ask what the agent already knows about your operation: the file is still there, because it came from the LangGraph store rather than from the transcript. A small label under the panel heading says which of two sources the panel is reading, and that label turns out to be the interesting part.
+Opening either example does not create a thread. React also keeps mode changes, history navigation, unsent drafts, New and saved-history selection free of authoring. New clears the React draft and local view; reload clears the retained local catalog. A successful followup reuses the owned thread; New or reload creates a fresh thread lazily on the next Send.
 
-## How it is built
+## Capture the browser scope
 
-Three files carry the capability: a Python graph that builds the agent and republishes one private key, an application config, and the Angular component that renders the file. Open the Code tab to read them in place.
+The storage key `threadplane.deep-agents-memory.scope.v1` stores a canonical UUIDv4. Each app generation captures the persisted readback winner and supplies exactly `context: { memory_scope }`. The namespace is `('cockpit', 'deep-agents-memory', 'browser-v1', scope)`. New conversations retain the same scope while storage is available.
 
-### The names the graph and the panel agree on
+Storage is partitioned by origin and browser storage partition. Angular and React on the same origin share the key; local development ports have different origins. Unavailable or corrupt storage blocks authoring before SDK thread creation. Replacement or deletion later blocks future turns. An already active turn may settle under its captured scope with a warning. There is no read, migration or reset of the historical global namespace.
 
-The memory file path, the store namespace, and the name of the custom stream event are module constants. The event name is the contract with the Angular panel, which listens for exactly that string.
-
-<ExampleCode file="graph.py" region="memory-constants" title="graph.py — the shared names" />
-
-<Callout type="warning" title="Scope the namespace in anything real">
-The namespace factory ignores its runtime argument, so every thread of this demo shares one memory. That is deliberate here and wrong everywhere else. A real deployment derives the namespace from the caller, for example `lambda rt: (rt.server_info.user.identity,)`.
+<Callout type="warning" title="Logical partition, not authentication">
+A browser UUID is not authorization. Public state APIs fall outside this scope guarantee. Derive an authenticated namespace and enforce server authorization when your application requires it.
 </Callout>
 
-### An agent that owns its memory file
+<ExampleCode file="cockpit/deep-agents/memory/angular/src/app/memory-scope.ts" />
+<ExampleCode file="cockpit/deep-agents/memory/angular/src/app/memory-transport.ts" />
+<ExampleCode file="cockpit/deep-agents/memory/angular/src/app/memory-agent-gate.ts" />
+<ExampleCode file="cockpit/deep-agents/memory/angular/src/app/app.config.ts" />
 
-`create_deep_agent` takes the memory sources and the backend. `memory=[...]` installs `MemoryMiddleware` with the agent's own backend, so where the memory lives is decided by the backend argument rather than by the memory argument.
+## Fresh observations
 
-<ExampleCode file="graph.py" region="memory-agent" title="graph.py — building the agent" />
+The graph reads the actual store initially, before every model call and at terminal completion. A missing file is `{}`; a present empty file is `''`. Reads validate strict UTF-8 and at most 65,536 bytes after downloading and materializing the file. The bound does not limit store allocation. The pinned middleware strips HTML comments and trailing whitespace from the model prompt; custom events, raw checkpoints and the React panel retain literal contents.
 
-`StoreBackend` keeps files in LangGraph's `BaseStore`, which is scoped by namespace and shared across every thread. The default backend is `StateBackend`, which would put the same file on the thread's own state, where a new conversation would never see it. Leaving `store` unset means "resolve the store from the graph execution context", which the LangGraph server supplies.
+<ExampleCode file="cockpit/deep-agents/memory/python/src/graph.py" />
+<ExampleCode file="cockpit/deep-agents/memory/python/src/memory_observation.py" />
 
-### What the prompt allows into memory
+The named `deep_agents.memory` custom event contains `memory_contents`, `memory_scope_owner` and `phase`. Angular's **store observed during this run** comes from this live event. Historical state/checkpoint reads are a distinct fallback. A live observation is read-time evidence, not durability, and checkpoints do not promise that the store remains current.
 
-What the agent records is a matter of prompt, not code. The system prompt in `prompts/memory.md` is the whole policy:
+The graph's private input/output schema annotations omit Memory keys from API `values` filtered through `graph.output_channels`. Custom events, checkpoint events and raw checkpoints retain those keys. This is not a secrecy guarantee; unfiltered local graph streams can include private values.
 
-```markdown
-`/memories/AGENTS.md` is yours. It is loaded into your context at the start of
-every conversation, including conversations you have not had yet, and it is the
-only thing about you that survives a new thread.
+<ExampleCode file="cockpit/deep-agents/memory/angular/src/app/memory.component.ts" />
 
-Write to it with `edit_file` whenever the user tells you something durable:
+## React confirmation and restoration
 
-- a home base, a fleet type, an operating limitation
-- a standing preference about how they want briefings written
-- a correction to something you got wrong
+React labels custom evidence **store observed during this run**. **confirmed checkpoint at read time** and **Response saved.** require native success plus matching current root state, a fresh newest history head, an exact checkpoint and actual native transcript/load. Only absent private Memory keys may be omitted from live values; ordinary values and the complete tool transcript must match. Loaded values must match fully.
 
-Keep it as a short markdown list under a `## Crew notes` heading. One line per
-fact. Do not record one-off requests, small talk, or anything that will be stale
-next week. Never record credentials of any kind.
+Saved conversations restore an exact retained historical checkpoint through reads only. A failed initial, model or terminal read, partial failed observation, oversized file or failed checkpoint read cannot confirm Saved. A terminal read failure after a successful write can leave the write persisted: confirmation is cleared and there is no rollback. Stop cancels local delivery while backend work may continue. New invalidates stale results. Conversations can update the same file at the same time; concurrent conversations are not serialized.
+
+React uses `ifExists: 'raise'` and `maxRetries: 0`, with no automatic Retry, replay or Resume. Its package remains a private source-build preview.
+
+## Source and verification
+
+Code includes the complete Angular scope, transport, authoring gate and UI, or the actual native React application and authority sources, together with both shared Python sources and the canonical Memory prompt. Browser fixtures and verification controls are excluded from public Code and production builds.
+
+```sh
+npx nx build cockpit-deep-agents-memory-angular
+npx nx e2e cockpit-deep-agents-memory-angular
+npx nx build cockpit-deep-agents-memory-react
+npx nx e2e cockpit-deep-agents-memory-react
 ```
 
-The last line is not decoration. A memory file is a persistent, model-writable document, so what must never go into it belongs in the prompt explicitly.
-
-### Announcing a private state key
-
-`MemoryMiddleware` annotates `memory_contents` with `PrivateStateAttr`, which is `OmitFromSchema(input=True, output=True)`: the key is deliberately absent from the agent's declared input and output. That is right for a transcript, since the memory file is context for the model rather than conversation, and it is why this example does not leave the panel bound to `agent.value()` alone while a run is in flight. A small middleware announces the key on a channel the client does receive during the run.
-
-<ExampleCode file="graph.py" region="visibility-middleware" title="graph.py — republishing memory_contents" />
-
-This is an application-side shim rather than a framework change: the key stays private on the state and is simply announced alongside it. `get_stream_writer` raises outside a streaming context, which is why the emit is guarded.
-
-### Providing the agent
-
-`provideAgent()` from `@threadplane/langgraph` registers the agent at the application root, and it is the only provider the `<chat>` composition requires. The example resolves its connection at runtime because the host that serves the demo decides which runtime is attached; your own application passes `apiUrl` and `assistantId` directly.
-
-<ExampleCode file="app.config.ts" />
-
-### Two sources for one panel
-
-A custom event is a live signal and is not replayed when a thread is reopened. The thread state is durable but arrives only when the client hydrates it, which the adapter does on first connect and again when a run completes. A panel that wants both reads both.
-
-<ExampleCode file="memory.component.ts" region="memory-sources" title="memory.component.ts — the two readers" />
-
-`agent.customEvents()` holds the custom events of the current run — the adapter clears it when a new run starts — so the live reader walks it newest first and takes the most recent payload under the event name the graph emits. `agent.value()` is the agent state the adapter projects from the latest checkpoint, which carries the key even though the run stream does not.
-
-<ExampleCode file="memory.component.ts" region="memory-source-label" title="memory.component.ts — which source is showing" />
-
-Blending the two would hide the distinction. `live` means the visibility middleware announced the key during this run; `checkpoint` is what a reopened thread looks like, and also what the panel degrades to if the middleware is removed.
-
-### Rendering the file
-
-The panel shows the source label, then one block per remembered file: the path, then one row per non-empty line.
-
-<ExampleCode file="memory.component.ts" region="memory-panel" title="memory.component.ts — the panel" />
-
-## Proving the store rather than the panel
-
-The only assertion that proves cross-thread memory is a genuinely new thread that already knows. Clearing the panel and watching it refill proves that the component works, not that the store is doing the remembering. The example's end-to-end test submits the second prompt after a fresh page load, so the file it asserts on was written during a conversation that is no longer open.
-
-<Callout type="tip" title="Assert the label as well as the contents">
-The panel fills in either way, so contents alone do not tell you whether the live path is working. Asserting that the source label reads `live` is what keeps the visibility middleware honest.
-</Callout>
-
-## What's Next
-
-<CardGroup cols={2}>
-  <Card title="Skills" href="/docs/deep-agents/capabilities/skills">
-    The same private-state visibility problem, for `skills_metadata`.
-  </Card>
-  <Card title="Filesystem" href="/docs/deep-agents/capabilities/filesystem">
-    The state-backed workspace the agent writes during a run.
-  </Card>
-  <Card title="LangGraph Memory" href="/docs/langgraph/guides/memory">
-    Thread-scoped memory in graph state, and the Store API behind this page.
-  </Card>
-  <Card title="Persistence" href="/docs/langgraph/guides/persistence">
-    Checkpointers and thread storage, which is where the durable source comes from.
-  </Card>
-</CardGroup>
+Local browser tests use the actual compiled graph, installed SDK and a deterministic offline model. The deployed example uses the shared cockpit development deployment.

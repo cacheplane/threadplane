@@ -6,12 +6,45 @@ import {
   screen,
 } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
+import { StrictMode } from 'react';
+import { createRenderState } from '@threadplane/content/render-state';
 import { ElementRenderingDemo } from './app';
 import { createPlayback } from './playback';
 import { ELEMENT_RENDERING_SAMPLES } from './specs';
 
-afterEach(cleanup);
-function fixture() {
+const disposals: (() => void)[] = [];
+afterEach(() => {
+  cleanup();
+  disposals.splice(0).forEach((dispose) => dispose());
+});
+function stateFixture(showDetail: unknown = true) {
+  const owner = createRenderState({ showDetail });
+  const set = vi.spyOn(owner, 'set');
+  const update = vi.spyOn(owner, 'update');
+  const dispose = vi.spyOn(owner, 'dispose');
+  const notify = vi.fn();
+  let active = 0;
+  const observer = {
+    getSnapshot: owner.getSnapshot,
+    subscribe(listener: () => void) {
+      active++;
+      const unsubscribe = owner.subscribe(() => {
+        notify();
+        listener();
+      });
+      let live = true;
+      return () => {
+        if (live) active--;
+        live = false;
+        unsubscribe();
+      };
+    },
+  };
+  disposals.push(() => owner.dispose());
+  return { owner, observer, set, update, dispose, notify, active: () => active };
+}
+function fixture(showDetail: unknown = true, strict = false) {
+  const state = stateFixture(showDetail);
   const callbacks: FrameRequestCallback[] = [];
   const playback = createPlayback(ELEMENT_RENDERING_SAMPLES, {
     request: (callback) => {
@@ -21,14 +54,18 @@ function fixture() {
     cancel: () => undefined,
   });
   const ready = vi.fn();
-  render(
+  const demo = (current = state) => (
     <ElementRenderingDemo
       playback={playback}
+      renderState={current.observer}
+      onShowDetailChange={(value) => current.owner.set('/showDetail', value)}
       samples={ELEMENT_RENDERING_SAMPLES.map((sample) => sample.label)}
       onReady={ready}
     />
   );
-  return { playback, callbacks, ready };
+  const view = render(strict ? <StrictMode>{demo()}</StrictMode> : demo());
+  disposals.push(() => playback.dispose());
+  return { playback, callbacks, ready, state, view, demo };
 }
 const output = () => screen.getByRole('region', { name: 'Render output' });
 const detail = () =>
@@ -74,13 +111,20 @@ it('never flashes hidden conditional text at any actual prefix with detail disab
   const { playback } = fixture();
   choose(2);
   fireEvent.click(detail());
+  // Resolve stable regions once; inspect their live contents at every prefix.
+  const outputRegion = output();
+  const sourceRegion = screen.getByRole('region', { name: 'Streaming JSON' });
   const json = ELEMENT_RENDERING_SAMPLES[2].json;
   for (let position = 0; position <= json.length; position++) {
     act(() => playback.seek(position));
+    expect(outputRegion.isConnected).toBe(true);
+    expect(sourceRegion.isConnected).toBe(true);
     expect(
-      output().querySelector('[data-element-key="conditional"]')
+      outputRegion.querySelector('[data-element-key="conditional"]')
     ).toBeNull();
-    expect(source()).toBe(json.slice(0, position));
+    expect(sourceRegion.querySelector('pre')?.textContent).toBe(
+      json.slice(0, position)
+    );
   }
   const before = playback.getSnapshot();
   fireEvent.click(detail());
@@ -95,6 +139,7 @@ it('never flashes hidden conditional text at any actual prefix with detail disab
 it('shows a conditional node only after native visibility metadata is admitted', () => {
   const { playback } = fixture();
   choose(2);
+  const outputRegion = output();
   for (
     let position = 0;
     position <= ELEMENT_RENDERING_SAMPLES[2].json.length;
@@ -102,8 +147,9 @@ it('shows a conditional node only after native visibility metadata is admitted',
   ) {
     act(() => playback.seek(position));
     const conditional = playback.getSnapshot().spec?.elements.conditional;
+    expect(outputRegion.isConnected).toBe(true);
     expect(
-      Boolean(output().querySelector('[data-element-key="conditional"]'))
+      Boolean(outputRegion.querySelector('[data-element-key="conditional"]'))
     ).toBe(Boolean(conditional));
     if (conditional)
       expect(conditional.visible).toEqual({ $state: '/showDetail' });
@@ -132,4 +178,102 @@ it('retains host state through pause, stale frames, rewind, reset and sample cha
   expect(source()).toBe(ELEMENT_RENDERING_SAMPLES[2].json);
   act(() => playback.seek(0));
   expect(detail().checked).toBe(false);
+});
+
+it('preserves an externally supplied initial false without mount commands', () => {
+  const { playback, state } = fixture(false);
+  expect(detail().checked).toBe(false);
+  expect(state.set).not.toHaveBeenCalled();
+  expect(state.update).not.toHaveBeenCalled();
+  expect(playback.getSnapshot().position).toBe(0);
+});
+
+it('observes external writes without changing playback or JSON', () => {
+  const { playback, state } = fixture();
+  choose(2);
+  click('Finish');
+  const before = playback.getSnapshot();
+  const raw = source();
+  act(() => state.owner.set('/showDetail', false));
+  expect(detail().checked).toBe(false);
+  expect(output().querySelector('[data-element-key="conditional"]')).toBeNull();
+  act(() => state.owner.set('/showDetail', true));
+  expect(detail().checked).toBe(true);
+  expect(output().querySelector('[data-element-key="conditional"]')).not.toBeNull();
+  act(() => state.owner.set('/showDetail', false));
+  expect(detail().checked).toBe(false);
+  expect(output().querySelector('[data-element-key="conditional"]')).toBeNull();
+  expect(playback.getSnapshot()).toBe(before);
+  expect(source()).toBe(raw);
+  expect(Object.isFrozen(state.owner.getSnapshot())).toBe(true);
+});
+
+it('releases only observation and reads writes made while the view is absent on remount', () => {
+  const { state, view, demo } = fixture(false);
+  choose(2);
+  click('Finish');
+  expect(output().querySelector('[data-element-key="conditional"]')).toBeNull();
+  expect(state.active()).toBeGreaterThan(0);
+  view.unmount();
+  expect(state.active()).toBe(0);
+  expect(state.set).not.toHaveBeenCalled();
+  expect(state.update).not.toHaveBeenCalled();
+  expect(state.dispose).not.toHaveBeenCalled();
+  act(() => state.owner.set('/showDetail', true));
+  const snapshot = state.owner.getSnapshot();
+  const remounted = render(demo());
+  expect(detail().checked).toBe(true);
+  expect(output().querySelector('[data-element-key="conditional"]')).not.toBeNull();
+  expect(state.owner.getSnapshot()).toBe(snapshot);
+  expect(state.set).toHaveBeenCalledTimes(1);
+  remounted.unmount();
+  expect(state.active()).toBe(0);
+  expect(state.dispose).not.toHaveBeenCalled();
+});
+
+it('borrows the owner through StrictMode without commands, reset or terminal disposal', () => {
+  const { state, view } = fixture(false, true);
+  expect(detail().checked).toBe(false);
+  expect(state.active()).toBeGreaterThan(0);
+  expect(state.owner.getSnapshot()).toEqual({ showDetail: false });
+  expect(state.set).not.toHaveBeenCalled();
+  expect(state.update).not.toHaveBeenCalled();
+  expect(state.dispose).not.toHaveBeenCalled();
+  view.unmount();
+  expect(state.active()).toBe(0);
+  expect(state.set).not.toHaveBeenCalled();
+  expect(state.update).not.toHaveBeenCalled();
+  expect(state.dispose).not.toHaveBeenCalled();
+  state.owner.set('/showDetail', true);
+  expect(state.owner.getSnapshot().showDetail).toBe(true);
+});
+
+it('switches observers and explicit commands to the replacement owner', () => {
+  const { state: old, view, demo } = fixture(true);
+  const next = stateFixture(false);
+  view.rerender(demo(next));
+  expect(detail().checked).toBe(false);
+  expect(old.active()).toBe(0);
+  expect(next.active()).toBeGreaterThan(0);
+  old.notify.mockClear();
+  act(() => old.owner.set('/showDetail', false));
+  act(() => old.owner.set('/showDetail', true));
+  expect(old.notify).not.toHaveBeenCalled();
+  expect(detail().checked).toBe(false);
+  fireEvent.click(detail());
+  expect(next.set).toHaveBeenCalledExactlyOnceWith('/showDetail', true);
+  expect(next.owner.getSnapshot().showDetail).toBe(true);
+  act(() => next.owner.set('/showDetail', false));
+  expect(detail().checked).toBe(false);
+  expect(old.set).toHaveBeenCalledTimes(2);
+  expect(old.owner.getSnapshot().showDetail).toBe(true);
+  expect(old.dispose).not.toHaveBeenCalled();
+  expect(next.dispose).not.toHaveBeenCalled();
+  view.unmount();
+  expect(next.active()).toBe(0);
+  expect(next.set).toHaveBeenCalledTimes(2);
+  expect(next.update).not.toHaveBeenCalled();
+  expect(old.update).not.toHaveBeenCalled();
+  expect(old.dispose).not.toHaveBeenCalled();
+  expect(next.dispose).not.toHaveBeenCalled();
 });

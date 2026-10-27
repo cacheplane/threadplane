@@ -70,7 +70,7 @@
       "cache": false,
       "options": {
         "cwd": "{workspaceRoot}",
-        "command": "node --test examples/chat/native/tooling/*.spec.mjs"
+        "command": "node --import tsx --test examples/chat/native/tooling/*.spec.mjs"
       }
     }
   }

@@ -87,6 +87,10 @@ export function createDurableFixture() {
       '/__publish-final': () => {
         final(threads.get(lastThread));
       },
+      '/__finish-run': () => {
+        const run = runs.get(threads.get(lastThread)?.runId);
+        if (run) run.status = 'success';
+      },
       '/__publish-wrong-marker': () => {
         final(threads.get(lastThread), 'wrong-human');
       },

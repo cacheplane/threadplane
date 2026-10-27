@@ -17,6 +17,16 @@ describe('CodeMode', () => {
     container?.remove();
   });
 
+  it('renders one tree row and tab when a prompt is also an actual code include', () => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+    root = createRoot(container);
+    act(() => root!.render(<CodeMode entryTitle="Client Tools" codeAssetPaths={['prompts/client-tools.md']} backendAssetPaths={['prompts/client-tools.md']} codeFiles={{'prompts/client-tools.md': '<pre>actual prompt</pre>'}} promptFiles={{'prompts/client-tools.md': 'actual prompt'}} />));
+    expect(container.querySelectorAll('[data-file-row]')).toHaveLength(1);
+    expect(container.querySelectorAll('[role="tab"]')).toHaveLength(1);
+    expect(container.textContent).toContain('actual prompt');
+  });
+
   it('renders Shiki-highlighted HTML for the active file', () => {
     container = document.createElement('div');
     document.body.appendChild(container);

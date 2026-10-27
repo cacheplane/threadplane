@@ -56,7 +56,7 @@ Each registered template receives:
 
 ### Project through `<chat>` directly
 
-`<chat>` re-projects any `chatToolCallTemplate` directive inside it down to the inner `<chat-tool-calls>`:
+`<chat>` collects every `chatToolCallTemplate` placed as a direct child and passes them to the inner `<chat-tool-calls>` of each assistant message:
 
 ```html
 <chat [agent]="agent">

@@ -3,6 +3,13 @@ import { CONTACT_HARD_STOP_REASONS } from './contacts.ts';
 import { normalizeEmail } from './crypto.ts';
 import type { GrowthArtifact, GrowthJob } from './models.ts';
 import { privacyLock } from './observability/store.ts';
+import { loadInboxConfig } from './inbox-replies.ts';
+import { readInboxRecoveryPaused } from './inbox-recovery.ts';
+import {
+  legacyMailboxRecoveryGuardSql,
+  receivingCampaignGuardSql,
+  receivingSendScopeSql,
+} from './receiving-control.ts';
 import {
   businessMorningAfter,
   isCampaignSendWindow,
@@ -542,14 +549,20 @@ export async function leaseDueJobs(
            where unbound.contact_id = j.contact_id and unbound.id <> j.id
              and unbound.kind in ('fulfill', 'send_step') and unbound.status = 'completed'
              and unbound.provider_email_id is not null and unbound.rfc_message_id is null
+             and ${receivingSendScopeSql('unbound')}
          ))
          and ($5::boolean or j.kind <> 'send_step')
+         and (j.kind <> 'send_step' or ${receivingCampaignGuardSql(
+           'j.contact_id',
+           '$2'
+         )})
          and (
            j.kind not in ('send_step', 'reply_reconcile')
            or not exists (
              select 1
              from growth_activity recovery_required
              where recovery_required.kind = 'mailbox.recovery_required'
+               and ${legacyMailboxRecoveryGuardSql()}
                and not exists (
                  select 1
                  from growth_activity recovery_completed
@@ -820,6 +833,7 @@ export async function authorizeLeasedJobForSubmission(
                 where unbound.contact_id = c.id and unbound.id <> target.id
                   and unbound.kind in ('fulfill', 'send_step') and unbound.status = 'completed'
                   and unbound.provider_email_id is not null and unbound.rfc_message_id is null
+                  and ${receivingSendScopeSql('unbound')}
               ) as reply_binding_pending,
               stop.kind as latest_hard_stop_kind,
               stop.occurred_at as latest_hard_stop_at,
@@ -827,6 +841,7 @@ export async function authorizeLeasedJobForSubmission(
                 select 1
                 from growth_activity recovery_required
                 where recovery_required.kind = 'mailbox.recovery_required'
+                  and ${legacyMailboxRecoveryGuardSql()}
                   and not exists (
                     select 1
                     from growth_activity recovery_completed
@@ -1023,6 +1038,7 @@ export async function authorizeLeasedJobForSubmission(
          select 1
          from growth_activity required
          where required.kind = 'mailbox.recovery_required'
+           and ${legacyMailboxRecoveryGuardSql()}
            and not exists (
              select 1
              from growth_activity completed
@@ -1052,6 +1068,23 @@ export async function authorizeLeasedJobForSubmission(
 
     // Lock waits must not carry a pre-window-boundary timestamp into a send.
     now = validDate('now', input.currentTime?.() ?? now);
+    if (job.kind === 'send_step' && loadInboxConfig().enabled) {
+      if (await readInboxRecoveryPaused(transaction, now)) {
+        return { authorized: false, reason: 'mailbox_recovery_required', job };
+      }
+      const pending = await transaction.execute<{ pending: boolean }>(
+        `/* growth:read-resend-contact-reply-pending */
+         select exists (select 1 from growth_reply_receipts
+           where recipient = 'brian@threadplane.ai' and status = 'pending'
+             and contact_id = $1) as pending`,
+        [job.contactId]
+      );
+      if (pending.rows.length !== 1 || pending.rows[0].pending !== false) {
+        return { authorized: false, reason: 'reply_binding_pending', job };
+      }
+      // Health reads may wait; recheck the campaign window with a fresh clock.
+      now = validDate('now', input.currentTime?.() ?? now);
+    }
     if (job.leaseUntil === null || job.leaseUntil.getTime() <= now.getTime())
       throw new JobLeaseConflictError(jobId);
     if (job.kind === 'send_step' && !isCampaignSendWindow(now)) {

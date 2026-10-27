@@ -1,0 +1,469 @@
+{
+  "provenance": {
+    "label": "Actual compiled c-debug graph with local AuthoredModel provider; no public provider requests. Extracted native gate1 receipt.",
+    "graphSha256": "1bbb052d948dba8156a973752a95c85a4266e61ee5a76697dbde79cd13d3accd",
+    "sidecars": "Natural reasoning/citations absent; name:null. Sidecar tests are authored source-grounded unit variants."
+  },
+  "turns": [
+    {
+      "input": "first input 🛩️",
+      "generation": "b4816321-f4b4-471c-9b57-828b99fecfb1",
+      "initialHuman": {
+        "id": "093a74ae-1c54-4143-8aec-c6986fb3cc45",
+        "content": "first input 🛩️",
+        "generation": "b4816321-f4b4-471c-9b57-828b99fecfb1",
+        "phase": "complete",
+        "status": "running",
+        "prefixLength": 0,
+        "snapshotOrdinal": 0,
+        "observedBeforeSettlement": true
+      },
+      "semantic": [
+        {
+          "id": "093a74ae-1c54-4143-8aec-c6986fb3cc45",
+          "role": "user",
+          "content": "first input 🛩️"
+        },
+        {
+          "id": "authored-generate-1",
+          "role": "assistant",
+          "content": "Answer 1: aviation  facts.\nA second line."
+        },
+        {
+          "id": "c692f852-86ed-4034-a98d-ff83e0913405",
+          "role": "assistant",
+          "content": "[Processing] Analyzed 41 characters. Found 7 words. Processing complete."
+        },
+        {
+          "id": "authored-summarize-1",
+          "role": "assistant",
+          "content": "Summary 1: an authored aviation conversation."
+        }
+      ],
+      "analysis": {
+        "characters": 41,
+        "words": 7
+      },
+      "checkpoint": {
+        "thread_id": "9bb2550a-8807-4732-9966-a554edce39b1",
+        "checkpoint_ns": "",
+        "checkpoint_id": "1f1c898f-7a15-62ec-8004-7a60b1bad3d1"
+      },
+      "rawExact": {
+        "values": {
+          "messages": [
+            {
+              "content": "first input 🛩️",
+              "additional_kwargs": {},
+              "response_metadata": {},
+              "type": "human",
+              "name": null,
+              "id": "093a74ae-1c54-4143-8aec-c6986fb3cc45"
+            },
+            {
+              "content": "Answer 1: aviation  facts.\nA second line.",
+              "additional_kwargs": {},
+              "response_metadata": {
+                "finish_reason": "stop",
+                "model_provider": "openai"
+              },
+              "type": "ai",
+              "name": null,
+              "id": "authored-generate-1",
+              "tool_calls": [],
+              "invalid_tool_calls": [],
+              "usage_metadata": null
+            },
+            {
+              "content": "[Processing] Analyzed 41 characters. Found 7 words. Processing complete.",
+              "additional_kwargs": {},
+              "response_metadata": {},
+              "type": "ai",
+              "name": null,
+              "id": "c692f852-86ed-4034-a98d-ff83e0913405",
+              "tool_calls": [],
+              "invalid_tool_calls": [],
+              "usage_metadata": null
+            },
+            {
+              "content": "Summary 1: an authored aviation conversation.",
+              "additional_kwargs": {},
+              "response_metadata": {
+                "finish_reason": "stop",
+                "model_provider": "openai"
+              },
+              "type": "ai",
+              "name": null,
+              "id": "authored-summarize-1",
+              "tool_calls": [],
+              "invalid_tool_calls": [],
+              "usage_metadata": null
+            }
+          ],
+          "analysis": {
+            "characters": 41,
+            "words": 7
+          }
+        },
+        "next": [],
+        "checkpoint": {
+          "thread_id": "9bb2550a-8807-4732-9966-a554edce39b1",
+          "checkpoint_ns": "",
+          "checkpoint_id": "1f1c898f-7a15-62ec-8004-7a60b1bad3d1"
+        },
+        "parent_checkpoint": {
+          "thread_id": "9bb2550a-8807-4732-9966-a554edce39b1",
+          "checkpoint_ns": "",
+          "checkpoint_id": "1f1c898f-7a10-630a-8003-cab72cd57beb"
+        },
+        "created_at": "2026-10-15T13:04:34.032500+00:00",
+        "metadata": {
+          "source": "loop",
+          "step": 4,
+          "parents": {}
+        },
+        "tasks": []
+      }
+    },
+    {
+      "input": "second input",
+      "generation": "94495da6-ef48-4d2d-be3b-220455fd2c6a",
+      "initialHuman": {
+        "id": "b494a9ca-58a3-44d7-a40e-8dfa4d735d5b",
+        "content": "second input",
+        "generation": "94495da6-ef48-4d2d-be3b-220455fd2c6a",
+        "phase": "complete",
+        "status": "running",
+        "prefixLength": 4,
+        "snapshotOrdinal": 37,
+        "observedBeforeSettlement": true
+      },
+      "semantic": [
+        {
+          "id": "093a74ae-1c54-4143-8aec-c6986fb3cc45",
+          "role": "user",
+          "content": "first input 🛩️"
+        },
+        {
+          "id": "authored-generate-1",
+          "role": "assistant",
+          "content": "Answer 1: aviation  facts.\nA second line."
+        },
+        {
+          "id": "c692f852-86ed-4034-a98d-ff83e0913405",
+          "role": "assistant",
+          "content": "[Processing] Analyzed 41 characters. Found 7 words. Processing complete."
+        },
+        {
+          "id": "authored-summarize-1",
+          "role": "assistant",
+          "content": "Summary 1: an authored aviation conversation."
+        },
+        {
+          "id": "b494a9ca-58a3-44d7-a40e-8dfa4d735d5b",
+          "role": "user",
+          "content": "second input"
+        },
+        {
+          "id": "authored-generate-2",
+          "role": "assistant",
+          "content": "Answer 2: aviation  facts.\nA second line."
+        },
+        {
+          "id": "c5bfbbf9-e2e9-4684-a6ed-60acd6df92db",
+          "role": "assistant",
+          "content": "[Processing] Analyzed 41 characters. Found 7 words. Processing complete."
+        },
+        {
+          "id": "authored-summarize-2",
+          "role": "assistant",
+          "content": "Summary 2: an authored aviation conversation."
+        }
+      ],
+      "analysis": {
+        "characters": 41,
+        "words": 7
+      },
+      "checkpoint": {
+        "thread_id": "9bb2550a-8807-4732-9966-a554edce39b1",
+        "checkpoint_ns": "",
+        "checkpoint_id": "1f1c898f-7a67-6588-800a-3daf58dc8c8e"
+      },
+      "rawExact": {
+        "values": {
+          "messages": [
+            {
+              "content": "first input 🛩️",
+              "additional_kwargs": {},
+              "response_metadata": {},
+              "type": "human",
+              "name": null,
+              "id": "093a74ae-1c54-4143-8aec-c6986fb3cc45"
+            },
+            {
+              "content": "Answer 1: aviation  facts.\nA second line.",
+              "additional_kwargs": {},
+              "response_metadata": {
+                "finish_reason": "stop",
+                "model_provider": "openai"
+              },
+              "type": "ai",
+              "name": null,
+              "id": "authored-generate-1",
+              "tool_calls": [],
+              "invalid_tool_calls": [],
+              "usage_metadata": null
+            },
+            {
+              "content": "[Processing] Analyzed 41 characters. Found 7 words. Processing complete.",
+              "additional_kwargs": {},
+              "response_metadata": {},
+              "type": "ai",
+              "name": null,
+              "id": "c692f852-86ed-4034-a98d-ff83e0913405",
+              "tool_calls": [],
+              "invalid_tool_calls": [],
+              "usage_metadata": null
+            },
+            {
+              "content": "Summary 1: an authored aviation conversation.",
+              "additional_kwargs": {},
+              "response_metadata": {
+                "finish_reason": "stop",
+                "model_provider": "openai"
+              },
+              "type": "ai",
+              "name": null,
+              "id": "authored-summarize-1",
+              "tool_calls": [],
+              "invalid_tool_calls": [],
+              "usage_metadata": null
+            },
+            {
+              "content": "second input",
+              "additional_kwargs": {},
+              "response_metadata": {},
+              "type": "human",
+              "name": null,
+              "id": "b494a9ca-58a3-44d7-a40e-8dfa4d735d5b"
+            },
+            {
+              "content": "Answer 2: aviation  facts.\nA second line.",
+              "additional_kwargs": {},
+              "response_metadata": {
+                "finish_reason": "stop",
+                "model_provider": "openai"
+              },
+              "type": "ai",
+              "name": null,
+              "id": "authored-generate-2",
+              "tool_calls": [],
+              "invalid_tool_calls": [],
+              "usage_metadata": null
+            },
+            {
+              "content": "[Processing] Analyzed 41 characters. Found 7 words. Processing complete.",
+              "additional_kwargs": {},
+              "response_metadata": {},
+              "type": "ai",
+              "name": null,
+              "id": "c5bfbbf9-e2e9-4684-a6ed-60acd6df92db",
+              "tool_calls": [],
+              "invalid_tool_calls": [],
+              "usage_metadata": null
+            },
+            {
+              "content": "Summary 2: an authored aviation conversation.",
+              "additional_kwargs": {},
+              "response_metadata": {
+                "finish_reason": "stop",
+                "model_provider": "openai"
+              },
+              "type": "ai",
+              "name": null,
+              "id": "authored-summarize-2",
+              "tool_calls": [],
+              "invalid_tool_calls": [],
+              "usage_metadata": null
+            }
+          ],
+          "analysis": {
+            "characters": 41,
+            "words": 7
+          }
+        },
+        "next": [],
+        "checkpoint": {
+          "thread_id": "9bb2550a-8807-4732-9966-a554edce39b1",
+          "checkpoint_ns": "",
+          "checkpoint_id": "1f1c898f-7a67-6588-800a-3daf58dc8c8e"
+        },
+        "parent_checkpoint": {
+          "thread_id": "9bb2550a-8807-4732-9966-a554edce39b1",
+          "checkpoint_ns": "",
+          "checkpoint_id": "1f1c898f-7a66-6368-8009-c043896736a6"
+        },
+        "created_at": "2026-10-15T13:04:34.066158+00:00",
+        "metadata": {
+          "source": "loop",
+          "step": 10,
+          "parents": {}
+        },
+        "tasks": []
+      }
+    }
+  ],
+  "unicode": {
+    "values": {
+      "messages": [
+        {
+          "content": "labelled generated Unicode extension",
+          "additional_kwargs": {},
+          "response_metadata": {},
+          "type": "human",
+          "name": null,
+          "id": "72f54461-9168-4736-a8a1-6ec464e05f46"
+        },
+        {
+          "content": "🛩️ Answer 1: aviation  facts.\nA second line.",
+          "additional_kwargs": {},
+          "response_metadata": {
+            "finish_reason": "stop",
+            "model_provider": "openai"
+          },
+          "type": "ai",
+          "name": null,
+          "id": "authored-generate-1",
+          "tool_calls": [],
+          "invalid_tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "content": "[Processing] Analyzed 44 characters. Found 8 words. Processing complete.",
+          "additional_kwargs": {},
+          "response_metadata": {},
+          "type": "ai",
+          "name": null,
+          "id": "646d55b8-6c6f-4c56-806d-bfaed4045e89",
+          "tool_calls": [],
+          "invalid_tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "content": "Summary 1: an authored aviation conversation.",
+          "additional_kwargs": {},
+          "response_metadata": {
+            "finish_reason": "stop",
+            "model_provider": "openai"
+          },
+          "type": "ai",
+          "name": null,
+          "id": "authored-summarize-1",
+          "tool_calls": [],
+          "invalid_tool_calls": [],
+          "usage_metadata": null
+        }
+      ],
+      "analysis": {
+        "characters": 44,
+        "words": 8
+      }
+    },
+    "next": [],
+    "checkpoint": {
+      "thread_id": "8d8951da-a1c3-4237-b0d9-0a20f4347e37",
+      "checkpoint_ns": "",
+      "checkpoint_id": "1f1c898f-8991-6c0c-8004-f84d1c5d56fc"
+    },
+    "parent_checkpoint": {
+      "thread_id": "8d8951da-a1c3-4237-b0d9-0a20f4347e37",
+      "checkpoint_ns": "",
+      "checkpoint_id": "1f1c898f-898d-6a08-8003-0b7b7b1d1fb1"
+    },
+    "created_at": "2026-10-15T13:04:35.656390+00:00",
+    "metadata": {
+      "source": "loop",
+      "step": 4,
+      "parents": {}
+    },
+    "tasks": []
+  },
+  "omittedB": {
+    "label": "Transport omission only; natural backend callback was present",
+    "raw": {
+      "values": {
+        "messages": [
+          {
+            "content": "labelled omitted B callback projection",
+            "additional_kwargs": {},
+            "response_metadata": {},
+            "type": "human",
+            "name": null,
+            "id": "f4fa13b5-67cb-4dad-af72-51e307d6639b"
+          },
+          {
+            "content": "Answer 1: aviation  facts.\nA second line.",
+            "additional_kwargs": {},
+            "response_metadata": {
+              "finish_reason": "stop",
+              "model_provider": "openai"
+            },
+            "type": "ai",
+            "name": null,
+            "id": "authored-generate-1",
+            "tool_calls": [],
+            "invalid_tool_calls": [],
+            "usage_metadata": null
+          },
+          {
+            "content": "[Processing] Analyzed 41 characters. Found 7 words. Processing complete.",
+            "additional_kwargs": {},
+            "response_metadata": {},
+            "type": "ai",
+            "name": null,
+            "id": "f12d4fcf-303c-4acf-b9b5-22a5e0f75a3f",
+            "tool_calls": [],
+            "invalid_tool_calls": [],
+            "usage_metadata": null
+          },
+          {
+            "content": "Summary 1: an authored aviation conversation.",
+            "additional_kwargs": {},
+            "response_metadata": {
+              "finish_reason": "stop",
+              "model_provider": "openai"
+            },
+            "type": "ai",
+            "name": null,
+            "id": "authored-summarize-1",
+            "tool_calls": [],
+            "invalid_tool_calls": [],
+            "usage_metadata": null
+          }
+        ],
+        "analysis": {
+          "characters": 41,
+          "words": 7
+        }
+      },
+      "next": [],
+      "checkpoint": {
+        "thread_id": "7414f40d-9891-49ef-87b7-0a7653256d82",
+        "checkpoint_ns": "",
+        "checkpoint_id": "1f1c898f-98b6-6d86-8004-96352e191327"
+      },
+      "parent_checkpoint": {
+        "thread_id": "7414f40d-9891-49ef-87b7-0a7653256d82",
+        "checkpoint_ns": "",
+        "checkpoint_id": "1f1c898f-98b2-6d4e-8003-47e3d893f9f1"
+      },
+      "created_at": "2026-10-15T13:04:37.244448+00:00",
+      "metadata": {
+        "source": "loop",
+        "step": 4,
+        "parents": {}
+      },
+      "tasks": []
+    }
+  }
+}
