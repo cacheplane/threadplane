@@ -41,7 +41,7 @@ export default [
             },
             {
               sourceTag: 'layer:content',
-              onlyDependOnLibsWithTags: ['layer:core', 'layer:content'],
+              onlyDependOnLibsWithTags: ['layer:core', 'layer:content', 'layer:a2ui'],
               bannedExternalImports: ['@angular/*', 'react', 'react-dom', 'rxjs', '@langchain/*', '@ag-ui/*'],
             },
             {

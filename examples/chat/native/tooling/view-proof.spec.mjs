@@ -28,6 +28,7 @@ function fixture(t, framework) {
     ? ['typescript', '@angular/compiler-cli', '@angular/cli', '@angular/build']
     : ['typescript', 'vite'];
   const packages = [
+    ...(!angular ? ['@threadplane/a2ui'] : []),
     ...tools,
     ...(angular
       ? ['@angular/core', '@angular/platform-browser']
@@ -39,6 +40,15 @@ function fixture(t, framework) {
     '@threadplane/' + framework,
   ];
   const runtime = [
+    ...(!angular
+      ? [
+          'view-proof/view-owner.react.ts',
+          'react/src/application.ts',
+          'react/src/a2ui-message-content.ts',
+          'react/src/a2ui-trip-catalog.ts',
+          'node_modules/@threadplane/content/src/a2ui/create-surfaces.js',
+        ]
+      : []),
     entry,
     'view-proof/view-owner.ts',
     app,
@@ -65,9 +75,19 @@ function fixture(t, framework) {
           'chat/message-list.js',
           'chat/reasoning.js',
           'chat/approval-card.js',
+          'chat/message-actions.js',
+          'chat/citations.js',
+          'chat/text-transcript.js',
+          'render/render-spec.js',
         ].map((n) => 'node_modules/@threadplane/react/src/' + n)),
   ];
   const types = [
+    ...(!angular
+      ? [
+          'node_modules/@threadplane/content/src/a2ui/create-surfaces.d.ts',
+          'node_modules/@threadplane/a2ui/src/index.d.ts',
+        ]
+      : []),
     ...runtime.filter((p) => !p.endsWith('.js') && !p.endsWith('.mjs')),
     'node_modules/@threadplane/langgraph/runtime/create-session.d.ts',
     'node_modules/@threadplane/content/src/markdown/create-markdown.d.ts',
@@ -78,7 +98,11 @@ function fixture(t, framework) {
           'threadplane-angular-markdown',
           'threadplane-angular-chat',
         ].map((n) => 'node_modules/@threadplane/angular/types/' + n + '.d.ts')
-      : []),
+      : [
+          'node_modules/@threadplane/react/src/render/render-spec.d.ts',
+          'node_modules/@threadplane/react/src/chat/citations.d.ts',
+          'node_modules/@threadplane/react/src/chat/text-transcript.d.ts',
+        ]),
   ];
   const configs = ['view-proof/tsconfig.json', framework + '/tsconfig.json'];
   const buildConfig =
@@ -144,6 +168,15 @@ function fixture(t, framework) {
   const record = {
     version: 2,
     framework,
+    profile: angular ? 'angular-langgraph' : 'react-native-a2ui-langgraph',
+    ...(!angular
+      ? {
+          reactHelper: {
+            path: 'examples/chat/native/tooling/view-owner.react.ts',
+            sha256: inputs['view-proof/view-owner.react.ts'],
+          },
+        }
+      : {}),
     entry,
     source: {
       path:
@@ -349,6 +382,66 @@ for (const framework of ['react', 'angular']) {
       assert.throws(() => readViewProof(f.root));
     });
 }
+for (const [graph, extension] of [
+  ['runtime', '.js'],
+  ['types', '.d.ts'],
+])
+  test(`React rejects missing installed RenderSpec ${graph}`, (t) => {
+    const f = fixture(t, 'react');
+    const path =
+      'node_modules/@threadplane/react/src/render/render-spec' + extension;
+    if (graph === 'runtime')
+      f.record.runtime = f.record.runtime.filter((p) => p !== path);
+    else
+      f.record.compiler.inputs = f.record.compiler.inputs.filter(
+        (p) => p !== path
+      );
+    delete f.record.inputs[path];
+    rmSync(join(f.root, 'inputs', path));
+    f.save();
+    assert.throws(() => readViewProof(f.root), /render-spec/);
+  });
+
+for (const [graph, extension] of [
+  ['runtime', '.js'],
+  ['types', '.d.ts'],
+])
+  test(`React rejects missing installed Citations ${graph}`, (t) => {
+    const f = fixture(t, 'react');
+    const path =
+      'node_modules/@threadplane/react/src/chat/citations' + extension;
+    if (graph === 'runtime')
+      f.record.runtime = f.record.runtime.filter((p) => p !== path);
+    else
+      f.record.compiler.inputs = f.record.compiler.inputs.filter(
+        (p) => p !== path
+      );
+    delete f.record.inputs[path];
+    rmSync(join(f.root, 'inputs', path));
+    f.save();
+    assert.throws(() => readViewProof(f.root), /citations/);
+  });
+
+for (const [graph, extension] of [
+  ['runtime', '.js'],
+  ['types', '.d.ts'],
+])
+  test(`React rejects missing installed TextTranscript ${graph}`, (t) => {
+    const f = fixture(t, 'react');
+    const path =
+      'node_modules/@threadplane/react/src/chat/text-transcript' + extension;
+    if (graph === 'runtime')
+      f.record.runtime = f.record.runtime.filter((p) => p !== path);
+    else
+      f.record.compiler.inputs = f.record.compiler.inputs.filter(
+        (p) => p !== path
+      );
+    delete f.record.inputs[path];
+    rmSync(join(f.root, 'inputs', path));
+    f.save();
+    assert.throws(() => readViewProof(f.root), /text-transcript/);
+  });
+
 test('React rejects missing installed MessageList runtime', (t) => {
   const f = fixture(t, 'react');
   f.record.runtime = f.record.runtime.filter(
@@ -366,6 +459,15 @@ test('React rejects missing installed ApprovalCard runtime', (t) => {
   rmSync(join(f.root, 'inputs', path));
   f.save();
   assert.throws(() => readViewProof(f.root), /approval-card/);
+});
+test('React rejects missing installed MessageActions runtime', (t) => {
+  const f = fixture(t, 'react');
+  const path = 'node_modules/@threadplane/react/src/chat/message-actions.js';
+  f.record.runtime = f.record.runtime.filter((p) => p !== path);
+  delete f.record.inputs[path];
+  rmSync(join(f.root, 'inputs', path));
+  f.save();
+  assert.throws(() => readViewProof(f.root), /message-actions/);
 });
 
 test('React rejects missing installed Reasoning runtime', (t) => {
@@ -401,4 +503,35 @@ for (const [name, mutate] of [
     mutate(f.record);
     f.save();
     assert.throws(() => readViewProof(f.root));
+  });
+
+for (const graph of ['runtime', 'compiler'])
+  for (const path of [
+    'view-proof/view-owner.react.ts',
+    'react/src/application.ts',
+    'react/src/a2ui-message-content.ts',
+    'react/src/a2ui-trip-catalog.ts',
+    'node_modules/@threadplane/content/src/a2ui/create-surfaces' +
+      (graph === 'runtime' ? '.js' : '.d.ts'),
+  ])
+    test(`React requires production A2UI ${graph}: ${path}`, (t) => {
+      const f = fixture(t, 'react');
+      if (graph === 'runtime')
+        f.record.runtime = f.record.runtime.filter((p) => p !== path);
+      else
+        f.record.compiler.inputs = f.record.compiler.inputs.filter(
+          (p) => p !== path
+        );
+      f.save();
+      assert.throws(
+        () => readViewProof(f.root),
+        /composition|A2UI|create-surfaces/
+      );
+    });
+for (const profile of [undefined, 'react-langgraph', 'angular-langgraph'])
+  test(`React rejects substituted profile ${profile}`, (t) => {
+    const f = fixture(t, 'react');
+    f.record.profile = profile;
+    f.save();
+    assert.throws(() => readViewProof(f.root), /profile/);
   });

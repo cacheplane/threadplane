@@ -64,7 +64,7 @@ const toolsOf = (state: State) =>
 const callsOf = (state: State) =>
   state.values.messages.flatMap((message) => message.tool_calls ?? []);
 const streamOptions = {
-  stream_mode: ['values', 'messages-tuple', 'updates', 'custom'],
+  stream_mode: ['values', 'messages-tuple', 'updates', 'custom', 'checkpoints'],
   stream_subgraphs: true,
   stream_resumable: true,
   on_disconnect: 'continue',

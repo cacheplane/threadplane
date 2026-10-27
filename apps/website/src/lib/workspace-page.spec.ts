@@ -4,6 +4,7 @@ import { compile } from '@tailwindcss/node';
 import { Scanner } from '@tailwindcss/oxide';
 import { describe, expect, it } from 'vitest';
 import { nextConfig } from '../../next.config';
+import { resolveExampleFile } from './example-code';
 import {
   getExampleCodeContext,
   getWebsiteWorkspacePage,
@@ -14,6 +15,127 @@ const workspaceRoot = process.cwd().endsWith('/apps/website')
   : process.cwd();
 
 describe('getWebsiteWorkspacePage', () => {
+  it('loads the authored MAF snapshot compatibility helper into actual ExampleCode context', async () => {
+    const page = await getWebsiteWorkspacePage({ docsPath: '/docs/runtimes/microsoft-agent-framework/overview', title: 'Overview' });
+    const context = getExampleCodeContext(page);
+    const helper = 'cockpit/runtimes/microsoft-agent-framework/python/src/snapshot_compat.py';
+    if (!context) throw new Error('Missing MAF ExampleCode context');
+    expect(resolveExampleFile('snapshot_compat.py', context)).toBe(helper);
+    expect(context?.assetPaths).toContain(helper);
+    expect(context?.sources[helper]).toBe(readFileSync(resolve(workspaceRoot, helper), 'utf8'));
+    const docs = readFileSync(resolve(workspaceRoot, 'apps/website/content/docs/runtimes/microsoft-agent-framework/overview.mdx'), 'utf8');
+    expect(docs).toContain('<ExampleCode file="snapshot_compat.py"');
+  });
+  it('loads the canonical Subagents React code and child bridge with the same native runtime', async () => {
+    const page = await getWebsiteWorkspacePage({ docsPath: '/docs/ag-ui/guides/subagents', title: 'Subagents' });
+    const react = page.frontendVariants?.react;
+    expect(react?.presentation.runtimeUrl).toBe('ag-ui/subagents/react');
+    const files = Object.keys(react?.contentBundle.codeFiles ?? {});
+    expect(files).toContain('cockpit/ag-ui/subagents/react/src/children.ts');
+    expect(files).toContain('cockpit/ag-ui/subagents/python/src/streaming/subagent_emitting_agent.py');
+    expect(files.some(file => file.includes('/langgraph/') || file.includes('/angular/'))).toBe(false);
+    expect(page.presentation.runtimeUrl).toBe('ag-ui/subagents');
+  });
+  it('loads AG-UI Streaming React from Event Mapping with its own native source and backend', async () => {
+    const page = await getWebsiteWorkspacePage({ docsPath:'/docs/ag-ui/reference/event-mapping',title:'Event Mapping' });
+    const react = page.frontendVariants?.react;
+    expect(react?.presentation.runtimeUrl).toBe('ag-ui/streaming/react');
+    const files = Object.keys(react?.contentBundle.codeFiles ?? {});
+    expect(files).toContain('cockpit/ag-ui/streaming/react/src/canonical-transcript.ts');
+    expect(files).toContain('cockpit/ag-ui/streaming/python/src/server.py');
+    expect(files.some(x=>x.includes('/langgraph/')||x.includes('/angular/'))).toBe(false);
+    expect(page.presentation.runtimeUrl).toBe('ag-ui/streaming');
+  });
+  it('loads Deployment Runtime React from the canonical deployment slug without Angular source fallback', async () => {
+    const page = await getWebsiteWorkspacePage({
+      docsPath: '/docs/langgraph/guides/deployment',
+      title: 'Deployment',
+    });
+    const react = page.frontendVariants?.react;
+    expect(react?.presentation.runtimeUrl).toBe(
+      'langgraph/deployment-runtime/react'
+    );
+    const files = Object.keys(react?.contentBundle.codeFiles ?? {});
+    for (const file of [
+      'app.tsx',
+      'application.ts',
+      'canonical-history.ts',
+      'connection.ts',
+      'main.tsx',
+    ])
+      expect(files).toContain(
+        `cockpit/langgraph/deployment-runtime/react/src/${file}`
+      );
+    expect(files).toContain(
+      'cockpit/langgraph/deployment-runtime/python/src/graph.py'
+    );
+    expect(files.some((path) => path.includes('/angular/'))).toBe(false);
+    expect(page.presentation.runtimeUrl).toBe('langgraph/deployment-runtime');
+  });
+  it('loads a bounded React variant with matching source and runtime', async () => {
+    const page = await getWebsiteWorkspacePage({
+      docsPath: '/docs/langgraph/guides/streaming',
+      title: 'Streaming',
+    });
+    const react = page.frontendVariants?.react;
+    expect(react?.resolution).toMatchObject({
+      kind: 'mapped',
+      identity: { id: expect.stringMatching(/:react$/), language: 'python' },
+    });
+    expect(react?.presentation).toMatchObject({
+      runtimeUrl: 'langgraph/streaming/react',
+    });
+    expect(Object.keys(react?.contentBundle.codeFiles ?? {})).toContain(
+      'cockpit/langgraph/streaming/react/src/app.tsx'
+    );
+    expect(
+      Object.keys(react?.contentBundle.codeFiles ?? {}).some((path) =>
+        path.includes('/angular/')
+      )
+    ).toBe(false);
+    const unsupported = await getWebsiteWorkspacePage({
+      docsPath: '/docs/langgraph/guides/testing',
+      title: 'Testing',
+    });
+    expect(unsupported.frontendVariants?.react).toBeUndefined();
+  });
+  it('loads Time Travel canonical history and full checkpoint source helpers with the exact React runtime', async () => {
+    const page = await getWebsiteWorkspacePage({
+      docsPath: '/docs/langgraph/guides/time-travel',
+      title: 'Time Travel',
+    });
+    const react = page.frontendVariants?.react;
+    expect(react?.presentation.runtimeUrl).toBe('langgraph/time-travel/react');
+    const files = Object.keys(react?.contentBundle.codeFiles ?? {});
+    for (const file of [
+      'application.ts',
+      'checkpoint-history.ts',
+      'canonical-history.ts',
+    ])
+      expect(files).toContain(
+        `cockpit/langgraph/time-travel/react/src/${file}`
+      );
+    expect(files).toContain(
+      'cockpit/langgraph/time-travel/python/src/graph.py'
+    );
+    expect(files.some((path) => path.includes('/angular/'))).toBe(false);
+    expect(page.presentation.runtimeUrl).toBe('langgraph/time-travel');
+  });
+  it('loads the Subgraphs parent owner and exact frontend runtime together', async () => {
+    const page = await getWebsiteWorkspacePage({
+      docsPath: '/docs/langgraph/guides/subgraphs',
+      title: 'Subgraphs',
+    });
+    const react = page.frontendVariants?.react;
+    expect(react?.presentation.runtimeUrl).toBe('langgraph/subgraphs/react');
+    const files = Object.keys(react?.contentBundle.codeFiles ?? {});
+    expect(files).toContain(
+      'cockpit/langgraph/subgraphs/react/src/application.ts'
+    );
+    expect(files).toContain('cockpit/langgraph/subgraphs/python/src/graph.py');
+    expect(files.some((path) => path.includes('/angular/'))).toBe(false);
+    expect(page.presentation.runtimeUrl).toBe('langgraph/subgraphs');
+  });
   it('loads descriptor-backed content for a mapped LangGraph docs page', async () => {
     const page = await getWebsiteWorkspacePage({
       docsPath: '/docs/langgraph/guides/streaming',
@@ -34,7 +156,9 @@ describe('getWebsiteWorkspacePage', () => {
         'cockpit/langgraph/streaming/angular/src/app/streaming.component.ts',
       ]),
     });
-    expect(page.contentBundle.runtimeUrl).toMatch(/(?:langgraph\/streaming|localhost:4300)$/);
+    expect(page.contentBundle.runtimeUrl).toMatch(
+      /(?:langgraph\/streaming|localhost:4300)$/
+    );
     expect(Object.keys(page.contentBundle.codeFiles)).toEqual(
       expect.arrayContaining([
         'cockpit/langgraph/streaming/angular/src/app/streaming.component.ts',

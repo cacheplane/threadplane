@@ -20,9 +20,15 @@ test('installed React transcript follows only while pinned and resets on selecti
   const saved = Array.from({ length: 24 }, (_, i) => ({
     id: `saved-${i}`,
     type: 'ai',
-    content: `Saved paragraph ${i}.\n\n${'A restored conversation needs room to read. '.repeat(
-      12
-    )}`,
+    content:
+      i === 23
+        ? 'Final saved answer.'
+        : `Saved paragraph ${i}.\n\n${'A restored conversation needs room to read. '.repeat(
+            12
+          )}`,
+    ...(i === 23
+      ? { reasoning: 'A long retained explanation.\n\n'.repeat(30) }
+      : {}),
   }));
   const rows = [
     threadEnvelope('a', 'Conversation A'),
@@ -121,7 +127,7 @@ test('installed React transcript follows only while pinned and resets on selecti
             },
           ],
         },
-        stream_mode: ['values', 'messages-tuple', 'updates', 'custom'],
+        stream_mode: ['values', 'messages-tuple', 'updates', 'custom', 'checkpoints'],
         stream_subgraphs: true,
         stream_resumable: true,
         on_disconnect: 'continue',
@@ -187,6 +193,83 @@ test('installed React transcript follows only while pinned and resets on selecti
       })
       .toBeGreaterThan(1000);
     await expect(list).toHaveClass(/tp-chat-list/);
+    await bottom(list);
+    const initialViewport = page.viewportSize();
+    assert.ok(initialViewport);
+    const beforeResize = await geometry(list);
+    const regionBeforeResize = await list.elementHandle();
+    const rowBeforeResize = await list
+      .getByRole('article')
+      .first()
+      .elementHandle();
+    assert.ok(regionBeforeResize);
+    assert.ok(rowBeforeResize);
+    await page.setViewportSize({
+      ...initialViewport,
+      height: initialViewport.height - 200,
+    });
+    await expect
+      .poll(async () => (await geometry(list)).viewport)
+      .toBeLessThan(beforeResize.viewport - 32);
+    expect((await geometry(list)).height).toBe(beforeResize.height);
+    await bottom(list);
+    await page.setViewportSize(initialViewport);
+    await bottom(list);
+    await list.evaluate((el) => {
+      el.scrollTop = 100;
+      el.dispatchEvent(new Event('scroll'));
+    });
+    for (const height of [
+      initialViewport.height - 200,
+      initialViewport.height,
+    ]) {
+      await page.setViewportSize({ ...initialViewport, height });
+      await list.evaluate(
+        () =>
+          new Promise<void>((resolve) =>
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+          )
+      );
+      expect((await geometry(list)).top).toBe(100);
+      expect(await regionBeforeResize.evaluate((el) => el.isConnected)).toBe(
+        true
+      );
+      expect(await rowBeforeResize.evaluate((el) => el.isConnected)).toBe(true);
+    }
+    await list.evaluate((el) => {
+      el.scrollTop = el.scrollHeight;
+      el.dispatchEvent(new Event('scroll'));
+    });
+    await bottom(list);
+    const disclosure = list.getByRole('button', {
+      name: 'Show reasoning',
+      exact: true,
+    });
+    await disclosure.click();
+    await bottom(list);
+    await list
+      .getByRole('button', { name: 'Show reasoning', exact: true })
+      .evaluate((el) => (el as HTMLButtonElement).click());
+    await bottom(list);
+    await list.evaluate((el) => {
+      el.scrollTop = 100;
+      el.dispatchEvent(new Event('scroll'));
+    });
+    await disclosure.evaluate((el) => (el as HTMLButtonElement).click());
+    await list.evaluate(
+      () =>
+        new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+        )
+    );
+    expect((await geometry(list)).top).toBe(100);
+    await list
+      .getByRole('button', { name: 'Show reasoning', exact: true })
+      .evaluate((el) => (el as HTMLButtonElement).click());
+    await list.evaluate((el) => {
+      el.scrollTop = el.scrollHeight;
+      el.dispatchEvent(new Event('scroll'));
+    });
     await bottom(list);
     const original = await list.elementHandle();
     const first = await list.getByRole('article').first().elementHandle();

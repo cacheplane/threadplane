@@ -1,15 +1,18 @@
 ---
 title: Subagents
-description: Passing subagents to create_deep_agent puts your specialists on the task tool, and every dispatch runs as a real child graph that renders as its own card.
+description: Register specialists on the task tool and inspect delegation through the Angular example or native React preview.
 ---
 
 # Subagents
 
+Angular is the default example on this guide. Choose React in **Example UI** for native parent task cards and separate current-session child observations. Both frontends share the same Python graph, prompt and runtime. The card tracking and description-based attribution described below apply to Angular only.
+
 Delegation in Deep Agents is one tool. `SubAgentMiddleware` registers a tool named `task` taking `{ description, subagent_type }`, and each call runs a real child graph with its own system prompt, its own tools, and its own transcript. Nothing about that is special on the wire — it is an ordinary tool call — and yet the browser renders it as a child agent, because `task` is the name the subagent tracker already watches for. The running example is an aviation dispatch desk, and this page walks the three files behind it.
 
-## What the demo does
+## What the Angular demo does
 
-The Run tab shows the prebuilt `<chat>` composition beside a sidebar holding the specialist roster and a live dispatch count. The first welcome suggestion asks for a brief on KASE and KDEN, covering field data and weather at both, and the orchestrator answers by dispatching four specialists in a single turn: four cards appear in the conversation at once, each expanded while its child works and collapsed to its header row when it reports. The second suggestion asks for the field data at KSFO alone, which is one dispatch and one card, so the two suggestions are the fan-out and the single case side by side. The orchestrator has no lookup tools of its own, so there is no run in which it answers without delegating.
+The Angular Run tab shows the prebuilt `<chat>` composition beside a specialist roster and live dispatch count. The first suggestion requests field data and weather for KASE and KDEN; the second asks for field data at KSFO. The prompt requests parallel tasks with one airport per dispatch. Actual model behavior determines the number and type of calls; four calls, mandatory delegation and exclusive use of the two named specialists are not guaranteed. The graph can respond without a task call, use generic tools or dispatch to general-purpose. All airport and weather lookups use fixed sample tables.
+
 
 ## How it is built
 
@@ -31,17 +34,17 @@ Omitting `tools` would inherit the main agent's tools instead, which is the oppo
 
 ### Installing the task tool
 
-`create_deep_agent` assembles a middleware stack, and `SubAgentMiddleware` is already on it: the factory adds a `general-purpose` subagent unless that one is explicitly disabled, so the `task` tool ships by default. Passing `subagents` is what puts your own specialists on that tool. The demo passes no tools of its own, so delegation is the only path to an answer.
+`create_deep_agent` assembles a middleware stack, and `SubAgentMiddleware` is already on it: the factory adds a `general-purpose` subagent unless that one is explicitly disabled, so the `task` tool ships by default. Passing `subagents` is what puts your own specialists on that tool. The demo passes no custom lookup tools to the orchestrator; middleware can still supply generic tools, and a model response need not delegate.
 
 <ExampleCode file="graph.py" region="orchestrator" title="graph.py — the orchestrator" />
 
 <Callout type="info" title="A third specialist you did not declare">
-Unless it is explicitly disabled, `create_deep_agent` inserts a `general-purpose` subagent ahead of the specs you pass, with the main agent's model and tools. The `task` tool description therefore lists three agent types rather than two. The demo does not disable it; the system prompt simply names the two specialists it wants, which is enough to keep the orchestrator on them.
+Unless it is explicitly disabled, `create_deep_agent` inserts a `general-purpose` subagent ahead of the specs you pass, with the main agent's model and tools. The `task` tool description therefore lists three agent types rather than two. The demo does not disable it; the system prompt names the two specialists it prefers, without guaranteeing that the model will use only them.
 </Callout>
 
 ### Asking for the dispatches in one turn
 
-The middleware supplies a tool, not a policy. A model left to itself will dispatch one specialist, wait for the report, and dispatch the next, which is correct but produces a run with nothing to see. Two paragraphs in `prompts/subagents.md` change the shape of the run instead.
+The middleware supplies a tool, not a policy. A model may dispatch sequentially or in parallel. Two paragraphs in `prompts/subagents.md` request parallel work; they do not guarantee its shape or call count.
 
 ```markdown
 Give each dispatch a `description` that names the airport and says exactly what
@@ -54,13 +57,13 @@ parallel. Do not wait for one to report before sending the next.
 
 Both halves matter, and the first one matters for a reason worth reading the next section for.
 
-### Providing the agent
+### Providing the Angular agent
 
 `provideAgent()` from `@threadplane/langgraph` registers the agent at the application root, and it is the only provider the `<chat>` composition requires. `subagentToolNames: ['task']` is already the default, so the line changes nothing at runtime and is there to say which tool call means that a child started. The example resolves its connection at runtime because the host that serves the demo decides which runtime is attached; your own application passes `apiUrl` and `assistantId` directly.
 
 <ExampleCode file="app.config.ts" />
 
-### Reading the dispatches
+### Reading Angular dispatches
 
 `injectAgent()` returns the agent, and `agent.subagents()` is a signal holding a map of the dispatches in the current thread. The sidebar spreads that map into an array once and derives both numbers from it, so the two counts can never disagree.
 
@@ -74,7 +77,7 @@ The `<chat>` composition already renders every dispatch as a card inside the con
 
 <ExampleCode file="subagents.component.ts" region="sidebar-panel" title="subagents.component.ts — the sidebar" />
 
-## How a dispatch becomes a card
+## How an Angular dispatch becomes a card
 
 Two independent things have to happen for a `task` call to render as a child agent, and they come from opposite ends of the run.
 
@@ -86,7 +89,7 @@ The second is attribution: deciding which child stream belongs to which dispatch
 The deepagents `task` tool cannot announce its binding, so inside this graph the description is the only signal that survives fan-out; a graph that announces its children through the [Threadplane middleware](/docs/langgraph/guides/subgraphs) gets an exact binding instead. With one child outstanding the adapter can fall back to claiming the single unmatched dispatch, but with four outstanding at once there is nothing positional to fall back on: arrival order is not dispatch order, and guessing would put one specialist's transcript in another specialist's card. Descriptions that name their airport keep the four apart. Two dispatches whose descriptions are identical give the ladder nothing to tell them apart: the exact rung claims the first unmapped dispatch, so the second child lands on the wrong card rather than on none.
 </Callout>
 
-Until a stream is attributed its chunks are held rather than dropped, and they are replayed into the card the moment the match lands. A dispatch that never matches shows an empty card, which is a worse card but never a wrong one.
+Until a stream is attributed its chunks are held rather than dropped, and they are replayed into the card the moment the match lands. An unmatched Angular dispatch can show an empty card. Description matching is a heuristic and can misattribute children, particularly when descriptions are identical. The native React preview instead presents separate unlinked namespace observations and never uses this matching heuristic.
 
 <Callout type="tip" title="The description is doing two jobs">
 A dispatch `description` is both the child's opening instruction and the key the adapter attributes its output by. A vague description costs twice: the child starts with less to go on, and its stream is harder to tell from its siblings.

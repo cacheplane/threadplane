@@ -1,0 +1,211 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color: #202832;
+  background: #fafafa;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+.a2ui-demo {
+  max-width: 56rem;
+  margin: auto;
+  padding: 1.5rem;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.a2ui-demo header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+.a2ui-demo h1 {
+  font-size: 1.5rem;
+  margin: 0;
+}
+.a2ui-demo p {
+  margin: 0;
+}
+.a2ui-eyebrow,
+.a2ui-message-role,
+.a2ui-history {
+  color: #606b76;
+  font-size: 0.8rem;
+}
+.a2ui-eyebrow {
+  margin-bottom: 0.4rem !important;
+}
+.a2ui-demo button,
+.a2ui-demo select,
+.a2ui-demo input {
+  font: inherit;
+}
+.a2ui-demo button {
+  cursor: pointer;
+  border: 1px solid #89939d;
+  border-radius: 0.3rem;
+  padding: 0.5rem 0.75rem;
+  background: white;
+  color: inherit;
+}
+.a2ui-demo button:disabled {
+  cursor: default;
+  color: #606b76;
+  background: #eef0f2;
+}
+.a2ui-demo :focus-visible {
+  outline: 3px solid #2463ba;
+  outline-offset: 3px;
+}
+.a2ui-suggestion {
+  align-self: flex-start;
+}
+.a2ui-conversation,
+.a2ui-column,
+.a2ui-surface {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+.a2ui-conversation {
+  flex: 1;
+  min-height: 12rem;
+}
+.a2ui-message {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.a2ui-message--user {
+  background: #edf2f7;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  align-self: flex-end;
+  max-width: 100%;
+}
+.a2ui-empty {
+  color: #606b76;
+  padding: 2rem 0;
+}
+.a2ui-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  min-width: 0;
+}
+.a2ui-row > * {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+.a2ui-list {
+  margin: 0;
+  padding-left: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.a2ui-card {
+  min-width: 0;
+  padding: 1rem;
+  background: white;
+  border: 1px solid #d4d9de;
+  border-radius: 0.5rem;
+}
+.a2ui-card h2,
+.a2ui-card h3,
+.a2ui-card h4,
+.a2ui-card h5 {
+  margin: 0;
+}
+.a2ui-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+}
+.a2ui-field label {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.a2ui-field input,
+.a2ui-field select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0.6rem;
+  color: inherit;
+  border: 1px solid #89939d;
+  border-radius: 0.25rem;
+  background: white;
+}
+.a2ui-field input:disabled,
+.a2ui-field select:disabled {
+  color: #505a65;
+  background: #f3f4f5;
+  opacity: 1;
+}
+.a2ui-field [aria-invalid='true'] {
+  border-color: #a52323;
+}
+.a2ui-button[data-variant='primary']:enabled {
+  background: #202832;
+  color: white;
+}
+.a2ui-button[data-variant='borderless'] {
+  border-color: transparent;
+  background: transparent;
+}
+.a2ui-divider {
+  border-top: 1px solid #d4d9de;
+}
+.a2ui-divider[aria-orientation='vertical'] {
+  border-top: 0;
+  border-left: 1px solid #d4d9de;
+  align-self: stretch;
+}
+.a2ui-prose {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.a2ui-wire {
+  min-width: 0;
+  font-size: 0.85rem;
+}
+.a2ui-wire summary {
+  cursor: pointer;
+  color: #505a65;
+}
+.a2ui-wire pre {
+  max-width: 100%;
+  max-height: 16rem;
+  overflow: auto;
+  padding: 0.75rem;
+  background: #edf0f3;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.a2ui-demo [role='alert'] {
+  color: #a52323;
+}
+.a2ui-demo [role='status'] {
+  color: #606b76;
+  font-size: 0.85rem;
+}
+@media (max-width: 32rem) {
+  .a2ui-demo {
+    padding: 1rem;
+  }
+  .a2ui-demo header {
+    align-items: flex-start;
+  }
+  .a2ui-card {
+    padding: 0.75rem;
+  }
+}

@@ -26,6 +26,7 @@ import {
   installCandidate,
   packCandidate,
   projector,
+  reviewedSources,
   rootRangeOverrides,
 } from './ag-ui-candidate-package.mjs';
 import {
@@ -42,6 +43,7 @@ import {
 import { createReviewServer } from '../../fixtures/react-parity/native-ag-ui/server.mjs';
 import { verifyBrowser } from './native-ag-ui-browser.mjs';
 import { sequence } from './review-native-ag-ui.mjs';
+import { verifyInstalledClientTools } from './verify-ag-ui-client-tools.mjs';
 
 const defaultRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const json = (path) => JSON.parse(readFileSync(path, 'utf8'));
@@ -58,7 +60,7 @@ function artifacts(consumer, expected) {
   );
   return records;
 }
-function typeProbes(root, consumer, mixed) {
+export function typeProbes(root, consumer, mixed) {
   cpSync(
     join(root, 'fixtures/react-parity/ag-ui-candidate/installed-types.ts'),
     join(consumer, 'installed-types.ts')
@@ -389,10 +391,9 @@ export async function verifyAgUiCandidate({ root = defaultRoot, retain } = {}) {
   try {
     const candidate = join(temporary, 'candidate'),
       emission = emitCandidate(root, candidate);
-    assert.equal(
-      emission.sources.length,
-      21,
-      'Twenty actual backend modules plus the direct forwarding entry'
+    assert.deepEqual(
+      emission.sources.map((source) => source.path).sort(),
+      reviewedSources
     );
     const packed = packCandidate(candidate, temporary),
       tarballs = packLocalArtifacts(root, temporary, [
@@ -511,6 +512,12 @@ export async function verifyAgUiCandidate({ root = defaultRoot, retain } = {}) {
       );
     const browser = await browserProof(root, consumer, installed),
       provider = providerProof(root, consumer, installed);
+    const clientTools = await verifyInstalledClientTools({
+      root,
+      consumer: node,
+      artifacts: nodeArtifacts,
+      receiptDirectory: temporary,
+    });
     const git = (...args) =>
       execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
     const scope = [
@@ -569,13 +576,14 @@ export async function verifyAgUiCandidate({ root = defaultRoot, retain } = {}) {
       ownerClient: ownerVersion(consumer),
       browser,
       provider,
+      clientTools,
     };
     writeJson(join(temporary, 'provenance.json'), provenance);
     success = true;
     console.log(
       JSON.stringify({
         mode: 'verified-ag-ui-candidate',
-        modules: 21,
+        modules: emission.sources.length,
         tarballSha256: packed.sha256,
         node: nodeResult,
         ownerClient: provenance.ownerClient,

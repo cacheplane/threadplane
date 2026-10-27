@@ -29,6 +29,51 @@ import {
 import { reviewCandidate } from './verify-ag-ui-candidate.mjs';
 
 const entry = 'fixtures/react-parity/ag-ui-candidate/entry';
+test('Library CI bootstraps the canonical client-tools lock before its worker tests and installed candidate proof', () => {
+  const workflow = readFileSync(
+    fileURLToPath(new URL('../../.github/workflows/ci.yml', import.meta.url)),
+    'utf8'
+  );
+  const library = workflow
+    .split('\n  library:\n')[1]
+    ?.split('\n  angular-compatibility:\n')[0];
+  assert.ok(library, 'Actual Library workflow job');
+  const steps = library.split('\n      - ').slice(1);
+  const setup = steps.findIndex(
+    (step) =>
+      step.includes('uses: astral-sh/setup-uv@') &&
+      step.includes("python-version: '3.12'")
+  );
+  const bootstrap = steps.findIndex((step) =>
+    step.startsWith('name: Prepare canonical AG-UI client-tools fixture\n')
+  );
+  const tests = steps.findIndex((step) =>
+    step.startsWith('name: Verify canonical AG-UI client-tools fixtures\n')
+  );
+  const candidate = steps.findIndex((step) =>
+    step.startsWith('name: Verify real AG-UI candidate package\n')
+  );
+  assert.ok(
+    setup >= 0 && bootstrap > setup && tests > bootstrap && candidate > tests,
+    'Python setup then frozen client-tools sync then scoped fixture checks then installed proof'
+  );
+  assert.match(
+    library,
+    /THREADPLANE_AG_UI_FIXTURE_ENVIRONMENT: \/tmp\/threadplane-agui-client-tools-native-fixture-env/
+  );
+  assert.match(
+    steps[bootstrap],
+    /UV_PYTHON=3\.12 UV_PROJECT_ENVIRONMENT="\$THREADPLANE_AG_UI_FIXTURE_ENVIRONMENT" uv sync --frozen --no-install-project --project cockpit\/ag-ui\/client-tools\/python/
+  );
+  assert.match(
+    steps[tests],
+    /node --test scripts\/react-parity\/ag-ui-candidate-package\.spec\.mjs fixtures\/react-parity\/native-ag-ui-client-tools\/server\.spec\.mjs/
+  );
+  assert.match(
+    steps[candidate],
+    /run: node scripts\/react-parity\/verify-ag-ui-candidate\.mjs/
+  );
+});
 test('mixed AG-UI graph includes local content parser and rejects a missing or changed edge', () => {
   const local = {
     '@threadplane/content': {
@@ -135,11 +180,15 @@ function fixture(t) {
   mkdirSync(join(source, 'libs/ag-ui/src/runtime'), { recursive: true });
   writeFileSync(
     join(source, entry + '.ts'),
-    "export { createSession } from '../../../libs/ag-ui/src/runtime/create-session.js';\nexport type { Session, SessionOptions } from '../../../libs/ag-ui/src/runtime/create-session.js';\nexport { projectTextTranscript } from '../../../libs/ag-ui/src/runtime/text-transcript.js';\nexport type { TextTranscriptRow } from '../../../libs/ag-ui/src/runtime/text-transcript.js';\n"
+    "export { createSession } from '../../../libs/ag-ui/src/runtime/create-session.js';\nexport type { Session, SessionOptions, ClientToolSession } from '../../../libs/ag-ui/src/runtime/create-session.js';\nexport type { ClientToolSessionSnapshot, ClientToolCall, ClientToolBlocker } from '../../../libs/ag-ui/src/runtime/client-tools.js';\nexport { projectTextTranscript } from '../../../libs/ag-ui/src/runtime/text-transcript.js';\nexport type { TextTranscriptRow } from '../../../libs/ag-ui/src/runtime/text-transcript.js';\n"
   );
   writeFileSync(
     join(source, 'libs/ag-ui/src/runtime/create-session.ts'),
-    'export interface SessionOptions { threadId: string }\nexport interface Session { value: string }\nexport function createSession(options: SessionOptions): Session { return { value: options.threadId }; }'
+    'export interface SessionOptions { threadId: string }\nexport interface Session { value: string }\nexport type ClientToolSession = Session;\nexport function createSession(options: SessionOptions): Session { return { value: options.threadId }; }'
+  );
+  writeFileSync(
+    join(source, 'libs/ag-ui/src/runtime/client-tools.ts'),
+    'export interface ClientToolSessionSnapshot {}\nexport interface ClientToolCall {}\nexport interface ClientToolBlocker {}'
   );
   writeFileSync(
     join(source, 'libs/ag-ui/src/runtime/text-transcript.ts'),
@@ -184,6 +233,73 @@ function fixture(t) {
 }
 test('accepts an actual emitted direct forwarding graph', (t) => {
   assert.deepEqual(candidateViolations(fixture(t).output), []);
+});
+test('accepts type-only core tools but rejects runtime and unrelated subpaths', (t) => {
+  const { output } = fixture(t);
+  const path = join(output, 'libs/ag-ui/src/runtime/create-session.d.ts');
+  writeFileSync(
+    path,
+    readFileSync(path, 'utf8') +
+      "\nimport type { CheckedTools } from '@threadplane/core/tools';\n"
+  );
+  assert.deepEqual(candidateViolations(output), []);
+  writeFileSync(
+    join(output, 'libs/ag-ui/src/runtime/create-session.js'),
+    "import '@threadplane/core/tools';\n"
+  );
+  assert.ok(
+    candidateViolations(output).some((error) =>
+      error.includes('Forbidden candidate import')
+    )
+  );
+  writeFileSync(
+    path,
+    "import type { X } from '@threadplane/core/unrelated';\n"
+  );
+  assert.ok(
+    candidateViolations(output).some((error) =>
+      error.includes('core/unrelated')
+    )
+  );
+});
+test('rejects wrong client-tool forwarding modules and extra runtime exports', (t) => {
+  const { output } = fixture(t);
+  const declaration = join(output, entry + '.d.ts');
+  writeFileSync(
+    declaration,
+    readFileSync(declaration, 'utf8').replace(
+      'client-tools.js',
+      'create-session.js'
+    )
+  );
+  assert.ok(
+    candidateViolations(output).some((error) =>
+      error.includes('direct forwarding')
+    )
+  );
+  const runtime = join(output, entry + '.js');
+  writeFileSync(
+    runtime,
+    readFileSync(runtime, 'utf8') +
+      "\nexport { ClientToolCall } from '../../../libs/ag-ui/src/runtime/client-tools.js';\n"
+  );
+  assert.ok(
+    candidateViolations(output).filter((error) =>
+      error.includes('direct forwarding')
+    ).length >= 2
+  );
+});
+test('rejects an unreviewed emitted module within the backend tree', (t) => {
+  const { output } = fixture(t);
+  writeFileSync(
+    join(output, 'libs/ag-ui/src/runtime/unrelated.js'),
+    'export const unexpected = true;'
+  );
+  assert.ok(
+    candidateViolations(output).some((error) =>
+      error.includes('Unexpected candidate file')
+    )
+  );
 });
 for (const path of [
   'libs/ag-ui/src/runtime/create-session.js',
@@ -314,14 +430,24 @@ test('AG-UI resolves and pins its nested RxJS/Zod graph independently of LangGra
     },
   });
   assert.equal(agUiVendorOverrides(vendors).zod, '3.25.76');
-  assert.throws(
-    () =>
-      agUiVendorOverrides([
-        ...vendors,
-        { name: 'zod', version: '3.24.0', dependencies: {} },
-      ]),
-    /multiple versions/
+  const mixed = agUiVendorOverrides([
+    ...vendors,
+    {
+      name: '@json-render/core',
+      version: '0.16.0',
+      dependencies: { zod: '4.3.6' },
+    },
+    { name: 'zod', version: '4.3.6', dependencies: {} },
+  ]);
+  assert.equal(mixed['zod@3.25.76'], '3.25.76');
+  assert.equal(mixed['zod@4.3.6'], '4.3.6');
+  assert.equal(
+    mixed.zod,
+    undefined,
+    'Do not flatten incompatible schema versions'
   );
+  assert.equal(mixed['@ag-ui/client']['zod@3.25.76'], '3.25.76');
+  assert.equal(mixed['@json-render/core']['zod@4.3.6'], '4.3.6');
   lock.packages['node_modules/@ag-ui/client/node_modules/zod'].version =
     '4.0.0';
   assert.throws(

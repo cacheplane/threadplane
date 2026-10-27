@@ -35,6 +35,8 @@ export function WebsiteWorkspace(props: WebsiteWorkspaceProps) {
     props.routePath,
     props.requestedMode,
     props.docsSlot,
+    props.frontendVariants,
+    props.reactDocsSlot,
     props.docsContext,
     props.contextTrail,
   ]);

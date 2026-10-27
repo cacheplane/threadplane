@@ -12,5 +12,9 @@
     "outDir": "test-output",
     "noEmitOnError": true
   },
-  "include": ["shared/**/*.spec.ts", "tooling/proof-server.mjs"]
+  "include": [
+    "shared/**/*.spec.ts",
+    "shared/application-content-types.type-test.ts",
+    "tooling/proof-server.mjs"
+  ]
 }

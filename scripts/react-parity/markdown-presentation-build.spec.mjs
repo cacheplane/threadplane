@@ -277,7 +277,134 @@ function consumerFixture(
   return { root, tarballs, consumer };
 }
 
+const a2uiFixture = (t, changes = {}) => consumerFixture(t, {
+  projects: ['content', 'core', 'react', 'angular', 'a2ui'],
+  root: lock({ ...fixture().packages, ...Object.fromEntries(presentation.presentationSeeds.map(name => ['node_modules/' + name, pkg('1.0.0', name === '@angular/build' ? { dependencies: { a: '^1.0.0' } } : {})])) }),
+  manifests: {
+    content: { dependencies: { a: '^1.0.0' }, peerDependencies: { '@threadplane/a2ui': '^0.3.2' }, peerDependenciesMeta: { '@threadplane/a2ui': { optional: true } } },
+    a2ui: { version: '0.3.2', dependencies: {} },
+    ...changes.manifests,
+  },
+});
+const deriveA2ui = input => derivePresentationConsumer(input.root, input.tarballs, presentation.presentationSeeds, 'a2ui-surfaces');
+const renderStateSeeds = [...presentation.presentationSeeds];
+const renderStateFixture = (t) => consumerFixture(t, {
+  root: lock({ ...fixture().packages, ...Object.fromEntries(renderStateSeeds.map(name => ['node_modules/' + name, pkg('1.0.0', name === '@angular/build' ? {dependencies:{a:'^1.0.0'}} : {})])) }),
+});
+test('render-state has a separate exact mixed four-artifact profile without backend SDK or optional protocol', (t) => {
+  const input = renderStateFixture(t), before = JSON.stringify(input.root);
+  assert.deepEqual(presentation.renderStatePresentationSeeds, renderStateSeeds);
+  assert.ok(Object.isFrozen(presentation.renderStatePresentationSeeds));
+  const derived = derivePresentationConsumer(input.root, input.tarballs, renderStateSeeds, 'render-state');
+  assert.equal(derived.profile, 'render-state');
+  assert.equal(Object.keys(derived.artifacts).length, 4);
+  assert.equal(derived.lock.packages['node_modules/@threadplane/a2ui'], undefined);
+  assert.ok(derived.lock.packages['node_modules/@json-render/core']);
+  assertPresentationInstallation(input.consumer, derived, input.tarballs);
+  assert.equal(JSON.stringify(input.root), before);
+  for (const name of Object.keys(input.tarballs)) {
+    const missing = {...input.tarballs}; delete missing[name];
+    assert.throws(() => derivePresentationConsumer(input.root, missing, renderStateSeeds, 'render-state'), /Exactly four render-state/);
+  }
+  for (const seeds of [renderStateSeeds.slice(1), [...renderStateSeeds, renderStateSeeds[0]]])
+    assert.throws(() => derivePresentationConsumer(input.root, input.tarballs, seeds, 'render-state'), /Exactly eighteen selected render-state seeds/);
+});
+for (const name of ['@langchain/langgraph-sdk', '@ag-ui/client', '@threadplane/a2ui', 'openai'])
+  test('render-state rejects selected and installed unrelated package ' + name, (t) => {
+    const input = renderStateFixture(t);
+    const derived = derivePresentationConsumer(input.root, input.tarballs, renderStateSeeds, 'render-state');
+    const path = 'node_modules/' + name;
+    input.root.packages[path] = pkg();
+    input.root.packages['node_modules/@angular/build'].dependencies = {[name]: '*'};
+    assert.throws(() => derivePresentationConsumer(input.root, input.tarballs, renderStateSeeds, 'render-state'), /Unexpected/);
+    mkdirSync(join(input.consumer, path), {recursive: true});
+    writeJson(join(input.consumer, path, 'package.json'), {name,version:'1.0.0'});
+    assert.throws(() => assertPresentationInstallation(input.consumer, derived, input.tarballs), /Unexpected/);
+  });
+test('A2UI surfaces selects exact mixed native roots and five artifacts without changing root bytes', (t) => {
+  const input = a2uiFixture(t);
+  const before = JSON.stringify(input.root);
+  const derived = deriveA2ui(input);
+  assert.deepEqual(presentation.a2uiSurfacesPresentationSeeds, presentation.presentationSeeds);
+  assert.ok(Object.isFrozen(presentation.a2uiSurfacesPresentationSeeds));
+  assert.equal(derived.profile, 'a2ui-surfaces');
+  assert.deepEqual(Object.keys(derived.manifest.dependencies).sort(), [...presentation.presentationSeeds, ...Object.keys(input.tarballs)].sort());
+  assert.equal(derived.graph.find(record => record.name === '@threadplane/content').dependencies['@threadplane/a2ui'], '0.3.2');
+  assertPresentationInstallation(input.consumer, derived, input.tarballs);
+  assert.equal(JSON.stringify(input.root), before);
+  for (const name of presentation.presentationSeeds)
+    assert.throws(() => derivePresentationConsumer(input.root, input.tarballs, presentation.presentationSeeds.filter(seed => seed !== name), 'a2ui-surfaces'), /selected A2UI surfaces seeds required/);
+  assert.throws(() => derivePresentationConsumer(input.root, input.tarballs, [...presentation.presentationSeeds, 'typescript'], 'a2ui-surfaces'), /selected A2UI surfaces seeds required/);
+});
+test('A2UI surfaces fails closed on absent, wrong, mismatched, tampered or leaking artifacts', (t) => {
+  const input = a2uiFixture(t);
+  const derived = deriveA2ui(input);
+  const missing = { ...input.tarballs }; delete missing['@threadplane/a2ui'];
+  assert.throws(() => deriveA2ui({ ...input, tarballs: missing }), /five A2UI surfaces tarballs required/);
+  assert.throws(() => deriveA2ui({ ...input, tarballs: { ...input.tarballs, '@threadplane/a2ui': input.tarballs['@threadplane/core'] } }), /identity|name/);
+  assert.throws(() => deriveA2ui(a2uiFixture(t, { manifests: { a2ui: { version: '0.2.0', dependencies: {} } } })), /does not satisfy/);
+  assert.throws(() => derivePresentationConsumer(input.root, input.tarballs, [], 'a2ui-unknown'), /Unknown presentation profile/);
+  assert.throws(() => derivePresentationConsumer(input.root, input.tarballs, presentation.presentationSeeds, 'markdown'), /four Markdown foundation tarballs required/);
+  const corrupt = structuredClone(derived); corrupt.lock.packages['node_modules/@threadplane/a2ui'].integrity = 'sha512-wrong';
+  assert.throws(() => assertPresentationInstallation(input.consumer, corrupt, input.tarballs), /integrity/);
+  const tarball = input.tarballs['@threadplane/a2ui'].slice(5), bytes = readFileSync(tarball);
+  writeFileSync(tarball, 'tampered');
+  assert.throws(() => assertPresentationInstallation(input.consumer, derived, input.tarballs), /integrity/);
+  writeFileSync(tarball, bytes);
+  writeFileSync(join(input.consumer, 'node_modules/@threadplane/a2ui/index.js'), 'changed');
+  assert.throws(() => assertPresentationInstallation(input.consumer, derived, input.tarballs), /bytes equal/);
+});
+for (const name of ['@langchain/langgraph-sdk', '@ag-ui/client', 'openai', '@anthropic-ai/sdk', '@threadplane/langgraph']) {
+  test(`A2UI surfaces rejects selected and installed backend leakage ${name}`, (t) => {
+    const input = a2uiFixture(t);
+    const derived = deriveA2ui(input);
+    input.root.packages['node_modules/@angular/build'].dependencies = { [name]: '^1.0.0' };
+    input.root.packages['node_modules/' + name] = pkg();
+    assert.throws(() => deriveA2ui(input), /Unexpected (backend SDK|local package)/);
+    const directory = join(input.consumer, 'node_modules', name); mkdirSync(directory, { recursive: true });
+    writeJson(join(directory, 'package.json'), { name, version: '1.0.0' });
+    assert.throws(() => assertPresentationInstallation(input.consumer, derived, input.tarballs), /Unexpected (backend SDK|local package)/);
+  });
+}
+
+test('selected A2UI feature declarations compile strictly only with the selected protocol artifact', (t) => {
+  const input = a2uiFixture(t, { manifests: {
+    content: { dependencies: {}, peerDependencies: { '@threadplane/a2ui': '^0.3.2' }, peerDependenciesMeta: { '@threadplane/a2ui': { optional: true } }, exports: { './a2ui': { types: './index.d.ts', default: './index.js' } } },
+    a2ui: { version: '0.3.2', dependencies: {}, exports: { '.': { types: './index.d.ts', default: './index.js' } } },
+  } });
+  for (const [name, declarations] of Object.entries({
+    content: "import type { A2uiMessage } from '@threadplane/a2ui'; export declare function createA2uiSurfaces(): { apply(message: A2uiMessage): void };",
+    a2ui: "export interface A2uiMessage { surfaceId: string }",
+  })) {
+    const original = join(input.consumer, '..', name, 'package');
+    writeFileSync(join(original, 'index.d.ts'), declarations);
+    writeFileSync(join(input.consumer, 'node_modules/@threadplane', name, 'index.d.ts'), declarations);
+    execFileSync('tar', ['-czf', input.tarballs['@threadplane/' + name].slice(5), '-C', join(original, '..'), 'package']);
+  }
+  const derived = deriveA2ui(input);
+  assertPresentationInstallation(input.consumer, derived, input.tarballs);
+  writeFileSync(join(input.consumer, 'index.ts'), "import { createA2uiSurfaces } from '@threadplane/content/a2ui'; createA2uiSurfaces().apply({ surfaceId: 'selected' });");
+  writeJson(join(input.consumer, 'tsconfig.json'), { compilerOptions: { target: 'ES2022', module: 'NodeNext', moduleResolution: 'NodeNext', strict: true, skipLibCheck: false, noEmit: true, types: [] }, files: ['index.ts'] });
+  const compile = () => execFileSync(process.execPath, [new URL('../../node_modules/typescript/bin/tsc', import.meta.url).pathname, '-p', 'tsconfig.json'], { cwd: input.consumer, encoding: 'utf8', stdio: 'pipe' });
+  compile();
+  rmSync(join(input.consumer, 'node_modules/@threadplane/a2ui'), { recursive: true });
+  assert.throws(compile, error => /TS2307.*@threadplane\/a2ui/.test(error.stdout));
+});
+for (const field of ['version', 'peerDependencies', 'peerDependenciesMeta']) {
+  test(`A2UI selected installation rejects changed ${field} metadata`, (t) => {
+    const input = a2uiFixture(t);
+    const derived = deriveA2ui(input);
+    const path = join(input.consumer, 'node_modules/@threadplane/content/package.json');
+    const manifest = JSON.parse(readFileSync(path, 'utf8'));
+    manifest[field] = field === 'version' ? '9.0.0' : {};
+    writeJson(path, manifest);
+    assert.throws(() => assertPresentationInstallation(input.consumer, derived, input.tarballs), /bytes equal/);
+  });
+}
+
 const reactSeeds = [
+  '@json-render/core',
+  '@cacheplane/json-stream',
   '@cacheplane/partial-markdown',
   '@langchain/langgraph-sdk',
   'react',
@@ -333,7 +460,503 @@ const deriveReact = (input) =>
     'react-langgraph'
   );
 
+const nativeA2uiFixture = (t, changes = {}) =>
+  reactFixture(t, {
+    projects: ['core', 'content', 'a2ui', 'react', 'langgraph'],
+    manifests: {
+      content: {
+        dependencies: { a: '^1.0.0' },
+        peerDependencies: { '@threadplane/a2ui': '^0.3.2' },
+        peerDependenciesMeta: { '@threadplane/a2ui': { optional: true } },
+      },
+      a2ui: { version: '0.3.2', dependencies: {} },
+      langgraph: {
+        dependencies: {
+          '@threadplane/core': '0.0.1',
+          '@langchain/langgraph-sdk': '^1.0.0',
+        },
+      },
+    },
+    ...changes,
+  });
+const deriveNativeA2ui = (input) =>
+  derivePresentationConsumer(
+    input.root,
+    input.tarballs,
+    reactSeeds,
+    'react-native-a2ui-langgraph'
+  );
+
+test('native React A2UI profile explicitly selects five locals with the unchanged React SDK graph', (t) => {
+  const input = nativeA2uiFixture(t);
+  const before = JSON.stringify(input.root);
+  const derived = deriveNativeA2ui(input);
+  assert.equal(derived.profile, 'react-native-a2ui-langgraph');
+  assert.deepEqual(
+    Object.keys(derived.artifacts).sort(),
+    ['a2ui', 'content', 'core', 'langgraph', 'react'].map(
+      (name) => '@threadplane/' + name
+    )
+  );
+  assert.equal(
+    derived.graph.find((record) => record.name === '@threadplane/content')
+      .dependencies['@threadplane/a2ui'],
+    '0.3.2'
+  );
+  assert.equal(JSON.stringify(input.root), before);
+  assert.deepEqual(derived.seeds, reactSeeds);
+  assertPresentationInstallation(input.consumer, derived, input.tarballs);
+  for (const seed of reactSeeds)
+    assert.throws(
+      () =>
+        derivePresentationConsumer(
+          input.root,
+          input.tarballs,
+          reactSeeds.filter((name) => name !== seed),
+          'react-native-a2ui-langgraph'
+        ),
+      /Exactly eleven selected React seeds required/
+    );
+  assert.throws(
+    () =>
+      derivePresentationConsumer(
+        input.root,
+        input.tarballs,
+        [...reactSeeds, 'vite'],
+        'react-native-a2ui-langgraph'
+      ),
+    /Exactly eleven selected React seeds required/
+  );
+  for (const name of Object.keys(input.tarballs)) {
+    const missing = { ...input.tarballs };
+    delete missing[name];
+    assert.throws(
+      () => deriveNativeA2ui({ ...input, tarballs: missing }),
+      /Exactly five native React A2UI/
+    );
+  }
+  assert.throws(
+    () =>
+      deriveNativeA2ui({
+        ...input,
+        tarballs: {
+          ...input.tarballs,
+          '@threadplane/angular': input.tarballs['@threadplane/react'],
+        },
+      }),
+    /Exactly five/
+  );
+  const wrong = nativeA2uiFixture(t, {
+    manifests: {
+      a2ui: { version: '0.2.0', dependencies: {} },
+      content: {
+        dependencies: {},
+        peerDependencies: { '@threadplane/a2ui': '^0.3.2' },
+        peerDependenciesMeta: { '@threadplane/a2ui': { optional: true } },
+      },
+    },
+  });
+  assert.throws(() => deriveNativeA2ui(wrong), /does not satisfy/);
+});
+
+test('native React A2UI profile rejects Angular seeds, foreign providers and unselected vendor records', (t) => {
+  const input = nativeA2uiFixture(t);
+  assert.throws(
+    () =>
+      derivePresentationConsumer(
+        input.root,
+        input.tarballs,
+        presentation.angularLanggraphPresentationSeeds,
+        'react-native-a2ui-langgraph'
+      ),
+    /Angular|Missing locked/
+  );
+  for (const name of ['@angular/core', '@ag-ui/client', 'openai']) {
+    const poisoned = structuredClone(input.root);
+    poisoned.packages['node_modules/' + name] = pkg();
+    poisoned.packages['node_modules/vite'].dependencies[name] = '*';
+    assert.throws(
+      () => deriveNativeA2ui({ ...input, root: poisoned }),
+      /Unexpected Angular|Unexpected backend/
+    );
+  }
+});
+
+for (const name of [
+  '@angular/core',
+  '@ag-ui/client',
+  '@threadplane/angular',
+  'unselected-vendor',
+])
+  test(`native React A2UI installed revalidation rejects ${name}`, (t) => {
+    const input = nativeA2uiFixture(t),
+      derived = deriveNativeA2ui(input);
+    const directory = join(input.consumer, 'node_modules', name);
+    mkdirSync(directory, { recursive: true });
+    writeJson(join(directory, 'package.json'), { name, version: '1.0.0' });
+    assert.throws(
+      () =>
+        assertPresentationInstallation(input.consumer, derived, input.tarballs),
+      /Unexpected Angular|Unexpected backend|Unexpected local|Unexpected installed record/
+    );
+  });
+
+const renderReactSeeds = reactSeeds.map((name) =>
+  name === '@langchain/langgraph-sdk' ? '@cacheplane/partial-json' : name
+);
+const renderReactRoot = () => {
+  const root = reactRoot();
+  for (const path of Object.keys(root.packages))
+    if (path.startsWith('node_modules/@langchain/')) delete root.packages[path];
+  root.packages['node_modules/@cacheplane/partial-json'] = pkg();
+  return root;
+};
+const renderReactFixture = (t, changes = {}) =>
+  consumerFixture(t, {
+    projects: ['content', 'core', 'react'],
+    root: renderReactRoot(),
+    ...changes,
+  });
+const deriveRenderReact = (input, seeds = renderReactSeeds) =>
+  derivePresentationConsumer(input.root, input.tarballs, seeds, 'react-render');
+
+test('static React rendering selects three foundations and the exact parser/toolchain closure', (t) => {
+  const input = renderReactFixture(t);
+  const before = JSON.stringify(input.root);
+  const derived = deriveRenderReact(input);
+  assert.deepEqual(presentation.reactRenderPresentationSeeds, renderReactSeeds);
+  assert.equal(derived.profile, 'react-render');
+  assert.equal(derived.manifest.overrides, undefined);
+  assert.deepEqual(Object.keys(derived.manifest.dependencies).sort(),
+    [...renderReactSeeds, '@threadplane/core', '@threadplane/content', '@threadplane/react'].sort());
+  for (const [path, record] of Object.entries(selectPresentationLock(input.root, renderReactSeeds)))
+    assert.deepEqual(derived.lock.packages[path], record);
+  assert.equal(JSON.stringify(input.root), before);
+  assertPresentationInstallation(input.consumer, derived, input.tarballs);
+  assert.ok(!Object.keys(derived.lock.packages).some(path => /@(?:angular|langchain|ag-ui)\//.test(path)));
+});
+
+test('static React rendering rejects changed foundation or seed selections', (t) => {
+  const input = renderReactFixture(t);
+  for (const name of Object.keys(input.tarballs)) {
+    const tarballs = { ...input.tarballs }; delete tarballs[name];
+    assert.throws(() => deriveRenderReact({ ...input, tarballs }), /tarballs required/);
+  }
+  for (const name of ['@threadplane/angular', '@threadplane/langgraph', '@threadplane/ag-ui'])
+    assert.throws(() => deriveRenderReact({ ...input, tarballs: {
+      ...input.tarballs, [name]: input.tarballs['@threadplane/react'],
+    }}), /tarballs required/);
+  for (const name of renderReactSeeds)
+    assert.throws(() => deriveRenderReact(input, renderReactSeeds.filter(seed => seed !== name)), /selected React seeds required/);
+  assert.throws(() => deriveRenderReact(input, [...renderReactSeeds, 'vite']), /selected React seeds required/);
+  assert.throws(() => derivePresentationConsumer(input.root, input.tarballs, renderReactSeeds, 'render-arbitrary'), /Unknown presentation profile/);
+});
+
+for (const name of ['@angular/core', '@angular/build', '@angular-devkit/core', 'ng-packagr', '@langchain/langgraph-sdk', '@ag-ui/client', '@mastra/client-js', 'openai', '@anthropic-ai/sdk', '@threadplane/langgraph']) {
+  test(`static React rendering rejects selected or installed execution package ${name}`, (t) => {
+    const input = renderReactFixture(t);
+    const derived = deriveRenderReact(input);
+    input.root.packages['node_modules/' + name] = pkg();
+    input.root.packages['node_modules/vite'].dependencies[name] = '1.0.0';
+    assert.throws(() => deriveRenderReact(input), /Unexpected (?:Angular|backend SDK|local package)/);
+    const installed = join(input.consumer, 'node_modules', name);
+    mkdirSync(installed, { recursive: true });
+    writeJson(join(installed, 'package.json'), { name, version: '1.0.0' });
+    assert.throws(() => assertPresentationInstallation(input.consumer, derived, input.tarballs), /Unexpected (?:Angular|backend SDK|local package)/);
+  });
+}
+
+test('static React rendering verifies installed bytes and rejects additional vendor records', (t) => {
+  const input = renderReactFixture(t);
+  const derived = deriveRenderReact(input);
+  const module = join(input.consumer, 'node_modules/@threadplane/react/index.js');
+  const original = readFileSync(module);
+  writeFileSync(module, 'tampered');
+  assert.throws(() => assertPresentationInstallation(input.consumer, derived, input.tarballs), /bytes equal/);
+  writeFileSync(module, original);
+  const extra = join(input.consumer, 'node_modules/unselected-vendor');
+  mkdirSync(extra);
+  writeJson(join(extra, 'package.json'), { name: 'unselected-vendor', version: '1.0.0' });
+  assert.throws(() => assertPresentationInstallation(input.consumer, derived, input.tarballs), /Unexpected installed record/);
+});
+
+const agUiReactSeeds = reactSeeds.map((name) =>
+  name === '@langchain/langgraph-sdk' ? '@ag-ui/client' : name
+);
+const agUiReactRoot = () => {
+  const root = reactRoot();
+  for (const path of Object.keys(root.packages))
+    if (path.startsWith('node_modules/@langchain/')) delete root.packages[path];
+  root.packages['node_modules/@ag-ui/client'] = pkg('1.0.1', {
+    dependencies: { '@ag-ui/core': '1.0.1', rxjs: '7.8.1' },
+  });
+  root.packages['node_modules/@ag-ui/core'] = pkg('1.0.1');
+  root.packages['node_modules/rxjs'] = pkg('7.8.2');
+  return root;
+};
+const agUiReactFixture = (t, changes = {}) =>
+  consumerFixture(t, {
+    projects: ['content', 'core', 'react', 'ag-ui'],
+    root: agUiReactRoot(),
+    manifests: {
+      'ag-ui': {
+        dependencies: {
+          '@threadplane/core': '0.0.1',
+          '@ag-ui/client': '1.0.1',
+        },
+      },
+    },
+    ...changes,
+  });
+const deriveAgUiReact = (input, seeds = agUiReactSeeds) =>
+  derivePresentationConsumer(input.root, input.tarballs, seeds, 'react-ag-ui');
+
+const nativeAgUiA2uiFixture = (t, changes = {}) => agUiReactFixture(t, {
+  projects: ['core', 'content', 'a2ui', 'react', 'ag-ui'],
+  manifests: {
+    content: {
+      dependencies: { a: '^1.0.0' },
+      peerDependencies: { '@threadplane/a2ui': '^0.3.2' },
+      peerDependenciesMeta: { '@threadplane/a2ui': { optional: true } },
+    },
+    a2ui: { version: '0.3.2', dependencies: {} },
+    'ag-ui': {
+      dependencies: { '@threadplane/core': '0.0.1', '@ag-ui/client': '1.0.1' },
+    },
+  },
+  ...changes,
+});
+const deriveNativeAgUiA2ui = (input, seeds = agUiReactSeeds) =>
+  derivePresentationConsumer(input.root, input.tarballs, seeds, 'react-native-a2ui-ag-ui');
+
+test('native React AG-UI A2UI selects exactly five locals and the unchanged AG-UI vendor graph', (t) => {
+  const input = nativeAgUiA2uiFixture(t);
+  const before = JSON.stringify(input.root);
+  const derived = deriveNativeAgUiA2ui(input);
+  assert.equal(derived.profile, 'react-native-a2ui-ag-ui');
+  assert.deepEqual(derived.seeds, presentation.reactAgUiPresentationSeeds);
+  assert.deepEqual(Object.keys(derived.artifacts).sort(),
+    ['a2ui', 'ag-ui', 'content', 'core', 'react'].map(name => '@threadplane/' + name));
+  assert.deepEqual(derived.manifest.overrides, { rxjs: '~7.8.0' });
+  assert.equal(derived.graph.find(record => record.name === '@threadplane/content')
+    .dependencies['@threadplane/a2ui'], '0.3.2');
+  for (const [path, record] of Object.entries(selectPresentationLock(input.root,
+    agUiReactSeeds, { rxjs: '~7.8.0' }))) assert.deepEqual(derived.lock.packages[path], record);
+  assert.equal(JSON.stringify(input.root), before);
+  assert.ok(!Object.keys(derived.lock.packages).some(path => /@(?:angular|langchain)\//.test(path)));
+  assertPresentationInstallation(input.consumer, derived, input.tarballs);
+  assert.throws(() => deriveAgUiReact(input), /tarballs required/);
+  assert.throws(() => deriveNativeA2ui(input), /tarballs required/);
+  for (const name of Object.keys(input.tarballs)) {
+    const tarballs = { ...input.tarballs };
+    delete tarballs[name];
+    assert.throws(() => deriveNativeAgUiA2ui({ ...input, tarballs }), /Exactly five native React A2UI AG-UI tarballs required/);
+  }
+  for (const name of ['@threadplane/angular', '@threadplane/langgraph'])
+    assert.throws(() => deriveNativeAgUiA2ui({ ...input, tarballs: {
+      ...input.tarballs, [name]: input.tarballs['@threadplane/ag-ui'],
+    } }), /tarballs required/);
+  for (const seed of agUiReactSeeds)
+    assert.throws(() => deriveNativeAgUiA2ui(input, agUiReactSeeds.filter(name => name !== seed)), /selected React seeds required/);
+  assert.throws(() => deriveNativeAgUiA2ui(input, [...agUiReactSeeds, 'vite']), /selected React seeds required/);
+  assert.throws(() => derivePresentationConsumer(input.root, input.tarballs, agUiReactSeeds,
+    'react-native-a2ui-ag-ui-unreviewed'), /Unknown presentation profile/);
+});
+
+test('native React AG-UI A2UI validates the selected optional peer and supported RxJS override', (t) => {
+  const wrongPeer = nativeAgUiA2uiFixture(t, { manifests: {
+    content: { dependencies: {}, peerDependencies: { '@threadplane/a2ui': '^0.3.2' },
+      peerDependenciesMeta: { '@threadplane/a2ui': { optional: true } } },
+    a2ui: { version: '0.2.0', dependencies: {} },
+    'ag-ui': { dependencies: { '@ag-ui/client': '1.0.1' } },
+  } });
+  assert.throws(() => deriveNativeAgUiA2ui(wrongPeer), /does not satisfy/);
+  const input = nativeAgUiA2uiFixture(t);
+  input.root.packages['node_modules/rxjs'].version = '7.9.0';
+  assert.throws(() => deriveNativeAgUiA2ui(input), /must satisfy ~7.8.0/);
+});
+
+for (const name of ['@angular/core', '@angular/build', '@langchain/langgraph-sdk', '@mastra/client-js', 'openai', '@anthropic-ai/sdk'])
+  test(`native React AG-UI A2UI rejects selected and installed foreign package ${name}`, (t) => {
+    const input = nativeAgUiA2uiFixture(t);
+    const derived = deriveNativeAgUiA2ui(input);
+    const poisoned = structuredClone(input.root);
+    poisoned.packages['node_modules/' + name] = pkg();
+    poisoned.packages['node_modules/@ag-ui/client'].dependencies[name] = '*';
+    assert.throws(() => deriveNativeAgUiA2ui({ ...input, root: poisoned }), /Unexpected Angular|Unexpected backend/);
+    const path = join(input.consumer, 'node_modules', name);
+    mkdirSync(path, { recursive: true });
+    writeJson(join(path, 'package.json'), { name, version: '1.0.0' });
+    assert.throws(() => assertPresentationInstallation(input.consumer, derived, input.tarballs), /Unexpected Angular|Unexpected backend/);
+  });
+
+test('native React AG-UI A2UI revalidates exact installed graph, payload and override policy', (t) => {
+  const input = nativeAgUiA2uiFixture(t), derived = deriveNativeAgUiA2ui(input);
+  const missingOverride = structuredClone(derived);
+  delete missingOverride.manifest.overrides;
+  assert.throws(() => assertPresentationInstallation(input.consumer, missingOverride, input.tarballs));
+  const wrongOverride = structuredClone(derived);
+  wrongOverride.manifest.overrides.rxjs = '*';
+  assert.throws(() => assertPresentationInstallation(input.consumer, wrongOverride, input.tarballs));
+  const manifestPath = join(input.consumer, 'node_modules/rxjs/package.json');
+  const original = readFileSync(manifestPath);
+  writeJson(manifestPath, { name: 'rxjs', version: '7.9.0' });
+  assert.throws(() => assertPresentationInstallation(input.consumer, derived, input.tarballs), /does not satisfy|must satisfy|graph/);
+  writeFileSync(manifestPath, original);
+  const a2ui = join(input.consumer, 'node_modules/@threadplane/a2ui');
+  rmSync(a2ui, { recursive: true });
+  assert.throws(() => assertPresentationInstallation(input.consumer, derived, input.tarballs));
+});
+
+test('native React AG-UI A2UI rejects installed protocol byte drift and extra records', (t) => {
+  const input = nativeAgUiA2uiFixture(t), derived = deriveNativeAgUiA2ui(input);
+  const file = join(input.consumer, 'node_modules/@threadplane/a2ui/index.js');
+  const original = readFileSync(file);
+  writeFileSync(file, 'tampered');
+  assert.throws(() => assertPresentationInstallation(input.consumer, derived, input.tarballs), /bytes equal/);
+  writeFileSync(file, original);
+  for (const name of ['@threadplane/langgraph', 'unselected-vendor']) {
+    const path = join(input.consumer, 'node_modules', name);
+    mkdirSync(path, { recursive: true });
+    writeJson(join(path, 'package.json'), { name, version: '1.0.0' });
+    assert.throws(() => assertPresentationInstallation(input.consumer, derived, input.tarballs), /Unexpected local|Unexpected installed record/);
+    rmSync(path, { recursive: true });
+  }
+});
+
+test('native React AG-UI A2UI installer retains profile and override and rejects lock mutation', (t) => {
+  for (const mutate of [false, true]) {
+    const input = installerFixture(t, mutate, nativeAgUiA2uiFixture);
+    const install = () => presentation.installPresentationConsumer(input.consumer, input.root,
+      input.tarballs, { seeds: agUiReactSeeds, profile: 'react-native-a2ui-ag-ui', env: input.env });
+    if (mutate) assert.throws(install, /preserves derived lock bytes/);
+    else {
+      const proof = install();
+      assert.equal(proof.profile, 'react-native-a2ui-ag-ui');
+      assert.deepEqual(proof.seeds, presentation.reactAgUiPresentationSeeds);
+      assert.deepEqual(JSON.parse(readFileSync(join(input.consumer, 'package.json'))).overrides, { rxjs: '~7.8.0' });
+    }
+  }
+});
+
+test('selected React AG-UI preserves exact native SDK and locked platform graph without Angular or LangGraph', (t) => {
+  const input = agUiReactFixture(t);
+  const before = JSON.stringify(input.root);
+  const derived = deriveAgUiReact(input);
+  assert.equal(derived.profile, 'react-ag-ui');
+  assert.deepEqual(presentation.reactAgUiPresentationSeeds, agUiReactSeeds);
+  assert.deepEqual(
+    Object.keys(derived.manifest.dependencies).sort(),
+    [...agUiReactSeeds, ...Object.keys(input.tarballs)].sort()
+  );
+  assert.deepEqual(derived.manifest.overrides, { rxjs: '~7.8.0' });
+  for (const [path, record] of Object.entries(
+    selectPresentationLock(input.root, agUiReactSeeds, { rxjs: '~7.8.0' })
+  ))
+    assert.deepEqual(derived.lock.packages[path], record);
+  assert.equal(JSON.stringify(input.root), before);
+  assertPresentationInstallation(input.consumer, derived, input.tarballs);
+  assert.equal(
+    derived.lock.packages['node_modules/@threadplane/angular'],
+    undefined
+  );
+  assert.equal(
+    derived.lock.packages['node_modules/@threadplane/langgraph'],
+    undefined
+  );
+  assert.ok(
+    derived.graph.some(
+      (record) => record.name === '@ag-ui/client' && record.version === '1.0.1'
+    )
+  );
+});
+
+test('React AG-UI retains only the existing RxJS override and rejects an incompatible locked version', (t) => {
+  const input = agUiReactFixture(t);
+  input.root.packages['node_modules/rxjs'].version = '7.9.0';
+  assert.throws(() => deriveAgUiReact(input), /must satisfy ~7.8.0/);
+});
+
+test('selected React AG-UI rejects missing or extra local artifacts and changed seed selection', (t) => {
+  const input = agUiReactFixture(t);
+  const missing = { ...input, tarballs: { ...input.tarballs } };
+  delete missing.tarballs['@threadplane/ag-ui'];
+  assert.throws(() => deriveAgUiReact(missing), /tarballs required/);
+  assert.throws(
+    () =>
+      deriveAgUiReact(
+        input,
+        agUiReactSeeds.filter((name) => name !== '@ag-ui/client')
+      ),
+    /selected React seeds required/
+  );
+  const extra = {
+    ...input,
+    tarballs: {
+      ...input.tarballs,
+      '@threadplane/langgraph': input.tarballs['@threadplane/ag-ui'],
+    },
+  };
+  assert.throws(() => deriveAgUiReact(extra), /tarballs required/);
+});
+
+test('selected React AG-UI rejects unrelated backend and Angular dependency graphs', (t) => {
+  for (const name of ['@langchain/langgraph-sdk', 'openai', '@angular/core']) {
+    const root = agUiReactRoot();
+    root.packages['node_modules/' + name] = pkg();
+    root.packages['node_modules/@ag-ui/client'].dependencies[name] = '1.0.0';
+    const input = agUiReactFixture(t, { root });
+    assert.throws(
+      () => deriveAgUiReact(input),
+      /Unexpected (backend SDK|Angular package)/
+    );
+  }
+});
+
+test('selected React AG-UI rejects actual installed vendor and artifact byte drift', (t) => {
+  const input = agUiReactFixture(t);
+  const derived = deriveAgUiReact(input);
+  const client = join(
+    input.consumer,
+    'node_modules/@ag-ui/client/package.json'
+  );
+  const original = readFileSync(client);
+  writeJson(client, { name: '@ag-ui/client', version: '1.0.2' });
+  assert.throws(
+    () =>
+      assertPresentationInstallation(input.consumer, derived, input.tarballs),
+    /Installed root selection/
+  );
+  writeFileSync(client, original);
+  writeFileSync(
+    join(input.consumer, 'node_modules/@threadplane/ag-ui/index.js'),
+    'tampered'
+  );
+  assert.throws(
+    () =>
+      assertPresentationInstallation(input.consumer, derived, input.tarballs),
+    /bytes equal/
+  );
+});
+
+test('selected React AG-UI rejects extra installed packages outside its exact vendor graph', (t) => {
+  const input = agUiReactFixture(t);
+  const derived = deriveAgUiReact(input);
+  const path = join(input.consumer, 'node_modules/unselected-vendor');
+  mkdirSync(path);
+  writeJson(join(path, 'package.json'), {
+    name: 'unselected-vendor',
+    version: '1.0.0',
+  });
+  assert.throws(
+    () =>
+      assertPresentationInstallation(input.consumer, derived, input.tarballs),
+    /Unexpected installed record/
+  );
+});
+
 const angularSeeds = [
+  '@cacheplane/json-stream',
   '@cacheplane/partial-markdown',
   '@angular/core',
   '@angular/common',
@@ -386,6 +1009,216 @@ const deriveAngular = (input) =>
     angularSeeds,
     'angular-langgraph'
   );
+
+const angularFoundationSeeds = angularSeeds.filter((name) => name !== '@langchain/langgraph-sdk');
+const angularFoundationFixture = (t, changes = {}) => {
+  const root = angularRoot();
+  for (const path of Object.keys(root.packages))
+    if (path.startsWith('node_modules/@langchain/')) delete root.packages[path];
+  return angularFixture(t, { projects: ['content', 'core', 'angular'], root, ...changes });
+};
+const deriveAngularFoundation = (input, seeds = angularFoundationSeeds) =>
+  derivePresentationConsumer(input.root, input.tarballs, seeds, 'angular-foundation');
+
+for (const [profile, makeFixture, seeds] of [
+  ['markdown', consumerFixture, ['a']],
+  ['react-langgraph', reactFixture, reactSeeds],
+  ['react-ag-ui', agUiReactFixture, agUiReactSeeds],
+  ['react-render', renderReactFixture, renderReactSeeds],
+  ['angular-langgraph', angularFixture, angularSeeds],
+  ['angular-foundation', angularFoundationFixture, angularFoundationSeeds],
+]) {
+  test(`${profile} retains its exact closure when content declares the unselected optional protocol peer`, (t) => {
+    const input = makeFixture(t);
+    const before = derivePresentationConsumer(input.root, input.tarballs, seeds, profile);
+    const original = join(input.consumer, '../content/package');
+    const manifest = JSON.parse(readFileSync(join(original, 'package.json'), 'utf8'));
+    manifest.peerDependencies = { ...manifest.peerDependencies, '@threadplane/a2ui': '^0.3.2' };
+    manifest.peerDependenciesMeta = { '@threadplane/a2ui': { optional: true } };
+    writeJson(join(original, 'package.json'), manifest);
+    writeJson(join(input.consumer, 'node_modules/@threadplane/content/package.json'), manifest);
+    execFileSync('tar', ['-czf', input.tarballs['@threadplane/content'].slice(5), '-C', join(original, '..'), 'package']);
+    const after = derivePresentationConsumer(input.root, input.tarballs, seeds, profile);
+    assert.deepEqual(after.graph, before.graph);
+    assert.deepEqual(Object.keys(after.lock.packages).sort(), Object.keys(before.lock.packages).sort());
+    assert.deepEqual(after.manifest.dependencies, before.manifest.dependencies);
+    assert.equal(after.lock.packages['node_modules/@threadplane/a2ui'], undefined);
+    assertPresentationInstallation(input.consumer, after, input.tarballs);
+  });
+}
+
+test('Angular foundation requires exactly thirteen root seeds and only core, content and Angular tarballs', (t) => {
+  const input = angularFoundationFixture(t);
+  const before = JSON.stringify(input.root);
+  const derived = deriveAngularFoundation(input);
+  assert.deepEqual(presentation.angularFoundationPresentationSeeds, angularFoundationSeeds);
+  assert.equal(derived.profile, 'angular-foundation');
+  assert.deepEqual(Object.keys(derived.manifest.dependencies).sort(), [...angularFoundationSeeds, ...Object.keys(input.tarballs)].sort());
+  assert.equal(derived.manifest.overrides, undefined);
+  assertPresentationInstallation(input.consumer, derived, input.tarballs);
+  assert.equal(JSON.stringify(input.root), before);
+  for (const name of angularFoundationSeeds)
+    assert.throws(() => deriveAngularFoundation(input, angularFoundationSeeds.filter(seed => seed !== name)), /thirteen selected Angular foundation seeds required/);
+  assert.throws(() => deriveAngularFoundation(input, [...angularFoundationSeeds, angularFoundationSeeds[0]]), /thirteen selected Angular foundation seeds required/);
+  for (const name of Object.keys(input.tarballs)) {
+    const tarballs = { ...input.tarballs };
+    delete tarballs[name];
+    assert.throws(() => deriveAngularFoundation({ ...input, tarballs }), /Angular, core and content foundation tarballs required/);
+  }
+  for (const project of ['react', 'langgraph'])
+    assert.throws(() => deriveAngularFoundation({ ...input, tarballs: { ...input.tarballs, ['@threadplane/' + project]: input.tarballs['@threadplane/core'] } }), /foundation tarballs required/);
+});
+
+test('Angular foundation keeps repository nested Vite placement and integrity without SDK or React', (t) => {
+  const bytes = readFileSync(new URL('../../package-lock.json', import.meta.url));
+  const root = JSON.parse(bytes);
+  const input = angularFoundationFixture(t, { manifests: {
+    content: { dependencies: { '@cacheplane/partial-markdown': '0.5.8' } },
+    angular: { peerDependencies: { '@angular/core': '^21.0.0' } },
+  } });
+  const derived = deriveAngularFoundation({ ...input, root });
+  const path = 'node_modules/@angular/build/node_modules/vite';
+  assert.ok(root.packages[path]?.integrity);
+  assert.deepEqual(derived.lock.packages[path], root.packages[path]);
+  for (const [path, record] of Object.entries(selectPresentationLock(root, angularFoundationSeeds)))
+    assert.deepEqual(derived.lock.packages[path], record);
+  assert.ok(!Object.keys(derived.lock.packages).some(path => /node_modules\/(?:@langchain\/|@ag-ui\/|react$|react-dom$|@types\/react)/.test(path)));
+  assert.deepEqual(readFileSync(new URL('../../package-lock.json', import.meta.url)), bytes);
+});
+
+for (const name of ['react', 'react-dom', '@types/react', '@types/react-dom', '@langchain/langgraph-sdk', '@ag-ui/client', 'openai']) {
+  test(`Angular foundation rejects selected and installed unrelated package ${name}`, (t) => {
+    const input = angularFoundationFixture(t);
+    const derived = deriveAngularFoundation(input);
+    input.root.packages['node_modules/@angular/build'].dependencies[name] = '^1.0.0';
+    input.root.packages['node_modules/' + name] = pkg();
+    assert.throws(() => deriveAngularFoundation(input), /Unexpected (React package|backend SDK)/);
+    const directory = join(input.consumer, 'node_modules', name);
+    mkdirSync(directory, { recursive: true });
+    writeJson(join(directory, 'package.json'), { name, version: '1.0.0' });
+    assert.throws(() => assertPresentationInstallation(input.consumer, derived, input.tarballs), /Unexpected (React package|backend SDK)/);
+  });
+}
+
+test('Angular foundation rejects missing locked dependencies and changed installed artifact bytes', (t) => {
+  const input = angularFoundationFixture(t);
+  const derived = deriveAngularFoundation(input);
+  delete input.root.packages['node_modules/a'];
+  assert.throws(() => deriveAngularFoundation(input), /Missing locked dependency a/);
+  writeFileSync(join(input.consumer, 'node_modules/@threadplane/angular/index.js'), 'tampered');
+  assert.throws(() => assertPresentationInstallation(input.consumer, derived, input.tarballs), /bytes equal/);
+});
+
+test('A2UI surfaces installer preserves exact profile and seeds and rejects child lock mutation', (t) => {
+  const input = installerFixture(t, false, a2uiFixture);
+  const options = { seeds: presentation.a2uiSurfacesPresentationSeeds, profile: 'a2ui-surfaces', env: input.env };
+  const proof = presentation.installPresentationConsumer(input.consumer, input.root, input.tarballs, options);
+  assert.equal(proof.profile, 'a2ui-surfaces');
+  assert.deepEqual(proof.seeds, presentation.presentationSeeds);
+  const mutated = installerFixture(t, true, a2uiFixture);
+  assert.throws(() => presentation.installPresentationConsumer(mutated.consumer, mutated.root, mutated.tarballs, { ...options, env: mutated.env }), /lock bytes/);
+});
+
+test('Angular foundation installer preserves its exact profile and rejects child lock mutation', (t) => {
+  const input = installerFixture(t, false, angularFoundationFixture);
+  const proof = presentation.installPresentationConsumer(input.consumer, input.root, input.tarballs, { seeds: angularFoundationSeeds, profile: 'angular-foundation', env: input.env });
+  assert.equal(proof.profile, 'angular-foundation');
+  assert.deepEqual(proof.seeds, angularFoundationSeeds);
+  const mutated = installerFixture(t, true, angularFoundationFixture);
+  assert.throws(() => presentation.installPresentationConsumer(mutated.consumer, mutated.root, mutated.tarballs, { seeds: angularFoundationSeeds, profile: 'angular-foundation', env: mutated.env }), /lock bytes/);
+});
+
+for (const framework of ['react', 'angular']) {
+  test(`selected ${framework} consumer retains the current content JSON parser dependency`, (t) => {
+    const root = JSON.parse(
+      readFileSync(new URL('../../package-lock.json', import.meta.url))
+    );
+    const content = JSON.parse(
+      readFileSync(new URL('../../libs/content/package.json', import.meta.url))
+    );
+    const input = (framework === 'react' ? reactFixture : angularFixture)(t, {
+      manifests: {
+        content: { dependencies: content.dependencies },
+        [framework]: {
+          peerDependencies:
+            framework === 'react'
+              ? { react: '^19.2.4' }
+              : { '@angular/core': '^21.0.0' },
+        },
+        langgraph: {
+          dependencies: {
+            '@threadplane/core': '0.0.1',
+            '@langchain/langgraph-sdk': '^1.10.0',
+          },
+        },
+      },
+    });
+    const derived = derivePresentationConsumer(
+      root,
+      input.tarballs,
+      framework === 'react'
+        ? presentation.reactLanggraphPresentationSeeds
+        : presentation.angularLanggraphPresentationSeeds,
+      `${framework}-langgraph`
+    );
+    assert.deepEqual(
+      derived.lock.packages['node_modules/@cacheplane/json-stream'],
+      root.packages['node_modules/@cacheplane/json-stream']
+    );
+    assert.equal(
+      derived.graph.find(({ name }) => name === '@threadplane/content')
+        .dependencies['@cacheplane/json-stream'],
+      '0.1.1'
+    );
+  });
+}
+
+for (const profile of ['markdown', 'react-langgraph']) {
+  test(`${profile} consumer retains the current React render engine dependency`, (t) => {
+    const root = JSON.parse(
+      readFileSync(new URL('../../package-lock.json', import.meta.url))
+    );
+    const react = JSON.parse(
+      readFileSync(new URL('../../libs/react/package.json', import.meta.url))
+    );
+    const content = JSON.parse(
+      readFileSync(new URL('../../libs/content/package.json', import.meta.url))
+    );
+    const input = (profile === 'markdown' ? consumerFixture : reactFixture)(t, {
+      manifests: {
+        content: { dependencies: content.dependencies },
+        react: {
+          dependencies: react.dependencies,
+          peerDependencies: { react: '^19.2.4' },
+        },
+        angular: { peerDependencies: { '@angular/core': '^21.0.0' } },
+        langgraph: {
+          dependencies: {
+            '@threadplane/core': '0.0.1',
+            '@langchain/langgraph-sdk': '^1.10.0',
+          },
+        },
+      },
+    });
+    const derived = derivePresentationConsumer(
+      root,
+      input.tarballs,
+      profile === 'markdown'
+        ? presentation.presentationSeeds
+        : presentation.reactLanggraphPresentationSeeds,
+      profile
+    );
+    assert.deepEqual(
+      derived.lock.packages['node_modules/@json-render/core'],
+      root.packages['node_modules/@json-render/core']
+    );
+    assert.equal(
+      derived.graph.find(({ name }) => name === '@threadplane/react')
+        .dependencies['@json-render/core'],
+      '0.16.0'
+    );
+  });
+}
 
 test('selected Angular profile derives the exact local closure, seeds and physical lock records without root mutation', (t) => {
   const input = angularFixture(t);
@@ -444,9 +1277,9 @@ test('selected Angular uses the repository-locked Angular toolchain and SDK clos
     );
   assert.equal(
     Object.keys(selectPresentationLock(root, angularSeeds)).length,
-    653
+    654
   );
-  assert.equal(canonicalVendorGraph(root, angularSeeds).length, 429);
+  assert.equal(canonicalVendorGraph(root, angularSeeds).length, 430);
   assert.ok(
     Object.keys(derived.lock.packages).some((path) =>
       path.includes('/node_modules/', 'node_modules/'.length)
@@ -485,7 +1318,7 @@ for (const name of angularSeeds) {
           angularSeeds.filter((seed) => seed !== name),
           'angular-langgraph'
         ),
-      /Exactly thirteen selected Angular seeds required/
+      /Exactly fourteen selected Angular seeds required/
     );
   });
 }
@@ -500,7 +1333,7 @@ test('selected Angular rejects duplicate and arbitrary seeds', (t) => {
         [...angularSeeds, '@angular/build'],
         'angular-langgraph'
       ),
-    /Exactly thirteen selected Angular seeds required/
+    /Exactly fourteen selected Angular seeds required/
   );
   input.root.packages['node_modules/unrelated-server-package'] = pkg();
   assert.throws(
@@ -762,7 +1595,7 @@ for (const name of reactSeeds) {
           reactSeeds.filter((seed) => seed !== name),
           'react-langgraph'
         ),
-      /Exactly nine selected React seeds required/
+      /Exactly eleven selected React seeds required/
     );
   });
 }
@@ -777,7 +1610,7 @@ test('selected React rejects duplicate root seeds', (t) => {
         [...reactSeeds, 'vite'],
         'react-langgraph'
       ),
-    /Exactly nine selected React seeds required/
+    /Exactly eleven selected React seeds required/
   );
 });
 
@@ -1021,6 +1854,36 @@ test('selected Angular installer rejects child-process lock mutation', (t) => {
         input.root,
         input.tarballs,
         { seeds: angularSeeds, profile: 'angular-langgraph', env: input.env }
+      ),
+    /preserves derived lock bytes/
+  );
+});
+
+test('installer preserves the AG-UI profile, exact lock and supported RxJS policy through the child boundary', (t) => {
+  const input = installerFixture(t, false, agUiReactFixture);
+  const proof = presentation.installPresentationConsumer(
+    input.consumer,
+    input.root,
+    input.tarballs,
+    { seeds: agUiReactSeeds, profile: 'react-ag-ui', env: input.env }
+  );
+  assert.deepEqual(proof.seeds, agUiReactSeeds);
+  assert.equal(proof.profile, 'react-ag-ui');
+  assert.deepEqual(
+    JSON.parse(readFileSync(join(input.consumer, 'package.json'))).overrides,
+    { rxjs: '~7.8.0' }
+  );
+});
+
+test('selected AG-UI installer rejects child-process lock mutation', (t) => {
+  const input = installerFixture(t, true, agUiReactFixture);
+  assert.throws(
+    () =>
+      presentation.installPresentationConsumer(
+        input.consumer,
+        input.root,
+        input.tarballs,
+        { seeds: agUiReactSeeds, profile: 'react-ag-ui', env: input.env }
       ),
     /preserves derived lock bytes/
   );

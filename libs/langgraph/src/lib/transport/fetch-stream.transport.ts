@@ -193,6 +193,24 @@ export class FetchStreamTransport implements AgentTransport {
     }
   }
 
+  /** Read the newest checkpoint saved under one child checkpoint namespace. */
+  async getChildState(
+    threadId: string,
+    checkpointNs: string,
+    signal: AbortSignal
+  ): Promise<ThreadState | undefined> {
+    try {
+      const [latest] = await this.client.threads.getHistory(threadId, {
+        checkpoint: { checkpoint_ns: checkpointNs },
+        limit: 1,
+        signal,
+      });
+      return latest;
+    } catch (error) {
+      return this.rethrowOperationError(error, signal);
+    }
+  }
+
   /** Read one exact saved checkpoint with the command's cancellation signal. */
   async getState(
     threadId: string,

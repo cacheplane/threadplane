@@ -8,12 +8,13 @@ featured: false
 draft: false
 ---
 
-This is how to build an Angular chat _app_ on LangGraph — not a single chat surface, but the whole thing: a conversation sidebar, threads that keep their history, and URLs you can bookmark.
+Let's build an Angular chat _app_ on LangGraph.
+Not a single chat surface, but the whole thing: a conversation sidebar, threads that keep their history, and URLs you can bookmark.
 
 One conversation is a demo.
 A list of them, each restoring on reload, is a product.
 
-The difference is smaller than you would think, because the durable part lives on the server.
+The difference is smaller than you'd think, because the durable part lives on the server.
 LangGraph already checkpoints every thread and exposes a thread API.
 Our job in Angular is mostly to stop throwing that away.
 
@@ -23,7 +24,7 @@ Our job in Angular is mostly to stop throwing that away.
 - Bind it to Angular with `@threadplane/langgraph` and `@threadplane/chat`.
 - Add a conversation sidebar backed by the server's own thread list.
 - Make reload, back/forward, and shared links land in the right conversation.
-- Name the parts that are still not production-ready.
+- Name the parts that still aren't production-ready.
 - Have fun!
 
 <Callout type="info" title="MIT-licensed packages">
@@ -37,7 +38,7 @@ This post picks up where that one stops.
 
 ## What are we building?
 
-Here is the whole path:
+Here's the whole path:
 
 ```text
 Angular <chat> + <chat-sidenav>
@@ -51,7 +52,7 @@ Angular <chat> + <chat-sidenav>
 Two Angular pieces, and they read from different places.
 `<chat>` renders the active conversation from the agent. `<chat-sidenav>` renders the thread _list_ from the LangGraph thread API.
 
-That split is the thing to hold onto.
+For me, that split is the thing to hold onto.
 The agent knows about one conversation.
 The thread adapter knows about all of them.
 
@@ -69,8 +70,8 @@ source .venv/bin/activate
 pip install "langgraph-cli[inmem]" langgraph langgraph-sdk langchain-openai
 ```
 
-Now `graph.py`.
-A generate node, and a second node that gives the thread a title:
+Now let's write `graph.py`.
+It has a generate node, and a second node that gives the thread a title:
 
 ```python
 import os
@@ -127,13 +128,13 @@ builder.add_edge("title_thread", END)
 graph = builder.compile()
 ```
 
-Two things there are worth calling out.
+Let's call out two things there.
 
 **No checkpointer.** `graph.compile()` takes no argument.
-`langgraph dev` — and LangGraph Platform — provide persistence themselves, and compiling one in fights the server.
-This trips people up because most LangGraph tutorials you will read are about invoking a graph in-process, where you _do_ pass `MemorySaver()`.
+`langgraph dev` (and LangGraph Platform) provide persistence themselves, and compiling one in fights the server.
+This trips people up because most LangGraph tutorials you'll read are about invoking a graph in-process, where you _do_ pass `MemorySaver()`.
 
-**`title_thread` calls back into the server.** It is the same SDK your Angular app will use, pointed at the thread it is currently running inside.
+**`title_thread` calls back into the server.** It's the same SDK your Angular app will use, pointed at the thread it's currently running inside.
 Leaving `url` as `None` lets the SDK use its in-process transport instead of an HTTP round trip.
 
 Add `langgraph.json`:
@@ -153,8 +154,8 @@ Put `OPENAI_API_KEY=…` in `.env`, then start it:
 langgraph dev --no-browser --port 2024
 ```
 
-The `chat` key in `graphs` is what you will pass to Angular as `assistantId`.
-That mapping is easy to forget later when the id does not match and every run 404s.
+The `chat` key in `graphs` is what you'll pass to Angular as `assistantId`.
+That mapping is easy to forget later when the id doesn't match and every run 404s.
 
 ## How do we bind Angular to it?
 
@@ -199,9 +200,9 @@ export const appConfig: ApplicationConfig = {
 ```
 
 `ACTIVE_THREAD` sits at module scope on purpose.
-`provideAgent()` runs when providers are registered — before any component exists — so it cannot reference a class field.
+`provideAgent()` runs when providers are registered (before any component exists), so it can't reference a class field.
 
-The two options that make this an app rather than a demo:
+Here are the two options that make this an app rather than a demo:
 
 - `threadId: ACTIVE_THREAD` — the adapter _watches_ this signal.
   Set it, and the conversation switches.
@@ -209,7 +210,7 @@ The two options that make this an app rather than a demo:
 - `onThreadId` — fires when the adapter creates a thread on the first submit. Writing it back into the same signal is what closes the loop.
 
 `LANGGRAPH_THREADS_CONFIG` is separate because the thread list is a separate concern from the agent.
-It is the config for `LangGraphThreadsAdapter`, which wraps `client.threads.*`.
+It's the config for `LangGraphThreadsAdapter`, which wraps `client.threads.*`.
 
 ## How do we render the sidebar?
 
@@ -295,23 +296,24 @@ Notice how little of this is thread _logic_.
 
 Selecting a conversation is `activeThread.set($event)`.
 Starting a new one is `activeThread.set(null)`.
-Both work because the adapter is watching the signal — the sidebar does not talk to the agent at all.
+Both work because the adapter is watching the signal.
+The sidebar doesn't talk to the agent at all.
 
 `ThreadActionAdapter` is the right-click menu contract: rename, delete, archive, unarchive, pin, move to a project.
 `LangGraphThreadsAdapter` already implements each of those against the SDK, so wiring them is mostly forwarding.
-The `refresh()` after each call matters: the framework clears its optimistic override in a `finally` block, so an action that does not change the input list will re-render the old row.
+The `refresh()` after each call matters: the framework clears its optimistic override in a `finally` block, so an action that doesn't change the input list will re-render the old row.
 
 `refreshOnRunEnd` re-fetches the list when a run finishes, which is how a brand-new conversation shows up in the sidebar.
 
 ## How do links survive a refresh?
 
-That is `injectThreadRouting()`, and it is three lines in the constructor above.
+That's `injectThreadRouting()`, and it's three lines in the constructor above.
 
 It restores the thread id from the URL on load, stamps signal changes back into the URL, and keeps the two in sync across back/forward.
 **The URL is the only source of truth — nothing is written to localStorage**, which is what makes links shareable without extra plumbing.
 
 The `validate` callback earns its place the first time someone pastes a stale link.
-It runs on any id that appears in the URL; returning `false` redirects to the bare path with `replaceUrl: true`, so the dead URL does not sit in history.
+It runs on any id that appears in the URL; returning `false` redirects to the bare path with `replaceUrl: true`, so the dead URL doesn't sit in history.
 `LangGraphThreadsAdapter.getThread()` returns `null` on a 404 and rethrows genuine network errors, so `.then(Boolean)` is the whole implementation.
 
 Your routes just need both shapes:
@@ -330,29 +332,30 @@ Bare path means no thread, which is the welcome state.
 The server, which is why `title_thread` is in the graph at all.
 
 `LangGraphThreadsAdapter` maps each SDK thread to the framework's `Thread` type and reads the label from `metadata.title`.
-Threads that do not have one yet render as `Untitled` — configurable with `titleFallback` on `LANGGRAPH_THREADS_CONFIG`.
+Threads that don't have one yet render as `Untitled` (configurable with `titleFallback` on `LANGGRAPH_THREADS_CONFIG`).
 
-There is a wrinkle worth knowing, and it shows up on the very first conversation.
+There's a wrinkle worth knowing, and it shows up on the very first conversation.
 
 A new conversation appears in the sidebar as **Untitled** and _stays_ Untitled for a while.
-The title node writes `metadata.title` during the run, but the thread list keeps returning the old value for several seconds after the run ends — so the `refreshOnRunEnd` fetch reads a thread that is not titled yet.
+The title node writes `metadata.title` during the run, but the thread list keeps returning the old value for several seconds after the run ends, so the `refreshOnRunEnd` fetch reads a thread that isn't titled yet.
 
 My first instinct was to refresh a second time on a delay.
-That does not work, and I would rather save you the detour: against `langgraph dev` I tried a 1.5s follow-up, then a 4s one, then a bounded poll refreshing five times at 1.5s intervals.
+That doesn't work, and I'd rather save you the detour: against `langgraph dev` I tried a 1.5s follow-up, then a 4s one, then a bounded poll refreshing five times at 1.5s intervals.
 All three finished before the new title showed up in the list, while a direct fetch of that same thread already had it.
 
-So do not engineer around it with a timer.
-The label settles on the next list refresh you were going to do anyway — the next message, a navigation, or a reload.
+So don't engineer around it with a timer.
+The label settles on the next list refresh you were going to do anyway: the next message, a navigation, or a reload.
 
 If you want the row correct immediately, own the label instead of waiting for it: title the thread optimistically in your own state from the first user message, and let the server's value replace it whenever the list catches up.
 That sidesteps the race rather than racing it.
 
-Either way, do not make the title node block the run to keep a sidebar label in sync.
-For me that is the wrong trade — the title is a nicety, and the conversation should not wait on it.
+Either way, don't make the title node block the run to keep a sidebar label in sync.
+For me, that's the wrong trade.
+The title is a nicety, and the conversation shouldn't wait on it.
 
 ## What about the bundle?
 
-One practical note, because it will be your first failed build.
+One practical note, because it'll probably be your first failed build. 😆
 
 A fresh `ng new` sets a 500 kB warning and 1 MB error budget.
 A chat UI plus the LangGraph SDK lands around 1.4 MB raw, so `ng build` fails on budget before it fails on anything real.
@@ -366,20 +369,19 @@ Raise it in `angular.json`:
 }
 ```
 
-You will also see a warning that `p-queue`, used by `@langchain/core`, is not ESM.
-It is a bailout warning, not an error.
+You'll also see a warning that `p-queue`, used by `@langchain/core`, isn't ESM.
+It's a bailout warning, not an error.
 
 ## What still needs work before production?
 
-The app runs now.
-It is not finished.
+The app runs now, but it isn't finished.
 
 - **The checkpointer has to be durable.** `langgraph dev` keeps threads in memory.
-  Bookmarkable URLs against an in-memory store are a lie — the link survives, the conversation does not.
+  Bookmarkable URLs against an in-memory store are a lie: the link survives, the conversation doesn't.
   Move to Postgres before you ship the sidebar.
   Persistence UI should match what the backend can actually restore.
 - **Threads need owners.** A `threadId` in a URL is an identifier, not proof the caller may read that conversation. Bind threads to the authenticated user on the server; `client.threads.search()` will happily list everything otherwise.
-- **The API key cannot live in the browser.** Right now Angular talks to `localhost:2024` directly. In production put a same-origin backend-for-frontend in front, and make `apiUrl` point at that.
+- **The API key can't live in the browser.** Right now Angular talks to `localhost:2024` directly. In production put a same-origin backend-for-frontend in front, and make `apiUrl` point at that.
 - **A buffering proxy breaks streaming.** If a gateway sits in the path, disable response buffering and preserve the streaming content type, or your token-by-token UI becomes a spinner.
 - **Errors need a path back.** The `Agent` contract has `retry()` and `regenerate()`; `<chat>` wires both. Decide what a failed run should look like before a user finds out for you.
 
@@ -388,9 +390,10 @@ It is not finished.
 The useful split here is that the server already owns everything durable.
 LangGraph checkpoints the conversation and stores the thread; the Angular app subscribes to one thread through a signal and lists the rest through the thread adapter.
 
-Once `threadId` is a signal, most of what feels like "app" is just setting it — from a click, from the URL, from a new run.
-That is the part I would take away from this even if you build the UI yourself.
+Once `threadId` is a signal, most of what feels like "app" is just setting it: from a click, from the URL, from a new run.
+That's the part I'd take away from this even if you build the UI yourself.
 
 Start with `langgraph dev`, get the sidebar listing real threads, then swap in a durable checkpointer and put an authenticated proxy in front.
 
-Then go spend your time on the parts your users actually see. Have fun!
+Then go spend your time on the parts your users actually see.
+Have fun, and let me know how your sidebar turns out!

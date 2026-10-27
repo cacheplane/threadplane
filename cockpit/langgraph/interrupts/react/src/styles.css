@@ -1,0 +1,86 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color: #202832;
+  background: #fafafa;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+.interrupts-demo {
+  max-width: 56rem;
+  margin: auto;
+  padding: 1.5rem;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.interrupts-demo header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+.interrupts-demo h1 {
+  font-size: 1.5rem;
+  margin: 0;
+}
+.interrupts-demo p {
+  margin: 0;
+}
+.eyebrow {
+  color: #606b76;
+  font-size: 0.8rem;
+  margin-bottom: 0.4rem !important;
+}
+.interrupts-demo button,
+.interrupts-demo input {
+  font: inherit;
+}
+.interrupts-demo button {
+  cursor: pointer;
+}
+.interrupts-demo button:disabled {
+  cursor: default;
+}
+.interrupts-demo .tp-chat-list {
+  flex: 1;
+  min-height: 8rem;
+  max-height: 40dvh;
+}
+.interrupts-demo dl {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 0.5rem 1rem;
+}
+.interrupts-demo dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.interrupts-demo input {
+  max-width: 100%;
+  display: block;
+}
+.suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+[role='alert'] {
+  color: #a52323;
+}
+[role='status'] {
+  font-size: 0.85rem;
+  color: #606b76;
+}
+@media (max-width: 32rem) {
+  .interrupts-demo {
+    padding: 1rem;
+  }
+  .interrupts-demo header {
+    align-items: flex-start;
+  }
+}

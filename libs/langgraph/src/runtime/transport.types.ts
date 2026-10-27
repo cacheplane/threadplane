@@ -159,6 +159,19 @@ export interface AgentTransport {
   /** Optional: load persisted checkpoint history for a thread. */
   getHistory?(threadId: string, signal: AbortSignal): Promise<ThreadState[]>;
 
+  /**
+   * Optional: read the newest checkpoint a child graph saved under one
+   * checkpoint namespace of a thread (for a delegation tool call, `tools:<task
+   * id>`). Used to restore a subagent's transcript when a thread is reloaded;
+   * without it, a reloaded subagent shows its status and result but no
+   * messages. Resolve `undefined` when the namespace has no saved state.
+   */
+  getChildState?(
+    threadId: string,
+    checkpointNs: string,
+    signal: AbortSignal
+  ): Promise<ThreadState | undefined>;
+
   /** Exact saved root read. Branch effects must not infer authority from latest. */
   getState?(
     threadId: string,

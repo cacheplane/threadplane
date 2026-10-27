@@ -18,7 +18,7 @@ This page records the AG-UI wire behavior measured for Mastra on 2026-08-31. It 
 
 The service refuses to boot without `AG_UI_INTERNAL_TOKEN`, rejects any non-health route without a matching header, and maps an error from the underlying observable to a `RUN_ERROR` frame rather than dropping the socket. Any route other than `/ok` that arrives without a matching header returns `401 {"detail":"unauthorized"}`; with a valid token, an unknown path or method returns `404 {"detail":"not found"}` and an unregistered topic returns `404 {"detail":"no such topic: <topic>"}`.
 
-In your own application this is still an ordinary `provideAgent({ url: '/agent', interruptTransport: 'mastra-command' })`; the example in this repository passes a factory only because it resolves its endpoint at runtime. The token is injected by the dev proxy in front of the app, never by the browser.
+In an Angular compatibility application this is an ordinary `provideAgent({ url: '/agent', interruptTransport: 'mastra-command' })`; the Angular example in this repository passes a factory only because it resolves its endpoint at runtime. The token is injected by the dev proxy in front of the app, never by the browser.
 
 ## Interrupts arrive by both conventions
 
@@ -28,7 +28,7 @@ AWS Strands and Microsoft Agent Framework emit only the outcome. The LangGraph b
 
 ## Resume carries a decision and correlation
 
-Mastra reads the decision from `forwardedProps.command.resume`. The adjacent `interruptEvent` identifies the suspended work by tool-call ID and run ID. These partial request bodies show both decisions; the identifiers are illustrative, and the adapter copies actual identifiers from the observed interrupt.
+The Angular compatibility example sends the decision through `forwardedProps.command.resume`. The adjacent `interruptEvent` identifies the suspended work by tool-call ID and run ID. These partial request bodies show both decisions; the identifiers are illustrative, and the adapter copies actual identifiers from the observed interrupt. The [native React reservation preview](/docs/runtimes/mastra/overview?frontend=react) uses the same actual service with an opaque native pause ID and a top-level `resume` array containing the exact interrupt ID, `status: 'resolved'`, and `payload: { approved }`.
 
 Approval:
 
@@ -74,7 +74,7 @@ provideAgent({ url: '/agent', interruptTransport: 'mastra-command' });
 // await agent.submit({ resume: { approved: false } });
 ```
 
-Strands and Microsoft Agent Framework read a top-level `resume` array; the LangGraph AG-UI bridge reads `forwardedProps.command.resume`. Mastra needs both the decision and correlation fields. Select `mastra-command` explicitly because this backend emits both compatibility and native interrupts, and `auto` otherwise selects the native wire shape. Mastra's `{ approved: false }` is an application decision, distinct from a native protocol entry with `status: 'cancelled'` and no payload.
+Strands and Microsoft Agent Framework read a top-level `resume` array; the LangGraph AG-UI bridge reads `forwardedProps.command.resume`. In the Angular compatibility example, select `mastra-command` explicitly to use the illustrated command and correlation fields. The native React reservation preview uses top-level native resume with the current opaque pause correlation; compatibility notices alone do not authorize a decision. Mastra's `{ approved: false }` is an application decision, distinct from a native protocol entry with `status: 'cancelled'` and no payload.
 
 Approval and cancellation verification on 2026-09-09 covered the synthetic North Pines reservation for two nights, totaling $90. Approve returns a synthetic confirmation; Cancel returns a backend tool result containing `Nothing was booked.` and a consistent assistant reply. Neither path contacts an external reservation service. The earlier wire measurements remain dated 2026-08-31.
 

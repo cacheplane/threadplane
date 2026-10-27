@@ -2,15 +2,20 @@
   "name": "@threadplane/content",
   "version": "0.0.0",
   "private": true,
-  "description": "Private content preparation with owned incremental Markdown documents.",
+  "description": "Private content preparation with owned Markdown and JSON documents and A2UI surface accumulation.",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
   "dependencies": {
+    "@cacheplane/json-stream": "0.1.1",
     "@cacheplane/partial-markdown": "0.5.8"
   },
   "peerDependencies": {
+    "@threadplane/a2ui": "^0.3.2",
     "@threadplane/core": "0.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@threadplane/a2ui": { "optional": true }
   },
   "files": [
     "src/**/*.js",
@@ -44,6 +49,11 @@
       "types": "./src/a2ui/index.d.ts",
       "import": "./src/a2ui/index.js",
       "default": "./src/a2ui/index.js"
+    },
+    "./render-state": {
+      "types": "./src/render-state/index.d.ts",
+      "import": "./src/render-state/index.js",
+      "default": "./src/render-state/index.js"
     },
     "./testing": {
       "types": "./src/testing/index.d.ts",

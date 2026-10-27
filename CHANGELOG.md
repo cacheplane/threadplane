@@ -1,18 +1,264 @@
-## Unreleased
+## 0.3.3 (2026-10-23)
+
+### ✨ Highlights
+
+- **chat:** inactive typing indicators no longer reserve layout space; active typing retains its existing styling and visibility conditions.
+
+### 🚀 Features
+
+- add native React Skills example and read-only mount ([8a0175a52](https://github.com/cacheplane/threadplane/commit/8a0175a52))
+- add native AG-UI A2UI React example ([166235e08](https://github.com/cacheplane/threadplane/commit/166235e08))
+- add native AG-UI A2UI React example ([#1334](https://github.com/cacheplane/threadplane/pull/1334))
+- **ag-ui:** execute native client tools with owned continuations ([d618a6fc2](https://github.com/cacheplane/threadplane/commit/d618a6fc2))
+- **chat:** dogfood generative UI with native React ([2fe8e7b99](https://github.com/cacheplane/threadplane/commit/2fe8e7b99))
+- **ci:** add guarded manual main recovery ([112946bc2](https://github.com/cacheplane/threadplane/commit/112946bc2))
+- **cockpit:** add native React Mastra reservation preview ([3748fd5bd](https://github.com/cacheplane/threadplane/commit/3748fd5bd))
+- **content:** add owned A2UI surfaces and installed native proof ([acdf34e67](https://github.com/cacheplane/threadplane/commit/acdf34e67))
+- **content:** add application-owned render state ([e017dcbcb](https://github.com/cacheplane/threadplane/commit/e017dcbcb))
+- **examples:** add native React Deep Agents Planning preview ([dd545f8c0](https://github.com/cacheplane/threadplane/commit/dd545f8c0))
+- **examples:** add native React Deep Agents Planning preview ([#1294](https://github.com/cacheplane/threadplane/pull/1294))
+- **examples:** add native React scoped Memory demo ([54d9a356b](https://github.com/cacheplane/threadplane/commit/54d9a356b))
+- **lifecycle:** link founder booking through threadplane.ai/call ([0c4b0eda8](https://github.com/cacheplane/threadplane/commit/0c4b0eda8))
+- **react:** add native Deep Agents Subagents preview ([ad762d9a6](https://github.com/cacheplane/threadplane/commit/ad762d9a6))
+- **react:** dogfood native MAF expense approvals ([865500eec](https://github.com/cacheplane/threadplane/commit/865500eec))
+- **react:** add native Strands meeting approval preview ([70b4b1e76](https://github.com/cacheplane/threadplane/commit/70b4b1e76))
+- **react:** add native chat theming example ([35de1f1c4](https://github.com/cacheplane/threadplane/commit/35de1f1c4))
+- **react:** dogfood native Chat Debug with explicit checkpoint inspection ([69057b532](https://github.com/cacheplane/threadplane/commit/69057b532))
+- **react:** add controlled chat popup and native dogfood ([#1335](https://github.com/cacheplane/threadplane/pull/1335))
+- **react:** add controlled chat sidebar and native dogfood ([#1337](https://github.com/cacheplane/threadplane/pull/1337))
+- **react:** add controlled conversation sidenav and native dogfood ([#1338](https://github.com/cacheplane/threadplane/pull/1338))
+- **react:** add controlled sidenav backdrop and native dogfood ([#1339](https://github.com/cacheplane/threadplane/pull/1339))
+- **react:** add optional sidebar page pushing and native dogfood ([#1340](https://github.com/cacheplane/threadplane/pull/1340))
+- **react:** add controlled thread list and native dogfood ([#1342](https://github.com/cacheplane/threadplane/pull/1342))
+- **react:** add app-owned thread list creation action ([#1343](https://github.com/cacheplane/threadplane/pull/1343))
+- **react:** show relative conversation update times ([#1347](https://github.com/cacheplane/threadplane/pull/1347))
+- **react:** support custom thread title content ([#1348](https://github.com/cacheplane/threadplane/pull/1348))
+- **website:** list each post's picture in the blog RSS feed ([fedbfbaa2](https://github.com/cacheplane/threadplane/commit/fedbfbaa2))
+
+### 🩹 Fixes
+
+- deploy shared backend when chat and render inputs change ([fd89062b4](https://github.com/cacheplane/threadplane/commit/fd89062b4))
+- confirm Skills responses with filtered stream values ([b654abd3d](https://github.com/cacheplane/threadplane/commit/b654abd3d))
+- retain Strands fixture listener ownership through startup ([ec469e692](https://github.com/cacheplane/threadplane/commit/ec469e692))
+- include Strands native fixtures in affected CI ([74e9855db](https://github.com/cacheplane/threadplane/commit/74e9855db))
+- make Strands fixture startup atomic and run its CI lane ([#1333](https://github.com/cacheplane/threadplane/pull/1333))
+- provision Python for A2UI workspace regression tests ([ef1e201ab](https://github.com/cacheplane/threadplane/commit/ef1e201ab))
+- preserve A2UI browser hosts through website checks ([81086a032](https://github.com/cacheplane/threadplane/commit/81086a032))
+- **a2ui:** validate canonical booking picker domains ([2b733bf97](https://github.com/cacheplane/threadplane/commit/2b733bf97))
+- **a2ui:** sync generated deployment validation ([c414a7eb6](https://github.com/cacheplane/threadplane/commit/c414a7eb6))
+- **ag-ui:** register native client tool migration inventory ([0b9e8efdd](https://github.com/cacheplane/threadplane/commit/0b9e8efdd))
+- **chat:** require validated generative UI action execution ([c224f3e0d](https://github.com/cacheplane/threadplane/commit/c224f3e0d))
+- **chat:** remove idle typing indicator from layout ([#1351](https://github.com/cacheplane/threadplane/pull/1351))
+- **ci:** pin isolated middleware provider graph ([8ae7f48c1](https://github.com/cacheplane/threadplane/commit/8ae7f48c1))
+- **ci:** deploy AG-UI demo when shared build inputs change ([ad5e31703](https://github.com/cacheplane/threadplane/commit/ad5e31703))
+- **ci:** preload pinned PostgreSQL integration image ([beabb1d39](https://github.com/cacheplane/threadplane/commit/beabb1d39))
+- **ci:** install Python for website preview fixtures ([6770b797a](https://github.com/cacheplane/threadplane/commit/6770b797a))
+- **ci:** install Python for deployed website verification ([a2b4e11cb](https://github.com/cacheplane/threadplane/commit/a2b4e11cb))
+- **ci:** fall back to the same pinned PostgreSQL image ([355211e79](https://github.com/cacheplane/threadplane/commit/355211e79))
+- **ci:** pin shared LangGraph deployment images by digest ([64c6a6aff](https://github.com/cacheplane/threadplane/commit/64c6a6aff))
+- **ci:** pin Vercel CLI to the verified deployment release ([fe2e67bc0](https://github.com/cacheplane/threadplane/commit/fe2e67bc0))
+- **ci:** bound Ubuntu package downloads and avoid stalled mirror ([#1344](https://github.com/cacheplane/threadplane/pull/1344))
+- **docs:** align Planning metadata and fixture contracts ([fe1d037fa](https://github.com/cacheplane/threadplane/commit/fe1d037fa))
+- **examples:** use the model's default reasoning effort unless the client picks one ([#1336](https://github.com/cacheplane/threadplane/pull/1336))
+- **maf:** preserve unique historical tool snapshots ([2badd3c3a](https://github.com/cacheplane/threadplane/commit/2badd3c3a))
+- **maf:** finish emitter cleanup during cancellation ([12b1cd592](https://github.com/cacheplane/threadplane/commit/12b1cd592))
+- **native:** contain Nx plugin workers during preparation ([31018d8d5](https://github.com/cacheplane/threadplane/commit/31018d8d5))
+- **native:** include protocol inputs in isolated content builds ([053f0f338](https://github.com/cacheplane/threadplane/commit/053f0f338))
+- **react:** confirm native batched expense approvals ([687a594cb](https://github.com/cacheplane/threadplane/commit/687a594cb))
+- **react:** preserve native cleanup failure and MAF history order ([5c0833e36](https://github.com/cacheplane/threadplane/commit/5c0833e36))
+- **smoke:** pin npm resolver for Angular compatibility ([8b224ad24](https://github.com/cacheplane/threadplane/commit/8b224ad24))
+- **verification:** lock isolated Angular consumer graphs ([1309ed87e](https://github.com/cacheplane/threadplane/commit/1309ed87e))
+- **website:** keep announcements clear of active Run controls ([3d31a1ff1](https://github.com/cacheplane/threadplane/commit/3d31a1ff1))
+
+## 0.3.2 (2026-10-08)
+
+### ✨ Highlights
+
+- **chat:** `chatRunActivityTemplate` renders a run's activity before its first assistant message exists, replacing the typing indicator in that window
+- **chat:** `chatInterruptTemplate` renders a host's interrupt UI at the end of the transcript while `agent.interrupt()` is pending
+
+### 🚀 Features
+
+- **chat:** add run-activity and interrupt slots to <chat> ([#1287](https://github.com/cacheplane/threadplane/pull/1287))
+
+## 0.3.1 (2026-10-08)
+
+### ✨ Highlights
+
+- **ag-ui:** a `replay` adapter option and an `httpReplay` helper rebuild a reloaded thread from the server's recorded protocol events
+- **langgraph:** reloading a thread restores its subagent cards and reasoning
+- **ag-ui:** tool calls streamed without a parent message now get an assistant message, `chat.css` ships with the package, and local-only message fields stay out of the run input
+- **chat:** a `chatToolCallTemplate` projected through `<chat>` now renders
+
+### 🚀 Features
+
+- **ag-ui:** replay a thread's protocol events on hydration ([#1283](https://github.com/cacheplane/threadplane/pull/1283))
+- **langgraph:** restore subagent cards and reasoning when a thread is reloaded ([#1284](https://github.com/cacheplane/threadplane/pull/1284))
+
+### 🩹 Fixes
+
+- **ag-ui:** render tool calls streamed without a parent message ([#1285](https://github.com/cacheplane/threadplane/pull/1285))
+- **chat:** render chatToolCallTemplate projected through <chat> ([#1282](https://github.com/cacheplane/threadplane/pull/1282), [#1276](https://github.com/cacheplane/threadplane/issues/1276))
+- **website:** make docs and site tables readable at every width ([#1281](https://github.com/cacheplane/threadplane/pull/1281), [#1275](https://github.com/cacheplane/threadplane/issues/1275))
+
+## 0.3.0 (2026-10-07)
 
 ### ⚠️  Breaking Changes
 
 - **ag-ui:** the peer range on `@ag-ui/client` and `@ag-ui/core` moves from `^0.0.59` to `^1.0.1`; the adapter imports validators from `@ag-ui/core/schemas`, which the 0.0.x line does not ship
 
-### 🚀 Features
+### ✨ Highlights
 
 - **langgraph, ag-ui:** in development, the AG-UI DevTools run simulator can script an agent's next runs with `threadplane:devtools:arm` / `:disarm` / `:ack` `CustomEvent`s on `window`; the scripted frames or events go through the adapter's real event handling with no network call; stripped from production builds; same opt-out
 - **langgraph, ag-ui:** in development, each agent reports which signals every event wrote as a `threadplane:devtools` `CustomEvent` on `window` — names and timing only, never values; stripped from production builds; opt out with `window.__THREADPLANE_DEVTOOLS_DISABLED__ = true`
 - **ag-ui:** upgrade to AG-UI 1.0.1; the adapter now declares `^1.0.1` peers on `@ag-ui/client` and `@ag-ui/core`, imports validators from `@ag-ui/core/schemas`, declares `protocolVersion` on every run, and runs the private request path through the 1.0 compatibility boundary
 - **chat:** `Agent.usage`, `ToolCall.parts`, and an `authoritativeIds` input to `selectPendingClientToolCalls`
 - **ag-ui:** cancelled run outcomes settle as `aborted`; content-part tool results map to chat content blocks
+- **chat:** `chatActivityTemplate`, a per-message activity slot on `<chat>` that replaces the reasoning pill and tool-call region of each assistant message ([#1253](https://github.com/cacheplane/threadplane/issues/1253))
+- **chat:** the `zod` peer range widens to `^3.25.0 || ^4.0.0`; the library imports only the `zod/v4` entry point, which both lines ship
+
+### 🚀 Features
+
+- load persisted LangGraph history in shared sessions ([cd56b9647](https://github.com/cacheplane/threadplane/commit/cd56b9647))
+- expose LangGraph state through native snapshots ([78df2f1de](https://github.com/cacheplane/threadplane/commit/78df2f1de))
+- add public React persistence preview ([#1221](https://github.com/cacheplane/threadplane/pull/1221))
+- dogfood native React subgraphs on the public guide ([#1225](https://github.com/cacheplane/threadplane/pull/1225))
+- dogfood React Chat Messages in the native example ([#1250](https://github.com/cacheplane/threadplane/pull/1250))
+- dogfood React Chat Input in the native example ([#1258](https://github.com/cacheplane/threadplane/pull/1258))
+- dogfood React Chat Interrupts in the native example ([#1259](https://github.com/cacheplane/threadplane/pull/1259))
+- dogfood React Chat Tool Calls in the native example ([#1260](https://github.com/cacheplane/threadplane/pull/1260))
+- dogfood React Chat Subagents in the native example ([#1261](https://github.com/cacheplane/threadplane/pull/1261))
+- dogfood React Chat Threads in the native example ([#1263](https://github.com/cacheplane/threadplane/pull/1263))
+- deployed demo metadata and SEO polish ([#1262](https://github.com/cacheplane/threadplane/pull/1262))
+- **ag-ui:** own private HTTP request lifetimes ([#1162](https://github.com/cacheplane/threadplane/pull/1162))
+- **ag-ui:** distinguish run outcomes from HTTP completion ([#1163](https://github.com/cacheplane/threadplane/pull/1163))
+- **ag-ui:** preserve owned protocol transcripts at request egress ([#1164](https://github.com/cacheplane/threadplane/pull/1164))
+- **ag-ui:** preserve streamed messages through snapshot reconciliation ([#1166](https://github.com/cacheplane/threadplane/pull/1166))
+- **ag-ui:** own state updates and preserve portable patch data ([#1167](https://github.com/cacheplane/threadplane/pull/1167))
+- **ag-ui:** preserve tool, activity and encrypted observations ([#1168](https://github.com/cacheplane/threadplane/pull/1168))
+- **ag-ui:** retain native child lifecycle evidence ([#1169](https://github.com/cacheplane/threadplane/pull/1169))
+- **ag-ui:** compose private protocol session ownership ([#1170](https://github.com/cacheplane/threadplane/pull/1170))
+- **ag-ui:** admit per-turn application state atomically ([#1174](https://github.com/cacheplane/threadplane/pull/1174))
+- **ag-ui:** correlate native resume and preserve dispatch uncertainty ([#1176](https://github.com/cacheplane/threadplane/pull/1176))
+- **ag-ui:** declare protocol version 1.0 on every outgoing run ([b36b7f26b](https://github.com/cacheplane/threadplane/commit/b36b7f26b))
+- **ag-ui:** run the private request path through the 1.0 compatibility boundary ([f68f9f52e](https://github.com/cacheplane/threadplane/commit/f68f9f52e))
+- **ag-ui:** treat a cancelled run outcome as aborted ([034f94945](https://github.com/cacheplane/threadplane/commit/034f94945))
+- **ag-ui:** expose the raw protocol event stream as rawEvents$ ([#1273](https://github.com/cacheplane/threadplane/pull/1273), [#1252](https://github.com/cacheplane/threadplane/issues/1252))
+- **bindings:** observe native session snapshots directly ([#1171](https://github.com/cacheplane/threadplane/pull/1171))
+- **chat:** add native text transcript components ([#1173](https://github.com/cacheplane/threadplane/pull/1173))
+- **chat:** add literal tool observation components ([#1178](https://github.com/cacheplane/threadplane/pull/1178))
+- **chat:** add a per-message activity slot to <chat> ([#1275](https://github.com/cacheplane/threadplane/pull/1275), [#1253](https://github.com/cacheplane/threadplane/issues/1253))
+- **chat:** let liveloveapp.com embed the hero demo replay-only ([#1277](https://github.com/cacheplane/threadplane/pull/1277))
+- **chat,ag-ui:** expose per-run token usage on the agent contract ([0f13ad187](https://github.com/cacheplane/threadplane/commit/0f13ad187))
+- **chat,ag-ui:** carry content-part tool results through the neutral contract ([baf6bdc70](https://github.com/cacheplane/threadplane/commit/baf6bdc70))
+- **chat,ag-ui:** honor the run's declared pending tool-call ids ([142a2447b](https://github.com/cacheplane/threadplane/commit/142a2447b))
+- **cockpit:** dogfood native React AG-UI streaming ([#1229](https://github.com/cacheplane/threadplane/pull/1229))
+- **cockpit:** dogfood native React AG-UI approvals ([#1230](https://github.com/cacheplane/threadplane/pull/1230))
+- **cockpit:** dogfood native React AG-UI weather views ([#1231](https://github.com/cacheplane/threadplane/pull/1231))
+- **cockpit:** dogfood native React AG-UI dashboards ([#1232](https://github.com/cacheplane/threadplane/pull/1232))
+- **cockpit:** dogfood native React AG-UI trip specialists ([#1234](https://github.com/cacheplane/threadplane/pull/1234))
+- **cockpit:** dogfood native React render spec playback ([#1236](https://github.com/cacheplane/threadplane/pull/1236))
+- **content:** own incremental Markdown documents ([#1182](https://github.com/cacheplane/threadplane/pull/1182))
+- **content:** add native Markdown presentation ([#1183](https://github.com/cacheplane/threadplane/pull/1183))
+- **content:** own reasoning Markdown in message rows ([1008c5efe](https://github.com/cacheplane/threadplane/commit/1008c5efe))
+- **content:** own incremental JSON snapshots ([#1205](https://github.com/cacheplane/threadplane/pull/1205))
+- **deployments:** fail the ag-ui requirements union on a protocol cap conflict ([40b4b91f4](https://github.com/cacheplane/threadplane/commit/40b4b91f4))
+- **deployments:** host the MAF runtime as its own ag-ui-maf service ([0d97ce0f1](https://github.com/cacheplane/threadplane/commit/0d97ce0f1))
+- **deployments:** generate a separate MAF deployment from the ag-ui config generator ([3419a3660](https://github.com/cacheplane/threadplane/commit/3419a3660))
+- **examples:** add native React conversation app ([#1184](https://github.com/cacheplane/threadplane/pull/1184))
+- **examples:** add native Angular conversation app ([#1185](https://github.com/cacheplane/threadplane/pull/1185))
+- **examples:** add native approval controls ([#1186](https://github.com/cacheplane/threadplane/pull/1186))
+- **examples:** add terminal trip summaries ([#1187](https://github.com/cacheplane/threadplane/pull/1187))
+- **examples:** refresh the selected conversation title ([3af47aff9](https://github.com/cacheplane/threadplane/commit/3af47aff9))
+- **examples:** declare protocol version 1.0 on RUN_STARTED from the LangGraph subclasses ([48e940b38](https://github.com/cacheplane/threadplane/commit/48e940b38))
+- **langgraph:** observe readonly interrupt batches ([e4862cfaa](https://github.com/cacheplane/threadplane/commit/e4862cfaa))
+- **langgraph:** resume observed interrupts explicitly ([bcf0597c7](https://github.com/cacheplane/threadplane/commit/bcf0597c7))
+- **langgraph:** reconnect owned runs without replay ([5788ce255](https://github.com/cacheplane/threadplane/commit/5788ce255))
+- **langgraph:** submit owned application state once ([e577149e9](https://github.com/cacheplane/threadplane/commit/e577149e9))
+- **langgraph:** observe isolated subgraph streams ([c600429e1](https://github.com/cacheplane/threadplane/commit/c600429e1))
+- **langgraph:** observe compact checkpoint history ([2088de1d6](https://github.com/cacheplane/threadplane/commit/2088de1d6))
+- **langgraph:** own per-command run options ([c49f78717](https://github.com/cacheplane/threadplane/commit/c49f78717))
+- **langgraph:** retain completed checkpoint fork authority ([#1156](https://github.com/cacheplane/threadplane/pull/1156))
+- **native:** present readonly React background observations ([#1211](https://github.com/cacheplane/threadplane/pull/1211))
+- **react:** add Chat, ChatInput and MessageList ([11ae9b11f](https://github.com/cacheplane/threadplane/commit/11ae9b11f))
+- **react:** dogfood typed MessageList in native example ([38de28e63](https://github.com/cacheplane/threadplane/commit/38de28e63))
+- **react:** dogfood owned reasoning in native chat ([5e8971e04](https://github.com/cacheplane/threadplane/commit/5e8971e04))
+- **react:** dogfood borrowed approval card in native example ([271c46c00](https://github.com/cacheplane/threadplane/commit/271c46c00))
+- **react:** dogfood message actions in native example ([69327681d](https://github.com/cacheplane/threadplane/commit/69327681d))
+- **react:** render readonly trees in native trip recaps ([#1206](https://github.com/cacheplane/threadplane/pull/1206))
+- **react:** show readonly citation sources in native chat ([#1207](https://github.com/cacheplane/threadplane/pull/1207))
+- **react:** dogfood client tools in the public cockpit ([#1220](https://github.com/cacheplane/threadplane/pull/1220))
+- **react:** dogfood durable execution in public cockpit ([#1222](https://github.com/cacheplane/threadplane/pull/1222))
+- **react:** dogfood time travel in public cockpit ([#1226](https://github.com/cacheplane/threadplane/pull/1226))
+- **react:** dogfood deployment runtime in public cockpit ([#1228](https://github.com/cacheplane/threadplane/pull/1228))
+- **react:** dogfood native repeat loops ([#1243](https://github.com/cacheplane/threadplane/pull/1243))
+- **react:** dogfood native Registry rendering ([#1244](https://github.com/cacheplane/threadplane/pull/1244))
+- **react:** dogfood native Element Rendering ([#1245](https://github.com/cacheplane/threadplane/pull/1245))
+- **react:** support pure computed render functions ([#1246](https://github.com/cacheplane/threadplane/pull/1246))
+- **react:** integrate native computed functions preview ([#1248](https://github.com/cacheplane/threadplane/pull/1248))
+- **runtime:** bind durable tools to invocation ownership ([#1152](https://github.com/cacheplane/threadplane/pull/1152))
+- **runtime:** preserve owned citation metadata ([#1158](https://github.com/cacheplane/threadplane/pull/1158))
+- **runtime:** preserve reasoning and supported answer text ([#1159](https://github.com/cacheplane/threadplane/pull/1159))
+- **website:** fit the navbar and its dropdowns to the page container on wide screens ([#1264](https://github.com/cacheplane/threadplane/pull/1264))
+
+### 🩹 Fixes
+
+- make runtime review cleanup tolerate exiting process groups ([1a11e0611](https://github.com/cacheplane/threadplane/commit/1a11e0611))
+- preserve durable completion identities from JSON messages ([#1223](https://github.com/cacheplane/threadplane/pull/1223))
+- **ag-ui:** scope reasoning timing to its delivery run ([#1160](https://github.com/cacheplane/threadplane/pull/1160))
+- **ag-ui:** isolate child reasoning with real HTTP lifecycle coverage ([#1161](https://github.com/cacheplane/threadplane/pull/1161))
+- **ag-ui:** enforce owned patch paths and safe data writes ([#1165](https://github.com/cacheplane/threadplane/pull/1165))
+- **ag-ui:** retain native interruption evidence until terminal ([#1175](https://github.com/cacheplane/threadplane/pull/1175))
+- **ag-ui:** import protocol validators from @ag-ui/core/schemas ([8433305d5](https://github.com/cacheplane/threadplane/commit/8433305d5))
+- **ag-ui:** normalize resume entries explicitly and compile the runtime against 1.0 types ([b6a5d2921](https://github.com/cacheplane/threadplane/commit/b6a5d2921))
+- **ag-ui:** align the private runtime with the 1.0 client's enforcement and null semantics ([ac804e00c](https://github.com/cacheplane/threadplane/commit/ac804e00c))
+- **ag-ui:** land a producer-cancelled resume in a recoverable interrupt phase ([6186dda4a](https://github.com/cacheplane/threadplane/commit/6186dda4a))
+- **ag-ui:** record pending tool-call ids only when the run finalizes ([873e52837](https://github.com/cacheplane/threadplane/commit/873e52837))
+- **ag-ui:** honor empty pending lists, record usage only on finalize, require the 1.0 store fields ([333524379](https://github.com/cacheplane/threadplane/commit/333524379))
+- **ag-ui:** declare the protocol version through @ag-ui/client on the private path ([c6f4072b1](https://github.com/cacheplane/threadplane/commit/c6f4072b1))
+- **ag-ui:** settle a cancelled outcome as aborted on the private runtime ([64aa49982](https://github.com/cacheplane/threadplane/commit/64aa49982))
+- **chat:** reduced motion, disclosure semantics and contrast fixes ([#1274](https://github.com/cacheplane/threadplane/pull/1274), [#1254](https://github.com/cacheplane/threadplane/issues/1254), [#1255](https://github.com/cacheplane/threadplane/issues/1255), [#1256](https://github.com/cacheplane/threadplane/issues/1256))
+- **ci:** rebuild child policy for affected website previews ([#1224](https://github.com/cacheplane/threadplane/pull/1224))
+- **cockpit:** explain browser render execution ([#1249](https://github.com/cacheplane/threadplane/pull/1249))
+- **deploy:** move the Vercel function runtime to nodejs22.x ([90bb6ea4f](https://github.com/cacheplane/threadplane/commit/90bb6ea4f))
+- **deploy:** use supported Node 22 function runtimes ([13ff89908](https://github.com/cacheplane/threadplane/commit/13ff89908))
+- **deployments:** pin @ag-ui/core 1.0.1 as a runtime dependency of ag-ui-mastra ([47d8d1897](https://github.com/cacheplane/threadplane/commit/47d8d1897))
+- **deployments:** title each generated server after its deployment ([4e0886c05](https://github.com/cacheplane/threadplane/commit/4e0886c05))
+- **deployments:** commit ag-ui-maf's generated deps and fail the drift gate on untracked files ([edec1a9f9](https://github.com/cacheplane/threadplane/commit/edec1a9f9))
+- **deployments:** gate on an ignored or untracked deps/ and stop staging pytest caches ([656edd596](https://github.com/cacheplane/threadplane/commit/656edd596))
+- **examples:** preserve empty backups and require exact approval ([#1188](https://github.com/cacheplane/threadplane/pull/1188))
+- **examples:** keep generated titles out of conversation streams ([cadcf27eb](https://github.com/cacheplane/threadplane/commit/cadcf27eb))
+- **examples:** preserve physical run identity through proxy ([#1227](https://github.com/cacheplane/threadplane/pull/1227))
+- **langgraph:** honor cancellation for state writes ([#1138](https://github.com/cacheplane/threadplane/pull/1138))
+- **langgraph:** preserve outstanding tool claim ownership ([#1143](https://github.com/cacheplane/threadplane/pull/1143))
+- **langgraph:** serialize terminal tool persistence ([#1146](https://github.com/cacheplane/threadplane/pull/1146))
+- **langgraph:** preserve sparse tool array changes ([#1147](https://github.com/cacheplane/threadplane/pull/1147))
+- **langgraph:** retain admitted tool invocation identity ([#1150](https://github.com/cacheplane/threadplane/pull/1150))
+- **langgraph:** reconcile streamed response identities ([d73809417](https://github.com/cacheplane/threadplane/commit/d73809417))
+- **langgraph:** accept checkpoints without saved run metadata ([#1272](https://github.com/cacheplane/threadplane/pull/1272))
+- **libs:** align the generated version constants with the manifests ([#1111](https://github.com/cacheplane/threadplane/pull/1111))
+- **lifecycle:** project observations in the tick behind the existing switch ([#1108](https://github.com/cacheplane/threadplane/pull/1108))
+- **lifecycle:** reduce idle Neon wakeups with fifteen-minute fallback ([#1115](https://github.com/cacheplane/threadplane/pull/1115))
+- **middleware:** preserve execution ownership during receipt ingestion ([#1145](https://github.com/cacheplane/threadplane/pull/1145))
+- **middleware:** preserve execution store string identities ([#1149](https://github.com/cacheplane/threadplane/pull/1149))
+- **react:** follow late message height growth while pinned ([#1208](https://github.com/cacheplane/threadplane/pull/1208))
+- **react:** follow transcript viewport resizing while pinned ([#1209](https://github.com/cacheplane/threadplane/pull/1209))
+- **react:** correct Subagents example page title ([#1265](https://github.com/cacheplane/threadplane/pull/1265))
+- **react-parity:** expect protocolVersion in the native review envelope ([2b17e9e39](https://github.com/cacheplane/threadplane/commit/2b17e9e39))
+- **react-parity:** expect protocolVersion in the native Mastra proof envelope ([b2b527f16](https://github.com/cacheplane/threadplane/commit/b2b527f16))
+- **website:** await native JSON Render readiness ([#1233](https://github.com/cacheplane/threadplane/pull/1233))
+- **website:** preserve mode and frontend history during rapid navigation ([#1238](https://github.com/cacheplane/threadplane/pull/1238))
+- **website:** work around React hydration replay bug on docs pages in dev ([#1266](https://github.com/cacheplane/threadplane/pull/1266), [#37584](https://github.com/cacheplane/threadplane/issues/37584))
 
 ## 0.2.0 (2026-09-18)
+
+### ⚠️  Breaking Changes
+
+- **langgraph:** `LangGraphClientOptions.apiKey` is removed and `defaultHeaders` is added. The SDK client is always constructed with `apiKey: null`, so the adapter never attaches a deployment key and never reads one from the environment. Send a per-user session token with `clientOptions.defaultHeaders` for LangGraph custom auth, and keep deployment credentials on an endpoint you own.
+- **cockpit-telemetry:** the LangSmith runtime target forwards its key as `clientOptions.defaultHeaders['x-api-key']` instead of `clientOptions.apiKey`.
+- **ag-ui:** native batches take precedence over compatibility events in `auto` mode. Select `legacy-command` or `mastra-command` explicitly for backends requiring command transport.
+- **ag-ui:** resume requires a pending batch and each native ID exactly once; scalar responses apply only to single-entry batches. New messages, regeneration, and client-tool continuation cannot abandon an unresolved interrupt.
+- **ag-ui:** uncertain resumes require authoritative reconciliation before retry. Durable client claims require an application-provided atomic store; backend duplicate-effect protection requires server idempotency.
 
 ### 🚀 Features
 
@@ -21,7 +267,7 @@
 - **growth:** founder install digest with one-click approve links ([#1102](https://github.com/cacheplane/threadplane/pull/1102))
 - **lifecycle:** attach the whitepaper PDF to the fulfillment email ([#1092](https://github.com/cacheplane/threadplane/pull/1092))
 - **sdk:** report a development session when an integration is created ([#1101](https://github.com/cacheplane/threadplane/pull/1101))
-- **website:** the reliability band becomes a preflight checklist ([#1067](https://github.com/cacheplane/threadplane/pull/1067), [#1058](https://github.com/cacheplane/threadplane/issues/1058), [#181818](https://github.com/cacheplane/threadplane/issues/181818), [#0](https://github.com/cacheplane/threadplane/issues/0), [#15253](https://github.com/cacheplane/threadplane/issues/15253))
+- **website:** the reliability band becomes a preflight checklist ([#1067](https://github.com/cacheplane/threadplane/pull/1067), [#1058](https://github.com/cacheplane/threadplane/issues/1058))
 - **website:** the open-source strip becomes the Fork us band ([#1073](https://github.com/cacheplane/threadplane/pull/1073))
 - **website:** five-beat interactive homepage stage ([#1075](https://github.com/cacheplane/threadplane/pull/1075))
 - **website:** the compatibility band becomes an airport diagram ([#1080](https://github.com/cacheplane/threadplane/pull/1080))
@@ -30,6 +276,7 @@
 - **website:** rebuild the navbar as four triggers with hover panels, a transparent hero surface, and a mobile drill-in stack ([#1083](https://github.com/cacheplane/threadplane/pull/1083), [#1084](https://github.com/cacheplane/threadplane/issues/1084))
 - **website:** homepage sequencing, plate trim, and diagram scaling ([#1089](https://github.com/cacheplane/threadplane/pull/1089), [#1067](https://github.com/cacheplane/threadplane/issues/1067))
 - **website:** the trust band keeps only third-party proof, and a No-runtime band lands after the architecture diagram ([#1096](https://github.com/cacheplane/threadplane/pull/1096), [#8](https://github.com/cacheplane/threadplane/issues/8), [#11](https://github.com/cacheplane/threadplane/issues/11))
+- **ag-ui:** expose complete interrupt sessions, optional atomic persistence and authoritative recovery, and provider lifetime cleanup.
 
 ### 🩹 Fixes
 
@@ -43,29 +290,12 @@
 - **tsconfig:** stop four library tsconfigs from shadowing the workspace baseUrl ([#1071](https://github.com/cacheplane/threadplane/pull/1071))
 - **website:** keep the heading fragment on a hard-loaded docs deep link ([#1079](https://github.com/cacheplane/threadplane/pull/1079))
 - **website:** bridge the dead zone between a nav trigger and its panel ([#1087](https://github.com/cacheplane/threadplane/pull/1087))
+- **langgraph:** retain null-payload resume commands and combined message/state input for intentional retry without reusing an aborted signal.
+- **ag-ui:** retain exact resume decisions, roll failed state back to committed boundaries, and reject stale callbacks and concurrent recovery actions.
 
 ### 🔥 Performance
 
 - **chat:** parse cumulative A2UI arguments incrementally ([#1078](https://github.com/cacheplane/threadplane/pull/1078))
-
-## Unreleased
-
-### Features
-
-- **ag-ui:** expose complete interrupt sessions, optional atomic persistence and authoritative recovery, and provider lifetime cleanup.
-
-### Fixes
-
-- **langgraph:** retain null-payload resume commands and combined message/state input for intentional retry without reusing an aborted signal.
-- **ag-ui:** retain exact resume decisions, roll failed state back to committed boundaries, and reject stale callbacks and concurrent recovery actions.
-
-### Breaking changes
-
-- **langgraph:** `LangGraphClientOptions.apiKey` is removed and `defaultHeaders` is added. The SDK client is always constructed with `apiKey: null`, so the adapter never attaches a deployment key and never reads one from the environment. Send a per-user session token with `clientOptions.defaultHeaders` for LangGraph custom auth, and keep deployment credentials on an endpoint you own.
-- **cockpit-telemetry:** the LangSmith runtime target forwards its key as `clientOptions.defaultHeaders['x-api-key']` instead of `clientOptions.apiKey`.
-- **ag-ui:** native batches take precedence over compatibility events in `auto` mode. Select `legacy-command` or `mastra-command` explicitly for backends requiring command transport.
-- **ag-ui:** resume requires a pending batch and each native ID exactly once; scalar responses apply only to single-entry batches. New messages, regeneration, and client-tool continuation cannot abandon an unresolved interrupt.
-- **ag-ui:** uncertain resumes require authoritative reconciliation before retry. Durable client claims require an application-provided atomic store; backend duplicate-effect protection requires server idempotency.
 
 ## 0.1.0 (2026-09-08)
 

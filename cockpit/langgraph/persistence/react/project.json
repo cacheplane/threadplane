@@ -1,0 +1,41 @@
+{
+  "name": "cockpit-langgraph-persistence-react",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "cockpit/langgraph/persistence/react/src",
+  "projectType": "application",
+  "tags": ["scope:cockpit-examples", "scope:cockpit-e2e", "framework:react"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [
+        {
+          "target": "build",
+          "projects": ["core", "content", "react"]
+        }
+      ],
+      "outputs": ["{workspaceRoot}/dist/cockpit/langgraph/persistence/react"],
+      "options": {
+        "command": "node scripts/react-cockpit/build.mjs persistence"
+      }
+    },
+    "test": {
+      "executor": "@nx/vitest:test",
+      "options": {
+        "configFile": "cockpit/langgraph/persistence/react/vite.config.mts"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "e2e": {
+      "executor": "@nx/playwright:playwright",
+      "cache": false,
+      "dependsOn": ["build"],
+      "options": {
+        "config": "cockpit/langgraph/persistence/react/e2e/playwright.config.ts",
+        "skipInstall": true
+      }
+    }
+  }
+}

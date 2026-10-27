@@ -1,5 +1,12 @@
 # Installed native runtime consumers
 
+Private session-owned SDK streams and same-run joins request canonical checkpoint
+events, including ordinary submits, resumes and tool continuations. Supplied
+custom transports and legacy transport defaults keep their existing behavior.
+Exact-run failures and uncertainty still prevent successful completion. Unsaved
+title and schema callbacks remain noncanonical; admitting their data into an
+application still requires separate application work.
+
 ## Reasoning projection
 
 Both main native views expose plain text from the real snapshot's readonly

@@ -15,15 +15,24 @@ import { mirrorDestination } from './source-policy.mjs';
 import { startProxy } from './proxy.mjs';
 
 export const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
-function selection(framework) {
+function selection(framework, profile) {
   assert.ok(
     framework === 'react' || framework === 'angular',
     'Unknown retained framework'
   );
+  assert.equal(
+    profile,
+    framework === 'react' ? 'react-native-a2ui-langgraph' : 'angular-langgraph',
+    'Explicit native retained profile required'
+  );
   return {
     framework,
+    profile,
     opposite: framework === 'react' ? 'angular' : 'react',
-    locals: ['content', 'core', 'langgraph', framework]
+    locals: (framework === 'react'
+      ? ['a2ui', 'content', 'core', 'langgraph', 'react']
+      : ['content', 'core', 'langgraph', 'angular']
+    )
       .map((name) => '@threadplane/' + name)
       .sort(),
     tools:
@@ -127,6 +136,7 @@ function selectedInputs(p, selected) {
       /^(?:package(?:-lock)?\.json|nx\.json|tsconfig[^/]*\.json)$/.test(path) ||
       [
         'libs/core/',
+        'libs/a2ui/',
         'libs/content/',
         `libs/${framework}/`,
         'libs/langgraph/',
@@ -141,6 +151,8 @@ function selectedInputs(p, selected) {
         'examples/chat/native/tooling/',
       ].some((prefix) => path.startsWith(prefix)) ||
       path === 'examples/chat/native/tsconfig.test.json' ||
+      (framework === 'react' &&
+        path === 'examples/chat/native/tsconfig.test.react.json') ||
       path === 'libs/design-tokens/src/lib/tokens.css';
     assert.ok(
       foundation || (!buildOnly && authored),
@@ -167,8 +179,13 @@ function selectedInputs(p, selected) {
     );
   for (const path of [entry, ...configs, 'shared/browser-config.json'])
     assert.ok(p.copied[path], 'Selected entry/config required: ' + path);
-  const consumerPath = (path) => {
+  const consumerPath = (path, runtime = false) => {
     localPath(path);
+    assert.notEqual(
+      path,
+      'react/src/application-fixture.ts',
+      'Test support fixture must not enter retained compiler or runtime inputs'
+    );
     assert.ok(
       p.copied[path] || path.startsWith('node_modules/'),
       'Input outside selected consumer framework: ' + path
@@ -180,18 +197,26 @@ function selectedInputs(p, selected) {
         ),
         'Unknown selected local package input: ' + path
       );
+    if (path.startsWith('node_modules/@threadplane/a2ui/'))
+      assert.ok(
+        framework === 'react' && !runtime && path.endsWith('.d.ts'),
+        'Protocol declarations only; protocol runtime forbidden'
+      );
     const forbidden =
       framework === 'angular'
         ? /^node_modules\/(?:react(?:-dom)?\/|@types\/react(?:-dom)?\/|@threadplane\/(?:react|chat|telemetry|render|a2ui|ag-ui)\/|@threadplane\/langgraph\/(?:fesm\d*|esm\d*|types)\/)/
-        : /^node_modules\/(?:@angular\/|@threadplane\/(?:angular|chat|telemetry|render|a2ui|ag-ui)\/|@threadplane\/langgraph\/(?:fesm\d*|esm\d*|types)\/)/;
+        : /^node_modules\/(?:@angular\/|@threadplane\/(?:angular|chat|telemetry|render|ag-ui)\/|@threadplane\/langgraph\/(?:fesm\d*|esm\d*|types)\/)/;
     assert.doesNotMatch(
       path,
       forbidden,
       'Forbidden selected framework input: ' + opposite
     );
   };
-  for (const map of [p.compiler.inputs, p.bundler.inputs])
-    for (const path of Object.keys(recordMap(map))) consumerPath(path);
+  for (const [map, runtime] of [
+    [p.compiler.inputs, false],
+    [p.bundler.inputs, true],
+  ])
+    for (const path of Object.keys(recordMap(map))) consumerPath(path, runtime);
   assert.ok(p.compiler.inputs[entry], 'Selected compiler entry required');
   assert.ok(p.bundler.inputs[entry], 'Selected runtime entry required');
   const projection =
@@ -205,10 +230,53 @@ function selectedInputs(p, selected) {
     'Installed message projection runtime required'
   );
   if (framework === 'react') {
+    for (const path of [
+      'react/src/application.ts',
+      'react/src/a2ui-message-content.ts',
+      'react/src/a2ui-trip-catalog.ts',
+    ]) {
+      const digest = p.inputs['examples/chat/native/' + path];
+      assert.ok(digest, 'Production React source module required: ' + path);
+      for (const map of [p.copied, p.compiler.inputs, p.bundler.inputs])
+        assert.equal(
+          map[path],
+          digest,
+          'Production React module hash required: ' + path
+        );
+    }
+    const raw = 'node_modules/@threadplane/content/src/a2ui/create-surfaces';
+    assert.ok(
+      p.compiler.inputs[raw + '.d.ts'],
+      'Installed A2UI owner declarations required'
+    );
+    assert.ok(
+      p.bundler.inputs[raw + '.js'],
+      'Installed A2UI owner runtime required'
+    );
+    assert.ok(
+      Object.keys(p.compiler.inputs).some(
+        (path) =>
+          path.startsWith('node_modules/@threadplane/a2ui/') &&
+          path.endsWith('.d.ts')
+      ),
+      'Installed protocol declarations required'
+    );
+    const render = 'node_modules/@threadplane/react/src/render/render-spec';
+    assert.ok(
+      p.compiler.inputs[render + '.d.ts'],
+      'Installed RenderSpec declarations required'
+    );
+    assert.ok(
+      p.bundler.inputs[render + '.js'],
+      'Installed RenderSpec runtime required'
+    );
     for (const [name, title] of [
       ['message-list', 'MessageList'],
       ['reasoning', 'Reasoning'],
       ['approval-card', 'ApprovalCard'],
+      ['message-actions', 'MessageActions'],
+      ['citations', 'Citations'],
+      ['text-transcript', 'TextTranscript'],
     ]) {
       const list = 'node_modules/@threadplane/react/src/chat/' + name;
       assert.ok(
@@ -329,12 +397,12 @@ function angularEvidence(p, consumerPath) {
 }
 function expectedConsumer(record) {
   const p = record.provenance;
-  const selected = selection(record.framework);
+  const selected = selection(record.framework, record.profile);
   const consumerPath = selectedInputs(p, selected);
   assert.deepEqual(
     Object.keys(p.installation.artifacts).sort(),
     selected.locals,
-    'Exactly four local artifacts required'
+    'Exact selected local artifacts required'
   );
   const artifacts = {};
   for (const [name, files] of Object.entries(p.installation.artifacts)) {
@@ -360,10 +428,11 @@ function expectedConsumer(record) {
 }
 function expectedFiles(record) {
   assert.equal(record.version, 2, 'Unsupported retained build');
-  const selected = selection(record.framework),
+  const selected = selection(record.framework, record.profile),
     { locals, tools } = selected;
   const p = record.provenance;
   assert.equal(p.framework, record.framework, 'Retained framework mismatch');
+  assert.equal(p.profile, record.profile, 'Retained profile mismatch');
   assert.equal(
     p.configuration,
     'production',
@@ -475,16 +544,18 @@ export function captureRetainedBuild(directory, context) {
     assert.deepEqual(provenance.compiler, context.compilation);
     assert.deepEqual(provenance.bundler.inputs, bundle.inputs);
     assert.deepEqual(provenance.packages, packages.hashes);
-    const selected = selection(provenance.framework),
+    const selected = selection(provenance.framework, provenance.profile),
       { locals } = selected;
     assert.equal(
       context.framework,
       selected.framework,
       'Capture framework mismatch'
     );
+    assert.equal(context.profile, selected.profile, 'Capture profile mismatch');
     const record = {
       version: 2,
       framework: selected.framework,
+      profile: selected.profile,
       provenance: structuredClone(provenance),
       archives: {},
       tools: merge(
@@ -583,7 +654,7 @@ export function readRetainedBuild(directory) {
   assertInstalledArtifacts(consumer, record.provenance.installation.artifacts);
   const lock = JSON.parse(file(consumer, 'package-lock.json'));
   const manifest = JSON.parse(file(consumer, 'package.json'));
-  const { locals } = selection(record.framework);
+  const { locals } = selection(record.framework, record.profile);
   assert.deepEqual(
     Object.keys(manifest.dependencies)
       .filter((name) => name.startsWith('@threadplane/'))

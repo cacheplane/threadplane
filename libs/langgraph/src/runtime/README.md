@@ -119,6 +119,60 @@ tip. `checkStatus()` does not repair a branch: ready is a no-op; active, dispose
 or uncertain states reject. Explicit reconnect can join a retained physical run
 when sufficient run/cursor evidence exists. It never submits another run.
 
+## Interruptions and recovery
+
+A stream that closes without this runtime's own terminal evidence settles as
+`interrupted`, never as a completed turn, and the error offers only the recovery
+the session can prove is safe. The runtime never emits `recovery: 'retry'`: a
+thrown iterator cannot show that a request was undispatched (a browser
+`TypeError: fetch failed` carries no cause, and a reset after the server accepted
+the request looks identical to one that never left), so a pre-response failure is
+an `interrupted` error too, not a retryable `connection` one.
+
+`recovery: 'check'` is offered exactly when `transport.getHistory` exists for an
+ordinary submit, with or without a captured run id, and `checkStatus()` is exposed
+on the same condition. The check is read-only: with a captured run id it inspects
+the exact run first (`getRunStatus`), then reads this turn's saved checkpoint and
+correlates it by the submitted user message. An in-flight run leaves the snapshot
+untouched so the check can be repeated; a failed run is reported as such and
+withdraws every recovery; a committed answer or a pending interrupt settles the
+turn. Close-time settlement performs the same read once, automatically, unless the
+exact run is known to be still in flight; a stream that throws instead of closing
+gets that same single read, and a conclusive answer settles the attempt itself. Fork attempts and tool follow-ups after
+a resume are never reconciled from history and report `recovery: 'none'`.
+
+A first-group resume is reconciled too, anchored on the turn's existing user
+message rather than a new one. Its evidence is activity the turn did not have
+when the decision was sent (message ids outside the captured turn), or a pause
+the thread did not have (a different interrupt id or payload). A different or
+recurring pause after new activity settles as paused on that pause; new activity
+on an idle thread, or a newer user turn, settles as success. The same pause with
+nothing new is inconclusive: the decision may never have landed, or may still be
+executing before its first checkpoint, so the runtime neither restores the pause
+nor replays the decision. An uncertain resume does not strand the user: `load()`
+and `resume()` withdraw a check owned by an earlier resume (one owned by an
+uncertain submit still blocks them), reloading restores the still-pending pause,
+and the decision can be sent again.
+
+An exact `interrupted` run status is ambiguous: the pause event may have been lost
+when the stream dropped, or a newer run may have cancelled this one. The runtime
+disambiguates through history before settling; pending interrupts for this turn
+mean paused, anything else is the failed run.
+
+`snapshot.reconnect` and `session.reconnect()` are LangGraph-specific extensions,
+not part of the core contract: they join the retained physical run from its last
+cursor when `joinStream` and `getRunStatus` exist and the run is not confirmed
+ended. Portable callers use `checkStatus()`; a resolved check clears the retained
+run so the two surfaces cannot disagree.
+
+Errors are plain frozen snapshots (`AgentError` from `@threadplane/core`), not
+`Error` instances: `instanceof Error` and `instanceof` the `@threadplane/chat`
+`AgentError` class are both false. Read `kind`, `recovery` and `detail` instead.
+The interruption copy is a bounded duplicate of `AGENT_RECOVERY_MESSAGES` and
+`AGENT_RECOVERY_DETAILS` from `@threadplane/chat`, which this neutral graph cannot
+import; `runtime-recovery-copy.spec.ts` under the Angular test target fails when
+they drift.
+
 ## Dynamic pauses
 
 Branch resume reads the exact retained pause before sending a decision. Task and

@@ -1,5 +1,5 @@
 // libs/chat/src/lib/compositions/chat-popup/chat-popup.component.ts
-import { Component, ChangeDetectionStrategy, input, model, DestroyRef, inject, DOCUMENT, effect } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, model, DestroyRef, inject, DOCUMENT, effect, output } from '@angular/core';
 import type { Agent } from '../../agent';
 import type { ViewRegistry } from '@threadplane/render';
 import type { ClientToolRegistry } from '../../client-tools/tool-def';
@@ -78,6 +78,9 @@ import { CHAT_HOST_TOKENS, ensureChatRootStyles } from '../../styles/chat-tokens
         [showModelPicker]="showModelPicker()"
         [selectedModel]="selectedModel()"
         (selectedModelChange)="selectedModel.set($event)"
+        (regenerate)="regenerate.emit()"
+        (rate)="rate.emit($event)"
+        (messageCopy)="messageCopy.emit($event)"
       >
         <ng-content select="[chatHeader]" chatHeader />
         <ng-content select="[chatWelcomeSuggestions]" chatWelcomeSuggestions />
@@ -115,6 +118,12 @@ export class ChatPopupComponent {
   readonly shortcut = input<string | null>('k');
   /** Close the popup on Escape (default true). */
   readonly closeOnEscape = input<boolean>(true);
+  /** Emitted when the user clicks the regenerate button on an assistant message. */
+  readonly regenerate = output<void>();
+  /** Emitted when the user rates an assistant message. */
+  readonly rate = output<{ messageIndex: number; rating: 'up' | 'down' }>();
+  /** Emitted when the user copies an assistant message. */
+  readonly messageCopy = output<{ messageIndex: number; content: string }>();
 
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);

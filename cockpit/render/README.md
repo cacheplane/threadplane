@@ -1,20 +1,22 @@
-# cockpit/render — aimock e2e: not applicable
+# Render cockpit browser coverage
 
-The 6 render capability demos (`spec-rendering`, `element-rendering`, `state-management`, `registry`, `repeat-loops`, `computed-functions`) intentionally ship **without** aimock-driven Playwright e2e suites. The cockpit aimock pattern drives demos by typing a prompt into a `<chat-input>` and asserting on the rendered conversation, but render demos have a fundamentally different shape:
+All six render capabilities (`spec-rendering`, `element-rendering`, `state-management`, `registry`, `repeat-loops`, `computed-functions`) have direct Playwright browser coverage in both Angular and React, configured by each frontend's Nx `e2e` target.
 
-- **No chat-input**: render demos use a spec picker (hardcoded sample specs in `app/specs.ts`) instead of a chat surface.
-- **No LLM backend wiring at the UI**: each cap's python backend exists for the LangGraph manifest, but the Angular demo uses an in-process `StreamingSimulator` (see `cockpit/render/shared/streaming-simulator.ts`) to stream the chosen spec locally rather than calling the backend.
-- **No chat-message bubbles**: the cap renders directly via `<render-spec>` / `<render-element>` primitives from `@threadplane/render`.
+The UI uses a spec picker and local samples, with no chat prompt or LLM-driven assertions. Angular streams the selected spec through the shared [StreamingSimulator](./shared/streaming-simulator.ts); React uses local [playback](./repeat-loops/react/src/playback.ts). For example, the Repeat Loops samples live in [Angular specs](./repeat-loops/angular/src/app/specs.ts) and [React specs](./repeat-loops/react/src/specs.ts).
 
-The right testing approach here is **direct component testing of the render pipeline**:
-- Mount the `RenderSpecComponent` with a fixture spec.
-- Assert the rendered DOM matches expectations.
-- Exercise the StreamingSimulator's partial-state behavior in unit tests.
+Local UI playback does not remove the existing Angular browser harness prerequisites: all six Angular global setups call the [shared setup factory](../../libs/e2e-harness/src/global-setup-factory.ts), which unconditionally starts aimock and the Python LangGraph dev service before the Angular dev server. See the Repeat Loops [Angular setup](./repeat-loops/angular/e2e/global-setup-impl.ts) and [Playwright config](./repeat-loops/angular/e2e/playwright.config.ts). React e2e instead serves the installed static build: its [Nx target](./repeat-loops/react/project.json) depends on `build`, and its [Playwright config](./repeat-loops/react/e2e/playwright.config.ts) starts the [local static server](../../scripts/react-cockpit/serve.mjs).
 
-Existing coverage:
-- `cockpit/render/shared/streaming-simulator.spec.ts` — vitest unit tests.
-- `cockpit/render/matrix.spec.ts` + `cockpit/render/footprint.spec.ts` — vitest structural checks.
+Coverage varies by suite. The [Angular Repeat Loops suite](./repeat-loops/angular/e2e/r-repeat-loops.spec.ts) checks the picker, timeline, JSON pane and row addition. The [React Repeat Loops suite](./repeat-loops/react/e2e/repeat-loops.spec.ts) checks row identity across list edits, source preservation, capacity and empty recovery, playback, narrow layout and cleanup. These establish bounded browser behavior, not equal test depth across frameworks or full render parity.
 
-If a render-specific e2e harness is desired in the future (visual diffs, interactive scrubbing), it would be a separate cycle. The aimock pattern from cockpit-chat / cockpit-langgraph caps does not fit.
+Existing unit and structural coverage complements the browser suites:
 
-This file is the deliberate "no e2e" marker for the render caps. It is the only one left: `c-debug` carried the same marker until it gained a real aimock suite at `cockpit/chat/debug/angular/e2e/`.
+- [StreamingSimulator unit tests](./shared/streaming-simulator.spec.ts) cover local Angular streaming behavior.
+- [React playback unit tests](./repeat-loops/react/src/playback.spec.ts) cover the local playback owner.
+- [Render matrix](./matrix.spec.ts) and [footprint](./footprint.spec.ts) tests provide structural checks.
+
+Run a configured suite from the repository root after installing the repository dependencies and Chromium, with the Angular harness tools available for Angular runs. The [Angular project](./repeat-loops/angular/project.json) and React target above define these exact commands and their prerequisites:
+
+```sh
+npx nx e2e cockpit-render-repeat-loops-react --skip-nx-cache
+npx nx e2e cockpit-render-repeat-loops-angular --skip-nx-cache
+```

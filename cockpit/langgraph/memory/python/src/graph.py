@@ -43,7 +43,8 @@ def build_memory_graph():
     keeping the agent's knowledge up to date without blocking the reply.
     """
     llm = ChatOpenAI(model="gpt-5-mini", streaming=True)
-    extractor_llm = ChatOpenAI(model="gpt-5-mini", streaming=False)
+    # streaming=False alone does not exclude output from LangGraph messages mode.
+    extractor_llm = ChatOpenAI(model="gpt-5-mini", streaming=False, tags=["nostream"])
 
     # region generate
     async def generate(state: MemoryState) -> dict:

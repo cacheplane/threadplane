@@ -2,6 +2,9 @@ import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 
 import type { SqlExecutor, SqlTransaction } from './database.ts';
 import { stopContact as canonicalStopContact } from './stops.ts';
+import { loadInboxConfig } from './inbox-replies.ts';
+import { readInboxRecoveryPaused } from './inbox-recovery.ts';
+import { legacyMailboxRecoveryGuardSql } from './receiving-control.ts';
 
 const BRIAN_EMAIL = 'brian@threadplane.ai';
 const MAX_CLOCK_SKEW_MS = 5 * 60 * 1_000;
@@ -666,6 +669,7 @@ export async function isGoogleMailboxRecoveryPaused(
        select 1
        from growth_activity required
        where required.kind = 'mailbox.recovery_required'
+         and ${legacyMailboxRecoveryGuardSql()}
          and not exists (
            select 1
            from growth_activity completed
@@ -674,8 +678,15 @@ export async function isGoogleMailboxRecoveryPaused(
          )
      ) as paused`
   );
-  return result.rows[0]?.paused === true;
+  return (
+    result.rows[0]?.paused === true ||
+    (loadInboxConfig().enabled &&
+      (await readInboxRecoveryPaused(executor, new Date())))
+  );
 }
+
+/** Reports recovery pauses across receiving and the legacy retirement state. */
+export const isMailboxRecoveryPaused = isGoogleMailboxRecoveryPaused;
 
 function transactionExecutor(transaction: SqlTransaction): SqlExecutor {
   return {

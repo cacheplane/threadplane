@@ -1,0 +1,54 @@
+{
+  "name": "cockpit-chat-timeline-react",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "cockpit/chat/timeline/react/src",
+  "projectType": "application",
+  "tags": ["scope:cockpit-examples", "scope:cockpit-e2e", "framework:react"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [
+        {
+          "target": "build",
+          "projects": ["core", "content", "react"]
+        }
+      ],
+      "outputs": ["{workspaceRoot}/dist/cockpit/chat/timeline/react"],
+      "options": {
+        "command": "node scripts/react-cockpit/build.mjs chat-timeline"
+      }
+    },
+    "test": {
+      "executor": "@nx/vitest:test",
+      "options": {
+        "configFile": "cockpit/chat/timeline/react/vite.config.mts"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "e2e": {
+      "executor": "@nx/playwright:playwright",
+      "cache": false,
+      "dependsOn": ["build", "fixture-test"],
+      "options": {
+        "config": "cockpit/chat/timeline/react/e2e/playwright.config.ts",
+        "skipInstall": true
+      }
+    },
+    "fixture-test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [
+        {
+          "target": "test",
+          "projects": ["cockpit-chat-timeline-python"]
+        }
+      ],
+      "options": {
+        "command": "node --test scripts/react-cockpit/chat-timeline-fixture.spec.mjs"
+      }
+    }
+  }
+}

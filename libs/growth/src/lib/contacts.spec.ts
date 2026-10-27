@@ -51,7 +51,9 @@ function executorWith(
       const marker = /\/\* growth:([a-z-]+) \*\//u.exec(sql)?.[1];
       const handler = marker ? handlers[marker] : undefined;
       const defaultResult =
-        marker === 'read-key-versions' || marker === 'read-event-key'
+        marker === 'read-key-versions' ||
+        marker === 'read-event-key' ||
+        marker === 'scrub-reply-receipts'
           ? { rows: [] }
           : marker === 'insert-form-outreach-approved'
           ? { rows: [{ event_key: 'form:outreach-approved:test' }] }
@@ -1289,6 +1291,11 @@ describe('deleteContact', () => {
     expect(result.unlinkedProjectIds).toEqual(['project-id']);
     expect(result.deletedArtifactIds).toEqual(['artifact-id']);
     expect(
+      harness.calls.find(({ marker }) => marker === 'scrub-reply-receipts')?.sql
+    ).toMatch(
+      /reference_ids = null[\s\S]*rfc_message_id = null[\s\S]*contact_id = null/u
+    );
+    expect(
       harness.calls.find(({ marker }) => marker === 'cancel-and-scrub-jobs')
         ?.sql
     ).toMatch(/project_id\s*=\s*null/u);
@@ -1327,6 +1334,7 @@ describe('deleteContact', () => {
     expect(harness.calls.map(({ marker }) => marker)).toEqual([
       'lock-contact',
       'insert-activity',
+      'scrub-reply-receipts',
       'cancel-and-scrub-jobs',
       'delete-artifacts',
       'unlink-projects',

@@ -5,16 +5,35 @@ import { join } from 'node:path';
 import test from 'node:test';
 import * as runtime from './runtime-consumer.mjs';
 
+test('installed React contract includes owned JSON types without adding them to core', (t) => {
+  for (const kind of ['react', 'core']) {
+    const consumer = mkdtempSync(join(tmpdir(), 'json-type-contract-'));
+    t.after(() => rmSync(consumer, { recursive: true, force: true }));
+    runtime.prepareInstalledTypes(process.cwd(), consumer, kind);
+    const config = JSON.parse(readFileSync(join(consumer, 'tsconfig.contracts.json'), 'utf8'));
+    assert.equal(config.files.includes('json-types.ts'), kind === 'react');
+    assert.equal(existsSync(join(consumer, 'json-types.ts')), kind === 'react');
+    assert.equal(config.files.includes('render-types.tsx'), kind === 'react');
+    assert.equal(existsSync(join(consumer, 'render-types.tsx')), kind === 'react');
+  }
+});
+
 test('shared view preparation copies the complete views without composing a private backend or declaration', (t) => {
   const consumer = mkdtempSync(join(tmpdir(), 'candidate-view-copy-'));
   t.after(() => rmSync(consumer, { recursive: true, force: true }));
   runtime.prepareRuntimeViews(process.cwd(), consumer, 'react');
-  for (const name of ['main.tsx', 'react-app.tsx', 'react-threads.tsx', 'react-checkpoints.tsx', 'scenarios.ts', 'thread-owner.ts', 'tools.ts', 'review.css', 'vite.config.mts'])
+  for (const name of ['main.tsx', 'react-app.tsx', 'react-threads.tsx', 'react-checkpoints.tsx', 'react-overflow-menu.tsx', 'scenarios.ts', 'thread-owner.ts', 'tools.ts', 'review.css', 'vite.config.mts'])
     assert.equal(existsSync(join(consumer, name)), true, `shared ${name}`);
   assert.equal(existsSync(join(consumer, 'runtime-entry.js')), false, 'no private bundle');
   assert.equal(existsSync(join(consumer, 'runtime-entry.d.ts')), false, 'no surrogate declarations');
   assert.match(readFileSync(join(consumer, 'main.tsx'), 'utf8'), /checkpoints/);
   assert.match(readFileSync(join(consumer, 'main.tsx'), 'utf8'), /threads/);
+  const contextView = readFileSync(join(consumer, 'react-overflow-menu.tsx'), 'utf8');
+  assert.equal(contextView, readFileSync('fixtures/react-parity/runtime/react-overflow-menu.tsx', 'utf8'));
+  assert.match(contextView, /<ThreadList/);
+  assert.match(contextView, /onContextMenu=/);
+  assert.match(contextView, /returnFocusTo=/);
+  assert.match(contextView, /anchorPoint=/);
 });
 
 const versions = { react: '19.2.4', 'react-dom': '19.2.4', '@types/react': '19.2.14', '@types/react-dom': '19.2.3', vite: '7.3.1', typescript: '5.9.3' };
@@ -31,7 +50,7 @@ test('React consumer pins framework and compiler tooling from the actual lock', 
 test('tool trace requires a real serialized handler result before returning the final answer', () => {
   assert.equal(typeof runtime.runtimeResponse, 'function');
   const catalog = [{ name: 'weather', description: 'Current weather' }, { name: 'count', description: 'Count values' }];
-  const submit = { ...runSettings, assistant_id: 'fixture-assistant', input: { ...applicationState, messages: [{ id: 'user', type: 'human', content: 'Tool' }], client_tools: catalog }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom'], stream_subgraphs: true, stream_resumable: true, on_disconnect: 'continue' };
+  const submit = { ...runSettings, assistant_id: 'fixture-assistant', input: { ...applicationState, messages: [{ id: 'user', type: 'human', content: 'Tool' }], client_tools: catalog }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom', 'checkpoints'], stream_subgraphs: true, stream_resumable: true, on_disconnect: 'continue' };
   assert.match(runtime.runtimeResponse(submit), /call-weather/);
   const continuation = { ...submit, input: { client_tools: catalog, messages: [{ id: 'client-tool-result-call-weather', type: 'tool', role: 'tool', tool_call_id: 'call-weather', content: '{"city":"Paris","temperature":20}' }] } };
   assert.match(runtime.runtimeResponse(continuation), /20 degrees/);
@@ -44,7 +63,7 @@ test('tool trace requires a real serialized handler result before returning the 
 });
 
 test('successive submitted turns receive distinct server message IDs', () => {
-  const body = (id) => ({ assistant_id: 'fixture-assistant', input: { messages: [{ id, type: 'human', content: 'Send' }], client_tools: [{ name: 'weather', description: 'Current weather' }, { name: 'count', description: 'Count values' }] }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom'], stream_subgraphs: true, stream_resumable: true, on_disconnect: 'continue' });
+  const body = (id) => ({ assistant_id: 'fixture-assistant', input: { messages: [{ id, type: 'human', content: 'Send' }], client_tools: [{ name: 'weather', description: 'Current weather' }, { name: 'count', description: 'Count values' }] }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom', 'checkpoints'], stream_subgraphs: true, stream_resumable: true, on_disconnect: 'continue' });
   const first = runtime.runtimeResponse(body('first'));
   const second = runtime.runtimeResponse(body('second'));
   assert.notEqual(first, second);
@@ -52,7 +71,7 @@ test('successive submitted turns receive distinct server message IDs', () => {
   assert.match(second, /Hello/);
 });
 
-const heldBody = { assistant_id: 'fixture-assistant', input: { messages: [{ id: 'held-user', type: 'human', content: 'Hold' }], client_tools: [{ name: 'weather', description: 'Current weather' }, { name: 'count', description: 'Count values' }] }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom'], stream_subgraphs: true, stream_resumable: true, on_disconnect: 'continue' };
+const heldBody = { assistant_id: 'fixture-assistant', input: { messages: [{ id: 'held-user', type: 'human', content: 'Hold' }], client_tools: [{ name: 'weather', description: 'Current weather' }, { name: 'count', description: 'Count values' }] }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom', 'checkpoints'], stream_subgraphs: true, stream_resumable: true, on_disconnect: 'continue' };
 
 test('execution settings are required for configured submits, tool continuations and explicit resumes only', () => {
   const messages = [
@@ -136,7 +155,7 @@ test('Drop reconnect joins the exact run and cursor, then confirms status withou
     assert.match(initial, /event: values/);
     const runUrl = `${server.url}/api/threads/fixture-thread/runs/drop-run`;
     assert.deepEqual(await (await fetch(runUrl)).json(), { run_id: 'drop-run', thread_id: 'fixture-thread', status: 'running' });
-    const joined = await fetch(`${runUrl}/stream?cancel_on_disconnect=0`, { headers: { 'Last-Event-ID': '2' } });
+    const joined = await fetch(`${runUrl}/stream?${new URLSearchParams({ cancel_on_disconnect: '0', stream_mode: JSON.stringify(['values', 'messages-tuple', 'updates', 'custom', 'checkpoints']) })}`, { headers: { 'Last-Event-ID': '2' } });
     assert.equal(joined.status, 200);
     const suffix = await joined.text();
     assert.match(suffix, /id: 3\n/);
@@ -161,10 +180,11 @@ test('reconnect fixture rejects a wrong cursor and cannot invent a known run bef
     const created = await fetch(`${server.url}/api/threads/fixture-thread/runs/stream`, { method: 'POST', body: JSON.stringify(body) });
     assert.equal(created.status, 200);
     await created.text();
-    assert.equal((await fetch(`${runUrl}/stream?cancel_on_disconnect=0`, { headers: { 'Last-Event-ID': '1' } })).status, 500);
+    assert.equal((await fetch(`${runUrl}/stream?${new URLSearchParams({ cancel_on_disconnect: '0', stream_mode: JSON.stringify(['values', 'messages-tuple', 'updates', 'custom', 'checkpoints']) })}`, { headers: { 'Last-Event-ID': '1' } })).status, 500);
     assert.deepEqual(server.joinRequests, []);
     assert.deepEqual(server.statusRequests, []);
     assert.equal(server.errors.length, 2);
+    assert.match(server.errors[1].message, /exact committed cursor/);
   } finally { await server.close(); }
 });
 
@@ -317,6 +337,46 @@ for (const [label, route, method, body] of [
       assert.equal(response.status, 500);
       assert.deepEqual(server.historyRequests, []);
       assert.deepEqual(server.requests, []);
+      assert.equal(server.errors.length, 1);
+    } finally { await server.close(); }
+  });
+}
+
+
+test('owned runtime accepts exactly five modes and rejects otherwise valid mode or field drift', () => {
+  const stream_mode = ['values', 'messages-tuple', 'updates', 'custom', 'checkpoints'];
+  const submit = { ...heldBody, stream_mode, input: { ...heldBody.input, messages: [{ id: 'exact-five-user', type: 'human', content: 'Send' }] } };
+  const continuation = { ...submit, ...runSettings, input: { client_tools: heldBody.input.client_tools, messages: [{ id: 'client-tool-result-call-weather', type: 'tool', role: 'tool', tool_call_id: 'call-weather', content: '{"city":"Paris","temperature":20}' }] } };
+  const resume = { ...submit, ...runSettings, input: null, command: { resume: { 'final-approval': true } } };
+  for (const body of [submit, continuation, resume]) {
+    assert.doesNotThrow(() => runtime.runtimeResponse(body), 'exact owned five-mode body');
+    for (const modes of [stream_mode.slice(0, -1), [...stream_mode.slice(0, -1), 'debug'], [...stream_mode, 'debug']]) {
+      assert.throws(() => runtime.runtimeResponse({ ...body, stream_mode: modes }));
+    }
+    assert.throws(() => runtime.runtimeResponse({ ...body, extra: true }));
+  }
+});
+
+for (const [label, query] of [
+  ['missing mode', new URLSearchParams({ cancel_on_disconnect: '0', stream_mode: JSON.stringify(['values', 'messages-tuple', 'updates', 'custom']) })],
+  ['wrong mode', new URLSearchParams({ cancel_on_disconnect: '0', stream_mode: JSON.stringify(['values', 'messages-tuple', 'updates', 'custom', 'debug']) })],
+  ['extra mode', new URLSearchParams({ cancel_on_disconnect: '0', stream_mode: JSON.stringify(['values', 'messages-tuple', 'updates', 'custom', 'checkpoints', 'debug']) })],
+  ['extra field', new URLSearchParams({ cancel_on_disconnect: '0', stream_mode: JSON.stringify(['values', 'messages-tuple', 'updates', 'custom', 'checkpoints']), extra: '1' })],
+]) {
+  test(`Drop reconnect rejects ${label} before recording a join`, async () => {
+    const server = await runtime.serveRuntimeConsumer(tmpdir());
+    try {
+      const body = { ...heldBody, ...runSettings, input: { ...applicationState, ...heldBody.input, messages: [{ id: 'drop-user', type: 'human', content: 'Drop' }] } };
+      const created = await fetch(`${server.url}/api/threads/fixture-thread/runs/stream`, { method: 'POST', body: JSON.stringify(body) });
+      assert.equal(created.status, 200);
+      await created.text();
+      const runUrl = `${server.url}/api/threads/fixture-thread/runs/drop-run`;
+      assert.equal((await fetch(runUrl)).status, 200);
+      const joined = await fetch(`${runUrl}/stream?${query}`, { headers: { 'Last-Event-ID': '2' } });
+      assert.equal(joined.status, 500);
+      await joined.text();
+      assert.deepEqual(server.joinRequests, []);
+      assert.deepEqual(server.statusRequests, ['running']);
       assert.equal(server.errors.length, 1);
     } finally { await server.close(); }
   });

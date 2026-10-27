@@ -103,14 +103,14 @@ export function verifyBoundaries({ root = process.cwd(), mode = 'source', projec
     const browserEntries = mode === 'built' ? emittedEntries(manifest, './browser').map((value) => join(directory, value)) : [];
     const browserPath = (path) => project === 'telemetry' && telemetryBrowserTransition && (path.startsWith(join(directory, mode === 'source' ? 'src/browser' : 'browser') + '/') || browserEntries.includes(path));
     const visited = new Set();
-    function visit(path, rootRuntime, ancestry = [], browserTransition = false, neutralRuntime = false, legacyRuntime = false) {
-      const key = `${path}:${rootRuntime}:${browserTransition}:${neutralRuntime}:${legacyRuntime}`;
+    function visit(path, rootRuntime, ancestry = [], browserTransition = false, neutralRuntime = false, legacyRuntime = false, guardedA2ui = false) {
+      const key = `${path}:${rootRuntime}:${browserTransition}:${neutralRuntime}:${legacyRuntime}:${guardedA2ui}`;
       if (visited.has(key)) return;
       visited.add(key);
       if (!existsSync(path)) { errors.add(`${project}: unresolved ${relative(root, path)}`); return; }
       const dependencies = cache.get(path) ?? importsIn(path);
       cache.set(path, dependencies);
-      if (mode === 'source' && (neutralRuntime || legacyRuntime)) {
+      if (guardedA2ui || (mode === 'source' && (neutralRuntime || legacyRuntime))) {
         for (const diagnostic of dependencies.diagnostics) errors.add(`${project}: cannot analyze guarded dependencies ${relative(root, path)}: ${diagnostic}`);
       }
       for (const specifier of dependencies.imports) {
@@ -120,6 +120,11 @@ export function verifyBoundaries({ root = process.cwd(), mode = 'source', projec
         const targetProjects = [...new Set(targetPaths.map(projectOf).filter(Boolean))];
         const targetLocations = target ? [relative(directory, target), relative(canonical(directory), canonicalTarget)] : [];
         const trail = [...ancestry, relative(root, path), specifier].join(' -> ');
+        if (guardedA2ui && (
+          /^@threadplane\/(?:a2ui(?:\/|$)|content\/a2ui(?:\/|$)|(?:react|angular)\/a2ui(?:\/|$))/.test(specifier) ||
+          targetProjects.includes('a2ui') ||
+          targetPaths.some(value => /\/(?:dist\/)?libs\/(?:content|react|angular)\/(?:src\/)?a2ui\//.test(value.replaceAll('\\', '/')) || /\/threadplane-(?:angular|react)-a2ui\.(?:mjs|d\.ts)$/.test(value))
+        )) errors.add(`${project}: A2UI dependency reachable from guarded entry: ${trail}`);
         if (legacyRuntime && target && runtimeSourceKind(target) === 'private') errors.add(`${project}: private runtime reachable from legacy source: ${trail}`);
         const policy = { angularTransitions, rootRuntime, neutralRuntime, browserTransition: browserTransition && browserPath(path) };
         const label = neutralRuntime ? 'neutral runtime forbidden dependency' : 'forbidden dependency';
@@ -147,21 +152,37 @@ export function verifyBoundaries({ root = process.cwd(), mode = 'source', projec
         if (rootRuntime && (optional.test(specifier) || ['zod', 'katex'].includes(packageOf(specifier)) || (target && optional.test(relative(directory, target))))) errors.add(`${project}: optional/testing dependency reachable from root: ${trail}`);
         if (project === 'react' && rootRuntime && ((specifier.startsWith('@threadplane/react/') && reactFeature.test(specifier.slice('@threadplane/react/'.length))) || (target && projectOf(target) === 'react' && reactFeature.test(relative(join(directory, 'src'), target))))) errors.add(`${project}: feature dependency reachable from root: ${trail}`);
         if (['react', 'angular'].includes(project) && rootRuntime && (
-          ['@cacheplane/partial-markdown', '@cacheplane/partial-json', 'marked', 'remark-gfm', 'katex', 'shiki'].includes(packageOf(specifier)) ||
-          /^@threadplane\/(?:content\/markdown|angular\/(?:markdown|chat))(?:\/|$)/.test(specifier) ||
-          targetLocations.some(location => /(?:^|\/)(?:markdown\/|threadplane-angular-(?:markdown|chat)\.(?:mjs|d\.ts)$)/.test(location.replaceAll('\\', '/'))) ||
+          packageOf(specifier) === '@json-render/core' ||
+          ['@cacheplane/json-stream', '@cacheplane/partial-markdown', '@cacheplane/partial-json', 'marked', 'remark-gfm', 'katex', 'shiki'].includes(packageOf(specifier)) ||
+          /^@threadplane\/(?:content\/(?:markdown|json)|angular\/(?:markdown|chat))(?:\/|$)/.test(specifier) ||
+          targetLocations.some(location => /(?:^|\/)(?:(?:markdown|json)\/|threadplane-angular-(?:markdown|chat)\.(?:mjs|d\.ts)$)/.test(location.replaceAll('\\', '/'))) ||
           (project === 'angular' && targetLocations.some(location => /^(?:markdown|chat)\//.test(location.replaceAll('\\', '/'))))
         )) errors.add(`${project}: feature dependency reachable from root: ${trail}`);
         if (project === 'content' && rootRuntime && (
-          ['@cacheplane/partial-markdown', '@cacheplane/partial-json', 'marked', 'remark-gfm', 'katex', 'shiki'].includes(packageOf(specifier)) ||
-          /^@threadplane\/content\/markdown(?:\/|$)/.test(specifier) ||
-          targetLocations.some(location => /(?:^|\/)markdown(?:\/|$)/.test(location))
+          packageOf(specifier) === '@json-render/core' ||
+          ['@cacheplane/json-stream', '@cacheplane/partial-markdown', '@cacheplane/partial-json', 'marked', 'remark-gfm', 'katex', 'shiki'].includes(packageOf(specifier)) ||
+          /^@threadplane\/content\/(?:markdown|json)(?:\/|$)/.test(specifier) ||
+          targetLocations.some(location => /(?:^|\/)(?:markdown|json)(?:\/|$)/.test(location))
         )) errors.add(`${project}: content root dependency must remain behind its feature entry: ${trail}`);
-        if (target && !target.includes('/node_modules/')) visit(target, rootRuntime, [...ancestry, relative(root, path)], browserTransition && browserPath(target), neutralRuntime, legacyRuntime);
+        if (target && !target.includes('/node_modules/')) visit(target, rootRuntime, [...ancestry, relative(root, path)], browserTransition && browserPath(target), neutralRuntime, legacyRuntime, guardedA2ui);
         else if (!target && (specifier.startsWith('.') || specifier.startsWith('@threadplane/'))) errors.add(`${project}: unresolved dependency ${trail}`);
       }
     }
     for (const path of allFiles) visit(path, false, [], browserPath(path), false, mode === 'source' && (project === 'angular' || angularTransitions.includes(project)) && runtimeSourceKind(path) === undefined);
+    if (['content', 'react', 'angular'].includes(project)) {
+      const features = mode === 'built'
+        ? ['./chat', './markdown'].flatMap(entry => emittedEntries(manifest, entry).map(value => join(directory, value)))
+        : ['chat', 'markdown'].map(entry => join(directory, project === 'angular' ? `${entry}/src/public-api.ts` : `src/${entry}/index.ts`));
+      for (const path of [...roots, ...features.filter(existsSync)]) visit(path, false, [], false, false, false, true);
+    }
+    // The optional state owner is neutral in both implementation and declarations.
+    // Carry both guards through wrappers, aliases and type-only dependencies.
+    if (project === 'content') {
+      const owners = mode === 'built'
+        ? emittedEntries(manifest, './render-state').map(value => join(directory, value))
+        : [join(directory, 'src/render-state/index.ts')].filter(existsSync);
+      for (const path of owners) visit(path, false, [], false, true, false, true);
+    }
     if (mode === 'source' && ['langgraph', 'ag-ui'].includes(project)) {
       const neutralRoots = [
         ...filesIn(join(directory, 'src/runtime')).filter((path) => !optional.test(relative(directory, path))),

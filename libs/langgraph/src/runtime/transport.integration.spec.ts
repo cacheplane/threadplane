@@ -228,7 +228,13 @@ describe('neutral real SDK transport', () => {
       });
       expect(bodies[0]).toMatchObject({
         assistant_id: 'a',
-        stream_mode: ['values', 'messages-tuple', 'updates', 'custom'],
+        stream_mode: [
+          'values',
+          'messages-tuple',
+          'updates',
+          'custom',
+          'checkpoints',
+        ],
         stream_subgraphs: true,
         stream_resumable: true,
         on_disconnect: 'continue',
@@ -254,7 +260,9 @@ describe('neutral real SDK transport', () => {
           ? [
               {
                 method: 'GET',
-                url: 'https://runtime.example/threads/t/runs/r/stream?cancel_on_disconnect=0',
+                url: `https://runtime.example/threads/t/runs/r/stream?cancel_on_disconnect=0&stream_mode=${encodeURIComponent(
+                  '["values","messages-tuple","updates","custom","checkpoints"]'
+                )}`,
                 body: undefined,
               },
             ]
@@ -373,7 +381,7 @@ describe('neutral real SDK transport', () => {
               },
             }
           );
-        if (item.url.endsWith('/stream?cancel_on_disconnect=0'))
+        if (new URL(item.url).pathname === '/threads/t/runs/r/stream')
           return fragmentedResponse(
             'id: c2\nevent: values\ndata: {"messages":[{"type":"ai","id":"answer","content":"Final"}]}\n\n'
           );
@@ -404,7 +412,9 @@ describe('neutral real SDK transport', () => {
       on_disconnect: 'continue',
     });
     expect(requests[2]).toMatchObject({
-      url: 'https://runtime.example/threads/t/runs/r/stream?cancel_on_disconnect=0',
+      url: `https://runtime.example/threads/t/runs/r/stream?cancel_on_disconnect=0&stream_mode=${encodeURIComponent(
+        '["values","messages-tuple","updates","custom","checkpoints"]'
+      )}`,
       cursor: 'c1',
     });
     expect(session.getSnapshot().messages[1].content).toBe('Final');
@@ -519,10 +529,13 @@ describe('neutral real SDK transport', () => {
     }
   );
 
-  it('does not retry or query history after an ambiguous SDK resume POST failure', async () => {
+  it('never retries an ambiguous SDK resume POST failure and reads history only', async () => {
     vi.useFakeTimers();
     let calls = 0;
     const request = vi.fn<typeof fetch>(async (url, init) => {
+      // The read-only recovery check may read history; nothing else may run.
+      if (String(url) === 'https://runtime.example/threads/t/history')
+        return Response.json([]);
       expect(String(url)).toBe('https://runtime.example/threads/t/runs/stream');
       calls += 1;
       if (calls === 1)
@@ -546,11 +559,16 @@ describe('neutral real SDK transport', () => {
     await vi.runAllTimersAsync();
     expect(await pending).toBe('interrupted');
     expect(session.getSnapshot().error).toMatchObject({
-      recovery: 'none',
+      recovery: 'check',
       retryable: false,
     });
     await session.checkStatus?.();
-    expect(request).toHaveBeenCalledTimes(2);
+    const urls = request.mock.calls.map(([url]) => String(url));
+    expect(urls.filter((url) => url.endsWith('/runs/stream'))).toHaveLength(2);
+    expect(
+      urls.filter((url) => url.endsWith('/history')).length
+    ).toBeGreaterThan(0);
+    expect(session.getSnapshot().status).toBe('error');
     await session.dispose();
   });
 
@@ -1162,7 +1180,13 @@ describe('neutral real SDK transport', () => {
             ],
             client_tools: catalog,
           },
-          stream_mode: ['values', 'messages-tuple', 'updates', 'custom'],
+          stream_mode: [
+            'values',
+            'messages-tuple',
+            'updates',
+            'custom',
+            'checkpoints',
+          ],
           stream_subgraphs: true,
           stream_resumable: true,
           on_disconnect: 'continue',
@@ -1184,7 +1208,13 @@ describe('neutral real SDK transport', () => {
             ],
             client_tools: catalog,
           },
-          stream_mode: ['values', 'messages-tuple', 'updates', 'custom'],
+          stream_mode: [
+            'values',
+            'messages-tuple',
+            'updates',
+            'custom',
+            'checkpoints',
+          ],
           stream_subgraphs: true,
           stream_resumable: true,
           on_disconnect: 'continue',

@@ -1,0 +1,30 @@
+{
+  "extends": "../../../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "declarationMap": false,
+    "composite": false,
+    "emitDeclarationOnly": false,
+    "strict": true,
+    "skipLibCheck": false,
+    "paths": {
+      "@threadplane/langgraph": [
+        "libs/langgraph/src/runtime/create-session.ts"
+      ],
+      "@threadplane/core": ["libs/core/src/index.ts"],
+      "@threadplane/core/tools": ["libs/core/src/tools/index.ts"],
+      "@threadplane/react": ["libs/react/src/index.ts"],
+      "@threadplane/react/chat": ["libs/react/src/chat/index.ts"],
+      "@threadplane/react/markdown": ["libs/react/src/markdown/index.ts"],
+      "@threadplane/content": ["libs/content/src/index.ts"],
+      "@threadplane/content/messages": ["libs/content/src/messages/index.ts"],
+      "@threadplane/react/debug": ["libs/react/src/debug/index.ts"]
+    },
+    "lib": ["ES2022", "ESNext.Disposable", "DOM"],
+    "types": ["node", "react", "react-dom"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
+}

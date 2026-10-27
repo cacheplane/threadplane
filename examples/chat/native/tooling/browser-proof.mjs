@@ -45,6 +45,40 @@ const values = (text) => ({
   event: 'values',
   data: { messages: [{ type: 'ai', id: 'answer', content: text }] },
 });
+const citationSnippet =
+  '<img src=x>\nLiteral evidence ' + 'Evidence'.repeat(100);
+const citationMetadata = (title = '<b>Supplied source</b>') => [
+  {
+    id: '__proto__',
+    index: 7,
+    title,
+    url: 'https://sources.invalid/article',
+    snippet: citationSnippet,
+    sourceType: 'Authored',
+    iconUrl: 'https://images.invalid/icon',
+  },
+  {
+    id: 'blocked',
+    index: 2,
+    title: 'Blocked source',
+    url: 'javascript:alert(1)',
+  },
+  { id: '', index: 3, title: '', snippet: '' },
+];
+const citedValues = (text, title) => {
+  const event = values(text);
+  event.data.messages[0].additional_kwargs = {
+    citations: citationMetadata(title),
+  };
+  return event;
+};
+const citedInitial = () => {
+  const steps = initial();
+  steps[2].body[0].values.messages[0].additional_kwargs = {
+    citations: citationMetadata(),
+  };
+  return steps;
+};
 const summaryTitle = '<img src=x onerror=alert(1)> Supplied recap';
 const summaryPlace = '<script>alert(1)</script> & ' + 'LongPlace'.repeat(24);
 const summaryNote = '<b>Keep this literal</b> & bring water';
@@ -160,7 +194,7 @@ const run = (id, text, events = [values('A response')], extra = {}) => ({
         messages: [{ type: 'human', id: messageId, content: text }],
         client_tools: expectedClientTools,
       },
-      stream_mode: ['values', 'messages-tuple', 'updates', 'custom'],
+      stream_mode: ['values', 'messages-tuple', 'updates', 'custom', 'checkpoints'],
       stream_subgraphs: true,
       stream_resumable: true,
       on_disconnect: 'continue',
@@ -202,7 +236,7 @@ const resume = (id, answer, events, extra = {}) => ({
     assistant_id: 'assistant',
     input: null,
     command: { resume: { [approvalId]: answer } },
-    stream_mode: ['values', 'messages-tuple', 'updates', 'custom'],
+    stream_mode: ['values', 'messages-tuple', 'updates', 'custom', 'checkpoints'],
     stream_subgraphs: true,
     stream_resumable: true,
     on_disconnect: 'continue',
@@ -440,6 +474,9 @@ export async function runViewProof(browser, retained) {
           reasoning: true,
           owner: true,
           tripSummaries: true,
+          ...(retained.framework === 'react'
+            ? { rawSnapshots: true, preparedCards: true }
+            : {}),
         }
       );
       // A successfully delivered response after unmount proves transport survived.
@@ -502,9 +539,22 @@ export async function runViewProof(browser, retained) {
           reasoning: true,
           owner: true,
           tripSummaries: true,
+          ...(retained.framework === 'react'
+            ? { rawSnapshots: true, preparedCards: true }
+            : {}),
         }
       );
       await page.evaluate(() => window.nativeViewProof.dispose());
+      if (retained.framework === 'react') {
+        assert.deepEqual(before.raw.titles, [summaryTitle, 'Empty recap']);
+        for (const title of remounted.raw.titles)
+          await expect(
+            page.getByRole('heading', { name: title, exact: true })
+          ).toBeVisible();
+        for (const phase of [absent, updated, remounted])
+          assert.deepEqual(phase.raw, before.raw);
+        assert.equal(remounted.preparedCardCount, 2);
+      }
       await physicallyClosed(backend.steps[5]);
       const disposed = await page.evaluate(() =>
         window.nativeViewProof.inspect()
@@ -526,11 +576,165 @@ export async function runViewProof(browser, retained) {
         disposed,
         physicalCloseBeforeCleanup: true,
         tripSummaryIdentity: true,
+        ...(retained.framework === 'react'
+          ? {
+              rawSnapshotIdentity: true,
+              preparedCardIdentity: true,
+              rawSnapshotRenderedText: true,
+            }
+          : {}),
         terminalWriteCount: 1,
         exactRequestCount: 6,
         [retained.framework === 'angular'
           ? 'actualAngularComponentDestroy'
           : 'actualCreateRootUnmount']: true,
+      };
+    }
+  );
+}
+
+export async function runA2uiOwnershipProof(browser, retained) {
+  assert.equal(retained.framework, 'react');
+  return scenario(
+    browser,
+    retained,
+    'production React A2UI ownership while absent and across navigation',
+    [
+      ...initial(),
+      run('a', 'Create a recap while absent.', [summaryEvent], {
+        holdHeaders: true,
+      }),
+      summaryWrite(),
+      lookup('b'),
+      history('b'),
+      run('b', 'Create another recap.', [summaryEvent]),
+      { ...summaryWrite(), path: '/api/threads/b/state' },
+    ],
+    async ({ page, expect, backend, url }) => {
+      const inspect = () =>
+        page.evaluate(() => window.nativeViewProof.inspect());
+      await page.goto(url + '/?thread=a');
+      await ready(page, expect);
+      const before = (await inspect()).raw;
+      assert.deepEqual(before, {
+        created: 0,
+        applies: 0,
+        disposed: 0,
+        active: 0,
+        disposalCounts: [],
+        titles: [],
+      });
+      await submit(page, 'Create a recap while absent.');
+      await deadline(backend.steps[3].received, 'held A2UI lifecycle request');
+      await page.evaluate(() => window.nativeViewProof.unmount());
+      await expect(page.locator('#root')).toBeEmpty();
+      assert.deepEqual((await inspect()).raw, before);
+      backend.steps[3].releaseHeaders();
+      await expect
+        .poll(async () => (await inspect()).preparedCardCount)
+        .toBe(2);
+      await deadline(backend.steps[4].received, 'absent terminal persistence');
+      const absentState = await inspect();
+      assert.equal(absentState.active, 0);
+      assert.deepEqual(absentState.raw, {
+        created: 1,
+        applies: 4,
+        disposed: 0,
+        active: 1,
+        disposalCounts: [0],
+        titles: [summaryTitle, 'Empty recap'],
+      });
+      await page.evaluate(() => window.nativeViewProof.mark('created-absent'));
+      await page.evaluate(() => window.nativeViewProof.mount());
+      await expect(
+        page.getByText('Response complete.', { exact: true })
+      ).toBeVisible();
+      for (const title of absentState.raw.titles)
+        await expect(
+          page.getByRole('heading', { name: title, exact: true })
+        ).toBeVisible();
+      const remountedState = await inspect();
+      const comparison = await page.evaluate(() =>
+        window.nativeViewProof.compare('created-absent')
+      );
+      assert.equal(comparison.preparedCards, true);
+      assert.equal(comparison.rawSnapshots, true);
+      assert.deepEqual(remountedState.raw, absentState.raw);
+      await page.evaluate(() => window.nativeViewProof.select(null));
+      await expect(
+        page.getByRole('region', { name: 'Trip summary', exact: true })
+      ).toHaveCount(0);
+      const navigated = (await inspect()).raw;
+      assert.deepEqual(navigated, {
+        ...absentState.raw,
+        disposed: 1,
+        active: 0,
+        disposalCounts: [1],
+      });
+      await page.evaluate(() => window.nativeViewProof.select('b'));
+      await expect(page.getByText('Saved B', { exact: true })).toBeVisible();
+      await submit(page, 'Create another recap.');
+      await expect(
+        page.getByText('Response complete.', { exact: true })
+      ).toBeVisible();
+      await expect(
+        page.getByRole('region', { name: 'Trip summary', exact: true })
+      ).toHaveCount(2);
+      const secondState = await inspect();
+      assert.deepEqual(secondState.raw, {
+        created: 2,
+        applies: 8,
+        disposed: 1,
+        active: 1,
+        disposalCounts: [1, 0],
+        titles: [summaryTitle, 'Empty recap', summaryTitle, 'Empty recap'],
+      });
+      assert.deepEqual(
+        secondState.ownerEpochs.map((owner) => ({
+          id: owner.id,
+          disposed: owner.disposed,
+        })),
+        [
+          { id: 1, disposed: true },
+          { id: 2, disposed: false },
+        ]
+      );
+      assert.equal(absentState.generations.length, 1);
+      assert.equal(secondState.generations.length, 1);
+      assert.notEqual(
+        absentState.generations[0].generation,
+        secondState.generations[0].generation
+      );
+      await page.evaluate(() => window.nativeViewProof.dispose());
+      const disposed = (await inspect()).raw;
+      assert.deepEqual(disposed, {
+        ...secondState.raw,
+        disposed: 2,
+        active: 0,
+        disposalCounts: [1, 1],
+      });
+      assert.deepEqual(disposed.titles, secondState.raw.titles);
+      assert.equal(backend.requests.length, 9);
+      assert.equal(
+        backend.requests.filter((request) => request.path.endsWith('/state'))
+          .length,
+        2
+      );
+      return {
+        before,
+        absent: absentState.raw,
+        remounted: remountedState.raw,
+        navigated,
+        second: secondState.raw,
+        disposed,
+        generations: [absentState.generations[0], secondState.generations[0]],
+        ownerEpochs: secondState.ownerEpochs,
+        exactRequestCount: 9,
+        terminalWriteCount: 2,
+        rawSnapshotRenderedText: true,
+        preparedCardIdentity: true,
+        rawSnapshotIdentity: true,
+        retainedSnapshotsReadable: true,
       };
     }
   );
@@ -544,8 +748,8 @@ export async function runProductionProofs(browser, retained) {
       retained,
       'deep link, reload, Back and Forward',
       [
-        ...initial(),
-        ...initial(),
+        ...citedInitial(),
+        ...citedInitial(),
         lookup('b'),
         history('b'),
         lookup('a'),
@@ -556,6 +760,48 @@ export async function runProductionProofs(browser, retained) {
       async ({ page, expect, url }) => {
         await page.goto(url + '/?thread=a');
         await ready(page, expect);
+        const assertSources = async () => {
+          if (retained.framework !== 'react') return;
+          const sources = page.getByRole('region', {
+            name: 'Sources',
+            exact: true,
+          });
+          await expect(sources.getByRole('listitem')).toHaveCount(3);
+          await expect(sources.getByRole('link')).toHaveCount(1);
+          await expect(sources.getByRole('link')).toHaveAttribute(
+            'href',
+            'https://sources.invalid/article'
+          );
+          await expect(sources.getByRole('link')).toHaveText(
+            '<b>Supplied source</b>'
+          );
+          await expect(sources.getByRole('link')).toHaveAttribute(
+            'rel',
+            'noopener noreferrer'
+          );
+          await expect(
+            sources.getByText('Blocked source', { exact: true })
+          ).toBeVisible();
+          await expect(sources.locator('img, script, b')).toHaveCount(0);
+          await expect(
+            sources.locator('.tp-citations__snippet').first()
+          ).toHaveText(citationSnippet);
+          assert.equal(
+            await sources
+              .locator('.tp-citations__snippet')
+              .first()
+              .evaluate((el) => getComputedStyle(el).whiteSpace),
+            'pre-wrap'
+          );
+          await page.setViewportSize({ width: 375, height: 812 });
+          assert.equal(
+            await page.evaluate(
+              () => document.documentElement.scrollWidth > innerWidth
+            ),
+            false
+          );
+        };
+        await assertSources();
         const icon = page.locator('link[rel="icon"]');
         await expect(icon).toHaveCount(1);
         await expect(icon).toHaveAttribute('type', 'image/svg+xml');
@@ -590,6 +836,7 @@ export async function runProductionProofs(browser, retained) {
         );
         await page.reload();
         await ready(page, expect);
+        await assertSources();
         await select(page, 'a');
         await select(page, 'b');
         await ready(page, expect);
@@ -831,18 +1078,34 @@ export async function runProductionProofs(browser, retained) {
       'duplicate submit guard, Stop and canonical correction',
       [
         ...initial(),
-        run('a', '  Exact text\nSecond line.  ', [values('Partial answer')], {
-          holdBody: true,
-        }),
+        run(
+          'a',
+          '  Exact text\nSecond line.  ',
+          [citedValues('Partial answer')],
+          {
+            holdBody: true,
+          }
+        ),
         run('a', 'Correct it.', [
-          values('Draft obsolete words'),
-          values('# Canonical answer\n\n- Corrected item'),
+          citedValues('Draft obsolete words'),
+          citedValues(
+            '# Canonical answer\n\n- Corrected item',
+            'Corrected source'
+          ),
         ]),
       ],
       async ({ page, expect, backend, url }) => {
         await page.goto(url + '/?thread=a');
         await ready(page, expect);
         await submit(page, '  Exact text\nSecond line.  ');
+        const sourceItem =
+          retained.framework === 'react'
+            ? await page
+                .getByRole('region', { name: 'Sources', exact: true })
+                .getByRole('listitem')
+                .first()
+                .elementHandle()
+            : undefined;
         await expect(
           page.getByRole('button', { name: 'Stop', exact: true })
         ).toBeEnabled();
@@ -875,6 +1138,15 @@ export async function runProductionProofs(browser, retained) {
         await expect(
           page.getByText('Draft obsolete words', { exact: true })
         ).toHaveCount(0);
+        if (retained.framework === 'react') {
+          assert.ok(sourceItem);
+          assert.equal(await sourceItem.evaluate((el) => el.isConnected), true);
+          await expect(
+            page
+              .getByRole('region', { name: 'Sources', exact: true })
+              .getByRole('link')
+          ).toHaveText('Corrected source');
+        }
         return {
           stopPhysicalCloseBeforeCleanup: true,
           exactRequestCount: 5,
@@ -1100,6 +1372,8 @@ export async function runProductionProofs(browser, retained) {
           exact: true,
         });
         await expect(cards).toHaveCount(2);
+        const mountedCard = await cards.first().elementHandle();
+        assert.ok(mountedCard);
         await expect(
           cards.first().getByRole('heading', { level: 4 })
         ).toHaveText(summaryTitle);
@@ -1164,6 +1438,7 @@ export async function runProductionProofs(browser, retained) {
           page.getByText('Response complete.', { exact: true })
         ).toBeVisible();
         await expect(cards).toHaveCount(2);
+        assert.equal(await mountedCard.evaluate((el) => el.isConnected), true);
         await page.reload();
         await ready(page, expect);
         await expect(cards).toHaveCount(0);
@@ -1180,6 +1455,7 @@ export async function runProductionProofs(browser, retained) {
           terminalNoAutoContinue: true,
           nextExplicitSubmit: true,
           cardsRetainedAfterNextTurn: true,
+          mountedCardRetainedAfterNextTurn: true,
           pendingStatus: true,
           restorationNoReexecute: true,
           literalSummary: true,
@@ -1290,10 +1566,15 @@ export async function runBrowserProofs(directory) {
       'App/view framework mismatch'
     );
     const view = await runViewProof(browser, checkedView);
+    const a2ui =
+      app.framework === 'react'
+        ? await runA2uiOwnershipProof(browser, checkedView)
+        : undefined;
     return {
       framework: app.framework,
       production,
       view,
+      ...(a2ui ? { a2ui } : {}),
       coverage: {
         installedOwnerTests:
           'Exhaustive synchronous command reentry and delayed actual SDK promise completion matrix. Browser cases cover user-reachable controls and physical HTTP cancellation.',

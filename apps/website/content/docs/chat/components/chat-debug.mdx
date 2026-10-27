@@ -4,6 +4,8 @@ description: How the debug example mounts the chat-debug panel against a multi-n
 
 # ChatDebugComponent
 
+For the experimental native React first slice, select **React** in the example UI or open [the React preview](/docs/chat/components/chat-debug?frontend=react). It uses the separate private `@threadplane/react/debug` entry point and explicit stylesheet, with application-owned reads and lifetime management. Current state and selected historical state are separate; historical diff, Replay/Fork and full devtools parity remain planned. The API below documents Angular.
+
 `ChatDebugComponent` is a docked development panel for inspecting an agent. It reads the agent's checkpoint history and current state and renders them in a floating panel, and it ships from a debug-only secondary entry point so applications can keep the implementation out of production bundles unless they opt in. The running example mounts it beside the prebuilt `<chat>` composition, which is how it is meant to be used: the chat produces the runs, the panel inspects them.
 
 **Selector:** `chat-debug`

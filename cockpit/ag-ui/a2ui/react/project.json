@@ -1,0 +1,76 @@
+{
+  "name": "cockpit-ag-ui-a2ui-react",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "cockpit/ag-ui/a2ui/react/src",
+  "projectType": "application",
+  "implicitDependencies": ["cockpit-a2ui-react"],
+  "tags": ["scope:cockpit-examples", "scope:cockpit-e2e", "framework:react"],
+  "namedInputs": {
+    "nativeA2uiFixture": [
+      "{workspaceRoot}/fixtures/react-parity/native-ag-ui-a2ui/**/*",
+      "{workspaceRoot}/scripts/react-cockpit/ag-ui-a2ui-fixture.mjs",
+      "{workspaceRoot}/scripts/react-cockpit/ag-ui-a2ui-fixture.spec.mjs",
+      "{workspaceRoot}/scripts/react-cockpit/prepare-ag-ui-a2ui-fixture.mjs",
+      "{workspaceRoot}/scripts/react-cockpit/ag-ui-a2ui-preparation.spec.mjs",
+      "{workspaceRoot}/scripts/react-cockpit/ag-ui-a2ui-native-probe.mjs",
+      "{workspaceRoot}/scripts/react-cockpit/ag-ui-a2ui-native-probe.spec.mjs",
+      "{workspaceRoot}/scripts/react-cockpit/ag-ui-a2ui-configuration.spec.mjs",
+      "{workspaceRoot}/scripts/react-cockpit/configuration.mjs",
+      "{workspaceRoot}/scripts/react-cockpit/build.mjs",
+      "{workspaceRoot}/scripts/react-cockpit/serve.mjs",
+      "{workspaceRoot}/cockpit/ag-ui/a2ui/python/pyproject.toml",
+      "{workspaceRoot}/cockpit/ag-ui/a2ui/python/uv.lock",
+      "{workspaceRoot}/cockpit/ag-ui/a2ui/python/src/**/*"
+    ]
+  },
+  "targets": {
+    "prepare-fixture": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "inputs": ["default", "nativeA2uiFixture"],
+      "options": {
+        "command": "node scripts/react-cockpit/prepare-ag-ui-a2ui-fixture.mjs"
+      }
+    },
+    "fixture-test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "inputs": ["default", "nativeA2uiFixture"],
+      "dependsOn": [
+        { "target": "build", "projects": ["core", "content", "react", "a2ui"] }
+      ],
+      "options": {
+        "command": "node scripts/react-cockpit/prepare-ag-ui-a2ui-fixture.mjs --verify-application"
+      }
+    },
+    "e2e": {
+      "executor": "@nx/playwright:playwright",
+      "cache": false,
+      "inputs": ["default", "nativeA2uiFixture"],
+      "dependsOn": ["prepare-fixture", "build", "fixture-test"],
+      "options": {
+        "config": "cockpit/ag-ui/a2ui/react/e2e/playwright.config.ts",
+        "skipInstall": true
+      }
+    },
+    "test": {
+      "executor": "@nx/vitest:test",
+      "options": {
+        "configFile": "cockpit/ag-ui/a2ui/react/vite.config.mts",
+        "reporters": ["default"]
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [
+        { "target": "build", "projects": ["core", "content", "react", "a2ui"] }
+      ],
+      "outputs": ["{workspaceRoot}/dist/cockpit/ag-ui/a2ui/react"],
+      "options": {
+        "command": "node scripts/react-cockpit/build.mjs ag-ui-a2ui"
+      }
+    },
+    "lint": { "executor": "@nx/eslint:lint" }
+  }
+}

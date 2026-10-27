@@ -1,0 +1,685 @@
+{
+  "current": {
+    "values": {
+      "messages": [
+        {
+          "content": "Inspect bundled skills.",
+          "additional_kwargs": {},
+          "response_metadata": {},
+          "type": "human",
+          "name": null,
+          "id": "offline-human"
+        },
+        {
+          "content": "",
+          "additional_kwargs": {},
+          "response_metadata": {},
+          "type": "ai",
+          "name": null,
+          "id": "lc_run--01a12d22-5f58-7640-9cc9-99efc7807820-0",
+          "tool_calls": [
+            {
+              "name": "read_file",
+              "args": {
+                "file_path": "/skills/runway-analysis/SKILL.md",
+                "limit": 100
+              },
+              "id": "offline-human-0",
+              "type": "tool_call"
+            }
+          ],
+          "invalid_tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "content": " 1  ---\n 2  name: runway-analysis\n 3  description: Decide whether a runway is long enough for a given aircraft at a given field elevation. Use when the user asks about runway suitability, takeoff or landing distance, or operating out of a high-elevation field.\n 4  license: MIT\n 5  ---\n 6  \n 7  # Runway Analysis\n 8  \n 9  ## When to use\n10  \n11  The user is asking whether an aircraft can safely operate from a specific\n12  runway, or is comparing two airports for a trip.\n13  \n14  ## Procedure\n15  \n16  1. Get the field elevation and the longest runway length with\n17     `lookup_field_elevation` and `lookup_runway_length`.\n18  2. Read `/skills/runway-analysis/reference/margins.md` for the required margin\n19     table. Do not work from memory \u2014 the table is the authority.\n20  3. Compare the runway length against the required distance for the aircraft\n21     class at that elevation.\n22  4. State the verdict in one sentence, then give the two numbers you compared.\n23  \n24  ## Reporting\n25  \n26  Always name the margin you applied. A verdict without the margin is not\n27  reviewable.",
+          "additional_kwargs": {},
+          "response_metadata": {},
+          "type": "tool",
+          "name": "read_file",
+          "id": "7b6a1016-ccf6-415b-bb71-24bcadbed082",
+          "tool_call_id": "offline-human-0",
+          "artifact": null,
+          "status": "success"
+        },
+        {
+          "content": "",
+          "additional_kwargs": {},
+          "response_metadata": {},
+          "type": "ai",
+          "name": null,
+          "id": "lc_run--01a12d22-5f61-73e3-801e-46b66c545867-0",
+          "tool_calls": [
+            {
+              "name": "read_file",
+              "args": {
+                "file_path": "/skills/runway-analysis/reference/margins.md",
+                "limit": 1
+              },
+              "id": "offline-human-1",
+              "type": "tool_call"
+            }
+          ],
+          "invalid_tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "content": "1  # Required Runway Margins\n\n[Read 1 line (lines 1-1 of 16 total). 15 lines remaining from offset 1.]",
+          "additional_kwargs": {},
+          "response_metadata": {},
+          "type": "tool",
+          "name": "read_file",
+          "id": "a20b3f67-90ea-4a9b-b463-ac2225735b2e",
+          "tool_call_id": "offline-human-1",
+          "artifact": null,
+          "status": "success"
+        },
+        {
+          "content": "Offline assessment complete.",
+          "additional_kwargs": {},
+          "response_metadata": {},
+          "type": "ai",
+          "name": null,
+          "id": "lc_run--01a12d22-5f6f-7bd1-a3dc-104e438edb92-0",
+          "tool_calls": [],
+          "invalid_tool_calls": [],
+          "usage_metadata": null
+        }
+      ],
+      "skills_metadata": [
+        {
+          "name": "runway-analysis",
+          "description": "Decide whether a runway is long enough for a given aircraft at a given field elevation. Use when the user asks about runway suitability, takeoff or landing distance, or operating out of a high-elevation field.",
+          "path": "/skills/runway-analysis/SKILL.md",
+          "metadata": {},
+          "license": "MIT",
+          "compatibility": null,
+          "allowed_tools": []
+        },
+        {
+          "name": "weather-brief",
+          "description": "Turn a raw field observation into a short operational weather brief. Use when the user asks about conditions, ceilings, visibility, or whether the weather is a problem for a departure or arrival.",
+          "path": "/skills/weather-brief/SKILL.md",
+          "metadata": {},
+          "license": "MIT",
+          "compatibility": null,
+          "allowed_tools": []
+        }
+      ],
+      "files": {}
+    },
+    "next": [],
+    "tasks": [],
+    "checkpoint": {
+      "thread_id": "offline-skills-task2",
+      "checkpoint_ns": "",
+      "checkpoint_id": "1f1c5c52-231a-6376-800b-d00d16e869a4"
+    },
+    "metadata": {
+      "source": "loop",
+      "step": 11,
+      "parents": {},
+      "counters_since_delta_snapshot": {
+        "messages": [
+          6,
+          13
+        ],
+        "files": [
+          0,
+          13
+        ]
+      }
+    },
+    "created_at": "2026-10-11T22:43:09.810357+00:00",
+    "parent_checkpoint": {
+      "thread_id": "offline-skills-task2",
+      "checkpoint_ns": "",
+      "checkpoint_id": "1f1c5c52-2317-6e28-800a-c4310de0c69c"
+    }
+  },
+  "exact": {
+    "values": {
+      "messages": [
+        {
+          "content": "Inspect bundled skills.",
+          "additional_kwargs": {},
+          "response_metadata": {},
+          "type": "human",
+          "name": null,
+          "id": "offline-human"
+        },
+        {
+          "content": "",
+          "additional_kwargs": {},
+          "response_metadata": {},
+          "type": "ai",
+          "name": null,
+          "id": "lc_run--01a12d22-5f58-7640-9cc9-99efc7807820-0",
+          "tool_calls": [
+            {
+              "name": "read_file",
+              "args": {
+                "file_path": "/skills/runway-analysis/SKILL.md",
+                "limit": 100
+              },
+              "id": "offline-human-0",
+              "type": "tool_call"
+            }
+          ],
+          "invalid_tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "content": " 1  ---\n 2  name: runway-analysis\n 3  description: Decide whether a runway is long enough for a given aircraft at a given field elevation. Use when the user asks about runway suitability, takeoff or landing distance, or operating out of a high-elevation field.\n 4  license: MIT\n 5  ---\n 6  \n 7  # Runway Analysis\n 8  \n 9  ## When to use\n10  \n11  The user is asking whether an aircraft can safely operate from a specific\n12  runway, or is comparing two airports for a trip.\n13  \n14  ## Procedure\n15  \n16  1. Get the field elevation and the longest runway length with\n17     `lookup_field_elevation` and `lookup_runway_length`.\n18  2. Read `/skills/runway-analysis/reference/margins.md` for the required margin\n19     table. Do not work from memory \u2014 the table is the authority.\n20  3. Compare the runway length against the required distance for the aircraft\n21     class at that elevation.\n22  4. State the verdict in one sentence, then give the two numbers you compared.\n23  \n24  ## Reporting\n25  \n26  Always name the margin you applied. A verdict without the margin is not\n27  reviewable.",
+          "additional_kwargs": {},
+          "response_metadata": {},
+          "type": "tool",
+          "name": "read_file",
+          "id": "7b6a1016-ccf6-415b-bb71-24bcadbed082",
+          "tool_call_id": "offline-human-0",
+          "artifact": null,
+          "status": "success"
+        },
+        {
+          "content": "",
+          "additional_kwargs": {},
+          "response_metadata": {},
+          "type": "ai",
+          "name": null,
+          "id": "lc_run--01a12d22-5f61-73e3-801e-46b66c545867-0",
+          "tool_calls": [
+            {
+              "name": "read_file",
+              "args": {
+                "file_path": "/skills/runway-analysis/reference/margins.md",
+                "limit": 1
+              },
+              "id": "offline-human-1",
+              "type": "tool_call"
+            }
+          ],
+          "invalid_tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "content": "1  # Required Runway Margins\n\n[Read 1 line (lines 1-1 of 16 total). 15 lines remaining from offset 1.]",
+          "additional_kwargs": {},
+          "response_metadata": {},
+          "type": "tool",
+          "name": "read_file",
+          "id": "a20b3f67-90ea-4a9b-b463-ac2225735b2e",
+          "tool_call_id": "offline-human-1",
+          "artifact": null,
+          "status": "success"
+        },
+        {
+          "content": "Offline assessment complete.",
+          "additional_kwargs": {},
+          "response_metadata": {},
+          "type": "ai",
+          "name": null,
+          "id": "lc_run--01a12d22-5f6f-7bd1-a3dc-104e438edb92-0",
+          "tool_calls": [],
+          "invalid_tool_calls": [],
+          "usage_metadata": null
+        }
+      ],
+      "skills_metadata": [
+        {
+          "name": "runway-analysis",
+          "description": "Decide whether a runway is long enough for a given aircraft at a given field elevation. Use when the user asks about runway suitability, takeoff or landing distance, or operating out of a high-elevation field.",
+          "path": "/skills/runway-analysis/SKILL.md",
+          "metadata": {},
+          "license": "MIT",
+          "compatibility": null,
+          "allowed_tools": []
+        },
+        {
+          "name": "weather-brief",
+          "description": "Turn a raw field observation into a short operational weather brief. Use when the user asks about conditions, ceilings, visibility, or whether the weather is a problem for a departure or arrival.",
+          "path": "/skills/weather-brief/SKILL.md",
+          "metadata": {},
+          "license": "MIT",
+          "compatibility": null,
+          "allowed_tools": []
+        }
+      ],
+      "files": {}
+    },
+    "next": [],
+    "tasks": [],
+    "checkpoint": {
+      "thread_id": "offline-skills-task2",
+      "checkpoint_ns": "",
+      "checkpoint_id": "1f1c5c52-231a-6376-800b-d00d16e869a4"
+    },
+    "metadata": {
+      "source": "loop",
+      "step": 11,
+      "parents": {},
+      "counters_since_delta_snapshot": {
+        "messages": [
+          6,
+          13
+        ],
+        "files": [
+          0,
+          13
+        ]
+      }
+    },
+    "created_at": "2026-10-11T22:43:09.810357+00:00",
+    "parent_checkpoint": {
+      "thread_id": "offline-skills-task2",
+      "checkpoint_ns": "",
+      "checkpoint_id": "1f1c5c52-2317-6e28-800a-c4310de0c69c"
+    }
+  },
+  "history": [
+    {
+      "values": {
+        "messages": [
+          {
+            "content": "Inspect bundled skills.",
+            "additional_kwargs": {},
+            "response_metadata": {},
+            "type": "human",
+            "name": null,
+            "id": "offline-human"
+          },
+          {
+            "content": "",
+            "additional_kwargs": {},
+            "response_metadata": {},
+            "type": "ai",
+            "name": null,
+            "id": "lc_run--01a12d22-5f58-7640-9cc9-99efc7807820-0",
+            "tool_calls": [
+              {
+                "name": "read_file",
+                "args": {
+                  "file_path": "/skills/runway-analysis/SKILL.md",
+                  "limit": 100
+                },
+                "id": "offline-human-0",
+                "type": "tool_call"
+              }
+            ],
+            "invalid_tool_calls": [],
+            "usage_metadata": null
+          },
+          {
+            "content": " 1  ---\n 2  name: runway-analysis\n 3  description: Decide whether a runway is long enough for a given aircraft at a given field elevation. Use when the user asks about runway suitability, takeoff or landing distance, or operating out of a high-elevation field.\n 4  license: MIT\n 5  ---\n 6  \n 7  # Runway Analysis\n 8  \n 9  ## When to use\n10  \n11  The user is asking whether an aircraft can safely operate from a specific\n12  runway, or is comparing two airports for a trip.\n13  \n14  ## Procedure\n15  \n16  1. Get the field elevation and the longest runway length with\n17     `lookup_field_elevation` and `lookup_runway_length`.\n18  2. Read `/skills/runway-analysis/reference/margins.md` for the required margin\n19     table. Do not work from memory \u2014 the table is the authority.\n20  3. Compare the runway length against the required distance for the aircraft\n21     class at that elevation.\n22  4. State the verdict in one sentence, then give the two numbers you compared.\n23  \n24  ## Reporting\n25  \n26  Always name the margin you applied. A verdict without the margin is not\n27  reviewable.",
+            "additional_kwargs": {},
+            "response_metadata": {},
+            "type": "tool",
+            "name": "read_file",
+            "id": "7b6a1016-ccf6-415b-bb71-24bcadbed082",
+            "tool_call_id": "offline-human-0",
+            "artifact": null,
+            "status": "success"
+          },
+          {
+            "content": "",
+            "additional_kwargs": {},
+            "response_metadata": {},
+            "type": "ai",
+            "name": null,
+            "id": "lc_run--01a12d22-5f61-73e3-801e-46b66c545867-0",
+            "tool_calls": [
+              {
+                "name": "read_file",
+                "args": {
+                  "file_path": "/skills/runway-analysis/reference/margins.md",
+                  "limit": 1
+                },
+                "id": "offline-human-1",
+                "type": "tool_call"
+              }
+            ],
+            "invalid_tool_calls": [],
+            "usage_metadata": null
+          },
+          {
+            "content": "1  # Required Runway Margins\n\n[Read 1 line (lines 1-1 of 16 total). 15 lines remaining from offset 1.]",
+            "additional_kwargs": {},
+            "response_metadata": {},
+            "type": "tool",
+            "name": "read_file",
+            "id": "a20b3f67-90ea-4a9b-b463-ac2225735b2e",
+            "tool_call_id": "offline-human-1",
+            "artifact": null,
+            "status": "success"
+          },
+          {
+            "content": "Offline assessment complete.",
+            "additional_kwargs": {},
+            "response_metadata": {},
+            "type": "ai",
+            "name": null,
+            "id": "lc_run--01a12d22-5f6f-7bd1-a3dc-104e438edb92-0",
+            "tool_calls": [],
+            "invalid_tool_calls": [],
+            "usage_metadata": null
+          }
+        ],
+        "skills_metadata": [
+          {
+            "name": "runway-analysis",
+            "description": "Decide whether a runway is long enough for a given aircraft at a given field elevation. Use when the user asks about runway suitability, takeoff or landing distance, or operating out of a high-elevation field.",
+            "path": "/skills/runway-analysis/SKILL.md",
+            "metadata": {},
+            "license": "MIT",
+            "compatibility": null,
+            "allowed_tools": []
+          },
+          {
+            "name": "weather-brief",
+            "description": "Turn a raw field observation into a short operational weather brief. Use when the user asks about conditions, ceilings, visibility, or whether the weather is a problem for a departure or arrival.",
+            "path": "/skills/weather-brief/SKILL.md",
+            "metadata": {},
+            "license": "MIT",
+            "compatibility": null,
+            "allowed_tools": []
+          }
+        ],
+        "files": {}
+      },
+      "next": [],
+      "tasks": [],
+      "checkpoint": {
+        "thread_id": "offline-skills-task2",
+        "checkpoint_ns": "",
+        "checkpoint_id": "1f1c5c52-231a-6376-800b-d00d16e869a4"
+      },
+      "metadata": {
+        "source": "loop",
+        "step": 11,
+        "parents": {},
+        "counters_since_delta_snapshot": {
+          "messages": [
+            6,
+            13
+          ],
+          "files": [
+            0,
+            13
+          ]
+        }
+      },
+      "created_at": "2026-10-11T22:43:09.810357+00:00",
+      "parent_checkpoint": {
+        "thread_id": "offline-skills-task2",
+        "checkpoint_ns": "",
+        "checkpoint_id": "1f1c5c52-2317-6e28-800a-c4310de0c69c"
+      }
+    },
+    {
+      "values": {
+        "messages": [
+          {
+            "content": "Inspect bundled skills.",
+            "additional_kwargs": {},
+            "response_metadata": {},
+            "type": "human",
+            "name": null,
+            "id": "offline-human"
+          },
+          {
+            "content": "",
+            "additional_kwargs": {},
+            "response_metadata": {},
+            "type": "ai",
+            "name": null,
+            "id": "lc_run--01a12d22-5f58-7640-9cc9-99efc7807820-0",
+            "tool_calls": [
+              {
+                "name": "read_file",
+                "args": {
+                  "file_path": "/skills/runway-analysis/SKILL.md",
+                  "limit": 100
+                },
+                "id": "offline-human-0",
+                "type": "tool_call"
+              }
+            ],
+            "invalid_tool_calls": [],
+            "usage_metadata": null
+          },
+          {
+            "content": " 1  ---\n 2  name: runway-analysis\n 3  description: Decide whether a runway is long enough for a given aircraft at a given field elevation. Use when the user asks about runway suitability, takeoff or landing distance, or operating out of a high-elevation field.\n 4  license: MIT\n 5  ---\n 6  \n 7  # Runway Analysis\n 8  \n 9  ## When to use\n10  \n11  The user is asking whether an aircraft can safely operate from a specific\n12  runway, or is comparing two airports for a trip.\n13  \n14  ## Procedure\n15  \n16  1. Get the field elevation and the longest runway length with\n17     `lookup_field_elevation` and `lookup_runway_length`.\n18  2. Read `/skills/runway-analysis/reference/margins.md` for the required margin\n19     table. Do not work from memory \u2014 the table is the authority.\n20  3. Compare the runway length against the required distance for the aircraft\n21     class at that elevation.\n22  4. State the verdict in one sentence, then give the two numbers you compared.\n23  \n24  ## Reporting\n25  \n26  Always name the margin you applied. A verdict without the margin is not\n27  reviewable.",
+            "additional_kwargs": {},
+            "response_metadata": {},
+            "type": "tool",
+            "name": "read_file",
+            "id": "7b6a1016-ccf6-415b-bb71-24bcadbed082",
+            "tool_call_id": "offline-human-0",
+            "artifact": null,
+            "status": "success"
+          },
+          {
+            "content": "",
+            "additional_kwargs": {},
+            "response_metadata": {},
+            "type": "ai",
+            "name": null,
+            "id": "lc_run--01a12d22-5f61-73e3-801e-46b66c545867-0",
+            "tool_calls": [
+              {
+                "name": "read_file",
+                "args": {
+                  "file_path": "/skills/runway-analysis/reference/margins.md",
+                  "limit": 1
+                },
+                "id": "offline-human-1",
+                "type": "tool_call"
+              }
+            ],
+            "invalid_tool_calls": [],
+            "usage_metadata": null
+          },
+          {
+            "content": "1  # Required Runway Margins\n\n[Read 1 line (lines 1-1 of 16 total). 15 lines remaining from offset 1.]",
+            "additional_kwargs": {},
+            "response_metadata": {},
+            "type": "tool",
+            "name": "read_file",
+            "id": "a20b3f67-90ea-4a9b-b463-ac2225735b2e",
+            "tool_call_id": "offline-human-1",
+            "artifact": null,
+            "status": "success"
+          },
+          {
+            "content": "Offline assessment complete.",
+            "additional_kwargs": {},
+            "response_metadata": {},
+            "type": "ai",
+            "name": null,
+            "id": "lc_run--01a12d22-5f6f-7bd1-a3dc-104e438edb92-0",
+            "tool_calls": [],
+            "invalid_tool_calls": [],
+            "usage_metadata": null
+          }
+        ],
+        "skills_metadata": [
+          {
+            "name": "runway-analysis",
+            "description": "Decide whether a runway is long enough for a given aircraft at a given field elevation. Use when the user asks about runway suitability, takeoff or landing distance, or operating out of a high-elevation field.",
+            "path": "/skills/runway-analysis/SKILL.md",
+            "metadata": {},
+            "license": "MIT",
+            "compatibility": null,
+            "allowed_tools": []
+          },
+          {
+            "name": "weather-brief",
+            "description": "Turn a raw field observation into a short operational weather brief. Use when the user asks about conditions, ceilings, visibility, or whether the weather is a problem for a departure or arrival.",
+            "path": "/skills/weather-brief/SKILL.md",
+            "metadata": {},
+            "license": "MIT",
+            "compatibility": null,
+            "allowed_tools": []
+          }
+        ],
+        "files": {}
+      },
+      "next": [
+        "SkillsVisibilityMiddleware.after_agent"
+      ],
+      "tasks": [
+        [
+          "2b6a87fe-d00f-a8a8-b398-ba3aea606196",
+          "SkillsVisibilityMiddleware.after_agent",
+          [
+            "__pregel_pull",
+            "SkillsVisibilityMiddleware.after_agent"
+          ],
+          null,
+          [],
+          null,
+          {}
+        ]
+      ],
+      "checkpoint": {
+        "thread_id": "offline-skills-task2",
+        "checkpoint_ns": "",
+        "checkpoint_id": "1f1c5c52-2317-6e28-800a-c4310de0c69c"
+      },
+      "metadata": {
+        "source": "loop",
+        "step": 10,
+        "parents": {},
+        "counters_since_delta_snapshot": {
+          "messages": [
+            6,
+            12
+          ],
+          "files": [
+            0,
+            12
+          ]
+        }
+      },
+      "created_at": "2026-10-11T22:43:09.809390+00:00",
+      "parent_checkpoint": {
+        "thread_id": "offline-skills-task2",
+        "checkpoint_ns": "",
+        "checkpoint_id": "1f1c5c52-2300-619c-8009-6f294c3864c2"
+      }
+    }
+  ],
+  "rootValues": {
+    "messages": [
+      {
+        "content": "Inspect bundled skills.",
+        "additional_kwargs": {},
+        "response_metadata": {},
+        "type": "human",
+        "name": null,
+        "id": "offline-human"
+      },
+      {
+        "content": "",
+        "additional_kwargs": {},
+        "response_metadata": {},
+        "type": "ai",
+        "name": null,
+        "id": "lc_run--01a12d22-5f58-7640-9cc9-99efc7807820-0",
+        "tool_calls": [
+          {
+            "name": "read_file",
+            "args": {
+              "file_path": "/skills/runway-analysis/SKILL.md",
+              "limit": 100
+            },
+            "id": "offline-human-0",
+            "type": "tool_call"
+          }
+        ],
+        "invalid_tool_calls": [],
+        "usage_metadata": null
+      },
+      {
+        "content": " 1  ---\n 2  name: runway-analysis\n 3  description: Decide whether a runway is long enough for a given aircraft at a given field elevation. Use when the user asks about runway suitability, takeoff or landing distance, or operating out of a high-elevation field.\n 4  license: MIT\n 5  ---\n 6  \n 7  # Runway Analysis\n 8  \n 9  ## When to use\n10  \n11  The user is asking whether an aircraft can safely operate from a specific\n12  runway, or is comparing two airports for a trip.\n13  \n14  ## Procedure\n15  \n16  1. Get the field elevation and the longest runway length with\n17     `lookup_field_elevation` and `lookup_runway_length`.\n18  2. Read `/skills/runway-analysis/reference/margins.md` for the required margin\n19     table. Do not work from memory \u2014 the table is the authority.\n20  3. Compare the runway length against the required distance for the aircraft\n21     class at that elevation.\n22  4. State the verdict in one sentence, then give the two numbers you compared.\n23  \n24  ## Reporting\n25  \n26  Always name the margin you applied. A verdict without the margin is not\n27  reviewable.",
+        "additional_kwargs": {},
+        "response_metadata": {},
+        "type": "tool",
+        "name": "read_file",
+        "id": "7b6a1016-ccf6-415b-bb71-24bcadbed082",
+        "tool_call_id": "offline-human-0",
+        "artifact": null,
+        "status": "success"
+      },
+      {
+        "content": "",
+        "additional_kwargs": {},
+        "response_metadata": {},
+        "type": "ai",
+        "name": null,
+        "id": "lc_run--01a12d22-5f61-73e3-801e-46b66c545867-0",
+        "tool_calls": [
+          {
+            "name": "read_file",
+            "args": {
+              "file_path": "/skills/runway-analysis/reference/margins.md",
+              "limit": 1
+            },
+            "id": "offline-human-1",
+            "type": "tool_call"
+          }
+        ],
+        "invalid_tool_calls": [],
+        "usage_metadata": null
+      },
+      {
+        "content": "1  # Required Runway Margins\n\n[Read 1 line (lines 1-1 of 16 total). 15 lines remaining from offset 1.]",
+        "additional_kwargs": {},
+        "response_metadata": {},
+        "type": "tool",
+        "name": "read_file",
+        "id": "a20b3f67-90ea-4a9b-b463-ac2225735b2e",
+        "tool_call_id": "offline-human-1",
+        "artifact": null,
+        "status": "success"
+      },
+      {
+        "content": "Offline assessment complete.",
+        "additional_kwargs": {},
+        "response_metadata": {},
+        "type": "ai",
+        "name": null,
+        "id": "lc_run--01a12d22-5f6f-7bd1-a3dc-104e438edb92-0",
+        "tool_calls": [],
+        "invalid_tool_calls": [],
+        "usage_metadata": null
+      }
+    ],
+    "skills_metadata": [
+      {
+        "name": "runway-analysis",
+        "description": "Decide whether a runway is long enough for a given aircraft at a given field elevation. Use when the user asks about runway suitability, takeoff or landing distance, or operating out of a high-elevation field.",
+        "path": "/skills/runway-analysis/SKILL.md",
+        "metadata": {},
+        "license": "MIT",
+        "compatibility": null,
+        "allowed_tools": []
+      },
+      {
+        "name": "weather-brief",
+        "description": "Turn a raw field observation into a short operational weather brief. Use when the user asks about conditions, ceilings, visibility, or whether the weather is a problem for a departure or arrival.",
+        "path": "/skills/weather-brief/SKILL.md",
+        "metadata": {},
+        "license": "MIT",
+        "compatibility": null,
+        "allowed_tools": []
+      }
+    ],
+    "files": {}
+  },
+  "provenance": {
+    "compiledGraph": true,
+    "providerCalls": 0,
+    "networkConnectAttempts": 0,
+    "deepagents": "0.7.11"
+  }
+}
