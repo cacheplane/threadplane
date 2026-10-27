@@ -17,6 +17,10 @@ export function CopyConversationId({
   onMoveUp,
   onMoveDown,
   reorderPending,
+  onDelete,
+  deleteDisabled,
+  deleteReason,
+  mutationBlocked,
 }: {
   readonly id: string;
   readonly title?: string;
@@ -31,6 +35,10 @@ export function CopyConversationId({
   readonly onMoveUp?: () => void;
   readonly onMoveDown?: () => void;
   readonly reorderPending?: boolean;
+  readonly onDelete?: () => void;
+  readonly deleteDisabled?: boolean;
+  readonly deleteReason?: string;
+  readonly mutationBlocked?: boolean;
 }) {
   return (
     <CopyCommand
@@ -48,6 +56,10 @@ export function CopyConversationId({
       onMoveUp={onMoveUp}
       onMoveDown={onMoveDown}
       reorderPending={reorderPending}
+      onDelete={onDelete}
+      deleteDisabled={deleteDisabled}
+      deleteReason={deleteReason}
+      mutationBlocked={mutationBlocked}
     />
   );
 }
@@ -66,6 +78,10 @@ function CopyCommand({
   onMoveUp,
   onMoveDown,
   reorderPending,
+  onDelete,
+  deleteDisabled,
+  deleteReason,
+  mutationBlocked,
 }: {
   readonly id: string;
   readonly title?: string;
@@ -80,6 +96,10 @@ function CopyCommand({
   readonly onMoveUp?: () => void;
   readonly onMoveDown?: () => void;
   readonly reorderPending?: boolean;
+  readonly onDelete?: () => void;
+  readonly deleteDisabled?: boolean;
+  readonly deleteReason?: string;
+  readonly mutationBlocked?: boolean;
 }) {
   const pending = useRef(false);
   const mounted = useRef(false);
@@ -118,6 +138,7 @@ function CopyCommand({
             ? [
                 {
                   id: 'rename',
+                  disabled: mutationBlocked,
                   label: `Rename conversation for ${
                     title ? `${title} (${id})` : id
                   }`,
@@ -131,7 +152,7 @@ function CopyCommand({
                   label: `${
                     pinned === true ? 'Unpin' : 'Pin'
                   } conversation for ${title ? `${title} (${id})` : id}`,
-                  disabled: pinPending,
+                  disabled: pinPending || mutationBlocked,
                 },
               ]
             : []),
@@ -157,6 +178,18 @@ function CopyCommand({
                 },
               ]
             : []),
+          ...(!archived && onDelete
+            ? [
+                {
+                  id: 'delete',
+                  label: `Delete conversation for ${
+                    title ? `${title} (${id})` : id
+                  }${deleteReason ? `. ${deleteReason}` : ''}`,
+                  tone: 'destructive' as const,
+                  disabled: deleteDisabled,
+                },
+              ]
+            : []),
           ...(onArchive
             ? [
                 {
@@ -164,7 +197,19 @@ function CopyCommand({
                   label: `${
                     archived === true ? 'Unarchive' : 'Archive'
                   } conversation for ${title ? `${title} (${id})` : id}`,
-                  disabled: archivePending,
+                  disabled: archivePending || mutationBlocked,
+                },
+              ]
+            : []),
+          ...(archived && onDelete
+            ? [
+                {
+                  id: 'delete',
+                  label: `Delete conversation for ${
+                    title ? `${title} (${id})` : id
+                  }${deleteReason ? `. ${deleteReason}` : ''}`,
+                  tone: 'destructive' as const,
+                  disabled: deleteDisabled,
                 },
               ]
             : []),
@@ -178,6 +223,7 @@ function CopyCommand({
           else if (command === 'pin') onPin?.();
           else if (command === 'move-up') onMoveUp?.();
           else if (command === 'move-down') onMoveDown?.();
+          else if (command === 'delete') onDelete?.();
           else if (command === 'archive') onArchive?.();
           else void copy(event);
         }}

@@ -435,6 +435,7 @@ export function prepareRuntimeViews(root, consumer, kind) {
   }
   if (kind === 'react') {
     cpSync(join(fixture, 'react-overflow-menu.tsx'), join(destination, 'react-overflow-menu.tsx'));
+    cpSync(join(fixture, 'react-confirm-dialog.tsx'), join(destination, 'react-confirm-dialog.tsx'));
     cpSync(join(fixture, 'vite.config.mts'), join(consumer, 'vite.config.mts'));
     writeFileSync(join(consumer, 'index.html'), '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>React installed consumer</title></head><body><div id="root"></div><script type="module" src="/main.tsx"></script></body></html>');
     writeFileSync(join(consumer, 'tsconfig.app.json'), JSON.stringify({ compilerOptions: { target: 'ES2022', module: 'ESNext', moduleResolution: 'Bundler', lib: ['ES2022', 'DOM'], types: [], strict: true, skipLibCheck: false, jsx: 'react-jsx', noEmit: true }, files: ['main.tsx'] }));
@@ -550,6 +551,117 @@ export async function serveRuntimeConsumer(directory) {
 function handshake(promise, label) {
   let timeout;
   return Promise.race([promise, new Promise((_, reject) => { timeout = setTimeout(() => reject(new Error(`Timed out awaiting ${label}`)), 10_000); })]).finally(() => clearTimeout(timeout));
+}
+
+export async function runConfirmDialogScenarios(page, url) {
+  for (const width of [1280, 390]) {
+    await page.setViewportSize({ width, height: 760 });
+    await page.goto(`${url}/?menu&confirm`);
+    const open = page.getByRole('button', { name: 'Open confirmation', exact: true });
+    const modal = page.getByRole('alertdialog');
+    const cancel = modal.getByRole('button', { name: 'Cancel', exact: true });
+    const confirm = modal.getByRole('button', { name: 'Remove <literal>', exact: true });
+    const confirmations = page.getByTestId('confirm-count');
+    const cancellations = page.getByTestId('cancel-count');
+    await open.click();
+    await expect(modal).toHaveAccessibleName('Delete <literal> & history?');
+    await expect(modal).toHaveAccessibleDescription('Permanent <body> & details.');
+    await expect(cancel).toBeFocused();
+    const panel = await modal.elementHandle();
+    const cancelNode = await cancel.elementHandle();
+    assert.ok(panel && cancelNode);
+    assert.equal(await modal.evaluate(node => node.matches(':modal')), true);
+    assert.deepEqual(await modal.evaluate(node => {
+      const style = getComputedStyle(node);
+      return { direction: style.direction, monospace: style.fontFamily.includes('monospace'), background: style.backgroundColor, color: style.color, literalElements: node.querySelectorAll('literal, body').length };
+    }), { direction: 'rtl', monospace: true, background: 'rgb(241, 242, 243)', color: 'rgb(11, 22, 33)', literalElements: 0 });
+    await page.keyboard.press('Shift+Tab');
+    await expect(confirm).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(cancel).toBeFocused();
+    await page.keyboard.press('F2');
+    await expect(modal).toHaveAttribute('aria-busy', 'true');
+    await expect(confirm).toBeDisabled();
+    await expect(cancel).toBeEnabled();
+    await expect(cancel).toBeFocused();
+    for (const key of ['Tab', 'Shift+Tab']) {
+      await page.keyboard.press(key);
+      await expect(cancel).toBeFocused();
+      assert.equal(await page.evaluate(() => document.hasFocus()), true);
+    }
+    await page.keyboard.press('F3');
+    await cancel.click();
+    await expect(cancellations).toHaveText('1');
+    await expect(modal).toBeVisible();
+    const background = await page.getByRole('button', { name: 'Background action', includeHidden: true }).boundingBox();
+    assert.ok(background);
+    await page.mouse.click(background.x + background.width / 2, background.y + background.height / 2);
+    await expect(page.getByTestId('background-count')).toHaveText('0');
+    await expect(cancellations).toHaveText('2');
+    await expect(modal).toBeVisible();
+    await page.keyboard.press('F2');
+    await expect(confirm).toBeEnabled();
+    await confirm.focus();
+    await page.keyboard.press('Space');
+    await expect(confirmations).toHaveText('1');
+    await page.keyboard.press('Enter');
+    await expect(confirmations).toHaveText('2');
+    await page.keyboard.down('Enter');
+    await page.keyboard.down('Enter');
+    await page.keyboard.up('Enter');
+    await expect(confirmations).toHaveText('3');
+    // Verify browser default prevention for an IME Space press and release;
+    // trusted ordinary native Space above independently proves activation.
+    assert.deepEqual(await confirm.evaluate(node => {
+      const down = new KeyboardEvent('keydown', { key: ' ', isComposing: true, bubbles: true, cancelable: true });
+      const up = new KeyboardEvent('keyup', { key: ' ', bubbles: true, cancelable: true });
+      node.dispatchEvent(down);
+      node.dispatchEvent(up);
+      return [down.defaultPrevented, up.defaultPrevented];
+    }), [true, true]);
+    await expect(confirmations).toHaveText('3');
+    await cancel.focus();
+    await page.keyboard.press('F5');
+    await expect(modal).toHaveAccessibleName(/Updated literal/);
+    assert.equal(await panel.evaluate(node => node === document.querySelector('dialog')), true);
+    assert.equal(await cancelNode.evaluate(node => node === document.activeElement), true);
+    await page.keyboard.press('Control+k');
+    await expect(page.getByTestId('shortcut-count')).toHaveText('0');
+    const bounds = await modal.boundingBox();
+    assert.ok(bounds && bounds.x >= 8 && bounds.y >= 8 && bounds.x + bounds.width <= width - 8 && bounds.y + bounds.height <= 752);
+    for (const button of [cancel, confirm]) {
+      const box = await button.boundingBox();
+      assert.ok(box && box.height >= 40 && box.width >= 40);
+    }
+    await page.screenshot({ path: join(tmpdir(), `react-confirm-dialog-plain-${width}.png`), fullPage: false });
+    await page.keyboard.press('F3');
+    await page.keyboard.press('Escape');
+    await expect(modal).toHaveCount(0);
+    await expect(cancellations).toHaveText('3');
+    await expect(open).toBeFocused();
+    await open.click();
+    await page.keyboard.press('F4');
+    await expect(open).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    await expect(modal).toHaveCount(0);
+    await expect(confirmations).toHaveText('3');
+
+    await page.goto(`${url}/?menu&confirm`);
+    await open.click();
+    await page.keyboard.press('F6');
+    const replacement = page.getByRole('alertdialog', { name: 'Replacement confirmation', exact: true });
+    await expect(replacement.getByRole('button', { name: 'Cancel', exact: true })).toBeFocused();
+    await page.keyboard.press('F7');
+    await expect(page.locator('dialog')).toHaveCount(1);
+    await expect(replacement.getByRole('button', { name: 'Cancel', exact: true })).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('dialog')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Background action', exact: true }).click();
+    await expect(page.getByTestId('background-count')).toHaveText('1');
+    await page.keyboard.press('Control+k');
+    await expect(page.getByTestId('shortcut-count')).toHaveText('1');
+  }
+  console.log('Installed confirmation dialog: native modal/Tab/background ownership, controlled cancellation/pending, literal content, keyboard/IME, stable DOM, local RTL/theme, removed invoker/replacement cleanup and 1280/390 containment passed.');
 }
 
 export async function runRenameFormScenarios(page, url) {
@@ -1090,6 +1202,7 @@ export async function runRuntimeScenarios(directory, kind) {
       await runRenameFormScenarios(page, server.url);
       await runOverflowMenuScenarios(page, server.url);
       await runContextMenuScenarios(page, server.url);
+      await runConfirmDialogScenarios(page, server.url);
     }
     assert.deepEqual(server.errors.map(String), []);
     assert.deepEqual(pageErrors, []);

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { OverflowMenu, ThreadList, ThreadRenameForm } from '@threadplane/react/chat';
 import '@threadplane/react/chat/styles.css';
+import { ConfirmDialogFixture } from './react-confirm-dialog';
 
 /** Installed plain-package command fixture; no backend or session commands. */
 export function OverflowMenuFixture() {
@@ -9,6 +10,8 @@ export function OverflowMenuFixture() {
   const [refuse, setRefuse] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [expandedLabel, setExpandedLabel] = useState(false);
+  if (new URLSearchParams(window.location.search).has('confirm'))
+    return <ConfirmDialogFixture />;
   if (new URLSearchParams(window.location.search).has('rename'))
     return <main><h1>Installed rename editor</h1><ThreadRenameFormFixture /></main>;
   return (
