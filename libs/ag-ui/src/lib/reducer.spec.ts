@@ -418,11 +418,82 @@ describe('reduceEvent', () => {
     expect(a1[0].toolCallIds).toEqual(['t1', 't2']);
   });
 
-  it('TOOL_CALL_START without parentMessageId does not create or modify messages', () => {
-    const store = makeStore();
-    reduceEvent({ type: 'TOOL_CALL_START', toolCallId: 't1', toolCallName: 'search' } as any, store);
-    expect(store.messages()).toEqual([]);
-    expect(store.toolCalls()).toEqual([{ id: 't1', name: 'search', args: {}, status: 'running' }]);
+  describe('TOOL_CALL_START from a server that streams tool calls without a parent message', () => {
+    const start = (toolCallId: string, parentMessageId?: string) => ({
+      type: 'TOOL_CALL_START', toolCallId, toolCallName: 'search',
+      ...(parentMessageId !== undefined ? { parentMessageId } : {}),
+    }) as any;
+
+    it('creates an assistant message keyed by the tool call id that lists the call', () => {
+      const store = makeStore();
+      store.messages.set([{ id: 'u1', role: 'user', content: 'plan it', delivery: staticDelivery('u1') }]);
+      reduceEvent(start('t1'), store);
+      expect(store.messages()).toEqual([
+        { id: 'u1', role: 'user', content: 'plan it', delivery: staticDelivery('u1') },
+        { id: 't1', role: 'assistant', content: '', toolCallIds: ['t1'], delivery: streamingDelivery('run-generation-1') },
+      ]);
+      expect(store.toolCalls()).toEqual([{ id: 't1', name: 'search', args: {}, status: 'running' }]);
+      expect(store.deliveryRun?.currentAssistantMessageId).toBe('t1');
+    });
+
+    it('gives each parentless call its own message and completes the previous one', () => {
+      const store = makeStore();
+      reduceEvent(start('t1'), store);
+      reduceEvent(start('t2'), store);
+      expect(store.messages().map(m => [m.id, m.toolCallIds, m.delivery])).toEqual([
+        ['t1', ['t1'], completeDelivery('run-generation-1', 'success')],
+        ['t2', ['t2'], streamingDelivery('run-generation-1')],
+      ]);
+    });
+
+    it('creates the named parent when parentMessageId arrives before any message with that id', () => {
+      const store = makeStore();
+      reduceEvent(start('t1', 'p1'), store);
+      reduceEvent(start('t2', 'p1'), store);
+      expect(store.messages()).toEqual([
+        { id: 'p1', role: 'assistant', content: '', toolCallIds: ['t1', 't2'], delivery: streamingDelivery('run-generation-1') },
+      ]);
+    });
+
+    it('does not attach a call to a non-assistant message that shares the parent id', () => {
+      const store = makeStore();
+      store.messages.set([{ id: 'shared', role: 'user', content: 'hi', delivery: staticDelivery('shared') }]);
+      reduceEvent(start('t1', 'shared'), store);
+      expect(store.messages()[0]).toEqual({ id: 'shared', role: 'user', content: 'hi', delivery: staticDelivery('shared') });
+      expect(store.messages()[1]).toMatchObject({ id: 't1', role: 'assistant', toolCallIds: ['t1'] });
+    });
+
+    it('lists a repeated start for the same call once', () => {
+      const store = makeStore();
+      reduceEvent(start('t1', 'p1'), store);
+      reduceEvent(start('t1', 'p1'), store);
+      expect(store.messages()[0].toolCallIds).toEqual(['t1']);
+    });
+
+    it('lands a following text message in its own message after the tool-only phase', () => {
+      const store = makeStore();
+      reduceEvent(start('t1'), store);
+      reduceEvent({ type: 'TOOL_CALL_END', toolCallId: 't1' } as any, store);
+      reduceEvent({ type: 'TOOL_CALL_RESULT', toolCallId: 't1', content: '{"ok":true}' } as any, store);
+      reduceEvent({ type: 'TEXT_MESSAGE_START', messageId: 'm1', role: 'assistant' } as any, store);
+      reduceEvent({ type: 'TEXT_MESSAGE_CONTENT', messageId: 'm1', delta: 'Done.' } as any, store);
+      expect(store.messages().map(m => ({ id: m.id, content: m.content, toolCallIds: m.toolCallIds }))).toEqual([
+        { id: 't1', content: '', toolCallIds: ['t1'] },
+        { id: 'm1', content: 'Done.', toolCallIds: undefined },
+      ]);
+      expect(store.messages()[0].delivery).toEqual(completeDelivery('run-generation-1', 'success'));
+      expect(store.toolCalls()).toEqual([
+        { id: 't1', name: 'search', args: {}, status: 'complete', result: { ok: true } },
+      ]);
+    });
+
+    it('creates no message outside an active run', () => {
+      const store = makeStore();
+      store.deliveryRun = null;
+      reduceEvent(start('t1'), store);
+      expect(store.messages()).toEqual([]);
+      expect(store.toolCalls()).toHaveLength(1);
+    });
   });
 
   it('TOOL_CALL_ARGS replaces args on the matching tool call', () => {

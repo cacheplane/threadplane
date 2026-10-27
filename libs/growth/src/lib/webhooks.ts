@@ -93,6 +93,7 @@ export type ProcessResendWebhookResult =
       reason:
         | 'ignored_event_type'
         | 'environment_mismatch'
+        | 'app_mismatch'
         | 'unmatched_job'
         | 'retryable_unmatched_job';
     }
@@ -448,6 +449,7 @@ function validateCorroboration(
 }
 
 function isThreadplaneGrowthSend(tags: Record<string, string>): boolean {
+  const appTags = tags['app'] === 'threadplane' ? 1 : 0;
   const environment = tags['environment'];
   if (
     environment !== 'production' &&
@@ -458,7 +460,7 @@ function isThreadplaneGrowthSend(tags: Record<string, string>): boolean {
   }
   if (tags['job_kind'] === 'fulfill') {
     return (
-      Object.keys(tags).length === 2 &&
+      Object.keys(tags).length === 2 + appTags &&
       tags['campaign_version'] === undefined &&
       tags['campaign_step'] === undefined
     );
@@ -467,7 +469,7 @@ function isThreadplaneGrowthSend(tags: Record<string, string>): boolean {
   // Sends accepted before the template tag shipped carry four tags; newer
   // sends carry a fifth, bounded to the closed template allowlist.
   const template = tags['campaign_template'];
-  const expectedTagCount = template === undefined ? 4 : 5;
+  const expectedTagCount = (template === undefined ? 4 : 5) + appTags;
   return (
     Object.keys(tags).length === expectedTagCount &&
     tags['campaign_version'] === 'v1' &&
@@ -539,6 +541,12 @@ export async function processVerifiedResendWebhook(
     throw new ResendWebhookPayloadError();
   }
   if (!event) return { applied: false, reason: 'ignored_event_type' };
+  // Historical Threadplane messages predate app tags. Their provider ID still
+  // must resolve to an existing job below; explicit foreign tags never enter
+  // the ledger, even when products share the same Resend account.
+  if (event.tags['app'] !== undefined && event.tags['app'] !== 'threadplane') {
+    return { applied: false, reason: 'app_mismatch' };
+  }
   if (event.tags['environment'] !== dependencies.databaseEnvironment) {
     return { applied: false, reason: 'environment_mismatch' };
   }

@@ -24,9 +24,19 @@
     },
     "smoke": {
       "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": ["test"],
       "options": {
         "cwd": "cockpit/chat/messages/python",
         "command": "npx tsx -e \"import { chatMessagesPythonModule } from './src/index.ts'; const module = chatMessagesPythonModule; if (module.id !== 'chat-messages-python' || module.title !== 'Chat Messages (Python)') { throw new Error('Unexpected module shape for ' + module.id); }\""
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "cwd": "cockpit/chat/messages/python",
+        "command": "uv run --frozen --python 3.12 python -m unittest discover -s tests"
       }
     }
   },

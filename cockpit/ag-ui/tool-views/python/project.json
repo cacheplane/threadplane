@@ -19,8 +19,13 @@
       "executor": "nx:run-commands",
       "options": {
         "cwd": "cockpit/ag-ui/tool-views/python",
-        "command": "npx tsx -e \"import { agUiToolViewsPythonModule } from './src/index.ts'; const module = agUiToolViewsPythonModule; if (module.id !== 'ag-ui-tool-views-python' || module.title !== 'AG-UI Tool Views (Python)') { throw new Error('Unexpected module shape for ' + module.id); }\""
-      }
+        "commands": [
+          "npx tsx -e \"import { agUiToolViewsPythonModule } from './src/index.ts'; const module = agUiToolViewsPythonModule; if (module.id !== 'ag-ui-tool-views-python' || module.title !== 'AG-UI Tool Views (Python)') { throw new Error('Unexpected module shape for ' + module.id); }\"",
+          "uv run --frozen --python 3.12 python -m unittest discover -s tests -v"
+        ],
+        "parallel": false
+      },
+      "cache": false
     },
     "serve": {
       "executor": "nx:run-commands",

@@ -8,14 +8,17 @@ featured: false
 draft: false
 ---
 
-Threadplane gives you two ways to let an agent build UI — a json-render spec or an A2UI surface — and this post is about how to pick.
+Threadplane gives you two ways to let an agent build UI: a json-render spec or an A2UI surface.
+Let's figure out how to pick.
 
-There is a ladder here: markdown when text is the best UI → a fixed spec when you can validate the whole thing up front → a live protocol when the surface keeps changing.
-The [mechanical comparison](/docs/render/concepts/json-render-vs-a2ui) covers what each layer does; this post answers the question that page ends on: which rung is yours?
+I think of it as a ladder: markdown when text is the best UI → a fixed spec when you can validate the whole thing up front → a live protocol when the surface keeps changing.
+The [mechanical comparison](/docs/render/concepts/json-render-vs-a2ui) covers what each layer does.
+This post answers the question that page ends on: which rung is yours?
 
 ## What's actually different?
 
-This is not a renderer shootout. The tradeoff is contract shape.
+This isn't a renderer shootout.
+The tradeoff is contract shape.
 
 With json-render, the contract is _application-owned_.
 You define the schema, you validate the spec before anything mounts, and your handlers own what every event means.
@@ -23,8 +26,8 @@ You define the schema, you validate the spec before anything mounts, and your ha
 With A2UI, the surface is _agent-owned_.
 The agent creates it, keeps updating it over the life of the conversation, and gets structured actions back when the user interacts.
 
-Here is the same order card in both shapes.
-First as a json-render spec:
+Let's look at the same order card in both shapes.
+First, as a json-render spec:
 
 ```json
 {
@@ -46,35 +49,37 @@ And as an A2UI JSONL stream:
 {"version":"v0.9","updateDataModel":{"surfaceId":"order","path":"/total","value":"$118.00"}}
 ```
 
-(I trimmed this one to the total line — the full card is just more components in the `updateComponents` envelope. The point is the shape: structure in one message, data in another.)
+(I trimmed this one to the total line. The full card is just more components in the `updateComponents` envelope. What matters is the shape: structure in one message, data in another.)
 
 One is a document you can validate before you show it; the other is a conversation you subscribe to.
 
 ## When does the fixed spec win?
 
-Whenever the UI is one answer — the agent responds once, the UI renders once, and it is done.
+Whenever the UI is one answer: the agent responds once, the UI renders once, and it's done.
 
-Two scenarios, each walked to a verdict.
+Let's walk two scenarios to a verdict.
 
 A _structured result card_ in chat: the agent looks up an order and answers with a summary card.
-Nothing about that card changes after it lands, so there is no ongoing surface to manage.
+Nothing about that card changes after it lands, so there's no ongoing surface to manage.
 Verdict: json-render.
-You get to validate the whole spec before mount, and your handlers — not the protocol — decide what a click means.
+You get to validate the whole spec before mount, and your handlers (not the protocol) decide what a click means.
 
 A _dashboard or results panel_ outside chat: your application already has the data and wants a model (or a config file, honestly) to describe the layout.
 Verdict: json-render again, driven directly through `<render-spec>`.
 The fixed contract is the feature here: explicit inputs on your own custom components, a schema you can lint, a spec you can snapshot in a test.
 
 One security note: in both paths, the registry is doing allowlist duty.
-A component name the model emits that is not registered falls back instead of executing — json-render and A2UI share that posture, so it is not a reason to pick either.
+A component name the model emits that isn't registered falls back instead of executing.
+json-render and A2UI share that posture, so it's not a reason to pick either.
 
 ## When does the protocol win?
 
 Whenever the surface has to live past its first render.
 
-Consider the itinerary case.
+Let's consider the itinerary case.
 The agent proposes a three-day trip mid-conversation: the component structure arrives first, prices and times fill in as `updateDataModel` messages land, and two turns later the agent swaps day two entirely.
-That is not one spec becoming one component tree — it is a surface being edited over time, and that is exactly what the envelope stream models.
+That isn't one spec becoming one component tree.
+It's a surface being edited over time, and that's exactly what the envelope stream models.
 
 Now a form the _agent_ needs back.
 A _valid_ submit goes back to the agent as a structured action message on its own; create the surface with `sendDataModel` and the current data model rides along.
@@ -82,22 +87,25 @@ Either way, user input flows back through the protocol, not through handlers you
 
 So the reasons to step up: incremental surfaces, data arriving separately from structure, and user actions as first-class protocol messages.
 
-The honest cost is protocol discipline.
-Envelopes have to be valid and arrive in a sensible order, the catalog has to support every component type the agent names, and someone has to actually design the action semantics — a fixed spec asks for none of that.
+For me, the real cost is protocol discipline.
+Envelopes have to be valid and arrive in a sensible order, the catalog has to support every component type the agent names, and someone has to actually design the action semantics.
+A fixed spec asks for none of that.
 
 ## What does it cost to switch?
 
-Inside chat, less than you would think.
+Inside chat, less than you'd think.
 
-Here is why. The same `[views]` catalog feeds both paths, and chat detects the contract from the first bytes: `{` means a json-render spec, `---a2ui_JSON---` means A2UI JSONL.
-So the choice is per-surface, not per-app — and it is revisable.
+The same `[views]` catalog feeds both paths, and chat detects the contract from the first bytes: `{` means a json-render spec, `---a2ui_JSON---` means A2UI JSONL.
+So the choice is per-surface, not per-app, and it's revisable.
 
-For me, the default is: start with json-render, and step up to A2UI only when a surface genuinely needs to live past its first render.
-You are not locked in either way, so the cheap contract is the right place to begin.
+For me, the default is to start with json-render, and step up to A2UI only when a surface genuinely needs to live past its first render.
+You're not locked in either way, so the cheap contract is the right place to begin.
 
 ## Conclusion
 
-The heuristic is short: if you can validate the entire UI before it renders, start with json-render; if the surface keeps changing after it lands — data trickling in, actions coming back, edits across turns — use A2UI.
+The heuristic is short.
+If you can validate the entire UI before it renders, start with json-render.
+If the surface keeps changing after it lands (data trickling in, actions coming back, edits across turns), use A2UI.
 
 The [mechanical comparison](/docs/render/concepts/json-render-vs-a2ui) has the layer-by-layer details, the [generative UI guide](/docs/chat/guides/generative-ui) wires up the json-render path end to end, and the [A2UI overview](/docs/chat/a2ui/overview) does the same for surfaces.
-Pick a surface you are building this week, run it up the ladder, and let me know where it lands.
+Pick a surface you're building this week, run it up the ladder, and let me know where it lands.

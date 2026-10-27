@@ -1,0 +1,88 @@
+{
+  "name": "cockpit-deep-agents-skills-react",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "cockpit/deep-agents/skills/react/src",
+  "projectType": "application",
+  "tags": [
+    "scope:cockpit-examples",
+    "framework:react",
+    "scope:cockpit-e2e"
+  ],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [
+        {
+          "target": "build",
+          "projects": [
+            "core",
+            "content",
+            "react"
+          ]
+        }
+      ],
+      "outputs": [
+        "{workspaceRoot}/dist/cockpit/deep-agents/skills/react"
+      ],
+      "options": {
+        "command": "node scripts/react-cockpit/build.mjs deep-agents-skills"
+      }
+    },
+    "configuration-test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "node --test scripts/react-cockpit/deep-agents-skills-configuration.spec.mjs"
+      }
+    },
+    "test": {
+      "executor": "@nx/vitest:test",
+      "options": {
+        "configFile": "cockpit/deep-agents/skills/react/vite.config.mts",
+        "reporters": [
+          "default"
+        ]
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "eslintConfig": "cockpit/deep-agents/skills/react/eslint.config.mjs"
+      }
+    },
+    "fixture-test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [
+        {
+          "target": "test",
+          "projects": [
+            "cockpit-deep-agents-skills-python"
+          ]
+        },
+        {
+          "target": "build",
+          "projects": [
+            "core"
+          ]
+        }
+      ],
+      "options": {
+        "command": "node --test scripts/react-cockpit/deep-agents-skills-fixture.spec.mjs scripts/react-cockpit/deep-agents-skills-configuration.spec.mjs"
+      }
+    },
+    "e2e": {
+      "executor": "@nx/playwright:playwright",
+      "cache": false,
+      "dependsOn": [
+        "build",
+        "fixture-test"
+      ],
+      "options": {
+        "config": "cockpit/deep-agents/skills/react/e2e/playwright.config.ts",
+        "skipInstall": true
+      }
+    }
+  }
+}

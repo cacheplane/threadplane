@@ -144,8 +144,8 @@ describe('statusColor', () => {
     expect(statusColor('running')).toContain('var(--tplane-chat-warning-text)');
   });
 
-  it('returns success style for complete', () => {
-    expect(statusColor('complete')).toContain('var(--tplane-chat-success)');
+  it('returns the small-text success color for complete', () => {
+    expect(statusColor('complete')).toContain('var(--tplane-chat-success-text)');
   });
 
   it('returns error style for error', () => {

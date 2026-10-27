@@ -1,2 +1,10 @@
-// Reserved private entry point. Runtime implementation follows in later work.
-export {};
+export { createJson } from './create-json.js';
+export type {
+  Json,
+  JsonDocument,
+  JsonError,
+  JsonNode,
+  JsonOptions,
+  JsonPartialValue,
+  JsonSnapshot,
+} from './types.js';

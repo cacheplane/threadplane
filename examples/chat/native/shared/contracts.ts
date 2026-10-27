@@ -3,6 +3,10 @@
 export interface ThreadRow {
   readonly id: string;
   readonly title: string;
+  readonly updatedAt?: number;
+  readonly pinned?: boolean;
+  readonly pinnedOrder?: number;
+  readonly archived?: boolean;
 }
 
 export type DirectoryResult<T> =
@@ -13,7 +17,36 @@ export type ThreadLookupResult =
   | DirectoryResult<ThreadRow>
   | Readonly<{ kind: 'missing' }>;
 
+export type RemovalInspection =
+  | DirectoryResult<ThreadRow>
+  | Readonly<{ kind: 'missing'; id: string }>;
+
 export interface ThreadDirectory {
+  remove?(
+    id: string,
+    signal: AbortSignal
+  ): Promise<DirectoryResult<Readonly<{ id: string }>>>;
+  inspectRemoval?(id: string, signal: AbortSignal): Promise<RemovalInspection>;
+  setPinnedOrder?(
+    id: string,
+    rank: number,
+    signal: AbortSignal
+  ): Promise<DirectoryResult<ThreadRow>>;
+  setArchived?(
+    id: string,
+    archived: boolean,
+    signal: AbortSignal
+  ): Promise<DirectoryResult<ThreadRow>>;
+  setPinned?(
+    id: string,
+    pinned: boolean,
+    signal: AbortSignal
+  ): Promise<DirectoryResult<ThreadRow>>;
+  rename?(
+    id: string,
+    title: string,
+    signal: AbortSignal
+  ): Promise<DirectoryResult<ThreadRow>>;
   get(id: string, signal: AbortSignal): Promise<ThreadLookupResult>;
   list(signal: AbortSignal): Promise<DirectoryResult<readonly ThreadRow[]>>;
   create(signal: AbortSignal): Promise<DirectoryResult<ThreadRow>>;

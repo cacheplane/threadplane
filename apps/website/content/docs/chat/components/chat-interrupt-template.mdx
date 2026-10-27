@@ -1,0 +1,53 @@
+---
+description: The ChatInterruptTemplateDirective renders your approval card or other interrupt UI at the end of the chat transcript while an interrupt is pending.
+---
+
+# ChatInterruptTemplateDirective
+
+`ChatInterruptTemplateDirective` registers an interrupt renderer on `<chat>`. While the agent has a pending interrupt, the template renders at the end of the transcript, inside the scroll region and after any [run activity](/docs/chat/components/chat-run-activity-template), so approval cards sit in the conversation instead of beside it.
+
+`<chat>` has no default interrupt UI. With no pending interrupt, or no template, nothing renders.
+
+**Selector:** `ng-template[chatInterruptTemplate]`
+
+**Import:**
+
+```typescript
+import { ChatInterruptTemplateDirective, type ChatInterruptTemplateContext } from '@threadplane/chat';
+```
+
+## Template context
+
+| Variable | Type | Description |
+|---|---|---|
+| `let-agent` (`$implicit`) | `Agent` | The agent bound to `<chat>`. |
+| `let-interrupt="interrupt"` | `AgentInterrupt` | The pending interrupt, read from `agent.interrupt()`. |
+
+The template renders while `agent.interrupt()` is defined. A runtime that exposes a full batch of interrupts does so on its own agent type, which the template reaches through `let-agent`.
+
+## Example
+
+```html
+<chat [agent]="agent">
+  <ng-template chatInterruptTemplate let-agent let-interrupt="interrupt">
+    <my-approval-card
+      [request]="interrupt.value"
+      (decide)="agent.submit({ resume: $event })"
+    />
+  </ng-template>
+</chat>
+```
+
+[`<chat-interrupt-panel>`](/docs/chat/components/chat-interrupt-panel) works inside the template too:
+
+```html
+<chat [agent]="agent">
+  <ng-template chatInterruptTemplate let-agent>
+    <chat-interrupt-panel [agent]="agent" (action)="onInterruptAction($event)" />
+  </ng-template>
+</chat>
+```
+
+## Accessibility and scrolling
+
+The template renders inside a `role="status"` region with `aria-atomic="false"`, matching the typing indicator, so the arrival of an interrupt is announced. While the transcript is pinned to the bottom, `<chat>` scrolls to keep the region in view as it appears and changes size.

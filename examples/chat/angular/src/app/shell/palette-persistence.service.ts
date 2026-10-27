@@ -25,7 +25,7 @@ type PaletteKey = keyof PaletteState;
  */
 const ALLOWED = {
   model:       new Set(['gpt-5', 'gpt-5-mini', 'gpt-5-nano']),
-  effort:      new Set(['minimal', 'low', 'medium', 'high']),
+  effort:      new Set(['default', 'minimal', 'low', 'medium', 'high']),
   genUiMode:   new Set(['a2ui', 'json-render']),
   theme:       new Set(['default-dark', 'default-light', 'material-dark', 'material-light']),
   colorScheme: new Set<string>(['light', 'dark']),

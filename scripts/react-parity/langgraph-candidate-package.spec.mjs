@@ -21,6 +21,7 @@ import {
   candidateCompilerOptions,
   lockedVendorGraph,
   vendorOverrides,
+  lockedEdgeRanges,
   fileHashes,
   localArtifactRecords,
   assertLocalResolutions,
@@ -411,6 +412,8 @@ test('composition requires the actual installed runtime and declarations and rej
   );
 });
 test('vendor pinning scopes every nested override to its locked version', () => {
+  const versions = [{ name: 'zod', version: '3.25.76', dependencies: {} }, { name: 'zod', version: '4.3.6', dependencies: {} }];
+  assert.deepEqual(vendorOverrides(versions, ['zod@3.25.76', 'zod@4.3.6']), { 'zod@3.25.76': '3.25.76', 'zod@4.3.6': '4.3.6' });
   const lock = {
     packages: {
       'node_modules/@langchain/langgraph-sdk': {
@@ -445,8 +448,44 @@ test('vendor pinning scopes every nested override to its locked version', () => 
     },
     '@langchain/core@1.2.9': { '.': '1.2.9', 'vendor@1.0.1': '1.0.1' },
   });
+  assert.deepEqual(
+    vendorOverrides(graph, undefined, {
+      rootPins: ['@langchain/langgraph-sdk@1.10.0', '@langchain/core@1.2.9'],
+    })['@langchain/langgraph-sdk@1.10.0'],
+    {
+      '.': '1.10.0',
+      'vendor@2.0.1': { '.': '2.0.1', 'leaf@3.0.1': '3.0.1' },
+    },
+    'a root-pinned peer is not re-pinned inside another owner subtree'
+  );
   delete lock.packages['node_modules/leaf'];
   assert.throws(() => lockedVendorGraph(lock), /Missing locked dependency/);
+});
+test('edge ranges qualify selectors so npm 11 replaces a hoisted incompatible candidate', () => {
+  const lock = {
+    packages: {
+      'node_modules/@langchain/core': {
+        version: '1.2.9',
+        dependencies: { zod: '^3.25.76 || ^4' },
+      },
+      'node_modules/zod': { version: '3.25.76' },
+      'node_modules/@json-render/core': {
+        version: '0.16.0',
+        dependencies: { zod: '^4.3.6' },
+      },
+      'node_modules/@json-render/core/node_modules/zod': { version: '4.3.6' },
+    },
+  };
+  const graph = lockedVendorGraph(lock, ['@langchain/core']);
+  assert.deepEqual(
+    vendorOverrides(graph, ['@langchain/core'], {
+      edgeRanges: lockedEdgeRanges(lock),
+    }),
+    { '@langchain/core@1.2.9': { '.': '1.2.9', 'zod@^3.25.76 || ^4': '3.25.76' } }
+  );
+  assert.deepEqual(vendorOverrides(graph, ['@langchain/core']), {
+    '@langchain/core@1.2.9': { '.': '1.2.9', 'zod@3.25.76': '3.25.76' },
+  });
 });
 test('conflicting queue descendants retain distinct version selectors and reject incompatible hoisting', () => {
   const lock = {

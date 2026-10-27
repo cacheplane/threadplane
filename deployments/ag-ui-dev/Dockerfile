@@ -3,10 +3,6 @@
 # into a slim runner without build tooling.
 FROM python:3.12-slim@sha256:d764629ce0ddd8c71fd371e9901efb324a95789d2315a47db7e4d27e78f1b0e9 AS builder
 WORKDIR /build
-# git is required by pip for direct-URL requirements (the ag-ui-strands
-# bridge is pinned to a git ref; see cockpit/runtimes/aws-strands/python).
-RUN apt-get update && apt-get install -y --no-install-recommends git \
-  && rm -rf /var/lib/apt/lists/*
 COPY requirements.txt .
 RUN pip install --user --no-cache-dir -r requirements.txt
 

@@ -291,6 +291,66 @@
   border-bottom: 0;
 }
 
+/* Phones: one card per plan detail, plan name beside each value, instead of
+ * a 1060px grid scrolled behind a sticky column. */
+@media (max-width: 40rem) {
+  .pricing-comparison-scroll {
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: none;
+  }
+  .pricing-comparison-table,
+  .pricing-comparison-table tbody,
+  .pricing-comparison-table tr,
+  .pricing-comparison-table th,
+  .pricing-comparison-table td {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+  .pricing-comparison-table { font-size: 14px; }
+  .pricing-comparison-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .pricing-comparison-table tbody tr {
+    margin-bottom: 12px;
+    padding: 14px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+  }
+  .pricing-comparison-table .pricing-comparison-row-heading {
+    position: static;
+    padding: 0 0 8px;
+    border: 0;
+    font-size: 15px;
+  }
+  .pricing-comparison-table td,
+  .pricing-comparison-table td[data-highlight] {
+    position: relative;
+    padding: 6px 0 6px calc(42% + 12px);
+    border: 0;
+    background: none;
+  }
+  .pricing-comparison-table td::before {
+    position: absolute;
+    top: 6px;
+    left: 0;
+    width: 42%;
+    content: attr(data-label);
+    color: var(--color-text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.75;
+  }
+}
+
 @media (max-width: 1100px) {
   .pricing-plan-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

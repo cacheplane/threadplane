@@ -235,7 +235,10 @@ async def test_without_any_delegation_the_stream_is_the_identity(monkeypatch):
     script = [_run_started(), *_tool_call("call_search", name="search_documents"),
               _tool_result("call_search", "[]"), *_text("lc_run--parent", "hi"), _run_finished()]
     out = await _collect(monkeypatch, script)
-    assert out == script
+    # Identity except the one stamp: RUN_STARTED gains the protocol version.
+    assert out[0].protocol_version == "1.0"
+    assert out[1:] == script[1:]
+    assert out[0].model_copy(update={"protocol_version": None}) == script[0]
 
 
 async def test_serialized_custom_value_is_decoded(monkeypatch):
@@ -459,3 +462,20 @@ def test_server_mounts_the_emitting_agent(monkeypatch):
     from src import server
 
     assert isinstance(server.agent, SubagentEmittingAgent)
+
+
+async def test_run_started_declares_the_protocol_version(monkeypatch):
+    from ag_ui.core import PROTOCOL_VERSION
+
+    events = await _collect(monkeypatch, [_run_started()])
+    started = events[0]
+    assert started.type == EventType.RUN_STARTED
+    assert started.protocol_version == PROTOCOL_VERSION
+
+
+async def test_run_started_keeps_an_explicit_protocol_version(monkeypatch):
+    started_in = RunStartedEvent(
+        type=EventType.RUN_STARTED, thread_id="t", run_id="r", protocol_version="1.0"
+    )
+    events = await _collect(monkeypatch, [started_in])
+    assert events[0].protocol_version == "1.0"

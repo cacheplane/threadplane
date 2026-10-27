@@ -9,6 +9,8 @@ description: How the Mastra example is built, from the Node service that serves 
 
 ## What the demo does
 
+The default Angular example below is the full camping planner. Select React for an experimental private source-build reservation preview using the same actual Mastra service and canonical prompts. It supports fictional Approve/Decline decisions through a current correlated native pause and top-level native resume. Compatibility notices alone cannot authorize a decision. Only a current successful terminal outcome plus a correlated literal backend tool result confirms an outcome; assistant prose alone does not. Stop, New, and uncertain outcomes revoke old authority without replay. The React preview does not claim weather/subagent parity, public npm availability, or durable restoration across reloads.
+
 The Run tab shows the prebuilt `<chat>` composition beside a panel that mirrors the agent's packing list. Three welcome suggestions set it up: "Start a packing list" seeds a titled list with a tent and two sleeping bags and the panel fills in as the agent writes it, "Check trail conditions" makes the agent call a backend tool, and "Reserve the campsite" asks for two nights at North Pines.
 
 The reservation pauses the run and displays North Pines, two nights, and a $90 total. Approve resumes with a synthetic confirmation; Cancel resumes with a tool result containing `Nothing was booked.` and an assistant reply agreeing with that result. Both paths were verified on 2026-09-09. The tool is local and does not make an external reservation.
@@ -81,7 +83,7 @@ The agent handed to the bridge is wrapped first, which is what makes the subagen
 
 ### The agent provider
 
-`provideAgent()` registers the agent once for the whole application. Mastra requires `interruptTransport: 'mastra-command'` because its backend consumes a command even though it also emits native interrupt outcomes. The example passes a factory because it resolves its endpoint at runtime from the host that serves the demo.
+`provideAgent()` registers the agent once for the whole Angular application. This Angular compatibility example selects `interruptTransport: 'mastra-command'` to send the legacy command shape alongside native interrupt observations. The native React reservation preview instead uses top-level native resume. The Angular example passes a factory because it resolves its endpoint at runtime from the host that serves the demo.
 
 <ExampleCode file="app.config.ts" />
 
@@ -116,7 +118,7 @@ The class supplies that payload and maps the two actions onto resume calls.
 
 <ExampleCode file="mastra.component.ts" region="approval-actions" title="mastra.component.ts — reading the interrupt and resuming" />
 
-`agent.interruptSession().legacy?.value` carries the parsed `CUSTOM on_interrupt` payload alongside the native interrupt batch. The provider selects `interruptTransport: 'mastra-command'`, so `submit({ resume })` goes back out as `forwardedProps.command = { resume, interruptEvent: { toolCallId, runId } }` — the shape the Mastra bridge reads to reopen the suspended run.
+In this Angular compatibility example, `agent.interruptSession().legacy?.value` carries the parsed `CUSTOM on_interrupt` payload alongside the native interrupt batch. The provider selects `interruptTransport: 'mastra-command'`, so `submit({ resume })` goes back out as `forwardedProps.command = { resume, interruptEvent: { toolCallId, runId } }` — the compatibility shape the Mastra bridge reads to reopen the suspended run.
 
 ## What the integration demonstrates
 

@@ -6,6 +6,10 @@ export const HERO_PARENT_ORIGINS: readonly string[] = [
   'https://www.threadplane.ai',
   'http://localhost:3000',
   'http://127.0.0.1:4308',
+  // LiveLoveApp's marketing site embeds the hero with `?replay=only`, which
+  // keeps the frame on the recorded run (see `isReplayOnly` in hero-mode).
+  'https://liveloveapp.com',
+  'https://www.liveloveapp.com',
 ];
 
 /** Preview deployments of the website: `https://<slug>.vercel.app`, one label deep. */

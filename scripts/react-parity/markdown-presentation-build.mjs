@@ -330,6 +330,8 @@ export function readPresentation(directory, provenance) {
 }
 
 export const presentationSeeds = [
+  '@json-render/core',
+  '@cacheplane/json-stream',
   '@cacheplane/partial-markdown',
   '@angular/core',
   '@angular/common',
@@ -347,7 +349,15 @@ export const presentationSeeds = [
   '@angular/build',
   '@angular/compiler-cli',
 ];
+// The mixed native build uses the same exact framework/build roots as Markdown.
+export const a2uiSurfacesPresentationSeeds = Object.freeze([...presentationSeeds]);
+// Mixed data-only borrowers need both frameworks/build tooling. The installed
+// React manifest still brings its required SDK dependency into the lock, but
+// neither SDK nor content parsers may enter this presentation's runtime graph.
+export const renderStatePresentationSeeds = Object.freeze([...presentationSeeds]);
 export const reactLanggraphPresentationSeeds = [
+  '@json-render/core',
+  '@cacheplane/json-stream',
   '@cacheplane/partial-markdown',
   '@langchain/langgraph-sdk',
   'react',
@@ -358,7 +368,15 @@ export const reactLanggraphPresentationSeeds = [
   'typescript',
   'vite',
 ];
+export const reactAgUiPresentationSeeds = reactLanggraphPresentationSeeds.map(
+  (name) => (name === '@langchain/langgraph-sdk' ? '@ag-ui/client' : name)
+);
+export const reactRenderPresentationSeeds = reactLanggraphPresentationSeeds.map(
+  (name) =>
+    name === '@langchain/langgraph-sdk' ? '@cacheplane/partial-json' : name
+);
 export const angularLanggraphPresentationSeeds = [
+  '@cacheplane/json-stream',
   '@cacheplane/partial-markdown',
   '@angular/core',
   '@angular/common',
@@ -373,25 +391,55 @@ export const angularLanggraphPresentationSeeds = [
   '@angular/compiler-cli',
   '@langchain/langgraph-sdk',
 ];
+export const angularFoundationPresentationSeeds = angularLanggraphPresentationSeeds.filter(
+  (name) => name !== '@langchain/langgraph-sdk'
+);
 const localNames = [
   '@threadplane/content',
   '@threadplane/core',
   '@threadplane/react',
   '@threadplane/angular',
 ];
+function isReactAgUiProfile(profile) {
+  return profile === 'react-ag-ui' || profile === 'react-native-a2ui-ag-ui';
+}
 function presentationLocals(profile) {
   assert.ok(
-    ['markdown', 'react-langgraph', 'angular-langgraph'].includes(profile),
+    [
+      'markdown',
+      'a2ui-surfaces',
+      'render-state',
+      'react-langgraph',
+      'react-native-a2ui-langgraph',
+      'react-native-a2ui-ag-ui',
+      'angular-langgraph',
+      'angular-foundation',
+      'react-ag-ui',
+      'react-render',
+    ].includes(profile),
     `Unknown presentation profile: ${profile}`
   );
-  if (profile === 'markdown') return localNames;
+  if (profile === 'markdown' || profile === 'render-state') return localNames;
+  if (profile === 'a2ui-surfaces') return [...localNames, '@threadplane/a2ui'];
+  if (profile === 'react-native-a2ui-langgraph')
+    return ['core', 'content', 'a2ui', 'react', 'langgraph'].map(
+      (name) => '@threadplane/' + name
+    );
+  if (profile === 'react-native-a2ui-ag-ui')
+    return ['core', 'content', 'a2ui', 'react', 'ag-ui'].map(
+      (name) => '@threadplane/' + name
+    );
+  if (profile === 'react-render')
+    return localNames.filter((name) => name !== '@threadplane/angular');
+  if (profile === 'angular-foundation')
+    return localNames.filter((name) => name !== '@threadplane/react');
   const excluded =
-    profile === 'react-langgraph'
+    profile === 'react-langgraph' || isReactAgUiProfile(profile)
       ? '@threadplane/angular'
       : '@threadplane/react';
   return [
     ...localNames.filter((name) => name !== excluded),
-    '@threadplane/langgraph',
+    isReactAgUiProfile(profile) ? '@threadplane/ag-ui' : '@threadplane/langgraph',
   ];
 }
 
@@ -407,7 +455,7 @@ function assertPresentationPackages(
   for (const path of Object.keys(packages)) {
     if (!path) continue;
     const name = path.split('node_modules/').at(-1);
-    if (profile === 'react-langgraph')
+    if (['react-langgraph', 'react-native-a2ui-langgraph', 'react-native-a2ui-ag-ui', 'react-ag-ui', 'react-render'].includes(profile))
       assert.ok(
         !/^@(?:angular|angular-devkit)\//.test(name) &&
           ![
@@ -418,7 +466,7 @@ function assertPresentationPackages(
           ].includes(name),
         `Unexpected Angular package: ${name}`
       );
-    if (profile === 'angular-langgraph')
+    if (profile === 'angular-langgraph' || profile === 'angular-foundation')
       assert.ok(
         !['react', 'react-dom', '@types/react', '@types/react-dom'].includes(
           name
@@ -430,8 +478,10 @@ function assertPresentationPackages(
       ['langchain', '@mastra/client-js'].includes(name);
     assert.ok(
       (!backend ||
-        (profile !== 'markdown' &&
-          name.startsWith('@langchain/') &&
+        (profile !== 'markdown' && profile !== 'a2ui-surfaces' && profile !== 'render-state' && profile !== 'react-render' && profile !== 'angular-foundation' &&
+          name.startsWith(
+            isReactAgUiProfile(profile) ? '@ag-ui/' : '@langchain/'
+          ) &&
           sdkNames.has(name))) &&
         (profile === 'markdown' ||
           !['openai', '@anthropic-ai/sdk'].includes(name)),
@@ -447,7 +497,11 @@ const integrity = (path) =>
 
 // Selection only: npm owns installation. Keep the original physical records,
 // including optional binaries for other platforms; never flatten or re-resolve.
-export function selectPresentationLock(lock, seeds = presentationSeeds) {
+export function selectPresentationLock(
+  lock,
+  seeds = presentationSeeds,
+  effectiveRanges = {}
+) {
   assert.equal(lock.lockfileVersion, 3, 'Root lock v3 required');
   const packages = lock.packages,
     selected = {};
@@ -490,8 +544,10 @@ export function selectPresentationLock(lock, seeds = presentationSeeds) {
         continue;
       assert.ok(target, `Missing locked dependency ${name} of ${path}`);
       assert.ok(
-        satisfies(packages[target].version, range),
-        `Locked ${target}@${packages[target].version} must satisfy ${range}`
+        satisfies(packages[target].version, effectiveRanges[name] ?? range),
+        `Locked ${target}@${packages[target].version} must satisfy ${
+          effectiveRanges[name] ?? range
+        }`
       );
       todo.push(target);
     }
@@ -501,13 +557,42 @@ export function selectPresentationLock(lock, seeds = presentationSeeds) {
 
 // Physical duplicates/hoisting are irrelevant only when the whole record agrees.
 // Keep same-name/version records with different edges distinct, including cycles.
-export function canonicalVendorGraph(lock, seeds = presentationSeeds) {
-  const records = lockedVendorGraph(lock, seeds).map((record) => ({
-    ...record,
-    dependencies: Object.fromEntries(
-      Object.entries(record.dependencies).sort(([a], [b]) => a.localeCompare(b))
-    ),
-  }));
+export function canonicalVendorGraph(
+  lock,
+  seeds = presentationSeeds,
+  effectiveRanges = {}
+) {
+  // Only explicitly present local optional peers contribute edges. This keeps
+  // partial profiles isolated while validating selected feature peer ranges.
+  const packages = Object.fromEntries(
+    Object.entries(lock.packages).map(([path, record]) => {
+      const selected = Object.keys(record.peerDependencies ?? {}).filter(
+        (name) => name.startsWith('@threadplane/') &&
+          record.peerDependenciesMeta?.[name]?.optional &&
+          lock.packages['node_modules/' + name]
+      );
+      if (!selected.length) return [path, record];
+      return [path, {
+        ...record,
+        peerDependenciesMeta: {
+          ...record.peerDependenciesMeta,
+          ...Object.fromEntries(selected.map((name) => [name, {
+            ...record.peerDependenciesMeta[name], optional: false,
+          }])),
+        },
+      }];
+    })
+  );
+  const records = lockedVendorGraph({ ...lock, packages }, seeds, effectiveRanges).map(
+    (record) => ({
+      ...record,
+      dependencies: Object.fromEntries(
+        Object.entries(record.dependencies).sort(([a], [b]) =>
+          a.localeCompare(b)
+        )
+      ),
+    })
+  );
   return [...new Set(records.map((record) => JSON.stringify(record)))]
     .sort()
     .map((record) => JSON.parse(record));
@@ -525,22 +610,59 @@ export function derivePresentationConsumer(
     [...locals].sort(),
     profile === 'markdown'
       ? 'Exactly four Markdown foundation tarballs required'
+      : profile === 'a2ui-surfaces'
+      ? 'Exactly five A2UI surfaces tarballs required'
+      : profile === 'render-state'
+      ? 'Exactly four render-state tarballs required'
+      : profile === 'react-native-a2ui-langgraph'
+      ? 'Exactly five native React A2UI LangGraph tarballs required'
+      : profile === 'react-native-a2ui-ag-ui'
+      ? 'Exactly five native React A2UI AG-UI tarballs required'
+      : profile === 'react-render'
+      ? 'Exactly React, core and content static tarballs required'
+      : profile === 'angular-foundation'
+      ? 'Exactly Angular, core and content foundation tarballs required'
       : `Exactly ${
-          profile === 'react-langgraph' ? 'React' : 'Angular'
-        }, core, content and LangGraph candidate tarballs required`
+          profile === 'react-langgraph' || isReactAgUiProfile(profile)
+            ? 'React'
+            : 'Angular'
+        }, core, content and ${
+          isReactAgUiProfile(profile) ? 'AG-UI' : 'LangGraph'
+        } candidate tarballs required`
   );
-  const selected = selectPresentationLock(rootLock, seeds);
+  // AG-UI's pinned client is installed under the repository's reviewed RxJS policy.
+  const effectiveRanges = isReactAgUiProfile(profile) ? { rxjs: '~7.8.0' } : {};
+  const selected = selectPresentationLock(rootLock, seeds, effectiveRanges);
   if (profile !== 'markdown') {
-    const react = profile === 'react-langgraph';
-    const selectedSeeds = react
-      ? reactLanggraphPresentationSeeds
-      : angularLanggraphPresentationSeeds;
-    const framework = react ? 'React' : 'Angular';
+    const react = ['react-langgraph', 'react-native-a2ui-langgraph', 'react-native-a2ui-ag-ui', 'react-ag-ui', 'react-render'].includes(profile);
+    const selectedSeeds =
+      profile === 'a2ui-surfaces'
+        ? a2uiSurfacesPresentationSeeds
+        : profile === 'render-state'
+        ? renderStatePresentationSeeds
+        : profile === 'react-render'
+        ? reactRenderPresentationSeeds
+        : profile === 'angular-foundation'
+        ? angularFoundationPresentationSeeds
+        : isReactAgUiProfile(profile)
+        ? reactAgUiPresentationSeeds
+        : react
+        ? reactLanggraphPresentationSeeds
+        : angularLanggraphPresentationSeeds;
+    const framework = profile === 'a2ui-surfaces' ? 'A2UI surfaces' : profile === 'render-state' ? 'render-state' : react ? 'React' : profile === 'angular-foundation' ? 'Angular foundation' : 'Angular';
     assertPresentationPackages(
       selected,
       profile,
       locals,
-      selectPresentationLock(rootLock, ['@langchain/langgraph-sdk'])
+      profile === 'a2ui-surfaces' || profile === 'render-state' || profile === 'react-render' || profile === 'angular-foundation' ? {} : selectPresentationLock(
+        rootLock,
+        [
+          isReactAgUiProfile(profile)
+            ? '@ag-ui/client'
+            : '@langchain/langgraph-sdk',
+        ],
+        effectiveRanges
+      )
     );
     for (const name of seeds)
       assert.ok(
@@ -551,7 +673,7 @@ export function derivePresentationConsumer(
       [...seeds].sort(),
       [...selectedSeeds].sort(),
       `Exactly ${
-        react ? 'nine' : 'thirteen'
+        profile === 'a2ui-surfaces' || profile === 'render-state' ? 'eighteen' : react ? 'eleven' : profile === 'angular-foundation' ? 'thirteen' : 'fourteen'
       } selected ${framework} seeds required`
     );
   }
@@ -561,6 +683,7 @@ export function derivePresentationConsumer(
     version: '0.0.0',
     private: true,
     type: 'module',
+    ...(isReactAgUiProfile(profile) ? { overrides: effectiveRanges } : {}),
     dependencies: {
       ...Object.fromEntries(
         seeds.map((name) => [
@@ -602,7 +725,11 @@ export function derivePresentationConsumer(
     packages: { '': manifest, ...selected, ...localRecords },
   };
   // This also checks that actual local manifest dependency and peer ranges fit.
-  const graph = canonicalVendorGraph(lock, [...seeds, ...locals]);
+  const graph = canonicalVendorGraph(
+    lock,
+    [...seeds, ...locals],
+    effectiveRanges
+  );
   return {
     profile,
     manifest,
@@ -651,6 +778,9 @@ function installedPackages(consumer) {
 export function assertPresentationInstallation(consumer, derived, tarballs) {
   const { lock, seeds, artifacts } = derived;
   const profile = derived.profile ?? 'markdown';
+  const effectiveRanges = isReactAgUiProfile(profile) ? { rxjs: '~7.8.0' } : {};
+  if (isReactAgUiProfile(profile))
+    assert.deepEqual(derived.manifest.overrides, effectiveRanges);
   const locals = presentationLocals(profile);
   assertLocalResolutions(consumer, lock, tarballs);
   for (const [name, specifier] of Object.entries(tarballs)) {
@@ -680,11 +810,23 @@ export function assertPresentationInstallation(consumer, derived, tarballs) {
     actual.packages,
     profile,
     locals,
-    profile !== 'markdown'
-      ? selectPresentationLock(lock, ['@langchain/langgraph-sdk'])
+    profile !== 'markdown' && profile !== 'a2ui-surfaces' && profile !== 'render-state' && profile !== 'react-render' && profile !== 'angular-foundation'
+      ? selectPresentationLock(
+          lock,
+          [
+            isReactAgUiProfile(profile)
+              ? '@ag-ui/client'
+              : '@langchain/langgraph-sdk',
+          ],
+          effectiveRanges
+        )
       : {}
   );
-  const graph = canonicalVendorGraph(actual, [...seeds, ...locals]);
+  const graph = canonicalVendorGraph(
+    actual,
+    [...seeds, ...locals],
+    effectiveRanges
+  );
   assert.deepEqual(
     graph,
     derived.graph,
@@ -699,13 +841,14 @@ export function assertPresentationInstallation(consumer, derived, tarballs) {
         .filter(Boolean)
         .map((path) => path.slice('node_modules/'.length));
     const allowed = new Set(
-      canonicalVendorGraph(lock, allSeeds(lock.packages)).map((record) =>
-        JSON.stringify(record)
+      canonicalVendorGraph(lock, allSeeds(lock.packages), effectiveRanges).map(
+        (record) => JSON.stringify(record)
       )
     );
     for (const record of canonicalVendorGraph(
       actual,
-      allSeeds(actual.packages)
+      allSeeds(actual.packages),
+      effectiveRanges
     ))
       assert.ok(
         allowed.has(JSON.stringify(record)),
@@ -719,8 +862,13 @@ export function assertPresentationInstallation(consumer, derived, tarballs) {
     optionalRecords: Object.values(lock.packages).filter(
       (record) => record.optional
     ).length,
-    requiredPhysicalRecords: lockedVendorGraph(actual, seeds).length,
-    requiredCanonicalRecords: canonicalVendorGraph(actual, seeds).length,
+    requiredPhysicalRecords: lockedVendorGraph(actual, seeds, effectiveRanges)
+      .length,
+    requiredCanonicalRecords: canonicalVendorGraph(
+      actual,
+      seeds,
+      effectiveRanges
+    ).length,
     graph,
   };
 }

@@ -139,7 +139,7 @@ describe('devtools signal reports (LangGraph)', () => {
     await vi.waitFor(() => expect(reports.length).toBe(3));
     expect(summary()).toEqual([
       ['history', ['isThreadLoading']],
-      ['history', ['history', 'messages', 'values', 'toolCalls']],
+      ['history', ['history', 'messages', 'values', 'toolCalls', 'subagents']],
       ['history', ['isThreadLoading']],
     ]);
   });

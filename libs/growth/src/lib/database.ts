@@ -20,6 +20,14 @@ export interface SqlExecutor extends SqlTransaction {
   close?(): Promise<void>;
 }
 
+/** Reuses the caller's transaction without opening or committing a nested one. */
+export function nestedExecutor(transaction: SqlTransaction): SqlExecutor {
+  return {
+    execute: transaction.execute.bind(transaction),
+    transaction: (operation) => operation(transaction),
+  };
+}
+
 function queryExecutor(
   queryable: Pick<Pool | PoolClient, 'query'>
 ): SqlTransaction {

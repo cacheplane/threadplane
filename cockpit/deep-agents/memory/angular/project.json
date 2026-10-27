@@ -89,9 +89,21 @@
     },
     "e2e": {
       "executor": "@nx/playwright:playwright",
+      "dependsOn": ["lifecycle-test"],
       "options": {
         "config": "cockpit/deep-agents/memory/angular/e2e/playwright.config.ts"
       }
+    },
+    "test": {
+      "executor": "@nx/vitest:test",
+      "options": {
+        "configFile": "cockpit/deep-agents/memory/angular/vite.config.mts"
+      }
+    },
+    "lifecycle-test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "node --test cockpit/deep-agents/memory/angular/e2e/lifecycle.spec.mjs" }
     }
   },
   "tags": [

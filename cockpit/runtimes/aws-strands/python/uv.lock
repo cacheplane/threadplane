@@ -19,26 +19,30 @@ wheels = [
 
 [[package]]
 name = "ag-ui-protocol"
-version = "0.1.22"
+version = "1.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e8/f7/9bf788e7d3608725d022a248a58427040f4f930ab87ddb54bd29ee4d9a51/ag_ui_protocol-0.1.22.tar.gz", hash = "sha256:d21f265284a50d9fc87ad7bcbd58f737b4b16eef7b5375f13a6e925117b52046", size = 18110, upload-time = "2026-08-31T18:20:04.334Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/57/92/d88fdc7f4648dc38d3d54c595066bb3e63a4c091884ffb2f98272c33eef8/ag_ui_protocol-1.0.0.tar.gz", hash = "sha256:cfebecef2e7bc942cc8a52d908a4ea86a98f631d2ffdc6ec5812bb843eac74fb", size = 30759, upload-time = "2026-09-17T18:31:19.448Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/be/6c/af3d577e68c9474c99600e65b2c6283772aae187edca6f0f2f5cbd9f565a/ag_ui_protocol-0.1.22-py3-none-any.whl", hash = "sha256:fca13ee7820f8f53e869c19e09ddd75826c1799b27c2adb6f2e567295433c704", size = 22068, upload-time = "2026-08-31T18:20:03.43Z" },
+    { url = "https://files.pythonhosted.org/packages/82/b0/850be4576e6443dc575daa54188d8136ae2b2eca3f19e098e7a088fc9ebc/ag_ui_protocol-1.0.0-py3-none-any.whl", hash = "sha256:0058eaf0522201089d444e430fc35180bc8ad0222cae39e8568b313e8105d9e6", size = 36842, upload-time = "2026-09-17T18:31:18.471Z" },
 ]
 
 [[package]]
 name = "ag-ui-strands"
-version = "0.3.0"
-source = { git = "https://github.com/ag-ui-protocol/ag-ui.git?subdirectory=integrations%2Faws-strands%2Fpython&rev=363d3878e30887e88c1fd5ca1916ec3a5962b6be#363d3878e30887e88c1fd5ca1916ec3a5962b6be" }
+version = "0.4.1"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "ag-ui-a2ui-toolkit" },
     { name = "ag-ui-protocol" },
     { name = "fastapi" },
     { name = "pydantic" },
     { name = "strands-agents" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/76/77/3bc7967f3babab159c58c471c590d3b663c54bd69165c0fe8896677a2042/ag_ui_strands-0.4.1.tar.gz", hash = "sha256:d72a78eb6e63f2d5309cae4c53b11bee3a99d489b3ee9ee6f2fad3e976f3b14d", size = 560187, upload-time = "2026-09-23T12:45:50.204Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c2/20/8b875f9044cc0e8ccc4547eeeb5221e1ee8c5287811826d106ef718e49f2/ag_ui_strands-0.4.1-py3-none-any.whl", hash = "sha256:ed8c30d9cd53667e6ecdf927f7d89eea70302f210a09e55538c17167039ce650", size = 172498, upload-time = "2026-09-23T12:45:49.105Z" },
 ]
 
 [[package]]
@@ -229,6 +233,7 @@ name = "cockpit-runtimes-aws-strands"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "ag-ui-protocol" },
     { name = "ag-ui-strands" },
     { name = "fastapi" },
     { name = "openai" },
@@ -244,8 +249,9 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "ag-ui-strands", git = "https://github.com/ag-ui-protocol/ag-ui.git?subdirectory=integrations%2Faws-strands%2Fpython&rev=363d3878e30887e88c1fd5ca1916ec3a5962b6be" },
-    { name = "fastapi", specifier = ">=0.121,<0.140" },
+    { name = "ag-ui-protocol", specifier = ">=1.0.0" },
+    { name = "ag-ui-strands", specifier = ">=0.4.1" },
+    { name = "fastapi", specifier = ">=0.121" },
     { name = "openai", specifier = ">=2.54.0" },
     { name = "strands-agents", extras = ["openai"], specifier = ">=1.54.0" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.29" },

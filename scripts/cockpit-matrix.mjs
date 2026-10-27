@@ -66,15 +66,16 @@ function nxJson(args) {
   return JSON.parse(stdout);
 }
 
-// Walk cockpit/ directly, finding every */angular/project.json. Reading
+// Walk cockpit/ directly, finding Angular and React frontend projects. Reading
 // project.json from disk is ~100x faster than `nx show project <name> --json`
 // per project (no nx CLI overhead, no project graph compute).
 //
 // Each candidate is kept iff its project.json has a targets.e2e key.
-// The python sibling path is derived by replacing /angular with /python in
-// the directory path (convention: cockpit/<topic>/<cap>/{angular,python}).
-function deriveCockpitCaps() {
-  const repoRoot = path.resolve(fileURLToPath(import.meta.url), '..', '..');
+// The python sibling path is derived by replacing /angular or /react with /python in
+// the directory path (convention: cockpit/<topic>/<cap>/{angular,react,python}).
+export function deriveCockpitCaps(
+  repoRoot = path.resolve(fileURLToPath(import.meta.url), '..', '..')
+) {
   const cockpitDir = path.join(repoRoot, 'cockpit');
   const caps = [];
 
@@ -96,9 +97,9 @@ function deriveCockpitCaps() {
       if (!s.isDirectory()) continue;
       if (name === 'node_modules' || name.startsWith('.')) continue;
 
-      // If this dir IS an angular project (matches /angular endpoint), check
+      // If this dir is an Angular or React frontend project, check
       // for project.json; otherwise recurse.
-      if (path.basename(full) === 'angular') {
+      if (['angular', 'react'].includes(path.basename(full))) {
         const projectJsonPath = path.join(full, 'project.json');
         try {
           const meta = JSON.parse(readFileSync(projectJsonPath, 'utf8'));
@@ -110,7 +111,7 @@ function deriveCockpitCaps() {
           // e.g. rt-mastra) gets python: '' — ci.yml guards the uv/venv
           // steps on that being non-empty.
           const relAngular = path.relative(repoRoot, full); // e.g. cockpit/chat/messages/angular
-          const relPython = relAngular.replace(/\/angular$/, '/python');
+          const relPython = relAngular.replace(/\/(?:angular|react)$/, '/python');
           const hasPython = (() => {
             try {
               return statSync(path.join(repoRoot, relPython)).isDirectory();
@@ -136,6 +137,7 @@ function deriveCockpitCaps() {
               return '';
             }
           })();
+          // Preserve the CI matrix field name; it now holds either frontend.
           caps.push({
             angular: angularName,
             python: hasPython ? relPython : '',

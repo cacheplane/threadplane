@@ -1,0 +1,39 @@
+{
+  "name": "cockpit-ag-ui-json-render-react",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "cockpit/ag-ui/json-render/react/src",
+  "projectType": "application",
+  "tags": ["scope:cockpit-examples", "scope:cockpit-e2e", "framework:react"],
+  "targets": {
+    "test": {
+      "executor": "@nx/vitest:test",
+      "options": {
+        "configFile": "cockpit/ag-ui/json-render/react/vite.config.mts"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [
+        { "target": "build", "projects": ["core", "content", "react"] }
+      ],
+      "outputs": ["{workspaceRoot}/dist/cockpit/ag-ui/json-render/react"],
+      "options": {
+        "command": "node scripts/react-cockpit/build.mjs ag-ui-json-render"
+      }
+    },
+    "lint": { "executor": "@nx/eslint:lint" },
+    "e2e": {
+      "executor": "@nx/playwright:playwright",
+      "cache": false,
+      "dependsOn": [
+        "build",
+        { "target": "smoke", "projects": ["cockpit-ag-ui-json-render-python"] }
+      ],
+      "options": {
+        "config": "cockpit/ag-ui/json-render/react/e2e/playwright.config.ts",
+        "skipInstall": true
+      }
+    }
+  }
+}

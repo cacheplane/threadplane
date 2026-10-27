@@ -34,6 +34,17 @@ function findCockpitAngularProjects() {
 
 const projects = findCockpitAngularProjects();
 
+test('Debug preserves canonical ports and its separate native React port', async () => {
+  const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
+  assert.deepEqual(PORTS['cockpit-chat-debug-angular'], { angular: 4509, langgraph: 5509 });
+  const config = reactCockpitConfiguration('chat-debug');
+  assert.equal(config.port, 4645);
+  assert.equal(config.base, '/chat/debug/react/');
+  assert.equal(config.project, 'cockpit-chat-debug-react');
+  const python = JSON.parse(readFileSync(join(repoRoot, 'cockpit/chat/debug/python/project.json'), 'utf8'));
+  assert.match(python.targets.serve.options.command, /--port 5509/);
+});
+
 describe('cockpit/ports.mjs registry', () => {
   test('covers every cockpit-*-angular project on disk', () => {
     const onDisk = projects.map((p) => p.name);

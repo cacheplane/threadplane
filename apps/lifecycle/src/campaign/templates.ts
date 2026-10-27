@@ -14,12 +14,13 @@ export type CampaignEvidenceAngle =
 const CampaignStepSchema = z.enum(['immediate', 'day-3', 'day-8']);
 
 /**
- * Brian's Google Calendar appointment-schedule booking page. This is the only
- * scheduling link recipient copy may carry; every other calendar host or path
- * is still rejected by the draft checks below.
+ * First-party redirect to Brian's Google Calendar appointment-schedule booking
+ * page (configured in the website's `next.config.ts`). Recipient copy links
+ * here instead of the calendar host so every URL matches the sending domain.
+ * This is the only scheduling link recipient copy may carry; every other
+ * calendar host or path is still rejected by the draft checks below.
  */
-export const FOUNDER_BOOKING_URL =
-  'https://calendar.app.google/nK961tWHZd21izKR6';
+export const FOUNDER_BOOKING_URL = 'https://threadplane.ai/call';
 
 /**
  * Every link recipient copy may carry, across campaign steps and fulfillment

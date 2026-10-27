@@ -15,7 +15,7 @@
       "executor": "nx:run-commands",
       "options": {
         "cwd": "examples/chat/smoke",
-        "command": "node cli.mjs --non-interactive --target ../../../tmp/examples-chat-smoke --fresh --angular-major 21 --local-dist-root ../../../dist/libs --install --build"
+        "command": "npm exec --yes --package=npm@11.6.0 -- node cli.mjs --non-interactive --target ../../../tmp/examples-chat-smoke --fresh --angular-major 21 --local-dist-root ../../../dist/libs --install --build"
       }
     }
   },

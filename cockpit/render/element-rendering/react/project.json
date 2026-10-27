@@ -1,0 +1,38 @@
+{
+  "name": "cockpit-render-element-rendering-react",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "cockpit/render/element-rendering/react/src",
+  "projectType": "application",
+  "tags": ["scope:cockpit-examples", "scope:cockpit-e2e", "framework:react"],
+  "targets": {
+    "test": {
+      "executor": "@nx/vitest:test",
+      "options": {
+        "configFile": "cockpit/render/element-rendering/react/vite.config.mts"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [
+        { "target": "build", "projects": ["core", "content", "react"] }
+      ],
+      "outputs": [
+        "{workspaceRoot}/dist/cockpit/render/element-rendering/react"
+      ],
+      "options": {
+        "command": "node scripts/react-cockpit/build.mjs render-element-rendering"
+      }
+    },
+    "lint": { "executor": "@nx/eslint:lint" },
+    "e2e": {
+      "executor": "@nx/playwright:playwright",
+      "cache": false,
+      "dependsOn": ["build"],
+      "options": {
+        "config": "cockpit/render/element-rendering/react/e2e/playwright.config.ts",
+        "skipInstall": true
+      }
+    }
+  }
+}

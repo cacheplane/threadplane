@@ -167,6 +167,8 @@ describe('scripted provideFakeAgent()', () => {
 
 A `CUSTOM` event named `on_interrupt` populates `agent.interrupt()` instead of `customEvents()`; see the [Interrupts guide](/docs/ag-ui/guides/interrupts). A second branch keyed `{ toolMessageFor: 'search-1' }` plays on the follow-up run that resolving a client tool starts, so an approve-then-continue turn is scriptable end to end.
 
+A host that folds the protocol stream itself can assert against the same script: subscribe to `agent.rawEvents$` before `submit()` and it emits `RUN_STARTED`, each scripted event, then `RUN_FINISHED`, in order. It completes when the injector is destroyed.
+
 When you need control the script does not give you — per-event timing, mid-stream errors, an observable you drive by hand — script your own `AbstractAgent` and feed it through `toAgent()`. The adapter reduces those events the same way.
 
 ```typescript

@@ -1,0 +1,34 @@
+{
+  "name": "cockpit-langgraph-subgraphs-react",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "cockpit/langgraph/subgraphs/react/src",
+  "projectType": "application",
+  "tags": ["scope:cockpit-examples", "scope:cockpit-e2e", "framework:react"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [
+        { "target": "build", "projects": ["core", "content", "react"] }
+      ],
+      "outputs": ["{workspaceRoot}/dist/cockpit/langgraph/subgraphs/react"],
+      "options": { "command": "node scripts/react-cockpit/build.mjs subgraphs" }
+    },
+    "test": {
+      "executor": "@nx/vitest:test",
+      "options": {
+        "configFile": "cockpit/langgraph/subgraphs/react/vite.config.mts"
+      }
+    },
+    "lint": { "executor": "@nx/eslint:lint" },
+    "e2e": {
+      "executor": "@nx/playwright:playwright",
+      "cache": false,
+      "dependsOn": ["build"],
+      "options": {
+        "config": "cockpit/langgraph/subgraphs/react/e2e/playwright.config.ts",
+        "skipInstall": true
+      }
+    }
+  }
+}

@@ -134,19 +134,23 @@ export function PricingComparison() {
         </p>
       </div>
       <div className="pricing-comparison-scroll">
+        {/* Explicit roles: the phone card layout sets display:block, which
+            drops table semantics in some browsers. */}
         <table
           className="pricing-comparison-table"
           aria-label="Full plan comparison"
+          role="table"
         >
-          <thead>
-            <tr>
-              <th scope="col" className="pricing-comparison-feature-col">
+          <thead role="rowgroup">
+            <tr role="row">
+              <th scope="col" role="columnheader" className="pricing-comparison-feature-col">
                 Plan detail
               </th>
               {TIERS.map((tier) => (
                 <th
                   key={tier.slug}
                   scope="col"
+                  role="columnheader"
                   className="pricing-comparison-plan-col"
                   data-highlight={tier.highlight || undefined}
                 >
@@ -155,15 +159,17 @@ export function PricingComparison() {
               ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody role="rowgroup">
             {COMPARISON_ROWS.map((row) => (
-              <tr key={row.label}>
-                <th scope="row" className="pricing-comparison-row-heading">
+              <tr key={row.label} role="row">
+                <th scope="row" role="rowheader" className="pricing-comparison-row-heading">
                   {row.label}
                 </th>
                 {TIERS.map((tier) => (
                   <td
                     key={tier.slug}
+                    role="cell"
+                    data-label={tier.displayName}
                     data-highlight={tier.highlight || undefined}
                   >
                     {row.cells[tier.slug]}

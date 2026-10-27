@@ -1,0 +1,7 @@
+# Installed native React readiness fixture
+
+Private, bounded development StrictMode fixture for the actual application-owned `createRenderState`, `useAgent`, and native `RenderSpec` readiness descriptor. All state writes, configuration changes, mounting, and final disposal belong to explicit application controls. Views keep local input state and borrow resolved props; gates and views never command the owner.
+
+Run `node scripts/react-parity/verify-react-readiness.mjs --retain NEW_DIRECTORY` after fresh core, content, and React builds. The runner installs exactly those three local artifacts using the existing `react-render` profile and current root lock. Strict installed type checking uses `skipLibCheck:false`. Vite builds without workspace configuration or environment files and records all module inputs separately from modules with executed bytes. Installed parser dependencies are legitimate; parser execution is excluded from this proof.
+
+The browser checks literal state and command counts, actual DOM identity and edited local inputs, pending children and null fallback, committed admission followed by missing data, contract replacement, remounts, direct memo/forwardRef undefined values, stable repeated keys, and a real suspended candidate cancelled before admission commits. Each browser step and screenshot is retained with installed/type/emitted/source hashes, the root lock fingerprint, and owned process/profile/socket cleanup receipts. This fixture does not claim full renderer parity, SSR, schema validation, forms, or backend integration.
