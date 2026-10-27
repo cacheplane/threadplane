@@ -1,8 +1,9 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "95e7c99951472f0766fb8bdf57c439bf5c67582e",
+  "baselineHead": "044fc0b375007d7f6c4fa43a06e8eba933fdc908",
   "sourceState": {
     "modified": [
+      "libs/chat/src/lib/compositions/chat-popup/chat-popup.component.ts",
       "libs/react/README.md",
       "libs/react/src/chat/confirm-dialog.tsx",
       "libs/react/src/chat/index.ts",
@@ -152,7 +153,7 @@
       "id": "asset:libs/ag-ui/README.md",
       "kind": "asset",
       "path": "libs/ag-ui/README.md",
-      "sha256": "db39f18b45bec3e398ab3a4306db2942cd6f73ebd6f546f348fbad9ae57f00b0"
+      "sha256": "aa056265bc5ccb69d52a1254525daee8af8985c327a0eb6d493bd7e8876b996c"
     },
     {
       "id": "asset:libs/ag-ui/fixtures/runtime-transcripts/maf-hitl-interrupt.sse",
@@ -332,7 +333,7 @@
       "id": "asset:libs/chat/CHANGELOG.md",
       "kind": "asset",
       "path": "libs/chat/CHANGELOG.md",
-      "sha256": "756220afda94558c8796a60ed80b7124a33b34199ed2d83c765a1f4f2d969d3f"
+      "sha256": "ef8ebf1f99a66ee128aebd7ab20bf1262b061a30286187427c626879488949cd"
     },
     {
       "id": "asset:libs/chat/LICENSE.md",
@@ -374,7 +375,7 @@
       "id": "asset:libs/chat/project.json",
       "kind": "asset",
       "path": "libs/chat/project.json",
-      "sha256": "650f32a6f72513086685aeee1ad31e0de6686a4458a6f247e09e7d5689d4f68b"
+      "sha256": "dc60fd2f73dd9bb843d767eb2b0061ec5d89060708e42c0405fd93abd1c555ba"
     },
     {
       "id": "asset:libs/chat/src/chat.css",
@@ -734,7 +735,7 @@
       "id": "asset:libs/langgraph/README.md",
       "kind": "asset",
       "path": "libs/langgraph/README.md",
-      "sha256": "c9e0dbf35d1d2906bf5115318b96e78c115a77454c4f3243a26d89d62989ae93"
+      "sha256": "d0e2dace696e31fd4e84f2432ac071c890eb2b19fa3daaad0c8e56d96cb0ba4f"
     },
     {
       "id": "asset:libs/langgraph/ng-package.json",
@@ -2180,7 +2181,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "f77783419fe1c95b19a63df176a523acd5082635eb193354702cb5f01bfc379a"
+      "sha256": "52888b79abb9b13c45d4934f6a73d4b1d16be58db9f28f568f9a56196d8559db"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -8584,6 +8585,76 @@
       ]
     },
     {
+      "id": "export:libs/chat/src/public-api.ts#ɵAgUiDevtoolsSignal",
+      "kind": "export",
+      "path": "libs/chat/src/public-api.ts",
+      "symbol": "ɵAgUiDevtoolsSignal",
+      "declarations": [
+        {
+          "path": "libs/chat/src/lib/devtools/devtools-emitter.ts",
+          "symbol": "AgUiDevtoolsSignal",
+          "syntaxKind": "TypeAliasDeclaration",
+          "signature": "export type AgUiDevtoolsSignal = (typeof AG_UI_DEVTOOLS_SIGNALS)[number];"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ɵDevtoolsEmitter",
+      "kind": "export",
+      "path": "libs/chat/src/public-api.ts",
+      "symbol": "ɵDevtoolsEmitter",
+      "declarations": [
+        {
+          "path": "libs/chat/src/lib/devtools/devtools-emitter.ts",
+          "symbol": "DevtoolsEmitter",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface DevtoolsEmitter<Name extends string = string> {\n    begin(eventType: string): void;\n    wrote(name: Name): void;\n    end(): void;\n    outside<R>(label: DevtoolsPseudoEvent, run: () => R): R;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ɵDevtoolsPseudoEvent",
+      "kind": "export",
+      "path": "libs/chat/src/public-api.ts",
+      "symbol": "ɵDevtoolsPseudoEvent",
+      "declarations": [
+        {
+          "path": "libs/chat/src/lib/devtools/devtools-emitter.ts",
+          "symbol": "DevtoolsPseudoEvent",
+          "syntaxKind": "TypeAliasDeclaration",
+          "signature": "export type DevtoolsPseudoEvent = 'run:start' | 'run:end' | 'history' | 'reset' | 'submit' | 'queue' | 'branch';"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ɵLangGraphDevtoolsSignal",
+      "kind": "export",
+      "path": "libs/chat/src/public-api.ts",
+      "symbol": "ɵLangGraphDevtoolsSignal",
+      "declarations": [
+        {
+          "path": "libs/chat/src/lib/devtools/devtools-emitter.ts",
+          "symbol": "LangGraphDevtoolsSignal",
+          "syntaxKind": "TypeAliasDeclaration",
+          "signature": "export type LangGraphDevtoolsSignal = (typeof LANGGRAPH_DEVTOOLS_SIGNALS)[number];"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ɵcreateDevtoolsEmitter",
+      "kind": "export",
+      "path": "libs/chat/src/public-api.ts",
+      "symbol": "ɵcreateDevtoolsEmitter",
+      "declarations": [
+        {
+          "path": "libs/chat/src/lib/devtools/devtools-emitter.ts",
+          "symbol": "ɵcreateDevtoolsEmitter",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function ɵcreateDevtoolsEmitter<A extends DevtoolsAdapter>(adapter: A): EmitterFor<A> | null {\n    if ((typeof ngDevMode === 'undefined' || ngDevMode) && isDevMode()) {\n        return createDevelopmentEmitter(adapter) as EmitterFor<A> | null;\n    }\n    return null;\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/chat/testing/public-api.ts#AbstractEvent",
       "kind": "export",
       "path": "libs/chat/testing/public-api.ts",
@@ -12356,6 +12427,12 @@
       "sha256": "74c5ff897842a482c646a73f62a3caf775fb85e9be6d6cbe54b9735f33b8a77a"
     },
     {
+      "id": "source:libs/ag-ui/src/lib/internal/devtools.ts",
+      "kind": "source",
+      "path": "libs/ag-ui/src/lib/internal/devtools.ts",
+      "sha256": "55abab807540e57f17bcdb649301f85d15c7be87f03a37b1ee809e90a5148deb"
+    },
+    {
       "id": "source:libs/ag-ui/src/lib/interrupt-persistence.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/interrupt-persistence.ts",
@@ -12425,7 +12502,7 @@
       "id": "source:libs/ag-ui/src/lib/to-agent.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/to-agent.ts",
-      "sha256": "841f71be7ef2962696657fb5d9075bbaf46e0309db8f1a45a6ebe361c1811a52"
+      "sha256": "a8c95f0c4789bf2ece308ef25f6a81a8c1d0a86ffe5b4853834e002f76d86a4e"
     },
     {
       "id": "source:libs/ag-ui/src/public-api.ts",
@@ -12743,13 +12820,19 @@
       "id": "source:libs/chat/eslint.config.mjs",
       "kind": "source",
       "path": "libs/chat/eslint.config.mjs",
-      "sha256": "7184c5abb14bb875fab1a3e4cf71c36e5356567efe0d5fc14df7895e943bea6b"
+      "sha256": "89a0b9cbd0fe0e345f9e7d01ee9d70536035738f12011385f9a399d32a12f6b7"
     },
     {
       "id": "source:libs/chat/install/postinstall.cjs",
       "kind": "source",
       "path": "libs/chat/install/postinstall.cjs",
       "sha256": "5624c16b6e7dc1c61bc4b9233de01ba6d13e1baa78f06a9977b652a59d67a5a2"
+    },
+    {
+      "id": "source:libs/chat/scripts/verify-devtools-bundle.mjs",
+      "kind": "source",
+      "path": "libs/chat/scripts/verify-devtools-bundle.mjs",
+      "sha256": "83b9655689bb5ecd082874ff9230388c098ba3b60af5a4987e4ce03f78fab4e2"
     },
     {
       "id": "source:libs/chat/src/index.ts",
@@ -13230,6 +13313,12 @@
       "kind": "source",
       "path": "libs/chat/src/lib/compositions/shared/message-utils.ts",
       "sha256": "22bc4113356bfa8ceb3a1a9cfe947fa64257e829f8903fddd7feee8f95aa4bcb"
+    },
+    {
+      "id": "source:libs/chat/src/lib/devtools/devtools-emitter.ts",
+      "kind": "source",
+      "path": "libs/chat/src/lib/devtools/devtools-emitter.ts",
+      "sha256": "8cfa6d0f3d52bbcc6b8eb7dd3c217619174178eecdd9a36ac294ac26fb137669"
     },
     {
       "id": "source:libs/chat/src/lib/internals/prettify.ts",
@@ -13877,7 +13966,7 @@
       "id": "source:libs/chat/src/public-api.ts",
       "kind": "source",
       "path": "libs/chat/src/public-api.ts",
-      "sha256": "ea0a9ac72ad2c11b733f85e7a5cf06d1b96fa9805fdaa459a436ce91a807c49a"
+      "sha256": "91920d04a9b6114a7bd1d4762b70a40f635bc7e80510452a3df0e5ad581fa8fd"
     },
     {
       "id": "source:libs/chat/src/test-setup.ts",
@@ -14591,7 +14680,7 @@
       "id": "source:libs/langgraph/src/lib/agent.fn.ts",
       "kind": "source",
       "path": "libs/langgraph/src/lib/agent.fn.ts",
-      "sha256": "44211ee473890adc98cd9cfe94540aa35dd1195daed35de2e7711738381fa2b4"
+      "sha256": "4be1665e1865c4332916a1c7f5027cc4e52bf1ce9982cfde9b8c907554874c85"
     },
     {
       "id": "source:libs/langgraph/src/lib/agent.provider.ts",
@@ -14636,6 +14725,12 @@
       "sha256": "5a39787273f9e8447a32b3dee673aa9da78bc0aca9e71f0480b611c8feab341d"
     },
     {
+      "id": "source:libs/langgraph/src/lib/internals/devtools.ts",
+      "kind": "source",
+      "path": "libs/langgraph/src/lib/internals/devtools.ts",
+      "sha256": "72bbd3750b72b7a08409fe3ebf677629f2ca2836777ef0d4fe96d5bd6631657e"
+    },
+    {
       "id": "source:libs/langgraph/src/lib/internals/extract-citations.ts",
       "kind": "source",
       "path": "libs/langgraph/src/lib/internals/extract-citations.ts",
@@ -14651,7 +14746,7 @@
       "id": "source:libs/langgraph/src/lib/internals/stream-manager.bridge.ts",
       "kind": "source",
       "path": "libs/langgraph/src/lib/internals/stream-manager.bridge.ts",
-      "sha256": "996e62123a8bd94fc924c3360af58a1fc7b31db4124bd6b7c8cd5a8b09691125"
+      "sha256": "3ece3d605b450de7110da818fbec5392ed51ad2fc72a15944b2b99085c90bd4b"
     },
     {
       "id": "source:libs/langgraph/src/lib/internals/subagent-tracker.ts",
