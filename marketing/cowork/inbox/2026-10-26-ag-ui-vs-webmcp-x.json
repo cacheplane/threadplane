@@ -1,0 +1,16 @@
+{
+  "_meta": {
+    "campaign": "ag-ui-vs-webmcp",
+    "channel_note": "Brian's account. Attach assets/ag-ui-vs-webmcp-x-card.png (1200x675, shows uncropped in the timeline) to the FIRST post. The link goes in the reply, not the first post: X down-ranks posts with external links, and the card carries the hook instead. Post the reply within a minute. DRY_RUN=1 smoke first.",
+    "card_alt": "AG-UI vs. WebMCP: who owns the agent? A diagram shows two rows. AG-UI: your agent sends events to your app. WebMCP: their agent calls tools on your app.",
+    "alt_first_post": "Everyone's lumping AG-UI and WebMCP together.\n\nThey actually point in opposite directions.\n\nOne question tells them apart: who owns the agent?",
+    "review_status": "awaiting-brian"
+  },
+  "draft": {
+    "channel": "x",
+    "threadParts": [
+      "AG-UI and WebMCP both connect agents to web apps, so it's easy to assume they compete.\n\nThey point in opposite directions.\n\nThe question I ask: who owns the agent?\n\n• You own it and you're building its UI → AG-UI\n• The user brings their own agent → WebMCP",
+      "I wrote up the difference, with code for both, and how one tool definition can serve both doors:\n\nhttps://threadplane.ai/blog/ag-ui-vs-webmcp?utm_source=x&utm_medium=social&utm_campaign=ag-ui-vs-webmcp"
+    ]
+  }
+}
