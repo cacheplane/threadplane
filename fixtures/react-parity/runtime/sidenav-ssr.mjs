@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createElement } from 'react';
 import { renderToString } from 'react-dom/server';
-import { ChatSidenav, OverflowMenu, ThreadList, ThreadRenameForm } from '@threadplane/react/chat';
+import { ChatSidenav, ConfirmDialog, OverflowMenu, ThreadList, ThreadRenameForm } from '@threadplane/react/chat';
 
 assert.equal(typeof window, 'undefined');
 assert.equal(typeof document, 'undefined');
@@ -75,3 +75,18 @@ assert.match(rename, /Save/);
 assert.match(rename, /Cancel/);
 assert.equal(requests, 0);
 console.log('Installed controlled rename editor SSR: no DOM globals or command requests.');
+for (const open of [false, true]) {
+  const html = renderToString(createElement(ConfirmDialog, {
+    open,
+    title: 'Delete <literal> & history?',
+    body: 'Permanent <body> & details',
+    pending: true,
+    tone: 'destructive',
+    returnFocusTo: null,
+    onConfirm: request,
+    onCancel: request,
+  }));
+  assert.doesNotMatch(html, /<dialog|role="alertdialog"|aria-modal|autofocus/);
+}
+assert.equal(requests, 0);
+console.log('Installed controlled confirmation SSR: closed and requested-open states are DOM-free and issue no commands.');
