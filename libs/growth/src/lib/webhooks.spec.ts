@@ -30,6 +30,20 @@ beforeEach(() => {
   vi.stubEnv('GROWTH_DATABASE_ENVIRONMENT', 'production');
 });
 
+it('rejects another product in the shared Resend account before database access', async () => {
+  const harness = executorWith({});
+  await expect(
+    processVerifiedResendWebhook(harness.executor, {
+      providerEventId: 'foreign-app-event',
+      payload: event('email.bounced', {
+        tags: { app: 'hashbrown', environment: 'production' },
+        bounce: { type: 'Permanent', subType: 'General', message: 'bounced' },
+      }),
+    })
+  ).resolves.toEqual({ applied: false, reason: 'app_mismatch' });
+  expect(harness.calls).toHaveLength(0);
+});
+
 afterEach(() => {
   vi.unstubAllEnvs();
 });
@@ -186,11 +200,26 @@ function webhookHarness(
   options: {
     existingActivity?: TestRow;
     job?: TestRow;
+    boundRfcMessageId?: string;
   } = {}
 ) {
   const currentJob = options.job ?? jobRow();
   const insertedRows = options.existingActivity ? [] : [{ event_key: 'x' }];
   const harness = executorWith({
+    'inspect-resend-terminal-rfc-binding': (parameters) => {
+      expect(parameters).toEqual([providerEmailId]);
+      return {
+        rows: [
+          {
+            kind: currentJob['kind'],
+            status: currentJob['status'],
+            contact_id: currentJob['contact_id'],
+            delivery_status: currentJob['delivery_status'],
+            rfc_message_id: options.boundRfcMessageId ?? null,
+          },
+        ],
+      };
+    },
     'discover-resend-webhook-job': (parameters, sql) => {
       expect(parameters).toEqual([providerEmailId]);
       expect(sql).toMatch(/where provider_email_id = \$1/u);
@@ -253,6 +282,83 @@ describe('processVerifiedResendWebhook', () => {
       },
       { stopContact: h.stopContact }
     );
+  });
+  it('preserves an existing RFC binding while applying a terminal suppression with a different provider Message-ID', async () => {
+    const h = webhookHarness({ boundRfcMessageId: '<original@resend.dev>' });
+    const result = await processVerifiedResendWebhook(
+      h.executor,
+      {
+        providerEventId: 'msg_terminal_binding_conflict',
+        payload: event('email.suppressed', {
+          message_id: '<different@resend.dev>',
+        }),
+      },
+      h.dependencies
+    );
+    expect(result).toMatchObject({
+      applied: true,
+      deliveryStatus: 'suppressed',
+    });
+    expect(h.dependencies.bindProviderMessageId).not.toHaveBeenCalled();
+    expect(h.stopContact).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ reason: 'provider_suppression' })
+    );
+  });
+  it('still reconciles a matching RFC binding on a terminal event', async () => {
+    const h = webhookHarness({ boundRfcMessageId: '<actual@resend.dev>' });
+    await processVerifiedResendWebhook(
+      h.executor,
+      {
+        providerEventId: 'msg_matching_terminal_binding',
+        payload: event('email.suppressed', {
+          message_id: '<actual@resend.dev>',
+        }),
+      },
+      h.dependencies
+    );
+    expect(h.dependencies.bindProviderMessageId).toHaveBeenCalledOnce();
+  });
+  it('does not bypass binding checks for an unfinished job', async () => {
+    const h = webhookHarness({
+      boundRfcMessageId: '<original@resend.dev>',
+      job: jobRow({ status: 'pending' }),
+    });
+    vi.mocked(h.dependencies.bindProviderMessageId).mockRejectedValueOnce(
+      new Error('Provider Message-ID binding conflict')
+    );
+    await expect(
+      processVerifiedResendWebhook(
+        h.executor,
+        {
+          providerEventId: 'msg_unfinished_terminal_binding',
+          payload: event('email.suppressed', {
+            message_id: '<different@resend.dev>',
+          }),
+        },
+        h.dependencies
+      )
+    ).rejects.toThrow(/Provider Message-ID binding conflict/u);
+    expect(h.stopContact).not.toHaveBeenCalled();
+  });
+  it('keeps a nonterminal RFC binding conflict retryable', async () => {
+    const h = webhookHarness({ boundRfcMessageId: '<original@resend.dev>' });
+    vi.mocked(h.dependencies.bindProviderMessageId).mockRejectedValueOnce(
+      new Error('Provider Message-ID binding conflict')
+    );
+    await expect(
+      processVerifiedResendWebhook(
+        h.executor,
+        {
+          providerEventId: 'msg_nonterminal_binding_conflict',
+          payload: event('email.delivered', {
+            message_id: '<different@resend.dev>',
+          }),
+        },
+        h.dependencies
+      )
+    ).rejects.toThrow(/Provider Message-ID binding conflict/u);
+    expect(h.calls).not.toContain('inspect-resend-terminal-rfc-binding');
   });
   it('keeps supported parser fixtures assignable to the pinned Resend webhook union', () => {
     expect(supportedSdkFixtures).toHaveLength(7);
@@ -470,6 +576,70 @@ describe('processVerifiedResendWebhook', () => {
   });
 
   it.each([
+    { name: 'null', diagnosticCode: null },
+    { name: 'string', diagnosticCode: 'smtp; 550 user unknown' },
+    { name: 'array with null', diagnosticCode: [null] },
+  ])(
+    'accepts provider bounce diagnostics $name and applies the hard-bounce stop',
+    async ({ diagnosticCode }) => {
+      const harness = webhookHarness();
+      const result = await processVerifiedResendWebhook(
+        harness.executor,
+        {
+          providerEventId: 'msg_bounce_diagnostics',
+          payload: event('email.bounced', {
+            bounce: {
+              type: 'Permanent',
+              subType: 'General',
+              message: 'bounced',
+              diagnosticCode,
+            },
+          }),
+        },
+        harness.dependencies
+      );
+      expect(result).toMatchObject({
+        applied: true,
+        deliveryStatus: 'bounced',
+      });
+      expect(harness.stopContact).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ reason: 'hard_bounce' })
+      );
+    }
+  );
+
+  it.each([
+    { name: 'oversized string', diagnosticCode: 'x'.repeat(2001) },
+    { name: 'oversized array item', diagnosticCode: ['x'.repeat(2001)] },
+    { name: 'object array item', diagnosticCode: [{}] },
+    { name: 'oversized array', diagnosticCode: Array(11).fill(null) },
+  ])(
+    'rejects $name bounce diagnostic before database access',
+    async ({ diagnosticCode }) => {
+      const harness = webhookHarness();
+      await expect(
+        processVerifiedResendWebhook(
+          harness.executor,
+          {
+            providerEventId: 'msg_invalid_bounce_diagnostic',
+            payload: event('email.bounced', {
+              bounce: {
+                type: 'Permanent',
+                subType: 'General',
+                message: 'bounced',
+                diagnosticCode,
+              },
+            }),
+          },
+          harness.dependencies
+        )
+      ).rejects.toThrow(/Invalid Resend webhook payload/u);
+      expect(harness.runTransaction).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each([
     ['email.complained', 'complaint'],
     ['email.suppressed', 'provider_suppression'],
   ] as const)('uses canonical stop for %s', async (type, reason) => {
@@ -484,6 +654,72 @@ describe('processVerifiedResendWebhook', () => {
       expect.objectContaining({ reason })
     );
   });
+
+  it.each([
+    { name: 'null', diagnosticCode: null },
+    { name: 'string', diagnosticCode: 'smtp; 550 suppressed' },
+    { name: 'array with string', diagnosticCode: ['smtp; 550 suppressed'] },
+    { name: 'array with null', diagnosticCode: [null] },
+  ])(
+    'accepts provider suppression diagnostics $name and applies the canonical stop',
+    async ({ diagnosticCode }) => {
+      const harness = webhookHarness();
+      const result = await processVerifiedResendWebhook(
+        harness.executor,
+        {
+          providerEventId: 'msg_suppression_diagnostics',
+          payload: event('email.suppressed', {
+            suppressed: {
+              type: 'Suppressed',
+              message: 'suppressed',
+              reason: 'Suppressed recipient',
+              diagnosticCode,
+            },
+          }),
+        },
+        harness.dependencies
+      );
+      expect(result).toMatchObject({
+        applied: true,
+        deliveryStatus: 'suppressed',
+      });
+      expect(harness.stopContact).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ reason: 'provider_suppression' })
+      );
+    }
+  );
+
+  it.each([
+    ['reason', 'x'.repeat(501)],
+    ['diagnosticCode', 'x'.repeat(2001)],
+    ['diagnosticCode', ['x'.repeat(2001)]],
+    ['diagnosticCode', [{}]],
+    ['diagnosticCode', Array(11).fill(null)],
+    ['reason', {}],
+  ])(
+    'rejects invalid suppression %s before database access',
+    async (key, value) => {
+      const harness = webhookHarness();
+      await expect(
+        processVerifiedResendWebhook(
+          harness.executor,
+          {
+            providerEventId: 'msg_invalid_suppression',
+            payload: event('email.suppressed', {
+              suppressed: {
+                type: 'Suppressed',
+                message: 'suppressed',
+                [key as string]: value,
+              },
+            }),
+          },
+          harness.dependencies
+        )
+      ).rejects.toThrow('Invalid Resend webhook payload');
+      expect(harness.runTransaction).not.toHaveBeenCalled();
+    }
+  );
 
   it('does not stop for a provider failure with arbitrary invalid-looking text', async () => {
     const harness = webhookHarness();
@@ -687,6 +923,19 @@ describe('processVerifiedResendWebhook', () => {
 
   it.each([
     {
+      app: 'threadplane',
+      environment: 'production',
+      job_kind: 'fulfill',
+    },
+    {
+      app: 'threadplane',
+      environment: 'production',
+      job_kind: 'send_step',
+      campaign_version: 'v1',
+      campaign_step: '1',
+      campaign_template: 'immediate',
+    },
+    {
       environment: 'production',
       job_kind: 'send_step',
       campaign_version: 'v1',
@@ -700,7 +949,7 @@ describe('processVerifiedResendWebhook', () => {
       campaign_template: 'streaming_foundation',
     },
   ])(
-    'retries an unmatched canonical send_step event with or without a template tag %#',
+    'retries an unmatched canonical recipient event, including app-tagged and historical sends %#',
     async (tags) => {
       const harness = executorWith({
         'read-resend-webhook-activity': () => ({ rows: [] }),

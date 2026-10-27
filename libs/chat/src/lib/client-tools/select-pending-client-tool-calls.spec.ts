@@ -58,4 +58,24 @@ describe('selectPendingClientToolCalls', () => {
       catalogNames: new Set(['get_weather', 'get_stock_price']),
     })).toEqual([weatherCall, stockCall]);
   });
+
+  it('uses the producer-declared pending set when one is present', () => {
+    // stockCall is in the catalog but the producer did not name it pending.
+    const out = select({
+      toolCalls: [weatherCall, stockCall],
+      catalogNames: new Set(['get_weather', 'get_stock_price']),
+      authoritativeIds: new Set(['c1']),
+    });
+    expect(out.map((tc) => tc.id)).toEqual(['c1']);
+  });
+
+  it('still hides resolved calls and non-catalog calls under an authoritative set', () => {
+    const out = select({
+      toolCalls: [weatherCall, stockCall],
+      catalogNames: new Set(['get_weather']),
+      authoritativeIds: new Set(['c1', 'c2']),
+      resolvedIds: new Set(['c1']),
+    });
+    expect(out).toEqual([]);
+  });
 });

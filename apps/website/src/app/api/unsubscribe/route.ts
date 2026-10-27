@@ -86,7 +86,9 @@ function confirmationResponse(token: string): NextResponse {
   return htmlResponse(
     'Confirm email preference',
     'Submit this form to update the contact preference.',
-    `<form method="post" action="/api/unsubscribe"><input type="hidden" name="token" value="${escapeHtmlAttribute(token)}"><button type="submit">Confirm</button></form>`
+    `<form method="post" action="/api/unsubscribe"><input type="hidden" name="token" value="${escapeHtmlAttribute(
+      token
+    )}"><button type="submit">Confirm</button></form>`
   );
 }
 
@@ -172,9 +174,10 @@ function defaultDependencies(): UnsubscribeRouteDependencies {
 async function readPostInput(request: Request): Promise<PostInput | null> {
   const url = new URL(request.url);
   const contentType = request.headers.get('content-type');
+  const mediaType = contentType?.split(';', 1)[0]?.trim().toLowerCase();
   if (
-    contentType?.split(';', 1)[0]?.trim().toLowerCase() !==
-    'application/x-www-form-urlencoded'
+    mediaType !== 'application/x-www-form-urlencoded' &&
+    mediaType !== 'multipart/form-data'
   ) {
     return null;
   }
@@ -188,7 +191,23 @@ async function readPostInput(request: Request): Promise<PostInput | null> {
     return null;
   }
   const queryEntries = [...url.searchParams.entries()];
-  const formEntries = [...new URLSearchParams(bodyText).entries()];
+  let formEntries: [string, string][];
+  try {
+    if (mediaType === 'multipart/form-data') {
+      const form = await new Request(request.url, {
+        method: 'POST',
+        headers: { 'content-type': contentType as string },
+        body: bodyText,
+      }).formData();
+      const entries = [...form.entries()];
+      if (entries.some(([, value]) => typeof value !== 'string')) return null;
+      formEntries = entries as [string, string][];
+    } else {
+      formEntries = [...new URLSearchParams(bodyText).entries()];
+    }
+  } catch {
+    return null;
+  }
 
   if (queryEntries.length > 0) {
     const queryToken = queryEntries[0]?.[1].trim() ?? '';

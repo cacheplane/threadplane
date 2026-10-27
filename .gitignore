@@ -57,6 +57,9 @@ deployments/*/deps/
 # ...but ag-ui-dev commits generated deps/ (Docker build copies them in)
 !deployments/ag-ui-dev/deps/
 !deployments/ag-ui-dev/deps/**
+# ...and so does ag-ui-maf (same generator, separate image)
+!deployments/ag-ui-maf/deps/
+!deployments/ag-ui-maf/deps/**
 
 # superpowers brainstorming output
 .superpowers/

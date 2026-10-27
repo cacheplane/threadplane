@@ -1,4 +1,4 @@
-import { InterruptSchema, MessageSchema, ResumeEntrySchema } from '@ag-ui/core';
+import { InterruptSchema, MessageSchema, ResumeEntrySchema } from '@ag-ui/core/schemas';
 import type { InterruptSessionSnapshot } from './interrupt-session.types';
 import type { ThreadSnapshot } from './run-state-transaction';
 

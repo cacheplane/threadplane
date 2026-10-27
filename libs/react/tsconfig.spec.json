@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.lib.json",
+  "compilerOptions": {
+    "rootDir": "../..",
+    "types": [
+      "vitest/globals"
+    ],
+    "outDir": "../../dist/out-tsc/react"
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
+  "exclude": []
+}

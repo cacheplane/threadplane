@@ -1,0 +1,193 @@
+import {
+  CompatibilityBoundary,
+  enforceEvents,
+  HttpAgent,
+  transformChunks,
+  verifyEvents,
+  type AbstractAgent,
+  type BaseEvent,
+  type HttpAgentConfig,
+  type RunAgentInput,
+} from '@ag-ui/client';
+
+// Transport completion is separate from RUN_FINISHED / RUN_ERROR domain events.
+export type HttpRequestOutcome =
+  | { status: 'closed' }
+  | { status: 'aborted' }
+  | { status: 'failed'; error: unknown };
+
+export interface HttpRequestHandle {
+  abort(): void;
+  done: Promise<HttpRequestOutcome>;
+}
+
+function withOwnedReaderCleanup(
+  response: Response,
+  isSettled: () => boolean
+): Response {
+  const body = response.body;
+  if (!body) return response;
+  const ownedBody = new Proxy(body, {
+    get(target, property) {
+      if (property === 'getReader') {
+        return (...args: Parameters<typeof body.getReader>) => {
+          const reader = body.getReader(...args);
+          // A read rejection is the stream's failure; the SDK forwards that
+          // same error as this request's `failed` outcome.
+          let readFailure: { error: unknown } | undefined;
+          return new Proxy(reader, {
+            get(target, property) {
+              if (property === 'read') {
+                return (...readArgs: unknown[]) =>
+                  (
+                    Reflect.apply(
+                      reader.read,
+                      reader,
+                      readArgs
+                    ) as Promise<unknown>
+                  ).catch((error: unknown) => {
+                    readFailure ??= { error };
+                    throw error;
+                  });
+              }
+              if (property === 'cancel') {
+                return (reason?: unknown) => {
+                  const settledAtCancel = isSettled();
+                  // The 1.0.1 client cancels the reader in its subscription
+                  // teardown, on completion AND on stream failure, and rethrows
+                  // a non-abort rejection from a detached promise. On failure
+                  // the teardown runs before the error reaches this owner, so
+                  // the request is not yet settled. An errored reader rejects
+                  // cancel with the original read error, which is already
+                  // selecting this request's outcome: contain that echo. A
+                  // cancel begun before settlement that rejects with anything
+                  // else still propagates.
+                  return reader.cancel(reason).catch((error: unknown) => {
+                    if (settledAtCancel) return;
+                    if (readFailure && readFailure.error === error) return;
+                    throw error;
+                  });
+                };
+              }
+              const value = Reflect.get(target, property, target);
+              return typeof value === 'function' ? value.bind(target) : value;
+            },
+          });
+        };
+      }
+      const value = Reflect.get(target, property, target);
+      return typeof value === 'function' ? value.bind(target) : value;
+    },
+  });
+  return new Proxy(response, {
+    get(target, property) {
+      if (property === 'body') return ownedBody;
+      const value = Reflect.get(target, property, target);
+      return typeof value === 'function' ? value.bind(target) : value;
+    },
+  });
+}
+
+export function createHttpRequest(
+  config: Pick<HttpAgentConfig, 'url' | 'headers' | 'fetch'>
+) {
+  const captured = {
+    url: config.url,
+    headers: { ...config.headers },
+    fetch: config.fetch ?? globalThis.fetch.bind(globalThis),
+  };
+  return {
+    start(
+      input: RunAgentInput,
+      onEvent: (event: BaseEvent) => void,
+      signal?: AbortSignal,
+      beforeFetch?: () => boolean
+    ): HttpRequestHandle {
+      let resolve!: (outcome: HttpRequestOutcome) => void;
+      const done = new Promise<HttpRequestOutcome>((yes) => {
+        resolve = yes;
+      });
+      let settled = false;
+      let controller: AbortController | undefined;
+      let subscription:
+        | ReturnType<ReturnType<HttpAgent['run']>['subscribe']>
+        | undefined;
+      const settle = (outcome: HttpRequestOutcome) => {
+        if (settled) return;
+        settled = true;
+        signal?.removeEventListener('abort', abort);
+        try {
+          subscription?.unsubscribe();
+        } catch {
+          /* Cleanup cannot replace the first outcome or prevent abort. */
+        }
+        if (outcome.status !== 'closed') controller?.abort();
+        resolve(outcome);
+      };
+      const abort = () => settle({ status: 'aborted' });
+      if (signal?.aborted) {
+        abort();
+        return { abort, done };
+      }
+      signal?.addEventListener('abort', abort, { once: true });
+      try {
+        // Raw run eagerly dispatches and cannot be reused after cancellation.
+        // It does not apply SDK events to a second messages/state authority.
+        const source = new HttpAgent({
+          ...captured,
+          fetch: async (url, init) => {
+            if (
+              settled ||
+              signal?.aborted ||
+              controller?.signal.aborted ||
+              beforeFetch?.() === false
+            ) {
+              abort();
+              throw new DOMException(
+                'Request cancelled before fetch',
+                'AbortError'
+              );
+            }
+            // The private gate and captured fetch are adjacent: no application
+            // callback or asynchronous work may obscure the invocation boundary.
+            return withOwnedReaderCleanup(
+              await captured.fetch(url, init),
+              () => settled
+            );
+          },
+        });
+        controller = source.abortController;
+        // Same order as the SDK's own runAgent pipeline: boundary (translate
+        // retired shapes), enforcement (drop/strip the unknown), chunk
+        // expansion, verification. A bare HttpAgent.run() gets none of it.
+        // The boundary only calls next.run(), so a run-only stub suffices.
+        const boundary = new CompatibilityBoundary();
+        const events = boundary
+          // the boundary rewrites `messages` on the input it is given; keep the caller's object intact.
+          .run({ ...input }, ({
+            run: (admitted: RunAgentInput) => source.run(admitted),
+          } satisfies Pick<AbstractAgent, 'run'>) as unknown as AbstractAgent)
+          .pipe(enforceEvents(), transformChunks(), verifyEvents());
+        if (!settled) {
+          subscription = events.subscribe({
+            next: (event) => {
+              if (settled) return;
+              try {
+                onEvent(event);
+              } catch (error) {
+                settle({ status: 'failed', error });
+              }
+            },
+            error: (error: unknown) => settle({ status: 'failed', error }),
+            complete: () => settle({ status: 'closed' }),
+          });
+          // A synchronous callback can settle before subscribe returns.
+          if (settled) subscription.unsubscribe();
+        }
+      } catch (error) {
+        settle({ status: 'failed', error });
+      }
+      return { abort, done };
+    },
+  };
+}

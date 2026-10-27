@@ -47,21 +47,36 @@ function parses(code: string): boolean {
 
 describe('positioning: hero copy', () => {
   it('names the exact category in eyebrow, H1, title and description', () => {
-    expect(HERO_EYEBROW).toBe('Angular · LangGraph & AG-UI');
-    expect(HERO_H1).toBe('The open-source thread-plane for agents.');
+    expect(HERO_EYEBROW).toBe('LangGraph & AG-UI');
+    expect(HERO_H1).toBe('The open-source thread-plane for Angular agents.');
     expect(HERO_SUBHEAD).toBe(
       'Make agent work persistent, durable, visible, reviewable, and resumable.',
     );
-    expect(HOME_TITLE).toBe('Threadplane — The open-source thread-plane for agents');
+    expect(HOME_TITLE).toBe('Threadplane — The open-source thread-plane for Angular agents');
     expect(HOME_DESCRIPTION).toBe(
       'The open-source thread-plane for agents: chat, durable threads, persistence, human approvals, and generative UI for Angular, on LangGraph and AG-UI.',
     );
     expect(HOME_DESCRIPTION.length).toBeLessThanOrEqual(160);
   });
 
-  it('H1 lines join back to HERO_H1 on three lines', () => {
+  it('H1 lines join back to HERO_H1 on the three lines the cards are laid out for', () => {
     expect(HERO_H1_LINES).toHaveLength(3);
     expect(HERO_H1_LINES.join(' ')).toBe(HERO_H1);
+    // Pinned exactly, because this array is also the line-breaking for
+    // opengraph-image.tsx and github-card/route.tsx, whose H1 columns are
+    // ~536px and ~588px at 60px and 62px Archivo Black. Canvas-measured at 60px
+    // with -0.02em tracking: 538 / 513 / 507px. The cards are centred at fixed
+    // height, so a line that overflows collides with the pills below rather
+    // than pushing them down.
+    //
+    // Pinned rather than computed: character count is NOT a proxy for width
+    // here — 'thread-plane for' is one character longer than 'The open-source'
+    // and 25px narrower. Re-measure in Archivo Black before changing a line.
+    expect(HERO_H1_LINES).toEqual([
+      'The open-source',
+      'thread-plane for',
+      'Angular agents.',
+    ]);
   });
 
   it('subhead segments preserve the copy and link each capability to its docs', () => {

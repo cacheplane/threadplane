@@ -1,0 +1,45 @@
+{
+  "name": "cockpit-runtimes-microsoft-agent-framework-react",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "cockpit/runtimes/microsoft-agent-framework/react/src",
+  "projectType": "application",
+  "tags": ["scope:cockpit-examples", "scope:cockpit-e2e", "framework:react"],
+  "targets": {
+    "prepare-fixture": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "node scripts/react-cockpit/prepare-native-maf-fixture.mjs"
+      }
+    },
+    "e2e": {
+      "executor": "@nx/playwright:playwright",
+      "cache": false,
+      "dependsOn": ["prepare-fixture", "build"],
+      "options": {
+        "config": "cockpit/runtimes/microsoft-agent-framework/react/e2e/playwright.config.ts",
+        "skipInstall": true
+      }
+    },
+    "test": {
+      "executor": "@nx/vitest:test",
+      "options": {
+        "configFile": "cockpit/runtimes/microsoft-agent-framework/react/vite.config.mts"
+      }
+    },
+    "lint": { "executor": "@nx/eslint:lint" },
+    "build": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [
+        { "target": "build", "projects": ["core", "content", "react"] }
+      ],
+      "outputs": [
+        "{workspaceRoot}/dist/cockpit/runtimes/microsoft-agent-framework/react"
+      ],
+      "options": {
+        "command": "node scripts/react-cockpit/build.mjs runtimes-microsoft-agent-framework"
+      }
+    }
+  }
+}

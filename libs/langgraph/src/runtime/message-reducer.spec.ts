@@ -1,0 +1,731 @@
+import {
+  completeDelivery,
+  streamingDelivery,
+  type Message,
+  type ToolCall,
+} from '@threadplane/core';
+import { describe, expect, it } from 'vitest';
+import {
+  initialMessageState,
+  reduceMessages,
+  type MessageEvent,
+} from './message-reducer';
+
+function message(
+  id: string,
+  content: string,
+  role: Message['role'] = 'assistant'
+): Message {
+  return { id, content, role, delivery: streamingDelivery('run-1') };
+}
+
+describe('pure text and tool transitions', () => {
+  it('uses explicit reasoning modes, preserving omission and appending even repeated or prefix-equal deltas', () => {
+    let state = initialMessageState();
+    const apply = (
+      mode: 'delta' | 'snapshot' | 'canonical',
+      reasoning?: string,
+      generation = 'run-1'
+    ) => {
+      state = reduceMessages(state, {
+        type: 'message',
+        mode,
+        message: {
+          ...message('m', ''),
+          reasoning,
+          delivery: streamingDelivery(generation),
+        },
+      });
+      return state.messages[0].reasoning;
+    };
+    expect(apply('delta', 'A')).toBe('A');
+    expect(apply('delta', 'A')).toBe('AA');
+    expect(apply('delta', 'AA')).toBe('AAAA');
+    expect(apply('delta')).toBe('AAAA');
+    expect(apply('snapshot')).toBe('AAAA');
+    expect(apply('snapshot', 'B')).toBe('B');
+    expect(apply('snapshot', '')).toBe('');
+    expect(apply('delta', 'Long')).toBe('Long');
+    expect(apply('canonical', 'C')).toBe('C');
+    expect(apply('delta', 'Late')).toBe('C');
+    expect(apply('snapshot', 'Late')).toBe('C');
+    expect(apply('canonical', '')).toBe('');
+    expect(apply('canonical')).toBeUndefined();
+    expect(apply('snapshot', 'Late')).toBeUndefined();
+    expect(apply('canonical', 'Corrected')).toBe('Corrected');
+    expect(apply('delta', undefined, 'run-2')).toBeUndefined();
+    expect(apply('delta', 'New', 'run-2')).toBe('New');
+    state = reduceMessages(state, {
+      type: 'complete',
+      generation: 'run-2',
+      outcome: 'success',
+    });
+    expect(apply('delta', 'Late', 'run-2')).toBe('New');
+    expect(state.messages[0].delivery.phase).toBe('complete');
+  });
+  it('replaces citation lists, preserves omitted interim metadata and shares equal metadata across text changes', () => {
+    const citations = [{ id: 'c', index: 1, extra: { nested: ['original'] } }];
+    const first = reduceMessages(initialMessageState(), {
+      type: 'message',
+      mode: 'snapshot',
+      message: { ...message('m', 'A'), citations },
+    });
+    const owned = first.messages[0].citations;
+    citations[0].extra.nested.push('mutated');
+    expect(owned?.[0].extra).toEqual({ nested: ['original'] });
+    const delta = reduceMessages(first, {
+      type: 'message',
+      mode: 'delta',
+      message: message('m', 'B'),
+    });
+    expect(delta.messages[0].content).toBe('AB');
+    expect(delta.messages[0].citations).toBe(owned);
+    const equal = reduceMessages(delta, {
+      type: 'message',
+      mode: 'snapshot',
+      message: {
+        ...message('m', 'ABC'),
+        citations: [{ id: 'c', index: 1, extra: { nested: ['original'] } }],
+      },
+    });
+    expect(equal.messages[0].citations).toBe(owned);
+    const updatedTitle = reduceMessages(equal, {
+      type: 'message',
+      mode: 'snapshot',
+      message: {
+        ...message('m', 'ABC'),
+        citations: [
+          {
+            id: 'c',
+            index: 1,
+            title: 'Updated',
+            extra: { nested: ['original'] },
+          },
+        ],
+      },
+    });
+    expect(updatedTitle.messages[0].citations).not.toBe(owned);
+    expect(updatedTitle.messages[0].citations?.[0].extra).toBe(owned?.[0].extra);
+    const changed = reduceMessages(equal, {
+      type: 'message',
+      mode: 'delta',
+      message: { ...message('m', ''), citations: [{ id: 'next', index: 2 }] },
+    });
+    expect(changed.messages[0].citations).toEqual([{ id: 'next', index: 2 }]);
+    expect(
+      reduceMessages(changed, {
+        type: 'message',
+        mode: 'delta',
+        message: { ...message('m', ''), citations: [{ id: 'next', index: 2 }] },
+      })
+    ).toBe(changed);
+    expect(
+      reduceMessages(changed, {
+        type: 'message',
+        mode: 'snapshot',
+        message: { ...message('m', ''), citations: [] },
+      }).messages[0].citations
+    ).toEqual([]);
+  });
+
+  it.each([undefined, []])(
+    'canonical citation removal %j bars late resurrection while ordered corrections remain authoritative',
+    (removed) => {
+      const withCitation = {
+        ...message('m', 'Text'),
+        citations: [{ id: 'c', index: 1 }],
+      };
+      const first = reduceMessages(initialMessageState(), {
+        type: 'message',
+        mode: 'snapshot',
+        message: withCitation,
+      });
+      const canonical = reduceMessages(first, {
+        type: 'message',
+        mode: 'canonical',
+        message: { ...message('m', 'Final'), citations: removed },
+      });
+      expect(canonical.messages[0].citations).toEqual(removed);
+      for (const mode of ['delta', 'snapshot'] as const) {
+        const late = reduceMessages(canonical, {
+          type: 'message',
+          mode,
+          message: withCitation,
+        });
+        expect(late.messages[0].content).toBe('Final');
+        expect(late.messages[0].citations).toBe(canonical.messages[0].citations);
+      }
+      expect(
+        reduceMessages(canonical, {
+          type: 'message',
+          mode: 'canonical',
+          message: withCitation,
+        }).messages[0].citations
+      ).toEqual(withCitation.citations);
+      const nextGeneration = reduceMessages(first, {
+        type: 'message',
+        mode: 'snapshot',
+        message: { ...message('m', 'New'), delivery: streamingDelivery('run-2') },
+      });
+      expect(nextGeneration.messages[0].citations).toBeUndefined();
+    }
+  );
+
+  it.each([
+    { label: 'empty to holes', from: 0, to: 2, populated: false },
+    { label: 'shorter trailing holes', from: 3, to: 1, populated: true },
+  ])(
+    'retains a pending argument correction: $label',
+    ({ from, to, populated }) => {
+      const values = (length: number) => {
+        const array = new Array<number>(length);
+        if (populated) array[0] = 1;
+        return array;
+      };
+      const call: ToolCall = {
+        id: 'call',
+        name: 'work',
+        status: 'pending',
+        args: { nested: { marker: true, values: values(from) } },
+      };
+      const before = reduceMessages(initialMessageState(), {
+        type: 'tool',
+        toolCall: call,
+      });
+      const corrected = {
+        ...call,
+        args: { nested: { marker: true, values: values(to) } },
+      };
+      const after = reduceMessages(before, {
+        type: 'tool',
+        toolCall: corrected,
+      });
+      expect(after).not.toBe(before);
+      expect(after.toolCalls[0]).toHaveProperty(
+        'args.nested.values.length',
+        to
+      );
+      expect(before.toolCalls[0]).toHaveProperty(
+        'args.nested.values.length',
+        from
+      );
+      expect(after.messages).toBe(before.messages);
+      corrected.args.nested.values.length = 5;
+      expect(after.toolCalls[0]).toHaveProperty(
+        'args.nested.values.length',
+        to
+      );
+      expect(
+        reduceMessages(after, {
+          type: 'tool',
+          toolCall: {
+            ...call,
+            args: { nested: { values: values(to), marker: true } },
+          },
+        })
+      ).toBe(after);
+    }
+  );
+
+  it('distinguishes a pending argument hole from explicit undefined', () => {
+    const call: ToolCall = {
+      id: 'call',
+      name: 'work',
+      status: 'pending',
+      args: { values: new Array(1) },
+    };
+    const before = reduceMessages(initialMessageState(), {
+      type: 'tool',
+      toolCall: call,
+    });
+    const after = reduceMessages(before, {
+      type: 'tool',
+      toolCall: { ...call, args: { values: [undefined] } },
+    });
+    expect(after).not.toBe(before);
+    expect(after.toolCalls[0]).toHaveProperty('args.values.0', undefined);
+    expect(before.toolCalls[0]).not.toHaveProperty('args.values.0');
+  });
+
+  it('withdraws only a running tool projection without reopening settled facts', () => {
+    const call: ToolCall = {
+      id: 'call',
+      name: 'work',
+      args: {},
+      status: 'pending',
+    };
+    const initial = initialMessageState();
+    expect(
+      reduceMessages(initial, { type: 'tool-unsettled', id: call.id })
+    ).toBe(initial);
+    const running = reduceMessages(initial, {
+      type: 'tool',
+      toolCall: { ...call, status: 'running' },
+    });
+    expect(reduceMessages(running, { type: 'tool', toolCall: call })).toBe(
+      running
+    );
+    const pending = reduceMessages(running, {
+      type: 'tool-unsettled',
+      id: call.id,
+    });
+    expect(pending.toolCalls[0]).toEqual(call);
+    expect(pending.messages).toBe(running.messages);
+    expect(running.toolCalls[0].status).toBe('running');
+    expect(
+      reduceMessages(pending, { type: 'tool-unsettled', id: call.id })
+    ).toBe(pending);
+    for (const result of [
+      { ...call, status: 'complete', result: 'Done' },
+      { ...call, status: 'error', error: 'Declined' },
+    ] as const) {
+      const settled = reduceMessages(running, {
+        type: 'tool',
+        toolCall: result,
+      });
+      expect(reduceMessages(settled, { type: 'tool', toolCall: call })).toBe(
+        settled
+      );
+      expect(
+        reduceMessages(settled, { type: 'tool-unsettled', id: call.id })
+      ).toBe(settled);
+    }
+  });
+
+  it('appends repeated identical deltas and shares untouched messages', () => {
+    const before = reduceMessages(initialMessageState(), {
+      type: 'message',
+      mode: 'snapshot',
+      message: message('user-1', 'Question', 'user'),
+    });
+    const first = reduceMessages(before, {
+      type: 'message',
+      mode: 'delta',
+      message: message('ai-1', '|'),
+    });
+    const second = reduceMessages(first, {
+      type: 'message',
+      mode: 'delta',
+      message: message('ai-1', '|'),
+    });
+    expect(second.messages[1].content).toBe('||');
+    expect(second.messages[0]).toBe(before.messages[0]);
+    expect(first.messages[1].content).toBe('|');
+    expect(before.messages).toHaveLength(1);
+  });
+
+  it('treats snapshots as cumulative, ignores duplicate/shorter snapshots and blocks late deltas after canonical content', () => {
+    const first = reduceMessages(initialMessageState(), {
+      type: 'message',
+      mode: 'snapshot',
+      message: message('ai-1', 'hello'),
+    });
+    expect(
+      reduceMessages(first, {
+        type: 'message',
+        mode: 'snapshot',
+        message: message('ai-1', 'hello'),
+      })
+    ).toBe(first);
+    expect(
+      reduceMessages(first, {
+        type: 'message',
+        mode: 'snapshot',
+        message: message('ai-1', 'hel'),
+      })
+    ).toBe(first);
+    const final = reduceMessages(first, {
+      type: 'message',
+      mode: 'canonical',
+      message: message('ai-1', 'hello world'),
+    });
+    expect(
+      reduceMessages(final, {
+        type: 'message',
+        mode: 'delta',
+        message: message('ai-1', '!'),
+      })
+    ).toBe(final);
+    expect(
+      reduceMessages(final, {
+        type: 'message',
+        mode: 'snapshot',
+        message: message('ai-1', 'hello'),
+      })
+    ).toBe(final);
+    expect(
+      reduceMessages(final, {
+        type: 'message',
+        mode: 'canonical',
+        message: message('ai-1', 'hello world'),
+      })
+    ).toBe(final);
+  });
+
+  it('preserves an explicitly correlated optimistic ID across server echoes and subsequent server updates', () => {
+    const first = reduceMessages(initialMessageState(), {
+      type: 'message',
+      mode: 'snapshot',
+      message: message('local', 'hello', 'user'),
+    });
+    const echo = reduceMessages(first, {
+      type: 'message',
+      mode: 'snapshot',
+      existingId: 'local',
+      message: message('server', 'hello', 'user'),
+    });
+    const repeated = reduceMessages(echo, {
+      type: 'message',
+      mode: 'snapshot',
+      message: message('server', 'hello', 'user'),
+    });
+    expect(echo.messages).toBe(first.messages);
+    expect(repeated).toBe(echo);
+    expect(repeated.messages.map((value) => value.id)).toEqual(['local']);
+    // Equal text alone must not collapse two legitimate user submissions.
+    const another = reduceMessages(repeated, {
+      type: 'message',
+      mode: 'snapshot',
+      message: message('local-2', 'hello', 'user'),
+    });
+    expect(another.messages).toHaveLength(2);
+  });
+
+  it.each(['hello', ''])(
+    'replaces draft text exactly with canonical content %j',
+    (content) => {
+      const draft = reduceMessages(initialMessageState(), {
+        type: 'message',
+        mode: 'delta',
+        message: message('ai', 'hello world'),
+      });
+      const terminal = reduceMessages(draft, {
+        type: 'message',
+        mode: 'canonical',
+        message: message('ai', content),
+      });
+      expect(terminal.messages[0].content).toBe(content);
+      expect(draft.messages[0].content).toBe('hello world');
+    }
+  );
+
+  it.each(['hello world', 'different content'])(
+    'retains terminal canonical text after a late cumulative snapshot %j',
+    (content) => {
+      const terminal = reduceMessages(initialMessageState(), {
+        type: 'message',
+        mode: 'canonical',
+        message: message('ai', 'hello'),
+      });
+      expect(
+        reduceMessages(terminal, {
+          type: 'message',
+          mode: 'snapshot',
+          message: message('ai', content),
+        })
+      ).toBe(terminal);
+    }
+  );
+
+  it('allows later snapshot metadata and delivery completion without replacing terminal text', () => {
+    const terminal = reduceMessages(initialMessageState(), {
+      type: 'message',
+      mode: 'canonical',
+      message: message('ai', 'hello'),
+    });
+    const enriched = reduceMessages(terminal, {
+      type: 'message',
+      mode: 'snapshot',
+      message: {
+        ...message('ai', 'stale draft'),
+        name: 'assistant',
+        toolCallIds: ['call-1'],
+        delivery: completeDelivery('run-1', 'success'),
+      },
+    });
+    expect(enriched.messages[0]).toMatchObject({
+      content: 'hello',
+      name: 'assistant',
+      toolCallIds: ['call-1'],
+      delivery: completeDelivery('run-1', 'success'),
+    });
+    expect(terminal.messages[0].delivery.phase).toBe('streaming');
+    expect(
+      reduceMessages(enriched, {
+        type: 'message',
+        mode: 'snapshot',
+        message: message('ai', 'another draft'),
+      })
+    ).toBe(enriched);
+  });
+
+  it('accepts an explicitly ordered canonical correction exactly and preserves duplicate identity', () => {
+    const original = reduceMessages(initialMessageState(), {
+      type: 'message',
+      mode: 'canonical',
+      message: {
+        ...message('ai', 'hello world'),
+        toolCallIds: ['call-1'],
+        delivery: completeDelivery('run-1', 'success'),
+      },
+    });
+    const correction: MessageEvent = {
+      type: 'message',
+      mode: 'canonical',
+      message: message('ai', 'hello'),
+    };
+    const corrected = reduceMessages(original, correction);
+    expect(corrected.messages[0]).toMatchObject({
+      id: 'ai',
+      content: 'hello',
+      toolCallIds: ['call-1'],
+      delivery: completeDelivery('run-1', 'success'),
+    });
+    expect(reduceMessages(corrected, correction)).toBe(corrected);
+    expect(
+      reduceMessages(corrected, {
+        type: 'message',
+        mode: 'delta',
+        message: message('ai', '!'),
+      })
+    ).toBe(corrected);
+    expect(original.messages[0].content).toBe('hello world');
+  });
+
+  it('preserves streamed assistant identity across a canonical server ID change', () => {
+    const first = reduceMessages(initialMessageState(), {
+      type: 'message',
+      mode: 'delta',
+      message: message('chunk', 'hello'),
+    });
+    const final = reduceMessages(first, {
+      type: 'message',
+      mode: 'canonical',
+      existingId: 'chunk',
+      message: message('server', 'hello world'),
+    });
+    expect(final.messages[0]).toMatchObject({
+      id: 'chunk',
+      content: 'hello world',
+    });
+    expect(
+      reduceMessages(final, {
+        type: 'message',
+        mode: 'delta',
+        message: message('server', '!'),
+      })
+    ).toBe(final);
+  });
+
+  it.each(['success', 'error', 'aborted', 'interrupted', 'paused'] as const)(
+    'finalizes only matching streaming delivery as %s',
+    (outcome) => {
+      const old = {
+        ...message('old', 'already complete'),
+        delivery: completeDelivery('old-run', 'success'),
+      };
+      let state = reduceMessages(initialMessageState(), {
+        type: 'message',
+        mode: 'snapshot',
+        message: old,
+      });
+      state = reduceMessages(state, {
+        type: 'message',
+        mode: 'delta',
+        message: message('ai', 'partial'),
+      });
+      const final = reduceMessages(state, {
+        type: 'complete',
+        generation: 'run-1',
+        outcome,
+      });
+      expect(final.messages[0]).toBe(state.messages[0]);
+      expect(final.messages[1].delivery).toEqual(
+        completeDelivery('run-1', outcome)
+      );
+      expect(state.messages[1].delivery.phase).toBe('streaming');
+      expect(
+        reduceMessages(final, {
+          type: 'complete',
+          generation: 'run-1',
+          outcome,
+        })
+      ).toBe(final);
+      expect(
+        reduceMessages(final, {
+          type: 'message',
+          mode: 'delta',
+          message: message('ai', 'late'),
+        })
+      ).toBe(final);
+    }
+  );
+
+  it('owns incoming nested values and upserts tool slices without mutating history', () => {
+    const ids = ['call-1'];
+    const input = { ...message('ai', 'searching'), toolCallIds: ids };
+    const args = { queries: ['first'] };
+    const call: ToolCall = {
+      id: 'call-1',
+      name: 'search',
+      status: 'running',
+      args,
+    };
+    const first = reduceMessages(initialMessageState(), {
+      type: 'message',
+      mode: 'delta',
+      message: input,
+    });
+    const running = reduceMessages(first, { type: 'tool', toolCall: call });
+    ids.push('call-2');
+    args.queries.push('second');
+    expect(running.messages[0].toolCallIds).toEqual(['call-1']);
+    expect(running.toolCalls[0].args).toEqual({ queries: ['first'] });
+    const result = { hits: ['found'] };
+    const complete = reduceMessages(running, {
+      type: 'tool',
+      toolCall: {
+        ...call,
+        args: { queries: ['first'] },
+        status: 'complete',
+        result,
+      },
+    });
+    result.hits.push('later');
+    expect(complete.toolCalls[0]).toMatchObject({
+      status: 'complete',
+      result: { hits: ['found'] },
+    });
+    expect(complete.messages).toBe(running.messages);
+    expect(running.toolCalls[0].status).toBe('running');
+    expect(Object.isFrozen(complete.toolCalls[0])).toBe(true);
+    expect(
+      reduceMessages(complete, {
+        type: 'tool',
+        toolCall: {
+          id: 'call-1',
+          name: 'search',
+          args: { queries: ['first'] },
+          status: 'complete',
+          result: { hits: ['found'] },
+        },
+      })
+    ).toBe(complete);
+  });
+
+  it('replays fixed events deterministically without changing the initial state or events', () => {
+    const initial = initialMessageState();
+    const events: readonly MessageEvent[] = [
+      {
+        type: 'message',
+        mode: 'snapshot',
+        message: message('user', 'go', 'user'),
+      },
+      { type: 'message', mode: 'delta', message: message('ai', 'a') },
+      { type: 'message', mode: 'delta', message: message('ai', 'a') },
+      { type: 'complete', generation: 'run-1', outcome: 'success' },
+    ];
+    const saved = JSON.stringify(events);
+    const replay = () => events.reduce(reduceMessages, initial);
+    expect(replay()).toEqual(replay());
+    expect(initial.messages).toEqual([]);
+    expect(JSON.stringify(events)).toBe(saved);
+  });
+
+  it('preserves sibling tool calls when a handler failure is published as plain text', () => {
+    const first: ToolCall = {
+      id: 'one',
+      name: 'search',
+      args: { query: 'one' },
+      status: 'running',
+    };
+    const second: ToolCall = {
+      id: 'two',
+      name: 'search',
+      args: { query: 'two' },
+      status: 'running',
+    };
+    let state = reduceMessages(initialMessageState(), {
+      type: 'tool',
+      toolCall: first,
+    });
+    state = reduceMessages(state, { type: 'tool', toolCall: second });
+    const failed = reduceMessages(state, {
+      type: 'tool',
+      toolCall: { ...second, status: 'error', error: 'Handler declined' },
+    });
+    expect(failed.toolCalls[0]).toBe(state.toolCalls[0]);
+    expect(failed.toolCalls[1]).toMatchObject({
+      status: 'error',
+      error: 'Handler declined',
+    });
+  });
+});
+
+describe('explicit proven message reconciliation', () => {
+  it.each([true, false])(
+    'installs exact canonical correction with existing target=%s without changing invocation ownership',
+    (existing) => {
+      let state = initialMessageState();
+      for (const id of [
+        'before',
+        ...(existing ? ['canonical'] : []),
+        'middle',
+        'provisional',
+        'after',
+      ])
+        state = reduceMessages(state, {
+          type: 'message',
+          mode: 'canonical',
+          message: message(id, 'Original'),
+        });
+      const before = state;
+      const next = reduceMessages(state, {
+        type: 'reconcile-message',
+        provisionalId: 'provisional',
+        message: message('canonical', ''),
+      });
+      expect(next.messages.map((m) => m.id)).toEqual(
+        existing
+          ? ['before', 'canonical', 'middle', 'after']
+          : ['before', 'middle', 'canonical', 'after']
+      );
+      expect(next.messages.find((m) => m.id === 'canonical')?.content).toBe('');
+      expect(
+        next.messages.find((m) => m.id === 'canonical')?.delivery.phase
+      ).toBe('streaming');
+      expect(next.canonical.some((entry) => entry.id === 'provisional')).toBe(
+        false
+      );
+      expect(next.invocations).toBe(before.invocations);
+      expect(next.toolCalls).toBe(before.toolCalls);
+      expect(next.messages[0]).toBe(before.messages[0]);
+      expect(before.messages.some((m) => m.id === 'provisional')).toBe(true);
+    }
+  );
+});
+
+it('reconciliation clears only the target delivery generation lock', () => {
+  let state = initialMessageState();
+  for (const generation of ['old', 'run-1'])
+    state = reduceMessages(state, {
+      type: 'message',
+      mode: 'canonical',
+      message: {
+        ...message('canonical', 'Before'),
+        delivery: streamingDelivery(generation),
+      },
+    });
+  state = reduceMessages(state, {
+    type: 'message',
+    mode: 'canonical',
+    message: message('provisional', 'Partial'),
+  });
+  const next = reduceMessages(state, {
+    type: 'reconcile-message',
+    provisionalId: 'provisional',
+    message: message('canonical', 'Current'),
+  });
+  expect(next.canonical).toEqual([{ id: 'canonical', generation: 'old' }]);
+  expect(state.canonical).toHaveLength(3);
+});

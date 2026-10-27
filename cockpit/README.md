@@ -14,4 +14,4 @@ Every capability module should make the mapping between its product-first direct
 
 ## E2E Coverage
 
-Runnable cockpit Playwright specs live under `cockpit/<product>/<capability>/angular/e2e/` only when the Angular project has an Nx `e2e` target with its own Playwright config, setup, and fixtures. Historical exploratory checks that are not wired into Nx live under `e2e/manual/` with a `.manual.ts` suffix until they are promoted to a configured target-backed suite.
+Runnable cockpit Playwright specs live under `cockpit/<product>/<capability>/<angular|react>/e2e/` when the corresponding frontend project has an Nx `e2e` target with its own Playwright config and any required setup and fixtures. Consult that project's target and config for its harness and build prerequisites. Historical exploratory checks that are not wired into Nx live under `e2e/manual/` with a `.manual.ts` suffix until they are promoted to a configured target-backed suite.

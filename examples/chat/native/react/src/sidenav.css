@@ -1,0 +1,190 @@
+.conversation-layout--sidenav {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
+}
+
+.native-conversation-sidenav:not(.tp-chat-sidenav--drawer)
+  .tp-chat-sidenav__panel {
+  height: calc(100dvh - 10rem);
+}
+
+.native-conversation-sidenav aside {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.native-conversation-sidenav .conversation-list {
+  max-height: none;
+  overflow: visible;
+}
+
+@media (max-width: 700px) {
+  .conversation-layout--sidenav {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+}
+
+.conversation-list .tp-thread-list__button mark {
+  background: #fde68a;
+  color: #1f2937;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.copy-conversation-id {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  min-inline-size: 40px;
+  max-inline-size: 4rem;
+}
+.copy-conversation-id__feedback {
+  max-inline-size: 100%;
+  font-size: 0.75rem;
+  line-height: 1.25;
+  text-align: center;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+.conversation-pin-status {
+  display: block;
+  font-size: 0.75rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+.copy-conversation-id > button {
+  display: grid;
+  place-items: center;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 8px;
+}
+.copy-conversation-id svg {
+  width: 20px;
+  height: 20px;
+}
+.copy-conversation-id__status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.conversation-list .tp-thread-list__button[aria-current='true'] mark {
+  background: #fef3c7;
+  color: #111827;
+}
+
+.native-conversation-sidenav
+  .conversation-list--compact
+  .tp-thread-list__button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.125rem;
+  padding: 0.5rem 0.125rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.native-conversation-sidenav .conversation-list--compact .tp-thread-list__time {
+  display: none;
+}
+
+.native-conversation-sidenav.tp-chat-sidenav--collapsed
+  .tp-chat-sidenav__header {
+  justify-content: center;
+}
+
+.native-conversation-sidenav.tp-chat-sidenav--collapsed
+  .tp-chat-sidenav__toggle {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 0;
+  line-height: 0;
+}
+
+.native-conversation-sidenav.tp-chat-sidenav--collapsed
+  .tp-chat-sidenav__toggle::before {
+  content: '';
+  width: 0.5rem;
+  height: 0.5rem;
+  border-top: 2px solid currentColor;
+  border-right: 2px solid currentColor;
+  transform: translateX(-2px) rotate(45deg);
+}
+
+.native-conversation-sidenav.tp-chat-sidenav--collapsed
+  .tp-chat-sidenav__toggle:dir(rtl)::before {
+  transform: translateX(2px) rotate(225deg);
+}
+
+.conversation-actions {
+  min-width: 0;
+}
+.conversation-rename {
+  position: relative;
+  z-index: 1;
+  width: min(19rem, calc(100vw - 4rem));
+  padding: 0.5rem;
+  background: var(--tp-chat-surface, #fff);
+  border: 1px solid var(--tp-chat-border, #ccc);
+  border-radius: 0.5rem;
+}
+.conversation-list .tp-thread-list__item--actions:has(.conversation-rename),
+.conversation-list
+  .tp-thread-list__item--actions:has(.conversation-pin-status) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.tp-thread-list__actions:has(.conversation-rename),
+.conversation-actions:has(.conversation-rename),
+.tp-thread-list__actions:has(.conversation-pin-status),
+.conversation-actions:has(.conversation-pin-status) {
+  display: contents;
+}
+.conversation-actions:has(.conversation-rename) > .copy-conversation-id,
+.conversation-actions:has(.conversation-pin-status) > .copy-conversation-id {
+  grid-column: 2;
+  grid-row: 1;
+}
+.conversation-actions > .conversation-rename {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  width: auto;
+  min-width: 0;
+}
+.conversation-actions > .conversation-pin-status {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  min-width: 0;
+}
+.conversation-actions:has(.conversation-rename) > .conversation-pin-status {
+  grid-row: 3;
+}
+
+.archived-conversations {
+  min-width: 0;
+  margin-top: 1rem;
+}
+
+.archived-conversations > summary {
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.conversation-archive-feedback {
+  min-width: 0;
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}

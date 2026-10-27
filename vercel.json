@@ -5,8 +5,12 @@
   "installCommand": "npm ci",
   "crons": [
     {
+      "path": "/api/cron/inbox-recovery",
+      "schedule": "*/5 * * * *"
+    },
+    {
       "path": "/api/cron/lifecycle",
-      "schedule": "* * * * *"
+      "schedule": "*/30 * * * *"
     }
   ]
 }

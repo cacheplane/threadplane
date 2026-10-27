@@ -24,8 +24,7 @@ import { injectAgent } from '@threadplane/langgraph';
         <div>
           <h4 class="cap">How It Works</h4>
           <p class="info">
-            Each message creates a checkpoint. Use the slider to navigate
-            through conversation history and branch from any point.
+            The sidebar lists saved checkpoints. Replay and Fork events require host wiring.
           </p>
         </div>
       </div>

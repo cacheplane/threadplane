@@ -4,10 +4,25 @@
   "sourceRoot": "apps/website/src",
   "projectType": "application",
   "implicitDependencies": [
+    "cockpit-ag-ui-a2ui-react",
+    "cockpit-chat-a2ui-react",
+    "cockpit-chat-debug-react",
+    "cockpit-chat-theming-react",
     "workspace-react",
     "cockpit-langgraph-streaming-angular",
+    "cockpit-langgraph-streaming-react",
     "cockpit-ag-ui-streaming-angular",
-    "cockpit-chat-threads-angular"
+    "cockpit-ag-ui-interrupts-angular",
+    "cockpit-ag-ui-tool-views-angular",
+    "cockpit-ag-ui-json-render-angular",
+    "cockpit-ag-ui-subagents-angular",
+    "cockpit-chat-threads-angular",
+    "cockpit-render-computed-functions-angular",
+    "cockpit-ag-ui-client-tools-react",
+    "cockpit-ag-ui-client-tools-angular",
+    "cockpit-runtimes-mastra-react",
+    "cockpit-runtimes-microsoft-agent-framework-react",
+    "cockpit-runtimes-aws-strands-react"
   ],
   "tags": ["scope:website", "scope:website-e2e", "type:app"],
   "targets": {
@@ -65,6 +80,66 @@
     },
     "e2e": {
       "executor": "@nx/playwright:playwright",
+      "dependsOn": [
+        {
+          "target": "fixture-test",
+          "projects": ["cockpit-chat-a2ui-react"]
+        },
+        {
+          "target": "test",
+          "projects": ["cockpit-chat-theming-python", "cockpit-chat-debug-python"]
+        },
+        {
+          "target": "prepare-fixture",
+          "projects": ["cockpit-runtimes-mastra-react", "cockpit-runtimes-microsoft-agent-framework-react", "cockpit-runtimes-aws-strands-react", "cockpit-ag-ui-a2ui-react"]
+        },
+        {
+          "target": "build",
+          "projects": [
+            "cockpit-chat-a2ui-react",
+            "cockpit-ag-ui-a2ui-react",
+            "cockpit-langgraph-streaming-react",
+            "cockpit-langgraph-interrupts-react",
+            "cockpit-langgraph-memory-react",
+            "cockpit-langgraph-client-tools-react",
+            "cockpit-langgraph-persistence-react",
+            "cockpit-langgraph-durable-execution-react",
+            "cockpit-langgraph-subgraphs-react",
+            "cockpit-langgraph-time-travel-react",
+            "cockpit-langgraph-deployment-runtime-react",
+            "cockpit-ag-ui-streaming-react",
+            "cockpit-ag-ui-interrupts-react",
+            "cockpit-ag-ui-tool-views-react",
+            "cockpit-ag-ui-json-render-react",
+            "cockpit-ag-ui-subagents-react",
+            "cockpit-render-spec-rendering-react",
+            "cockpit-render-state-management-react",
+            "cockpit-render-repeat-loops-react",
+            "cockpit-render-registry-react",
+            "cockpit-render-element-rendering-react",
+            "cockpit-render-computed-functions-react",
+            "cockpit-chat-messages-react",
+            "cockpit-chat-theming-react",
+            "cockpit-chat-debug-react",
+            "cockpit-chat-input-react",
+            "cockpit-chat-interrupts-react",
+            "cockpit-chat-tool-calls-react",
+            "cockpit-chat-subagents-react",
+            "cockpit-chat-threads-react",
+            "cockpit-chat-timeline-react",
+            "cockpit-chat-generative-ui-react",
+            "cockpit-deep-agents-planning-react",
+            "cockpit-deep-agents-filesystem-react",
+            "cockpit-deep-agents-subagents-react",
+            "cockpit-deep-agents-skills-react",
+            "cockpit-deep-agents-memory-react",
+            "cockpit-ag-ui-client-tools-react",
+            "cockpit-runtimes-mastra-react",
+            "cockpit-runtimes-microsoft-agent-framework-react",
+            "cockpit-runtimes-aws-strands-react"
+          ]
+        }
+      ],
       "options": {
         "config": "apps/website/playwright.config.ts"
       }

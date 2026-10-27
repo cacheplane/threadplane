@@ -1,0 +1,60 @@
+---
+description: The ChatRunActivityTemplateDirective renders a chat run while it is active and has no assistant message, in place of the typing indicator.
+---
+
+# ChatRunActivityTemplateDirective
+
+`ChatRunActivityTemplateDirective` registers one turn-level run renderer on `<chat>`. The template renders after the last message, inside the transcript's scroll region, while a run is active and has no assistant message yet. In that window it replaces the default typing indicator.
+
+A run's first model call can take a long time before any text or tool call arrives. Until then there is no assistant message, so the per-message [`chatActivityTemplate`](/docs/chat/components/chat-activity-template) has nothing to render into. A host that renders turn-level activity uses this template to show the run from the moment the user submits.
+
+**Selector:** `ng-template[chatRunActivityTemplate]`
+
+**Import:**
+
+```typescript
+import { ChatRunActivityTemplateDirective, type ChatRunActivityTemplateContext } from '@threadplane/chat';
+```
+
+## When it renders
+
+The current run is every message after the last user message, or every message when there is none. The template renders while both hold:
+
+- `agent.isLoading()` is `true`.
+- The current run has no assistant message.
+
+It stops rendering when the first assistant message of the run arrives, at which point the per-message activity slot takes over, and when the run ends. A resumed run that continues an existing assistant message never shows it, because the current run already has an assistant message.
+
+## Template context
+
+| Variable | Type | Description |
+|---|---|---|
+| `let-agent` (`$implicit`) | `Agent` | The agent bound to `<chat>`. |
+| `let-running="running"` | `boolean` | Whether a run is in flight. Always `true` while the template renders. |
+| `let-hasAssistantMessage="hasAssistantMessage"` | `boolean` | Whether the current run has an assistant message. Always `false` while the template renders. |
+| `let-messages="messages"` | `Message[]` | The current run's messages, which hold no assistant message while the template renders. |
+
+The context object is reused while the agent and the run's messages are unchanged.
+
+## Example
+
+```html
+<chat [agent]="agent">
+  <ng-template chatActivityTemplate let-message let-toolCalls="toolCalls">
+    <my-turn-activity [message]="message" [steps]="toolCalls" />
+  </ng-template>
+  <ng-template chatRunActivityTemplate let-agent>
+    <my-turn-activity [agent]="agent" />
+  </ng-template>
+</chat>
+```
+
+## Typing indicator
+
+With the template projected, the typing indicator is hidden only while the template renders. Outside that window, for example once an empty assistant message has arrived, the indicator behaves as it does without the template. Without the template, `<chat>` renders exactly as before.
+
+## Accessibility and scrolling
+
+The template renders inside a `role="status"` region, like the typing indicator, with `aria-atomic="false"` so assistive technology announces additions rather than the whole region. Mark frequently changing text, such as an elapsed-time counter, `aria-hidden="true"` to keep announcements quiet.
+
+While the transcript is pinned to the bottom, `<chat>` scrolls to keep the region in view as it appears and changes size.

@@ -1,0 +1,44 @@
+// Private example contracts. App ownership and its independent operation
+// states are introduced with the application owner, not the directory.
+export interface ThreadRow {
+  readonly id: string;
+  readonly title: string;
+  readonly updatedAt?: number;
+  readonly pinned?: boolean;
+  readonly pinnedOrder?: number;
+  readonly archived?: boolean;
+}
+
+export type DirectoryResult<T> =
+  | Readonly<{ kind: 'ready'; value: T }>
+  | Readonly<{ kind: 'failed' }>
+  | Readonly<{ kind: 'cancelled' }>;
+export type ThreadLookupResult =
+  | DirectoryResult<ThreadRow>
+  | Readonly<{ kind: 'missing' }>;
+
+export interface ThreadDirectory {
+  setPinnedOrder?(
+    id: string,
+    rank: number,
+    signal: AbortSignal
+  ): Promise<DirectoryResult<ThreadRow>>;
+  setArchived?(
+    id: string,
+    archived: boolean,
+    signal: AbortSignal
+  ): Promise<DirectoryResult<ThreadRow>>;
+  setPinned?(
+    id: string,
+    pinned: boolean,
+    signal: AbortSignal
+  ): Promise<DirectoryResult<ThreadRow>>;
+  rename?(
+    id: string,
+    title: string,
+    signal: AbortSignal
+  ): Promise<DirectoryResult<ThreadRow>>;
+  get(id: string, signal: AbortSignal): Promise<ThreadLookupResult>;
+  list(signal: AbortSignal): Promise<DirectoryResult<readonly ThreadRow[]>>;
+  create(signal: AbortSignal): Promise<DirectoryResult<ThreadRow>>;
+}

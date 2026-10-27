@@ -5,7 +5,7 @@ import {
   type GrowthJob,
   type SqlExecutor,
 } from '@threadplane-internal/growth';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, test, vi } from 'vitest';
 
 import middleware from './middleware.js';
 import {
@@ -78,8 +78,21 @@ function dependencies(
       createdJobs: 0,
     }),
     enqueueInstallDigestJob: vi.fn().mockResolvedValue(null),
+    processObservations: vi.fn().mockResolvedValue({
+      completed: 0,
+      leaseLost: 0,
+      retryScheduled: 0,
+      failed: 0,
+      disabled: false,
+    }),
+    projectFormObservations: vi
+      .fn()
+      .mockResolvedValue({ projected: 0, disabled: false }),
     now: vi.fn(() => NOW),
     renewJobLease: vi
+      .fn()
+      .mockImplementation(async (_executor, input) => leasedJob(input.jobId)),
+    deferJob: vi
       .fn()
       .mockImplementation(async (_executor, input) => leasedJob(input.jobId)),
     quarantineJob: vi
@@ -826,6 +839,106 @@ describe('dispatchLifecycleJobs', () => {
     expect(resumed.recoveryPaused).toBe(false);
     expect(dispatchLeasedJob).toHaveBeenCalledTimes(2);
   });
+
+  it('projects observations and form links before enrollment when the switch is on', async () => {
+    const deps = dependencies();
+    await dispatchLifecycleJobs(
+      {
+        batchSize: 10,
+        campaignEnabled: true,
+        campaignEnrollmentEnabled: true,
+        campaignEnrollmentStartAt: NOW,
+        observationProcessingEnabled: true,
+        signal: new AbortController().signal,
+      },
+      deps
+    );
+    expect(deps.processObservations).toHaveBeenCalledOnce();
+    expect(deps.processObservations).toHaveBeenCalledWith(expect.anything(), {
+      enabled: true,
+      limit: 10,
+      now: deps.now,
+    });
+    expect(deps.projectFormObservations).toHaveBeenCalledOnce();
+    expect(deps.projectFormObservations).toHaveBeenCalledWith(
+      expect.anything(),
+      { enabled: true, limit: 10, now: deps.now }
+    );
+    const order = (fn: unknown): number =>
+      (fn as { mock: { invocationCallOrder: number[] } }).mock
+        .invocationCallOrder[0];
+    expect(order(deps.processObservations)).toBeLessThan(
+      order(deps.materializeCampaignEnrollment)
+    );
+    expect(order(deps.projectFormObservations)).toBeLessThan(
+      order(deps.materializeCampaignEnrollment)
+    );
+  });
+
+  it.each([undefined, false])(
+    'projects no observations when the switch is %s',
+    async (observationProcessingEnabled) => {
+      const deps = dependencies();
+      await dispatchLifecycleJobs(
+        {
+          batchSize: 10,
+          campaignEnabled: true,
+          observationProcessingEnabled,
+          signal: new AbortController().signal,
+        },
+        deps
+      );
+      expect(deps.processObservations).not.toHaveBeenCalled();
+      expect(deps.projectFormObservations).not.toHaveBeenCalled();
+    }
+  );
+
+  it('clamps the observation batch to the dispatcher maximum, well under the projection cap of 100', async () => {
+    const deps = dependencies();
+    await dispatchLifecycleJobs(
+      {
+        batchSize: 25,
+        campaignEnabled: false,
+        observationProcessingEnabled: true,
+        signal: new AbortController().signal,
+      },
+      deps
+    );
+    for (const fn of [deps.processObservations, deps.projectFormObservations]) {
+      const limit = (
+        fn as unknown as { mock: { calls: [unknown, { limit: number }][] } }
+      ).mock.calls[0][1].limit;
+      expect(limit).toBe(25);
+      expect(limit).toBeLessThanOrEqual(100);
+    }
+  });
+
+  it('still leases and dispatches jobs when observation projection fails, and reports it to operators', async () => {
+    const job = leasedJob('00000000-0000-4000-8000-0000000000ab');
+    const deps = dependencies({
+      processObservations: vi
+        .fn()
+        .mockRejectedValue(new Error('projection exploded')),
+      leaseDueJobs: vi.fn().mockResolvedValue([job]),
+    });
+    const result = await dispatchLifecycleJobs(
+      {
+        batchSize: 10,
+        campaignEnabled: true,
+        observationProcessingEnabled: true,
+        signal: new AbortController().signal,
+      },
+      deps
+    );
+    expect(deps.leaseDueJobs).toHaveBeenCalledOnce();
+    expect(deps.dispatchLeasedJob).toHaveBeenCalledOnce();
+    expect(deps.projectFormObservations).toHaveBeenCalledOnce();
+    expect(result).toMatchObject({
+      leased: 1,
+      dispatched: 1,
+      operatorAlerts: ['observation_projection_failed'],
+    });
+  });
 });
 
 it('reconciles accepted send identities before leasing contact follow-ups', async () => {
@@ -872,5 +985,117 @@ it('continues enrichment-only dispatch when delivery configuration is absent', a
     expect(deps.dispatchLeasedJob).toHaveBeenCalledOnce();
   } finally {
     vi.unstubAllEnvs();
+  }
+});
+
+test('preparation consuming the tick budget prevents leasing any jobs', async () => {
+  let current = NOW;
+  const d = dependencies({
+    now: () => current,
+    reconcileMessageIds: vi.fn(async () => {
+      current = new Date(NOW.getTime() + 35_000);
+      return { attempted: 0, bound: 0 };
+    }),
+  });
+
+  const result = await dispatchLifecycleJobs(
+    {
+      batchSize: 2,
+      campaignEnabled: false,
+      signal: new AbortController().signal,
+    },
+    d
+  );
+
+  expect(result.leased).toBe(0);
+  expect(d.leaseDueJobs).not.toHaveBeenCalled();
+});
+
+test('a slow job releases remaining jobs without starting more provider work', async () => {
+  let current = NOW;
+  const deferJob = vi.fn().mockResolvedValue(null);
+  const d = dependencies({
+    now: () => current,
+    deferJob,
+    leaseDueJobs: vi
+      .fn()
+      .mockResolvedValue([leasedJob('one'), leasedJob('two')]),
+    dispatchLeasedJob: vi.fn(async () => {
+      current = new Date(NOW.getTime() + 35_000);
+      return 'completed' as const;
+    }),
+  });
+
+  const result = await dispatchLifecycleJobs(
+    {
+      batchSize: 2,
+      campaignEnabled: false,
+      signal: new AbortController().signal,
+    },
+    d
+  );
+
+  expect(result.dispatched).toBe(1);
+  expect(d.dispatchLeasedJob).toHaveBeenCalledOnce();
+  expect(deferJob).toHaveBeenCalledWith(
+    expect.anything(),
+    expect.objectContaining({
+      jobId: 'two',
+      errorCode: 'tick_budget_exhausted',
+    })
+  );
+});
+
+test('the hard tick deadline aborts a running job before another remote phase starts', async () => {
+  vi.useFakeTimers({ now: NOW });
+  const timeout = vi.spyOn(AbortSignal, 'timeout').mockImplementation((ms) => {
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(new Error('tick deadline')), ms);
+    return controller.signal;
+  });
+  let phases = 0;
+  let jobSignal: AbortSignal | undefined;
+  const d = dependencies({
+    now: () => new Date(Date.now()),
+    leaseDueJobs: vi.fn().mockResolvedValue([leasedJob('slow-cleanup')]),
+    dispatchLeasedJob: vi.fn(async (_db, _job, context) => {
+      jobSignal = context.signal;
+      phases++;
+      await new Promise<void>((resolve, reject) => {
+        const timer = setTimeout(resolve, 60_000);
+        context.signal?.addEventListener(
+          'abort',
+          () => {
+            clearTimeout(timer);
+            reject(context.signal?.reason);
+          },
+          { once: true }
+        );
+      });
+      context.signal?.throwIfAborted();
+      phases++;
+      return 'completed' as const;
+    }),
+  });
+
+  try {
+    const run = dispatchLifecycleJobs(
+      {
+        batchSize: 1,
+        campaignEnabled: false,
+        signal: new AbortController().signal,
+      },
+      d
+    );
+    const settled = run.catch((error: unknown) => error);
+    await vi.advanceTimersByTimeAsync(50_000);
+    expect(jobSignal?.aborted).toBe(true);
+    await expect(settled).resolves.toBeInstanceOf(Error);
+
+    expect(phases).toBe(1);
+    expect(d.dispatchLeasedJob).toHaveBeenCalledOnce();
+  } finally {
+    timeout.mockRestore();
+    vi.useRealTimers();
   }
 });

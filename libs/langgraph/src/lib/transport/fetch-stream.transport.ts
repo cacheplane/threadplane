@@ -1,14 +1,16 @@
-import type { Client, StreamMode, ThreadState } from '@langchain/langgraph-sdk';
-import type { AgentQueueEntry, AgentTransport, LangGraphClientOptions, LangGraphSubmitOptions, StreamEvent } from '../agent.types';
+import type { Client, Run, StreamMode, ThreadState } from '@langchain/langgraph-sdk';
+import { captureCheckpoint } from './checkpoint-position.js';
+import type { OwnedCheckpointPosition } from './checkpoint-position.d.ts';
+import type { AgentQueueEntry, AgentTransport, LangGraphClientOptions, LangGraphSubmitOptions, StreamEvent } from '../../runtime/transport.types.d.ts';
 import {
   createLangGraphClient,
   ɵcreateProtectedLangGraphClient,
-} from '../client/create-langgraph-client';
+} from '../client/create-langgraph-client.js';
 import {
   createLangGraphRuntimeFetch,
   projectLangGraphOperationFailure,
-  type RuntimeOperationFailureReporter,
-} from '../runtime-operation-reporter';
+} from '../../runtime/operation-errors.js';
+import type { RuntimeOperationFailureReporter } from '../../runtime/operation-errors.d.ts';
 
 /**
  * Production transport that connects to a LangGraph Platform API via HTTP and SSE.
@@ -108,18 +110,33 @@ export class FetchStreamTransport implements AgentTransport {
     runId: string,
     lastEventId: string | undefined,
     signal: AbortSignal,
+    options?: { streamMode?: StreamMode[] }
   ): AsyncIterable<StreamEvent> {
     // SDK joinStream: joins an already-started run without creating a new one.
     let run: ReturnType<Client['runs']['joinStream']>;
     try {
       run = this.client.runs.joinStream(threadId, runId, {
         signal,
+        ...(options?.streamMode ? { streamMode: options.streamMode } : {}),
         ...(lastEventId !== undefined ? { lastEventId } : {}),
       });
     } catch (error) {
       this.rethrowOperationError(error, signal);
     }
     yield* this.iterateSdkRun(run, signal);
+  }
+
+  /** @internal Exact-run inspection for the private owned reconnect command. */
+  async getRunStatus(threadId: string, runId: string, signal: AbortSignal): Promise<Run['status']> {
+    try {
+      const run = await this.client.runs.get(threadId, runId, { signal });
+      if (run.run_id !== runId || run.thread_id !== threadId ||
+        !['pending', 'running', 'success', 'error', 'timeout', 'interrupted'].includes(run.status))
+        throw new Error('Invalid LangGraph run status response.');
+      return run.status;
+    } catch (error) {
+      return this.rethrowOperationError(error, signal);
+    }
   }
 
   /** Create a pending server-side run using LangGraph's enqueue strategy. */
@@ -176,21 +193,67 @@ export class FetchStreamTransport implements AgentTransport {
     }
   }
 
-  /** Update server-side thread state, e.g. to remove messages for regenerate rollback. */
+  /** Read the newest checkpoint saved under one child checkpoint namespace. */
+  async getChildState(
+    threadId: string,
+    checkpointNs: string,
+    signal: AbortSignal
+  ): Promise<ThreadState | undefined> {
+    try {
+      const [latest] = await this.client.threads.getHistory(threadId, {
+        checkpoint: { checkpoint_ns: checkpointNs },
+        limit: 1,
+        signal,
+      });
+      return latest;
+    } catch (error) {
+      return this.rethrowOperationError(error, signal);
+    }
+  }
+
+  /** Read one exact saved checkpoint with the command's cancellation signal. */
+  async getState(
+    threadId: string,
+    checkpoint: OwnedCheckpointPosition,
+    signal: AbortSignal
+  ): Promise<ThreadState> {
+    try {
+      return await this.client.threads.getState(threadId, checkpoint, {
+        signal,
+      });
+    } catch (error) {
+      return this.rethrowOperationError(error, signal);
+    }
+  }
+
+  /** Update state once and return only usable root routing, when supplied. */
   async updateState(
     threadId: string,
     values: Record<string, unknown>,
-    _signal: AbortSignal,
-    options?: { asNode?: string },
-  ): Promise<void> {
-    const body: { values: Record<string, unknown>; asNode?: string } = { values };
+    signal: AbortSignal,
+    options?: { asNode?: string; checkpoint?: OwnedCheckpointPosition }
+  ): Promise<void | OwnedCheckpointPosition> {
+    const body: {
+      values: Record<string, unknown>;
+      signal: AbortSignal;
+      asNode?: string;
+      checkpoint?: OwnedCheckpointPosition;
+    } = { values, signal };
     if (options?.asNode !== undefined) {
       body.asNode = options.asNode;
     }
+    if (options?.checkpoint) body.checkpoint = options.checkpoint;
     try {
-      await this.client.threads.updateState(threadId, body);
+      const result = await this.client.threads.updateState(threadId, body);
+      // Legacy non-branch callers need no routing acknowledgment. The branch
+      // effect owner rejects absence without replaying the successful request.
+      try {
+        return captureCheckpoint(result.configurable, threadId);
+      } catch {
+        return undefined;
+      }
     } catch (error) {
-      this.rethrowOperationError(error, _signal);
+      this.rethrowOperationError(error, signal);
     }
   }
 
@@ -208,24 +271,43 @@ export class FetchStreamTransport implements AgentTransport {
     run: ReturnType<Client['runs']['stream']> | ReturnType<Client['runs']['joinStream']>,
     signal: AbortSignal,
   ): AsyncIterable<StreamEvent> {
-    let iterator: AsyncIterator<{ event: string; data: unknown }>;
+    let iterator: AsyncIterator<{ event: string; data: unknown; id?: unknown }>;
     try {
       iterator = run[Symbol.asyncIterator]();
     } catch (error) {
       return this.rethrowOperationError(error, signal);
     }
-    while (true) {
-      let next: IteratorResult<{ event: string; data: unknown }>;
-      try {
-        next = await iterator.next();
-      } catch (error) {
-        return this.rethrowOperationError(error, signal);
+    let completed = false;
+    let failed = false;
+    try {
+      while (true) {
+        let next: IteratorResult<{ event: string; data: unknown; id?: unknown }>;
+        try {
+          next = await iterator.next();
+        } catch (error) {
+          return this.rethrowOperationError(error, signal);
+        }
+        if (next.done) {
+          completed = true;
+          return;
+        }
+        try {
+          yield { ...normalizeSdkEvent(next.value.event as StreamEvent['type'], next.value.data), sseId: typeof next.value.id === 'string' ? next.value.id : undefined };
+        } catch (error) {
+          return this.rethrowLocalError(error, signal);
+        }
       }
-      if (next.done) return;
-      try {
-        yield normalizeSdkEvent(next.value.event as StreamEvent['type'], next.value.data);
-      } catch (error) {
-        return this.rethrowLocalError(error, signal);
+    } catch (error) {
+      failed = true;
+      throw error;
+    } finally {
+      if (!completed) {
+        try {
+          await iterator.return?.();
+        } catch (error) {
+          // Closing the SDK iterator must not replace an already projected failure.
+          if (!failed) this.rethrowOperationError(error, signal);
+        }
       }
     }
   }
@@ -240,15 +322,24 @@ function buildRunPayload(
   streamMode: StreamMode[];
   streamSubgraphs: boolean;
   signal: AbortSignal;
-} & Omit<LangGraphSubmitOptions, 'signal' | 'resume' | 'checkpoint' | 'streamMode' | 'streamSubgraphs'> {
+} & Omit<LangGraphSubmitOptions, 'signal' | 'resume' | 'checkpoint' | 'checkpointId' | 'streamMode' | 'streamSubgraphs'> {
   const runOptions = { ...(options ?? {}) };
-  const hasCheckpoint = Object.prototype.hasOwnProperty.call(runOptions, 'checkpoint');
-  const checkpoint = runOptions.checkpoint;
+  const hasCheckpoint = Object.prototype.hasOwnProperty.call(runOptions, 'checkpoint') ||
+    runOptions.checkpointId !== undefined;
+  // SDK stream serializes only `checkpoint`, unlike create/wait. Normalize the
+  // documented ID alias for both paths; an explicit object or null wins.
+  // Older API versions require checkpoint_map to be an object, not null.
+  const checkpoint: LangGraphSubmitOptions['checkpoint'] = runOptions.checkpoint !== undefined
+    ? runOptions.checkpoint
+    : runOptions.checkpointId !== undefined
+      ? { checkpoint_id: runOptions.checkpointId, checkpoint_ns: '', checkpoint_map: {} }
+      : undefined;
   const streamMode = runOptions.streamMode;
   const streamSubgraphs = runOptions.streamSubgraphs;
   delete runOptions.signal;
   delete runOptions.resume;
   delete runOptions.checkpoint;
+  delete runOptions.checkpointId;
   delete runOptions.streamMode;
   delete runOptions.streamSubgraphs;
 
@@ -283,7 +374,13 @@ function normalizeSdkEvent(type: StreamEvent['type'], data: unknown): StreamEven
   }
 
   if (isRecord(data)) {
-    return { type, ...(namespace ? { namespace } : {}), ...data, data };
+    // Application fields remain in data; they cannot change protocol routing.
+    return {
+      ...data,
+      type,
+      ...(namespace || Object.hasOwn(data, 'namespace') ? { namespace } : {}),
+      data,
+    };
   }
 
   return { type, ...(namespace ? { namespace } : {}), data };

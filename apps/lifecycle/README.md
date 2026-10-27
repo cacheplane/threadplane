@@ -1,5 +1,8 @@
 # Threadplane lifecycle service
 
+Inbound replies use Resend receiving at `brian@threadplane.ai`, forwarding human
+correspondence to `brian@cacheplane.ai`. See the [receiving cutover guide](../../docs/growth/resend-receiving.md).
+
 Part of [Growth architecture and operations](../../docs/growth/README.md).
 
 This Node 24 service builds Dawn 0.8.26's native Vercel target and adds a thin app-owned service boundary. The Vercel adapter requires the exact `LIFECYCLE_SERVICE_SECRET` bearer token on every Dawn path. Dawn route middleware repeats the same check for execution routes.
@@ -12,6 +15,8 @@ The service has two database boundaries:
 Neither variable falls back to the other. Preview and production must use different Neon resources for both boundaries. Configure no lifecycle secret with a `NEXT_PUBLIC_` prefix.
 
 Install/runtime activation has a separate rollout switch: `GROWTH_INSTALL_RUNTIME_HELLO_ENABLED` defaults to `false` and accepts only exact `true` or `false`. Only when it and campaign enrollment are enabled does the existing lifecycle tick resolve linked activations before materializing the campaign cohort. Configure the same server-only `GROWTH_EMAIL_HMAC_ACTIVE_VERSION`, `GROWTH_EMAIL_HMAC_ACTIVE_SECRET`, and optional `GROWTH_EMAIL_HMAC_PREVIOUS_KEYS` used by collection; these keys are read lazily only for enabled activation processing. Existing form and claim enrollment needs no new HMAC configuration while the rollout switch is off. Announcement requests do not run this work or submit email.
+
+Observation projection has its own switch: `GROWTH_OBSERVATION_PROCESSING_ENABLED` defaults to `false` and accepts only exact `true` or `false`. When it is enabled the lifecycle tick projects a bounded batch of pending observation work into `growth_observation_facts` and links form observations into `growth_observation_form_links`, before campaign enrollment so a fact projected this tick is visible to the same tick's downstream reads. Until it is enabled nothing automatic projects anything: those tables stay empty and every milestone, active-day, and form-link report reads zero. A projection failure is contained to the projection step, reported to operators as `observation_projection_failed`, and never blocks the tick's job leasing and dispatch.
 
 The founder install digest has its own switch: `GROWTH_INSTALL_DIGEST_ENABLED` defaults to `false` and accepts only exact `true` or `false`. When enabled, the lifecycle tick enqueues one `digest` job per Pacific business day (idempotency key `install_digest:<YYYY-MM-DD>`) only when at least one identified, non-CI installer with a work-email domain has no contact record and has not been reported before. The job renders a plain-text summary and sends it to `FOUNDER_NOTIFICATION_EMAIL` through the internal notification sender; it never emails the installer and never creates a contact. Each line carries a seven-day signed `founder_approve_install` link to `/api/growth/approve-install` on `GROWTH_PUBLIC_ACTION_ORIGIN`, which creates and approves the contact through the founder reauthorization path so the next tick enrolls them. Reported identities are recorded in `growth_install_digest_reports` in the same transaction that completes the job. `DELIVERY_ENABLED=false` defers digest jobs like any other send.
 
@@ -44,11 +49,25 @@ acceptance of the first; the third is due five business days after acceptance of
 the second. Weekends are skipped; public holidays are not excluded in V1.
 Each target date resolves its own Pacific offset, preserving 07:00 across DST.
 
-Due times are persisted in Growth jobs. The existing cron leases campaign sends
-only Monday–Friday during 07:00–08:00 Pacific; final authorization and provider
+Due times are persisted in Growth jobs. The website's fallback cron invokes
+lifecycle every 30 minutes (UTC minutes 00 and 30), rather than opening
+Dawn and Growth on every idle minute. Requested form fulfillment still nudges
+lifecycle immediately after the submission commits. Background retries and
+research cleanup/reconciliation wait for a subsequent tick, potentially adding
+up to 30 minutes plus execution time; execution deadlines and lease durations
+are unchanged. Other traffic can keep a compute active, so fewer invocations
+do not guarantee a proportional reduction in Neon CU-hours.
+
+The cron leases campaign sends only Monday–Friday during 07:00–08:00 Pacific;
+final authorization and provider
 submission recheck the window. Normal sends begin on the first successful cron
-tick after 07:00. Retries can run within that hour; missed windows wait until the
-next weekday morning. Stops, mailbox recovery and ambiguous provider acceptance
+tick at or after 07:00. The schedule includes 07:00 and 07:30
+Pacific under either daylight-saving offset. The default batch size of 20 means
+the two scheduled ticks can lease at most 40 jobs in that hour, shared across
+all job kinds; nudges may add runs but are not guaranteed capacity. Review due
+queue size before expanding the campaign cohort. Retries can run within that
+hour; missed windows wait until the next weekday morning. Stops, mailbox
+recovery and ambiguous provider acceptance
 remain authoritative. Requested fulfillment and internal notifications do not
 use this campaign window. Replayed acceptance cannot move later jobs earlier.
 

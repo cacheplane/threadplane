@@ -1,0 +1,857 @@
+import assert from 'node:assert/strict';
+import { existsSync, mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, symlinkSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join, relative } from 'node:path';
+import test from 'node:test';
+import { verifyBoundaries } from './verify-boundaries.mjs';
+
+const finalOptions = { angularTransitions: [], telemetryBrowserTransition: false };
+
+for (const extension of ['ts', 'js', 'd.ts']) {
+  const mode = extension === 'ts' ? 'source' : 'built';
+  const base = `${mode === 'source' ? '' : 'dist/'}libs/content`;
+  for (const dependency of ['@json-render/core', 'marked', '@threadplane/content/a2ui', '@angular/core', '@langchain/langgraph-sdk', 'react']) {
+    for (const form of ['import', 'reexport', 'import-type', 'alias']) {
+      if (extension === 'js' && form === 'import-type') continue;
+      test(`render-state ${extension} rejects transitive ${form} ${dependency}`, t => {
+        const edge = form === 'alias' ? '#hidden' : dependency;
+        const root = fixture(t, {
+          'tsconfig.base.json': JSON.stringify({ compilerOptions: { paths: { '#hidden': ['./libs/content/src/hidden.ts'] } } }),
+          [`${base}/package.json`]: JSON.stringify({ exports: { '.': { import: './src/index.js', types: './src/index.d.ts' }, './render-state': { import: './src/render-state/index.js', types: './src/render-state/index.d.ts' } } }),
+          [`${base}/src/index.${extension}`]: 'export {};',
+          [`${base}/src/render-state/index.${extension}`]: "export * from '../bridge.js';",
+          [`${base}/src/bridge.${extension}`]: form === 'import-type' ? `export type Value = import('${edge}').Value;` : form === 'import' ? `import '${edge}';` : `export * from '${mode === 'built' && form === 'alias' ? './hidden.js' : edge}';`,
+          [`${base}/src/hidden.${extension}`]: `export * from '${dependency}';`,
+          [`${base}/src/a2ui/index.${extension}`]: 'export {};',
+        });
+        const errors = verifyBoundaries({ root, mode, projects: ['content'], ...finalOptions });
+        assert.ok(errors.some(error => /neutral runtime forbidden dependency|A2UI dependency reachable/.test(error) && error.includes(dependency)), errors.join('\n'));
+      });
+    }
+  }
+  for (const expression of ['import(target)', 'require(target)', 'import(']) {
+    test(`render-state ${extension} fails closed on ${expression}`, t => {
+      const root = fixture(t, {
+        [`${base}/package.json`]: JSON.stringify({ exports: { '.': { import: './src/index.js', types: './src/index.d.ts' }, './render-state': { import: './src/render-state/index.js', types: './src/render-state/index.d.ts' } } }),
+        [`${base}/src/index.${extension}`]: 'export {};',
+        [`${base}/src/render-state/index.${extension}`]: "export * from '../bridge.js';",
+        [`${base}/src/bridge.${extension}`]: `const target = 'marked'; ${expression};`,
+      });
+      assert.ok(verifyBoundaries({ root, mode, projects: ['content'], ...finalOptions }).some(error => /cannot analyze guarded dependencies/.test(error)));
+    });
+  }
+}
+
+for (const extension of ['ts', 'js']) {
+  test(`guarded A2UI ${extension} entry rejects unanalyzable indirect imports`, (t) => {
+    const mode = extension === 'ts' ? 'source' : 'built';
+    const prefix = `${mode === 'source' ? '' : 'dist/'}libs/content`;
+    const root = fixture(t, {
+      [`${prefix}/package.json`]: JSON.stringify({ exports: { '.': { import: './src/index.' + extension } } }),
+      [`${prefix}/src/index.${extension}`]: "export * from './bridge.js';",
+      [`${prefix}/src/bridge.${extension}`]: "const dependency = '@threadplane/a2ui'; import(dependency);",
+    });
+    assert.ok(verifyBoundaries({ root, mode, projects: ['content'], ...finalOptions }).some(error => /cannot analyze guarded dependencies.*nonliteral import/.test(error)));
+  });
+}
+
+for (const project of ['content', 'react', 'angular']) {
+  for (const extension of ['ts', 'js', 'd.ts']) {
+    const mode = extension === 'ts' ? 'source' : 'built';
+    const base = mode === 'source' ? 'libs' : 'dist/libs';
+    for (const entry of ['root', 'chat', 'markdown']) {
+      if (project === 'content' && entry === 'chat') continue;
+      for (const dependency of ['@threadplane/a2ui', '@threadplane/content/a2ui', '#feature']) {
+        for (const indirect of [false, true]) {
+        test(`${project} ${extension} ${entry} rejects ${indirect ? 'indirect' : 'direct'} A2UI ${dependency}`, (t) => {
+          const own = entry === 'root'
+            ? `src/${project === 'angular' && mode === 'source' ? 'public-api' : 'index'}.${extension}`
+            : project === 'angular' && mode === 'source' ? `${entry}/src/public-api.${extension}` : `src/${entry}/index.${extension}`;
+          const target = `${base}/content/src/a2ui/index.${extension}`;
+          const bridge = `${base}/${project}/src/bridge.${extension}`;
+          const dependencyFrom = (from) => dependency === '#feature' && mode === 'built'
+            ? './' + relative(dirname(from), target).replace(/\.d\.ts$/, '.js')
+            : dependency;
+          const exportFrom = (specifier) => extension === 'js' ? `export * from '${specifier}';` : `export type Value = import('${specifier}').Value;`;
+          const root = fixture(t, {
+            'tsconfig.base.json': JSON.stringify({ compilerOptions: { paths: { '#feature': ['./libs/content/src/a2ui/index.ts'], '@threadplane/content/a2ui': ['./libs/content/src/a2ui/index.ts'], '@threadplane/a2ui': ['./libs/a2ui/src/index.ts'] } } }),
+            [`${base}/${project}/package.json`]: JSON.stringify({ exports: { '.': { [extension === 'd.ts' ? 'types' : 'import']: `./${entry === 'root' ? own : `src/${project === 'angular' && mode === 'source' ? 'public-api' : 'index'}.${extension}`}` }, ...(entry === 'root' ? {} : { [`./${entry}`]: { [extension === 'd.ts' ? 'types' : 'import']: `./${own}` } }) } }),
+            [`${base}/${project}/src/${project === 'angular' && mode === 'source' ? 'public-api' : 'index'}.${extension}`]: 'export {};',
+            [`${base}/${project}/${own}`]: indirect ? `export * from '${entry === 'root' ? './bridge.js' : mode === 'source' && project === 'angular' ? '../../src/bridge.js' : '../bridge.js'}';` : exportFrom(dependencyFrom(`${base}/${project}/${own}`)),
+            [bridge]: exportFrom(dependencyFrom(bridge)),
+            ...(project === 'content' ? {} : { [`${base}/content/package.json`]: JSON.stringify({ exports: { './a2ui': { [extension === 'd.ts' ? 'types' : 'import']: './src/a2ui/index.' + extension } } }) }),
+            [target]: extension === 'js' ? 'export const Value = 1;' : 'export interface Value {}',
+            [`${base}/a2ui/package.json`]: JSON.stringify({ exports: { '.': { [extension === 'd.ts' ? 'types' : 'import']: './src/index.' + extension } } }),
+            [`${base}/a2ui/src/index.${extension}`]: extension === 'js' ? 'export const Value = 1;' : 'export interface Value {}',
+          });
+          if (project === 'content') {
+            const path = join(root, base, 'content/package.json');
+            const manifest = JSON.parse(readFileSync(path, 'utf8'));
+            manifest.exports['./a2ui'] = { [extension === 'd.ts' ? 'types' : 'import']: './src/a2ui/index.' + extension };
+            writeFileSync(path, JSON.stringify(manifest));
+          }
+          const errors = verifyBoundaries({ root, mode, projects: [project], ...finalOptions });
+          assert.ok(errors.some(error => error.includes('A2UI dependency reachable from guarded entry')), errors.join('\n'));
+          assert.ok(errors.every(error => !error.includes('unresolved dependency')), errors.join('\n'));
+        });
+        }
+      }
+    }
+  }
+}
+
+for (const project of ['content', 'react', 'angular']) {
+  for (const extension of ['ts', 'js', 'd.ts']) {
+    const mode = extension === 'ts' ? 'source' : 'built';
+    const prefix = `${mode === 'source' ? '' : 'dist/'}libs/${project}`;
+    const content = `${mode === 'source' ? '' : 'dist/'}libs/content`;
+    const entry = project === 'angular' && mode === 'source' ? 'public-api' : 'index';
+    for (const dependency of ['@cacheplane/json-stream', '@threadplane/content/json', '@json-render/core']) {
+      test(`${project} ${extension} root rejects indirect ${dependency}`, (t) => {
+        const root = fixture(t, {
+          'tsconfig.base.json': JSON.stringify({ compilerOptions: { paths: { '@threadplane/content/json': ['./libs/content/src/json/index.ts'] } } }),
+          [`${content}/package.json`]: JSON.stringify({ exports: { './json': { types: './src/json/index.d.ts', import: './src/json/index.js' }, ...(project === 'content' ? { '.': { [extension === 'd.ts' ? 'types' : 'import']: `./src/index.${extension}` } } : {}) } }),
+          ...(project === 'content' ? {} : { [`${prefix}/package.json`]: JSON.stringify({ exports: { '.': { [extension === 'd.ts' ? 'types' : 'import']: `./src/${entry}.${extension}` } } }) }),
+          [`${prefix}/src/${entry}.${extension}`]: "export * from './bridge.js';",
+          [`${prefix}/src/bridge.${extension}`]: `export * from '${dependency}';`,
+          [`${content}/src/json/index.${extension}`]: 'export {};',
+        });
+        const label = project === 'content' ? 'content root dependency' : 'feature dependency reachable from root';
+        assert.ok(verifyBoundaries({ root, mode, projects: [project], ...finalOptions }).some(error => error.includes(label)));
+      });
+    }
+  }
+}
+
+for (const project of ['react', 'angular']) {
+  for (const extension of ['ts', 'js', 'd.ts']) {
+    const mode = extension === 'ts' ? 'source' : 'built';
+    const prefix = `${mode === 'source' ? '' : 'dist/'}libs/${project}`;
+    const entry = project === 'angular' && mode === 'source' ? 'public-api' : 'index';
+    const feature = project === 'angular' ? '../markdown/src/index.js' : './markdown/index.js';
+    for (const dependency of [feature, '@threadplane/content/markdown', '@cacheplane/partial-markdown']) {
+      for (const indirect of [false, true]) {
+        test(`${project} ${extension} root rejects ${indirect ? 'indirect' : 'direct'} ${dependency}`, (t) => {
+          const content = `${mode === 'source' ? '' : 'dist/'}libs/content`;
+          const root = fixture(t, {
+            'tsconfig.base.json': JSON.stringify({ compilerOptions: { paths: { '@threadplane/content/markdown': ['./libs/content/src/markdown/index.ts'] } } }),
+            [`${prefix}/package.json`]: JSON.stringify({ exports: { '.': { [extension === 'd.ts' ? 'types' : 'import']: `./src/${entry}.${extension}` } } }),
+            [`${prefix}/src/${entry}.${extension}`]: `export * from '${indirect ? './bridge.js' : dependency}';`,
+            [`${prefix}/src/bridge.${extension}`]: `export * from '${dependency}';`,
+            [`${prefix}/${project === 'angular' ? 'markdown/src' : 'src/markdown'}/index.${extension}`]: 'export {};',
+            [`${content}/package.json`]: JSON.stringify({ exports: { './markdown': { [extension === 'd.ts' ? 'types' : 'import']: `./src/markdown/index.${extension}` } } }),
+            [`${content}/src/markdown/index.${extension}`]: 'export {};',
+          });
+          const errors = verifyBoundaries({ root, mode, projects: [project], ...finalOptions });
+          assert.ok(errors.some(error => /feature dependency reachable from root/.test(error)), dependency);
+          assert.ok(errors.every(error => !error.includes('unresolved dependency')), errors.join('\n'));
+        });
+      }
+    }
+    test(`${project} ${extension} root may retain own bindings and core`, (t) => {
+      const core = `${mode === 'source' ? '' : 'dist/'}libs/core`;
+      const root = fixture(t, {
+        'tsconfig.base.json': JSON.stringify({ compilerOptions: { paths: { '@threadplane/core': ['./libs/core/src/index.ts'] } } }),
+        [`${prefix}/package.json`]: JSON.stringify({ exports: { '.': { [extension === 'd.ts' ? 'types' : 'import']: `./src/${entry}.${extension}` } } }),
+        [`${prefix}/src/${entry}.${extension}`]: "export * from './binding.js';",
+        [`${prefix}/src/binding.${extension}`]: "export * from '@threadplane/core';",
+        [`${core}/package.json`]: JSON.stringify({ exports: { '.': { [extension === 'd.ts' ? 'types' : 'import']: `./src/index.${extension}` } } }),
+        [`${core}/src/index.${extension}`]: 'export {};',
+      });
+      assert.deepEqual(verifyBoundaries({ root, mode, projects: [project], ...finalOptions }), []);
+    });
+  }
+}
+
+test('Angular scans unreferenced secondary sources for backend SDK imports', (t) => {
+  const root = fixture(t, {
+    'libs/angular/src/public-api.ts': 'export {};',
+    'libs/angular/markdown/src/unused.ts': "import '@langchain/langgraph-sdk';",
+  });
+  assert.ok(verifyBoundaries({ root, projects: ['angular'], ...finalOptions }).some(error => error.includes('forbidden dependency') && error.includes('unused.ts')));
+});
+
+for (const extension of ['mjs', 'd.ts']) {
+  test(`Angular APF ${extension} root rejects an indirect Markdown entry`, (t) => {
+    const path = extension === 'mjs' ? 'fesm2022' : 'types';
+    const root = fixture(t, {
+      'dist/libs/angular/package.json': JSON.stringify({ exports: { '.': { [extension === 'mjs' ? 'default' : 'types']: `./${path}/threadplane-angular.${extension}` } } }),
+      [`dist/libs/angular/${path}/threadplane-angular.${extension}`]: `export * from './bridge.${extension}';`,
+      [`dist/libs/angular/${path}/bridge.${extension}`]: `export * from './threadplane-angular-markdown.${extension}';`,
+      [`dist/libs/angular/${path}/threadplane-angular-markdown.${extension}`]: 'export {};',
+    });
+    assert.ok(verifyBoundaries({ root, mode: 'built', projects: ['angular'], ...finalOptions }).some(error => error.includes('feature dependency reachable from root')));
+  });
+}
+
+for (const extension of ['ts', 'js', 'd.ts']) {
+  const mode = extension === 'ts' ? 'source' : 'built';
+  const prefix = mode === 'source' ? 'libs/content' : 'dist/libs/content';
+  for (const [name, rootEntry, extra] of [
+    ['direct parser', "export * from '@cacheplane/partial-markdown';", {}],
+    ['indirect parser', "export * from './shared.js';", { [`${prefix}/src/shared.${extension}`]: extension === 'js' ? "export { createParser } from '@cacheplane/partial-markdown';" : "import type { MarkdownNode } from '@cacheplane/partial-markdown'; export type Node = MarkdownNode;" }],
+    ['own Markdown entry', "export * from './markdown/index.js';", {}],
+    ['type-only Markdown entry', "export type { Node } from './markdown/index.js';", {}],
+  ]) {
+    if (extension === 'js' && name === 'type-only Markdown entry') continue;
+    test(`content ${extension} root rejects ${name}`, (t) => {
+      const root = fixture(t, {
+        [`${prefix}/package.json`]: JSON.stringify({ exports: { '.': { [extension === 'd.ts' ? 'types' : 'import']: `./src/index.${extension}` } } }),
+        [`${prefix}/src/index.${extension}`]: rootEntry,
+        [`${prefix}/src/markdown/index.${extension}`]: extension === 'js' ? 'export const Node = {};' : 'export interface Node {}',
+        ...extra,
+      });
+      assert.ok(verifyBoundaries({ root, mode, projects: ['content'], ...finalOptions }).some(error => error.includes('content root dependency')), name);
+    });
+  }
+  test(`content ${extension} feature may own its parser while root stays empty`, (t) => {
+    const root = fixture(t, {
+      [`${prefix}/package.json`]: JSON.stringify({ exports: { '.': { [extension === 'd.ts' ? 'types' : 'import']: `./src/index.${extension}` }, './markdown': { import: './src/markdown/index.js' } } }),
+      [`${prefix}/src/index.${extension}`]: 'export {};',
+      [`${prefix}/src/markdown/index.${extension}`]: "export * from '@cacheplane/partial-markdown';",
+    });
+    assert.deepEqual(verifyBoundaries({ root, mode, projects: ['content'], ...finalOptions }), []);
+  });
+}
+
+test('React root retains lexical feature restrictions through filesystem aliases', (t) => {
+  const root = fixture(t, {
+    'libs/react/src/index.ts': "export * from './chat/linked';",
+    'libs/react/src/shared.ts': 'export interface Shared {}',
+  });
+  mkdirSync(join(root, 'libs/react/src/chat'));
+  symlinkSync('../shared.ts', join(root, 'libs/react/src/chat/linked.ts'));
+  assert.ok(verifyBoundaries({ root, projects: ['react'], ...finalOptions }).some((error) => error.includes('feature dependency reachable from root')));
+});
+
+for (const project of ['langgraph', 'ag-ui']) {
+  const sdk = project === 'langgraph' ? '@langchain/langgraph-sdk' : '@ag-ui/client';
+  const otherBackend = project === 'langgraph' ? 'ag-ui' : 'langgraph';
+  for (const [target, diagnostic] of [
+    [`libs/${otherBackend}/src/runtime/private.ts`, 'neutral runtime forbidden dependency'],
+    ['libs/core/src/private.ts', 'neutral runtime private/testing dependency'],
+    ['libs/core/src/testing/helper.ts', 'neutral runtime private/testing dependency'],
+    [`libs/${project}/src/runtime/testing/helper.ts`, 'neutral runtime private/testing dependency'],
+  ]) {
+    test(`${project} neutral runtime rejects a local symlink to ${target}`, (t) => {
+      const root = fixture(t, {
+        [`libs/${project}/src/public-api.ts`]: 'export {};',
+        [`libs/${project}/src/runtime/owner.ts`]: "export type { Foreign } from './linked';",
+        [target]: 'export interface Foreign {}',
+      });
+      symlinkSync(join(root, target), join(root, `libs/${project}/src/runtime/linked.ts`));
+      assert.ok(verifyBoundaries({ root, projects: [project] }).some((error) => error.includes(diagnostic) && error.includes('./linked')));
+    });
+  }
+  for (const entry of ['@threadplane/core', '@threadplane/core/tools']) {
+    test(`${project} neutral runtime rejects ${entry} mapped to a private core file`, (t) => {
+      const root = fixture(t, {
+        'tsconfig.base.json': JSON.stringify({ compilerOptions: { paths: { [entry]: ['./libs/core/src/private.ts'] } } }),
+        [`libs/${project}/src/public-api.ts`]: 'export {};',
+        [`libs/${project}/src/runtime/owner.ts`]: `export type { Core } from '${entry}';`,
+        'libs/core/src/index.ts': 'export interface Core {}',
+        'libs/core/src/tools/index.ts': 'export interface Core {}',
+        'libs/core/src/private.ts': 'export interface Core {}',
+      });
+      assert.ok(verifyBoundaries({ root, projects: [project] }).some((error) => error.includes('neutral runtime private/testing dependency') && error.includes(entry)));
+    });
+  }
+  test(`${project} neutral runtime permits exact core entries and their internal source traversal`, (t) => {
+    const root = fixture(t, {
+      'tsconfig.base.json': JSON.stringify({ compilerOptions: { paths: {
+        '@threadplane/core': ['./libs/core/src/index.ts'],
+        '@threadplane/core/tools': ['./libs/core/src/tools/index.ts'],
+      } } }),
+      [`libs/${project}/src/public-api.ts`]: 'export {};',
+      [`libs/${project}/src/runtime/owner.ts`]: "export type { Core } from '@threadplane/core'; export type { Tool } from '@threadplane/core/tools';",
+      'libs/core/src/index.ts': "export type { Core } from './private';",
+      'libs/core/src/tools/index.ts': "export type { Tool } from '../private';",
+      'libs/core/src/private.ts': 'export interface Core {} export interface Tool {}',
+    });
+    assert.deepEqual(verifyBoundaries({ root, projects: [project] }), []);
+  });
+  for (const alias of [`@threadplane/${project}`, `@threadplane/${project}/hidden`, '@threadplane/core', '@threadplane/core/tools', sdk]) {
+    test(`${project} neutral runtime rejects ${alias} remapped to a private external SDK file`, (t) => {
+      const root = fixture(t, {
+        'tsconfig.base.json': JSON.stringify({ compilerOptions: { paths: { [alias]: [`./node_modules/${sdk}/private.ts`] } } }),
+        [`libs/${project}/src/public-api.ts`]: 'export {};',
+        [`libs/${project}/src/runtime/owner.ts`]: `export type { SDK } from '${alias}';`,
+        [`node_modules/${sdk}/package.json`]: JSON.stringify({ name: sdk, types: 'index.d.ts' }),
+        [`node_modules/${sdk}/index.d.ts`]: 'export interface SDK {}',
+        [`node_modules/${sdk}/private.ts`]: 'export interface SDK {}',
+      });
+      assert.ok(verifyBoundaries({ root, projects: [project] }).some((error) => error.includes('neutral runtime forbidden dependency') && error.includes(alias)));
+    });
+  }
+  for (const alias of [false, true]) {
+    for (const dependency of [`${sdk}/private`, 'rxjs/index']) {
+      test(`${project} neutral runtime rejects ${alias ? 'symlinked' : 'relative'} external ${dependency}`, (t) => {
+        const edge = alias ? './external-alias' : `../../../../node_modules/${dependency}`;
+        const root = fixture(t, {
+          [`libs/${project}/src/public-api.ts`]: 'export {};',
+          [`libs/${project}/src/runtime/owner.ts`]: `export * from '${edge}';`,
+          [`node_modules/${dependency}.ts`]: 'export interface External {}',
+        });
+        if (alias) symlinkSync(`../../../../node_modules/${dependency}.ts`, join(root, `libs/${project}/src/runtime/external-alias.ts`));
+        assert.ok(verifyBoundaries({ root, projects: [project] }).some((error) => error.includes('neutral runtime forbidden dependency') && error.includes(edge)));
+      });
+    }
+  }
+  test(`${project} neutral runtime still permits the exact installed SDK root`, (t) => {
+    const root = fixture(t, {
+      [`libs/${project}/src/public-api.ts`]: 'export {};',
+      [`libs/${project}/src/runtime/owner.ts`]: `export type { SDK } from '${sdk}';`,
+      [`node_modules/${sdk}/package.json`]: JSON.stringify({ name: sdk, types: 'index.d.ts' }),
+      [`node_modules/${sdk}/index.d.ts`]: 'export interface SDK {}',
+    });
+    assert.deepEqual(verifyBoundaries({ root, projects: [project] }), []);
+  });
+}
+
+for (const dependency of ['@angular/core', '@threadplane/chat', '@threadplane/langgraph', '@langchain/langgraph-sdk', '@ag-ui/client/private', '@ag-ui/core', 'rxjs', 'unreviewed']) {
+  test(`AG-UI neutral runtime rejects transitive ${dependency} despite prior legacy visits`, (t) => {
+    const root = fixture(t, {
+      'libs/ag-ui/src/public-api.ts': "export * from './lib/shared';",
+      'libs/ag-ui/src/lib/shared.ts': `export type { X } from '${dependency}';`,
+      'libs/ag-ui/src/runtime/create-http-request.ts': "export * from '../lib/shared';",
+    });
+    assert.ok(verifyBoundaries({ root, projects: ['ag-ui'] }).some((error) => error.includes('neutral runtime') && error.includes(dependency)));
+  });
+}
+
+for (const edge of [
+  "export * from './runtime/create-http-request';",
+  "export type { Request } from './runtime/create-http-request';",
+  "export * from './bridge';",
+  "export * from '@private-request';",
+  "void import('./runtime/create-http-request');",
+  "type Request = import('./runtime/create-http-request').Request;",
+  "const request = require('./runtime/create-http-request');",
+]) {
+  test(`AG-UI legacy source rejects private request reachability: ${edge}`, (t) => {
+    const root = fixture(t, {
+      'tsconfig.base.json': JSON.stringify({ compilerOptions: { paths: { '@private-request': ['./libs/ag-ui/src/runtime/create-http-request.ts'] } } }),
+      'libs/ag-ui/src/public-api.ts': edge,
+      ...(edge.includes('./bridge') ? { 'libs/ag-ui/src/bridge.ts': "export * from './runtime/create-http-request';" } : {}),
+      'libs/ag-ui/src/runtime/create-http-request.ts': 'export interface Request {}',
+    });
+    assert.ok(verifyBoundaries({ root, projects: ['ag-ui'] }).some((error) => error.includes('private runtime reachable from legacy source')));
+  });
+}
+
+for (const project of ['chat', 'langgraph', 'render', 'angular']) {
+  test(`${project} cannot reach AG-UI private runtime through indirection`, (t) => {
+    const root = fixture(t, {
+      [`libs/${project}/src/public-api.ts`]: "export * from './bridge';",
+      [`libs/${project}/src/bridge.ts`]: "export * from '../../ag-ui/src/runtime/create-http-request';",
+      'libs/ag-ui/src/runtime/create-http-request.ts': 'export interface Request {}',
+    });
+    assert.ok(verifyBoundaries({ root, projects: [project] }).some((error) => error.includes('private runtime reachable from legacy source')));
+  });
+}
+
+test('AG-UI filesystem aliases retain private runtime identity', (t) => {
+  const root = fixture(t, {
+    'libs/ag-ui/src/public-api.ts': "export * from './linked-request';",
+    'libs/ag-ui/src/runtime/create-http-request.ts': 'export interface Request {}',
+  });
+  symlinkSync('runtime/create-http-request.ts', join(root, 'libs/ag-ui/src/linked-request.ts'));
+  assert.ok(verifyBoundaries({ root, projects: ['ag-ui'] }).some((error) => error.includes('private runtime reachable from legacy source')));
+  if (existsSync(join(root, 'libs/ag-ui/src/RUNTIME/create-http-request.ts'))) {
+    writeFileSync(join(root, 'libs/ag-ui/src/public-api.ts'), "export * from './RUNTIME/create-http-request';");
+    assert.ok(verifyBoundaries({ root, projects: ['ag-ui'] }).some((error) => error.includes('private runtime reachable from legacy source')));
+  }
+});
+
+test('AG-UI public transition remains allowed while its runtime permits only public core and exact SDK', (t) => {
+  const root = fixture(t, {
+    'tsconfig.base.json': JSON.stringify({ compilerOptions: { paths: {
+      '@threadplane/core': ['./libs/core/src/index.ts'],
+      '@backend-alias': ['./libs/langgraph/src/index.ts'],
+    } } }),
+    'libs/ag-ui/src/public-api.ts': "export type { Signal } from '@angular/core';",
+    'libs/ag-ui/src/runtime/create-http-request.ts': "export type { X } from '@threadplane/core'; export { HttpAgent } from '@ag-ui/client'; export * from './local';",
+    'libs/ag-ui/src/runtime/local.ts': 'export interface Local {}',
+    'libs/ag-ui/src/runtime/testing/helper.ts': 'export interface Helper {}',
+    'libs/ag-ui/src/runtime/create-http-request.spec.ts': "import '@angular/core';",
+    'libs/core/src/index.ts': 'export interface X {}',
+    'libs/core/src/private.ts': 'export interface X {}',
+    'libs/langgraph/src/index.ts': 'export interface X {}',
+  });
+  assert.deepEqual(verifyBoundaries({ root, projects: ['ag-ui'] }), []);
+  for (const dependency of ['@backend-alias', '../../../langgraph/src/index', '../../../core/src/private', './testing/helper']) {
+    writeFileSync(join(root, 'libs/ag-ui/src/runtime/create-http-request.ts'), `export * from '${dependency}';`);
+    assert.ok(verifyBoundaries({ root, projects: ['ag-ui'] }).some((error) => error.includes('neutral runtime')), dependency);
+  }
+  assert.ok(verifyBoundaries({ root, projects: ['ag-ui'], finalRelease: true }).some((error) => error.includes('ag-ui: Angular transition remains enabled')));
+});
+
+for (const path of ['public-api.ts', 'runtime/create-http-request.ts']) {
+  for (const code of ["const target = '@angular/core'; void import(target);", "const target = '@angular/core'; require(target);", 'export const broken = ;']) {
+    test(`AG-UI guarded ${path} rejects unsupported dependency analysis: ${code}`, (t) => {
+      const root = fixture(t, { [`libs/ag-ui/src/${path}`]: code });
+      assert.ok(verifyBoundaries({ root, projects: ['ag-ui'] }).some((error) => error.includes('cannot analyze guarded dependencies')));
+    });
+  }
+}
+
+for (const edge of [
+  "export * from './runtime/create-session';",
+  "export type { Session } from './runtime/create-session';",
+  "export * from './bridge';",
+  "export * from '@private-session';",
+  "void import('./runtime/create-session');",
+]) {
+  test(`legacy source rejects private runtime exposure: ${edge}`, (t) => {
+    const root = fixture(t, {
+      'tsconfig.base.json': JSON.stringify({ compilerOptions: { baseUrl: '.', paths: { '@private-session': ['libs/langgraph/src/runtime/create-session.ts'] } } }),
+      'libs/langgraph/src/public-api.ts': edge,
+      ...(edge.includes('./bridge') ? { 'libs/langgraph/src/bridge.ts': "export * from './runtime/create-session';" } : {}),
+      'libs/langgraph/src/runtime/create-session.ts': 'export interface Session {}',
+    });
+    assert.ok(verifyBoundaries({ root, projects: ['langgraph'] }).some((error) => error.includes('private runtime reachable from legacy source')));
+  });
+}
+
+for (const shared of ['transport.types', 'operation-errors']) {
+  test(`legacy source may reach exactly shared ${shared}, but not private dependencies`, (t) => {
+    const root = fixture(t, {
+      'libs/langgraph/src/public-api.ts': `export * from './runtime/${shared}';`,
+      [`libs/langgraph/src/runtime/${shared}.ts`]: 'export interface Shared {}',
+      'libs/langgraph/src/runtime/create-session.ts': 'export interface Session {}',
+    });
+    assert.deepEqual(verifyBoundaries({ root, projects: ['langgraph'] }), []);
+    writeFileSync(join(root, `libs/langgraph/src/runtime/${shared}.ts`), "export * from './create-session';");
+    assert.ok(verifyBoundaries({ root, projects: ['langgraph'] }).some((error) => error.includes('private runtime reachable from legacy source')));
+  });
+}
+
+test('legacy context revisits a shared module after an earlier permissive runtime visit', (t) => {
+  const root = fixture(t, {
+    'libs/langgraph/src/public-api.ts': 'export {};',
+    'libs/langgraph/src/runtime/operation-errors.ts': "export * from './create-session';",
+    'libs/langgraph/src/runtime/create-session.ts': 'export interface Session {}',
+    'libs/langgraph/src/z-legacy.ts': "export * from './runtime/operation-errors';",
+  });
+  const errors = verifyBoundaries({ root, projects: ['langgraph'] });
+  assert.ok(errors.some((error) => error.includes('private runtime reachable from legacy source') && error.includes('z-legacy.ts')), errors.join('\n'));
+});
+
+test('private neutral modules may depend on each other', (t) => {
+  const root = fixture(t, {
+    'libs/langgraph/src/public-api.ts': 'export {};',
+    'libs/langgraph/src/runtime/create-session.ts': "export * from './ownership';",
+    'libs/langgraph/src/runtime/ownership.ts': 'export interface Owned {}',
+  });
+  assert.deepEqual(verifyBoundaries({ root, projects: ['langgraph'] }), []);
+});
+
+test('another legacy library cannot import the private runtime directly', (t) => {
+  const root = fixture(t, {
+    'libs/chat/src/public-api.ts': "export * from '../../langgraph/src/runtime/create-session';",
+    'libs/langgraph/src/runtime/create-session.ts': 'export interface Session {}',
+  });
+  assert.ok(verifyBoundaries({ root, projects: ['chat'] }).some((error) => error.includes('private runtime reachable from legacy source')));
+});
+
+test('case-insensitive filesystem aliases preserve exact runtime sharing policy', (t) => {
+  const root = fixture(t, {
+    'libs/langgraph/src/public-api.ts': "export * from './RUNTIME/create-session';",
+    'libs/langgraph/src/runtime/create-session.ts': 'export interface Session {}',
+    'libs/langgraph/src/runtime/transport.types.ts': 'export interface Shared {}',
+  });
+  if (!existsSync(join(root, 'libs/langgraph/src/RUNTIME/create-session.ts'))) {
+    t.skip('Requires a case-insensitive filesystem; literal source checks remain covered.');
+    return;
+  }
+  assert.ok(verifyBoundaries({ root, projects: ['langgraph'] }).some((error) => error.includes('private runtime reachable from legacy source')));
+  writeFileSync(join(root, 'libs/langgraph/src/public-api.ts'), "export * from './RUNTIME/TRANSPORT.TYPES';");
+  assert.deepEqual(verifyBoundaries({ root, projects: ['langgraph'] }), []);
+});
+
+for (const path of ['public-api.ts', 'runtime/create-session.ts']) {
+  for (const code of [
+    "const target = '@angular/core'; void import(target);",
+    "const target = '@angular/core'; require(target);",
+    'export const broken = ;',
+  ]) {
+    test(`guarded ${path} rejects unsupported dependency analysis: ${code}`, (t) => {
+      const root = fixture(t, { [`libs/langgraph/src/${path}`]: code });
+      assert.ok(verifyBoundaries({ root, projects: ['langgraph'] }).some((error) => error.includes('cannot analyze guarded dependencies')));
+    });
+  }
+}
+
+test('guarded legacy graph rejects unresolved internal sources', (t) => {
+  const root = fixture(t, { 'libs/langgraph/src/public-api.ts': "export * from './missing';" });
+  assert.ok(verifyBoundaries({ root, projects: ['langgraph'] }).some((error) => error.includes('unresolved dependency')));
+});
+
+for (const mode of ['source', 'built']) {
+  for (const field of ['dependencies', 'peerDependencies', 'optionalDependencies']) {
+    test(`empty ${mode} core rejects manifest-only ${field}`, (t) => {
+      const prefix = mode === 'source' ? 'libs/core' : 'dist/libs/core';
+      const root = fixture(t, {
+        [`${prefix}/package.json`]: JSON.stringify({ [field]: { lodash: '*' }, exports: { '.': { types: './src/index.d.ts', default: './src/index.js' } } }),
+        [`${prefix}/src/index.ts`]: 'export {};',
+        [`${prefix}/src/index.js`]: 'export {};',
+        [`${prefix}/src/index.d.ts`]: 'export {};',
+      });
+      assert.ok(verifyBoundaries({ root, mode, projects: ['core'] }).includes(`core: forbidden ${field} entry lodash`));
+    });
+  }
+}
+const finalCases = [
+  ['react', '@angular/core'], ['react', '@threadplane/langgraph'],
+  ['langgraph', '@threadplane/angular'], ['ag-ui', '@threadplane/render'],
+  ['core', '@angular/core'], ['core', 'marked'], ['core', 'rxjs'],
+  ['content', '@threadplane/ag-ui'], ['render', '@threadplane/content'],
+  ['render', '@angular/core'], ['angular', '@threadplane/telemetry'],
+  ['angular', 'react'], ['angular', '@threadplane/langgraph'], ['angular', '@ag-ui/client'],
+];
+for (const variant of ['source', 'built-js', 'built-d.ts']) {
+  const mode = variant === 'source' ? 'source' : 'built';
+  for (const [project, dependency] of finalCases) {
+    test(`final role ${variant} transitively rejects ${project} -> ${dependency}`, (t) => {
+      const prefix = mode === 'source' ? 'libs' : 'dist/libs';
+      const extension = mode === 'source' ? 'ts' : variant.slice('built-'.length);
+      const entry = project === 'angular' ? 'public-api' : 'index';
+      const files = {
+        [`${prefix}/${project}/package.json`]: JSON.stringify({ exports: { '.': { types: `./src/${entry}.d.ts`, default: `./src/${entry}.js` } } }),
+        [`${prefix}/${project}/src/${entry}.js`]: 'export {};',
+        [`${prefix}/${project}/src/${entry}.d.ts`]: 'export {};',
+        [`${prefix}/${project}/src/${entry}.${extension}`]: extension === 'js' ? "export * from './bridge.js';" : "export type { X } from './bridge.js';",
+        [`${prefix}/${project}/src/bridge.${extension}`]: extension === 'js' ? `export * from '${dependency}';` : `export type { X } from '${dependency}';`,
+      };
+      const errors = verifyBoundaries({ root: fixture(t, files), projects: [project], mode, ...finalOptions });
+      assert.ok(errors.some((error) => error.includes('forbidden dependency') && error.includes(dependency)), errors.join('\n'));
+    });
+  }
+}
+
+for (const mode of ['source', 'built']) {
+  for (const entry of ['index', 'shared/public-api', 'node/index']) {
+    test(`telemetry ${mode} ${entry} cannot reach Angular through browser`, (t) => {
+      const prefix = mode === 'source' ? 'libs/telemetry/src' : 'dist/libs/telemetry';
+      const extension = mode === 'source' ? 'ts' : 'd.ts';
+      const browser = mode === 'source' ? 'browser/public-api' : 'browser/index';
+      const files = {
+        [`${prefix}/index.${extension}`]: 'export {};',
+        [`${prefix}/${entry}.${extension}`]: `export * from '${entry.includes('/') ? '../' : './'}${browser}.js';`,
+        [`${prefix}/${browser}.${extension}`]: "export type { Signal } from '@angular/core';",
+      };
+      if (mode === 'built') files['dist/libs/telemetry/package.json'] = JSON.stringify({ exports: { '.': { types: './index.d.ts' }, './browser': { types: './browser/index.d.ts' } } });
+      const errors = verifyBoundaries({ root: fixture(t, files), projects: ['telemetry'], mode });
+      assert.ok(errors.some((error) => error.includes('forbidden dependency') && error.includes('@angular/core')), errors.join('\n'));
+    });
+  }
+  test(`telemetry ${mode} browser transition allows Angular but never React`, (t) => {
+    const prefix = mode === 'source' ? 'libs/telemetry/src' : 'dist/libs/telemetry';
+    const extension = mode === 'source' ? 'ts' : 'd.ts';
+    const browser = mode === 'source' ? 'browser/public-api' : 'browser/index';
+    const files = {
+      [`${prefix}/index.${extension}`]: 'export {};',
+      [`${prefix}/${browser}.${extension}`]: "export type { Signal } from '@angular/core';",
+    };
+    if (mode === 'built') files['dist/libs/telemetry/package.json'] = JSON.stringify({ exports: { '.': { types: './index.d.ts' }, './browser': { types: './browser/index.d.ts' } } });
+    const root = fixture(t, files);
+    assert.deepEqual(verifyBoundaries({ root, projects: ['telemetry'], mode }), []);
+    writeFileSync(join(root, prefix, `${browser}.${extension}`), "export type { ReactNode } from 'react';");
+    assert.ok(verifyBoundaries({ root, projects: ['telemetry'], mode }).some((error) => error.includes('forbidden dependency') && error.includes('react')));
+  });
+}
+
+test('default source scan always includes telemetry', (t) => {
+  const errors = verifyBoundaries({ root: fixture(t, { 'libs/telemetry/src/index.ts': "export * from '@angular/core';" }) });
+  assert.ok(errors.some((error) => error.startsWith('telemetry: forbidden dependency')));
+});
+
+test('new Angular facade uses its public-api source entry', (t) => {
+  const root = fixture(t, { 'libs/angular/src/public-api.ts': 'export {};' });
+  assert.deepEqual(verifyBoundaries({ root, projects: ['angular'], ...finalOptions }), []);
+});
+
+test('new Angular facade requires its declared public-api source entry', (t) => {
+  const root = fixture(t, { 'libs/angular/src/index.ts': 'export {};' });
+  assert.ok(verifyBoundaries({ root, projects: ['angular'], ...finalOptions }).some((error) => error.includes('public-api.ts')));
+});
+
+test('final-release assertion is opt-in and fails while transitions remain', (t) => {
+  const root = fixture(t, { 'libs/react/src/index.ts': 'export {};' });
+  assert.deepEqual(verifyBoundaries({ root, projects: ['react'] }), []);
+  assert.ok(verifyBoundaries({ root, projects: ['react'], finalRelease: true }).some((error) => error.includes('transition remains enabled')));
+});
+
+test('default built scan never omits telemetry', (t) => {
+  const root = fixture(t, { 'dist/libs/telemetry/package.json': JSON.stringify({ exports: { '.': { types: './index.d.ts' } } }), 'dist/libs/telemetry/index.d.ts': "export type { Signal } from '@angular/core';" });
+  assert.ok(verifyBoundaries({ root, mode: 'built' }).some((error) => error.startsWith('telemetry: forbidden dependency')));
+});
+
+function fixture(t, files) {
+  const root = mkdtempSync(join(tmpdir(), 'threadplane-boundaries-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  for (const [path, content] of Object.entries(files)) {
+    mkdirSync(dirname(join(root, path)), { recursive: true });
+    writeFileSync(join(root, path), content);
+  }
+  return root;
+}
+
+const sourceCases = [
+  ['core type-only React import', 'core', "import type { ReactNode } from 'react'; export type X = ReactNode;"],
+  ['core Angular re-export', 'core', "export type { Signal } from '@angular/core';"],
+  ['backend UI import', 'langgraph', "export * from '@threadplane/react';"],
+  ['AG-UI backend renderer import', 'ag-ui', "export * from '@threadplane/render';"],
+  ['React Angular import', 'react', "export * from '@angular/core';"],
+  ['React backend type import', 'react', "type X = import('@threadplane/langgraph').X; export type { X };"],
+  ['Angular React import', 'chat', "export * from '@threadplane/react';"],
+  ['core parser import', 'core', "export * from '@cacheplane/partial-markdown';"],
+  ['core RxJS import', 'core', "export * from 'rxjs';"],
+];
+for (const [label, project, code] of sourceCases) {
+  test(`rejects ${label}`, (t) => {
+    const root = fixture(t, { [`libs/${project}/src/index.ts`]: code });
+    assert.ok(verifyBoundaries({ root, projects: [project], ...finalOptions }).some((error) => error.includes('forbidden dependency')));
+  });
+}
+test('follows TS aliases and relative re-exports transitively, including types', (t) => {
+  const root = fixture(t, {
+    'tsconfig.base.json': JSON.stringify({ compilerOptions: { paths: { '@shared': ['./shared/index.ts'] } } }),
+    'libs/core/src/index.ts': "export type { X } from '@shared';",
+    'shared/index.ts': "export type { X } from './hidden.js';",
+    'shared/hidden.ts': "export type { ReactNode as X } from 'react';",
+  });
+  assert.ok(verifyBoundaries({ root, projects: ['core'] }).some((error) => error.includes('react')));
+});
+test('rejects cross-package relative imports', (t) => {
+  const root = fixture(t, {
+    'libs/core/src/index.ts': "export * from '../../react/src/index.js';",
+    'libs/react/src/index.ts': 'export {};',
+  });
+  assert.ok(verifyBoundaries({ root, projects: ['core'] }).length > 0);
+});
+for (const optional of ['testing', 'schema/zod', 'math']) {
+  test(`isolates ${optional} from root transitive declarations`, (t) => {
+    const root = fixture(t, {
+      'libs/core/src/index.ts': "export type { X } from './bridge.js';",
+      'libs/core/src/bridge.ts': `export type { X } from './${optional}/index.js';`,
+      [`libs/core/src/${optional}/index.ts`]: 'export type X = string;',
+    });
+    assert.ok(verifyBoundaries({ root, projects: ['core'] }).length > 0);
+  });
+}
+test('allows isolated testing entries without making them root dependencies', (t) => {
+  const root = fixture(t, {
+    'libs/core/src/index.ts': 'export {};',
+    'libs/core/src/testing/index.ts': 'export {};',
+  });
+  assert.deepEqual(verifyBoundaries({ root, projects: ['core'] }), []);
+});
+test('rejects core validation dependencies outside the root graph', (t) => {
+  const root = fixture(t, {
+    'libs/core/src/index.ts': 'export {};',
+    'libs/core/src/tools/index.ts': "export type { ZodType } from 'zod';",
+  });
+  assert.ok(verifyBoundaries({ root, projects: ['core'] }).some((error) => error.includes('forbidden dependency') && error.includes('zod')));
+});
+for (const extension of ['ts', 'js', 'd.ts']) {
+  for (const dependency of ['some-validator', 'zod', 'tslib']) {
+    test(`rejects off-root core ${extension} dependency on ${dependency}`, (t) => {
+      const mode = extension === 'ts' ? 'source' : 'built';
+      const prefix = mode === 'source' ? 'libs/core' : 'dist/libs/core';
+      const root = fixture(t, {
+        [`${prefix}/package.json`]: JSON.stringify({ exports: { '.': { types: './src/index.d.ts', import: './src/index.js' } } }),
+        [`${prefix}/src/index.ts`]: 'export {};',
+        [`${prefix}/src/index.js`]: 'export {};',
+        [`${prefix}/src/index.d.ts`]: 'export {};',
+        [`${prefix}/src/tools/index.${extension}`]: `export * from '${dependency}';`,
+      });
+      assert.ok(verifyBoundaries({ root, mode, projects: ['core'] }).some((error) => error.includes('unreviewed') && error.includes(dependency)));
+    });
+  }
+}
+for (const extension of ['js', 'd.ts']) {
+  test(`inspects built ${extension} imports`, (t) => {
+    const root = fixture(t, {
+      'dist/libs/core/package.json': JSON.stringify({ name: '@threadplane/core', exports: { '.': { import: './src/index.js', types: './src/index.d.ts' } } }),
+      'dist/libs/core/src/index.js': 'export {};',
+      'dist/libs/core/src/index.d.ts': 'export {};',
+      [`dist/libs/core/src/index.${extension}`]: "export * from './bridge.js';",
+      [`dist/libs/core/src/bridge.${extension}`]: "export * from 'react';",
+    });
+    assert.ok(verifyBoundaries({ root, mode: 'built', projects: ['core'] }).length > 0);
+  });
+}
+test('does not mistake comments or ordinary strings for imports', (t) => {
+  const root = fixture(t, { 'libs/core/src/index.ts': "// import 'react';\nexport const example = \"import 'react'\";" });
+  assert.deepEqual(verifyBoundaries({ root, projects: ['core'] }), []);
+});
+test('fails closed for unresolved local imports', (t) => {
+  const root = fixture(t, { 'libs/core/src/index.ts': "export * from './missing.js';" });
+  assert.ok(verifyBoundaries({ root, projects: ['core'] }).some((error) => error.includes('unresolved')));
+});
+test('rejects unreviewed external dependencies from the core root', (t) => {
+  const root = fixture(t, { 'libs/core/src/index.ts': "export * from 'some-parser';" });
+  assert.ok(verifyBoundaries({ root, projects: ['core'] }).some((error) => error.includes('some-parser')));
+});
+test('keeps optional math dependencies out of content root declarations', (t) => {
+  const root = fixture(t, { 'libs/content/src/index.ts': "export type { KatexOptions } from 'katex';" });
+  assert.ok(verifyBoundaries({ root, projects: ['content'] }).some((error) => error.includes('katex')));
+});
+test('rejects a missing foundation root entry', (t) => {
+  const root = fixture(t, { 'libs/core/src/other.ts': 'export {};' });
+  assert.ok(verifyBoundaries({ root, projects: ['core'] }).length > 0);
+});
+test('checks declared dependencies even when no source imports them yet', (t) => {
+  const root = fixture(t, {
+    'libs/langgraph/src/index.ts': 'export {};',
+    'libs/langgraph/package.json': JSON.stringify({ dependencies: { react: '^19.0.0' } }),
+  });
+  assert.ok(verifyBoundaries({ root, projects: ['langgraph'], ...finalOptions }).some((error) => error.includes('react')));
+});
+
+const builtCases = [
+  ['core to Angular', 'core', '@angular/core'],
+  ['core to React', 'core', 'react'],
+  ['LangGraph backend to UI', 'langgraph', '@threadplane/react'],
+  ['AG-UI backend to UI', 'ag-ui', '@threadplane/render'],
+  ['backend to Angular UI', 'langgraph', '@threadplane/angular'],
+  ['React to Angular', 'react', '@angular/core'],
+  ['React to backend', 'react', '@threadplane/langgraph'],
+  ['React to retired renderer', 'react', '@threadplane/react-render'],
+];
+for (const extension of ['js', 'd.ts']) {
+  for (const [label, project, dependency] of builtCases) {
+    test(`rejects built ${extension} ${label}`, (t) => {
+      const root = fixture(t, {
+        [`dist/libs/${project}/package.json`]: JSON.stringify({ name: `@threadplane/${project}`, exports: { '.': { import: './src/index.js', types: './src/index.d.ts' } } }),
+        [`dist/libs/${project}/src/index.js`]: 'export {};',
+        [`dist/libs/${project}/src/index.d.ts`]: 'export {};',
+        [`dist/libs/${project}/src/index.${extension}`]: extension === 'd.ts' ? `export type X = import('${dependency}').X;` : `export * from '${dependency}';`,
+      });
+      const errors = verifyBoundaries({ root, mode: 'built', projects: [project], ...finalOptions });
+      assert.ok(errors.some((error) => error.includes('forbidden dependency') && error.includes(dependency)), errors.join('\n'));
+    });
+  }
+}
+
+// Exercise the default CLI project selection as well as Angular's actual APF
+// layout: .mjs in fesm2022 and declarations under types, with a default export
+// condition rather than an import condition.
+for (const project of ['chat', 'langgraph', 'ag-ui', 'render']) {
+  for (const extension of ['mjs', 'd.ts']) {
+    test(`default built scan rejects ${project} ${extension} importing React`, (t) => {
+      const files = {};
+      for (const name of ['core', 'content', 'angular', 'react', 'chat', 'langgraph', 'ag-ui', 'render', 'a2ui', 'telemetry']) {
+        files[`dist/libs/${name}/package.json`] = JSON.stringify({ name: `@threadplane/${name}`, exports: { '.': { types: `./types/${name}.d.ts`, default: `./fesm2022/${name}.mjs` } } });
+        files[`dist/libs/${name}/fesm2022/${name}.mjs`] = 'export {};';
+        files[`dist/libs/${name}/types/${name}.d.ts`] = 'export {};';
+      }
+      const directory = extension === 'mjs' ? 'fesm2022' : 'types';
+      files[`dist/libs/${project}/${directory}/${project}.${extension}`] = extension === 'd.ts' ? "export type X = import('react').ReactNode;" : "export * from '@threadplane/react';";
+      const errors = verifyBoundaries({ root: fixture(t, files), mode: 'built' });
+      assert.ok(errors.some((error) => error.startsWith(`${project}: forbidden dependency`) && error.includes('react')), errors.join('\n'));
+    });
+  }
+}
+
+for (const extension of ['ts', 'js', 'd.ts']) {
+  for (const feature of ['chat', 'markdown', 'a2ui', 'debug', 'tools', 'testing', 'render', 'render/types']) {
+    test(`React root excludes ${feature} from transitive ${extension} exports`, (t) => {
+      const mode = extension === 'ts' ? 'source' : 'built';
+      const prefix = mode === 'source' ? 'libs/react' : 'dist/libs/react';
+      const root = fixture(t, {
+        [`${prefix}/package.json`]: JSON.stringify({ exports: { '.': { types: './src/index.d.ts', import: './src/index.js' } } }),
+        [`${prefix}/src/index.js`]: 'export {};',
+        [`${prefix}/src/index.d.ts`]: 'export {};',
+        [`${prefix}/src/index.${extension}`]: "export * from './bridge.js';",
+        [`${prefix}/src/bridge.${extension}`]: `export * from './${feature}/index.js';`,
+        [`${prefix}/src/${feature}/index.${extension}`]: 'export {};',
+      });
+      assert.ok(verifyBoundaries({ root, mode, projects: ['react'] }).some((error) => error.includes('reachable from root') && error.includes(feature)));
+    });
+  }
+}
+
+test('React root permits binding implementation and core contracts', (t) => {
+  const root = fixture(t, {
+    'tsconfig.base.json': JSON.stringify({ compilerOptions: { paths: { '@threadplane/core': ['./libs/core/src/index.ts'] } } }),
+    'libs/react/src/index.ts': "'use client'; export * from './use-agent.js';",
+    'libs/react/src/use-agent.ts': "export type { Agent } from '@threadplane/core';",
+    'libs/core/src/index.ts': 'export interface Agent {}',
+  });
+  assert.deepEqual(verifyBoundaries({ root, projects: ['react'] }), []);
+});
+
+for (const extension of ['mjs', 'd.ts']) {
+  test(`resolves legacy built main/module/types for Angular ${extension} dependencies`, (t) => {
+    const files = {
+      'dist/libs/chat/package.json': JSON.stringify({ name: '@threadplane/chat', exports: { '.': { types: './index.d.ts', default: './index.mjs' } } }),
+      'dist/libs/chat/index.mjs': 'export {};',
+      'dist/libs/chat/index.d.ts': 'export {};',
+      [`dist/libs/chat/index.${extension}`]: "export * from '@threadplane/a2ui';",
+      'dist/libs/a2ui/package.json': JSON.stringify({ name: '@threadplane/a2ui', types: './src/index.d.ts', module: './src/index.js', main: './src/index.js' }),
+      'dist/libs/a2ui/src/index.js': 'export {};',
+      'dist/libs/a2ui/src/index.d.ts': 'export {};',
+    };
+    const root = fixture(t, files);
+    assert.deepEqual(verifyBoundaries({ root, mode: 'built', projects: ['chat'] }), []);
+    // Following the legacy entry is mandatory, not just accepting the package
+    // name: an indirect React edge must still fail in either output format.
+    const entry = extension === 'd.ts' ? 'index.d.ts' : 'index.js';
+    writeFileSync(join(root, 'dist/libs/a2ui/src', entry), "export * from 'react';");
+    assert.ok(verifyBoundaries({ root, mode: 'built', projects: ['chat'] }).some((error) => error.includes('forbidden dependency') && error.includes('react')));
+  });
+}
+
+for (const dependency of ['@angular/core', '@threadplane/chat', '@threadplane/telemetry', '@threadplane/render', 'react']) {
+  test(`neutral runtime rejects transitive ${dependency} despite legacy visits`, (t) => {
+    const root = fixture(t, {
+      'libs/langgraph/src/public-api.ts': "export * from './lib/shared.js';",
+      'libs/langgraph/src/lib/shared.ts': `export type { X } from '${dependency}';`,
+      'libs/langgraph/src/runtime/transport.ts': "export type { X } from '../lib/shared.js';",
+    });
+    assert.ok(verifyBoundaries({ root, projects: ['langgraph'] }).some((error) => error.includes('neutral runtime') && error.includes(dependency)));
+  });
+}
+
+test('neutral runtime permits public core and SDK but excludes private core and testing edges', (t) => {
+  const root = fixture(t, {
+    'tsconfig.base.json': JSON.stringify({ compilerOptions: { paths: { '@threadplane/core': ['./libs/core/src/index.ts'] } } }),
+    'libs/langgraph/src/public-api.ts': "export type { Signal } from '@angular/core';",
+    'libs/langgraph/src/runtime/transport.ts': "export type { X } from '@threadplane/core'; export type { Client } from '@langchain/langgraph-sdk';",
+    'libs/langgraph/src/runtime/testing/controlled.ts': 'export type T = string;',
+    'libs/langgraph/src/runtime/transport.spec.ts': "import '@angular/core'; import './testing/controlled';",
+    'libs/core/src/index.ts': 'export type X = string;',
+    'libs/core/src/private.ts': 'export type X = string;',
+  });
+  assert.deepEqual(verifyBoundaries({ root, projects: ['langgraph'] }), []);
+  for (const edge of ['../../../core/src/private.js', './testing/controlled.js', '@threadplane/core/private']) {
+    writeFileSync(join(root, 'libs/langgraph/src/runtime/transport.ts'), `export type { X } from '${edge}';`);
+    assert.ok(verifyBoundaries({ root, projects: ['langgraph'] }).some((error) => error.includes('neutral runtime') && error.includes(edge)));
+  }
+});
+
+for (const dependency of ['@langchain/langgraph-sdk/react', '@langchain/langgraph-sdk/react-ui', '@langchain/langgraph-sdk/react-ui/server']) {
+  test(`strict transport source root rejects ${dependency}`, (t) => {
+    const root = fixture(t, {
+      'libs/langgraph/src/public-api.ts': "export * from './lib/transport/fetch-stream.transport.js';",
+      'libs/langgraph/src/lib/transport/fetch-stream.transport.ts': `export type { X } from '${dependency}';`,
+    });
+    assert.ok(verifyBoundaries({ root, projects: ['langgraph'] }).some((error) => error.includes('neutral runtime') && error.includes(dependency)));
+  });
+}
+
+for (const extension of ['ts', 'js', 'd.ts']) {
+ test(`React ${extension} root rejects indirect Debug entry`, t => {
+  const mode = extension === 'ts' ? 'source' : 'built';
+  const prefix = `${mode === 'source' ? '' : 'dist/'}libs/react`;
+  const root = fixture(t, {
+   [`${prefix}/package.json`]: JSON.stringify({ exports: { '.': { [extension === 'd.ts' ? 'types' : 'import']: `./src/index.${extension}` } } }),
+   [`${prefix}/src/index.${extension}`]: "export * from './bridge.js';",
+   [`${prefix}/src/bridge.${extension}`]: "export * from './debug/index.js';",
+   [`${prefix}/src/debug/index.${extension}`]: 'export {};',
+  });
+  assert.ok(verifyBoundaries({ root, mode, projects: ['react'], ...finalOptions }).some(error => /feature dependency reachable from root/.test(error)));
+ });
+}

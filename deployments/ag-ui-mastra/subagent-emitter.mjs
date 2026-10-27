@@ -43,8 +43,8 @@
 //   exactly once, before the terminal frame.
 //
 // STAND-DOWN (forward compatibility). This whole module exists only because
-// @ag-ui/mastra 1.1.2 drops the child stream. Upstream is expected to grow its
-// own sub-agent surface (@ag-ui/core 0.0.59 already ships the SUBAGENT_*
+// @ag-ui/mastra 1.1.5 (like 1.1.2) drops the child stream. Upstream is expected to grow its
+// own sub-agent surface (@ag-ui/core 1.0.1 already ships the SUBAGENT_*
 // schemas, and the LangGraph integration already emits them behind
 // `subagent_visibility`). The day the installed bridge emits SUBAGENT_* itself,
 // injecting too would put duplicates on the wire — and a duplicate

@@ -20,6 +20,7 @@
 import { execSync } from 'child_process';
 import { cpSync, mkdirSync, rmSync, existsSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
+import { demoRoutes } from './demo-routes';
 
 const root = resolve(__dirname, '..');
 const deployDir = resolve(root, 'deploy/ag-ui-demo');
@@ -81,7 +82,7 @@ execSync(`npx esbuild scripts/ag-ui-demo-middleware.ts --bundle --format=cjs --p
 });
 
 writeFileSync(resolve(funcDir, '.vc-config.json'), JSON.stringify({
-  runtime: 'nodejs20.x',
+  runtime: 'nodejs22.x',
   handler: 'index.js',
   launcherType: 'Nodejs',
   shouldAddHelpers: true,
@@ -89,11 +90,7 @@ writeFileSync(resolve(funcDir, '.vc-config.json'), JSON.stringify({
 
 writeFileSync(resolve(outputDir, 'config.json'), JSON.stringify({
   version: 3,
-  routes: [
-    { src: '^/agent(/.*)?$', dest: '/api/[[...path]]', check: true },
-    { handle: 'filesystem' },
-    { src: '.*', dest: '/index.html' },
-  ],
+  routes: demoRoutes('^/agent(/.*)?$'),
 }, null, 2));
 
 console.log('✅ .vercel/output/ (Build Output API with serverless proxy)');

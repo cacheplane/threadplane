@@ -14,7 +14,8 @@
     "scope:shared",
     "scope:website",
     "scope:website-e2e",
-    "type:lib"
+    "type:lib",
+    "layer:a2ui"
   ],
   "targets": {
     "build": {
@@ -25,6 +26,7 @@
         "main": "libs/a2ui/src/index.ts",
         "tsConfig": "libs/a2ui/tsconfig.lib.json",
         "assets": [
+          "libs/a2ui/README.md",
           "libs/a2ui/LICENSE.md"
         ]
       }

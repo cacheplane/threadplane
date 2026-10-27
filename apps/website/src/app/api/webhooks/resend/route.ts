@@ -5,6 +5,7 @@ import { Resend } from 'resend';
 import {
   createDatabaseExecutor,
   processVerifiedResendWebhook,
+  ResendWebhookPayloadError,
   type SqlExecutor,
 } from '@threadplane-internal/growth';
 
@@ -120,15 +121,18 @@ export function createResendWebhookRoute(
         );
         return response(status);
       } catch (error) {
+        const invalidPayload = error instanceof ResendWebhookPayloadError;
+        const status = invalidPayload ? 400 : 503;
         console.info(
           JSON.stringify({
             route: 'webhooks/resend',
-            status: 400,
-            reason: 'payload_rejected',
-            message: error instanceof Error ? error.message : 'unknown',
+            status,
+            reason: invalidPayload
+              ? 'payload_rejected'
+              : 'processing_unavailable',
           })
         );
-        return response(400);
+        return response(status);
       } finally {
         await database.close?.();
       }

@@ -1,13 +1,13 @@
 <p align="center">
   <img
     src="https://threadplane.ai/assets/hero.svg"
-    alt="Threadplane — the open-source thread-plane for agents"
+    alt="Threadplane — the open-source thread-plane for Angular agents"
     width="100%"
   />
 </p>
 
 <p align="center">
-  <em>The open-source thread-plane for agents.</em>
+  <em>The open-source thread-plane for Angular agents.</em>
 </p>
 
 <p align="center">
@@ -33,7 +33,7 @@
 
 ---
 
-**Threadplane is the open-source thread-plane for agents.** Chat, durable
+**Threadplane is the open-source thread-plane for Angular agents.** Chat, durable
 threads, persistence, human approvals, tool progress, subagents, and generative UI — built on
 Angular Signals and dependency injection, for Angular 20–22. Your backend stays
 where it is: Threadplane adapts a LangGraph or AG-UI agent into a runtime-neutral
@@ -41,6 +41,12 @@ where it is: Threadplane adapts a LangGraph or AG-UI agent into a runtime-neutra
 system components you already own.
 
 `MIT · Angular 20–22 · no account, no cloud`
+
+Experimental native React previews are available through the docs' **Example UI**
+selector. The [AG-UI JSON Render preview](https://threadplane.ai/docs/ag-ui/guides/json-render?frontend=react)
+uses the existing airline agent, six authored read-only views and native shared
+state. These React packages remain private source builds; from a checkout, run
+`npx nx build cockpit-ag-ui-json-render-react` and the matching `npx nx e2e` target.
 
 ---
 
@@ -64,8 +70,8 @@ marked                     ^15.0.0 || ^16.0.0              # @threadplane/chat
 rxjs                       ~7.8.0                          # @threadplane/chat and both adapters
 @langchain/core            ^1.1.33                         # @threadplane/langgraph
 @langchain/langgraph-sdk   ^1.7.4                          # @threadplane/langgraph
-@ag-ui/client              *                               # @threadplane/ag-ui
-@ag-ui/core                *                               # @threadplane/ag-ui
+@ag-ui/client              ^1.0.1                          # @threadplane/ag-ui
+@ag-ui/core                ^1.0.1                          # @threadplane/ag-ui
 ```
 
 Each package README lists that package's full peer set.

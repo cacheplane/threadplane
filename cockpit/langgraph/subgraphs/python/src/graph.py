@@ -28,7 +28,7 @@ tool-call id (that shape is demonstrated in `cockpit/chat/subagents`).
 """
 
 from pathlib import Path
-from typing import Annotated, TypedDict
+from typing import Annotated, NotRequired, TypedDict
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
@@ -91,13 +91,16 @@ class OrchestratorState(TypedDict):
     messages: Annotated[list, add_messages]
     research_topic: str
     research_brief: str
+    # Final-answer identity binds the retained boundary to one original turn.
+    completed_turn_id: NotRequired[str]
+    completed_answer_id: NotRequired[str]
 # endregion
 
 
 def build_subgraphs_graph():
     """Constructs a parent graph that conditionally enters a child subgraph."""
     llm = ChatOpenAI(model="gpt-5-mini", streaming=True)
-    router = ChatOpenAI(model="gpt-5-mini").with_structured_output(DelegationDecision)
+    router = ChatOpenAI(model="gpt-5-mini", tags=["nostream"]).with_structured_output(DelegationDecision)
     researcher = ChatOpenAI(model="gpt-5-mini")
 
     # region research-subgraph
@@ -160,7 +163,22 @@ def build_subgraphs_graph():
         response = await llm.ainvoke(
             [SystemMessage(content=system_prompt), *context, *state["messages"]]
         )
-        return {"messages": [response]}
+        question = next(
+            (message for message in reversed(state["messages"])
+             if getattr(message, "type", None) == "human"),
+            None,
+        )
+        human_id = getattr(question, "id", None)
+        answer_id = getattr(response, "id", None)
+        completion = {}
+        if (isinstance(human_id, str) and human_id
+                and isinstance(answer_id, str) and answer_id
+                and human_id != answer_id):
+            completion = {
+                "completed_turn_id": human_id,
+                "completed_answer_id": answer_id,
+            }
+        return {"messages": [response], **completion}
     # endregion
 
     # region graph

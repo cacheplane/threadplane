@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import { signal } from '@angular/core';
 import { Subject } from 'rxjs';
 import {
@@ -10,8 +10,9 @@ import {
   type Message,
   type ToolCall,
   type AgentEvent,
+  type AgentUsage,
 } from '@threadplane/chat';
-import { reduceEvent, type ReducerStore, type CustomStreamEvent, type ActivityEntry } from './reducer';
+import { finalizeDeliveryRun, reduceEvent, type ReducerStore, type CustomStreamEvent, type ActivityEntry } from './reducer';
 
 interface TestDeliveryRun {
   generation: string;
@@ -42,6 +43,8 @@ function makeStore(generation = 'run-generation-1'): TestStore {
     events$:   new Subject<AgentEvent>(),
     customEvents: signal<CustomStreamEvent[]>([]),
     activities: signal<Map<string, ActivityEntry>>(new Map()),
+    usage: signal<AgentUsage | undefined>(undefined),
+    pendingClientToolCallIds: signal<ReadonlySet<string> | undefined>(undefined),
     deliveryRun: {
       generation,
       baselineMessageIds: new Set(),
@@ -81,6 +84,23 @@ describe('reduceEvent', () => {
     expect(store.isLoading()).toBe(false);
     expect(store.messages()[0].delivery).toEqual(staticDelivery('historical'));
     expect(store.messages()[1].delivery).toEqual(completeDelivery('run-generation-1', 'success'));
+  });
+
+  it('finalizes a cancelled outcome as aborted without an error', () => {
+    const store = makeStore();
+    reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r' } as never, store);
+    reduceEvent({ type: 'TEXT_MESSAGE_START', messageId: 'm1', role: 'assistant' } as never, store);
+    reduceEvent({ type: 'TEXT_MESSAGE_CONTENT', messageId: 'm1', delta: 'partial' } as never, store);
+    expect(store.isLoading()).toBe(true);
+    reduceEvent(
+      { type: 'RUN_FINISHED', threadId: 't', runId: 'r', outcome: { type: 'cancelled' } } as never,
+      store,
+    );
+    expect(store.deliveryRun?.outcome).toBe('aborted');
+    expect(store.status()).toBe('idle');
+    expect(store.isLoading()).toBe(false);
+    expect(store.error()).toBeUndefined();
+    expect(store.messages()[0]?.delivery).toEqual(completeDelivery('run-generation-1', 'aborted'));
   });
 
   it('RUN_ERROR finalizes active-generation messages as error', () => {
@@ -398,11 +418,82 @@ describe('reduceEvent', () => {
     expect(a1[0].toolCallIds).toEqual(['t1', 't2']);
   });
 
-  it('TOOL_CALL_START without parentMessageId does not create or modify messages', () => {
-    const store = makeStore();
-    reduceEvent({ type: 'TOOL_CALL_START', toolCallId: 't1', toolCallName: 'search' } as any, store);
-    expect(store.messages()).toEqual([]);
-    expect(store.toolCalls()).toEqual([{ id: 't1', name: 'search', args: {}, status: 'running' }]);
+  describe('TOOL_CALL_START from a server that streams tool calls without a parent message', () => {
+    const start = (toolCallId: string, parentMessageId?: string) => ({
+      type: 'TOOL_CALL_START', toolCallId, toolCallName: 'search',
+      ...(parentMessageId !== undefined ? { parentMessageId } : {}),
+    }) as any;
+
+    it('creates an assistant message keyed by the tool call id that lists the call', () => {
+      const store = makeStore();
+      store.messages.set([{ id: 'u1', role: 'user', content: 'plan it', delivery: staticDelivery('u1') }]);
+      reduceEvent(start('t1'), store);
+      expect(store.messages()).toEqual([
+        { id: 'u1', role: 'user', content: 'plan it', delivery: staticDelivery('u1') },
+        { id: 't1', role: 'assistant', content: '', toolCallIds: ['t1'], delivery: streamingDelivery('run-generation-1') },
+      ]);
+      expect(store.toolCalls()).toEqual([{ id: 't1', name: 'search', args: {}, status: 'running' }]);
+      expect(store.deliveryRun?.currentAssistantMessageId).toBe('t1');
+    });
+
+    it('gives each parentless call its own message and completes the previous one', () => {
+      const store = makeStore();
+      reduceEvent(start('t1'), store);
+      reduceEvent(start('t2'), store);
+      expect(store.messages().map(m => [m.id, m.toolCallIds, m.delivery])).toEqual([
+        ['t1', ['t1'], completeDelivery('run-generation-1', 'success')],
+        ['t2', ['t2'], streamingDelivery('run-generation-1')],
+      ]);
+    });
+
+    it('creates the named parent when parentMessageId arrives before any message with that id', () => {
+      const store = makeStore();
+      reduceEvent(start('t1', 'p1'), store);
+      reduceEvent(start('t2', 'p1'), store);
+      expect(store.messages()).toEqual([
+        { id: 'p1', role: 'assistant', content: '', toolCallIds: ['t1', 't2'], delivery: streamingDelivery('run-generation-1') },
+      ]);
+    });
+
+    it('does not attach a call to a non-assistant message that shares the parent id', () => {
+      const store = makeStore();
+      store.messages.set([{ id: 'shared', role: 'user', content: 'hi', delivery: staticDelivery('shared') }]);
+      reduceEvent(start('t1', 'shared'), store);
+      expect(store.messages()[0]).toEqual({ id: 'shared', role: 'user', content: 'hi', delivery: staticDelivery('shared') });
+      expect(store.messages()[1]).toMatchObject({ id: 't1', role: 'assistant', toolCallIds: ['t1'] });
+    });
+
+    it('lists a repeated start for the same call once', () => {
+      const store = makeStore();
+      reduceEvent(start('t1', 'p1'), store);
+      reduceEvent(start('t1', 'p1'), store);
+      expect(store.messages()[0].toolCallIds).toEqual(['t1']);
+    });
+
+    it('lands a following text message in its own message after the tool-only phase', () => {
+      const store = makeStore();
+      reduceEvent(start('t1'), store);
+      reduceEvent({ type: 'TOOL_CALL_END', toolCallId: 't1' } as any, store);
+      reduceEvent({ type: 'TOOL_CALL_RESULT', toolCallId: 't1', content: '{"ok":true}' } as any, store);
+      reduceEvent({ type: 'TEXT_MESSAGE_START', messageId: 'm1', role: 'assistant' } as any, store);
+      reduceEvent({ type: 'TEXT_MESSAGE_CONTENT', messageId: 'm1', delta: 'Done.' } as any, store);
+      expect(store.messages().map(m => ({ id: m.id, content: m.content, toolCallIds: m.toolCallIds }))).toEqual([
+        { id: 't1', content: '', toolCallIds: ['t1'] },
+        { id: 'm1', content: 'Done.', toolCallIds: undefined },
+      ]);
+      expect(store.messages()[0].delivery).toEqual(completeDelivery('run-generation-1', 'success'));
+      expect(store.toolCalls()).toEqual([
+        { id: 't1', name: 'search', args: {}, status: 'complete', result: { ok: true } },
+      ]);
+    });
+
+    it('creates no message outside an active run', () => {
+      const store = makeStore();
+      store.deliveryRun = null;
+      reduceEvent(start('t1'), store);
+      expect(store.messages()).toEqual([]);
+      expect(store.toolCalls()).toHaveLength(1);
+    });
   });
 
   it('TOOL_CALL_ARGS replaces args on the matching tool call', () => {
@@ -492,6 +583,39 @@ describe('reduceEvent', () => {
       delta: [{ op: 'replace', path: '/a', value: 2 }, { op: 'add', path: '/b', value: 3 }],
     } as any, store);
     expect(store.state()).toEqual({ a: 2, b: 3 });
+  });
+
+  it.each([
+    { op: 'replace', path: '/missing', value: 2 },
+    { op: 'copy', from: '/missing', path: '/copy' },
+  ])('STATE_DELTA rejects a failed $op batch before publishing state or citations', (invalid) => {
+    const store = makeStore();
+    store.messages.set([{ id: 'm1', role: 'assistant', content: 'answer', delivery: staticDelivery('m1') }]);
+    reduceEvent({ type: 'STATE_SNAPSHOT', snapshot: {
+      citations: { m1: [{ id: 'prior', title: 'Prior citation' }] },
+    } } as never, store);
+    const state = store.state();
+    const messages = store.messages();
+    const citations = messages[0].citations;
+    expect(() => reduceEvent({ type: 'STATE_DELTA', delta: [
+      { op: 'replace', path: '/citations/m1', value: [{ id: 'next', title: 'Unpublished citation' }] },
+      invalid,
+    ] } as never, store)).toThrow();
+    expect(store.state()).toBe(state);
+    expect(store.messages()).toBe(messages);
+    expect(store.messages()[0].citations).toBe(citations);
+    expect(citations?.[0].id).toBe('prior');
+    expect(state['citations']).toEqual({ m1: [{ id: 'prior', title: 'Prior citation' }] });
+  });
+
+  it('STATE_DELTA publishes an own __proto__ data member with a safe prototype', () => {
+    const store = makeStore();
+    reduceEvent({ type: 'STATE_DELTA', delta: [
+      { op: 'add', path: '/__proto__', value: { label: 'data' } },
+    ] } as never, store);
+    expect(Object.hasOwn(store.state(), '__proto__')).toBe(true);
+    expect(store.state()['__proto__']).toEqual({ label: 'data' });
+    expect(Object.getPrototypeOf(store.state())).toBe(Object.prototype);
   });
 
   it('MESSAGES_SNAPSHOT replaces messages wholesale', () => {
@@ -625,6 +749,175 @@ describe('reduceEvent — interrupt', () => {
 });
 
 describe('reduceEvent — REASONING_MESSAGE_*', () => {
+  let now = 100;
+  beforeEach(() => {
+    now = 100;
+    vi.spyOn(Date, 'now').mockImplementation(() => now);
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  function reasoning(store: ReducerStore, type: string, messageId = 'owned', runId?: string) {
+    reduceEvent({ type: `REASONING_MESSAGE_${type}`, messageId, runId, delta: 'thinking' } as any, store);
+  }
+
+  it('consumes a start once and leaves duplicate END references unchanged', () => {
+    const store = makeStore();
+    reasoning(store, 'START');
+    now = 200;
+    reasoning(store, 'END');
+    const messages = store.messages();
+    expect(messages[0].reasoningDurationMs).toBe(100);
+    now = 400;
+    reasoning(store, 'END');
+    expect(store.messages()).toBe(messages);
+    expect(store.messages()[0]).toBe(messages[0]);
+  });
+
+  it('does not inherit a same-id start from a previous run', () => {
+    const store = makeStore();
+    reasoning(store, 'START');
+    finalizeDeliveryRun(store, store.deliveryRun!, 'success');
+    store.deliveryRun = makeStore('next-generation').deliveryRun;
+    reduceEvent({ type: 'TEXT_MESSAGE_START', messageId: 'owned' } as any, store);
+    const messages = store.messages();
+    now = 400;
+    reasoning(store, 'END');
+    expect(store.messages()).toBe(messages);
+    expect(messages[0].reasoningDurationMs).toBeUndefined();
+    reasoning(store, 'START');
+    now = 450;
+    reasoning(store, 'END');
+    expect(store.messages()[0].reasoningDurationMs).toBe(50);
+  });
+
+  it('restarts the clock and clears stale duration while retaining reasoning text', () => {
+    const store = makeStore();
+    reasoning(store, 'START');
+    reasoning(store, 'CONTENT');
+    now = 200;
+    reasoning(store, 'END');
+    now = 300;
+    reasoning(store, 'START');
+    expect(store.messages()[0].reasoningDurationMs).toBeUndefined();
+    expect(store.messages()[0].reasoning).toBe('thinking');
+    now = 350;
+    reasoning(store, 'START');
+    now = 400;
+    reasoning(store, 'END');
+    expect(store.messages()[0].reasoningDurationMs).toBe(50);
+  });
+
+  it.each(['success', 'error', 'paused', 'aborted', 'interrupted'] as const)(
+    'clears pending timing on %s and ignores late reasoning events', outcome => {
+      const store = makeStore();
+      reasoning(store, 'START');
+      const run = store.deliveryRun!;
+      finalizeDeliveryRun(store, run, outcome);
+      const messages = store.messages();
+      now = 500;
+      for (const type of ['END', 'START', 'CONTENT', 'CHUNK']) reasoning(store, type);
+      expect(store.messages()).toBe(messages);
+      expect(run).not.toHaveProperty('pendingReasoning');
+      expect(finalizeDeliveryRun(store, run, outcome)).toBe(false);
+    },
+  );
+
+  it.each(['TEXT_MESSAGE_START', 'TOOL_CALL_START', 'MESSAGES_SNAPSHOT'])(
+    'discards the previous clock when %s moves assistant ownership', type => {
+      const store = makeStore();
+      reasoning(store, 'START');
+      reduceEvent({ type, messageId: 'next', parentMessageId: 'next', toolCallId: 'tool',
+        toolCallName: 'tool', messages: [{ id: 'next', role: 'assistant', content: 'canonical' }] } as any, store);
+      const messages = store.messages();
+      now = 500;
+      reasoning(store, 'END');
+      expect(store.messages()).toBe(messages);
+      expect(store.deliveryRun).not.toHaveProperty('pendingReasoning');
+      expect(store.deliveryRun?.currentAssistantMessageId).toBe('next');
+    },
+  );
+
+  it.each(['START', 'CONTENT', 'CHUNK', 'END'])(
+    'ignores foreign-run reasoning %s without disturbing the valid clock', type => {
+      const store = makeStore();
+      reduceEvent({ type: 'RUN_STARTED', runId: 'current' } as any, store);
+      reasoning(store, 'START', 'owned', 'current');
+      const messages = store.messages();
+      now = 200;
+      reasoning(store, type, 'owned', 'foreign');
+      expect(store.messages()).toBe(messages);
+      now = 300;
+      reasoning(store, 'END', 'owned', 'current');
+      expect(store.messages()[0].reasoningDurationMs).toBe(200);
+    },
+  );
+
+  it.each(['static', 'wrong-generation', 'completed', 'non-assistant', 'unowned', 'not-current', 'no-run'])(
+    'does not let END mutate a %s message or claim ownership', scenario => {
+      const store = makeStore();
+      reasoning(store, 'START');
+      const message = store.messages()[0];
+      if (scenario === 'static') store.messages.set([{ ...message, delivery: staticDelivery('owned') }]);
+      if (scenario === 'wrong-generation') store.messages.set([{ ...message, delivery: streamingDelivery('other') }]);
+      if (scenario === 'completed') store.messages.set([{ ...message, delivery: completeDelivery('run-generation-1', 'success') }]);
+      if (scenario === 'non-assistant') store.messages.set([{ ...message, role: 'user' }]);
+      if (scenario === 'unowned') store.deliveryRun!.ownedMessageIds.clear();
+      if (scenario === 'not-current') store.deliveryRun!.currentAssistantMessageId = 'different';
+      if (scenario === 'no-run') store.deliveryRun = null;
+      const messages = store.messages();
+      now = 200;
+      reasoning(store, 'END');
+      expect(store.messages()).toBe(messages);
+    },
+  );
+
+  it('leaves an END without a local start inert even when another store has that ID', () => {
+    const other = makeStore();
+    reasoning(other, 'START');
+    const store = makeStore();
+    reduceEvent({ type: 'TEXT_MESSAGE_START', messageId: 'owned' } as any, store);
+    const messages = store.messages();
+    reasoning(store, 'END');
+    expect(store.messages()).toBe(messages);
+    expect(store.deliveryRun?.currentAssistantMessageId).toBe('owned');
+  });
+
+  it('keeps pending timing across a same-id canonical snapshot and keeps its replacement policy', () => {
+    const store = makeStore();
+    reasoning(store, 'START');
+    const snapshot = { type: 'MESSAGES_SNAPSHOT', messages: [{ id: 'owned', role: 'assistant', content: 'canonical' }] } as any;
+    reduceEvent(snapshot, store);
+    now = 200;
+    reasoning(store, 'END');
+    expect(store.messages()[0].reasoningDurationMs).toBe(100);
+    expect(store.messages()[0].content).toBe('canonical');
+    reduceEvent(snapshot, store);
+    expect(store.messages()[0].reasoningDurationMs).toBeUndefined();
+    const messages = store.messages();
+    reasoning(store, 'END');
+    expect(store.messages()).toBe(messages);
+  });
+
+  it('keeps same-id reasoning clocks isolated between simultaneous stores', () => {
+    const first = makeStore('first');
+    const second = makeStore('second');
+    const clock = vi.spyOn(Date, 'now');
+    try {
+      clock.mockReturnValue(100);
+      reduceEvent({ type: 'REASONING_MESSAGE_START', messageId: 'shared' } as any, first);
+      clock.mockReturnValue(200);
+      reduceEvent({ type: 'REASONING_MESSAGE_START', messageId: 'shared' } as any, second);
+      clock.mockReturnValue(300);
+      reduceEvent({ type: 'REASONING_MESSAGE_END', messageId: 'shared' } as any, first);
+      expect(first.messages()[0].reasoningDurationMs).toBe(200);
+      clock.mockReturnValue(450);
+      reduceEvent({ type: 'REASONING_MESSAGE_END', messageId: 'shared' } as any, second);
+      expect(second.messages()[0].reasoningDurationMs).toBe(250);
+    } finally {
+      clock.mockRestore();
+    }
+  });
+
   it('REASONING_MESSAGE_START creates an assistant slot with empty reasoning', () => {
     const store = makeStore();
     reduceEvent({ type: 'REASONING_MESSAGE_START', messageId: 'm1', role: 'assistant' } as any, store);
@@ -741,6 +1034,44 @@ describe('ACTIVITY events (F5 subagent activities)', () => {
     expect(store.activities().size).toBe(0);
   });
 
+  it.each([
+    { op: 'replace', path: '/missing', value: 2 },
+    { op: 'copy', from: '/missing', path: '/copy' },
+  ])('ACTIVITY_DELTA retains the original content and membership after a failed $op batch', (invalid) => {
+    const store = makeStore();
+    const content = Object.freeze({ text: 'prior', items: Object.freeze([1, 2]) });
+    reduceEvent({ type: 'ACTIVITY_SNAPSHOT', messageId: 'tc-1', activityType: 'subagent', content } as never, store);
+    const activities = store.activities();
+    const entry = activities.get('tc-1');
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    try {
+      expect(() => reduceEvent({ type: 'ACTIVITY_DELTA', messageId: 'tc-1', patch: [
+        { op: 'replace', path: '/text', value: 'unpublished' },
+        { op: 'replace', path: '/items/0', value: 9 },
+        invalid,
+      ] } as never, store)).not.toThrow();
+      expect(entry?.content()).toBe(content);
+      expect(entry?.content()).toEqual({ text: 'prior', items: [1, 2] });
+      expect(store.activities()).toBe(activities);
+      expect(store.activities().get('tc-1')).toBe(entry);
+      expect(warning).toHaveBeenCalledExactlyOnceWith('[ag-ui] dropping malformed ACTIVITY_DELTA patch', expect.any(Error));
+    } finally {
+      warning.mockRestore();
+    }
+  });
+
+  it('ACTIVITY_DELTA publishes an own __proto__ data member with a safe prototype', () => {
+    const store = makeStore();
+    reduceEvent({ type: 'ACTIVITY_SNAPSHOT', messageId: 'tc-1', activityType: 'subagent', content: {} } as never, store);
+    reduceEvent({ type: 'ACTIVITY_DELTA', messageId: 'tc-1', patch: [
+      { op: 'add', path: '/__proto__', value: { label: 'data' } },
+    ] } as never, store);
+    const content = store.activities().get('tc-1')?.content() ?? {};
+    expect(Object.hasOwn(content, '__proto__')).toBe(true);
+    expect(content['__proto__']).toEqual({ label: 'data' });
+    expect(Object.getPrototypeOf(content)).toBe(Object.prototype);
+  });
+
   it('two concurrent subagents are keyed independently', () => {
     const store = makeStore();
     reduceEvent({ type: 'ACTIVITY_SNAPSHOT', messageId: 'a', activityType: 'subagent', content: { text: '' } } as any, store);
@@ -787,5 +1118,120 @@ describe('ACTIVITY events (F5 subagent activities)', () => {
     reduceEvent({ type: 'ACTIVITY_DELTA', messageId: 'tc-1', activityType: 'subagent',
       patch: [{ op: 'replace', path: '/text', value: 'updated' }] } as any, store);
     expect(store.activities().get('tc-1')?.content()['text']).toBe('updated');
+  });
+});
+
+describe('usage', () => {
+  const usage = [{ provider: 'openai', model: 'gpt-5', inputTokens: 12, outputTokens: 3, totalTokens: 15 }];
+
+  it('records RUN_FINISHED usage for the run', () => {
+    const store = makeStore();
+    reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r' } as never, store);
+    reduceEvent({ type: 'RUN_FINISHED', threadId: 't', runId: 'r', usage } as never, store);
+    expect(store.usage()).toEqual({ entries: usage });
+  });
+
+  it('records RUN_ERROR usage accrued before the failure', () => {
+    const store = makeStore();
+    reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r' } as never, store);
+    reduceEvent({ type: 'RUN_ERROR', message: 'boom', usage } as never, store);
+    expect(store.usage()).toEqual({ entries: usage });
+  });
+
+  it('clears usage when a new run starts and leaves it undefined when none is reported', () => {
+    const store = makeStore();
+    store.usage.set({ entries: usage });
+    reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r2' } as never, store);
+    expect(store.usage()).toBeUndefined();
+    reduceEvent({ type: 'RUN_FINISHED', threadId: 't', runId: 'r2' } as never, store);
+    expect(store.usage()).toBeUndefined();
+  });
+});
+
+describe('content-part tool results', () => {
+  const parts = [
+    { type: 'text', text: '{"ok":true}' },
+    { type: 'image', source: { type: 'url', value: 'https://x/y.png' } },
+  ];
+  it('TOOL_CALL_RESULT with parts sets result text and keeps parts', () => {
+    const store = makeStore();
+    reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r' } as never, store);
+    reduceEvent({ type: 'TOOL_CALL_START', toolCallId: 'c', toolCallName: 'look', parentMessageId: 'a' } as never, store);
+    reduceEvent({ type: 'TOOL_CALL_END', toolCallId: 'c' } as never, store);
+    reduceEvent({ type: 'TOOL_CALL_RESULT', messageId: 'tm', toolCallId: 'c', content: parts } as never, store);
+    const call = store.toolCalls().find((t) => t.id === 'c');
+    expect(call?.result).toEqual({ ok: true });
+    expect(call?.parts).toEqual(parts);
+  });
+  it('MESSAGES_SNAPSHOT tool messages with parts become chat content blocks', () => {
+    const store = makeStore();
+    reduceEvent({ type: 'MESSAGES_SNAPSHOT', messages: [
+      { id: 'u', role: 'user', content: 'hi' },
+      { id: 'tm', role: 'tool', toolCallId: 'c', content: parts },
+    ] } as never, store);
+    const tool = store.messages().find((m) => m.id === 'tm');
+    expect(tool?.content).toEqual([
+      { type: 'text', text: '{"ok":true}' },
+      { type: 'image', url: 'https://x/y.png' },
+    ]);
+  });
+});
+
+describe('pendingToolCallIds', () => {
+  it('records pendingToolCallIds from a success outcome and clears them on the next run', () => {
+    const store = makeStore();
+    reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r' } as never, store);
+    reduceEvent({ type: 'RUN_FINISHED', threadId: 't', runId: 'r', outcome: { type: 'success', pendingToolCallIds: ['x'] } } as never, store);
+    expect(store.pendingClientToolCallIds()).toEqual(new Set(['x']));
+    // The adapter allocates a fresh delivery run per send; the finished one is closed.
+    store.deliveryRun = {
+      generation: 'run-generation-2',
+      baselineMessageIds: new Set(),
+      ownedMessageIds: new Set(),
+      snapshotReplacementIds: new Set(),
+    };
+    reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r2' } as never, store);
+    expect(store.pendingClientToolCallIds()).toBeUndefined();
+  });
+
+  it('ignores pendingToolCallIds on a RUN_FINISHED that does not finalize the run', () => {
+    const store = makeStore();
+    reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r' } as never, store);
+    reduceEvent({ type: 'RUN_FINISHED', threadId: 't', runId: 'r', outcome: { type: 'success', pendingToolCallIds: ['x'] } } as never, store);
+    expect(store.pendingClientToolCallIds()).toEqual(new Set(['x']));
+    // The run is already settled; a duplicate terminal must not rewrite the set.
+    reduceEvent({ type: 'RUN_FINISHED', threadId: 't', runId: 'r', outcome: { type: 'success', pendingToolCallIds: ['y'] } } as never, store);
+    expect(store.pendingClientToolCallIds()).toEqual(new Set(['x']));
+  });
+
+  it('an empty declared pending list is authoritative', () => {
+    const store = makeStore();
+    reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r' } as never, store);
+    reduceEvent({ type: 'TOOL_CALL_START', toolCallId: 'c1', toolCallName: 'get_weather' } as never, store);
+    reduceEvent({ type: 'TOOL_CALL_END', toolCallId: 'c1' } as never, store);
+    reduceEvent({ type: 'RUN_FINISHED', threadId: 't', runId: 'r', outcome: { type: 'success', pendingToolCallIds: [] } } as never, store);
+    expect(store.pendingClientToolCallIds()).toEqual(new Set());
+  });
+
+  it('ignores usage on a RUN_FINISHED that does not finalize the run', () => {
+    const store = makeStore();
+    const usageA = [{ provider: 'openai', model: 'gpt-5', inputTokens: 1, outputTokens: 2, totalTokens: 3 }];
+    const usageB = [{ provider: 'openai', model: 'gpt-5', inputTokens: 9, outputTokens: 9, totalTokens: 18 }];
+    reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r' } as never, store);
+    reduceEvent({ type: 'RUN_FINISHED', threadId: 't', runId: 'r', usage: usageA } as never, store);
+    expect(store.usage()).toEqual({ entries: usageA });
+    reduceEvent({ type: 'RUN_FINISHED', threadId: 't', runId: 'r', usage: usageB } as never, store);
+    expect(store.usage()).toEqual({ entries: usageA });
+  });
+
+  it('records usage carried by an interrupt outcome', () => {
+    const store = makeStore();
+    const usage = [{ provider: 'openai', model: 'gpt-5', inputTokens: 1, outputTokens: 2, totalTokens: 3 }];
+    reduceEvent({ type: 'RUN_STARTED', threadId: 't', runId: 'r' } as never, store);
+    reduceEvent({
+      type: 'RUN_FINISHED', threadId: 't', runId: 'r', usage,
+      outcome: { type: 'interrupt', interrupts: [{ id: 'i1', reason: 'approval' }] },
+    } as never, store);
+    expect(store.usage()).toEqual({ entries: usage });
   });
 });

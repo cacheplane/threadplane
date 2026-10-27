@@ -1,0 +1,3202 @@
+import assert from 'node:assert/strict';
+import { test, type TestContext } from 'node:test';
+import { createSession } from '@threadplane/langgraph';
+import type { ApplicationSession } from './application.js';
+import { applicationTools } from './trip-summary.js';
+import type { CompleteOutcome } from '@threadplane/core';
+import { startProofServer, threadEnvelope } from '../tooling/proof-server.mjs';
+import { createApplication, type ApplicationOptions } from './application.js';
+import { createThreadDirectory } from './directory.js';
+import type { BrowserHistory } from './route.js';
+import type {
+  ThreadDirectory,
+  ThreadRow,
+  DirectoryResult,
+} from './contracts.js';
+
+const search = (body: unknown = [], extra = {}) => ({
+  method: 'POST',
+  path: '/api/threads/search',
+  payload: { limit: 50, offset: 0 },
+  body,
+  ...extra,
+});
+const lookup = (id: string, extra = {}) => ({
+  method: 'GET',
+  path: `/api/threads/${id}`,
+  body: threadEnvelope(id, id),
+  ...extra,
+});
+const history = (id: string, extra = {}) => ({
+  method: 'POST',
+  path: `/api/threads/${id}/history`,
+  payload: { limit: 10 },
+  body: [],
+  ...extra,
+});
+const create = (id: string, extra = {}) => ({
+  method: 'POST',
+  path: '/api/threads',
+  payload: { metadata: {} },
+  body: threadEnvelope(id, id),
+  ...extra,
+});
+// Independent wire expectation; do not derive this from the authored catalog.
+const expectedClientTools = [
+  {
+    name: 'show_trip_summary',
+    description:
+      'Show a supplied trip recap with days and places. This terminal summary needs no follow-up; it does not plan or change an itinerary.',
+    parameters: {
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        days: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              day: { type: 'integer', minimum: 1 },
+              places: { type: 'array', items: { type: 'string' } },
+            },
+            required: ['day', 'places'],
+          },
+        },
+        note: { type: 'string' },
+      },
+      required: ['title', 'days'],
+    },
+  },
+];
+const run = (id: string, text: string, extra = {}) => ({
+  method: 'POST',
+  path: `/api/threads/${id}/runs/stream`,
+  assertPayload(payload: unknown) {
+    const message = (payload as { input: { messages: { id: string }[] } }).input
+      .messages[0];
+    assert.match(
+      message.id,
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    );
+    assert.deepEqual(payload, {
+      assistant_id: 'assistant',
+      input: {
+        messages: [{ type: 'human', id: message.id, content: text }],
+        client_tools: expectedClientTools,
+      },
+      stream_mode: [
+        'values',
+        'messages-tuple',
+        'updates',
+        'custom',
+        'checkpoints',
+      ],
+      stream_subgraphs: true,
+      stream_resumable: true,
+      on_disconnect: 'continue',
+    });
+  },
+  events: [
+    {
+      event: 'values',
+      data: {
+        messages: [{ type: 'ai', id: 'answer', content: 'Here is a reply.' }],
+      },
+    },
+  ],
+  ...extra,
+});
+function deferred() {
+  let release!: () => void;
+  const promise = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  return { promise, release };
+}
+async function deadline<T>(promise: Promise<T>): Promise<T> {
+  let timer: ReturnType<typeof setTimeout>;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error('Owned operation exceeded deadline')),
+          2000
+        );
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer!);
+  }
+}
+async function until(predicate: () => boolean) {
+  const expires = Date.now() + 2000;
+  while (!predicate()) {
+    assert.ok(
+      Date.now() < expires,
+      'Expected application state before deadline'
+    );
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  }
+}
+function navigation(initial: string) {
+  let url = initial;
+  let reads = 0;
+  const pushes: string[] = [];
+  const listeners = new Set<() => void>();
+  const boundary: BrowserHistory = {
+    currentUrl() {
+      reads++;
+      return url;
+    },
+    push(next) {
+      pushes.push(next);
+      url = next;
+    },
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+  };
+  return {
+    boundary,
+    pushes,
+    listeners,
+    get reads() {
+      return reads;
+    },
+    get url() {
+      return url;
+    },
+    pop(next: string) {
+      url = next;
+      for (const listener of [...listeners]) listener();
+    },
+  };
+}
+async function fixture(
+  t: TestContext,
+  expectations: Parameters<typeof startProofServer>[0],
+  route = '?theme=dark#bottom',
+  configure?: (options: ApplicationOptions) => ApplicationOptions
+) {
+  const concurrentStart = new URL(
+    'http://example.test/' + route
+  ).searchParams.get('thread');
+  const server = await startProofServer(
+    (expectations ?? []).map((expected, index) =>
+      concurrentStart && index < 2
+        ? { ...expected, concurrentGroup: 'startup' }
+        : expected
+    )
+  );
+  const nav = navigation(server.origin + '/chat' + route);
+  const sessions: ApplicationSession[] = [];
+  const disposed: ApplicationSession[] = [];
+  const options: ApplicationOptions = {
+    history: nav.boundary,
+    directory: createThreadDirectory({
+      apiBase: server.origin + '/api',
+      browserOrigin: server.origin,
+    }),
+    apiUrl: server.origin + '/api',
+    assistantId: 'assistant',
+    sessionFactory(id) {
+      const actual = createSession({
+        tools: applicationTools,
+        assistantId: 'assistant',
+        threadId: id,
+        apiUrl: server.origin + '/api',
+      });
+      const owned = {
+        ...actual,
+        dispose() {
+          disposed.push(owned);
+          return actual.dispose();
+        },
+      };
+      sessions.push(owned);
+      return owned;
+    },
+  };
+  const app = createApplication(configure ? configure(options) : options);
+  t.after(async () => {
+    app.dispose();
+    await server.close();
+  });
+  return { app, nav, server, sessions, disposed };
+}
+type App = ReturnType<typeof createApplication>;
+test('pin capability updates the supplied row without selection or runtime work', async (t) => {
+  const { app, sessions, nav } = await fixture(t, [], '', (options) => ({
+    ...options,
+    directory: {
+      list: async () => ({
+        kind: 'ready',
+        value: [{ id: 'a', title: 'Alpha' }],
+      }),
+      get: async () => ({ kind: 'missing' }),
+      create: async () => ({ kind: 'failed' }),
+      ...{
+        setPinned: async (id: string, pinned: boolean) => ({
+          kind: 'ready' as const,
+          value: { id, title: 'Ignored server title', pinned },
+        }),
+      },
+    },
+  }));
+  app.start();
+  await listed(app);
+  const pin = (
+    app as typeof app & {
+      setPinned?: (id: string, pinned: boolean) => Promise<boolean>;
+    }
+  ).setPinned;
+  assert.equal(await pin?.('a', true), true);
+  assert.deepEqual(app.getSnapshot().list.rows, [
+    { id: 'a', title: 'Alpha', pinned: true },
+  ]);
+  assert.equal(sessions.length, 0);
+  assert.equal(nav.pushes.length, 0);
+});
+const ready = (app: App, id: string) =>
+  until(
+    () =>
+      app.getSnapshot().selection.status === 'ready' &&
+      app.getSnapshot().selection.id === id
+  );
+const listed = (app: App) =>
+  until(() => app.getSnapshot().list.status === 'ready');
+
+function pinDirectory(
+  overrides: Partial<ThreadDirectory> = {}
+): ThreadDirectory {
+  return {
+    list: async () => ({
+      kind: 'ready',
+      value: [
+        { id: 'a', title: 'Alpha', updatedAt: 42 },
+        { id: 'b', title: 'Beta', pinned: true },
+      ],
+    }),
+    get: async (id) => ({ kind: 'ready', value: { id, title: id } }),
+    create: async () => ({ kind: 'failed' }),
+    setPinned: async (id, pinned) => ({
+      kind: 'ready',
+      value: { id, title: 'Unowned title', pinned },
+    }),
+    ...overrides,
+  };
+}
+async function pinFixture(t: TestContext, directory: ThreadDirectory) {
+  return fixture(t, [], '', (options) => ({ ...options, directory }));
+}
+
+test('pin reserves before observer and transport reentry, rejects duplicate/opposite and isolates targets', async (t) => {
+  const pending = new Map<
+    string,
+    (result: DirectoryResult<ThreadRow>) => void
+  >();
+  const signals: AbortSignal[] = [];
+  const calls: string[] = [];
+  let nested: Promise<boolean> | undefined;
+  const { app } = await pinFixture(
+    t,
+    pinDirectory({
+      setPinned: (id, _pinned, signal) => {
+        calls.push(id);
+        signals.push(signal);
+        nested = app.setPinned(id, false);
+        return new Promise((resolve) => pending.set(id, resolve));
+      },
+    })
+  );
+  app.start();
+  await listed(app);
+  assert.equal(await app.setPinned('a', false), false);
+  assert.equal(await app.setPinned('a', 1 as unknown as boolean), false);
+  let duplicate: Promise<boolean> | undefined;
+  const release = app.subscribe(() => {
+    if (app.getSnapshot().pins['a']?.status === 'pending')
+      duplicate = app.setPinned('a', true);
+  });
+  const before = app.getSnapshot();
+  const first = app.setPinned('a', true);
+  assert.equal(await duplicate, false);
+  assert.equal(await nested, false);
+  assert.equal(await app.setPinned('a', false), false);
+  const second = app.setPinned('b', false);
+  assert.deepEqual(calls, ['a', 'b']);
+  assert.ok(Object.isFrozen(app.getSnapshot().pins));
+  assert.ok(Object.isFrozen(app.getSnapshot().pins['a']));
+  pending.get('b')!({
+    kind: 'ready',
+    value: { id: 'b', title: 'ignored', pinned: false },
+  });
+  assert.equal(await second, true);
+  pending.get('a')!({
+    kind: 'ready',
+    value: { id: 'a', title: 'ignored', pinned: true },
+  });
+  assert.equal(await first, true);
+  release();
+  const after = app.getSnapshot();
+  assert.deepEqual(after.list.rows, [
+    { id: 'a', title: 'Alpha', updatedAt: 42, pinned: true },
+    { id: 'b', title: 'Beta', pinned: false },
+  ]);
+  for (const key of [
+    'runtime',
+    'messages',
+    'selection',
+    'submission',
+    'creation',
+  ] as const)
+    assert.equal(after[key], before[key]);
+  assert.equal(
+    signals.some((s) => s.aborted),
+    false
+  );
+  assert.equal(await app.setPinned('a', true), false);
+});
+
+for (const mode of [
+  'failed',
+  'cancelled',
+  'throw',
+  'wrong-id',
+  'missing-pin',
+  'wrong-pin',
+  'dispose',
+] as const)
+  test(`pin ${mode} preserves rows, contains errors and supports explicit retry`, async (t) => {
+    let resolve!: (value: DirectoryResult<ThreadRow>) => void;
+    let signal!: AbortSignal;
+    let calls = 0;
+    const { app } = await pinFixture(
+      t,
+      pinDirectory({
+        setPinned: async (id, pinned, s) => {
+          signal = s;
+          calls++;
+          if (calls > 1)
+            return { kind: 'ready', value: { id, title: 'ignored', pinned } };
+          if (mode === 'throw') throw new Error('hostile');
+          return new Promise((done) => (resolve = done));
+        },
+      })
+    );
+    app.start();
+    await listed(app);
+    const rows = app.getSnapshot().list.rows;
+    const result = app.setPinned('a', true);
+    if (mode === 'dispose') app.dispose();
+    if (mode !== 'throw')
+      resolve(
+        mode === 'failed' || mode === 'cancelled'
+          ? { kind: mode }
+          : {
+              kind: 'ready',
+              value: {
+                id: mode === 'wrong-id' ? 'other' : 'a',
+                title: 'ignored',
+                ...(mode === 'missing-pin'
+                  ? {}
+                  : { pinned: mode === 'wrong-pin' ? false : true }),
+              },
+            }
+      );
+    assert.equal(await result, false);
+    assert.equal(app.getSnapshot().list.rows, rows);
+    if (mode === 'dispose') {
+      assert.equal(signal.aborted, true);
+      assert.equal(await app.setPinned('a', true), false);
+    } else {
+      assert.deepEqual(app.getSnapshot().pins['a'], {
+        status: 'failed',
+        pinned: true,
+      });
+      assert.equal(await app.setPinned('a', true), true);
+      assert.equal(calls, 2);
+    }
+  });
+
+test('pin observer disposal prevents transport and optional capability remains compatible', async (t) => {
+  let calls = 0;
+  const { app } = await pinFixture(
+    t,
+    pinDirectory({
+      setPinned: async () => {
+        calls++;
+        return { kind: 'failed' };
+      },
+    })
+  );
+  assert.equal(app.canSetPinned(), false);
+  app.start();
+  await listed(app);
+  app.subscribe(() => {
+    if (app.getSnapshot().pins['a']?.status === 'pending') app.dispose();
+  });
+  assert.equal(await app.setPinned('a', true), false);
+  assert.equal(calls, 0);
+  const { app: legacy } = await pinFixture(
+    t,
+    pinDirectory({ setPinned: undefined })
+  );
+  legacy.start();
+  assert.equal(legacy.canSetPinned(), false);
+  assert.equal(await legacy.setPinned('a', true), false);
+});
+
+for (const first of ['pin', 'rename'])
+  test(`pin and rename responses patch independent fields when ${first} finishes first`, async (t) => {
+    let finishPin!: (value: DirectoryResult<ThreadRow>) => void;
+    let finishRename!: (value: DirectoryResult<ThreadRow>) => void;
+    const { app } = await pinFixture(
+      t,
+      pinDirectory({
+        setPinned: () => new Promise((resolve) => (finishPin = resolve)),
+        rename: () => new Promise((resolve) => (finishRename = resolve)),
+      })
+    );
+    app.start();
+    await listed(app);
+    const pin = app.setPinned('a', true);
+    const rename = app.rename('a', 'New Alpha');
+    const settlePin = () =>
+      finishPin({
+        kind: 'ready',
+        value: { id: 'a', title: 'OLD', pinned: true },
+      });
+    const settleRename = () =>
+      finishRename({
+        kind: 'ready',
+        value: { id: 'a', title: 'New Alpha', pinned: false },
+      });
+    if (first === 'pin') {
+      settlePin();
+      await pin;
+      settleRename();
+    } else {
+      settleRename();
+      await rename;
+      settlePin();
+    }
+    assert.equal(await pin, true);
+    assert.equal(await rename, true);
+    assert.deepEqual(app.getSnapshot().list.rows[0], {
+      id: 'a',
+      title: 'New Alpha',
+      updatedAt: 42,
+      pinned: true,
+    });
+  });
+
+for (const timing of ['before-write', 'after-write'] as const)
+  for (const phase of ['lookup', 'history'] as const)
+    test(`pin authoritative refresh supersedes ${timing} delayed ${phase} independently of title writes`, async (t) => {
+      let finishGet!: (value: DirectoryResult<ThreadRow>) => void;
+      let row: ThreadRow = { id: 'a', title: 'Old', pinned: false };
+      const { app, server } = await fixture(
+        t,
+        [history('a', { holdHeaders: phase === 'history' })],
+        '',
+        (options) => ({
+          ...options,
+          directory: pinDirectory({
+            list: async () => ({ kind: 'ready', value: [row] }),
+            get: () => new Promise((resolve) => (finishGet = resolve)),
+            rename: async (id, title) => ({
+              kind: 'ready',
+              value: { id, title },
+            }),
+          }),
+        })
+      );
+      app.start();
+      await listed(app);
+      if (timing === 'before-write') app.select('a');
+      assert.equal(await app.setPinned('a', true), true);
+      if (timing === 'after-write') app.select('a');
+      if (phase === 'history') {
+        finishGet({ kind: 'ready', value: row });
+        await server.steps[0].received;
+      }
+      row = { id: 'a', title: 'Authority', pinned: false };
+      app.refresh();
+      await listed(app);
+      assert.equal(await app.rename('a', 'Newest title'), true);
+      if (phase === 'lookup')
+        finishGet({
+          kind: 'ready',
+          value: { id: 'a', title: 'Stale', pinned: true },
+        });
+      else server.steps[0].releaseHeaders();
+      await ready(app, 'a');
+      assert.equal(app.getSnapshot().selection.row?.pinned, false);
+      assert.equal(app.getSnapshot().selection.row?.title, 'Newest title');
+      server.verify();
+    });
+
+test('pin authoritative lookup supersedes older same-version list and preserves selected runtime on refresh', async (t) => {
+  let finishList!: (value: DirectoryResult<readonly ThreadRow[]>) => void;
+  const { app, server } = await fixture(t, [history('a')], '', (options) => ({
+    ...options,
+    directory: pinDirectory({
+      list: () => new Promise((resolve) => (finishList = resolve)),
+      get: async (id) => ({
+        kind: 'ready',
+        value: { id, title: 'Authority', pinned: false },
+      }),
+    }),
+  }));
+  app.start();
+  assert.equal(await app.setPinned('a', true), true);
+  app.refresh();
+  app.select('a');
+  await ready(app, 'a');
+  const runtime = app.getSnapshot().runtime;
+  finishList({
+    kind: 'ready',
+    value: [{ id: 'a', title: 'Stale', pinned: true }],
+  });
+  await listed(app);
+  assert.equal(app.getSnapshot().list.rows[0].pinned, false);
+  assert.equal(app.getSnapshot().selection.row?.pinned, false);
+  assert.equal(app.getSnapshot().runtime, runtime);
+  server.verify();
+});
+
+test('pin old list and history-delayed lookup cannot undo confirmation', async (t) => {
+  let finishList!: (value: DirectoryResult<readonly ThreadRow[]>) => void;
+  const { app, server } = await fixture(
+    t,
+    [history('a', { holdHeaders: true })],
+    '',
+    (options) => ({
+      ...options,
+      directory: pinDirectory({
+        list: () => new Promise((resolve) => (finishList = resolve)),
+        get: async (id) => ({
+          kind: 'ready',
+          value: { id, title: 'Alpha', pinned: false },
+        }),
+      }),
+    })
+  );
+  app.start();
+  app.select('a');
+  await server.steps[0].received;
+  assert.equal(await app.setPinned('a', true), true);
+  finishList({
+    kind: 'ready',
+    value: [{ id: 'a', title: 'Alpha', pinned: false }],
+  });
+  await listed(app);
+  server.steps[0].releaseHeaders();
+  await ready(app, 'a');
+  assert.equal(app.getSnapshot().list.rows[0].pinned, true);
+  assert.equal(app.getSnapshot().selection.row?.pinned, true);
+  server.verify();
+});
+
+for (const unavailable of [
+  'empty',
+  'lookup-held',
+  'missing',
+  'history-held',
+  'history-error',
+] as const) {
+  test(`submission refuses ${unavailable} history without calling actual runtime`, async (t) => {
+    let submissions = 0;
+    const expectations =
+      unavailable === 'empty'
+        ? [search()]
+        : [
+            search(),
+            lookup(
+              'a',
+              unavailable === 'lookup-held'
+                ? { holdHeaders: true }
+                : unavailable === 'missing'
+                ? { status: 404 }
+                : {}
+            ),
+            ...(['history-held', 'history-error'].includes(unavailable)
+              ? [
+                  history(
+                    'a',
+                    unavailable === 'history-held'
+                      ? { holdBody: true }
+                      : { status: 400 }
+                  ),
+                ]
+              : []),
+          ];
+    const { app, server } = await fixture(
+      t,
+      expectations,
+      unavailable === 'empty' ? '' : '?thread=a',
+      (options) => ({
+        ...options,
+        sessionFactory(id) {
+          const actual = options.sessionFactory!(id);
+          return {
+            ...actual,
+            submit(text) {
+              submissions++;
+              return actual.submit(text);
+            },
+          };
+        },
+      })
+    );
+    assert.equal(app.submit('Before startup'), false);
+    app.start();
+    await deadline(server.steps.at(-1)!.received);
+    if (unavailable === 'missing' || unavailable === 'history-error')
+      await until(() =>
+        ['missing', 'error'].includes(app.getSnapshot().selection.status)
+      );
+    assert.equal(app.submit('Please explain this topic.'), false);
+    assert.equal(app.canSubmit(), false);
+    assert.equal(submissions, 0);
+    assert.equal(app.getSnapshot().submission.active, false);
+    app.stop();
+    app.dispose();
+    if (unavailable === 'lookup-held' || unavailable === 'history-held')
+      assert.deepEqual(await deadline(server.steps.at(-1)!.closed), {
+        finished: false,
+      });
+    server.verify();
+  });
+}
+
+test('submission reserves before duplicate synchronous commands and observer reentry; preserves exact text', async (t) => {
+  const text = '  Explain this topic.\nPlease keep the spacing.  ';
+  let calls = 0;
+  let reentered = false;
+  const { app, server } = await fixture(
+    t,
+    [search(), lookup('a'), history('a'), run('a', text, { holdBody: true })],
+    '?thread=a',
+    (options) => ({
+      ...options,
+      sessionFactory(id) {
+        const actual = options.sessionFactory!(id);
+        return {
+          ...actual,
+          submit(text) {
+            calls++;
+            return actual.submit(text);
+          },
+        };
+      },
+    })
+  );
+  app.start();
+  await ready(app, 'a');
+  const before = app.getSnapshot();
+  assert.equal(app.canSubmit(), true);
+  app.subscribe(() => {
+    if (app.getSnapshot().submission.active && !reentered) {
+      reentered = true;
+      assert.equal(app.submit('A second question.'), false);
+    }
+  });
+  assert.equal(app.submit(text), true);
+  assert.equal(app.submit('Another question.'), false);
+  await deadline(server.steps[3].headersSent);
+  assert.equal(reentered, true);
+  assert.equal(calls, 1);
+  assert.equal(app.canSubmit(), false);
+  const active = app.getSnapshot();
+  assert.deepEqual(active.submission, { active: true, outcome: null });
+  server.steps[3].releaseBody();
+  await until(() => !app.getSnapshot().submission.active);
+  assert.deepEqual(app.getSnapshot().submission, {
+    active: false,
+    outcome: 'success',
+  });
+  assert.equal(app.canSubmit(), true);
+  assert.deepEqual(before.submission, { active: false, outcome: null });
+  assert.deepEqual(active.submission, { active: true, outcome: null });
+  assert.ok(Object.isFrozen(active.submission));
+  assert.deepEqual(await deadline(server.steps[3].closed), { finished: true });
+  server.verify();
+});
+
+test('submission rejects blank-only input without touching the runtime', async (t) => {
+  const { app, server } = await fixture(
+    t,
+    [search(), lookup('a'), history('a')],
+    '?thread=a'
+  );
+  app.start();
+  await ready(app, 'a');
+  const before = app.getSnapshot();
+  assert.equal(app.submit(' \n\t '), false);
+  assert.strictEqual(app.getSnapshot(), before);
+  server.verify();
+});
+
+test('stop during submission reservation prevents a later runtime launch and releases only on settlement', async (t) => {
+  const gate = deferred();
+  const settled = deferred();
+  let calls = 0;
+  let stops = 0;
+  t.after(() => gate.release());
+  const { app, server } = await fixture(
+    t,
+    [search(), lookup('a'), history('a')],
+    '?thread=a',
+    (options) => ({
+      ...options,
+      sessionFactory(id) {
+        const actual = options.sessionFactory!(id);
+        return {
+          ...actual,
+          async submit(text, runOptions) {
+            calls++;
+            const outcome = await actual.submit(text, runOptions);
+            settled.release();
+            await gate.promise;
+            return outcome;
+          },
+          stop() {
+            stops++;
+            return actual.stop();
+          },
+        };
+      },
+    })
+  );
+  app.start();
+  await ready(app, 'a');
+  let stopped = false;
+  app.subscribe(() => {
+    if (app.getSnapshot().submission.active && !stopped) {
+      stopped = true;
+      app.stop();
+    }
+  });
+  assert.equal(app.submit('Please explain the tides.'), true);
+  assert.equal(app.submit('Please explain the moon.'), false);
+  await deadline(settled.promise);
+  assert.equal(calls, 1);
+  assert.equal(stops, 1);
+  assert.deepEqual(app.getSnapshot().submission, {
+    active: true,
+    outcome: null,
+  });
+  gate.release();
+  await until(() => app.getSnapshot().submission.outcome === 'aborted');
+  assert.equal(app.canSubmit(), true);
+  server.verify();
+});
+
+test('stop closes actual held SSE but submission stays active until its own completion settles', async (t) => {
+  const gate = deferred();
+  const settled = deferred();
+  let calls = 0;
+  let stops = 0;
+  t.after(() => gate.release());
+  const { app, server } = await fixture(
+    t,
+    [
+      search(),
+      lookup('a'),
+      history('a'),
+      run('a', 'Tell me a story.', { holdBody: true }),
+      run('a', 'Tell me another story.'),
+    ],
+    '?thread=a',
+    (options) => ({
+      ...options,
+      sessionFactory(id) {
+        const actual = options.sessionFactory!(id);
+        return {
+          ...actual,
+          async submit(text) {
+            const first = ++calls === 1;
+            const result = await actual.submit(text);
+            if (first) {
+              settled.release();
+              await gate.promise;
+            }
+            return result;
+          },
+          stop() {
+            stops++;
+            return actual.stop();
+          },
+        };
+      },
+    })
+  );
+  app.start();
+  await ready(app, 'a');
+  assert.equal(app.submit('Tell me a story.'), true);
+  await deadline(server.steps[3].headersSent);
+  await until(
+    () =>
+      app
+        .getSnapshot()
+        .runtime?.messages.some(
+          (message) => message.content === 'Here is a reply.'
+        ) === true
+  );
+  app.stop();
+  app.stop();
+  assert.equal(app.submit('Do not lose the first story.'), false);
+  await deadline(settled.promise);
+  assert.deepEqual(await deadline(server.steps[3].closed), { finished: false });
+  assert.equal(stops, 2);
+  assert.equal(calls, 1);
+  assert.equal(app.canSubmit(), false);
+  assert.deepEqual(app.getSnapshot().submission, {
+    active: true,
+    outcome: null,
+  });
+  gate.release();
+  await until(() => !app.getSnapshot().submission.active);
+  assert.equal(app.getSnapshot().submission.outcome, 'aborted');
+  app.stop();
+  assert.equal(stops, 2);
+  assert.equal(app.submit('Tell me another story.'), true);
+  await until(() => app.getSnapshot().submission.outcome === 'success');
+  server.verify();
+});
+
+test('submission selection retires consumed SSE before a replacement submits', async (t) => {
+  const { app, server } = await fixture(
+    t,
+    [
+      search(),
+      lookup('a'),
+      history('a'),
+      run('a', 'Explain the night sky.', { holdBody: true }),
+      lookup('b'),
+      history('b'),
+      run('b', 'Explain the garden.'),
+    ],
+    '?thread=a'
+  );
+  app.start();
+  await ready(app, 'a');
+  assert.equal(app.submit('Explain the night sky.'), true);
+  await until(
+    () =>
+      app
+        .getSnapshot()
+        .runtime?.messages.some(
+          (message) => message.content === 'Here is a reply.'
+        ) === true
+  );
+  const outgoing = app.getSnapshot();
+  app.select('b');
+  assert.deepEqual(await deadline(server.steps[3].closed), { finished: false });
+  await ready(app, 'b');
+  assert.deepEqual(app.getSnapshot().submission, {
+    active: false,
+    outcome: null,
+  });
+  assert.equal(app.submit('Explain the garden.'), true);
+  await until(() => app.getSnapshot().submission.outcome === 'success');
+  assert.deepEqual(outgoing.submission, { active: true, outcome: null });
+  server.verify();
+});
+
+for (const destination of [
+  'b-ready',
+  'b-running',
+  'a-running',
+  'disposed',
+] as const) {
+  for (const reject of [false, true]) {
+    test(`submission late ${
+      reject ? 'rejection' : 'outcome'
+    } from A cannot change ${destination}`, async (t) => {
+      const gate = deferred();
+      const settled = deferred();
+      const delivered = deferred();
+      let originalSession: ApplicationSession | undefined;
+      const stopped: ApplicationSession[] = [];
+      const running = destination.endsWith('-running');
+      const runStep = destination === 'a-running' ? 8 : 6;
+      t.after(() => gate.release());
+      const expectations = [
+        search(),
+        lookup('a'),
+        history('a'),
+        run('a', 'Explain astronomy.'),
+        ...(destination === 'disposed' ? [] : [lookup('b'), history('b')]),
+        ...(destination === 'a-running' ? [lookup('a'), history('a')] : []),
+        ...(running
+          ? [
+              run(destination === 'a-running' ? 'a' : 'b', 'Explain botany.', {
+                holdBody: true,
+              }),
+            ]
+          : []),
+      ];
+      const { app, server, sessions, disposed } = await fixture(
+        t,
+        expectations,
+        '?thread=a',
+        (options) => ({
+          ...options,
+          sessionFactory(id) {
+            const actual = options.sessionFactory!(id);
+            originalSession ??= actual;
+            return {
+              ...actual,
+              async submit(text) {
+                const outcome = await actual.submit(text);
+                if (actual === originalSession) {
+                  settled.release();
+                  await gate.promise;
+                  delivered.release();
+                  if (reject) throw new Error('credential=do-not-expose');
+                }
+                return outcome;
+              },
+              stop() {
+                stopped.push(actual);
+                return actual.stop();
+              },
+            };
+          },
+        })
+      );
+      app.start();
+      await ready(app, 'a');
+      assert.equal(app.submit('Explain astronomy.'), true);
+      await deadline(settled.promise);
+      const outgoing = app.getSnapshot();
+      if (destination === 'disposed') app.dispose();
+      else {
+        app.select('b');
+        await ready(app, 'b');
+        if (destination === 'a-running') {
+          app.select('a');
+          await ready(app, 'a');
+          assert.equal(sessions.length, 3);
+          assert.notStrictEqual(sessions[2], sessions[0]);
+          assert.deepEqual(disposed, [sessions[0], sessions[1]]);
+        }
+        assert.deepEqual(app.getSnapshot().submission, {
+          active: false,
+          outcome: null,
+        });
+        if (running) {
+          assert.equal(app.submit('Explain botany.'), true);
+          await deadline(server.steps[runStep].headersSent);
+          await until(
+            () =>
+              app
+                .getSnapshot()
+                .runtime?.messages.some(
+                  (message) => message.content === 'Here is a reply.'
+                ) === true
+          );
+        }
+      }
+      const current = app.getSnapshot();
+      gate.release();
+      await deadline(delivered.promise);
+      await new Promise<void>((resolve) => setImmediate(resolve));
+      assert.strictEqual(app.getSnapshot(), current);
+      assert.deepEqual(outgoing.submission, { active: true, outcome: null });
+      if (running) {
+        assert.deepEqual(app.getSnapshot().submission, {
+          active: true,
+          outcome: null,
+        });
+        assert.equal(app.canSubmit(), false);
+        assert.equal(app.submit('Explain chemistry.'), false);
+        app.stop();
+        assert.deepEqual(stopped, [sessions.at(-1)]);
+        assert.deepEqual(await deadline(server.steps[runStep].closed), {
+          finished: false,
+        });
+        await until(() => app.getSnapshot().submission.outcome === 'aborted');
+      }
+      if (destination === 'disposed') {
+        assert.equal(app.submit('Explain physics.'), false);
+        assert.equal(app.canSubmit(), false);
+        app.stop();
+        assert.strictEqual(app.getSnapshot(), current);
+      }
+      server.verify();
+    });
+  }
+}
+
+for (const action of ['select', 'dispose'] as const) {
+  test(`submission observer ${action} reentry prevents dispatch to retired runtime`, async (t) => {
+    let calls = 0;
+    const { app, server } = await fixture(
+      t,
+      [
+        search(),
+        lookup('a'),
+        history('a'),
+        ...(action === 'select' ? [lookup('b'), history('b')] : []),
+      ],
+      '?thread=a',
+      (options) => ({
+        ...options,
+        sessionFactory(id) {
+          const actual = options.sessionFactory!(id);
+          return {
+            ...actual,
+            submit(text) {
+              calls++;
+              return actual.submit(text);
+            },
+          };
+        },
+      })
+    );
+    app.start();
+    await ready(app, 'a');
+    app.subscribe(() => {
+      if (app.getSnapshot().submission.active) {
+        if (action === 'select') app.select('b');
+        else app.dispose();
+      }
+    });
+    assert.equal(app.submit('Explain the ocean.'), false);
+    if (action === 'select') await ready(app, 'b');
+    assert.equal(calls, 0);
+    server.verify();
+  });
+}
+
+for (const outcome of [
+  'success',
+  'error',
+  'paused',
+  'interrupted',
+  'rejected',
+] as const) {
+  test(`submission reports actual ${outcome} safely`, async (t) => {
+    const events =
+      outcome === 'error'
+        ? [{ event: 'error', data: { message: 'credential=do-not-expose' } }]
+        : outcome === 'paused'
+        ? [
+            {
+              event: 'values',
+              data: { __interrupt__: [{ id: 'question', value: 'Continue?' }] },
+            },
+          ]
+        : outcome === 'interrupted'
+        ? [{ event: 'custom', data: { progress: 'Waiting for a response.' } }]
+        : undefined;
+    const expectations = [
+      search(),
+      lookup('a'),
+      history('a'),
+      run('a', 'Explain the seasons.', events ? { events } : {}),
+      ...(outcome === 'interrupted' ? [history('a')] : []),
+    ];
+    let actualOutcome: CompleteOutcome | undefined;
+    const { app, server } = await fixture(
+      t,
+      expectations,
+      '?thread=a',
+      (options) => ({
+        ...options,
+        sessionFactory(id) {
+          const actual = options.sessionFactory!(id);
+          return {
+            ...actual,
+            async submit(text) {
+              actualOutcome = await actual.submit(text);
+              if (outcome === 'rejected')
+                throw new Error('credential=do-not-expose');
+              return actualOutcome;
+            },
+          };
+        },
+      })
+    );
+    app.start();
+    await ready(app, 'a');
+    assert.equal(app.submit('Explain the seasons.'), true);
+    await until(() => !app.getSnapshot().submission.active);
+    assert.equal(actualOutcome, outcome === 'rejected' ? 'success' : outcome);
+    assert.deepEqual(app.getSnapshot().submission, {
+      active: false,
+      outcome: outcome === 'rejected' ? 'error' : outcome,
+    });
+    assert.equal(
+      JSON.stringify(app.getSnapshot().submission).includes('credential'),
+      false
+    );
+    server.verify();
+  });
+}
+
+test('route application construction and borrowed observation are inert; bare start refreshes only once', async (t) => {
+  const { app, nav, server, sessions } = await fixture(t, [search()]);
+  const initial = app.getSnapshot();
+  const callback = () => {};
+  const release = app.subscribe(callback);
+  app.getSnapshot();
+  release();
+  app.subscribe(callback)();
+  assert.equal(nav.reads, 0);
+  assert.equal(nav.listeners.size, 0);
+  assert.equal(server.requests.length, 0);
+  assert.equal(sessions.length, 0);
+  assert.strictEqual(app.getSnapshot(), initial);
+  app.start();
+  await listed(app);
+  const stable = app.getSnapshot();
+  app.start();
+  app.select(null);
+  app.retry();
+  app.subscribe(callback)();
+  assert.strictEqual(app.getSnapshot(), stable);
+  assert.equal(nav.reads, 1);
+  assert.equal(nav.listeners.size, 1);
+  assert.equal(sessions.length, 0);
+  assert.equal(initial.list.status, 'idle');
+  assert.ok(Object.isFrozen(stable));
+  assert.ok(Object.isFrozen(stable.selection));
+  assert.ok(Object.isFrozen(stable.list.rows));
+  server.verify();
+});
+
+test('route deep link and reload admit actual fresh history without submit or create', async (t) => {
+  for (let reload = 0; reload < 2; reload++) {
+    const { app, server, nav, sessions } = await fixture(
+      t,
+      [search(), lookup('a'), history('a')],
+      '?theme=dark&thread=a#bottom'
+    );
+    app.start();
+    await ready(app, 'a');
+    await listed(app);
+    assert.equal(sessions.length, 1);
+    assert.deepEqual(app.getSnapshot().runtime?.history, []);
+    assert.equal(nav.pushes.length, 0);
+    assert.equal(nav.url, server.origin + '/chat?theme=dark&thread=a#bottom');
+    server.verify();
+    app.dispose();
+  }
+});
+
+test('selection pushes once, popstate never pushes, same ID and query-only navigation retain session, clearing releases it', async (t) => {
+  const { app, server, nav, sessions, disposed } = await fixture(t, [
+    search(),
+    lookup('a'),
+    history('a'),
+    lookup('b'),
+    history('b'),
+  ]);
+  app.start();
+  await listed(app);
+  app.select('a');
+  await ready(app, 'a');
+  const old = app.getSnapshot();
+  app.select('a');
+  nav.pop(server.origin + '/chat?theme=light&thread=a#top');
+  assert.strictEqual(app.getSnapshot(), old);
+  assert.equal(sessions.length, 1);
+  nav.pop(server.origin + '/chat?theme=light&thread=b#top');
+  await ready(app, 'b');
+  assert.deepEqual(nav.pushes, [
+    server.origin + '/chat?theme=dark&thread=a#bottom',
+  ]);
+  assert.equal(disposed.length, 1);
+  assert.equal(old.selection.id, 'a');
+  assert.equal(old.runtime?.history?.length, 0);
+  assert.throws(() => {
+    (old.selection as { id: string }).id = 'corrupt';
+  }, TypeError);
+  app.select(null);
+  assert.deepEqual(app.getSnapshot().selection, { status: 'empty', id: null });
+  assert.equal(app.getSnapshot().runtime, null);
+  assert.equal(nav.pushes[1], server.origin + '/chat?theme=light#top');
+  assert.equal(disposed.length, 2);
+  server.verify();
+});
+
+for (const status of [404, 422, 503]) {
+  test(`selection HTTP ${status} remains on route and explicit Retry admits fresh history`, async (t) => {
+    const { app, server, sessions, nav } = await fixture(
+      t,
+      [search(), lookup('a', { status }), lookup('a'), history('a')],
+      '?thread=a'
+    );
+    app.start();
+    await until(
+      () =>
+        app.getSnapshot().selection.status ===
+        (status === 503 ? 'error' : 'missing')
+    );
+    assert.equal(sessions.length, 0);
+    const failed = app.getSnapshot();
+    app.select('a');
+    assert.strictEqual(app.getSnapshot(), failed);
+    app.retry();
+    await ready(app, 'a');
+    assert.equal(sessions.length, 1);
+    assert.equal(nav.pushes.length, 0);
+    assert.equal(nav.url, server.origin + '/chat?thread=a');
+    assert.doesNotMatch(JSON.stringify(failed), /hostile|secret|HTTP/);
+    server.verify();
+  });
+}
+
+test('history failure stays safe and Retry replaces the failed session with a fresh admission', async (t) => {
+  const { app, server, sessions, disposed } = await fixture(
+    t,
+    [
+      search(),
+      lookup('a'),
+      history('a', { status: 503 }),
+      lookup('a'),
+      history('a'),
+    ],
+    '?thread=a'
+  );
+  app.start();
+  await until(() => app.getSnapshot().selection.status === 'error');
+  const failure = app.getSnapshot();
+  assert.equal(failure.runtime?.history, undefined);
+  assert.doesNotMatch(JSON.stringify(failure), /hostile|secret|HTTP/);
+  app.retry();
+  await ready(app, 'a');
+  assert.equal(sessions.length, 2);
+  assert.equal(disposed.length, 1);
+  assert.notStrictEqual(sessions[0], sessions[1]);
+  server.verify();
+});
+
+for (const phase of ['lookup', 'history'] as const) {
+  for (const destination of ['b', 'a'] as const) {
+    test(
+      `selection ${phase} A→B${
+        destination === 'a' ? '→A' : ''
+      } physically closes stale HTTP before cleanup`,
+      { timeout: 5000 },
+      async (t) => {
+        const initial =
+          phase === 'lookup'
+            ? [lookup('a', { holdHeaders: true })]
+            : [lookup('a'), history('a', { holdBody: true })];
+        const { app, server, nav } = await fixture(t, [
+          search(),
+          ...initial,
+          lookup(destination),
+          history(destination),
+        ]);
+        app.start();
+        await listed(app);
+        app.select('a');
+        const heldIndex = initial.length;
+        await deadline(server.steps[heldIndex].received);
+        if (phase === 'history')
+          await deadline(server.steps[heldIndex].headersSent);
+        if (destination === 'a') {
+          // A reentrant observer replaces B before its lookup can start.
+          const release = app.subscribe(() => {
+            if (app.getSnapshot().selection.id === 'b') app.select('a');
+          });
+          app.select('b');
+          release();
+        } else app.select('b');
+        assert.deepEqual(await deadline(server.steps[heldIndex].closed), {
+          finished: false,
+        });
+        await ready(app, destination);
+        assert.equal(app.getSnapshot().selection.id, destination);
+        assert.equal(new URL(nav.url).searchParams.get('thread'), destination);
+        server.verify();
+      }
+    );
+  }
+}
+
+for (const phase of ['lookup', 'history'] as const) {
+  for (const failure of [false, true]) {
+    for (const destination of ['b', 'a', 'disposed'] as const) {
+      test(`selection ignores late ${phase} ${
+        failure ? 'failure' : 'success'
+      } after ${
+        destination === 'disposed'
+          ? 'disposal'
+          : destination === 'a'
+          ? 'A→B→A'
+          : 'A→B'
+      }`, async (t) => {
+        const gate = deferred();
+        const completed = deferred();
+        const initial =
+          phase === 'lookup'
+            ? [lookup('a', failure ? { status: 503 } : {})]
+            : [lookup('a'), history('a', failure ? { status: 503 } : {})];
+        let first = true;
+        const replacement =
+          destination === 'disposed'
+            ? []
+            : [
+                lookup('b'),
+                history('b'),
+                ...(destination === 'a' ? [lookup('a'), history('a')] : []),
+              ];
+        const { app, server, nav } = await fixture(
+          t,
+          [search(), ...initial, ...replacement],
+          '?thread=a',
+          (options) => ({
+            ...options,
+            directory:
+              phase !== 'lookup'
+                ? options.directory
+                : {
+                    ...options.directory,
+                    async get(id, signal) {
+                      const delay = first;
+                      first = false;
+                      const result = await options.directory.get(id, signal);
+                      if (delay) {
+                        completed.release();
+                        await gate.promise;
+                      }
+                      return result;
+                    },
+                  },
+            sessionFactory:
+              phase !== 'history'
+                ? options.sessionFactory
+                : (id) => {
+                    const actual = options.sessionFactory!(id);
+                    const delay = first;
+                    first = false;
+                    return {
+                      ...actual,
+                      async load(options) {
+                        let rejected = false;
+                        try {
+                          await actual.load!(options);
+                        } catch {
+                          rejected = true;
+                        }
+                        if (delay) {
+                          completed.release();
+                          await gate.promise;
+                        }
+                        if (rejected)
+                          throw new Error('hostile delayed failure');
+                      },
+                    };
+                  },
+          })
+        );
+        app.start();
+        await deadline(completed.promise);
+        assert.equal(app.getSnapshot().selection.status, 'pending');
+        if (destination === 'disposed') app.dispose();
+        else {
+          app.select('b');
+          await ready(app, 'b');
+          if (destination === 'a') {
+            app.select('a');
+            await ready(app, 'a');
+          }
+        }
+        const current = app.getSnapshot();
+        gate.release();
+        await new Promise<void>((resolve) => setImmediate(resolve));
+        assert.strictEqual(app.getSnapshot(), current);
+        const url = nav.url;
+        app.dispose();
+        app.select('b');
+        app.refresh();
+        app.retry();
+        app.start();
+        nav.pop(server.origin + '/chat?thread=unused');
+        assert.strictEqual(app.getSnapshot(), current);
+        assert.equal(nav.listeners.size, 0);
+        assert.equal(
+          new URL(url).searchParams.get('thread'),
+          destination === 'b' ? 'b' : 'a'
+        );
+        server.verify();
+      });
+    }
+  }
+}
+
+test(
+  'history default application runtime projects actual saved messages while startup list is held',
+  { timeout: 5000 },
+  async (t) => {
+    const saved = [
+      {
+        values: {
+          messages: [
+            { type: 'human', id: 'message-1', content: 'Saved conversation' },
+          ],
+        },
+        next: [],
+        tasks: [],
+        checkpoint: {
+          thread_id: 'a',
+          checkpoint_ns: '',
+          checkpoint_id: 'checkpoint-1',
+        },
+        parent_checkpoint: null,
+        metadata: { source: 'input', step: 0, parents: {} },
+        created_at: '2026-09-28T00:00:00.000Z',
+      },
+    ];
+    const { app, server } = await fixture(
+      t,
+      [
+        search([], { holdHeaders: true }),
+        lookup('a'),
+        history('a', { body: saved }),
+        lookup('b'),
+        history('b'),
+      ],
+      '?thread=a',
+      (options) => ({ ...options, sessionFactory: undefined })
+    );
+    app.start();
+    await ready(app, 'a');
+    const old = app.getSnapshot();
+    assert.equal(old.list.status, 'pending');
+    assert.equal(old.runtime?.messages[0]?.content, 'Saved conversation');
+    assert.ok(Object.isFrozen(old.runtime?.messages[0]));
+    app.select('b');
+    await ready(app, 'b');
+    assert.equal(old.runtime?.messages[0]?.content, 'Saved conversation');
+    app.dispose();
+    assert.deepEqual(await deadline(server.steps[0].closed), {
+      finished: false,
+    });
+    server.verify();
+  }
+);
+
+test('selection reentry after session construction retires it before history can begin', async (t) => {
+  const { app, server, disposed } = await fixture(t, [
+    search(),
+    lookup('a'),
+    lookup('b'),
+    history('b'),
+  ]);
+  app.start();
+  await listed(app);
+  app.subscribe(() => {
+    if (app.getSnapshot().selection.id === 'a' && app.getSnapshot().runtime)
+      app.select('b');
+  });
+  app.select('a');
+  await ready(app, 'b');
+  assert.equal(disposed.length, 1);
+  server.verify();
+});
+
+test(
+  'history resolved by actual runtime disposal without accepted history is never ready',
+  { timeout: 5000 },
+  async (t) => {
+    let current!: ApplicationSession;
+    const { app, server } = await fixture(
+      t,
+      [
+        search(),
+        lookup('a'),
+        history('a', { holdHeaders: true }),
+        lookup('a'),
+        history('a'),
+      ],
+      '?thread=a',
+      (options) => ({
+        ...options,
+        sessionFactory(id) {
+          current = options.sessionFactory!(id);
+          return current;
+        },
+      })
+    );
+    app.start();
+    await deadline(server.steps[2].received);
+    await current.dispose();
+    assert.deepEqual(await deadline(server.steps[2].closed), {
+      finished: false,
+    });
+    await until(() => app.getSnapshot().selection.status === 'error');
+    assert.equal(app.getSnapshot().runtime?.history, undefined);
+    app.retry();
+    await ready(app, 'a');
+    server.verify();
+  }
+);
+
+test(
+  'history disposal closes current held HTTP; cancelled load resolution cannot admit it',
+  { timeout: 5000 },
+  async (t) => {
+    const { app, server, disposed } = await fixture(
+      t,
+      [search(), lookup('a'), history('a', { holdHeaders: true })],
+      '?thread=a'
+    );
+    app.start();
+    await deadline(server.steps[2].received);
+    const old = app.getSnapshot();
+    app.dispose();
+    assert.deepEqual(await deadline(server.steps[2].closed), {
+      finished: false,
+    });
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    assert.strictEqual(app.getSnapshot(), old);
+    assert.equal(old.selection.status, 'pending');
+    assert.equal(disposed.length, 1);
+    server.verify();
+  }
+);
+
+test('selection reentrant observers and listener failures cannot continue old admission or share subscription releases', async (t) => {
+  const { app, server, sessions } = await fixture(t, [
+    search(),
+    lookup('b'),
+    history('b'),
+  ]);
+  app.start();
+  await listed(app);
+  const calls: string[] = [];
+  const listener = () => {
+    calls.push(app.getSnapshot().selection.status);
+  };
+  const release = app.subscribe(listener);
+  app.subscribe(listener);
+  release();
+  app.subscribe(() => {
+    throw new Error('observer failure');
+  });
+  app.subscribe(() => {
+    if (app.getSnapshot().selection.id === 'a') app.select('b');
+  });
+  app.select('a');
+  await ready(app, 'b');
+  assert.ok(calls.length > 0);
+  assert.equal(sessions.length, 1);
+  server.verify();
+});
+
+test(
+  'selection refresh is independent, retains accepted rows through pending/error and aborts stale search',
+  { timeout: 5000 },
+  async (t) => {
+    const { app, server } = await fixture(
+      t,
+      [
+        search([threadEnvelope('old', 'Old')]),
+        lookup('a', { status: 404 }),
+        search([], { holdBody: true }),
+        search([threadEnvelope('new', 'New')]),
+        search([], { status: 503 }),
+      ],
+      '?thread=a'
+    );
+    app.start();
+    await listed(app);
+    await until(() => app.getSnapshot().selection.status === 'missing');
+    const old = app.getSnapshot();
+    app.refresh();
+    assert.strictEqual(app.getSnapshot().list.rows, old.list.rows);
+    await deadline(server.steps[2].headersSent);
+    app.refresh();
+    assert.deepEqual(await deadline(server.steps[2].closed), {
+      finished: false,
+    });
+    await until(() => app.getSnapshot().list.rows[0]?.id === 'new');
+    app.refresh();
+    await until(() => app.getSnapshot().list.status === 'error');
+    assert.equal(app.getSnapshot().list.rows[0]?.id, 'new');
+    assert.strictEqual(app.getSnapshot().selection, old.selection);
+    assert.equal(old.list.rows[0]?.id, 'old');
+    server.verify();
+  }
+);
+
+for (const failure of [false, true]) {
+  test(`selection ignores delayed refresh ${
+    failure ? 'failure' : 'success'
+  } after a newer refresh`, async (t) => {
+    const gate = deferred();
+    const completed = deferred();
+    let calls = 0;
+    const { app, server } = await fixture(
+      t,
+      [
+        search([threadEnvelope('old')]),
+        search([threadEnvelope('stale')], failure ? { status: 503 } : {}),
+        search([threadEnvelope('new')]),
+      ],
+      '',
+      (options) => ({
+        ...options,
+        directory: {
+          ...options.directory,
+          async list(signal) {
+            const delay = ++calls === 2;
+            const result = await options.directory.list(signal);
+            if (delay) {
+              completed.release();
+              await gate.promise;
+            }
+            return result;
+          },
+        },
+      })
+    );
+    app.start();
+    await listed(app);
+    app.refresh();
+    await deadline(completed.promise);
+    app.refresh();
+    await until(() => app.getSnapshot().list.rows[0]?.id === 'new');
+    const current = app.getSnapshot();
+    gate.release();
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    assert.strictEqual(app.getSnapshot(), current);
+    server.verify();
+  });
+}
+
+const settledList = (app: App) =>
+  until(() => app.getSnapshot().list.status !== 'pending');
+
+test('selection refresh adopts a changed matching ready title with its list and nothing else', async (t) => {
+  const { app, nav, server, sessions, disposed } = await fixture(
+    t,
+    [
+      search(),
+      lookup('a'),
+      history('a'),
+      search([threadEnvelope('b', 'B'), threadEnvelope('a', 'Renamed')]),
+    ],
+    '?thread=a'
+  );
+  app.start();
+  await ready(app, 'a');
+  await listed(app);
+  const before = app.getSnapshot();
+  const pushes = nav.pushes.length;
+  const seen: ReturnType<App['getSnapshot']>[] = [];
+  app.subscribe(() => seen.push(app.getSnapshot()));
+  app.refresh();
+  await settledList(app);
+  const after = app.getSnapshot();
+  assert.equal(after.list.status, 'ready');
+  assert.equal(after.selection.status, 'ready');
+  assert.equal(after.selection.id, 'a');
+  assert.equal(after.selection.row?.title, 'Renamed');
+  assert.strictEqual(after.selection.row, after.list.rows[1]);
+  assert.ok(Object.isFrozen(after.selection));
+  // One atomic publication: no observer sees the new list with the old title.
+  for (const observed of seen)
+    assert.equal(
+      observed.selection.row?.title,
+      observed.list.status === 'ready' ? 'Renamed' : 'a'
+    );
+  assert.equal(seen.filter((s) => s.list.status === 'ready').length, 1);
+  assert.equal(before.selection.row?.title, 'a');
+  for (const key of [
+    'runtime',
+    'messages',
+    'submission',
+    'creation',
+    'decision',
+    'submissionKind',
+  ] as const)
+    assert.strictEqual(after[key], before[key], key);
+  assert.equal(sessions.length, 1);
+  assert.equal(disposed.length, 0);
+  assert.equal(nav.pushes.length, pushes);
+  server.verify();
+});
+
+test('selection refresh preserves same, omitted and failed titles but adopts a changed Untitled', async (t) => {
+  const { app, server } = await fixture(
+    t,
+    [
+      search(),
+      lookup('a'),
+      history('a'),
+      search([threadEnvelope('a', 'a')]),
+      search([threadEnvelope('b', 'B')]),
+      search([threadEnvelope('a', 'Renamed')], { status: 503 }),
+      search([threadEnvelope('a', '  ')]),
+    ],
+    '?thread=a'
+  );
+  app.start();
+  await ready(app, 'a');
+  await listed(app);
+  const before = app.getSnapshot().selection;
+  for (const expected of ['ready', 'ready', 'error'] as const) {
+    app.refresh();
+    await settledList(app);
+    assert.equal(app.getSnapshot().list.status, expected);
+    assert.strictEqual(app.getSnapshot().selection, before);
+  }
+  app.refresh();
+  await settledList(app);
+  assert.equal(app.getSnapshot().selection.row?.title, 'Untitled');
+  assert.equal(app.getSnapshot().selection.id, 'a');
+  server.verify();
+});
+
+test('selection refresh begun during pending admission does not adopt after admission completes', async (t) => {
+  const { app, server } = await fixture(t, [
+    search(),
+    lookup('a', { holdBody: true }),
+    search([threadEnvelope('a', 'Renamed')], { holdBody: true }),
+    history('a'),
+  ]);
+  app.start();
+  await listed(app);
+  app.select('a');
+  await deadline(server.steps[1].headersSent);
+  app.refresh();
+  await deadline(server.steps[2].headersSent);
+  server.steps[1].releaseBody();
+  await ready(app, 'a');
+  const selection = app.getSnapshot().selection;
+  server.steps[2].releaseBody();
+  await settledList(app);
+  assert.equal(app.getSnapshot().list.rows[0]?.title, 'Renamed');
+  assert.strictEqual(app.getSnapshot().selection, selection);
+  assert.equal(selection.row?.title, 'a');
+  server.verify();
+});
+
+for (const back of [false, true]) {
+  test(`selection refresh captured from A does not rename ${
+    back ? 'a replacement A' : 'B'
+  }`, async (t) => {
+    const { app, server } = await fixture(
+      t,
+      [
+        search(),
+        lookup('a'),
+        history('a'),
+        search([threadEnvelope('a', 'A2'), threadEnvelope('b', 'B2')], {
+          holdBody: true,
+        }),
+        lookup('b'),
+        history('b'),
+        ...(back ? [lookup('a'), history('a')] : []),
+      ],
+      '?thread=a'
+    );
+    app.start();
+    await ready(app, 'a');
+    await listed(app);
+    app.refresh();
+    await deadline(server.steps[3].headersSent);
+    app.select('b');
+    await ready(app, 'b');
+    if (back) {
+      app.select('a');
+      await ready(app, 'a');
+    }
+    const selection = app.getSnapshot().selection;
+    server.steps[3].releaseBody();
+    await settledList(app);
+    assert.equal(app.getSnapshot().list.rows.length, 2);
+    assert.strictEqual(app.getSnapshot().selection, selection);
+    server.verify();
+  });
+}
+
+for (const reentry of ['abort listener', 'pending publication'] as const) {
+  test(`selection refresh ignores a selection replaced by ${reentry} reentry`, async (t) => {
+    const signals: AbortSignal[] = [];
+    const { app, server } = await fixture(
+      t,
+      [
+        search(),
+        lookup('a'),
+        history('a'),
+        ...(reentry === 'abort listener'
+          ? [search([threadEnvelope('a', 'Stale')], { holdBody: true })]
+          : []),
+        search([threadEnvelope('a', 'Renamed'), threadEnvelope('b', 'B2')], {
+          concurrentGroup: 'reentry',
+          holdBody: true,
+        }),
+        // Refresh and selection requests are independent; only their order within a request is fixed.
+        lookup('b', { concurrentGroup: 'reentry' }),
+        history('b', { concurrentGroup: 'reentry' }),
+      ],
+      '?thread=a',
+      (options) => ({
+        ...options,
+        directory: {
+          ...options.directory,
+          list(signal) {
+            signals.push(signal);
+            return options.directory.list(signal);
+          },
+        },
+      })
+    );
+    app.start();
+    await ready(app, 'a');
+    await listed(app);
+    if (reentry === 'abort listener') {
+      app.refresh();
+      await deadline(server.steps[3].headersSent);
+      signals.at(-1)!.addEventListener('abort', () => app.select('b'));
+    } else {
+      const release = app.subscribe(() => {
+        if (app.getSnapshot().list.status !== 'pending') return;
+        release();
+        app.select('b');
+      });
+    }
+    app.refresh();
+    const held = server.steps.at(-3)!;
+    await deadline(held.headersSent);
+    await ready(app, 'b');
+    const selection = app.getSnapshot().selection;
+    held.releaseBody();
+    await until(() => app.getSnapshot().list.rows[0]?.title === 'Renamed');
+    assert.strictEqual(app.getSnapshot().selection, selection);
+    assert.equal(selection.row?.title, 'b');
+    server.verify();
+  });
+}
+
+test('selection refresh does not publish after disposal', async (t) => {
+  const { app, server } = await fixture(
+    t,
+    [
+      search(),
+      lookup('a'),
+      history('a'),
+      search([threadEnvelope('a', 'Renamed')], { holdBody: true }),
+    ],
+    '?thread=a'
+  );
+  app.start();
+  await ready(app, 'a');
+  await listed(app);
+  app.refresh();
+  await deadline(server.steps[3].headersSent);
+  const last = app.getSnapshot();
+  app.dispose();
+  server.steps[3].releaseBody();
+  await new Promise<void>((resolve) => setImmediate(resolve));
+  assert.strictEqual(app.getSnapshot(), last);
+  assert.equal(last.selection.row?.title, 'a');
+});
+
+test('selection does not await or adopt late disposal completion of the outgoing actual session', async (t) => {
+  const gate = deferred();
+  const disposing = deferred();
+  const completed = deferred();
+  let first = true;
+  const { app, server } = await fixture(
+    t,
+    [search(), lookup('a'), history('a'), lookup('b'), history('b')],
+    '?thread=a',
+    (options) => ({
+      ...options,
+      sessionFactory(id) {
+        const actual = options.sessionFactory!(id);
+        const delay = first;
+        first = false;
+        return {
+          ...actual,
+          async dispose() {
+            await actual.dispose();
+            if (delay) {
+              disposing.release();
+              await gate.promise;
+              completed.release();
+            }
+          },
+        };
+      },
+    })
+  );
+  app.start();
+  await ready(app, 'a');
+  app.select('b');
+  await deadline(disposing.promise);
+  await ready(app, 'b');
+  const current = app.getSnapshot();
+  gate.release();
+  await deadline(completed.promise);
+  assert.strictEqual(app.getSnapshot(), current);
+  server.verify();
+});
+
+test('creation reserves before synchronous duplicates and observer reentry; confirmed ID loads history once', async (t) => {
+  const { app, nav, server } = await fixture(t, [
+    search(),
+    create('created', { holdHeaders: true }),
+    lookup('created'),
+    history('created', { holdBody: true }),
+  ]);
+  const initial = app.getSnapshot();
+  app.newConversation();
+  assert.strictEqual(app.getSnapshot(), initial);
+  app.start();
+  await listed(app);
+  app.subscribe(() => {
+    if (app.getSnapshot().creation.status === 'pending') app.newConversation();
+  });
+  app.newConversation();
+  const pending = app.getSnapshot();
+  assert.equal(pending.creation.status, 'pending');
+  app.newConversation();
+  assert.strictEqual(app.getSnapshot(), pending);
+  await deadline(server.steps[1].received);
+  assert.equal(server.requests.length, 2);
+  assert.equal(nav.pushes.length, 0);
+  server.steps[1].releaseHeaders();
+  await deadline(server.steps[3].headersSent);
+  assert.deepEqual(app.getSnapshot().creation, {
+    status: 'confirmed',
+    id: 'created',
+  });
+  assert.equal(app.getSnapshot().selection.status, 'pending');
+  assert.equal(nav.pushes.length, 1);
+  server.steps[3].releaseBody();
+  await ready(app, 'created');
+  assert.equal(
+    nav.url,
+    server.origin + '/chat?theme=dark&thread=created#bottom'
+  );
+  assert.equal(initial.creation.status, 'idle');
+  assert.equal(pending.creation.status, 'pending');
+  assert.ok(Object.isFrozen(pending.creation));
+  assert.throws(() => {
+    (pending.creation as { id: string }).id = 'corrupt';
+  }, TypeError);
+  server.verify();
+});
+
+for (const action of ['navigate', 'dispose'] as const) {
+  test(`creation pending observer ${action} prevents SDK invocation`, async (t) => {
+    const { app, server, nav } = await fixture(t, [
+      search(),
+      ...(action === 'navigate' ? [lookup('b'), history('b')] : []),
+    ]);
+    app.start();
+    await listed(app);
+    app.subscribe(() => {
+      if (app.getSnapshot().creation.status === 'pending') {
+        if (action === 'navigate') app.select('b');
+        else app.dispose();
+      }
+    });
+    app.newConversation();
+    assert.notEqual(app.getSnapshot().creation.status, 'idle');
+    if (action === 'navigate') {
+      await ready(app, 'b');
+      assert.equal(app.getSnapshot().creation.status, 'unconfirmed');
+      assert.equal(nav.pushes.length, 1);
+    } else {
+      const retained = app.getSnapshot();
+      app.newConversation();
+      assert.strictEqual(app.getSnapshot(), retained);
+      assert.equal(nav.pushes.length, 0);
+    }
+    server.verify();
+  });
+}
+
+for (const action of ['navigate', 'retry', 'dispose'] as const) {
+  test(`creation held SDK request closes on ${action} after server acceptance`, async (t) => {
+    const { app, server, nav } = await fixture(
+      t,
+      [
+        search(),
+        lookup('a', action === 'retry' ? { status: 404 } : {}),
+        ...(action === 'retry' ? [] : [history('a')]),
+        create('remote', { holdHeaders: true }),
+        ...(action === 'dispose'
+          ? []
+          : [
+              lookup(action === 'retry' ? 'a' : 'b'),
+              history(action === 'retry' ? 'a' : 'b'),
+            ]),
+      ],
+      '?thread=a'
+    );
+    app.start();
+    await listed(app);
+    if (action === 'retry')
+      await until(() => app.getSnapshot().selection.status === 'missing');
+    else await ready(app, 'a');
+    app.newConversation();
+    assert.equal(app.getSnapshot().creation.status, 'pending');
+    const step = server.steps[action === 'retry' ? 2 : 3];
+    await deadline(step.received);
+    const pending = app.getSnapshot();
+    if (action === 'dispose') app.dispose();
+    else if (action === 'retry') app.retry();
+    else app.select('b');
+    assert.deepEqual(await deadline(step.closed), { finished: false });
+    if (action === 'dispose') assert.strictEqual(app.getSnapshot(), pending);
+    else {
+      await ready(app, action === 'retry' ? 'a' : 'b');
+      assert.equal(app.getSnapshot().creation.status, 'unconfirmed');
+      assert.equal(app.getSnapshot().creation.id, null);
+    }
+    assert.equal(nav.pushes.length, action === 'navigate' ? 1 : 0);
+    assert.equal(pending.creation.status, 'pending');
+    server.verify();
+  });
+}
+
+for (const outcome of ['success', 'failure', 'rejection'] as const) {
+  for (const destination of ['b', 'a', 'disposed'] as const) {
+    test(`creation late ${outcome} after A→${destination} cannot change selection or newer operation`, async (t) => {
+      const gate = deferred();
+      const completed = deferred();
+      let calls = 0;
+      const { app, server, nav } = await fixture(
+        t,
+        [
+          search(),
+          lookup('a'),
+          history('a'),
+          create('stale', outcome === 'failure' ? { disconnect: true } : {}),
+          ...(destination === 'disposed'
+            ? []
+            : [
+                lookup('b'),
+                history('b'),
+                ...(destination === 'a' ? [lookup('a'), history('a')] : []),
+                create('fresh', { holdHeaders: true }),
+                lookup('fresh'),
+                history('fresh'),
+              ]),
+        ],
+        '?thread=a',
+        (options) => ({
+          ...options,
+          directory: {
+            ...options.directory,
+            async create(signal) {
+              const delay = ++calls === 1;
+              const result = await options.directory.create(signal);
+              if (delay) {
+                completed.release();
+                await gate.promise;
+                if (outcome === 'rejection') throw new Error('hostile secret');
+              }
+              return result;
+            },
+          },
+        })
+      );
+      t.after(gate.release);
+      app.start();
+      await ready(app, 'a');
+      app.newConversation();
+      assert.equal(app.getSnapshot().creation.status, 'pending');
+      await deadline(completed.promise);
+      if (destination === 'disposed') app.dispose();
+      else {
+        app.select('b');
+        await ready(app, 'b');
+        if (destination === 'a') {
+          app.select('a');
+          await ready(app, 'a');
+        }
+        assert.equal(app.getSnapshot().creation.status, 'unconfirmed');
+        app.newConversation();
+        assert.equal(app.getSnapshot().creation.status, 'pending');
+        await deadline(server.steps[destination === 'a' ? 8 : 6].received);
+      }
+      const current = app.getSnapshot();
+      const currentUrl = nav.url;
+      const pushes = nav.pushes.length;
+      gate.release();
+      await new Promise<void>((resolve) => setImmediate(resolve));
+      assert.strictEqual(app.getSnapshot(), current);
+      assert.equal(nav.url, currentUrl);
+      assert.equal(nav.pushes.length, pushes);
+      app.newConversation();
+      assert.strictEqual(app.getSnapshot(), current);
+      if (destination !== 'disposed') {
+        server.steps[destination === 'a' ? 8 : 6].releaseHeaders();
+        await ready(app, 'fresh');
+        assert.deepEqual(app.getSnapshot().creation, {
+          status: 'confirmed',
+          id: 'fresh',
+        });
+        assert.equal(nav.pushes.length, pushes + 1);
+      }
+      server.verify();
+    });
+  }
+}
+
+test('creation network uncertainty retains selection; explicit Refresh inspects remote rows; later New is distinct', async (t) => {
+  const { app, server, nav } = await fixture(t, [
+    search(),
+    create('remote', { disconnect: true }),
+    search([threadEnvelope('remote')]),
+    create('second'),
+    lookup('second'),
+    history('second'),
+  ]);
+  app.start();
+  await listed(app);
+  app.newConversation();
+  assert.equal(app.getSnapshot().creation.status, 'pending');
+  await until(() => app.getSnapshot().creation.status === 'unconfirmed');
+  const uncertain = app.getSnapshot();
+  assert.equal(server.requests.length, 2);
+  assert.equal(nav.pushes.length, 0);
+  assert.equal(uncertain.selection.status, 'empty');
+  app.refresh();
+  await listed(app);
+  assert.strictEqual(app.getSnapshot().creation, uncertain.creation);
+  assert.equal(app.getSnapshot().list.rows[0]?.id, 'remote');
+  app.newConversation();
+  await ready(app, 'second');
+  assert.equal(app.getSnapshot().creation.id, 'second');
+  assert.equal(nav.pushes.length, 1);
+  assert.equal(uncertain.creation.status, 'unconfirmed');
+  assert.doesNotMatch(JSON.stringify(uncertain), /hostile|secret|HTTP/);
+  server.verify();
+});
+
+test('creation confirmed ID survives omitted list rows and a failed explicit refresh', async (t) => {
+  const { app, server, nav } = await fixture(t, [
+    search(),
+    create('created'),
+    lookup('created'),
+    history('created'),
+    search(),
+    search([], { status: 503 }),
+    create('second'),
+    lookup('second'),
+    history('second'),
+  ]);
+  app.start();
+  await listed(app);
+  app.newConversation();
+  assert.equal(app.getSnapshot().creation.status, 'pending');
+  await ready(app, 'created');
+  const confirmed = app.getSnapshot();
+  app.refresh();
+  await listed(app);
+  assert.deepEqual(app.getSnapshot().list.rows, []);
+  assert.strictEqual(app.getSnapshot().creation, confirmed.creation);
+  app.refresh();
+  await until(() => app.getSnapshot().list.status === 'error');
+  assert.strictEqual(app.getSnapshot().creation, confirmed.creation);
+  assert.strictEqual(app.getSnapshot().selection, confirmed.selection);
+  app.newConversation();
+  await ready(app, 'second');
+  assert.equal(app.getSnapshot().creation.id, 'second');
+  assert.equal(nav.pushes.length, 2);
+  assert.equal(confirmed.creation.id, 'created');
+  server.verify();
+});
+
+for (const action of ['navigate', 'new', 'dispose'] as const) {
+  test(`creation confirmed observer ${action} cannot let old success adopt selection`, async (t) => {
+    const destination = action === 'new' ? 'second' : 'b';
+    const { app, server, nav } = await fixture(t, [
+      search(),
+      create('first'),
+      ...(action === 'new' ? [create('second')] : []),
+      ...(action === 'dispose'
+        ? []
+        : [lookup(destination), history(destination)]),
+    ]);
+    app.start();
+    await listed(app);
+    app.subscribe(() => {
+      if (app.getSnapshot().creation.id === 'first') {
+        if (action === 'new') app.newConversation();
+        else if (
+          action === 'navigate' &&
+          app.getSnapshot().selection.id !== 'b'
+        )
+          app.select('b');
+        else if (action === 'dispose') app.dispose();
+      }
+    });
+    app.newConversation();
+    assert.equal(app.getSnapshot().creation.status, 'pending');
+    if (action === 'dispose') {
+      await until(() => app.getSnapshot().creation.status === 'confirmed');
+      assert.equal(nav.pushes.length, 0);
+      assert.equal(app.getSnapshot().selection.status, 'empty');
+    } else {
+      await ready(app, destination);
+      assert.equal(nav.pushes.length, 1);
+      assert.equal(new URL(nav.url).searchParams.get('thread'), destination);
+    }
+    server.verify();
+  });
+}
+
+test('rename reconciles only metadata without replacing selected runtime or session', async (t) => {
+  const { app, server, nav, sessions } = await fixture(
+    t,
+    [
+      search([threadEnvelope('a', 'a')]),
+      lookup('a'),
+      history('a'),
+      {
+        method: 'PATCH',
+        path: '/api/threads/a',
+        payload: { metadata: { title: 'New title' } },
+        body: threadEnvelope('a', 'New title'),
+      },
+    ],
+    '?thread=a'
+  );
+  app.start();
+  await ready(app, 'a');
+  await listed(app);
+  const before = app.getSnapshot();
+  const pushes = nav.pushes.length;
+  assert.equal(app.canRename(), true);
+  assert.equal(await app.rename('a', '   '), false);
+  assert.equal(await app.rename('a', ' a '), false);
+  assert.equal(await app.rename('a', ' New title '), true);
+  const after = app.getSnapshot();
+  assert.equal(after.selection.row?.title, 'New title');
+  assert.equal(after.list.rows[0].title, 'New title');
+  for (const key of ['messages', 'submission', 'runtime', 'creation'] as const)
+    assert.equal(after[key], before[key]);
+  assert.equal(sessions.length, 1);
+  assert.equal(nav.pushes.length, pushes);
+  server.verify();
+});
+
+test('rename reserves before observers reenter, rejects duplicate and preserves confirmation against old list and lookup', async (t) => {
+  let finishList!: (value: unknown) => void;
+  let finishGet!: (value: unknown) => void;
+  let finishRename!: (value: unknown) => void;
+  let calls = 0;
+  const row = { id: 'a', title: 'Old', pinned: true };
+  const { app } = await fixture(t, [], '', (options) => ({
+    ...options,
+    directory: {
+      list: () =>
+        new Promise((resolve) => {
+          finishList = resolve as typeof finishList;
+        }),
+      get: () =>
+        new Promise((resolve) => {
+          finishGet = resolve as typeof finishGet;
+        }),
+      create: async () => ({ kind: 'failed' }),
+      rename: () => {
+        calls++;
+        return new Promise((resolve) => {
+          finishRename = resolve as typeof finishRename;
+        });
+      },
+    },
+  }));
+  app.start();
+  app.select('a');
+  let duplicate: Promise<boolean> | undefined;
+  const release = app.subscribe(() => {
+    if (app.getSnapshot().renames['a']?.status === 'pending')
+      duplicate = app.rename('a', 'Other');
+  });
+  const pending = app.rename('a', 'New');
+  assert.equal(await duplicate, false);
+  assert.equal(await app.rename('a', 'Again'), false);
+  assert.equal(calls, 1);
+  finishRename({ kind: 'ready', value: { ...row, title: 'New' } });
+  assert.equal(await pending, true);
+  release();
+  finishList({ kind: 'ready', value: [row] });
+  await listed(app);
+  assert.equal(app.getSnapshot().list.rows[0].title, 'New');
+  finishGet({ kind: 'missing' });
+  await until(() => app.getSnapshot().selection.status === 'missing');
+});
+
+for (const mode of [
+  'failed',
+  'cancelled',
+  'mismatch',
+  'throw',
+  'dispose',
+] as const)
+  test(`rename ${mode} never fabricates confirmation and disposal aborts`, async (t) => {
+    let signal: AbortSignal | undefined;
+    let settle!: (value: unknown) => void;
+    const { app } = await fixture(t, [], '', (options) => ({
+      ...options,
+      directory: {
+        list: async () => ({
+          kind: 'ready',
+          value: [{ id: 'a', title: 'Old' }],
+        }),
+        get: async () => ({ kind: 'missing' }),
+        create: async () => ({ kind: 'failed' }),
+        rename: async (_id, _title, s) => {
+          signal = s;
+          if (mode === 'throw') throw Error('private');
+          return new Promise((resolve) => {
+            settle = resolve as typeof settle;
+          });
+        },
+      },
+    }));
+    app.start();
+    await listed(app);
+    const pending = app.rename('a', 'New');
+    if (mode === 'dispose') app.dispose();
+    if (mode !== 'throw')
+      settle(
+        mode === 'failed' || mode === 'cancelled'
+          ? { kind: mode }
+          : {
+              kind: 'ready',
+              value: { id: mode === 'mismatch' ? 'wrong' : 'a', title: 'New' },
+            }
+      );
+    assert.equal(await pending, false);
+    assert.equal(app.getSnapshot().list.rows[0].title, 'Old');
+    if (mode === 'dispose') assert.equal(signal?.aborted, true);
+  });
+
+test('rename confirmation wins over an older lookup through history load; later explicit refresh is authoritative', async (t) => {
+  let get!: (value: unknown) => void;
+  let title = 'Old';
+  const { app, sessions, server } = await fixture(
+    t,
+    [history('a')],
+    '?thread=a',
+    (options) => ({
+      ...options,
+      directory: {
+        list: async () => ({
+          kind: 'ready',
+          value: [{ id: 'a', title, pinned: true }],
+        }),
+        get: () =>
+          new Promise((resolve) => {
+            get = resolve as typeof get;
+          }),
+        create: async () => ({ kind: 'failed' }),
+        rename: async (id, title) => ({
+          kind: 'ready',
+          value: { id, title, updatedAt: 100 },
+        }),
+      },
+    })
+  );
+  app.start();
+  await listed(app);
+  assert.equal(await app.rename('a', 'New'), true);
+  get({ kind: 'ready', value: { id: 'a', title: 'Old' } });
+  await ready(app, 'a');
+  assert.equal(app.getSnapshot().selection.row?.title, 'New');
+  assert.equal(sessions.length, 1);
+  const before = app.getSnapshot();
+  title = 'Authoritative later';
+  app.refresh();
+  await listed(app);
+  assert.equal(app.getSnapshot().list.rows[0].title, title);
+  assert.equal(app.getSnapshot().selection.row?.title, title);
+  assert.equal(app.getSnapshot().runtime, before.runtime);
+  assert.equal(app.getSnapshot().messages, before.messages);
+  assert.equal(sessions.length, 1);
+  server.verify();
+});
+
+test('rename concurrent targets retain unrelated row metadata/order, and transport reentry cannot duplicate a target', async (t) => {
+  const settlements = new Map<string, (value: unknown) => void>();
+  const calls: string[] = [];
+  let nested: Promise<boolean> | undefined;
+  const { app } = await fixture(t, [], '', (options) => ({
+    ...options,
+    directory: {
+      list: async () => ({
+        kind: 'ready',
+        value: [
+          { id: 'b', title: 'Bee', pinned: true, updatedAt: 21 },
+          { id: 'a', title: 'Ay', updatedAt: 22 },
+        ],
+      }),
+      get: async () => ({ kind: 'missing' }),
+      create: async () => ({ kind: 'failed' }),
+      rename: (id) => {
+        calls.push(id);
+        nested = app.rename(id, 'Duplicate');
+        return new Promise((resolve) =>
+          settlements.set(id, resolve as (value: unknown) => void)
+        );
+      },
+    },
+  }));
+  app.start();
+  await listed(app);
+  const a = app.rename('a', 'New A');
+  assert.equal(await nested, false);
+  const b = app.rename('b', 'New B');
+  assert.equal(await nested, false);
+  settlements.get('b')!({
+    kind: 'ready',
+    value: { id: 'b', title: 'New B', updatedAt: 999 },
+  });
+  assert.equal(await b, true);
+  settlements.get('a')!({
+    kind: 'ready',
+    value: { id: 'a', title: 'New A', pinned: false },
+  });
+  assert.equal(await a, true);
+  assert.deepEqual(calls, ['a', 'b']);
+  assert.deepEqual(app.getSnapshot().list.rows, [
+    { id: 'b', title: 'New B', pinned: true, updatedAt: 21 },
+    { id: 'a', title: 'New A', updatedAt: 22 },
+  ]);
+});
+
+test('rename reservation observer disposal prevents transport and optional capability remains compatible', async (t) => {
+  let writes = 0;
+  const { app } = await fixture(t, [], '', (options) => ({
+    ...options,
+    directory: {
+      list: async () => ({ kind: 'ready', value: [{ id: 'a', title: 'Old' }] }),
+      get: async () => ({ kind: 'missing' }),
+      create: async () => ({ kind: 'failed' }),
+      rename: async () => {
+        writes++;
+        return { kind: 'failed' };
+      },
+    },
+  }));
+  app.start();
+  await listed(app);
+  app.subscribe(() => {
+    if (app.getSnapshot().renames['a']?.status === 'pending') app.dispose();
+  });
+  assert.equal(await app.rename('a', 'New'), false);
+  assert.equal(writes, 0);
+  const { app: legacy } = await fixture(t, [], '', (options) => ({
+    ...options,
+    directory: {
+      list: async () => ({ kind: 'ready', value: [] }),
+      get: async () => ({ kind: 'missing' }),
+      create: async () => ({ kind: 'failed' }),
+    },
+  }));
+  legacy.start();
+  assert.equal(legacy.canRename(), false);
+  assert.equal(await legacy.rename('a', 'New'), false);
+});
+
+for (const admissionTiming of ['before-write', 'after-write'] as const) {
+  for (const heldPhase of ['lookup', 'history'] as const) {
+    test(`rename later authoritative refresh supersedes ${admissionTiming} pending ${heldPhase}`, async (t) => {
+      let releaseGet!: (result: {
+        kind: 'ready';
+        value: { id: string; title: string };
+      }) => void;
+      let title = 'Old';
+      const { app, server, sessions } = await fixture(
+        t,
+        [history('a', { holdHeaders: heldPhase === 'history' })],
+        '',
+        (options) => ({
+          ...options,
+          directory: {
+            list: async () => ({ kind: 'ready', value: [{ id: 'a', title }] }),
+            get: () =>
+              new Promise((resolve) => {
+                releaseGet = resolve;
+              }),
+            create: async () => ({ kind: 'failed' }),
+            rename: async (id, title) => ({
+              kind: 'ready',
+              value: { id, title },
+            }),
+          },
+        })
+      );
+      app.start();
+      await listed(app);
+      if (admissionTiming === 'before-write') app.select('a');
+      assert.equal(await app.rename('a', 'New'), true);
+      if (admissionTiming === 'after-write') app.select('a');
+      if (heldPhase === 'history') {
+        releaseGet({ kind: 'ready', value: { id: 'a', title: 'Old' } });
+        await server.steps[0].received;
+      }
+      title = 'Authoritative later';
+      app.refresh();
+      await listed(app);
+      assert.equal(app.getSnapshot().list.rows[0].title, title);
+      if (heldPhase === 'lookup')
+        releaseGet({ kind: 'ready', value: { id: 'a', title: 'Old' } });
+      else server.steps[0].releaseHeaders();
+      await ready(app, 'a');
+      assert.equal(app.getSnapshot().selection.row?.title, title);
+      assert.equal(app.getSnapshot().list.rows[0].title, title);
+      assert.equal(sessions.length, 1);
+      server.verify();
+    });
+  }
+}
+
+test('rename authoritative lookup supersedes an older pending refresh without advancing mutation version', async (t) => {
+  let releaseList!: (result: {
+    kind: 'ready';
+    value: { id: string; title: string }[];
+  }) => void;
+  const { app, server } = await fixture(t, [history('a')], '', (options) => ({
+    ...options,
+    directory: {
+      list: () =>
+        new Promise((resolve) => {
+          releaseList = resolve;
+        }),
+      get: async (id) => ({
+        kind: 'ready',
+        value: { id, title: 'Authoritative lookup' },
+      }),
+      create: async () => ({ kind: 'failed' }),
+      rename: async (id, title) => ({ kind: 'ready', value: { id, title } }),
+    },
+  }));
+  app.start();
+  assert.equal(await app.rename('a', 'New'), true);
+  app.select('a');
+  await ready(app, 'a');
+  releaseList({ kind: 'ready', value: [{ id: 'a', title: 'Old' }] });
+  await listed(app);
+  assert.equal(app.getSnapshot().list.rows[0].title, 'Authoritative lookup');
+  assert.equal(app.getSnapshot().selection.row?.title, 'Authoritative lookup');
+  server.verify();
+});
+
+test('archive capability updates the supplied row without selection or runtime work', async (t) => {
+  const { app, sessions, nav } = await fixture(t, [], '', (options) => ({
+    ...options,
+    directory: {
+      list: async () => ({
+        kind: 'ready',
+        value: [{ id: 'a', title: 'Alpha' }],
+      }),
+      get: async () => ({ kind: 'missing' }),
+      create: async () => ({ kind: 'failed' }),
+      ...{
+        setArchived: async (id: string, archived: boolean) => ({
+          kind: 'ready' as const,
+          value: { id, title: 'Ignored server title', archived },
+        }),
+      },
+    },
+  }));
+  app.start();
+  await listed(app);
+  const archive = (
+    app as typeof app & {
+      setArchived?: (id: string, archived: boolean) => Promise<boolean>;
+    }
+  ).setArchived;
+  assert.equal(await archive?.('a', true), true);
+  assert.deepEqual(app.getSnapshot().list.rows, [
+    { id: 'a', title: 'Alpha', archived: true },
+  ]);
+  assert.equal(sessions.length, 0);
+  assert.equal(nav.pushes.length, 0);
+});
+function archiveDirectory(
+  overrides: Partial<ThreadDirectory> = {}
+): ThreadDirectory {
+  return {
+    list: async () => ({
+      kind: 'ready',
+      value: [
+        { id: 'a', title: 'Alpha', updatedAt: 42 },
+        { id: 'b', title: 'Beta', archived: true },
+      ],
+    }),
+    get: async (id) => ({ kind: 'ready', value: { id, title: id } }),
+    create: async () => ({ kind: 'failed' }),
+    setArchived: async (id, archived) => ({
+      kind: 'ready',
+      value: { id, title: 'Unowned title', archived },
+    }),
+    ...overrides,
+  };
+}
+async function archiveFixture(t: TestContext, directory: ThreadDirectory) {
+  return fixture(t, [], '', (options) => ({ ...options, directory }));
+}
+
+test('archive reserves before observer and transport reentry, rejects duplicate/opposite and isolates targets', async (t) => {
+  const pending = new Map<
+    string,
+    (result: DirectoryResult<ThreadRow>) => void
+  >();
+  const signals: AbortSignal[] = [];
+  const calls: string[] = [];
+  let nested: Promise<boolean> | undefined;
+  const { app } = await archiveFixture(
+    t,
+    archiveDirectory({
+      setArchived: (id, _archived, signal) => {
+        calls.push(id);
+        signals.push(signal);
+        nested = app.setArchived(id, false);
+        return new Promise((resolve) => pending.set(id, resolve));
+      },
+    })
+  );
+  app.start();
+  await listed(app);
+  assert.equal(await app.setArchived('a', false), false);
+  assert.equal(await app.setArchived('a', 1 as unknown as boolean), false);
+  let duplicate: Promise<boolean> | undefined;
+  const release = app.subscribe(() => {
+    if (app.getSnapshot().archives['a']?.status === 'pending')
+      duplicate = app.setArchived('a', true);
+  });
+  const before = app.getSnapshot();
+  const first = app.setArchived('a', true);
+  assert.equal(await duplicate, false);
+  assert.equal(await nested, false);
+  assert.equal(await app.setArchived('a', false), false);
+  const second = app.setArchived('b', false);
+  assert.deepEqual(calls, ['a', 'b']);
+  assert.ok(Object.isFrozen(app.getSnapshot().archives));
+  assert.ok(Object.isFrozen(app.getSnapshot().archives['a']));
+  pending.get('b')!({
+    kind: 'ready',
+    value: { id: 'b', title: 'ignored', archived: false },
+  });
+  assert.equal(await second, true);
+  pending.get('a')!({
+    kind: 'ready',
+    value: { id: 'a', title: 'ignored', archived: true },
+  });
+  assert.equal(await first, true);
+  release();
+  const after = app.getSnapshot();
+  assert.deepEqual(after.list.rows, [
+    { id: 'a', title: 'Alpha', updatedAt: 42, archived: true },
+    { id: 'b', title: 'Beta', archived: false },
+  ]);
+  for (const key of [
+    'runtime',
+    'messages',
+    'selection',
+    'submission',
+    'creation',
+  ] as const)
+    assert.equal(after[key], before[key]);
+  assert.equal(
+    signals.some((s) => s.aborted),
+    false
+  );
+  assert.equal(await app.setArchived('a', true), false);
+});
+
+for (const mode of [
+  'failed',
+  'cancelled',
+  'throw',
+  'wrong-id',
+  'missing-archive',
+  'wrong-archive',
+  'dispose',
+] as const)
+  test(`archive ${mode} preserves rows, contains errors and supports explicit retry`, async (t) => {
+    let resolve!: (value: DirectoryResult<ThreadRow>) => void;
+    let signal!: AbortSignal;
+    let calls = 0;
+    const { app } = await archiveFixture(
+      t,
+      archiveDirectory({
+        setArchived: async (id, archived, s) => {
+          signal = s;
+          calls++;
+          if (calls > 1)
+            return { kind: 'ready', value: { id, title: 'ignored', archived } };
+          if (mode === 'throw') throw new Error('hostile');
+          return new Promise((done) => (resolve = done));
+        },
+      })
+    );
+    app.start();
+    await listed(app);
+    const rows = app.getSnapshot().list.rows;
+    const result = app.setArchived('a', true);
+    if (mode === 'dispose') app.dispose();
+    if (mode !== 'throw')
+      resolve(
+        mode === 'failed' || mode === 'cancelled'
+          ? { kind: mode }
+          : {
+              kind: 'ready',
+              value: {
+                id: mode === 'wrong-id' ? 'other' : 'a',
+                title: 'ignored',
+                ...(mode === 'missing-archive'
+                  ? {}
+                  : { archived: mode === 'wrong-archive' ? false : true }),
+              },
+            }
+      );
+    assert.equal(await result, false);
+    assert.equal(app.getSnapshot().list.rows, rows);
+    if (mode === 'dispose') {
+      assert.equal(signal.aborted, true);
+      assert.equal(await app.setArchived('a', true), false);
+    } else {
+      assert.deepEqual(app.getSnapshot().archives['a'], {
+        status: 'failed',
+        archived: true,
+      });
+      assert.equal(await app.setArchived('a', true), true);
+      assert.equal(calls, 2);
+    }
+  });
+
+test('archive observer disposal prevents transport and optional capability remains compatible', async (t) => {
+  let calls = 0;
+  const { app } = await archiveFixture(
+    t,
+    archiveDirectory({
+      setArchived: async () => {
+        calls++;
+        return { kind: 'failed' };
+      },
+    })
+  );
+  assert.equal(app.canSetArchived(), false);
+  app.start();
+  await listed(app);
+  app.subscribe(() => {
+    if (app.getSnapshot().archives['a']?.status === 'pending') app.dispose();
+  });
+  assert.equal(await app.setArchived('a', true), false);
+  assert.equal(calls, 0);
+  const { app: legacy } = await archiveFixture(
+    t,
+    archiveDirectory({ setArchived: undefined })
+  );
+  legacy.start();
+  assert.equal(legacy.canSetArchived(), false);
+  assert.equal(await legacy.setArchived('a', true), false);
+});
+
+for (const first of ['archive', 'rename'])
+  test(`archive and rename responses patch independent fields when ${first} finishes first`, async (t) => {
+    let finishPin!: (value: DirectoryResult<ThreadRow>) => void;
+    let finishRename!: (value: DirectoryResult<ThreadRow>) => void;
+    const { app } = await archiveFixture(
+      t,
+      archiveDirectory({
+        setArchived: () => new Promise((resolve) => (finishPin = resolve)),
+        rename: () => new Promise((resolve) => (finishRename = resolve)),
+      })
+    );
+    app.start();
+    await listed(app);
+    const archive = app.setArchived('a', true);
+    const rename = app.rename('a', 'New Alpha');
+    const settlePin = () =>
+      finishPin({
+        kind: 'ready',
+        value: { id: 'a', title: 'OLD', archived: true },
+      });
+    const settleRename = () =>
+      finishRename({
+        kind: 'ready',
+        value: { id: 'a', title: 'New Alpha', archived: false },
+      });
+    if (first === 'archive') {
+      settlePin();
+      await archive;
+      settleRename();
+    } else {
+      settleRename();
+      await rename;
+      settlePin();
+    }
+    assert.equal(await archive, true);
+    assert.equal(await rename, true);
+    assert.deepEqual(app.getSnapshot().list.rows[0], {
+      id: 'a',
+      title: 'New Alpha',
+      updatedAt: 42,
+      archived: true,
+    });
+  });
+
+for (const timing of ['before-write', 'after-write'] as const)
+  for (const phase of ['lookup', 'history'] as const)
+    test(`archive authoritative refresh supersedes ${timing} delayed ${phase} independently of title writes`, async (t) => {
+      let finishGet!: (value: DirectoryResult<ThreadRow>) => void;
+      let row: ThreadRow = { id: 'a', title: 'Old', archived: false };
+      const { app, server } = await fixture(
+        t,
+        [history('a', { holdHeaders: phase === 'history' })],
+        '',
+        (options) => ({
+          ...options,
+          directory: archiveDirectory({
+            list: async () => ({ kind: 'ready', value: [row] }),
+            get: () => new Promise((resolve) => (finishGet = resolve)),
+            rename: async (id, title) => ({
+              kind: 'ready',
+              value: { id, title },
+            }),
+          }),
+        })
+      );
+      app.start();
+      await listed(app);
+      if (timing === 'before-write') app.select('a');
+      assert.equal(await app.setArchived('a', true), true);
+      if (timing === 'after-write') app.select('a');
+      if (phase === 'history') {
+        finishGet({ kind: 'ready', value: row });
+        await server.steps[0].received;
+      }
+      row = { id: 'a', title: 'Authority', archived: false };
+      app.refresh();
+      await listed(app);
+      assert.equal(await app.rename('a', 'Newest title'), true);
+      if (phase === 'lookup')
+        finishGet({
+          kind: 'ready',
+          value: { id: 'a', title: 'Stale', archived: true },
+        });
+      else server.steps[0].releaseHeaders();
+      await ready(app, 'a');
+      assert.equal(app.getSnapshot().selection.row?.archived, false);
+      assert.equal(app.getSnapshot().selection.row?.title, 'Newest title');
+      server.verify();
+    });
+
+test('archive authoritative lookup supersedes older same-version list and preserves selected runtime on refresh', async (t) => {
+  let finishList!: (value: DirectoryResult<readonly ThreadRow[]>) => void;
+  const { app, server } = await fixture(t, [history('a')], '', (options) => ({
+    ...options,
+    directory: archiveDirectory({
+      list: () => new Promise((resolve) => (finishList = resolve)),
+      get: async (id) => ({
+        kind: 'ready',
+        value: { id, title: 'Authority', archived: false },
+      }),
+    }),
+  }));
+  app.start();
+  assert.equal(await app.setArchived('a', true), true);
+  app.refresh();
+  app.select('a');
+  await ready(app, 'a');
+  const runtime = app.getSnapshot().runtime;
+  finishList({
+    kind: 'ready',
+    value: [{ id: 'a', title: 'Stale', archived: true }],
+  });
+  await listed(app);
+  assert.equal(app.getSnapshot().list.rows[0].archived, false);
+  assert.equal(app.getSnapshot().selection.row?.archived, false);
+  assert.equal(app.getSnapshot().runtime, runtime);
+  server.verify();
+});
+
+test('archive old list and history-delayed lookup cannot undo confirmation', async (t) => {
+  let finishList!: (value: DirectoryResult<readonly ThreadRow[]>) => void;
+  const { app, server } = await fixture(
+    t,
+    [history('a', { holdHeaders: true })],
+    '',
+    (options) => ({
+      ...options,
+      directory: archiveDirectory({
+        list: () => new Promise((resolve) => (finishList = resolve)),
+        get: async (id) => ({
+          kind: 'ready',
+          value: { id, title: 'Alpha', archived: false },
+        }),
+      }),
+    })
+  );
+  app.start();
+  app.select('a');
+  await server.steps[0].received;
+  assert.equal(await app.setArchived('a', true), true);
+  finishList({
+    kind: 'ready',
+    value: [{ id: 'a', title: 'Alpha', archived: false }],
+  });
+  await listed(app);
+  server.steps[0].releaseHeaders();
+  await ready(app, 'a');
+  assert.equal(app.getSnapshot().list.rows[0].archived, true);
+  assert.equal(app.getSnapshot().selection.row?.archived, true);
+  server.verify();
+});
+
+for (const order of [
+  ['archive', 'pin', 'rename'],
+  ['archive', 'rename', 'pin'],
+  ['pin', 'archive', 'rename'],
+  ['pin', 'rename', 'archive'],
+  ['rename', 'archive', 'pin'],
+  ['rename', 'pin', 'archive'],
+])
+  test(`archive, pin and rename preserve independent selected fields in order ${order.join(
+    ', '
+  )}`, async (t) => {
+    const settles = new Map<
+      string,
+      (value: DirectoryResult<ThreadRow>) => void
+    >();
+    const { app, sessions, nav, server } = await fixture(
+      t,
+      [history('a')],
+      '',
+      (options) => ({
+        ...options,
+        directory: archiveDirectory({
+          setArchived: () =>
+            new Promise((resolve) => settles.set('archive', resolve)),
+          setPinned: () =>
+            new Promise((resolve) => settles.set('pin', resolve)),
+          rename: () =>
+            new Promise((resolve) => settles.set('rename', resolve)),
+        }),
+      })
+    );
+    app.start();
+    await listed(app);
+    app.select('a');
+    await ready(app, 'a');
+    const before = app.getSnapshot();
+    const calls = [
+      app.setArchived('a', true),
+      app.setPinned('a', true),
+      app.rename('a', 'New'),
+    ];
+    for (const field of order) {
+      settles.get(field)!({
+        kind: 'ready',
+        value: {
+          id: 'a',
+          title: field === 'rename' ? 'New' : 'Stale',
+          archived: field === 'archive',
+          pinned: field === 'pin',
+        },
+      });
+      await Promise.resolve();
+    }
+    assert.deepEqual(await Promise.all(calls), [true, true, true]);
+    const after = app.getSnapshot();
+    assert.equal(after.selection.row?.archived, true);
+    assert.equal(after.selection.row?.pinned, true);
+    assert.equal(after.selection.row?.title, 'New');
+    assert.deepEqual(after.list.rows[0], {
+      id: 'a',
+      title: 'New',
+      updatedAt: 42,
+      archived: true,
+      pinned: true,
+    });
+    for (const key of [
+      'runtime',
+      'messages',
+      'submission',
+      'creation',
+    ] as const)
+      assert.strictEqual(after[key], before[key]);
+    assert.equal(sessions.length, 1);
+    assert.equal(nav.pushes.length, 1);
+    server.verify();
+  });
+
+test('pinned ordering rank-only confirmation and refresh retain selected runtime, messages and submission identities', async (t) => {
+  let rows: readonly ThreadRow[] = [
+    { id: 'a', title: 'A', pinned: true, pinnedOrder: 0 },
+    { id: 'b', title: 'B', pinned: true, pinnedOrder: 1 },
+  ];
+  const { app, server, sessions } = await fixture(
+    t,
+    [history('a')],
+    '',
+    (options) => ({
+      ...options,
+      directory: {
+        list: async () => ({ kind: 'ready', value: rows }),
+        get: async () => ({ kind: 'ready', value: rows[0] }),
+        create: async () => ({ kind: 'failed' }),
+        setPinnedOrder: async (id, pinnedOrder) => ({
+          kind: 'ready',
+          value: { id, title: 'stale', pinnedOrder },
+        }),
+      },
+    })
+  );
+  app.start();
+  await listed(app);
+  app.select('a');
+  await ready(app, 'a');
+  const before = app.getSnapshot();
+  assert.equal(await app.reorderPinned('b', 'a'), true);
+  assert.equal(app.getSnapshot().selection.row?.pinnedOrder, 1);
+  assert.equal(app.getSnapshot().runtime, before.runtime);
+  assert.equal(app.getSnapshot().messages, before.messages);
+  assert.equal(app.getSnapshot().submission, before.submission);
+  rows = rows.map((row) => ({ ...row, pinnedOrder: 42 }));
+  app.refresh();
+  await listed(app);
+  assert.equal(app.getSnapshot().selection.row?.pinnedOrder, 42);
+  assert.equal(app.getSnapshot().runtime, before.runtime);
+  assert.equal(app.getSnapshot().messages, before.messages);
+  assert.equal(app.getSnapshot().submission, before.submission);
+  assert.equal(sessions.length, 1);
+  server.verify();
+});
+
+for (const phase of ['lookup', 'history'] as const)
+  test(`pinned ordering ${phase}-delayed admission cannot undo confirmation or newer same-version rank authority`, async (t) => {
+    const old: readonly ThreadRow[] = [
+      { id: 'a', title: 'A', pinned: true, pinnedOrder: 0 },
+      { id: 'b', title: 'B', pinned: true, pinnedOrder: 1 },
+    ];
+    let rows = old;
+    let finishGet!: (value: DirectoryResult<ThreadRow>) => void;
+    const { app, server } = await fixture(
+      t,
+      [history('a', { holdHeaders: phase === 'history' })],
+      '',
+      (options) => ({
+        ...options,
+        directory: {
+          list: async () => ({ kind: 'ready', value: rows }),
+          get: () =>
+            new Promise((resolve) => {
+              finishGet = resolve;
+            }),
+          create: async () => ({ kind: 'failed' }),
+          setPinnedOrder: async (id, pinnedOrder) => ({
+            kind: 'ready',
+            value: { id, title: 'stale', pinnedOrder },
+          }),
+        },
+      })
+    );
+    app.start();
+    await listed(app);
+    app.select('a');
+    if (phase === 'history') {
+      finishGet({ kind: 'ready', value: old[0] });
+      await server.steps[0].received;
+    }
+    assert.equal(await app.reorderPinned('b', 'a'), true);
+    rows = old.map((row) => ({ ...row, pinnedOrder: 42 }));
+    app.refresh();
+    await listed(app);
+    if (phase === 'lookup') finishGet({ kind: 'ready', value: old[0] });
+    else server.steps[0].releaseHeaders();
+    await ready(app, 'a');
+    assert.equal(app.getSnapshot().selection.row?.pinnedOrder, 42);
+    assert.equal(app.getSnapshot().list.rows[0].pinnedOrder, 42);
+    server.verify();
+  });
+
+test('pinned ordering authoritative lookup supersedes an older same-version list without clearing an unconfirmed barrier', async (t) => {
+  const rows: readonly ThreadRow[] = [
+    { id: 'a', title: 'A', pinned: true, pinnedOrder: 0 },
+    { id: 'b', title: 'B', pinned: true, pinnedOrder: 1 },
+  ];
+  let finishList!: (value: DirectoryResult<readonly ThreadRow[]>) => void;
+  let reads = 0;
+  const { app, server } = await fixture(t, [history('a')], '', (options) => ({
+    ...options,
+    directory: {
+      list: () =>
+        ++reads === 1
+          ? Promise.resolve({ kind: 'ready', value: rows })
+          : new Promise((resolve) => {
+              finishList = resolve;
+            }),
+      get: async () => ({
+        kind: 'ready',
+        value: { ...rows[0], pinnedOrder: 42 },
+      }),
+      create: async () => ({ kind: 'failed' }),
+      setPinnedOrder: async () => ({ kind: 'failed' }),
+    },
+  }));
+  app.start();
+  await listed(app);
+  assert.equal(await app.reorderPinned('b', 'a'), false);
+  app.refresh();
+  app.select('a');
+  await ready(app, 'a');
+  assert.equal(app.getSnapshot().ordering.status, 'unconfirmed');
+  finishList({ kind: 'ready', value: rows });
+  await listed(app);
+  assert.equal(app.getSnapshot().ordering.status, 'idle');
+  assert.equal(app.getSnapshot().selection.row?.pinnedOrder, 42);
+  assert.equal(app.getSnapshot().list.rows[0].pinnedOrder, 42);
+  server.verify();
+});
+
+test('pinned ordering preserves the selected row identity when its captured rank remains unchanged', async (t) => {
+  const rows: readonly ThreadRow[] = [
+    { id: 'a', title: 'A', pinned: true, pinnedOrder: 0 },
+    { id: 'b', title: 'B', pinned: true, pinnedOrder: 1 },
+    { id: 'c', title: 'C', pinned: true, pinnedOrder: 2 },
+  ];
+  const { app, server } = await fixture(t, [history('c')], '', (options) => ({
+    ...options,
+    directory: {
+      list: async () => ({ kind: 'ready', value: rows }),
+      get: async (id) => ({
+        kind: 'ready',
+        value: rows.find((row) => row.id === id)!,
+      }),
+      create: async () => ({ kind: 'failed' }),
+      setPinnedOrder: async (id, pinnedOrder) => ({
+        kind: 'ready',
+        value: { id, title: 'stale', pinnedOrder },
+      }),
+    },
+  }));
+  app.start();
+  await listed(app);
+  app.select('c');
+  await ready(app, 'c');
+  const before = app.getSnapshot();
+  assert.equal(await app.reorderPinned('b', 'a'), true);
+  assert.equal(app.getSnapshot().selection, before.selection);
+  assert.equal(app.getSnapshot().runtime, before.runtime);
+  assert.equal(app.getSnapshot().messages, before.messages);
+  server.verify();
+});

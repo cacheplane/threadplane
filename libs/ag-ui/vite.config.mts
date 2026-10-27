@@ -7,6 +7,7 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     include: ['src/**/*.spec.ts'],
+    exclude: ['src/runtime/**'],
     setupFiles: ['src/test-setup.ts'],
     passWithNoTests: true,
   },

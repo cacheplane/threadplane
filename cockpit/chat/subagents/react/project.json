@@ -1,0 +1,54 @@
+{
+  "name": "cockpit-chat-subagents-react",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "cockpit/chat/subagents/react/src",
+  "projectType": "application",
+  "tags": ["scope:cockpit-examples", "scope:cockpit-e2e", "framework:react"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [
+        {
+          "target": "build",
+          "projects": ["core", "content", "react"]
+        }
+      ],
+      "outputs": ["{workspaceRoot}/dist/cockpit/chat/subagents/react"],
+      "options": {
+        "command": "node scripts/react-cockpit/build.mjs chat-subagents"
+      }
+    },
+    "test": {
+      "executor": "@nx/vitest:test",
+      "options": {
+        "configFile": "cockpit/chat/subagents/react/vite.config.mts"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "e2e": {
+      "executor": "@nx/playwright:playwright",
+      "cache": false,
+      "dependsOn": ["build", "fixture-test"],
+      "options": {
+        "config": "cockpit/chat/subagents/react/e2e/playwright.config.ts",
+        "skipInstall": true
+      }
+    },
+    "fixture-test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [
+        {
+          "target": "test",
+          "projects": ["cockpit-chat-subagents-python"]
+        }
+      ],
+      "options": {
+        "command": "node --test scripts/react-cockpit/chat-subagents-fixture.spec.mjs"
+      }
+    }
+  }
+}

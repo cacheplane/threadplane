@@ -3,6 +3,8 @@
 // move, copy, test. Pure ESM, zero deps. Replaces a CommonJS-only third-party
 // dependency that broke ESM-strict consumers (Vitest, Vite test envs).
 
+import { copyData } from './copy-data.js';
+
 export interface JsonPatchOp {
   readonly op: 'add' | 'replace' | 'remove' | 'move' | 'copy' | 'test';
   readonly path: string;
@@ -15,8 +17,9 @@ export interface JsonPatchOp {
  * new document. The input is not mutated.
  *
  * Operations apply in order; if any operation fails (invalid path, failed
- * test, etc.) the whole patch throws — matching `fast-json-patch`'s
- * `validate: false` behavior used by the reducer.
+ * test, etc.) the whole patch throws without changing the input. Paths must
+ * resolve through existing own members; only a final add may create a member
+ * or insert at the array end. Root add/replace is supported, root remove is not.
  */
 export function applyPatch<T>(target: T, ops: readonly JsonPatchOp[]): T {
   let current: unknown = target;
@@ -28,8 +31,8 @@ export function applyPatch<T>(target: T, ops: readonly JsonPatchOp[]): T {
 
 function applyOne(doc: unknown, op: JsonPatchOp): unknown {
   switch (op.op) {
-    case 'add':     return setAt(doc, parsePointer(op.path), op.value, /*replaceArrayDash*/ true);
-    case 'replace': return setAt(doc, parsePointer(op.path), op.value, /*replaceArrayDash*/ false);
+    case 'add':     return setAt(doc, parsePointer(op.path), op.value, /*add*/ true);
+    case 'replace': return setAt(doc, parsePointer(op.path), op.value, /*add*/ false);
     case 'remove':  return removeAt(doc, parsePointer(op.path));
     case 'move': {
       if (op.from == null) throw new Error("'move' op requires 'from'");
@@ -41,7 +44,7 @@ function applyOne(doc: unknown, op: JsonPatchOp): unknown {
     case 'copy': {
       if (op.from == null) throw new Error("'copy' op requires 'from'");
       const value = getAt(doc, parsePointer(op.from));
-      return setAt(doc, parsePointer(op.path), structuredCloneSafe(value), true);
+      return setAt(doc, parsePointer(op.path), value, true);
     }
     case 'test': {
       const actual = getAt(doc, parsePointer(op.path));
@@ -85,10 +88,11 @@ function getAt(doc: unknown, tokens: readonly string[]): unknown {
 
 function stepInto(node: unknown, token: string): unknown {
   if (Array.isArray(node)) {
-    const i = parseArrayIndex(token, node.length);
+    const i = existingArrayIndex(node, token);
     return node[i];
   }
   if (node !== null && typeof node === 'object') {
+    if (!Object.hasOwn(node, token)) throw new Error(`Cannot read non-existent key "${token}"`);
     return (node as Record<string, unknown>)[token];
   }
   throw new Error(`Cannot traverse non-container at token "${token}"`);
@@ -98,44 +102,49 @@ function setAt(
   doc: unknown,
   tokens: readonly string[],
   value: unknown,
-  allowArrayAppend: boolean,
+  add: boolean,
 ): unknown {
   if (tokens.length === 0) {
     // Replace root.
-    return structuredCloneSafe(value);
+    return copyData(value, false);
   }
   const [head, ...rest] = tokens;
   if (Array.isArray(doc)) {
-    const arr = doc.slice();
-    const i = head === '-' && allowArrayAppend ? arr.length : parseArrayIndex(head!, arr.length + (allowArrayAppend ? 1 : 0));
+    const i = add && rest.length === 0
+      ? head === '-' ? doc.length : parseArrayIndex(head!, doc.length)
+      : existingArrayIndex(doc, head!);
+    const arr = copyContainer(doc);
     if (rest.length === 0) {
-      if (allowArrayAppend) {
+      if (add) {
         // RFC-6902 add: insert at index, shifting elements right
-        arr.splice(i, 0, structuredCloneSafe(value));
+        const length = arr.length;
+        for (let index = length; index > i; index--) {
+          if (Object.hasOwn(arr, index - 1)) arr[index] = arr[index - 1];
+          else delete arr[index];
+        }
+        arr[i] = copyData(value, false);
+        arr.length = length + 1;
       } else {
         // replace: overwrite at index
-        if (i >= arr.length) throw new Error(`Cannot replace beyond array length at "/${tokens.join('/')}"`);
-        arr[i] = structuredCloneSafe(value);
+        arr[i] = copyData(value, false);
       }
     } else {
-      if (i >= arr.length) throw new Error(`Cannot descend into non-existent array index ${i}`);
-      arr[i] = setAt(arr[i], rest, value, allowArrayAppend);
+      arr[i] = setAt(arr[i], rest, value, add);
     }
     return arr;
   }
   if (doc === null || typeof doc !== 'object') {
     throw new Error(`Cannot descend into non-container at "/${tokens.join('/')}"`);
   }
-  const obj = { ...(doc as Record<string, unknown>) };
-  if (rest.length === 0) {
-    obj[head!] = structuredCloneSafe(value);
-  } else {
-    if (!(head! in obj)) {
-      throw new Error(`Cannot descend into missing path "/${tokens.join('/')}"`);
-    }
-    obj[head!] = setAt(obj[head!], rest, value, allowArrayAppend);
+  const obj = doc as Record<string, unknown>;
+  if ((!add || rest.length > 0) && !Object.hasOwn(obj, head!)) {
+    throw new Error(`Cannot update missing path "/${tokens.join('/')}"`);
   }
-  return obj;
+  const out = copyContainer(obj);
+  defineData(out, head!, rest.length === 0
+    ? copyData(value, false)
+    : setAt(obj[head!], rest, value, add));
+  return out;
 }
 
 function removeAt(doc: unknown, tokens: readonly string[]): unknown {
@@ -144,11 +153,16 @@ function removeAt(doc: unknown, tokens: readonly string[]): unknown {
   }
   const [head, ...rest] = tokens;
   if (Array.isArray(doc)) {
-    const arr = doc.slice();
-    const i = parseArrayIndex(head!, arr.length);
-    if (i >= arr.length) throw new Error(`Cannot remove non-existent array index ${i}`);
+    const i = existingArrayIndex(doc, head!);
+    const arr = copyContainer(doc);
     if (rest.length === 0) {
-      arr.splice(i, 1);
+      const length = arr.length;
+      for (let index = i; index < length - 1; index++) {
+        if (Object.hasOwn(arr, index + 1)) arr[index] = arr[index + 1];
+        else delete arr[index];
+      }
+      delete arr[length - 1];
+      arr.length = length - 1;
     } else {
       arr[i] = removeAt(arr[i], rest);
     }
@@ -157,15 +171,21 @@ function removeAt(doc: unknown, tokens: readonly string[]): unknown {
   if (doc === null || typeof doc !== 'object') {
     throw new Error(`Cannot remove from non-container at token "${head}"`);
   }
-  const obj = { ...(doc as Record<string, unknown>) };
+  if (!Object.hasOwn(doc, head!)) throw new Error(`Cannot remove non-existent key "${head}"`);
+  const obj = doc as Record<string, unknown>;
+  const out = copyContainer(obj);
   if (rest.length === 0) {
-    if (!(head! in obj)) throw new Error(`Cannot remove non-existent key "${head}"`);
-    delete obj[head!];
-  } else {
-    if (!(head! in obj)) throw new Error(`Cannot descend into missing path "${head}"`);
-    obj[head!] = removeAt(obj[head!], rest);
+    delete out[head!];
+    return out;
   }
-  return obj;
+  defineData(out, head!, removeAt(obj[head!], rest));
+  return out;
+}
+
+function existingArrayIndex(array: readonly unknown[], token: string): number {
+  const i = parseArrayIndex(token, array.length - 1);
+  if (!Object.hasOwn(array, i)) throw new Error(`Cannot access non-existent array index ${i}`);
+  return i;
 }
 
 function parseArrayIndex(token: string, lengthBound: number): number {
@@ -183,12 +203,21 @@ function parseArrayIndex(token: string, lengthBound: number): number {
   return i;
 }
 
-function structuredCloneSafe<T>(v: T): T {
-  // Cheap deep clone for JSON-like values (no functions, no cycles) — matches
-  // the deep-clone the reducer was already doing pre-applyPatch with the prior
-  // dependency.
-  if (v === null || typeof v !== 'object') return v;
-  return JSON.parse(JSON.stringify(v)) as T;
+/** Detach a changed ancestor while retaining unaffected child references. */
+function copyContainer<T extends object>(value: T): T {
+  const copy = Array.isArray(value)
+    ? new Array(value.length)
+    : Object.create(Object.getPrototypeOf(value));
+  for (const key of Object.keys(value)) {
+    defineData(copy, key, (value as Record<string, unknown>)[key]);
+  }
+  return copy;
+}
+
+function defineData(target: object, key: string, value: unknown): void {
+  Object.defineProperty(target, key, {
+    value, enumerable: true, writable: true, configurable: true,
+  });
 }
 
 function deepEqual(a: unknown, b: unknown): boolean {
@@ -198,10 +227,6 @@ function deepEqual(a: unknown, b: unknown): boolean {
   if (Array.isArray(a) !== Array.isArray(b)) return false;
   if (Array.isArray(a) && Array.isArray(b)) {
     if (a.length !== b.length) return false;
-    for (let i = 0; i < a.length; i++) {
-      if (!deepEqual(a[i], b[i])) return false;
-    }
-    return true;
   }
   const ao = a as Record<string, unknown>;
   const bo = b as Record<string, unknown>;

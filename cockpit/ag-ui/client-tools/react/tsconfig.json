@@ -1,0 +1,21 @@
+{
+  "extends": "../../../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM"],
+    "noEmit": true,
+    "composite": false,
+    "emitDeclarationOnly": false,
+    "paths": {
+      "@threadplane/core": ["libs/core/src/index.ts"],
+      "@threadplane/core/tools": ["libs/core/src/tools/index.ts"],
+      "@threadplane/ag-ui": ["fixtures/react-parity/ag-ui-candidate/entry.ts"],
+      "@threadplane/react": ["libs/react/src/index.ts"],
+      "@threadplane/react/chat": ["libs/react/src/chat/index.ts"]
+    },
+    "declarationMap": false
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
+}

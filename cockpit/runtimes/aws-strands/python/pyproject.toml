@@ -3,26 +3,20 @@ name = "cockpit-runtimes-aws-strands"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
-    # PyPI ag-ui-strands 0.3.0 is STALE: it crashes on multi-agent routes
-    # ("'function' object has no attribute 'model'", agent.py:927) and
-    # predates the interrupt/resume contract this example depends on. Pin
-    # the bridge to a git ref instead (source mapped in [tool.uv.sources]).
-    "ag-ui-strands",
+    # 0.4.1 (2026-09-23) was built for ag-ui-protocol 1.0 and carries the
+    # multi-agent route fix that previously forced a git pin.
+    "ag-ui-strands>=0.4.1",
+    "ag-ui-protocol>=1.0.0",
     "strands-agents[openai]>=1.54.0",
     # Declared directly (not only via the [openai] extra) so the generated
     # ag-ui-dev requirements union — which carries only deps attributed to
     # this cockpit-* project — keeps the OpenAI client the Strands provider
     # imports. uv export erases extras from the direct entry.
     "openai>=2.54.0",
-    # Capped below 0.140 so the generated ag-ui-dev requirements union
-    # (highest version wins) stays satisfiable next to the MAF example:
-    # agent-framework-ag-ui 1.2.1 requires fastapi>=0.121,<0.140.
-    "fastapi>=0.121,<0.140",
+    # Only needs to satisfy ag-ui-strands' own fastapi range.
+    "fastapi>=0.121",
     "uvicorn[standard]>=0.29",
 ]
-
-[tool.uv.sources]
-ag-ui-strands = { git = "https://github.com/ag-ui-protocol/ag-ui.git", rev = "363d3878e30887e88c1fd5ca1916ec3a5962b6be", subdirectory = "integrations/aws-strands/python" }
 
 [dependency-groups]
 dev = [

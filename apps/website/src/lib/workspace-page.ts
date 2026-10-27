@@ -1,5 +1,8 @@
 import {
   cockpitManifest,
+  deriveAvailableModes,
+  getFrontendCapabilityDescriptor,
+  type CockpitManifestIdentity,
   resolveDocsWorkspace,
   type WorkspaceResolution,
 } from '@threadplane/cockpit-registry';
@@ -13,10 +16,14 @@ import {
 } from '@threadplane/cockpit-shell';
 import type { ExampleCodeContext } from './example-code';
 
-export interface WebsiteWorkspacePageModel {
+export interface WebsiteWorkspaceVariant {
   readonly resolution: WorkspaceResolution;
   readonly presentation: WorkspacePresentation;
   readonly contentBundle: ContentBundle;
+}
+
+export interface WebsiteWorkspacePageModel extends WebsiteWorkspaceVariant {
+  readonly frontendVariants?: { readonly react?: WebsiteWorkspaceVariant };
   readonly navigationTree: NavigationProduct[];
 }
 
@@ -26,12 +33,45 @@ export async function getWebsiteWorkspacePage(options: {
 }): Promise<WebsiteWorkspacePageModel> {
   const resolution = resolveDocsWorkspace(options.docsPath, options.title);
   const presentation = getWorkspacePresentation(resolution);
+  let react: WebsiteWorkspaceVariant | undefined;
+  if (resolution.kind === 'mapped') {
+    const descriptor = getFrontendCapabilityDescriptor(
+      resolution.identity as CockpitManifestIdentity,
+      'react'
+    );
+    if (descriptor) {
+      const reactResolution: WorkspaceResolution = {
+        ...resolution,
+        identity: {
+          ...resolution.identity,
+          id: `${resolution.identity.id}:react`,
+          title: descriptor.title,
+          availableModes: [
+            ...deriveAvailableModes({
+              docsPath: descriptor.docsPath,
+              descriptor,
+            }),
+          ],
+        },
+      };
+      const reactPresentation = getWorkspacePresentation(
+        reactResolution,
+        'react'
+      );
+      react = {
+        resolution: reactResolution,
+        presentation: reactPresentation,
+        contentBundle: await getContentBundle(reactPresentation),
+      };
+    }
+  }
 
   return {
     resolution,
     presentation,
     contentBundle: await getContentBundle(presentation),
     navigationTree: buildNavigationTree(cockpitManifest),
+    ...(react ? { frontendVariants: { react } } : {}),
   };
 }
 
@@ -41,7 +81,7 @@ export async function getWebsiteWorkspacePage(options: {
  * page throws at build time instead of rendering nothing.
  */
 export function getExampleCodeContext(
-  model: WebsiteWorkspacePageModel
+  model: WebsiteWorkspaceVariant
 ): ExampleCodeContext | null {
   const { presentation, contentBundle } = model;
   if (presentation.kind !== 'capability') return null;

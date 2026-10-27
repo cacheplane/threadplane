@@ -15,8 +15,9 @@ from langgraph.prebuilt import ToolNode
 from langgraph.types import Command
 from typing_extensions import TypedDict
 
+pytestmark = pytest.mark.smoke
 
-@pytest.mark.smoke
+
 def test_state_declares_backups_channel():
     from src.graph import State
     assert "backups" in State.__annotations__
@@ -38,6 +39,14 @@ def test_inventory_of_falls_back_to_seed_when_state_is_empty():
     assert inventory_of({"backups": None}) == seed_backups()
     rows = [{"id": "x", "location": "s3://x", "created_at": "2026-01-01", "size_gb": 1.0}]
     assert inventory_of({"backups": rows}) == rows
+
+
+def test_inventory_of_preserves_an_explicit_empty_inventory():
+    from src.backups import inventory_of
+    rows = []
+    inventory = inventory_of({"backups": rows})
+    assert inventory == []
+    assert inventory is not rows
 
 
 def test_age_is_measured_against_the_frozen_clock():
@@ -123,6 +132,44 @@ def test_list_backups_reads_the_thread_inventory_not_the_seed():
     assert [b["id"] for b in _last_tool_json(out)["backups"]] == ["bk-only"]
 
 
+def test_list_backups_persists_an_explicit_empty_inventory():
+    from src.backups import list_backups
+    g = _tool_graph(list_backups)
+    cfg = {"configurable": {"thread_id": "list-empty"}}
+    out = g.invoke({**_call("list_backups", {"older_than_days": 0}, "list-empty-call"), "backups": []}, cfg)
+    assert _last_tool_json(out) == {"older_than_days": 0, "backups": [], "total": 0}
+    assert out["messages"][-1].tool_call_id == "list-empty-call"
+    saved = g.get_state(cfg).values
+    assert saved["backups"] == []
+    assert _last_tool_json(saved) == _last_tool_json(out)
+    assert saved["messages"][-1].tool_call_id == "list-empty-call"
+
+
+def test_deleting_the_last_backup_keeps_later_checkpointed_lists_empty():
+    from src.backups import delete_backups, list_backups
+    g = _tool_graph(delete_backups, list_backups)
+    cfg = {"configurable": {"thread_id": "delete-last"}}
+    only = [{"id": "bk-only", "location": "s3://only", "created_at": "2025-01-01", "size_gb": 1.25}]
+    paused = g.invoke({**_call("delete_backups", {"ids": ["bk-only"]}, "delete-last-call"), "backups": only}, cfg)
+    assert paused["__interrupt__"][0].value["ids"] == ["bk-only"]
+    before = g.get_state(cfg).values
+    assert before["backups"] == only
+    assert not any(isinstance(message, ToolMessage) for message in before["messages"])
+
+    out = g.invoke(Command(resume="approved"), cfg)
+    assert _last_tool_json(out) == {"deleted": ["bk-only"], "freed_gb": 1.2, "remaining": 0}
+    assert out["messages"][-1].tool_call_id == "delete-last-call"
+    saved = g.get_state(cfg).values
+    assert saved["backups"] == []
+    assert _last_tool_json(saved) == _last_tool_json(out)
+    assert saved["messages"][-1].tool_call_id == "delete-last-call"
+
+    listed = g.invoke(_call("list_backups", {"older_than_days": 0}, "list-after-last-call"), cfg)
+    assert _last_tool_json(listed) == {"older_than_days": 0, "backups": [], "total": 0}
+    assert listed["messages"][-1].tool_call_id == "list-after-last-call"
+    assert g.get_state(cfg).values["backups"] == []
+
+
 _OLD_DELETABLE = ["bk-2026-05-28-prod", "bk-2026-04-30-prod", "bk-2026-02-01-staging"]
 
 
@@ -178,7 +225,7 @@ def test_anything_but_approval_deletes_nothing(answer):
     assert inventory_of(g.get_state(cfg).values) == seed_backups()
 
 
-@pytest.mark.parametrize("answer", ["approved", "Approve", "APPROVED — go ahead", "yes", "ok", "confirm"])
+@pytest.mark.parametrize("answer", ["approved", "Approve", "APPROVED — go ahead", "yes", "ok", "okay", "confirm", "proceed", "go ahead", " \nYeS\t", "  approved — go ahead  "])
 def test_approval_wording_is_recognised(answer):
     from src.backups import delete_backups
     g = _tool_graph(delete_backups)
@@ -186,6 +233,39 @@ def test_approval_wording_is_recognised(answer):
     g.invoke(_call("delete_backups", {"ids": ["bk-2026-02-01-staging"]}), cfg)
     out = g.invoke(Command(resume=answer), cfg)
     assert _last_tool_json(out)["deleted"] == ["bk-2026-02-01-staging"]
+
+
+@pytest.mark.parametrize("answer", [
+    "approve the prod ones but keep staging",
+    "approved but do not delete staging",
+    "  APPROVED if the audit passes\n",
+    "approved — go ahead, but keep staging",
+    "approvedish",
+    "approve-no",
+    "not approved",
+    "do not approve",
+])
+def test_conditional_negated_and_prefixed_answers_preserve_explicit_inventory(answer):
+    from src.backups import delete_backups
+    g = _tool_graph(delete_backups)
+    cfg = {"configurable": {"thread_id": f"conditional-{answer!r}"}}
+    inventory = [
+        {"id": "bk-prod", "location": "s3://prod", "created_at": "2025-01-01", "size_gb": 2.0},
+        {"id": "bk-staging", "location": "s3://staging", "created_at": "2025-01-01", "size_gb": 1.0},
+    ]
+    paused = g.invoke({**_call("delete_backups", {"ids": ["bk-prod", "bk-staging"]}, "conditional-call"), "backups": inventory}, cfg)
+    assert paused["__interrupt__"][0].value["ids"] == ["bk-prod", "bk-staging"]
+    before = g.get_state(cfg).values
+    assert before["backups"] == inventory
+    assert not any(isinstance(message, ToolMessage) for message in before["messages"])
+
+    out = g.invoke(Command(resume=answer), cfg)
+    assert _last_tool_json(out) == {"deleted": [], "declined": True, "human_response": answer, "remaining": 2}
+    assert out["messages"][-1].tool_call_id == "conditional-call"
+    saved = g.get_state(cfg).values
+    assert saved["backups"] == inventory
+    assert _last_tool_json(saved) == _last_tool_json(out)
+    assert saved["messages"][-1].tool_call_id == "conditional-call"
 
 
 def test_retained_ids_are_refused_before_any_interrupt():

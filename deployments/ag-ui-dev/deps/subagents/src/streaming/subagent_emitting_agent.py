@@ -39,8 +39,10 @@ from dataclasses import dataclass
 from typing import Any, AsyncGenerator, Iterator
 
 from ag_ui.core import (
+    PROTOCOL_VERSION,
     BaseEvent,
     EventType,
+    RunStartedEvent,
     SubagentErrorEvent,
     SubagentFinishedEvent,
     SubagentFinishedSuccessOutcome,
@@ -71,6 +73,16 @@ def _subagent_run_id(tid: str) -> str:
 
 def _message_id(tid: str, n: int) -> str:
     return f"{tid}-sub-m{n}"
+
+
+def _declare_version(event: BaseEvent) -> BaseEvent:
+    """ag-ui-langgraph 0.0.45 opens the run without a protocol version. The
+    spec says a 1.0 producer MUST declare one, and the SDK deliberately does
+    not default it, so it is stamped here on the way out. An explicit value
+    from the bridge is left alone."""
+    if isinstance(event, RunStartedEvent) and event.protocol_version is None:
+        return event.model_copy(update={"protocol_version": PROTOCOL_VERSION})
+    return event
 
 
 def _payload(event: BaseEvent) -> dict[str, Any] | None:
@@ -104,7 +116,7 @@ class SubagentEmittingAgent(LangGraphAgent):
     async def run(self, *args: Any, **kwargs: Any) -> AsyncGenerator[BaseEvent, None]:
         delegations: dict[str, _Delegation] = {}
         async for event in super().run(*args, **kwargs):
-            for out in self._expand(event, delegations):
+            for out in self._expand(_declare_version(event), delegations):
                 yield out
 
     def _expand(self, event: BaseEvent, delegations: dict[str, _Delegation]) -> Iterator[BaseEvent]:

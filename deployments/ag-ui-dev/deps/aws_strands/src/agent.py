@@ -26,7 +26,7 @@ contract surfaces measured in the 2026-08-31 runtime-portability matrix:
   wire events. (The bridge natively drops inner text deltas and would
   otherwise route delegation through CUSTOM MultiAgentHandoff + STEP_*;
   multi-agent routes also crash the stale PyPI ``ag-ui-strands`` 0.3.0
-  wheel — which is why this example pins the bridge to a git ref, see
+  wheel — which is why this example installs ``ag-ui-strands`` 0.4.1 from PyPI, see
   pyproject.toml and docs/wire-capture-subagents.md.)
 
 Model: Strands' native OpenAI provider on plain ``OPENAI_API_KEY`` — no

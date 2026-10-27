@@ -13,10 +13,11 @@ import {
   type CompleteOutcome,
 } from '@threadplane/chat';
 import type {
-  Message, AgentStatus, ToolCall, AgentEvent, AgentInterrupt,
+  Message, AgentStatus, ToolCall, AgentEvent, AgentInterrupt, AgentUsage,
 } from '@threadplane/chat';
 import type { BaseEvent } from '@ag-ui/client';
 import { applyPatch, type JsonPatchOp } from './internal/apply-patch';
+import { toolResultFromContent, messageContentFromParts } from './internal/content-parts';
 import { bridgeCitationsState } from './bridge-citations-state';
 
 /**
@@ -33,7 +34,7 @@ interface AgUiSnapshotToolCall {
 interface AgUiSnapshotMessage {
   id: string;
   role: string;
-  content?: string;
+  content?: string | unknown[];
   toolCalls?: AgUiSnapshotToolCall[];
   [key: string]: unknown;
 }
@@ -67,6 +68,7 @@ export interface ReducerDeliveryRun {
   snapshotReplacementIds: Set<string>;
   eligibleBaselineAssistantId?: string;
   currentAssistantMessageId?: string;
+  pendingReasoning?: { messageId: string; startedAt: number };
   protocolRunId?: string;
   outcome?: CompleteOutcome;
 }
@@ -82,6 +84,12 @@ export interface ReducerStore {
   events$:      Subject<AgentEvent>;
   customEvents: WritableSignal<CustomStreamEvent[]>;
   activities: WritableSignal<Map<string, ActivityEntry>>;
+  /** Token usage for the latest finished/errored run. */
+  usage: WritableSignal<AgentUsage | undefined>;
+  /** `outcome.pendingToolCallIds` from the latest successful RUN_FINISHED.
+   *  undefined when the producer declared no list; a declared list, even an
+   *  empty one, is the authority (an empty Set means nothing is pending). */
+  pendingClientToolCallIds: WritableSignal<ReadonlySet<string> | undefined>;
   deliveryRun: ReducerDeliveryRun | null;
   allocateDeliveryGeneration(scope: string): string;
   /** Accumulated raw TOOL_CALL_ARGS text per toolCallId. A live model streams
@@ -101,6 +109,7 @@ export function finalizeDeliveryRun(
 ): boolean {
   if (run.outcome !== undefined) return false;
   run.outcome = outcome;
+  delete run.pendingReasoning;
   store.messages.update(messages => messages.map(message =>
     message.delivery.generation === run.generation
       ? { ...message, delivery: completeDelivery(run.generation, outcome) }
@@ -110,35 +119,16 @@ export function finalizeDeliveryRun(
 }
 
 /**
- * Per-message reasoning timing. Populated by REASONING_MESSAGE_START /
- * REASONING_MESSAGE_END handlers. The map lives on the module — same
- * scope as the reducer function. ReducerStore stays free of timing
- * state; consumers read it via `Message.reasoningDurationMs` on
- * messages that completed reasoning.
- *
- * Keyed by messageId. We do not need cross-thread isolation here:
- * AG-UI's source agent recreates the reducer pipeline per session, and
- * messageIds are unique within a session.
- */
-const reasoningTimingMap = new Map<string, { startedAt: number; endedAt?: number }>();
-
-function resolveReasoningDurationMs(messageId: string): number | undefined {
-  const entry = reasoningTimingMap.get(messageId);
-  if (!entry || entry.endedAt === undefined) return undefined;
-  return entry.endedAt - entry.startedAt;
-}
-
-/**
- * Pure function: applies a single AG-UI BaseEvent to the store. Caller
- * subscribes to source.agent() and forwards each event here. Designed
- * for testability — no side effects beyond the supplied store.
+ * Applies a single AG-UI BaseEvent to the supplied signal store. The adapter
+ * forwards source subscriber events here; reasoning timing reads Date.now()
+ * at this imperative boundary and retains its pending start on the delivery run.
  */
 export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
   // A subagentRunId on a content event means the child produced it: route it
   // into that subagent's activity entry and never into the parent transcript —
   // the same structural rule @threadplane/langgraph applies to namespaced
-  // events. Scope: text + tool events (what our emitters produce). Reasoning/
-  // step attribution is deliberately not routed yet (YAGNI).
+  // events. Scope: text, tool and reasoning message events. Step attribution
+  // is not routed yet.
   const subagentRunId = (event as { subagentRunId?: string }).subagentRunId;
   if (subagentRunId && SUBAGENT_ROUTED_TYPES.has(event.type as string)) {
     routeSubagentContentEvent(subagentRunId, event, store);
@@ -158,6 +148,8 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
       // a TOOL_CALL_ARGS fragment whose TOOL_CALL_END never arrived (aborted
       // or errored run) must not prefix a same-id call in the next run.
       store.argsBuffers?.clear();
+      store.usage.set(undefined);
+      store.pendingClientToolCallIds.set(undefined);
       return;
     }
     case 'RUN_FINISHED': {
@@ -175,12 +167,28 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
           store.interrupt.set(toOutcomeInterrupt(outcome, eventRunId(event)));
         }
         if (run && finalizeDeliveryRun(store, run, 'paused')) {
+          store.usage.set(usageFromEvent(event));
           store.status.set('idle');
           store.isLoading.set(false);
         }
         return;
       }
+      if (outcome?.type === 'cancelled') {
+        // 1.0 RunFinishedCancelledOutcome: the producer stopped the run on
+        // request. The neutral contract already has 'aborted' for exactly this.
+        if (!run || !finalizeDeliveryRun(store, run, 'aborted')) return;
+        store.usage.set(usageFromEvent(event));
+        store.status.set('idle');
+        store.isLoading.set(false);
+        return;
+      }
+      const declared = outcome?.pendingToolCallIds;
+      const pendingIds = Array.isArray(declared)
+        ? new Set(declared.filter((id): id is string => typeof id === 'string'))
+        : undefined;
       if (!run || !finalizeDeliveryRun(store, run, 'success')) return;
+      store.usage.set(usageFromEvent(event));
+      store.pendingClientToolCallIds.set(pendingIds);
       store.status.set('idle');
       store.isLoading.set(false);
       return;
@@ -188,6 +196,7 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
     case 'RUN_ERROR': {
       const run = currentRunForEvent(event, store);
       if (!run || !finalizeDeliveryRun(store, run, 'error')) return;
+      store.usage.set(usageFromEvent(event));
       store.status.set('error');
       store.isLoading.set(false);
       const runErrorMsg = (event as { message?: unknown }).message;
@@ -208,15 +217,17 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
       return;
     }
     case 'REASONING_MESSAGE_START': {
+      const run = currentRunForEvent(event, store);
+      if (!run || run.outcome !== undefined) return;
       const id = messageIdFrom(event);
       const delivery = ownAssistantMessage(store, id);
       if (!delivery) return;
-      reasoningTimingMap.set(id, { startedAt: Date.now() });
+      run.pendingReasoning = { messageId: id, startedAt: Date.now() };
       // Initialize an assistant slot with empty reasoning if it doesn't already exist.
       store.messages.update((prev) =>
         prev.some((m) => m.id === id)
           ? prev.map((m) => m.id === id
-              ? { ...m, reasoning: m.reasoning ?? '', delivery }
+              ? { ...m, reasoning: m.reasoning ?? '', reasoningDurationMs: undefined, delivery }
               : m)
           : [...prev, { id, role: 'assistant', content: '', reasoning: '', delivery }],
       );
@@ -224,6 +235,8 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
     }
     case 'REASONING_MESSAGE_CONTENT':
     case 'REASONING_MESSAGE_CHUNK': {
+      const run = currentRunForEvent(event, store);
+      if (!run || run.outcome !== undefined) return;
       const id = messageIdFrom(event);
       const delivery = ownAssistantMessage(store, id);
       if (!delivery) return;
@@ -236,18 +249,20 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
       return;
     }
     case 'REASONING_MESSAGE_END': {
+      const run = currentRunForEvent(event, store);
+      if (!run || run.outcome !== undefined) return;
       const id = messageIdFrom(event);
-      const entry = reasoningTimingMap.get(id);
-      if (entry) {
-        entry.endedAt = Date.now();
-        reasoningTimingMap.set(id, entry);
-        const duration = resolveReasoningDurationMs(id);
-        if (duration !== undefined) {
-          store.messages.update((prev) =>
-            prev.map((m) => m.id === id ? { ...m, reasoningDurationMs: duration } : m),
-          );
-        }
-      }
+      const pending = run.pendingReasoning;
+      if (!pending || pending.messageId !== id
+        || run.currentAssistantMessageId !== id || !run.ownedMessageIds.has(id)) return;
+      const message = store.messages().find(m => m.id === id && m.role === 'assistant'
+        && m.delivery.generation === run.generation && m.delivery.phase === 'streaming');
+      if (!message) return;
+      const duration = Date.now() - pending.startedAt;
+      delete run.pendingReasoning;
+      store.messages.update(messages => messages.map(m =>
+        m === message ? { ...m, reasoningDurationMs: duration } : m,
+      ));
       return;
     }
     case 'TEXT_MESSAGE_CONTENT': {
@@ -271,27 +286,30 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
         ...prev,
         { id: e.toolCallId, name: e.toolCallName, args: {}, status: 'running' },
       ]);
-      // Link the tool call to its parent assistant message so the chat lib's
-      // per-message tool-call resolution (chat-tool-calls / chat-tool-views)
-      // can scope it. ag-ui-langgraph emits parentMessageId for every tool
-      // call. If the parent assistant message hasn't been created yet (a
-      // tool-call-only turn emits no TEXT_MESSAGE_START), create a slot.
-      const parentId = e.parentMessageId;
-      if (parentId) {
-        const delivery = ownAssistantMessage(store, parentId);
-        if (!delivery) return;
-        store.messages.update((prev) => {
-          const existing = prev.find((m) => m.id === parentId);
-          if (existing) {
-            return prev.map((m) =>
-              m.id === parentId
-                ? { ...m, toolCallIds: [...(m.toolCallIds ?? []), e.toolCallId], delivery }
-                : m,
-            );
-          }
-          return [...prev, { id: parentId, role: 'assistant', content: '', toolCallIds: [e.toolCallId], delivery }];
+      // Link the tool call to the assistant message that owns it, so the chat
+      // lib's per-message tool-call resolution (chat-tool-calls /
+      // chat-tool-views) and subagent anchoring can scope it. A server may
+      // stream tool calls without a parent message (no parentMessageId and no
+      // TEXT_MESSAGE_START first); the owner is then a new assistant message
+      // keyed by the tool call id, the same message the source agent's own
+      // message list holds for it, so a hydrated thread matches the live one.
+      const ownerId = toolCallOwnerId(store.messages(), e.toolCallId, e.parentMessageId);
+      const delivery = ownAssistantMessage(store, ownerId);
+      if (!delivery) return;
+      store.messages.update((prev) => {
+        if (!prev.some((m) => m.id === ownerId)) {
+          return [...prev, { id: ownerId, role: 'assistant', content: '', toolCallIds: [e.toolCallId], delivery }];
+        }
+        return prev.map((m) => {
+          if (m.id !== ownerId) return m;
+          const ids = m.toolCallIds ?? [];
+          return {
+            ...m,
+            toolCallIds: ids.includes(e.toolCallId) ? ids : [...ids, e.toolCallId],
+            delivery,
+          };
         });
-      }
+      });
       return;
     }
     case 'TOOL_CALL_ARGS': {
@@ -333,9 +351,9 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
       // ag_ui_langgraph serialises tool results via normalize_tool_content()
       // which always returns a string. Parse it so downstream consumers
       // (chat-tool-views / toToolViewSpec) can spread the object into props.
-      const result = typeof e.content === 'string' ? safeParseJson(e.content) : e.content;
+      const { result, parts } = toolResultFromContent(e.content);
       store.toolCalls.update((prev) =>
-        prev.map((t) => t.id === e.toolCallId ? { ...t, result } : t),
+        prev.map((t) => t.id === e.toolCallId ? { ...t, result, ...(parts ? { parts } : {}) } : t),
       );
       return;
     }
@@ -383,7 +401,16 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
         let delivery = previous?.delivery ?? staticDelivery(m.id);
         let snapshotMessage: Omit<Message, 'delivery'>;
         if (m.role !== 'assistant' || !m.toolCalls || m.toolCalls.length === 0) {
-          snapshotMessage = m as unknown as Omit<Message, 'delivery'>;
+          if (m.role === 'tool' && Array.isArray(m.content)) {
+            const mapped = messageContentFromParts(m.content);
+            snapshotMessage = {
+              ...m,
+              content: mapped.content,
+              ...(mapped.extra ? { extra: mergeAgUiExtra(m['extra'], mapped.extra) } : {}),
+            } as unknown as Omit<Message, 'delivery'>;
+          } else {
+            snapshotMessage = m as unknown as Omit<Message, 'delivery'>;
+          }
         } else {
           const ids: string[] = [];
           for (const tc of m.toolCalls) {
@@ -396,10 +423,12 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
             });
           }
           const { toolCalls: _dropped, ...rest } = m;
-          snapshotMessage = { ...rest, toolCallIds: ids } as unknown as Omit<Message, 'delivery'>;
+          // A tool-call-only assistant message may carry no content on the
+          // wire; the streamed message it replaces has ''.
+          snapshotMessage = { ...rest, content: rest.content ?? '', toolCallIds: ids } as unknown as Omit<Message, 'delivery'>;
         }
         if (completedMessage) {
-          const snapshotChanged = completedMessage.content !== snapshotMessage.content
+          const snapshotChanged = !sameContent(completedMessage.content, snapshotMessage.content)
             || !sameStringArray(completedMessage.toolCallIds, snapshotMessage.toolCallIds);
           if (!snapshotChanged) return completedMessage;
 
@@ -610,6 +639,8 @@ function randomId(): string {
 const SUBAGENT_ROUTED_TYPES = new Set([
   'TEXT_MESSAGE_START', 'TEXT_MESSAGE_CONTENT', 'TEXT_MESSAGE_END',
   'TOOL_CALL_START', 'TOOL_CALL_ARGS', 'TOOL_CALL_END', 'TOOL_CALL_RESULT',
+  'REASONING_MESSAGE_START', 'REASONING_MESSAGE_CONTENT',
+  'REASONING_MESSAGE_CHUNK', 'REASONING_MESSAGE_END',
 ]);
 
 function subagentArgsBufferKey(subagentRunId: string, toolCallId: string): string {
@@ -649,6 +680,17 @@ function ensureSubagentEntry(subagentRunId: string, store: ReducerStore): Activi
  *  TOOL_CALL cases above, but written against the entry's content record
  *  instead of store.messages/store.toolCalls. */
 function routeSubagentContentEvent(subagentRunId: string, event: BaseEvent, store: ReducerStore): void {
+  if (event.type === 'REASONING_MESSAGE_START' || event.type === 'REASONING_MESSAGE_CONTENT'
+    || event.type === 'REASONING_MESSAGE_CHUNK' || event.type === 'REASONING_MESSAGE_END') {
+    if (!store.deliveryRun || store.deliveryRun.outcome !== undefined) return;
+    // END carries no child timing or lifecycle effect, even before STARTED.
+    // Reject inert/terminal events before currentRunForEvent can bind a run ID.
+    if (event.type === 'REASONING_MESSAGE_END') return;
+    const existing = store.activities().get(subagentRunId);
+    const status = existing?.content()['status'];
+    if (existing?.activityType === 'subagent' && (status === 'complete' || status === 'error')) return;
+    if (!currentRunForEvent(event, store)) return;
+  }
   const entry = ensureSubagentEntry(subagentRunId, store); // buffer-not-drop: creates on first sight
   const e = event as unknown as Record<string, unknown>;
 
@@ -675,6 +717,16 @@ function routeSubagentContentEvent(subagentRunId: string, event: BaseEvent, stor
     const messages = [...((c['messages'] as Array<Record<string, unknown>>) ?? [])];
     const toolCalls = [...((c['toolCalls'] as Array<Record<string, unknown>>) ?? [])];
     switch (event.type as string) {
+      case 'REASONING_MESSAGE_START':
+      case 'REASONING_MESSAGE_CONTENT':
+      case 'REASONING_MESSAGE_CHUNK': {
+        const id = e['messageId'] as string;
+        const idx = messages.findIndex((m) => m['id'] === id);
+        const delta = event.type === 'REASONING_MESSAGE_START' ? '' : (e['delta'] as string) ?? '';
+        if (idx < 0) messages.push({ id, role: 'assistant', content: '', reasoning: delta });
+        else messages[idx] = { ...messages[idx], reasoning: `${messages[idx]['reasoning'] ?? ''}${delta}` };
+        return { ...c, messages };
+      }
       case 'TEXT_MESSAGE_START': {
         const id = e['messageId'] as string;
         if (!messages.some((m) => m['id'] === id)) messages.push({ id, role: 'assistant', content: '' });
@@ -726,9 +778,8 @@ function routeSubagentContentEvent(subagentRunId: string, event: BaseEvent, stor
         // ag_ui_langgraph serialises tool results via normalize_tool_content()
         // which always returns a string — parse it the same way the parent
         // TOOL_CALL_RESULT handler does so downstream consumers get an object.
-        const raw = e['content'];
-        const result = typeof raw === 'string' ? safeParseJson(raw) : raw;
-        return { ...c, toolCalls: toolCalls.map((t) => (t['id'] === e['toolCallId'] ? { ...t, result } : t)) };
+        const { result, parts } = toolResultFromContent(e['content']);
+        return { ...c, toolCalls: toolCalls.map((t) => (t['id'] === e['toolCallId'] ? { ...t, result, ...(parts ? { parts } : {}) } : t)) };
       }
       default:
         return c;
@@ -736,17 +787,28 @@ function routeSubagentContentEvent(subagentRunId: string, event: BaseEvent, stor
   });  // content-only change → inner signal, no map churn
 }
 
-/** Loosely-typed RUN_FINISHED outcome. @ag-ui/core@0.0.59 ships the strict
- *  RunFinishedInterruptOutcomeSchema / InterruptSchema for this shape, but
- *  the reducer deliberately keeps this tolerant hand-rolled view: a strict
- *  parse would silently DROP an interrupt whose entries deviate from the
- *  schema (extra keys on the strict outcome object, a missing `reason`),
- *  while the contract here is to preserve every entry verbatim under
- *  `value.interrupts` for resume to address. Validation strictness would be
- *  a behavior change, not a simplification. */
+/** Loosely-typed RUN_FINISHED outcome. The 1.0 validators are loose objects,
+ *  but the reducer still keeps its own tolerant view: it must preserve every
+ *  interrupt entry verbatim under `value.interrupts` for resume to address,
+ *  and it must not depend on a validator to route on `type`. */
 interface RunFinishedOutcome {
   type?: string;
   interrupts?: unknown;
+  pendingToolCallIds?: unknown;
+}
+
+/** Merge mapped `extra` into a pre-existing one, keeping any existing
+ *  `extra['ag-ui']` record rather than overwriting it. */
+function mergeAgUiExtra(existing: unknown, mapped: Record<string, unknown>): Record<string, unknown> {
+  const base = isRecord(existing) ? existing : {};
+  return {
+    ...base,
+    ...mapped,
+    'ag-ui': {
+      ...(isRecord(base['ag-ui']) ? base['ag-ui'] : {}),
+      ...(isRecord(mapped['ag-ui']) ? mapped['ag-ui'] : {}),
+    },
+  };
 }
 
 function runFinishedOutcome(event: BaseEvent): RunFinishedOutcome | undefined {
@@ -776,6 +838,12 @@ function toOutcomeInterrupt(
   };
 }
 
+function usageFromEvent(event: BaseEvent): AgentUsage | undefined {
+  const usage = (event as { usage?: unknown }).usage;
+  if (!Array.isArray(usage) || usage.length === 0) return undefined;
+  return { entries: usage.filter(isRecord) as AgentUsage['entries'] };
+}
+
 function eventRunId(event: BaseEvent): string | undefined {
   const runId = (event as { runId?: unknown }).runId;
   return typeof runId === 'string' ? runId : undefined;
@@ -801,6 +869,7 @@ function ownAssistantMessage(store: ReducerStore, id: string) {
   const currentId = run.currentAssistantMessageId;
   if (currentId && currentId !== id) {
     if (run.ownedMessageIds.has(id)) return undefined;
+    delete run.pendingReasoning;
     store.messages.update(messages => messages.map(message =>
       message.id === currentId
         && message.delivery.generation === run.generation
@@ -812,6 +881,27 @@ function ownAssistantMessage(store: ReducerStore, id: string) {
   run.ownedMessageIds.add(id);
   run.currentAssistantMessageId = id;
   return streamingDelivery(run.generation);
+}
+
+/**
+ * The id of the assistant message a TOOL_CALL_START belongs to, resolved the
+ * way the source agent applies the event to its own message list: a message
+ * that already lists the call keeps it; otherwise a named parent owns it unless
+ * that id belongs to a non-assistant message; otherwise the call id names a new
+ * assistant message.
+ */
+function toolCallOwnerId(messages: readonly Message[], toolCallId: string, parentMessageId?: string): string {
+  const listed = messages.find((m) => m.role === 'assistant' && m.toolCallIds?.includes(toolCallId));
+  if (listed) return listed.id;
+  if (!parentMessageId) return toolCallId;
+  const parent = messages.find((m) => m.id === parentMessageId);
+  return !parent || parent.role === 'assistant' ? parentMessageId : toolCallId;
+}
+
+function sameContent(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (Array.isArray(a) && Array.isArray(b)) return JSON.stringify(a) === JSON.stringify(b);
+  return false;
 }
 
 function sameStringArray(left?: string[], right?: string[]): boolean {
