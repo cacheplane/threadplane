@@ -309,6 +309,22 @@ remain the original title or ID, including with custom or empty title content.
 Invalid timestamps still leave pin status available. Pin presentation preserves
 supplied order and adds no action, mutation, sorting or focus target.
 
+Optional readonly `renderItem(thread, isActive)` replaces the entire content of
+its ID-keyed list item. It receives the original supplied item and exact active-ID
+comparison, and returns ReactNode content. `null`, `false` and `undefined` leave an
+empty item without default fallback. The default selection button, pin/time
+presentation, `renderTitle`, `renderActions` and `onContextMenu` are bypassed for
+custom rows. The outer list and optional New button retain their behavior.
+
+The application supplies its own controls, accessible names, active indicators,
+selection callbacks and context handling. Return list-item content, rather than
+another `li`. Render callbacks must be pure; React may evaluate them repeatedly.
+Put hooks inside a returned component. Normal keyed React reconciliation preserves
+surviving same-type content when a callback changes; switching between default and
+custom rows may replace the subtree. Omit `renderItem` to retain the default rows.
+Native compact navigation dogfoods complete application-owned selection rows while
+preserving full names, pin/time descriptions, supplied order and retained sessions.
+
 Optional readonly `renderTitle` receives the original supplied `ThreadListItem`
 and returns ReactNode title content inside the existing button. Supply only
 noninteractive phrasing content (for example `mark` or `em`); do not nest links,
@@ -337,8 +353,7 @@ serve as the menu's invoking element.
 
 An empty collection renders an empty list. The application owns loaded-title
 filtering, loading/error/empty notices, data fetching and execution. Native Delete
-uses the existing action slot; project actions, drag reordering, live timestamp refresh and
-custom row rendering remain future work. This is a bounded private T29 slice.
+uses the existing action slot; project actions, drag reordering, live timestamp refresh remain future work. This is a bounded private T29 slice.
 
 ## Controlled conversation rename editor
 

@@ -146,6 +146,10 @@ export type CompletePropsContract = Assert<
       readonly newThreadDisabled?: boolean;
       readonly newThreadLabel?: string;
       readonly now?: number;
+      readonly renderItem?: (
+        thread: ThreadListItem,
+        isActive: boolean
+      ) => ReactNode;
       readonly renderTitle?: (thread: ThreadListItem) => ReactNode;
       readonly renderActions?: (thread: ThreadListItem) => ReactNode;
       readonly onContextMenu?: (
@@ -173,3 +177,32 @@ props.onContextMenu = () => undefined;
 />;
 // @ts-expect-error Context callback IDs are exact strings.
 <ThreadList {...props} onContextMenu={(id: number) => void id} />;
+
+export type ItemRendererContract = Assert<
+  Equal<
+    Pick<ThreadListProps, 'renderItem'>,
+    {
+      readonly renderItem?: (
+        thread: ThreadListItem,
+        isActive: boolean
+      ) => ReactNode;
+    }
+  >
+>;
+<ThreadList
+  {...props}
+  renderItem={(thread, isActive) => (
+    <button aria-current={isActive ? 'true' : undefined}>{thread.id}</button>
+  )}
+/>;
+<ThreadList {...props} renderItem={() => null} />;
+<ThreadList {...props} renderItem={() => false} />;
+// @ts-expect-error Full row renderers are readonly.
+props.renderItem = () => null;
+<ThreadList
+  {...props}
+  // @ts-expect-error Full row renderers receive the original item and boolean active state.
+  renderItem={(thread: string, active: number) => thread + active}
+/>;
+// @ts-expect-error Arbitrary objects are not row content.
+<ThreadList {...props} renderItem={() => ({ arbitrary: true })} />;

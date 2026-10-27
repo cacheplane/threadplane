@@ -10,6 +10,134 @@ afterEach(() => {
 });
 
 describe('ThreadList', () => {
+  it('reconciles same-type custom content when the render callback changes', () => {
+    const rows = [{ id: 'a', title: 'Alpha' }];
+    const view = render(
+      <StrictMode>
+        <ThreadList
+          threads={rows}
+          onSelect={() => undefined}
+          renderItem={() => (
+            <input aria-label="Custom draft" defaultValue="Original" />
+          )}
+        />
+      </StrictMode>
+    );
+    const input = view.getByRole('textbox') as HTMLInputElement;
+    input.focus();
+    fireEvent.change(input, { target: { value: 'Retained' } });
+    view.rerender(
+      <StrictMode>
+        <ThreadList
+          threads={rows}
+          onSelect={() => undefined}
+          renderItem={() => (
+            <input aria-label="Updated draft" defaultValue="New default" />
+          )}
+        />
+      </StrictMode>
+    );
+    expect(view.getByRole('textbox', { name: 'Updated draft' })).toBe(input);
+    expect(input.value).toBe('Retained');
+    expect(document.activeElement).toBe(input);
+  });
+
+  it('renders application-owned complete rows with original items and active state, bypassing default renderers', () => {
+    const rows = Object.freeze([
+      Object.freeze({ id: 'b', title: 'Beta', pinned: true, updatedAt: 0 }),
+      Object.freeze({ id: 'a', title: 'Alpha' }),
+    ]);
+    const onSelect = vi.fn();
+    const onNewThread = vi.fn();
+    const onContextMenu = vi.fn();
+    const renderTitle = vi.fn(() => 'unused title');
+    const renderActions = vi.fn(() => <button>Unused action</button>);
+    const renderItem = vi.fn((thread: ThreadListItem, active: boolean) => (
+      <button
+        aria-current={active ? 'true' : undefined}
+        onClick={() => onSelect(thread.id)}
+      >
+        Custom {thread.id}
+      </button>
+    ));
+    const props = {
+      threads: rows,
+      onSelect,
+      onNewThread,
+      onContextMenu,
+      renderTitle,
+      renderActions,
+      renderItem,
+      activeThreadId: 'b',
+      now: 60000,
+    };
+    const view = render(<ThreadList {...props} />);
+    expect(renderItem.mock.calls.map(([row, active]) => [row, active])).toEqual(
+      [
+        [rows[0], true],
+        [rows[1], false],
+      ]
+    );
+    expect(renderItem.mock.calls[0][0]).toBe(rows[0]);
+    expect(renderTitle).not.toHaveBeenCalled();
+    expect(renderActions).not.toHaveBeenCalled();
+    expect(view.queryByText('1 min ago')).toBeNull();
+    expect(view.queryByText('Pinned conversation')).toBeNull();
+    expect(view.queryByRole('button', { name: 'Beta' })).toBeNull();
+    const beta = view.getByRole('button', { name: 'Custom b' });
+    expect(beta.getAttribute('aria-current')).toBe('true');
+    expect(beta.parentElement?.tagName).toBe('LI');
+    expect(beta.parentElement?.className).toBe('tp-thread-list__item');
+    fireEvent.contextMenu(beta);
+    expect(onContextMenu).not.toHaveBeenCalled();
+    expect(onSelect).not.toHaveBeenCalled();
+    fireEvent.click(beta);
+    fireEvent.click(view.getByRole('button', { name: '+ New thread' }));
+    expect(onSelect.mock.calls).toEqual([['b']]);
+    expect(onNewThread.mock.calls).toEqual([[]]);
+    beta.focus();
+    const row = beta.parentElement;
+    view.rerender(
+      <ThreadList {...props} threads={[rows[1], rows[0]]} activeThreadId="a" />
+    );
+    expect(view.getByRole('button', { name: 'Custom b' })).toBe(beta);
+    expect(beta.parentElement).toBe(row);
+    expect(document.activeElement).toBe(beta);
+    expect(beta.hasAttribute('aria-current')).toBe(false);
+    expect(
+      view.getAllByRole('listitem').map((node) => node.textContent)
+    ).toEqual(['Custom a', 'Custom b']);
+  });
+
+  it.each([null, false, undefined])(
+    'honors custom empty row output %s without default fallback',
+    (content) => {
+      const renderTitle = vi.fn();
+      const renderActions = vi.fn();
+      const view = render(
+        <ThreadList
+          threads={[{ id: 'a', title: 'Default' }]}
+          onSelect={() => undefined}
+          renderItem={() => content}
+          renderTitle={renderTitle}
+          renderActions={renderActions}
+        />
+      );
+      expect(view.getAllByRole('listitem')).toHaveLength(1);
+      expect(view.getByRole('listitem').innerHTML).toBe('');
+      expect(view.queryByRole('button')).toBeNull();
+      expect(renderTitle).not.toHaveBeenCalled();
+      expect(renderActions).not.toHaveBeenCalled();
+      view.rerender(
+        <ThreadList
+          threads={[{ id: 'a', title: 'Default' }]}
+          onSelect={() => undefined}
+        />
+      );
+      expect(view.getByRole('button', { name: 'Default' })).toBeTruthy();
+    }
+  );
+
   it.each([true, false, undefined, 'true', 1, {}, []].map((value) => [value]))(
     'presents only strict true pinned values: %s',
     (value) => {
