@@ -3936,6 +3936,12 @@
         "optional": false
       },
       {
+        "name": "messageCopy",
+        "type": "OutputEmitterRef<object>",
+        "description": "Emitted when the user copies an assistant message.",
+        "optional": false
+      },
+      {
         "name": "modelOptions",
         "type": "InputSignal<readonly ChatSelectOption[]>",
         "description": "Forwarded to the inner <chat>. When non-empty, a model picker pill\nrenders in the chat-input chrome.",
@@ -3951,6 +3957,18 @@
         "name": "pushContent",
         "type": "InputSignal<boolean>",
         "description": "",
+        "optional": false
+      },
+      {
+        "name": "rate",
+        "type": "OutputEmitterRef<object>",
+        "description": "Emitted when the user rates an assistant message.",
+        "optional": false
+      },
+      {
+        "name": "regenerate",
+        "type": "OutputEmitterRef<void>",
+        "description": "Emitted when the user clicks the regenerate button on an assistant message.",
         "optional": false
       },
       {

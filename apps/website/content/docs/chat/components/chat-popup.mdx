@@ -68,6 +68,9 @@ export class AppComponent {
 | Output | Type | Description |
 |--------|------|-------------|
 | `openChange` | `boolean` | Emits when the window opens or closes. Use with `[(open)]` for two-way binding |
+| `regenerate` | `void` | Emits when the user clicks the regenerate button on an assistant message |
+| `rate` | `{ messageIndex: number; rating: 'up' \| 'down' }` | Emits when the user rates an assistant message |
+| `messageCopy` | `{ messageIndex: number; content: string }` | Emits when the user copies an assistant message |
 
 ### Slots
 
