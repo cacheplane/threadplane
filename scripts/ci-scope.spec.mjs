@@ -20,6 +20,9 @@ it('pins CI runners to the installed browser recipe and canonical Python baselin
   const runners = [...workflow.matchAll(/^    runs-on: (.+)$/gm)].map(match => match[1]);
   assert.ok(runners.length > 0, 'CI jobs declare their runner');
   assert.deepEqual([...new Set(runners)], [runner], 'all CI jobs use the explicit supported image');
+  const drift = await readFile('.github/workflows/aimock-drift.yml', 'utf8');
+  const driftRunners = [...drift.matchAll(/^    runs-on: (.+)$/gm)].map(match => match[1]);
+  assert.deepEqual([...new Set(driftRunners)], [runner], 'the drift check installs the same browser recipe');
 
   const require = createRequire(import.meta.url);
   const installed = require('playwright-core/package.json');
