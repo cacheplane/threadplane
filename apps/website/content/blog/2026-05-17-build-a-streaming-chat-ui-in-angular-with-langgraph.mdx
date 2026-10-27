@@ -7,10 +7,11 @@ author: brian
 featured: true
 ---
 
-A real streaming chat UI in Angular, wired to a LangGraph backend, comes together with `@threadplane/chat` and `@threadplane/langgraph`.
+Let's build a real streaming chat UI in Angular, wired to a LangGraph backend, using `@threadplane/chat` and `@threadplane/langgraph`.
 
-Most AI chat features still ship without streaming — they buffer the full response on the server, then drop it into the UI in one paste.
-Streaming is the difference between a user waiting two seconds and waiting eight, and between an interface that feels alive and one that feels broken.
+Most AI chat features still ship without streaming.
+They buffer the full response on the server, then drop it into the UI in one paste.
+I think streaming is the difference between a user waiting two seconds and waiting eight, and between an interface that feels alive and one that feels broken.
 
 ## Goals
 
@@ -24,14 +25,15 @@ A user reads at roughly 200 to 300 words per minute; a modern model produces tok
 If you stream, the user starts reading before the model has finished.
 If you buffer, every response feels like a page load with no progress indicator.
 
-Streaming also enables **interruption**: if the response is incremental, the user can stop a run that is going the wrong direction before it finishes burning tokens.
+Streaming also enables **interruption**: if the response is incremental, the user can stop a run that's going the wrong direction before it finishes burning tokens.
 
-## The architecture in three boxes
+## What does the architecture look like?
 
-The seams come first, before any code.
+Let's look at the seams first, before any code.
+There are three boxes.
 
 **LangGraph backend.** This is where your agent graph lives — nodes, edges, tools, interrupts. It exposes a streaming endpoint over SSE.
-You do not write the transport.
+You don't write the transport.
 LangGraph does.
 
 **`@threadplane/langgraph` adapter.** This is the Angular-side translator.
@@ -43,11 +45,11 @@ Message list, input, suggestions, interrupt panels, tool-call cards, reasoning b
 Every piece is a signal, every signal flows through OnPush change detection, and everything is themeable through CSS custom properties.
 
 The contract between the adapter and the UI is small on purpose.
-The chat does not know it is talking to LangGraph.
-The adapter does not know how messages get rendered.
+The chat doesn't know it's talking to LangGraph.
+The adapter doesn't know how messages get rendered.
 That separation is what lets you swap the backend, theme the UI, or replace a single component without touching the rest.
 
-It is also what makes the stack viable for teams that do not control the backend.
+It's also what makes the stack viable for teams that don't control the backend.
 If your backend is LangGraph, the adapter is what you reach for.
 If your backend is something else, the adapter is the only piece that changes.
 The chat — and every component, theme, and slot inside it — is the same.
@@ -56,7 +58,7 @@ The chat — and every component, theme, and slot inside it — is the same.
 
 ## Scaffold
 
-Start with a fresh Angular 20 app.
+Let's start with a fresh Angular 20 app.
 Three commands and three files.
 
 <Steps>
@@ -86,7 +88,7 @@ yarn add @threadplane/chat @threadplane/langgraph marked
 </Tab>
 </Tabs>
 
-`marked` is the markdown renderer the chat uses for assistant messages. It is a peer dependency so you can swap it if you need to.
+`marked` is the markdown renderer the chat uses for assistant messages. It's a peer dependency so you can swap it if you need to.
 
 </Step>
 <Step title="Wire the providers">
@@ -103,7 +105,7 @@ export const appConfig: ApplicationConfig = {
 };
 ```
 
-`provideAgent` is the transport, and it is the only provider the chat components need. The UI is configured entirely through component inputs, so the two layers stay independent on purpose.
+`provideAgent` is the transport, and it's the only provider the chat components need. The UI is configured entirely through component inputs, so the two layers stay independent on purpose.
 
 </Step>
 <Step title="Create the agent in your component">
@@ -134,27 +136,27 @@ export class ChatPageComponent {
 </Step>
 </Steps>
 
-That is the entire wiring.
+That's the entire wiring!
 No global stylesheet to import.
 No PostCSS config.
 No Tailwind setup.
 The chat ships with its own design tokens and component-scoped styles.
 
 One thing worth calling out is the `assistantId`.
-That is the name of your LangGraph graph — the entry point the run will execute against.
+That's the name of your LangGraph graph — the entry point the run will execute against.
 If you have multiple graphs, you have multiple `agent()` instances, and you decide which one mounts where: a support graph in one route, a coding graph in another, the same chat shell rendering both.
 
 ## Render the chat
 
-The rendering surface is next.
-The `<chat>` component handles the standard stuff — message list, input, send button, suggestion chips, scroll behavior, autosizing, the lot.
+Let's render it.
+The `<chat>` component handles the standard stuff: message list, input, send button, suggestion chips, scroll behavior, autosizing, the lot.
 
 ```html
 <chat [agent]="chatAgent" />
 ```
 
-That is the minimum.
-You will quickly want a welcome state, suggestions, and a header.
+That's the minimum.
+You'll quickly want a welcome state, suggestions, and a header.
 
 ```ts
 template: `
@@ -178,7 +180,9 @@ template: `
 `,
 ```
 
-The slot pattern is intentional: the chat does not set your welcome copy, pick your suggestions, or own your empty states. It exposes those as slots so you can grow past the demo phase without fighting the component.
+The slot pattern is intentional.
+The chat doesn't set your welcome copy, pick your suggestions, or own your empty states.
+It exposes those as slots so you can grow past the demo phase without fighting the component.
 
 Theming is a separate concern.
 The chat reads from CSS custom properties — `--chat-bg`, `--chat-fg`, `--chat-accent`, and a few dozen more.
@@ -186,7 +190,7 @@ If you already use a design system, map your tokens onto theirs in a single styl
 
 ## What's happening under the hood?
 
-Start with the contract.
+Let's start with the contract.
 The adapter exposes a small surface, the chat consumes it, and everything else is implementation detail.
 
 The contract is roughly:
@@ -197,7 +201,7 @@ The contract is roughly:
 - `cancel()` — abort the current run
 - `retry()` — re-run the last user message
 
-Notice what *is not* in there.
+Notice what *isn't* in there.
 No event emitters.
 No observables to subscribe to.
 No imperative `subscribe(messages, render)` plumbing.
@@ -207,24 +211,25 @@ The chat template reads `messages()` directly.
 OnPush change detection picks up the writes and re-renders only the components that depend on the changed signal.
 
 Angular's signal model maps cleanly onto streaming: at the data-shape level, streaming is a sequence of small writes to a growing list, and so are signals.
-That is why the chat does not need an internal store, a reducer, or a state machine.
+That's why the chat doesn't need an internal store, a reducer, or a state machine.
 The agent is the state, the signal is the read, the template is the render.
 
 It also matters for testing.
-Because the contract is signals all the way down, you can mock the agent with a plain object — no harness, no fakes, no subscription bookkeeping.
+Because the contract is signals all the way down, you can mock the agent with a plain object (no harness, no fakes, no subscription bookkeeping).
 Write a signal, the chat re-renders.
 Write another signal, the chat re-renders again.
-That is the entire testing story for the UI layer.
+That's the entire testing story for the UI layer. 👍
 
 The transport story is the same shape one level down.
 The adapter reads from LangGraph's SSE stream and writes the parsed events into the agent's signals.
-You can swap the transport — a fake stream, a recorded fixture, a different backend entirely — and the chat does not know the difference.
-That is the boundary the contract was designed to enforce.
+You can swap the transport — a fake stream, a recorded fixture, a different backend entirely — and the chat doesn't know the difference.
+That's the boundary the contract was designed to enforce.
 
-## Production patterns
+## What does production need?
 
-The scaffold above gets you to a working chat in about ten minutes. The remaining ninety percent of the work is in three buckets.
-Each one is covered below.
+The scaffold above gets you to a working chat in about ten minutes.
+The remaining ninety percent of the work is in three buckets.
+Let's take them one at a time.
 
 ### 1. Errors and retries
 
@@ -236,7 +241,7 @@ The default behavior is to surface the error in the chat with a retry affordance
 For me, two patterns are worth setting up early:
 
 - **Per-message retry**, so a failed assistant response can be re-run without resubmitting the user's message.
-- **Transport-level retry with backoff**, so transient SSE drops do not surface as errors at all.
+- **Transport-level retry with backoff**, so transient SSE drops don't surface as errors at all.
 
 The adapter exposes both as configuration on `provideAgent`.
 A third pattern worth thinking about early: **graceful degradation when streaming is unavailable**.
@@ -250,13 +255,16 @@ The depth of what you can do here is in the [error handling guide](/docs/chat/gu
 A single-thread chat is a demo.
 A real product remembers conversations across sessions and across devices.
 
-LangGraph handles persistence on the backend. The adapter exposes thread CRUD through `@langchain/langgraph-sdk` — list threads, create a thread, switch threads, delete a thread.
+LangGraph handles persistence on the backend.
+The adapter exposes thread CRUD through `@langchain/langgraph-sdk` — list threads, create a thread, switch threads, delete a thread.
 
-Bind your `threadId` signal to your router or sidebar selection. When the signal changes, the chat re-reads from the new thread automatically — no manual unsubscribe, no race conditions.
+Bind your `threadId` signal to your router or sidebar selection.
+When the signal changes, the chat re-reads from the new thread automatically (no manual unsubscribe, no race conditions).
 
-How you scope threads is a product decision: per project, per task, or per session with the agent's memory doing the cross-session work. For me, the one thing to avoid is shipping a chat where every refresh starts from zero.
+How you scope threads is a product decision: per project, per task, or per session with the agent's memory doing the cross-session work.
+For me, the one thing to avoid is shipping a chat where every refresh starts from zero.
 
-If you are building a multi-thread sidebar, the [`<chat-sidebar>`](/docs/chat/components/chat-sidebar) primitive gives you the layout without locking you into a specific persistence model.
+If you're building a multi-thread sidebar, the [`<chat-sidebar>`](/docs/chat/components/chat-sidebar) primitive gives you the layout without locking you into a specific persistence model.
 
 ### 3. Generative UI fallbacks
 
@@ -265,9 +273,10 @@ Tool calls produce structured output.
 Interrupts ask for human input.
 Subagents return their own state.
 
-The chat handles each of these as a first-class message type. You do not need to write a custom renderer to get the default behavior — tool calls become cards, interrupts become panels, subagents become collapsible blocks.
+The chat handles each of these as a first-class message type.
+You don't need to write a custom renderer to get the default behavior: tool calls become cards, interrupts become panels, subagents become collapsible blocks.
 
-When you do need custom rendering — and you will — every one of these is a templatable slot.
+When you do need custom rendering (and you will), every one of these is a templatable slot.
 Pass a template, override the default, ship the variant you actually want.
 This is the seam where a generic chat becomes *your* chat.
 The branded card for your most important tool.
@@ -275,22 +284,24 @@ The custom approval flow for your most sensitive interrupt.
 The product-specific summary block when a subagent finishes a long task.
 The [generative UI guide](/docs/chat/guides/generative-ui) walks through each surface in depth.
 
-## Where to go from here
+## Where should you go from here?
 
 The scaffold above is the smallest possible production-shaped chat.
-It is not the whole story.
+It isn't the whole story.
 
-Three places to look next:
+Here are three places I'd look next:
 
 - The [chat quickstart example](/docs/chat/getting-started/quickstart) — a full multi-thread, multi-agent chat shell with real LangGraph graphs behind it.
 - The [persistence guide](/docs/chat/guides/lifecycle) — how to manage threads, runs, and resume state across sessions.
 - The [interrupts guide](/docs/chat/guides/streaming) — how to handle human-in-the-loop pauses without breaking the streaming model.
 
 <Callout type="info" title="Building this for an enterprise team?">
-If you are wiring `@threadplane/chat` into a regulated, multi-tenant, or design-system-heavy environment, we have a paid track for that. [Talk to us about the enterprise track →](/contact?source=blog_streaming_pillar&track=enterprise)
+If you're wiring `@threadplane/chat` into a regulated, multi-tenant, or design-system-heavy environment, we have a paid track for that. [Talk to us about the enterprise track →](/contact?source=blog_streaming_pillar&track=enterprise)
 </Callout>
 
 ## Conclusion
 
 `@threadplane/chat` plus `@threadplane/langgraph` gets an Angular app to a streaming, production-shaped chat in three files.
-Signals all the way down, and a contract small enough that you can swap the backend without touching the UI.
+It's signals all the way down, with a contract small enough that you can swap the backend without touching the UI.
+
+Give it a spin, and let me know how it goes.
