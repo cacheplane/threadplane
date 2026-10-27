@@ -214,7 +214,7 @@ export function classifyFromAffected(changedFiles, affectedProjects) {
           'examples/chat/python/pyproject.toml',
           'examples/chat/python/uv.lock',
           'examples/chat/python/langgraph.json',
-          'examples/chat/angular/e2e/fixtures/interrupt-approval.json',
+          'examples/chat/native/tooling/fixtures/approval.json',
         ].includes(normalized)
       );
     })

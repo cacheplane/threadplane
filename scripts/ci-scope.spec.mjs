@@ -166,7 +166,7 @@ describe('native canonical provider inputs', () => {
     'examples/chat/python/pyproject.toml',
     'examples/chat/python/uv.lock',
     'examples/chat/python/langgraph.json',
-    'examples/chat/angular/e2e/fixtures/interrupt-approval.json',
+    'examples/chat/native/tooling/fixtures/approval.json',
     'libs/e2e-harness/src/aimock-runner.ts',
     'examples/chat/native/tooling/fixtures/trip-summary.json',
     'examples/chat/native/tooling/canonical-provider.ts',

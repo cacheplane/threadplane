@@ -373,7 +373,10 @@ function selectScenario(scenario: Scenario) {
       control: 'provider-output/tooling/trip-summary-provider-consumer.spec.js',
     } as const;
   return {
-    fixture: 'examples/chat/angular/e2e/fixtures/interrupt-approval.json',
+    // Its own copy, not the e2e fixture: that one follows the live model into
+    // the list-then-approve backup flow, while this proof pins the plain
+    // single request_approval pause and asserts exactly one tool result.
+    fixture: 'examples/chat/native/tooling/fixtures/approval.json',
     files: [
       'approval-provider-consumer.ts',
       'approval-provider-consumer.spec.ts',
