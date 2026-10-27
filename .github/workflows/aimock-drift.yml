@@ -20,9 +20,11 @@ permissions:
 env:
   DO_NOT_TRACK: '1'
 
+# Keep the locked Playwright native recipes on their supported runner
+# baseline; ubuntu-latest may move ahead of them.
 jobs:
   drift:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
