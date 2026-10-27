@@ -7,14 +7,15 @@ author: brian
 featured: true
 ---
 
-This is how to pause an AG-UI agent in Angular for human approval before it runs a high-stakes tool, using a `CUSTOM` `on_interrupt` event and the `<chat-approval-card>` composition from `@threadplane/chat`.
+Let's pause an AG-UI agent in Angular for human approval before it runs a high-stakes tool.
+We'll use a `CUSTOM` `on_interrupt` event and the `<chat-approval-card>` composition from `@threadplane/chat`.
 
 **Updated September 9, 2026:** This tutorial uses the LangGraph compatibility bridge. The adapter also supports native interrupt batches, which take precedence in `auto` mode; Mastra requires its explicit `mastra-command` profile. Resume now claims a pending batch, and uncertain delivery requires authoritative reconciliation before retry. Client restoration is opt-in and cannot replace the server checkpointer.
 The example is the same refund agent from [Human-in-the-Loop LangGraph Agents in Angular](/blog/2026-05-28-human-in-the-loop-langgraph-agents-in-angular) — wired through the AG-UI adapter instead.
 The Angular component is byte-identical except the import.
 
 Everything below is running code from the workspace example at `cockpit/ag-ui/interrupts`.
-Clone the repo, run `nx serve cockpit-ag-ui-interrupts-angular`, and follow along.
+Clone the repo, run `nx serve cockpit-ag-ui-interrupts-angular`, and follow along!
 
 <div style={{ marginTop: 40, marginBottom: 44 }}>
 <CardGroup cols={2}>
@@ -33,7 +34,7 @@ Clone the repo, run `nx serve cockpit-ag-ui-interrupts-angular`, and follow alon
 - See how a single `CUSTOM` event named `on_interrupt` becomes `agent.interrupt()` in Angular.
 - Swap adapters without touching the component — the parity proof.
 
-## The parity proof
+## What actually changes?
 
 The Angular component file is byte-identical to the LangGraph version from [the precedent post](/blog/2026-05-28-human-in-the-loop-langgraph-agents-in-angular) except for the `injectAgent` import:
 
@@ -49,43 +50,43 @@ The `app.config.ts` adapter swap is one line in the providers array:
 + provideAgent({ url: '/agent' }),
 ```
 
-That is the whole client-side delta.
+That's the whole client-side delta.
 The rest of the file — the template binding `<chat-approval-card>`, the `(action)` handler, the approve / edit / cancel branches, the `submit({ resume })` call — is unchanged.
 
 `<chat-approval-card>` reads `agent.interrupt()` (a `Signal<AgentInterrupt | undefined>`), and `submit({ resume })` is part of the runtime-neutral `Agent` contract declared in `@threadplane/chat`.
 Both adapters populate the signal and forward the resume.
-The chat surface above does not see the wire format.
+The chat surface above doesn't see the wire format.
 
 ## When should you use an interrupt?
 
-Most tool calls do not need approval.
+Most tool calls don't need approval.
 Reads, searches, and lookups can run unattended.
-Reach for an interrupt when a tool does something the operator would not want to undo by hand: moves money, sends a customer-facing message, deletes a record, or triggers a deploy.
+Reach for an interrupt when a tool does something the operator wouldn't want to undo by hand: moves money, sends a customer-facing message, deletes a record, or triggers a deploy.
 
 For me, two practical reasons hold up.
 An interrupt caps the cost of a misfiring agent looping over a write API, and it gives the operator a checkpoint to catch a wrong action before it lands.
 
 The AG-UI angle adds a third.
 Because AG-UI normalizes the wire across many backends, the same operator-approval checkpoint plugs into LangGraph, CrewAI, Mastra, Pydantic AI, or anything else that speaks AG-UI — with no UI rewrite.
-If your shop runs more than one agent backend, I think that is a real benefit.
+If your shop runs more than one agent backend, I think that's a real benefit.
 The `<chat-approval-card>` you build today survives the backend you swap in next year.
 
-## The architecture
+## How does it fit together?
 
-Three pieces:
+There are three pieces:
 
 - **AG-UI-fronted LangGraph backend.** The same compiled graph as the LangGraph post, duplicated under `cockpit/ag-ui/interrupts/python` because example apps are standalone.
   Wrapped with `ag-ui-langgraph`'s `LangGraphAgent(name, graph)` + `add_langgraph_fastapi_endpoint(app, agent, path='/agent')` and served by `uvicorn`.
   When `interrupt()` fires inside the graph, `ag-ui-langgraph` emits a `CUSTOM` AG-UI event with `name: 'on_interrupt'` and a `value` carrying the interrupt payload — serialized as a JSON string via `dump_json_safe`.
-  The uvicorn server needs a `MemorySaver` checkpointer (`langgraph dev` and LangGraph Platform inject one automatically; plain uvicorn does not, and `aget_state` raises "No checkpointer set" without it).
+  The uvicorn server needs a `MemorySaver` checkpointer (`langgraph dev` and LangGraph Platform inject one automatically; plain uvicorn doesn't, and `aget_state` raises "No checkpointer set" without it).
 - **`@threadplane/ag-ui` adapter.** The reducer recognizes the `CUSTOM`/`on_interrupt` event, JSON-parses the string `value` so consumers see the structured object, and sets `agent.interrupt()` to `{ id, value, resumable: true }`. `agent.submit({ resume })` short-circuits the message-append path and calls `source.runAgent({ forwardedProps: { command: { resume } } })`.
   The server reads `forwarded_props.command.resume`.
   The adapter exposes the same `Agent` contract as `@threadplane/langgraph`.
 - **`@threadplane/chat` UI.** `<chat-approval-card matchKind="refund_approval">` reads `agent.interrupt()`, opens a `<dialog>`-backed modal, and emits `'approve' | 'edit' | 'cancel'`.
   Resume actions call `agent.submit({ resume: { approved, amount? } })`.
   Reject calls `submit({ resume: { approved: false } })`.
-  The component does not know which adapter is wired.
-  That is the point.
+  The component doesn't know which adapter is wired.
+  That's the point.
 
 The data flow on resume:
 
@@ -107,7 +108,7 @@ Different wire, same Angular surface.
 
 ## Scaffold
 
-Four steps.
+Let's build it in four steps.
 
 <Steps>
 <Step title="The LangGraph node">
@@ -168,8 +169,8 @@ def request_approval(state: RefundState) -> dict:
     }
 ```
 
-This file is **duplicated** into `cockpit/ag-ui/interrupts/python/src/graph.py` per the standalone-examples convention — copy, do not import across examples.
-The graph itself does not know it will be served over AG-UI.
+This file is **duplicated** into `cockpit/ag-ui/interrupts/python/src/graph.py` per the standalone-examples convention — copy, don't import across examples.
+The graph itself doesn't know it'll be served over AG-UI.
 
 </Step>
 <Step title="Wrap the graph with ag-ui-langgraph + uvicorn">
@@ -195,10 +196,10 @@ def ok() -> dict:
 
 Run with `uv run uvicorn src.server:app --port 5320`.
 
-Two details worth knowing:
+There are two details worth knowing:
 
-- **`MemorySaver` is mandatory here.** `ag-ui-langgraph` calls `graph.aget_state(config)` to read the post-stream interrupt state. `langgraph dev` and LangGraph Platform inject a checkpointer; plain uvicorn does not. Without one, `aget_state` raises "No checkpointer set" and the run never surfaces the interrupt.
-- **The `dump_json_safe` quirk.** When `interrupt({…})` fires, `ag-ui-langgraph` serializes `value` to a JSON string before placing it on the wire so arbitrary Python objects survive JSON-encoding. The `@threadplane/ag-ui` reducer parses it back to an object for you, so the Angular side never sees the string.
+- **`MemorySaver` is mandatory here.** `ag-ui-langgraph` calls `graph.aget_state(config)` to read the post-stream interrupt state. `langgraph dev` and LangGraph Platform inject a checkpointer; plain uvicorn doesn't. Without one, `aget_state` raises "No checkpointer set" and the run never surfaces the interrupt.
+- **The `dump_json_safe` quirk.** When `interrupt({…})` fires, `ag-ui-langgraph` serializes `value` to a JSON string before placing it on the wire so arbitrary Python objects survive JSON-encoding. The `@threadplane/ag-ui` reducer parses it back to an object for you, so the Angular side never sees the string (nice!).
 
 </Step>
 <Step title="Wire the adapter in app.config.ts">
@@ -227,7 +228,7 @@ export default {
 ```
 
 AG-UI's `provideAgent({ url })` and LangGraph's `provideAgent({ apiUrl, assistantId })` share the symmetric provider name but take different config shapes because the wire protocols differ.
-The provider+inject names are deliberately symmetric across both adapters — that is what makes the component code unchanged.
+The provider+inject names are deliberately symmetric across both adapters — that's what keeps the component code unchanged.
 
 </Step>
 <Step title="The Angular component">
@@ -362,7 +363,9 @@ If your graph emits `interrupt({ kind: 'deploy_approval', … })`, a separate `<
 </Step>
 </Steps>
 
-## Walk the run
+## What happens during a run?
+
+Let's walk through one.
 
 ### Streaming start → the draft
 
@@ -384,7 +387,7 @@ The structured-output call finishes, the graph hits `request_approval`, and `int
 }
 ```
 
-`value` is a JSON string — that is the `dump_json_safe` quirk.
+`value` is a JSON string — that's the `dump_json_safe` quirk.
 The `@threadplane/ag-ui` reducer parses it and sets:
 
 ```ts
@@ -408,7 +411,9 @@ When the operator clicks Approve:
 this.agent.submit({ resume: { approved: true, amount: this.editAmount() ?? payload.amount } });
 ```
 
-The adapter claims the pending interrupt before dispatching the resume. The card closing is a local UI transition, not proof that the refund completed. For this compatibility bridge, the request carries:
+The adapter claims the pending interrupt before dispatching the resume.
+The card closing is a local UI transition, not proof that the refund completed.
+For this compatibility bridge, the request carries:
 
 ```ts
 source.runAgent({ forwardedProps: { command: { resume: { approved: true, amount: 99 } } } });
@@ -427,19 +432,22 @@ Different wire, same Angular surface.
   <figcaption>Run resumed and finished after Approve.</figcaption>
 </figure>
 
-## Closing
+## Conclusion
 
-The runtime-neutral `Agent` contract is not a marketing line.
-It is the reason this post existed without rewriting the component.
+The runtime-neutral `Agent` contract isn't a marketing line.
+It's the reason this post exists without rewriting the component.
 `<chat-approval-card>`, `agent.interrupt()`, and `submit({ resume })` are the stable surface.
-`on_interrupt` and `forwardedProps.command.resume` are this LangGraph bridge's compatibility wire details. Other AG-UI runtimes can require native correlated entries or an explicit command profile.
+`on_interrupt` and `forwardedProps.command.resume` are this LangGraph bridge's compatibility wire details.
+Other AG-UI runtimes can require native correlated entries or an explicit command profile.
 
-My recommendation is simple: pick the adapter that matches your backend — LangGraph SDK direct → `@threadplane/langgraph`; anything AG-UI-fronted, including LangGraph-via-`ag-ui-langgraph` → `@threadplane/ag-ui`.
-Your chat surface does not pick.
+For me, the recommendation is simple: pick the adapter that matches your backend — LangGraph SDK direct → `@threadplane/langgraph`; anything AG-UI-fronted, including LangGraph-via-`ag-ui-langgraph` → `@threadplane/ag-ui`.
+Your chat surface doesn't pick. 👍
 
-Pointers:
+A few pointers:
 
 - The working example: [`cockpit/ag-ui/interrupts`](https://github.com/cacheplane/threadplane/tree/main/cockpit/ag-ui/interrupts) — Angular + Python, e2e-tested.
 - The cross-adapter parity rendered in docs: [Choosing an adapter](https://threadplane.ai/docs/choosing-an-adapter).
 - The AG-UI interrupts guide for protocol-level detail: [/docs/ag-ui/guides/interrupts](https://threadplane.ai/docs/ag-ui/guides/interrupts).
 - The langgraph counterpart, if you want both sides side-by-side: [Human-in-the-Loop LangGraph Agents in Angular](/blog/2026-05-28-human-in-the-loop-langgraph-agents-in-angular).
+
+Give it a spin, and let me know how the approval flow works with your backend.

@@ -1,6 +1,6 @@
 ---
 title: 'What injectAgent() Actually Returns'
-description: 'The signals, the async methods, and the runtime-neutral Agent contract underneath — what you get from one call.'
+description: 'The signals, the async methods, and the runtime-neutral Agent contract underneath. Everything you get back from one call.'
 date: 2026-08-26
 tags: [langgraph, angular, signals, agentic-ui]
 author: brian
@@ -8,63 +8,68 @@ featured: false
 draft: false
 ---
 
-You call `injectAgent()` once, you get one object back — this post is about what is actually in it.
+You call `injectAgent()` once and you get one object back.
+Let's look at what's actually in it.
 
 The [API page](/docs/langgraph/api/inject-agent) answers "what's the signature."
-That is the right question when you are mid-keystroke.
+That's the right question when you're mid-keystroke.
 This post answers the other one: what is each piece of the return value _for_, and why is it shaped the way it is?
 
 ## What are the signals?
 
-Six core signals, and together they are the reactive picture most apps need.
+There are six core signals, and together they're the reactive picture most apps need.
 
-One at a time:
+Let's go through them one at a time:
 
 - `messages` — the conversation as a `Message[]`, updated as tokens stream in. This is what you `@for` over.
 - `status` — where the agent is in its run lifecycle, as a single value you can switch on.
-- `isLoading` — `true` while a run is in flight. The signal behind every "Thinking…" indicator.
-- `error` — the last run's failure, or `undefined`. Render it; do not `try/catch` your template.
+- `isLoading` — `true` while a run is in flight. It's the signal behind every "Thinking…" indicator.
+- `error` — the last run's failure, or `undefined`. Render it; don't `try/catch` your template.
 - `toolCalls` — the tool calls the model has made, so you can show work-in-progress instead of dead air.
 - `state` — the graph's custom state, typed to your `T` when you use a typed agent ref.
 
-There is a little more on the contract: optional `interrupt` and `subagents` signals when the adapter supports those capabilities, and an `events$` observable for everything that does not fit a signal.
+There's a little more on the contract: optional `interrupt` and `subagents` signals when the adapter supports those capabilities, and an `events$` observable for everything that doesn't fit a signal.
 
-That is the surface you bind templates to.
-No subscriptions, no `async` pipe bookkeeping, no manual change detection — a streaming token lands in `messages`, and Angular's reactivity does the rest.
+That's the surface you bind templates to.
+No subscriptions, no `async` pipe bookkeeping, and no manual change detection.
+A streaming token lands in `messages`, and Angular's reactivity does the rest (which is pretty freakin' nice).
 
 ## What are the methods?
 
-Four, and they are the imperative half — the things user actions call.
+There are four, and they're the imperative half: the things user actions call.
 
-In the order you will reach for them:
+Here they are in the order you'll reach for them:
 
 - `submit(input, opts?)` — send a user message (or a resume payload, or a state patch) and start a run. Returns a promise that settles when the run does.
 - `stop()` — cancel the in-flight run.
-- `retry()` — re-run the last submission after a failure. It is deliberately safe to wire to a button: it is a no-op if a run is already in flight or there is nothing to retry.
+- `retry()` — re-run the last submission after a failure. It's deliberately safe to wire to a button: it's a no-op if a run is already in flight or there's nothing to retry.
 - `regenerate(assistantMessageIndex)` — discard the assistant message at that index and everything after it, then re-submit the user message that preceded it. This is how "regenerate response" works without you managing message surgery yourself.
 
-Signals tell the template what is true; these methods are how the user changes it.
+Signals tell the template what's true; these methods are how the user changes it.
 
 ## Why is the return type two types?
 
-Because most of what you get back is not LangGraph-shaped — and that is on purpose.
+Because most of what you get back isn't LangGraph-shaped, and that's on purpose.
 
-`injectAgent()` from `@threadplane/langgraph` returns a `LangGraphAgent<T>`, which extends the runtime-neutral `Agent` contract (by way of `AgentWithHistory`, which adds a `history` signal — a sub-contract, so do not count on `history` surviving a runtime swap; the AG-UI agent implements plain `Agent`).
-Everything above — the six signals, the four methods — lives on that neutral contract.
+`injectAgent()` from `@threadplane/langgraph` returns a `LangGraphAgent<T>`, which extends the runtime-neutral `Agent` contract (by way of `AgentWithHistory`, which adds a `history` signal — a sub-contract, so don't count on `history` surviving a runtime swap; the AG-UI agent implements plain `Agent`).
+Everything above, the six signals and the four methods, lives on that neutral contract.
 
 The neutral slice is what `<chat>` and the other primitives consume.
-They do not know they are talking to LangGraph.
+They don't know they're talking to LangGraph.
 
 The layer on top is where the runtime shows through.
-`LangGraphAgent` adds the runtime-specific members — raw `langGraph*`-prefixed signals that expose the underlying `BaseMessage` and thread-state shapes, plus things like `value`, `branch`/`setBranch`, `switchThread`, and `lifecycle`.
-They are additive. You reach for them when you need LangGraph itself; you ignore them when you do not.
+`LangGraphAgent` adds the runtime-specific members: raw `langGraph*`-prefixed signals that expose the underlying `BaseMessage` and thread-state shapes, plus things like `value`, `branch`/`setBranch`, `switchThread`, and `lifecycle`.
+They're additive.
+You reach for them when you need LangGraph itself, and you ignore them when you don't.
 
-Here is the payoff: the AG-UI adapter's `injectAgent()` returns the same neutral slice.
+Here's the payoff: the AG-UI adapter's `injectAgent()` returns the same neutral slice.
 Swap the adapter, and every component bound to `messages`, `isLoading`, and `submit` keeps working.
-For me, that is the strongest reason to keep your components on the neutral surface and treat the `langGraph*` members as an escape hatch — [choosing an adapter](/docs/choosing-an-adapter) walks through the tradeoff.
+For me, that's the strongest reason to keep your components on the neutral surface and treat the `langGraph*` members as an escape hatch.
+[Choosing an adapter](/docs/choosing-an-adapter) walks through the tradeoff.
 
 ## What does this look like in a component?
 
+Let's put it together.
 The whole thing fits in one small component:
 
 ```ts
@@ -87,12 +92,16 @@ export class SupportComponent {
 }
 ```
 
-Sending is the same object: a submit button calls `chat.submit({ message: text })`, and the response streams into `messages` on its own.
-This is not the full setup — `injectAgent()` needs `provideAgent()` configured first, and the [quickstart](/docs/langgraph/getting-started/quickstart) covers that.
+Sending uses the same object: a submit button calls `chat.submit({ message: text })`, and the response streams into `messages` on its own.
+This isn't the full setup, though.
+`injectAgent()` needs `provideAgent()` configured first, and the [quickstart](/docs/langgraph/getting-started/quickstart) covers that.
 
 ## Conclusion
 
-One call returns the whole agent surface: reactive signals for the template, imperative methods for user actions, and a contract that is not LangGraph-shaped underneath.
-That last part is the one I think matters most — bind to the neutral slice and the runtime becomes a swappable detail.
+One call returns the whole agent surface: reactive signals for the template, imperative methods for user actions, and a contract that isn't LangGraph-shaped underneath.
+I think that last part matters most.
+Bind to the neutral slice and the runtime becomes a swappable detail. 👍
 
-The [API reference](/docs/langgraph/api/inject-agent) has the full signatures, [choosing an adapter](/docs/choosing-an-adapter) covers when the neutral contract earns its keep, and if you have not built the streaming surface yet, start with [Build a Streaming Chat UI in Angular with LangGraph](/blog/build-a-streaming-chat-ui-in-angular-with-langgraph).
+The [API reference](/docs/langgraph/api/inject-agent) has the full signatures, and [choosing an adapter](/docs/choosing-an-adapter) covers when the neutral contract earns its keep.
+If you haven't built the streaming surface yet, start with [Build a Streaming Chat UI in Angular with LangGraph](/blog/build-a-streaming-chat-ui-in-angular-with-langgraph).
+And if any of this surprised you, let me know!
