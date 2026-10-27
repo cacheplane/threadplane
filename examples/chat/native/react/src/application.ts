@@ -14,13 +14,19 @@ interface ReactApplicationOptions
 }
 
 export function createReactApplication(options: ReactApplicationOptions) {
-  return createApplication({
+  const application = createApplication({
     ...options,
     contentFactory: () =>
       createA2uiMessageContent({
         ...options.a2ui,
         markdownFactory: options.markdownFactory,
       }),
+  });
+  return Object.freeze({
+    ...application,
+    hasRemovalCapability: () =>
+      typeof options.directory.remove === 'function' &&
+      typeof options.directory.inspectRemoval === 'function',
   });
 }
 
