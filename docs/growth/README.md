@@ -1,5 +1,7 @@
 # Growth architecture and operations
 
+Inbound mail and Google retirement are covered in the [Resend receiving guide](./resend-receiving.md).
+
 Growth covers acquisition, publishing, developer progress, company research,
 and founder follow-up. This is the current implementation map. `gtm.md` owns
 positioning and audience strategy; historical plans describe decisions at the

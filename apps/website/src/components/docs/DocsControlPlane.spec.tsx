@@ -44,6 +44,21 @@ beforeEach(() => {
 });
 
 describe('DocsControlPlane', () => {
+  it('preserves the selected frontend in documentation navigation', () => {
+    render(
+      <DocsContextContent
+        activeLibrary="langgraph"
+        activeSection="guides"
+        activeSlug="streaming"
+        resolveHref={(href) => `${href}?frontend=react`}
+      />
+    );
+    expect(
+      screen
+        .getByRole('link', { name: 'Persistence', exact: true })
+        .getAttribute('href')
+    ).toBe('/docs/langgraph/guides/persistence?frontend=react');
+  });
   it('keeps context headings on the shared sentence-case sans contract', () => {
     for (const selector of [
       '[data-docs-control-plane-context] [data-control-plane-section-trigger]',

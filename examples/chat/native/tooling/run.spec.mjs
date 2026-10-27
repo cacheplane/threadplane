@@ -51,7 +51,7 @@ test('closed framework selection propagates through launcher and foundation comm
   }
   assert.deepEqual(
     foundationCommands('/owned/root', 'angular').map(({ args }) => args[2]),
-    ['core', 'content', 'angular']
+    ['core', 'a2ui', 'content', 'angular']
   );
   assert.throws(() => foundationCommands('/owned/root', 'vue'), /framework/i);
   assert.equal(
@@ -169,10 +169,35 @@ test('argument rejection does not print a supplied credential value', () => {
   );
 });
 
+test('preparation disables installed Nx plugin isolation in a real child', () => {
+  const isolation = createRequire(import.meta.url).resolve(
+    'nx/src/project-graph/plugins/isolation/enabled.js'
+  );
+  for (const supplied of [{}, { NX_ISOLATE_PLUGINS: 'true' }]) {
+    const before = { ...supplied };
+    const child = spawnSync(
+      process.execPath,
+      [
+        '-e',
+        `console.log(JSON.stringify({ flag: process.env.NX_ISOLATE_PLUGINS, enabled: require(${JSON.stringify(
+          isolation
+        )}).isIsolationEnabled() }))`,
+      ],
+      { env: preparationEnvironment(supplied), encoding: 'utf8' }
+    );
+    assert.equal(child.status, 0, child.stderr);
+    assert.deepEqual(JSON.parse(child.stdout), {
+      flag: 'false',
+      enabled: false,
+    });
+    assert.deepEqual(supplied, before);
+  }
+});
+
 test('foundation invocations build only the ordered selected libraries', () => {
   assert.deepEqual(
     foundationCommands('/owned/root'),
-    ['core', 'content', 'react'].map((project) => ({
+    ['core', 'a2ui', 'content', 'react'].map((project) => ({
       command: process.execPath,
       args: [
         '/owned/root/node_modules/nx/bin/nx.js',
@@ -236,6 +261,7 @@ test('Nx target owns preparation without outer dependency builds or unsupported 
   assert.equal(project.name, 'native-conversation-react');
   assert.deepEqual(Object.keys(project.targets).sort(), [
     'build',
+    'copy-test',
     'e2e',
     'provider-test',
     'serve',

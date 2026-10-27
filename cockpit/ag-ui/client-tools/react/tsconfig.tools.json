@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "declarationMap": false,
+    "paths": {
+      "@threadplane/core": ["libs/core/src/index.ts"],
+      "@threadplane/core/tools": ["libs/core/src/tools/index.ts"],
+      "@threadplane/ag-ui": ["fixtures/react-parity/ag-ui-candidate/entry.ts"]
+    }
+  },
+  "include": ["src/tools.ts", "src/tools.spec.ts", "src/tools.type-test.ts"]
+}

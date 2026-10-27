@@ -138,6 +138,7 @@ async function prepare(context: Context) {
       temporary,
       JSON.stringify({
         framework: 'react',
+        profile: 'react-native-a2ui-langgraph',
         configuration: 'production',
         assistantId: 'chat',
       }),
@@ -200,6 +201,52 @@ async function providerCommand(context: Context): Promise<Command> {
     env,
   };
 }
+export function collectInstalledProviderPackages(
+  consumer: string,
+  temporary: string
+) {
+  const artifacts: Record<string, Record<string, string>> = {};
+  const packages = ['core', 'content', 'a2ui', 'react', 'langgraph'];
+  for (const name of packages)
+    artifacts[name] = inventory(
+      join(consumer, 'node_modules/@threadplane', name)
+    );
+  const tarballs = Object.fromEntries(
+    readdirSync(temporary)
+      .filter((name) => name.endsWith('.tgz'))
+      .map((name) => [name, sha(readFileSync(join(temporary, name)))])
+  );
+  assert.deepEqual(
+    Object.keys(tarballs).sort(),
+    packages
+      .map((name) => {
+        const manifest = json(
+          join(consumer, 'node_modules/@threadplane', name, 'package.json')
+        );
+        assert.equal(manifest.name, '@threadplane/' + name);
+        return `threadplane-${name}-${manifest.version}.tgz`;
+      })
+      .sort(),
+    'Exactly five native React A2UI tarballs required'
+  );
+  return {
+    profile: 'react-native-a2ui-langgraph',
+    lock: sha(readFileSync(join(consumer, 'package-lock.json'))),
+    artifacts,
+    tarballs,
+    versions: Object.fromEntries(
+      [
+        'typescript',
+        '@langchain/langgraph-sdk',
+        ...packages.map((name) => '@threadplane/' + name),
+      ].map((name) => [
+        name,
+        json(join(consumer, 'node_modules', name, 'package.json')).version,
+      ])
+    ),
+  };
+}
+
 async function exercise(
   context: Context & { url: string; modelUrl: string; controlUrl?: string },
   selected: ReturnType<typeof selectScenario>,
@@ -254,17 +301,6 @@ async function exercise(
     'node_modules/@langchain/langgraph-sdk/dist/index.d.ts',
   ])
     assert.ok(inputs[path], 'Installed declaration required: ' + path);
-  const artifacts: Record<string, Record<string, string>> = {};
-  for (const name of ['core', 'content', 'react', 'langgraph'])
-    artifacts[name] = inventory(
-      join(consumer, 'node_modules/@threadplane', name)
-    );
-  const tarballs = Object.fromEntries(
-    readdirSync(temporary)
-      .filter((name) => name.endsWith('.tgz'))
-      .map((name) => [name, sha(readFileSync(join(temporary, name)))])
-  );
-  assert.equal(Object.keys(tarballs).length, 4);
   Object.assign(proof, {
     compiler: {
       executable: relative(consumer, executable),
@@ -272,23 +308,7 @@ async function exercise(
       inputs,
       configuration: sha(readFileSync(join(consumer, selected.configuration))),
     },
-    installed: {
-      lock: sha(readFileSync(join(consumer, 'package-lock.json'))),
-      artifacts,
-      tarballs,
-      versions: Object.fromEntries(
-        [
-          'typescript',
-          '@langchain/langgraph-sdk',
-          '@threadplane/langgraph',
-          '@threadplane/core',
-          '@threadplane/content',
-        ].map((name) => [
-          name,
-          json(join(consumer, 'node_modules', name, 'package.json')).version,
-        ])
-      ),
-    },
+    installed: collectInstalledProviderPackages(consumer, temporary),
   });
   const resultPath = join(temporary, 'session-result.json');
   await context.run('installed cleanup control', {

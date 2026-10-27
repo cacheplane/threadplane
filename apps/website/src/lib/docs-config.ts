@@ -369,6 +369,21 @@ export const docsConfig: DocsLibrary[] = [
             section: 'components',
           },
           {
+            title: 'chatActivityTemplate',
+            slug: 'chat-activity-template',
+            section: 'components',
+          },
+          {
+            title: 'chatRunActivityTemplate',
+            slug: 'chat-run-activity-template',
+            section: 'components',
+          },
+          {
+            title: 'chatInterruptTemplate',
+            slug: 'chat-interrupt-template',
+            section: 'components',
+          },
+          {
             title: 'ChatToolCallCard',
             slug: 'chat-tool-call-card',
             section: 'components',

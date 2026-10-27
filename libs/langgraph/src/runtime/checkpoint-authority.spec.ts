@@ -136,16 +136,46 @@ describe('final checkpoint evidence', () => {
     for (const change of [
       { checkpoint: { ...checkpoint, checkpoint_id: 'other' } },
       { metadata: { run_id: 'other' } },
+      ...[undefined, null, '', 3, false, {}, []].map((run_id) => ({
+        metadata: { run_id },
+      })),
       { values: { messages: ['other'] } },
       { next: ['work'] },
+      { tasks: [{ id: 'other', name: 'work' }] },
     ])
       expect(() =>
-        confirmCheckpoint(candidate, saved(change), 'run')
+        confirmCheckpoint(candidate, saved({ metadata: {}, ...change }), 'run')
       ).toThrow();
     expect(() => confirmCheckpoint(undefined, saved(), 'run')).toThrow();
+    expect(() =>
+      confirmCheckpoint(candidate, saved({ metadata: {} }), 'other')
+    ).toThrow();
     expect(
       captureCheckpointEvent({ ...event(), namespace: ['child'] }, 'thread')
     ).toBeUndefined();
+  });
+  it('confirms independently bound stream evidence when saved metadata omits the run and checkpoint map', () => {
+    const position = {
+      thread_id: 'thread',
+      checkpoint_ns: '',
+      checkpoint_id: 'a',
+    };
+    const candidate = captureCheckpointEvent(
+      event({
+        config: { configurable: { ...position, run_id: 'run' } },
+      }),
+      'thread'
+    );
+    expect(
+      confirmCheckpoint(
+        candidate,
+        saved({
+          checkpoint: position,
+          metadata: { source: 'loop', step: 2 },
+        }),
+        'run'
+      ).position
+    ).toEqual({ ...position, checkpoint_map: {} });
   });
   it('supports only unconsumed dynamic root tasks and detects consumption before resume', () => {
     const tasks = [

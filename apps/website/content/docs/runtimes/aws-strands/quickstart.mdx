@@ -60,12 +60,23 @@ Visit `http://localhost:4331`. The backend answers on `http://localhost:5331/age
 The app opens with two welcome suggestions, and one of them covers the tool call, the shared state, and the interrupt in a single turn.
 
 1. Send **Book the Q3 roadmap review**, which submits *"Book a Q3 roadmap review meeting with the platform team on Tuesday."* The agent calls `check_availability` first, and the requested day and its open slots appear in the "Shared state — schedule" panel beside the transcript. Then it calls `book_meeting`, the run stops, and a card titled "Booking approval required" shows the topic and the chosen slot above Cancel and Approve.
-2. Approve or cancel the card. The run resumes and the agent confirms in one sentence either that the meeting is booked or that nothing was booked. The panel keeps the booking as it was snapshotted before the pause, because no hook writes state after the interrupt resolves.
+2. Approve or cancel the card. The run resumes and the agent confirms in one sentence either that the meeting is booked or that nothing was booked. The panel may retain the pending snapshot; a later batch lookup may publish final state. The canonical tool result is separate from that observation.
 3. The second suggestion, **Book a design critique**, runs the same two steps for the web team on Thursday.
 4. For the subagent surface, type a research request instead: *"Find a slot for Ada and Grace next week — research their availability first."* The agent calls `research_availability`, and the specialist's answer streams token by token inside a subagent card rather than into the parent bubble.
 
 </Step>
 </Steps>
+
+## React source preview
+
+The Overview page also offers an experimental React selection at `/docs/runtimes/aws-strands/overview?frontend=react`. It covers fictional availability and booking approval with the same backend and prompt. The calendar is process-global; a fresh thread does not reset it. Research specialist rendering remains in the canonical Angular example.
+
+```bash
+npx nx build cockpit-runtimes-aws-strands-react
+npx nx e2e cockpit-runtimes-aws-strands-react
+```
+
+The build installs private candidate artifacts. The e2e target prepares an owned frozen Python 3.12 fixture and runs the actual generated service with an offline model seam; it makes no live-provider or public npm availability claim.
 
 ## About the bridge pin
 

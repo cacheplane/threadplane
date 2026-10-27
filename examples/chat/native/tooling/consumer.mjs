@@ -38,6 +38,47 @@ const digest = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const json = (path) => JSON.parse(readFileSync(path, 'utf8'));
 const writeJson = (path, value) =>
   writeFileSync(path, JSON.stringify(value, null, 2) + '\n');
+
+export function selectedConsumerProfile(framework = 'react', profile) {
+  const ordinary = selectedFramework(framework) + '-langgraph';
+  const selected =
+    profile ??
+    (framework === 'react' ? 'react-native-a2ui-langgraph' : ordinary);
+  assert.ok(
+    selected === ordinary ||
+      (framework === 'react' && selected === 'react-native-a2ui-langgraph'),
+    `Unsupported native consumer profile for ${framework}: ${selected}`
+  );
+  return selected;
+}
+
+export function installedTestGraph(framework = 'react', profile) {
+  const feature =
+    selectedConsumerProfile(framework, profile) ===
+    'react-native-a2ui-langgraph';
+  return {
+    config: feature ? 'tsconfig.test.react.json' : 'tsconfig.test.json',
+    specRoots: feature ? ['shared', 'react/src'] : ['shared'],
+  };
+}
+
+export function collectInstalledTestSpecs(consumer, graph) {
+  return graph.specRoots.flatMap((root) =>
+    files(join(consumer, 'test-output', root)).filter((path) =>
+      path.endsWith('.spec.js')
+    )
+  );
+}
+
+export function testInputFingerprint(root, framework = 'react', profile) {
+  const graph = installedTestGraph(framework, profile);
+  return inputFingerprint(root, [
+    ...buildInputRoots(root, framework),
+    ...(graph.config === 'tsconfig.test.json'
+      ? []
+      : ['examples/chat/native/' + graph.config]),
+  ]);
+}
 function files(directory) {
   assert.equal(
     lstatSync(directory).isSymbolicLink(),
@@ -161,7 +202,8 @@ function compiler(consumer, allowFailure = false) {
   );
 }
 
-export function compileApplication({ consumer, framework = 'react' }) {
+export function compileApplication({ consumer, framework = 'react', profile }) {
+  selectedConsumerProfile(framework, profile);
   selectedFramework(framework);
   if (framework === 'angular')
     return compileAngularApplication({ consumer, run });
@@ -222,21 +264,66 @@ export function compileApplication({ consumer, framework = 'react' }) {
   };
 }
 
-function assertComposition(consumer, typeInputs, runtimeInputs) {
+function assertComposition(consumer, typeInputs, runtimeInputs, profile) {
+  assert.equal(
+    profile,
+    'react-native-a2ui-langgraph',
+    'Native React application requires its A2UI profile'
+  );
   const types = Object.keys(typeInputs);
   for (const path of [...types, ...runtimeInputs]) {
+    assert.notEqual(
+      path,
+      'react/src/application-fixture.ts',
+      'Test support fixture must not enter production compiler or runtime inputs'
+    );
     assert.ok(
       !path.split('/').includes('..') && !isAbsolute(path),
       `Input outside consumer: ${path}`
     );
     assert.doesNotMatch(
       path,
-      /(?:^|\/)(?:libs\/|fixtures\/|node_modules\/(?:@angular\/|@threadplane\/(?:angular|chat|telemetry|render|a2ui)\/))|(?:fesm\d*|runtime-entry)\//,
+      /(?:^|\/)(?:libs\/|fixtures\/|node_modules\/(?:@angular\/|@threadplane\/(?:angular|chat|telemetry|render)\/))|(?:fesm\d*|runtime-entry)\//,
       `Forbidden application input: ${path}`
     );
     assert.ok(
       existsSync(join(consumer, path)),
       `Build input must exist: ${path}`
+    );
+  }
+  for (const path of runtimeInputs)
+    assert.doesNotMatch(
+      path,
+      /^node_modules\/@threadplane\/a2ui\//,
+      'Protocol JavaScript is forbidden in the browser'
+    );
+  for (const path of types.filter((path) =>
+    path.startsWith('node_modules/@threadplane/a2ui/')
+  ))
+    assert.ok(
+      path.endsWith('.d.ts'),
+      'Only protocol declarations may enter compiler inputs'
+    );
+  assert.ok(
+    types.some(
+      (path) =>
+        path.startsWith('node_modules/@threadplane/a2ui/') &&
+        path.endsWith('.d.ts')
+    ),
+    'Installed protocol declarations required'
+  );
+  for (const path of [
+    'react/src/application.ts',
+    'react/src/a2ui-message-content.ts',
+    'react/src/a2ui-trip-catalog.ts',
+  ]) {
+    assert.ok(
+      types.includes(path),
+      'Production React compiler module required: ' + path
+    );
+    assert.ok(
+      runtimeInputs.includes(path),
+      'Production React runtime module required: ' + path
     );
   }
   for (const suffix of [
@@ -246,8 +333,13 @@ function assertComposition(consumer, typeInputs, runtimeInputs) {
     '@threadplane/react/src/chat/message-list',
     '@threadplane/react/src/chat/reasoning',
     '@threadplane/react/src/chat/approval-card',
+    '@threadplane/react/src/chat/message-actions',
+    '@threadplane/react/src/chat/citations',
+    '@threadplane/react/src/chat/text-transcript',
+    '@threadplane/react/src/render/render-spec',
     '@threadplane/content/src/markdown/create-markdown',
     '@threadplane/content/src/messages/create-message-content',
+    '@threadplane/content/src/a2ui/create-surfaces',
   ]) {
     assert.ok(
       types.includes('node_modules/' + suffix + '.d.ts'),
@@ -297,15 +389,22 @@ export async function productionOperations(buildRoot) {
         process.stderr.write(result.stderr);
       }
     },
-    pack({ buildRoot, temporary, framework }) {
+    pack({ buildRoot, temporary, framework, profile }) {
+      const selected = selectedConsumerProfile(framework, profile);
       const candidate = join(temporary, 'candidate');
       mkdirSync(candidate);
       const emission = emitCandidate(buildRoot, candidate);
       const packed = packCandidate(candidate, temporary);
       const tarballs = {
-        ...packLocalArtifacts(buildRoot, temporary, [
-          selectedFramework(framework),
-        ]),
+        ...packLocalArtifacts(
+          buildRoot,
+          temporary,
+          [selectedFramework(framework)],
+          {
+            optionalPeers:
+              selected === 'react-native-a2ui-langgraph' ? ['a2ui'] : [],
+          }
+        ),
         '@threadplane/langgraph': 'file:' + packed.tarball,
       };
       return {
@@ -319,7 +418,8 @@ export async function productionOperations(buildRoot) {
         ),
       };
     },
-    install({ buildRoot, consumer, packages, framework }) {
+    install({ buildRoot, consumer, packages, framework, profile }) {
+      const selected = selectedConsumerProfile(framework, profile);
       return installPresentationConsumer(
         consumer,
         json(join(buildRoot, 'package-lock.json')),
@@ -329,13 +429,14 @@ export async function productionOperations(buildRoot) {
             framework === 'angular'
               ? angularLanggraphPresentationSeeds
               : reactLanggraphPresentationSeeds,
-          profile: selectedFramework(framework) + '-langgraph',
+          profile: selected,
           env: preparationEnvironment(),
         }
       );
     },
     compile: compileApplication,
-    bundle({ consumer, configuration, compilation, framework }) {
+    bundle({ consumer, configuration, compilation, framework, profile }) {
+      const selected = selectedConsumerProfile(framework, profile);
       if (selectedFramework(framework) === 'angular')
         return bundleAngularApplication({
           consumer,
@@ -359,7 +460,7 @@ export async function productionOperations(buildRoot) {
       process.stderr.write(result.stderr);
       const output = join(consumer, 'react/dist');
       const inputs = json(join(output, 'build-inputs.json'));
-      assertComposition(consumer, compilation.inputs, inputs);
+      assertComposition(consumer, compilation.inputs, inputs, selected);
       return {
         output,
         inputs: Object.fromEntries(
@@ -379,12 +480,13 @@ export async function prepareConsumer({
   root,
   temporary,
   framework = 'react',
+  profile,
   configuration = 'development',
   assistantId = '',
   operations,
   unchanged = () => {},
 }) {
-  selectedFramework(framework);
+  const selected = selectedConsumerProfile(framework, profile);
   const consumer = join(temporary, 'consumer');
   mkdirSync(consumer);
   const initialFiles = copyApplication(root, consumer, {
@@ -400,6 +502,7 @@ export async function prepareConsumer({
     consumer,
     configuration,
     framework,
+    profile: selected,
   };
   const stages =
     typeof operations === 'function'
@@ -429,6 +532,7 @@ export async function prepareConsumer({
 export async function buildConsumer({
   root,
   framework = 'react',
+  profile,
   configuration = 'production',
   assistantId = '',
   output = join(
@@ -440,7 +544,7 @@ export async function buildConsumer({
   operations,
   capture,
 }) {
-  selectedFramework(framework);
+  const selected = selectedConsumerProfile(framework, profile);
   const fingerprint = () =>
     inputFingerprint(root, buildInputRoots(root, framework));
   const inputs = fingerprint();
@@ -468,6 +572,7 @@ export async function buildConsumer({
       root,
       temporary,
       framework,
+      profile: selected,
       configuration,
       assistantId,
       operations,
@@ -478,6 +583,7 @@ export async function buildConsumer({
     unchanged();
     const provenance = {
       framework,
+      profile: selected,
       configuration,
       inputs,
       buildInputs,
@@ -544,13 +650,14 @@ export async function buildConsumer({
 export async function testConsumer({
   root,
   framework = 'react',
+  profile,
   configuration,
   assistantId,
   testNamePattern,
 }) {
-  selectedFramework(framework);
-  const fingerprint = () =>
-    inputFingerprint(root, buildInputRoots(root, framework));
+  const selected = selectedConsumerProfile(framework, profile);
+  const graph = installedTestGraph(framework, selected);
+  const fingerprint = () => testInputFingerprint(root, framework, selected);
   const inputs = fingerprint();
   const unchanged = () =>
     assert.deepEqual(
@@ -568,6 +675,7 @@ export async function testConsumer({
       root,
       temporary,
       framework,
+      profile: selected,
       configuration,
       assistantId,
       unchanged,
@@ -577,6 +685,8 @@ export async function testConsumer({
       join(native, 'tsconfig.test.json'),
       join(consumer, 'tsconfig.test.json')
     );
+    if (graph.config !== 'tsconfig.test.json')
+      cpSync(join(native, graph.config), join(consumer, graph.config));
     mkdirSync(join(consumer, 'tooling'));
     cpSync(
       join(native, 'tooling/proof-server.mjs'),
@@ -587,7 +697,7 @@ export async function testConsumer({
       [
         join(consumer, 'node_modules/typescript/bin/tsc'),
         '--project',
-        'tsconfig.test.json',
+        graph.config,
         '--listFiles',
         '--pretty',
         'false',
@@ -605,6 +715,28 @@ export async function testConsumer({
         join(consumer, 'node_modules/@langchain/langgraph-sdk/dist/index.d.ts')
       )
     );
+    const protocolInputs = typeInputs.filter((path) =>
+      path.includes('/node_modules/@threadplane/a2ui/')
+    );
+    if (selected === 'react-native-a2ui-langgraph')
+      assert.ok(
+        protocolInputs.some((path) => path.endsWith('.d.ts')),
+        'Selected protocol declarations required'
+      );
+    else {
+      assert.deepEqual(
+        protocolInputs,
+        [],
+        'Ordinary test graph excludes protocol declarations'
+      );
+      assert.equal(
+        typeInputs.some((path) =>
+          path.startsWith(join(consumer, 'react/src') + sep)
+        ),
+        false,
+        'Ordinary tests use only the shared source graph'
+      );
+    }
     console.log(
       `Installed test compiler: TypeScript ${
         json(join(consumer, 'node_modules/typescript/package.json')).version
@@ -614,9 +746,7 @@ export async function testConsumer({
         ).version
       }; ${typeInputs.length} isolated inputs`
     );
-    const specs = files(join(consumer, 'test-output/shared')).filter((path) =>
-      path.endsWith('.spec.js')
-    );
+    const specs = collectInstalledTestSpecs(consumer, graph);
     assert.ok(specs.length, 'Emitted tests are required');
     unchanged();
     const result = run(

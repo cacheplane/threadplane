@@ -104,9 +104,11 @@ const CONTRACTS: StyleContract[] = [
   {
     file: 'docs.css',
     selector: '.website-workspace-host .workspace-shell',
-    why: 'The shared shell uses h-screen by default; the Website host must subtract its fixed nav or the bottom of every workspace panel is clipped.',
+    why: 'The shell fills the remaining height below the fixed site nav and frontend selector, without clipping its panels.',
     requires: {
-      height: /height:\s*calc\(100dvh\s*-\s*var\(--nav-h\)\)/,
+      height: /height:\s*auto/,
+      flex: /flex:\s*1/,
+      'min-height': /min-height:\s*0/,
     },
   },
   {

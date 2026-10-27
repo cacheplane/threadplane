@@ -2,6 +2,8 @@ export { toAgent } from './lib/to-agent';
 export type { ToAgentOptions, AgUiAgent, AgUiSubmitOptions } from './lib/to-agent';
 export type { InterruptSessionSnapshot, InterruptSessionPhase, InterruptTransport, ResumeAttempt } from './lib/interrupt-session.types';
 export type { AgUiInterruptPersistence, AgUiThreadRecord } from './lib/interrupt-persistence';
+export { httpReplay } from './lib/replay';
+export type { AgUiReplaySource, HttpReplayOptions } from './lib/replay';
 export type { ThreadSnapshot } from './lib/run-state-transaction';
 export type { CustomStreamEvent } from './lib/reducer';
 export { provideAgent, injectAgent } from './lib/provide-agent';

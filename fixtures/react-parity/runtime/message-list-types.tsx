@@ -1,5 +1,10 @@
 import {
   MessageList,
+  Citations,
+  type CitationsProps,
+  MessageActions,
+  type MessageAction,
+  type MessageActionsProps,
   ApprovalCard,
   type ApprovalCardProps,
   type ApprovalCardAction,
@@ -18,6 +23,34 @@ interface WeatherRow extends MessageRow<Tools> {
   readonly summary: string;
 }
 declare const rows: readonly WeatherRow[];
+const citationProps: CitationsProps = { citations: [{ id: 'a', index: 1 }] };
+<Citations {...citationProps} />;
+// @ts-expect-error Installed citation collections are readonly.
+citationProps.citations.push({ id: 'b', index: 2 });
+// @ts-expect-error Installed citation fields are readonly.
+citationProps.citations[0].title = 'Changed';
+// @ts-expect-error Presentation cannot execute commands.
+<Citations {...citationProps} onSelect={() => undefined} />;
+const messageAction: MessageAction = {
+  id: 'copy',
+  label: 'Copy',
+  onSelect: () => {},
+};
+const messageActionsProps: MessageActionsProps = { actions: [messageAction] };
+<MessageActions {...messageActionsProps} />;
+// @ts-expect-error Installed actions are required.
+<MessageActions />;
+// @ts-expect-error Installed collections are readonly.
+messageActionsProps.actions.push(messageAction);
+// @ts-expect-error Installed callbacks remain readonly.
+messageAction.onSelect = () => {};
+const invalidMessageAction: MessageAction = {
+  id: 'invalid',
+  label: 'Invalid',
+  // @ts-expect-error Installed callbacks receive no inferred message.
+  onSelect: (message: string) => message,
+};
+void invalidMessageAction;
 const approvalAction: ApprovalCardAction = {
   id: 'approve',
   label: 'Approve',

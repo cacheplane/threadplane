@@ -1,0 +1,82 @@
+{
+  "name": "cockpit-chat-debug-react",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "cockpit/chat/debug/react/src",
+  "projectType": "application",
+  "tags": [
+    "scope:cockpit-examples",
+    "scope:cockpit-e2e",
+    "framework:react"
+  ],
+  "targets": {
+    "test": {
+      "executor": "@nx/vitest:test",
+      "options": {
+        "configFile": "cockpit/chat/debug/react/vite.config.mts"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [
+        {
+          "target": "build",
+          "projects": [
+            "core",
+            "content",
+            "react"
+          ]
+        }
+      ],
+      "outputs": [
+        "{workspaceRoot}/dist/cockpit/chat/debug/react"
+      ],
+      "options": {
+        "command": "node scripts/react-cockpit/build.mjs chat-debug"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "e2e": {
+      "executor": "@nx/playwright:playwright",
+      "cache": false,
+      "inputs": [
+        "default",
+        "debugFixture"
+      ],
+      "dependsOn": [
+        "build",
+        {
+          "target": "test",
+          "projects": [
+            "cockpit-chat-debug-python"
+          ]
+        }
+      ],
+      "options": {
+        "config": "cockpit/chat/debug/react/e2e/playwright.config.ts",
+        "skipInstall": true
+      }
+    }
+  },
+  "namedInputs": {
+    "debugFixture": [
+      "{workspaceRoot}/scripts/react-cockpit/chat-debug-configuration.spec.mjs",
+      "{workspaceRoot}/scripts/react-cockpit/configuration.mjs",
+      "{workspaceRoot}/scripts/react-cockpit/serve.mjs",
+      "{workspaceRoot}/scripts/react-cockpit/chat-debug-fixture.mjs",
+      "{workspaceRoot}/scripts/react-cockpit/chat-debug-wire.py",
+      "{workspaceRoot}/scripts/react-cockpit/chat-debug-fixture.spec.mjs",
+      "{workspaceRoot}/scripts/react-cockpit/chat-debug-native-session-probe.mjs",
+      "{workspaceRoot}/cockpit/chat/debug/python/src/graph.py",
+      "{workspaceRoot}/cockpit/chat/debug/python/tests/providers.py",
+      "{workspaceRoot}/cockpit/chat/debug/python/pyproject.toml",
+      "{workspaceRoot}/cockpit/chat/debug/python/uv.lock",
+      "{workspaceRoot}/fixtures/react-parity/langgraph-candidate/chat-debug-native-session.mjs",
+      "{workspaceRoot}/cockpit/chat/debug/python/tests/test_streaming.py",
+      "{workspaceRoot}/cockpit/chat/debug/python/prompts/debug.md",
+      "{workspaceRoot}/cockpit/chat/debug/python/langgraph.json"
+    ]
+  }
+}

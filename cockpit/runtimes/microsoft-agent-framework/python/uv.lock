@@ -117,6 +117,7 @@ dependencies = [
     { name = "agent-framework-ag-ui" },
     { name = "agent-framework-core" },
     { name = "agent-framework-openai" },
+    { name = "anyio" },
     { name = "fastapi" },
     { name = "uvicorn", extra = ["standard"] },
 ]
@@ -132,6 +133,7 @@ requires-dist = [
     { name = "agent-framework-ag-ui", specifier = ">=1.2.1" },
     { name = "agent-framework-core", specifier = ">=1.16.0" },
     { name = "agent-framework-openai", specifier = ">=1.14.1" },
+    { name = "anyio", specifier = ">=4,<5" },
     { name = "fastapi", specifier = ">=0.110" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.29" },
 ]

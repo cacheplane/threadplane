@@ -1,0 +1,19 @@
+# Upload source, not local Nx/Next/Dawn build outputs.
+dist/
+.nx/
+tmp/
+node_modules/
+**/node_modules/
+**/.next/
+**/.dawn/
+**/.vercel/
+.worktrees/
+.claude/
+
+# Keep local credentials out of source deployments; examples remain available.
+.env
+.env.local
+**/.env
+**/.env.local
+**/.env.*.local
+keys/

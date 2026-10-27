@@ -11,7 +11,7 @@
 import { createProxyHandler } from './langgraph-proxy';
 import { checkRateLimit } from './upstash-rate-limit';
 
-const SHARED_DEPLOYMENT_URL = 'https://cockpit-dev-219a15942c545a00a03a9a41905d7fc2.us.langgraph.app';
+const SHARED_DEPLOYMENT_URL = 'https://cockpit-dev-free-6957db75280055dcbbf2a4916c04b66f.us.langgraph.app';
 
 const ALLOWED_ORIGINS = [
   'https://examples.threadplane.ai',

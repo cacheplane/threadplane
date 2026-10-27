@@ -2,6 +2,15 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as policy from './package-policy.mjs';
 
+test('JSON kernel stays out of core while content can own it', () => {
+  assert.equal(policy.forbiddenDependency('core', '@cacheplane/json-stream'), true);
+  assert.equal(policy.forbiddenDependency('content', '@cacheplane/json-stream'), false);
+});
+test('render engine stays out of dependency-free core while native React can use it', () => {
+  assert.equal(policy.forbiddenDependency('core', '@json-render/core'), true);
+  assert.equal(policy.forbiddenDependency('react', '@json-render/core'), false);
+});
+
 for (const root of ['/repo', '/repo/', 'C:\\repo', 'C:/repo/']) {
   test(`runtime source policy normalizes path separators for ${root}`, () => {
     const prefix = `${root.replace(/[/\\]$/, '')}/libs/langgraph/`;

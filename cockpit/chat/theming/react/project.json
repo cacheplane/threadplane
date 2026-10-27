@@ -1,0 +1,55 @@
+{
+  "name": "cockpit-chat-theming-react",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "cockpit/chat/theming/react/src",
+  "projectType": "application",
+  "tags": ["scope:cockpit-examples", "scope:cockpit-e2e", "framework:react"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [
+        {
+          "target": "build",
+          "projects": ["core", "content", "react"]
+        }
+      ],
+      "outputs": ["{workspaceRoot}/dist/cockpit/chat/theming/react"],
+      "options": {
+        "command": "node scripts/react-cockpit/build.mjs chat-theming"
+      }
+    },
+    "test": {
+      "executor": "@nx/vitest:test",
+      "options": {
+        "configFile": "cockpit/chat/theming/react/vite.config.mts"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "e2e": {
+      "executor": "@nx/playwright:playwright",
+      "cache": false,
+      "inputs": ["default", "themingFixture"],
+      "dependsOn": [
+        "build",
+        {
+          "target": "test",
+          "projects": ["cockpit-chat-theming-python"]
+        }
+      ],
+      "options": {
+        "config": "cockpit/chat/theming/react/e2e/playwright.config.ts",
+        "skipInstall": true
+      }
+    }
+  },
+  "namedInputs": {
+    "themingFixture": [
+      "{workspaceRoot}/scripts/react-cockpit/chat-theming-fixture.mjs",
+      "{workspaceRoot}/scripts/react-cockpit/chat-theming-wire.py",
+      "{workspaceRoot}/scripts/react-cockpit/chat-theming-fixture.spec.mjs"
+    ]
+  }
+}

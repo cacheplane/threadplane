@@ -172,7 +172,7 @@ function candidate() {
         : saved;
     const id = String(index + 1).repeat(32);
     const stream = {
-      stream_mode: ['values', 'messages-tuple', 'updates', 'custom'],
+      stream_mode: ['values', 'messages-tuple', 'updates', 'custom', 'checkpoints'],
       stream_subgraphs: true,
       stream_resumable: true,
       on_disconnect: 'continue',

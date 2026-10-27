@@ -6,6 +6,7 @@ backend (`src/agent.py` + `src/server.py`, bridge pinned to git rev
 `363d3878e30887e88c1fd5ca1916ec3a5962b6be`), scratch delegation tool
 `research_availability` wrapping a tool-less specialist `Agent(name="availability_researcher")`.
 The scratch edit was reverted after capture; only this doc lands.
+The runtime has since moved to the published `ag-ui-strands` 0.4.1; this capture predates that move and has not been refreshed.
 
 All bridge citations are into the installed venv source:
 `.venv/lib/python3.14/site-packages/ag_ui_strands/` (referred to as `agent.py`

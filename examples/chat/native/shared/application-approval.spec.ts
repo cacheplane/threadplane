@@ -97,7 +97,7 @@ const resume = (thread: string, answer = 'approved', extra = {}) => ({
     assistant_id: 'assistant',
     input: null,
     command: { resume: { [id]: answer } },
-    stream_mode: ['values', 'messages-tuple', 'updates', 'custom'],
+    stream_mode: ['values', 'messages-tuple', 'updates', 'custom', 'checkpoints'],
     stream_subgraphs: true,
     stream_resumable: true,
     on_disconnect: 'continue',
@@ -410,7 +410,7 @@ test('approval observed during text streaming cannot respond until that text ope
             messages: [{ type: 'human', id: message.id, content: text }],
             client_tools: expectedClientTools,
           },
-          stream_mode: ['values', 'messages-tuple', 'updates', 'custom'],
+          stream_mode: ['values', 'messages-tuple', 'updates', 'custom', 'checkpoints'],
           stream_subgraphs: true,
           stream_resumable: true,
           on_disconnect: 'continue',
@@ -603,6 +603,10 @@ for (const outcome of ['error', 'interrupted'] as const) {
         'approved',
         outcome === 'error' ? { events } : { disconnect: true }
       ),
+      // A disconnected decision gets one read-only history check. The same
+      // pause with nothing new is inconclusive: it must not re-enable the
+      // replaced pause evidence, and the decision is never replayed.
+      ...(outcome === 'interrupted' ? [history('a')] : []),
       search(),
     ]);
     app.start();

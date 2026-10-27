@@ -32,11 +32,11 @@ the aimock e2e harness intercepts calls). See .env.example.
 import os
 
 from agent_framework import Agent, tool
-from agent_framework.ag_ui import AgentFrameworkAgent
 from agent_framework.openai import OpenAIChatCompletionClient
 from pydantic import BaseModel, Field
 
 from . import subagent_emitter
+from .snapshot_compat import HistoricalToolSnapshotAgent
 
 _POLICIES = {
     "meals": {"limit_usd": 300, "receipt_required_over_usd": 25, "notes": "Team meals require attendee count in the memo."},
@@ -208,7 +208,7 @@ async def research_policy(category: str, amount: float) -> str:
 
 
 # region bridge
-agent = AgentFrameworkAgent(
+agent = HistoricalToolSnapshotAgent(
     agent=Agent(
         name="expense_approval_copilot",
         instructions=_INSTRUCTIONS,

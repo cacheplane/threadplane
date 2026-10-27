@@ -44,6 +44,8 @@ export function preparationEnvironment(env = process.env) {
     ),
     CI: 'true',
     NX_DAEMON: 'false',
+    // Keep Nx plugin workers in the preparation process group we own.
+    NX_ISOLATE_PLUGINS: 'false',
     NX_TUI: 'false',
     NX_LOAD_DOT_ENV_FILES: 'false',
     NX_NO_CLOUD: 'true',
@@ -55,16 +57,18 @@ export function preparationEnvironment(env = process.env) {
 }
 
 export function foundationCommands(root, framework) {
-  return ['core', 'content', selectedFramework(framework)].map((project) => ({
-    command: process.execPath,
-    args: [
-      join(root, 'node_modules/nx/bin/nx.js'),
-      'build',
-      project,
-      '--excludeTaskDependencies',
-      '--skip-nx-cache',
-      '--outputStyle=stream',
-    ],
-    cwd: root,
-  }));
+  return ['core', 'a2ui', 'content', selectedFramework(framework)].map(
+    (project) => ({
+      command: process.execPath,
+      args: [
+        join(root, 'node_modules/nx/bin/nx.js'),
+        'build',
+        project,
+        '--excludeTaskDependencies',
+        '--skip-nx-cache',
+        '--outputStyle=stream',
+      ],
+      cwd: root,
+    })
+  );
 }

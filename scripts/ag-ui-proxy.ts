@@ -37,6 +37,9 @@ const RAILWAY_BASE_URL =
  * `mastra` topic is served by the separate Node service
  * (deployments/ag-ui-mastra, Railway service `ag-ui-mastra`); its base URL
  * comes from the AG_UI_MASTRA_URL env var on the Vercel examples project.
+ * The `microsoft-agent-framework` topic is served by the separate Python
+ * service deployments/ag-ui-maf (Railway service `ag-ui-maf`); its base URL
+ * comes from AG_UI_MAF_URL.
  * Both upstreams verify the same X-Internal-Token header contract.
  *
  * Values are read lazily per request so a missing env var yields a clear
@@ -45,6 +48,10 @@ const RAILWAY_BASE_URL =
 function upstreamBaseFor(topic: string): string | null {
   if (topic === 'mastra') {
     return process.env['AG_UI_MASTRA_URL'] ?? null;
+  }
+  if (topic === 'microsoft-agent-framework') {
+    // Hosted apart from ag-ui-dev: its bridge caps ag-ui-protocol below 1.0.
+    return process.env['AG_UI_MAF_URL'] ?? null;
   }
   return RAILWAY_BASE_URL;
 }

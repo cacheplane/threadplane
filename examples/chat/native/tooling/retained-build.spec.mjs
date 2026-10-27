@@ -99,7 +99,9 @@ function fixture(t, framework = 'react') {
     artifacts = {},
     dependencies = {},
     lockPackages = {};
-  for (const name of ['core', 'content', framework, 'langgraph']) {
+  for (const name of framework === 'react'
+    ? ['core', 'content', 'a2ui', 'react', 'langgraph']
+    : ['core', 'content', 'angular', 'langgraph']) {
     const packageName = '@threadplane/' + name,
       file = join(temporary, name + '.tgz');
     hashes[packageName] = put(temporary, name + '.tgz', 'archive-' + name);
@@ -239,7 +241,26 @@ function fixture(t, framework = 'react') {
     map[path] = sha256;
     artifacts['@threadplane/content'].push({ path: local, sha256 });
     if (framework === 'react') {
-      for (const name of ['message-list', 'reasoning', 'approval-card']) {
+      const render = 'src/render/render-spec' + extension;
+      const renderPath = 'node_modules/@threadplane/react/' + render;
+      const renderHash = put(
+        consumer,
+        renderPath,
+        'installed RenderSpec: ' + extension
+      );
+      map[renderPath] = renderHash;
+      artifacts['@threadplane/react'].push({
+        path: render,
+        sha256: renderHash,
+      });
+      for (const name of [
+        'message-list',
+        'reasoning',
+        'approval-card',
+        'message-actions',
+        'citations',
+        'text-transcript',
+      ]) {
         const local = 'src/chat/' + name + extension;
         const path = 'node_modules/@threadplane/react/' + local;
         const sha256 = put(
@@ -261,6 +282,34 @@ function fixture(t, framework = 'react') {
     'assets/main.js': put(output, 'assets/main.js', 'console.log("app")'),
     'build-inputs.json': put(output, 'build-inputs.json', '[]'),
   };
+  if (framework === 'react') {
+    for (const path of [
+      'react/src/application.ts',
+      'react/src/a2ui-message-content.ts',
+      'react/src/a2ui-trip-catalog.ts',
+    ]) {
+      inputs['examples/chat/native/' + path] = put(
+        root,
+        'examples/chat/native/' + path,
+        path
+      );
+      copied[path] = put(consumer, path, path);
+      compilation.inputs[path] = copied[path];
+      bundle.inputs[path] = copied[path];
+    }
+    for (const extension of ['.d.ts', '.js']) {
+      const local = 'src/a2ui/create-surfaces' + extension;
+      const path = 'node_modules/@threadplane/content/' + local;
+      const sha256 = put(consumer, path, path);
+      (extension === '.js' ? bundle : compilation).inputs[path] = sha256;
+      artifacts['@threadplane/content'].push({ path: local, sha256 });
+    }
+    const local = 'src/index.d.ts',
+      path = 'node_modules/@threadplane/a2ui/' + local;
+    const sha256 = put(consumer, path, path);
+    compilation.inputs[path] = sha256;
+    artifacts['@threadplane/a2ui'].push({ path: local, sha256 });
+  }
   if (framework === 'angular')
     outputs['stats.json'] = put(output, 'stats.json', '{"inputs":{}}');
   for (const files of Object.values(artifacts))
@@ -268,6 +317,10 @@ function fixture(t, framework = 'react') {
   const installation = { artifacts, derivedLockSha256 };
   const provenance = {
     framework,
+    profile:
+      framework === 'react'
+        ? 'react-native-a2ui-langgraph'
+        : 'angular-langgraph',
     configuration: 'production',
     inputs,
     buildInputs,
@@ -292,6 +345,7 @@ function fixture(t, framework = 'react') {
   };
   return {
     framework,
+    profile: provenance.profile,
     base,
     directory: join(base, 'retained'),
     root,
@@ -330,6 +384,108 @@ test('retains actual bytes and original lock, verifies after original temporary 
   assert.equal(retained.readOutput('../consumer/package.json'), undefined);
   assert.ok(Object.isFrozen(retained));
 });
+
+for (const graph of ['inputs', 'copied', 'compiler', 'bundler'])
+  for (const path of [
+    'react/src/application.ts',
+    'react/src/a2ui-message-content.ts',
+    'react/src/a2ui-trip-catalog.ts',
+  ])
+    test(`feature retention requires ${graph} production module ${path}`, (t) => {
+      const f = fixture(t);
+      const map =
+        graph === 'compiler' || graph === 'bundler'
+          ? f.provenance[graph].inputs
+          : f.provenance[graph];
+      delete map[(graph === 'inputs' ? 'examples/chat/native/' : '') + path];
+      assert.throws(
+        () => captureRetainedBuild(f.directory, f),
+        /production|module|required|selected consumer/i
+      );
+    });
+
+for (const graph of ['compiler', 'bundler'])
+  test(`production ${graph} rejects test-only application fixture`, (t) => {
+    const f = fixture(t);
+    const path = 'react/src/application-fixture.ts';
+    const digest = put(f.consumer, path, 'test support');
+    f.provenance.copied[path] = digest;
+    f.provenance[graph].inputs[path] = digest;
+    assert.throws(
+      () => captureRetainedBuild(f.directory, f),
+      /test.*support|fixture/i
+    );
+  });
+
+for (const mutation of [
+  'missing profile',
+  'ordinary substitution',
+  'provenance mismatch',
+  'protocol runtime',
+  'missing protocol declarations',
+  'missing content declarations',
+  'missing content runtime',
+])
+  test(`feature retention rejects ${mutation}`, (t) => {
+    const f = fixture(t);
+    captureRetainedBuild(f.directory, f);
+    const path = join(f.directory, 'retained.json');
+    const record = JSON.parse(readFileSync(path));
+    if (mutation === 'missing profile') delete record.profile;
+    if (mutation === 'ordinary substitution')
+      record.profile = record.provenance.profile = 'react-langgraph';
+    if (mutation === 'provenance mismatch')
+      record.provenance.profile = 'react-langgraph';
+    if (mutation === 'protocol runtime')
+      record.provenance.bundler.inputs[
+        'node_modules/@threadplane/a2ui/index.js'
+      ] =
+        record.provenance.compiler.inputs[
+          'node_modules/@threadplane/a2ui/src/index.d.ts'
+        ];
+    if (mutation === 'missing protocol declarations')
+      delete record.provenance.compiler.inputs[
+        'node_modules/@threadplane/a2ui/src/index.d.ts'
+      ];
+    if (mutation === 'missing content declarations')
+      delete record.provenance.compiler.inputs[
+        'node_modules/@threadplane/content/src/a2ui/create-surfaces.d.ts'
+      ];
+    if (mutation === 'missing content runtime')
+      delete record.provenance.bundler.inputs[
+        'node_modules/@threadplane/content/src/a2ui/create-surfaces.js'
+      ];
+    writeFileSync(path, JSON.stringify(record));
+    assert.throws(
+      () => readRetainedBuild(f.directory),
+      /profile|protocol|A2UI/i
+    );
+  });
+
+for (const framework of ['react', 'angular'])
+  test(`${framework} retains protocol build inputs with its exact installed selection`, (t) => {
+    const f = fixture(t, framework);
+    const path = 'libs/a2ui/src/index.ts';
+    f.provenance.inputs[path] = put(f.root, path, 'protocol build input');
+    f.provenance.buildInputs[path] = put(
+      f.buildRoot,
+      path,
+      'protocol build input'
+    );
+    captureRetainedBuild(f.directory, f);
+    rmSync(f.temporary, { recursive: true });
+    rmSync(f.root, { recursive: true });
+    assert.equal(readRetainedBuild(f.directory).framework, framework);
+    assert.equal(
+      existsSync(join(f.directory, 'consumer/node_modules/@threadplane/a2ui')),
+      framework === 'react'
+    );
+    writeFileSync(join(f.directory, 'build-inputs', path), 'drift');
+    assert.throws(
+      () => readRetainedBuild(f.directory),
+      /hash|bytes|inventory/i
+    );
+  });
 
 for (const framework of ['react', 'angular'])
   for (const [graph, extension] of [
@@ -370,6 +526,54 @@ for (const [graph, extension] of [
       'node_modules/@threadplane/react/src/chat/approval-card' + extension
     ];
     assert.throws(() => captureRetainedBuild(f.directory, f), /ApprovalCard/);
+  });
+
+for (const [graph, extension] of [
+  ['compiler', '.d.ts'],
+  ['bundler', '.js'],
+])
+  test(`React retention requires installed MessageActions ${graph}`, (t) => {
+    const f = fixture(t, 'react');
+    delete f.provenance[graph].inputs[
+      'node_modules/@threadplane/react/src/chat/message-actions' + extension
+    ];
+    assert.throws(() => captureRetainedBuild(f.directory, f), /MessageActions/);
+  });
+
+for (const [graph, extension] of [
+  ['compiler', '.d.ts'],
+  ['bundler', '.js'],
+])
+  test(`React retention requires installed RenderSpec ${graph}`, (t) => {
+    const f = fixture(t, 'react');
+    delete f.provenance[graph].inputs[
+      'node_modules/@threadplane/react/src/render/render-spec' + extension
+    ];
+    assert.throws(() => captureRetainedBuild(f.directory, f), /RenderSpec/);
+  });
+
+for (const [graph, extension] of [
+  ['compiler', '.d.ts'],
+  ['bundler', '.js'],
+])
+  test(`React retention requires installed Citations ${graph}`, (t) => {
+    const f = fixture(t, 'react');
+    delete f.provenance[graph].inputs[
+      'node_modules/@threadplane/react/src/chat/citations' + extension
+    ];
+    assert.throws(() => captureRetainedBuild(f.directory, f), /Citations/);
+  });
+
+for (const [graph, extension] of [
+  ['compiler', '.d.ts'],
+  ['bundler', '.js'],
+])
+  test(`React retention requires installed TextTranscript ${graph}`, (t) => {
+    const f = fixture(t, 'react');
+    delete f.provenance[graph].inputs[
+      'node_modules/@threadplane/react/src/chat/text-transcript' + extension
+    ];
+    assert.throws(() => captureRetainedBuild(f.directory, f), /TextTranscript/);
   });
 
 for (const framework of ['react', 'angular']) {

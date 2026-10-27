@@ -30,6 +30,20 @@ beforeEach(() => {
   vi.stubEnv('GROWTH_DATABASE_ENVIRONMENT', 'production');
 });
 
+it('rejects another product in the shared Resend account before database access', async () => {
+  const harness = executorWith({});
+  await expect(
+    processVerifiedResendWebhook(harness.executor, {
+      providerEventId: 'foreign-app-event',
+      payload: event('email.bounced', {
+        tags: { app: 'hashbrown', environment: 'production' },
+        bounce: { type: 'Permanent', subType: 'General', message: 'bounced' },
+      }),
+    })
+  ).resolves.toEqual({ applied: false, reason: 'app_mismatch' });
+  expect(harness.calls).toHaveLength(0);
+});
+
 afterEach(() => {
   vi.unstubAllEnvs();
 });
@@ -909,6 +923,19 @@ describe('processVerifiedResendWebhook', () => {
 
   it.each([
     {
+      app: 'threadplane',
+      environment: 'production',
+      job_kind: 'fulfill',
+    },
+    {
+      app: 'threadplane',
+      environment: 'production',
+      job_kind: 'send_step',
+      campaign_version: 'v1',
+      campaign_step: '1',
+      campaign_template: 'immediate',
+    },
+    {
       environment: 'production',
       job_kind: 'send_step',
       campaign_version: 'v1',
@@ -922,7 +949,7 @@ describe('processVerifiedResendWebhook', () => {
       campaign_template: 'streaming_foundation',
     },
   ])(
-    'retries an unmatched canonical send_step event with or without a template tag %#',
+    'retries an unmatched canonical recipient event, including app-tagged and historical sends %#',
     async (tags) => {
       const harness = executorWith({
         'read-resend-webhook-activity': () => ({ rows: [] }),

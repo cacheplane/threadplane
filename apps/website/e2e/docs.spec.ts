@@ -195,7 +195,10 @@ test.describe('Docs slug page', () => {
     await expect(dialog.getByText('In page content')).toBeVisible();
     await expect(hit.locator('.docs-search-result-snippet')).toContainText(/checkpointer/i);
 
-    await hit.click();
+    await Promise.all([
+      page.waitForURL(/\/docs\/[a-z0-9-]+\/.*#.+/),
+      hit.click(),
+    ]);
 
     // The deep link must land on a real section anchor, not just a
     // well-formed but dangling fragment that scrolls nowhere.
@@ -245,6 +248,10 @@ test.describe('a2ui docs', () => {
 test.describe('Docs search', () => {
   test('Cmd+K opens the search modal', async ({ page, browserName }) => {
     await page.goto('/docs/langgraph/getting-started/introduction');
+    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
+      'data-hydrated',
+      'true'
+    );
     // Mac uses Meta; other platforms emulate the same shortcut via keydown.
     const modifier = browserName === 'webkit' ? 'Meta' : 'Control';
     await page.keyboard.press(`${modifier}+KeyK`);
@@ -254,6 +261,10 @@ test.describe('Docs search', () => {
 
   test('matches docs pages when query omits small connector words', async ({ page, browserName }) => {
     await page.goto('/docs/langgraph/getting-started/introduction');
+    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
+      'data-hydrated',
+      'true'
+    );
     const modifier = browserName === 'webkit' ? 'Meta' : 'Control';
     await page.keyboard.press(`${modifier}+KeyK`);
 

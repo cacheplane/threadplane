@@ -75,11 +75,11 @@ const savedHistory = [{
 /** A strict wire fixture: malformed/extra operations fail the browser run. */
 export function runtimeResponse(body) {
   assert.equal(body.assistant_id, 'fixture-assistant');
-  assert.deepEqual(body.stream_mode, ['values', 'messages-tuple', 'updates', 'custom']);
+  assert.deepEqual(body.stream_mode, ['values', 'messages-tuple', 'updates', 'custom', 'checkpoints']);
   assert.equal(body.stream_subgraphs, true);
   if (body.input === null) {
     const response = body.command?.resume;
-    assert.deepEqual(body, { assistant_id: 'fixture-assistant', input: null, command: { resume: response }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom'], stream_subgraphs: true, ...resumableRunFields, ...configuredRunFields }, 'exact resume run fields');
+    assert.deepEqual(body, { assistant_id: 'fixture-assistant', input: null, command: { resume: response }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom', 'checkpoints'], stream_subgraphs: true, ...resumableRunFields, ...configuredRunFields }, 'exact resume run fields');
     if (Object.hasOwn(response ?? {}, 'live-approval')) {
       assert.deepEqual(response, { 'live-approval': 'yes', 'live-confirmation': false }, 'exact initial response map');
       return sse('values', { stage: 'final-approval', messages: [{ type: 'ai', id: 'resume-answer', content: 'One final approval', additional_kwargs: { reasoning_content: 'Approval reasoning', citations: [{ id: 'approval-source', title: 'Approval reference', publishedAt: 0 }] } }] })
@@ -98,7 +98,7 @@ export function runtimeResponse(body) {
     ? { model: 'gpt-5-mini', reasoning_effort: 'minimal', gen_ui_mode: 'a2ui', itinerary: [{ id: 'paris', day: 1, place: 'Paris', note: 'Check the weather' }] }
     : {};
   const execution = message.type === 'tool' || ['Tool', 'Drop'].includes(message.content) ? configuredRunFields : {};
-  assert.deepEqual(body, { assistant_id: 'fixture-assistant', input: { ...initialState, messages: [message], client_tools: catalog }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom'], stream_subgraphs: true, ...resumableRunFields, ...execution }, 'unexpected run fields');
+  assert.deepEqual(body, { assistant_id: 'fixture-assistant', input: { ...initialState, messages: [message], client_tools: catalog }, stream_mode: ['values', 'messages-tuple', 'updates', 'custom', 'checkpoints'], stream_subgraphs: true, ...resumableRunFields, ...execution }, 'unexpected run fields');
   if (message.type === 'tool') {
     assert.deepEqual(message, { id: 'client-tool-result-call-weather', type: 'tool', role: 'tool', tool_call_id: 'call-weather', content: '{"city":"Paris","temperature":20}' }, 'actual handler result continuation');
     return sse('values', { messages: [toolCall, message, { type: 'ai', id: 'answer', content: '20 degrees' }] });
@@ -359,11 +359,15 @@ export function prepareInstalledTypes(root, consumer, kind) {
   const fixture = join(root, 'fixtures/react-parity/runtime');
   cpSync(join(fixture, 'scenarios.ts'), join(consumer, 'scenarios.ts'));
   writeFileSync(join(consumer, 'installed-types.ts'), installedTypeSource(readFileSync(join(fixture, 'installed-types.ts'), 'utf8'), kind));
-  if (kind === 'react') cpSync(join(fixture, 'message-list-types.tsx'), join(consumer, 'message-list-types.tsx'));
+  if (kind === 'react') {
+    cpSync(join(fixture, 'message-list-types.tsx'), join(consumer, 'message-list-types.tsx'));
+    cpSync(join(fixture, 'json-types.ts'), join(consumer, 'json-types.ts'));
+    cpSync(join(fixture, 'render-types.tsx'), join(consumer, 'render-types.tsx'));
+  }
   writeFileSync(join(consumer, 'tsconfig.contracts.json'), JSON.stringify({ compilerOptions: {
     target: 'ES2022', module: 'ESNext', moduleResolution: 'Bundler', lib: ['ES2022', 'DOM'], types: [], strict: true, skipLibCheck: false, noEmit: true,
     ...(kind === 'react' ? { jsx: 'react-jsx' } : {}),
-  }, files: ['installed-types.ts', ...(kind === 'react' ? ['message-list-types.tsx'] : [])] }, null, 2));
+  }, files: ['installed-types.ts', ...(kind === 'react' ? ['message-list-types.tsx', 'json-types.ts', 'render-types.tsx'] : [])] }, null, 2));
 }
 
 /** Typecheck the private source against the *installed* public core declarations,
@@ -430,6 +434,7 @@ export function prepareRuntimeViews(root, consumer, kind) {
     writeFileSync(index, readFileSync(index, 'utf8').replace('<head>', '<head><meta name="viewport" content="width=device-width, initial-scale=1">'));
   }
   if (kind === 'react') {
+    cpSync(join(fixture, 'react-overflow-menu.tsx'), join(destination, 'react-overflow-menu.tsx'));
     cpSync(join(fixture, 'vite.config.mts'), join(consumer, 'vite.config.mts'));
     writeFileSync(join(consumer, 'index.html'), '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>React installed consumer</title></head><body><div id="root"></div><script type="module" src="/main.tsx"></script></body></html>');
     writeFileSync(join(consumer, 'tsconfig.app.json'), JSON.stringify({ compilerOptions: { target: 'ES2022', module: 'ESNext', moduleResolution: 'Bundler', lib: ['ES2022', 'DOM'], types: [], strict: true, skipLibCheck: false, jsx: 'react-jsx', noEmit: true }, files: ['main.tsx'] }));
@@ -471,7 +476,7 @@ export async function serveRuntimeConsumer(directory) {
             response.writeHead(200, { 'content-type': 'application/json' });
             return response.end(JSON.stringify({ run_id: 'drop-run', thread_id: 'fixture-thread', status }));
           }
-          assert.equal(url.search, '?cancel_on_disconnect=0');
+          assert.deepEqual([...url.searchParams], [['cancel_on_disconnect', '0'], ['stream_mode', JSON.stringify(['values', 'messages-tuple', 'updates', 'custom', 'checkpoints'])]]);
           assert.equal(request.headers['last-event-id'], '2', 'exact committed cursor');
           assert.deepEqual(statusRequests, ['running'], 'initial closure must inspect the running run');
           assert.equal(joined, false, 'one explicit join, no replay');
@@ -545,6 +550,227 @@ export async function serveRuntimeConsumer(directory) {
 function handshake(promise, label) {
   let timeout;
   return Promise.race([promise, new Promise((_, reject) => { timeout = setTimeout(() => reject(new Error(`Timed out awaiting ${label}`)), 10_000); })]).finally(() => clearTimeout(timeout));
+}
+
+export async function runRenameFormScenarios(page, url) {
+  await page.goto(`${url}/?menu&rename`);
+  const fixture = page.getByRole('region', { name: 'Installed rename editor' });
+  const input = fixture.getByRole('textbox', { name: 'Rename fixture title' });
+  const save = fixture.getByRole('button', { name: 'Save', exact: true });
+  const cancel = fixture.getByRole('button', { name: 'Cancel', exact: true });
+  const submitted = page.getByTestId('rename-submissions');
+  const cancelled = page.getByTestId('rename-cancels');
+  await expect(input).toBeFocused();
+  const node = await input.elementHandle();
+  assert.ok(node);
+  await input.fill('   ');
+  await expect(save).toBeDisabled();
+  await input.press('Enter');
+  await expect(submitted).toHaveText('[]');
+  await input.fill('  Literal <&> title  ');
+  await input.press('Enter');
+  await expect(submitted).toHaveText('["Literal <&> title"]');
+  await input.dispatchEvent('keydown', { key: 'Enter', isComposing: true, bubbles: true });
+  await expect(submitted).toHaveText('["Literal <&> title"]');
+  await input.press('Escape');
+  await expect(cancelled).toHaveText('1');
+  await fixture.getByRole('checkbox', { name: 'Rename fixture error' }).check();
+  await expect(fixture.getByRole('alert')).toHaveText('Rename fixture failure');
+  await expect(input).toHaveValue('  Literal <&> title  ');
+  await fixture.getByRole('checkbox', { name: 'Rename fixture pending' }).check();
+  await expect(input).toBeDisabled();
+  await expect(save).toBeDisabled();
+  await expect(cancel).toBeEnabled();
+  await cancel.click();
+  await expect(cancelled).toHaveText('2');
+  await fixture.getByRole('checkbox', { name: 'Rename fixture pending' }).uncheck();
+  await fixture.getByRole('checkbox', { name: 'Rename fixture error' }).uncheck();
+  await save.click();
+  await expect(submitted).toHaveText('["Literal <&> title","Literal <&> title"]');
+  assert.equal(await node.evaluate((node) => node.isConnected), true);
+  for (const width of [390, 600, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    const box = await input.boundingBox();
+    assert.ok(box && box.x >= 0 && box.x + box.width <= width, `Rename input fits viewport ${width}`);
+  }
+  console.log('Installed rename editor: explicit submit/cancel, literal title, blank and IME guards, pending/error/retry, retained input and responsive containment passed.');
+}
+
+export async function runOverflowMenuScenarios(page, url) {
+  await page.goto(`${url}/?menu`);
+  const trigger = page.getByRole('button', { name: 'Fixture actions for full ID' });
+  const menu = page.getByRole('menu', { name: 'Fixture actions for full ID' });
+  const first = page.getByRole('menuitem', { name: 'First literal <&>' });
+  const last = page.getByRole('menuitem', { name: /^Last destructive/ });
+  await expect(menu).toHaveCount(0);
+  for (const width of [1280, 390, 600]) {
+    // setViewportSize can finish before its resize event is dispatched. That
+    // event legitimately dismisses an open menu, so complete it before opening.
+    if (page.viewportSize()?.width !== width || page.viewportSize()?.height !== 844) {
+      await page.evaluate(() => {
+        window.overflowMenuViewportReady = new Promise(resolve => window.addEventListener('resize', () => resolve(), { once: true }));
+      });
+      await page.setViewportSize({ width, height: 844 });
+      await handshake(page.evaluate(() => window.overflowMenuViewportReady), 'menu fixture viewport resize');
+    }
+    await trigger.focus();
+    await page.keyboard.press('ArrowUp');
+    await expect(last).toBeFocused();
+    const evidence = await menu.evaluate((node) => {
+      const box = node.getBoundingClientRect();
+      const style = getComputedStyle(node);
+      return {
+        contained: box.left >= 8 && box.top >= 8 && box.right <= innerWidth - 8 && box.bottom <= innerHeight - 8,
+        targets: Array.from(node.querySelectorAll('button')).every(button => button.getBoundingClientRect().height >= 40),
+        rtl: style.direction, font: style.fontFamily, fontSize: style.fontSize,
+        surface: style.backgroundColor, text: style.color,
+        rootDirection: getComputedStyle(document.documentElement).direction,
+      };
+    });
+    assert.deepEqual(evidence, { contained: true, targets: true, rtl: 'rtl', font: 'monospace', fontSize: '18px', surface: 'rgb(241, 242, 243)', text: 'rgb(11, 22, 33)', rootDirection: 'ltr' });
+    await page.screenshot({ path: join(tmpdir(), `react-overflow-menu-plain-${width}.png`), fullPage: false });
+    const survivingLast = await last.elementHandle();
+    await page.keyboard.press('F2');
+    await expect(last).toContainText('Expanded literal <&>');
+    await expect(last).toBeFocused();
+    assert.equal(await survivingLast.evaluate(node => node === document.activeElement), true, 'label growth preserves focused item DOM');
+    await expect.poll(() => menu.evaluate(node => {
+      const box = node.getBoundingClientRect();
+      return box.left >= 8 && box.top >= 8 && box.right <= innerWidth - 8 && box.bottom <= innerHeight - 8 && node.scrollWidth <= node.clientWidth;
+    })).toBe(true);
+    await page.screenshot({ path: join(tmpdir(), `react-overflow-menu-plain-grown-${width}.png`), fullPage: false });
+    await page.keyboard.press('F2');
+    await expect(last).not.toContainText('Expanded literal <&>');
+    await expect(last).toBeFocused();
+    await page.keyboard.press('ArrowDown'); await expect(first).toBeFocused();
+    await page.keyboard.press('ArrowUp'); await expect(last).toBeFocused();
+    await page.keyboard.press('Home'); await expect(first).toBeFocused();
+    await page.keyboard.press('End'); await expect(last).toBeFocused();
+    await page.keyboard.press('Escape'); await expect(menu).toHaveCount(0); await expect(trigger).toBeFocused();
+    await trigger.press('Enter'); await expect(first).toBeFocused();
+    await page.keyboard.press('Tab'); await expect(page.getByRole('button', { name: 'After menu' })).toBeFocused();
+    await expect(menu).toHaveCount(0);
+    await trigger.press('Space'); await expect(first).toBeFocused();
+    await page.keyboard.press('Shift+Tab'); await expect(page.getByRole('button', { name: 'Before menu' })).toBeFocused();
+    await trigger.click();
+    await first.press('Enter'); await expect(trigger).toBeFocused();
+  }
+  await expect(page.getByTestId('menu-selected')).toHaveText(JSON.stringify(['literal<&', 'literal<&', 'literal<&']));
+  await page.getByRole('checkbox', { name: 'Refuse closing' }).check();
+  await trigger.click();
+  const toggle = page.getByRole('button', { name: 'Toggle anchor availability' });
+  await toggle.click();
+  await expect(menu).toHaveCount(0); await expect(toggle).toBeFocused();
+  const hiddenTrigger = page.locator('.tp-overflow-menu__trigger[aria-label="Fixture actions for full ID"]');
+  await expect(hiddenTrigger).toHaveAttribute('aria-expanded', 'false');
+  await expect(hiddenTrigger).not.toHaveAttribute('aria-controls');
+  await toggle.click(); await expect(menu).toHaveCount(0);
+  await page.getByRole('button', { name: 'Reset open cycle' }).click();
+  await page.getByRole('checkbox', { name: 'Refuse closing' }).uncheck();
+  await trigger.click(); await expect(first).toBeFocused();
+  await menu.evaluate(node => node.parentElement?.setAttribute('data-theme', 'changed'));
+  await expect(menu).toHaveCount(0);
+  await trigger.click();
+  await page.setViewportSize({ width: 601, height: 844 });
+  await expect(menu).toHaveCount(0);
+  console.log('Installed React overflow menu: keyboard, literal commands, Tab destinations, unavailable-anchor suppression, local RTL/theme/font and 1280/390/600 viewport placement passed.');
+}
+
+
+/** Real installed ThreadList → owner → OverflowMenu context requests. */
+export async function runContextMenuScenarios(page, url) {
+  await page.goto(`${url}/?menu`);
+  const owner = page.getByRole('region', { name: 'Installed row context owner' });
+  const row = owner.getByRole('button', { name: 'Beta context', exact: true });
+  const trigger = owner.getByRole('button', { name: 'Context actions for Beta context (context-b<&)' });
+  const alphaTrigger = owner.getByRole('button', { name: 'Context actions for Alpha context (context-a)' });
+  const menu = page.getByRole('menu', { name: 'Context actions for Beta context (context-b<&)' });
+  const first = page.getByRole('menuitem', { name: 'Context first literal <&>' });
+  const last = page.getByRole('menuitem', { name: 'Context last command' });
+  for (const [width, rtl] of [[1280, false], [390, false], [600, true]]) {
+    if (page.viewportSize()?.width !== width || page.viewportSize()?.height !== 844) {
+      await page.evaluate(() => {
+        window.contextViewportReady = new Promise(resolve => window.addEventListener('resize', () => resolve(), { once: true }));
+      });
+      await page.setViewportSize({ width, height: 844 });
+      await handshake(page.evaluate(() => window.contextViewportReady), 'context viewport resize');
+    }
+    await owner.getByRole('checkbox', { name: 'Context RTL' }).setChecked(rtl);
+    const rowBox = await row.boundingBox();
+    assert.ok(rowBox);
+    const position = { x: rtl ? rowBox.width - 16 : 16, y: rowBox.height / 2 };
+    const point = { x: Math.floor(rowBox.x + position.x), y: Math.floor(rowBox.y + position.y) };
+    const count = Number(await owner.getByTestId('context-requests').textContent());
+    await page.mouse.click(point.x, point.y, { button: 'right' });
+    await expect(first).toBeFocused();
+    await expect(owner.getByTestId('context-requests')).toHaveText(String(count + 1));
+    await expect(owner.getByTestId('context-selected')).toHaveText('context-a');
+    await expect(owner.getByTestId('context-commands')).toHaveText('[]');
+    await expect.poll(() => menu.evaluate((node, { point, rtl }) => {
+      const box = node.getBoundingClientRect();
+      const left = Math.max(8, Math.min(point.x - (rtl ? box.width : 0), innerWidth - box.width - 8));
+      const preferred = point.y + 4 + box.height > innerHeight - 8 ? point.y - box.height - 4 : point.y + 4;
+      const top = Math.max(8, Math.min(preferred, innerHeight - box.height - 8));
+      return Math.abs(box.left - left) < 1 && Math.abs(box.top - top) < 1 && box.left >= 8 && box.right <= innerWidth - 8 && box.top >= 8 && box.bottom <= innerHeight - 8;
+    }, { point, rtl })).toBe(true);
+    await page.screenshot({ path: join(tmpdir(), `react-context-menu-plain-${width}.png`), fullPage: false });
+    const survivingMenu = await menu.elementHandle();
+    const survivingLast = await last.elementHandle();
+    await page.keyboard.press('End');
+    await expect(last).toBeFocused();
+    await page.keyboard.press('F3');
+    await expect(last).toBeFocused();
+    assert.equal(await survivingMenu.evaluate(node => node === document.querySelector('[role="menu"]')), true, 'point update keeps menu DOM');
+    assert.equal(await survivingLast.evaluate(node => node === document.activeElement), true, 'point update keeps focused command DOM');
+    await expect.poll(() => menu.evaluate(node => {
+      const box = node.getBoundingClientRect();
+      return Math.abs(box.right - (innerWidth - 8)) < 1 && box.top >= 8 && Math.abs(box.bottom - (innerHeight - 8)) < 1;
+    })).toBe(true);
+    await page.screenshot({ path: join(tmpdir(), `react-context-menu-plain-edge-${width}.png`), fullPage: false });
+    await page.keyboard.press('Escape');
+    await expect(menu).toHaveCount(0);
+    await expect(row).toBeFocused();
+    for (const key of ['Shift+F10', 'ContextMenu']) {
+      const before = Number(await owner.getByTestId('context-requests').textContent());
+      await row.press(key);
+      await expect(first).toBeFocused();
+      await expect(owner.getByTestId('context-requests')).toHaveText(String(before + 1));
+      await page.keyboard.press('Escape');
+      await expect(row).toBeFocused();
+    }
+    // A real right-click after both keyboard gestures must still open once.
+    await page.mouse.click(point.x, point.y, { button: 'right' });
+    await expect(first).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(menu).toHaveCount(0);
+    await expect(trigger).toBeFocused();
+    await row.press('ContextMenu');
+    await page.keyboard.press('Shift+Tab');
+    await expect(alphaTrigger).toBeFocused();
+    await expect(menu).toHaveCount(0);
+    await trigger.click();
+    await expect(first).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(trigger).toBeFocused();
+  }
+  await row.press('ContextMenu');
+  await first.press('Enter');
+  await expect(owner.getByTestId('context-commands')).toHaveText(JSON.stringify(['context-b<&:literal<&']));
+  await expect(row).toBeFocused();
+  await row.press('ContextMenu');
+  const invokerHandle = await row.elementHandle();
+  await invokerHandle.evaluate(node => { node.hidden = true; });
+  await page.keyboard.press('Escape');
+  await expect(trigger).toBeFocused();
+  await invokerHandle.evaluate(node => { node.hidden = false; });
+  await row.press('ContextMenu');
+  const triggerHandle = await trigger.elementHandle();
+  await triggerHandle.evaluate(node => { node.parentElement.hidden = true; });
+  await expect(menu).toHaveCount(0);
+  await triggerHandle.evaluate(node => { node.parentElement.hidden = false; });
+  await expect(menu).toHaveCount(0);
+  await expect(owner.getByTestId('context-selected')).toHaveText('context-a');
+  console.log('Installed React row contexts: original pointer/keyboard requests, viewport/RTL placement, live point and focus identity, invoker Escape/Tab, exact commands and anchor suppression passed.');
 }
 
 export async function runRuntimeScenarios(directory, kind) {
@@ -860,6 +1086,11 @@ export async function runRuntimeScenarios(directory, kind) {
     completed.push('unmount and explicit disposal');
     completed.push(...await runThreadScenarios(page, server));
     completed.push(...await runCheckpointScenarios(page, server));
+    if (/react/i.test(kind)) {
+      await runRenameFormScenarios(page, server.url);
+      await runOverflowMenuScenarios(page, server.url);
+      await runContextMenuScenarios(page, server.url);
+    }
     assert.deepEqual(server.errors.map(String), []);
     assert.deepEqual(pageErrors, []);
     assert.deepEqual(consoleFailures, [], 'browser console has no warnings or errors');

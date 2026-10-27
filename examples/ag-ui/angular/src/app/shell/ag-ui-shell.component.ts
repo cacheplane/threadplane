@@ -23,10 +23,13 @@ import { environment } from '../../environments/environment';
 export type DemoMode = 'embed' | 'popup' | 'sidebar';
 const MODES: readonly DemoMode[] = ['embed', 'popup', 'sidebar'] as const;
 
-/** Default knob values — omitted from the URL when active. */
+/**
+ * Default knob values — omitted from the URL when active. The `'default'`
+ * effort sends no `reasoning_effort`, so the model's own default applies.
+ */
 const DEFAULTS = {
   model: 'gpt-5-mini',
-  effort: 'minimal',
+  effort: 'default',
   genui: 'a2ui',
   theme: 'default-dark',
   scheme: 'dark',
@@ -108,6 +111,7 @@ export class AgUiShell {
     { value: 'gpt-5-nano', label: 'gpt-5-nano' },
   ]);
   protected readonly effortOptions = signal<readonly { value: string; label: string }[]>([
+    { value: 'default', label: 'model default' },
     { value: 'minimal', label: 'minimal (fast)' },
     { value: 'low', label: 'low' },
     { value: 'medium', label: 'medium' },
@@ -146,7 +150,7 @@ export class AgUiShell {
           state: {
             ...(input?.state ?? {}),
             model: this.model(),
-            reasoning_effort: this.effort(),
+            reasoning_effort: this.effort() === DEFAULTS.effort ? null : this.effort(),
             gen_ui_mode: this.genUiMode(),
           },
         },

@@ -11,13 +11,19 @@ description: How the AWS Strands example books meetings over AG-UI, and why its 
 
 The Run tab shows the prebuilt `<chat>` composition in front of a Strands agent served over AG-UI, with a side panel titled "Shared state — schedule" to the right of the transcript. Two welcome suggestions set it up: "Book the Q3 roadmap review" asks for a Tuesday meeting with the platform team, and "Book a design critique" runs the same two steps for the web team on Thursday.
 
-The agent calls `check_availability` for the requested weekday, and that day and its open slots appear in the side panel. Then it calls `book_meeting`, the run stops, and a modal card titled "Booking approval required" shows the topic and the chosen slot above two buttons, Cancel and Approve. Approve resumes the run and the agent confirms the booking in one sentence; Cancel resumes it with a rejection and nothing is booked. Either way the panel keeps showing the booking as it was snapshotted before the pause; the final booked or declined status lives only in the agent's confirmation sentence, because no hook emits state after the interrupt resolves.
+The agent calls `check_availability` for the requested weekday, and that day and its open slots appear in the side panel. Then it calls `book_meeting`, the run stops, and a modal card titled "Booking approval required" shows the topic and the chosen slot above two buttons, Cancel and Approve. Approve resumes the run and the agent confirms the booking in one sentence; Cancel resumes it with a rejection and nothing is booked. The Angular presentation uses the agent's confirmation sentence for final status. The wire also carries the canonical booking tool result. The last schedule snapshot may remain pending after a sequential booking, or become final when a later batch availability lookup publishes state; it is an observation, not a required final-state hook.
 
 Delegation is the third thing to try. Type a research request instead, for example "Find a slot for Ada and Grace next week — research their availability first", and the agent calls `research_availability`. That call renders as a subagent card carrying the specialist's own answer, streamed token by token inside the card rather than into the parent bubble.
 
+## React source preview
+
+Select React for a bounded native meeting preview with an editable preset, availability observation, current booking approval, and exact backend result. Angular remains the default and provides the research specialist UI. React uses a native Session and generic interrupt, preserves the opaque pause id, and resumes with a resolved `{ approved }` payload. Confirmation requires the distinct resumed run, matching normal root terminal, and matching canonical tool result decoded through one JSON layer. Assistant prose and the observed schedule cannot confirm the booking.
+
+The calendar is fictional and process-global, not isolated per conversation. New conversation clears local state after cleanup; the next Send creates a fresh thread. It does not reset the calendar. An unconfirmed outcome requires a new conversation. Failed cleanup permanently revokes controls until reload. React is an experimental private source-build candidate, with no public npm availability or full researcher/subagent parity claim.
+
 ## How it is built
 
-Four files carry the example: a Python module holding the Strands agent and its tools, a FastAPI server that mounts it, an application config that registers the agent, and a component that renders the state panel and the approval card. Open the Code tab to read them in place. `subagent_emitter.py`, a fifth file in the same backend directory and not shown in the Code tab, holds the translation from the specialist's stream into the protocol's subagent events.
+Five files carry the example: a Python module holding the Strands agent and its tools, a FastAPI server that mounts it, an application config that registers the agent, and a component that renders the state panel and the approval card. Open the Code tab to read them in place. `subagent_emitter.py`, also included in the Code tab, holds the translation from the specialist's stream into the protocol's subagent events.
 
 ### An ordinary backend tool
 

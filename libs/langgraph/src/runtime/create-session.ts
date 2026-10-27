@@ -164,7 +164,12 @@ type AttemptInput =
       readonly messages: { type: 'human'; id: string; content: string }[];
       readonly state?: LangGraphInputState;
     }
-  | { readonly kind: 'resume'; readonly value: PlainValue | undefined };
+  | {
+      readonly kind: 'resume';
+      readonly value: PlainValue | undefined;
+      /** The pending interrupts this decision answers, for history reconciliation. */
+      readonly interrupts: readonly LangGraphInterrupt[];
+    };
 
 interface PhysicalRun {
   readonly batch: ReturnType<ReturnType<typeof createToolBuffer>['snapshot']>;
@@ -194,6 +199,20 @@ interface Attempt {
   iterator?: AsyncIterator<StreamEvent>;
   unlink?: () => void;
   closed?: boolean;
+}
+
+/** Two pending batches describe the same pause when every interrupt matches
+ * by id and payload. Ids alone are not enough: a node that pauses again can
+ * reuse its deterministic id with a different question. */
+function sameInterrupts(
+  current: readonly LangGraphInterrupt[],
+  answered: readonly LangGraphInterrupt[]
+): boolean {
+  if (current.length !== answered.length) return false;
+  const key = (interrupt: LangGraphInterrupt) =>
+    JSON.stringify([interrupt.id ?? null, interrupt.value ?? null]);
+  const keys = answered.map(key);
+  return current.every((interrupt) => keys.includes(key(interrupt)));
 }
 
 /** Private development composition. Construction/observation perform no I/O.
@@ -292,6 +311,7 @@ export function createSession(
   const canCheck = !!getHistory;
   const joinStream = transport.joinStream?.bind(transport);
   const getRunStatus = transport.getRunStatus?.bind(transport);
+  type RunStatus = Awaited<ReturnType<NonNullable<typeof getRunStatus>>>;
   const getState = transport.getState?.bind(transport);
   const canReconnect = !!joinStream && !!getRunStatus;
   const publication = createPublication({
@@ -319,7 +339,8 @@ export function createSession(
   let pendingToolSettlements = 0;
   let branch: CheckpointOwner | undefined;
   let preparing: Preparation | undefined;
-  const branchStreamModes = [
+  // Owned streams need saved root values after auxiliary model callbacks.
+  const checkpointStreamModes = [
     'values',
     'messages-tuple',
     'updates',
@@ -339,6 +360,19 @@ export function createSession(
   function assertInvocationIdentity() {
     if (hasInvocationConflict(state.invocations))
       throw new Error(invocationConflictError().message);
+  }
+
+  /** The exact run ended without success: nothing is pending and nothing can
+   * be checked again, so no recovery is offered. */
+  function runFailureError(
+    status: 'error' | 'timeout' | 'interrupted'
+  ): AgentError {
+    return {
+      kind: status === 'interrupted' ? 'interrupted' : 'server',
+      message: 'The LangGraph run did not complete successfully.',
+      retryable: false,
+      recovery: 'none',
+    };
   }
 
   function unsettledToolError(): AgentError {
@@ -683,10 +717,10 @@ export function createSession(
         outcome: 'interrupted' as const,
       };
     }
-    if (attempt.input.kind === 'resume') return undefined;
     // Inert construction gives us no server baseline. Only our unique submitted
     // user ID can correlate this checkpoint to this request, including when the
-    // persisted assistant retains the ID of its earlier streamed partial.
+    // persisted assistant retains the ID of its earlier streamed partial. A
+    // resume anchors on the turn's existing user message instead.
     const anchor = messages.findIndex(
       (value) => record(value)?.['id'] === previousProjection.userId
     );
@@ -710,19 +744,52 @@ export function createSession(
       previousInterrupts,
       history
     );
-    const paused = nextUser < 0 && projectedInterrupts.length > 0;
-    const committed =
-      (nextUser >= 0 || latest.next.length === 0) &&
-      evidence.some((value) => {
+    let paused: boolean;
+    let committed: boolean;
+    if (attempt.input.kind === 'resume') {
+      // A decision leaves no new user message. Its evidence is activity the
+      // turn did not have when the decision was sent, or a pause the thread
+      // did not have. The same pause with nothing new is inconclusive: the
+      // decision may never have landed, or may still be executing before its
+      // first checkpoint, and either way it must not be replayed from here.
+      const known = previousProjection.resume?.turnIds ?? [];
+      const activity = turn.some((value) => {
         const message = record(value);
         return (
-          message &&
+          !!message &&
+          typeof message['id'] === 'string' &&
+          !known.includes(message['id']) &&
           (message['type'] === 'ai' ||
-            (attempt.handoffIds.length === 0 && message['type'] === 'tool') ||
-            message['role'] === 'assistant') &&
-          typeof message['id'] === 'string'
+            message['type'] === 'tool' ||
+            message['role'] === 'assistant')
         );
       });
+      paused =
+        nextUser < 0 &&
+        projectedInterrupts.length > 0 &&
+        (activity ||
+          !sameInterrupts(projectedInterrupts, attempt.input.interrupts));
+      committed =
+        nextUser >= 0 ||
+        (projectedInterrupts.length === 0 &&
+          activity &&
+          latest.next.length === 0);
+    } else {
+      paused = nextUser < 0 && projectedInterrupts.length > 0;
+      committed =
+        (nextUser >= 0 || latest.next.length === 0) &&
+        evidence.some((value) => {
+          const message = record(value);
+          return (
+            message &&
+            (message['type'] === 'ai' ||
+              (attempt.handoffIds.length === 0 &&
+                message['type'] === 'tool') ||
+              message['role'] === 'assistant') &&
+            typeof message['id'] === 'string'
+          );
+        });
+    }
     if (!paused && !committed) return undefined;
     const projected = projectStream(previousState, previousProjection, {
       type: 'values',
@@ -749,11 +816,15 @@ export function createSession(
 
   async function execute(attempt: Attempt): Promise<void> {
     if (!owns(attempt)) return;
+    // A captured run id does not bar the read-only history check: the check
+    // correlates by this turn's own user message, not by run identity, and it
+    // is the only portable recovery the core contract can surface. Exact-run
+    // status, when available, decides whether history is conclusive yet.
     const attemptCanCheck = () =>
       !attempt.branch &&
-      attempt.input.kind === 'submit' &&
+      (attempt.input.kind === 'submit' ||
+        (attempt.input.kind === 'resume' && attempt.groups === 0)) &&
       canCheck &&
-      !attempt.physical?.evidence.runId &&
       !attempt.physical?.evidence.unsafe;
     try {
       let groups = attempt.groups;
@@ -819,8 +890,8 @@ export function createSession(
                 run.evidence.runId,
                 joining,
                 attempt.controller.signal,
-                ...(attempt.branch
-                  ? [{ streamMode: [...branchStreamModes] }]
+                ...(!suppliedTransport || attempt.branch
+                  ? [{ streamMode: [...checkpointStreamModes] }]
                   : [])
               )
             : transport.stream(
@@ -828,18 +899,17 @@ export function createSession(
                 threadId,
                 payload,
                 attempt.controller.signal,
-                attempt.runOptions ||
+                !suppliedTransport ||
+                  attempt.runOptions ||
                   canReconnect ||
                   (resuming &&
                     attempt.input.kind === 'resume' &&
                     attempt.input.value !== undefined)
                   ? {
                       ...attempt.runOptions,
-                      ...(from
-                        ? {
-                            checkpoint: from,
-                            streamMode: [...branchStreamModes],
-                          }
+                      ...(from ? { checkpoint: from } : {}),
+                      ...(!suppliedTransport || from
+                        ? { streamMode: [...checkpointStreamModes] }
                         : {}),
                       ...(canReconnect
                         ? {
@@ -945,8 +1015,9 @@ export function createSession(
           : attempt.projection.terminal
           ? 'success'
           : 'interrupted';
+        let status: RunStatus | undefined;
+        let historyChecked = false;
         if (run.evidence.runId && !run.evidence.unsafe && getRunStatus) {
-          let status: Awaited<ReturnType<typeof getRunStatus>> | undefined;
           try {
             status = await getRunStatus(
               threadId,
@@ -1008,27 +1079,52 @@ export function createSession(
             status === 'interrupted'
           ) {
             run.confirmed = true;
-            settle(
-              attempt,
-              status === 'interrupted' ? 'interrupted' : 'error',
-              {
-                kind: status === 'interrupted' ? 'interrupted' : 'server',
-                message: 'The LangGraph run did not complete successfully.',
-                retryable: false,
-                recovery: 'none',
+            // 'interrupted' is ambiguous: the pause event may have been lost
+            // when the stream dropped, or a newer run cancelled this one.
+            // Only this turn's saved checkpoint tells the two apart.
+            let recovered: ReturnType<typeof reconcile>;
+            if (status === 'interrupted' && attemptCanCheck() && getHistory) {
+              historyChecked = true;
+              try {
+                const history = await getHistory(
+                  threadId,
+                  attempt.controller.signal
+                );
+                if (!owns(attempt)) return;
+                recovered = reconcile(attempt, history);
+                if (!owns(attempt)) return;
+              } catch {
+                if (!owns(attempt)) return;
               }
-            );
-            return;
+            }
+            if (!recovered) {
+              settle(
+                attempt,
+                status === 'interrupted' ? 'interrupted' : 'error',
+                runFailureError(status)
+              );
+              return;
+            }
+            state = recovered.state;
+            values = recovered.values;
+            interrupts = recovered.interrupts;
+            attempt.projection = recovered.projection;
+            outcome = recovered.outcome;
           } else outcome = 'interrupted';
         } else if (run.evidence.unsafe || attempt.branch)
           outcome = 'interrupted';
+        // While the exact run is known to be in flight, its saved state is
+        // not conclusive yet; the check stays available for later instead.
         if (
           outcome === 'interrupted' &&
+          !historyChecked &&
+          status !== 'pending' &&
+          status !== 'running' &&
           attemptCanCheck() &&
-          transport.getHistory
+          getHistory
         ) {
           try {
-            const history = await transport.getHistory(
+            const history = await getHistory(
               threadId,
               attempt.controller.signal
             );
@@ -1153,6 +1249,50 @@ export function createSession(
         false,
         attemptCanCheck()
       );
+      // A thrown stream gets the same single read-only reconciliation a closed
+      // one gets, unless the exact run is known to be still in flight. A
+      // conclusive answer settles the attempt itself; nothing is retried.
+      if (
+        error.kind === 'interrupted' &&
+        error.recovery === 'check' &&
+        getHistory
+      ) {
+        const run = attempt.physical;
+        let status: RunStatus | undefined;
+        if (run?.evidence.runId && !run.evidence.unsafe && getRunStatus) {
+          try {
+            status = await getRunStatus(
+              threadId,
+              run.evidence.runId,
+              attempt.controller.signal
+            );
+          } catch {
+            /* Unknown exact status; history may still be conclusive. */
+          }
+          if (!owns(attempt)) return;
+        }
+        if (status !== 'pending' && status !== 'running') {
+          try {
+            const history = await getHistory(
+              threadId,
+              attempt.controller.signal
+            );
+            if (!owns(attempt)) return;
+            const recovered = reconcile(attempt, history);
+            if (!owns(attempt)) return;
+            if (recovered) {
+              // Settlement stamps deliveries and subgraphs with this outcome.
+              state = recovered.state;
+              values = recovered.values;
+              interrupts = recovered.interrupts;
+              settle(attempt, recovered.outcome);
+              return;
+            }
+          } catch {
+            if (!owns(attempt)) return;
+          }
+        }
+      }
       settle(
         attempt,
         error.kind === 'interrupted' ? 'interrupted' : 'error',
@@ -1485,10 +1625,12 @@ export function createSession(
       const admit = () => {
         assertInvocationIdentity();
         if (branch || preparing) admitBranchCommand();
+        // A check owned by an earlier resume is withdrawn by re-sending the
+        // decision; one owned by an uncertain submit still blocks it.
         if (
           owner ||
           loading ||
-          recoveryAttempt ||
+          (recoveryAttempt && recoveryAttempt.input.kind !== 'resume') ||
           retained ||
           pendingToolSettlements ||
           persistence.pending ||
@@ -1530,7 +1672,7 @@ export function createSession(
           assertResumeCheckpoint(confirmed, saved);
           return () =>
             beginAttempt(
-              { kind: 'resume', value: captured },
+              { kind: 'resume', value: captured, interrupts },
               external,
               runOptions
             );
@@ -1538,7 +1680,7 @@ export function createSession(
         return;
       }
       attempt = beginAttempt(
-        { kind: 'resume', value: captured },
+        { kind: 'resume', value: captured, interrupts },
         external,
         runOptions
       );
@@ -1729,7 +1871,7 @@ export function createSession(
       if (branch || preparing) admitBranchCommand();
       if (
         owner ||
-        recoveryAttempt ||
+        (recoveryAttempt && recoveryAttempt.input.kind !== 'resume') ||
         retained ||
         pendingToolSettlements ||
         persistence.pending ||
@@ -1740,6 +1882,13 @@ export function createSession(
         throw new Error(
           'History cannot replace an active request, recovery, or unsettled tool results.'
         );
+      // A check owned by an earlier resume yields to a fresh read: the pause it
+      // answered is restored from history, so the decision can be sent again.
+      let withdrawn: AbortController | undefined;
+      if (recoveryAttempt?.input.kind === 'resume') {
+        recoveryAttempt = undefined;
+        withdrawn = invalidateCheck();
+      }
       const previous = detachLoad();
       let resolve!: HistoryRead['resolve'];
       let reject!: HistoryRead['reject'];
@@ -1767,6 +1916,7 @@ export function createSession(
         if (external.aborted) abort();
       }
       closeLoad(previous);
+      withdrawn?.abort();
     });
     return beginning.then(() => {
       if (!read) return;
@@ -1812,6 +1962,34 @@ export function createSession(
     if (!checking || disposed || checking.revision !== revision) return;
     const captured = checking;
     try {
+      // The exact run answers first. In flight means history is not
+      // conclusive yet; a failed run is reported as such and needs no read.
+      const run = captured.attempt.physical;
+      let status: RunStatus | undefined;
+      if (run?.evidence.runId && !run.evidence.unsafe && getRunStatus) {
+        try {
+          status = await getRunStatus(
+            threadId,
+            run.evidence.runId,
+            captured.controller.signal
+          );
+        } catch {
+          /* Unknown exact status; history may still be conclusive. */
+        }
+        if (status === 'pending' || status === 'running') return;
+        if (status === 'error' || status === 'timeout') {
+          const failed = status;
+          await publication.command(() => {
+            if (disposed || captured.revision !== revision) return;
+            run.confirmed = true;
+            recoveryAttempt = undefined;
+            checkController = undefined;
+            retained = undefined;
+            publish('error', runFailureError(failed));
+          });
+          return;
+        }
+      }
       const history = await transport.getHistory?.(
         threadId,
         captured.controller.signal
@@ -1847,6 +2025,7 @@ export function createSession(
         if (disposed || captured.revision !== revision) return;
         recoveryAttempt = undefined;
         checkController = undefined;
+        retained = undefined;
         state = recoveredState;
         values = recovered.values;
         interrupts = recovered.interrupts;

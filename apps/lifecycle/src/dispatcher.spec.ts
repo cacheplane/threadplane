@@ -5,7 +5,7 @@ import {
   type GrowthJob,
   type SqlExecutor,
 } from '@threadplane-internal/growth';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, test, vi } from 'vitest';
 
 import middleware from './middleware.js';
 import {
@@ -90,6 +90,9 @@ function dependencies(
       .mockResolvedValue({ projected: 0, disabled: false }),
     now: vi.fn(() => NOW),
     renewJobLease: vi
+      .fn()
+      .mockImplementation(async (_executor, input) => leasedJob(input.jobId)),
+    deferJob: vi
       .fn()
       .mockImplementation(async (_executor, input) => leasedJob(input.jobId)),
     quarantineJob: vi
@@ -982,5 +985,117 @@ it('continues enrichment-only dispatch when delivery configuration is absent', a
     expect(deps.dispatchLeasedJob).toHaveBeenCalledOnce();
   } finally {
     vi.unstubAllEnvs();
+  }
+});
+
+test('preparation consuming the tick budget prevents leasing any jobs', async () => {
+  let current = NOW;
+  const d = dependencies({
+    now: () => current,
+    reconcileMessageIds: vi.fn(async () => {
+      current = new Date(NOW.getTime() + 35_000);
+      return { attempted: 0, bound: 0 };
+    }),
+  });
+
+  const result = await dispatchLifecycleJobs(
+    {
+      batchSize: 2,
+      campaignEnabled: false,
+      signal: new AbortController().signal,
+    },
+    d
+  );
+
+  expect(result.leased).toBe(0);
+  expect(d.leaseDueJobs).not.toHaveBeenCalled();
+});
+
+test('a slow job releases remaining jobs without starting more provider work', async () => {
+  let current = NOW;
+  const deferJob = vi.fn().mockResolvedValue(null);
+  const d = dependencies({
+    now: () => current,
+    deferJob,
+    leaseDueJobs: vi
+      .fn()
+      .mockResolvedValue([leasedJob('one'), leasedJob('two')]),
+    dispatchLeasedJob: vi.fn(async () => {
+      current = new Date(NOW.getTime() + 35_000);
+      return 'completed' as const;
+    }),
+  });
+
+  const result = await dispatchLifecycleJobs(
+    {
+      batchSize: 2,
+      campaignEnabled: false,
+      signal: new AbortController().signal,
+    },
+    d
+  );
+
+  expect(result.dispatched).toBe(1);
+  expect(d.dispatchLeasedJob).toHaveBeenCalledOnce();
+  expect(deferJob).toHaveBeenCalledWith(
+    expect.anything(),
+    expect.objectContaining({
+      jobId: 'two',
+      errorCode: 'tick_budget_exhausted',
+    })
+  );
+});
+
+test('the hard tick deadline aborts a running job before another remote phase starts', async () => {
+  vi.useFakeTimers({ now: NOW });
+  const timeout = vi.spyOn(AbortSignal, 'timeout').mockImplementation((ms) => {
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(new Error('tick deadline')), ms);
+    return controller.signal;
+  });
+  let phases = 0;
+  let jobSignal: AbortSignal | undefined;
+  const d = dependencies({
+    now: () => new Date(Date.now()),
+    leaseDueJobs: vi.fn().mockResolvedValue([leasedJob('slow-cleanup')]),
+    dispatchLeasedJob: vi.fn(async (_db, _job, context) => {
+      jobSignal = context.signal;
+      phases++;
+      await new Promise<void>((resolve, reject) => {
+        const timer = setTimeout(resolve, 60_000);
+        context.signal?.addEventListener(
+          'abort',
+          () => {
+            clearTimeout(timer);
+            reject(context.signal?.reason);
+          },
+          { once: true }
+        );
+      });
+      context.signal?.throwIfAborted();
+      phases++;
+      return 'completed' as const;
+    }),
+  });
+
+  try {
+    const run = dispatchLifecycleJobs(
+      {
+        batchSize: 1,
+        campaignEnabled: false,
+        signal: new AbortController().signal,
+      },
+      d
+    );
+    const settled = run.catch((error: unknown) => error);
+    await vi.advanceTimersByTimeAsync(50_000);
+    expect(jobSignal?.aborted).toBe(true);
+    await expect(settled).resolves.toBeInstanceOf(Error);
+
+    expect(phases).toBe(1);
+    expect(d.dispatchLeasedJob).toHaveBeenCalledOnce();
+  } finally {
+    timeout.mockRestore();
+    vi.useRealTimers();
   }
 });

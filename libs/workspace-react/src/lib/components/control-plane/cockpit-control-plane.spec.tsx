@@ -195,6 +195,19 @@ describe('CockpitControlPlane', () => {
     expect(within(pane).queryByText('Actions')).toBeNull();
   });
 
+  it('describes static Render execution in the browser without changing canonical language', () => {
+    const staticEntry = cockpitManifest.find(
+      (candidate) => candidate.product === 'render' && candidate.runtimeAdapter === 'none'
+    )!;
+    expect(staticEntry.language).toBe('python');
+    renderControlPlane({ entry: staticEntry });
+    const pane = screen.getByRole('complementary', { name: 'Workspace context' });
+    expect(pane.textContent).toContain('Browser · Render');
+    expect(pane.textContent).toContain('Runs in your browser');
+    expect(pane.textContent).not.toContain('Python · Render');
+    expect(pane.textContent).not.toContain('Runtime target unavailable');
+  });
+
   it('omits the Theme setting row when the host provides no theme control', () => {
     renderControlPlane({ initialUtility: 'settings' });
 

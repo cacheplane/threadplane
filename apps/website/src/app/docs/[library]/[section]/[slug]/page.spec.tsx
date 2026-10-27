@@ -5,12 +5,120 @@ import { LibraryMark } from '../../../../../components/docs/LibraryMark';
 import { DocsSearchFooter } from '../../../../../components/docs/DocsSearchFooter';
 import { DocsTOC } from '../../../../../components/docs/DocsTOC';
 import { MdxRenderer } from '../../../../../components/docs/MdxRenderer';
+import { ReactStreamingPreview } from '../../../../../components/docs/ReactStreamingPreview';
+import { ReactAgUiStreamingPreview } from '../../../../../components/docs/ReactAgUiStreamingPreview';
+import { ReactAgUiInterruptsPreview } from '../../../../../components/docs/ReactAgUiInterruptsPreview';
+import { ReactAgUiToolViewsPreview } from '../../../../../components/docs/ReactAgUiToolViewsPreview';
+import { ReactAgUiJsonRenderPreview } from '../../../../../components/docs/ReactAgUiJsonRenderPreview';
+import { ReactAgUiSubagentsPreview } from '../../../../../components/docs/ReactAgUiSubagentsPreview';
+import { ReactRenderSpecPreview } from '../../../../../components/docs/ReactRenderSpecPreview';
+import { ReactElementRenderingPreview } from '../../../../../components/docs/ReactElementRenderingPreview';
+import { ReactRegistryPreview } from '../../../../../components/docs/ReactRegistryPreview';
+import { ReactRepeatLoopsPreview } from '../../../../../components/docs/ReactRepeatLoopsPreview';
+import { ReactStateManagementPreview } from '../../../../../components/docs/ReactStateManagementPreview';
+import { ReactChatMessagesPreview } from '../../../../../components/docs/ReactChatMessagesPreview';
+import { ReactChatSubagentsPreview } from '../../../../../components/docs/ReactChatSubagentsPreview';
+import { ReactChatToolCallsPreview } from '../../../../../components/docs/ReactChatToolCallsPreview';
+import { ReactChatInterruptsPreview } from '../../../../../components/docs/ReactChatInterruptsPreview';
+import { ReactChatInputPreview } from '../../../../../components/docs/ReactChatInputPreview';
+import { ReactComputedFunctionsPreview } from '../../../../../components/docs/ReactComputedFunctionsPreview';
+import { ReactInterruptsPreview } from '../../../../../components/docs/ReactInterruptsPreview';
+import { ReactMemoryPreview } from '../../../../../components/docs/ReactMemoryPreview';
+import { ReactClientToolsPreview } from '../../../../../components/docs/ReactClientToolsPreview';
+import { ReactPersistencePreview } from '../../../../../components/docs/ReactPersistencePreview';
+import { ReactDurableExecutionPreview } from '../../../../../components/docs/ReactDurableExecutionPreview';
+import { ReactSubgraphsPreview } from '../../../../../components/docs/ReactSubgraphsPreview';
+import { ReactDeploymentRuntimePreview } from '../../../../../components/docs/ReactDeploymentRuntimePreview';
+import { ReactTimeTravelPreview } from '../../../../../components/docs/ReactTimeTravelPreview';
 import { WebsiteWorkspace } from '../../../../../components/workspace/WebsiteWorkspace';
 import DocsPage, { generateMetadata } from './page';
+
+it('selects native Debug Docs with its exact source context while retaining canonical Angular MDX', async () => {
+  const tree = await route('chat', 'components', 'chat-debug');
+  const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
+  const article = workspace?.props.reactDocsSlot as React.ReactElement<ElementProps> | undefined;
+  expect((article?.type as { name?: string })?.name).toBe('ReactChatDebugPreview');
+  expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/chat/debug/react/src/checkpoint-page.ts');
+  expect(article?.props.exampleCode?.sources?.['cockpit/chat/debug/python/src/graph.py']).toContain('TAG_NOSTREAM');
+  const angular = findElement(workspace?.props.docsSlot, MdxRenderer as ComponentType<never>);
+  expect(angular?.props.exampleCode?.assetPaths).toContain('cockpit/chat/debug/angular/src/app/debug.component.ts');
+  expect(angular?.props.source).toContain('# ChatDebugComponent');
+});
+
+it('selects the exact native Theming guide with real source Code and canonical Angular docs', async () => {
+  const tree = await route('chat', 'guides', 'theming');
+  const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
+  const article = workspace?.props.reactDocsSlot as React.ReactElement<ElementProps> | undefined;
+  expect((article?.type as { name?: string })?.name).toBe('ReactChatThemingPreview');
+  expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/chat/theming/react/src/themes.ts');
+  const angular = findElement(workspace?.props.docsSlot, MdxRenderer as ComponentType<never>);
+  expect(angular?.props.exampleCode?.assetPaths).toContain('cockpit/chat/theming/angular/src/app/theming.component.ts');
+});
+
+it('selects Memory-specific native React Docs and complete sources with Angular default', async () => {
+  const tree = await route('deep-agents', 'capabilities', 'memory');
+  const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
+  const article = workspace?.props.reactDocsSlot as React.ReactElement<ElementProps> | undefined;
+  expect((article?.type as { name?: string })?.name).toBe('ReactDeepAgentsMemoryPreview');
+  expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/deep-agents/memory/react/src/browser-scope.ts');
+  expect(article?.props.exampleCode?.sources?.['cockpit/deep-agents/memory/python/src/memory_observation.py']).toContain('validate_scope');
+  const angular = findElement(workspace?.props.docsSlot, MdxRenderer as ComponentType<never>);
+  expect(angular?.props.exampleCode?.assetPaths).toContain('cockpit/deep-agents/memory/angular/src/app/memory-scope.ts');
+});
+
+it('selects Skills-specific native React Docs and exact sources while retaining Angular Docs', async () => {
+  const tree = await route('deep-agents', 'capabilities', 'skills');
+  const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
+  const article = workspace?.props.reactDocsSlot as React.ReactElement<ElementProps> | undefined;
+  expect(article).toBeTruthy();
+  expect((article?.type as { name?: string })?.name).toBe('ReactDeepAgentsSkillsPreview');
+  expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/deep-agents/skills/react/src/read-projection.ts');
+  expect(article?.props.exampleCode?.sources?.['cockpit/deep-agents/skills/react/src/authority.ts']).toContain('checkpoint');
+  const angular = findElement(workspace?.props.docsSlot, MdxRenderer as ComponentType<never>);
+  expect(angular?.props.exampleCode?.assetPaths.some(path => path.includes('/skills/angular/'))).toBe(true);
+  expect(article?.props.exampleCode?.assetPaths.some(path => /fixture|wire\.py|\.spec\.|proof/.test(path))).toBe(false);
+});
+it('selects Subagents-specific native React Docs and exact sources while retaining Angular Docs', async () => {
+  const tree = await route('deep-agents', 'capabilities', 'subagents');
+  const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
+  const article = workspace?.props.reactDocsSlot as React.ReactElement<ElementProps> | undefined;
+  expect(article).toBeTruthy();
+  expect((article?.type as { name?: string })?.name).toBe('ReactDeepAgentsSubagentsPreview');
+  expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/deep-agents/subagents/react/src/projection.ts');
+  expect(article?.props.exampleCode?.sources?.['cockpit/deep-agents/subagents/react/src/authority.ts']).toContain('checkpoint');
+  const angular = findElement(workspace?.props.docsSlot, MdxRenderer as ComponentType<never>);
+  expect(angular?.props.exampleCode?.assetPaths.some(path => path.includes('/subagents/angular/'))).toBe(true);
+  expect(article?.props.exampleCode?.assetPaths.some(path => /fixture|wire\.py|\.spec\.|proof/.test(path))).toBe(false);
+});
+it('selects Filesystem-specific native React Docs and exact sources while retaining Angular Docs', async () => {
+  const tree = await route('deep-agents', 'capabilities', 'filesystem');
+  const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
+  const article = workspace?.props.reactDocsSlot as React.ReactElement<ElementProps> | undefined;
+  expect(article).toBeTruthy();
+  expect((article?.type as { name?: string })?.name).toBe('ReactDeepAgentsFilesystemPreview');
+  expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/deep-agents/filesystem/react/src/approval-state.ts');
+  expect(article?.props.exampleCode?.sources?.['cockpit/deep-agents/filesystem/react/src/authority.ts']).toContain('checkpoint');
+  const angular = findElement(workspace?.props.docsSlot, MdxRenderer as ComponentType<never>);
+  expect(angular?.props.exampleCode?.assetPaths.some(path => path.includes('/filesystem/angular/'))).toBe(true);
+  expect(article?.props.exampleCode?.assetPaths.some(path => /fixture|wire\.py|\.spec\.|proof/.test(path))).toBe(false);
+});
+it('selects Planning-specific native React Docs and sources while retaining Angular Docs', async () => {
+  const tree = await route('deep-agents', 'capabilities', 'planning');
+  const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
+  const article = workspace?.props.reactDocsSlot as React.ReactElement<ElementProps> | undefined;
+  expect(article).toBeTruthy();
+  expect((article?.type as { name?: string })?.name).toBe('ReactDeepAgentsPlanningPreview');
+  expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/deep-agents/planning/react/src/plan-state.ts');
+  expect(article?.props.exampleCode?.sources?.['cockpit/deep-agents/planning/react/src/terminal.ts']).toContain('checkpoint');
+  const angular = findElement(workspace?.props.docsSlot, MdxRenderer as ComponentType<never>);
+  expect(angular?.props.exampleCode?.assetPaths.some(path => path.includes('/planning/angular/'))).toBe(true);
+  expect(findElement(workspace?.props.reactDocsSlot, ReactStreamingPreview as ComponentType<never>)).toBeNull();
+});
 
 interface ElementProps {
   children?: ReactNode;
   docsSlot?: ReactNode;
+  reactDocsSlot?: ReactNode;
   requestedMode?: string | null;
   resolution?: { kind?: string; identity?: { availableModes?: string[] } };
   contentBundle?: {
@@ -20,6 +128,7 @@ interface ElementProps {
   contextTrail?: readonly { label: string; href?: string; icon?: ReactNode }[];
   docsContext?: unknown;
   docsPath?: string;
+  source?: string;
   exampleCode?: {
     assetPaths?: readonly string[];
     sources?: Record<string, string>;
@@ -49,6 +158,293 @@ const route = (library: string, section: string, slug: string, mode?: string) =>
   } as never);
 
 describe('unified docs workspace route', () => {
+  it('selects native AG-UI A2UI Docs on its canonical A2UI introduction route', async () => {
+    const tree = await route('a2ui', 'getting-started', 'introduction');
+    const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
+    const slot = workspace?.props.reactDocsSlot;
+    expect(isValidElement(slot) && typeof slot.type === 'function' && slot.type.name).toBe('ReactAgUiA2uiPreview');
+    const context = isValidElement<ElementProps>(slot) ? slot.props.exampleCode : undefined;
+    expect(context?.assetPaths).toEqual(expect.arrayContaining(['cockpit/ag-ui/a2ui/react/src/app.tsx', 'libs/cockpit-a2ui-react/src/protocol.ts']));
+    expect(context?.sources?.['cockpit/ag-ui/a2ui/python/src/graph.py']).toContain('a2ui');
+    expect(context?.assetPaths.some(path => /fixture|probe|testing|\.spec\./.test(path))).toBe(false);
+    const angular = findElement(workspace?.props.docsSlot, MdxRenderer as ComponentType<never>);
+    expect(angular?.props.exampleCode?.assetPaths).toContain('cockpit/ag-ui/a2ui/angular/src/app/a2ui.component.ts');
+  });
+  it('selects native Chat A2UI sources and article while retaining canonical Angular docs', async () => {
+    const tree = await route('chat', 'a2ui', 'overview');
+    const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
+    const slot = workspace?.props.reactDocsSlot;
+    expect(isValidElement(slot) && typeof slot.type === 'function' && slot.type.name).toBe('ReactChatA2uiPreview');
+    expect(isValidElement<ElementProps>(slot) && slot.props.exampleCode?.assetPaths).toEqual(
+      expect.arrayContaining([...['app.tsx', 'application.ts', 'connection.ts', 'terminal.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/chat/a2ui/react/src/${file}`), ...['data.ts', 'protocol.ts', 'form.ts', 'actions.ts', 'views.tsx'].map(file => `libs/cockpit-a2ui-react/src/${file}`)])
+    );
+    const assets = isValidElement<ElementProps>(slot) ? slot.props.exampleCode?.assetPaths ?? [] : [];
+    expect(assets.some(path => /fixture|probe|testing|\.spec\./.test(path))).toBe(false);
+    expect(isValidElement<ElementProps>(slot) && slot.props.exampleCode?.sources?.['cockpit/chat/a2ui/python/src/graph.py']).toContain('a2ui');
+    const angular = findElement(workspace?.props.docsSlot, MdxRenderer as ComponentType<never>);
+    expect(angular?.props.exampleCode?.assetPaths.some(path => path.includes('/a2ui/angular/'))).toBe(true);
+  });
+  it('selects the native Generative UI article and source assets on the canonical guide', async () => {
+    const tree = await route('chat', 'guides', 'generative-ui');
+    const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
+    expect(workspace?.props.reactDocsSlot).toBeTruthy();
+    const slot = workspace?.props.reactDocsSlot;
+    expect(isValidElement<ElementProps>(slot) && slot.props.exampleCode?.assetPaths).toEqual(
+      expect.arrayContaining(['app.tsx', 'application.ts', 'connection.ts', 'dashboard-views.tsx', 'dashboard-data.ts', 'dashboard-spec.ts', 'tool-evidence.ts', 'observation.ts', 'terminal.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/chat/generative-ui/react/src/${file}`))
+    );
+    expect(isValidElement(slot) && typeof slot.type === 'function' && slot.type.name).toBe('ReactChatGenerativeUiPreview');
+    expect(findElement(slot, ReactChatSubagentsPreview as ComponentType<never>)).toBeNull();
+  });
+  it('selects the native Timeline article and source assets on the canonical guide', async () => {
+    const tree = await route('chat', 'components', 'chat-trace');
+    const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
+    expect(workspace?.props.reactDocsSlot).toBeTruthy();
+    const slot = workspace?.props.reactDocsSlot;
+    expect(isValidElement<ElementProps>(slot) && slot.props.exampleCode?.assetPaths).toEqual(
+      expect.arrayContaining(['app.tsx', 'application.ts', 'checkpoints.ts', 'preview.ts', 'authority.ts', 'connection.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/chat/timeline/react/src/${file}`))
+    );
+    expect(isValidElement(slot) && typeof slot.type === 'function' && slot.type.name).toBe('ReactChatTimelinePreview');
+    expect(findElement(slot, ReactChatSubagentsPreview as ComponentType<never>)).toBeNull();
+  });
+
+  it('selects the native Threads article and source assets on the canonical guide', async () => {
+    const tree = await route('chat', 'guides', 'thread-routing');
+    const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
+    expect(workspace?.props.reactDocsSlot).toBeTruthy();
+    const slot = workspace?.props.reactDocsSlot;
+    expect(isValidElement<ElementProps>(slot) && slot.props.exampleCode?.assetPaths).toEqual(
+      expect.arrayContaining(['app.tsx', 'application.ts', 'authority.ts', 'records.ts', 'titles.ts', 'connection.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/chat/threads/react/src/${file}`))
+    );
+    expect(isValidElement(slot) && typeof slot.type === 'function' && slot.type.name).toBe('ReactChatThreadsPreview');
+    expect(findElement(slot, ReactChatSubagentsPreview as ComponentType<never>)).toBeNull();
+  });
+
+  it('selects a native Chat Subagents article on its canonical component page', async () => {
+    const tree=await route('chat','components','chat-subagent-card');
+    const workspace=findElement(tree,WebsiteWorkspace as ComponentType<never>);
+    const article=findElement(workspace?.props.reactDocsSlot,ReactChatSubagentsPreview as ComponentType<never>);
+    expect(article).not.toBeNull();
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/chat/subagents/react/src/children.ts');
+    expect(findElement(workspace?.props.reactDocsSlot,ReactStreamingPreview as ComponentType<never>)).toBeNull();
+    expect(findElement(workspace?.props.reactDocsSlot,ReactClientToolsPreview as ComponentType<never>)).toBeNull();
+  });
+  it('selects a native Chat Tool Calls article on its canonical component page', async () => {
+    const tree=await route('chat','components','chat-tool-calls');
+    const workspace=findElement(tree,WebsiteWorkspace as ComponentType<never>);
+    const article=findElement(workspace?.props.reactDocsSlot,ReactChatToolCallsPreview as ComponentType<never>);
+    expect(article).not.toBeNull();
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/chat/tool-calls/react/src/authority.ts');
+    expect(findElement(workspace?.props.reactDocsSlot,ReactStreamingPreview as ComponentType<never>)).toBeNull();
+    expect(findElement(workspace?.props.reactDocsSlot,ReactClientToolsPreview as ComponentType<never>)).toBeNull();
+  });
+  it('selects a native Chat Interrupts article on its canonical component page', async () => {
+    const tree=await route('chat','components','chat-interrupt-panel');
+    const workspace=findElement(tree,WebsiteWorkspace as ComponentType<never>);
+    const article=findElement(workspace?.props.reactDocsSlot,ReactChatInterruptsPreview as ComponentType<never>);
+    expect(article).not.toBeNull();
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/chat/interrupts/react/src/authority.ts');
+    expect(findElement(workspace?.props.reactDocsSlot,ReactStreamingPreview as ComponentType<never>)).toBeNull();
+    expect(findElement(workspace?.props.reactDocsSlot,ReactClientToolsPreview as ComponentType<never>)).toBeNull();
+  });
+  it('selects a native Chat Input article on its canonical component page', async () => {
+    const tree=await route('chat','components','chat-input');
+    const workspace=findElement(tree,WebsiteWorkspace as ComponentType<never>);
+    const article=findElement(workspace?.props.reactDocsSlot,ReactChatInputPreview as ComponentType<never>);
+    expect(article).not.toBeNull();
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/chat/input/react/src/application.ts');
+    expect(findElement(workspace?.props.reactDocsSlot,ReactStreamingPreview as ComponentType<never>)).toBeNull();
+    expect(findElement(workspace?.props.reactDocsSlot,ReactClientToolsPreview as ComponentType<never>)).toBeNull();
+  });
+  it('selects a native Chat Messages article on its canonical concept page', async () => {
+    const tree=await route('chat','concepts','message-model');
+    const workspace=findElement(tree,WebsiteWorkspace as ComponentType<never>);
+    const article=findElement(workspace?.props.reactDocsSlot,ReactChatMessagesPreview as ComponentType<never>);
+    expect(article).not.toBeNull();
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/chat/messages/react/src/application.ts');
+    expect(findElement(workspace?.props.reactDocsSlot,ReactStreamingPreview as ComponentType<never>)).toBeNull();
+    expect(findElement(workspace?.props.reactDocsSlot,ReactClientToolsPreview as ComponentType<never>)).toBeNull();
+  });
+  it('selects React Element Rendering Docs with owned state and readonly view sources', async () => {
+    const tree = await route('render', 'api', 'render-spec-component');
+    const workspace = findElement(
+      tree,
+      WebsiteWorkspace as ComponentType<never>
+    );
+    const article = findElement(
+      workspace?.props.reactDocsSlot,
+      ReactElementRenderingPreview as ComponentType<never>
+    );
+    expect(article).not.toBeNull();
+    expect(article?.props.exampleCode?.assetPaths).toContain(
+      'cockpit/render/element-rendering/react/src/app.tsx'
+    );
+    expect(article?.props.exampleCode?.assetPaths).toContain(
+      'cockpit/render/element-rendering/react/src/views.tsx'
+    );
+    expect(
+      article?.props.exampleCode?.assetPaths?.some((path) =>
+        path.includes('/python/')
+      )
+    ).toBe(false);
+    expect(
+      findElement(
+        workspace?.props.reactDocsSlot,
+        ReactRenderSpecPreview as ComponentType<never>
+      )
+    ).toBeNull();
+  });
+  it('selects React Component Registry Docs with owned state and readonly view sources', async () => {
+    const tree = await route('render', 'guides', 'registry');
+    const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
+    const article = findElement(workspace?.props.reactDocsSlot, ReactRegistryPreview as ComponentType<never>);
+    expect(article).not.toBeNull();
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/render/registry/react/src/app.tsx');
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/render/registry/react/src/views.tsx');
+    expect(article?.props.exampleCode?.assetPaths?.some(path => path.includes('/python/'))).toBe(false);
+    expect(findElement(workspace?.props.reactDocsSlot, ReactRenderSpecPreview as ComponentType<never>)).toBeNull();
+  });
+  it('selects React Repeat Loops Docs with owned state and readonly view sources', async () => {
+    const tree = await route('render', 'guides', 'repeat-loops');
+    const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
+    const article = findElement(workspace?.props.reactDocsSlot, ReactRepeatLoopsPreview as ComponentType<never>);
+    expect(article).not.toBeNull();
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/render/repeat-loops/react/src/items.ts');
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/render/repeat-loops/react/src/views.tsx');
+    expect(article?.props.exampleCode?.assetPaths?.some(path => path.includes('/python/'))).toBe(false);
+    expect(findElement(workspace?.props.reactDocsSlot, ReactRenderSpecPreview as ComponentType<never>)).toBeNull();
+  });
+  it('selects React State Management Docs with owned state and readonly view sources', async () => {
+    const tree = await route('render', 'guides', 'state-store');
+    const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
+    const article = findElement(workspace?.props.reactDocsSlot, ReactStateManagementPreview as ComponentType<never>);
+    expect(article).not.toBeNull();
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/render/state-management/react/src/state.ts');
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/render/state-management/react/src/views.tsx');
+    expect(article?.props.exampleCode?.assetPaths?.some(path => path.includes('/python/'))).toBe(false);
+    expect(findElement(workspace?.props.reactDocsSlot, ReactRenderSpecPreview as ComponentType<never>)).toBeNull();
+  });
+  it('selects native Computed Functions Docs on canonical provide-render with owned pure callback sources', async () => {
+    const tree = await route('render', 'api', 'provide-render');
+    const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
+    const article = findElement(workspace?.props.reactDocsSlot, ReactComputedFunctionsPreview as ComponentType<never>);
+    expect(article).not.toBeNull();
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/render/computed-functions/react/src/functions.ts');
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/render/computed-functions/react/src/projection.ts');
+    expect(article?.props.exampleCode?.assetPaths?.some(path => path.includes('/python/'))).toBe(false);
+    expect(findElement(workspace?.props.reactDocsSlot, ReactRenderSpecPreview as ComponentType<never>)).toBeNull();
+  });
+
+  it('selects the local React Render Spec guide and owned renderer sources without Python assets', async () => {
+    const tree = await route('render', 'guides', 'specs');
+    const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
+    const article = findElement(workspace?.props.reactDocsSlot, ReactRenderSpecPreview as ComponentType<never>);
+    expect(article).not.toBeNull();
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/render/spec-rendering/react/src/playback.ts');
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/render/spec-rendering/react/src/views.tsx');
+    expect(article?.props.exampleCode?.assetPaths?.some(path => path.includes('/python/'))).toBe(false);
+  });
+  it('selects the native trip specialists Docs with exact child policy and bridge sources', async () => {
+    const tree=await route('ag-ui','guides','subagents');
+    const workspace=findElement(tree,WebsiteWorkspace as ComponentType<never>);
+    const article=findElement(workspace?.props.reactDocsSlot,ReactAgUiSubagentsPreview as ComponentType<never>);
+    expect(article).not.toBeNull();
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/ag-ui/subagents/react/src/children.ts');
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/ag-ui/subagents/python/src/streaming/subagent_emitting_agent.py');
+    expect(findElement(workspace?.props.reactDocsSlot,ReactAgUiJsonRenderPreview as ComponentType<never>)).toBeNull();
+  });
+  it('selects native JSON Render Docs with the exact dashboard policy, views and data tools', async () => {
+    const tree=await route('ag-ui','guides','json-render');
+    const workspace=findElement(tree,WebsiteWorkspace as ComponentType<never>);
+    const article=findElement(workspace?.props.reactDocsSlot,ReactAgUiJsonRenderPreview as ComponentType<never>);
+    expect(article).not.toBeNull();
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/ag-ui/json-render/react/src/dashboard-policy.ts');
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/ag-ui/json-render/react/src/dashboard-views.tsx');
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/ag-ui/json-render/python/src/dashboard_tools.py');
+    expect(findElement(workspace?.props.reactDocsSlot,ReactAgUiToolViewsPreview as ComponentType<never>)).toBeNull();
+  });
+  it('selects the authored native weather guide and server sources on AG-UI Tool Views', async () => {
+    const tree = await route('ag-ui','guides','tool-views');
+    const workspace = findElement(tree,WebsiteWorkspace as ComponentType<never>);
+    const article = findElement(workspace?.props.reactDocsSlot,ReactAgUiToolViewsPreview as ComponentType<never>);
+    expect(article).not.toBeNull();
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/ag-ui/tool-views/react/src/tool-view-policy.ts');
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/ag-ui/tool-views/python/src/graph.py');
+    expect(findElement(workspace?.props.reactDocsSlot,ReactAgUiStreamingPreview as ComponentType<never>)).toBeNull();
+    expect(findElement(workspace?.props.reactDocsSlot,ReactAgUiInterruptsPreview as ComponentType<never>)).toBeNull();
+  });
+  it('selects native AG-UI approval Docs on the canonical Interrupts guide without borrowing LangGraph', async () => {
+    const tree = await route('ag-ui', 'guides', 'interrupts');
+    const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
+    const article = findElement(workspace?.props.reactDocsSlot, ReactAgUiInterruptsPreview as ComponentType<never>);
+    expect(article).not.toBeNull();
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/ag-ui/interrupts/react/src/approval-policy.ts');
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/ag-ui/interrupts/python/src/native_agent.py');
+    expect(findElement(workspace?.props.reactDocsSlot, ReactInterruptsPreview as ComponentType<never>)).toBeNull();
+    expect(findElement(workspace?.props.reactDocsSlot, ReactAgUiStreamingPreview as ComponentType<never>)).toBeNull();
+  });
+  it('selects the authored AG-UI Streaming Docs on Event Mapping without selecting LangGraph Streaming', async () => {
+    const tree = await route('ag-ui','reference','event-mapping');
+    const workspace = findElement(tree,WebsiteWorkspace as ComponentType<never>);
+    const article = findElement(workspace?.props.reactDocsSlot,ReactAgUiStreamingPreview as ComponentType<never>);
+    expect(article).not.toBeNull();
+    expect(article?.props.exampleCode?.assetPaths).toContain('cockpit/ag-ui/streaming/react/src/app.tsx');
+    expect(findElement(workspace?.props.reactDocsSlot,ReactStreamingPreview as ComponentType<never>)).toBeNull();
+  });
+  it('selects the authored client-tools preview on the canonical Chat route', async () => {
+    const tree = await route('chat', 'guides', 'client-tools');
+    const workspace = findElement(
+      tree,
+      WebsiteWorkspace as ComponentType<never>
+    );
+    const article = findElement(
+      workspace?.props.reactDocsSlot,
+      ReactClientToolsPreview as ComponentType<never>
+    );
+    expect(article).not.toBeNull();
+    expect(article?.props.exampleCode?.assetPaths).toContain(
+      'cockpit/langgraph/client-tools/react/src/tools.ts'
+    );
+    expect(workspace?.props.contentBundle?.runtimeUrl).toMatch(
+      /langgraph\/client-tools/
+    );
+  });
+  it.each([
+    ['streaming', ReactStreamingPreview],
+    ['interrupts', ReactInterruptsPreview],
+    ['memory', ReactMemoryPreview],
+    ['persistence', ReactPersistencePreview],
+    ['durable-execution', ReactDurableExecutionPreview],
+    ['subgraphs', ReactSubgraphsPreview],
+    ['time-travel', ReactTimeTravelPreview],
+    ['deployment', ReactDeploymentRuntimePreview],
+  ] as const)(
+    'selects topic-specific authored React Docs for %s',
+    async (slug, component) => {
+      const tree = await route('langgraph', 'guides', slug);
+      const workspace = findElement(
+        tree,
+        WebsiteWorkspace as ComponentType<never>
+      );
+      const article = findElement(
+        workspace?.props.reactDocsSlot,
+        component as ComponentType<never>
+      );
+      expect(article).not.toBeNull();
+      expect(article?.props.exampleCode?.assetPaths).toContain(
+        `cockpit/langgraph/${
+          slug === 'deployment' ? 'deployment-runtime' : slug
+        }/react/src/app.tsx`
+      );
+      expect(
+        findElement(
+          workspace?.props.reactDocsSlot,
+          (slug === 'streaming'
+            ? ReactInterruptsPreview
+            : ReactStreamingPreview) as ComponentType<never>
+        )
+      ).toBeNull();
+    }
+  );
   it('passes mapped descriptor-backed content and the requested mode to the client boundary', async () => {
     const tree = await route('langgraph', 'guides', 'streaming', 'code');
     const workspace = findElement(
@@ -168,4 +564,21 @@ describe('unified docs workspace route', () => {
     );
     expect(String(metadata.alternates?.canonical)).not.toContain('mode');
   });
+});
+
+it('selects native AG-UI Client Tools React docs and actual assets while retaining Angular docs', async () => {
+  const tree = await route('ag-ui', 'guides', 'client-tools');
+  const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
+  const slot = workspace?.props.reactDocsSlot;
+  expect(isValidElement(slot) && typeof slot.type === 'function' && slot.type.name).toBe('ReactAgUiClientToolsPreview');
+  expect(isValidElement<ElementProps>(slot) && slot.props.exampleCode?.assetPaths).toEqual(expect.arrayContaining([
+    'cockpit/ag-ui/client-tools/react/src/tools.ts',
+    'cockpit/ag-ui/client-tools/react/src/application.ts',
+    'cockpit/ag-ui/client-tools/python/src/graph.py',
+    'cockpit/ag-ui/client-tools/python/prompts/client-tools.md',
+  ]));
+  const angular = findElement(workspace?.props.docsSlot, MdxRenderer as ComponentType<never>);
+  expect(angular?.props.exampleCode?.assetPaths?.some(path => path.includes('/client-tools/angular/'))).toBe(true);
+  expect(findElement(slot, ReactStreamingPreview as ComponentType<never>)).toBeNull();
+  expect(findElement(slot, ReactClientToolsPreview as ComponentType<never>)).toBeNull();
 });

@@ -21,10 +21,30 @@
         "cwd": "cockpit/chat/subagents/python",
         "command": "uv run langgraph dev --port 5505 --no-browser"
       }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "cwd": "cockpit/chat/subagents/python",
+        "command": "uv run --frozen --python 3.12 python -m unittest discover -s tests"
+      }
+    },
+    "smoke": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [
+        "test"
+      ],
+      "options": {
+        "cwd": "cockpit/chat/subagents/python",
+        "command": "npx tsx -e \"import { chatSubagentsPythonModule } from './src/index.ts'; const module = chatSubagentsPythonModule; if (module.id !== 'chat-subagents-python' || module.title !== 'Chat Subagents (Python)') { throw new Error('Unexpected module shape for ' + module.id); }\""
+      }
     }
   },
   "tags": [
     "scope:cockpit-e2e",
-    "scope:cockpit-examples"
+    "scope:cockpit-examples",
+    "scope:cockpit-smoke"
   ]
 }

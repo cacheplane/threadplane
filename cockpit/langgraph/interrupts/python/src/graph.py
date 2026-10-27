@@ -43,7 +43,8 @@ class RefundState(TypedDict):
 def build_interrupts_graph():
     # region draft
     llm = ChatOpenAI(model="gpt-5-mini", streaming=True)
-    extractor = ChatOpenAI(model="gpt-5-mini").with_structured_output(RefundDraft)
+    # Extracted fields belong to state, not the user-visible message stream.
+    extractor = ChatOpenAI(model="gpt-5-mini", tags=["nostream"]).with_structured_output(RefundDraft)
 
     async def draft_refund(state: RefundState) -> dict:
         """Extract structured refund fields, then acknowledge the draft.

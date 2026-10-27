@@ -79,7 +79,7 @@ The `weather_card`, `weather_snapshot`, and `confirm_booking` entries take their
 It reuses the weather card with `{ followUp: false }`, which is what makes it terminal.
 
 <Callout type="warning" title="Author schemas with zod/v4">
-The catalog the model sees is derived by `deriveJsonSchema`, which calls `toJSONSchema` from `zod/v4`. A validator it cannot convert throws with the tool name in the message.
+The catalog the model sees is derived by `deriveJsonSchema`, which calls `toJSONSchema` from `zod/v4`. A validator it cannot convert throws with the tool name in the message. Both zod 3.25+ and zod 4 ship the `zod/v4` entry point; on zod 4, schemas imported from `zod` work too.
 </Callout>
 
 ### Passing the registry to chat

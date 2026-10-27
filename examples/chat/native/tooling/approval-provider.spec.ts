@@ -3,6 +3,7 @@ import { test, type TestContext } from 'node:test';
 import { createServer, request } from 'node:http';
 import {
   mkdtempSync,
+  mkdirSync,
   existsSync,
   rmSync,
   writeFileSync,
@@ -13,6 +14,7 @@ import { join, resolve } from 'node:path';
 import { runApprovalProvider } from './approval-provider';
 import * as approval from './approval-provider';
 import { runCanonicalProvider } from './canonical-provider';
+import { collectInstalledProviderPackages as collect } from './canonical-provider';
 
 const root = resolve(process.cwd());
 const node = (source: string) => ({
@@ -563,4 +565,84 @@ test('the provider target compiles and tests its host before the actual installe
     'node --import tsx --test examples/chat/native/tooling/approval-provider.spec.ts',
     'node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.base.json examples/chat/native/tooling/approval-provider.ts',
   ]);
+});
+
+test('canonical package evidence requires the exact five native React A2UI packages', (t) => {
+  const temporary = owned(t);
+  const consumer = join(temporary, 'consumer');
+  const names = ['a2ui', 'content', 'core', 'langgraph', 'react'];
+  for (const name of [
+    ...names.map((name) => '@threadplane/' + name),
+    'typescript',
+    '@langchain/langgraph-sdk',
+  ]) {
+    const directory = join(consumer, 'node_modules', name);
+    mkdirSync(directory, { recursive: true });
+    writeFileSync(
+      join(directory, 'package.json'),
+      JSON.stringify({ name, version: '1.2.3' })
+    );
+    if (name.startsWith('@threadplane/'))
+      writeFileSync(
+        join(temporary, `threadplane-${name.slice(13)}-1.2.3.tgz`),
+        name
+      );
+  }
+  writeFileSync(join(consumer, 'package-lock.json'), '{}');
+  const proof = collect(consumer, temporary);
+  assert.equal(proof.profile, 'react-native-a2ui-langgraph');
+  assert.deepEqual(Object.keys(proof.artifacts).sort(), names);
+  assert.deepEqual(
+    Object.keys(proof.tarballs).sort(),
+    names.map((name) => `threadplane-${name}-1.2.3.tgz`)
+  );
+  assert.equal(proof.versions['@threadplane/a2ui'], '1.2.3');
+  assert.equal(proof.versions['@threadplane/react'], '1.2.3');
+  assert.match(proof.artifacts.a2ui['package.json'], /^[a-f0-9]{64}$/);
+  for (const name of names) {
+    const path = join(temporary, `threadplane-${name}-1.2.3.tgz`);
+    rmSync(path);
+    assert.throws(
+      () => collect(consumer, temporary),
+      /native React A2UI tarballs/
+    );
+    writeFileSync(path, '@threadplane/' + name);
+  }
+  const a2ui = join(consumer, 'node_modules/@threadplane/a2ui/package.json');
+  writeFileSync(
+    a2ui,
+    JSON.stringify({
+      name: '@threadplane/a2ui',
+      version: '1.2.3',
+      changed: true,
+    })
+  );
+  assert.notEqual(
+    collect(consumer, temporary).artifacts.a2ui['package.json'],
+    proof.artifacts.a2ui['package.json']
+  );
+  writeFileSync(
+    a2ui,
+    JSON.stringify({ name: '@threadplane/angular', version: '1.2.3' })
+  );
+  assert.throws(() => collect(consumer, temporary), {
+    code: 'ERR_ASSERTION',
+    actual: '@threadplane/angular',
+    expected: '@threadplane/a2ui',
+  });
+  writeFileSync(
+    a2ui,
+    JSON.stringify({ name: '@threadplane/a2ui', version: '1.2.3' })
+  );
+  const extra = join(temporary, 'threadplane-angular-1.2.3.tgz');
+  writeFileSync(extra, 'extra');
+  assert.throws(
+    () => collect(consumer, temporary),
+    /native React A2UI tarballs/
+  );
+  rmSync(join(temporary, 'threadplane-a2ui-1.2.3.tgz'));
+  assert.throws(
+    () => collect(consumer, temporary),
+    /native React A2UI tarballs/
+  );
 });

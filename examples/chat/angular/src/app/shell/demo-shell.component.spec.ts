@@ -619,4 +619,35 @@ describe('DemoShell — submit injects itinerary into state', () => {
     expect(payload.itinerary).toEqual(store.stops());
     expect(payload.itinerary?.[0].place).toBe('Louvre');
   });
+
+  it('sends reasoning_effort null by default and the explicit choice otherwise', async () => {
+    const capturing = new CapturingTransport();
+    TestBed.overrideComponent(DemoShell, {
+      set: {
+        providers: [
+          ItineraryStore,
+          ...provideAgent(DEMO_AGENT_REF, {
+            assistantId: 'fake',
+            transport: capturing,
+          }),
+        ],
+      },
+    });
+
+    const fx = TestBed.createComponent(DemoShell);
+    fx.detectChanges();
+    const shell = fx.componentInstance as unknown as {
+      agent: { submit: (i: unknown) => Promise<void> };
+      effort: { (): string; set: (v: string) => void };
+    };
+
+    // No selection → the model's own default effort applies server-side.
+    expect(shell.effort()).toBe('default');
+    await shell.agent.submit({ messages: [{ role: 'user', content: 'hi' }] });
+    expect((capturing.lastPayload as { reasoning_effort?: unknown }).reasoning_effort).toBeNull();
+
+    shell.effort.set('high');
+    await shell.agent.submit({ messages: [{ role: 'user', content: 'again' }] });
+    expect((capturing.lastPayload as { reasoning_effort?: unknown }).reasoning_effort).toBe('high');
+  });
 });

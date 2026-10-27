@@ -39,6 +39,7 @@ import {
   angularBuildCommand,
   lockedAngularManifest,
 } from './verify-angular-package.mjs';
+import { angularLanggraphPresentationSeeds, installPresentationConsumer } from './markdown-presentation-build.mjs';
 import {
   lockedReactManifest,
   prepareInstalledTypes,
@@ -223,7 +224,12 @@ async function frameworkConsumer(
       (name) => records[`@threadplane/${name}`]?.manifest
     ).map((name) => [`@threadplane/${name}`, tarballs[`@threadplane/${name}`]])
   );
-  const installation = installCandidateConsumer(
+  const installation = kind === 'angular' ? installPresentationConsumer(
+    consumer,
+    lock,
+    selected,
+    { seeds: angularLanggraphPresentationSeeds, profile: 'angular-langgraph' }
+  ) : installCandidateConsumer(
     consumer,
     manifest,
     selected,

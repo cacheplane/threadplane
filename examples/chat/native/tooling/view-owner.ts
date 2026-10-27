@@ -1,12 +1,17 @@
 import { applicationTools } from '../shared/trip-summary.js';
 import { createMarkdown } from '@threadplane/content/markdown';
 import { createSession } from '@threadplane/langgraph';
-import { createApplication } from '../shared/application';
+import type {
+  createApplication,
+  ApplicationOptions,
+} from '../shared/application';
 import { createThreadDirectory } from '../shared/directory';
 import { browserHistory } from '../shared/route';
 
 // Proof-only instrumentation; production entries never import this module.
-export function createViewOwner() {
+export function createViewOwner<
+  Owner extends ReturnType<typeof createApplication>
+>(factory: (options: ApplicationOptions) => Owner) {
   const counts = {
     subscriptions: 0,
     releases: 0,
@@ -22,7 +27,7 @@ export function createViewOwner() {
     ownerDisposals: 0,
   };
   const apiUrl = new URL('/api', location.origin).href;
-  const owner = createApplication({
+  const owner = factory({
     assistantId: 'assistant',
     apiUrl,
     directory: createThreadDirectory({

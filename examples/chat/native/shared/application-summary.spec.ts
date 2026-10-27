@@ -94,7 +94,7 @@ const run = (events = [final()], text = 'Recap') => ({
         messages: [{ type: 'human', id, content: text }],
         client_tools: expectedClientTools,
       },
-      stream_mode: ['values', 'messages-tuple', 'updates', 'custom'],
+      stream_mode: ['values', 'messages-tuple', 'updates', 'custom', 'checkpoints'],
       stream_subgraphs: true,
       stream_resumable: true,
       on_disconnect: 'continue',
