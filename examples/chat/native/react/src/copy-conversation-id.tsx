@@ -11,6 +11,12 @@ export function CopyConversationId({
   onPin,
   pinned,
   pinPending,
+  onArchive,
+  archived,
+  archivePending,
+  onMoveUp,
+  onMoveDown,
+  reorderPending,
 }: {
   readonly id: string;
   readonly title?: string;
@@ -19,6 +25,12 @@ export function CopyConversationId({
   readonly onPin?: () => void;
   readonly pinned?: boolean;
   readonly pinPending?: boolean;
+  readonly onArchive?: () => void;
+  readonly archived?: boolean;
+  readonly archivePending?: boolean;
+  readonly onMoveUp?: () => void;
+  readonly onMoveDown?: () => void;
+  readonly reorderPending?: boolean;
 }) {
   return (
     <CopyCommand
@@ -30,6 +42,12 @@ export function CopyConversationId({
       onPin={onPin}
       pinned={pinned}
       pinPending={pinPending}
+      onArchive={onArchive}
+      archived={archived}
+      archivePending={archivePending}
+      onMoveUp={onMoveUp}
+      onMoveDown={onMoveDown}
+      reorderPending={reorderPending}
     />
   );
 }
@@ -42,6 +60,12 @@ function CopyCommand({
   onPin,
   pinned,
   pinPending,
+  onArchive,
+  archived,
+  archivePending,
+  onMoveUp,
+  onMoveDown,
+  reorderPending,
 }: {
   readonly id: string;
   readonly title?: string;
@@ -50,6 +74,12 @@ function CopyCommand({
   readonly onPin?: () => void;
   readonly pinned?: boolean;
   readonly pinPending?: boolean;
+  readonly onArchive?: () => void;
+  readonly archived?: boolean;
+  readonly archivePending?: boolean;
+  readonly onMoveUp?: () => void;
+  readonly onMoveDown?: () => void;
+  readonly reorderPending?: boolean;
 }) {
   const pending = useRef(false);
   const mounted = useRef(false);
@@ -105,6 +135,39 @@ function CopyCommand({
                 },
               ]
             : []),
+          ...(onMoveUp
+            ? [
+                {
+                  id: 'move-up',
+                  label: `Move up conversation for ${
+                    title ? `${title} (${id})` : id
+                  }`,
+                  disabled: reorderPending,
+                },
+              ]
+            : []),
+          ...(onMoveDown
+            ? [
+                {
+                  id: 'move-down',
+                  label: `Move down conversation for ${
+                    title ? `${title} (${id})` : id
+                  }`,
+                  disabled: reorderPending,
+                },
+              ]
+            : []),
+          ...(onArchive
+            ? [
+                {
+                  id: 'archive',
+                  label: `${
+                    archived === true ? 'Unarchive' : 'Archive'
+                  } conversation for ${title ? `${title} (${id})` : id}`,
+                  disabled: archivePending,
+                },
+              ]
+            : []),
         ]}
         open={menu?.open ?? open}
         onOpenChange={menu?.onOpenChange ?? setOpen}
@@ -113,6 +176,9 @@ function CopyCommand({
         onSelect={(command, event) => {
           if (command === 'rename') onRename?.();
           else if (command === 'pin') onPin?.();
+          else if (command === 'move-up') onMoveUp?.();
+          else if (command === 'move-down') onMoveDown?.();
+          else if (command === 'archive') onArchive?.();
           else void copy(event);
         }}
       />

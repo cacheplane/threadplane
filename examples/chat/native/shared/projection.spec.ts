@@ -5,6 +5,7 @@ import {
   projectThread,
   projectThreads,
   filterLoadedTitles,
+  orderActiveThreads,
 } from './projection.js';
 
 function envelope(title: unknown): Thread {
@@ -132,4 +133,81 @@ test('projection copies only strict true pin metadata into independent frozen sn
   const filtered = filterLoadedTitles(rows, 'pin');
   assert.equal(filtered[0], rows[1]);
   assert.ok(Object.isFrozen(filtered));
+});
+
+test('projection copies only strict true archive metadata into independent frozen snapshots without sorting', () => {
+  for (const archived of [true, false, undefined, null, 'true', 1, {}, []]) {
+    const source = {
+      ...envelope('Title'),
+      metadata: { title: 'Title', archived },
+    };
+    const row = projectThread(source);
+    assert.deepEqual(row, {
+      id: 'one',
+      title: 'Title',
+      ...(archived === true ? { archived: true } : {}),
+    });
+    source.metadata.archived = archived === true ? false : true;
+    assert.equal(row.archived, archived === true ? true : undefined);
+    assert.ok(Object.isFrozen(row));
+    assert.equal(Reflect.set(row, 'archived', false), false);
+  }
+  assert.deepEqual(projectThread({ ...envelope('ignored'), metadata: null }), {
+    id: 'one',
+    title: 'Untitled',
+  });
+  const rows = projectThreads([
+    envelope('Plain'),
+    {
+      ...envelope('Archived'),
+      thread_id: 'two',
+      metadata: { title: 'Archived', archived: true },
+    },
+  ]);
+  assert.deepEqual(
+    rows.map((row) => row.id),
+    ['one', 'two']
+  );
+  const filtered = filterLoadedTitles(rows, 'archive');
+  assert.equal(filtered[0], rows[1]);
+  assert.ok(Object.isFrozen(filtered));
+});
+
+test('pinned ordering projects only finite ranks and stably groups the active loaded slice', async () => {
+  for (const rank of [-2, 0, 0.5, 42, undefined, null, '2', NaN, Infinity]) {
+    const row = projectThread({
+      ...envelope('Rank'),
+      metadata: { pinnedOrder: rank },
+    });
+    assert.equal(
+      row.pinnedOrder,
+      typeof rank === 'number' && Number.isFinite(rank) ? rank : undefined
+    );
+  }
+  const rows = Object.freeze(
+    [
+      { id: 'u', title: 'U' },
+      { id: 'missing', title: 'M', pinned: true },
+      { id: 'two', title: 'T', pinned: true, pinnedOrder: 2 },
+      {
+        id: 'archived',
+        title: 'A',
+        pinned: true,
+        pinnedOrder: -10,
+        archived: true,
+      },
+      { id: 'first', title: 'F', pinned: true, pinnedOrder: -1 },
+      { id: 'tie', title: 'T', pinned: true, pinnedOrder: 2 },
+      { id: 'invalid', title: 'I', pinned: true, pinnedOrder: NaN },
+      { id: 'v', title: 'V' },
+    ].map((row) => Object.freeze(row))
+  );
+  const ordered = orderActiveThreads(rows);
+  assert.deepEqual(
+    ordered.map((row) => row.id),
+    ['first', 'two', 'tie', 'missing', 'invalid', 'u', 'v']
+  );
+  assert.equal(ordered[0], rows[4]);
+  assert.ok(Object.isFrozen(ordered));
+  assert.equal(rows[0].id, 'u');
 });

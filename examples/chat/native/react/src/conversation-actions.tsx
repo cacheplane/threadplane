@@ -9,6 +9,12 @@ export interface RenameEditorRequest {
   readonly returnFocusTo: HTMLElement | null;
 }
 interface Props {
+  readonly archived?: boolean;
+  readonly archivePending?: boolean;
+  readonly onMoveUp?: () => void;
+  readonly onMoveDown?: () => void;
+  readonly reorderPending?: boolean;
+  readonly onArchive?: () => void;
   readonly canSetPinned?: boolean;
   readonly pinned?: boolean;
   readonly pinState?: Readonly<{
@@ -83,19 +89,25 @@ function ConversationActionsOwner(props: Props) {
         title={props.title}
         menu={controlledMenu}
         pinned={props.pinned}
+        archived={props.archived}
+        archivePending={props.archivePending}
+        onMoveUp={props.onMoveUp}
+        onMoveDown={props.onMoveDown}
+        reorderPending={props.reorderPending}
+        onArchive={props.onArchive}
         pinPending={
           props.pinState?.status === 'pending' ||
           pinFeedback?.status === 'pending'
         }
         onPin={
-          props.canSetPinned && props.setPinned
+          !props.archived && props.canSetPinned && props.setPinned
             ? () => {
                 void pin();
               }
             : undefined
         }
         onRename={
-          props.canRename
+          !props.archived && props.canRename
             ? () =>
                 props.onRename(
                   props.menu?.returnFocusTo ??
@@ -120,7 +132,7 @@ function ConversationActionsOwner(props: Props) {
             : 'Could not unpin conversation. Try again.'}
         </span>
       )}
-      {props.editor?.id === props.id && (
+      {!props.archived && props.editor?.id === props.id && (
         <RenameEditor
           key={props.editor.token}
           {...props}

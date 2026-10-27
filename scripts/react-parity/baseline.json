@@ -1,12 +1,8 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "2374423a0c0901364d40a68174ec87ff90fa0556",
+  "baselineHead": "7fd4fbcaf548abede293fd6dece094550d5e6c6c",
   "sourceState": {
-    "modified": [
-      "libs/langgraph/src/runtime/README.md",
-      "libs/langgraph/src/runtime/create-session.ts",
-      "libs/langgraph/src/runtime/stream-projection.ts"
-    ],
+    "modified": [],
     "untracked": []
   },
   "scope": {
@@ -757,7 +753,7 @@
       "id": "asset:libs/langgraph/src/runtime/README.md",
       "kind": "asset",
       "path": "libs/langgraph/src/runtime/README.md",
-      "sha256": "33dc8f135c4d5cde69566d44c86a1ec8c7f27c3362456003a91d966b4266f16d"
+      "sha256": "3896815bab509de505cffa9b82a82f5a00f3abd03dda0be5e400083aaaa1aa20"
     },
     {
       "id": "asset:libs/langgraph/test/fixtures/reloaded-subagent-thread.json",
@@ -853,7 +849,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "15312cf0c7dca4b7342519dd16c09567be567f8a7f1ab281035c98376cd0f19f"
+      "sha256": "0159c82eb8630849ca2686847a8d894374d5751e1e81cdcdae7063a2a553687b"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -2179,7 +2175,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "0c4ac2ec9df75e6c81f87ba8d3fcc9e53666191545b8bde26aa60431e2796e5f"
+      "sha256": "f77783419fe1c95b19a63df176a523acd5082635eb193354702cb5f01bfc379a"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -14742,7 +14738,7 @@
       "id": "source:libs/langgraph/src/runtime/create-session.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/create-session.ts",
-      "sha256": "d7f88ebf9b76af15fd64fbe396aab53404afa01df0d6b89877ed71d2712e5c5a"
+      "sha256": "80866407ce96c159a307b4b7a646fa32a9f5461afe19b118fc9d99b185e038a3"
     },
     {
       "id": "source:libs/langgraph/src/runtime/function-tools.ts",

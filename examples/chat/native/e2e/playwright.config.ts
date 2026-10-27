@@ -15,6 +15,8 @@ export default defineConfig({
     'sidenav.spec.ts',
     'rename.spec.ts',
     'pin.spec.ts',
+    'archive.spec.ts',
+    'ordering.spec.ts',
   ],
   fullyParallel: false,
   workers: 1,

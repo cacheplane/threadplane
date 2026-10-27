@@ -164,7 +164,12 @@ type AttemptInput =
       readonly messages: { type: 'human'; id: string; content: string }[];
       readonly state?: LangGraphInputState;
     }
-  | { readonly kind: 'resume'; readonly value: PlainValue | undefined };
+  | {
+      readonly kind: 'resume';
+      readonly value: PlainValue | undefined;
+      /** The pending interrupts this decision answers, for history reconciliation. */
+      readonly interrupts: readonly LangGraphInterrupt[];
+    };
 
 interface PhysicalRun {
   readonly batch: ReturnType<ReturnType<typeof createToolBuffer>['snapshot']>;
@@ -194,6 +199,20 @@ interface Attempt {
   iterator?: AsyncIterator<StreamEvent>;
   unlink?: () => void;
   closed?: boolean;
+}
+
+/** Two pending batches describe the same pause when every interrupt matches
+ * by id and payload. Ids alone are not enough: a node that pauses again can
+ * reuse its deterministic id with a different question. */
+function sameInterrupts(
+  current: readonly LangGraphInterrupt[],
+  answered: readonly LangGraphInterrupt[]
+): boolean {
+  if (current.length !== answered.length) return false;
+  const key = (interrupt: LangGraphInterrupt) =>
+    JSON.stringify([interrupt.id ?? null, interrupt.value ?? null]);
+  const keys = answered.map(key);
+  return current.every((interrupt) => keys.includes(key(interrupt)));
 }
 
 /** Private development composition. Construction/observation perform no I/O.
@@ -698,10 +717,10 @@ export function createSession(
         outcome: 'interrupted' as const,
       };
     }
-    if (attempt.input.kind === 'resume') return undefined;
     // Inert construction gives us no server baseline. Only our unique submitted
     // user ID can correlate this checkpoint to this request, including when the
-    // persisted assistant retains the ID of its earlier streamed partial.
+    // persisted assistant retains the ID of its earlier streamed partial. A
+    // resume anchors on the turn's existing user message instead.
     const anchor = messages.findIndex(
       (value) => record(value)?.['id'] === previousProjection.userId
     );
@@ -725,19 +744,52 @@ export function createSession(
       previousInterrupts,
       history
     );
-    const paused = nextUser < 0 && projectedInterrupts.length > 0;
-    const committed =
-      (nextUser >= 0 || latest.next.length === 0) &&
-      evidence.some((value) => {
+    let paused: boolean;
+    let committed: boolean;
+    if (attempt.input.kind === 'resume') {
+      // A decision leaves no new user message. Its evidence is activity the
+      // turn did not have when the decision was sent, or a pause the thread
+      // did not have. The same pause with nothing new is inconclusive: the
+      // decision may never have landed, or may still be executing before its
+      // first checkpoint, and either way it must not be replayed from here.
+      const known = previousProjection.resume?.turnIds ?? [];
+      const activity = turn.some((value) => {
         const message = record(value);
         return (
-          message &&
+          !!message &&
+          typeof message['id'] === 'string' &&
+          !known.includes(message['id']) &&
           (message['type'] === 'ai' ||
-            (attempt.handoffIds.length === 0 && message['type'] === 'tool') ||
-            message['role'] === 'assistant') &&
-          typeof message['id'] === 'string'
+            message['type'] === 'tool' ||
+            message['role'] === 'assistant')
         );
       });
+      paused =
+        nextUser < 0 &&
+        projectedInterrupts.length > 0 &&
+        (activity ||
+          !sameInterrupts(projectedInterrupts, attempt.input.interrupts));
+      committed =
+        nextUser >= 0 ||
+        (projectedInterrupts.length === 0 &&
+          activity &&
+          latest.next.length === 0);
+    } else {
+      paused = nextUser < 0 && projectedInterrupts.length > 0;
+      committed =
+        (nextUser >= 0 || latest.next.length === 0) &&
+        evidence.some((value) => {
+          const message = record(value);
+          return (
+            message &&
+            (message['type'] === 'ai' ||
+              (attempt.handoffIds.length === 0 &&
+                message['type'] === 'tool') ||
+              message['role'] === 'assistant') &&
+            typeof message['id'] === 'string'
+          );
+        });
+    }
     if (!paused && !committed) return undefined;
     const projected = projectStream(previousState, previousProjection, {
       type: 'values',
@@ -770,7 +822,8 @@ export function createSession(
     // status, when available, decides whether history is conclusive yet.
     const attemptCanCheck = () =>
       !attempt.branch &&
-      attempt.input.kind === 'submit' &&
+      (attempt.input.kind === 'submit' ||
+        (attempt.input.kind === 'resume' && attempt.groups === 0)) &&
       canCheck &&
       !attempt.physical?.evidence.unsafe;
     try {
@@ -1196,6 +1249,50 @@ export function createSession(
         false,
         attemptCanCheck()
       );
+      // A thrown stream gets the same single read-only reconciliation a closed
+      // one gets, unless the exact run is known to be still in flight. A
+      // conclusive answer settles the attempt itself; nothing is retried.
+      if (
+        error.kind === 'interrupted' &&
+        error.recovery === 'check' &&
+        getHistory
+      ) {
+        const run = attempt.physical;
+        let status: RunStatus | undefined;
+        if (run?.evidence.runId && !run.evidence.unsafe && getRunStatus) {
+          try {
+            status = await getRunStatus(
+              threadId,
+              run.evidence.runId,
+              attempt.controller.signal
+            );
+          } catch {
+            /* Unknown exact status; history may still be conclusive. */
+          }
+          if (!owns(attempt)) return;
+        }
+        if (status !== 'pending' && status !== 'running') {
+          try {
+            const history = await getHistory(
+              threadId,
+              attempt.controller.signal
+            );
+            if (!owns(attempt)) return;
+            const recovered = reconcile(attempt, history);
+            if (!owns(attempt)) return;
+            if (recovered) {
+              // Settlement stamps deliveries and subgraphs with this outcome.
+              state = recovered.state;
+              values = recovered.values;
+              interrupts = recovered.interrupts;
+              settle(attempt, recovered.outcome);
+              return;
+            }
+          } catch {
+            if (!owns(attempt)) return;
+          }
+        }
+      }
       settle(
         attempt,
         error.kind === 'interrupted' ? 'interrupted' : 'error',
@@ -1528,10 +1625,12 @@ export function createSession(
       const admit = () => {
         assertInvocationIdentity();
         if (branch || preparing) admitBranchCommand();
+        // A check owned by an earlier resume is withdrawn by re-sending the
+        // decision; one owned by an uncertain submit still blocks it.
         if (
           owner ||
           loading ||
-          recoveryAttempt ||
+          (recoveryAttempt && recoveryAttempt.input.kind !== 'resume') ||
           retained ||
           pendingToolSettlements ||
           persistence.pending ||
@@ -1573,7 +1672,7 @@ export function createSession(
           assertResumeCheckpoint(confirmed, saved);
           return () =>
             beginAttempt(
-              { kind: 'resume', value: captured },
+              { kind: 'resume', value: captured, interrupts },
               external,
               runOptions
             );
@@ -1581,7 +1680,7 @@ export function createSession(
         return;
       }
       attempt = beginAttempt(
-        { kind: 'resume', value: captured },
+        { kind: 'resume', value: captured, interrupts },
         external,
         runOptions
       );
@@ -1772,7 +1871,7 @@ export function createSession(
       if (branch || preparing) admitBranchCommand();
       if (
         owner ||
-        recoveryAttempt ||
+        (recoveryAttempt && recoveryAttempt.input.kind !== 'resume') ||
         retained ||
         pendingToolSettlements ||
         persistence.pending ||
@@ -1783,6 +1882,13 @@ export function createSession(
         throw new Error(
           'History cannot replace an active request, recovery, or unsettled tool results.'
         );
+      // A check owned by an earlier resume yields to a fresh read: the pause it
+      // answered is restored from history, so the decision can be sent again.
+      let withdrawn: AbortController | undefined;
+      if (recoveryAttempt?.input.kind === 'resume') {
+        recoveryAttempt = undefined;
+        withdrawn = invalidateCheck();
+      }
       const previous = detachLoad();
       let resolve!: HistoryRead['resolve'];
       let reject!: HistoryRead['reject'];
@@ -1810,6 +1916,7 @@ export function createSession(
         if (external.aborted) abort();
       }
       closeLoad(previous);
+      withdrawn?.abort();
     });
     return beginning.then(() => {
       if (!read) return;

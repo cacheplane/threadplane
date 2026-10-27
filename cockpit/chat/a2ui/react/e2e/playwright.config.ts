@@ -14,7 +14,7 @@ export default defineConfig({
     url: 'http://127.0.0.1:4646/chat/a2ui/react/',
     reuseExistingServer: false,
     stdout: 'pipe',
-    gracefulShutdown: { signal: 'SIGTERM', timeout: 5000 },
-    timeout: 10000,
+    gracefulShutdown: { signal: 'SIGTERM', timeout: 95000 },
+    timeout: 120000,
   },
 });

@@ -172,3 +172,19 @@
 .conversation-actions:has(.conversation-rename) > .conversation-pin-status {
   grid-row: 3;
 }
+
+.archived-conversations {
+  min-width: 0;
+  margin-top: 1rem;
+}
+
+.archived-conversations > summary {
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.conversation-archive-feedback {
+  min-width: 0;
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}

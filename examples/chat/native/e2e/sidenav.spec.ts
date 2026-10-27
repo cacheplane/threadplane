@@ -445,8 +445,8 @@ test('installed React sidenav retains navigation, draft and a running response a
       'Pinned conversation 2 min ago'
     );
     await expect(threadList.locator('.tp-thread-list__button')).toHaveText([
-      /Alpha notes/,
       /Beta notes/,
+      /Alpha notes/,
     ]);
     await expect(alpha.locator('.tp-thread-list__pin')).toHaveCount(0);
     const pin = beta.locator('.tp-thread-list__pin');
@@ -492,17 +492,23 @@ test('installed React sidenav retains navigation, draft and a running response a
     ]);
     await page.keyboard.press('Tab');
     await expect(menu).toHaveCount(0);
-    await expect(beta).toBeFocused();
+    // Alpha now follows pinned Beta, so forward Tab leaves its final action
+    // for the next directory control rather than wrapping to the first row.
+    await expect(
+      nav.locator('summary').filter({ hasText: 'Archived conversations' })
+    ).toBeFocused();
     await copyAlpha.evaluate((node) => {
       node.parentElement!.removeAttribute('dir');
       node.parentElement!.removeAttribute('style');
     });
     await copyBeta.focus();
     await page.keyboard.press('ArrowUp');
-    await expect(page.getByRole('menuitem', { name: /^Unpin conversation for Beta notes/ })).toBeFocused();
+    await expect(page.getByRole('menuitem', { name: /^Archive conversation for Beta notes/ })).toBeFocused();
     await page.keyboard.press('Shift+Tab');
     await expect(beta).toBeFocused();
-    await copyBeta.click();
+    // Open Alpha's own menu so its selected-row button remains outside it;
+    // the preceding pinned row's menu can cover Alpha after grouping.
+    await copyAlpha.click();
     await alpha.click();
     await expect(menu).toHaveCount(0);
     await expect(alpha).toBeFocused();
