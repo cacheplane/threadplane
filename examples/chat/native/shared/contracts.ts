@@ -17,7 +17,16 @@ export type ThreadLookupResult =
   | DirectoryResult<ThreadRow>
   | Readonly<{ kind: 'missing' }>;
 
+export type RemovalInspection =
+  | DirectoryResult<ThreadRow>
+  | Readonly<{ kind: 'missing'; id: string }>;
+
 export interface ThreadDirectory {
+  remove?(
+    id: string,
+    signal: AbortSignal
+  ): Promise<DirectoryResult<Readonly<{ id: string }>>>;
+  inspectRemoval?(id: string, signal: AbortSignal): Promise<RemovalInspection>;
   setPinnedOrder?(
     id: string,
     rank: number,

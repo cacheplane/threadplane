@@ -1,8 +1,13 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "74516527a790b0ba10a0f7eb9ad0330b451d2eae",
+  "baselineHead": "95e7c99951472f0766fb8bdf57c439bf5c67582e",
   "sourceState": {
-    "modified": [],
+    "modified": [
+      "libs/react/README.md",
+      "libs/react/src/chat/confirm-dialog.tsx",
+      "libs/react/src/chat/index.ts",
+      "libs/react/src/chat/styles.css"
+    ],
     "untracked": []
   },
   "scope": {
@@ -849,7 +854,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "0159c82eb8630849ca2686847a8d894374d5751e1e81cdcdae7063a2a553687b"
+      "sha256": "c1a67187a7d6aa7820d454934430a096132387d92e09c970145d9b3ab5f5a83d"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -867,7 +872,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "7ef6c346e1b62bfc1a5567c6488046dc0b98ab81f67ac173ae4aa2a146d7c30f"
+      "sha256": "5c5d1cf7f78b839b0c62d6893b6d1e384906c7384fc5562c2a1f8127217c40a9"
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -10485,6 +10490,34 @@
       ]
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#ConfirmDialog",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ConfirmDialog",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/confirm-dialog.tsx",
+          "symbol": "ConfirmDialog",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function ConfirmDialog({ open, title, onConfirm, onCancel, body, confirmLabel = 'Confirm', cancelLabel = 'Cancel', tone = 'normal', pending = false, className, returnFocusTo, }: ConfirmDialogProps) {\n    const id = useId();\n    const marker = useRef<HTMLSpanElement>(null);\n    const dialog = useRef<HTMLDialogElement>(null);\n    const cancel = useRef<HTMLButtonElement>(null);\n    const callbacks = useRef({ onConfirm, onCancel, pending });\n    callbacks.current = { onConfirm, onCancel, pending };\n    const target = useRef(returnFocusTo);\n    target.current = returnFocusTo;\n    const [portal, setPortal] = useState<{\n        document: Document;\n        style: CSSProperties;\n        invoker: HTMLElement | null;\n    } | null>(null);\n    useIsomorphicLayoutEffect(() => {\n        const anchor = marker.current;\n        if (!open || !anchor) {\n            setPortal(null);\n            return;\n        }\n        const doc = anchor.ownerDocument;\n        const win = doc.defaultView;\n        const candidate = target.current ?? doc.activeElement;\n        setPortal({\n            document: doc,\n            style: presentation(anchor),\n            invoker: win && candidate instanceof win.HTMLElement && available(candidate, doc)\n                ? candidate\n                : null,\n        });\n    }, [open]);\n    useIsomorphicLayoutEffect(() => {\n        const panel = dialog.current;\n        if (!portal || !panel)\n            return;\n        const doc = portal.document;\n        const win = doc.defaultView;\n        let ownedFocus = false;\n        let escapeHeld = false;\n        let spaceTarget: EventTarget | null = null;\n        let spaceBlocked = false;\n        const releaseKeyboard = () => {\n            escapeHeld = false;\n            spaceTarget = null;\n            spaceBlocked = false;\n        };\n        const visibility = () => {\n            if (doc.visibilityState === 'hidden')\n                releaseKeyboard();\n        };\n        const focus = () => {\n            ownedFocus = panel.contains(doc.activeElement);\n        };\n        const keydown = (event: KeyboardEvent) => {\n            event.stopPropagation();\n            const claimed = event.defaultPrevented;\n            const ignored = event.repeat || event.isComposing || event.keyCode === 229;\n            if (event.key === 'Tab' &&\n                !claimed &&\n                !event.isComposing &&\n                event.keyCode !== 229) {\n                const buttons = Array.from(panel.querySelectorAll<HTMLButtonElement>('button:not(:disabled)'));\n                const first = buttons[0];\n                const last = buttons[buttons.length - 1];\n                if (doc.activeElement === panel ||\n                    (event.shiftKey\n                        ? doc.activeElement === first\n                        : doc.activeElement === last)) {\n                    event.preventDefault();\n                    (event.shiftKey ? last : first)?.focus();\n                }\n            }\n            else if (event.key === 'Escape') {\n                event.preventDefault();\n                if (!claimed && !ignored) {\n                    escapeHeld = true;\n                    callbacks.current.onCancel();\n                }\n            }\n            else if (event.key === ' ') {\n                if (!event.repeat) {\n                    spaceTarget = event.target;\n                    spaceBlocked = claimed || ignored;\n                }\n                else\n                    spaceBlocked = true;\n                if (spaceBlocked)\n                    event.preventDefault();\n            }\n            else if (event.key === 'Enter' && ignored)\n                event.preventDefault();\n        };\n        const keyup = (event: KeyboardEvent) => {\n            event.stopPropagation();\n            if (event.key === 'Escape')\n                escapeHeld = false;\n            if (event.key === ' ') {\n                if (event.defaultPrevented ||\n                    event.repeat ||\n                    event.isComposing ||\n                    event.keyCode === 229 ||\n                    spaceBlocked ||\n                    spaceTarget !== event.target)\n                    event.preventDefault();\n                spaceTarget = null;\n                spaceBlocked = false;\n            }\n        };\n        const nativeCancel = (event: Event) => {\n            const claimed = event.defaultPrevented;\n            event.preventDefault();\n            event.stopPropagation();\n            if (!claimed && !escapeHeld)\n                callbacks.current.onCancel();\n        };\n        panel.addEventListener('keydown', keydown);\n        panel.addEventListener('keyup', keyup);\n        panel.addEventListener('cancel', nativeCancel);\n        doc.addEventListener('focusin', focus);\n        doc.addEventListener('visibilitychange', visibility);\n        win?.addEventListener('blur', releaseKeyboard);\n        panel.showModal();\n        cancel.current?.focus();\n        focus();\n        return () => {\n            const active = doc.activeElement;\n            const restore = panel.contains(active) || (active === doc.body && ownedFocus);\n            doc.removeEventListener('focusin', focus);\n            doc.removeEventListener('visibilitychange', visibility);\n            win?.removeEventListener('blur', releaseKeyboard);\n            panel.removeEventListener('keydown', keydown);\n            panel.removeEventListener('keyup', keyup);\n            panel.removeEventListener('cancel', nativeCancel);\n            if (panel.open)\n                panel.close();\n            if (restore && portal.invoker && available(portal.invoker, doc))\n                portal.invoker.focus();\n        };\n    }, [portal]);\n    return (<>\n      <span ref={marker} hidden aria-hidden=\"true\"/>\n      {portal &&\n            createPortal(<dialog ref={dialog} role=\"alertdialog\" aria-modal=\"true\" aria-busy={pending || undefined} aria-labelledby={`${id}-title`} aria-describedby={body ? `${id}-body` : undefined} dir={portal.style.direction === 'rtl' ? 'rtl' : 'ltr'} className={['tp-confirm-dialog', className]\n                    .filter(Boolean)\n                    .join(' ')} style={portal.style} onClick={(event) => {\n                    event.stopPropagation();\n                    if (event.defaultPrevented ||\n                        event.target !== event.currentTarget)\n                        return;\n                    const rect = event.currentTarget.getBoundingClientRect();\n                    if (event.clientX < rect.left ||\n                        event.clientX > rect.right ||\n                        event.clientY < rect.top ||\n                        event.clientY > rect.bottom)\n                        callbacks.current.onCancel();\n                }}>\n            <h2 id={`${id}-title`}>{title}</h2>\n            {body && <p id={`${id}-body`}>{body}</p>}\n            <div className=\"tp-confirm-dialog__actions\">\n              <button ref={cancel} type=\"button\" onClick={(event) => {\n                    event.stopPropagation();\n                    if (!event.defaultPrevented)\n                        callbacks.current.onCancel();\n                }}>\n                {cancelLabel}\n              </button>\n              <button type=\"button\" className={tone === 'destructive'\n                    ? 'tp-confirm-dialog__confirm tp-confirm-dialog__confirm--destructive'\n                    : 'tp-confirm-dialog__confirm'} disabled={pending} onClick={(event) => {\n                    event.stopPropagation();\n                    if (!event.defaultPrevented && !callbacks.current.pending)\n                        callbacks.current.onConfirm();\n                }}>\n                {confirmLabel}\n              </button>\n            </div>\n          </dialog>, portal.document.body)}\n    </>);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ConfirmDialogProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ConfirmDialogProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/confirm-dialog.tsx",
+          "symbol": "ConfirmDialogProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface ConfirmDialogProps {\n    readonly open: boolean;\n    readonly title: string;\n    readonly onConfirm: () => void;\n    readonly onCancel: () => void;\n    readonly body?: string;\n    readonly confirmLabel?: string;\n    readonly cancelLabel?: string;\n    readonly tone?: 'normal' | 'destructive';\n    readonly pending?: boolean;\n    readonly className?: string;\n    readonly returnFocusTo?: HTMLElement | null;\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/react/src/chat/index.ts#MessageAction",
       "kind": "export",
       "path": "libs/react/src/chat/index.ts",
@@ -15035,10 +15068,16 @@
       "sha256": "926e77bc7ee058451ff8d7e0df0ff26f2e92419949c72fa4b97dabb569ccde7f"
     },
     {
+      "id": "source:libs/react/src/chat/confirm-dialog.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/confirm-dialog.tsx",
+      "sha256": "1178b68b1d199eef533daacbbcc51690708459724cd66f6856c4241d95f2a47b"
+    },
+    {
       "id": "source:libs/react/src/chat/index.ts",
       "kind": "source",
       "path": "libs/react/src/chat/index.ts",
-      "sha256": "5e17763375a55262522597e89e988434ac25201489203eda92010f6d72aa97cf"
+      "sha256": "39bea45e855f9faf78865f5f1c21f4f74c04d5eed9b2c5197afe32a36b1652ee"
     },
     {
       "id": "source:libs/react/src/chat/internal/isomorphic-layout-effect.ts",

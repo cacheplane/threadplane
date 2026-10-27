@@ -604,3 +604,71 @@
     width: 100vw;
   }
 }
+
+.tp-confirm-dialog {
+  box-sizing: border-box;
+  width: min(28rem, calc(100vw - 2rem));
+  max-width: calc(100vw - 2rem);
+  max-height: calc(100dvh - 2rem);
+  overflow: auto;
+  padding: 1.25rem;
+  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  border-radius: 0.75rem;
+  background: var(--tp-chat-surface, var(--ds-surface, Canvas));
+  color: var(--tp-chat-text, var(--ds-text-primary, CanvasText));
+  font: inherit;
+  text-align: start;
+  overflow-wrap: anywhere;
+  box-shadow: 0 1rem 3rem #0004;
+}
+/* A styled dialog must remain hidden until showModal owns the top layer. */
+.tp-confirm-dialog:not([open]) {
+  display: none;
+}
+.tp-confirm-dialog::backdrop {
+  background: #0007;
+}
+.tp-confirm-dialog h2 {
+  margin: 0;
+  font-size: 1.125em;
+}
+.tp-confirm-dialog p {
+  margin: 0.75rem 0 0;
+  white-space: pre-wrap;
+}
+.tp-confirm-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+.tp-confirm-dialog button {
+  min-width: 40px;
+  min-height: 40px;
+  max-width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  border-radius: 0.375rem;
+  font: inherit;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+.tp-confirm-dialog .tp-confirm-dialog__confirm {
+  background: var(--tp-chat-accent, var(--ds-accent, CanvasText));
+  color: var(--tp-chat-on-accent, var(--ds-surface, Canvas));
+}
+.tp-confirm-dialog .tp-confirm-dialog__confirm--destructive {
+  background: var(--tp-chat-danger, light-dark(#b42318, #ff8a80));
+}
+.tp-confirm-dialog button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.tp-confirm-dialog :focus-visible {
+  outline: 2px solid var(--tp-chat-accent, var(--ds-accent, CanvasText));
+  outline-offset: 2px;
+}

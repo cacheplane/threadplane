@@ -1,4 +1,5 @@
 import { memo, useEffect, useRef, useState, type ReactNode } from 'react';
+import { flushSync } from 'react-dom';
 import { useAgent } from '@threadplane/react';
 import { Markdown } from '@threadplane/react/markdown';
 import {
@@ -6,6 +7,7 @@ import {
   ChatPopup,
   ChatSidebar,
   Citations,
+  ConfirmDialog,
   MessageList,
   Reasoning,
   ThreadList,
@@ -102,6 +104,10 @@ function Composer({
   snapshot: ApplicationSnapshot;
 }) {
   const active = snapshot.submission.active;
+  const deletionBlocked =
+    snapshot.deletion.id === snapshot.selection.id &&
+    (snapshot.deletion.status === 'pending' ||
+      snapshot.deletion.status === 'unconfirmed');
   return (
     <div className="composer">
       <ChatInput
@@ -110,7 +116,9 @@ function Composer({
         placeholder="Write a message…"
         hint="Ctrl or ⌘ + Enter to send. Enter adds a line."
         submitOnEnter={false}
-        disabled={snapshot.selection.status !== 'ready' || active}
+        disabled={
+          snapshot.selection.status !== 'ready' || active || deletionBlocked
+        }
         busy={active || !application.canSubmit()}
         onStop={active ? () => void application.stop() : undefined}
         onSubmit={(text) => application.canSubmit() && application.submit(text)}
@@ -206,7 +214,123 @@ function Conversation({
     readonly title: string;
     readonly status: 'pending' | 'confirmed' | 'failed';
   } | null>(null);
+  const deletionBlocked =
+    snapshot.deletion.status === 'pending' ||
+    snapshot.deletion.status === 'unconfirmed';
+  const deletionTargetBlocked = (id: string) =>
+    deletionBlocked && snapshot.deletion.id === id;
+  const [confirmation, setConfirmation] = useState<Readonly<{
+    id: string;
+    title: string;
+    selected: boolean;
+    token: object;
+    returnFocusTo: HTMLElement | null;
+  }> | null>(null);
+  const confirmationOwner = useRef<typeof confirmation>(null);
+  const [deletionFeedback, setDeletionFeedback] = useState<string | null>(null);
+  const deletionRequest = useRef<object | null>(null);
+  const deletionCheckRequest = useRef<object | null>(null);
+  const deletionFocusCleanups = useRef(new Set<() => void>());
+  const checkDeletion = (id: string, intent: number, title: string | null) => {
+    const operation = {};
+    deletionCheckRequest.current = operation;
+    void application
+      .checkRemoval(id, intent)
+      .then((settled) => {
+        if (
+          !mounted.current ||
+          deletionCheckRequest.current !== operation ||
+          !settled
+        )
+          return;
+        const latest = application.getSnapshot().deletion;
+        if (
+          latest.status === 'confirmed' &&
+          latest.id === id &&
+          latest.intent === intent
+        )
+          setDeletionFeedback(`Conversation deleted: ${title ?? id} (${id}).`);
+        else if (latest.status === 'idle')
+          setDeletionFeedback(
+            `Conversation still present: ${title ?? id} (${id}).`
+          );
+      })
+      .catch(() => {});
+  };
+  const requestDeletion = (
+    row: ThreadRow,
+    returnFocusTo: HTMLElement | null
+  ) => {
+    if (!application.canRemove(row.id)) return;
+    const request = Object.freeze({
+      id: row.id,
+      title: row.title,
+      selected: snapshot.selection.id === row.id,
+      token: {},
+      returnFocusTo,
+    });
+    confirmationOwner.current = request;
+    setConfirmation(request);
+  };
+  const closeConfirmation = (request: NonNullable<typeof confirmation>) => {
+    if (confirmationOwner.current !== request) return false;
+    confirmationOwner.current = null;
+    // Commit native modal cleanup/focus restoration before admitting remote I/O.
+    flushSync(() => setConfirmation(null));
+    return true;
+  };
+  const confirmDeletion = (request: NonNullable<typeof confirmation>) => {
+    if (
+      confirmationOwner.current !== request ||
+      !application.canRemove(request.id)
+    )
+      return;
+    if (!closeConfirmation(request)) return;
+    const operation = {};
+    deletionRequest.current = operation;
+    setDeletionFeedback(null);
+    const target = request.returnFocusTo;
+    const doc = target?.ownerDocument;
+    let ownsFocus = !!target && doc?.activeElement === target;
+    const observeFocus = (event: Event) => {
+      if (event.target !== doc?.body) ownsFocus = event.target === target;
+    };
+    const observePointer = (event: Event) => {
+      if (event.target !== target) ownsFocus = false;
+    };
+    doc?.addEventListener('focusin', observeFocus);
+    doc?.addEventListener('pointerdown', observePointer, true);
+    const cleanupFocus = () => {
+      doc?.removeEventListener('focusin', observeFocus);
+      doc?.removeEventListener('pointerdown', observePointer, true);
+      deletionFocusCleanups.current.delete(cleanupFocus);
+    };
+    deletionFocusCleanups.current.add(cleanupFocus);
+    void application
+      .remove(request.id)
+      .then((confirmed) => {
+        if (!mounted.current || deletionRequest.current !== operation) return;
+        if (confirmed) {
+          setDeletionFeedback(
+            `Conversation deleted: ${request.title} (${request.id}).`
+          );
+          // A removed invoker can leave focus on body; only its still-owned focus
+          // may move to this directory's stable filter, never a newer destination.
+          if (
+            ownsFocus &&
+            target &&
+            doc &&
+            !target.isConnected &&
+            doc.activeElement === doc.body
+          )
+            filterInput.current?.focus();
+        }
+      })
+      .catch(() => {})
+      .finally(cleanupFocus);
+  };
   const reorderBlocked =
+    deletionBlocked ||
     snapshot.ordering.status === 'pending' ||
     snapshot.ordering.status === 'unconfirmed';
   const reorderAvailable = application.canReorderPinned() || reorderBlocked;
@@ -233,7 +357,11 @@ function Conversation({
           }
     );
   };
-  const sharedOrdering = reorderBlocked ? snapshot.ordering : null;
+  const sharedOrdering =
+    snapshot.ordering.status === 'pending' ||
+    snapshot.ordering.status === 'unconfirmed'
+      ? snapshot.ordering
+      : null;
   const reorderIdentity = sharedOrdering?.id
     ? `${
         reorderFeedback?.id === sharedOrdering.id
@@ -264,6 +392,10 @@ function Conversation({
       mounted.current = false;
       archiveRequests.current.clear();
       reorderRequest.current = null;
+      confirmationOwner.current = null;
+      deletionRequest.current = null;
+      deletionCheckRequest.current = null;
+      for (const cleanup of deletionFocusCleanups.current) cleanup();
     };
   }, []);
   const archive = async (row: ThreadRow) => {
@@ -327,6 +459,27 @@ function Conversation({
         snapshot.list.rows.find((row) => row.id === thread.id)?.archived
       }
       archivePending={snapshot.archives[thread.id]?.status === 'pending'}
+      mutationBlocked={deletionTargetBlocked(thread.id)}
+      onDelete={
+        application.hasRemovalCapability()
+          ? (target) => {
+              const row = snapshot.list.rows.find(
+                (row) => row.id === thread.id
+              );
+              if (row) requestDeletion(row, target);
+            }
+          : undefined
+      }
+      deleteDisabled={!application.canRemove(thread.id)}
+      deleteReason={
+        application.hasRemovalCapability() &&
+        snapshot.selection.id === thread.id &&
+        (snapshot.submission.active ||
+          snapshot.runtime?.status === 'running' ||
+          !!snapshot.runtime?.reconnect?.runId)
+          ? 'Resolve the current run before deleting this conversation.'
+          : undefined
+      }
       reorderPending={reorderBlocked}
       onMoveUp={
         reorderAvailable &&
@@ -423,6 +576,34 @@ function Conversation({
           refresh before trying again.
         </p>
       )}
+      {deletionBlocked && (
+        <div className="conversation-delete-feedback">
+          <p role="status">
+            {snapshot.deletion.status === 'pending'
+              ? `Deleting conversation ${snapshot.deletion.title} (${snapshot.deletion.id})…`
+              : snapshot.deletion.checking
+              ? `Checking deletion status for ${snapshot.deletion.title} (${snapshot.deletion.id})…`
+              : `Conversation deletion unconfirmed for ${snapshot.deletion.title} (${snapshot.deletion.id}). Check its status before deleting again.`}
+          </p>
+          {snapshot.deletion.status === 'unconfirmed' && (
+            <button
+              type="button"
+              disabled={snapshot.deletion.checking}
+              onClick={() => {
+                const { id, intent, title } = snapshot.deletion;
+                if (id) checkDeletion(id, intent, title);
+              }}
+            >
+              {snapshot.deletion.checking
+                ? 'Checking deletion status…'
+                : 'Check deletion status'}
+            </button>
+          )}
+        </div>
+      )}
+      {!deletionBlocked && deletionFeedback && (
+        <p role="status">{deletionFeedback}</p>
+      )}
       {(sharedOrdering || reorderFeedback) && (
         <p role="status" className="conversation-order-feedback">
           {sharedOrdering?.status === 'unconfirmed'
@@ -511,6 +692,31 @@ function Conversation({
           : ''
       }`}
     >
+      <ConfirmDialog
+        open={confirmation !== null}
+        title="Delete conversation?"
+        body={
+          confirmation
+            ? `Permanently delete ${confirmation.title} (${
+                confirmation.id
+              })? This action is permanent.${
+                confirmation.selected
+                  ? ' This closes the selected conversation and discards its draft.'
+                  : ''
+              }`
+            : ''
+        }
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        tone="destructive"
+        returnFocusTo={confirmation?.returnFocusTo}
+        onConfirm={() => {
+          if (confirmation) confirmDeletion(confirmation);
+        }}
+        onCancel={() => {
+          if (confirmation) closeConfirmation(confirmation);
+        }}
+      />
       {presentation === 'sidenav' ? (
         <NativeNavigation
           selectedId={selection.id}
