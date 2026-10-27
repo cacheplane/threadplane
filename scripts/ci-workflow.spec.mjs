@@ -212,6 +212,14 @@ async function runPostgresPreparation(failingCommand, failedPullImages = []) {
 }
 
 describe('CI workflow', () => {
+  it('commits regenerated API docs through the signing GitHub API, never an unsigned git push', async () => {
+    const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'website');
+    const step = withoutYamlCommentLines(readNamedStep(job, 'Commit generated API docs to same-repo PR'));
+    assert.match(step, /node scripts\/commit-staged-via-api\.mjs/);
+    assert.match(step, /GITHUB_TOKEN: \$\{\{ github\.token \}\}/);
+    assert.doesNotMatch(step, /git (commit|push)\b/, 'a bot git commit lands unsigned and blocks the merge');
+  });
+
   it('requires unconditional pinned PostgreSQL preparation immediately before the real durable tool verifier', async () => {
     const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'library');
     const prepare = readNamedStep(job, 'Prepare pinned PostgreSQL integration image');

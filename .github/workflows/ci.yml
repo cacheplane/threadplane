@@ -101,7 +101,7 @@ jobs:
       # classifier walk.
       - run: npm ci
       - name: Test CI scope classifier
-        run: node --test scripts/configure-ci-apt.spec.mjs scripts/ci-scope.spec.mjs scripts/cockpit-matrix.spec.mjs scripts/cockpit-frontend-matrix.spec.mjs scripts/cockpit-ports.spec.mjs scripts/cockpit-runtime-bridge-coverage.spec.mjs scripts/react-cockpit/ag-ui-client-tools-configuration.spec.mjs scripts/react-cockpit/ag-ui-client-tools-preparation.spec.mjs scripts/react-cockpit/runtimes-microsoft-agent-framework-configuration.spec.mjs scripts/react-cockpit/prepare-native-maf-fixture.spec.mjs scripts/react-cockpit/runtimes-aws-strands-configuration.spec.mjs scripts/react-cockpit/prepare-native-strands-fixture.spec.mjs scripts/react-cockpit/chat-theming-configuration.spec.mjs
+        run: node --test scripts/configure-ci-apt.spec.mjs scripts/commit-staged-via-api.spec.mjs scripts/ci-scope.spec.mjs scripts/cockpit-matrix.spec.mjs scripts/cockpit-frontend-matrix.spec.mjs scripts/cockpit-ports.spec.mjs scripts/cockpit-runtime-bridge-coverage.spec.mjs scripts/react-cockpit/ag-ui-client-tools-configuration.spec.mjs scripts/react-cockpit/ag-ui-client-tools-preparation.spec.mjs scripts/react-cockpit/runtimes-microsoft-agent-framework-configuration.spec.mjs scripts/react-cockpit/prepare-native-maf-fixture.spec.mjs scripts/react-cockpit/runtimes-aws-strands-configuration.spec.mjs scripts/react-cockpit/prepare-native-strands-fixture.spec.mjs scripts/react-cockpit/chat-theming-configuration.spec.mjs
       - name: Test Debug static configuration without Python workers
         run: node --test --test-name-pattern='^debug ' scripts/react-cockpit/chat-debug-configuration.spec.mjs
       - name: Detect changed CI surfaces
@@ -438,17 +438,23 @@ jobs:
           # passed as a literal value, never interpolated into the script text
           # (prevents shell injection — OSSF Scorecard Dangerous-Workflow).
           HEAD_REF: ${{ github.head_ref }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           if git diff --quiet -- apps/website/content/docs/*/api/api-docs.json; then
             echo "Generated API docs are already committed."
             exit 0
           fi
 
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Commit through the GitHub API, not `git push`: GitHub signs
+          # API-created commits, and main requires signed commits, so an
+          # unsigned bot commit would block the PR from merging.
           git add apps/website/content/docs/*/api/api-docs.json
-          git commit -m "chore(docs): regenerate api docs"
-          git push origin "HEAD:$HEAD_REF"
+          oid="$(node scripts/commit-staged-via-api.mjs \
+            --repo "$GITHUB_REPOSITORY" \
+            --branch "$HEAD_REF" \
+            --message "chore(docs): regenerate api docs")"
+          git fetch --no-tags --depth=1 origin "$oid"
+          git reset --soft "$oid"
       - name: Verify generated API docs are committed
         run: git diff --exit-code -- apps/website/content/docs/*/api/api-docs.json
       - run: npx nx build website
