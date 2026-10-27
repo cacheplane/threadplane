@@ -7,6 +7,10 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   retries: process.env.CI ? 2 : 0,
+  // Recording against the live provider (the scheduled @drift check) pays real
+  // model latency, and a multi-tool turn can outlast the 30s default; the
+  // specs' own 45s waits only hold if the test budget exceeds them.
+  timeout: process.env.AIMOCK_MODE === 'record' ? 120_000 : 30_000,
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
   use: {
     baseURL: 'http://localhost:4200',
