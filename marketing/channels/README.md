@@ -6,10 +6,10 @@ Channel adapters for the Threadplane marketing pipeline. One adapter per channel
 
 - **X** (`getAdapter('x')`) — post single tweets, threads, and image media (PNG ≤ 5MB, alt text required). `metrics()` is a stub until the X tier upgrades to Basic+.
 - **Dev.to** (`getAdapter('devto')`) — post articles with title, tags, canonical URL, description. Real `metrics()` (Dev.to's read API is free).
+- **LinkedIn** (`getAdapter('linkedin')`) — post to your personal profile with one optional image (PNG ≤ 5MB, alt text required) and an optional `firstComment` posted right after. `metrics()` is a stub: reading member post stats needs a partner-only permission.
 
 ## Planned (follow-up commits in this package — no separate spec)
 
-- LinkedIn
 - Reddit
 
 ## Quickstart
@@ -44,6 +44,35 @@ X_USER_HANDLE=brian
 Prerequisites: create an X v2 app at <https://developer.x.com/en/portal/dashboard> and set the `X_CLIENT_ID` + `X_CLIENT_SECRET` env vars from the app's OAuth 2.0 section.
 
 When an access token expires, the adapter automatically calls `/2/oauth2/token` to refresh. Rotated tokens remain in memory and are never logged by the adapter. They are not persisted across process restarts; if authentication fails after restarting, run the bootstrapper again.
+
+## Auth (LinkedIn)
+
+LinkedIn uses 3-legged OAuth 2.0. One-time app setup:
+
+1. Create an app at <https://www.linkedin.com/developers/apps>. LinkedIn requires a company page to associate it with.
+2. Under **Products**, add **Share on LinkedIn** and **Sign In with LinkedIn using OpenID Connect**. Both are self-serve.
+3. Under **Auth**, add the redirect URL `http://localhost:8724/callback`.
+4. Copy the Client ID and Primary Client Secret into `.env` as `LINKEDIN_CLIENT_ID` and `LINKEDIN_CLIENT_SECRET`.
+
+Then run the bootstrapper:
+
+```bash
+npm run marketing:channels:linkedin:auth
+```
+
+It opens your browser, you authorize the app, and it prints the values for `.env`:
+
+```
+LINKEDIN_ACCESS_TOKEN=...
+LINKEDIN_AUTHOR_URN=urn:li:person:...
+LINKEDIN_TOKEN_EXPIRES_AT=2027-01-01T00:00:00.000Z
+```
+
+Tokens last 60 days and self-serve apps get no refresh token, so there's no automatic refresh. The adapter warns on stderr when the token expires within 7 days and refuses to post once it has expired; run the bootstrapper again either way.
+
+Post text is sent in LinkedIn's "little" format. The adapter escapes its reserved characters (`| { } @ [ ] ( ) < > \ * _ ~`, and any `#` that doesn't start a hashtag) so the text renders as written. Unescaped parentheses can silently truncate a post. `#word` hashtags stay live.
+
+A failed `firstComment` doesn't throw, because the post is already live: the result carries a `warnings` entry instead, so add the comment by hand.
 
 ## Auth (Dev.to)
 
@@ -92,6 +121,13 @@ All adapters call `validateDraft()` first. Drafts that violate per-channel rules
 - Threads have ≥ 2 parts.
 - Up to 4 media items per post.
 - PNG only, ≤ 5MB, alt text required (1-1000 chars).
+
+LinkedIn rules:
+
+- `text` required, ≤ 3000 code points. No `threadParts`.
+- No `link`: the Posts API doesn't scrape link previews. Put the URL in `firstComment` or the text.
+- `firstComment` 1-1250 code points.
+- At most 1 image, with the same PNG and alt-text rules as X.
 
 ## Adding a new adapter
 

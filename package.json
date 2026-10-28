@@ -21,6 +21,8 @@
     "marketing:channels:x:auth": "tsx --env-file=.env marketing/channels/src/x/auth-cli.ts",
     "marketing:channels:x:smoke": "tsx --env-file=.env marketing/channels/scripts/smoke.ts",
     "marketing:channels:devto:smoke": "tsx --env-file=.env marketing/channels/scripts/smoke.ts --channel=devto",
+    "marketing:channels:linkedin:auth": "tsx --env-file=.env marketing/channels/src/linkedin/auth-cli.ts",
+    "marketing:channels:linkedin:smoke": "tsx --env-file=.env marketing/channels/scripts/smoke.ts --channel=linkedin",
     "posthog:sync": "nx run posthog-tools:sync:plan",
     "posthog:apply": "nx run posthog-tools:sync:apply",
     "posthog:report": "nx run posthog-tools:report",

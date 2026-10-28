@@ -8,8 +8,11 @@
 //   SMOKE_THREAD=1 npm run marketing:channels:x:smoke
 //   DRY_RUN=1 npm run marketing:channels:devto:smoke
 //   npm run marketing:channels:devto:smoke
+//   npm run marketing:channels:linkedin:auth                             # every 60 days, fills .env
+//   DRY_RUN=1 npm run marketing:channels:linkedin:smoke
+//   SMOKE_MEDIA=1 npm run marketing:channels:linkedin:smoke
 //
-// The default channel is 'x'. Override with --channel=devto.
+// The default channel is 'x'. Override with --channel=devto or --channel=linkedin.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -24,8 +27,8 @@ function parseChannel(): ChannelId {
   const arg = process.argv.find((a) => a.startsWith('--channel='));
   if (!arg) return 'x';
   const value = arg.split('=')[1];
-  if (value !== 'x' && value !== 'devto') {
-    throw new Error(`smoke.ts: --channel=${value} not supported. Use x or devto.`);
+  if (value !== 'x' && value !== 'devto' && value !== 'linkedin') {
+    throw new Error(`smoke.ts: --channel=${value} not supported. Use x, devto, or linkedin.`);
   }
   return value;
 }
@@ -78,10 +81,31 @@ function buildDevToDraft(): Draft {
   };
 }
 
+// LinkedIn has no unlisted posts: a live smoke is visible to your network until
+// you delete it.
+function buildLinkedInDraft(): Draft {
+  const stamp = new Date().toISOString();
+  const draft: Draft = {
+    channel: 'linkedin',
+    text: `Marketing pipeline smoke test (please ignore). Escaping check: (parens) [brackets] #hashtag. ${stamp}`,
+    firstComment: 'Smoke test first comment: https://threadplane.ai',
+  };
+  if (process.env.SMOKE_MEDIA === '1') {
+    draft.media = [{ png: PIXEL_PNG, alt: 'A 1x1 transparent pixel — test image.' }];
+  }
+  return draft;
+}
+
+function buildDraft(channel: ChannelId): Draft {
+  if (channel === 'devto') return buildDevToDraft();
+  if (channel === 'linkedin') return buildLinkedInDraft();
+  return buildXDraft();
+}
+
 async function main(): Promise<void> {
   const channel = parseChannel();
   const adapter = getAdapter(channel);
-  const draft = channel === 'devto' ? buildDevToDraft() : buildXDraft();
+  const draft = buildDraft(channel);
   const result = await adapter.post(draft);
   console.log(JSON.stringify(result, null, 2));
 
