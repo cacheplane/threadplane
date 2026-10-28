@@ -78,6 +78,15 @@
         "configFile": "apps/website/vite.config.mts"
       }
     },
+    "public-copy": {
+      "executor": "@nx/playwright:playwright",
+      "cache": false,
+      "dependsOn": [],
+      "options": {
+        "config": "apps/website/public-copy.playwright.config.ts",
+        "skipInstall": true
+      }
+    },
     "e2e": {
       "executor": "@nx/playwright:playwright",
       "dependsOn": [

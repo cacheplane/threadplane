@@ -6,6 +6,61 @@ import assert from 'node:assert/strict';
 import { privateScaffoldProjects } from './react-parity/package-policy.mjs';
 import { spawnSync } from 'node:child_process';
 
+it('runs the production copy gate through its minimal target while retaining the full Website suite', async () => {
+  const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+  const job = readJobBlock(workflow, 'website-production-checks');
+  const step = readNamedStep(job, 'Public copy boundary (production build)');
+  assert.match(step, /run: npx nx run website:public-copy --skip-nx-cache/);
+  assert.doesNotMatch(step, /--grep|continue-on-error/);
+  assert.match(step, /GROWTH_FORM_POLICY: growth_v1/);
+  assert.match(readJobBlock(workflow, 'website-e2e'), /run: npx nx e2e website --skip-nx-cache/);
+});
+
+it('shards the complete Website suite and runs production checks independently', async () => {
+  const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+  const suite = readJobBlock(workflow, 'website-e2e');
+  assert.match(suite, /shard: \[1, 2\]/);
+  assert.match(suite, /fail-fast: false/);
+  assert.match(suite, /npx nx e2e website --skip-nx-cache --skipInstall --shard=\$\{\{ matrix.shard \}\}\/2/);
+  assert.doesNotMatch(suite, /Public copy boundary|Stage scroll verification|--grep/);
+  const production = readJobBlock(workflow, 'website-production-checks');
+  assert.deepEqual(readJobNeeds(production), ['ci-scope']);
+  assert.match(readJobFieldBlock(production, 'if'), /needs\.ci-scope\.outputs\.website_e2e == 'true'/);
+  assert.doesNotMatch(production, /setup-uv|prepare-.*fixture|nx e2e website/);
+  assert.match(production, /npx playwright install --with-deps chromium/);
+});
+
+it('uses the explicit Chromium installation for every CI Nx browser invocation', async () => {
+  const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+  const invocations = [...workflow.matchAll(/^.*\bnpx nx e2e .+$/gm)];
+  assert.ok(invocations.length > 0);
+  for (const [line] of invocations) assert.match(line, /--skipInstall\b/);
+});
+
+it('requires all parallel native and Website production proofs before PR success or deployment', async () => {
+  const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+  const gate = readJobBlock(workflow, 'required-pr-checks');
+  const step = readNamedStep(gate, 'Verify scoped CI jobs');
+  const script = readStepRunBlock(step);
+  const environment = { ...process.env, PREVIEW_LANES_ELIGIBLE: 'false' };
+  for (const [, key] of step.matchAll(/^ {10}((?:RESULT|SCOPE)_[A-Z0-9_]+):/gm)) {
+    environment[key] = key.startsWith('RESULT_') ? 'skipped' : 'false';
+  }
+  environment.RESULT_CI_SCOPE = 'success';
+  for (const [job, resultKey, scopeKey, otherResults] of [
+    ['native-conversation', 'RESULT_NATIVE_CONVERSATION', 'SCOPE_LIBRARY', { RESULT_LIBRARY: 'success' }],
+    ['native-conversation', 'RESULT_NATIVE_CONVERSATION', 'SCOPE_ANGULAR_COMPATIBILITY', { RESULT_ANGULAR_COMPATIBILITY: 'success' }],
+    ['website-production-checks', 'RESULT_WEBSITE_PRODUCTION', 'SCOPE_WEBSITE_E2E', { RESULT_WEBSITE_E2E: 'success' }],
+  ]) {
+    for (const owner of ['required-pr-checks', 'deploy']) assert.ok(readJobNeeds(readJobBlock(workflow, owner)).includes(job), `${owner} requires ${job}`);
+    assert.match(step, new RegExp(`${resultKey}: \\$\\{\\{ needs\\.${job}\\.result \\}\\}`));
+    for (const result of ['success', 'failure', 'cancelled', 'skipped']) {
+      const run = spawnSync('bash', ['-c', script], { encoding: 'utf8', env: { ...environment, ...otherResults, [scopeKey]: 'true', [resultKey]: result } });
+      assert.equal(run.status, result === 'success' ? 0 : 1, `${job}: ${result}\n${run.stderr}\n${run.stdout}`);
+    }
+  }
+});
+
 it('pins every Vercel CLI invocation to the verified working release', async () => {
   const workflow = withoutYamlCommentLines(await readFile('.github/workflows/ci.yml', 'utf8'));
   const invocations = [...workflow.matchAll(/\bnpx\s+(vercel(?:@[^\s]+)?)(?=\s)/g)];
@@ -371,15 +426,15 @@ describe('CI workflow', () => {
   });
   it('requires native example development, production and actual verification CLI after builds and Chromium', async () => {
     const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
-    const job = readJobBlock(workflow, 'library');
+    const job = readJobBlock(workflow, 'native-conversation');
     const step = readNamedStep(job, 'Verify native conversation example');
-    assert.match(step, /^ {10}npx nx e2e native-conversation-react\s*$/m);
-    assert.match(step, /^ {10}node examples\/chat\/native\/tooling\/verify\.mjs\s*$/m);
-    assert.match(step, /^ {10}npx nx e2e native-conversation-angular\s*$/m);
-    assert.match(step, /^ {10}node examples\/chat\/native\/tooling\/verify\.mjs --framework=angular\s*$/m);
+    assert.deepEqual(readJobNeeds(job), ['ci-scope']);
+    assert.match(job, /framework: \[react, angular\]/);
+    assert.match(job, /fail-fast: false/);
+    assert.match(step, /npx nx e2e "native-conversation-\$\{\{ matrix.framework \}\}" --skipInstall/);
+    assert.match(step, /node examples\/chat\/native\/tooling\/verify\.mjs --framework="\$\{\{ matrix.framework \}\}"/);
     for (const prerequisite of [
-      'Build and validate private React foundations',
-      'run-many -t build --projects=$LIBS',
+      'run-many -t build --projects=core,content,angular,react,chat,langgraph,ag-ui,render,a2ui,telemetry,middleware',
       'npx playwright install --with-deps chromium',
     ]) assert.ok(job.indexOf(prerequisite) >= 0 && job.indexOf(step) > job.indexOf(prerequisite));
     assert.doesNotMatch(step, /continue-on-error|\|\|\s*true|set\s+\+e|if:|--grep|--test-name-pattern/);
@@ -398,7 +453,7 @@ describe('CI workflow', () => {
     assert.equal(angularProject.targets.e2e.options.config, 'examples/chat/native/angular/playwright.config.ts');
     // Existing runtime, provider, package and Markdown assertions below still apply.
     const canonical = readJobBlock(workflow, 'examples-chat-e2e');
-    assert.match(canonical, /nx e2e examples-chat-angular --skip-nx-cache -- --shard=/);
+    assert.match(canonical, /nx e2e examples-chat-angular --skip-nx-cache --skipInstall -- --shard=/);
   });
   it('requires exact-lock Mastra installation, service tests and native owner proof after isolated runtimes', async () => {
     const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'library');
@@ -519,7 +574,7 @@ describe('CI workflow', () => {
   });
   it('verifies stage scrolling and interaction against the matching local replay build', async () => {
     const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
-    const step = readNamedStep(readJobBlock(workflow, 'website-e2e'), 'Stage scroll verification (scroll-craft harness)');
+    const step = readNamedStep(readJobBlock(workflow, 'website-production-checks'), 'Stage scroll verification (scroll-craft harness)');
     assert.match(step, /NEXT_PUBLIC_STAGE_DEMO_ORIGIN: http:\/\/localhost:4200/);
     assert.match(step, /nx serve examples-chat-angular --configuration=production --port=4200/);
     assert.match(step, /nx build website --configuration=production --skip-nx-cache/);
@@ -1467,6 +1522,7 @@ describe('CI workflow', () => {
     const expectedNeeds = [
       'ci-scope',
       'library',
+      'native-conversation',
       'angular-compatibility',
       'website',
       'cockpit',
@@ -1477,6 +1533,7 @@ describe('CI workflow', () => {
       'examples-ag-ui-e2e',
       'cockpit-e2e-summary',
       'website-e2e',
+      'website-production-checks',
       'website-preview-e2e',
       'posthog-sync-plan',
       'scripts-tests',
@@ -1714,7 +1771,7 @@ describe('guarded current-main manual recovery', () => {
   it('preserves direct production needs, success eligibility, preview allowlist, and main concurrency', async () => {
     const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
     const expected = {
-      deploy: ['ci-scope', 'library', 'website', 'cockpit', 'cockpit-examples-build', 'cockpit-smoke', 'examples-chat-smoke', 'examples-chat-e2e', 'cockpit-e2e-summary', 'website-e2e', 'growth-lifecycle', 'lifecycle'],
+      deploy: ['ci-scope', 'library', 'native-conversation', 'website', 'cockpit', 'cockpit-examples-build', 'cockpit-smoke', 'examples-chat-smoke', 'examples-chat-e2e', 'cockpit-e2e-summary', 'website-e2e', 'website-production-checks', 'growth-lifecycle', 'lifecycle'],
       'demo-deploy': ['ci-scope', 'examples-chat-smoke', 'examples-chat-e2e'],
       'ag-ui-demo-deploy': ['ci-scope', 'examples-ag-ui-e2e'],
       'production-smoke': ['ci-scope', 'deploy', 'demo-deploy', 'ag-ui-demo-deploy'],
@@ -1888,7 +1945,7 @@ it('bounds every Playwright dependency install and configures Ubuntu downloads f
     const workflow = withoutYamlCommentLines(await readFile(`.github/workflows/${file}`, 'utf8'));
     const steps = workflow.split(/(?=^      - )/m);
     const installs = steps.map((step, index) => ({ step, index })).filter(({ step }) => /npx playwright install.*--with-deps/.test(step));
-    assert.equal(installs.length, file === 'ci.yml' ? 9 : 1, `enumerate actual install callers in ${file}`);
+    assert.equal(installs.length, file === 'ci.yml' ? 11 : 1, `enumerate actual install callers in ${file}`);
     for (const { step, index } of installs) {
       assert.match(step, /timeout-minutes: 10/);
       assert.match(steps[index - 1], /name: Configure bounded Ubuntu package downloads/);

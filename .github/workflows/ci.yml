@@ -261,12 +261,6 @@ jobs:
       - name: Install Chromium for packed runtime consumers
         timeout-minutes: 10
         run: npx playwright install --with-deps chromium
-      - name: Verify native conversation example
-        run: |
-          npx nx e2e native-conversation-react
-          node examples/chat/native/tooling/verify.mjs
-          npx nx e2e native-conversation-angular
-          node examples/chat/native/tooling/verify.mjs --framework=angular
       - name: Verify native same-document session bindings
         run: node scripts/react-parity/review-native-ag-ui.mjs --verify
       - name: Verify real LangGraph candidate package
@@ -344,14 +338,6 @@ jobs:
         run: node scripts/check-dx-coverage.mjs
       - run: node --test examples/chat/smoke/*.spec.mjs scripts/verify-angular-support.spec.mjs
       - run: node scripts/verify-angular-support.mjs
-      - name: Upload native conversation React traces on failure
-        if: failure()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: native-conversation-react-e2e-traces
-          path: /tmp/native-conversation-react-e2e-results
-          retention-days: 7
-          if-no-files-found: warn
       - name: Upload production library artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -359,6 +345,47 @@ jobs:
           path: dist/libs
           if-no-files-found: error
           retention-days: 1
+
+  native-conversation:
+    name: 'Native conversation — ${{ matrix.framework }}'
+    needs: ci-scope
+    if: github.event_name == 'push' || needs.ci-scope.outputs.library == 'true' || needs.ci-scope.outputs.angular_compatibility == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        framework: [react, angular]
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57 # v8.0.0
+        with:
+          python-version: '3.12'
+          enable-cache: false
+      - name: Build native conversation prerequisites
+        run: npx nx run-many -t build --projects=core,content,angular,react,chat,langgraph,ag-ui,render,a2ui,telemetry,middleware --configuration=production --parallel=2
+      - name: Configure bounded Ubuntu package downloads
+        run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
+      - name: Install Chromium
+        timeout-minutes: 10
+        run: npx playwright install --with-deps chromium
+      - name: Verify native conversation example
+        run: |
+          npx nx e2e "native-conversation-${{ matrix.framework }}" --skipInstall
+          node examples/chat/native/tooling/verify.mjs --framework="${{ matrix.framework }}"
+      - name: Upload native conversation traces on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: native-conversation-${{ matrix.framework }}-e2e-traces
+          path: /tmp/native-conversation-${{ matrix.framework }}-e2e-results
+          retention-days: 7
+          if-no-files-found: warn
 
   angular-compatibility:
     name: 'Angular ${{ matrix.angular }} — packaged consumer'
@@ -663,7 +690,7 @@ jobs:
       - name: Install Chromium
         timeout-minutes: 10
         run: npx playwright install --with-deps chromium
-      - run: npx nx e2e examples-chat-angular --skip-nx-cache -- --shard=${{ matrix.shard }}/4
+      - run: npx nx e2e examples-chat-angular --skip-nx-cache --skipInstall -- --shard=${{ matrix.shard }}/4
       - name: Upload Playwright trace on failure
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -746,7 +773,7 @@ jobs:
       - name: Install Chromium
         timeout-minutes: 10
         run: npx playwright install --with-deps chromium
-      - run: npx nx e2e examples-ag-ui-angular --skip-nx-cache
+      - run: npx nx e2e examples-ag-ui-angular --skip-nx-cache --skipInstall
       - name: Upload Playwright trace on failure
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -934,7 +961,7 @@ jobs:
           npx nx build core --skip-nx-cache
           node scripts/react-cockpit/chat-debug-native-session-probe.mjs
       - name: nx e2e ${{ matrix.cap.angular }}
-        run: npx nx e2e "${{ matrix.cap.angular }}" --skip-nx-cache
+        run: npx nx e2e "${{ matrix.cap.angular }}" --skip-nx-cache --skipInstall
       - name: Retain native A2UI installed application attempts
         if: always() && matrix.cap.angular == 'cockpit-ag-ui-a2ui-react'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -974,10 +1001,14 @@ jobs:
           echo "All cockpit-e2e matrix expansions passed."
 
   website-e2e:
-    name: Website — e2e
+    name: 'Website — e2e (${{ matrix.shard }}/2)'
     needs: ci-scope
     if: github.event_name == 'push' || needs.ci-scope.outputs.website_e2e == 'true'
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
@@ -1005,17 +1036,44 @@ jobs:
       - name: Install Chromium
         timeout-minutes: 10
         run: npx playwright install --with-deps chromium
-      - run: npx nx e2e website --skip-nx-cache
+      - run: npx nx e2e website --skip-nx-cache --skipInstall --shard=${{ matrix.shard }}/2
         timeout-minutes: 45
+
+  website-production-checks:
+    name: Website — production copy / stage
+    needs: ci-scope
+    if: github.event_name == 'push' || needs.ci-scope.outputs.website_e2e == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Cache Playwright browsers
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+      - name: Configure bounded Ubuntu package downloads
+        run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
+      - name: Install Chromium
+        timeout-minutes: 10
+        run: npx playwright install --with-deps chromium
       # The public-copy gate reads served output, and `next dev` serves a
       # different bundle than production. Run it a second time against a real
       # production build so a claim that only appears in the built output — in a
       # generated bundle or a response body — cannot reach the site unnoticed.
+      # This target owns only the Website server; it does not repeat the full
+      # suite's cockpit builds, fixture proofs, or runtime servers.
       - name: Public copy boundary (production build)
         env:
           GROWTH_FORM_POLICY: growth_v1
-          WEBSITE_E2E_MODE: production
-        run: npx nx e2e website --skip-nx-cache --grep "public copy boundary|canonical policy surface"
+        run: npx nx run website:public-copy --skip-nx-cache
       # Spec §8: scroll-craft's own harness walks the homepage's pinned stage
       # act and fails on dead scroll outside the declared hold and on cues that
       # never peak. The Nx build lands in dist/apps/website with a rewritten
@@ -1164,7 +1222,7 @@ jobs:
           echo "website deployment: $url"
           npx vercel@64.2.0 alias set "$url" "${{ steps.aliases.outputs.website }}" --scope=${{ secrets.VERCEL_ORG_ID }} --token=${{ secrets.VERCEL_TOKEN }}
       - name: Run the Website suite against the aliased preview
-        run: npx nx e2e website --skip-nx-cache
+        run: npx nx e2e website --skip-nx-cache --skipInstall
         env:
           BASE_URL: https://${{ steps.aliases.outputs.website }}
           RUNTIME_BYPASS_ORIGIN: https://${{ steps.aliases.outputs.examples }}
@@ -1176,6 +1234,7 @@ jobs:
     needs:
       - ci-scope
       - library
+      - native-conversation
       - angular-compatibility
       - website
       - cockpit
@@ -1186,6 +1245,7 @@ jobs:
       - examples-ag-ui-e2e
       - cockpit-e2e-summary
       - website-e2e
+      - website-production-checks
       - website-preview-e2e
       - posthog-sync-plan
       - scripts-tests
@@ -1202,6 +1262,7 @@ jobs:
         env:
           RESULT_CI_SCOPE: ${{ needs.ci-scope.result }}
           RESULT_LIBRARY: ${{ needs.library.result }}
+          RESULT_NATIVE_CONVERSATION: ${{ needs.native-conversation.result }}
           RESULT_ANGULAR_COMPATIBILITY: ${{ needs.angular-compatibility.result }}
           RESULT_WEBSITE: ${{ needs.website.result }}
           RESULT_COCKPIT: ${{ needs.cockpit.result }}
@@ -1212,6 +1273,7 @@ jobs:
           RESULT_EXAMPLES_AG_UI_E2E: ${{ needs.examples-ag-ui-e2e.result }}
           RESULT_COCKPIT_E2E: ${{ needs.cockpit-e2e-summary.result }}
           RESULT_WEBSITE_E2E: ${{ needs.website-e2e.result }}
+          RESULT_WEBSITE_PRODUCTION: ${{ needs.website-production-checks.result }}
           RESULT_WEBSITE_PREVIEW_E2E: ${{ needs.website-preview-e2e.result }}
           RESULT_POSTHOG: ${{ needs.posthog-sync-plan.result }}
           RESULT_SCRIPTS_TESTS: ${{ needs.scripts-tests.result }}
@@ -1296,6 +1358,8 @@ jobs:
 
           require_always "CI scope" "$RESULT_CI_SCOPE"
           require_scoped "library" "Library — lint / test / build" "$RESULT_LIBRARY" "$SCOPE_LIBRARY"
+          require_scoped "library" "Native conversation matrix" "$RESULT_NATIVE_CONVERSATION" "$SCOPE_LIBRARY"
+          require_scoped "angular_compatibility" "Native conversation matrix" "$RESULT_NATIVE_CONVERSATION" "$SCOPE_ANGULAR_COMPATIBILITY"
           require_scoped \
             "angular_compatibility" \
             "Angular compatibility matrix" \
@@ -1314,6 +1378,7 @@ jobs:
             "$SCOPE_EXAMPLES_AG_UI"
           require_scoped "cockpit_e2e" "Cockpit — e2e" "$RESULT_COCKPIT_E2E" "$SCOPE_COCKPIT_E2E"
           require_scoped "website_e2e" "Website — e2e" "$RESULT_WEBSITE_E2E" "$SCOPE_WEBSITE_E2E"
+          require_scoped "website_e2e" "Website — production copy / stage" "$RESULT_WEBSITE_PRODUCTION" "$SCOPE_WEBSITE_E2E"
           require_preview "website_e2e" "Website — e2e (deployed preview)" "$RESULT_WEBSITE_PREVIEW_E2E" "$SCOPE_WEBSITE_E2E"
           require_scoped "posthog" "PostHog — dashboards-as-code drift check" "$RESULT_POSTHOG" "$SCOPE_POSTHOG"
           require_scoped "scripts_tests" "Scripts — generator / proxy vitest suites" "$RESULT_SCRIPTS_TESTS" "$SCOPE_SCRIPTS_TESTS"
@@ -1333,6 +1398,7 @@ jobs:
     needs:
       - ci-scope
       - library
+      - native-conversation
       - website
       - cockpit
       - cockpit-examples-build
@@ -1341,6 +1407,7 @@ jobs:
       - examples-chat-e2e
       - cockpit-e2e-summary
       - website-e2e
+      - website-production-checks
       - growth-lifecycle
       - lifecycle
     runs-on: ubuntu-24.04
@@ -1621,7 +1688,7 @@ jobs:
         run: npx vercel@64.2.0 promote "${{ steps.deploy_website.outputs.deployment_url }}" --scope=${{ secrets.VERCEL_ORG_ID }} --yes --token=${{ secrets.VERCEL_TOKEN }}
       - name: Verify deployed website
         if: steps.freshness.outputs.stale != 'true' && steps.affected.outputs.website == 'true' && steps.website_promotion_freshness.outputs.fresh == 'true'
-        run: npx nx e2e website --skip-nx-cache
+        run: npx nx e2e website --skip-nx-cache --skipInstall
         env:
           BASE_URL: https://threadplane.ai
 
