@@ -482,6 +482,8 @@ test('installed React sidenav retains navigation, draft and a running response a
       wrapper.style.setProperty('--tp-chat-surface', 'rgb(241, 242, 243)');
       wrapper.style.setProperty('--tp-chat-text', 'rgb(11, 22, 33)');
     });
+    // Finish scrolling before opening a menu that dismisses on outside scroll.
+    await copyAlpha.scrollIntoViewIfNeeded();
     await copyAlpha.focus();
     await page.keyboard.press('ArrowDown');
     await expect(copyItem).toBeFocused();

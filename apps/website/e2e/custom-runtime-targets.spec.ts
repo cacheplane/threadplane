@@ -589,6 +589,9 @@ test.describe('custom runtime targets', () => {
     await page
       .getByRole('link', { name: 'AG-UI Streaming', exact: true })
       .click();
+    await expect(page).toHaveURL(
+      new RegExp(`${AG_UI_PATH.replaceAll('/', '\\/')}`)
+    );
     await openSettings(page);
     await expect(page.locator('[data-runtime-target-settings]')).toContainText(
       fixtureRuntimeUrl(testInfo, 'ag-ui/success')
