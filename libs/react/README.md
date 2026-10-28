@@ -849,17 +849,19 @@ as literal text (empty names fall back to ID), and marks the active button with
 `onNewProject`, `newProjectLabel` and `newProjectDisabled` expose an application-owned
 request; the primitive performs no creation or persistence. Use unique project IDs.
 
-Native React derives first-seen projects from nonblank string `metadata.projectId`
-among all loaded conversations, including archived rows. IDs are preserved exactly
-and displayed as names because this example has no project catalog. Selecting a
-project filters active, archived and compact rows alongside the existing title
-filter. All conversations resets only the project filter. The selected transcript,
-draft and running response remain mounted, with no additional backend calls.
-A disappearing project stays selected with an empty filtered view until reset.
-The project section appears only when loaded projects or a selected filter exist.
-Selection is ephemeral; new conversations remain unassigned. Pinned reordering
-continues across all loaded pinned conversations, including other projects.
-Project CRUD, catalog persistence, move-to-project and full T29 parity remain open.
+Native React merges browser-local catalog entries with first-seen nonblank
+`metadata.projectId` values among loaded conversations, including archived rows.
+IDs retain their exact bytes; local names fall back to IDs when not saved in this
+browser. Selecting a project filters active, archived and compact rows alongside
+the existing title filter. All conversations resets only the project filter.
+The selected transcript, draft and running response remain mounted without extra
+backend calls. A disappearing project stays selected with an empty filtered view
+until reset. New project is always available when local storage is healthy; the
+larger project section appears for catalog/loaded entries, a retained filter or an
+open editor. Selection is ephemeral, while names persist only in this browser.
+New conversations remain unassigned, and pinned reordering still spans all loaded
+pins, including other projects. Deletion, association writes/move-to-project and
+full T29 parity remain open. See the naming slice below for persistence behavior.
 
 ### Project creation and browser-local names (private React T29 slice)
 
