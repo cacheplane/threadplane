@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import {
   ProjectList,
   type ProjectListItem,
@@ -46,3 +47,24 @@ props.projects = [];
 <ProjectList {...props} onNewProject={(id: string) => void id} />;
 // @ts-expect-error Disabled is boolean.
 <ProjectList {...props} newProjectDisabled="yes" />;
+
+<ProjectList
+  {...props}
+  renderActions={(item) => {
+    const original: ProjectListItem = item;
+    const node: ReactNode = <button>{original.name}</button>;
+    // @ts-expect-error Callback receives the readonly item.
+    item.id = 'other';
+    return node;
+  }}
+/>;
+<ProjectList {...props} renderActions={() => null} />;
+<ProjectList {...props} renderActions={() => false} />;
+<ProjectList {...props} renderActions={() => undefined} />;
+<ProjectList {...props} renderActions={() => 'Rename'} />;
+// @ts-expect-error Action slot is readonly.
+props.renderActions = () => null;
+// @ts-expect-error Action renderer receives an item, not an ID.
+<ProjectList {...props} renderActions={(id: string) => id} />;
+// @ts-expect-error Action renderer returns ReactNode.
+<ProjectList {...props} renderActions={() => ({ command: 'rename' })} />;

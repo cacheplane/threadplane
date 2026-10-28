@@ -13,6 +13,7 @@ export default defineConfig({
     'message-actions.spec.ts',
     'popup.spec.ts',
     'sidenav.spec.ts',
+    'project-names.spec.ts',
     'rename.spec.ts',
     'pin.spec.ts',
     'archive.spec.ts',

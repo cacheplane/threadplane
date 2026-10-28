@@ -247,6 +247,15 @@ export function OverflowMenu({
     const doc = portal.document;
     const win = doc.defaultView;
     if (!win) return;
+    const chain = ancestors(anchor);
+    // Scroll events can arrive after the motion that preceded this opening.
+    // Snapshot once, before menu focus, so only later ancestor motion dismisses.
+    const openingScroll = new Map<Element, { top: number; left: number }>(
+      chain.map((node) => [
+        node,
+        { top: node.scrollTop, left: node.scrollLeft },
+      ])
+    );
     const inside = (target: EventTarget | null) =>
       target instanceof win.Node &&
       (panel.contains(target) || anchor.contains(target));
@@ -260,10 +269,20 @@ export function OverflowMenu({
     };
     const scroll = (event: Event) => {
       if (
-        !event.defaultPrevented &&
-        !(event.target instanceof win.Node && panel.contains(event.target))
+        event.defaultPrevented ||
+        (event.target instanceof win.Node && panel.contains(event.target))
       )
-        close();
+        return;
+      if (event.target instanceof win.Element) {
+        const original = openingScroll.get(event.target);
+        if (
+          original &&
+          event.target.scrollTop === original.top &&
+          event.target.scrollLeft === original.left
+        )
+          return;
+      }
+      close();
     };
     const suppress = () => {
       if (!suppressed.current) {
@@ -277,7 +296,6 @@ export function OverflowMenu({
       if (!available(anchor)) suppress();
       else measure();
     };
-    const chain = ancestors(anchor);
     const observer = new win.MutationObserver((records) => {
       if (!available(anchor)) suppress();
       else {

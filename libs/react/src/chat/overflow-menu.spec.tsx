@@ -947,3 +947,42 @@ it('suppresses point menus when their real trigger is unavailable', () => {
   expect(view.queryByRole('menu')).toBeNull();
   expect(change.mock.calls).toEqual([[false]]);
 });
+
+it('keeps a context menu through a queued unchanged ancestor scroll notification but dismisses later movement', () => {
+  const view = render(
+    <div data-testid="scroll-host">
+      <Controlled />
+    </div>
+  );
+  const host = view.getByTestId('scroll-host');
+  host.scrollTop = 15;
+  host.scrollLeft = 4;
+  fireEvent.click(
+    view.getByRole('button', { name: 'Actions for literal <ID>' })
+  );
+  const menu = view.getByRole('menu');
+  fireEvent.scroll(host);
+  expect(view.getByRole('menu')).toBe(menu);
+  expect(document.activeElement).toBe(
+    view.getByRole('menuitem', { name: 'Alpha' })
+  );
+  host.scrollTop = 16;
+  fireEvent.scroll(host);
+  expect(view.queryByRole('menu')).toBeNull();
+  fireEvent.click(
+    view.getByRole('button', { name: 'Actions for literal <ID>' })
+  );
+  fireEvent.scroll(host);
+  expect(view.getByRole('menu')).toBeTruthy();
+  host.scrollLeft = 5;
+  fireEvent.scroll(host);
+  expect(view.queryByRole('menu')).toBeNull();
+  fireEvent.click(
+    view.getByRole('button', { name: 'Actions for literal <ID>' })
+  );
+  const unrelated = document.createElement('div');
+  document.body.append(unrelated);
+  fireEvent.scroll(unrelated);
+  expect(view.queryByRole('menu')).toBeNull();
+  unrelated.remove();
+});
