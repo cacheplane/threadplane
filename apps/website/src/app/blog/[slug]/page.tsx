@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     description: clampMetaDescription(post.frontmatter.description),
     pathname,
     type: 'article',
-    image: ogImagePath(post.slug),
+    image: ogImagePath(post.slug, post.frontmatter.ogImage),
     article: published
       ? {
           publishedTime: published.toISOString(),
@@ -79,6 +79,7 @@ export default async function BlogPostPage({ params }: Params) {
         dateModified: lastModified?.toISOString(),
         authorName: author.name,
         tags: post.frontmatter.tags,
+        ogImage: post.frontmatter.ogImage,
       })
     : null;
 

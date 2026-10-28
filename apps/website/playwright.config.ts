@@ -628,4 +628,27 @@ export const createWebsitePlaywrightConfig = (
   return config;
 };
 
+/** Run the served-copy contract without starting unrelated example runtimes. */
+export const createPublicCopyPlaywrightConfig = (
+  environment: WebsitePlaywrightEnvironment = process.env
+) => {
+  const config = createWebsitePlaywrightConfig({
+    ...environment,
+    WEBSITE_E2E_MODE: 'production',
+    BASE_URL: undefined,
+    PRODUCTION_SMOKE: undefined,
+    CUSTOM_RUNTIME_BFCACHE: undefined,
+    WEBSITE_E2E_REACT_TOPIC: undefined,
+    PLAYWRIGHT_REUSE_EXISTING_SERVER: undefined,
+  });
+  return defineConfig({
+    ...config,
+    testMatch: '**/public-copy.spec.ts',
+    // The first server owns the production build, content link, and Website.
+    webServer: Array.isArray(config.webServer)
+      ? config.webServer.slice(0, 1)
+      : config.webServer,
+  });
+};
+
 export default createWebsitePlaywrightConfig();
