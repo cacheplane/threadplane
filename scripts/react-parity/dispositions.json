@@ -2088,7 +2088,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/overflow-menu.tsx",
-      "reason": "Bounded private React controlled menu presents disabled/destructive commands, pointer placement, explicit keyboard requests, focus return and dismissal. Typeahead, broader composition and full migration remain open; legacy Angular source and API stay unchanged."
+      "reason": "Bounded private React controlled menu presents disabled/destructive commands, pointer placement, explicit keyboard requests, focus return and dismissal. Typeahead, broader composition and full migration remain open; legacy Angular source and API stay unchanged. Opening snapshots ancestor scroll offsets and ignores only unchanged queued notifications; actual later movement, document/unrelated scroll, outside input and resize still dismiss."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-project-list/chat-project-list.component.ts#ChatProjectListComponent",
@@ -5362,7 +5362,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/overflow-menu.tsx",
-      "reason": "Bounded private React controlled menu presents disabled/destructive commands, pointer placement, explicit keyboard requests, focus return and dismissal. Typeahead, broader composition and full migration remain open; legacy Angular source and API stay unchanged."
+      "reason": "Bounded private React controlled menu presents disabled/destructive commands, pointer placement, explicit keyboard requests, focus return and dismissal. Typeahead, broader composition and full migration remain open; legacy Angular source and API stay unchanged. Opening snapshots ancestor scroll offsets and ignores only unchanged queued notifications; actual later movement, document/unrelated scroll, outside input and resize still dismiss."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatOverlayOriginDirective",
@@ -6377,7 +6377,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/overflow-menu.tsx",
-      "reason": "Bounded private React controlled menu presents disabled/destructive commands, pointer placement, explicit keyboard requests, focus return and dismissal. Typeahead, broader composition and full migration remain open; legacy Angular source and API stay unchanged."
+      "reason": "Bounded private React controlled menu presents disabled/destructive commands, pointer placement, explicit keyboard requests, focus return and dismissal. Typeahead, broader composition and full migration remain open; legacy Angular source and API stay unchanged. Opening snapshots ancestor scroll offsets and ignores only unchanged queued notifications; actual later movement, document/unrelated scroll, outside input and resize still dismiss."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#OverlayPositionResult",
@@ -10482,7 +10482,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/overflow-menu.tsx",
-      "reason": "Bounded private React controlled menu presents disabled/destructive commands, pointer placement, explicit keyboard requests, focus return and dismissal. Typeahead, broader composition and full migration remain open; legacy Angular source and API stay unchanged."
+      "reason": "Bounded private React controlled menu presents disabled/destructive commands, pointer placement, explicit keyboard requests, focus return and dismissal. Typeahead, broader composition and full migration remain open; legacy Angular source and API stay unchanged. Opening snapshots ancestor scroll offsets and ignores only unchanged queued notifications; actual later movement, document/unrelated scroll, outside input and resize still dismiss."
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-project-list/chat-project-list.component.ts",
@@ -15883,7 +15883,7 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Scoped point/trigger portal placement, local theme snapshot, invoker-aware focus/Tab and unavailable-anchor suppression without backend execution ownership. Typeahead and full parity remain open."
+      "reason": "Scoped point/trigger portal placement, local theme snapshot, invoker-aware focus/Tab and unavailable-anchor suppression without backend execution ownership. Typeahead and full parity remain open. Opening snapshots ancestor scroll offsets and ignores only unchanged queued notifications; actual later movement, document/unrelated scroll, outside input and resize still dismiss."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ThreadList",

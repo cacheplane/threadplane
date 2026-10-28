@@ -892,3 +892,10 @@ transactions. No cross-device sharing or backend project commands are introduced
 Project selection, naming and persistence preserve the selected conversation,
 transcript, composer draft and running session without extra network calls.
 Project deletion, association writes/move-to-project and full T29 parity remain open.
+
+Conversation menus also retain their opening through a queued scroll notification
+from an anchor ancestor whose vertical/horizontal offsets already settled before
+opening. Actual later ancestor movement, document/unrelated scroll notifications,
+outside input and resize still dismiss the menu. The shorter native rail browser
+proof covers unchanged queued notification, genuine scrolling, reopening and the
+retained pin/unpin flow without retries or added timeouts.
