@@ -2,6 +2,7 @@
     .tp-chat,
     .tp-chat-list:not(.tp-chat .tp-chat-list),
     .tp-chat-input:not(.tp-chat .tp-chat-input),
+    .tp-project-name-form:not(.tp-chat .tp-project-name-form),
     .tp-thread-rename-form:not(.tp-chat .tp-thread-rename-form)
   ) {
   /* Standalone parts get tokens too; nested parts inherit .tp-chat overrides. */
@@ -721,4 +722,55 @@
 .tp-project-list__container .tp-project-list__new:focus-visible {
   outline: 2px solid var(--tp-chat-accent, var(--ds-accent, Highlight));
   outline-offset: 3px;
+}
+
+.tp-project-name-form {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0.5rem;
+  color: var(--tp-chat-text);
+  background: var(--tp-chat-surface);
+  border: 1px solid var(--tp-chat-border);
+  border-radius: 0.375rem;
+}
+.tp-project-name-form input {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+}
+.tp-project-name-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.tp-project-name-form button {
+  min-height: 40px;
+  font: inherit;
+}
+.tp-project-name-form p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.tp-project-name-form [role='alert'] {
+  color: var(--tp-chat-danger);
+}
+.tp-project-name-form :focus-visible {
+  outline: 2px solid var(--tp-chat-accent);
+  outline-offset: 2px;
+}
+.tp-project-list__item--actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.tp-project-list__item--actions > .tp-project-list__button {
+  flex: 1 1 0%;
+  width: auto;
+}
+.tp-project-list__actions {
+  flex: 0 0 auto;
+  min-width: 0;
 }

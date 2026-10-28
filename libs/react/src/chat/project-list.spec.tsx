@@ -87,3 +87,42 @@ describe('ProjectList', () => {
     expect(onSelect).not.toHaveBeenCalled();
   });
 });
+
+it('composes app actions beside project selection without selecting or changing names', () => {
+  const item = Object.freeze({ id: ' p ', name: '<Project>' });
+  const onSelect = vi.fn(),
+    command = vi.fn();
+  const renderActions = vi.fn((project: chat.ProjectListItem) => (
+    <button onClick={() => command(project.id)}>Rename {project.name}</button>
+  ));
+  const view = render(
+    <chat.ProjectList
+      projects={[item]}
+      onSelect={onSelect}
+      renderActions={renderActions}
+    />
+  );
+  expect(renderActions.mock.calls[0][0]).toBe(item);
+  const action = view.getByRole('button', { name: 'Rename <Project>' });
+  expect(
+    action
+      .closest('li')
+      ?.querySelector('.tp-project-list__button')
+      ?.contains(action)
+  ).toBe(false);
+  fireEvent.click(action);
+  expect(command).toHaveBeenCalledWith(' p ');
+  expect(onSelect).not.toHaveBeenCalled();
+  for (const empty of [null, false, undefined]) {
+    view.rerender(
+      <chat.ProjectList
+        projects={[item]}
+        onSelect={onSelect}
+        renderActions={() => empty}
+      />
+    );
+    expect(
+      view.container.querySelector('.tp-project-list__actions')
+    ).toBeNull();
+  }
+});

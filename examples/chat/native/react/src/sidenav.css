@@ -188,3 +188,8 @@
   font-size: 0.875rem;
   overflow-wrap: anywhere;
 }
+
+.native-projects {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}

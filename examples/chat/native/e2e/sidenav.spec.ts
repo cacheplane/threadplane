@@ -1064,19 +1064,37 @@ test('installed React sidenav retains navigation, draft and a running response a
       await expect(search).toBeFocused();
       await page.keyboard.press('Tab');
       await expect(
+        nav.getByRole('button', { name: 'New project', exact: true })
+      ).toBeFocused();
+      await page.keyboard.press('Tab');
+      await expect(
         nav.getByRole('button', { name: 'All conversations', exact: true })
       ).toBeFocused();
       await page.keyboard.press('Tab');
       await expect(
         nav
-          .getByRole('list', { name: 'Loaded projects' })
+          .getByRole('list', { name: 'Projects' })
           .getByRole('button', { name: '<Alpha project>', exact: true })
       ).toBeFocused();
       await page.keyboard.press('Tab');
       await expect(
+        nav.getByRole('button', {
+          name: 'Rename project <Alpha project> (<Alpha project>)',
+          exact: true,
+        })
+      ).toBeFocused();
+      await page.keyboard.press('Tab');
+      await expect(
         nav
-          .getByRole('list', { name: 'Loaded projects' })
+          .getByRole('list', { name: 'Projects' })
           .getByRole('button', { name: 'beta/project', exact: true })
+      ).toBeFocused();
+      await page.keyboard.press('Tab');
+      await expect(
+        nav.getByRole('button', {
+          name: 'Rename project beta/project (beta/project)',
+          exact: true,
+        })
       ).toBeFocused();
       await page.keyboard.press('Tab');
       await expect(
@@ -1304,7 +1322,7 @@ test('installed React sidenav retains navigation, draft and a running response a
     await expect(filter).toHaveValue('notes');
     await expectRetainedThreadList();
     await expectRetainedCompact();
-    const projects = nav.getByRole('list', { name: 'Loaded projects' });
+    const projects = nav.getByRole('list', { name: 'Projects' });
     await projects
       .getByRole('button', { name: '<Alpha project>', exact: true })
       .click();

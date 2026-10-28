@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createElement } from 'react';
 import { renderToString } from 'react-dom/server';
-import { ProjectList, ChatSidenav, ConfirmDialog, OverflowMenu, ThreadList, ThreadRenameForm } from '@threadplane/react/chat';
+import { ProjectNameForm, ProjectList, ChatSidenav, ConfirmDialog, OverflowMenu, ThreadList, ThreadRenameForm } from '@threadplane/react/chat';
 
 assert.equal(typeof window, 'undefined');
 assert.equal(typeof document, 'undefined');
@@ -114,3 +114,58 @@ assert.match(projectList, />empty<\/button>/);
 assert.match(projectList, /\+ New project/);
 assert.equal(requests, 0);
 console.log('Installed ProjectList SSR retains literal names without DOM globals or commands.');
+
+const nameProps = {
+  value: 'Literal <project> & details', onValueChange: request,
+  onSubmit: request, onCancel: request,
+};
+const projectName = renderToString(createElement(ProjectNameForm, {
+  ...nameProps, error: 'Literal <failure> & details',
+}));
+assert.match(projectName, /class="tp-project-name-form"/);
+assert.match(projectName, /<label[^>]+>Project name<\/label>/);
+assert.match(projectName, /value="Literal &lt;project&gt; &amp; details"/);
+assert.match(projectName, /aria-invalid="true" aria-describedby="([^"]+)-error"/);
+assert.match(projectName, /<p id="[^"]+-error" role="alert">Literal &lt;failure&gt; &amp; details<\/p>/);
+assert.match(projectName, /<button type="submit">Save<\/button>/);
+assert.match(projectName, /<button type="button">Cancel<\/button>/);
+const pendingName = renderToString(createElement(ProjectNameForm, { ...nameProps, pending: true }));
+assert.match(pendingName, /aria-busy="true"/);
+assert.match(pendingName, /<input[^>]+disabled=""/);
+assert.match(pendingName, /<button type="submit" disabled="">Save<\/button>/);
+assert.match(pendingName, /<p role="status">Saving project name…<\/p>/);
+for (const options of [{ value: '   ' }, { submitDisabled: true }]) {
+  const html = renderToString(createElement(ProjectNameForm, {
+    ...nameProps, ...options, submitLabel: 'Create <project> & save',
+  }));
+  assert.match(html, /<button type="submit" disabled="">Create &lt;project&gt; &amp; save<\/button>/);
+  assert.match(html, /<button type="button">Cancel<\/button>/);
+  assert.doesNotMatch(html, /<input[^>]+disabled|role="status"/);
+}
+const actionProjects = Object.freeze([
+  Object.freeze({ id: ' original/ID ', name: 'Literal <name> & title' }),
+  Object.freeze({ id: 'second', name: 'Second' }),
+]);
+const received = [];
+const projectActions = renderToString(createElement(ProjectList, {
+  projects: actionProjects, onSelect: request, onNewProject: request,
+  renderActions: project => {
+    received.push(project);
+    return createElement('button', { type: 'button', onClick: request }, `Rename ${project.id}`);
+  },
+}));
+assert.equal(received.length, actionProjects.length);
+actionProjects.forEach((project, index) => assert.equal(received[index], project));
+assert.match(projectActions, /Literal &lt;name&gt; &amp; title/);
+assert.match(projectActions, /<\/button><div class="tp-project-list__actions"><button type="button">Rename  original\/ID <\/button><\/div>/);
+assert.doesNotMatch(projectList, /tp-project-list__actions|tp-project-list__item--actions/);
+for (const empty of [null, false, undefined]) {
+  const html = renderToString(createElement(ProjectList, {
+    projects: actionProjects, onSelect: request, renderActions: () => empty,
+  }));
+  assert.doesNotMatch(html, /tp-project-list__actions|tp-project-list__item--actions/);
+}
+assert.equal(requests, 0);
+assert.equal(typeof window, 'undefined');
+assert.equal(typeof document, 'undefined');
+console.log('Installed project name and action SSR: literal data, original items, disabled/status states and no DOM globals or commands.');

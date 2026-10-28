@@ -131,7 +131,7 @@ test('installed React conversation pin and unpin preserve metadata, draft, selec
       errors.push('Unexpected external request: ' + route.request().url());
       return route.abort();
     });
-    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.setViewportSize({ width: 1280, height: 650 });
     await page.goto(origin + '/?presentation=sidenav&thread=a');
     const list = page.getByRole('list', {
       name: 'Loaded conversations',
@@ -149,7 +149,53 @@ test('installed React conversation pin and unpin preserve metadata, draft, selec
     const betaNode = await betaRow.elementHandle();
     assert.ok(draftNode && alphaNode && betaNode);
     await draft.fill('Retain this pin draft.');
+    // The shorter rail requires pre-click scrolling. Browsers may deliver its
+    // already-settled scroll notification after the context menu opens.
+    await page.evaluate(() => {
+      const proof = { delivered: false, before: 0, after: 0 };
+      Object.assign(window, { contextScrollProof: proof });
+      document.addEventListener(
+        'contextmenu',
+        () => {
+          const host = document.querySelector(
+            '.tp-chat-sidenav__body'
+          ) as HTMLElement;
+          proof.before = host.scrollTop;
+          setTimeout(() => {
+            proof.after = host.scrollTop;
+            host.dispatchEvent(new Event('scroll'));
+            requestAnimationFrame(() => {
+              proof.delivered = true;
+            });
+          }, 0);
+        },
+        { once: true }
+      );
+    });
     await betaRow.click({ button: 'right' });
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            (
+              window as unknown as {
+                contextScrollProof: { delivered: boolean };
+              }
+            ).contextScrollProof.delivered
+        )
+      )
+      .toBe(true);
+    const openingScroll = await page.evaluate(
+      () =>
+        (
+          window as unknown as {
+            contextScrollProof: { before: number; after: number };
+          }
+        ).contextScrollProof
+    );
+    expect(openingScroll.before).toBeGreaterThan(0);
+    expect(openingScroll.after).toBe(openingScroll.before);
+
     const pinBeta = page.getByRole('menuitem', {
       name: /^Pin conversation for Beta/,
     });
@@ -158,6 +204,16 @@ test('installed React conversation pin and unpin preserve metadata, draft, selec
       page.getByRole('menuitem', { name: /^Unpin conversation for Beta/ })
     ).toHaveCount(0);
     expect(backend.requests).toHaveLength(3);
+    await page.evaluate(() => {
+      const host = document.querySelector(
+        '.tp-chat-sidenav__body'
+      ) as HTMLElement;
+      host.scrollTop = 0;
+      host.dispatchEvent(new Event('scroll'));
+    });
+    await expect(pinBeta).toHaveCount(0);
+    await betaRow.click({ button: 'right' });
+    await expect(pinBeta).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(betaRow).toBeFocused();
     await expect(draft).toHaveValue('Retain this pin draft.');
