@@ -133,6 +133,12 @@ describe('blogPostingJsonLd', () => {
     );
   });
 
+  it('points image at a hand-made card when the post ships one', () => {
+    expect(blogPostingJsonLd({ ...SAMPLE_POST, ogImage: '/blog/a-post/og.png' })['image']).toBe(
+      'https://threadplane.ai/blog/a-post/og.png',
+    );
+  });
+
   it('omits keywords entirely for an untagged post', () => {
     expect('keywords' in blogPostingJsonLd(SAMPLE_POST)).toBe(false);
     expect('keywords' in blogPostingJsonLd({ ...SAMPLE_POST, tags: [] })).toBe(false);

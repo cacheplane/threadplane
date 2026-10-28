@@ -184,6 +184,8 @@ export interface BlogPostingInput {
   dateModified?: string;
   authorName: string;
   tags?: string[];
+  /** Frontmatter `ogImage`, when the post ships its own share card. */
+  ogImage?: string;
 }
 
 export function blogPostingJsonLd(post: BlogPostingInput) {
@@ -198,7 +200,7 @@ export function blogPostingJsonLd(post: BlogPostingInput) {
     datePublished: post.datePublished,
     dateModified: resolveModifiedTime(post.datePublished, post.dateModified),
     // Per-post card, matching the `og:image` that `generateMetadata` emits.
-    image: getCanonicalUrl(ogImagePath(post.slug)),
+    image: getCanonicalUrl(ogImagePath(post.slug, post.ogImage)),
     // Omitted rather than left undefined, matching `dateModified` below.
     ...(post.tags?.length ? { keywords: post.tags } : {}),
     // The same `@id` the /about Person declares, so a byline and that page are

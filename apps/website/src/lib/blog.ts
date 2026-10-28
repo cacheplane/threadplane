@@ -13,6 +13,8 @@ export interface PostFrontmatter {
   draft?: boolean;
   /** A picture of the work for feeds; defaults to the post's first image. */
   image?: string;
+  /** A hand-made 1200x630 share card; replaces the generated opengraph-image. */
+  ogImage?: string;
 }
 
 export interface Post {

@@ -1,0 +1,228 @@
+---
+title: 'AG-UI vs. WebMCP: Who Owns the Agent?'
+description: "AG-UI and WebMCP both connect agents to web apps, but they point in opposite directions. Here's what each one does and when to reach for it."
+date: 2026-10-26
+tags: [AG-UI, webmcp, agentic-ui, architecture, angular]
+author: brian
+ogImage: /blog/2026-10-26-ag-ui-vs-webmcp/og.png
+draft: false
+---
+
+Learn the difference between AG-UI and WebMCP, and when you'd reach for each one.
+
+Both show up in the same conversations, both mention tools, and both promise to connect agents to web apps.
+So it's easy to assume they compete, but they actually point in opposite directions.
+Once you see which way each one points, the choice gets simple.
+
+## Goals
+
+- Understand what AG-UI does.
+- Understand what WebMCP does.
+- Learn the one question that tells them apart.
+- See how they work together in the same app.
+- Learn where Threadplane fits.
+
+## What is AG-UI?
+
+AG-UI is an open protocol for streaming an agent's work to a user interface.
+
+Your frontend starts a run, and the agent streams back a sequence of typed events:
+
+- `RUN_STARTED` and `RUN_FINISHED` bracket the run.
+- `TEXT_MESSAGE_START`, `TEXT_MESSAGE_CONTENT`, and `TEXT_MESSAGE_END` stream the assistant's reply token by token.
+- `TOOL_CALL_START`, `TOOL_CALL_ARGS`, and `TOOL_CALL_END` show the agent calling tools as it happens.
+- `STATE_SNAPSHOT` and `STATE_DELTA` keep shared state in sync between the agent and the UI.
+
+Over HTTP, that's a stream of server-sent events that looks something like this:
+
+```text
+data: {"type":"RUN_STARTED","threadId":"t_1","runId":"r_1"}
+data: {"type":"TEXT_MESSAGE_START","messageId":"m_1","role":"assistant"}
+data: {"type":"TEXT_MESSAGE_CONTENT","messageId":"m_1","delta":"Checking flights"}
+data: {"type":"TOOL_CALL_START","toolCallId":"c_1","toolCallName":"searchFlights"}
+...
+data: {"type":"RUN_FINISHED","threadId":"t_1","runId":"r_1"}
+```
+
+The important part is who is on each end.
+On one end is *your* agent: a LangGraph graph, a Strands agent, a Mastra workflow, whatever you built.
+On the other end is *your* UI, rendering those events as a chat, a timeline, an approval card, or a map.
+
+AG-UI is the wire between two things you own.
+
+## What is WebMCP?
+
+WebMCP is a proposed web API that lets a page expose tools to an AI agent running in the browser.
+
+It's being incubated in the W3C Web Machine Learning Community Group, with editors from Microsoft and Google.
+It's still a draft Community Group report, not a standard, and Chrome is running it as an origin trial.
+
+The shape will feel familiar if you've built an MCP server.
+You register a tool with a name, a description, a JSON Schema for its input, and an `execute` callback:
+
+```ts
+if ('modelContext' in document) {
+  document.modelContext.registerTool({
+    name: 'add_to_cart',
+    description: 'Add a product to the shopping cart by SKU.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        sku: { type: 'string' },
+        quantity: { type: 'number', minimum: 1 },
+      },
+      required: ['sku'],
+    },
+    annotations: { consequentialHint: true },
+    async execute({ sku, quantity = 1 }) {
+      await cart.add(sku, quantity);
+      return `Added ${quantity} of ${sku}. Cart has ${cart.count()} items.`;
+    },
+  });
+}
+```
+
+That `execute` callback runs in your page, with the user's session, cookies, and app state already in place.
+The spec describes these pages as being similar to MCP servers that implement their tools in client-side script instead of on a backend.
+
+Chrome also documents a declarative flavor in its origin trial, where you add `toolname` and `tooldescription` attributes to an existing `<form>` and the browser builds the tool from its fields.
+That part isn't in the normative spec yet, so I'd treat it as experimental.
+
+A quick heads up if you've read earlier tutorials: they use `navigator.modelContext`, while the current draft exposes the API on `document.modelContext`.
+That's why I feature-detect rather than assume.
+
+On one end of WebMCP is *your* page, offering tools.
+On the other end is an agent you probably *didn't* build: the one built into the browser, or an extension, or something the user brought with them.
+
+WebMCP is the doorway you open for someone else's agent.
+
+## So what's the difference?
+
+Here's the one question I'd ask: **who owns the agent?**
+
+- If you own the agent and you're building the UI for it, that's AG-UI.
+- If the user brings the agent and you want your site to be usable by it, that's WebMCP.
+
+Put another way, the arrows point in opposite directions:
+
+| | AG-UI | WebMCP |
+|---|---|---|
+| Who owns the agent? | You | The user, browser, or extension |
+| Where does the agent run? | Usually your server | Usually the browser |
+| What flows over it? | A stream of events: text, tool calls, state | Tool definitions and tool calls |
+| Who renders the conversation? | Your app | The agent's own UI |
+| What does your app provide? | The UI | The capabilities |
+
+For me, that last row is the clearest way to hold it.
+With AG-UI, your app *is* the interface to an agent.
+With WebMCP, your app is a set of capabilities that some other interface can drive.
+
+## Doesn't AG-UI have tools too?
+
+It does, and this is where the confusion usually starts.
+
+AG-UI supports frontend tools.
+When you start a run, you can send a list of tool definitions along with the messages.
+The agent can call them, the call streams down as `TOOL_CALL_*` events, your frontend executes it, and the result goes back on the next run.
+
+So in both protocols, a tool can run in the browser.
+The difference is still ownership.
+AG-UI frontend tools are offered to *your* agent, as part of a conversation your app is hosting.
+WebMCP tools are offered to *whatever* agent the browser lets in, and your app may never see the conversation at all.
+
+I think of AG-UI frontend tools as private, and WebMCP tools as public.
+That's a simplification, since WebMCP has origin controls and a Permissions Policy gate, but it's the right instinct for how carefully you should design them.
+
+## Can I use both?
+
+Yes, and I think a lot of apps will.
+
+The nice part is that the tool shapes are nearly the same: a name, a description, and a JSON Schema.
+So you can write the capability once and offer it through both doors:
+
+```ts
+const addToCart = {
+  name: 'add_to_cart',
+  description: 'Add a product to the shopping cart by SKU.',
+  inputSchema: {
+    type: 'object',
+    properties: { sku: { type: 'string' }, quantity: { type: 'number' } },
+    required: ['sku'],
+  },
+  execute: async ({ sku, quantity = 1 }) => {
+    await cart.add(sku, quantity);
+    return `Added ${quantity} of ${sku}.`;
+  },
+};
+
+// Door 1: your own in-app assistant, over AG-UI.
+const tools = [{ name: addToCart.name, description: addToCart.description, parameters: addToCart.inputSchema }];
+
+// Door 2: the user's browser agent, over WebMCP.
+if ('modelContext' in document) {
+  document.modelContext.registerTool(addToCart);
+}
+```
+
+Your in-app assistant gets a rich, branded experience: streaming text, tool views, approvals, and state you control.
+A user who prefers their own agent still gets a site that works with it, instead of one it has to guess its way through by reading the DOM.
+
+If you're building that in-app assistant in Angular, the [client tools guide](/docs/ag-ui/guides/client-tools) shows the AG-UI side.
+
+## What should I watch out for?
+
+A few tradeoffs worth keeping in mind:
+
+- **WebMCP is early.** It's an origin trial with a moving API surface. Feature-detect, and don't build a critical path on it yet.
+- **You don't control the WebMCP caller.** Treat every input as untrusted, keep inputs narrow, and mark anything that spends money or sends a message with `consequentialHint`. The user's agent may be reading content from other tabs, so prompt injection is a real concern.
+- **AG-UI means you run the agent.** That's infrastructure, model costs, and a backend to deploy. The upside is that you control the whole experience.
+- **Neither one replaces the other.** WebMCP doesn't stream your agent's reasoning into your UI, and AG-UI doesn't make your site usable by an agent you didn't build.
+
+## Where does Threadplane fit?
+
+A few questions come up whenever I talk about this, so here are the short answers.
+
+### Why does Threadplane use AG-UI?
+
+Threadplane is a UI library for agents *you* own, which is exactly the AG-UI side of the arrow.
+
+AG-UI gives us one adapter that reaches a lot of runtimes.
+`@threadplane/ag-ui` works with any backend that speaks the protocol: CrewAI, Mastra, Microsoft Agent Framework, AG2, Pydantic AI, AWS Strands, and LangGraph fronted by AG-UI.
+We test that claim against real runtimes, and the results are in [Choosing an adapter](/docs/choosing-an-adapter).
+
+For me, that's the appeal.
+Your Angular components shouldn't care which framework your agent team picked, and a protocol is how you keep it that way.
+
+### Why do we also use LangGraph directly?
+
+`@threadplane/langgraph` talks to LangGraph Platform through LangGraph's own JavaScript SDK, without going through AG-UI.
+
+The reason is durability.
+Thread history, checkpoints, and time travel are things LangGraph does really well, and they're outside what the AG-UI protocol defines.
+Going direct lets the LangGraph adapter expose `history()` and the rest of the thread surface, instead of only what fits through the event stream.
+
+The tradeoff is a second adapter to maintain.
+The upside is that you don't pay for it in your components: both adapters produce the same `Agent` contract, so `<chat [agent]="agent" />` doesn't change when the import does.
+I wrote up exactly [what changes when the runtime changes](/blog/what-changes-when-the-runtime-changes) if you want the details.
+
+### Does Threadplane support WebMCP?
+
+No, not today.
+
+Threadplane builds the UI for your own agent, and WebMCP is about exposing your page to someone else's.
+Those are different jobs, so nothing about WebMCP is blocked by Threadplane, and nothing in Threadplane needs it.
+
+If you want both, you can do it yourself today.
+Offer a tool to your in-app agent through Threadplane's [client tools](/docs/ag-ui/guides/client-tools), and register the same function with `document.modelContext` next to it.
+
+## Conclusion
+
+In summary, AG-UI and WebMCP solve different problems.
+AG-UI connects *your* agent to *your* UI with a stream of events.
+WebMCP lets *your* page offer tools to *someone else's* agent running in the browser.
+
+When you're not sure which one you need, ask who owns the agent.
+The answer tells you which way the arrow points.
+
+I'm *really* curious to see where WebMCP lands as it moves through the standards process.
+If you're experimenting with either one, or both, let me know what you're building.
