@@ -2,7 +2,65 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { getCockpitFrontends } from '@threadplane/cockpit-registry';
-import { createWebsitePlaywrightConfig } from '../playwright.config';
+import {
+  createWebsitePlaywrightConfig,
+  createPublicCopyPlaywrightConfig,
+} from '../playwright.config';
+
+it('runs the complete public copy spec against only a fresh production Website', () => {
+  const config = createPublicCopyPlaywrightConfig({
+    CI: 'true',
+    WEBSITE_E2E_PORT: '4390',
+  });
+  expect(config.testDir).toBe('./e2e');
+  expect(config.testMatch).toBe('**/public-copy.spec.ts');
+  expect(config.testIgnore).not.toContain('**/public-copy.spec.ts');
+  const servers = Array.isArray(config.webServer) ? config.webServer : [];
+  expect(servers).toHaveLength(1);
+  expect(servers[0]).toMatchObject({
+    url: 'http://127.0.0.1:4390',
+    reuseExistingServer: false,
+    timeout: 300_000,
+  });
+  expect(servers[0]?.command).toContain(
+    'nx build website --configuration=production --skip-nx-cache'
+  );
+  expect(servers[0]?.command).toContain(
+    'ln -sfn ../../../apps/website/content dist/apps/website/content'
+  );
+  expect(servers[0]?.command).toContain(
+    'nx serve website --configuration=production --port=4390'
+  );
+  expect(servers[0]?.env).toEqual({ GROWTH_FORM_POLICY: 'growth_v1' });
+  expect(config.retries).toBe(2);
+});
+
+it('keeps the public copy target independent of runtime preparation and other E2E modes', () => {
+  const config = createPublicCopyPlaywrightConfig({
+    BASE_URL: 'https://example.test',
+    PRODUCTION_SMOKE: 'true',
+    CUSTOM_RUNTIME_BFCACHE: 'true',
+    WEBSITE_E2E_REACT_TOPIC: 'chat-a2ui',
+    PLAYWRIGHT_REUSE_EXISTING_SERVER: 'true',
+  });
+  expect(config.testMatch).toBe('**/public-copy.spec.ts');
+  expect(config.use?.baseURL).toBe('http://127.0.0.1:4308');
+  const servers = Array.isArray(config.webServer) ? config.webServer : [];
+  expect(servers).toHaveLength(1);
+  expect(servers[0]?.reuseExistingServer).toBe(false);
+  const project = JSON.parse(
+    readFileSync(resolve(import.meta.dirname, '../project.json'), 'utf8')
+  );
+  expect(project.targets['public-copy']).toMatchObject({
+    executor: '@nx/playwright:playwright',
+    cache: false,
+    dependsOn: [],
+    options: {
+      config: 'apps/website/public-copy.playwright.config.ts',
+      skipInstall: true,
+    },
+  });
+});
 
 it('bounds full and scoped local Website setup plus tests without changing external modes', () => {
   for (const environment of [{}, { WEBSITE_E2E_REACT_TOPIC: 'ag-ui-a2ui' }, { WEBSITE_E2E_REACT_TOPIC: 'chat-a2ui' }]) {
