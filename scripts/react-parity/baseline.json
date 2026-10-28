@@ -1,15 +1,9 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "5838116c51009698d4e2ce550ad58ff6f70f7df5",
+  "baselineHead": "b0ce7cc26ba470d6a8f2003867799afeb385c8b4",
   "sourceState": {
-    "modified": [
-      "libs/react/README.md",
-      "libs/react/src/chat/index.ts",
-      "libs/react/src/chat/styles.css"
-    ],
-    "untracked": [
-      "libs/react/src/chat/project-list.tsx"
-    ]
+    "modified": [],
+    "untracked": []
   },
   "scope": {
     "libraries": [
@@ -2181,7 +2175,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "0f2ae3b11d5abb18f7620e8fc5c8c19797a7d2d52a4e801d1e97a4b57ef43e5d"
+      "sha256": "100b3315a679f2ef6280c95e5cf68a4f653ef4cb424f05ffac222ff6e018517e"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
