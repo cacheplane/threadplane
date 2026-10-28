@@ -672,3 +672,53 @@
   outline: 2px solid var(--tp-chat-accent, var(--ds-accent, CanvasText));
   outline-offset: 2px;
 }
+
+.tp-project-list__container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.tp-project-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.tp-project-list__item {
+  min-width: 0;
+}
+.tp-project-list .tp-project-list__button,
+.tp-project-list__container .tp-project-list__new {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding-block: 0.625rem;
+  padding-inline: 0.75rem;
+  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  border-radius: 0.5rem;
+  background: var(--tp-chat-surface, var(--ds-surface, Canvas));
+  color: var(--tp-chat-text, var(--ds-text-primary, CanvasText));
+  font: inherit;
+  text-align: start;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.tp-project-list .tp-project-list__button[aria-current='true'] {
+  border-color: var(--tp-chat-accent, var(--ds-accent, Highlight));
+  background: var(--tp-chat-accent, var(--ds-accent, Highlight));
+  color: var(--tp-chat-on-accent, var(--ds-surface, HighlightText));
+}
+.tp-project-list__container .tp-project-list__new:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.tp-project-list .tp-project-list__button:focus-visible,
+.tp-project-list__container .tp-project-list__new:focus-visible {
+  outline: 2px solid var(--tp-chat-accent, var(--ds-accent, Highlight));
+  outline-offset: 3px;
+}

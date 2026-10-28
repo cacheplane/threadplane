@@ -660,3 +660,25 @@ Unavailable or rejected clipboard access reports failure without a legacy fallba
 the installed production browser proof stubs every clipboard write and checks
 keyboard use, remounts, preserved drafts and no extra conversation requests.
 Ratings and regeneration remain separate application capabilities.
+
+### Loaded project navigation (private React T29 slice)
+
+`ProjectList` from `@threadplane/react/chat` presents a readonly supplied
+`ProjectListItem[]` (`id`, `name`) with controlled `activeProjectId` and
+`onSelect(projectId)`. It preserves supplied order and exact IDs, renders names
+as literal text (empty names fall back to ID), and marks the active button with
+`aria-current`. `label` and `className` customize the list. Optional
+`onNewProject`, `newProjectLabel` and `newProjectDisabled` expose an application-owned
+request; the primitive performs no creation or persistence. Use unique project IDs.
+
+Native React derives first-seen projects from nonblank string `metadata.projectId`
+among all loaded conversations, including archived rows. IDs are preserved exactly
+and displayed as names because this example has no project catalog. Selecting a
+project filters active, archived and compact rows alongside the existing title
+filter. All conversations resets only the project filter. The selected transcript,
+draft and running response remain mounted, with no additional backend calls.
+A disappearing project stays selected with an empty filtered view until reset.
+The project section appears only when loaded projects or a selected filter exist.
+Selection is ephemeral; new conversations remain unassigned. Pinned reordering
+continues across all loaded pinned conversations, including other projects.
+Project CRUD, catalog persistence, move-to-project and full T29 parity remain open.

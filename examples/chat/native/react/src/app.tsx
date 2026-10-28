@@ -11,6 +11,7 @@ import {
   MessageList,
   Reasoning,
   ThreadList,
+  ProjectList,
   ToolObservation,
 } from '@threadplane/react/chat';
 import type {
@@ -196,10 +197,26 @@ function Conversation({
   const snapshot = useAgent(application);
   const [filter, setFilter] = useState('');
   const filterInput = useRef<HTMLInputElement>(null);
-  const rows = filterLoadedTitles(snapshot.list.rows, filter);
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const projects = [
+    ...new Set(
+      snapshot.list.rows.flatMap((row) =>
+        row.projectId === undefined ? [] : [row.projectId]
+      )
+    ),
+  ].map((id) => ({ id, name: id }));
+  const projectRows = snapshot.list.rows.filter(
+    (row) => projectId === null || row.projectId === projectId
+  );
+  const rows = filterLoadedTitles(projectRows, filter);
   const orderedActiveRows = orderActiveThreads(snapshot.list.rows);
   const pinnedRows = orderedActiveRows.filter((row) => row.pinned === true);
-  const activeRows = filterLoadedTitles(orderedActiveRows, filter);
+  const activeRows = filterLoadedTitles(
+    orderedActiveRows.filter(
+      (row) => projectId === null || row.projectId === projectId
+    ),
+    filter
+  );
   const archivedRows = rows.filter((row) => row.archived === true);
   const selection = snapshot.selection;
   const [archiveOpen, setArchiveOpen] = useState(false);
@@ -543,8 +560,37 @@ function Conversation({
       <p className="muted">
         Browse up to 50 loaded conversations. The filter searches only loaded
         titles. Pinned conversations appear first. Moves apply to all loaded
-        pinned conversations, including those hidden by the filter.
+        pinned conversations, including those hidden by the title or project
+        filter.
       </p>
+      {(projects.length > 0 || projectId !== null) && (
+        <section aria-labelledby="loaded-projects-title">
+          <h3 id="loaded-projects-title">Loaded projects</h3>
+          <p className="muted">
+            Project IDs from loaded conversations, including archived rows. New
+            conversations are unassigned.
+          </p>
+          <button
+            type="button"
+            aria-pressed={projectId === null}
+            onClick={() => setProjectId(null)}
+          >
+            All conversations
+          </button>
+          <ProjectList
+            projects={projects}
+            activeProjectId={projectId}
+            onSelect={setProjectId}
+            label="Loaded projects"
+          />
+          {projectId !== null && (
+            <p role="status">Selected project: {projectId}</p>
+          )}
+          {projects.length === 0 && (
+            <p className="muted">No projects in loaded conversations.</p>
+          )}
+        </section>
+      )}
       <div className="directory-actions">
         <button
           type="button"

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createElement } from 'react';
 import { renderToString } from 'react-dom/server';
-import { ChatSidenav, ConfirmDialog, OverflowMenu, ThreadList, ThreadRenameForm } from '@threadplane/react/chat';
+import { ProjectList, ChatSidenav, ConfirmDialog, OverflowMenu, ThreadList, ThreadRenameForm } from '@threadplane/react/chat';
 
 assert.equal(typeof window, 'undefined');
 assert.equal(typeof document, 'undefined');
@@ -102,3 +102,15 @@ assert.match(customRows, /<li class="tp-thread-list__item"><button aria-current=
 assert.doesNotMatch(customRows, /Unused title|Pinned conversation|<time/);
 assert.equal(requests, 0);
 console.log('Installed custom ThreadList row SSR: literal data, app-owned controls, no default callbacks or commands.');
+
+const projectList = renderToString(createElement(ProjectList, {
+  projects: [{ id: ' p/b ', name: '<Project> & details' }, { id: 'empty', name: '' }],
+  activeProjectId: ' p/b ', onSelect: request, onNewProject: request,
+}));
+assert.match(projectList, /aria-label="Projects"/);
+assert.match(projectList, /aria-current="true"/);
+assert.match(projectList, /&lt;Project&gt; &amp; details/);
+assert.match(projectList, />empty<\/button>/);
+assert.match(projectList, /\+ New project/);
+assert.equal(requests, 0);
+console.log('Installed ProjectList SSR retains literal names without DOM globals or commands.');
