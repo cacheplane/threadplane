@@ -102,7 +102,8 @@ test('native A2UI capability CI owns one installed proof with retained partial a
   assert.ok(
     website.some(
       (step) =>
-        step.run === 'node scripts/react-cockpit/prepare-ag-ui-a2ui-fixture.mjs'
+        step.run === 'node scripts/react-cockpit/prepare-ag-ui-a2ui-fixture.mjs' &&
+        step.if === "matrix.suite == 'ag-ui'"
     )
   );
   assert.ok(
@@ -159,13 +160,13 @@ test('full local Website execution has a finite enclosing Nx step budget', () =>
     )
   );
   const job = workflow.jobs['website-e2e'];
-  assert.deepEqual(job.strategy.matrix.shard, [1, 2]);
+  assert.deepEqual(job.strategy.matrix.suite, ['control-plane', 'agents', 'ag-ui', 'chat', 'render']);
   assert.equal(job.strategy['fail-fast'], false);
   const steps = job.steps;
   const runs = steps.filter(
     (step) =>
       step.run ===
-      'npx nx e2e website --skip-nx-cache --skipInstall --shard=${{ matrix.shard }}/2'
+      'npx nx run website:e2e-${{ matrix.suite }} --skip-nx-cache'
   );
   assert.equal(runs.length, 1);
   assert.equal(runs[0]['timeout-minutes'], 45);
