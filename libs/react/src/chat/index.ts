@@ -49,3 +49,9 @@ export {
   ChatSidenavScrim,
   type ChatSidenavScrimProps,
 } from './chat-sidenav-scrim.js';
+
+export {
+  ProjectList,
+  type ProjectListItem,
+  type ProjectListProps,
+} from './project-list.js';

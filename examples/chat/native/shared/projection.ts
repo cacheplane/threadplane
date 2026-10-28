@@ -4,12 +4,14 @@ import type { ThreadRow } from './contracts.js';
 export function projectThread(thread: Thread): ThreadRow {
   const title = thread.metadata?.['title'];
   const rank = thread.metadata?.['pinnedOrder'];
+  const projectId = thread.metadata?.['projectId'];
   const updatedAt =
     typeof thread.updated_at === 'string' ? Date.parse(thread.updated_at) : NaN;
   return Object.freeze({
     id: thread.thread_id,
     title:
       typeof title === 'string' && title.trim() ? title.trim() : 'Untitled',
+    ...(typeof projectId === 'string' && projectId.trim() ? { projectId } : {}),
     ...(thread.metadata?.['archived'] === true ? { archived: true } : {}),
     ...(thread.metadata?.['pinned'] === true ? { pinned: true } : {}),
     ...(typeof rank === 'number' && Number.isFinite(rank)

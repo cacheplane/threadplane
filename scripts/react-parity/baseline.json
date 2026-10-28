@@ -1,12 +1,15 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "458e019954532b447e28d4c9868e4bbbd1bad0a2",
+  "baselineHead": "5838116c51009698d4e2ce550ad58ff6f70f7df5",
   "sourceState": {
     "modified": [
       "libs/react/README.md",
-      "libs/react/src/chat/thread-list.tsx"
+      "libs/react/src/chat/index.ts",
+      "libs/react/src/chat/styles.css"
     ],
-    "untracked": []
+    "untracked": [
+      "libs/react/src/chat/project-list.tsx"
+    ]
   },
   "scope": {
     "libraries": [
@@ -852,7 +855,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "3d387b9c8656408d6c38a1154bd0da62c7d9c115901b498fdcb6c1ee694fe03f"
+      "sha256": "ac0b03c63cc14e8a1d839c874dc2a5c8a5dfe16e8dd2a1bee9ea9cdb2913bdf2"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -870,7 +873,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "5c5d1cf7f78b839b0c62d6893b6d1e384906c7384fc5562c2a1f8127217c40a9"
+      "sha256": "8dc295e613a12b6ebc449bad7c1444d8cd580ba7996415a38fdffc3c7f289d58"
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -2178,7 +2181,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "52888b79abb9b13c45d4934f6a73d4b1d16be58db9f28f568f9a56196d8559db"
+      "sha256": "0f2ae3b11d5abb18f7620e8fc5c8c19797a7d2d52a4e801d1e97a4b57ef43e5d"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -10810,6 +10813,48 @@
       ]
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#ProjectList",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ProjectList",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/project-list.tsx",
+          "symbol": "ProjectList",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function ProjectList({ projects, onSelect, activeProjectId, label = 'Projects', className, onNewProject, newProjectDisabled = false, newProjectLabel = '+ New project', }: ProjectListProps) {\n    const list = (<ul className={`tp-project-list${className ? ` ${className}` : ''}`} aria-label={label}>\n      {projects.map((project) => (<li key={project.id} className=\"tp-project-list__item\">\n          <button type=\"button\" className=\"tp-project-list__button\" title={project.name || project.id} aria-current={project.id === activeProjectId ? 'true' : undefined} onClick={() => onSelect(project.id)}>\n            {project.name || project.id}\n          </button>\n        </li>))}\n    </ul>);\n    return onNewProject ? (<div className=\"tp-project-list__container\">\n      <button type=\"button\" className=\"tp-project-list__new\" disabled={newProjectDisabled} onClick={() => onNewProject()}>\n        {newProjectLabel}\n      </button>\n      {list}\n    </div>) : (list);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ProjectListItem",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ProjectListItem",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/project-list.tsx",
+          "symbol": "ProjectListItem",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface ProjectListItem {\n    readonly id: string;\n    readonly name: string;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ProjectListProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ProjectListProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/project-list.tsx",
+          "symbol": "ProjectListProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface ProjectListProps {\n    readonly projects: readonly ProjectListItem[];\n    readonly onSelect: (projectId: string) => void;\n    readonly activeProjectId?: string | null;\n    readonly label?: string;\n    readonly className?: string;\n    readonly onNewProject?: () => void;\n    readonly newProjectDisabled?: boolean;\n    readonly newProjectLabel?: string;\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/react/src/chat/index.ts#Reasoning",
       "kind": "export",
       "path": "libs/react/src/chat/index.ts",
@@ -14769,7 +14814,7 @@
       "id": "source:libs/e2e-harness/src/drift-lib.ts",
       "kind": "source",
       "path": "libs/e2e-harness/src/drift-lib.ts",
-      "sha256": "2204b9f3c289eeb2d226173394146a0f22db08802e806bd670f3959c262d4885"
+      "sha256": "dee6103353377748deafd900a65373cd1e7b04eed7b79331cdfc59724d9bbf53"
     },
     {
       "id": "source:libs/e2e-harness/src/drift.ts",
@@ -15363,7 +15408,7 @@
       "id": "source:libs/react/src/chat/index.ts",
       "kind": "source",
       "path": "libs/react/src/chat/index.ts",
-      "sha256": "39bea45e855f9faf78865f5f1c21f4f74c04d5eed9b2c5197afe32a36b1652ee"
+      "sha256": "9a0339668346e8bb1b1de32fa5b5012f77e3faedea4dbcccc88e8822b9e11e34"
     },
     {
       "id": "source:libs/react/src/chat/internal/isomorphic-layout-effect.ts",
@@ -15394,6 +15439,12 @@
       "kind": "source",
       "path": "libs/react/src/chat/overflow-menu.tsx",
       "sha256": "d01ae80a2d5291b779d4c6c65b9563e75dce99914789fa8af5aa350c1946e5dd"
+    },
+    {
+      "id": "source:libs/react/src/chat/project-list.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/project-list.tsx",
+      "sha256": "e678af009e74e3aa88b7b7b5664842c75b2adabfc32da93f519bc9ffbf3acec8"
     },
     {
       "id": "source:libs/react/src/chat/reasoning.tsx",

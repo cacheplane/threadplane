@@ -211,3 +211,24 @@ test('pinned ordering projects only finite ranks and stably groups the active lo
   assert.ok(Object.isFrozen(ordered));
   assert.equal(rows[0].id, 'u');
 });
+
+test('projection preserves exact nonblank project IDs and omits invalid associations', () => {
+  for (const projectId of ['alpha', ' p/b ', '<Project>', '__proto__']) {
+    const source = {
+      ...envelope('Title'),
+      metadata: { title: 'Title', projectId },
+    };
+    const row = projectThread(source);
+    assert.equal(row.projectId, projectId);
+    source.metadata.projectId = 'changed';
+    assert.equal(row.projectId, projectId);
+    assert.ok(Object.isFrozen(row));
+  }
+  for (const projectId of [undefined, null, '', ' \t ', 1, true, {}, ['p']]) {
+    const row = projectThread({
+      ...envelope('Title'),
+      metadata: { title: 'Title', projectId },
+    });
+    assert.equal(Object.hasOwn(row, 'projectId'), false);
+  }
+});

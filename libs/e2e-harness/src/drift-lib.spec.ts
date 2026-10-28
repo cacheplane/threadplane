@@ -110,3 +110,14 @@ test('diffFixtures: structural drift and prompt change are reported independentl
   assert.equal(d.changed.length, 1);
   assert.equal(d.promptChanged.length, 1);
 });
+
+test('summarizeEntry: recorder-only fields do not move the length bucket', () => {
+  const committed = text('say hi briefly', 'Hi! How can I help?');
+  const recorded: FixtureEntry = {
+    match: { userMessage: 'say hi briefly' },
+    response: { content: 'Hi!', reasoning: 'x'.repeat(500), recordedTimings: { ttftMs: 393 } },
+  };
+  assert.equal(diffFixtures([committed], [recorded]).changed.length, 0);
+  const longer: FixtureEntry = { ...recorded, response: { content: 'x'.repeat(500) } };
+  assert.equal(diffFixtures([committed], [longer]).changed.length, 1, 'a longer answer still drifts');
+});

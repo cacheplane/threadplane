@@ -7,6 +7,7 @@ export interface ThreadRow {
   readonly pinned?: boolean;
   readonly pinnedOrder?: number;
   readonly archived?: boolean;
+  readonly projectId?: string;
 }
 
 export type DirectoryResult<T> =
