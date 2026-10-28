@@ -135,19 +135,38 @@ test('workspace full A2UI regressions provision pinned Python tooling before eve
     'astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57'
   );
   assert.equal(setup.with['python-version'], '3.12');
-  assert.equal(Object.hasOwn(setup, 'if'), false, 'Tooling setup is unconditional');
+  assert.equal(
+    Object.hasOwn(setup, 'if'),
+    false,
+    'Tooling setup is unconditional'
+  );
   for (const command of suites) {
     const matches = steps.filter((step) => step.run === command);
     assert.equal(matches.length, 1, `Preserve one complete suite: ${command}`);
     assert.equal(Object.hasOwn(matches[0], 'if'), false);
-    assert.ok(steps.indexOf(matches[0]) > setupIndex, `Provision before ${command}`);
+    assert.ok(
+      steps.indexOf(matches[0]) > setupIndex,
+      `Provision before ${command}`
+    );
   }
 });
 
 test('full local Website execution has a finite enclosing Nx step budget', () => {
-  const workflow = parse(readFileSync(new URL('../../.github/workflows/ci.yml', import.meta.url), 'utf8'));
-  const steps = workflow.jobs['website-e2e'].steps;
-  const runs = steps.filter(step => step.run === 'npx nx e2e website --skip-nx-cache');
+  const workflow = parse(
+    readFileSync(
+      new URL('../../.github/workflows/ci.yml', import.meta.url),
+      'utf8'
+    )
+  );
+  const job = workflow.jobs['website-e2e'];
+  assert.deepEqual(job.strategy.matrix.shard, [1, 2]);
+  assert.equal(job.strategy['fail-fast'], false);
+  const steps = job.steps;
+  const runs = steps.filter(
+    (step) =>
+      step.run ===
+      'npx nx e2e website --skip-nx-cache --skipInstall --shard=${{ matrix.shard }}/2'
+  );
   assert.equal(runs.length, 1);
   assert.equal(runs[0]['timeout-minutes'], 45);
   assert.equal(Object.hasOwn(runs[0], 'if'), false);
