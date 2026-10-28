@@ -1,16 +1,9 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "1e692e6cdd4563f4f616b38b18f6b49a0b9581d4",
+  "baselineHead": "5635c9f7086b679987042e4210d66b2571187e8e",
   "sourceState": {
     "modified": [
-      "libs/react/README.md",
-      "libs/react/src/chat/index.ts",
-      "libs/react/src/chat/internal/name-form.tsx",
-      "libs/react/src/chat/overflow-menu.tsx",
-      "libs/react/src/chat/project-list.tsx",
-      "libs/react/src/chat/project-name-form.tsx",
-      "libs/react/src/chat/styles.css",
-      "libs/react/src/chat/thread-rename-form.tsx"
+      ".github/workflows/ci.yml"
     ],
     "untracked": []
   },
@@ -2184,7 +2177,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "100b3315a679f2ef6280c95e5cf68a4f653ef4cb424f05ffac222ff6e018517e"
+      "sha256": "22faadb7518535af24f082dfd66c8826afc93151f0454149feef48fcdd75b598"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",

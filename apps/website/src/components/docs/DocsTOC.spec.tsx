@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { declarationsFor, loadStylesheet } from '../../styles/style-contract';
 import { DocsTOC } from './DocsTOC';
@@ -19,7 +19,7 @@ const rectAt = (top: number): DOMRect =>
     x: 0,
     y: top,
     toJSON: () => ({}),
-  }) as DOMRect;
+  } as DOMRect);
 
 describe('DocsTOC', () => {
   let secondTop = 250;
@@ -33,7 +33,8 @@ describe('DocsTOC', () => {
     vi.stubGlobal('cancelAnimationFrame', vi.fn());
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(
       function (this: HTMLElement) {
-        if (this.classList.contains('docs-workspace-article')) return rectAt(80);
+        if (this.classList.contains('docs-workspace-article'))
+          return rectAt(80);
         if (this.id === 'first') return rectAt(100);
         if (this.id === 'second') return rectAt(secondTop);
         return rectAt(0);
@@ -94,6 +95,42 @@ describe('DocsTOC', () => {
     expect(
       screen.getByRole('link', { name: 'Second' }).hasAttribute('data-active')
     ).toBe(true);
+  });
+
+  it('tracks headings that stream into the article after the rail hydrates', async () => {
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) =>
+      setTimeout(() => callback(0), 0)
+    );
+    vi.stubGlobal('cancelAnimationFrame', clearTimeout);
+    const { container } = render(
+      <div className="docs-workspace-article">
+        <article />
+        <DocsTOC headings={headings} />
+      </div>
+    );
+    expect(
+      screen.getByRole('link', { name: 'First' }).hasAttribute('data-active')
+    ).toBe(false);
+    act(() => {
+      container
+        .querySelector('article')
+        ?.insertAdjacentHTML(
+          'beforeend',
+          '<h2 id="first">First</h2><h2 id="second">Second</h2>'
+        );
+    });
+    await waitFor(() =>
+      expect(
+        screen.getByRole('link', { name: 'First' }).hasAttribute('data-active')
+      ).toBe(true)
+    );
+    secondTop = 160;
+    act(() => container.firstElementChild?.dispatchEvent(new Event('scroll')));
+    await waitFor(() =>
+      expect(
+        screen.getByRole('link', { name: 'Second' }).hasAttribute('data-active')
+      ).toBe(true)
+    );
   });
 
   it('uses its panel scroller without applying the global nav offset twice', () => {

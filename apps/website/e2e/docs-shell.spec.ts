@@ -28,6 +28,8 @@ test.describe('DocsTOC rail', () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(ARTICLE);
     await expectWorkspaceReady(page);
+    // In development the article streams after the shell hydrates.
+    await expect(page.locator('article #connect-with-angular')).toBeVisible();
     await expect(page.locator('.docs-toc-link').first()).toBeVisible();
 
     // Nothing is active at the top: the first heading is below the reading line.
@@ -78,6 +80,7 @@ test.describe('DocsTOC rail', () => {
   test('every rail link resolves to a heading in the article', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(ARTICLE);
+    await expect(page.locator('article #connect-with-angular')).toBeVisible();
 
     const unresolved = await page.evaluate(() =>
       [...document.querySelectorAll('.docs-toc-link')]

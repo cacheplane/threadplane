@@ -7,19 +7,22 @@ export function DocsTOC({ headings }: { headings: DocHeading[] }) {
   const tocRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
+    if (headings.length === 0) return undefined;
     // "Current section" = the last heading above the reading line. Unlike an
     // IntersectionObserver band, this always yields an active item after a
     // jump-scroll or hash navigation, not only when a heading crosses the band.
-    const els = headings
-      .map((h) => document.getElementById(h.id))
-      .filter((el): el is HTMLElement => el !== null);
-    if (els.length === 0) return undefined;
     const scrollRoot =
       tocRef.current?.closest<HTMLElement>('.docs-workspace-article') ?? null;
 
     let frame = 0;
     const update = () => {
       frame = 0;
+      // The development article can stream after this rail hydrates. Resolve
+      // headings when they arrive, then stop observing the article's DOM.
+      const els = headings
+        .map((h) => document.getElementById(h.id))
+        .filter((el): el is HTMLElement => el !== null);
+      if (els.length === headings.length) observer.disconnect();
       const line = scrollRoot
         ? scrollRoot.getBoundingClientRect().top + scrollRoot.clientHeight * 0.25
         : window.innerHeight * 0.25;
@@ -33,11 +36,14 @@ export function DocsTOC({ headings }: { headings: DocHeading[] }) {
     const onScroll = () => {
       if (!frame) frame = requestAnimationFrame(update);
     };
+    const observer = new MutationObserver(onScroll);
+    observer.observe(scrollRoot ?? document.body, { childList: true, subtree: true });
     update();
     const scrollTarget = scrollRoot ?? window;
     scrollTarget.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onScroll, { passive: true });
     return () => {
+      observer.disconnect();
       if (frame) cancelAnimationFrame(frame);
       scrollTarget.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onScroll);

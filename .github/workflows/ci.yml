@@ -1001,14 +1001,14 @@ jobs:
           echo "All cockpit-e2e matrix expansions passed."
 
   website-e2e:
-    name: 'Website — e2e (${{ matrix.shard }}/2)'
+    name: 'Website — e2e (${{ matrix.suite }})'
     needs: ci-scope
     if: github.event_name == 'push' || needs.ci-scope.outputs.website_e2e == 'true'
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2]
+        suite: [control-plane, agents, ag-ui, chat, render]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
@@ -1021,8 +1021,10 @@ jobs:
         with:
           python-version: '3.12'
       - name: Prepare frozen canonical client tools browser producer
+        if: matrix.suite == 'ag-ui'
         run: node scripts/react-cockpit/prepare-ag-ui-client-tools-fixture.mjs
       - name: Prepare frozen canonical A2UI browser producer
+        if: matrix.suite == 'ag-ui'
         run: node scripts/react-cockpit/prepare-ag-ui-a2ui-fixture.mjs
       - name: Cache Playwright browsers
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
@@ -1036,7 +1038,7 @@ jobs:
       - name: Install Chromium
         timeout-minutes: 10
         run: npx playwright install --with-deps chromium
-      - run: npx nx e2e website --skip-nx-cache --skipInstall --shard=${{ matrix.shard }}/2
+      - run: npx nx run website:e2e-${{ matrix.suite }} --skip-nx-cache
         timeout-minutes: 45
 
   website-production-checks:
@@ -1222,7 +1224,7 @@ jobs:
           echo "website deployment: $url"
           npx vercel@64.2.0 alias set "$url" "${{ steps.aliases.outputs.website }}" --scope=${{ secrets.VERCEL_ORG_ID }} --token=${{ secrets.VERCEL_TOKEN }}
       - name: Run the Website suite against the aliased preview
-        run: npx nx e2e website --skip-nx-cache --skipInstall
+        run: npx nx run website:deployed-e2e --skip-nx-cache
         env:
           BASE_URL: https://${{ steps.aliases.outputs.website }}
           RUNTIME_BYPASS_ORIGIN: https://${{ steps.aliases.outputs.examples }}
@@ -1688,7 +1690,7 @@ jobs:
         run: npx vercel@64.2.0 promote "${{ steps.deploy_website.outputs.deployment_url }}" --scope=${{ secrets.VERCEL_ORG_ID }} --yes --token=${{ secrets.VERCEL_TOKEN }}
       - name: Verify deployed website
         if: steps.freshness.outputs.stale != 'true' && steps.affected.outputs.website == 'true' && steps.website_promotion_freshness.outputs.fresh == 'true'
-        run: npx nx e2e website --skip-nx-cache --skipInstall
+        run: npx nx run website:deployed-e2e --skip-nx-cache
         env:
           BASE_URL: https://threadplane.ai
 
