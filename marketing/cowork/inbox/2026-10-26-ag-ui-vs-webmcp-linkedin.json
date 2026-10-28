@@ -1,0 +1,17 @@
+{
+  "_meta": {
+    "campaign": "ag-ui-vs-webmcp",
+    "channel_note": "Brian's account. LinkedIn adapter is NOT built, so post by hand. Upload assets/ag-ui-vs-webmcp-og-card.png as a native image rather than relying on the link preview. Put the link in the FIRST COMMENT right after posting, because LinkedIn down-ranks posts with links in the body. The first two lines are what shows before '...see more', so they carry the hook.",
+    "card_alt": "AG-UI vs. WebMCP: who owns the agent? A diagram shows two rows. AG-UI: your agent sends events to your app. WebMCP: their agent calls tools on your app.",
+    "first_comment": "Here's the full write-up, with code for both: https://threadplane.ai/blog/ag-ui-vs-webmcp?utm_source=linkedin&utm_medium=social&utm_campaign=ag-ui-vs-webmcp",
+    "review_status": "awaiting-brian"
+  },
+  "draft": {
+    "channel": "linkedin",
+    "text": "AG-UI and WebMCP keep showing up in the same conversations, so it's easy to assume they compete.\nThey don't. They point in opposite directions.\n\nAG-UI is the wire between your agent and your UI.\nYour app streams the agent's work (text, tool calls, and state) and renders it however you like.\n\nWebMCP is a proposed browser API that lets your page offer tools to an agent you didn't build: the one in the browser, an extension, or whatever the user brings along.\n\nFor me, one question settles it: who owns the agent?\n\n→ You own it: AG-UI.\n→ The user brings it: WebMCP.\n→ Both: write the tool once and offer it through both doors. The shapes are nearly identical.\n\nOne caveat: WebMCP is still a draft in the W3C Web Machine Learning Community Group and an origin trial in Chrome. Feature-detect, and don't put it on a critical path yet.\n\nI wrote up the full comparison, with code for both. The link is in the first comment.\n\nAre you experimenting with WebMCP yet? I'd love to hear what you're exposing.\n\n#Angular #AIAgents #WebDevelopment",
+    "link": {
+      "url": "https://threadplane.ai/blog/ag-ui-vs-webmcp?utm_source=linkedin&utm_medium=social&utm_campaign=ag-ui-vs-webmcp",
+      "previewTitle": "AG-UI vs. WebMCP: Who Owns the Agent?"
+    }
+  }
+}

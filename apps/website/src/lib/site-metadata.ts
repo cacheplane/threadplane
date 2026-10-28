@@ -56,8 +56,8 @@ export {
  * feeds it to the BlogPosting `image`. Building the string in both places
  * independently let them drift with both test suites still green.
  */
-export function ogImagePath(slug: string): string {
-  return `/blog/${slug}/opengraph-image`;
+export function ogImagePath(slug: string, ogImage?: string): string {
+  return ogImage ?? `/blog/${slug}/opengraph-image`;
 }
 
 /**
