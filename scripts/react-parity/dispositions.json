@@ -2096,9 +2096,9 @@
         "T29"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/project-list.tsx",
-      "reason": "Native component. Create/rename/delete async adapters, selection and error/optimistic behavior."
+      "reason": "Bounded private controlled React ProjectList selection and optional application-owned New request, with exact IDs, literal names, supplied order and accessible active state. Native dogfoods read-only loaded metadata.projectId navigation across active/archived/compact views without changing transcript/draft/session or issuing commands. Project catalog, CRUD, move-to-project and full T29 parity remain open."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-reasoning/chat-reasoning.component.ts#ChatReasoningComponent",
@@ -10490,7 +10490,8 @@
         "T29"
       ],
       "treatment": "react",
-      "status": "planned"
+      "status": "in-progress",
+      "reason": "Bounded private controlled React ProjectList selection and optional application-owned New request, with exact IDs, literal names, supplied order and accessible active state. Native dogfoods read-only loaded metadata.projectId navigation across active/archived/compact views without changing transcript/draft/session or issuing commands. Project catalog, CRUD, move-to-project and full T29 parity remain open."
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-reasoning/chat-reasoning.component.ts",
@@ -10838,7 +10839,8 @@
         "T29"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "reason": "Bounded private controlled React ProjectList selection and optional application-owned New request, with exact IDs, literal names, supplied order and accessible active state. Native dogfoods read-only loaded metadata.projectId navigation across active/archived/compact views without changing transcript/draft/session or issuing commands. Project catalog, CRUD, move-to-project and full T29 parity remain open."
     },
     {
       "id": "source:libs/chat/src/lib/styles/chat-reasoning.styles.ts",
@@ -15962,6 +15964,46 @@
       "treatment": "react",
       "status": "in-progress",
       "reason": "Readonly controlled title/body/labels, open state and confirm/cancel callbacks with optional tone, pending, class and same-document return-focus target. Application owns remote acknowledgement, uncertainty and recovery."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ProjectList",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/project-list.tsx",
+      "reason": "Private controlled ProjectList selection and optional app-owned New request; exact IDs, literal names, supplied order and accessible active state. Native read-only loaded project filtering preserves selected transcript/draft/session. CRUD, catalog and move-to-project remain open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ProjectListItem",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/project-list.tsx",
+      "reason": "Private controlled ProjectList selection and optional app-owned New request; exact IDs, literal names, supplied order and accessible active state. Native read-only loaded project filtering preserves selected transcript/draft/session. CRUD, catalog and move-to-project remain open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ProjectListProps",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/project-list.tsx",
+      "reason": "Private controlled ProjectList selection and optional app-owned New request; exact IDs, literal names, supplied order and accessible active state. Native read-only loaded project filtering preserves selected transcript/draft/session. CRUD, catalog and move-to-project remain open."
+    },
+    {
+      "id": "source:libs/react/src/chat/project-list.tsx",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/project-list.tsx",
+      "reason": "Private controlled ProjectList selection and optional app-owned New request; exact IDs, literal names, supplied order and accessible active state. Native read-only loaded project filtering preserves selected transcript/draft/session. CRUD, catalog and move-to-project remain open."
     }
   ]
 }

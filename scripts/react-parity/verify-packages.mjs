@@ -225,7 +225,7 @@ export function plainExportTypes(specifiers) {
   const namespaces = specifiers.map((specifier, index) => `import * as entry${index} from ${JSON.stringify(specifier)};\nexport type Entry${index} = typeof entry${index};`).join('\n');
   if (!specifiers.includes('@threadplane/react/chat')) return namespaces;
   return `${namespaces}
-import type { ConfirmDialogProps, ChatSidebarProps, ChatSidenavMode, ChatSidenavProps, ChatSidenavScrimProps, ThreadListItem, ThreadListProps, ThreadRenameFormProps, OverflowMenuItem, OverflowMenuProps } from '@threadplane/react/chat';
+import type { ProjectListItem, ProjectListProps, ConfirmDialogProps, ChatSidebarProps, ChatSidenavMode, ChatSidenavProps, ChatSidenavScrimProps, ThreadListItem, ThreadListProps, ThreadRenameFormProps, OverflowMenuItem, OverflowMenuProps } from '@threadplane/react/chat';
 import type { ReactNode, MouseEvent, KeyboardEvent } from 'react';
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
 type Assert<T extends true> = T;
@@ -233,6 +233,8 @@ export type ConfirmDialogContract = Assert<Equal<ConfirmDialogProps, { readonly 
 export type ThreadRenameFormContract = Assert<Equal<ThreadRenameFormProps, { readonly value: string; readonly onValueChange: (value: string) => void; readonly onSubmit: () => void; readonly onCancel: () => void; readonly pending?: boolean; readonly error?: string; readonly label?: string; readonly className?: string }>>;
 export type OverflowMenuItemContract = Assert<Equal<OverflowMenuItem, { readonly id: string; readonly label: string; readonly disabled?: boolean; readonly tone?: 'normal' | 'destructive' }>>;
 export type OverflowMenuPropsContract = Assert<Equal<OverflowMenuProps, { readonly items: readonly OverflowMenuItem[]; readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly onSelect: (itemId: string, event: MouseEvent<HTMLButtonElement>) => void; readonly label: string; readonly className?: string; readonly disabled?: boolean; readonly anchorPoint?: { readonly x: number; readonly y: number } | null; readonly returnFocusTo?: HTMLElement | null }>>;
+export type ProjectListItemContract = Assert<Equal<ProjectListItem, { readonly id: string; readonly name: string }>>;
+export type ProjectListContract = Assert<Equal<ProjectListProps, { readonly projects: readonly ProjectListItem[]; readonly onSelect: (projectId: string) => void; readonly activeProjectId?: string | null; readonly label?: string; readonly className?: string; readonly onNewProject?: () => void; readonly newProjectDisabled?: boolean; readonly newProjectLabel?: string }>>;
 export type ThreadListItemContract = Assert<Equal<ThreadListItem, { readonly id: string; readonly title?: string; readonly updatedAt?: number; readonly pinned?: boolean }>>;
 export type ThreadListRequiredContract = Assert<Equal<Pick<ThreadListProps, 'threads' | 'onSelect'>, { readonly threads: readonly ThreadListItem[]; readonly onSelect: (threadId: string) => void }>>;
 export type ThreadListContextContract = Assert<Equal<Pick<ThreadListProps, 'onContextMenu'>, { readonly onContextMenu?: (threadId: string, event: MouseEvent<HTMLButtonElement> | KeyboardEvent<HTMLButtonElement>) => void }>>;
@@ -374,6 +376,7 @@ export function assertSupportedExports(project, entry) {
         'Reasoning',
         'TextTranscript',
         'ThreadList',
+        'ProjectList',
         'ThreadRenameForm',
         'ToolObservation',
       ],

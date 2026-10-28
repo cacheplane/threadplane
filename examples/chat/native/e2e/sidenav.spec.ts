@@ -16,21 +16,32 @@ test('installed React sidenav retains navigation, draft and a running response a
     await import('../tooling/retained-build.mjs');
   const work = realpathSync(mkdtempSync(join(tmpdir(), 'native-sidenav-')));
   const rows = [
-    threadEnvelope('a', 'Alpha notes'),
+    {
+      ...threadEnvelope('a', 'Alpha notes'),
+      metadata: { title: 'Alpha notes', projectId: '<Alpha project>' },
+    },
     {
       ...threadEnvelope('b', 'Beta notes'),
-      metadata: { title: 'Beta notes', pinned: true },
+      metadata: {
+        title: 'Beta notes',
+        pinned: true,
+        projectId: 'beta/project',
+      },
     },
   ];
   const fixedNow = new Date('2026-09-28T00:02:01.000Z');
   const refreshedAlpha = {
     ...rows[0],
-    metadata: { title: 'Alpha notes', pinned: true },
+    metadata: {
+      title: 'Alpha notes',
+      pinned: true,
+      projectId: '<Alpha project>',
+    },
     updated_at: '2026-09-28T00:01:01.000Z',
   };
   const refreshedBeta = {
     ...rows[1],
-    metadata: { title: 'Beta notes', pinned: false },
+    metadata: { title: 'Beta notes', pinned: false, projectId: 'beta/project' },
   };
   const saved = (id: string) => [
     { type: 'ai', id: `saved-${id}`, content: `Saved answer ${id}.` },
@@ -658,8 +669,9 @@ test('installed React sidenav retains navigation, draft and a running response a
       rows[0].updated_at
     );
     // Beta was filtered out and is newly mounted; retain its current node below.
-    const retainedBetaNode = await beta.elementHandle();
-    assert.ok(retainedBetaNode);
+    const initialRetainedBetaNode = await beta.elementHandle();
+    assert.ok(initialRetainedBetaNode);
+    let retainedBetaNode = initialRetainedBetaNode;
     const expectRetainedThreadList = async () => {
       expect(
         await alphaNode.evaluate(
@@ -806,8 +818,9 @@ test('installed React sidenav retains navigation, draft and a running response a
     await expect(compactBeta.locator('time')).toBeHidden();
     await expect(compactBeta.locator('span').first()).toHaveText('B');
     const compactAlphaNode = await compactAlpha.elementHandle();
-    const compactBetaNode = await compactBeta.elementHandle();
-    assert.ok(compactAlphaNode && compactBetaNode);
+    const initialCompactBetaNode = await compactBeta.elementHandle();
+    assert.ok(compactAlphaNode && initialCompactBetaNode);
+    let compactBetaNode = initialCompactBetaNode;
     const expectRetainedCompact = async () => {
       for (const [handle, title] of [
         [compactAlphaNode, 'Alpha notes'],
@@ -1051,6 +1064,22 @@ test('installed React sidenav retains navigation, draft and a running response a
       await expect(search).toBeFocused();
       await page.keyboard.press('Tab');
       await expect(
+        nav.getByRole('button', { name: 'All conversations', exact: true })
+      ).toBeFocused();
+      await page.keyboard.press('Tab');
+      await expect(
+        nav
+          .getByRole('list', { name: 'Loaded projects' })
+          .getByRole('button', { name: '<Alpha project>', exact: true })
+      ).toBeFocused();
+      await page.keyboard.press('Tab');
+      await expect(
+        nav
+          .getByRole('list', { name: 'Loaded projects' })
+          .getByRole('button', { name: 'beta/project', exact: true })
+      ).toBeFocused();
+      await page.keyboard.press('Tab');
+      await expect(
         nav.getByRole('button', { name: 'Refresh', exact: true })
       ).toBeFocused();
       await filter.scrollIntoViewIfNeeded();
@@ -1273,6 +1302,55 @@ test('installed React sidenav retains navigation, draft and a running response a
     await page.setViewportSize({ width: 1280, height: 900 });
     await expand.click();
     await expect(filter).toHaveValue('notes');
+    await expectRetainedThreadList();
+    await expectRetainedCompact();
+    const projects = nav.getByRole('list', { name: 'Loaded projects' });
+    await projects
+      .getByRole('button', { name: '<Alpha project>', exact: true })
+      .click();
+    await expect(
+      threadList.getByRole('button', { name: 'Beta notes', exact: true })
+    ).toHaveCount(0);
+    await expect(
+      threadList.getByRole('button', { name: 'Alpha notes', exact: true })
+    ).toBeVisible();
+    await expect(page.locator('.native-compact-thread')).toHaveCount(1);
+    await expect(page).toHaveURL(/thread=b/);
+    await expect(page.locator('.submission-status')).toHaveText(
+      'Response in progress…'
+    );
+    expect(
+      await retainedDraft.evaluate(
+        (node) => node === document.querySelector('#message')
+      )
+    ).toBe(true);
+    expect(backend.requests).toHaveLength(6);
+    await page.screenshot({
+      path: testInfo.outputPath('loaded-project-desktop.png'),
+      fullPage: true,
+    });
+    await nav
+      .getByRole('button', { name: 'All conversations', exact: true })
+      .click();
+    await expect(
+      threadList.getByRole('button', { name: 'Beta notes', exact: true })
+    ).toBeVisible();
+    expect(backend.requests).toHaveLength(6);
+    // Filtering removes row DOM; reset remounts Beta while Alpha and the
+    // selected transcript/composer keep their existing owners.
+    expect(await retainedBetaNode.evaluate((node) => node.isConnected)).toBe(
+      false
+    );
+    expect(await compactBetaNode.evaluate((node) => node.isConnected)).toBe(
+      false
+    );
+    const remountedBetaNode = await beta.elementHandle();
+    const remountedCompactBetaNode = await compact
+      .locator('.tp-thread-list__button[title="Beta notes"]')
+      .elementHandle();
+    assert.ok(remountedBetaNode && remountedCompactBetaNode);
+    retainedBetaNode = remountedBetaNode;
+    compactBetaNode = remountedCompactBetaNode;
     await expectRetainedThreadList();
     await expectRetainedCompact();
     backend.steps[5].releaseHeaders();
