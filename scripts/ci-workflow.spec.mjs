@@ -13,15 +13,15 @@ it('runs the production copy gate through its minimal target while retaining the
   assert.match(step, /run: npx nx run website:public-copy --skip-nx-cache/);
   assert.doesNotMatch(step, /--grep|continue-on-error/);
   assert.match(step, /GROWTH_FORM_POLICY: growth_v1/);
-  assert.match(readJobBlock(workflow, 'website-e2e'), /run: npx nx e2e website --skip-nx-cache/);
+  assert.match(readJobBlock(workflow, 'website-e2e'), /run: npx nx run website:e2e-\$\{\{ matrix.suite \}\} --skip-nx-cache/);
 });
 
-it('shards the complete Website suite and runs production checks independently', async () => {
+it('groups the complete Website suite by runtime dependencies and runs production checks independently', async () => {
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
   const suite = readJobBlock(workflow, 'website-e2e');
-  assert.match(suite, /shard: \[1, 2\]/);
+  assert.match(suite, /suite: \[control-plane, agents, ag-ui, chat, render\]/);
   assert.match(suite, /fail-fast: false/);
-  assert.match(suite, /npx nx e2e website --skip-nx-cache --skipInstall --shard=\$\{\{ matrix.shard \}\}\/2/);
+  assert.match(suite, /npx nx run website:e2e-\$\{\{ matrix.suite \}\} --skip-nx-cache/);
   assert.doesNotMatch(suite, /Public copy boundary|Stage scroll verification|--grep/);
   const production = readJobBlock(workflow, 'website-production-checks');
   assert.deepEqual(readJobNeeds(production), ['ci-scope']);
@@ -107,23 +107,23 @@ it('bounds the Website promotion budget without changing other deploy budgets', 
   assert.match(readJobBlock(workflow, 'deploy'), /timeout-minutes: 45/);
 });
 
-it('installs pinned Python before Website e2e fixture prerequisites in every CI caller', async () => {
+it('installs pinned Python before local fixture preparation and preview assembly', async () => {
   const website = JSON.parse(await readFile('apps/website/project.json', 'utf8'));
   for (const name of ['cockpit-runtimes-microsoft-agent-framework-react', 'cockpit-runtimes-aws-strands-react']) {
     assert.ok(website.targets.e2e.dependsOn.some((dependency) =>
       dependency.target === 'prepare-fixture' && dependency.projects.includes(name)
-    ), `remote BASE_URL does not bypass the native fixture Nx prerequisite for ${name}`);
+    ), `the legacy full local suite retains its native fixture proof for ${name}`);
   }
 
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
   const websiteCallers = [
-    ['deploy', 'Set up Python for Website fixture prerequisites', 'npx nx e2e website'],
-    ['website-preview-e2e', 'Set up Python for Website fixture prerequisites', 'npx nx e2e website'],
-    ['website-e2e', 'Prepare frozen dashboard browser producer', 'npx nx e2e website'],
+    ['deploy', 'Set up Python for Website fixture prerequisites', 'npx nx run website:deployed-e2e'],
+    ['website-preview-e2e', 'Set up Python for Website fixture prerequisites', 'npx nx run website:deployed-e2e'],
+    ['website-e2e', 'Prepare frozen dashboard browser producer', 'npx nx run website:e2e-'],
   ];
   const discoveredWebsiteCallers = [...withoutYamlCommentLines(workflow).matchAll(/^ {2}([A-Za-z0-9_-]+):\s*$/gm)]
     .map((match) => match[1])
-    .filter((jobName) => /\bnpx\s+nx\s+e2e\s+website\b/.test(readJobBlock(workflow, jobName)));
+    .filter((jobName) => /\bnpx\s+nx\s+run\s+website:(?:e2e-|deployed-e2e)/.test(readJobBlock(workflow, jobName)));
   assert.deepEqual(discoveredWebsiteCallers.sort(), websiteCallers.map(([jobName]) => jobName).sort(),
     'every Website Nx e2e caller must have pinned Python prerequisite coverage');
 
@@ -1086,7 +1086,7 @@ describe('CI workflow', () => {
     assert.match(suite, /RUNTIME_BYPASS_ORIGIN:\s*https:\/\/\$\{\{ steps\.aliases\.outputs\.examples \}\}/);
     assert.match(suite, /VERCEL_AUTOMATION_BYPASS_SECRET:\s*\$\{\{ secrets\.VERCEL_AUTOMATION_BYPASS_SECRET \}\}/);
     assert.match(suite, /VERCEL_EXAMPLES_AUTOMATION_BYPASS_SECRET:\s*\$\{\{ secrets\.VERCEL_EXAMPLES_AUTOMATION_BYPASS_SECRET \}\}/);
-    assert.match(suite, /npx nx e2e website --skip-nx-cache/);
+    assert.match(suite, /npx nx run website:deployed-e2e --skip-nx-cache/);
     assert.doesNotMatch(job, /vercel(?:@[^\s]+)? promote/);
     assert.doesNotMatch(job, /vercel(?:@[^\s]+)? remove/);
   });
@@ -1274,7 +1274,7 @@ describe('CI workflow', () => {
     );
     assert.match(
       websiteE2eJob,
-      /npx nx e2e website\b/,
+      /npx nx run website:e2e-\$\{\{ matrix.suite \}\}/,
       'Website e2e should run the interactive shell suite'
     );
 

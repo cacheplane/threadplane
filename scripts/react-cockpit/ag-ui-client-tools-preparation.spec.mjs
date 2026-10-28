@@ -25,8 +25,9 @@ test('website browser job prepares its own canonical worker after existing pinne
   const website=workflow.split('\n  website-e2e:\n')[1].split('\n  website-preview-e2e:')[0];
   assert.equal((website.match(/astral-sh\/setup-uv@/g)??[]).length,1);
   assert.match(website,/Prepare frozen dashboard browser producer[\s\S]*python-version: '3.12'/);
-  assert.match(website,/Prepare frozen canonical client tools browser producer\n        run: node scripts\/react-cockpit\/prepare-ag-ui-client-tools-fixture.mjs/);
-  assert.ok(website.indexOf('prepare-ag-ui-client-tools-fixture.mjs')<website.indexOf('npx nx e2e website'));
+  assert.match(website,/Prepare frozen canonical client tools browser producer\n        if: matrix.suite == 'ag-ui'\n        run: node scripts\/react-cockpit\/prepare-ag-ui-client-tools-fixture.mjs/);
+  assert.match(website,/suite: \[control-plane, agents, ag-ui, chat, render\]/);
+  assert.ok(website.indexOf('prepare-ag-ui-client-tools-fixture.mjs')<website.indexOf('npx nx run website:e2e-${{ matrix.suite }}'));
   const library=workflow.split('\n  library:\n')[1]?.split(/^  [a-z]/m)[0] ?? workflow.slice(0,workflow.indexOf('\n  cockpit:'));
   assert.match(library,/UV_PROJECT_ENVIRONMENT="\$THREADPLANE_AG_UI_FIXTURE_ENVIRONMENT" uv sync --frozen --no-install-project --project cockpit\/ag-ui\/client-tools\/python/);
 });
