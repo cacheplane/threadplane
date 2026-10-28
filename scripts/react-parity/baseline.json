@@ -1,15 +1,9 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "5838116c51009698d4e2ce550ad58ff6f70f7df5",
+  "baselineHead": "f63ee01f699915f4fa624f4c925012c100e677a5",
   "sourceState": {
-    "modified": [
-      "libs/react/README.md",
-      "libs/react/src/chat/index.ts",
-      "libs/react/src/chat/styles.css"
-    ],
-    "untracked": [
-      "libs/react/src/chat/project-list.tsx"
-    ]
+    "modified": [],
+    "untracked": []
   },
   "scope": {
     "libraries": [
@@ -2241,7 +2235,7 @@
       "id": "config:package.json",
       "kind": "config",
       "path": "package.json",
-      "sha256": "db7b67432af69c907af7c096dcce1efdbd767af867dec0a85a6da0f68b931e55"
+      "sha256": "3999d926d7d98015c5a29ad80e1236d01fc6aa74558987ae9ac9d02f75049aa6"
     },
     {
       "id": "config:scripts/assemble-examples.ts",
