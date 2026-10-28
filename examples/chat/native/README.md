@@ -682,3 +682,33 @@ The project section appears only when loaded projects or a selected filter exist
 Selection is ephemeral; new conversations remain unassigned. Pinned reordering
 continues across all loaded pinned conversations, including other projects.
 Project CRUD, catalog persistence, move-to-project and full T29 parity remain open.
+
+### Project creation and browser-local names (private React T29 slice)
+
+`ProjectList.renderActions(project)` receives the original readonly item and
+composes application-owned controls beside selection. Absent/null/false/undefined
+output omits the action wrapper. Commands do not implicitly select a project.
+`ProjectNameForm` is a controlled editor with `value`, `onValueChange`, `onSubmit`
+and `onCancel`; optional `label`, `className`, `submitLabel`, `pending`,
+`submitDisabled` and `error` customize presentation. It focuses/selects once,
+protects IME input and blank/pending/disabled submissions, and never saves on blur.
+Persistence, request lifetime and return focus belong to the application.
+
+Native React now creates and renames projects in the versioned browser-local
+`threadplane-native-react-projects-v1` catalog. It displays local catalog entries
+first, then first-seen loaded association IDs without duplicates. Renaming a loaded
+ID imports its name locally without changing the ID or backend metadata. Names
+are trimmed on Save; duplicate names are allowed because IDs define identity.
+Catalog-only projects can be selected with an empty conversation view. New
+conversations remain unassigned. These are local labels, not a shared server catalog.
+
+Writes reread and validate the current catalog and publish only after persistence
+succeeds. Malformed/unsupported saved data is never replaced; unavailable storage
+and write failures keep the draft and target, expose Retry, and block submission
+until recovery. Retry reloads without committing. Storage events (including clear)
+refresh names without broadening a retained filter or replacing an active draft.
+This uses browser localStorage's last-writer-wins behavior, not atomic multi-tab
+transactions. No cross-device sharing or backend project commands are introduced.
+Project selection, naming and persistence preserve the selected conversation,
+transcript, composer draft and running session without extra network calls.
+Project deletion, association writes/move-to-project and full T29 parity remain open.

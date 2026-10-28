@@ -69,7 +69,7 @@ it('search requests reveal the retained filter and focus it again without extra 
     const view = render(
       <App application={application} presentation="sidenav" />
     );
-    expect(view.queryByRole('list', { name: 'Loaded projects' })).toBeNull();
+    expect(view.queryByRole('list', { name: 'Projects' })).toBeNull();
     const filter = view.getByRole('searchbox') as HTMLInputElement;
     const input = view.getByRole('textbox', {
       name: 'Message',

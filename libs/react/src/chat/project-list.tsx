@@ -1,4 +1,5 @@
 'use client';
+import type { ReactNode } from 'react';
 
 export interface ProjectListItem {
   readonly id: string;
@@ -14,6 +15,7 @@ export interface ProjectListProps {
   readonly onNewProject?: () => void;
   readonly newProjectDisabled?: boolean;
   readonly newProjectLabel?: string;
+  readonly renderActions?: (project: ProjectListItem) => ReactNode;
 }
 
 /** Controlled project selection; the application owns catalog and lifecycle. */
@@ -26,25 +28,39 @@ export function ProjectList({
   onNewProject,
   newProjectDisabled = false,
   newProjectLabel = '+ New project',
+  renderActions,
 }: ProjectListProps) {
   const list = (
     <ul
       className={`tp-project-list${className ? ` ${className}` : ''}`}
       aria-label={label}
     >
-      {projects.map((project) => (
-        <li key={project.id} className="tp-project-list__item">
-          <button
-            type="button"
-            className="tp-project-list__button"
-            title={project.name || project.id}
-            aria-current={project.id === activeProjectId ? 'true' : undefined}
-            onClick={() => onSelect(project.id)}
+      {projects.map((project) => {
+        const actions = renderActions?.(project);
+        const hasActions =
+          actions !== null && actions !== false && actions !== undefined;
+        return (
+          <li
+            key={project.id}
+            className={`tp-project-list__item${
+              hasActions ? ' tp-project-list__item--actions' : ''
+            }`}
           >
-            {project.name || project.id}
-          </button>
-        </li>
-      ))}
+            <button
+              type="button"
+              className="tp-project-list__button"
+              title={project.name || project.id}
+              aria-current={project.id === activeProjectId ? 'true' : undefined}
+              onClick={() => onSelect(project.id)}
+            >
+              {project.name || project.id}
+            </button>
+            {hasActions && (
+              <div className="tp-project-list__actions">{actions}</div>
+            )}
+          </li>
+        );
+      })}
     </ul>
   );
   return onNewProject ? (

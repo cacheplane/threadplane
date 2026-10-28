@@ -1,14 +1,17 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "5838116c51009698d4e2ce550ad58ff6f70f7df5",
+  "baselineHead": "36dee90935c335d7c307290e282f27baa057fffc",
   "sourceState": {
     "modified": [
       "libs/react/README.md",
       "libs/react/src/chat/index.ts",
-      "libs/react/src/chat/styles.css"
+      "libs/react/src/chat/project-list.tsx",
+      "libs/react/src/chat/styles.css",
+      "libs/react/src/chat/thread-rename-form.tsx"
     ],
     "untracked": [
-      "libs/react/src/chat/project-list.tsx"
+      "libs/react/src/chat/internal/name-form.tsx",
+      "libs/react/src/chat/project-name-form.tsx"
     ]
   },
   "scope": {
@@ -855,7 +858,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "ac0b03c63cc14e8a1d839c874dc2a5c8a5dfe16e8dd2a1bee9ea9cdb2913bdf2"
+      "sha256": "ad3efd2422bddb5324cbf7e0bc43ebc6728320326884f17a75374910c16729e2"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -873,7 +876,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "8dc295e613a12b6ebc449bad7c1444d8cd580ba7996415a38fdffc3c7f289d58"
+      "sha256": "b1ee7e1f40490083557e5e17cfd78dc63c41ea616fcdf46327b44452708abd8f"
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -10822,7 +10825,7 @@
           "path": "libs/react/src/chat/project-list.tsx",
           "symbol": "ProjectList",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function ProjectList({ projects, onSelect, activeProjectId, label = 'Projects', className, onNewProject, newProjectDisabled = false, newProjectLabel = '+ New project', }: ProjectListProps) {\n    const list = (<ul className={`tp-project-list${className ? ` ${className}` : ''}`} aria-label={label}>\n      {projects.map((project) => (<li key={project.id} className=\"tp-project-list__item\">\n          <button type=\"button\" className=\"tp-project-list__button\" title={project.name || project.id} aria-current={project.id === activeProjectId ? 'true' : undefined} onClick={() => onSelect(project.id)}>\n            {project.name || project.id}\n          </button>\n        </li>))}\n    </ul>);\n    return onNewProject ? (<div className=\"tp-project-list__container\">\n      <button type=\"button\" className=\"tp-project-list__new\" disabled={newProjectDisabled} onClick={() => onNewProject()}>\n        {newProjectLabel}\n      </button>\n      {list}\n    </div>) : (list);\n}"
+          "signature": "export function ProjectList({ projects, onSelect, activeProjectId, label = 'Projects', className, onNewProject, newProjectDisabled = false, newProjectLabel = '+ New project', renderActions, }: ProjectListProps) {\n    const list = (<ul className={`tp-project-list${className ? ` ${className}` : ''}`} aria-label={label}>\n      {projects.map((project) => {\n            const actions = renderActions?.(project);\n            const hasActions = actions !== null && actions !== false && actions !== undefined;\n            return (<li key={project.id} className={`tp-project-list__item${hasActions ? ' tp-project-list__item--actions' : ''}`}>\n            <button type=\"button\" className=\"tp-project-list__button\" title={project.name || project.id} aria-current={project.id === activeProjectId ? 'true' : undefined} onClick={() => onSelect(project.id)}>\n              {project.name || project.id}\n            </button>\n            {hasActions && (<div className=\"tp-project-list__actions\">{actions}</div>)}\n          </li>);\n        })}\n    </ul>);\n    return onNewProject ? (<div className=\"tp-project-list__container\">\n      <button type=\"button\" className=\"tp-project-list__new\" disabled={newProjectDisabled} onClick={() => onNewProject()}>\n        {newProjectLabel}\n      </button>\n      {list}\n    </div>) : (list);\n}"
         }
       ]
     },
@@ -10850,7 +10853,35 @@
           "path": "libs/react/src/chat/project-list.tsx",
           "symbol": "ProjectListProps",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface ProjectListProps {\n    readonly projects: readonly ProjectListItem[];\n    readonly onSelect: (projectId: string) => void;\n    readonly activeProjectId?: string | null;\n    readonly label?: string;\n    readonly className?: string;\n    readonly onNewProject?: () => void;\n    readonly newProjectDisabled?: boolean;\n    readonly newProjectLabel?: string;\n}"
+          "signature": "export interface ProjectListProps {\n    readonly projects: readonly ProjectListItem[];\n    readonly onSelect: (projectId: string) => void;\n    readonly activeProjectId?: string | null;\n    readonly label?: string;\n    readonly className?: string;\n    readonly onNewProject?: () => void;\n    readonly newProjectDisabled?: boolean;\n    readonly newProjectLabel?: string;\n    readonly renderActions?: (project: ProjectListItem) => ReactNode;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ProjectNameForm",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ProjectNameForm",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/project-name-form.tsx",
+          "symbol": "ProjectNameForm",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function ProjectNameForm({ label = 'Project name', ...props }: ProjectNameFormProps) {\n    return (<NameForm {...props} label={label} baseClass=\"tp-project-name-form\" pendingLabel=\"Saving project name…\"/>);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ProjectNameFormProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ProjectNameFormProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/project-name-form.tsx",
+          "symbol": "ProjectNameFormProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface ProjectNameFormProps {\n    readonly value: string;\n    readonly onValueChange: (value: string) => void;\n    readonly onSubmit: () => void;\n    readonly onCancel: () => void;\n    readonly pending?: boolean;\n    readonly error?: string;\n    readonly label?: string;\n    readonly className?: string;\n    readonly submitLabel?: string;\n    readonly submitDisabled?: boolean;\n}"
         }
       ]
     },
@@ -10962,7 +10993,7 @@
           "path": "libs/react/src/chat/thread-rename-form.tsx",
           "symbol": "ThreadRenameForm",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function ThreadRenameForm({ value, onValueChange, onSubmit, onCancel, pending = false, error, label = 'Conversation title', className, }: ThreadRenameFormProps) {\n    const id = useId();\n    const input = useRef<HTMLInputElement>(null);\n    const composing = useRef(false);\n    const cancel = useRef<HTMLButtonElement>(null);\n    useIsomorphicLayoutEffect(() => {\n        if (input.current?.disabled)\n            cancel.current?.focus();\n        else {\n            input.current?.focus();\n            input.current?.select();\n        }\n    }, []);\n    const canSubmit = !pending && value.trim().length > 0;\n    const submit = () => {\n        if (canSubmit && !composing.current)\n            onSubmit();\n    };\n    return (<form className={['tp-thread-rename-form', className].filter(Boolean).join(' ')} aria-busy={pending || undefined} onSubmit={(event) => {\n            event.preventDefault();\n            submit();\n        }} onKeyDown={(event) => {\n            if (event.key === 'Escape') {\n                event.preventDefault();\n                event.stopPropagation();\n                onCancel();\n            }\n        }}>\n      <label htmlFor={`${id}-title`}>{label}</label>\n      <input ref={input} id={`${id}-title`} type=\"text\" value={value} disabled={pending} aria-invalid={error ? true : undefined} aria-describedby={error ? `${id}-error` : undefined} onChange={(event) => onValueChange(event.target.value)} onCompositionStart={() => {\n            composing.current = true;\n        }} onCompositionEnd={() => {\n            composing.current = false;\n        }} onKeyDown={(event) => {\n            if (event.key !== 'Enter')\n                return;\n            event.preventDefault();\n            if (event.nativeEvent.isComposing ||\n                event.nativeEvent.keyCode === 229)\n                return;\n            submit();\n        }}/>\n      <div className=\"tp-thread-rename-form__actions\">\n        <button type=\"submit\" disabled={!canSubmit}>\n          Save\n        </button>\n        <button ref={cancel} type=\"button\" onClick={onCancel}>\n          Cancel\n        </button>\n      </div>\n      {pending && <p role=\"status\">Saving conversation title…</p>}\n      {error && (<p id={`${id}-error`} role=\"alert\">\n          {error}\n        </p>)}\n    </form>);\n}"
+          "signature": "export function ThreadRenameForm(props: ThreadRenameFormProps) {\n    return (<NameForm {...props} baseClass=\"tp-thread-rename-form\" pendingLabel=\"Saving conversation title…\"/>);\n}"
         }
       ]
     },
@@ -15408,13 +15439,19 @@
       "id": "source:libs/react/src/chat/index.ts",
       "kind": "source",
       "path": "libs/react/src/chat/index.ts",
-      "sha256": "9a0339668346e8bb1b1de32fa5b5012f77e3faedea4dbcccc88e8822b9e11e34"
+      "sha256": "520714ff918a8ecb54bbc191cbb716b47916684cabad6db4de827b783a731417"
     },
     {
       "id": "source:libs/react/src/chat/internal/isomorphic-layout-effect.ts",
       "kind": "source",
       "path": "libs/react/src/chat/internal/isomorphic-layout-effect.ts",
       "sha256": "c652282a163fbd885c2ee454f564115909f646cea2077e736e5f21e354198024"
+    },
+    {
+      "id": "source:libs/react/src/chat/internal/name-form.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/internal/name-form.tsx",
+      "sha256": "0a64b3b549377fa32be8210dcd22bb55c896212f7065ec488018db0825f4d415"
     },
     {
       "id": "source:libs/react/src/chat/internal/use-message-content.ts",
@@ -15444,7 +15481,13 @@
       "id": "source:libs/react/src/chat/project-list.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/project-list.tsx",
-      "sha256": "e678af009e74e3aa88b7b7b5664842c75b2adabfc32da93f519bc9ffbf3acec8"
+      "sha256": "16603cf8cc51b58a144e34a43a7c8e7573b81966e57852f0ec611f880be48917"
+    },
+    {
+      "id": "source:libs/react/src/chat/project-name-form.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/project-name-form.tsx",
+      "sha256": "dcfb495d03a3b5354ee222ab249b14a97dc4e674310e0f235ca0401e47c2619e"
     },
     {
       "id": "source:libs/react/src/chat/reasoning.tsx",
@@ -15468,7 +15511,7 @@
       "id": "source:libs/react/src/chat/thread-rename-form.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/thread-rename-form.tsx",
-      "sha256": "8caf19bf99363c6f61e65af76e4e7b86e37a706201c0bd691c36ea0317cb445a"
+      "sha256": "444907577943b44057c5d359f1bff4ea89baf8c58bb50b54becd266c878d9d29"
     },
     {
       "id": "source:libs/react/src/chat/tool-observation.tsx",

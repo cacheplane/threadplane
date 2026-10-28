@@ -69,10 +69,13 @@ it('filters loaded active, archived and compact rows by exact project without ch
     fireEvent.change(input, { target: { value: 'Keep draft' } });
     const session = application.getSnapshot().runtime;
     const before = { io: { ...io }, counters: { ...fixture.counters } };
-    const projects = view.getByRole('list', { name: 'Loaded projects' });
+    const projects = view.getByRole('list', { name: 'Projects' });
     expect(
       within(projects)
         .getAllByRole('button')
+        .filter((button) =>
+          button.classList.contains('tp-project-list__button')
+        )
         .map((el) => el.textContent)
     ).toEqual([' p/b ', '<Project>', 'archive-only']);
     fireEvent.click(
@@ -96,7 +99,13 @@ it('filters loaded active, archived and compact rows by exact project without ch
       target: { value: 'Alpha' },
     });
     expect(within(list).queryByRole('button')).toBeNull();
-    expect(within(projects).getAllByRole('button')).toHaveLength(3);
+    expect(
+      within(projects)
+        .getAllByRole('button')
+        .filter((button) =>
+          button.classList.contains('tp-project-list__button')
+        )
+    ).toHaveLength(3);
     fireEvent.change(view.getByRole('searchbox'), { target: { value: '' } });
     fireEvent.click(
       within(projects).getByRole('button', { name: 'archive-only' })
@@ -143,5 +152,74 @@ it('filters loaded active, archived and compact rows by exact project without ch
     expect(input.value).toBe('Keep draft');
   } finally {
     application.dispose();
+  }
+});
+
+it('creates and renames browser-local projects without changing the selected conversation or draft', async () => {
+  localStorage.clear();
+  vi.stubGlobal('matchMedia', () => ({
+    matches: false,
+    addEventListener() {},
+    removeEventListener() {},
+  }));
+  vi.spyOn(crypto, 'randomUUID').mockReturnValue(
+    '00000000-0000-4000-8000-000000000001'
+  );
+  const fixture = applicationFixture();
+  const application = createReactApplication(fixture.options);
+  try {
+    application.start();
+    await waitFor(() =>
+      expect(application.getSnapshot().selection.status).toBe('ready')
+    );
+    const view = render(
+      <App application={application} presentation="sidenav" />
+    );
+    const input = view.getByRole('textbox', {
+      name: 'Message',
+    }) as HTMLTextAreaElement;
+    fireEvent.change(input, { target: { value: 'Keep project draft' } });
+    const runtime = application.getSnapshot().runtime;
+    const counters = { ...fixture.counters };
+    fireEvent.click(
+      view.getByRole('button', { name: 'New project', exact: true })
+    );
+    const name = view.getByRole('textbox', { name: 'Project name' });
+    fireEvent.change(name, { target: { value: '  <Local project>  ' } });
+    fireEvent.click(view.getByRole('button', { name: 'Create', exact: true }));
+    expect(view.getByRole('list', { name: 'Projects' }).textContent).toContain(
+      '<Local project>'
+    );
+    expect(
+      view.getByText('Selected project: 00000000-0000-4000-8000-000000000001')
+    ).toBeTruthy();
+    expect(
+      JSON.parse(localStorage.getItem('threadplane-native-react-projects-v1')!)
+        .projects
+    ).toEqual([
+      { id: '00000000-0000-4000-8000-000000000001', name: '<Local project>' },
+    ]);
+    fireEvent.click(
+      view.getByRole('button', {
+        name: 'Rename project <Local project> (00000000-0000-4000-8000-000000000001)',
+        exact: true,
+      })
+    );
+    fireEvent.change(view.getByRole('textbox', { name: 'Project name' }), {
+      target: { value: '<Renamed>' },
+    });
+    fireEvent.click(view.getByRole('button', { name: 'Save', exact: true }));
+    expect(
+      view.getByRole('button', { name: '<Renamed>', exact: true })
+    ).toBeTruthy();
+    expect(application.getSnapshot().selection.id).toBe('a');
+    expect(application.getSnapshot().runtime).toBe(runtime);
+    expect(view.getByRole('textbox', { name: 'Message' })).toBe(input);
+    expect(input.value).toBe('Keep project draft');
+    expect(fixture.counters).toEqual(counters);
+  } finally {
+    application.dispose();
+    localStorage.clear();
+    vi.restoreAllMocks();
   }
 });

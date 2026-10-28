@@ -11,7 +11,6 @@ import {
   MessageList,
   Reasoning,
   ThreadList,
-  ProjectList,
   ToolObservation,
 } from '@threadplane/react/chat';
 import type {
@@ -37,6 +36,7 @@ import { useConversationMenu } from './use-conversation-menu';
 import { TripSummary } from './trip-summary';
 import { NativeNavigation } from './native-navigation';
 import { CompactThreadRow } from './compact-thread-row';
+import { NativeProjects } from './native-projects';
 
 type Presentation = 'page' | 'popup' | 'sidebar' | 'sidenav';
 
@@ -198,13 +198,6 @@ function Conversation({
   const [filter, setFilter] = useState('');
   const filterInput = useRef<HTMLInputElement>(null);
   const [projectId, setProjectId] = useState<string | null>(null);
-  const projects = [
-    ...new Set(
-      snapshot.list.rows.flatMap((row) =>
-        row.projectId === undefined ? [] : [row.projectId]
-      )
-    ),
-  ].map((id) => ({ id, name: id }));
   const projectRows = snapshot.list.rows.filter(
     (row) => projectId === null || row.projectId === projectId
   );
@@ -563,34 +556,11 @@ function Conversation({
         pinned conversations, including those hidden by the title or project
         filter.
       </p>
-      {(projects.length > 0 || projectId !== null) && (
-        <section aria-labelledby="loaded-projects-title">
-          <h3 id="loaded-projects-title">Loaded projects</h3>
-          <p className="muted">
-            Project IDs from loaded conversations, including archived rows. New
-            conversations are unassigned.
-          </p>
-          <button
-            type="button"
-            aria-pressed={projectId === null}
-            onClick={() => setProjectId(null)}
-          >
-            All conversations
-          </button>
-          <ProjectList
-            projects={projects}
-            activeProjectId={projectId}
-            onSelect={setProjectId}
-            label="Loaded projects"
-          />
-          {projectId !== null && (
-            <p role="status">Selected project: {projectId}</p>
-          )}
-          {projects.length === 0 && (
-            <p className="muted">No projects in loaded conversations.</p>
-          )}
-        </section>
-      )}
+      <NativeProjects
+        rows={snapshot.list.rows}
+        projectId={projectId}
+        onSelect={setProjectId}
+      />
       <div className="directory-actions">
         <button
           type="button"

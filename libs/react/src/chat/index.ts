@@ -55,3 +55,8 @@ export {
   type ProjectListItem,
   type ProjectListProps,
 } from './project-list.js';
+
+export {
+  ProjectNameForm,
+  type ProjectNameFormProps,
+} from './project-name-form.js';
