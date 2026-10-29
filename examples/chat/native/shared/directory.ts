@@ -128,6 +128,26 @@ export function createThreadDirectory(
   const validId = (id: string) =>
     typeof id === 'string' && !!id && id !== '.' && id !== '..';
   return Object.freeze({
+    setProject(id: string, projectId: string | null, signal: AbortSignal) {
+      if (
+        typeof id !== 'string' ||
+        !id.trim() ||
+        id === '.' ||
+        id === '..' ||
+        (projectId !== null &&
+          (typeof projectId !== 'string' || !projectId.trim()))
+      )
+        return Promise.resolve(failure(signal));
+      return perform(signal, async () => {
+        const raw = await client.threads.update(encodeURIComponent(id), {
+          metadata: { projectId },
+          signal,
+        });
+        if (raw.thread_id !== id || raw.metadata?.['projectId'] !== projectId)
+          throw new Error('Project assignment not confirmed');
+        return Object.freeze({ id, projectId });
+      });
+    },
     async remove(id: string, signal: AbortSignal) {
       if (!validId(id) || signal.aborted) return failure(signal);
       try {

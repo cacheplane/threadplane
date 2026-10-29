@@ -23,6 +23,13 @@ export type RemovalInspection =
   | Readonly<{ kind: 'missing'; id: string }>;
 
 export interface ThreadDirectory {
+  setProject?(
+    id: string,
+    projectId: string | null,
+    signal: AbortSignal
+  ): Promise<
+    DirectoryResult<Readonly<{ id: string; projectId: string | null }>>
+  >;
   remove?(
     id: string,
     signal: AbortSignal

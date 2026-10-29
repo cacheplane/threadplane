@@ -2098,7 +2098,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/project-list.tsx",
-      "reason": "Private controlled project selection and optional app-owned New request now compose readonly app-owned renderActions beside selection. ProjectNameForm supports explicit project naming with controlled value, labels, pending/error, submitDisabled and IME safety; native browser-local validated catalog dogfoods create/rename without conversation association writes. Catalog sharing, deletion, move-to-project and full T29 parity remain open."
+      "reason": "Private controlled project selection and optional app-owned New request now compose readonly app-owned renderActions beside selection. ProjectNameForm supports explicit project naming with controlled value, labels, pending/error, submitDisabled and IME safety; native browser-local validated catalog dogfoods create/rename. Native full active/archived directories compose confirmed backend assignment/removal through existing selection and action primitives, with exact raw/null evidence, independent stale-read protection and preserved filter/session/draft ownership. Catalog sharing, deletion and full T29 parity remain open."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-reasoning/chat-reasoning.component.ts#ChatReasoningComponent",
@@ -2169,7 +2169,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/thread-list.tsx",
-      "reason": "Private controlled semantic ThreadList selection and optional new-conversation request with retained keyed rows and installed native dogfood. Native application composes confirmed rename, pin and reversible archive/unarchive using existing slots, with separate loaded active/archived lists, stable feedback and independent pending/stale-read protection. Application-owned pinned-first grouping and loaded-slice Move up/down compose existing slots, with exact rank-only confirmation and an explicit refresh barrier after partial failure; the primitive retains supplied order. Native confirmed Delete composes immutable modal intent, exact-target acknowledgement or explicit inspection recovery and lifetime tombstones, preserving unrelated selected sessions/drafts/responses. Project/drag reorder, full parity remain open. Optional private renderItem(thread, isActive) replaces full row content inside the keyed list item, bypassing default title/actions/context controls; native compact navigation owns accessible selection, pin/time descriptions and retained state. Rendering is pure and does not execute commands."
+      "reason": "Private controlled semantic ThreadList selection and optional new-conversation request with retained keyed rows and installed native dogfood. Native application composes confirmed rename, pin and reversible archive/unarchive using existing slots, with separate loaded active/archived lists, stable feedback and independent pending/stale-read protection. Application-owned pinned-first grouping and loaded-slice Move up/down compose existing slots, with exact rank-only confirmation and an explicit refresh barrier after partial failure; the primitive retains supplied order. Native confirmed Delete composes immutable modal intent, exact-target acknowledgement or explicit inspection recovery and lifetime tombstones, preserving unrelated selected sessions/drafts/responses. Native full active/archived directories also compose explicit project assignment/removal with exact raw/null confirmation, independent read/write evidence, root-owned retained intent and per-ID recovery; compact rails stay selection-only. Drag reordering and full parity remain open. Optional private renderItem(thread, isActive) replaces full row content inside the keyed list item, bypassing default title/actions/context controls; native compact navigation owns accessible selection, pin/time descriptions and retained state. Rendering is pure and does not execute commands."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-timeline/chat-timeline.component.ts#ChatTimelineComponent",
@@ -5392,7 +5392,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/project-list.tsx",
-      "reason": "Private controlled project selection and optional app-owned New request now compose readonly app-owned renderActions beside selection. ProjectNameForm supports explicit project naming with controlled value, labels, pending/error, submitDisabled and IME safety; native browser-local validated catalog dogfoods create/rename without conversation association writes. Catalog sharing, deletion, move-to-project and full T29 parity remain open."
+      "reason": "Private controlled project selection and optional app-owned New request now compose readonly app-owned renderActions beside selection. ProjectNameForm supports explicit project naming with controlled value, labels, pending/error, submitDisabled and IME safety; native browser-local validated catalog dogfoods create/rename. Native full active/archived directories compose confirmed backend assignment/removal through existing selection and action primitives, with exact raw/null evidence, independent stale-read protection and preserved filter/session/draft ownership. Catalog sharing, deletion and full T29 parity remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatReasoningComponent",
@@ -5592,7 +5592,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/thread-list.tsx",
-      "reason": "Private controlled semantic ThreadList selection and optional new-conversation request export; application owns data, creation and execution. Native application composes confirmed rename/pin/archive/Delete and pinned grouping/manual loaded-slice moves through existing slots; the primitive preserves supplied order. Project/drag reorder, full parity remain open. Optional private renderItem(thread, isActive) replaces full row content inside the keyed list item, bypassing default title/actions/context controls; native compact navigation owns accessible selection, pin/time descriptions and retained state. Rendering is pure and does not execute commands."
+      "reason": "Private controlled semantic ThreadList selection and optional new-conversation request export; application owns data, creation and execution. Native application composes confirmed rename/pin/archive/Delete and pinned grouping/manual loaded-slice moves through existing slots; the primitive preserves supplied order. Native full active/archived directories also compose explicit project assignment/removal with exact raw/null confirmation, independent read/write evidence, root-owned retained intent and per-ID recovery; compact rails stay selection-only. Drag reordering and full parity remain open. Optional private renderItem(thread, isActive) replaces full row content inside the keyed list item, bypassing default title/actions/context controls; native compact navigation owns accessible selection, pin/time descriptions and retained state. Rendering is pure and does not execute commands."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatTimelineComponent",
@@ -10491,7 +10491,7 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Private controlled project selection and optional app-owned New request now compose readonly app-owned renderActions beside selection. ProjectNameForm supports explicit project naming with controlled value, labels, pending/error, submitDisabled and IME safety; native browser-local validated catalog dogfoods create/rename without conversation association writes. Catalog sharing, deletion, move-to-project and full T29 parity remain open."
+      "reason": "Private controlled project selection and optional app-owned New request now compose readonly app-owned renderActions beside selection. ProjectNameForm supports explicit project naming with controlled value, labels, pending/error, submitDisabled and IME safety; native browser-local validated catalog dogfoods create/rename. Native full active/archived directories compose confirmed backend assignment/removal through existing selection and action primitives, with exact raw/null evidence, independent stale-read protection and preserved filter/session/draft ownership. Catalog sharing, deletion and full T29 parity remain open."
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-reasoning/chat-reasoning.component.ts",
@@ -10840,7 +10840,7 @@
       ],
       "treatment": "shared",
       "status": "in-progress",
-      "reason": "Private controlled project selection and optional app-owned New request now compose readonly app-owned renderActions beside selection. ProjectNameForm supports explicit project naming with controlled value, labels, pending/error, submitDisabled and IME safety; native browser-local validated catalog dogfoods create/rename without conversation association writes. Catalog sharing, deletion, move-to-project and full T29 parity remain open."
+      "reason": "Private controlled project selection and optional app-owned New request now compose readonly app-owned renderActions beside selection. ProjectNameForm supports explicit project naming with controlled value, labels, pending/error, submitDisabled and IME safety; native browser-local validated catalog dogfoods create/rename. Native full active/archived directories compose confirmed backend assignment/removal through existing selection and action primitives, with exact raw/null evidence, independent stale-read protection and preserved filter/session/draft ownership. Catalog sharing, deletion and full T29 parity remain open."
     },
     {
       "id": "source:libs/chat/src/lib/styles/chat-reasoning.styles.ts",
@@ -15915,7 +15915,7 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Private keyed semantic selection list with original-event context requests on selection buttons and app-owned actions; the primitive retains supplied order, selection and row identity. Native composes bounded confirmed renaming, Pin/Unpin, Archive/Unarchive and loaded-slice Move up/down in action siblings, with application-owned pinned-first grouping, exact rank-only confirmation and an explicit refresh barrier after partial failure. Native loaded active/archived partitions retain selected transcript/draft/runtime and directory-owned completion feedback. Native confirmed Delete composes immutable modal intent, exact-target acknowledgement or explicit inspection recovery and lifetime tombstones, preserving unrelated selected sessions/drafts/responses. Project/drag reorder, full parity remain open. Optional private renderItem(thread, isActive) replaces full row content inside the keyed list item, bypassing default title/actions/context controls; native compact navigation owns accessible selection, pin/time descriptions and retained state. Rendering is pure and does not execute commands."
+      "reason": "Private keyed semantic selection list with original-event context requests on selection buttons and app-owned actions; the primitive retains supplied order, selection and row identity. Native composes bounded confirmed renaming, Pin/Unpin, Archive/Unarchive and loaded-slice Move up/down in action siblings, with application-owned pinned-first grouping, exact rank-only confirmation and an explicit refresh barrier after partial failure. Native loaded active/archived partitions retain selected transcript/draft/runtime and directory-owned completion feedback. Native confirmed Delete composes immutable modal intent, exact-target acknowledgement or explicit inspection recovery and lifetime tombstones, preserving unrelated selected sessions/drafts/responses. Native full active/archived directories also compose explicit project assignment/removal with exact raw/null confirmation, independent read/write evidence, root-owned retained intent and per-ID recovery; compact rails stay selection-only. Drag reordering and full parity remain open. Optional private renderItem(thread, isActive) replaces full row content inside the keyed list item, bypassing default title/actions/context controls; native compact navigation owns accessible selection, pin/time descriptions and retained state. Rendering is pure and does not execute commands."
     },
     {
       "id": "source:libs/react/src/chat/thread-rename-form.tsx",
@@ -15973,7 +15973,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/project-list.tsx",
-      "reason": "Private controlled project selection and optional app-owned New request now compose readonly app-owned renderActions beside selection. ProjectNameForm supports explicit project naming with controlled value, labels, pending/error, submitDisabled and IME safety; native browser-local validated catalog dogfoods create/rename without conversation association writes. Catalog sharing, deletion, move-to-project and full T29 parity remain open."
+      "reason": "Private controlled project selection and optional app-owned New request now compose readonly app-owned renderActions beside selection. ProjectNameForm supports explicit project naming with controlled value, labels, pending/error, submitDisabled and IME safety; native browser-local validated catalog dogfoods create/rename. Native full active/archived directories compose confirmed backend assignment/removal through existing selection and action primitives, with exact raw/null evidence, independent stale-read protection and preserved filter/session/draft ownership. Catalog sharing, deletion and full T29 parity remain open."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ProjectListItem",
@@ -15983,7 +15983,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/project-list.tsx",
-      "reason": "Private controlled project selection and optional app-owned New request now compose readonly app-owned renderActions beside selection. ProjectNameForm supports explicit project naming with controlled value, labels, pending/error, submitDisabled and IME safety; native browser-local validated catalog dogfoods create/rename without conversation association writes. Catalog sharing, deletion, move-to-project and full T29 parity remain open."
+      "reason": "Private controlled project selection and optional app-owned New request now compose readonly app-owned renderActions beside selection. ProjectNameForm supports explicit project naming with controlled value, labels, pending/error, submitDisabled and IME safety; native browser-local validated catalog dogfoods create/rename. Native full active/archived directories compose confirmed backend assignment/removal through existing selection and action primitives, with exact raw/null evidence, independent stale-read protection and preserved filter/session/draft ownership. Catalog sharing, deletion and full T29 parity remain open."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ProjectListProps",
@@ -15993,7 +15993,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/project-list.tsx",
-      "reason": "Private controlled project selection and optional app-owned New request now compose readonly app-owned renderActions beside selection. ProjectNameForm supports explicit project naming with controlled value, labels, pending/error, submitDisabled and IME safety; native browser-local validated catalog dogfoods create/rename without conversation association writes. Catalog sharing, deletion, move-to-project and full T29 parity remain open."
+      "reason": "Private controlled project selection and optional app-owned New request now compose readonly app-owned renderActions beside selection. ProjectNameForm supports explicit project naming with controlled value, labels, pending/error, submitDisabled and IME safety; native browser-local validated catalog dogfoods create/rename. Native full active/archived directories compose confirmed backend assignment/removal through existing selection and action primitives, with exact raw/null evidence, independent stale-read protection and preserved filter/session/draft ownership. Catalog sharing, deletion and full T29 parity remain open."
     },
     {
       "id": "source:libs/react/src/chat/project-list.tsx",
@@ -16003,7 +16003,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/project-list.tsx",
-      "reason": "Private controlled project selection and optional app-owned New request now compose readonly app-owned renderActions beside selection. ProjectNameForm supports explicit project naming with controlled value, labels, pending/error, submitDisabled and IME safety; native browser-local validated catalog dogfoods create/rename without conversation association writes. Catalog sharing, deletion, move-to-project and full T29 parity remain open."
+      "reason": "Private controlled project selection and optional app-owned New request now compose readonly app-owned renderActions beside selection. ProjectNameForm supports explicit project naming with controlled value, labels, pending/error, submitDisabled and IME safety; native browser-local validated catalog dogfoods create/rename. Native full active/archived directories compose confirmed backend assignment/removal through existing selection and action primitives, with exact raw/null evidence, independent stale-read protection and preserved filter/session/draft ownership. Catalog sharing, deletion and full T29 parity remain open."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ProjectNameForm",
@@ -16013,7 +16013,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/project-name-form.tsx",
-      "reason": "Private controlled project selection and optional app-owned New request now compose readonly app-owned renderActions beside selection. ProjectNameForm supports explicit project naming with controlled value, labels, pending/error, submitDisabled and IME safety; native browser-local validated catalog dogfoods create/rename without conversation association writes. Catalog sharing, deletion, move-to-project and full T29 parity remain open."
+      "reason": "Private controlled project selection and optional app-owned New request now compose readonly app-owned renderActions beside selection. ProjectNameForm supports explicit project naming with controlled value, labels, pending/error, submitDisabled and IME safety; native browser-local validated catalog dogfoods create/rename. Native full active/archived directories compose confirmed backend assignment/removal through existing selection and action primitives, with exact raw/null evidence, independent stale-read protection and preserved filter/session/draft ownership. Catalog sharing, deletion and full T29 parity remain open."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ProjectNameFormProps",
@@ -16023,7 +16023,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/project-name-form.tsx",
-      "reason": "Private controlled project selection and optional app-owned New request now compose readonly app-owned renderActions beside selection. ProjectNameForm supports explicit project naming with controlled value, labels, pending/error, submitDisabled and IME safety; native browser-local validated catalog dogfoods create/rename without conversation association writes. Catalog sharing, deletion, move-to-project and full T29 parity remain open."
+      "reason": "Private controlled project selection and optional app-owned New request now compose readonly app-owned renderActions beside selection. ProjectNameForm supports explicit project naming with controlled value, labels, pending/error, submitDisabled and IME safety; native browser-local validated catalog dogfoods create/rename. Native full active/archived directories compose confirmed backend assignment/removal through existing selection and action primitives, with exact raw/null evidence, independent stale-read protection and preserved filter/session/draft ownership. Catalog sharing, deletion and full T29 parity remain open."
     },
     {
       "id": "source:libs/react/src/chat/project-name-form.tsx",
@@ -16033,7 +16033,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/project-name-form.tsx",
-      "reason": "Private controlled project selection and optional app-owned New request now compose readonly app-owned renderActions beside selection. ProjectNameForm supports explicit project naming with controlled value, labels, pending/error, submitDisabled and IME safety; native browser-local validated catalog dogfoods create/rename without conversation association writes. Catalog sharing, deletion, move-to-project and full T29 parity remain open."
+      "reason": "Private controlled project selection and optional app-owned New request now compose readonly app-owned renderActions beside selection. ProjectNameForm supports explicit project naming with controlled value, labels, pending/error, submitDisabled and IME safety; native browser-local validated catalog dogfoods create/rename. Native full active/archived directories compose confirmed backend assignment/removal through existing selection and action primitives, with exact raw/null evidence, independent stale-read protection and preserved filter/session/draft ownership. Catalog sharing, deletion and full T29 parity remain open."
     },
     {
       "id": "source:libs/react/src/chat/internal/name-form.tsx",
@@ -16043,7 +16043,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/internal/name-form.tsx",
-      "reason": "Private controlled project selection and optional app-owned New request now compose readonly app-owned renderActions beside selection. ProjectNameForm supports explicit project naming with controlled value, labels, pending/error, submitDisabled and IME safety; native browser-local validated catalog dogfoods create/rename without conversation association writes. Catalog sharing, deletion, move-to-project and full T29 parity remain open."
+      "reason": "Private controlled project selection and optional app-owned New request now compose readonly app-owned renderActions beside selection. ProjectNameForm supports explicit project naming with controlled value, labels, pending/error, submitDisabled and IME safety; native browser-local validated catalog dogfoods create/rename. Native full active/archived directories compose confirmed backend assignment/removal through existing selection and action primitives, with exact raw/null evidence, independent stale-read protection and preserved filter/session/draft ownership. Catalog sharing, deletion and full T29 parity remain open."
     }
   ]
 }

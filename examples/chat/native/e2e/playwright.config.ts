@@ -14,6 +14,7 @@ export default defineConfig({
     'popup.spec.ts',
     'sidenav.spec.ts',
     'project-names.spec.ts',
+    'project-assignment.spec.ts',
     'rename.spec.ts',
     'pin.spec.ts',
     'archive.spec.ts',

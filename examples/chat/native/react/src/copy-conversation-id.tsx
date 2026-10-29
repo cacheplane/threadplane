@@ -17,6 +17,8 @@ export function CopyConversationId({
   onMoveUp,
   onMoveDown,
   reorderPending,
+  onMoveProject,
+  moveProjectPending,
   onDelete,
   deleteDisabled,
   deleteReason,
@@ -35,6 +37,8 @@ export function CopyConversationId({
   readonly onMoveUp?: () => void;
   readonly onMoveDown?: () => void;
   readonly reorderPending?: boolean;
+  readonly onMoveProject?: () => void;
+  readonly moveProjectPending?: boolean;
   readonly onDelete?: () => void;
   readonly deleteDisabled?: boolean;
   readonly deleteReason?: string;
@@ -56,6 +60,8 @@ export function CopyConversationId({
       onMoveUp={onMoveUp}
       onMoveDown={onMoveDown}
       reorderPending={reorderPending}
+      onMoveProject={onMoveProject}
+      moveProjectPending={moveProjectPending}
       onDelete={onDelete}
       deleteDisabled={deleteDisabled}
       deleteReason={deleteReason}
@@ -78,6 +84,8 @@ function CopyCommand({
   onMoveUp,
   onMoveDown,
   reorderPending,
+  onMoveProject,
+  moveProjectPending,
   onDelete,
   deleteDisabled,
   deleteReason,
@@ -96,6 +104,8 @@ function CopyCommand({
   readonly onMoveUp?: () => void;
   readonly onMoveDown?: () => void;
   readonly reorderPending?: boolean;
+  readonly onMoveProject?: () => void;
+  readonly moveProjectPending?: boolean;
   readonly onDelete?: () => void;
   readonly deleteDisabled?: boolean;
   readonly deleteReason?: string;
@@ -213,6 +223,17 @@ function CopyCommand({
                 },
               ]
             : []),
+          ...(onMoveProject
+            ? [
+                {
+                  id: 'project',
+                  label: `Move to project for ${
+                    title ? `${title} (${id})` : id
+                  }`,
+                  disabled: moveProjectPending || mutationBlocked,
+                },
+              ]
+            : []),
         ]}
         open={menu?.open ?? open}
         onOpenChange={menu?.onOpenChange ?? setOpen}
@@ -225,6 +246,7 @@ function CopyCommand({
           else if (command === 'move-down') onMoveDown?.();
           else if (command === 'delete') onDelete?.();
           else if (command === 'archive') onArchive?.();
+          else if (command === 'project') onMoveProject?.();
           else void copy(event);
         }}
       />
