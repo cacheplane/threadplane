@@ -27,7 +27,10 @@ export interface Draft {
   link?: { url: string; previewTitle?: string };
   scheduledAt?: string;
   article?: DraftArticle;
-  /** LinkedIn only: posted as the author's first comment right after the post. */
+  /**
+   * LinkedIn only: posted as the author's first comment right after the post.
+   * Needs partner API access; validation rejects it unless LINKEDIN_PARTNER_COMMENTS=1.
+   */
   firstComment?: string;
 }
 
