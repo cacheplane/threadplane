@@ -162,6 +162,7 @@ test('installed React project deletion drains unloaded membership and explicitly
     await buildConsumer({
       root: resolve('.'),
       assistantId: 'assistant',
+      output: join(work, 'production'),
       capture: (context) =>
         captureRetainedBuild(join(work, 'retained'), context),
     });

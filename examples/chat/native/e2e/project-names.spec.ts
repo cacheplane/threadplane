@@ -44,6 +44,7 @@ test('installed React project creation and renaming persist locally without conv
     await buildConsumer({
       root: resolve('.'),
       assistantId: 'assistant',
+      output: join(work, 'production'),
       capture: (context) =>
         captureRetainedBuild(join(work, 'retained'), context),
     });
