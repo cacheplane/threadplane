@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { validateDraft, ValidationError } from './validation';
 import type { Draft } from './types';
 
@@ -112,6 +112,24 @@ function ruleOf(d: Draft): string | undefined {
 }
 
 describe('validateDraft (LinkedIn)', () => {
+  let partnerComments: string | undefined;
+  beforeEach(() => {
+    partnerComments = process.env.LINKEDIN_PARTNER_COMMENTS;
+    process.env.LINKEDIN_PARTNER_COMMENTS = '1';
+  });
+  afterEach(() => {
+    if (partnerComments === undefined) delete process.env.LINKEDIN_PARTNER_COMMENTS;
+    else process.env.LINKEDIN_PARTNER_COMMENTS = partnerComments;
+  });
+
+  it('rejects firstComment without partner access, before anything is posted', () => {
+    delete process.env.LINKEDIN_PARTNER_COMMENTS;
+    expect(ruleOf({ ...baseLinkedIn(), firstComment: 'link' })).toBe(
+      'linkedin-comment-needs-partner',
+    );
+    expect(ruleOf(baseLinkedIn())).toBeUndefined();
+  });
+
   it('accepts text with one image and a first comment', () => {
     const d: Draft = {
       ...baseLinkedIn(),

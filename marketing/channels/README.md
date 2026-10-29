@@ -6,7 +6,7 @@ Channel adapters for the Threadplane marketing pipeline. One adapter per channel
 
 - **X** (`getAdapter('x')`) — post single tweets, threads, and image media (PNG ≤ 5MB, alt text required). `metrics()` is a stub until the X tier upgrades to Basic+.
 - **Dev.to** (`getAdapter('devto')`) — post articles with title, tags, canonical URL, description. Real `metrics()` (Dev.to's read API is free).
-- **LinkedIn** (`getAdapter('linkedin')`) — post to your personal profile with one optional image (PNG ≤ 5MB, alt text required) and an optional `firstComment` posted right after. `metrics()` is a stub: reading member post stats needs a partner-only permission.
+- **LinkedIn** (`getAdapter('linkedin')`) — post to your personal profile with one optional image (PNG ≤ 5MB, alt text required). `firstComment` needs partner API access (see below). `metrics()` is a stub: reading member post stats needs a partner-only permission.
 
 ## Planned (follow-up commits in this package — no separate spec)
 
@@ -72,7 +72,7 @@ Tokens last 60 days and self-serve apps get no refresh token, so there's no auto
 
 Post text is sent in LinkedIn's "little" format. The adapter escapes its reserved characters (`| { } @ [ ] ( ) < > \ * _ ~`, and any `#` that doesn't start a hashtag) so the text renders as written. Unescaped parentheses can silently truncate a post. `#word` hashtags stay live.
 
-A failed `firstComment` doesn't throw, because the post is already live: the result carries a `warnings` entry instead, so add the comment by hand.
+LinkedIn's comments endpoint is partner-only. A self-serve app's `w_member_social` token can create posts but gets `403 ACCESS_DENIED` on comments, so validation rejects `firstComment` unless `LINKEDIN_PARTNER_COMMENTS=1`. Without partner access, post first and add the link comment by hand. With the flag set, a failed comment still doesn't throw, because the post is already live: the result carries a `warnings` entry instead.
 
 ## Auth (Dev.to)
 
@@ -125,8 +125,8 @@ All adapters call `validateDraft()` first. Drafts that violate per-channel rules
 LinkedIn rules:
 
 - `text` required, ≤ 3000 code points. No `threadParts`.
-- No `link`: the Posts API doesn't scrape link previews. Put the URL in `firstComment` or the text.
-- `firstComment` 1-1250 code points.
+- No `link`: the Posts API doesn't scrape link previews. Put the URL in the text, or comment it by hand after posting.
+- `firstComment` only with `LINKEDIN_PARTNER_COMMENTS=1`, and 1-1250 code points.
 - At most 1 image, with the same PNG and alt-text rules as X.
 
 ## Adding a new adapter
