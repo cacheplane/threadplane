@@ -1,0 +1,278 @@
+{
+  "source": "Library steps from 34138447e0b71198982adf3fdc33f14b06f424cd before partitioning; hashes exclude only added matrix conditions.",
+  "steps": [
+    {
+      "step": "- uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2",
+      "lanes": [
+        "quality",
+        "native",
+        "packages"
+      ],
+      "sha256": "aed36c7646304bfe7e2b3f8aa1a0c4493d918fa07624ef502f3dd5d15901bba0"
+    },
+    {
+      "step": "- uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0",
+      "lanes": [
+        "quality",
+        "native",
+        "packages"
+      ],
+      "sha256": "2b8f33fda93fa8c2b009d07650ba493989f04440ce0c3355a52b3d779038a458"
+    },
+    {
+      "step": "- run: npm ci",
+      "lanes": [
+        "quality",
+        "native",
+        "packages"
+      ],
+      "sha256": "5ef9a25dbdfd5dad6ac2e2e4f7d533192dae97f0435ffcb5839b1fd6c33b7a0d"
+    },
+    {
+      "step": "- name: Verify native conversation tooling",
+      "lanes": [
+        "quality"
+      ],
+      "sha256": "6c51be979018f9c7b18ec54849d606696a7dc2f0a699fb78f1c856a4dfbceab9"
+    },
+    {
+      "step": "- name: Verify native React copy behavior",
+      "lanes": [
+        "quality"
+      ],
+      "sha256": "f619b9193c538f121100f7798e20d445a1127d7db4ec7d6841c78ed5f0a450d8"
+    },
+    {
+      "step": "- run: npx nx run-many -t lint --projects=$LIBS",
+      "lanes": [
+        "quality"
+      ],
+      "sha256": "3a630dd4eebbfcfc480c297d71168918097e0247df3d465bd381e3d228df7e98"
+    },
+    {
+      "step": "- name: React migration baseline and boundaries",
+      "lanes": [
+        "quality"
+      ],
+      "sha256": "477f7ca29fe6911a1e2bcd6ead05f94754653e71bfc66e448df5f0e591a63ff9"
+    },
+    {
+      "step": "- name: Build and validate private React foundations",
+      "lanes": [
+        "quality"
+      ],
+      "sha256": "49e1e2853d2b70df03007215ced3a8124c72efc871250c9519e9c805b4d9a896"
+    },
+    {
+      "step": "- name: Verify isolated backend runtimes and types",
+      "lanes": [
+        "native"
+      ],
+      "sha256": "00ad6a2e55612f21a5b92ae59fc7cbae515548ed617fa6f4e3a1485b8e12bb4b"
+    },
+    {
+      "step": "- name: Set up pinned Python for native approval proof",
+      "lanes": [
+        "native",
+        "packages"
+      ],
+      "sha256": "a9dd2d4bed99fefa1448edcc940be0f42e93ea9b945c0cf54cf7fbef186b78c8"
+    },
+    {
+      "step": "- name: Verify native approval with canonical provider",
+      "lanes": [
+        "native"
+      ],
+      "sha256": "52abae4372f847cddd4971f4b26a530f40fabbac6cdd47c507e31a6c1016e98a"
+    },
+    {
+      "step": "- name: Verify native trip summary with canonical provider",
+      "lanes": [
+        "native"
+      ],
+      "sha256": "7cd85adc53db32af3741f038bc66db2f81e4d9156af8f9b1fe923b4822800149"
+    },
+    {
+      "step": "- name: Verify native owner with pinned Mastra service",
+      "lanes": [
+        "packages"
+      ],
+      "sha256": "b29a38388039661d8243bf8b5409f6589635983496f005230217e1a19f6181e5"
+    },
+    {
+      "step": "- run: npx nx test langgraph --coverage --maxWorkers=2 --reporter=default",
+      "lanes": [
+        "native"
+      ],
+      "sha256": "9fa6d251b0b81498a068ce7e456526ca61b62bd8c14fab8db154a3ace87eb80a"
+    },
+    {
+      "step": "- name: Prepare pinned PostgreSQL integration image",
+      "lanes": [
+        "native"
+      ],
+      "sha256": "4cf511603e141dfcbc9ce239230d0849cfee2d0638ba9cb306a90ab1583d186c"
+    },
+    {
+      "step": "- name: Verify durable tool ownership and PostgreSQL migration",
+      "lanes": [
+        "native"
+      ],
+      "sha256": "52cd0e7c17dc4640ea3c29fb3c656d1d3bf8b7153e02d7cd6fbfab8ea3fca5b0"
+    },
+    {
+      "step": "- run: npx nx run-many -t test --projects=chat,ag-ui,render,a2ui,telemetry,middleware --coverage --parallel=1 --maxWorkers=2",
+      "lanes": [
+        "native"
+      ],
+      "sha256": "fbeb0e244d0dbc8169f093540e0567176432c2b7b874621aa42b79026ff4154a"
+    },
+    {
+      "step": "- run: npx nx run-many -t build --projects=$LIBS --configuration=production",
+      "lanes": [
+        "packages"
+      ],
+      "sha256": "23f6a5a2b45b9e930a3064cb216a05dcbf03ed827d372b0c16c3de769f88cf23"
+    },
+    {
+      "step": "- name: Verify production builds strip the devtools hook",
+      "lanes": [
+        "packages"
+      ],
+      "sha256": "04a604dbc1efa86d0c4f8ace3da7949977928887bf7d884399b764b3888b7f48"
+    },
+    {
+      "step": "- name: Verify canonical A2UI native fixtures",
+      "lanes": [
+        "packages"
+      ],
+      "sha256": "eb0c97a21ac19f77ba597c684a0db23d513ba27fc7b9475781a270e63d6923bf"
+    },
+    {
+      "step": "- name: Configure bounded Ubuntu package downloads",
+      "lanes": [
+        "packages"
+      ],
+      "sha256": "d8f16e9c10162b2e6709b94c0596a63eb8be5171d21d952badf798d9d6e3630a"
+    },
+    {
+      "step": "- name: Install Chromium for packed runtime consumers",
+      "lanes": [
+        "packages"
+      ],
+      "sha256": "02491e6940e543429c683a96bd84bc10a3e5ff2257d3b7d4f8726781361e9065"
+    },
+    {
+      "step": "- name: Verify native same-document session bindings",
+      "lanes": [
+        "packages"
+      ],
+      "sha256": "3d6436efa306b733f9f29f02b8156b66023a47d8095fd8cd2e73eca352edd980"
+    },
+    {
+      "step": "- name: Verify real LangGraph candidate package",
+      "lanes": [
+        "packages"
+      ],
+      "sha256": "a3b781103a1e6a7371aae24bb032124e60d75666421e4a86b52c3080ce000b7f"
+    },
+    {
+      "step": "- name: Prepare canonical AG-UI client-tools fixture",
+      "lanes": [
+        "packages"
+      ],
+      "sha256": "297232f568ddb90f4428db11e8612cfc96745020ddee50d863ec107f31df5175"
+    },
+    {
+      "step": "- name: Verify canonical AG-UI client-tools fixtures",
+      "lanes": [
+        "packages"
+      ],
+      "sha256": "51dbae73a562e0719af9cfa64d5f9a50f99c9b64ff2d64f8b7240e85356124b6"
+    },
+    {
+      "step": "- name: Verify real AG-UI candidate package",
+      "lanes": [
+        "packages"
+      ],
+      "sha256": "1a957b83e601905cc02a8b247f2092e3204c6244e32b499ed9de7b61de5ad4e2"
+    },
+    {
+      "step": "- name: Verify installed native AG-UI A2UI",
+      "lanes": [
+        "packages"
+      ],
+      "sha256": "db121e4fe2804fb48ad18a3d5eedc49df9873182092efbc3f98776318684cf09"
+    },
+    {
+      "step": "- name: Upload native AG-UI A2UI proof",
+      "lanes": [
+        "packages"
+      ],
+      "sha256": "92fde18e46bf7173ee8ff3cf3478c30739ad446efd3e34a8c8420d53417ad9fa"
+    },
+    {
+      "step": "- name: Verify installed owned Markdown",
+      "lanes": [
+        "packages"
+      ],
+      "sha256": "05c15159a595a4a591abf965de6a41617c72f26929e6c54948835268f105c39d"
+    },
+    {
+      "step": "- name: Verify installed owned A2UI surfaces",
+      "lanes": [
+        "packages"
+      ],
+      "sha256": "f3ac7545563d686207960976b93ccd3b3176c5d32790c1170e4ffe65ccec0a4a"
+    },
+    {
+      "step": "- name: Verify installed owned render state",
+      "lanes": [
+        "packages"
+      ],
+      "sha256": "951786b3d1a3801edee6eb958690b40101f22d924b573f6cfe42ab23ae590a34"
+    },
+    {
+      "step": "- name: Verify installed native React readiness",
+      "lanes": [
+        "packages"
+      ],
+      "sha256": "2e27572a4cdaaf299d7040e9a41850d0417f228ee0ac1e9022246f63d766b91a"
+    },
+    {
+      "step": "- name: Verify emitted boundaries and isolated packages",
+      "lanes": [
+        "packages"
+      ],
+      "sha256": "305c23d400b96e4f4521e6554f9e9af1d5b61becfec167a50a7d07d39da1f07f"
+    },
+    {
+      "step": "- run: node scripts/verify-release-versions.mjs",
+      "lanes": [
+        "quality"
+      ],
+      "sha256": "581dd68bc012f312684637c608687e271502a7bdf5e3d6af8bac6705c736da77"
+    },
+    {
+      "step": "- name: DX-coverage — public dev-facing functions must have a JSDoc summary",
+      "lanes": [
+        "quality"
+      ],
+      "sha256": "b9ea239809bee2bb572ccde461d400d7e96984d02176704d615c1944c627bd9d"
+    },
+    {
+      "step": "- run: node --test examples/chat/smoke/*.spec.mjs scripts/verify-angular-support.spec.mjs",
+      "lanes": [
+        "quality"
+      ],
+      "sha256": "1532e22b49c4748f2a86c9a3c1e2599a75650d779aac9f209e11f7578045c44a"
+    },
+    {
+      "step": "- run: node scripts/verify-angular-support.mjs",
+      "lanes": [
+        "quality"
+      ],
+      "sha256": "490300e42d60867bda0a0561750d4612d6853ac9189def8d29c415f692e50901"
+    }
+  ]
+}
