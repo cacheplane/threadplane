@@ -1,9 +1,10 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "68ba5bd79835bc6fdf83c3f741cf0e9424707996",
+  "baselineHead": "bb291409b75bd4eecf3e06e68b38b72a22ee991f",
   "sourceState": {
     "modified": [
-      ".github/workflows/ci.yml"
+      ".github/workflows/ci.yml",
+      "libs/react/README.md"
     ],
     "untracked": []
   },
@@ -2237,7 +2238,7 @@
       "id": "config:package.json",
       "kind": "config",
       "path": "package.json",
-      "sha256": "db7b67432af69c907af7c096dcce1efdbd767af867dec0a85a6da0f68b931e55"
+      "sha256": "3999d926d7d98015c5a29ad80e1236d01fc6aa74558987ae9ac9d02f75049aa6"
     },
     {
       "id": "config:scripts/assemble-examples.ts",

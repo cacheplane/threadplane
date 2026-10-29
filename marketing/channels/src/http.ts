@@ -1,11 +1,13 @@
 export interface HttpOpts {
-  method: 'GET' | 'POST' | 'PATCH' | 'DELETE';
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   url: string;
   headers?: Record<string, string>;
   body?: BodyInit;
   timeoutMs?: number;
   retryOn5xx?: boolean;
   on401?: () => Promise<{ retry: true } | { retry: false }>;
+  /** Called with the response headers of a successful (2xx) response. */
+  onHeaders?: (headers: Headers) => void;
 }
 
 const DEFAULT_TIMEOUT_MS = 20_000;
@@ -53,7 +55,7 @@ export async function http<T = unknown>(opts: HttpOpts): Promise<T> {
       const result = await opts.on401();
       if (result.retry) {
         const retryRes = await doFetch(opts);
-        return await parseOrThrow<T>(retryRes);
+        return await parseOrThrow<T>(retryRes, opts.onHeaders);
       }
       throw await toError(res);
     }
@@ -64,14 +66,18 @@ export async function http<T = unknown>(opts: HttpOpts): Promise<T> {
       continue;
     }
 
-    return await parseOrThrow<T>(res);
+    return await parseOrThrow<T>(res, opts.onHeaders);
   }
 
   throw lastError ?? new Error('http: exhausted retries without an error');
 }
 
-async function parseOrThrow<T>(res: Response): Promise<T> {
+async function parseOrThrow<T>(
+  res: Response,
+  onHeaders?: (headers: Headers) => void,
+): Promise<T> {
   if (res.status >= 200 && res.status < 300) {
+    onHeaders?.(res.headers);
     const text = await res.text();
     if (text.length === 0) return undefined as T;
     try {

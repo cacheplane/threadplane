@@ -92,11 +92,67 @@ describe('validateDraft (X)', () => {
 });
 
 describe('validateDraft (other channels)', () => {
-  it('throws not-yet-implemented for linkedin/reddit', () => {
-    for (const channel of ['linkedin', 'reddit'] as const) {
-      const d: Draft = { channel, text: 'hi' };
-      expect(() => validateDraft(d)).toThrow(/not yet implemented/i);
-    }
+  it('throws not-yet-implemented for reddit', () => {
+    const d: Draft = { channel: 'reddit', text: 'hi' };
+    expect(() => validateDraft(d)).toThrow(/not yet implemented/i);
+  });
+});
+
+function baseLinkedIn(): Draft {
+  return { channel: 'linkedin', text: 'hello' };
+}
+
+function ruleOf(d: Draft): string | undefined {
+  try {
+    validateDraft(d);
+  } catch (e) {
+    return (e as ValidationError).rule;
+  }
+  return undefined;
+}
+
+describe('validateDraft (LinkedIn)', () => {
+  it('accepts text with one image and a first comment', () => {
+    const d: Draft = {
+      ...baseLinkedIn(),
+      media: [{ png: Buffer.from('a'), alt: 'alt' }],
+      firstComment: 'link: https://threadplane.ai',
+    };
+    expect(() => validateDraft(d)).not.toThrow();
+  });
+
+  it('requires non-blank text', () => {
+    expect(ruleOf({ channel: 'linkedin' })).toBe('linkedin-text-required');
+    expect(ruleOf({ channel: 'linkedin', text: '  ' })).toBe('linkedin-text-required');
+  });
+
+  it('accepts 3000 code points and rejects 3001', () => {
+    expect(ruleOf({ channel: 'linkedin', text: '→'.repeat(3000) })).toBeUndefined();
+    expect(ruleOf({ channel: 'linkedin', text: '→'.repeat(3001) })).toBe('linkedin-text-too-long');
+  });
+
+  it('rejects threads and link previews', () => {
+    expect(ruleOf({ ...baseLinkedIn(), threadParts: ['a', 'b'] })).toBe('linkedin-no-threads');
+    expect(ruleOf({ ...baseLinkedIn(), link: { url: 'https://threadplane.ai' } })).toBe(
+      'linkedin-no-link-preview',
+    );
+  });
+
+  it('bounds firstComment to 1-1250 code points', () => {
+    expect(ruleOf({ ...baseLinkedIn(), firstComment: '' })).toBe('linkedin-comment-length');
+    expect(ruleOf({ ...baseLinkedIn(), firstComment: 'a'.repeat(1250) })).toBeUndefined();
+    expect(ruleOf({ ...baseLinkedIn(), firstComment: 'a'.repeat(1251) })).toBe(
+      'linkedin-comment-length',
+    );
+  });
+
+  it('allows at most one image, with alt text and the 5MB cap', () => {
+    const img = { png: Buffer.from('a'), alt: 'alt' };
+    expect(ruleOf({ ...baseLinkedIn(), media: [img, img] })).toBe('linkedin-too-many-media');
+    expect(ruleOf({ ...baseLinkedIn(), media: [{ ...img, alt: '' }] })).toBe('alt-required');
+    expect(
+      ruleOf({ ...baseLinkedIn(), media: [{ ...img, png: Buffer.alloc(5 * 1024 * 1024 + 1) }] }),
+    ).toBe('png-too-large');
   });
 });
 

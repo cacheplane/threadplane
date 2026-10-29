@@ -16,6 +16,9 @@ const MAX_X_MEDIA = 4;
 const MAX_ALT = 1000;
 const MAX_PNG_BYTES = 5 * 1024 * 1024;
 
+const MAX_LINKEDIN_CHARS = 3000;
+const MAX_LINKEDIN_COMMENT_CHARS = 1250;
+
 const MAX_DEVTO_TITLE = 128;
 const MAX_DEVTO_TAGS = 4;
 const MAX_DEVTO_TAG_LEN = 30;
@@ -90,6 +93,69 @@ function validateX(draft: Draft): void {
       throw new ValidationError(
         `media[${i}] PNG exceeds 5MB (got ${m.png.byteLength} bytes).`,
         { rule: 'png-too-large', field: `media[${i}].png` },
+      );
+    }
+  }
+}
+
+function validateLinkedIn(draft: Draft): void {
+  if (typeof draft.text !== 'string' || draft.text.trim().length === 0) {
+    throw new ValidationError('LinkedIn draft.text is required.', {
+      rule: 'linkedin-text-required',
+      field: 'text',
+    });
+  }
+  if (codePointLength(draft.text) > MAX_LINKEDIN_CHARS) {
+    throw new ValidationError(
+      `LinkedIn text exceeds 3000 characters (got ${codePointLength(draft.text)}).`,
+      { rule: 'linkedin-text-too-long', field: 'text' },
+    );
+  }
+  if (draft.threadParts) {
+    throw new ValidationError(
+      'LinkedIn does not support threads. Use text, plus firstComment for a follow-up.',
+      { rule: 'linkedin-no-threads', field: 'threadParts' },
+    );
+  }
+  if (draft.link) {
+    throw new ValidationError(
+      'LinkedIn adapter does not build link previews. Put the URL in firstComment or in the text.',
+      { rule: 'linkedin-no-link-preview', field: 'link' },
+    );
+  }
+  if (draft.firstComment !== undefined) {
+    const len = codePointLength(draft.firstComment);
+    if (len === 0 || len > MAX_LINKEDIN_COMMENT_CHARS) {
+      throw new ValidationError(
+        `LinkedIn firstComment must be 1-1250 characters (got ${len}).`,
+        { rule: 'linkedin-comment-length', field: 'firstComment' },
+      );
+    }
+  }
+  if (draft.media && draft.media.length > 1) {
+    throw new ValidationError(
+      `LinkedIn adapter posts at most 1 image (got ${draft.media.length}).`,
+      { rule: 'linkedin-too-many-media', field: 'media' },
+    );
+  }
+  const m = draft.media?.[0];
+  if (m) {
+    if (!m.alt || m.alt.length === 0) {
+      throw new ValidationError('media[0] alt text is required.', {
+        rule: 'alt-required',
+        field: 'media[0].alt',
+      });
+    }
+    if (m.alt.length > MAX_ALT) {
+      throw new ValidationError(
+        `media[0] alt text exceeds 1000 characters (got ${m.alt.length}).`,
+        { rule: 'alt-too-long', field: 'media[0].alt' },
+      );
+    }
+    if (m.png.byteLength > MAX_PNG_BYTES) {
+      throw new ValidationError(
+        `media[0] PNG exceeds 5MB (got ${m.png.byteLength} bytes).`,
+        { rule: 'png-too-large', field: 'media[0].png' },
       );
     }
   }
@@ -179,6 +245,7 @@ export function validateDraft(
     case 'devto':
       return validateDevTo(draft);
     case 'linkedin':
+      return validateLinkedIn(draft);
     case 'reddit':
       throw new ValidationError(
         `Channel "${draft.channel}" adapter is not yet implemented.`,

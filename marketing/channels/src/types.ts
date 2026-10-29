@@ -27,6 +27,8 @@ export interface Draft {
   link?: { url: string; previewTitle?: string };
   scheduledAt?: string;
   article?: DraftArticle;
+  /** LinkedIn only: posted as the author's first comment right after the post. */
+  firstComment?: string;
 }
 
 export interface PostResult {
@@ -34,6 +36,8 @@ export interface PostResult {
   postId: string;
   url: string;
   postedAt: string;
+  /** Follow-up steps that failed after the post itself went live. */
+  warnings?: string[];
 }
 
 export interface PostMetrics {

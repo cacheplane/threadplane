@@ -1,6 +1,7 @@
 import type { ChannelAdapter, ChannelId } from './types';
 import { XAdapter } from './x';
 import { DevToAdapter } from './devto';
+import { LinkedInAdapter } from './linkedin';
 
 const KNOWN: ChannelId[] = ['x', 'linkedin', 'devto', 'reddit'];
 
@@ -13,9 +14,10 @@ function buildAdapter(id: ChannelId): ChannelAdapter {
     case 'devto':
       return new DevToAdapter();
     case 'linkedin':
+      return new LinkedInAdapter();
     case 'reddit':
       throw new Error(
-        `Channel "${id}" adapter is not yet implemented. Known channels with implementations: x, devto.`,
+        `Channel "${id}" adapter is not yet implemented. Known channels with implementations: x, devto, linkedin.`,
       );
     default: {
       const _exhaustive: never = id;
