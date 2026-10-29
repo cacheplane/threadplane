@@ -128,6 +128,36 @@ export function createThreadDirectory(
   const validId = (id: string) =>
     typeof id === 'string' && !!id && id !== '.' && id !== '..';
   return Object.freeze({
+    projectMembers(projectId: string, signal: AbortSignal) {
+      if (typeof projectId !== 'string' || !projectId.trim())
+        return Promise.resolve(failure(signal));
+      return perform(signal, async () => {
+        const raw = await client.threads.search({
+          metadata: { projectId },
+          limit: 50,
+          offset: 0,
+          signal,
+        });
+        if (!Array.isArray(raw) || raw.length > 50)
+          throw new Error('Invalid project membership');
+        const ids = new Set<string>();
+        for (const row of raw) {
+          if (
+            !row ||
+            typeof row.thread_id !== 'string' ||
+            !row.thread_id.trim() ||
+            !validId(row.thread_id) ||
+            !row.metadata ||
+            !Object.hasOwn(row.metadata, 'projectId') ||
+            row.metadata['projectId'] !== projectId ||
+            ids.has(row.thread_id)
+          )
+            throw new Error('Invalid project membership');
+          ids.add(row.thread_id);
+        }
+        return Object.freeze([...ids]);
+      });
+    },
     setProject(id: string, projectId: string | null, signal: AbortSignal) {
       if (
         typeof id !== 'string' ||
@@ -143,7 +173,12 @@ export function createThreadDirectory(
           metadata: { projectId },
           signal,
         });
-        if (raw.thread_id !== id || raw.metadata?.['projectId'] !== projectId)
+        if (
+          raw.thread_id !== id ||
+          !raw.metadata ||
+          !Object.hasOwn(raw.metadata, 'projectId') ||
+          raw.metadata['projectId'] !== projectId
+        )
           throw new Error('Project assignment not confirmed');
         return Object.freeze({ id, projectId });
       });

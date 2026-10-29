@@ -860,7 +860,7 @@ until reset. New project is always available when local storage is healthy; the
 larger project section appears for catalog/loaded entries, a retained filter or an
 open editor. Selection is ephemeral, while names persist only in this browser.
 New conversations use the selected project as described below, and pinned reordering still spans all loaded
-pins, including other projects. Deletion, shared catalogs and full T29 parity remain open. Confirmed
+pins, including other projects. Confirmed deletion is described below; shared catalogs and full T29 parity remain open. Confirmed
 conversation assignment/removal is described below. See the naming slice below for persistence behavior.
 
 ### Project creation and browser-local names (private React T29 slice)
@@ -891,7 +891,7 @@ transactions. This naming catalog has no cross-device sharing. The association s
 uses explicit backend conversation metadata commands.
 Project selection, naming and persistence preserve the selected conversation,
 transcript, composer draft and running session without extra network calls.
-Project deletion, shared catalogs and full T29 parity remain open. Confirmed
+Confirmed project deletion is described below; shared catalogs and full T29 parity remain open. Confirmed
 conversation assignment/removal is described below.
 
 Conversation menus also retain their opening through a queued scroll notification
@@ -931,7 +931,7 @@ out of the current project keeps that filter, selected conversation, transcript,
 composer draft and running response. Cancellation may close the editor while an
 already dispatched command continues; its completion cannot close a newer editor.
 Focus returns only while still owned, using the stable filter when the original
-row is hidden. Compact rails remain selection-only. New conversations inherit the selected project as described below. Project deletion, shared catalogs, drag
+row is hidden. Compact rails remain selection-only. New conversations inherit the selected project as described below. Confirmed project deletion is described below. Shared catalogs, drag
 reordering and full T29 parity remain open.
 
 
@@ -957,5 +957,37 @@ or revert its confirmed project; fresh post-creation reads remain authoritative.
 Navigation, disposal and newer creation intents fence late completions.
 
 The association survives backend reloads; the selected project filter stays
-ephemeral. Project deletion, shared catalogs, drag reordering and full T29 parity
+ephemeral. Confirmed project deletion is described below. Shared catalogs, drag reordering and full T29 parity
 remain open. This is private native dogfood with no new library export.
+
+### Confirmed project deletion (private native React T29 slice)
+
+Native React **Delete project** captures an exact project ID and asks for
+confirmation. It preserves conversations, including archived conversations and
+those outside the 50-row loaded directory. The application searches backend
+membership in batches of 50 and clears each association with a confirmed
+`projectId: null` metadata update. It repeats the first page as membership shrinks;
+it never deletes conversation records or changes their content.
+
+A final empty membership response confirms backend completion. Only then does
+the browser remove the project label from the latest observed local catalog.
+Pending and uncertain operations retain their captured target. Explicit **Retry
+project deletion** rechecks remaining membership, including after an uncertain
+write or a failed local catalog save. Partial progress is retained; failure never
+claims the entire project was removed. Invalid stored data remains untouched.
+The owner bounds each attempt to 200 pages and rejects repeated member IDs rather
+than looping indefinitely; an incomplete attempt requires explicit retry.
+
+Selection, transcript, composer draft and running response remain owned by the
+current conversation. Successful deletion returns to All conversations only if
+the deleted project is still selected; a newer filter is preserved. Independent
+read/write evidence prevents older reads from restoring cleared associations.
+Pending deletion blocks local creation, project moves and conversation deletion;
+an unconfirmed target cannot accept new local associations. Confirmed deleted IDs
+also reject incoming local associations for the application owner's lifetime.
+
+The backend has no atomic project-deletion operation: another client can create
+or move conversations concurrently, and fresh backend reads remain authoritative.
+Catalog updates preserve the latest observed entries without an atomic multi-tab
+guarantee. Project names remain browser-local. Shared catalogs, drag reordering
+and full T29 parity remain open; this slice adds no public library export.

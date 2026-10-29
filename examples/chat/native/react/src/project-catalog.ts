@@ -116,3 +116,16 @@ export function mergeProjects(
   }
   return capture(projects);
 }
+
+/** Remove from the latest observed catalog; malformed storage remains untouched. */
+export function removeProject(
+  storage: CatalogStorage,
+  id: string
+): readonly NativeProject[] {
+  if (!nonblank(id)) throw new Error('Project ID is required');
+  const projects = readProjectCatalog(storage);
+  return persist(
+    storage,
+    projects.filter((project) => project.id !== id)
+  );
+}
