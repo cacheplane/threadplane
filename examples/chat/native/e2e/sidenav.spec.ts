@@ -1093,6 +1093,13 @@ test('installed React sidenav retains navigation, draft and a running response a
       ).toBeFocused();
       await page.keyboard.press('Tab');
       await expect(
+        nav.getByRole('button', {
+          name: 'Delete project <Alpha project> (<Alpha project>)',
+          exact: true,
+        })
+      ).toBeFocused();
+      await page.keyboard.press('Tab');
+      await expect(
         nav
           .getByRole('list', { name: 'Projects' })
           .getByRole('button', { name: 'beta/project', exact: true })
@@ -1101,6 +1108,13 @@ test('installed React sidenav retains navigation, draft and a running response a
       await expect(
         nav.getByRole('button', {
           name: 'Rename project beta/project (beta/project)',
+          exact: true,
+        })
+      ).toBeFocused();
+      await page.keyboard.press('Tab');
+      await expect(
+        nav.getByRole('button', {
+          name: 'Delete project beta/project (beta/project)',
           exact: true,
         })
       ).toBeFocused();

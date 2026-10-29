@@ -7,8 +7,14 @@ import {
   mergeProjects,
   readProjectCatalog,
   renameProject,
+  removeProject,
   type NativeProject,
 } from './project-catalog';
+
+import {
+  useProjectDeletion,
+  type ProjectDeletionOwner,
+} from './use-project-deletion';
 
 type Editor = {
   readonly id: string | null;
@@ -22,7 +28,9 @@ export function NativeProjects({
   rows,
   projectId,
   onSelect,
+  deletion,
 }: {
+  readonly deletion?: ProjectDeletionOwner;
   readonly rows: readonly ThreadRow[];
   readonly projectId: string | null;
   readonly onSelect: (id: string | null) => void;
@@ -35,6 +43,7 @@ export function NativeProjects({
   const [error, setError] = useState<string | undefined>();
   const [feedback, setFeedback] = useState('');
   const form = useRef<HTMLDivElement>(null);
+  const allConversations = useRef<HTMLButtonElement>(null);
   const sequence = useRef(0);
   const current = useRef<Editor | null>(null);
   const reload = () => {
@@ -98,8 +107,26 @@ export function NativeProjects({
           request.invoker.focus({ preventScroll: true });
       });
   };
+  const projectDeletion = useProjectDeletion({
+    owner: deletion,
+    fallbackFocusTo: () => allConversations.current,
+    selectedId: projectId,
+    onSelect,
+    onRemoved(id) {
+      const next = removeProject(window.localStorage, id);
+      setCatalog(next);
+      const active = current.current;
+      if (active?.id === id) close(active);
+    },
+  });
   const save = (request: Editor) => {
-    if (current.current !== request || problem || !value.trim()) return;
+    if (
+      current.current !== request ||
+      problem ||
+      projectDeletion.busy ||
+      !value.trim()
+    )
+      return;
     let id = request.id;
     if (id === null) {
       try {
@@ -138,7 +165,7 @@ export function NativeProjects({
     <>
       <button
         type="button"
-        disabled={!ready || problem}
+        disabled={!ready || problem || projectDeletion.busy}
         onClick={(event) => open(null, '', event.currentTarget)}
       >
         New project
@@ -162,10 +189,12 @@ export function NativeProjects({
           <h3 id="native-projects-title">Projects</h3>
           <p className="muted">
             Project names are saved only in this browser. Loaded project IDs
-            include archived conversations. New conversations use the selected project.
+            include archived conversations. New conversations use the selected
+            project.
           </p>
           <button
             type="button"
+            ref={allConversations}
             aria-pressed={projectId === null}
             onClick={() => onSelect(null)}
           >
@@ -177,16 +206,35 @@ export function NativeProjects({
             onSelect={onSelect}
             label="Projects"
             renderActions={(project) => (
-              <button
-                type="button"
-                disabled={!ready || problem}
-                aria-label={`Rename project ${project.name} (${project.id})`}
-                onClick={(event) =>
-                  open(project.id, project.name, event.currentTarget)
-                }
-              >
-                Rename
-              </button>
+              <>
+                <button
+                  type="button"
+                  disabled={!ready || problem || projectDeletion.busy}
+                  aria-label={`Rename project ${project.name} (${project.id})`}
+                  onClick={(event) =>
+                    open(project.id, project.name, event.currentTarget)
+                  }
+                >
+                  Rename
+                </button>
+                {deletion && (
+                  <button
+                    type="button"
+                    disabled={
+                      !ready ||
+                      problem ||
+                      projectDeletion.busy ||
+                      !deletion.canDeleteProject(project.id)
+                    }
+                    aria-label={`Delete project ${project.name} (${project.id})`}
+                    onClick={(event) =>
+                      projectDeletion.request(project, event.currentTarget)
+                    }
+                  >
+                    Delete
+                  </button>
+                )}
+              </>
             )}
           />
           {editor && (
@@ -203,7 +251,7 @@ export function NativeProjects({
                 onSubmit={() => save(editor)}
                 onCancel={() => close(editor)}
                 error={error}
-                submitDisabled={problem}
+                submitDisabled={problem || projectDeletion.busy}
                 submitLabel={editor.id === null ? 'Create' : 'Save'}
               />
             </div>
@@ -213,6 +261,7 @@ export function NativeProjects({
           )}
         </section>
       )}
+      {projectDeletion.content}
       {feedback && <p role="status">{feedback}</p>}
     </>
   );

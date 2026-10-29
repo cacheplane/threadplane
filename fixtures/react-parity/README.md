@@ -343,7 +343,7 @@ This bounded runtime proof does not establish complete migration parity.
 | T26 | Implement all Markdown views and citation UI |
 | T27 | Implement A2UI surface and all 18 catalog views |
 | T28 | Implement approvals, tools, reasoning and subagent UI |
-| T29  | In progress: private controlled ThreadList selection view, optional app-owned new-conversation request and render-time relative updated timestamps with exact ISO metadata, dogfooded from backend timestamps in native React directory presentations; application owns data/filtering/execution/refresh. Bounded readonly title-content callback receives the original item and returns noninteractive ReactNode phrasing content; original accessible labels survive and null/false output is honored. Native React highlights the first literal loaded-title filter match. No timer or live ticking. Optional readonly boolean pinned metadata presents only strict true with a decorative icon and accessible status before time, preserving original names and supplied order without sorting or writes. Optional readonly `renderActions` receives the original item and composes application-owned interactive controls beside the selection button without changing selection; absent/null/false/undefined output omits its wrapper. Native full directories dogfood exact-ID clipboard copying, app-owned confirmed renaming through the private controlled ThreadRenameForm, and confirmed Pin/Unpin commands with pending/error/retry and independent title/pin/archive reconciliation; native app-owned Archive/Unarchive partition loaded rows into active and archived full lists with the same filter and stable directory feedback across row migration; exact raw boolean confirmation, per-ID pending/retry, independent stale-read protection and selected transcript/draft/running-session preservation remain app-owned. Compact rails stay active-only and selection-only and reflect shared pin state. The ThreadList primitive still renders supplied order; native application grouping sorts active loaded pins by finite pinnedOrder, with stable unranked/tie handling and loaded-slice manual Move up/down commands across filtered neighbors. Partial rank writes require explicit Refresh recovery. Native Delete uses an immutable confirmation target through ConfirmDialog, exact-target 204 or explicit inspection 404 retirement, shared pending/uncertain recovery and lifetime tombstones. It blocks global delete/reorder and target writes while preserving other selected sessions/drafts/responses; selected idle retirement clears only matching session/route. Compact rails remain selection-only. Installed form types, SSR and browser checks cover explicit Save/Cancel, IME, literal titles and responsive containment. Optional readonly renderItem(thread, isActive) replaces full row content with application-owned accessible controls; original objects, exact active equality, keyed reconciliation and empty results are preserved, while default title/actions/context handling are bypassed. Native compact selection rows dogfood this callback without backend or session changes; installed types/SSR and retained browser flows verify it. Controlled ProjectList now provides supplied-order selection and optional app-owned New requests; native derives exact project IDs from loaded metadata and filters full/archived/compact rows without commands or session changes. Browser-local project creation/rename now use a validated app-owned catalog and controlled ProjectNameForm with explicit failure/Retry recovery, preserving conversation ownership without network commands. Native full directories also compose confirmed backend project assignment/removal with exact-null evidence, independent stale-read protection and retained filter/session ownership. Project deletion, shared catalogs, drag reordering, search/history/timeline surfaces and full parity remain open; private Debug is a separate bounded surface |
+| T29  | In progress: private controlled ThreadList selection view, optional app-owned new-conversation request and render-time relative updated timestamps with exact ISO metadata, dogfooded from backend timestamps in native React directory presentations; application owns data/filtering/execution/refresh. Bounded readonly title-content callback receives the original item and returns noninteractive ReactNode phrasing content; original accessible labels survive and null/false output is honored. Native React highlights the first literal loaded-title filter match. No timer or live ticking. Optional readonly boolean pinned metadata presents only strict true with a decorative icon and accessible status before time, preserving original names and supplied order without sorting or writes. Optional readonly `renderActions` receives the original item and composes application-owned interactive controls beside the selection button without changing selection; absent/null/false/undefined output omits its wrapper. Native full directories dogfood exact-ID clipboard copying, app-owned confirmed renaming through the private controlled ThreadRenameForm, and confirmed Pin/Unpin commands with pending/error/retry and independent title/pin/archive reconciliation; native app-owned Archive/Unarchive partition loaded rows into active and archived full lists with the same filter and stable directory feedback across row migration; exact raw boolean confirmation, per-ID pending/retry, independent stale-read protection and selected transcript/draft/running-session preservation remain app-owned. Compact rails stay active-only and selection-only and reflect shared pin state. The ThreadList primitive still renders supplied order; native application grouping sorts active loaded pins by finite pinnedOrder, with stable unranked/tie handling and loaded-slice manual Move up/down commands across filtered neighbors. Partial rank writes require explicit Refresh recovery. Native Delete uses an immutable confirmation target through ConfirmDialog, exact-target 204 or explicit inspection 404 retirement, shared pending/uncertain recovery and lifetime tombstones. It blocks global delete/reorder and target writes while preserving other selected sessions/drafts/responses; selected idle retirement clears only matching session/route. Compact rails remain selection-only. Installed form types, SSR and browser checks cover explicit Save/Cancel, IME, literal titles and responsive containment. Optional readonly renderItem(thread, isActive) replaces full row content with application-owned accessible controls; original objects, exact active equality, keyed reconciliation and empty results are preserved, while default title/actions/context handling are bypassed. Native compact selection rows dogfood this callback without backend or session changes; installed types/SSR and retained browser flows verify it. Controlled ProjectList now provides supplied-order selection and optional app-owned New requests; native derives exact project IDs from loaded metadata and filters full/archived/compact rows without commands or session changes. Browser-local project creation/rename now use a validated app-owned catalog and controlled ProjectNameForm with explicit failure/Retry recovery, preserving conversation ownership without network commands. Native full directories also compose confirmed backend project assignment/removal with exact-null evidence, independent stale-read protection and retained filter/session ownership. Confirmed native project deletion preserves conversations through backend membership draining and explicit recovery. Shared catalogs, drag reordering, search/history/timeline surfaces and full parity remain open; private Debug is a separate bounded surface |
 | T30 | In progress: private controlled non-modal ChatPopup, full-height ChatSidebar with optional persistent page content and desktop content pushing, children-based ChatSidenav and optional sibling ChatSidenavScrim, dogfooded by the native conversation example. Sidenav supports expanded/collapsed navigation and a non-modal drawer, retaining mounted content with an optional readonly ReactNode `collapsedContent` slot; native composes a compact ThreadList using shared filtered rows/selection and full accessible names with pin/time descriptions, while retaining both trees. Optional readonly boolean `toggleShortcut` opts into desktop Ctrl/Command+B controlled mode requests, with editable/claimed-event exclusions and drawer no-op; native dogfoods it across retained draft and active response. This is a bounded private T30 slice; native exact `presentation=sidenav` chooses drawer with a dismissible backdrop at widths <=700px. Optional readonly `onSearch`, `searchLabel` and strict opt-in `searchShortcut` add an application-owned Search request action and Ctrl/Command+K in all modes; native reveals navigation and focuses only the existing loaded-title filter without backend search or extra commands. Peer-panel edge claims, project menus, backend search/search dialogs and other global shortcuts, debug ownership and full composition parity remain open |
 | T31 | Create canonical React applications and public testing utilities |
 | T32 | In progress: 41 registered native React and 41 Angular frontend identities across LangGraph, Deep Agents, Chat, AG-UI, Render and Runtimes; Chat and AG-UI A2UI reuse their existing shared backends, existing runtimes and bridges are reused, Render playback stays local |
@@ -437,7 +437,7 @@ until reset. New project is always available when local storage is healthy; the
 larger project section appears for catalog/loaded entries, a retained filter or an
 open editor. Selection is ephemeral, while names persist only in this browser.
 New conversations use the selected project as described below, and pinned reordering still spans all loaded
-pins, including other projects. Deletion, shared catalogs and full T29 parity remain open. Confirmed
+pins, including other projects. Confirmed deletion is described below; shared catalogs and full T29 parity remain open. Confirmed
 conversation assignment/removal is described below. See the naming slice below for persistence behavior.
 
 ### Project creation and browser-local names (private React T29 slice)
@@ -468,7 +468,7 @@ transactions. This naming catalog has no cross-device sharing. The association s
 uses explicit backend conversation metadata commands.
 Project selection, naming and persistence preserve the selected conversation,
 transcript, composer draft and running session without extra network calls.
-Project deletion, shared catalogs and full T29 parity remain open. Confirmed
+Confirmed project deletion is described below; shared catalogs and full T29 parity remain open. Confirmed
 conversation assignment/removal is described below.
 
 Conversation menus also retain their opening through a queued scroll notification
@@ -508,7 +508,7 @@ out of the current project keeps that filter, selected conversation, transcript,
 composer draft and running response. Cancellation may close the editor while an
 already dispatched command continues; its completion cannot close a newer editor.
 Focus returns only while still owned, using the stable filter when the original
-row is hidden. Compact rails remain selection-only. New conversations inherit the selected project as described below. Project deletion, shared catalogs, drag
+row is hidden. Compact rails remain selection-only. New conversations inherit the selected project as described below. Confirmed project deletion is described below. Shared catalogs, drag
 reordering and full T29 parity remain open.
 
 
@@ -534,5 +534,37 @@ or revert its confirmed project; fresh post-creation reads remain authoritative.
 Navigation, disposal and newer creation intents fence late completions.
 
 The association survives backend reloads; the selected project filter stays
-ephemeral. Project deletion, shared catalogs, drag reordering and full T29 parity
+ephemeral. Confirmed project deletion is described below. Shared catalogs, drag reordering and full T29 parity
 remain open. This is private native dogfood with no new library export.
+
+### Confirmed project deletion (private native React T29 slice)
+
+Native React **Delete project** captures an exact project ID and asks for
+confirmation. It preserves conversations, including archived conversations and
+those outside the 50-row loaded directory. The application searches backend
+membership in batches of 50 and clears each association with a confirmed
+`projectId: null` metadata update. It repeats the first page as membership shrinks;
+it never deletes conversation records or changes their content.
+
+A final empty membership response confirms backend completion. Only then does
+the browser remove the project label from the latest observed local catalog.
+Pending and uncertain operations retain their captured target. Explicit **Retry
+project deletion** rechecks remaining membership, including after an uncertain
+write or a failed local catalog save. Partial progress is retained; failure never
+claims the entire project was removed. Invalid stored data remains untouched.
+The owner bounds each attempt to 200 pages and rejects repeated member IDs rather
+than looping indefinitely; an incomplete attempt requires explicit retry.
+
+Selection, transcript, composer draft and running response remain owned by the
+current conversation. Successful deletion returns to All conversations only if
+the deleted project is still selected; a newer filter is preserved. Independent
+read/write evidence prevents older reads from restoring cleared associations.
+Pending deletion blocks local creation, project moves and conversation deletion;
+an unconfirmed target cannot accept new local associations. Confirmed deleted IDs
+also reject incoming local associations for the application owner's lifetime.
+
+The backend has no atomic project-deletion operation: another client can create
+or move conversations concurrently, and fresh backend reads remain authoritative.
+Catalog updates preserve the latest observed entries without an atomic multi-tab
+guarantee. Project names remain browser-local. Shared catalogs, drag reordering
+and full T29 parity remain open; this slice adds no public library export.

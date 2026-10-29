@@ -24,6 +24,11 @@ interface Decision extends Approval {
 export interface ApplicationSnapshot<
   TRow extends MessageContent = MessageContent
 > {
+  readonly projectDeletion: Readonly<{
+    status: 'idle' | 'pending' | 'unconfirmed' | 'confirmed';
+    id: string | null;
+    cleared: number;
+  }>;
   readonly deletion: Readonly<{
     status: 'idle' | 'pending' | 'confirmed' | 'unconfirmed';
     id: string | null;
@@ -173,6 +178,7 @@ function createApplicationOwner<TRow extends MessageContent>(
   }
 
   let snapshot: ApplicationSnapshot<TRow> = Object.freeze({
+    projectDeletion: Object.freeze({ status: 'idle', id: null, cleared: 0 }),
     deletion: Object.freeze({
       status: 'idle',
       id: null,
@@ -199,6 +205,16 @@ function createApplicationOwner<TRow extends MessageContent>(
     selection: Object.freeze({ status: 'empty', id: null }),
     runtime: null,
   });
+  const retiredProjects = new Set<string>();
+  const emptyProjectEvidence = new Map<string, number>();
+  let projectDeleting:
+    | { id: string; controller: AbortController; cleared: number }
+    | undefined;
+  const blocksProject = (id: string | null | undefined) =>
+    id != null &&
+    (retiredProjects.has(id) ||
+      (snapshot.projectDeletion.status === 'unconfirmed' &&
+        snapshot.projectDeletion.id === id));
   const retiredIds = new Set<string>();
   let deletionIntent = 0;
   let deleting:
@@ -266,6 +282,28 @@ function createApplicationOwner<TRow extends MessageContent>(
     readVersion: number,
     order: number
   ): ThreadRow {
+    // Once a project has been emptied, accepted fresh rows also carry read
+    // order evidence, including rows never encountered in deletion batches.
+    if (emptyProjectEvidence.size && !projectEvidence.has(row.id))
+      projectEvidence.set(row.id, {
+        version: readVersion,
+        projectId: row.projectId,
+        readOrder: order,
+      });
+    const emptyVersion =
+      row.projectId === undefined
+        ? undefined
+        : emptyProjectEvidence.get(row.projectId);
+    if (emptyVersion !== undefined && emptyVersion > readVersion) {
+      row = replaceProject(row, undefined);
+      const previous = projectEvidence.get(row.id);
+      if (!previous || previous.version < emptyVersion)
+        projectEvidence.set(row.id, {
+          version: emptyVersion,
+          projectId: undefined,
+          readOrder: 0,
+        });
+    }
     const project = projectEvidence.get(row.id);
     if (project) {
       if (project.version > readVersion || project.readOrder > order)
@@ -273,6 +311,7 @@ function createApplicationOwner<TRow extends MessageContent>(
       else
         projectEvidence.set(row.id, {
           ...project,
+          version: readVersion,
           projectId: row.projectId,
           readOrder: order,
         });
@@ -372,6 +411,7 @@ function createApplicationOwner<TRow extends MessageContent>(
     if (disposed || snapshot !== supplied) return;
     next = { ...supplied, decision };
     if (
+      next.projectDeletion === previous.projectDeletion &&
       next.deletion === previous.deletion &&
       next.ordering === previous.ordering &&
       next.renames === previous.renames &&
@@ -634,6 +674,8 @@ function createApplicationOwner<TRow extends MessageContent>(
         (typeof projectId !== 'string' || !projectId.trim())) ||
       !started ||
       disposed ||
+      projectDeleting ||
+      blocksProject(projectId) ||
       creating
     )
       return;
@@ -833,6 +875,7 @@ function createApplicationOwner<TRow extends MessageContent>(
       !started ||
       disposed ||
       deleting ||
+      projectDeleting ||
       ordering ||
       retiredIds.has(id) ||
       typeof id !== 'string' ||
@@ -876,6 +919,7 @@ function createApplicationOwner<TRow extends MessageContent>(
     return (
       !disposed &&
       !deleting &&
+      !projectDeleting &&
       !ordering &&
       !renaming.has(id) &&
       !pinning.has(id) &&
@@ -1190,9 +1234,150 @@ function createApplicationOwner<TRow extends MessageContent>(
     );
   }
 
+  function canDeleteProject(id: string) {
+    return (
+      started &&
+      !disposed &&
+      typeof id === 'string' &&
+      !!id.trim() &&
+      !projectDeleting &&
+      !creating &&
+      !deleting &&
+      projectMoving.size === 0 &&
+      (snapshot.projectDeletion.status !== 'unconfirmed' ||
+        snapshot.projectDeletion.id === id) &&
+      typeof options.directory.projectMembers === 'function' &&
+      typeof options.directory.setProject === 'function'
+    );
+  }
+
+  async function deleteProject(id: string): Promise<boolean> {
+    if (!canDeleteProject(id)) return false;
+    const current = {
+      id,
+      controller: new AbortController(),
+      cleared:
+        snapshot.projectDeletion.id === id
+          ? snapshot.projectDeletion.cleared
+          : 0,
+    };
+    projectDeleting = current;
+    const owned = () =>
+      !disposed &&
+      projectDeleting === current &&
+      !current.controller.signal.aborted;
+    const state = (status: 'pending' | 'confirmed' | 'unconfirmed') =>
+      Object.freeze({ status, id: current.id, cleared: current.cleared });
+    const publishCleared = (ids: readonly string[]) => {
+      const version = ++writeVersion;
+      const cleared = new Set(ids);
+      for (const member of ids)
+        projectEvidence.set(member, {
+          version,
+          projectId: undefined,
+          readOrder: 0,
+        });
+      const replace = (row: ThreadRow) =>
+        cleared.has(row.id) ? replaceProject(row, undefined) : row;
+      publish({
+        ...snapshot,
+        projectDeletion: state('pending'),
+        list: Object.freeze({
+          ...snapshot.list,
+          rows: Object.freeze(snapshot.list.rows.map(replace)),
+        }),
+        selection: snapshot.selection.row
+          ? Object.freeze({
+              ...snapshot.selection,
+              row: replace(snapshot.selection.row),
+            })
+          : snapshot.selection,
+      });
+    };
+    publish({ ...snapshot, projectDeletion: state('pending') });
+    const seen = new Set<string>();
+    try {
+      for (let page = 0; page < 200; page++) {
+        if (!owned()) return false;
+        const result = await options.directory.projectMembers!(
+          current.id,
+          current.controller.signal
+        );
+        if (!owned()) return false;
+        if (
+          result.kind !== 'ready' ||
+          !Array.isArray(result.value) ||
+          result.value.length > 50
+        )
+          break;
+        const ids = result.value;
+        // Validate the whole page before dispatching any writes, including
+        // implementations supplied through the optional private directory seam.
+        if (
+          ids.some(
+            (member) =>
+              typeof member !== 'string' ||
+              !member.trim() ||
+              member === '.' ||
+              member === '..' ||
+              seen.has(member)
+          ) ||
+          new Set(ids).size !== ids.length
+        )
+          break;
+        if (!ids.length) {
+          // Empty filtered membership is evidence for stale loaded/selected rows
+          // too. A fresh mutation version fences reads admitted before this page.
+          const stale = new Set(
+            snapshot.list.rows
+              .filter((row) => row.projectId === current.id)
+              .map((row) => row.id)
+          );
+          if (snapshot.selection.row?.projectId === current.id)
+            stale.add(snapshot.selection.row.id);
+          emptyProjectEvidence.set(current.id, writeVersion + 1);
+          publishCleared([...stale]);
+          if (!owned()) return false;
+          retiredProjects.add(current.id);
+          projectDeleting = undefined;
+          publish({ ...snapshot, projectDeletion: state('confirmed') });
+          return true;
+        }
+        for (const member of ids) {
+          if (!owned()) return false;
+          const write = await options.directory.setProject!(
+            member,
+            null,
+            current.controller.signal
+          );
+          if (!owned()) return false;
+          if (
+            write.kind !== 'ready' ||
+            write.value?.id !== member ||
+            !Object.hasOwn(write.value, 'projectId') ||
+            write.value.projectId !== null
+          )
+            throw new Error('Project removal not confirmed');
+          seen.add(member);
+          current.cleared++;
+          publishCleared([member]);
+        }
+      }
+    } catch {
+      if (!owned()) return false;
+    }
+    if (!owned()) return false;
+    projectDeleting = undefined;
+    publish({ ...snapshot, projectDeletion: state('unconfirmed') });
+    return false;
+  }
+
   function canSetProject() {
     return (
-      started && !disposed && typeof options.directory.setProject === 'function'
+      started &&
+      !disposed &&
+      !projectDeleting &&
+      typeof options.directory.setProject === 'function'
     );
   }
 
@@ -1214,6 +1399,7 @@ function createApplicationOwner<TRow extends MessageContent>(
       (snapshot.selection.id === id ? snapshot.selection.row : undefined);
     if (
       !canSetProject() ||
+      blocksProject(projectId) ||
       !existing ||
       blocksTarget(id) ||
       projectMoving.has(id) ||
@@ -1625,6 +1811,8 @@ function createApplicationOwner<TRow extends MessageContent>(
   }
 
   return Object.freeze({
+    canDeleteProject,
+    deleteProject,
     canRemove,
     remove,
     checkRemoval,
@@ -1671,6 +1859,8 @@ function createApplicationOwner<TRow extends MessageContent>(
     dispose() {
       if (disposed) return;
       disposed = true;
+      projectDeleting?.controller.abort();
+      projectDeleting = undefined;
       deleting?.controller.abort();
       deleting?.inspection?.abort();
       deleting = undefined;

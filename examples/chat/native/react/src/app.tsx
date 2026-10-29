@@ -584,6 +584,7 @@ function Conversation({
         filter.
       </p>
       <NativeProjects
+        deletion={application}
         rows={snapshot.list.rows}
         projectId={projectId}
         onSelect={setProjectId}
@@ -678,7 +679,13 @@ function Conversation({
         label="Loaded conversations"
         className="conversation-list"
         onNewThread={() => application.newConversation(projectId)}
-        newThreadDisabled={snapshot.creation.status === 'pending'}
+        newThreadDisabled={
+          snapshot.creation.status === 'pending' ||
+          snapshot.projectDeletion?.status === 'pending' ||
+          ((snapshot.projectDeletion?.status === 'unconfirmed' ||
+            snapshot.projectDeletion?.status === 'confirmed') &&
+            snapshot.projectDeletion.id === projectId)
+        }
         newThreadLabel="New"
       />
       {snapshot.list.status !== 'pending' && activeRows.length === 0 && (

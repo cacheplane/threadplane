@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   PROJECT_CATALOG_KEY,
   createProject,
+  removeProject,
   mergeProjects,
   readProjectCatalog,
   renameProject,
@@ -203,4 +204,49 @@ describe('local project catalog', () => {
     expect(Object.isFrozen(merged)).toBe(true);
     expect(merged.every(Object.isFrozen)).toBe(true);
   });
+});
+
+it('removes only an exact project from latest storage and preserves other entries', () => {
+  const storage = memoryStorage(
+    encode([
+      { id: ' p/x ', name: 'Old' },
+      { id: 'p/x', name: 'Other' },
+    ])
+  );
+  const before = readProjectCatalog(storage);
+  storage.setItem(
+    PROJECT_CATALOG_KEY,
+    encode([...before, { id: '__proto__', name: 'Latest' }])
+  );
+  expect(removeProject(storage, ' p/x ')).toEqual([
+    { id: 'p/x', name: 'Other' },
+    { id: '__proto__', name: 'Latest' },
+  ]);
+  expect(removeProject(storage, 'missing')).toEqual(
+    readProjectCatalog(storage)
+  );
+  expect(before).toHaveLength(2);
+});
+it('does not overwrite invalid storage or claim a failed project removal', () => {
+  const malformed = memoryStorage('{broken');
+  expect(() => removeProject(malformed, 'p')).toThrow();
+  expect(malformed.writes).toEqual([]);
+  const storage = memoryStorage(encode([{ id: '__proto__', name: 'Keep' }]));
+  for (const id of ['', ' ', null, 42])
+    expect(() => removeProject(storage, id as string)).toThrow();
+  expect(storage.writes).toEqual([]);
+  expect(() =>
+    removeProject(
+      {
+        getItem: storage.getItem,
+        setItem() {
+          throw new Error('quota');
+        },
+      },
+      '__proto__'
+    )
+  ).toThrow('quota');
+  expect(readProjectCatalog(storage)).toEqual([
+    { id: '__proto__', name: 'Keep' },
+  ]);
 });
