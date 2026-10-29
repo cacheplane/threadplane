@@ -1,10 +1,8 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "d995a137902885a00ee0884456c88567b9135518",
+  "baselineHead": "d1094efc47dd17616736c06b5558cdc6e628c177",
   "sourceState": {
-    "modified": [
-      "libs/react/README.md"
-    ],
+    "modified": [],
     "untracked": []
   },
   "scope": {
