@@ -37,6 +37,7 @@ import { TripSummary } from './trip-summary';
 import { NativeNavigation } from './native-navigation';
 import { CompactThreadRow } from './compact-thread-row';
 import { NativeProjects } from './native-projects';
+import { useProjectMove } from './use-project-move';
 
 type Presentation = 'page' | 'popup' | 'sidebar' | 'sidenav';
 
@@ -230,6 +231,7 @@ function Conversation({
     snapshot.deletion.status === 'unconfirmed';
   const deletionTargetBlocked = (id: string) =>
     deletionBlocked && snapshot.deletion.id === id;
+  const projectMove = useProjectMove(application, snapshot, filterInput);
   const [confirmation, setConfirmation] = useState<Readonly<{
     id: string;
     title: string;
@@ -273,6 +275,8 @@ function Conversation({
     returnFocusTo: HTMLElement | null
   ) => {
     if (!application.canRemove(row.id)) return;
+    projectMove.dismiss();
+    setEditor(null);
     const request = Object.freeze({
       id: row.id,
       title: row.title,
@@ -526,7 +530,29 @@ function Conversation({
           : undefined
       }
       title={thread.title ?? ''}
-      menu={menus.forThread(thread.id)}
+      menu={{
+        ...menus.forThread(thread.id),
+        onOpenChange(open) {
+          if (open) projectMove.dismiss();
+          menus.forThread(thread.id).onOpenChange(open);
+        },
+      }}
+      onMoveProject={
+        application.canSetProject?.()
+          ? (target) => {
+              const row = snapshot.list.rows.find(
+                (row) => row.id === thread.id
+              );
+              if (row) {
+                setEditor(null);
+                projectMove.requestMove(row, target);
+              }
+            }
+          : undefined
+      }
+      moveProjectPending={
+        snapshot.projectMoves?.[thread.id]?.status === 'pending'
+      }
       canRename={application.canRename()}
       canSetPinned={application.canSetPinned()}
       pinned={thread.pinned}
@@ -535,13 +561,14 @@ function Conversation({
       pending={snapshot.renames[thread.id]?.status === 'pending'}
       rename={application.rename}
       editor={rows.some((row) => row.id === editor?.id) ? editor : null}
-      onRename={(target) =>
+      onRename={(target) => {
+        projectMove.dismiss();
         setEditor({
           id: thread.id,
           token: ++editorSequence.current,
           returnFocusTo: target,
-        })
-      }
+        });
+      }}
       onClose={(request) =>
         setEditor((latest) => (latest === request ? null : latest))
       }
@@ -578,6 +605,8 @@ function Conversation({
         value={filter}
         onChange={(event) => setFilter(event.target.value)}
       />
+      {projectMove.editor}
+      {projectMove.feedback}
       {snapshot.list.status === 'pending' && (
         <p role="status">Refreshing conversations…</p>
       )}
@@ -637,6 +666,7 @@ function Conversation({
         threads={activeRows}
         onContextMenu={(id, event) => {
           setEditor(null);
+          projectMove.dismiss();
           menus.onContextMenu(id, event);
         }}
         renderActions={renderActions}
@@ -668,6 +698,7 @@ function Conversation({
           threads={archivedRows}
           onContextMenu={(id, event) => {
             setEditor(null);
+            projectMove.dismiss();
             menus.onContextMenu(id, event);
           }}
           renderActions={renderActions}
