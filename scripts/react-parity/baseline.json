@@ -1,9 +1,8 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "bb291409b75bd4eecf3e06e68b38b72a22ee991f",
+  "baselineHead": "d444aee168ed683f5025b8a013cc907198f17740",
   "sourceState": {
     "modified": [
-      ".github/workflows/ci.yml",
       "libs/react/README.md"
     ],
     "untracked": []
@@ -852,7 +851,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "b0d5b2308e9f1af73660aef5ec22db687a6d04b964dc7bdf11a4cdd7be37c663"
+      "sha256": "1e3885bee07d4e030b832ef31923a5f4a1512fe16e43af7a8ca78b8a5ba368ec"
     },
     {
       "id": "asset:libs/react/package.json",

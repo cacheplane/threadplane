@@ -162,7 +162,7 @@ export function NativeProjects({
           <h3 id="native-projects-title">Projects</h3>
           <p className="muted">
             Project names are saved only in this browser. Loaded project IDs
-            include archived conversations. New conversations are unassigned.
+            include archived conversations. New conversations use the selected project.
           </p>
           <button
             type="button"

@@ -224,6 +224,9 @@ function createApplicationOwner<TRow extends MessageContent>(
     string,
     { version: number; title: string; readOrder: number }
   >();
+  // Only pre-creation lists may retain an omitted row. Store the write clock,
+  // not a saved row: later local writes must remain visible on stale omission.
+  const createdRows = new Map<string, number>();
   const projectMoving = new Map<string, AbortController>();
   const projectEvidence = new Map<
     string,
@@ -625,8 +628,15 @@ function createApplicationOwner<TRow extends MessageContent>(
     return Object.freeze({ status: 'unconfirmed', id: null });
   }
 
-  function newConversation() {
-    if (!started || disposed || creating) return;
+  function newConversation(projectId?: string | null) {
+    if (
+      (projectId != null &&
+        (typeof projectId !== 'string' || !projectId.trim())) ||
+      !started ||
+      disposed ||
+      creating
+    )
+      return;
     const current: Creation = {
       operation: ++creationIntent,
       intent: selectionIntent,
@@ -648,26 +658,55 @@ function createApplicationOwner<TRow extends MessageContent>(
     void (async () => {
       try {
         const result = await options.directory.create(
-          current.controller.signal
+          current.controller.signal,
+          projectId
         );
         if (!ownsCreation()) return;
+        const row = result.kind === 'ready' ? result.value : undefined;
+        const confirmed =
+          row != null &&
+          typeof row.id === 'string' &&
+          !!row.id.trim() &&
+          row.id !== '.' &&
+          row.id !== '..' &&
+          !blocksTarget(row.id) &&
+          (projectId == null ||
+            (Object.hasOwn(row, 'projectId') && row.projectId === projectId));
         creating = undefined;
+        if (confirmed) {
+          const version = ++writeVersion;
+          createdRows.set(row.id, version);
+          projectEvidence.set(row.id, {
+            version,
+            projectId: row.projectId,
+            readOrder: 0,
+          });
+        }
         publish({
           ...snapshot,
           creation: Object.freeze(
-            result.kind === 'ready' && !retiredIds.has(result.value.id)
-              ? { status: 'confirmed', id: result.value.id }
+            confirmed
+              ? { status: 'confirmed', id: row.id }
               : { status: 'unconfirmed', id: null }
           ),
+          list: confirmed
+            ? Object.freeze({
+                ...snapshot.list,
+                rows: Object.freeze(
+                  [
+                    Object.freeze({ ...row }),
+                    ...snapshot.list.rows.filter(
+                      (existing) => existing.id !== row.id
+                    ),
+                  ].slice(0, 50)
+                ),
+              })
+            : snapshot.list,
         });
         // Confirmation observers may navigate, dispose, or explicitly start
         // another creation. Only the still-current intent can adopt this ID.
-        if (
-          result.kind === 'ready' &&
-          !retiredIds.has(result.value.id) &&
-          interested()
-        )
-          select(result.value.id, true);
+        if (confirmed && !blocksTarget(row.id) && interested())
+          select(row.id, true);
       } catch {
         if (!ownsCreation()) return;
         creating = undefined;
@@ -715,14 +754,34 @@ function createApplicationOwner<TRow extends MessageContent>(
       try {
         const result = await options.directory.list(controller.signal);
         if (!current()) return;
-        const rows =
-          result.kind === 'ready'
-            ? Object.freeze(
-                result.value
-                  .filter((row) => !retiredIds.has(row.id))
-                  .map((row) => reconcile(row, readVersion, order))
-              )
-            : snapshot.list.rows;
+        let rows = snapshot.list.rows;
+        if (result.kind === 'ready') {
+          const loaded = result.value
+            .filter((row) => !retiredIds.has(row.id))
+            .map((row) => reconcile(row, readVersion, order));
+          const included = new Map(loaded.map((row) => [row.id, row]));
+          for (const [id, version] of createdRows) {
+            if (readVersion >= version || blocksTarget(id)) {
+              createdRows.delete(id);
+              continue;
+            }
+          }
+          const protectedRows = snapshot.list.rows.filter((row) =>
+            createdRows.has(row.id)
+          );
+          if (protectedRows.some((row) => !included.has(row.id))) {
+            const protectedIds = new Set(protectedRows.map((row) => row.id));
+            // Prioritize every protected creation in current snapshot order so
+            // adding an omitted row cannot evict another from the 50-row window.
+            // Included rows still accept the read through field reconciliation.
+            rows = Object.freeze(
+              [
+                ...protectedRows.map((row) => included.get(row.id) ?? row),
+                ...loaded.filter((row) => !protectedIds.has(row.id)),
+              ].slice(0, 50)
+            );
+          } else rows = Object.freeze(loaded);
+        }
         // A matching row renames the same ready selection; omission is not deletion.
         let selection = snapshot.selection;
         const row =
@@ -842,6 +901,7 @@ function createApplicationOwner<TRow extends MessageContent>(
   function confirmRemoval(current: NonNullable<typeof deleting>) {
     // Lifetime retirement is installed before any observer, disposal or history callback.
     retiredIds.add(current.id);
+    createdRows.delete(current.id);
     projectEvidence.delete(current.id);
     const previous = admission?.id === current.id ? admission : undefined;
     const selected = snapshot.selection.id === current.id;

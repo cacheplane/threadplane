@@ -677,7 +677,7 @@ function Conversation({
         onSelect={application.select}
         label="Loaded conversations"
         className="conversation-list"
-        onNewThread={() => application.newConversation()}
+        onNewThread={() => application.newConversation(projectId)}
         newThreadDisabled={snapshot.creation.status === 'pending'}
         newThreadLabel="New"
       />

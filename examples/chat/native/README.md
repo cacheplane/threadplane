@@ -681,7 +681,7 @@ backend calls. A disappearing project stays selected with an empty filtered view
 until reset. New project is always available when local storage is healthy; the
 larger project section appears for catalog/loaded entries, a retained filter or an
 open editor. Selection is ephemeral, while names persist only in this browser.
-New conversations remain unassigned, and pinned reordering still spans all loaded
+New conversations use the selected project as described below, and pinned reordering still spans all loaded
 pins, including other projects. Deletion, shared catalogs and full T29 parity remain open. Confirmed
 conversation assignment/removal is described below. See the naming slice below for persistence behavior.
 
@@ -701,8 +701,7 @@ Native React now creates and renames projects in the versioned browser-local
 first, then first-seen loaded association IDs without duplicates. Renaming a loaded
 ID imports its name locally without changing the ID or backend metadata. Names
 are trimmed on Save; duplicate names are allowed because IDs define identity.
-Catalog-only projects can be selected with an empty conversation view. New
-conversations remain unassigned. These are local labels, not a shared server catalog.
+Catalog-only projects can be selected with an empty conversation view. These are local labels, not a shared server catalog. New conversations use the selected project as described below.
 
 Writes reread and validate the current catalog and publish only after persistence
 succeeds. Malformed/unsupported saved data is never replaced; unavailable storage
@@ -754,6 +753,31 @@ out of the current project keeps that filter, selected conversation, transcript,
 composer draft and running response. Cancellation may close the editor while an
 already dispatched command continues; its completion cannot close a newer editor.
 Focus returns only while still owned, using the stable filter when the original
-row is hidden. Compact rails remain selection-only. New conversations remain
-unassigned until explicitly moved. Project deletion, shared catalogs, drag
+row is hidden. Compact rails remain selection-only. New conversations inherit the selected project as described below. Project deletion, shared catalogs, drag
 reordering and full T29 parity remain open.
+
+
+### Conversation creation in the selected project (private React T29 slice)
+
+Native React **New** captures the current project filter and sends its exact ID
+in the initial conversation creation metadata. **All conversations** retains the
+ordinary creation request without project metadata. Project names remain local
+labels; the backend persists the association ID. Creation uses one request and
+never follows it with a project-assignment PATCH.
+
+Until a valid new conversation ID and matching project metadata are confirmed,
+the previous selection, transcript, composer draft and running session remain
+owned by the current conversation. Pending duplicate clicks cannot create a
+second request. A failed, cancelled or mismatched response is unconfirmed and
+requires explicit recovery; the server may already have created a conversation.
+
+Confirmation publishes the new row and creation state together before selecting
+it. Changing project filters while the request is pending neither changes its
+captured destination nor resets the newer filter on completion. Existing title
+filters also remain intact. Lists begun before creation cannot erase its new row
+or revert its confirmed project; fresh post-creation reads remain authoritative.
+Navigation, disposal and newer creation intents fence late completions.
+
+The association survives backend reloads; the selected project filter stays
+ephemeral. Project deletion, shared catalogs, drag reordering and full T29 parity
+remain open. This is private native dogfood with no new library export.

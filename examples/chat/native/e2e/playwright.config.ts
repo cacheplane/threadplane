@@ -15,6 +15,7 @@ export default defineConfig({
     'sidenav.spec.ts',
     'project-names.spec.ts',
     'project-assignment.spec.ts',
+    'project-creation.spec.ts',
     'rename.spec.ts',
     'pin.spec.ts',
     'archive.spec.ts',
