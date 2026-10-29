@@ -653,6 +653,21 @@ describe('classifyFromAffected — short-circuit', () => {
   });
 });
 
+describe('preview build ownership', () => {
+  for (const file of ['scripts/build-example-shard.ts', 'scripts/example-build-artifacts.ts']) {
+    it(`requires preview and script checks for ${file} without relying on Nx tags`, () => {
+      assert.deepEqual(classifyFromAffected([file], []), {
+        ...emptyScope(), scripts_tests: true, website_e2e: true,
+      });
+    });
+  }
+  it('keeps unrelated script changes scoped to their own tests', () => {
+    assert.deepEqual(classifyFromAffected(['scripts/unrelated.ts'], [{ name: 'scripts', tags: ['scope:scripts-tests'] }]), {
+      ...emptyScope(), scripts_tests: true,
+    });
+  });
+});
+
 describe('classifyFromAffected — lint-only files', () => {
   it('runs scripts contracts for the rootless LangGraph deployment workflow', () => {
     assert.equal(

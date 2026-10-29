@@ -31,6 +31,11 @@ const GLOBAL_CI_FILES = new Set([
   'tsconfig.base.json',
 ]);
 
+const PREVIEW_BUILD_FILES = new Set([
+  'scripts/build-example-shard.ts',
+  'scripts/example-build-artifacts.ts',
+]);
+
 const ANGULAR_COMPATIBILITY_FILES = new Set([
   'scripts/verify-angular-support.mjs',
   'scripts/verify-angular-support.spec.mjs',
@@ -191,6 +196,10 @@ export function classifyFromAffected(changedFiles, affectedProjects) {
   }
   if (changedFiles.some((f) => COCKPIT_ROOTLESS_SPEC.test(f))) {
     scope.cockpit = true;
+  }
+  if (changedFiles.some(file => PREVIEW_BUILD_FILES.has(normalizePath(file)))) {
+    scope.scripts_tests = true;
+    scope.website_e2e = true;
   }
   if (isAngularCompatibilityChange(changedFiles)) {
     scope.angular_compatibility = true;

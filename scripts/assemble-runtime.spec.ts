@@ -1,6 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { writes } = vi.hoisted(() => ({ writes: new Map<string, string>() }));
+const { writes, restore } = vi.hoisted(() => ({ writes: new Map<string, string>(), restore: vi.fn() }));
+vi.mock('./example-build-artifacts', () => ({ restoreExampleBuildArtifacts: restore }));
+const originalArgv = process.argv;
+afterEach(() => { process.argv = originalArgv; });
 
 vi.mock('child_process', () => ({ execSync: vi.fn(() => 'test-sha\n') }));
 vi.mock('fs', () => ({
@@ -42,9 +45,30 @@ describe('assembled Vercel function runtimes', () => {
     expect(config.routes.some((route: {src?: string; status?: number}) => route.src?.includes('/react') && route.status === 404)).toBe(true);
     expect([...writes.keys()].some(path => path.endsWith('/deploy/examples/langgraph/streaming/react/index.html'))).toBe(false);
   });
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.resetModules();
+    vi.clearAllMocks();
+    restore.mockReset();
+    vi.mocked((await import('fs')).cpSync).mockImplementation(() => undefined);
     writes.clear();
+  });
+
+  it.each([false, true])('validates downloaded artifacts before staging (failure=%s)', async failure => {
+    const fs = await import('fs');
+    vi.mocked(fs.readFileSync).mockImplementation(path => String(path).endsWith('runtime-parent-origins.json') ? '{}' : '<html><head></head><body></body></html>');
+    process.argv = [...originalArgv, '--skip-build', '--build-artifacts=output/downloads'];
+    if (failure) restore.mockImplementation(() => { throw new Error('invalid artifacts'); });
+    else vi.mocked(fs.cpSync).mockImplementation(() => { expect(restore).toHaveBeenCalledOnce(); });
+    if (failure) {
+      await expect(import('./assemble-examples')).rejects.toThrow('invalid artifacts');
+      expect(fs.cpSync).not.toHaveBeenCalled();
+      expect(fs.rmSync).not.toHaveBeenCalled();
+    } else {
+      await import('./assemble-examples');
+      expect(restore).toHaveBeenCalledOnce();
+      const { execSync } = await import('child_process');
+      expect(vi.mocked(execSync).mock.calls.some(([command]) => String(command).includes('nx run-many'))).toBe(false);
+    }
   });
 
   it.each([
