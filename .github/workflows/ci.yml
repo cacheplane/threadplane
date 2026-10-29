@@ -190,10 +190,14 @@ jobs:
           retention-days: 1
 
   library:
-    name: Library — lint / test / build
+    name: 'Library — ${{ matrix.lane }}'
     needs: ci-scope
     if: github.event_name == 'push' || needs.ci-scope.outputs.library == 'true' || needs.ci-scope.outputs.angular_compatibility == 'true'
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        lane: [quality, native, packages]
     env:
       LIBS: chat,langgraph,ag-ui,render,a2ui,telemetry,middleware
       FOUNDATIONS: core,content,angular,react
@@ -206,18 +210,27 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Verify native conversation tooling
+        if: matrix.lane == 'quality'
         run: npx nx run native-conversation-react:tooling-test
       - name: Verify native React copy behavior
+        if: matrix.lane == 'quality'
         run: npx nx run native-conversation-react:copy-test
       - run: npx nx run-many -t lint --projects=$LIBS
+        if: matrix.lane == 'quality'
       - name: React migration baseline and boundaries
+        if: matrix.lane == 'quality'
         run: |
           node --test scripts/react-parity/*.spec.mjs fixtures/react-parity/traces.spec.mjs
           node scripts/react-parity/inventory.mjs --check
           node scripts/react-parity/verify-boundaries.mjs
       - name: Build and validate private React foundations
+        if: matrix.lane == 'quality'
         run: npx nx run-many -t lint test type-tests build --projects=$FOUNDATIONS --parallel=2
+      - name: Build private foundations for isolated validation
+        if: matrix.lane == 'native' || matrix.lane == 'packages'
+        run: npx nx run-many -t build --projects=$FOUNDATIONS --parallel=2 --skip-nx-cache
       - name: Verify isolated backend runtimes and types
+        if: matrix.lane == 'native'
         run: |
           npx nx run langgraph:runtime-quality
           npx nx run langgraph:runtime-type-tests
@@ -226,25 +239,31 @@ jobs:
           npx nx run ag-ui:runtime-type-tests
           npx nx run ag-ui:type-tests
       - name: Set up pinned Python for native approval proof
+        if: matrix.lane == 'native' || matrix.lane == 'packages'
         uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57
         with:
           python-version: '3.12'
           # Isolated provider children do not populate the action's cache.
           enable-cache: false
       - name: Verify native approval with canonical provider
+        if: matrix.lane == 'native'
         timeout-minutes: 10
         run: npx nx run native-conversation-react:provider-test
       - name: Verify native trip summary with canonical provider
+        if: matrix.lane == 'native'
         timeout-minutes: 10
         run: npx nx run native-conversation-react:summary-provider-test
       - name: Verify native owner with pinned Mastra service
+        if: matrix.lane == 'packages'
         run: |
           npm ci --prefix deployments/ag-ui-mastra --no-audit --no-fund
           npm test --prefix deployments/ag-ui-mastra
           node node_modules/typescript/bin/tsc -p scripts/react-parity/tsconfig.native-mastra.json
           node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.base.json scripts/react-parity/verify-native-mastra.ts
       - run: npx nx test langgraph --coverage --maxWorkers=2 --reporter=default
+        if: matrix.lane == 'native'
       - name: Prepare pinned PostgreSQL integration image
+        if: matrix.lane == 'native'
         run: |
           postgres_image='public.ecr.aws/docker/library/postgres@sha256:ca0bd484cb98bf4b24eb1010e73fb3fcbd6714d240fbc1a10eea5b7dbecb641d'
           if ! docker pull "$postgres_image"; then
@@ -253,12 +272,17 @@ jobs:
           fi
           docker tag "$postgres_image" postgres:16
       - name: Verify durable tool ownership and PostgreSQL migration
+        if: matrix.lane == 'native'
         run: node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.base.json scripts/react-parity/verify-tool-claims.ts
       - run: npx nx run-many -t test --projects=chat,ag-ui,render,a2ui,telemetry,middleware --coverage --parallel=1 --maxWorkers=2
+        if: matrix.lane == 'native'
       - run: npx nx run-many -t build --projects=$LIBS --configuration=production
+        if: matrix.lane == 'packages'
       - name: Verify production builds strip the devtools hook
+        if: matrix.lane == 'packages'
         run: npx nx run chat:test-devtools-bundle
       - name: Verify canonical A2UI native fixtures
+        if: matrix.lane == 'packages'
         timeout-minutes: 15
         env:
           A2UI_FIXTURE_ENV: ${{ runner.temp }}/threadplane-a2ui-environment
@@ -285,21 +309,29 @@ jobs:
             PYTHONDONTWRITEBYTECODE=1 LANGSMITH_TRACING=false LANGCHAIN_TRACING_V2=false \
             "$node_path" --test --test-concurrency=1 scripts/react-cockpit/chat-a2ui-fixture.spec.mjs scripts/react-cockpit/chat-a2ui-configuration.spec.mjs scripts/react-cockpit/chat-a2ui-host.spec.mjs scripts/react-cockpit/chat-a2ui-readiness.spec.mjs
       - name: Configure bounded Ubuntu package downloads
+        if: matrix.lane == 'packages'
         run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
       - name: Install Chromium for packed runtime consumers
+        if: matrix.lane == 'packages'
         timeout-minutes: 10
         run: npx playwright install --with-deps chromium
       - name: Verify native same-document session bindings
+        if: matrix.lane == 'packages'
         run: node scripts/react-parity/review-native-ag-ui.mjs --verify
       - name: Verify real LangGraph candidate package
+        if: matrix.lane == 'packages'
         run: node scripts/react-parity/verify-langgraph-candidate.mjs
       - name: Prepare canonical AG-UI client-tools fixture
+        if: matrix.lane == 'packages'
         run: UV_PYTHON=3.12 UV_PROJECT_ENVIRONMENT="$THREADPLANE_AG_UI_FIXTURE_ENVIRONMENT" uv sync --frozen --no-install-project --project cockpit/ag-ui/client-tools/python
       - name: Verify canonical AG-UI client-tools fixtures
+        if: matrix.lane == 'packages'
         run: node --test scripts/react-parity/ag-ui-candidate-package.spec.mjs fixtures/react-parity/native-ag-ui-client-tools/server.spec.mjs
       - name: Verify real AG-UI candidate package
+        if: matrix.lane == 'packages'
         run: node scripts/react-parity/verify-ag-ui-candidate.mjs
       - name: Verify installed native AG-UI A2UI
+        if: matrix.lane == 'packages'
         timeout-minutes: 15
         env:
           AG_UI_A2UI_ROOT: ${{ runner.temp }}/threadplane-agui-a2ui
@@ -338,7 +370,7 @@ jobs:
             --retain "$AG_UI_A2UI_ROOT/proof" --python "$fixture_environment/bin/python" \
             --environment "$fixture_environment" --home "$fixture_home" --tmpdir "$fixture_tmp"
       - name: Upload native AG-UI A2UI proof
-        if: always()
+        if: always() && (matrix.lane == 'packages')
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: threadplane-native-agui-a2ui-proof
@@ -347,14 +379,19 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
       - name: Verify installed owned Markdown
+        if: matrix.lane == 'packages'
         run: node scripts/react-parity/verify-markdown.mjs
       - name: Verify installed owned A2UI surfaces
+        if: matrix.lane == 'packages'
         run: node scripts/react-parity/verify-a2ui-surfaces.mjs
       - name: Verify installed owned render state
+        if: matrix.lane == 'packages'
         run: node scripts/react-parity/verify-render-state.mjs
       - name: Verify installed native React readiness
+        if: matrix.lane == 'packages'
         run: node scripts/react-parity/verify-react-readiness.mjs
       - name: Verify emitted boundaries and isolated packages
+        if: matrix.lane == 'packages'
         run: |
           node scripts/react-parity/verify-boundaries.mjs --built
           node scripts/react-parity/verify-packages.mjs
@@ -362,10 +399,14 @@ jobs:
           node scripts/react-parity/verify-middleware-package.mjs
           node scripts/react-parity/verify-middleware-conformance.mjs
       - run: node scripts/verify-release-versions.mjs
+        if: matrix.lane == 'quality'
       - name: DX-coverage — public dev-facing functions must have a JSDoc summary
+        if: matrix.lane == 'quality'
         run: node scripts/check-dx-coverage.mjs
       - run: node --test examples/chat/smoke/*.spec.mjs scripts/verify-angular-support.spec.mjs
+        if: matrix.lane == 'quality'
       - run: node scripts/verify-angular-support.mjs
+        if: matrix.lane == 'quality'
 
   native-conversation:
     name: 'Native conversation — ${{ matrix.framework }}'
