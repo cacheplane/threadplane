@@ -113,17 +113,28 @@ function validateLinkedIn(draft: Draft): void {
   }
   if (draft.threadParts) {
     throw new ValidationError(
-      'LinkedIn does not support threads. Use text, plus firstComment for a follow-up.',
+      'LinkedIn does not support threads. Put everything in text.',
       { rule: 'linkedin-no-threads', field: 'threadParts' },
     );
   }
   if (draft.link) {
     throw new ValidationError(
-      'LinkedIn adapter does not build link previews. Put the URL in firstComment or in the text.',
+      'LinkedIn adapter does not build link previews. Put the URL in the text, or add it as a comment by hand after posting.',
       { rule: 'linkedin-no-link-preview', field: 'link' },
     );
   }
   if (draft.firstComment !== undefined) {
+    // The comments endpoint is partner-only: a self-serve app's w_member_social
+    // token can post but gets a 403 on comments. Refuse up front instead of
+    // publishing the post and losing the comment.
+    if (process.env.LINKEDIN_PARTNER_COMMENTS !== '1') {
+      throw new ValidationError(
+        'LinkedIn firstComment needs partner API access; self-serve apps get a 403 on comments. ' +
+          'Drop firstComment and add the comment by hand after posting, or set ' +
+          'LINKEDIN_PARTNER_COMMENTS=1 once the app has partner access.',
+        { rule: 'linkedin-comment-needs-partner', field: 'firstComment' },
+      );
+    }
     const len = codePointLength(draft.firstComment);
     if (len === 0 || len > MAX_LINKEDIN_COMMENT_CHARS) {
       throw new ValidationError(
