@@ -208,7 +208,7 @@ Archiving or restoring a selected conversation changes directory classification
 only. The selected transcript, composer draft, session and running response stay
 mounted and selected, with no reload, stop or navigation. Archived rows remain
 selectable. This deliberately differs from the Angular demo clearing selection
-when it archives. Project actions, drag reordering and full thread lifecycle/T29
+when it archives. Remaining project actions, drag reordering and full thread lifecycle/T29
 parity remain open; the ThreadList row API is unchanged.
 
 Native React full directories also compose permanent Delete through the private
@@ -682,8 +682,8 @@ until reset. New project is always available when local storage is healthy; the
 larger project section appears for catalog/loaded entries, a retained filter or an
 open editor. Selection is ephemeral, while names persist only in this browser.
 New conversations remain unassigned, and pinned reordering still spans all loaded
-pins, including other projects. Deletion, association writes/move-to-project and
-full T29 parity remain open. See the naming slice below for persistence behavior.
+pins, including other projects. Deletion, shared catalogs and full T29 parity remain open. Confirmed
+conversation assignment/removal is described below. See the naming slice below for persistence behavior.
 
 ### Project creation and browser-local names (private React T29 slice)
 
@@ -710,10 +710,12 @@ and write failures keep the draft and target, expose Retry, and block submission
 until recovery. Retry reloads without committing. Storage events (including clear)
 refresh names without broadening a retained filter or replacing an active draft.
 This uses browser localStorage's last-writer-wins behavior, not atomic multi-tab
-transactions. No cross-device sharing or backend project commands are introduced.
+transactions. This naming catalog has no cross-device sharing. The association slice below
+uses explicit backend conversation metadata commands.
 Project selection, naming and persistence preserve the selected conversation,
 transcript, composer draft and running session without extra network calls.
-Project deletion, association writes/move-to-project and full T29 parity remain open.
+Project deletion, shared catalogs and full T29 parity remain open. Confirmed
+conversation assignment/removal is described below.
 
 Conversation menus also retain their opening through a queued scroll notification
 from an anchor ancestor whose vertical/horizontal offsets already settled before
@@ -721,3 +723,37 @@ opening. Actual later ancestor movement, document/unrelated scroll notifications
 outside input and resize still dismiss the menu. The shorter native rail browser
 proof covers unchanged queued notification, genuine scrolling, reopening and the
 retained pin/unpin flow without retries or added timeouts.
+
+
+### Confirmed conversation project assignment (private React T29 slice)
+
+Native full active and archived directories now compose an application-owned
+**Move to project** command from the existing React row action and selection
+primitives. The editor has explicit Save/Cancel and a separate **No project**
+choice. Choosing a destination does not write; only Save requests a narrow
+`metadata: { projectId }` update. IDs preserve exact bytes, and removal sends
+explicit `null`. Success requires the exact raw thread ID and requested metadata
+value; an omitted value does not confirm removal. No new library export is needed.
+
+Names remain browser-local; association IDs are persisted by the backend. The
+picker merges the validated local catalog with all loaded project IDs. It reloads
+on relevant storage events and rereads before Save. Missing destinations keep the
+draft choice visible and disable Save; unavailable or malformed catalog storage
+requires explicit read-only Retry without replacing saved bytes. Duplicate names
+and prototype-like IDs remain literal.
+
+The shared owner publishes per-conversation pending/error/retry state and applies
+only a confirmed association. Independent read/write evidence prevents older list
+or selected-row reads and unrelated rename/pin/archive/rank responses from
+reverting it. Disposal and application replacement retire old UI requests; pending
+moves block target deletion. A failed or unconfirmed response retains intent for
+explicit retry or Refresh rather than claiming success.
+
+The directory owns the editor and feedback outside filtered rows. Moving a row
+out of the current project keeps that filter, selected conversation, transcript,
+composer draft and running response. Cancellation may close the editor while an
+already dispatched command continues; its completion cannot close a newer editor.
+Focus returns only while still owned, using the stable filter when the original
+row is hidden. Compact rails remain selection-only. New conversations remain
+unassigned until explicitly moved. Project deletion, shared catalogs, drag
+reordering and full T29 parity remain open.

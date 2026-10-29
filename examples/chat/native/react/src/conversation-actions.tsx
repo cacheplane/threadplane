@@ -10,6 +10,8 @@ export interface RenameEditorRequest {
 }
 interface Props {
   readonly archived?: boolean;
+  readonly onMoveProject?: (target: HTMLElement | null) => void;
+  readonly moveProjectPending?: boolean;
   readonly onDelete?: (target: HTMLElement | null) => void;
   readonly deleteDisabled?: boolean;
   readonly deleteReason?: string;
@@ -89,6 +91,17 @@ function ConversationActionsOwner(props: Props) {
   return (
     <div ref={root} className="conversation-actions">
       <CopyConversationId
+        onMoveProject={
+          props.onMoveProject
+            ? () =>
+                props.onMoveProject?.(
+                  props.menu?.returnFocusTo ??
+                    root.current?.querySelector('button') ??
+                    null
+                )
+            : undefined
+        }
+        moveProjectPending={props.moveProjectPending}
         id={props.id}
         title={props.title}
         menu={controlledMenu}

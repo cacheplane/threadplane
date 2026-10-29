@@ -86,13 +86,15 @@ it('requires Library validation and its independent package producer for compati
   assert.match(step, /RESULT_LIBRARY_PACKAGE: \$\{\{ needs.library-package.result \}\}/);
 });
 
-it('pins every Vercel CLI invocation to the verified working release', async () => {
+it('pins every Vercel CLI invocation and its estree dependency to available releases', async () => {
   const workflow = withoutYamlCommentLines(await readFile('.github/workflows/ci.yml', 'utf8'));
-  const invocations = [...workflow.matchAll(/\bnpx\s+(vercel(?:@[^\s]+)?)(?=\s)/g)];
+  const invocations = [...workflow.matchAll(/\bnpm exec[^\n]*?-- vercel(?=\s)/g)];
   assert.equal(invocations.length, 17, 'cover every preview, promotion, and demo CLI invocation');
   for (const invocation of invocations) {
-    assert.equal(invocation[1], 'vercel@64.2.0', 'Vercel CLI must use the exact verified release');
+    assert.equal(invocation[0], 'npm exec --yes --package=vercel@64.2.0 --package=@types/estree@1.0.8 -- vercel',
+      'keep the verified CLI and avoid the published estree version with a missing tarball');
   }
+  assert.doesNotMatch(workflow, /\bnpx\s+vercel(?:@|\s)/, 'no floating CLI dependency installation');
 });
 
 it('runs native MAF Node configuration, preparation, actual fixture and model checks in scoped CI', async () => {
@@ -610,7 +612,7 @@ describe('CI workflow', () => {
     const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
     const promotes = workflow
       .split('\n')
-      .filter((line) => line.includes('vercel@64.2.0 promote'));
+      .filter((line) => line.includes('-- vercel promote'));
 
     assert.ok(promotes.length >= 1, 'expected the Website promotion');
     for (const line of promotes) {
@@ -960,7 +962,7 @@ describe('CI workflow', () => {
     assert.match(previewStep, /id:\s*deploy_website/);
     assert.match(
       previewStep,
-      /vercel@64\.2\.0 deploy[^\n]*--prebuilt[^\n]*--prod[^\n]*--skip-domain/
+      /-- vercel deploy[^\n]*--prebuilt[^\n]*--prod[^\n]*--skip-domain/
     );
     assert.match(previewStep, /new URL\(process\.argv\[1\]\)/);
     assert.match(previewStep, /process\.stdout\.write\(parsed\.origin\)/);
@@ -984,7 +986,7 @@ describe('CI workflow', () => {
     assert.match(freshnessStep, /fresh=true.*GITHUB_OUTPUT/);
     assert.match(
       promoteStep,
-      /vercel@64\.2\.0 promote "\$\{\{ steps\.deploy_website\.outputs\.deployment_url \}\}" --scope=\$\{\{ secrets\.VERCEL_ORG_ID \}\} --yes/
+      /-- vercel promote "\$\{\{ steps\.deploy_website\.outputs\.deployment_url \}\}" --scope=\$\{\{ secrets\.VERCEL_ORG_ID \}\} --yes/
     );
     assert.match(
       promoteStep,
@@ -1079,32 +1081,32 @@ describe('CI workflow', () => {
     );
     assert.match(examples, /working-directory:\s*deploy\/examples/);
     assert.match(examples, /"projectName":"threadplane-examples"/);
-    assert.match(examples, /vercel@64\.2\.0 pull --yes --environment=preview/);
-    assert.match(examples, /vercel@64\.2\.0 deploy --prebuilt --yes/);
+    assert.match(examples, /-- vercel pull --yes --environment=preview/);
+    assert.match(examples, /-- vercel deploy --prebuilt --yes/);
     assert.doesNotMatch(examples, /--prod/);
     assert.match(examples, /set -euo pipefail/);
     assert.match(examples, /new URL\(process\.argv\[1\]\)/);
     assert.match(
       examples,
-      /vercel@64\.2\.0 alias set "\$url" "\$\{\{ steps\.aliases\.outputs\.examples \}\}" --scope=\$\{\{ secrets\.VERCEL_ORG_ID \}\}/
+      /-- vercel alias set "\$url" "\$\{\{ steps\.aliases\.outputs\.examples \}\}" --scope=\$\{\{ secrets\.VERCEL_ORG_ID \}\}/
     );
 
     assert.match(website, /"projectName":"threadplane"/);
-    assert.match(website, /vercel@64\.2\.0 pull --yes --environment=preview/);
+    assert.match(website, /-- vercel pull --yes --environment=preview/);
     assert.match(
       website,
       /NEXT_PUBLIC_COCKPIT_RUNTIME_BASE_URL:\s*https:\/\/\$\{\{ steps\.aliases\.outputs\.examples \}\}/
     );
     assert.match(website, /GROWTH_FORM_POLICY:\s*growth_v1/);
-    assert.match(website, /vercel@64\.2\.0 build --token/);
-    assert.match(website, /vercel@64\.2\.0 deploy --prebuilt --archive=tgz --yes/);
+    assert.match(website, /-- vercel build --token/);
+    assert.match(website, /-- vercel deploy --prebuilt --archive=tgz --yes/);
     assert.doesNotMatch(website, /--skip-domain/);
     assert.doesNotMatch(website, /--prod/);
     assert.match(website, /set -euo pipefail/);
     assert.match(website, /new URL\(process\.argv\[1\]\)/);
     assert.match(
       website,
-      /vercel@64\.2\.0 alias set "\$url" "\$\{\{ steps\.aliases\.outputs\.website \}\}" --scope=\$\{\{ secrets\.VERCEL_ORG_ID \}\}/
+      /-- vercel alias set "\$url" "\$\{\{ steps\.aliases\.outputs\.website \}\}" --scope=\$\{\{ secrets\.VERCEL_ORG_ID \}\}/
     );
 
     assert.match(suite, /BASE_URL:\s*https:\/\/\$\{\{ steps\.aliases\.outputs\.website \}\}/);
@@ -1201,7 +1203,7 @@ describe('CI workflow', () => {
     // Each `vercel deploy --prod` must sit behind the freshness gate.
     const promotions = workflow
       .split(/^ {6}- /m)
-      .filter((step) => /vercel@64\.2\.0 deploy[^\n]*--prod/.test(step));
+      .filter((step) => /-- vercel deploy[^\n]*--prod/.test(step));
 
     assert.ok(
       promotions.length >= 4,
@@ -1946,7 +1948,7 @@ it('executes the final Website freshness fence before unchanged-artifact promoti
   const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'deploy');
   const promotion = readNamedStep(job, 'Promote verified Website artifact unchanged');
   assert.match(promotion, /steps.website_promotion_freshness.outputs.fresh == 'true'/);
-  assert.match(promotion, /npx vercel@64\.2\.0 promote "\$\{\{ steps.deploy_website.outputs.deployment_url \}\}"/);
+  assert.match(promotion, /npm exec[^\n]*?-- vercel promote "\$\{\{ steps.deploy_website.outputs.deployment_url \}\}"/);
 });
 
 it('representative smoke includes the canonical tagged Theming graph', async () => {

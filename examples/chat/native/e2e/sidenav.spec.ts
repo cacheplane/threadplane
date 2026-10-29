@@ -523,6 +523,12 @@ test('installed React sidenav retains navigation, draft and a running response a
       page.getByRole('menuitem', {
         name: /^Archive conversation for Beta notes/,
       })
+    ).toBeEnabled();
+    // Up opens at the final enabled action, now the project command.
+    await expect(
+      page.getByRole('menuitem', {
+        name: /^Move to project for Beta notes/,
+      })
     ).toBeFocused();
     await page.keyboard.press('Shift+Tab');
     await expect(beta).toBeFocused();

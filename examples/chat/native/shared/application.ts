@@ -37,6 +37,15 @@ export interface ApplicationSnapshot<
     beforeId: string | null;
     intent: number;
   }>;
+  readonly projectMoves: Readonly<
+    Record<
+      string,
+      Readonly<{
+        status: 'pending' | 'confirmed' | 'failed';
+        projectId: string | null;
+      }>
+    >
+  >;
   readonly archives: Readonly<
     Record<
       string,
@@ -177,6 +186,7 @@ function createApplicationOwner<TRow extends MessageContent>(
       beforeId: null,
       intent: 0,
     }),
+    projectMoves: Object.freeze({}),
     archives: Object.freeze({}),
     pins: Object.freeze({}),
     renames: Object.freeze({}),
@@ -214,6 +224,29 @@ function createApplicationOwner<TRow extends MessageContent>(
     string,
     { version: number; title: string; readOrder: number }
   >();
+  const projectMoving = new Map<string, AbortController>();
+  const projectEvidence = new Map<
+    string,
+    {
+      version: number;
+      projectId: string | undefined;
+      readOrder: number;
+    }
+  >();
+  function replaceProject(
+    row: ThreadRow,
+    projectId: string | undefined
+  ): ThreadRow {
+    if (
+      row.projectId === projectId &&
+      (projectId !== undefined || !Object.hasOwn(row, 'projectId'))
+    )
+      return row;
+    const { projectId: _previous, ...rest } = row;
+    return Object.freeze(
+      projectId === undefined ? rest : { ...rest, projectId }
+    );
+  }
   const renaming = new Map<string, AbortController>();
   const archiving = new Map<string, AbortController>();
   const confirmedArchives = new Map<
@@ -230,6 +263,17 @@ function createApplicationOwner<TRow extends MessageContent>(
     readVersion: number,
     order: number
   ): ThreadRow {
+    const project = projectEvidence.get(row.id);
+    if (project) {
+      if (project.version > readVersion || project.readOrder > order)
+        row = replaceProject(row, project.projectId);
+      else
+        projectEvidence.set(row.id, {
+          ...project,
+          projectId: row.projectId,
+          readOrder: order,
+        });
+    }
     const confirmed = confirmedTitles.get(row.id);
     if (confirmed) {
       if (confirmed.version > readVersion || confirmed.readOrder > order)
@@ -330,6 +374,7 @@ function createApplicationOwner<TRow extends MessageContent>(
       next.renames === previous.renames &&
       next.archives === previous.archives &&
       next.pins === previous.pins &&
+      next.projectMoves === previous.projectMoves &&
       next.list === previous.list &&
       next.decision === previous.decision &&
       next.submissionKind === previous.submissionKind &&
@@ -693,6 +738,7 @@ function createApplicationOwner<TRow extends MessageContent>(
           (row.title !== selection.row?.title ||
             row.pinned !== selection.row?.pinned ||
             row.archived !== selection.row?.archived ||
+            row.projectId !== selection.row?.projectId ||
             row.pinnedOrder !== selection.row?.pinnedOrder)
         )
           selection = Object.freeze({ ...selection, row });
@@ -738,7 +784,8 @@ function createApplicationOwner<TRow extends MessageContent>(
       typeof options.directory.inspectRemoval !== 'function' ||
       renaming.has(id) ||
       pinning.has(id) ||
-      archiving.has(id)
+      archiving.has(id) ||
+      projectMoving.has(id)
     )
       return false;
     const row =
@@ -773,7 +820,8 @@ function createApplicationOwner<TRow extends MessageContent>(
       !ordering &&
       !renaming.has(id) &&
       !pinning.has(id) &&
-      !archiving.has(id)
+      !archiving.has(id) &&
+      !projectMoving.has(id)
     );
   }
 
@@ -794,6 +842,7 @@ function createApplicationOwner<TRow extends MessageContent>(
   function confirmRemoval(current: NonNullable<typeof deleting>) {
     // Lifetime retirement is installed before any observer, disposal or history callback.
     retiredIds.add(current.id);
+    projectEvidence.delete(current.id);
     const previous = admission?.id === current.id ? admission : undefined;
     const selected = snapshot.selection.id === current.id;
     const intent = selected ? ++selectionIntent : selectionIntent;
@@ -919,6 +968,7 @@ function createApplicationOwner<TRow extends MessageContent>(
           [confirmedPins, { pinned: row.pinned }],
           [confirmedArchives, { archived: row.archived }],
           [rankEvidence, { pinnedOrder: row.pinnedOrder }],
+          [projectEvidence, { projectId: row.projectId }],
         ] as const) {
           // Each field has already passed its own reconciliation above.
           const previous = map.get(id);
@@ -1078,6 +1128,94 @@ function createApplicationOwner<TRow extends MessageContent>(
     return (
       started && !disposed && typeof options.directory.rename === 'function'
     );
+  }
+
+  function canSetProject() {
+    return (
+      started && !disposed && typeof options.directory.setProject === 'function'
+    );
+  }
+
+  async function setProject(
+    id: string,
+    projectId: string | null
+  ): Promise<boolean> {
+    if (
+      typeof id !== 'string' ||
+      !id.trim() ||
+      id === '.' ||
+      id === '..' ||
+      (projectId !== null &&
+        (typeof projectId !== 'string' || !projectId.trim()))
+    )
+      return false;
+    const existing =
+      snapshot.list.rows.find((row) => row.id === id) ??
+      (snapshot.selection.id === id ? snapshot.selection.row : undefined);
+    if (
+      !canSetProject() ||
+      !existing ||
+      blocksTarget(id) ||
+      projectMoving.has(id) ||
+      (existing.projectId ?? null) === projectId
+    )
+      return false;
+    const controller = new AbortController();
+    projectMoving.set(id, controller);
+    const owned = () =>
+      !disposed &&
+      projectMoving.get(id) === controller &&
+      !controller.signal.aborted;
+    const state = (status: 'pending' | 'confirmed' | 'failed') =>
+      Object.freeze({
+        ...snapshot.projectMoves,
+        [id]: Object.freeze({ status, projectId }),
+      });
+    publish({ ...snapshot, projectMoves: state('pending') });
+    if (!owned()) return false;
+    let confirmed = false;
+    try {
+      const result = await options.directory.setProject!(
+        id,
+        projectId,
+        controller.signal
+      );
+      if (!owned()) return false;
+      confirmed =
+        result.kind === 'ready' &&
+        result.value?.id === id &&
+        result.value.projectId === projectId;
+    } catch {
+      if (!owned()) return false;
+    }
+    projectMoving.delete(id);
+    if (!confirmed) {
+      publish({ ...snapshot, projectMoves: state('failed') });
+      return false;
+    }
+    projectEvidence.set(id, {
+      version: ++writeVersion,
+      projectId: projectId ?? undefined,
+      readOrder: 0,
+    });
+    const replace = (row: ThreadRow) =>
+      row.id === id ? replaceProject(row, projectId ?? undefined) : row;
+    publish({
+      ...snapshot,
+      projectMoves: state('confirmed'),
+      list: Object.freeze({
+        ...snapshot.list,
+        rows: Object.freeze(snapshot.list.rows.map(replace)),
+      }),
+      selection:
+        snapshot.selection.id === id && snapshot.selection.row
+          ? Object.freeze({
+              ...snapshot.selection,
+              row: replace(snapshot.selection.row),
+            })
+          : snapshot.selection,
+    });
+    return true;
   }
 
   function canSetArchived() {
@@ -1432,6 +1570,8 @@ function createApplicationOwner<TRow extends MessageContent>(
     checkRemoval,
     canReorderPinned,
     reorderPinned,
+    canSetProject,
+    setProject,
     canSetArchived,
     setArchived,
     canSetPinned,
@@ -1476,6 +1616,8 @@ function createApplicationOwner<TRow extends MessageContent>(
       deleting = undefined;
       ordering?.abort();
       ordering = undefined;
+      for (const controller of projectMoving.values()) controller.abort();
+      projectMoving.clear();
       for (const controller of archiving.values()) controller.abort();
       archiving.clear();
       for (const controller of pinning.values()) controller.abort();
