@@ -270,10 +270,32 @@ export function createThreadDirectory(
         )
       );
     },
-    create(signal: AbortSignal) {
-      return perform(signal, async () =>
-        projectThread(await client.threads.create({ signal }))
-      );
+    create(signal: AbortSignal, projectId?: string | null) {
+      if (
+        projectId != null &&
+        (typeof projectId !== 'string' || !projectId.trim())
+      )
+        return Promise.resolve(failure(signal));
+      return perform(signal, async () => {
+        const raw = await client.threads.create({
+          signal,
+          ...(projectId == null ? {} : { metadata: { projectId } }),
+        });
+        // Projection supplies fallbacks; only exact raw evidence confirms creation.
+        if (
+          !raw ||
+          typeof raw.thread_id !== 'string' ||
+          !raw.thread_id.trim() ||
+          raw.thread_id === '.' ||
+          raw.thread_id === '..' ||
+          (projectId != null &&
+            (!raw.metadata ||
+              !Object.hasOwn(raw.metadata, 'projectId') ||
+              raw.metadata['projectId'] !== projectId))
+        )
+          throw new Error('Creation not confirmed');
+        return projectThread(raw);
+      });
     },
   });
 }

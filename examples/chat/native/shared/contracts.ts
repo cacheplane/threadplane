@@ -57,5 +57,8 @@ export interface ThreadDirectory {
   ): Promise<DirectoryResult<ThreadRow>>;
   get(id: string, signal: AbortSignal): Promise<ThreadLookupResult>;
   list(signal: AbortSignal): Promise<DirectoryResult<readonly ThreadRow[]>>;
-  create(signal: AbortSignal): Promise<DirectoryResult<ThreadRow>>;
+  create(
+    signal: AbortSignal,
+    projectId?: string | null
+  ): Promise<DirectoryResult<ThreadRow>>;
 }

@@ -158,6 +158,9 @@ test('development: authored refresh, native diagnostics, browser abort and owned
     socketClosed: boolean;
   }[] = [];
   evidence.requests = requests;
+  let documentNumber = 0;
+  const searchDocuments: number[] = [];
+  evidence.searchDocuments = searchDocuments;
   const groups = new Set<number>();
   const baselineSignals = [
     process.listenerCount('SIGINT'),
@@ -277,8 +280,6 @@ test('development: authored refresh, native diagnostics, browser abort and owned
       );
     });
     const apiRequests: string[] = [];
-    let documentNumber = 0;
-    const searchDocuments: number[] = [];
     page.on('framenavigated', (frame) => {
       if (frame === page.mainFrame()) documentNumber++;
     });
@@ -291,6 +292,37 @@ test('development: authored refresh, native diagnostics, browser abort and owned
       if (new URL(request.url()).pathname === '/api/threads/search')
         searchDocuments.push(documentNumber);
     });
+    const searchCount = () =>
+      requests.filter((request) => request.path === '/threads/search').length;
+    const assertApiRequests = (otherPaths: string[]) => {
+      const searches = requests.filter(
+        (request) => request.path === '/threads/search'
+      );
+      expect(searchDocuments).toHaveLength(searches.length);
+      expect(searchDocuments.length).toBe(new Set(searchDocuments).size);
+      for (const search of searches)
+        expect({
+          method: search.method,
+          payload: search.payload,
+          authenticated: search.authenticated,
+        }).toEqual({
+          method: 'POST',
+          payload: { limit: 50, offset: 0 },
+          authenticated: true,
+        });
+      expect(
+        requests
+          .filter((request) => request.path !== '/threads/search')
+          .map(({ path }) => path)
+      ).toEqual(otherPaths);
+      expect(
+        apiRequests
+          .map((url) => new URL(url).pathname)
+          .filter((path) => path !== '/api/threads/search')
+      ).toEqual(otherPaths.map((path) => '/api' + path));
+      expect(apiRequests).toHaveLength(searches.length + otherPaths.length);
+      expect(requests).toHaveLength(searches.length + otherPaths.length);
+    };
     await page.goto(first.url);
     await expect(
       page.getByRole('heading', { name: 'A place for your next conversation.' })
@@ -314,6 +346,9 @@ test('development: authored refresh, native diagnostics, browser abort and owned
     const originalApp = readFileSync(app, 'utf8');
     const marker = join(source, 'owned-proof/marker.ts');
     const authoredCheckStart = logs.length;
+    // Vite may reload the app and its new import separately; require progress
+    // for each authored phase, then reconcile exactly one search per document.
+    const authoredBaseline = { searches: searchCount(), documentNumber };
     mkdirSync(dirname(marker));
     writeFileSync(
       marker,
@@ -331,7 +366,9 @@ test('development: authored refresh, native diagnostics, browser abort and owned
     await expect(page.getByTestId('development-marker')).toHaveText(
       'owned marker one'
     );
-    await expect.poll(() => requests.length).toBe(2);
+    await expect.poll(searchCount).toBeGreaterThan(authoredBaseline.searches);
+    expect(documentNumber).toBeGreaterThan(authoredBaseline.documentNumber);
+    const atomicBaseline = { searches: searchCount(), documentNumber };
     const atomic = join(dirname(marker), '.marker-atomic');
     writeFileSync(
       atomic,
@@ -341,7 +378,8 @@ test('development: authored refresh, native diagnostics, browser abort and owned
     await expect(page.getByTestId('development-marker')).toHaveText(
       'owned marker two'
     );
-    await expect.poll(() => requests.length).toBe(3);
+    await expect.poll(searchCount).toBeGreaterThan(atomicBaseline.searches);
+    expect(documentNumber).toBeGreaterThan(atomicBaseline.documentNumber);
     await expect
       .poll(() => logs.slice(authoredCheckStart).join('\n'))
       .toMatch(/Found 0 errors\. Watching for file changes\./);
@@ -363,6 +401,7 @@ test('development: authored refresh, native diagnostics, browser abort and owned
       .poll(() => logs.slice(diagnosticStart).join('\n'))
       .toMatch(/app\.tsx.*TS2307.*owned-proof\/marker/);
     diagnosticStart = logs.length;
+    const recoveryBaseline = { searches: searchCount(), documentNumber };
     writeFileSync(
       renamed,
       'export const developmentMarker = "owned marker recovered";\n'
@@ -374,7 +413,8 @@ test('development: authored refresh, native diagnostics, browser abort and owned
     await expect(page.getByTestId('development-marker')).toHaveText(
       'owned marker recovered'
     );
-    await expect.poll(() => requests.length).toBe(4);
+    await expect.poll(searchCount).toBeGreaterThan(recoveryBaseline.searches);
+    expect(documentNumber).toBeGreaterThan(recoveryBaseline.documentNumber);
 
     const negative = join(source, 'owned-proof/snapshot.tsx');
     diagnosticStart = logs.length;
@@ -402,8 +442,7 @@ test('development: authored refresh, native diagnostics, browser abort and owned
     });
     // Each successful document starts exactly one directory refresh. The
     // intentionally broken import document never reaches composition.
-    expect(requests).toHaveLength(4);
-    expect(new Set(searchDocuments).size).toBe(4);
+    assertApiRequests([]);
 
     for (const path of ['owned-held', 'owned-sse']) {
       await page.evaluate((path) => {
@@ -488,7 +527,7 @@ test('development: authored refresh, native diagnostics, browser abort and owned
         socketClosed: true,
       },
     ]);
-    expect(apiRequests).toHaveLength(6);
+    assertApiRequests(['/owned-held', '/owned-sse']);
     await Promise.all(pendingResponses);
     const browserConfig = readFileSync(
       join(first.consumer, 'shared/browser-config.json'),
@@ -533,18 +572,19 @@ test('development: authored refresh, native diagnostics, browser abort and owned
     expect(groups.size).toBe(3);
     evidence.normalCleanup = true;
 
+    const firstGenerationSearchCount = searchCount();
+    const firstGenerationDocumentNumber = documentNumber;
+    evidence.firstGenerationSearchCount = firstGenerationSearchCount;
     const second = await launch();
     await page.goto(second.url);
     await expect(page.getByTestId('development-marker')).toHaveText(
       'owned marker recovered'
     );
-    await expect
-      .poll(
-        () =>
-          requests.filter((request) => request.path === '/threads/search')
-            .length
-      )
-      .toBe(5);
+    await expect.poll(searchCount).toBe(firstGenerationSearchCount + 1);
+    expect(searchDocuments).toHaveLength(firstGenerationSearchCount + 1);
+    expect(searchDocuments.at(-1)).toBeGreaterThan(
+      firstGenerationDocumentNumber
+    );
     const frozen = join(root, 'libs/react/src/index.ts');
     writeFileSync(
       frozen,
@@ -565,19 +605,8 @@ test('development: authored refresh, native diagnostics, browser abort and owned
       'Building content from frozen inputs',
       'Building react from frozen inputs',
     ]);
-    expect(requests).toHaveLength(7);
-    expect(new Set(searchDocuments).size).toBe(5);
-    expect(
-      requests
-        .filter((request) => request.path === '/threads/search')
-        .map(({ method, payload }) => ({ method, payload }))
-    ).toEqual([
-      { method: 'POST', payload: { limit: 50, offset: 0 } },
-      { method: 'POST', payload: { limit: 50, offset: 0 } },
-      { method: 'POST', payload: { limit: 50, offset: 0 } },
-      { method: 'POST', payload: { limit: 50, offset: 0 } },
-      { method: 'POST', payload: { limit: 50, offset: 0 } },
-    ]);
+    expect(searchCount()).toBe(firstGenerationSearchCount + 1);
+    assertApiRequests(['/owned-held', '/owned-sse']);
     for (const sentinel of [key, clientSecret, target])
       expect(logs.join('\n')).not.toContain(sentinel);
     evidence.frozenCleanup = true;
@@ -593,6 +622,7 @@ test('development: authored refresh, native diagnostics, browser abort and owned
         testInfo.outputPath('supervisor.log'),
         logs.join('\n') + '\n'
       );
+      evidence.documentNumber = documentNumber;
       evidence.originalInputsUnchanged = isDeepStrictEqual(
         inputFingerprint(workspace),
         original
