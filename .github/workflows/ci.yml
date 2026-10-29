@@ -161,6 +161,34 @@ jobs:
       - run: npx nx test scripts
       - run: npx nx run-many -t lint test --projects=marketing-assets,marketing-channels --parallel=2
 
+  # Consumer compatibility needs production packages, not the completion of
+  # Library's independent fixture, coverage, and installed-package proofs.
+  library-package:
+    name: Library — production packages
+    needs: ci-scope
+    if: github.event_name == 'push' || needs.ci-scope.outputs.angular_compatibility == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      LIBS: chat,langgraph,ag-ui,render,a2ui,telemetry,middleware
+      FOUNDATIONS: core,content,angular,react
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build production library artifact
+        run: npx nx run-many -t build --projects=$FOUNDATIONS,$LIBS --configuration=production --parallel=2 --skip-nx-cache
+      - name: Upload production library artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: threadplane-library-dist
+          path: dist/libs
+          if-no-files-found: error
+          retention-days: 1
+
   library:
     name: Library — lint / test / build
     needs: ci-scope
@@ -338,13 +366,6 @@ jobs:
         run: node scripts/check-dx-coverage.mjs
       - run: node --test examples/chat/smoke/*.spec.mjs scripts/verify-angular-support.spec.mjs
       - run: node scripts/verify-angular-support.mjs
-      - name: Upload production library artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: threadplane-library-dist
-          path: dist/libs
-          if-no-files-found: error
-          retention-days: 1
 
   native-conversation:
     name: 'Native conversation — ${{ matrix.framework }}'
@@ -389,7 +410,7 @@ jobs:
 
   angular-compatibility:
     name: 'Angular ${{ matrix.angular }} — packaged consumer'
-    needs: [ci-scope, library]
+    needs: [ci-scope, library-package]
     if: github.event_name == 'push' || needs.ci-scope.outputs.angular_compatibility == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -1236,6 +1257,7 @@ jobs:
     needs:
       - ci-scope
       - library
+      - library-package
       - native-conversation
       - angular-compatibility
       - website
@@ -1264,6 +1286,7 @@ jobs:
         env:
           RESULT_CI_SCOPE: ${{ needs.ci-scope.result }}
           RESULT_LIBRARY: ${{ needs.library.result }}
+          RESULT_LIBRARY_PACKAGE: ${{ needs.library-package.result }}
           RESULT_NATIVE_CONVERSATION: ${{ needs.native-conversation.result }}
           RESULT_ANGULAR_COMPATIBILITY: ${{ needs.angular-compatibility.result }}
           RESULT_WEBSITE: ${{ needs.website.result }}
@@ -1360,6 +1383,10 @@ jobs:
 
           require_always "CI scope" "$RESULT_CI_SCOPE"
           require_scoped "library" "Library — lint / test / build" "$RESULT_LIBRARY" "$SCOPE_LIBRARY"
+          # Compatibility-only changes still require all Library validation,
+          # even though the consumer matrix can now start from the early build.
+          require_scoped "angular_compatibility" "Library — lint / test / build" "$RESULT_LIBRARY" "$SCOPE_ANGULAR_COMPATIBILITY"
+          require_scoped "angular_compatibility" "Library production packages" "$RESULT_LIBRARY_PACKAGE" "$SCOPE_ANGULAR_COMPATIBILITY"
           require_scoped "library" "Native conversation matrix" "$RESULT_NATIVE_CONVERSATION" "$SCOPE_LIBRARY"
           require_scoped "angular_compatibility" "Native conversation matrix" "$RESULT_NATIVE_CONVERSATION" "$SCOPE_ANGULAR_COMPATIBILITY"
           require_scoped \
@@ -1400,6 +1427,7 @@ jobs:
     needs:
       - ci-scope
       - library
+      - library-package
       - native-conversation
       - website
       - cockpit

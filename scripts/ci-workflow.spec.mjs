@@ -49,7 +49,7 @@ it('requires all parallel native and Website production proofs before PR success
   environment.RESULT_CI_SCOPE = 'success';
   for (const [job, resultKey, scopeKey, otherResults] of [
     ['native-conversation', 'RESULT_NATIVE_CONVERSATION', 'SCOPE_LIBRARY', { RESULT_LIBRARY: 'success' }],
-    ['native-conversation', 'RESULT_NATIVE_CONVERSATION', 'SCOPE_ANGULAR_COMPATIBILITY', { RESULT_ANGULAR_COMPATIBILITY: 'success' }],
+    ['native-conversation', 'RESULT_NATIVE_CONVERSATION', 'SCOPE_ANGULAR_COMPATIBILITY', { RESULT_LIBRARY: 'success', RESULT_LIBRARY_PACKAGE: 'success', RESULT_ANGULAR_COMPATIBILITY: 'success' }],
     ['website-production-checks', 'RESULT_WEBSITE_PRODUCTION', 'SCOPE_WEBSITE_E2E', { RESULT_WEBSITE_E2E: 'success' }],
   ]) {
     for (const owner of ['required-pr-checks', 'deploy']) assert.ok(readJobNeeds(readJobBlock(workflow, owner)).includes(job), `${owner} requires ${job}`);
@@ -59,6 +59,31 @@ it('requires all parallel native and Website production proofs before PR success
       assert.equal(run.status, result === 'success' ? 0 : 1, `${job}: ${result}\n${run.stderr}\n${run.stdout}`);
     }
   }
+});
+
+it('requires Library validation and its independent package producer for compatibility-only changes', async () => {
+  const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+  const step = readNamedStep(readJobBlock(workflow, 'required-pr-checks'), 'Verify scoped CI jobs');
+  const environment = { ...process.env, PREVIEW_LANES_ELIGIBLE: 'false' };
+  for (const [, key] of step.matchAll(/^ {10}((?:RESULT|SCOPE)_[A-Z0-9_]+):/gm)) {
+    environment[key] = key.startsWith('RESULT_') ? 'skipped' : 'false';
+  }
+  Object.assign(environment, {
+    RESULT_CI_SCOPE: 'success', SCOPE_ANGULAR_COMPATIBILITY: 'true',
+    RESULT_LIBRARY: 'success', RESULT_LIBRARY_PACKAGE: 'success',
+    RESULT_NATIVE_CONVERSATION: 'success', RESULT_ANGULAR_COMPATIBILITY: 'success',
+  });
+  const script = readStepRunBlock(step);
+  for (const key of ['RESULT_LIBRARY', 'RESULT_LIBRARY_PACKAGE', 'RESULT_ANGULAR_COMPATIBILITY']) {
+    for (const result of ['success', 'failure', 'cancelled', 'skipped']) {
+      const run = spawnSync('bash', ['-c', script], { encoding: 'utf8', env: { ...environment, [key]: result } });
+      assert.equal(run.status, result === 'success' ? 0 : 1, `${key}=${result}: ${run.stdout}\n${run.stderr}`);
+    }
+  }
+  for (const owner of ['required-pr-checks', 'deploy']) {
+    assert.ok(readJobNeeds(readJobBlock(workflow, owner)).includes('library-package'), owner);
+  }
+  assert.match(step, /RESULT_LIBRARY_PACKAGE: \$\{\{ needs.library-package.result \}\}/);
 });
 
 it('pins every Vercel CLI invocation to the verified working release', async () => {
@@ -1321,20 +1346,33 @@ describe('CI workflow', () => {
   });
 
   it('uploads one production library artifact for compatibility consumers', async () => {
+    const workflow = await readWorkflow();
+    const producer = readJobBlock(workflow, 'library-package');
     const libraryJob = await readLibraryJob();
+    assert.deepEqual(readJobNeeds(producer), ['ci-scope']);
+    assert.match(readJobFieldBlock(producer, 'if'), /github.event_name == 'push' \|\| needs.ci-scope.outputs.angular_compatibility == 'true'/);
+    for (const key of ['LIBS', 'FOUNDATIONS']) {
+      assert.equal(producer.match(new RegExp(`${key}: ([^\\n]+)`))?.[1], libraryJob.match(new RegExp(`${key}: ([^\\n]+)`))?.[1]);
+    }
+    assert.match(producer, /npx nx run-many -t build --projects=\$FOUNDATIONS,\$LIBS --configuration=production --parallel=2 --skip-nx-cache/);
+    assert.ok(producer.indexOf('run-many -t build') < producer.indexOf('Upload production library artifact'));
+    assert.doesNotMatch(producer, /continue-on-error|if: always\(\)/);
+    assert.doesNotMatch(libraryJob, /name: threadplane-library-dist/);
 
     assert.match(
-      libraryJob,
+      producer,
       /uses:\s*actions\/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02/
     );
-    assert.match(libraryJob, /name:\s*threadplane-library-dist/);
-    assert.match(libraryJob, /path:\s*dist\/libs/);
+    assert.match(producer, /name:\s*threadplane-library-dist/);
+    assert.match(producer, /path:\s*dist\/libs/);
+    assert.match(producer, /if-no-files-found: error/);
+    assert.equal((workflow.match(/name: threadplane-library-dist/g) ?? []).length, 2, 'one upload and one same-run download');
   });
 
   it('runs the packaged consumer matrix against the uploaded artifact', async () => {
     const job = await readAngularCompatibilityJob();
 
-    assert.match(job, /needs:\s*\[ci-scope,\s*library\]/);
+    assert.match(job, /needs:\s*\[ci-scope,\s*library-package\]/);
     assert.match(job, /angular:\s*\[20,\s*21,\s*22\]/);
     assert.match(job, /node-version:\s*22\.22\.3/);
     assert.match(
@@ -1522,6 +1560,7 @@ describe('CI workflow', () => {
     const expectedNeeds = [
       'ci-scope',
       'library',
+      'library-package',
       'native-conversation',
       'angular-compatibility',
       'website',
@@ -1771,7 +1810,7 @@ describe('guarded current-main manual recovery', () => {
   it('preserves direct production needs, success eligibility, preview allowlist, and main concurrency', async () => {
     const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
     const expected = {
-      deploy: ['ci-scope', 'library', 'native-conversation', 'website', 'cockpit', 'cockpit-examples-build', 'cockpit-smoke', 'examples-chat-smoke', 'examples-chat-e2e', 'cockpit-e2e-summary', 'website-e2e', 'website-production-checks', 'growth-lifecycle', 'lifecycle'],
+      deploy: ['ci-scope', 'library', 'library-package', 'native-conversation', 'website', 'cockpit', 'cockpit-examples-build', 'cockpit-smoke', 'examples-chat-smoke', 'examples-chat-e2e', 'cockpit-e2e-summary', 'website-e2e', 'website-production-checks', 'growth-lifecycle', 'lifecycle'],
       'demo-deploy': ['ci-scope', 'examples-chat-smoke', 'examples-chat-e2e'],
       'ag-ui-demo-deploy': ['ci-scope', 'examples-ag-ui-e2e'],
       'production-smoke': ['ci-scope', 'deploy', 'demo-deploy', 'ag-ui-demo-deploy'],
@@ -1855,7 +1894,7 @@ it('manual scope uses all fourteen real push outputs and preserves every ordinar
     assert.equal(Object.keys(flags).length, 14);
     assert.ok(Object.values(flags).every(value => value === 'true'));
     const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
-    const ordinary = ['scripts-tests', 'library', 'angular-compatibility', 'website', 'growth-lifecycle', 'lifecycle', 'growth-research', 'cockpit', 'cockpit-examples-build', 'cockpit-smoke', 'examples-chat-smoke', 'examples-chat-e2e', 'examples-chat-e2e-summary', 'examples-ag-ui-e2e', 'cockpit-e2e-dispatcher', 'cockpit-e2e', 'cockpit-e2e-summary', 'website-e2e', 'posthog-sync-plan'];
+    const ordinary = ['scripts-tests', 'library', 'library-package', 'angular-compatibility', 'website', 'growth-lifecycle', 'lifecycle', 'growth-research', 'cockpit', 'cockpit-examples-build', 'cockpit-smoke', 'examples-chat-smoke', 'examples-chat-e2e', 'examples-chat-e2e-summary', 'examples-ag-ui-e2e', 'cockpit-e2e-dispatcher', 'cockpit-e2e', 'cockpit-e2e-summary', 'website-e2e', 'posthog-sync-plan'];
     for (const name of ordinary) {
       const job = readJobBlock(workflow, name);
       assert.ok(readJobNeeds(job).includes('ci-scope'), name);
