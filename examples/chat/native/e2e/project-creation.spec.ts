@@ -82,6 +82,7 @@ test('installed React New captures project in its initial POST and admits only c
     await buildConsumer({
       root: resolve('.'),
       assistantId: 'assistant',
+      output: join(work, 'production'),
       capture: (context) =>
         captureRetainedBuild(join(work, 'retained'), context),
     });
