@@ -13,6 +13,16 @@ import {
   SCOPE_KEYS,
 } from './ci-scope.mjs';
 
+function selectedLibraryLane(workflow, lane) {
+  const job = workflow.split('\n  library:\n')[1].split(/^ {2}[A-Za-z0-9_-]+:\s*$/m)[0];
+  const [header, ...steps] = job.split(/(?=^ {6}- )/m);
+  return header + steps.filter(step => {
+    const guard = /^ {8}if: (.+)$/m.exec(step)?.[1];
+    return !guard || guard.includes(`matrix.lane == '${lane}'`);
+  }).map(step => step.replace(/^ {8}if: matrix\.lane == .+\n/m, '')
+    .replace(/^ {8}if: always\(\) && \(matrix\.lane == 'packages'\)$/m, '        if: always()')).join('');
+}
+
 it('pins CI runners to the installed browser recipe and canonical Python baseline', async () => {
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
   // GitHub's Ubuntu 24.04 image supplies Python 3.12 for the closed fixture.
@@ -130,14 +140,18 @@ describe('Debug actual CI owners', () => {
     assert.match(config, /testDir: '\.\/e2e'/);
     assert.match(config, /node scripts\/react-cockpit\/serve.mjs chat-debug --no-parent/);
     const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
-    const library = workflow.split('\n  library:\n')[1].split('\n  angular-compatibility:')[0];
+    const quality = selectedLibraryLane(workflow, 'quality');
     for (const command of [
       'node --test scripts/react-parity/*.spec.mjs',
       'node scripts/react-parity/verify-boundaries.mjs',
       'npx nx run-many -t lint test type-tests build --projects=$FOUNDATIONS',
+    ]) assert.ok(quality.includes(command), command);
+    const packages = selectedLibraryLane(workflow, 'packages');
+    for (const command of [
+      'npx nx run-many -t build --projects=$FOUNDATIONS',
       'node scripts/react-parity/verify-boundaries.mjs --built',
       'node scripts/react-parity/verify-packages.mjs',
-    ]) assert.ok(library.includes(command), command);
+    ]) assert.ok(packages.includes(command), command);
   });
 });
 
@@ -276,12 +290,12 @@ describe('canonical A2UI native regression CI ownership', () => {
 
   it('runs the frozen closed-environment regression in the PR Library lane after its build prerequisites', async () => {
     const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
-    const library = workflow.split('\n  library:\n')[1].split('\n  angular-compatibility:')[0];
+    const library = selectedLibraryLane(workflow, 'packages');
     assert.match(library, /if: github.event_name == 'push' \|\| needs.ci-scope.outputs.library == 'true'/);
     const setup = library.indexOf('uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57');
     assert.ok(setup >= 0);
     assert.match(library.slice(setup).split('      - name:')[0], /python-version: '3.12'/);
-    const foundations = library.indexOf('npx nx run-many -t lint test type-tests build --projects=$FOUNDATIONS');
+    const foundations = library.indexOf('npx nx run-many -t build --projects=$FOUNDATIONS');
     assert.ok(foundations >= 0, 'foundation build prerequisite is present');
     assert.match(library, /FOUNDATIONS: core,content,angular,react/);
     assert.match(library, /LIBS: chat,langgraph,ag-ui,render,a2ui,telemetry,middleware/);
@@ -351,9 +365,7 @@ describe('native AG-UI A2UI proof CI ownership', () => {
 
   it('runs a separate closed locked proof after prerequisites and retains complete owned evidence', async () => {
     const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
-    const library = workflow
-      .split('\n  library:\n')[1]
-      .split('\n  angular-compatibility:')[0];
+    const library = selectedLibraryLane(workflow, 'packages');
     const steps = library.split(/\n      - /);
     const proof = steps.find((step) =>
       step.startsWith('name: Verify installed native AG-UI A2UI')
@@ -362,7 +374,7 @@ describe('native AG-UI A2UI proof CI ownership', () => {
     const position = library.indexOf(proof);
     for (const prerequisite of [
       "python-version: '3.12'",
-      'npx nx run-many -t lint test type-tests build --projects=$FOUNDATIONS',
+      'npx nx run-many -t build --projects=$FOUNDATIONS',
       'node scripts/react-parity/verify-ag-ui-candidate.mjs',
     ])
       assert.ok(

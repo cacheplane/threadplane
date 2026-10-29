@@ -5,6 +5,47 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { privateScaffoldProjects } from './react-parity/package-policy.mjs';
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+
+// The partition contract below checks exact lane ownership. Existing proof
+// contracts still reject any conditional execution inside the selected lane.
+function withoutLibraryLaneGuard(step) {
+  assert.match(step, /^ {8}if: matrix\.lane == '(quality|native|packages)'(?: \|\| matrix\.lane == 'packages')?$/m);
+  return step.replace(/^ {8}if: matrix\.lane == .+\n/m, '');
+}
+
+it('partitions every original Library step without changing its commands or dropping coverage', async () => {
+  const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'library');
+  assert.match(job, /lane: \[quality, native, packages\]/);
+  assert.match(job, /fail-fast: false/);
+  const fixture = JSON.parse(await readFile('scripts/fixtures/library-validation-steps.json', 'utf8'));
+  const steps = job.split(/(?=^ {6}- )/m).slice(1);
+  assert.equal(steps.length, fixture.steps.length + 1, 'only the fresh foundation prerequisite is added');
+  for (const expected of fixture.steps) {
+    const step = steps.find(step => step.trimStart().startsWith(expected.step + '\n'));
+    assert.ok(step, expected.step);
+    const guards = [...step.matchAll(/^ {8}if: (.+)$/gm)].map(match => match[1]);
+    let normalized = step;
+    if (expected.lanes.length < 3) {
+      const condition = expected.lanes.map(lane => `matrix.lane == '${lane}'`).join(' || ');
+      if (expected.step.includes('Upload native')) {
+        assert.deepEqual(guards, [`always() && (${condition})`]);
+        normalized = step.replace(`if: always() && (${condition})`, 'if: always()');
+      } else {
+        assert.deepEqual(guards, [condition], expected.step);
+        normalized = step.replace(/^ {8}if: .+\n/m, '');
+      }
+    } else assert.equal(guards.length, 0, expected.step);
+    assert.equal(createHash('sha256').update(normalized.trimEnd()).digest('hex'), expected.sha256, expected.step);
+  }
+  const prerequisite = readNamedStep(job, 'Build private foundations for isolated validation');
+  assert.match(prerequisite, /if: matrix.lane == 'native' \|\| matrix.lane == 'packages'/);
+  assert.match(prerequisite, /run: npx nx run-many -t build --projects=\$FOUNDATIONS --parallel=2 --skip-nx-cache/);
+  assert.ok(job.indexOf(prerequisite) < job.indexOf('Verify isolated backend runtimes and types'));
+  assert.match(readNamedStep(job, 'Verify native owner with pinned Mastra service'), /if: matrix.lane == 'packages'/);
+  assert.match(readNamedStep(job, 'Set up pinned Python for native approval proof'), /if: matrix.lane == 'native' \|\| matrix.lane == 'packages'/);
+  assert.deepEqual(readJobNeeds(job), ['ci-scope']);
+});
 
 it('runs the production copy gate through its minimal target while retaining the full Website suite', async () => {
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
@@ -369,9 +410,9 @@ describe('CI workflow', () => {
     assert.equal(job.slice(job.indexOf(prepare) + prepare.length).trimStart().startsWith(verify.trimStart()), true,
       'the real verifier must be the next GitHub step after successful preparation');
     for (const step of [prepare, verify]) {
-      assert.doesNotMatch(step, /if:|continue-on-error|\|\|\s*true|set\s+\+e|secrets\.|credentials|docker login/);
+      assert.doesNotMatch(withoutLibraryLaneGuard(step), /if:|continue-on-error|\|\|\s*true|set\s+\+e|secrets\.|credentials|docker login/);
     }
-    assert.equal(verify.trimEnd(), '      - name: Verify durable tool ownership and PostgreSQL migration\n' +
+    assert.equal(withoutLibraryLaneGuard(verify).trimEnd(), '      - name: Verify durable tool ownership and PostgreSQL migration\n' +
       '        run: node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.base.json scripts/react-parity/verify-tool-claims.ts');
     const source = await readFile('scripts/react-parity/verify-tool-claims.ts', 'utf8');
     assert.match(source, /'--network',\s*'none'/);
@@ -448,7 +489,7 @@ describe('CI workflow', () => {
     assert.ok(job.indexOf(summary) > job.indexOf(approval));
     assert.ok(job.indexOf(approval) > job.indexOf(setup));
     assert.ok(job.indexOf(setup) > job.indexOf('npx nx run ag-ui:runtime-type-tests'));
-    assert.doesNotMatch(summary, /continue-on-error|\|\|\s*true|set\s+\+e|if:|--grep|--test-name-pattern|&\s*$/m);
+    assert.doesNotMatch(withoutLibraryLaneGuard(summary), /continue-on-error|\|\|\s*true|set\s+\+e|if:|--grep|--test-name-pattern|&\s*$/m);
   });
   it('requires one pinned Python canonical native approval proof after runtime prerequisites', async () => {
     const job = readJobBlock(
@@ -487,7 +528,7 @@ describe('CI workflow', () => {
     );
     assert.ok(job.indexOf(proof) > job.indexOf(setup));
     for (const step of [setup, proof])
-      assert.doesNotMatch(step, /continue-on-error|\|\|\s*true|set\s+\+e|if:/);
+      assert.doesNotMatch(withoutLibraryLaneGuard(step), /continue-on-error|\|\|\s*true|set\s+\+e|if:/);
   });
   it('runs import-safe native example tooling after installation and before foundation builds', async () => {
     const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'library');
@@ -495,7 +536,7 @@ describe('CI workflow', () => {
     assert.match(step, /run: npx nx run native-conversation-react:tooling-test\s*$/);
     assert.ok(job.indexOf(step) > job.indexOf('- run: npm ci'));
     assert.ok(job.indexOf(step) < job.indexOf('Build and validate private React foundations'));
-    assert.doesNotMatch(step, /continue-on-error|\|\|\s*true|set\s+\+e|if:/);
+    assert.doesNotMatch(withoutLibraryLaneGuard(step), /continue-on-error|\|\|\s*true|set\s+\+e|if:/);
     assert.equal((job.match(/npx nx run native-conversation-\w+:tooling-test/g) ?? []).length, 1, 'shared tooling runs once');
     for (const framework of ['react', 'angular']) {
       const project = JSON.parse(await readFile(`examples/chat/native/${framework}/project.json`, 'utf8'));
@@ -561,7 +602,7 @@ describe('CI workflow', () => {
     assert.ok(candidate > job.indexOf('Build and validate private React foundations'));
     assert.ok(candidate > job.indexOf('npx playwright install --with-deps chromium'));
     const step = readNamedStep(job, 'Verify real LangGraph candidate package');
-    assert.doesNotMatch(step, /continue-on-error|\|\|\s*true|if:/);
+    assert.doesNotMatch(withoutLibraryLaneGuard(step), /continue-on-error|\|\|\s*true|if:/);
     assert.match(step, /run: node scripts\/react-parity\/verify-langgraph-candidate\.mjs\s*$/);
     assert.match(job, /node scripts\/react-parity\/verify-packages\.mjs/);
     assert.match(job, /node scripts\/react-parity\/verify-angular-package\.mjs/);
@@ -572,7 +613,7 @@ describe('CI workflow', () => {
     const job = readJobBlock(workflow, 'library');
     const step = readNamedStep(job, 'Verify installed owned Markdown');
     assert.match(step, /node scripts\/react-parity\/verify-markdown\.mjs/);
-    assert.doesNotMatch(step, /continue-on-error|\|\|\s*true|if:/);
+    assert.doesNotMatch(withoutLibraryLaneGuard(step), /continue-on-error|\|\|\s*true|if:/);
     assert.ok(job.indexOf('Build and validate private React foundations') < job.indexOf('Verify installed owned Markdown'));
     assert.ok(job.indexOf('Install Chromium for packed runtime consumers') < job.indexOf('Verify installed owned Markdown'));
     for (const command of ['verify-ag-ui-candidate.mjs', 'verify-langgraph-candidate.mjs', 'review-native-ag-ui.mjs --verify', 'verify-packages.mjs', 'verify-angular-package.mjs']) assert.ok(job.includes(command));
@@ -583,7 +624,7 @@ describe('CI workflow', () => {
     const candidate = job.indexOf('node scripts/react-parity/verify-ag-ui-candidate.mjs');
     for (const prerequisite of ['Build and validate private React foundations', 'npx playwright install --with-deps chromium', 'npm ci --prefix deployments/ag-ui-mastra', 'npm test --prefix deployments/ag-ui-mastra']) assert.ok(candidate > job.indexOf(prerequisite));
     const step = readNamedStep(job, 'Verify real AG-UI candidate package');
-    assert.doesNotMatch(step, /continue-on-error|\|\|\s*true|if:/);
+    assert.doesNotMatch(withoutLibraryLaneGuard(step), /continue-on-error|\|\|\s*true|if:/);
     assert.match(step, /run: node scripts\/react-parity\/verify-ag-ui-candidate\.mjs\s*$/);
     for (const command of ['review-native-ag-ui.mjs --verify', 'verify-native-mastra.ts', 'verify-langgraph-candidate.mjs', 'verify-packages.mjs', 'verify-angular-package.mjs']) assert.ok(job.includes(command));
     assert.ok(job.indexOf('node --test scripts/react-parity/*.spec.mjs') < candidate);
@@ -2025,7 +2066,7 @@ it('requires installed native React readiness immediately after owned render sta
   const name = 'Verify installed native React readiness';
   const step = readNamedStep(job, name);
   assert.match(step, /run: node scripts\/react-parity\/verify-react-readiness\.mjs\s*$/);
-  assert.doesNotMatch(step, /if:|continue-on-error|\|\|/);
+  assert.doesNotMatch(withoutLibraryLaneGuard(step), /if:|continue-on-error|\|\|/);
   const owner = readNamedStep(job, 'Verify installed owned render state');
   assert.match(owner, /run: node scripts\/react-parity\/verify-render-state\.mjs/);
   assert.equal(job.slice(job.indexOf(owner) + owner.length, job.indexOf(step)).trim(), '', 'readiness immediately follows owner proof');
