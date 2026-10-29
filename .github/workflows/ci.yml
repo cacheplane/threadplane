@@ -1248,10 +1248,69 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+  website-preview-deploy:
+    name: Website — deploy preview
+    needs: ci-scope
+    if: >-
+      (github.event_name == 'pull_request' || github.event_name == 'merge_group') &&
+      needs.ci-scope.outputs.website_e2e == 'true' &&
+      (github.event_name == 'merge_group' || github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Derive deterministic preview aliases
+        id: aliases
+        run: |
+          if [ "${{ github.event_name }}" = "merge_group" ]; then
+            key="mq-$(echo "${{ github.event.merge_group.head_sha }}" | cut -c1-8)"
+          else
+            key="pr-${{ github.event.pull_request.number }}"
+          fi
+          echo "website=threadplane-${key}-cacheplane.vercel.app" >> "$GITHUB_OUTPUT"
+          echo "examples=threadplane-examples-${key}-cacheplane.vercel.app" >> "$GITHUB_OUTPUT"
+      - name: Require preview bypass secrets
+        # Both previews sit behind deployment protection, and bypass secrets
+        # are issued per Vercel project. Fail before creating anything.
+        run: |
+          if [ -z "${VERCEL_AUTOMATION_BYPASS_SECRET}" ]; then
+            echo "::error::VERCEL_AUTOMATION_BYPASS_SECRET is unset — the protected Website preview cannot be verified. Enable 'Protection Bypass for Automation' on the Vercel threadplane project and store the value as this repository secret."
+            exit 1
+          fi
+          if [ -z "${VERCEL_EXAMPLES_AUTOMATION_BYPASS_SECRET}" ]; then
+            echo "::error::VERCEL_EXAMPLES_AUTOMATION_BYPASS_SECRET is unset — the runtime iframe from the protected examples preview cannot load. Enable 'Protection Bypass for Automation' on the Vercel threadplane-examples project and store the value as this repository secret."
+            exit 1
+          fi
+        env:
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+          VERCEL_EXAMPLES_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_EXAMPLES_AUTOMATION_BYPASS_SECRET }}
+      - name: Build, deploy, and alias the Website preview
+        env:
+          GROWTH_FORM_POLICY: growth_v1
+          NEXT_PUBLIC_COCKPIT_RUNTIME_BASE_URL: https://${{ steps.aliases.outputs.examples }}
+        run: |
+          set -euo pipefail
+          mkdir -p .vercel
+          cat > .vercel/project.json <<'EOF'
+          {"projectId":"${{ secrets.VERCEL_WEBSITE_PROJECT_ID }}","orgId":"${{ secrets.VERCEL_ORG_ID }}","projectName":"threadplane"}
+          EOF
+          npm exec --yes --package=vercel@64.2.0 --package=@types/estree@1.0.8 -- vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+          rm -rf .vercel/output
+          npm exec --yes --package=vercel@64.2.0 --package=@types/estree@1.0.8 -- vercel build --token=${{ secrets.VERCEL_TOKEN }}
+          url=$(npm exec --yes --package=vercel@64.2.0 --package=@types/estree@1.0.8 -- vercel deploy --prebuilt --archive=tgz --yes --token=${{ secrets.VERCEL_TOKEN }} | tail -n 1)
+          url=$(node -e 'const parsed = new URL(process.argv[1]); if (parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.pathname !== "/" || parsed.search || parsed.hash) throw new Error("Vercel returned a non-origin Website preview URL"); process.stdout.write(parsed.origin)' "$url")
+          echo "website deployment: $url"
+          npm exec --yes --package=vercel@64.2.0 --package=@types/estree@1.0.8 -- vercel alias set "$url" "${{ steps.aliases.outputs.website }}" --scope=${{ secrets.VERCEL_ORG_ID }} --token=${{ secrets.VERCEL_TOKEN }}
+
   website-preview-e2e:
     name: Website — e2e (deployed preview)
     timeout-minutes: 40
-    needs: [ci-scope, website-preview-build]
+    needs: [ci-scope, website-preview-build, website-preview-deploy]
     # PR-side twin of the deploy job's post-promotion verification. The
     # ordinary suite runs against a real, protected Vercel preview of the
     # Website whose runtime iframe loads from a matching examples preview, so
@@ -1338,23 +1397,6 @@ jobs:
           url=$(node -e 'const parsed = new URL(process.argv[1]); if (parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.pathname !== "/" || parsed.search || parsed.hash) throw new Error("Vercel returned a non-origin examples preview URL"); process.stdout.write(parsed.origin)' "$url")
           echo "examples deployment: $url"
           npm exec --yes --package=vercel@64.2.0 --package=@types/estree@1.0.8 -- vercel alias set "$url" "${{ steps.aliases.outputs.examples }}" --scope=${{ secrets.VERCEL_ORG_ID }} --token=${{ secrets.VERCEL_TOKEN }}
-      - name: Build, deploy, and alias the Website preview
-        env:
-          GROWTH_FORM_POLICY: growth_v1
-          NEXT_PUBLIC_COCKPIT_RUNTIME_BASE_URL: https://${{ steps.aliases.outputs.examples }}
-        run: |
-          set -euo pipefail
-          mkdir -p .vercel
-          cat > .vercel/project.json <<'EOF'
-          {"projectId":"${{ secrets.VERCEL_WEBSITE_PROJECT_ID }}","orgId":"${{ secrets.VERCEL_ORG_ID }}","projectName":"threadplane"}
-          EOF
-          npm exec --yes --package=vercel@64.2.0 --package=@types/estree@1.0.8 -- vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
-          rm -rf .vercel/output
-          npm exec --yes --package=vercel@64.2.0 --package=@types/estree@1.0.8 -- vercel build --token=${{ secrets.VERCEL_TOKEN }}
-          url=$(npm exec --yes --package=vercel@64.2.0 --package=@types/estree@1.0.8 -- vercel deploy --prebuilt --archive=tgz --yes --token=${{ secrets.VERCEL_TOKEN }} | tail -n 1)
-          url=$(node -e 'const parsed = new URL(process.argv[1]); if (parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.pathname !== "/" || parsed.search || parsed.hash) throw new Error("Vercel returned a non-origin Website preview URL"); process.stdout.write(parsed.origin)' "$url")
-          echo "website deployment: $url"
-          npm exec --yes --package=vercel@64.2.0 --package=@types/estree@1.0.8 -- vercel alias set "$url" "${{ steps.aliases.outputs.website }}" --scope=${{ secrets.VERCEL_ORG_ID }} --token=${{ secrets.VERCEL_TOKEN }}
       - name: Run the Website suite against the aliased preview
         run: npx nx run website:deployed-e2e --skip-nx-cache
         env:
@@ -1382,6 +1424,7 @@ jobs:
       - website-e2e
       - website-production-checks
       - website-preview-build
+      - website-preview-deploy
       - website-preview-e2e
       - posthog-sync-plan
       - scripts-tests
@@ -1412,6 +1455,7 @@ jobs:
           RESULT_WEBSITE_E2E: ${{ needs.website-e2e.result }}
           RESULT_WEBSITE_PRODUCTION: ${{ needs.website-production-checks.result }}
           RESULT_WEBSITE_PREVIEW_BUILD: ${{ needs.website-preview-build.result }}
+          RESULT_WEBSITE_PREVIEW_DEPLOY: ${{ needs.website-preview-deploy.result }}
           RESULT_WEBSITE_PREVIEW_E2E: ${{ needs.website-preview-e2e.result }}
           RESULT_POSTHOG: ${{ needs.posthog-sync-plan.result }}
           RESULT_SCRIPTS_TESTS: ${{ needs.scripts-tests.result }}
@@ -1522,6 +1566,7 @@ jobs:
           require_scoped "website_e2e" "Website — e2e" "$RESULT_WEBSITE_E2E" "$SCOPE_WEBSITE_E2E"
           require_scoped "website_e2e" "Website — production copy / stage" "$RESULT_WEBSITE_PRODUCTION" "$SCOPE_WEBSITE_E2E"
           require_preview "website_e2e" "Website preview example builds" "$RESULT_WEBSITE_PREVIEW_BUILD" "$SCOPE_WEBSITE_E2E"
+          require_preview "website_e2e" "Website preview deployment" "$RESULT_WEBSITE_PREVIEW_DEPLOY" "$SCOPE_WEBSITE_E2E"
           require_preview "website_e2e" "Website — e2e (deployed preview)" "$RESULT_WEBSITE_PREVIEW_E2E" "$SCOPE_WEBSITE_E2E"
           require_scoped "posthog" "PostHog — dashboards-as-code drift check" "$RESULT_POSTHOG" "$SCOPE_POSTHOG"
           require_scoped "scripts_tests" "Scripts — generator / proxy vitest suites" "$RESULT_SCRIPTS_TESTS" "$SCOPE_SCRIPTS_TESTS"
