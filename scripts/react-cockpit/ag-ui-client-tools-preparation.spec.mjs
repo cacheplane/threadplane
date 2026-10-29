@@ -22,7 +22,7 @@ test('native cockpit frozen prerequisite is uncached, absolute and independent o
 });
 test('website browser job prepares its own canonical worker after existing pinned Python setup', () => {
   const workflow=read('.github/workflows/ci.yml');
-  const website=workflow.split('\n  website-e2e:\n')[1].split('\n  website-preview-e2e:')[0];
+  const website=workflow.split('\n  website-e2e:\n')[1].split(/^ {2}[A-Za-z0-9_-]+:\s*$/m)[0];
   assert.equal((website.match(/astral-sh\/setup-uv@/g)??[]).length,1);
   assert.match(website,/Prepare frozen dashboard browser producer[\s\S]*python-version: '3.12'/);
   assert.match(website,/Prepare frozen canonical client tools browser producer\n        if: matrix.suite == 'ag-ui'\n        run: node scripts\/react-cockpit\/prepare-ag-ui-client-tools-fixture.mjs/);

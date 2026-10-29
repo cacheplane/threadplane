@@ -97,6 +97,57 @@ it('pins every Vercel CLI invocation and its estree dependency to available rele
   assert.doesNotMatch(workflow, /\bnpx\s+vercel(?:@|\s)/, 'no floating CLI dependency installation');
 });
 
+it('partitions preview builds without weakening provenance or production assembly', async () => {
+  const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+  const build = readJobBlock(workflow, 'website-preview-build');
+  const preview = readJobBlock(workflow, 'website-preview-e2e');
+  assert.deepEqual(readJobNeeds(build), ['ci-scope']);
+  assert.deepEqual(readJobNeeds(preview), ['ci-scope', 'website-preview-build']);
+  assert.equal(readJobFieldBlock(build, 'if'), readJobFieldBlock(preview, 'if'));
+  assert.match(build, /shard: \[1, 2, 3, 4\]/);
+  assert.match(build, /fail-fast: false/);
+  for (const name of ['Derive deterministic preview aliases', 'Require preview bypass secrets']) {
+    assert.equal(readNamedStep(build, name), readNamedStep(preview, name));
+  }
+  const compile = readNamedStep(build, 'Build preview example shard');
+  assert.match(compile, /npx tsx scripts\/build-example-shard.ts \$\{\{ matrix.shard \}\}/);
+  assert.match(compile, /RUNTIME_PARENT_PREVIEW_ORIGINS: https:\/\/\$\{\{ steps.aliases.outputs.website \}\}/);
+  assert.ok(build.indexOf('Require preview bypass secrets') < build.indexOf('Build preview example shard'));
+  assert.match(build, /python-version: '3.12'/);
+  const upload = readNamedStep(build, 'Upload preview example shard');
+  assert.match(upload, /name: website-preview-examples-\$\{\{ matrix.shard \}\}/);
+  assert.match(upload, /overwrite: true/, 'reruns can replace their own same-run shard snapshot');
+  assert.match(upload, /path: \|\s+dist\/cockpit\s+output\/website-preview-builds/);
+  assert.match(upload, /include-hidden-files: true/);
+  assert.match(upload, /if-no-files-found: error/);
+  assert.doesNotMatch(build, /continue-on-error|if: always\(\)/);
+  const download = readNamedStep(preview, 'Download preview example builds');
+  assert.match(download, /pattern: website-preview-examples-\*/);
+  assert.match(download, /path: output\/website-preview-downloads/);
+  assert.match(download, /merge-multiple: false/);
+  assert.doesNotMatch(download, /run-id:|repository:/);
+  assert.match(readNamedStep(preview, 'Build and assemble Angular examples for the preview'), /npx tsx scripts\/assemble-examples.ts --skip-build --build-artifacts=output\/website-preview-downloads/);
+  assert.doesNotMatch(readNamedStep(readJobBlock(workflow, 'deploy'), 'Build and assemble Angular examples'), /--skip-build|--build-artifacts/);
+});
+
+it('requires every preview build shard before scoped PR success and preserves fork skips', async () => {
+  const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+  const gate = readJobBlock(workflow, 'required-pr-checks');
+  const step = readNamedStep(gate, 'Verify scoped CI jobs');
+  const script = readStepRunBlock(step);
+  const environment = { ...process.env };
+  for (const [, key] of step.matchAll(/^ {10}((?:RESULT|SCOPE)_[A-Z0-9_]+):/gm)) environment[key] = key.startsWith('RESULT_') ? 'skipped' : 'false';
+  Object.assign(environment, { RESULT_CI_SCOPE: 'success', SCOPE_WEBSITE_E2E: 'true', RESULT_WEBSITE_E2E: 'success', RESULT_WEBSITE_PRODUCTION: 'success', RESULT_WEBSITE_PREVIEW_E2E: 'success' });
+  for (const result of ['success', 'failure', 'cancelled', 'skipped']) {
+    const run = spawnSync('bash', ['-c', script], { encoding: 'utf8', env: { ...environment, PREVIEW_LANES_ELIGIBLE: 'true', RESULT_WEBSITE_PREVIEW_BUILD: result } });
+    assert.equal(run.status, result === 'success' ? 0 : 1, `${result}: ${run.stdout}\n${run.stderr}`);
+  }
+  const fork = spawnSync('bash', ['-c', script], { encoding: 'utf8', env: { ...environment, PREVIEW_LANES_ELIGIBLE: 'false', RESULT_WEBSITE_PREVIEW_BUILD: 'skipped', RESULT_WEBSITE_PREVIEW_E2E: 'skipped' } });
+  assert.equal(fork.status, 0, fork.stdout + fork.stderr);
+  assert.ok(readJobNeeds(gate).includes('website-preview-build'));
+  assert.match(step, /RESULT_WEBSITE_PREVIEW_BUILD: \$\{\{ needs.website-preview-build.result \}\}/);
+});
+
 it('runs native MAF Node configuration, preparation, actual fixture and model checks in scoped CI', async () => {
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
   const scope = readNamedStep(readJobBlock(workflow, 'ci-scope'), 'Test CI scope classifier');
@@ -1047,7 +1098,7 @@ describe('CI workflow', () => {
     const job = readJobBlock(workflow, 'website-preview-e2e');
     const ifBlock = readJobFieldBlock(job, 'if');
 
-    assert.deepEqual(readJobNeeds(job), ['ci-scope']);
+    assert.deepEqual(readJobNeeds(job), ['ci-scope', 'website-preview-build']);
     assert.match(ifBlock, /\(github\.event_name == 'pull_request' \|\| github\.event_name == 'merge_group'\)/);
     assert.match(ifBlock, /needs\.ci-scope\.outputs\.website_e2e == 'true'/);
     assert.match(
@@ -1575,6 +1626,7 @@ describe('CI workflow', () => {
       'cockpit-e2e-summary',
       'website-e2e',
       'website-production-checks',
+      'website-preview-build',
       'website-preview-e2e',
       'posthog-sync-plan',
       'scripts-tests',

@@ -1143,10 +1143,74 @@ jobs:
           npx playwright test apps/website/e2e/platform-production-smoke.spec.ts \
             --config apps/website/playwright.config.ts --list
 
+  website-preview-build:
+    name: 'Website — example builds (${{ matrix.shard }}/4)'
+    needs: ci-scope
+    if: >-
+      (github.event_name == 'pull_request' || github.event_name == 'merge_group') &&
+      needs.ci-scope.outputs.website_e2e == 'true' &&
+      (github.event_name == 'merge_group' || github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: 22
+          cache: npm
+      - uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57 # v8.0.0
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - name: Derive deterministic preview aliases
+        id: aliases
+        run: |
+          if [ "${{ github.event_name }}" = "merge_group" ]; then
+            key="mq-$(echo "${{ github.event.merge_group.head_sha }}" | cut -c1-8)"
+          else
+            key="pr-${{ github.event.pull_request.number }}"
+          fi
+          echo "website=threadplane-${key}-cacheplane.vercel.app" >> "$GITHUB_OUTPUT"
+          echo "examples=threadplane-examples-${key}-cacheplane.vercel.app" >> "$GITHUB_OUTPUT"
+      - name: Require preview bypass secrets
+        # Both previews sit behind deployment protection, and bypass secrets
+        # are issued per Vercel project. Fail before creating anything.
+        run: |
+          if [ -z "${VERCEL_AUTOMATION_BYPASS_SECRET}" ]; then
+            echo "::error::VERCEL_AUTOMATION_BYPASS_SECRET is unset — the protected Website preview cannot be verified. Enable 'Protection Bypass for Automation' on the Vercel threadplane project and store the value as this repository secret."
+            exit 1
+          fi
+          if [ -z "${VERCEL_EXAMPLES_AUTOMATION_BYPASS_SECRET}" ]; then
+            echo "::error::VERCEL_EXAMPLES_AUTOMATION_BYPASS_SECRET is unset — the runtime iframe from the protected examples preview cannot load. Enable 'Protection Bypass for Automation' on the Vercel threadplane-examples project and store the value as this repository secret."
+            exit 1
+          fi
+        env:
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+          VERCEL_EXAMPLES_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_EXAMPLES_AUTOMATION_BYPASS_SECRET }}
+      - name: Build preview example shard
+        run: npx tsx scripts/build-example-shard.ts ${{ matrix.shard }}
+        env:
+          RUNTIME_PARENT_PREVIEW_ORIGINS: https://${{ steps.aliases.outputs.website }}
+      - name: Upload preview example shard
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: website-preview-examples-${{ matrix.shard }}
+          overwrite: true
+          path: |
+            dist/cockpit
+            output/website-preview-builds
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+
   website-preview-e2e:
     name: Website — e2e (deployed preview)
     timeout-minutes: 40
-    needs: ci-scope
+    needs: [ci-scope, website-preview-build]
     # PR-side twin of the deploy job's post-promotion verification. The
     # ordinary suite runs against a real, protected Vercel preview of the
     # Website whose runtime iframe loads from a matching examples preview, so
@@ -1210,8 +1274,14 @@ jobs:
         env:
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
           VERCEL_EXAMPLES_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_EXAMPLES_AUTOMATION_BYPASS_SECRET }}
+      - name: Download preview example builds
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: website-preview-examples-*
+          path: output/website-preview-downloads
+          merge-multiple: false
       - name: Build and assemble Angular examples for the preview
-        run: npx tsx scripts/assemble-examples.ts
+        run: npx tsx scripts/assemble-examples.ts --skip-build --build-artifacts=output/website-preview-downloads
         env:
           RUNTIME_PARENT_PREVIEW_ORIGINS: https://${{ steps.aliases.outputs.website }}
       - name: Deploy examples preview and alias it
@@ -1270,6 +1340,7 @@ jobs:
       - cockpit-e2e-summary
       - website-e2e
       - website-production-checks
+      - website-preview-build
       - website-preview-e2e
       - posthog-sync-plan
       - scripts-tests
@@ -1299,6 +1370,7 @@ jobs:
           RESULT_COCKPIT_E2E: ${{ needs.cockpit-e2e-summary.result }}
           RESULT_WEBSITE_E2E: ${{ needs.website-e2e.result }}
           RESULT_WEBSITE_PRODUCTION: ${{ needs.website-production-checks.result }}
+          RESULT_WEBSITE_PREVIEW_BUILD: ${{ needs.website-preview-build.result }}
           RESULT_WEBSITE_PREVIEW_E2E: ${{ needs.website-preview-e2e.result }}
           RESULT_POSTHOG: ${{ needs.posthog-sync-plan.result }}
           RESULT_SCRIPTS_TESTS: ${{ needs.scripts-tests.result }}
@@ -1408,6 +1480,7 @@ jobs:
           require_scoped "cockpit_e2e" "Cockpit — e2e" "$RESULT_COCKPIT_E2E" "$SCOPE_COCKPIT_E2E"
           require_scoped "website_e2e" "Website — e2e" "$RESULT_WEBSITE_E2E" "$SCOPE_WEBSITE_E2E"
           require_scoped "website_e2e" "Website — production copy / stage" "$RESULT_WEBSITE_PRODUCTION" "$SCOPE_WEBSITE_E2E"
+          require_preview "website_e2e" "Website preview example builds" "$RESULT_WEBSITE_PREVIEW_BUILD" "$SCOPE_WEBSITE_E2E"
           require_preview "website_e2e" "Website — e2e (deployed preview)" "$RESULT_WEBSITE_PREVIEW_E2E" "$SCOPE_WEBSITE_E2E"
           require_scoped "posthog" "PostHog — dashboards-as-code drift check" "$RESULT_POSTHOG" "$SCOPE_POSTHOG"
           require_scoped "scripts_tests" "Scripts — generator / proxy vitest suites" "$RESULT_SCRIPTS_TESTS" "$SCOPE_SCRIPTS_TESTS"

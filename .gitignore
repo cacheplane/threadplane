@@ -9,6 +9,10 @@ dist/
 .next/
 deploy/
 
+# Preview frontend build handoff artifacts
+/output/website-preview-builds/
+/output/website-preview-downloads/
+
 # Nx
 .nx/cache/
 .nx/workspace-data

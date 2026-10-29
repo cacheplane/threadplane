@@ -7,6 +7,7 @@
  * Usage:
  *   npx tsx scripts/assemble-examples.ts
  *   npx tsx scripts/assemble-examples.ts --skip-build
+ *   npx tsx scripts/assemble-examples.ts --skip-build --build-artifacts=output/website-preview-downloads
  */
 import { execSync } from 'child_process';
 import {
@@ -20,6 +21,7 @@ import {
 import { resolve } from 'path';
 import { getCockpitFrontends } from '@threadplane/cockpit-registry';
 import { prepareExampleHtml } from './prepare-example-html';
+import { restoreExampleBuildArtifacts } from './example-build-artifacts';
 import {
   GENERATED_RUNTIME_PARENT_ORIGINS_MODULE,
   generateRuntimeParentOriginPolicy,
@@ -63,6 +65,17 @@ writeFileSync(
 // generator already derives from the registry; this keeps the frontend deploy
 // in lockstep so a registry cap can never be missed again.
 const capabilities = getCockpitFrontends();
+const buildArtifacts = process.argv.find(arg => arg.startsWith('--build-artifacts='));
+if (buildArtifacts !== undefined) {
+  if (!skipBuild) throw new Error('--build-artifacts requires --skip-build');
+  restoreExampleBuildArtifacts(
+    root,
+    resolve(root, buildArtifacts.slice('--build-artifacts='.length)),
+    capabilities,
+    runtimeParentOriginPolicy,
+    execSync('git rev-parse HEAD', { cwd: root, encoding: 'utf8' }).trim()
+  );
+}
 
 if (!skipBuild) {
   console.log(`Building all ${capabilities.length} frontend apps...`);
