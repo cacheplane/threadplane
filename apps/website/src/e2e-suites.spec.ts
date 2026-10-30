@@ -90,6 +90,42 @@ it('starts only each group’s runtimes while retaining the original server cont
   expect([...selectedUrls].sort()).toEqual(all.map((s) => s.url ?? '').sort());
 });
 
+describe('public surface ownership', () => {
+  it('omits duplicate local executions only with an explicit deployed owner', () => {
+    const full = createWebsiteSuitePlaywrightConfig('control-plane', {});
+    const owned = createWebsiteSuitePlaywrightConfig('control-plane', {
+      WEBSITE_E2E_DEPLOYED_OWNER: 'true',
+    });
+    expect(owned.testIgnore).toContain('**/website.spec.ts');
+    for (const file of [
+      'custom-runtime-targets', 'workspace-shell', 'workspace-mode-history',
+      'workspace-run-announcement', 'home-stage', 'docs-deep-link', 'docs-shell',
+      'render-spec-docs-hydration',
+    ]) expect(owned.testIgnore).not.toContain(`**/${file}.spec.ts`);
+    expect(owned.webServer).toEqual(full.webServer);
+    expect(owned.projects).toEqual(full.projects);
+    expect(owned.retries).toEqual(full.retries);
+    expect(owned.testMatch).toEqual(full.testMatch);
+    for (const value of [undefined, '', 'false', 'true ']) {
+      expect(createWebsiteSuitePlaywrightConfig('control-plane', {
+        WEBSITE_E2E_DEPLOYED_OWNER: value,
+      })).toEqual(full);
+    }
+  });
+
+  it('keeps the other local groups and the deployed suite complete', () => {
+    for (const suite of websiteSuites.filter(s => s !== 'control-plane')) {
+      expect(createWebsiteSuitePlaywrightConfig(suite, {
+        WEBSITE_E2E_DEPLOYED_OWNER: 'true',
+      })).toEqual(createWebsiteSuitePlaywrightConfig(suite, {}));
+    }
+    const env = { BASE_URL: 'https://preview.example.test' };
+    expect(createDeployedWebsitePlaywrightConfig({
+      ...env, WEBSITE_E2E_DEPLOYED_OWNER: 'true',
+    })).toEqual(createDeployedWebsitePlaywrightConfig(env));
+  });
+});
+
 describe('deployed suite', () => {
   it('keeps the existing deployed selection, bypass setup and browser settings without local prerequisites', () => {
     const env = {
