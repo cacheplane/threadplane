@@ -1,21 +1,16 @@
-import { expect, test } from '@playwright/test';
-import { mkdtempSync, realpathSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { test } from './fixtures';
+import { expect } from '@playwright/test';
 
 test('installed React message actions copy only explicit answer text without conversation commands', async ({
   page,
+  retainedConsumer,
 }) => {
   test.setTimeout(300_000);
-  const { buildConsumer } = await import('../tooling/consumer.mjs');
   const { startProofServer, threadEnvelope } = await import(
     '../tooling/proof-server.mjs'
   );
-  const { captureRetainedBuild, readRetainedBuild, startCheckedServer } =
+  const { startCheckedServer } =
     await import('../tooling/retained-build.mjs');
-  const work = realpathSync(
-    mkdtempSync(join(tmpdir(), 'native-message-actions-'))
-  );
   const answer =
     '**Exact answer**\n\n<script>literal()</script>\n\n[Link](https://example.com)';
   const saved = [
@@ -70,15 +65,8 @@ test('installed React message actions copy only explicit answer text without con
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   try {
-    await buildConsumer({
-      root: resolve(__dirname, '../../../../'),
-      assistantId: 'assistant',
-      output: join(work, 'production'),
-      capture: (context: unknown) =>
-        captureRetainedBuild(join(work, 'retained'), context),
-    });
     server = await startCheckedServer({
-      retained: readRetainedBuild(join(work, 'retained')),
+      retained: retainedConsumer,
       target: backend.origin + '/api',
     });
     const origin = server.url;
@@ -203,6 +191,5 @@ test('installed React message actions copy only explicit answer text without con
     await page.close();
     await server?.close();
     await backend.close();
-    rmSync(work, { recursive: true, force: true });
   }
 });

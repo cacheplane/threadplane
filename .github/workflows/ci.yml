@@ -443,8 +443,8 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Verify native conversation example
         run: |
-          # React files own independent builds and fixture ports. Keep local
-          # defaults and Angular serial; run the retained-artifact CLI once.
+          # React workers reuse verified output with independent fixture ports.
+          # Keep local defaults and Angular serial; run the retained CLI once.
           npx nx e2e "native-conversation-${{ matrix.framework }}" --skipInstall --workers=${{ matrix.framework == 'react' && 2 || 1 }}
           node examples/chat/native/tooling/verify.mjs --framework="${{ matrix.framework }}"
       - name: Upload native conversation traces on failure
