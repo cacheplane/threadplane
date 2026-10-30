@@ -162,6 +162,38 @@ describe('updateDraftPost', () => {
     expect(calls.map((c) => c.marker)).not.toContain('insert-revision');
   });
 
+  it('editing a scheduled post to add a blocking flag demotes it to draft', async () => {
+    const { calls, executor } = update('scheduled');
+    await updateDraftPost(executor, 'p', {
+      payload: { text: 'new', lintFlags: [flag('competitor')] },
+    });
+    const statement = calls.find((c) => c.marker === 'update-draft-post');
+    expect(statement?.parameters.slice(5)).toEqual([true, 'draft']);
+  });
+
+  it('keeps a scheduled post scheduled when the edit adds only warnings', async () => {
+    const { calls, executor } = update('scheduled');
+    await updateDraftPost(executor, 'p', {
+      payload: { text: 'new', lintFlags: [flag('dash', false)] },
+    });
+    const statement = calls.find((c) => c.marker === 'update-draft-post');
+    expect(statement?.parameters.slice(5)).toEqual([true, 'scheduled']);
+  });
+
+  it('editing a payload clears confirmed_flags', async () => {
+    const { calls, executor } = update('draft');
+    await updateDraftPost(executor, 'p', { payload: { text: 'new' } });
+    const statement = calls.find((c) => c.marker === 'update-draft-post');
+    expect(statement?.sql).toMatch(/confirmed_flags = case when \$6/u);
+    expect(statement?.parameters[5]).toBe(true);
+    const untouched = update('draft');
+    await updateDraftPost(untouched.executor, 'p', { media: [] });
+    expect(
+      untouched.calls.find((c) => c.marker === 'update-draft-post')
+        ?.parameters[5]
+    ).toBe(false);
+  });
+
   it('rejects posts that are already posting', async () => {
     const { executor } = update('posting');
     await expect(

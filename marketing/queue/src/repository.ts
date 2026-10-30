@@ -124,6 +124,21 @@ export async function updateDraftPost(
         `Marketing post ${id} is ${before.status} and can no longer be edited`
       );
     }
+    const payloadChanged =
+      patch.payload !== undefined &&
+      JSON.stringify(patch.payload) !== JSON.stringify(before.payload);
+    // A changed payload invalidates earlier confirmations, and a scheduled
+    // post that now carries a blocking flag goes back to draft for approval.
+    const nextStatus =
+      payloadChanged &&
+      before.status === 'scheduled' &&
+      unconfirmedBlockingCodes({
+        ...before,
+        payload: patch.payload as Record<string, unknown>,
+        confirmedFlags: [],
+      }).length > 0
+        ? 'draft'
+        : before.status;
     const { rows } = await tx.execute(
       `/* marketing:update-draft-post */
        update marketing_posts set
@@ -131,6 +146,8 @@ export async function updateDraftPost(
          media = coalesce($3::jsonb, media),
          publish_at = coalesce($4::timestamptz, publish_at),
          kind = coalesce($5, kind),
+         confirmed_flags = case when $6::boolean then '[]'::jsonb else confirmed_flags end,
+         status = $7,
          updated_at = now()
        where id = $1
        returning *`,
@@ -140,12 +157,11 @@ export async function updateDraftPost(
         patch.media === undefined ? null : JSON.stringify(patch.media),
         patch.publishAt ?? null,
         patch.kind ?? null,
+        payloadChanged,
+        nextStatus,
       ]
     );
-    if (
-      patch.payload !== undefined &&
-      JSON.stringify(patch.payload) !== JSON.stringify(before.payload)
-    ) {
+    if (payloadChanged) {
       await tx.execute(
         `/* marketing:insert-revision */
          insert into marketing_post_revisions (id, post_id, before, after)
