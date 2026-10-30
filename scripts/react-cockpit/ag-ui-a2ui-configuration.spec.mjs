@@ -165,8 +165,9 @@ test('full local Website execution has a finite enclosing Nx step budget', () =>
   const steps = job.steps;
   const runs = steps.filter(
     (step) =>
-      step.run ===
-      'npx nx run website:e2e-${{ matrix.suite }} --skip-nx-cache'
+      step.run?.split('\n').includes(
+        'npx nx run website:e2e-${{ matrix.suite }} --skip-nx-cache'
+      )
   );
   assert.equal(runs.length, 1);
   assert.equal(runs[0]['timeout-minutes'], 45);

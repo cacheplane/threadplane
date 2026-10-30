@@ -183,7 +183,7 @@ it('runs the production copy gate through its minimal target while retaining the
   assert.match(step, /run: npx nx run website:public-copy --skip-nx-cache/);
   assert.doesNotMatch(step, /--grep|continue-on-error/);
   assert.match(step, /GROWTH_FORM_POLICY: growth_v1/);
-  assert.match(readJobBlock(workflow, 'website-e2e'), /run: npx nx run website:e2e-\$\{\{ matrix.suite \}\} --skip-nx-cache/);
+  assert.match(readJobBlock(workflow, 'website-e2e'), /npx nx run website:e2e-\$\{\{ matrix.suite \}\} --skip-nx-cache/);
 });
 
 it('groups the complete Website suite by runtime dependencies and runs production checks independently', async () => {
@@ -222,6 +222,16 @@ it('delegates local public coverage only when its required deployed preview is e
       }
     }
   }
+});
+
+it('requires reusable consumer isolation checks and owns preparation for the complete local run', async () => {
+  const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+  assert.match(readNamedStep(readJobBlock(workflow, 'ci-scope'), 'Test CI scope classifier'), /scripts\/react-cockpit\/consumer-preparation\.spec\.mjs/);
+  const step = readNamedStep(readJobBlock(workflow, 'website-e2e'), 'Run local Website suite');
+  assert.match(step, /preparation=\$\(mktemp -d\)/);
+  assert.match(step, /trap 'rm -rf "\$preparation"' EXIT/);
+  assert.match(step, /export WEBSITE_RUNTIME_PREPARATION="\$preparation"/);
+  assert.match(step, /npx nx run website:e2e-\$\{\{ matrix.suite \}\} --skip-nx-cache/);
 });
 
 it('uses the explicit Chromium installation for every CI Nx browser invocation', async () => {

@@ -9,7 +9,9 @@
     "build": {
       "executor": "nx:run-commands",
       "cache": false,
-      "dependsOn": [{ "target": "build", "projects": ["core", "content", "react", "a2ui"] }],
+      "dependsOn": [{ "target": "build", "projects": ["core", "content", "react", "a2ui"] },
+        { "target": "react-native-a2ui-langgraph", "projects": ["website-runtime-preparation"] }
+      ],
       "outputs": ["{workspaceRoot}/dist/cockpit/chat/a2ui/react"],
       "options": { "command": "node scripts/react-cockpit/build.mjs chat-a2ui" }
     },

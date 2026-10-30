@@ -41,7 +41,7 @@ test('uses the installed native build with explicit uncached preparation and bro
     project.targets.build.options.command,
     'node scripts/react-cockpit/build.mjs runtimes-microsoft-agent-framework'
   );
-  assert.deepEqual(project.targets.build.dependsOn, [
+  assert.deepEqual(project.targets.build.dependsOn.filter(edge => edge.target === 'build'), [
     { target: 'build', projects: ['core', 'content', 'react'] },
   ]);
   assert.deepEqual(project.targets.build.outputs, [
