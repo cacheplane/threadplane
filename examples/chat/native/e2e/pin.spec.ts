@@ -1,20 +1,17 @@
-import { expect, test } from '@playwright/test';
+import { test } from './fixtures';
+import { expect } from '@playwright/test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, realpathSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
 
 test('installed React conversation pin and unpin preserve metadata, draft, selection and a running response', async ({
   page,
+  retainedConsumer,
 }, testInfo) => {
   test.setTimeout(300_000);
-  const { buildConsumer } = await import('../tooling/consumer.mjs');
   const { startProofServer, threadEnvelope } = await import(
     '../tooling/proof-server.mjs'
   );
-  const { captureRetainedBuild, readRetainedBuild, startCheckedServer } =
+  const { startCheckedServer } =
     await import('../tooling/retained-build.mjs');
-  const work = realpathSync(mkdtempSync(join(tmpdir(), 'native-pin-')));
   const alpha = threadEnvelope('a', 'Alpha notes');
   const beta = threadEnvelope('b', 'Beta notes');
   const backend = await startProofServer([
@@ -113,15 +110,8 @@ test('installed React conversation pin and unpin preserve metadata, draft, selec
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   try {
-    await buildConsumer({
-      root: resolve(__dirname, '../../../../'),
-      assistantId: 'assistant',
-      output: join(work, 'production'),
-      capture: (context: unknown) =>
-        captureRetainedBuild(join(work, 'retained'), context),
-    });
     server = await startCheckedServer({
-      retained: readRetainedBuild(join(work, 'retained')),
+      retained: retainedConsumer,
       target: backend.origin + '/api',
     });
     const origin = server.url;
@@ -359,6 +349,5 @@ test('installed React conversation pin and unpin preserve metadata, draft, selec
   } finally {
     await server?.close();
     await backend.close();
-    rmSync(work, { recursive: true, force: true });
   }
 });

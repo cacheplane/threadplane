@@ -17,6 +17,7 @@ export default defineConfig({
     'project-assignment.spec.ts',
     'project-creation.spec.ts',
     'project-deletion.spec.ts',
+    'project-deletion-race.spec.ts',
     'rename.spec.ts',
     'pin.spec.ts',
     'archive.spec.ts',

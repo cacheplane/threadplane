@@ -88,8 +88,10 @@ function buildLinkedInDraft(): Draft {
   const draft: Draft = {
     channel: 'linkedin',
     text: `Marketing pipeline smoke test (please ignore). Escaping check: (parens) [brackets] #hashtag. ${stamp}`,
-    firstComment: 'Smoke test first comment: https://threadplane.ai',
   };
+  if (process.env.LINKEDIN_PARTNER_COMMENTS === '1') {
+    draft.firstComment = 'Smoke test first comment: https://threadplane.ai';
+  }
   if (process.env.SMOKE_MEDIA === '1') {
     draft.media = [{ png: PIXEL_PNG, alt: 'A 1x1 transparent pixel — test image.' }];
   }

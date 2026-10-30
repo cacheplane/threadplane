@@ -7,6 +7,135 @@ import { privateScaffoldProjects } from './react-parity/package-policy.mjs';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 
+const supportingScopes = {
+  'scripts-tests': 'scripts_tests',
+  website: 'website',
+  'growth-lifecycle': 'growth_lifecycle',
+  lifecycle: 'growth_lifecycle',
+  'growth-research': 'growth_research',
+  cockpit: 'cockpit',
+  'cockpit-examples-build': 'cockpit_examples',
+  'cockpit-smoke': 'cockpit_smoke',
+  'examples-chat-smoke': 'examples_chat',
+  'examples-chat-e2e': 'examples_chat',
+  'examples-ag-ui-e2e': 'examples_ag_ui',
+  'cockpit-e2e-dispatcher': 'cockpit_e2e',
+  'website-production-checks': 'website_e2e',
+  'posthog-sync-plan': 'posthog',
+};
+
+it('starts long verification chains before supporting runner requests without a dependency cycle', async () => {
+  const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+  const names = [...workflow.split('\njobs:\n')[1].matchAll(/^ {2}([A-Za-z0-9_-]+):\s*$/gm)].map(match => match[1]);
+  const jobs = new Map(names.map(name => [name, readJobBlock(workflow, name)]));
+  const needs = new Map([...jobs].map(([name, job]) => [name, /^ {4}needs:/m.test(job) ? readJobNeeds(job) : []]));
+  const ready = [...needs].filter(([, parents]) => parents.length === 1 && parents[0] === 'ci-scope').map(([name]) => name);
+  assert.deepEqual(ready.sort(), ['library-package', 'library', 'native-conversation', 'website-e2e', 'website-preview-build', 'website-preview-deploy'].sort());
+  const width = ready.reduce((total, name) => {
+    const axes = [...jobs.get(name).matchAll(/^ {8}\w+: \[([^\]]+)\]/gm)];
+    return total + axes.reduce((product, [, values]) => product * values.split(',').length, 1);
+  }, 0);
+  assert.equal(width, 16, 'keep the first scheduling wave below the former33requests');
+  const visited = new Set();
+  function visit(name, path = new Set()) {
+    assert.ok(needs.has(name), `unknown dependency ${name}`);
+    assert.ok(!path.has(name), `dependency cycle at ${name}`);
+    if (visited.has(name)) return;
+    for (const parent of needs.get(name)) visit(parent, new Set([...path, name]));
+    visited.add(name);
+  }
+  for (const name of names) visit(name);
+});
+
+it('delays supporting jobs without dropping coverage after an optional producer fails or skips', async () => {
+  const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+  for (const [name, scope] of Object.entries(supportingScopes)) {
+    const job = readJobBlock(workflow, name);
+    assert.deepEqual(readJobNeeds(job), ['ci-scope', 'library-package'], name);
+    const guard = readJobFieldBlock(job, 'if').replace(/^ {4}if:\s*(?:>-)?/, '').trim();
+    assert.match(guard, /always\(\) && !cancelled\(\)/, name);
+    const condition = guard.replace(/needs\.([a-z0-9-]+)\./g, (_, key) => `needs[${JSON.stringify(key)}].`);
+    const evaluate = Function('github', 'needs', 'always', 'cancelled', `return (${condition});`);
+    for (const producer of ['success', 'failure', 'skipped', 'cancelled']) {
+      for (const result of ['success', 'failure', 'skipped', 'cancelled']) {
+        for (const event of ['pull_request', 'merge_group', 'push', 'workflow_dispatch']) {
+          for (const selected of [true, false]) for (const cancelled of [true, false]) {
+            const actual = evaluate({ event_name: event }, {
+              'ci-scope': { result, outputs: { [scope]: String(selected) } },
+              'library-package': { result: producer },
+            }, () => true, () => cancelled);
+            assert.equal(actual, !cancelled && result === 'success' && (event === 'push' || selected), `${name}: ${[producer, result, event, selected, cancelled]}`);
+          }
+        }
+      }
+    }
+  }
+});
+
+it('keeps the dispatched Cockpit matrix eligible after a skipped or failed scheduling ancestor', async () => {
+  const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+  const job = readJobBlock(workflow, 'cockpit-e2e');
+  assert.deepEqual(readJobNeeds(job), ['ci-scope', 'cockpit-e2e-dispatcher']);
+  const guard = readJobFieldBlock(job, 'if').replace(/^ {4}if:\s*(?:>-)?/, '').trim();
+  assert.match(guard, /always\(\) && !cancelled\(\)/);
+  const condition = guard.replace(/needs\.([a-z0-9-]+)\./g, (_, key) => `needs[${JSON.stringify(key)}].`);
+  const evaluate = Function('github', 'needs', 'always', 'cancelled', `return (${condition});`);
+  for (const producer of ['success', 'failure', 'skipped', 'cancelled']) {
+    for (const dispatcher of ['success', 'failure', 'skipped', 'cancelled']) {
+      for (const result of ['success', 'failure', 'skipped', 'cancelled']) {
+        for (const event of ['pull_request', 'merge_group', 'push', 'workflow_dispatch']) {
+          for (const selected of [true, false]) for (const cancelled of [true, false]) {
+            assert.equal(evaluate({ event_name: event }, {
+              'ci-scope': { result, outputs: { cockpit_e2e: String(selected) } },
+              'library-package': { result: producer },
+              'cockpit-e2e-dispatcher': { result: dispatcher },
+            }, () => true, () => cancelled),
+            !cancelled && result === 'success' && dispatcher === 'success' && (event === 'push' || selected));
+          }
+        }
+      }
+    }
+  }
+});
+
+it('deploys the Website independently while verification waits for both same-run producers', async () => {
+  const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+  const producer = readJobBlock(workflow, 'website-preview-deploy');
+  const builds = readJobBlock(workflow, 'website-preview-build');
+  const verify = readJobBlock(workflow, 'website-preview-e2e');
+  assert.deepEqual(readJobNeeds(producer), ['ci-scope']);
+  assert.deepEqual(readJobNeeds(verify), ['ci-scope', 'website-preview-build', 'website-preview-deploy']);
+  for (const job of [builds, verify]) assert.equal(readJobFieldBlock(producer, 'if'), readJobFieldBlock(job, 'if'));
+  for (const name of ['Derive deterministic preview aliases', 'Require preview bypass secrets']) {
+    assert.equal(readNamedStep(producer, name).trimEnd(), readNamedStep(verify, name).trimEnd());
+  }
+  assert.match(producer, /node-version: 22/);
+  assert.match(producer, /- run: npm ci/);
+  const deploy = readNamedStep(producer, 'Build, deploy, and alias the Website preview');
+  assert.equal(createHash('sha256').update(deploy.trimEnd()).digest('hex'), 'b88c3cb08f471b0507ae07bca41d04e7b93386800a99067b7491449964c080b2', 'preserve the original deployment command and environment');
+  assert.ok(producer.indexOf('Require preview bypass secrets') < producer.indexOf(deploy));
+  assert.doesNotMatch(verify, /vercel build|Build, deploy, and alias the Website preview/);
+  assert.doesNotMatch(producer, /assemble-examples|download-artifact|playwright|website:deployed-e2e|continue-on-error/);
+});
+
+it('requires early Website deployment before preview success and preserves fork skips', async () => {
+  const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+  const gate = readJobBlock(workflow, 'required-pr-checks');
+  const step = readNamedStep(gate, 'Verify scoped CI jobs');
+  assert.ok(readJobNeeds(gate).includes('website-preview-deploy'));
+  assert.match(step, /RESULT_WEBSITE_PREVIEW_DEPLOY: \$\{\{ needs.website-preview-deploy.result \}\}/);
+  const script = readStepRunBlock(step);
+  const environment = { ...process.env };
+  for (const [, key] of step.matchAll(/^ {10}((?:RESULT|SCOPE)_[A-Z0-9_]+):/gm)) environment[key] = key.startsWith('RESULT_') ? 'skipped' : 'false';
+  Object.assign(environment, { RESULT_CI_SCOPE: 'success', SCOPE_WEBSITE_E2E: 'true', RESULT_WEBSITE_E2E: 'success', RESULT_WEBSITE_PRODUCTION: 'success', RESULT_WEBSITE_PREVIEW_BUILD: 'success', RESULT_WEBSITE_PREVIEW_E2E: 'success' });
+  for (const result of ['success', 'failure', 'cancelled', 'skipped']) {
+    const run = spawnSync('bash', ['-c', script], { encoding: 'utf8', env: { ...environment, PREVIEW_LANES_ELIGIBLE: 'true', RESULT_WEBSITE_PREVIEW_DEPLOY: result } });
+    assert.equal(run.status, result === 'success' ? 0 : 1, `${result}: ${run.stdout}\n${run.stderr}`);
+  }
+  const fork = spawnSync('bash', ['-c', script], { encoding: 'utf8', env: { ...environment, PREVIEW_LANES_ELIGIBLE: 'false', RESULT_WEBSITE_PREVIEW_BUILD: 'skipped', RESULT_WEBSITE_PREVIEW_DEPLOY: 'skipped', RESULT_WEBSITE_PREVIEW_E2E: 'skipped' } });
+  assert.equal(fork.status, 0, fork.stdout + fork.stderr);
+});
+
 // The partition contract below checks exact lane ownership. Existing proof
 // contracts still reject any conditional execution inside the selected lane.
 function withoutLibraryLaneGuard(step) {
@@ -65,7 +194,7 @@ it('groups the complete Website suite by runtime dependencies and runs productio
   assert.match(suite, /npx nx run website:e2e-\$\{\{ matrix.suite \}\} --skip-nx-cache/);
   assert.doesNotMatch(suite, /Public copy boundary|Stage scroll verification|--grep/);
   const production = readJobBlock(workflow, 'website-production-checks');
-  assert.deepEqual(readJobNeeds(production), ['ci-scope']);
+  assert.deepEqual(readJobNeeds(production), ['ci-scope', 'library-package']);
   assert.match(readJobFieldBlock(production, 'if'), /needs\.ci-scope\.outputs\.website_e2e == 'true'/);
   assert.doesNotMatch(production, /setup-uv|prepare-.*fixture|nx e2e website/);
   assert.match(production, /npx playwright install --with-deps chromium/);
@@ -143,7 +272,7 @@ it('partitions preview builds without weakening provenance or production assembl
   const build = readJobBlock(workflow, 'website-preview-build');
   const preview = readJobBlock(workflow, 'website-preview-e2e');
   assert.deepEqual(readJobNeeds(build), ['ci-scope']);
-  assert.deepEqual(readJobNeeds(preview), ['ci-scope', 'website-preview-build']);
+  assert.deepEqual(readJobNeeds(preview), ['ci-scope', 'website-preview-build', 'website-preview-deploy']);
   assert.equal(readJobFieldBlock(build, 'if'), readJobFieldBlock(preview, 'if'));
   assert.match(build, /shard: \[1, 2, 3, 4\]/);
   assert.match(build, /fail-fast: false/);
@@ -178,12 +307,12 @@ it('requires every preview build shard before scoped PR success and preserves fo
   const script = readStepRunBlock(step);
   const environment = { ...process.env };
   for (const [, key] of step.matchAll(/^ {10}((?:RESULT|SCOPE)_[A-Z0-9_]+):/gm)) environment[key] = key.startsWith('RESULT_') ? 'skipped' : 'false';
-  Object.assign(environment, { RESULT_CI_SCOPE: 'success', SCOPE_WEBSITE_E2E: 'true', RESULT_WEBSITE_E2E: 'success', RESULT_WEBSITE_PRODUCTION: 'success', RESULT_WEBSITE_PREVIEW_E2E: 'success' });
+  Object.assign(environment, { RESULT_CI_SCOPE: 'success', SCOPE_WEBSITE_E2E: 'true', RESULT_WEBSITE_E2E: 'success', RESULT_WEBSITE_PRODUCTION: 'success', RESULT_WEBSITE_PREVIEW_DEPLOY: 'success', RESULT_WEBSITE_PREVIEW_E2E: 'success' });
   for (const result of ['success', 'failure', 'cancelled', 'skipped']) {
     const run = spawnSync('bash', ['-c', script], { encoding: 'utf8', env: { ...environment, PREVIEW_LANES_ELIGIBLE: 'true', RESULT_WEBSITE_PREVIEW_BUILD: result } });
     assert.equal(run.status, result === 'success' ? 0 : 1, `${result}: ${run.stdout}\n${run.stderr}`);
   }
-  const fork = spawnSync('bash', ['-c', script], { encoding: 'utf8', env: { ...environment, PREVIEW_LANES_ELIGIBLE: 'false', RESULT_WEBSITE_PREVIEW_BUILD: 'skipped', RESULT_WEBSITE_PREVIEW_E2E: 'skipped' } });
+  const fork = spawnSync('bash', ['-c', script], { encoding: 'utf8', env: { ...environment, PREVIEW_LANES_ELIGIBLE: 'false', RESULT_WEBSITE_PREVIEW_BUILD: 'skipped', RESULT_WEBSITE_PREVIEW_DEPLOY: 'skipped', RESULT_WEBSITE_PREVIEW_E2E: 'skipped' } });
   assert.equal(fork.status, 0, fork.stdout + fork.stderr);
   assert.ok(readJobNeeds(gate).includes('website-preview-build'));
   assert.match(step, /RESULT_WEBSITE_PREVIEW_BUILD: \$\{\{ needs.website-preview-build.result \}\}/);
@@ -1139,7 +1268,7 @@ describe('CI workflow', () => {
     const job = readJobBlock(workflow, 'website-preview-e2e');
     const ifBlock = readJobFieldBlock(job, 'if');
 
-    assert.deepEqual(readJobNeeds(job), ['ci-scope', 'website-preview-build']);
+    assert.deepEqual(readJobNeeds(job), ['ci-scope', 'website-preview-build', 'website-preview-deploy']);
     assert.match(ifBlock, /\(github\.event_name == 'pull_request' \|\| github\.event_name == 'merge_group'\)/);
     assert.match(ifBlock, /needs\.ci-scope\.outputs\.website_e2e == 'true'/);
     assert.match(
@@ -1151,7 +1280,7 @@ describe('CI workflow', () => {
     const guard = readNamedStep(job, 'Require preview bypass secrets');
     const assemble = readNamedStep(job, 'Build and assemble Angular examples for the preview');
     const examples = readNamedStep(job, 'Deploy examples preview and alias it');
-    const website = readNamedStep(job, 'Build, deploy, and alias the Website preview');
+    const website = readNamedStep(readJobBlock(workflow, 'website-preview-deploy'), 'Build, deploy, and alias the Website preview');
     const suite = readNamedStep(job, 'Run the Website suite against the aliased preview');
 
     assert.match(aliases, /id:\s*aliases/);
@@ -1524,7 +1653,7 @@ describe('CI workflow', () => {
 
     assert.match(
       scriptsTestsJob,
-      /if: github\.event_name == 'push' \|\| needs\.ci-scope\.outputs\.scripts_tests == 'true'/
+      /github\.event_name == 'push' \|\| needs\.ci-scope\.outputs\.scripts_tests == 'true'/
     );
     assert.match(scriptsTestsJob, /npx nx test scripts/);
 
@@ -1585,10 +1714,10 @@ describe('CI workflow', () => {
       scope,
       /growth_research:\s*\$\{\{ steps\.scope\.outputs\.growth_research \}\}/
     );
-    assert.deepEqual(readJobNeeds(job), ['ci-scope']);
+    assert.deepEqual(readJobNeeds(job), ['ci-scope', 'library-package']);
     assert.match(
       job,
-      /if: github\.event_name == 'push' \|\| needs\.ci-scope\.outputs\.growth_research == 'true'/
+      /github\.event_name == 'push' \|\| needs\.ci-scope\.outputs\.growth_research == 'true'/
     );
     assert.match(job, /node-version:\s*24(?:\s|$)/m);
     assert.match(job, /run: npm ci --ignore-scripts(?:\s|$)/m);
@@ -1668,6 +1797,7 @@ describe('CI workflow', () => {
       'website-e2e',
       'website-production-checks',
       'website-preview-build',
+      'website-preview-deploy',
       'website-preview-e2e',
       'posthog-sync-plan',
       'scripts-tests',

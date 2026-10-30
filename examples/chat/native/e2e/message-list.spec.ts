@@ -1,22 +1,17 @@
-import { expect, test, type Locator } from '@playwright/test';
+import { test } from './fixtures';
+import { expect, type Locator } from '@playwright/test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, realpathSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
 
 test('installed React transcript follows only while pinned and resets on selection', async ({
   page,
+  retainedConsumer,
 }) => {
   test.setTimeout(300_000);
-  const { buildConsumer } = await import('../tooling/consumer.mjs');
   const { startProofServer, threadEnvelope } = await import(
     '../tooling/proof-server.mjs'
   );
-  const { captureRetainedBuild, readRetainedBuild, startCheckedServer } =
+  const { startCheckedServer } =
     await import('../tooling/retained-build.mjs');
-  const work = realpathSync(
-    mkdtempSync(join(tmpdir(), 'native-message-list-'))
-  );
   const saved = Array.from({ length: 24 }, (_, i) => ({
     id: `saved-${i}`,
     type: 'ai',
@@ -160,15 +155,8 @@ test('installed React transcript follows only while pinned and resets on selecti
   const bottom = async (list: Locator) =>
     expect.poll(async () => (await geometry(list)).gap).toBeLessThanOrEqual(1);
   try {
-    await buildConsumer({
-      root: resolve(__dirname, '../../../../'),
-      assistantId: 'assistant',
-      output: join(work, 'production'),
-      capture: (context: unknown) =>
-        captureRetainedBuild(join(work, 'retained'), context),
-    });
     server = await startCheckedServer({
-      retained: readRetainedBuild(join(work, 'retained')),
+      retained: retainedConsumer,
       target: backend.origin + '/api',
     });
     const origin = server.url;
@@ -339,6 +327,5 @@ test('installed React transcript follows only while pinned and resets on selecti
     await page.close();
     await server?.close();
     await backend.close();
-    rmSync(work, { recursive: true, force: true });
   }
 });
