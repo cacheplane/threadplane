@@ -6,10 +6,12 @@ import { fetchDevToMetrics } from './metrics.ts';
 export class DevToAdapter implements ChannelAdapter {
   readonly id = 'devto' as const;
   private readonly apiKey: string;
+  private readonly signal?: AbortSignal;
 
-  constructor(opts?: { credentials: DevToCredentials }) {
+  constructor(opts?: { credentials: DevToCredentials; signal?: AbortSignal }) {
     if (opts) {
       this.apiKey = opts.credentials.apiKey;
+      this.signal = opts.signal;
       return;
     }
     const key = process.env.DEVTO_API_KEY;
@@ -23,10 +25,10 @@ export class DevToAdapter implements ChannelAdapter {
 
   async post(draft: Draft): Promise<PostResult> {
     validateDraft(draft, { adapterId: 'devto' });
-    return postDevTo(this.apiKey, draft);
+    return postDevTo(this.apiKey, draft, this.signal);
   }
 
   async metrics(postId: string): Promise<PostMetrics> {
-    return fetchDevToMetrics(this.apiKey, postId);
+    return fetchDevToMetrics(this.apiKey, postId, this.signal);
   }
 }

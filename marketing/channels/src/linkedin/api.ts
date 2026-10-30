@@ -34,6 +34,7 @@ export async function linkedInPost<T>(
     body: JSON.stringify(body),
     // A retried create can double-post; let the caller decide.
     retryOn5xx: false,
+    signal: auth.signal,
     on401,
     onHeaders: (h) => {
       restliId = h.get('x-restli-id') ?? undefined;

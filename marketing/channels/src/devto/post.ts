@@ -19,7 +19,11 @@ interface ArticleBody {
   description?: string;
 }
 
-export async function postDevTo(apiKey: string, draft: Draft): Promise<PostResult> {
+export async function postDevTo(
+  apiKey: string,
+  draft: Draft,
+  signal?: AbortSignal,
+): Promise<PostResult> {
   if (process.env.DRY_RUN === '1') {
     return writeDryRunResult(draft);
   }
@@ -44,7 +48,9 @@ export async function postDevTo(apiKey: string, draft: Draft): Promise<PostResul
         'User-Agent': 'threadplane-marketing/1.0',
       },
       body: JSON.stringify({ article }),
-      retryOn5xx: true,
+      // A create is never retried: a 5xx or timeout may still have published.
+      retryOn5xx: false,
+      signal,
     });
   } catch (err) {
     const message = (err as Error).message;

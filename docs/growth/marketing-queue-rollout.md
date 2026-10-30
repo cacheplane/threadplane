@@ -12,9 +12,11 @@ Background: [queue package](../../marketing/queue/README.md),
 
 Preview and production use separate Neon resources. Do preview first, every time.
 
+The marketing tables live in the lifecycle Growth database; there is no separate marketing database. The lifecycle dispatcher reads them through its own `DATABASE_URL`, so `MARKETING_DATABASE_URL_PREVIEW` must equal the preview lifecycle deployment's `DATABASE_URL` and `MARKETING_DATABASE_URL_PRODUCTION` must equal the production lifecycle deployment's `DATABASE_URL`. Do not create a new database.
+
 ## 1. Prerequisites
 
-1. Neon connection strings for the preview and production marketing databases.
+1. The lifecycle preview and production `DATABASE_URL` values (the Growth databases). They become `MARKETING_DATABASE_URL_PREVIEW` and `MARKETING_DATABASE_URL_PRODUCTION`.
 2. A credentials key. It seals the X, LinkedIn, and dev.to credentials stored in Neon:
 
    ```bash
@@ -29,7 +31,7 @@ Preview and production use separate Neon resources. Do preview first, every time
 
 | Variable | Used by |
 | --- | --- |
-| `MARKETING_DATABASE_URL_PREVIEW`, `MARKETING_DATABASE_URL_PRODUCTION` | Queue CLI and auth CLIs, selected by `--target` |
+| `MARKETING_DATABASE_URL_PREVIEW`, `MARKETING_DATABASE_URL_PRODUCTION` | Queue CLI and auth CLIs, selected by `--target`. Equal to the preview and production lifecycle `DATABASE_URL` |
 | `MARKETING_CREDENTIALS_KEY` | Seals credentials written by the auth CLIs and `set-devto-key` |
 | `BLOB_READ_WRITE_TOKEN` | Queue CLI media upload |
 | `X_CLIENT_ID`, `X_CLIENT_SECRET`, `X_USER_HANDLE` | X auth |
@@ -60,7 +62,7 @@ Set these for each environment in the lifecycle Vercel project. Redeploy lifecyc
 - It reads `DATABASE_URL` and does not load `.env`, so the inline `DATABASE_URL=` below is required.
 - It refuses to run when `TEST_DATABASE_URL` or `DAWN_DATABASE_URL` is present in the environment, even with an empty value. `env -u` removes them.
 
-Point it at the marketing database for each target, preview first:
+Point it at each lifecycle Growth database (the `MARKETING_DATABASE_URL_*` values), preview first:
 
 ```bash
 env -u TEST_DATABASE_URL -u DAWN_DATABASE_URL DATABASE_URL="$MARKETING_DATABASE_URL_PREVIEW" npm run db:migrate
@@ -71,7 +73,7 @@ Then the same two runs against `$MARKETING_DATABASE_URL_PRODUCTION`. The migrati
 
 ## 3. Authorize the channels
 
-Run each against preview first, then production. The auth CLIs open a browser, you approve the app, and the sealed tokens are written to the target's Neon database.
+Run each against preview first, then production. The auth CLIs open a browser, you approve the app, and the sealed tokens are written to the target's Growth database.
 
 ```bash
 npm run marketing:channels:x:auth -- --target=preview
@@ -113,7 +115,7 @@ LinkedIn tokens last 60 days and self-serve apps get no refresh token. Put a rec
    ```
 
    The row should be `posted`, with a dry-run result (a `dry-` post id and a `dry-run.local` URL). The adapter also writes a payload file under `tmp/marketing/dry-runs/` (or `MARKETING_DRY_RUN_DIR`) on the lifecycle host; that filesystem is ephemeral, so the `list` result is the durable evidence.
-4. A failed dry-run attempt leaves a `failed` row, and failures are never retried automatically. `cancel <id>` it or add a fresh row before trying again.
+4. A failed dry-run attempt leaves a `failed` row, and failures are never retried automatically. `cancel` refuses it (it only takes `draft` and `scheduled` rows); close it with `resolve <id> --as=cancelled --target=preview`, then add a fresh row before trying again.
 5. If it is not posted after two ticks, check for a `marketing_dispatch_failed` operator report and an alert email before changing anything.
 
 When the check passes, remove `DRY_RUN` and `MARKETING_DRY_RUN_DIR` from preview, or switch preview posting off.
@@ -123,8 +125,9 @@ When the check passes, remove `DRY_RUN` and `MARKETING_DRY_RUN_DIR` from preview
 Do the dev.to backlog migration (section 6) before this step, so no backlog item's `publishAt` passes between enabling and migrating.
 
 1. Confirm migration 0011, all lifecycle variables, and all three authorizations are in place for production.
-2. Queue one real X post you are happy to publish, `approve` it with `--target=production`, then set `MARKETING_POSTING_ENABLED=true` on the production lifecycle deployment and redeploy.
-3. After the due tick, confirm with `list --target=production` that the row is `posted` exactly once and that the post is on X. Do not run `/week` for production until this works.
+2. Deploy the website before enabling posting: its operator-alert allow-list must know `marketing_dispatch_failed`, or the cron call answers 503 when that alert fires. The merge that ships this branch deploys both; a single merge covers it.
+3. Queue one real X post you are happy to publish, `approve` it with `--target=production`, then set `MARKETING_POSTING_ENABLED=true` on the production lifecycle deployment and redeploy.
+4. After the due tick, confirm with `list --target=production` that the row is `posted` exactly once and that the post is on X. Do not run `/week` for production until this works.
 
 ## 6. Migrate the dev.to backlog
 
@@ -141,4 +144,13 @@ The dispatcher has no staleness cutoff. An approved row whose publish time has p
 
 Set `MARKETING_POSTING_ENABLED` to anything other than `true` (unset it, or set `false`) and redeploy lifecycle. The tick stops dispatching; queued rows stay queued and nothing is lost. To cancel individual posts use `cancel <id>`; to move one use `reschedule <id> --at=<ISO>`.
 
-Rows stuck in `posting` need human review. A `posting` row means the dispatcher started the attempt and did not record an outcome, so the post may or may not be live. It is never retried automatically. Check the channel by hand, then fix the row (cancel it if it went out, reschedule or re-add it if it did not). Expired-lease rows are surfaced by `list` and by the alert email.
+Rows stuck in `posting` (lease expired) and `failed` rows need human review. Either means the dispatcher started an attempt and the outcome is uncertain, so the post may or may not be live. Neither is ever retried automatically, and `cancel` refuses both. Check the channel by hand, then close the row with `resolve`:
+
+```bash
+# It went out: record the live URL (dependent posts, such as a blog's dev.to row, then proceed).
+npm run marketing:queue -- resolve <id> --as=posted --url=<live url> --target=<preview|production>
+# It did not go out: close the row, then re-add the post with add (a cancelled slot refills).
+npm run marketing:queue -- resolve <id> --as=cancelled --target=<preview|production>
+```
+
+`resolve` only accepts `failed` rows and `posting` rows whose lease has expired, so it cannot race a tick that is still posting. Expired-lease rows are surfaced by `list` and by the alert email.

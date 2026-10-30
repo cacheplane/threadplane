@@ -1033,11 +1033,24 @@ describe('marketing dispatch step', () => {
         waiting: 0,
         failed: 1,
         alerts: [],
-        alertErrors: ['post_failed:1: resend down'],
+        alertErrors: [
+          'post_failed:1: resend down secret-body',
+          'linkedin_expiring:2026-11-01:2026-10-29: 429',
+        ],
       }),
     });
-    const result = await run(deps, true);
-    expect(result.operatorAlerts).toEqual(['marketing_dispatch_failed']);
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    try {
+      const result = await run(deps, true);
+      expect(result.operatorAlerts).toEqual(['marketing_dispatch_failed']);
+      // Only the keys reach the log, never the messages.
+      expect(spy).toHaveBeenCalledOnce();
+      expect(spy).toHaveBeenCalledWith(
+        '[marketing] alert delivery failed: post_failed:1, linkedin_expiring:2026-11-01:2026-10-29'
+      );
+    } finally {
+      spy.mockRestore();
+    }
   });
 });
 

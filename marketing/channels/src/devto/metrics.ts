@@ -11,6 +11,7 @@ interface DevToArticleDetail {
 export async function fetchDevToMetrics(
   apiKey: string,
   postId: string,
+  signal?: AbortSignal,
 ): Promise<PostMetrics> {
   let response: DevToArticleDetail;
   try {
@@ -21,6 +22,7 @@ export async function fetchDevToMetrics(
         'api-key': apiKey,
         'User-Agent': 'threadplane-marketing/1.0',
       },
+      signal,
     });
   } catch (err) {
     const message = (err as Error).message;

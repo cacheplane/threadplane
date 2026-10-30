@@ -332,7 +332,9 @@ describe('dispatchMarketingPosts', () => {
       alerts: [],
       alertErrors: [],
     });
-    expect(h.created).toEqual([{ channel: 'x', options: OPTIONS }]);
+    expect(h.created).toEqual([
+      { channel: 'x', options: { ...OPTIONS, signal: expect.any(AbortSignal) } },
+    ]);
     expect(h.posts).toEqual([
       {
         channel: 'x',
@@ -747,6 +749,80 @@ describe('dispatchMarketingPosts', () => {
     });
     expect(h.posts).toEqual([]);
     expect(db.rows.get('x1')?.['status']).toBe('scheduled');
+  });
+
+  it('second X row in a tick uses the rotated refresh token', async () => {
+    const key = randomBytes(32);
+    const db = fakeDatabase(
+      [
+        postRow({ id: 'x1', idempotency_key: 'x:1' }),
+        postRow({ id: 'x2', idempotency_key: 'x:2', publish_at: at(1) }),
+      ],
+      {
+        x: {
+          sealed: seal(JSON.stringify({ accessToken: 'a1', refreshToken: 'r1' }), key),
+          expires_at: null,
+        },
+      }
+    );
+    const seen: { accessToken?: string; refreshToken?: string }[] = [];
+    let rotated = false;
+    const h = harness({
+      loadAdapterOptions: () =>
+        loadAdapterOptions(db.executor, key, {
+          X_CLIENT_ID: 'cid',
+          X_CLIENT_SECRET: 'cs',
+          X_USER_HANDLE: 'brian',
+        }),
+      post: async (_draft, options) => {
+        const c = options?.x?.credentials;
+        seen.push({ accessToken: c?.accessToken, refreshToken: c?.refreshToken });
+        if (!rotated) {
+          rotated = true;
+          // The first row's 401 refresh: X rotates r1 into r2.
+          await options?.x?.onTokensRotated?.({ accessToken: 'a2', refreshToken: 'r2' });
+        }
+      },
+    });
+
+    const result = await tick(db, h.deps);
+
+    expect(result.posted).toBe(2);
+    expect(h.created).toHaveLength(2);
+    expect(seen).toEqual([
+      { accessToken: 'a1', refreshToken: 'r1' },
+      { accessToken: 'a2', refreshToken: 'r2' },
+    ]);
+  });
+
+  it('passes the step signal to every adapter it builds', async () => {
+    const controller = new AbortController();
+    const db = fakeDatabase([postRow({ id: 'x1' })]);
+    const h = harness();
+    await tick(db, h.deps, controller.signal);
+    expect(h.created[0].options?.signal).toBe(controller.signal);
+  });
+
+  it('an aborted signal before post() releases the row without calling post', async () => {
+    const controller = new AbortController();
+    const db = fakeDatabase([
+      postRow({ id: 'x1', media: [{ url: 'https://blob.example/a.png', alt: 'a' }] }),
+    ]);
+    const h = harness({
+      // The budget runs out while the media is being fetched.
+      fetchMedia: async () => {
+        controller.abort();
+        return Buffer.from('png');
+      },
+    });
+    const result = await tick(db, h.deps, controller.signal);
+    expect(h.posts).toHaveLength(0);
+    expect(result).toMatchObject({ posted: 0, waiting: 1, failed: 0 });
+    expect(db.rows.get('x1')).toMatchObject({
+      status: 'scheduled',
+      lease_token: null,
+      attempts: 0,
+    });
   });
 
   it('stops before the next row once the signal aborts and releases the rest', async () => {

@@ -20,11 +20,15 @@ async function postTweet(auth: XAuth, body: TweetRequestBody): Promise<string> {
   const response = await http<TweetResponse>({
     method: 'POST',
     url: TWEETS_URL,
-    headers: {
+    // Read per attempt so the retry after a refresh sends the new token.
+    headers: () => ({
       Authorization: `Bearer ${auth.accessToken}`,
       'Content-Type': 'application/json',
-    },
+    }),
     body: JSON.stringify(body),
+    // A create is never retried: a 5xx or timeout may still have posted.
+    retryOn5xx: false,
+    signal: auth.signal,
     on401: async () => {
       await auth.refresh();
       return { retry: true };

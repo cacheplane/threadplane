@@ -1,7 +1,14 @@
 import { validateDraft, type Draft } from '@threadplane-internal/marketing-channels';
 import { convertMdxForDevto } from '../../devto-convert.ts';
 import { lintPublicCopy, type LintFlag } from '../../lint.ts';
-import { getPost, insertDraftPost, listSlotRows, updateDraftPost, upsertWeek } from '../../repository.ts';
+import {
+  getPost,
+  insertDraftPost,
+  listBlogRowsBySlug,
+  listSlotRows,
+  updateDraftPost,
+  upsertWeek,
+} from '../../repository.ts';
 import { defaultSlots, pacificWeekContaining } from '../../schedule.ts';
 import type { Channel, MediaRef, PostKind } from '../../types.ts';
 import { requireFlag, requireId, requireWeek, type Args, type CommandDeps } from './shared.ts';
@@ -42,6 +49,53 @@ async function readJson(deps: CommandDeps, path: string): Promise<Record<string,
     throw new Error(`${path} must contain a JSON object`);
   }
   return parsed as Record<string, unknown>;
+}
+
+const BLOG_LINK_RE = /threadplane\.ai\/blog\/([^/?#\s)"'<>]+)/gu;
+
+/** Slugs of threadplane.ai blog posts linked from the draft's text, thread, or link. */
+function linkedBlogSlugs(payload: Record<string, unknown>): string[] {
+  const link = payload['link'] as { url?: unknown } | undefined;
+  const haystack = [
+    payload['text'],
+    ...((payload['threadParts'] as unknown[] | undefined) ?? []),
+    link?.url,
+  ]
+    .filter((part): part is string => typeof part === 'string')
+    .join('\n');
+  // Sentence punctuation right after a bare URL is not part of the slug.
+  return [
+    ...new Set([...haystack.matchAll(BLOG_LINK_RE)].map((m) => m[1].replace(/[.,;:!]+$/u, ''))),
+  ];
+}
+
+/**
+ * A post linking a queued blog that has not gone live must depend on that
+ * blog row, or it can publish a link that 404s. Links to blogs the queue does
+ * not know (older posts) or has already posted pass.
+ */
+async function assertBlogDependency(
+  deps: CommandDeps,
+  payload: Record<string, unknown>,
+  dependsOn: string | undefined
+): Promise<void> {
+  for (const slug of linkedBlogSlugs(payload)) {
+    const rows = (await listBlogRowsBySlug(deps.ex, slug)).filter(
+      (row) => row.status !== 'cancelled'
+    );
+    if (rows.length === 0 || rows.some((row) => row.status === 'posted')) continue;
+    const ids = rows.map((row) => row.id);
+    if (!dependsOn) {
+      throw new Error(
+        `This draft links /blog/${slug}, which is not live yet; add --depends-on=${ids[0]}`
+      );
+    }
+    if (!ids.includes(dependsOn)) {
+      throw new Error(
+        `This draft links /blog/${slug}; --depends-on must be its blog row ${ids[0]}, not ${dependsOn}`
+      );
+    }
+  }
 }
 
 function validate(channel: Channel, payload: Record<string, unknown>, media: Draft['media']): void {
@@ -96,6 +150,7 @@ export async function add(args: Args, deps: CommandDeps): Promise<void> {
 
   // Refuse before any upload or write.
   validate(channel, payload, png ? [{ png, alt }] : undefined);
+  await assertBlogDependency(deps, payload, args.flags['depends-on']);
   const flags = lintPublicCopy(lintText(payload), channel);
 
   const media: MediaRef[] = [];

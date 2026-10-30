@@ -82,4 +82,6 @@ export interface AdapterOptions {
   };
   linkedin?: { credentials: LinkedInCredentials };
   devto?: { credentials: DevToCredentials };
+  /** Aborts every adapter request (e.g. the caller's step budget). */
+  signal?: AbortSignal;
 }

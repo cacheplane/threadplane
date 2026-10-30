@@ -6,7 +6,7 @@ import { defaultSlots } from '../schedule.ts';
 import { loadCredentialKey, openContext } from './context.ts';
 import { add, addBlog, edit, lintFile, relintBlog } from './commands/draft.ts';
 import { setDevtoKey } from './commands/devto-key.ts';
-import { approve, cancel, confirm, list, reschedule, revisions } from './commands/manage.ts';
+import { approve, cancel, confirm, list, reschedule, resolve, revisions } from './commands/manage.ts';
 import { report } from './commands/report.ts';
 import { parseArgs, requireWeek, type CommandDeps } from './commands/shared.ts';
 
@@ -19,12 +19,13 @@ export interface CliIo {
 
 const USAGE = `usage: npm run marketing:queue -- <command> --target=preview|production
   plan --week=YYYY-MM-DD
-  add --week= --channel= (--slot=<slot> | --at=<ISO>) --kind= --file=<draft.json> [--media=<png> --alt="..."] [--depends-on=<id>] [--campaign=<slug>]   (--week optional with --at; a slot whose rows are all cancelled is refilled)
+  add --week= --channel= (--slot=<slot> | --at=<ISO>) --kind= --file=<draft.json> [--media=<png> --alt="..."] [--depends-on=<id>] [--campaign=<slug>]   (--week optional with --at; a slot whose rows are all cancelled is refilled; a link to a queued, unposted blog needs --depends-on=<blog row id>)
   add-blog --week= --mdx=<path> [--kind=]
   edit <id> --file=<draft.json>
   confirm <id> --codes=a,b
   list --week=
-  cancel <id>
+  cancel <id>          (draft or scheduled rows)
+  resolve <id> --as=posted --url=<live url> | --as=cancelled   (failed rows, or posting rows whose lease expired)
   reschedule <id> --at=<ISO>
   approve --week=<YYYY-MM-DD> | --id=<post id>
   lint --channel=<x|linkedin|devto|blog> --file=<draft.json|post.mdx>      (no --target, no database)
@@ -80,6 +81,8 @@ export async function runCli(argv: readonly string[], env: Env, io: CliIo): Prom
         return await list(args, deps);
       case 'cancel':
         return await cancel(args, deps);
+      case 'resolve':
+        return await resolve(args, deps);
       case 'reschedule':
         return await reschedule(args, deps);
       case 'approve':

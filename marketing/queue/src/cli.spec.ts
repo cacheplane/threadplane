@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { uploadMedia } from './blob.ts';
 import { openContext } from './cli/context.ts';
 import { add, addBlog, lintFile, relintBlog } from './cli/commands/draft.ts';
-import { approve, revisions } from './cli/commands/manage.ts';
+import { approve, resolve, revisions } from './cli/commands/manage.ts';
 import { report } from './cli/commands/report.ts';
 import { setDevtoKey } from './cli/commands/devto-key.ts';
 import { parseArgs, type CommandDeps } from './cli/commands/shared.ts';
@@ -78,6 +78,24 @@ function fakeDb() {
         case 'cancel-post': {
           const row = posts.find((x) => x['id'] === p[0] && ['draft', 'scheduled'].includes(x['status'] as string));
           if (row) row['status'] = 'cancelled';
+          return out(row ? [row] : []);
+        }
+        case 'list-blog-rows-by-slug':
+          return out(posts.filter((x) => x['channel'] === 'blog' && (x['payload'] as Row)['slug'] === p[0]));
+        case 'resolve-post': {
+          const row = posts.find(
+            (x) =>
+              x['id'] === p[0] &&
+              (x['status'] === 'failed' ||
+                (x['status'] === 'posting' &&
+                  (x['lease_expires_at'] == null || (x['lease_expires_at'] as Date) < (p[3] as Date))))
+          );
+          if (row) {
+            row['status'] = p[1];
+            if (p[2] !== null) row['result'] = JSON.parse(p[2] as string);
+            row['lease_token'] = null;
+            row['lease_expires_at'] = null;
+          }
           return out(row ? [row] : []);
         }
         case 'approve-week':
@@ -343,6 +361,97 @@ describe('marketing:queue CLI', () => {
     expect(text).toContain('linkedin p3');
     expect(db.metrics).toHaveLength(1);
     expect(db.metrics[0]).toMatchObject({ post_id: 'p1', metrics: { impressions: 10 } });
+  });
+});
+
+describe('blog-linking drafts', () => {
+  const LINK = 'https://threadplane.ai/blog/my-post?utm_source=x&utm_medium=social&utm_campaign=my-post';
+  function withBlog(status: string) {
+    const h = harness({
+      'thread.json': JSON.stringify({ threadParts: ['New post on streaming', `Read it ${LINK}`] }),
+    });
+    h.db.posts.push({
+      id: 'blog-1', week_id: 'w', channel: 'blog', kind: 'guide', status,
+      publish_at: new Date('2026-11-03T17:00:00Z'), payload: { slug: 'my-post' }, media: [],
+      source_refs: [], depends_on: null, utm_campaign: null, idempotency_key: `blog:${WEEK}:blog`,
+      confirmed_flags: [], attempts: 0, created_at: new Date(), updated_at: new Date(),
+    });
+    return h;
+  }
+  const addThread = (deps: CommandDeps, extra: string[] = []) =>
+    add(parseArgs(['add', `--week=${WEEK}`, '--channel=x', '--slot=x-wed', '--kind=guide', '--file=thread.json', ...extra]), deps);
+
+  it('add refuses a blog link without depends-on while the blog is unposted', async () => {
+    const { db, deps } = withBlog('scheduled');
+    await expect(addThread(deps)).rejects.toThrow('--depends-on=blog-1');
+    await expect(addThread(deps, ['--depends-on=other'])).rejects.toThrow('blog row blog-1');
+    deps.readFile = async () => Buffer.from(JSON.stringify({ text: 'Out now: threadplane.ai/blog/my-post.' }));
+    await expect(addThread(deps)).rejects.toThrow('--depends-on=blog-1');
+    expect(db.posts).toHaveLength(1);
+  });
+
+  it('add accepts it with the right depends-on', async () => {
+    const { db, deps } = withBlog('draft');
+    await addThread(deps, ['--depends-on=blog-1']);
+    expect(db.posts[1]).toMatchObject({ channel: 'x', depends_on: 'blog-1' });
+  });
+
+  it('add allows a link to an already posted blog', async () => {
+    const { db, deps } = withBlog('posted');
+    await addThread(deps);
+    expect(db.posts[1]).toMatchObject({ channel: 'x', depends_on: null });
+  });
+});
+
+describe('resolve', () => {
+  function withRow(status: string, leaseExpiresAt: Date | null) {
+    const h = harness();
+    h.db.posts.push({
+      id: 'r1', week_id: 'w', channel: 'x', kind: 'take', status,
+      publish_at: new Date('2026-11-02T16:30:00Z'), payload: { text: 'hi' }, media: [],
+      source_refs: [], depends_on: null, utm_campaign: null, idempotency_key: 'x:r1',
+      confirmed_flags: [], attempts: 1, lease_token: leaseExpiresAt ? 'tok' : null,
+      lease_expires_at: leaseExpiresAt, created_at: new Date(), updated_at: new Date(),
+    });
+    return h;
+  }
+
+  it('resolve marks a stuck posting row posted with its url', async () => {
+    const { db, deps, lines } = withRow('posting', new Date(NOW.getTime() - 60_000));
+    await resolve(parseArgs(['resolve', 'r1', '--as=posted', '--url=https://x.com/brian/status/9']), deps);
+    expect(db.posts[0]).toMatchObject({
+      status: 'posted',
+      lease_token: null,
+      lease_expires_at: null,
+      result: { url: 'https://x.com/brian/status/9', postedAt: NOW.toISOString() },
+    });
+    expect(lines).toContain('resolved r1 as posted (https://x.com/brian/status/9)');
+  });
+
+  it('resolve marks a failed row cancelled', async () => {
+    const { db, deps } = withRow('failed', null);
+    await resolve(parseArgs(['resolve', 'r1', '--as=cancelled']), deps);
+    expect(db.posts[0]['status']).toBe('cancelled');
+  });
+
+  it('resolve refuses a scheduled row', async () => {
+    const { db, deps } = withRow('scheduled', null);
+    await expect(resolve(parseArgs(['resolve', 'r1', '--as=cancelled']), deps)).rejects.toThrow('cannot be resolved');
+    expect(db.posts[0]['status']).toBe('scheduled');
+  });
+
+  it('resolve refuses a posting row whose lease is still live', async () => {
+    const { db, deps } = withRow('posting', new Date(NOW.getTime() + 60_000));
+    await expect(
+      resolve(parseArgs(['resolve', 'r1', '--as=posted', '--url=https://x.com/a/status/1']), deps)
+    ).rejects.toThrow('cannot be resolved');
+    expect(db.posts[0]['status']).toBe('posting');
+  });
+
+  it('resolve as posted requires --url', async () => {
+    const { deps } = withRow('failed', null);
+    await expect(resolve(parseArgs(['resolve', 'r1', '--as=posted']), deps)).rejects.toThrow('--url is required');
+    await expect(resolve(parseArgs(['resolve', 'r1', '--as=gone']), deps)).rejects.toThrow('--as must be');
   });
 });
 

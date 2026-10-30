@@ -22,6 +22,10 @@ export async function uploadImage(auth: LinkedInAuth, png: Buffer): Promise<stri
       'Content-Type': 'image/png',
     },
     body: new Uint8Array(png),
+    // Retrying is safe: the PUT replaces the bytes of the one image URN that
+    // initializeUpload reserved and creates nothing new. Nothing is posted
+    // until the /posts create, which never retries.
+    signal: auth.signal,
   });
 
   return data.value.image;

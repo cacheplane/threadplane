@@ -40,7 +40,8 @@ npm run marketing:queue -- <command> --target=preview|production
   relint-blog <id> --mdx=<path>                   re-lints a blog row from its MDX
   confirm <id> --codes=a,b                        confirms blocking lint flags on one item
   list --week=
-  cancel <id>
+  cancel <id>                                     draft or scheduled rows only
+  resolve <id> --as=posted --url=<live url> | --as=cancelled   failed rows, or posting rows whose lease expired
   reschedule <id> --at=<ISO>
   approve --week=<YYYY-MM-DD> | --id=<post id>    drafts -> scheduled (whole week, or one post)
   lint --channel=<x|linkedin|devto|blog> --file=<draft.json|post.mdx>   no --target, no database
@@ -66,7 +67,7 @@ Facts you need about it:
   - `banned_phrase`, `em_dash`, `hashtags`: warnings. Shown to Brian, not blocking.
   - `edit` and `relint-blog` clear earlier confirmations. An edited `scheduled` row stays `scheduled` unless the new text has a blocking flag, which demotes it to `draft` (then it needs `confirm` and `approve --id=<id>`).
 - **Blog rows can't be edited with `edit`.** The MDX is the blog. Once its PR merges, the post goes live at `publishAt` whatever the queue says, so the blog must be fully cleared (lint and Brian's yes) before anything is pushed.
-- **`--depends-on=<id>`** makes a post wait until that row is `posted`. Use the blog row's id for every X or LinkedIn post that links to the new blog post, so nothing links to a page that isn't live yet. It can only be set at `add` time.
+- **`--depends-on=<id>`** makes a post wait until that row is `posted`. Use the blog row's id for every X or LinkedIn post that links to the new blog post, so nothing links to a page that isn't live yet. It can only be set at `add` time. `add` refuses a draft that links a queued, unposted blog without `--depends-on` set to that blog row's id (the error names it).
 - **`--campaign=<slug>`** stores the post's `utm_campaign`. Always pass the same slug you put in the post's link.
 - `approve` prints `scheduled`, `blocked` (with codes), and `past` (a draft whose time has gone by; it stays a draft, reschedule or cancel it).
 - `revisions --limit=10` prints recent edits as `before:` / `after:` pairs: Brian's rewrites of agent drafts.
@@ -264,6 +265,7 @@ The current week's Monday is `weekStartFor(today)` minus 7 days.
 
 - **Show the queue:** `list --week=<current monday>` (and the next week if asked). Translate times to Pacific. Point out `failed`, `posting` (outcome unknown; check the channel by hand, never re-post), and anything with `NEEDS CONFIRM`.
 - **Pull a post:** `cancel <id>`, after Brian names which one. Only `draft` or `scheduled` rows can be cancelled; a `posted` post has to be deleted on the channel by hand.
+- **Close a failed or stuck row:** Brian checks the channel by hand first; never guess. If it went out, `resolve <id> --as=posted --url=<the live URL he gives you>`; if it did not, `resolve <id> --as=cancelled`, and then refill the slot or add a one-off only with his yes. `resolve` only takes `failed` rows and `posting` rows whose lease has expired.
 - **Move a post:** `reschedule <id> --at=<ISO>`.
 - **Change a post:** write the new text, show it to Brian, and get his yes before `edit <id> --file=…` (works on `draft` and `scheduled` rows). Re-check the lint lines. An edited `scheduled` row stays `scheduled` unless a new blocking flag demotes it to `draft`; then get his per-item yes, `confirm <id> --codes=…`, and `approve --id=<id>`.
 - **Refill a cancelled slot:** `add --week=<monday> --channel=… --slot=<slot> --kind=… --file=…` again; the CLI refills a slot whose rows are all cancelled. Then `approve --id=<id>`.

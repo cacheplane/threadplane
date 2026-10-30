@@ -122,4 +122,79 @@ describe('http()', () => {
       }),
     ).rejects.toThrow(/aborted|timeout/i);
   });
+
+  it('retryOn5xx: false does not retry a network error', async () => {
+    let calls = 0;
+    server.use(
+      mswHttp.post('https://api.example.test/create', () => {
+        calls++;
+        return HttpResponse.error();
+      }),
+    );
+    await expect(
+      http({ method: 'POST', url: 'https://api.example.test/create', retryOn5xx: false }),
+    ).rejects.toThrow();
+    expect(calls).toBe(1);
+  });
+
+  it('retryOn5xx: false does not retry after its own timeout', async () => {
+    let calls = 0;
+    server.use(
+      mswHttp.post('https://api.example.test/slow-create', async () => {
+        calls++;
+        await new Promise((r) => setTimeout(r, 200));
+        return HttpResponse.json({ ok: true });
+      }),
+    );
+    await expect(
+      http({
+        method: 'POST',
+        url: 'https://api.example.test/slow-create',
+        timeoutMs: 30,
+        retryOn5xx: false,
+      }),
+    ).rejects.toThrow(/aborted|timeout/i);
+    expect(calls).toBe(1);
+  });
+
+  it('header factory is evaluated per attempt', async () => {
+    const seen: (string | null)[] = [];
+    let token = 'old';
+    server.use(
+      mswHttp.get('https://api.example.test/token', ({ request }) => {
+        seen.push(request.headers.get('authorization'));
+        if (seen.length === 1) return new HttpResponse(null, { status: 401 });
+        return HttpResponse.json({ ok: true });
+      }),
+    );
+    await http({
+      method: 'GET',
+      url: 'https://api.example.test/token',
+      headers: () => ({ Authorization: `Bearer ${token}` }),
+      on401: async () => {
+        token = 'new';
+        return { retry: true };
+      },
+    });
+    expect(seen).toEqual(['Bearer old', 'Bearer new']);
+  });
+
+  it('caller signal aborts the request and stops retries', async () => {
+    let calls = 0;
+    server.use(
+      mswHttp.get('https://api.example.test/hang', async () => {
+        calls++;
+        await new Promise((r) => setTimeout(r, 500));
+        return HttpResponse.json({ ok: true });
+      }),
+    );
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(new Error('step budget')), 30);
+    const started = Date.now();
+    await expect(
+      http({ method: 'GET', url: 'https://api.example.test/hang', signal: controller.signal }),
+    ).rejects.toThrow();
+    expect(Date.now() - started).toBeLessThan(400);
+    expect(calls).toBe(1);
+  });
 });

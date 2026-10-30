@@ -80,19 +80,26 @@ export async function loadAdapterOptions(
   const userHandle = env['X_USER_HANDLE'];
   // Missing X app config omits only X, so LinkedIn and dev.to keep posting.
   if (x && clientId && clientSecret && userHandle) {
+    const credentials = {
+      clientId,
+      clientSecret,
+      accessToken: x.value.accessToken,
+      refreshToken: x.value.refreshToken,
+      userHandle,
+    };
     options.x = {
-      credentials: {
-        clientId,
-        clientSecret,
-        accessToken: x.value.accessToken,
-        refreshToken: x.value.refreshToken,
-        userHandle,
-      },
-      onTokensRotated: (tokens) =>
-        saveCredentials(ex, key, 'x', {
+      credentials,
+      onTokensRotated: async (tokens) => {
+        // X has already invalidated the old refresh token, so an adapter
+        // built later from these options (the next X row in the same tick)
+        // must start from the new pair.
+        credentials.accessToken = tokens.accessToken;
+        credentials.refreshToken = tokens.refreshToken;
+        await saveCredentials(ex, key, 'x', {
           accessToken: tokens.accessToken,
           refreshToken: tokens.refreshToken,
-        }),
+        });
+      },
     };
   }
   if (linkedin) {

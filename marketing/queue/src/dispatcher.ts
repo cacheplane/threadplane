@@ -135,9 +135,13 @@ export async function dispatchMarketingPosts(
     alerts: [],
     alertErrors: [],
   };
-  let secrets: string[] = [];
+  let loaded: AdapterOptions | undefined;
+  // Recomputed per call so X tokens rotated mid-tick are redacted too.
   const redact = (text: string): string =>
-    secrets.reduce((out, secret) => out.split(secret).join('[redacted]'), text);
+    (loaded ? collectSecrets(loaded) : []).reduce(
+      (out, secret) => out.split(secret).join('[redacted]'),
+      text
+    );
   // Channel-scoped keys get a Pacific-day bucket so an ongoing outage
   // re-alerts daily; row-scoped keys fire once per row.
   const today = pacificDay.format(now);
@@ -170,7 +174,7 @@ export async function dispatchMarketingPosts(
   let optionsLoad: Promise<AdapterOptions> | undefined;
   const adapterOptions = (): Promise<AdapterOptions> =>
     (optionsLoad ??= deps.loadAdapterOptions().then(async (options) => {
-      secrets = collectSecrets(options);
+      loaded = options;
       const expiresAt = options.linkedin?.credentials.expiresAt;
       if (
         expiresAt &&
@@ -242,7 +246,11 @@ export async function dispatchMarketingPosts(
 
     const draft: Draft = { ...draftFields(post) };
     if (media.length > 0) draft.media = media;
-    return { adapter: deps.createAdapter(channel, options), draft };
+    // The step signal bounds every adapter request, not just this loop.
+    return {
+      adapter: deps.createAdapter(channel, { ...options, signal: input.signal }),
+      draft,
+    };
   }
 
   async function processRow(post: MarketingPost): Promise<Outcome> {
@@ -354,6 +362,13 @@ export async function dispatchMarketingPosts(
           describe(post, messageOf(error))
         );
       }
+      return 'waiting';
+    }
+
+    // The budget ran out while preparing: nothing was sent, so release
+    // instead of starting a post() that would be cut off mid-request.
+    if (input.signal.aborted) {
+      await releaseToScheduled(ex, post.id, token, now, 0);
       return 'waiting';
     }
 

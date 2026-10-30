@@ -37,6 +37,13 @@ const TICK_DEADLINE_MS = 50_000;
 // The marketing step gets its own slice so it cannot starve email jobs.
 const MARKETING_STEP_BUDGET_MS = 15_000;
 const OBSERVATION_PROJECTION_MAX_LIMIT = 100;
+
+/** `alertErrors` entries are `<key>: <message>`; keys never contain ': '. */
+function marketingAlertKey(entry: string): string {
+  const end = entry.indexOf(': ');
+  return end === -1 ? entry : entry.slice(0, end);
+}
+
 const LEASE_DURATION_MS = 60_000;
 const LEASE_RENEWAL_INTERVAL_MS = 20_000;
 const LEASED_KINDS = [
@@ -251,6 +258,12 @@ export async function dispatchLifecycleJobs(
         // A failed alert email leaves the operator log as the only signal.
         if (marketing.alertErrors.length > 0) {
           operatorAlerts.push('marketing_dispatch_failed');
+          // Keys only: messages can carry upstream response text.
+          console.error(
+            `[marketing] alert delivery failed: ${marketing.alertErrors
+              .map(marketingAlertKey)
+              .join(', ')}`
+          );
         }
       } catch {
         operatorAlerts.push('marketing_dispatch_failed');

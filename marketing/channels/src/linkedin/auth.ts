@@ -14,9 +14,12 @@ export class LinkedInAuth {
   public readonly accessToken: string;
   public readonly authorUrn: string;
   public readonly expiresAt?: Date;
+  /** Passed to every LinkedIn request made with this auth. */
+  public readonly signal?: AbortSignal;
 
-  constructor(opts?: { credentials: LinkedInCredentials }) {
+  constructor(opts?: { credentials: LinkedInCredentials; signal?: AbortSignal }) {
     if (opts) {
+      this.signal = opts.signal;
       this.accessToken = opts.credentials.accessToken;
       this.authorUrn = opts.credentials.authorUrn;
       this.expiresAt = opts.credentials.expiresAt;

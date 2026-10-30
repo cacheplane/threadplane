@@ -10,11 +10,13 @@ const instances = new Map<ChannelId, ChannelAdapter>();
 function buildAdapter(id: ChannelId, options?: AdapterOptions): ChannelAdapter {
   switch (id) {
     case 'x':
-      return new XAdapter(options?.x);
+      return new XAdapter(options?.x && { ...options.x, signal: options.signal });
     case 'devto':
-      return new DevToAdapter(options?.devto);
+      return new DevToAdapter(options?.devto && { ...options.devto, signal: options.signal });
     case 'linkedin':
-      return new LinkedInAdapter(options?.linkedin);
+      return new LinkedInAdapter(
+        options?.linkedin && { ...options.linkedin, signal: options.signal },
+      );
     case 'reddit':
       throw new Error(
         `Channel "${id}" adapter is not yet implemented. Known channels with implementations: x, devto, linkedin.`,

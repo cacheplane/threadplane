@@ -10,6 +10,7 @@ import {
   releaseAlertClaim,
   releaseToScheduled,
   reschedulePost,
+  resolvePost,
   updateDraftPost,
 } from './repository.ts';
 
@@ -230,6 +231,8 @@ describe('leaseDuePosts', () => {
       /where status = 'scheduled' and coalesce\(next_attempt_at, publish_at\) <= \$1\s+order by coalesce\(next_attempt_at, publish_at\)/u
     );
     expect(sql).toMatch(/for update skip locked/u);
+    // The outer update re-checks status, so a row changed after the subselect is skipped.
+    expect(sql).toMatch(/limit \$2\s*\) and status = 'scheduled'/u);
     expect(sql).toMatch(/status = 'posting'/u);
     expect(sql).toMatch(/attempts = attempts \+ 1/u);
     expect(parameters).toEqual([NOW, 5, 60_000]);
@@ -342,5 +345,29 @@ describe('releaseAlertClaim', () => {
     await releaseAlertClaim(executor, 'k');
     expect(calls[0].sql).toMatch(/delete from marketing_alerts where key = \$1/u);
     expect(calls[0].parameters).toEqual(['k']);
+  });
+});
+
+describe('resolvePost', () => {
+  it('only touches failed rows and posting rows with an expired lease', async () => {
+    const { calls, executor } = fakeExecutor({
+      'resolve-post': () => [postRow({ status: 'posted' })],
+    });
+    await resolvePost(executor, 'p', { as: 'posted', url: 'https://x.com/a/status/1', now: NOW });
+    const { sql, parameters } = calls[0];
+    expect(sql).toMatch(/status = 'failed'\s+or \(status = 'posting' and \(lease_expires_at is null or lease_expires_at < \$4\)\)/u);
+    expect(sql).toMatch(/lease_token = null/u);
+    expect(parameters[1]).toBe('posted');
+    expect(JSON.parse(parameters[2] as string)).toEqual({
+      url: 'https://x.com/a/status/1',
+      postedAt: NOW.toISOString(),
+    });
+  });
+
+  it('throws when no row qualifies', async () => {
+    const { executor } = fakeExecutor({ 'resolve-post': () => [] });
+    await expect(
+      resolvePost(executor, 'p', { as: 'cancelled', now: NOW })
+    ).rejects.toThrow('cannot be resolved');
   });
 });

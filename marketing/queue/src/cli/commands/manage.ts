@@ -8,6 +8,7 @@ import {
   listPosts,
   listRecentRevisions,
   reschedulePost,
+  resolvePost,
 } from '../../repository.ts';
 import type { MarketingPost } from '../../types.ts';
 import { requireFlag, requireId, requireWeek, type Args, type CommandDeps } from './shared.ts';
@@ -44,6 +45,22 @@ export async function confirm(args: Args, deps: CommandDeps): Promise<void> {
 export async function cancel(args: Args, deps: CommandDeps): Promise<void> {
   const post = await cancelPost(deps.ex, requireId(args));
   deps.stdout(`cancelled ${post.id}`);
+}
+
+/** Records the operator's outcome for a failed or stuck posting row. */
+export async function resolve(args: Args, deps: CommandDeps): Promise<void> {
+  const id = requireId(args);
+  const as = requireFlag(args, 'as');
+  if (as !== 'posted' && as !== 'cancelled') throw new Error('--as must be posted or cancelled');
+  let url: string | undefined;
+  if (as === 'posted') {
+    url = requireFlag(args, 'url');
+    if (!/^https:\/\/\S+$/u.test(url)) throw new Error('--url must be the live https URL');
+  } else if (args.flags['url']) {
+    throw new Error('--url only applies with --as=posted');
+  }
+  const post = await resolvePost(deps.ex, id, { as, url, now: deps.now });
+  deps.stdout(`resolved ${post.id} as ${post.status}${url ? ` (${url})` : ''}`);
 }
 
 export async function reschedule(args: Args, deps: CommandDeps): Promise<void> {

@@ -159,7 +159,7 @@ jobs:
       # node:test suites in scripts/ run in ci-scope and library instead —
       # see scripts/vite.config.mts for the split.
       - run: npx nx test scripts
-      - run: npx nx run-many -t lint test --projects=marketing-assets,marketing-channels --parallel=2
+      - run: npx nx run-many -t lint test --projects=marketing-assets,marketing-channels,marketing-queue --parallel=2
 
   # Consumer compatibility needs production packages, not the completion of
   # Library's independent fixture, coverage, and installed-package proofs.

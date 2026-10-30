@@ -78,6 +78,8 @@ describe('loadAdapterOptions', () => {
       accessToken: 'a2',
       refreshToken: 'r2',
     });
+    // Adapters built later from the same options start from the rotated pair.
+    expect(options.x?.credentials).toMatchObject({ accessToken: 'a2', refreshToken: 'r2' });
   });
 
   it('loads LinkedIn with expiry and dev.to fully from the database', async () => {

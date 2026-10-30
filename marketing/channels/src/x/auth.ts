@@ -21,6 +21,7 @@ type TokenResponse = {
 export interface XAuthOptions {
   credentials: XCredentials;
   onTokensRotated?: (t: { accessToken: string; refreshToken: string }) => Promise<void>;
+  signal?: AbortSignal;
 }
 
 export class XAuth {
@@ -30,6 +31,8 @@ export class XAuth {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly onTokensRotated?: XAuthOptions['onTokensRotated'];
+  /** Passed to every X request made with this auth. */
+  public readonly signal?: AbortSignal;
 
   constructor(opts?: XAuthOptions) {
     if (opts) {
@@ -40,6 +43,7 @@ export class XAuth {
       this.refreshToken = c.refreshToken;
       this.userHandle = c.userHandle;
       this.onTokensRotated = opts.onTokensRotated;
+      this.signal = opts.signal;
       return;
     }
     const missing = REQUIRED_ENV.filter((k) => !process.env[k]);
@@ -69,7 +73,9 @@ export class XAuth {
           Authorization: `Basic ${basic}`,
         },
         body: params.toString(),
+        // X rotates the refresh token on every refresh; never resend it.
         retryOn5xx: false,
+        signal: this.signal,
       });
     } catch (err) {
       throw new Error(

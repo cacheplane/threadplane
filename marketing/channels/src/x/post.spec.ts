@@ -145,4 +145,99 @@ describe('postX', () => {
       delete process.env.DRY_RUN;
     }
   });
+
+  const refreshHandler = () =>
+    mswHttp.post('https://api.x.com/2/oauth2/token', () =>
+      HttpResponse.json({
+        access_token: 'a2',
+        refresh_token: 'r2',
+        token_type: 'bearer',
+        expires_in: 7200,
+      }),
+    );
+
+  it('retry after refresh sends the new access token (tweet create)', async () => {
+    const seen: (string | null)[] = [];
+    server.use(
+      refreshHandler(),
+      mswHttp.post('https://api.x.com/2/tweets', ({ request }) => {
+        seen.push(request.headers.get('authorization'));
+        if (seen.length === 1) return new HttpResponse(null, { status: 401 });
+        return HttpResponse.json({ data: { id: '2001', text: 'hi' } });
+      }),
+    );
+    const result = await postX(new XAuth(), { channel: 'x', text: 'hi' });
+    expect(seen).toEqual(['Bearer access-1', 'Bearer a2']);
+    expect(result.postId).toBe('2001');
+  });
+
+  it('retry after refresh sends the new access token (media upload)', async () => {
+    const uploads: (string | null)[] = [];
+    const later: (string | null)[] = [];
+    server.use(
+      refreshHandler(),
+      mswHttp.post('https://api.x.com/2/media/upload', ({ request }) => {
+        uploads.push(request.headers.get('authorization'));
+        if (uploads.length === 1) return new HttpResponse(null, { status: 401 });
+        return HttpResponse.json({ data: { id: 'm1', media_key: 'mk' } });
+      }),
+      mswHttp.post('https://api.x.com/2/media/metadata', ({ request }) => {
+        later.push(request.headers.get('authorization'));
+        return HttpResponse.json({ data: { ok: true } });
+      }),
+      mswHttp.post('https://api.x.com/2/tweets', ({ request }) => {
+        later.push(request.headers.get('authorization'));
+        return HttpResponse.json({ data: { id: '2002', text: 'hi' } });
+      }),
+    );
+    await postX(new XAuth(), {
+      channel: 'x',
+      text: 'hi',
+      media: [{ png: Buffer.from('a'), alt: 'alt' }],
+    });
+    expect(uploads).toEqual(['Bearer access-1', 'Bearer a2']);
+    expect(later).toEqual(['Bearer a2', 'Bearer a2']);
+  });
+
+  it('tweet create is not retried on 503', async () => {
+    let calls = 0;
+    server.use(
+      mswHttp.post('https://api.x.com/2/tweets', () => {
+        calls++;
+        return new HttpResponse('busy', { status: 503 });
+      }),
+    );
+    await expect(postX(new XAuth(), { channel: 'x', text: 'hi' })).rejects.toThrow(/HTTP 503/);
+    expect(calls).toBe(1);
+  });
+
+  it('tweet create is not retried on network error', async () => {
+    let calls = 0;
+    server.use(
+      mswHttp.post('https://api.x.com/2/tweets', () => {
+        calls++;
+        return HttpResponse.error();
+      }),
+    );
+    await expect(postX(new XAuth(), { channel: 'x', text: 'hi' })).rejects.toThrow();
+    expect(calls).toBe(1);
+  });
+
+  it('media upload is not retried on 503', async () => {
+    let calls = 0;
+    server.use(
+      mswHttp.post('https://api.x.com/2/media/upload', () => {
+        calls++;
+        return new HttpResponse(null, { status: 503 });
+      }),
+    );
+    await expect(
+      postX(new XAuth(), {
+        channel: 'x',
+        text: 'hi',
+        media: [{ png: Buffer.from('a'), alt: 'alt' }],
+      }),
+    ).rejects.toThrow(/HTTP 503/);
+    expect(calls).toBe(1);
+  });
 });

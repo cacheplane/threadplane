@@ -8,7 +8,7 @@ export class LinkedInAdapter implements ChannelAdapter {
   readonly id = 'linkedin' as const;
   private readonly auth: LinkedInAuth;
 
-  constructor(opts?: { credentials: LinkedInCredentials }) {
+  constructor(opts?: { credentials: LinkedInCredentials; signal?: AbortSignal }) {
     this.auth = new LinkedInAuth(opts);
   }
 

@@ -276,6 +276,60 @@ export async function cancelPost(
   return mapPost(rows[0]);
 }
 
+/**
+ * Operator outcome for a row the dispatcher will never touch again: `failed`,
+ * or `posting` whose lease has expired (a live lease means a tick may still
+ * be posting it). `posted` records the live URL the operator verified.
+ */
+export async function resolvePost(
+  ex: SqlTransaction,
+  id: string,
+  input: { as: 'posted' | 'cancelled'; url?: string; now: Date }
+): Promise<MarketingPost> {
+  if (input.as === 'posted' && !input.url) {
+    throw new Error('Resolving as posted requires the live url');
+  }
+  const result: PostResult | null =
+    input.as === 'posted'
+      ? { url: input.url, postedAt: input.now.toISOString() }
+      : null;
+  const { rows } = await ex.execute(
+    `/* marketing:resolve-post */
+     update marketing_posts set
+       status = $2,
+       result = coalesce($3::jsonb, result),
+       lease_token = null,
+       lease_expires_at = null,
+       updated_at = now()
+     where id = $1
+       and (status = 'failed'
+         or (status = 'posting' and (lease_expires_at is null or lease_expires_at < $4)))
+     returning *`,
+    [id, input.as, result ? JSON.stringify(result) : null, input.now]
+  );
+  if (!rows[0]) {
+    throw new Error(
+      `Marketing post ${id} cannot be resolved; only failed rows and posting rows with an expired lease can`
+    );
+  }
+  return mapPost(rows[0]);
+}
+
+/** Blog rows for a slug, newest first. */
+export async function listBlogRowsBySlug(
+  ex: SqlTransaction,
+  slug: string
+): Promise<MarketingPost[]> {
+  const { rows } = await ex.execute(
+    `/* marketing:list-blog-rows-by-slug */
+     select * from marketing_posts
+     where channel = 'blog' and payload->>'slug' = $1
+     order by created_at desc`,
+    [slug]
+  );
+  return rows.map(mapPost);
+}
+
 export async function reschedulePost(
   ex: SqlTransaction,
   id: string,
@@ -326,7 +380,7 @@ export async function leaseDuePosts(
        order by coalesce(next_attempt_at, publish_at)
        for update skip locked
        limit $2
-     )
+     ) and status = 'scheduled'
      returning *`,
     [options.now, options.limit, options.leaseMs]
   );
