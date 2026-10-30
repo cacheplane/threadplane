@@ -1,6 +1,6 @@
 # X adapter — manual smoke
 
-Run after the bootstrapper has populated `.env`.
+Run after `npm run marketing:channels:x:auth -- --target=<preview|production>` has stored the X tokens in Neon. The smoke script reads `X_ACCESS_TOKEN` and `X_REFRESH_TOKEN` from `.env`, which auth no longer prints; for a live smoke, use the dispatcher dry run in the [rollout runbook](../../docs/growth/marketing-queue-rollout.md) or supply tokens another way. `DRY_RUN=1` needs no tokens.
 
 > **Note:** Use the npm scripts below (or pass `--env-file=.env` to tsx directly). Plain `npx tsx ...` does NOT auto-load `.env`, so the adapter will throw "missing env vars".
 

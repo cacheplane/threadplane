@@ -5,3 +5,5 @@ Neon-backed queue for the weekly marketing content pipeline. All SQL for the `ma
 - `approveWeek` moves clean future drafts to `scheduled` in one transaction and returns blocked and past rows untouched.
 - `leaseDuePosts` leases due rows with `for update skip locked`.
 - A `posting` row whose lease expired is never returned to `scheduled` automatically (the outcome is ambiguous); `listPosts` surfaces it.
+
+Rollout and operations (migration, credentials, dry run, rollback): [marketing queue runbook](../../docs/growth/marketing-queue-rollout.md).

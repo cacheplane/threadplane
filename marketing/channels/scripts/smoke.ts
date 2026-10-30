@@ -1,14 +1,14 @@
 // Standalone smoke runner for channel adapters. NOT exported by the package.
 //
 // Usage:
-//   npm run marketing:channels:x:auth                                    # one-time, fills .env (X only)
+//   npm run marketing:channels:x:auth -- --target=<preview|production>   # one-time, writes sealed tokens to Neon (never printed)
 //   DRY_RUN=1 npm run marketing:channels:x:smoke
 //   npm run marketing:channels:x:smoke
 //   SMOKE_MEDIA=1 npm run marketing:channels:x:smoke
 //   SMOKE_THREAD=1 npm run marketing:channels:x:smoke
 //   DRY_RUN=1 npm run marketing:channels:devto:smoke
 //   npm run marketing:channels:devto:smoke
-//   npm run marketing:channels:linkedin:auth                             # every 60 days, fills .env
+//   npm run marketing:channels:linkedin:auth -- --target=<preview|production>   # every 60 days, writes to Neon (without --target it prints .env values)
 //   DRY_RUN=1 npm run marketing:channels:linkedin:smoke
 //   SMOKE_MEDIA=1 npm run marketing:channels:linkedin:smoke
 //
