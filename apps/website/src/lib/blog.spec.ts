@@ -176,4 +176,69 @@ describe('blog.ts', () => {
     const { getRecentPosts } = await import('./blog');
     expect(getRecentPosts()).toEqual([]);
   });
+
+  describe('future-dated posts', () => {
+    const tomorrowPost = `---
+title: "Tomorrow Post"
+description: "Tomorrow description"
+date: 2026-10-30
+author: brian
+---
+Body tomorrow.`;
+    const todayPost = `---
+title: "Today Post"
+description: "Today description"
+date: 2026-10-29
+author: brian
+---
+Body today.`;
+    const now = new Date('2026-10-29T16:00:00Z');
+    const files = {
+      '2026-10-29-today-post.mdx': todayPost,
+      '2026-10-30-tomorrow-post.mdx': tomorrowPost,
+    };
+
+    it('getAllPosts hides a post dated tomorrow and shows one dated today', async () => {
+      setupFs(files);
+      const { getAllPosts } = await import('./blog');
+      expect(getAllPosts({ now }).map((p) => p.slug)).toEqual(['today-post']);
+      expect(getAllPosts({ now: new Date('2026-10-30T00:00:00Z') }).map((p) => p.slug)).toEqual([
+        'tomorrow-post',
+        'today-post',
+      ]);
+    });
+
+    it('getAllPosts includes future posts with includeDrafts', async () => {
+      setupFs(files);
+      const { getAllPosts } = await import('./blog');
+      expect(getAllPosts({ now, includeDrafts: true }).map((p) => p.slug)).toContain('tomorrow-post');
+    });
+
+    it('getPostBySlug returns null for a future post and the post for today', async () => {
+      setupFs(files);
+      const { getPostBySlug } = await import('./blog');
+      expect(getPostBySlug('tomorrow-post', { now })).toBeNull();
+      expect(getPostBySlug('today-post', { now })?.slug).toBe('today-post');
+    });
+
+    it('getPostBySlug still returns drafts that are not future-dated', async () => {
+      setupFs({ '2026-05-20-draft-post.mdx': draft });
+      const { getPostBySlug } = await import('./blog');
+      expect(getPostBySlug('draft-post', { now })?.slug).toBe('draft-post');
+    });
+
+    it('getAllSlugs excludes future posts', async () => {
+      setupFs({ '2026-05-10-second-post.mdx': post2, '2999-01-01-far-future.mdx': tomorrowPost.replace('2026-10-30', '2999-01-01') });
+      const { getAllSlugs } = await import('./blog');
+      expect(getAllSlugs()).toEqual(['second-post']);
+    });
+
+    it('the RSS feed route excludes future posts', async () => {
+      setupFs({ '2026-05-10-second-post.mdx': post2, '2999-01-01-far-future.mdx': tomorrowPost.replace('2026-10-30', '2999-01-01') });
+      const { GET } = await import('../app/blog/rss.xml/route');
+      const xml = await (await GET()).text();
+      expect(xml).toContain('/blog/second-post');
+      expect(xml).not.toContain('far-future');
+    });
+  });
 });

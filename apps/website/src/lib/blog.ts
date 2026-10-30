@@ -61,22 +61,32 @@ function readPost(dir: string, filename: string): Post | null {
   };
 }
 
-export function getAllPosts(opts: { includeDrafts?: boolean } = {}): Post[] {
+/** A post is future-dated when its frontmatter date (UTC midnight for YYYY-MM-DD) is after `now`; today's posts are visible. */
+function isFuture(post: Post, now: Date): boolean {
+  const t = new Date(post.frontmatter.date).getTime();
+  return !Number.isNaN(t) && t > now.getTime();
+}
+
+export function getAllPosts(opts: { includeDrafts?: boolean; now?: Date } = {}): Post[] {
   const dir = resolveBlogDir();
   if (!fs.existsSync(dir)) return [];
+  const now = opts.now ?? new Date();
   const files = fs.readdirSync(dir).filter((f) => typeof f === 'string' && (f as string).endsWith('.mdx'));
   const posts: Post[] = [];
   for (const f of files) {
     const post = readPost(dir, f as string);
     if (!post) continue;
     if (post.frontmatter.draft && !opts.includeDrafts) continue;
+    if (isFuture(post, now) && !opts.includeDrafts) continue;
     posts.push(post);
   }
   return posts.sort((a, b) => (a.date < b.date ? 1 : -1));
 }
 
-export function getPostBySlug(slug: string): Post | null {
-  return getAllPosts({ includeDrafts: true }).find((p) => p.slug === slug) ?? null;
+export function getPostBySlug(slug: string, opts: { now?: Date } = {}): Post | null {
+  const now = opts.now ?? new Date();
+  const post = getAllPosts({ includeDrafts: true, now }).find((p) => p.slug === slug) ?? null;
+  return post && !isFuture(post, now) ? post : null;
 }
 
 export function getFeaturedPost(): Post | null {
