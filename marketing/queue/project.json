@@ -7,6 +7,7 @@
   "targets": {
     "build": {
       "executor": "@nx/js:tsc",
+      "dependsOn": ["^build"],
       "outputs": ["{workspaceRoot}/dist/marketing/queue"],
       "options": {
         "outputPath": "dist/marketing/queue",

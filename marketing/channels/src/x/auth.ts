@@ -75,7 +75,9 @@ export class XAuth {
         body: params.toString(),
         // X rotates the refresh token on every refresh; never resend it.
         retryOn5xx: false,
-        signal: this.signal,
+        // No caller signal: aborting after X rotates would lose the new
+        // refresh token, and Neon is its only holder. http()'s own timeout
+        // still bounds the request.
       });
     } catch (err) {
       throw new Error(

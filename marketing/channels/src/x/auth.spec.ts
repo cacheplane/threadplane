@@ -138,4 +138,26 @@ describe('XAuth with injected credentials', () => {
     expect(spy).not.toHaveBeenCalled();
     spy.mockRestore();
   });
+
+  it('finishes and persists a refresh even when the caller signal aborts', async () => {
+    const controller = new AbortController();
+    server.use(
+      mswHttp.post('https://api.x.com/2/oauth2/token', async () => {
+        // The step budget runs out while X is rotating the token.
+        controller.abort();
+        await new Promise((r) => setTimeout(r, 5));
+        return HttpResponse.json({
+          access_token: 'a3',
+          refresh_token: 'r3',
+          token_type: 'bearer',
+          expires_in: 7200,
+        });
+      }),
+    );
+    const onTokensRotated = vi.fn(() => Promise.resolve());
+    const auth = new XAuth({ credentials, onTokensRotated, signal: controller.signal });
+    await auth.refresh();
+    expect(onTokensRotated).toHaveBeenCalledWith({ accessToken: 'a3', refreshToken: 'r3' });
+    expect(auth.refreshToken).toBe('r3');
+  });
 });
