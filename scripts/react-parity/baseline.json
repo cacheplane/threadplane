@@ -1,9 +1,10 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "34138447e0b71198982adf3fdc33f14b06f424cd",
+  "baselineHead": "cc804a92ad505a500a8185e47621ef017027c449",
   "sourceState": {
     "modified": [
-      ".github/workflows/ci.yml"
+      "package.json",
+      "tsconfig.base.json"
     ],
     "untracked": []
   },
@@ -2237,7 +2238,7 @@
       "id": "config:package.json",
       "kind": "config",
       "path": "package.json",
-      "sha256": "3999d926d7d98015c5a29ad80e1236d01fc6aa74558987ae9ac9d02f75049aa6"
+      "sha256": "c18b97809871db57e3c11498cf3a6eba82755a62e31225afdc3f629ffa7451dc"
     },
     {
       "id": "config:scripts/assemble-examples.ts",
@@ -2267,7 +2268,7 @@
       "id": "config:tsconfig.base.json",
       "kind": "config",
       "path": "tsconfig.base.json",
-      "sha256": "2df95b2453abb605eb56acf44f4ac53f06620f97a01144af7f194aab70e86293"
+      "sha256": "fef85f15cc13389982dc749ecffbf9e6864412d410190475cbcf10bfc077bbf0"
     },
     {
       "id": "doc:apps/website/content/docs/a2ui/getting-started/introduction.mdx",

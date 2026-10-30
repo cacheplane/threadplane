@@ -113,7 +113,8 @@
     "apps/*",
     "libs/*",
     "marketing/assets",
-    "marketing/channels"
+    "marketing/channels",
+    "marketing/queue"
   ],
   "dependencies": {
     "@ag-ui/client": "^1.0.1",
