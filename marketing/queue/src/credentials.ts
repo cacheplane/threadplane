@@ -53,20 +53,15 @@ export function reauthHint(channel: CredentialChannel): string {
   return `No ${channel} credentials stored in Neon. Authorize with: ${REAUTH_HINT[channel]}`;
 }
 
-function requireEnv(env: Env, name: string): string {
-  const value = env[name];
-  if (!value) throw new Error(`${name} must be set`);
-  return value;
-}
-
 /**
  * `ex` must be the root executor, never a transaction: X rotates its refresh
  * token on every refresh, so the rotation hook has to commit on its own even
  * if the surrounding post attempt later rolls back. Do not call this inside a
  * dispatch transaction.
  *
- * Channels with no stored row are omitted, so one unauthorized channel does
- * not block the others; callers treat a missing entry as unavailable.
+ * Channels with no stored row (and X without X_CLIENT_ID, X_CLIENT_SECRET and
+ * X_USER_HANDLE) are omitted, so one unavailable channel does not block the
+ * others; callers treat a missing entry as unavailable.
  */
 export async function loadAdapterOptions(
   ex: SqlExecutor,
@@ -80,14 +75,18 @@ export async function loadAdapterOptions(
   ]);
 
   const options: AdapterOptions = {};
-  if (x) {
+  const clientId = env['X_CLIENT_ID'];
+  const clientSecret = env['X_CLIENT_SECRET'];
+  const userHandle = env['X_USER_HANDLE'];
+  // Missing X app config omits only X, so LinkedIn and dev.to keep posting.
+  if (x && clientId && clientSecret && userHandle) {
     options.x = {
       credentials: {
-        clientId: requireEnv(env, 'X_CLIENT_ID'),
-        clientSecret: requireEnv(env, 'X_CLIENT_SECRET'),
+        clientId,
+        clientSecret,
         accessToken: x.value.accessToken,
         refreshToken: x.value.refreshToken,
-        userHandle: requireEnv(env, 'X_USER_HANDLE'),
+        userHandle,
       },
       onTokensRotated: (tokens) =>
         saveCredentials(ex, key, 'x', {

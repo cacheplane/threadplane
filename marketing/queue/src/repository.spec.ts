@@ -3,9 +3,13 @@ import {
   approveWeek,
   claimAlert,
   getPost,
+  HOLD_RETRY_MS,
   leaseDuePosts,
   listExpiredPostingLeases,
   markPosted,
+  releaseAlertClaim,
+  releaseToScheduled,
+  reschedulePost,
   updateDraftPost,
 } from './repository.ts';
 
@@ -222,7 +226,9 @@ describe('leaseDuePosts', () => {
       leaseMs: 60_000,
     });
     const { sql, parameters } = calls[0];
-    expect(sql).toMatch(/where status = 'scheduled' and publish_at <= \$1/u);
+    expect(sql).toMatch(
+      /where status = 'scheduled' and coalesce\(next_attempt_at, publish_at\) <= \$1\s+order by coalesce\(next_attempt_at, publish_at\)/u
+    );
     expect(sql).toMatch(/for update skip locked/u);
     expect(sql).toMatch(/status = 'posting'/u);
     expect(sql).toMatch(/attempts = attempts \+ 1/u);
@@ -301,5 +307,40 @@ describe('listExpiredPostingLeases', () => {
     );
     expect(calls[0].sql).not.toMatch(/update/u);
     expect(calls[0].parameters).toEqual([NOW]);
+  });
+});
+
+describe('releaseToScheduled', () => {
+  it('sets next_attempt_at to now plus the hold backoff', async () => {
+    const { calls, executor } = fakeExecutor({
+      'release-to-scheduled': () => [{ id: 'p' }],
+    });
+    await releaseToScheduled(executor, 'p', 'tok', NOW);
+    expect(HOLD_RETRY_MS).toBe(30 * 60_000);
+    expect(calls[0].sql).toMatch(
+      /next_attempt_at = \$3::timestamptz \+ \(\$4::int \* interval '1 millisecond'\)/u
+    );
+    expect(calls[0].parameters).toEqual(['p', 'tok', NOW, HOLD_RETRY_MS]);
+  });
+});
+
+describe('reschedulePost', () => {
+  it('clears next_attempt_at so a moved row waits for its new time', async () => {
+    const { calls, executor } = fakeExecutor({
+      'reschedule-post': () => [postRow({ id: 'p' })],
+    });
+    await reschedulePost(executor, 'p', NOW);
+    expect(calls[0].sql).toMatch(/next_attempt_at = null/u);
+  });
+});
+
+describe('releaseAlertClaim', () => {
+  it('deletes the claimed key', async () => {
+    const { calls, executor } = fakeExecutor({
+      'release-alert-claim': () => [],
+    });
+    await releaseAlertClaim(executor, 'k');
+    expect(calls[0].sql).toMatch(/delete from marketing_alerts where key = \$1/u);
+    expect(calls[0].parameters).toEqual(['k']);
   });
 });

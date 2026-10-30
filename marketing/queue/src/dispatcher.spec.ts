@@ -12,7 +12,7 @@ import {
   dispatchMarketingPosts,
   type MarketingDispatchDependencies,
 } from './dispatcher.ts';
-import { claimAlert } from './repository.ts';
+import { claimAlert, releaseAlertClaim } from './repository.ts';
 import type { SqlExecutor, SqlQueryResult, SqlTransaction } from './sql.ts';
 
 type TestRow = Record<string, unknown>;
@@ -42,17 +42,15 @@ function fakeDatabase(seed: TestRow[], credentials: Record<string, TestRow> = {}
   };
   const handlers: Record<string, (p: readonly unknown[]) => TestRow[]> = {
     'lease-due-posts': ([now, limit, leaseMs]) => {
+      const dueAt = (row: TestRow) =>
+        ((row['next_attempt_at'] ?? row['publish_at']) as Date).getTime();
       const due = [...rows.values()]
         .filter(
           (row) =>
             row['status'] === 'scheduled' &&
-            (row['publish_at'] as Date).getTime() <= (now as Date).getTime()
+            dueAt(row) <= (now as Date).getTime()
         )
-        .sort(
-          (a, b) =>
-            (a['publish_at'] as Date).getTime() -
-            (b['publish_at'] as Date).getTime()
-        )
+        .sort((a, b) => dueAt(a) - dueAt(b))
         .slice(0, limit as number);
       for (const row of due) {
         tokens += 1;
@@ -71,6 +69,9 @@ function fakeDatabase(seed: TestRow[], credentials: Record<string, TestRow> = {}
         row['lease_token'] = null;
         row['lease_expires_at'] = null;
         row['attempts'] = (row['attempts'] as number) - 1;
+        row['next_attempt_at'] = new Date(
+          (p[2] as Date).getTime() + (p[3] as number)
+        );
       }),
     'mark-posted': (p) =>
       finish(p, (row) => {
@@ -91,6 +92,10 @@ function fakeDatabase(seed: TestRow[], credentials: Record<string, TestRow> = {}
       if (!row) return [];
       row['deploy_requested_at'] = p[2];
       return [{ id: row['id'] }];
+    },
+    'release-alert-claim': ([key]) => {
+      claimed.delete(key as string);
+      return [];
     },
     'claim-alert': ([key]) => {
       if (claimed.has(key as string)) return [];
@@ -172,6 +177,7 @@ function postRow(overrides: TestRow): TestRow {
     lease_expires_at: null,
     attempts: 0,
     deploy_requested_at: null,
+    next_attempt_at: null,
     result: null,
     error: null,
     created_at: new Date('2026-10-29T00:00:00Z'),
@@ -274,8 +280,31 @@ function harness(
 const tick = (
   db: ReturnType<typeof fakeDatabase>,
   deps: MarketingDispatchDependencies,
-  signal = new AbortController().signal
-) => dispatchMarketingPosts(db.executor, { limit: 10, signal }, deps);
+  signal = new AbortController().signal,
+  limit = 10
+) => dispatchMarketingPosts(db.executor, { limit, signal }, deps);
+
+/** The real alert sender, claiming keys in the fake database. */
+function claimingSender(
+  db: ReturnType<typeof fakeDatabase>,
+  send: (input: { subject: string; text: string }) => Promise<void> = async () => undefined
+) {
+  const emails: { subject: string; text: string }[] = [];
+  const alert = createAlertSender({
+    resend: {
+      async send(input) {
+        await send(input);
+        emails.push(input);
+        return { error: null };
+      },
+    },
+    from: 'alerts@threadplane.ai',
+    to: 'founder@example.com',
+    claim: (key) => claimAlert(db.executor, key),
+    release: (key) => releaseAlertClaim(db.executor, key),
+  });
+  return { alert, emails };
+}
 
 describe('dispatchMarketingPosts', () => {
   it('posts a due x row and marks posted', async () => {
@@ -296,7 +325,13 @@ describe('dispatchMarketingPosts', () => {
     const h = harness();
     const result = await tick(db, h.deps);
 
-    expect(result).toEqual({ posted: 1, waiting: 0, failed: 0, alerts: [] });
+    expect(result).toEqual({
+      posted: 1,
+      waiting: 0,
+      failed: 0,
+      alerts: [],
+      alertErrors: [],
+    });
     expect(h.created).toEqual([{ channel: 'x', options: OPTIONS }]);
     expect(h.posts).toEqual([
       {
@@ -364,18 +399,7 @@ describe('dispatchMarketingPosts', () => {
 
   it('adapter throw marks failed and alerts once', async () => {
     const db = fakeDatabase([postRow({ id: 'x1' })]);
-    const emails: { subject: string; text: string }[] = [];
-    const alert = createAlertSender({
-      resend: {
-        async send(input) {
-          emails.push(input);
-          return { error: null };
-        },
-      },
-      from: 'alerts@threadplane.ai',
-      to: 'founder@example.com',
-      claim: (key) => claimAlert(db.executor, key),
-    });
+    const { alert, emails } = claimingSender(db);
     const h = harness({
       alert,
       post: async () => {
@@ -389,6 +413,7 @@ describe('dispatchMarketingPosts', () => {
       waiting: 0,
       failed: 1,
       alerts: ['post_failed:x1'],
+      alertErrors: [],
     });
     expect(h.posts).toHaveLength(1);
     expect(db.rows.get('x1')).toMatchObject({
@@ -476,7 +501,7 @@ describe('dispatchMarketingPosts', () => {
       attempts: 0,
     });
 
-    h.setNow(at(30));
+    h.setNow(at(40));
     expect(await tick(db, h.deps)).toMatchObject({ posted: 0, waiting: 1 });
     expect(h.calls.triggerDeploy).toBe(1);
 
@@ -485,7 +510,7 @@ describe('dispatchMarketingPosts', () => {
     expect(late.alerts).toEqual(['blog_not_live:b1']);
 
     live = true;
-    h.setNow(at(200));
+    h.setNow(at(215));
     expect(await tick(db, h.deps)).toMatchObject({ posted: 1, waiting: 0 });
     expect(h.calls.triggerDeploy).toBe(1);
     expect(db.rows.get('b1')).toMatchObject({
@@ -532,6 +557,7 @@ describe('dispatchMarketingPosts', () => {
       waiting: 1,
       failed: 0,
       alerts: [],
+      alertErrors: [],
     });
     expect(h.calls.checkLive).toEqual([]);
 
@@ -551,7 +577,7 @@ describe('dispatchMarketingPosts', () => {
     expect(db.rows.get('dev1')?.['status']).toBe('scheduled');
 
     live = true;
-    h.setNow(at(200));
+    h.setNow(at(215));
     expect(await tick(db, h.deps)).toMatchObject({ posted: 1 });
     expect(h.posts.map((p) => p.channel)).toEqual(['devto']);
     expect(h.posts[0].draft.article).toEqual({
@@ -563,8 +589,14 @@ describe('dispatchMarketingPosts', () => {
   it('dependent alerts after 3h when its dependency never posts', async () => {
     const db = fakeDatabase([
       postRow({
+        id: 'blog',
+        channel: 'blog',
+        status: 'draft',
+        idempotency_key: 'blog:1',
+      }),
+      postRow({
         id: 'x2',
-        depends_on: 'missing-blog',
+        depends_on: 'blog',
       }),
     ]);
     const h = harness();
@@ -637,7 +669,7 @@ describe('dispatchMarketingPosts', () => {
     const result = await tick(db, h.deps);
     expect(result).toMatchObject({
       posted: 1,
-      alerts: ['linkedin_expiring:2026-11-06'],
+      alerts: ['linkedin_expiring:2026-11-06:2026-11-03'],
     });
     expect(h.alerts[0].body).toContain('2026-11-06');
     expect(h.alerts[0].body).not.toContain('li-secret-token');
@@ -660,7 +692,8 @@ describe('dispatchMarketingPosts', () => {
       posted: 1,
       waiting: 1,
       failed: 0,
-      alerts: ['credentials_unavailable:linkedin'],
+      alerts: ['credentials_unavailable:linkedin:2026-11-03'],
+      alertErrors: [],
     });
     expect(db.rows.get('li1')).toMatchObject({
       status: 'scheduled',
@@ -686,7 +719,8 @@ describe('dispatchMarketingPosts', () => {
       posted: 0,
       waiting: 2,
       failed: 0,
-      alerts: ['credentials_unavailable:x'],
+      alerts: ['credentials_unavailable:x:2026-11-03'],
+      alertErrors: [],
     });
     expect(h.posts).toEqual([]);
     expect(db.rows.get('x2')?.['status']).toBe('scheduled');
@@ -709,6 +743,7 @@ describe('dispatchMarketingPosts', () => {
       waiting: 1,
       failed: 0,
       alerts: ['media_unavailable:x1'],
+      alertErrors: [],
     });
     expect(h.posts).toEqual([]);
     expect(db.rows.get('x1')?.['status']).toBe('scheduled');
@@ -744,5 +779,178 @@ describe('dispatchMarketingPosts', () => {
       status: 'scheduled',
       attempts: 0,
     });
+  });
+  it('five held rows do not starve a fresh due row', async () => {
+    const held = [1, 2, 3, 4, 5].map((n) =>
+      postRow({
+        id: `held${n}`,
+        depends_on: 'blog',
+        publish_at: at(-n),
+        idempotency_key: `x:held${n}`,
+      })
+    );
+    const db = fakeDatabase([
+      postRow({
+        id: 'blog',
+        channel: 'blog',
+        status: 'draft',
+        idempotency_key: 'blog:1',
+      }),
+      ...held,
+      postRow({ id: 'fresh', publish_at: at(0), idempotency_key: 'x:fresh' }),
+    ]);
+    const h = harness();
+    const signal = new AbortController().signal;
+
+    expect(await tick(db, h.deps, signal, 5)).toMatchObject({
+      posted: 0,
+      waiting: 5,
+    });
+    expect(db.rows.get('fresh')?.['status']).toBe('scheduled');
+
+    h.setNow(at(10));
+    expect(await tick(db, h.deps, signal, 5)).toMatchObject({
+      posted: 1,
+      waiting: 0,
+    });
+    expect(db.rows.get('fresh')?.['status']).toBe('posted');
+  });
+
+  it('released row is not leased again until next_attempt_at', async () => {
+    const db = fakeDatabase([
+      postRow({
+        id: 'blog',
+        channel: 'blog',
+        status: 'draft',
+        idempotency_key: 'blog:1',
+      }),
+      postRow({ id: 'x1', depends_on: 'blog', idempotency_key: 'x:1' }),
+    ]);
+    const h = harness();
+    await tick(db, h.deps);
+    expect(db.rows.get('x1')).toMatchObject({
+      status: 'scheduled',
+      next_attempt_at: at(35),
+    });
+
+    h.setNow(at(34));
+    expect(await tick(db, h.deps)).toMatchObject({ posted: 0, waiting: 0 });
+
+    const blog = db.rows.get('blog');
+    if (blog) blog['status'] = 'posted';
+    h.setNow(at(35));
+    expect(await tick(db, h.deps)).toMatchObject({ posted: 1 });
+  });
+
+  it('dependency in failed state fails the dependent and alerts dependency_failed', async () => {
+    for (const status of ['failed', 'cancelled', null]) {
+      const db = fakeDatabase([
+        ...(status
+          ? [
+              postRow({
+                id: 'blog',
+                channel: 'blog',
+                status,
+                idempotency_key: 'blog:1',
+              }),
+            ]
+          : []),
+        postRow({ id: 'dev1', channel: 'devto', depends_on: 'blog' }),
+      ]);
+      const h = harness();
+      expect(await tick(db, h.deps)).toEqual({
+        posted: 0,
+        waiting: 0,
+        failed: 1,
+        alerts: ['dependency_failed:dev1'],
+        alertErrors: [],
+      });
+      expect(db.rows.get('dev1')).toMatchObject({
+        status: 'failed',
+        error: `dependency blog is ${status ?? 'missing'}`,
+      });
+      expect(h.posts).toEqual([]);
+      expect(h.calls.checkLive).toEqual([]);
+    }
+  });
+
+  it('credentials_unavailable re-fires on a different Pacific day', async () => {
+    const db = fakeDatabase([postRow({ id: 'li1', channel: 'linkedin' })]);
+    const { alert, emails } = claimingSender(db);
+    const h = harness({ alert, loadAdapterOptions: async () => ({}) });
+
+    expect((await tick(db, h.deps)).alerts).toEqual([
+      'credentials_unavailable:linkedin:2026-11-03',
+    ]);
+    h.setNow(at(60));
+    await tick(db, h.deps);
+    expect(emails).toHaveLength(1);
+
+    // 2026-11-04 08:40 Pacific.
+    h.setNow(at(24 * 60 + 10));
+    expect((await tick(db, h.deps)).alerts).toEqual([
+      'credentials_unavailable:linkedin:2026-11-04',
+    ]);
+    expect(emails).toHaveLength(2);
+  });
+
+  it('failed alert send releases the claim so the next tick retries', async () => {
+    const db = fakeDatabase([
+      postRow({
+        id: 'x1',
+        media: [{ url: 'https://blob.example/gone.png', alt: 'Card' }],
+      }),
+    ]);
+    let down = true;
+    const { alert, emails } = claimingSender(db, async () => {
+      if (down) throw new Error('resend 500');
+    });
+    const h = harness({
+      alert,
+      fetchMedia: async () => {
+        throw new Error('404');
+      },
+    });
+
+    const first = await tick(db, h.deps);
+    expect(first.alertErrors).toEqual([
+      'media_unavailable:x1: Marketing alert media_unavailable:x1 could not be sent: resend 500',
+    ]);
+    expect(emails).toHaveLength(0);
+
+    down = false;
+    h.setNow(at(40));
+    const second = await tick(db, h.deps);
+    expect(second.alertErrors).toEqual([]);
+    expect(emails).toHaveLength(1);
+  });
+
+  it('alert transport failure does not stop the tick', async () => {
+    const db = fakeDatabase([
+      postRow({
+        id: 'x1',
+        idempotency_key: 'x:1',
+        media: [{ url: 'https://blob.example/gone.png', alt: 'Card' }],
+      }),
+      postRow({ id: 'x2', idempotency_key: 'x:2', publish_at: at(1) }),
+    ]);
+    const h = harness({
+      alert: async () => {
+        throw new Error('transport down');
+      },
+      fetchMedia: async (url) => {
+        if (url.includes('gone')) throw new Error('404');
+        return Buffer.from('png');
+      },
+    });
+    const result = await tick(db, h.deps);
+    expect(result).toEqual({
+      posted: 1,
+      waiting: 1,
+      failed: 0,
+      alerts: ['media_unavailable:x1'],
+      alertErrors: ['media_unavailable:x1: transport down'],
+    });
+    expect(db.rows.get('x2')?.['status']).toBe('posted');
   });
 });

@@ -105,13 +105,17 @@ describe('loadAdapterOptions', () => {
     expect(options).toEqual({ devto: { credentials: { apiKey: 'dk' } } });
   });
 
-  it('requires the X env values when an X row is stored', async () => {
+  it('missing X env omits only X', async () => {
     const { executor } = fakeExecutor({
+      ...otherChannels,
       x: { sealed: seal(JSON.stringify({ accessToken: 'a', refreshToken: 'r' }), key), expires_at: null },
     });
-    await expect(loadAdapterOptions(executor, key, {})).rejects.toThrow(
-      /X_CLIENT_ID/u
-    );
+    const options = await loadAdapterOptions(executor, key, {
+      X_CLIENT_ID: 'cid',
+    });
+    expect(options.x).toBeUndefined();
+    expect(options.linkedin?.credentials.accessToken).toBe('li');
+    expect(options.devto).toEqual({ credentials: { apiKey: 'dk' } });
   });
 });
 

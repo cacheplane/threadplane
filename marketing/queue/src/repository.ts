@@ -54,6 +54,7 @@ function mapPost(row: Row): MarketingPost {
     leaseExpiresAt: isoOrNull(row['lease_expires_at']),
     attempts: Number(row['attempts'] ?? 0),
     deployRequestedAt: isoOrNull(row['deploy_requested_at']),
+    nextAttemptAt: isoOrNull(row['next_attempt_at']),
     result: (row['result'] as PostResult | null) ?? null,
     error: (row['error'] as string | null) ?? null,
     createdAt: iso(row['created_at']),
@@ -145,6 +146,7 @@ export async function updateDraftPost(
          payload = coalesce($2::jsonb, payload),
          media = coalesce($3::jsonb, media),
          publish_at = coalesce($4::timestamptz, publish_at),
+         next_attempt_at = case when $4::timestamptz is null then next_attempt_at else null end,
          kind = coalesce($5, kind),
          confirmed_flags = case when $6::boolean then '[]'::jsonb else confirmed_flags end,
          status = $7,
@@ -281,7 +283,7 @@ export async function reschedulePost(
 ): Promise<MarketingPost> {
   const { rows } = await ex.execute(
     `/* marketing:reschedule-post */
-     update marketing_posts set publish_at = $2, updated_at = now()
+     update marketing_posts set publish_at = $2, next_attempt_at = null, updated_at = now()
      where id = $1 and status in ('draft', 'scheduled')
      returning *`,
     [id, publishAt]
@@ -320,8 +322,8 @@ export async function leaseDuePosts(
        updated_at = now()
      where id in (
        select id from marketing_posts
-       where status = 'scheduled' and publish_at <= $1
-       order by publish_at
+       where status = 'scheduled' and coalesce(next_attempt_at, publish_at) <= $1
+       order by coalesce(next_attempt_at, publish_at)
        for update skip locked
        limit $2
      )
@@ -376,18 +378,28 @@ async function finishLeased(
   if (!rows[0]) throw new LeaseConflictError(id);
 }
 
+/** How long a held (released) row waits before it can be leased again. */
+export const HOLD_RETRY_MS = 30 * 60_000;
+
+/**
+ * Returns a row to `scheduled` after a hold (nothing was sent). It is not
+ * leased again before `now + retryMs`, so held rows cannot starve the lease.
+ */
 export function releaseToScheduled(
   ex: SqlTransaction,
   id: string,
-  leaseToken: string
+  leaseToken: string,
+  now: Date,
+  retryMs: number = HOLD_RETRY_MS
 ): Promise<void> {
   return finishLeased(
     ex,
     'release-to-scheduled',
-    `status = 'scheduled', lease_token = null, lease_expires_at = null, attempts = attempts - 1`,
+    `status = 'scheduled', lease_token = null, lease_expires_at = null, attempts = attempts - 1,
+       next_attempt_at = $3::timestamptz + ($4::int * interval '1 millisecond')`,
     id,
     leaseToken,
-    []
+    [now, retryMs]
   );
 }
 
@@ -451,6 +463,18 @@ export async function claimAlert(
     [key]
   );
   return rows.length > 0;
+}
+
+/** Lets a key be claimed again, e.g. after the alert email failed to send. */
+export async function releaseAlertClaim(
+  ex: SqlTransaction,
+  key: string
+): Promise<void> {
+  await ex.execute(
+    `/* marketing:release-alert-claim */
+     delete from marketing_alerts where key = $1`,
+    [key]
+  );
 }
 
 export type CredentialChannel = 'x' | 'linkedin' | 'devto';

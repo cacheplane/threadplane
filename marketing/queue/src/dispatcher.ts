@@ -38,6 +38,8 @@ export interface MarketingDispatchResult {
   waiting: number;
   failed: number;
   alerts: string[];
+  /** `<key>: <message>` for alerts whose delivery failed; the claim was released for a retry. */
+  alertErrors: string[];
 }
 
 /** Long enough to cover a whole tick; an expired `posting` lease is only ever alerted on. */
@@ -46,6 +48,13 @@ const NOT_LIVE_ALERT_MS = 3 * 60 * 60_000;
 const LINKEDIN_EXPIRY_WARNING_MS = 7 * 24 * 60 * 60_000;
 
 type AdapterChannel = 'x' | 'linkedin' | 'devto';
+
+const pacificDay = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'America/Los_Angeles',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
 type Outcome = 'posted' | 'waiting' | 'failed';
 
 /**
@@ -124,18 +133,23 @@ export async function dispatchMarketingPosts(
     waiting: 0,
     failed: 0,
     alerts: [],
+    alertErrors: [],
   };
   let secrets: string[] = [];
+  const redact = (text: string): string =>
+    secrets.reduce((out, secret) => out.split(secret).join('[redacted]'), text);
+  // Channel-scoped keys get a Pacific-day bucket so an ongoing outage
+  // re-alerts daily; row-scoped keys fire once per row.
+  const today = pacificDay.format(now);
 
   const raise = async (key: string, subject: string, body: string) => {
     if (result.alerts.includes(key)) return;
     result.alerts.push(key);
-    let text = body;
-    for (const secret of secrets) text = text.split(secret).join('[redacted]');
     try {
-      await deps.alert(key, `[threadplane marketing] ${subject}`, text);
-    } catch {
-      // An alert transport failure must not stop the remaining rows.
+      await deps.alert(key, `[threadplane marketing] ${subject}`, redact(body));
+    } catch (error) {
+      // Recorded, not thrown: a transport failure must not stop the other rows.
+      result.alertErrors.push(`${key}: ${redact(messageOf(error))}`);
     }
   };
 
@@ -164,7 +178,7 @@ export async function dispatchMarketingPosts(
       ) {
         const day = expiresAt.toISOString().slice(0, 10);
         await raise(
-          `linkedin_expiring:${day}`,
+          `linkedin_expiring:${day}:${today}`,
           `LinkedIn token expires ${day}`,
           `The stored LinkedIn access token expires at ${expiresAt.toISOString()}.\n` +
             `Reauthorize with: npm run marketing:channels:linkedin:auth -- --target=<preview|production>`
@@ -203,22 +217,24 @@ export async function dispatchMarketingPosts(
       options = await adapterOptions();
     } catch (error) {
       throw new HoldError(
-        `credentials_unavailable:${channel}`,
+        `credentials_unavailable:${channel}:${today}`,
         `${channel} credentials unavailable`,
         `Loading channel credentials failed: ${messageOf(error)}`
       );
     }
     if (!options[channel]) {
       throw new HoldError(
-        `credentials_unavailable:${channel}`,
+        `credentials_unavailable:${channel}:${today}`,
         `${channel} credentials unavailable`,
-        reauthHint(channel)
+        channel === 'x'
+          ? `${reauthHint(channel)}\nAlso check X_CLIENT_ID, X_CLIENT_SECRET and X_USER_HANDLE.`
+          : reauthHint(channel)
       );
     }
     const expiresAt = options.linkedin?.credentials.expiresAt;
     if (channel === 'linkedin' && expiresAt && expiresAt <= now) {
       throw new HoldError(
-        `credentials_unavailable:${channel}`,
+        `credentials_unavailable:${channel}:${today}`,
         `${channel} credentials unavailable`,
         `The LinkedIn access token expired at ${expiresAt.toISOString()}. ${reauthHint(channel)}`
       );
@@ -234,7 +250,7 @@ export async function dispatchMarketingPosts(
     const overdue =
       now.getTime() - new Date(post.publishAt).getTime() > NOT_LIVE_ALERT_MS;
     const release = async (): Promise<Outcome> => {
-      await releaseToScheduled(ex, post.id, token);
+      await releaseToScheduled(ex, post.id, token, now);
       return 'waiting';
     };
     const notLive = async (detail: string): Promise<Outcome> => {
@@ -253,7 +269,19 @@ export async function dispatchMarketingPosts(
     try {
       if (post.dependsOn) {
         const dependency = await getPost(ex, post.dependsOn);
-        if (dependency?.status !== 'posted') {
+        const status = dependency?.status ?? 'missing';
+        if (status === 'failed' || status === 'cancelled' || status === 'missing') {
+          // Terminal: the dependency will never go live. Nothing was sent.
+          const reason = `dependency ${post.dependsOn} is ${status}`;
+          await markFailed(ex, post.id, token, reason);
+          await raise(
+            `dependency_failed:${post.id}`,
+            `Dependency failed for ${post.channel} ${post.id}`,
+            describe(post, `${reason}. This post was marked failed without sending.`)
+          );
+          return 'failed';
+        }
+        if (status !== 'posted') {
           return await notLive(
             `Waiting on ${post.dependsOn}, which is ${dependency?.status ?? 'missing'}.`
           );
@@ -385,7 +413,8 @@ export async function dispatchMarketingPosts(
       // Unstarted rows go back to `scheduled`; nothing was sent for them.
       for (const rest of leased.slice(index)) {
         try {
-          await releaseToScheduled(ex, rest.id, rest.leaseToken as string);
+          // No backoff: these rows were never looked at.
+          await releaseToScheduled(ex, rest.id, rest.leaseToken as string, now, 0);
         } catch {
           // Left in `posting`; the expired-lease alert will surface it.
         }

@@ -47,6 +47,8 @@ export interface MarketingPost {
   leaseExpiresAt: string | null;
   attempts: number;
   deployRequestedAt: string | null;
+  /** Set when a held row is released; the row is not leased again before it. */
+  nextAttemptAt: string | null;
   result: PostResult | null;
   error: string | null;
   createdAt: string;

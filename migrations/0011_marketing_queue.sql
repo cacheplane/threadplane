@@ -25,12 +25,13 @@ CREATE TABLE marketing_posts (
   lease_expires_at timestamptz,
   attempts int NOT NULL DEFAULT 0,
   deploy_requested_at timestamptz,
+  next_attempt_at timestamptz,
   result jsonb,
   error text,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
-CREATE INDEX marketing_posts_due ON marketing_posts(publish_at) WHERE status = 'scheduled';
+CREATE INDEX marketing_posts_due ON marketing_posts((coalesce(next_attempt_at, publish_at))) WHERE status = 'scheduled';
 
 CREATE TABLE marketing_post_revisions (
   id uuid PRIMARY KEY,
