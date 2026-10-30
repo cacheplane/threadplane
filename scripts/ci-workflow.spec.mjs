@@ -200,6 +200,30 @@ it('groups the complete Website suite by runtime dependencies and runs productio
   assert.match(production, /npx playwright install --with-deps chromium/);
 });
 
+it('delegates local public coverage only when its required deployed preview is eligible', async () => {
+  const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+  const local = readJobBlock(workflow, 'website-e2e');
+  const flag = local.match(/WEBSITE_E2E_DEPLOYED_OWNER: \$\{\{ (.+) \}\}/);
+  assert.ok(flag, 'local selection must explicitly identify its deployed owner');
+  const preview = readJobFieldBlock(readJobBlock(workflow, 'website-preview-e2e'), 'if')
+    .replace(/^ {4}if:\s*(?:>-)?/, '').trim();
+  const evaluate = expression => Function('github', 'needs', `return (${expression.replace(/needs\.([a-z0-9-]+)\./g, (_, key) => `needs[${JSON.stringify(key)}].`)});`);
+  for (const event of ['pull_request', 'merge_group', 'push', 'workflow_dispatch']) {
+    for (const trusted of [true, false]) {
+      for (const selected of [true, false]) {
+        const github = {
+          event_name: event, repository: 'owner/repo',
+          event: event === 'pull_request' ? { pull_request: { head: { repo: { full_name: trusted ? 'owner/repo' : 'fork/repo' } } } } : {},
+        };
+        const needs = { 'ci-scope': { outputs: { website_e2e: String(selected) } } };
+        const expected = selected && (event === 'merge_group' || (event === 'pull_request' && trusted));
+        assert.equal(evaluate(flag[1])(github, needs), expected, `${event}/${trusted}/${selected}`);
+        assert.equal(evaluate(preview)(github, needs), expected, 'local ownership and preview eligibility must agree');
+      }
+    }
+  }
+});
+
 it('uses the explicit Chromium installation for every CI Nx browser invocation', async () => {
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
   const invocations = [...workflow.matchAll(/^.*\bnpx nx e2e .+$/gm)];
@@ -308,9 +332,11 @@ it('requires every preview build shard before scoped PR success and preserves fo
   const environment = { ...process.env };
   for (const [, key] of step.matchAll(/^ {10}((?:RESULT|SCOPE)_[A-Z0-9_]+):/gm)) environment[key] = key.startsWith('RESULT_') ? 'skipped' : 'false';
   Object.assign(environment, { RESULT_CI_SCOPE: 'success', SCOPE_WEBSITE_E2E: 'true', RESULT_WEBSITE_E2E: 'success', RESULT_WEBSITE_PRODUCTION: 'success', RESULT_WEBSITE_PREVIEW_DEPLOY: 'success', RESULT_WEBSITE_PREVIEW_E2E: 'success' });
-  for (const result of ['success', 'failure', 'cancelled', 'skipped']) {
-    const run = spawnSync('bash', ['-c', script], { encoding: 'utf8', env: { ...environment, PREVIEW_LANES_ELIGIBLE: 'true', RESULT_WEBSITE_PREVIEW_BUILD: result } });
-    assert.equal(run.status, result === 'success' ? 0 : 1, `${result}: ${run.stdout}\n${run.stderr}`);
+  for (const key of ['RESULT_WEBSITE_PREVIEW_BUILD', 'RESULT_WEBSITE_PREVIEW_DEPLOY', 'RESULT_WEBSITE_PREVIEW_E2E']) {
+    for (const result of ['success', 'failure', 'cancelled', 'skipped']) {
+      const run = spawnSync('bash', ['-c', script], { encoding: 'utf8', env: { ...environment, RESULT_WEBSITE_PREVIEW_BUILD: 'success', PREVIEW_LANES_ELIGIBLE: 'true', [key]: result } });
+      assert.equal(run.status, result === 'success' ? 0 : 1, `${key}/${result}: ${run.stdout}\n${run.stderr}`);
+    }
   }
   const fork = spawnSync('bash', ['-c', script], { encoding: 'utf8', env: { ...environment, PREVIEW_LANES_ELIGIBLE: 'false', RESULT_WEBSITE_PREVIEW_BUILD: 'skipped', RESULT_WEBSITE_PREVIEW_DEPLOY: 'skipped', RESULT_WEBSITE_PREVIEW_E2E: 'skipped' } });
   assert.equal(fork.status, 0, fork.stdout + fork.stderr);

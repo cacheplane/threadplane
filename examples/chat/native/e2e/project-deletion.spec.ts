@@ -10,8 +10,7 @@ test('installed React project deletion drains unloaded membership and explicitly
   const { startProofServer, threadEnvelope } = await import(
     '../tooling/proof-server.mjs'
   );
-  const { startCheckedServer } =
-    await import('../tooling/retained-build.mjs');
+  const { startCheckedServer } = await import('../tooling/retained-build.mjs');
   const projectId = ' p/one ';
   const name = '<Project> ' + 'W'.repeat(160);
   const otherId = '__proto__';
@@ -360,3 +359,157 @@ test('installed React project deletion drains unloaded membership and explicitly
     await backend.close();
   }
 });
+
+for (const focus of ['project controls', 'draft'] as const) {
+  test(`installed React last project deletion preserves ${focus} focus and the selected conversation`, async ({
+    page,
+    retainedConsumer,
+  }) => {
+    const { startProofServer, threadEnvelope } = await import(
+      '../tooling/proof-server.mjs'
+    );
+    const { startCheckedServer } = await import(
+      '../tooling/retained-build.mjs'
+    );
+    const alpha = {
+      ...threadEnvelope('a', 'Last project conversation'),
+      metadata: { title: 'Last project conversation', projectId: 'last' },
+    };
+    const backend = await startProofServer([
+      {
+        method: 'POST',
+        path: '/api/threads/search',
+        payload: { limit: 50, offset: 0 },
+        body: [alpha],
+      },
+      { method: 'GET', path: '/api/threads/a', body: alpha },
+      {
+        method: 'POST',
+        path: '/api/threads/a/history',
+        payload: { limit: 10 },
+        body: [],
+      },
+      {
+        method: 'POST',
+        path: '/api/threads/search',
+        payload: { metadata: { projectId: 'last' }, limit: 50, offset: 0 },
+        body: [alpha],
+      },
+      {
+        method: 'PATCH',
+        path: '/api/threads/a',
+        payload: { metadata: { projectId: null } },
+        body: { ...alpha, metadata: { ...alpha.metadata, projectId: null } },
+        holdBody: true,
+      },
+      {
+        method: 'POST',
+        path: '/api/threads/search',
+        payload: { metadata: { projectId: 'last' }, limit: 50, offset: 0 },
+        body: [],
+        holdBody: true,
+      },
+    ]);
+    let server: Awaited<ReturnType<typeof startCheckedServer>> | undefined;
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    try {
+      server = await startCheckedServer({
+        retained: retainedConsumer,
+        target: backend.origin + '/api',
+        apiKey: 'last-project-focus-proof-key',
+      });
+      await page.addInitScript(() => {
+        localStorage.setItem(
+          'threadplane-native-react-projects-v1',
+          JSON.stringify({
+            version: 1,
+            projects: [{ id: 'last', name: 'Last project' }],
+          })
+        );
+      });
+      await page.goto(server.url + '/?presentation=sidenav&thread=a');
+      const nav = page.getByRole('navigation', {
+        name: 'Conversations',
+        exact: true,
+      });
+      const draft = page.getByRole('textbox', { name: 'Message', exact: true });
+      await expect(draft).toBeEnabled();
+      await draft.fill('Keep the last project draft.');
+      const draftNode = await draft.elementHandle();
+      assert.ok(draftNode);
+      await nav
+        .getByRole('button', { name: 'Last project', exact: true })
+        .click();
+      await nav
+        .getByRole('button', {
+          name: 'Delete project Last project (last)',
+          exact: true,
+        })
+        .click();
+      await page
+        .getByRole('alertdialog', { name: 'Delete project?', exact: true })
+        .getByRole('button', { name: 'Delete project', exact: true })
+        .click();
+      await backend.steps[4].received;
+      const all = nav.getByRole('button', {
+        name: 'All conversations',
+        exact: true,
+      });
+      await expect(all).toBeFocused();
+      if (focus === 'draft') await draft.focus();
+      backend.steps[4].releaseBody();
+      await backend.steps[5].received;
+      backend.steps[5].releaseBody();
+      await expect(all).toHaveCount(0);
+      await expect(
+        nav.getByRole('status').filter({ hasText: 'Project deleted:' })
+      ).toHaveText(
+        'Project deleted: Last project (last). Conversations were preserved.'
+      );
+      await expect(
+        focus === 'draft'
+          ? draft
+          : nav.getByRole('button', { name: 'New project', exact: true })
+      ).toBeFocused();
+      await expect(
+        nav.getByRole('button', {
+          name: 'Last project conversation',
+          exact: true,
+        })
+      ).toHaveAttribute('aria-current', 'true');
+      await expect(
+        page.getByRole('heading', {
+          name: 'Last project conversation',
+          exact: true,
+        })
+      ).toBeVisible();
+      await expect(draft).toHaveValue('Keep the last project draft.');
+      expect(await draftNode.evaluate((node) => node.isConnected)).toBe(true);
+      expect(new URL(page.url()).searchParams.get('thread')).toBe('a');
+      backend.verify();
+      expect(backend.requests).toHaveLength(6);
+      expect(
+        backend.requests.filter((request) => request.method === 'PATCH')
+      ).toHaveLength(1);
+      expect(
+        backend.requests.some(
+          (request) =>
+            request.method === 'DELETE' ||
+            (request.method === 'POST' && request.path === '/api/threads')
+        )
+      ).toBe(false);
+      for (const request of backend.requests)
+        expect(request.headers['x-api-key']).toBe(
+          'last-project-focus-proof-key'
+        );
+      expect(errors).toEqual([]);
+      for (const step of backend.steps)
+        expect((await step.closed).finished).toBe(true);
+    } finally {
+      await page.close();
+      await server?.close();
+      await backend.close();
+    }
+  });
+}

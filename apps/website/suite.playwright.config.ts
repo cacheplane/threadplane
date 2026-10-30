@@ -1,7 +1,12 @@
 import { defineConfig } from '@playwright/test';
 import { getCockpitFrontends } from '@threadplane/cockpit-registry';
 import { createWebsitePlaywrightConfig } from './playwright.config';
-import { previewSpec, suiteFrontends, type WebsiteSuite } from './e2e-suites';
+import {
+  deployedSurfaceSpecs,
+  previewSpec,
+  suiteFrontends,
+  type WebsiteSuite,
+} from './e2e-suites';
 
 type Environment = Readonly<Record<string, string | undefined>>;
 
@@ -78,6 +83,9 @@ export function createWebsiteSuitePlaywrightConfig(
     testIgnore: [
       ...(Array.isArray(config.testIgnore) ? config.testIgnore : []),
       ...(suite === 'control-plane' ? ['**/react-*-preview.spec.ts'] : []),
+      ...(suite === 'control-plane' && environment['WEBSITE_E2E_DEPLOYED_OWNER'] === 'true'
+        ? deployedSurfaceSpecs.map(file => `**/${file}`)
+        : []),
     ],
     webServer: servers.filter(
       (server, index) =>

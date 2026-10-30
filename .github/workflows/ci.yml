@@ -1146,6 +1146,10 @@ jobs:
         run: npx playwright install --with-deps chromium
       - run: npx nx run website:e2e-${{ matrix.suite }} --skip-nx-cache
         timeout-minutes: 45
+        env:
+          # Delegate reviewed public surfaces only when the required preview
+          # runs. Main, manual runs and fork PRs keep complete local coverage.
+          WEBSITE_E2E_DEPLOYED_OWNER: ${{ (github.event_name == 'pull_request' || github.event_name == 'merge_group') && needs.ci-scope.outputs.website_e2e == 'true' && (github.event_name == 'merge_group' || github.event.pull_request.head.repo.full_name == github.repository) }}
 
   website-production-checks:
     name: Website — production copy / stage
