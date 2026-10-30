@@ -283,7 +283,7 @@ export function createChatDebugFixture(options = {}) {
     captures = [],
     requests = [];
   const handlers = new Set(),
-    responses = new Set(),
+    responses = new Map(),
     reads = new Set(),
     streams = new Set();
   let worker,
@@ -558,10 +558,17 @@ export function createChatDebugFixture(options = {}) {
     const abort = () => {
       if (!response.writableEnded) controller.abort();
     };
-    responses.add(response);
+    let resolveClose;
+    responses.set(
+      response,
+      new Promise((resolve) => {
+        resolveClose = resolve;
+      })
+    );
     const done = () => {
       responses.delete(response);
       response.off('close', done);
+      resolveClose();
     };
     response.once('close', done);
     response.once('close', abort);
@@ -585,13 +592,15 @@ export function createChatDebugFixture(options = {}) {
     }
   }
   async function reset() {
+    const responseClosures = [...responses.values()];
     for (const owner of [...reads, ...streams]) {
       owner.cancel();
       owner.response.destroy();
     }
-    for (const response of responses) response.destroy();
+    for (const response of responses.keys()) response.destroy();
     await worker?.close();
     await Promise.allSettled([...handlers]);
+    await Promise.all(responseClosures);
     worker = undefined;
     threads.clear();
     runs.clear();
