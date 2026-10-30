@@ -282,39 +282,35 @@ function createApplicationOwner<TRow extends MessageContent>(
     readVersion: number,
     order: number
   ): ThreadRow {
-    // Once a project has been emptied, accepted fresh rows also carry read
-    // order evidence, including rows never encountered in deletion batches.
-    if (emptyProjectEvidence.size && !projectEvidence.has(row.id))
+    // Resolve the row-level winner before consulting project-wide absence.
+    // Emptying p cannot erase newer evidence for q; q's own later absence can.
+    const project = projectEvidence.get(row.id);
+    const retained =
+      project && (project.version > readVersion || project.readOrder > order);
+    let projectVersion = readVersion;
+    if (retained) {
+      row = replaceProject(row, project.projectId);
+      projectVersion = project.version;
+    }
+    const emptyVersion =
+      row.projectId === undefined
+        ? undefined
+        : emptyProjectEvidence.get(row.projectId);
+    if (emptyVersion !== undefined && emptyVersion > projectVersion) {
+      row = replaceProject(row, undefined);
+      projectEvidence.set(row.id, {
+        version: emptyVersion,
+        projectId: undefined,
+        readOrder: 0,
+      });
+    } else if (!retained) {
+      // Retain accepted reads even before the first deletion, so a later
+      // absence fence can distinguish newer associations from old responses.
       projectEvidence.set(row.id, {
         version: readVersion,
         projectId: row.projectId,
         readOrder: order,
       });
-    const emptyVersion =
-      row.projectId === undefined
-        ? undefined
-        : emptyProjectEvidence.get(row.projectId);
-    if (emptyVersion !== undefined && emptyVersion > readVersion) {
-      row = replaceProject(row, undefined);
-      const previous = projectEvidence.get(row.id);
-      if (!previous || previous.version < emptyVersion)
-        projectEvidence.set(row.id, {
-          version: emptyVersion,
-          projectId: undefined,
-          readOrder: 0,
-        });
-    }
-    const project = projectEvidence.get(row.id);
-    if (project) {
-      if (project.version > readVersion || project.readOrder > order)
-        row = replaceProject(row, project.projectId);
-      else
-        projectEvidence.set(row.id, {
-          ...project,
-          version: readVersion,
-          projectId: row.projectId,
-          readOrder: order,
-        });
     }
     const confirmed = confirmedTitles.get(row.id);
     if (confirmed) {
