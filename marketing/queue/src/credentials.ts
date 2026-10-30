@@ -1,40 +1,15 @@
-// Structural copies of the marketing-channels credential shapes. Importing
-// them would make marketing-queue and marketing-channels (whose auth CLIs use
-// this package) circular; the dispatcher's createAdapter() call type-checks
-// the result against the real AdapterOptions.
-interface DevToCredentials {
-  apiKey: string;
-}
-interface LinkedInCredentials {
-  accessToken: string;
-  authorUrn: string;
-  expiresAt?: Date;
-}
-export interface AdapterOptions {
-  x?: {
-    credentials: {
-      clientId: string;
-      clientSecret: string;
-      accessToken: string;
-      refreshToken: string;
-      userHandle: string;
-    };
-    onTokensRotated?: (t: {
-      accessToken: string;
-      refreshToken: string;
-    }) => Promise<void>;
-  };
-  linkedin?: { credentials: LinkedInCredentials };
-  devto?: { credentials: DevToCredentials };
-}
-
+import type {
+  AdapterOptions,
+  DevToCredentials,
+  LinkedInCredentials,
+} from '@threadplane-internal/marketing-channels';
 import { seal, unseal } from './crypto.ts';
 import {
   getChannelCredentials,
   upsertChannelCredentials,
   type CredentialChannel,
 } from './repository.ts';
-import type { SqlTransaction } from './sql.ts';
+import type { SqlExecutor, SqlTransaction } from './sql.ts';
 
 type Env = Record<string, string | undefined>;
 
@@ -83,8 +58,14 @@ function requireEnv(env: Env, name: string): string {
   return value;
 }
 
+/**
+ * `ex` must be the root executor, never a transaction: X rotates its refresh
+ * token on every refresh, so the rotation hook has to commit on its own even
+ * if the surrounding post attempt later rolls back. Do not call this inside a
+ * dispatch transaction.
+ */
 export async function loadAdapterOptions(
-  ex: SqlTransaction,
+  ex: SqlExecutor,
   key: Buffer,
   env: Env
 ): Promise<AdapterOptions> {

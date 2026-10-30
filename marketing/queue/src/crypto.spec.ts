@@ -22,6 +22,20 @@ describe('seal/unseal', () => {
     expect(() => unseal(tampered, key)).toThrow();
   });
 
+  it('rejects a truncated tag', () => {
+    const [v, iv, tag, ct] = seal('secret', key).split('.');
+    const short = Buffer.from(tag, 'base64url').subarray(0, 4);
+    expect(() =>
+      unseal([v, iv, short.toString('base64url'), ct].join('.'), key)
+    ).toThrow(/format/u);
+  });
+
+  it('rejects an iv that is not 12 bytes', () => {
+    const [v, , tag, ct] = seal('secret', key).split('.');
+    const iv = randomBytes(16).toString('base64url');
+    expect(() => unseal([v, iv, tag, ct].join('.'), key)).toThrow(/format/u);
+  });
+
   it('rejects the wrong key and unknown versions', () => {
     expect(() => unseal(seal('s', key), randomBytes(32))).toThrow();
     expect(() => unseal('v2.a.b.c', key)).toThrow(/format/u);

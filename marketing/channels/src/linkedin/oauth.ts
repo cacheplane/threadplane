@@ -1,5 +1,5 @@
-// One-time OAuth 2.0 bootstrapper for the LinkedIn adapter.
-// Run via: npm run marketing:channels:linkedin:auth
+// One-time OAuth 2.0 flow for the LinkedIn adapter.
+// Run via: npm run marketing:channels:linkedin:auth (marketing/queue/src/cli/linkedin-auth.ts)
 //
 // LinkedIn access tokens last 60 days and self-serve apps get no refresh token,
 // so re-run this when the adapter reports the token has expired.
@@ -7,7 +7,6 @@
 import http from 'node:http';
 import crypto from 'node:crypto';
 import { exec } from 'node:child_process';
-import { prepareNeonWriter } from '@threadplane-internal/marketing-queue';
 
 const PORT = 8724;
 const REDIRECT_URI = `http://localhost:${PORT}/callback`;
@@ -16,11 +15,6 @@ const AUTHORIZE_URL = 'https://www.linkedin.com/oauth/v2/authorization';
 const TOKEN_URL = 'https://www.linkedin.com/oauth/v2/accessToken';
 const USERINFO_URL = 'https://api.linkedin.com/v2/userinfo';
 const TIMEOUT_MS = 5 * 60 * 1000;
-
-function fail(msg: string): never {
-  process.stderr.write(`✗ ${msg}\n`);
-  process.exit(1);
-}
 
 function b64url(buf: Buffer): string {
   return buf.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -38,17 +32,16 @@ function openInBrowser(url: string): void {
   });
 }
 
-async function main(): Promise<void> {
-  let writer: ReturnType<typeof prepareNeonWriter>;
-  try {
-    writer = prepareNeonWriter(process.argv.slice(2), process.env);
-  } catch (err) {
-    fail(err instanceof Error ? err.message : String(err));
-  }
+export async function runLinkedInOAuth(): Promise<{
+  accessToken: string;
+  authorUrn: string;
+  expiresAt: Date;
+  name?: string;
+}> {
   const clientId = process.env.LINKEDIN_CLIENT_ID;
   const clientSecret = process.env.LINKEDIN_CLIENT_SECRET;
   if (!clientId || !clientSecret) {
-    fail(
+    throw new Error(
       'LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET must be set in your environment.\n' +
         'Create an app at https://www.linkedin.com/developers/apps, add the "Share on LinkedIn" and\n' +
         '"Sign In with LinkedIn using OpenID Connect" products, add the redirect URL\n' +
@@ -123,7 +116,7 @@ async function main(): Promise<void> {
     }).toString(),
   });
   if (!tokenRes.ok) {
-    fail(`Token exchange failed: HTTP ${tokenRes.status} ${await tokenRes.text()}`);
+    throw new Error(`Token exchange failed: HTTP ${tokenRes.status} ${await tokenRes.text()}`);
   }
   const tokens = (await tokenRes.json()) as { access_token: string; expires_in: number };
 
@@ -131,35 +124,13 @@ async function main(): Promise<void> {
     headers: { Authorization: `Bearer ${tokens.access_token}` },
   });
   if (!meRes.ok) {
-    fail(`Failed to fetch /v2/userinfo: HTTP ${meRes.status}`);
+    throw new Error(`Failed to fetch /v2/userinfo: HTTP ${meRes.status}`);
   }
   const me = (await meRes.json()) as { sub: string; name?: string };
-  const expiresAtDate = new Date(Date.now() + tokens.expires_in * 1000);
-  const expiresAt = expiresAtDate.toISOString();
-
-  if (writer) {
-    const saved = await writer.write(
-      'linkedin',
-      {
-        accessToken: tokens.access_token,
-        authorUrn: `urn:li:person:${me.sub}`,
-      },
-      expiresAtDate,
-    );
-    if (!saved) fail('Aborted; nothing was written.');
-    process.stdout.write(
-      `\n✓ Stored LinkedIn token (sealed) in the ${writer.target} database. Expires ${expiresAt}.\n\n`,
-    );
-    process.exit(0);
-  }
-
-  process.stdout.write(
-    `\n✓ Authorized${me.name ? ` as ${me.name}` : ''}. Add these to .env:\n\n` +
-      `LINKEDIN_ACCESS_TOKEN=${tokens.access_token}\n` +
-      `LINKEDIN_AUTHOR_URN=urn:li:person:${me.sub}\n` +
-      `LINKEDIN_TOKEN_EXPIRES_AT=${expiresAt}\n\n`,
-  );
-  process.exit(0);
+  return {
+    accessToken: tokens.access_token,
+    authorUrn: `urn:li:person:${me.sub}`,
+    expiresAt: new Date(Date.now() + tokens.expires_in * 1000),
+    ...(me.name ? { name: me.name } : {}),
+  };
 }
-
-main().catch((err) => fail(err instanceof Error ? err.message : String(err)));

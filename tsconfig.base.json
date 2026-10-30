@@ -64,6 +64,7 @@
       "@threadplane/langgraph": ["libs/langgraph/src/public-api.ts"],
       "@threadplane-internal/marketing-assets": ["marketing/assets/src/index.ts"],
       "@threadplane-internal/marketing-channels": ["marketing/channels/src/index.ts"],
+      "@threadplane-internal/marketing-channels/oauth": ["marketing/channels/src/oauth.ts"],
       "@threadplane-internal/marketing-queue": ["marketing/queue/src/index.ts"],
       "@threadplane/render": ["libs/render/src/public-api.ts"],
       "@threadplane/telemetry": ["libs/telemetry/src/index.ts"],

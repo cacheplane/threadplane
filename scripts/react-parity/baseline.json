@@ -1,9 +1,10 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "a7644bb90cb7d2a911e602be5091b15a962e6588",
+  "baselineHead": "4ea25f2e0eb0e802b25011cb6ec1962582ac5b15",
   "sourceState": {
     "modified": [
-      "package-lock.json"
+      "package.json",
+      "tsconfig.base.json"
     ],
     "untracked": []
   },
@@ -2237,7 +2238,7 @@
       "id": "config:package.json",
       "kind": "config",
       "path": "package.json",
-      "sha256": "c18b97809871db57e3c11498cf3a6eba82755a62e31225afdc3f629ffa7451dc"
+      "sha256": "4dfbbe651020a287565af077393622e41d5cf58de8e273b36859e964ffd41e17"
     },
     {
       "id": "config:scripts/assemble-examples.ts",
@@ -2267,7 +2268,7 @@
       "id": "config:tsconfig.base.json",
       "kind": "config",
       "path": "tsconfig.base.json",
-      "sha256": "fef85f15cc13389982dc749ecffbf9e6864412d410190475cbcf10bfc077bbf0"
+      "sha256": "b224e24c89769f5b6cc7b4e8f9086baeb4a269d5d5a187b194b25c0dae83278f"
     },
     {
       "id": "doc:apps/website/content/docs/a2ui/getting-started/introduction.mdx",

@@ -7,6 +7,7 @@ type TestRow = Record<string, unknown>;
 
 function fakeExecutor(stored: Record<string, TestRow>) {
   const upserts: { channel: string; sealed: string; expiresAt: unknown }[] = [];
+  let transactionCalls = 0;
   const transaction: SqlTransaction = {
     async execute<Row extends Record<string, unknown>>(
       sql: string,
@@ -32,9 +33,12 @@ function fakeExecutor(stored: Record<string, TestRow>) {
   };
   const executor: SqlExecutor = {
     execute: transaction.execute.bind(transaction),
-    transaction: (operation) => operation(transaction),
+    transaction: (operation) => {
+      transactionCalls += 1;
+      return operation(transaction);
+    },
   };
-  return { executor, upserts };
+  return { executor, upserts, transactionCalls: () => transactionCalls };
 }
 
 const key = randomBytes(32);
@@ -53,7 +57,7 @@ const env = {
 
 describe('loadAdapterOptions', () => {
   it('builds X options and its rotation hook saves sealed tokens', async () => {
-    const { executor, upserts } = fakeExecutor({
+    const { executor, upserts, transactionCalls } = fakeExecutor({
       ...otherChannels,
       x: { sealed: seal(JSON.stringify({ accessToken: 'a1', refreshToken: 'r1' }), key), expires_at: null },
     });
@@ -67,6 +71,7 @@ describe('loadAdapterOptions', () => {
     });
     await options.x?.onTokensRotated?.({ accessToken: 'a2', refreshToken: 'r2' });
     expect(upserts).toHaveLength(1);
+    expect(transactionCalls()).toBe(0);
     expect(upserts[0].channel).toBe('x');
     expect(upserts[0].sealed).not.toContain('r2');
     expect(JSON.parse(unseal(upserts[0].sealed, key))).toEqual({
