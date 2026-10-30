@@ -2,10 +2,12 @@ import { composePlugins, withNx } from '@nx/next';
 import type { WithNxOptions } from '@nx/next/plugins/with-nx';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { resolveDocsBuildRevision } from './build-revision';
 
 const websiteAppDir = dirname(fileURLToPath(import.meta.url));
 
 export const nextConfig: WithNxOptions = {
+  env: { THREADPLANE_DOCS_BUILD_REVISION: resolveDocsBuildRevision(process.env) },
   // Use this to set Nx-specific options
   // See: https://nx.dev/recipes/next/next-config-setup
   nx: {},

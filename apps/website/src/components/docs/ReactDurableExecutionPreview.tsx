@@ -2,7 +2,28 @@ import type { ExampleCodeContext } from '../../lib/example-code';
 import { MdxRenderer } from './MdxRenderer';
 const source = `# React durable execution preview
 
-This experimental example uses native React chat components with the existing Python LangGraph durable execution graph. React, core, content, and the framework-neutral LangGraph candidates remain private source-build packages.
+A long answer may depend on several completed steps. Durable execution saves progress between those steps so a recoverable interruption does not require repeating all earlier work.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Resume saved work deliberately
+
+The example graph separates analysis, outline, and generation. Its checkpoints belong to the backend; React presents the observed progress and lets the application owner request recovery. Reconnecting to an existing run is different from submitting the same question again. Read-only inspection of the snapshot below starts neither operation.
+
+~~~tsx
+import type { LangGraphSession } from '@threadplane/langgraph';
+import { useAgent } from '@threadplane/react';
+
+export function SavedProgress({ session }: { session: LangGraphSession }) {
+  const snapshot = useAgent(session);
+  return <section aria-label="Observed progress">
+    <p>{snapshot.status}</p>
+    <pre>{JSON.stringify(snapshot.values, null, 2)}</pre>
+  </section>;
+}
+~~~
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Follow saved pipeline checkpoints
 

@@ -2,7 +2,15 @@ import type { ExampleCodeContext } from '../../lib/example-code';
 import { MdxRenderer } from './MdxRenderer';
 const source = `# React AG-UI JSON Render preview
 
-Ask for an airline operations dashboard, then filter its disruptions or change its layout. This experimental source-build example uses the existing Python agent and fixed demo data. React, core, content and the framework-neutral AG-UI candidate remain private packages.
+Let the agent choose a dashboard layout while React supplies the components and data bindings. A later state update can refresh the dashboard without replacing the layout already displayed.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Keep layout, data, and execution separate
+
+\`RenderSpec\` receives a specification, a registry, and optional state. The AG-UI session provides the observed backend data; the application validates the supported layout and passes those values to the renderer. The airline operations example uses fixed data to make the distinction visible: filtering disruptions changes the data, while choosing another layout changes the specification.
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Render the authored dashboard
 

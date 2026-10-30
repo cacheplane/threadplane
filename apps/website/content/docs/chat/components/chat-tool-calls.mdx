@@ -8,6 +8,12 @@ description: How the tool-calls example renders an aviation agent's calls in a s
 
 **Selector:** `chat-tool-calls`
 
+## Show the work behind an answer
+
+A traveler may see several lookups before receiving an itinerary. Each lookup has an identity, a name, arguments, and eventually a result or error. Keep that structured information with the assistant message that requested it so two calls to the same tool remain distinguishable.
+
+`ChatToolCallsComponent` observes and presents calls. The backend or client-tool coordinator executes them. A card becoming visible does not itself run the tool. See [Client tools](/docs/chat/guides/client-tools) when your application needs to implement the requested capability.
+
 ## What the demo does
 
 The Run tab shows a conversation on the left and a sidebar headed "Tool Calls" on the right, with an "Available Tools" list below it naming the three aviation tools the agent can call. One welcome suggestion, "Check a flight status", asks for the status of flight UA123.
@@ -30,7 +36,7 @@ The names bound here are the names the component groups by and labels its cards 
 
 ### The agent and tool loop
 
-`should_continue` looks at the last message and routes to the `tools` node whenever it carries tool calls, and the `tools` edge goes straight back to `agent`. That is the loop: the model calls a tool, `ToolNode` runs it, the result returns as a tool message, and the model gets another turn. A turn with no tool calls falls through to the title node instead.
+`should_continue` looks at the last message and routes to the `tools` node whenever it carries tool calls, and the `tools` edge goes straight back to `agent`. That is the loop: the model calls a tool, `ToolNode` runs it, the result returns as a tool message, and the model is invoked again within the same user turn. A model response with no tool calls falls through to the title node instead.
 
 <ExampleCode file="graph.py" region="tool-loop" title="graph.py — the agent and tool loop" />
 

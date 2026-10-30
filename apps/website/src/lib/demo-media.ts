@@ -64,13 +64,13 @@ export const AG_UI_CLIP: DemoClip = {
 };
 
 /**
- * Generative UI: the agent emits a json-render spec and the demo mounts it as
+ * Generative UI: the agent emits an A2UI surface and the demo mounts it as
  * real Angular components. Recorded by
  * `examples/chat/angular/e2e/record-render.record.ts`.
  */
 export const RENDER_CLIP: DemoClip = {
   caption:
-    'The agent emits a spec and your own components render it — this form is Angular, not a screenshot.',
+    'The agent emits an A2UI surface and the Angular chat renders an interactive contact form.',
   url: 'demo.threadplane.ai',
   videoMp4: `${DEMO_CDN}/render-demo.mp4`,
   videoWebm: `${DEMO_CDN}/render-demo.webm`,

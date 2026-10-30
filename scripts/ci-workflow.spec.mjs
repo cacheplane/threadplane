@@ -7,6 +7,41 @@ import { privateScaffoldProjects } from './react-parity/package-policy.mjs';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 
+it('binds immutable and public documentation audits to the actual build before recording deployment success', async () => {
+  const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+  const deploy = readJobBlock(workflow, 'deploy');
+  const names = ['Deploy immutable Website preview', 'Verify Website preview runtime embedding policy', 'Verify immutable Website documentation', 'Check this commit is still the tip before Website promotion', 'Promote verified Website artifact unchanged', 'Verify production Website documentation', 'Verify deployed website'];
+  const positions = names.map((name) => deploy.indexOf(`- name: ${name}\n`));
+  assert.ok(positions.every((position, index) => position >= 0 && (!index || position > positions[index - 1])));
+  assert.match(readNamedStep(deploy, names[0]), /THREADPLANE_DOCS_BUILD_REVISION: \$\{\{ github.sha \}\}/);
+  for (const [name, phase] of [[names[2], 'immutable'], [names[5], 'production']]) {
+    const step = readNamedStep(deploy, name);
+    assert.match(step, /npx nx run website:verify-docs-deployment --skip-nx-cache/);
+    assert.ok(step.includes(`DOCS_DEPLOYMENT_PHASE: ${phase}`));
+    assert.match(step, /DOCS_DEPLOYMENT_REVISION: \$\{\{ github.sha \}\}/);
+    assert.match(step, /DOCS_DEPLOYMENT_URL: \$\{\{ steps.deploy_website.outputs.preview_origin \}\}/);
+    assert.doesNotMatch(step, /continue-on-error/);
+  }
+  const artifacts = readNamedStep(deploy, 'Upload deployed documentation diagnostics');
+  assert.match(artifacts, /if: always\(\)/);
+  assert.match(artifacts, /dist\/docs-audit\/immutable/);
+  assert.match(artifacts, /dist\/docs-audit\/production/);
+});
+
+it('runs the local documentation audit on a production build and keeps remote targets uncached', async () => {
+  const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+  const production = readJobBlock(workflow, 'website-production-checks');
+  assert.ok(production.indexOf('- name: Public copy boundary (production build)') < production.indexOf('- name: Documentation learning and accessibility audit'));
+  assert.match(readNamedStep(production, 'Documentation learning and accessibility audit'), /website:docs-audit/);
+  const project = JSON.parse(await readFile('apps/website/project.json', 'utf8'));
+  for (const name of ['docs-audit', 'verify-docs-deployment']) {
+    assert.equal(project.targets[name].cache, false);
+    assert.deepEqual(project.targets[name].dependsOn, []);
+  }
+  assert.ok(project.targets.build.inputs.some((input) => input.env === 'THREADPLANE_DOCS_BUILD_REVISION'));
+  assert.ok(project.targets.build.inputs.some((input) => input.runtime === 'git rev-parse HEAD'));
+});
+
 const supportingScopes = {
   'scripts-tests': 'scripts_tests',
   website: 'website',

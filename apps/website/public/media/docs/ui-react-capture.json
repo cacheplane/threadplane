@@ -1,0 +1,177 @@
+{
+  "version": 1,
+  "id": "ui-react",
+  "demo": "ui",
+  "frontend": "react",
+  "recordedAt": "2026-10-30T18:44:55.345Z",
+  "sourceRevision": "c586a94bb20d9924058b9f6a067c709a159bd6b6",
+  "sourceTreeDirty": true,
+  "sourceKind": "authored-local-json",
+  "sourceDescription": "Actual framework renderer playing the existing authored JSON sample; no model or backend.",
+  "input": "Play the first authored sample, pause at its heading, then Finish.",
+  "viewport": {
+    "width": 640,
+    "height": 640
+  },
+  "theme": {
+    "mode": "light",
+    "mechanism": "native application stylesheet"
+  },
+  "edits": {
+    "trimStart": 0.497,
+    "trimEnd": 13.888,
+    "speed": 1
+  },
+  "phases": [
+    {
+      "time": 0,
+      "text": "Play the local JSON sample."
+    },
+    {
+      "time": 2.27,
+      "text": "Inspect the partial render."
+    },
+    {
+      "time": 5.39,
+      "text": "Inspect the complete render."
+    }
+  ],
+  "finalText": "React · Experimental\n\nRender Spec\n\nWatch a local JSON sample become a React view as its text arrives.\n\nSample\nHeading + Text\nCard + Badge\nNested Layout\nPlay\nFinish\nReset\nPlayback position\n\nComplete · 380 characters\n\nRender output\nWelcome to React Spec Rendering\n\nThis local JSON sample maps each element to a registered React view.\n\nStreaming JSON\n{\n  \"root\": \"root\",\n  \"elements\": {\n    \"root\": {\n      \"type\": \"Heading\",\n      \"props\": {\n        \"content\": \"Welcome to React Spec Rendering\"\n      },\n      \"children\": [\n        \"description\"\n      ]\n    },\n    \"description\": {\n      \"type\": \"Text\",\n      \"props\": {\n        \"content\": \"This local JSON sample maps each element to a registered React view.\"\n      }\n    }\n  }\n}",
+  "requests": [],
+  "sourceHashes": {
+    "apps/website/scripts/record-docs-media.mjs": "0367da587bebe9b23564d3c10f04851ec54a8a4c6bb15dbd0b962957405cabee",
+    "apps/website/scripts/encode-docs-media.mjs": "c290872256a41268974dcf232c590b3933363533197d4cb36c49817892125ed7",
+    "libs/example-layouts/src/lib/install-embedded-theme.ts": "43ac4509c68c7e5b07afea1100f12b1db30ab8273c99d7bf7c9bdcd479d9b6bf",
+    "cockpit/langgraph/streaming/angular/e2e/fixtures/streaming.json": "5ce36b2b40561fbc46ba0dd2cb73a71b794d2ab1ad9fad9dc03a34b4886cbf74",
+    "cockpit/langgraph/streaming/python/src/graph.py": "97db9510fc245cfa0c151404869f6a35dc285cb501250743d4daab7ace556bf2",
+    "cockpit/langgraph/persistence/angular/e2e/fixtures/persistence.json": "3094094800130ddae423e1744792677314a553ec5b4198107bed4d0bb60d02a3",
+    "cockpit/langgraph/persistence/python/src/graph.py": "b61c7846814b394d9fdc0cd412a0a8936bfa2bba21d84aab80b7eacad764d20d",
+    "cockpit/langgraph/client-tools/angular/e2e/fixtures/client-tools.json": "ccfae8ada335ffaf6a0eef56d4bc69045200a1a12f5ae3c0079b6b6987d13906",
+    "cockpit/langgraph/client-tools/python/src/graph.py": "f11ff38e2f0da2450d74596c55791fc06da9e3dcdbc8f8c09a070164a76d5de7",
+    "cockpit/render/spec-rendering/react/src/app.tsx": "49f7fb7e23fff263807806a68aa9aaf7876e8072e3bad875d7f3ba43c44adb89",
+    "cockpit/render/spec-rendering/react/src/main.tsx": "ad56e5021196f11b8975dba39e3e3e21f7856a8a5277ce9f7e0fbb5d1f8ed345",
+    "cockpit/render/spec-rendering/react/src/playback.ts": "ae13a57bdb327116d7ff621c33690849087a9bedf8623f1d0357aab0fc725c48",
+    "cockpit/render/spec-rendering/react/src/projection.ts": "15ecb72b6a84866ce0a0b412d8e28a09f314059b06f43610fa89adec8a61ee4d",
+    "cockpit/render/spec-rendering/react/src/specs.ts": "e41bb513685db874e7a7e56c48ec652b37ec46f58a2d94e548150518cc9ae337",
+    "cockpit/render/spec-rendering/react/src/styles.css": "1fe9054a6e9db15eb6a09f6f9e09689aa2d73b4beb75da74f461a7924b789287",
+    "cockpit/render/spec-rendering/react/src/views.tsx": "66e9723a04a527d47449ffb7fe821cd04c1c0ee1bae255a9c38a51950d59cb31"
+  },
+  "buildHashes": {
+    "dist/cockpit/render/spec-rendering/react/assets/index-BTYQKyMF.css": "9bd698071a1dbd4be3b5d38bef3697304e3cdeaa3110761ab2addadaa12c2caf",
+    "dist/cockpit/render/spec-rendering/react/assets/index-CX2jJnTa.js": "1aa3fdc3d05ab1aaaca5a87cc3888344018764faffb2534525525f251623f12c",
+    "dist/cockpit/render/spec-rendering/react/build-proof.json": "acfa67050c25dacdc0904bcb7dbc237b3921c30f7bd27b76d07fba2811877b13",
+    "dist/cockpit/render/spec-rendering/react/index.html": "064cf643037e9fc2acb2814ee8f37f9a3c7d9a8dd710da79e491f676a90c1e37"
+  },
+  "rawSha256": "0217741607df4c15eef8a96e296531d568bb778f2b405c002ff0d43c341e597d",
+  "reproduction": "node apps/website/scripts/record-docs-media.mjs ui react",
+  "duration": 13.36,
+  "captions": [
+    {
+      "from": 0,
+      "to": 2.27,
+      "text": "Play the local JSON sample."
+    },
+    {
+      "from": 2.27,
+      "to": 5.39,
+      "text": "Inspect the partial render."
+    },
+    {
+      "from": 5.39,
+      "to": 13.36,
+      "text": "Inspect the complete render."
+    }
+  ],
+  "ffmpeg": {
+    "version": "ffmpeg version 8.1.1 Copyright (c) 2000-2026 the FFmpeg developers",
+    "commands": [
+      [
+        "-ss",
+        "0.497",
+        "-i",
+        "<raw-capture.webm>",
+        "-t",
+        "13.391",
+        "-an",
+        "-vf",
+        "fps=25,format=yuv420p",
+        "-c:v",
+        "libx264",
+        "-crf",
+        "22",
+        "-preset",
+        "medium",
+        "-movflags",
+        "+faststart",
+        "<capture-directory>/encoded/ui-react.mp4"
+      ],
+      [
+        "-ss",
+        "0.497",
+        "-i",
+        "<raw-capture.webm>",
+        "-t",
+        "13.391",
+        "-an",
+        "-vf",
+        "fps=25,format=yuv420p",
+        "-c:v",
+        "libvpx-vp9",
+        "-crf",
+        "32",
+        "-b:v",
+        "0",
+        "-row-mt",
+        "1",
+        "-cpu-used",
+        "4",
+        "<capture-directory>/encoded/ui-react.webm"
+      ],
+      [
+        "-ss",
+        "11.36",
+        "-i",
+        "<capture-directory>/encoded/ui-react.mp4",
+        "-frames:v",
+        "1",
+        "<capture-directory>/encoded/ui-react-poster.png"
+      ],
+      [
+        "-i",
+        "<capture-directory>/encoded/ui-react.mp4",
+        "-f",
+        "null",
+        "-"
+      ],
+      [
+        "-i",
+        "<capture-directory>/encoded/ui-react.webm",
+        "-f",
+        "null",
+        "-"
+      ]
+    ]
+  },
+  "assets": {
+    "ui-react.mp4": {
+      "sha256": "3823ec042d16111b75c446fd298942dfbfeefbefe98bd550b7576fbc39cf8daf",
+      "bytes": 133249
+    },
+    "ui-react.webm": {
+      "sha256": "10db99355c5e03b0202713536798f435d710dc352fb9d1b124a6fa866e24c130",
+      "bytes": 122035
+    },
+    "ui-react.vtt": {
+      "sha256": "9d586191d77a4e4543b151181b29c98b62d5b6251da21f6e1756c623223ddbd3",
+      "bytes": 185
+    },
+    "ui-react-poster.png": {
+      "sha256": "ace96ab3e964103533876222ffc9b3a80f7cdcbd3c1ff383a814e9ac8752157c",
+      "bytes": 113246
+    },
+    "ui-react-transcript.txt": {
+      "sha256": "44d98945612f0eabbd8238a7e8dd120a25ae78812b399b973ac7fecef4b2ef49",
+      "bytes": 1131
+    }
+  }
+}

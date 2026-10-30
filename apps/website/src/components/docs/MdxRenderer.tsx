@@ -10,6 +10,7 @@ import { Pre } from './mdx/CodeBlock';
 import { FeatureChips } from './mdx/FeatureChips';
 import { mdxHeadingComponents } from './mdx/headings';
 import { ArchFlowDiagram } from './ArchFlowDiagram';
+import { DocsDemoVideo } from './DocsDemoVideo';
 import {
   StackDiagram,
   AgUiArchitecturePipeline,
@@ -18,6 +19,11 @@ import {
   RenderVsA2ui,
   MiddlewareHowItFits,
   TelemetryHowItFits,
+  ConversationArchitecture,
+  TurnSequence,
+  RunState,
+  ToolFlow,
+  PersistenceModel,
 } from './diagrams';
 import { mdxCompileOptions } from './mdx-options';
 import { createExampleCode } from './mdx/ExampleCode';
@@ -50,6 +56,7 @@ const mdxComponents = {
   CardGroup,
   CodeGroup,
   ArchFlowDiagram,
+  DocsDemoVideo,
   StackDiagram,
   AgUiArchitecturePipeline,
   A2uiMessageFlow,
@@ -57,6 +64,11 @@ const mdxComponents = {
   RenderVsA2ui,
   MiddlewareHowItFits,
   TelemetryHowItFits,
+  ConversationArchitecture,
+  TurnSequence,
+  RunState,
+  ToolFlow,
+  PersistenceModel,
   FeatureChips,
   pre: Pre,
   // Explicit width/height let the browser reserve the box before the file

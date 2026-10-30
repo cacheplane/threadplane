@@ -3,7 +3,15 @@ import type { ExampleCodeContext } from '../../lib/example-code';
 
 const source = `# React chat subagents preview
 
-This experimental example composes native React ToolObservation, MessageList, Markdown and ChatInput with the existing Python Chat Subagents graph. The React, core, content and neutral LangGraph candidates remain private packages built from source.
+Show specialist activity without blending every child answer into the main transcript. A trip planner can retain research observations while the root agent assembles the final itinerary.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Separate root history from local child observations
+
+The root messages and task tool results are durable conversation evidence. In this example, child response text is a separate local observation panel and is not reconstructed as saved child execution history. The application keeps those lifetimes explicit and uses native message and tool components to present each part. The source walkthrough explains which data can be restored and which disappears on reload.
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Inspect specialist requests and results
 

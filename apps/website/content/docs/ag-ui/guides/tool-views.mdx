@@ -24,7 +24,7 @@ Every key in that JSON object is a name the card declares as an input, which is 
 
 ### The graph runs the tool itself
 
-The agent node calls a model bound to the tool, and `route` sends a turn that produced a tool call to a `ToolNode` and everything else to the end. The edge from `tools` back to `agent` closes the loop, so the tool executes on the server and its result reaches the browser inside the same run.
+The agent node calls a model bound to the tool, and `route` sends a model response containing a tool call to a `ToolNode` and everything else to the end. The edge from `tools` back to `agent` closes the loop, so the tool executes on the server and its result reaches the browser inside the same run.
 
 <ExampleCode file="graph.py" region="graph" title="graph.py — the graph" />
 

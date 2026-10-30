@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { ExpandableDiagram } from './ExpandableDiagram';
 
 interface DiagramFrameProps {
   /**
@@ -12,6 +13,8 @@ interface DiagramFrameProps {
   /** Accessible one-sentence description of what the diagram shows. */
   label: string;
   caption?: string;
+  /** Complete reading order and relationships, available without interpreting SVG. */
+  description?: string;
   /**
    * Marketing pages render the same SVG larger; compact cards render it small with a bigger type
    * ramp. Compact compositions author at a ~320 viewBox with the compact type ramp (eyebrow 10 /
@@ -38,11 +41,11 @@ export function DiagramFrame({
   viewHeight,
   label,
   caption,
+  description,
   scale = 'docs',
   children,
 }: DiagramFrameProps) {
-  return (
-    <figure className="tp-diagram-figure" data-scale={scale}>
+  const diagram = (
       <svg
         className="tp-diagram-svg"
         viewBox={`0 0 ${viewWidth} ${viewHeight}`}
@@ -74,6 +77,13 @@ export function DiagramFrame({
         <rect width={viewWidth} height={viewHeight} rx="10" fill={`url(#${slug}-dots)`} />
         {children}
       </svg>
+  );
+  if (scale === 'docs') {
+    return <ExpandableDiagram label={label} caption={caption} description={description}>{diagram}</ExpandableDiagram>;
+  }
+  return (
+    <figure className="tp-diagram-figure" data-scale={scale}>
+      {diagram}
       {caption ? <figcaption className="tp-diagram-caption">{caption}</figcaption> : null}
     </figure>
   );

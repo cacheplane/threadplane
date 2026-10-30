@@ -2,7 +2,23 @@ import type { ExampleCodeContext } from '../../lib/example-code';
 import { MdxRenderer } from './MdxRenderer';
 const source = `# React AG-UI tool views preview
 
-Ask for a city's weather and watch an authored weather card appear alongside the conversation. This experimental source-build example uses native React components and the existing Python server tool. Readings are fixed demo data. React, core, content and the framework-neutral AG-UI candidate remain private packages.
+Display a weather lookup as an application component while the agent writes its answer. The server executes the weather tool; the browser observes its arguments and result and chooses the presentation.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Render a result without executing it
+
+\`ToolObservation\` accepts literal strings supplied by the application. It does not invoke a function or infer business success from a result. Associate the arguments and result by tool-call ID before passing them to a view, especially when the model calls the same tool more than once.
+
+~~~tsx
+import { ToolObservation } from '@threadplane/react/chat';
+
+export function WeatherResult({ location, result }: { location: string; result: string }) {
+  return <ToolObservation name="get_weather" argumentsText={location} resultText={result} />;
+}
+~~~
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Observe a server tool
 

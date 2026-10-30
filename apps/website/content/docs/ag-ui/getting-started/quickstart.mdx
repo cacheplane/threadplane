@@ -4,7 +4,7 @@ description: Bind the chat composition to an AG-UI backend in three steps: insta
 
 # Quick Start
 
-Bind `<chat>` from `@threadplane/chat` to an AG-UI backend in 5 minutes.
+Connect the trip planner UI to a backend that emits AG-UI events. The adapter translates those events into the same Angular `Agent` contract that `<chat>` reads; the backend remains responsible for executing its agent and tools.
 
 <Callout type="info" title="Prerequisites">
 Angular 20–22 project using a Node.js version supported by that Angular major. If you need setup help, see the [Installation](/docs/ag-ui/getting-started/installation) guide.
@@ -71,6 +71,14 @@ That is all. The `<chat>` composition handles streaming messages, tool calls, er
 
 </Step>
 </Steps>
+
+## Follow one request
+
+When the traveler sends a question, the adapter submits the conversation to the configured endpoint. Message events build the answer, tool events describe work, and state events update the observed application data. The terminal event tells the adapter that this run has finished; a message ending alone is not enough to establish that.
+
+<TurnSequence />
+
+AG-UI defines the event exchange. Durable threads, replay, and approval behavior depend on the backend integration. Read [Follow a conversation](/docs/langgraph/concepts/conversation-turns) for the shared vocabulary, then [Event mapping](/docs/ag-ui/reference/event-mapping) for the concrete protocol.
 
 ## What to read next
 

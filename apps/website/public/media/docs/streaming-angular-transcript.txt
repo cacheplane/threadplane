@@ -1,0 +1,15 @@
+streaming-angular
+
+Actual framework app and LangGraph runtime; existing aimock responses, 12-character chunks with 100ms fixture delay. No live provider requests.
+Footage runs at actual speed; initial page loading is trimmed. No narration.
+
+Input: Tell me one quick fact about Angular signals in two sentences.
+
+00:00:00.000 Send a message.
+00:00:03.822 Read the arriving response.
+00:00:10.227 The response is complete.
+
+Final visible result:
+Tell me one quick fact about Angular signals in two sentences.
+
+Angular signals are a reactive primitive (signal, computed, effect) that track dependencies to provide fine-grained reactivity and more efficient change detection. They let you update state synchronously via set()/update() and ensure only consumers that read an affected signal are re‑evaluated.

@@ -1,0 +1,24 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "composite": false,
+    "declarationMap": false,
+    "declaration": false,
+    "ignoreDeprecations": "6.0",
+    "noEmit": true,
+    "types": ["node"]
+  },
+  "include": [
+    "build-revision.ts",
+    "scripts/docs-audit-checks.ts",
+    "scripts/docs-audit-evidence.ts",
+    "scripts/docs-deployment.ts",
+    "scripts/docs-diagram-inventory.ts",
+    "scripts/docs-protected-request.ts",
+    "scripts/docs-protected-request.browser-test.ts",
+    "scripts/run-docs-audit.ts",
+    "scripts/verify-docs-deployment.ts"
+  ],
+  "exclude": [],
+  "references": []
+}

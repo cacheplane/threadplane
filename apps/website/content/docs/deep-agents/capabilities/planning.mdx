@@ -43,7 +43,7 @@ batch several completions into one call, and do not call `write_todos` in
 parallel with itself.
 ```
 
-<Callout type="warning" title="One write_todos call per model turn">
+<Callout type="warning" title="One write_todos call per model response">
 The tool replaces the entire list, so two calls in the same turn would be ambiguous about which one wins. `TodoListMiddleware` checks the assistant message after every model call and, when it finds more than one `write_todos` call, answers all of them with an error instead of applying any of them. The prompt asking for one transition at a time keeps the run away from that path.
 </Callout>
 

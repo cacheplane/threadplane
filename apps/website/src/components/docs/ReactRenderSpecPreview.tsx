@@ -3,7 +3,33 @@ import { MdxRenderer } from './MdxRenderer';
 
 const source = `# React Render Spec preview
 
-Watch three authored JSON samples become React views as their text arrives. This experimental source-build example uses the installed **@threadplane/react/render** RenderSpec component and a local partial JSON parser.
+<DocsDemoVideo demo="ui" frontend="react" />
+
+Describe a small interface as JSON and render it with your own React components. The specification supplies names, props, and child relationships; the registry supplies executable code.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Keep the registry outside the specification
+
+\`RenderSpec\` takes plain specification data and a stable component map. The view receives resolved \`props\` and \`children\`; a container renders those children where they belong. This complete local example needs no agent. In the trip planner, the same boundary lets a backend describe an itinerary without shipping JavaScript.
+
+~~~tsx
+import { RenderSpec, type ReactRenderRegistry, type RenderSpecData } from '@threadplane/react/render';
+
+const registry: ReactRenderRegistry = {
+  Text: ({ props }) => <p>{String(props['text'] ?? '')}</p>,
+};
+const spec: RenderSpecData = {
+  root: 'summary',
+  elements: { summary: { type: 'Text', props: { text: 'Weekend in Portland' } } },
+};
+
+export function TripSummary() {
+  return <RenderSpec spec={spec} registry={registry} />;
+}
+~~~
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Play a local sample
 

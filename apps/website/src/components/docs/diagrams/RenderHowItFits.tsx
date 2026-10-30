@@ -18,6 +18,7 @@ export function RenderHowItFits() {
       viewWidth={640}
       viewHeight={280}
       label="Pipeline: a JSON spec flows into @threadplane/render, which renders it into your Angular components."
+      description="An agent or your application produces a JSON specification. @threadplane/render resolves it using your component registry, state store, functions and event handlers. Bindings pass values into trusted Angular components; component events call the handlers your application registered. The specification selects from that registry rather than executing arbitrary generated component code."
     >
       <DiagramNode
         x={170}

@@ -3,7 +3,15 @@ import type { ExampleCodeContext } from '../../lib/example-code';
 
 const source = `# React Deep Agents Subagents preview
 
-This experimental example composes native React chat components with parent task cards and separate child response observations. Angular remains the default on this canonical guide. Both frontends use the same Python graph, Subagents prompt and shared FREE runtime. The React, core, content and native LangGraph candidates are private packages built from source.
+Let an orchestrator delegate focused work while the user keeps one conversation. Specialist observations help explain progress, but the root agent still owns the final response.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Follow the dispatched task identity
+
+The application associates a specialist with its actual dispatch and observes its messages and tool activity separately from the root. Keep the root result, child observations, and saved history distinct; similar names or adjacent events do not establish a parent relationship. The complete sources below show that attribution alongside the React presentation.
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Start an aviation brief
 

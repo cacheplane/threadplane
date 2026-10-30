@@ -3,7 +3,15 @@ import type { ExampleCodeContext } from '../../lib/example-code';
 
 const source = `# React chat interrupts preview
 
-This experimental example composes native React ApprovalCard, MessageList, Markdown and ChatInput with the existing Python Chat Interrupts graph. The React, core, content and neutral LangGraph candidates remain private packages built from source.
+Place a booking decision beside the conversation that requested it. The card shows what the person may choose; the application retains the pending interrupt and controls whether a choice is still valid.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Match the decision before dispatching
+
+An approval action must answer the current pause, not a previous card with similar wording. The application holds the observed interrupt and checkpoint, supplies explicit callbacks to \`ApprovalCard\`, and confirms the resumed conversation before enabling another turn. The source below shows the fictional flight decision and its owner separately.
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Review a demo booking
 

@@ -3,7 +3,38 @@ import type { ExampleCodeContext } from '../../lib/example-code';
 
 const source = `# React persistence preview
 
-This experimental example uses native React chat components with the existing Python LangGraph persistence graph. Conversation history is saved by the server's checkpointer. React, core, content, and the framework-neutral LangGraph candidates remain private source-build packages.
+<DocsDemoVideo demo="persistence" frontend="react" />
+
+Keep the Portland itinerary when the traveler opens another conversation. Persistence means the backend retains the conversation and the application knows which thread to load; a local picker alone does not provide both.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Identify, load, then render
+
+A session belongs to one confirmed thread. Selecting a saved conversation creates a session for that identity and reads its history before enabling another submission. The picker stores IDs, not copies of the server transcript. The small lookup below illustrates the boundary: this read restores history without sending a new user message. The complete application below also handles cancellation, stale selections, and failures.
+
+<PersistenceModel />
+
+~~~tsx
+import { createSession } from '@threadplane/langgraph';
+
+export async function openConversation(apiUrl: string, confirmedThreadId: string) {
+  const session = createSession({ apiUrl, assistantId: 'persistence', threadId: confirmedThreadId });
+  if (!session.load) {
+    await session.dispose();
+    throw new Error('History loading is unavailable.');
+  }
+  try {
+    await session.load();
+    return session; // The application owns this session and its eventual disposal.
+  } catch (error) {
+    await session.dispose();
+    throw error;
+  }
+}
+~~~
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Create and revisit conversations
 
@@ -36,7 +67,7 @@ npx nx build cockpit-langgraph-persistence-react
 npx nx e2e cockpit-langgraph-persistence-react
 ~~~
 
-The isolated build installs local candidate packages and checks strict declarations and emitted browser modules. Browser tests use real SDK HTTP and SSE against a local fixture. Docs, Code, and Run select this same React implementation. Public React previews cover streaming, interrupts, memory, client tools, persistence, durable execution, subgraphs, time travel, and deployment runtime; AG-UI Streaming, Interrupts, Tool Views and JSON Render and Subagents also have React previews on Event Mapping and their canonical guides; other topics remain pending.
+The isolated build installs local candidate packages and checks strict declarations and emitted browser modules. Browser tests use real SDK HTTP and SSE against a local fixture. Docs, Code, and Run select this same React implementation.
 `;
 
 export function ReactPersistencePreview({

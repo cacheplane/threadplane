@@ -129,6 +129,11 @@ export const docsConfig: DocsLibrary[] = [
         color: 'red',
         pages: [
           {
+            title: 'Conversation Turns',
+            slug: 'conversation-turns',
+            section: 'concepts',
+          },
+          {
             title: 'Agent Contract',
             slug: 'agent-contract',
             section: 'concepts',
@@ -432,6 +437,14 @@ export const docsConfig: DocsLibrary[] = [
             slug: 'parse-tree-store',
             section: 'api',
           },
+        ],
+      },
+      {
+        title: 'Migrations',
+        id: 'migrations',
+        color: 'blue',
+        pages: [
+          { title: 'Upgrade an existing application', slug: 'upgrading', section: 'migrations' },
         ],
       },
     ],

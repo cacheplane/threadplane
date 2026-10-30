@@ -1,0 +1,20 @@
+persistence-angular
+
+Actual framework app and LangGraph runtime; existing aimock responses, 12-character chunks with 100ms fixture delay. No live provider requests.
+Footage runs at actual speed; initial page loading is trimmed. No narration.
+
+Input: Hello
+
+00:00:00.000 Send a message.
+00:00:01.938 Read the arriving response.
+00:00:06.386 Start a new conversation.
+00:00:08.914 Select the saved conversation.
+
+Final visible result:
+Hello
+
+Hi — how can I help you today?
+
+THREADS
+Thread 1
++ New Thread

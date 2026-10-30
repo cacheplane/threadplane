@@ -3,7 +3,29 @@ import type { ExampleCodeContext } from '../../lib/example-code';
 
 const source = `# React chat theming preview
 
-This experimental example composes native React MessageList, Markdown and ChatInput with the existing c-theming Python aviation assistant. React, core, content and neutral LangGraph candidates remain private source-build packages.
+Give the same conversation a different visual theme without replacing its session. Colors, typography, and surfaces belong to presentation state, so changing a palette should preserve the draft and answer.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Scope the theme to the conversation root
+
+The example applies one of four classes around the native chat components. Those classes supply CSS tokens while \`MessageList\`, Markdown, and \`ChatInput\` continue reading the same owner. Keep the theme selection outside the session creation path; the code below makes a palette change a normal local React update.
+
+~~~tsx
+import { useState, type ReactNode } from 'react';
+
+export function ThemeScope({ children }: { children: ReactNode }) {
+  const [theme, setTheme] = useState('dark');
+  return <section className={\`trip-theme-\${theme}\`}>
+    <select aria-label="Theme" value={theme} onChange={(event) => setTheme(event.target.value)}>
+      <option value="dark">Dark</option><option value="light">Light</option>
+    </select>
+    {children}
+  </section>;
+}
+~~~
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Four local palettes
 

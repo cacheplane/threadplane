@@ -3,7 +3,23 @@ import { MdxRenderer } from './MdxRenderer';
 
 const source = `# React Computed Functions preview
 
-Watch three authored JSON samples transform text, multiply numbers and format dates. The experimental native **@threadplane/react/render** RenderSpec resolves the samples’ computed expressions with four pure functions supplied by the React caller. Everything runs locally and makes no agent requests.
+Transform values in a generated layout using a small set of functions your application provides. A specification can name a calculation without carrying executable code.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Supply pure synchronous functions
+
+The \`functions\` prop maps names to \`RenderComputedFunction\` implementations. They receive owned, frozen arguments and return plain render values. Keep them pure: React may evaluate them again during rendering. Network requests and state writes belong in explicit application actions, not a computed expression.
+
+~~~tsx
+import type { ReactRenderFunctions } from '@threadplane/react/render';
+
+export const tripFunctions: ReactRenderFunctions = {
+  uppercase: ({ text }) => typeof text === 'string' ? text.toUpperCase() : '',
+};
+~~~
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Play a local sample
 

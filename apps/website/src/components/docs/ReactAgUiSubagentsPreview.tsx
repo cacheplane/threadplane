@@ -2,7 +2,15 @@ import type { ExampleCodeContext } from '../../lib/example-code';
 import { MdxRenderer } from './MdxRenderer';
 const source = `# React AG-UI Subagents preview
 
-Plan a fictional trip with the existing Python agent. Research, booking and itinerary specialists share read-only progress under the main agent’s task. This experimental source-build example uses private React, core, content and framework-neutral AG-UI packages.
+Follow research, booking, and itinerary specialists inside one trip-planning conversation. Their progress belongs beneath the parent task that requested the work.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Use explicit parent attribution
+
+AG-UI child events carry their relationship to parent work. The application preserves that association when it presents text and tool observations. Do not match a child by its label or arrival order: parallel specialists can share names and complete in either order. The complete example below waits for the root turn and its relevant child work before permitting a follow-up.
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Follow the specialists
 

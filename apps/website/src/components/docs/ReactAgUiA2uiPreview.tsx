@@ -3,7 +3,15 @@ import type { ExampleCodeContext } from '../../lib/example-code';
 
 const source = `# React AG-UI A2UI preview
 
-Request a flight form, edit its route, date, passenger count and fare, then choose **Search flights**, **Select**, and **Modify search**. This experimental React preview uses the native AG-UI Session and the existing Python AG-UI A2UI graph. It makes no booking or payment. Angular remains the default on this guide.
+Turn a flight request into a form the traveler can edit. A2UI describes the surface and its data; the application renders an allowed catalog and sends explicit user actions back to the backend.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Keep the received surface separate from edits
+
+The server sends a surface description and data-model updates. React retains the received surface, while form controls hold the traveler’s current edits. Search, Select, and Modify send intentional actions; typing does not start another agent run. The example admits a fixed flight-form profile rather than every possible A2UI component.
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Start a conversation
 

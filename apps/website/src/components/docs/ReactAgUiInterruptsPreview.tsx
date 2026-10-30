@@ -2,7 +2,17 @@ import type { ExampleCodeContext } from '../../lib/example-code';
 import { MdxRenderer } from './MdxRenderer';
 const source = `# React AG-UI interrupts preview
 
-Draft a fictional refund, review the amount, and approve, edit or cancel it. This experimental source-build example uses the native React approval card and the existing Python refund graph. It issues a fake refund identifier; no real payment is made. The React, core, content and framework-neutral AG-UI candidate packages remain private.
+Let a person review a fictional refund before the backend continues. AG-UI carries the pending interrupt; the application matches that pause and provides the decision controls.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## An action callback is not a resume protocol
+
+\`ApprovalCard\` is a presentation component. The application translates its callbacks into the resume shape required by the current backend, including the observed interrupt identity. Keep the amount and decision tied to that pending pause, and wait for the resumed run before reporting completion. The example below uses a refund rather than the trip-planner domain to make approve, edit, and cancel easy to compare.
+
+<RunState />
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Review a refund
 

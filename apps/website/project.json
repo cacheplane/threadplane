@@ -41,7 +41,13 @@
           "outputPath": "dist/apps/website"
         }
       },
-      "inputs": ["default", "deploymentConfig", "^default"]
+      "inputs": [
+        "default",
+        "deploymentConfig",
+        "^default",
+        { "env": "THREADPLANE_DOCS_BUILD_REVISION" },
+        { "runtime": "git rev-parse HEAD" }
+      ]
     },
     "serve": {
       "executor": "@nx/next:server",
@@ -245,6 +251,27 @@
       "options": {
         "config": "apps/website/deployed.playwright.config.ts",
         "skipInstall": true
+      }
+    },
+    "docs-audit": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [],
+      "options": {
+        "commands": [
+          "tsc --project apps/website/tsconfig.docs-audit.json",
+          "node --import tsx --test apps/website/scripts/docs-protected-request.browser-test.ts",
+          "tsx apps/website/scripts/run-docs-audit.ts"
+        ],
+        "parallel": false
+      }
+    },
+    "verify-docs-deployment": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [],
+      "options": {
+        "command": "tsx apps/website/scripts/verify-docs-deployment.ts"
       }
     },
     "e2e": {

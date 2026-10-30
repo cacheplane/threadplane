@@ -5,7 +5,7 @@ description: What the Threadplane LangGraph middleware does, the TypeScript and 
 
 # Introduction
 
-Threadplane publishes middleware for backend graphs that need browser-executed client tools. The browser declares tools, the model can call those tools, and the backend routes client-tool-only turns back to the browser for execution.
+Threadplane publishes middleware for backend graphs that need browser-executed client tools. The browser declares tools, the model can call those tools, and the backend routes responses containing only client tool calls back to the browser for execution.
 
 There are two package surfaces:
 
@@ -44,7 +44,7 @@ The catalog is read from `state.tools` first. If that channel is absent or empty
 4. The router routes client-only tool calls to `END`.
 5. The browser executes the local tool and resumes the graph with a `ToolMessage`.
 
-If a turn mixes server tool calls and client tool calls, server tools win the first route. The server tool node runs first, and the client call can surface on a later turn.
+If one model response mixes server tool calls and client tool calls, server tools win the first route. The server tool node runs first, and client tools can be requested again in a later model response. These model calls can belong to the same user turn.
 
 ## TypeScript public surface
 

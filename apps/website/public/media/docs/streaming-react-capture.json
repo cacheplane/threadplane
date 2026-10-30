@@ -1,0 +1,188 @@
+{
+  "version": 1,
+  "id": "streaming-react",
+  "demo": "streaming",
+  "frontend": "react",
+  "recordedAt": "2026-10-30T18:32:45.115Z",
+  "sourceRevision": "c586a94bb20d9924058b9f6a067c709a159bd6b6",
+  "sourceKind": "fixture-backed-langgraph",
+  "sourceDescription": "Actual framework app and LangGraph runtime; existing aimock responses, 12-character chunks with 100ms fixture delay. No live provider requests.",
+  "input": "Tell me one quick fact about Angular signals in two sentences.",
+  "viewport": {
+    "width": 640,
+    "height": 640
+  },
+  "theme": {
+    "mode": "light",
+    "mechanism": "native application stylesheet"
+  },
+  "edits": {
+    "trimStart": 0.346,
+    "trimEnd": 16.111,
+    "speed": 1
+  },
+  "phases": [
+    {
+      "time": 0,
+      "text": "Send a message."
+    },
+    {
+      "time": 3.4299999999999997,
+      "text": "Read the arriving response."
+    },
+    {
+      "time": 10.76,
+      "text": "The response is complete."
+    }
+  ],
+  "finalText": "React \u00b7 Experimental\n\nLangGraph streaming\nNew conversation\n\nWatch an answer arrive as the agent writes it.\n\nUSER\n\nTell me one quick fact about Angular signals in two sentences.\n\nASSISTANT\n\nAngular signals are a reactive primitive (signal, computed, effect) that track dependencies to provide fine-grained reactivity and more efficient change detection. They let you update state synchronously via set()/update() and ensure only consumers that read an affected signal are re\u2011evaluated.\n\nMessage\nSend\n\nResponse complete.",
+  "requests": [
+    {
+      "method": "POST",
+      "path": "/api/threads"
+    },
+    {
+      "method": "POST",
+      "path": "/api/threads/ba6020b4-33de-46ba-a2e6-2463841292ab/runs/stream"
+    },
+    {
+      "method": "GET",
+      "path": "/api/threads/ba6020b4-33de-46ba-a2e6-2463841292ab/runs/01a18e15-c01c-71d2-b211-8d26331b80f4"
+    }
+  ],
+  "sourceHashes": {
+    "apps/website/scripts/record-docs-media.mjs": "66da48b538efb967f75ec92f98b1dfe91c7de9fe7b1e7e0a4d27b3b8ce47657c",
+    "apps/website/scripts/encode-docs-media.mjs": "c290872256a41268974dcf232c590b3933363533197d4cb36c49817892125ed7",
+    "libs/example-layouts/src/lib/install-embedded-theme.ts": "43ac4509c68c7e5b07afea1100f12b1db30ab8273c99d7bf7c9bdcd479d9b6bf",
+    "cockpit/langgraph/streaming/angular/e2e/fixtures/streaming.json": "5ce36b2b40561fbc46ba0dd2cb73a71b794d2ab1ad9fad9dc03a34b4886cbf74",
+    "cockpit/langgraph/streaming/python/src/graph.py": "97db9510fc245cfa0c151404869f6a35dc285cb501250743d4daab7ace556bf2",
+    "cockpit/langgraph/persistence/angular/e2e/fixtures/persistence.json": "3094094800130ddae423e1744792677314a553ec5b4198107bed4d0bb60d02a3",
+    "cockpit/langgraph/persistence/python/src/graph.py": "b61c7846814b394d9fdc0cd412a0a8936bfa2bba21d84aab80b7eacad764d20d",
+    "cockpit/langgraph/client-tools/angular/e2e/fixtures/client-tools.json": "ccfae8ada335ffaf6a0eef56d4bc69045200a1a12f5ae3c0079b6b6987d13906",
+    "cockpit/langgraph/client-tools/python/src/graph.py": "f11ff38e2f0da2450d74596c55791fc06da9e3dcdbc8f8c09a070164a76d5de7",
+    "cockpit/langgraph/streaming/react/src/app.tsx": "e1c1b18aeb41f0fca445881f0ea85a75eda5783dfd7d852a23adc41be02bc96a",
+    "cockpit/langgraph/streaming/react/src/application.ts": "4d8c7816e0b8657af64b8babdb89ad2c355f7ba0956c1b5d3c6c24732d2e19b3",
+    "cockpit/langgraph/streaming/react/src/connection.ts": "be41c9b0d13c9fa3fc4e03ada665710eb96fdf2e551be92cc19980de4bca7761",
+    "cockpit/langgraph/streaming/react/src/main.tsx": "3ad32814cf143d245002e561418a7a60d701e25727382ad747f9f8ebe1b04b33",
+    "cockpit/langgraph/streaming/react/src/styles.css": "7a480680be7236a0246e1eb064d4f8ef53b00504e040d6cfca43050fce9321ba"
+  },
+  "buildHashes": {
+    "dist/cockpit/langgraph/streaming/react/assets/index-CUc9Sghh.js": "420eca333a22731673347a15911ff16cce11668630a4553658790bf3955873ad",
+    "dist/cockpit/langgraph/streaming/react/assets/index-wpsURfOb.css": "fcd2c3582578c5ae790d99e388ebd9989b84ffad7b6f20cf5cad0e40e1a4a59e",
+    "dist/cockpit/langgraph/streaming/react/build-proof.json": "ea5230cf2deae748068b720a6c6495ed256043486fc91b412f3294ce0c340ea6",
+    "dist/cockpit/langgraph/streaming/react/index.html": "11a3ba7eb65d2dc118a84de75e66cf0e8dda8fefdcd3c7c51e02871f9e3501dd"
+  },
+  "rawSha256": "4dc5f89f778ca78f4b584326bc5c43af0088a9714dac58f6a07d94e4e1a8dd23",
+  "reproduction": "node apps/website/scripts/record-docs-media.mjs streaming react",
+  "duration": 15.76,
+  "captions": [
+    {
+      "from": 0,
+      "to": 3.43,
+      "text": "Send a message."
+    },
+    {
+      "from": 3.43,
+      "to": 10.76,
+      "text": "Read the arriving response."
+    },
+    {
+      "from": 10.76,
+      "to": 15.76,
+      "text": "The response is complete."
+    }
+  ],
+  "ffmpeg": {
+    "version": "ffmpeg version 8.1.1 Copyright (c) 2000-2026 the FFmpeg developers",
+    "commands": [
+      [
+        "-ss",
+        "0.346",
+        "-i",
+        "<raw-capture.webm>",
+        "-t",
+        "15.765",
+        "-an",
+        "-vf",
+        "fps=25,format=yuv420p",
+        "-c:v",
+        "libx264",
+        "-crf",
+        "22",
+        "-preset",
+        "medium",
+        "-movflags",
+        "+faststart",
+        "<capture-directory>/encoded/streaming-react.mp4"
+      ],
+      [
+        "-ss",
+        "0.346",
+        "-i",
+        "<raw-capture.webm>",
+        "-t",
+        "15.765",
+        "-an",
+        "-vf",
+        "fps=25,format=yuv420p",
+        "-c:v",
+        "libvpx-vp9",
+        "-crf",
+        "32",
+        "-b:v",
+        "0",
+        "-row-mt",
+        "1",
+        "-cpu-used",
+        "4",
+        "<capture-directory>/encoded/streaming-react.webm"
+      ],
+      [
+        "-ss",
+        "13.76",
+        "-i",
+        "<capture-directory>/encoded/streaming-react.mp4",
+        "-frames:v",
+        "1",
+        "<capture-directory>/encoded/streaming-react-poster.png"
+      ],
+      [
+        "-i",
+        "<capture-directory>/encoded/streaming-react.mp4",
+        "-f",
+        "null",
+        "-"
+      ],
+      [
+        "-i",
+        "<capture-directory>/encoded/streaming-react.webm",
+        "-f",
+        "null",
+        "-"
+      ]
+    ]
+  },
+  "assets": {
+    "streaming-react.mp4": {
+      "sha256": "8d0ce3e7af166c720222221258ce9e8dabb6a08c5d268fc9acb951594ee3296c",
+      "bytes": 138945
+    },
+    "streaming-react.webm": {
+      "sha256": "085b56e13ba75ce433c33836b7be57639b3d6dca265182ed2668f7aabb96b518",
+      "bytes": 183886
+    },
+    "streaming-react.vtt": {
+      "sha256": "9123f30f0aaa11f0422e231ceb50ee022bd313fe3dbffc6b74234434252fd19d",
+      "bytes": 170
+    },
+    "streaming-react-poster.png": {
+      "sha256": "41bd89bd8b46720b9e0ca91342c73fb8b447db629f0ff80b019c558f142dfc52",
+      "bytes": 155881
+    },
+    "streaming-react-transcript.txt": {
+      "sha256": "7b639fce5ae55ad9d29bd37316aea3c1e194ca91847d896e214451b8b3078769",
+      "bytes": 964
+    }
+  },
+  "sourceTreeDirty": true
+}

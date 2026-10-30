@@ -1,0 +1,59 @@
+tools-react
+
+Actual framework app and LangGraph runtime; existing aimock responses, 12-character chunks with 100ms fixture delay. No live provider requests.
+Footage runs at actual speed; initial page loading is trimmed. No narration.
+
+Input: What's the weather in San Francisco?
+
+00:00:00.000 Send a message.
+00:00:03.116 The browser runs the weather tool.
+00:00:09.721 The returned result completes the turn.
+
+Final visible result:
+React · Experimental
+
+LangGraph client tools
+New conversation
+
+Try simulated weather, a slow status check, a weather panel or snapshot, and a fictional booking decision. These browser tools use authored data; no real weather service or booking is contacted.
+
+USER
+
+What's the weather in San Francisco?
+
+ASSISTANT
+
+get_weather
+Arguments
+{
+  "location": "San Francisco"
+}
+Result
+{
+  "location": "San Francisco",
+  "temperatureF": 68,
+  "conditions": "Sunny",
+  "humidity": 55,
+  "windMph": 8
+}
+
+TOOL
+
+{"location":"San Francisco","temperatureF":68,"conditions":"Sunny","humidity":55,"windMph":8}
+
+ASSISTANT
+
+It's 68°F and sunny in San Francisco right now.
+
+Weather panels
+
+No weather panels yet.
+
+Booking decisions
+
+No booking decisions yet.
+
+Message
+Send
+
+Response complete.

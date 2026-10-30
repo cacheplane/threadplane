@@ -2,7 +2,17 @@ import type { ExampleCodeContext } from '../../lib/example-code';
 import { MdxRenderer } from './MdxRenderer';
 const source = `# React AG-UI client tools preview
 
-Five browser tools demonstrate simulated weather, a cancellable status check, and an explicit fictional booking decision. This experimental source-build preview uses private React, core, content, and framework-neutral AG-UI candidate packages. These native APIs are not published npm packages. Angular continues to use the same canonical Python backend, stock model, and prompt.
+Allow an AG-UI agent to request browser capabilities, including simulated weather and a person’s booking decision. The browser supplies results that the backend can use in the same user turn.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## A client tool is a request and a result
+
+The native session owns the declared function catalog and continuation requests. The application owns the handler implementation and any decision UI. A weather result can continue the model; a terminal snapshot can finish locally and travel with the next explicit user request. A booking card resolves a browser function promise here, which is different from an AG-UI native interrupt resume.
+
+<ToolFlow />
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Execute a typed browser catalog
 

@@ -3,7 +3,34 @@ import { MdxRenderer } from './MdxRenderer';
 
 const source = `# React State Management preview
 
-Edit caller-owned state and see native **RenderSpec** bindings update immediately. This experimental local example uses the installed **@threadplane/react/render** component with three authored JSON samples.
+Update a rendered view by changing its data, without replacing the layout. State bindings let a specification refer to values such as the traveler’s name or selected preference.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Let React own editable values
+
+\`RenderSpec\` reads the \`state\` prop; it does not become the owner of your form. Update local React state in response to a control, then pass the next object to the renderer. A \`$state\` expression names the value to read. The local example below makes that relationship visible without a backend or persistence layer.
+
+~~~tsx
+import { useState } from 'react';
+import { RenderSpec, type ReactRenderRegistry, type RenderSpecData } from '@threadplane/react/render';
+
+const registry: ReactRenderRegistry = { Text: ({ props }) => <p>{String(props['text'] ?? '')}</p> };
+const spec: RenderSpecData = {
+  root: 'destination',
+  elements: { destination: { type: 'Text', props: { text: { $state: '/destination' } } } },
+};
+
+export function DestinationPreview() {
+  const [destination, setDestination] = useState('Portland');
+  return <>
+    <input aria-label="Destination" value={destination} onChange={(event) => setDestination(event.target.value)} />
+    <RenderSpec spec={spec} registry={registry} state={{ destination }} />
+  </>;
+}
+~~~
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Edit local state
 

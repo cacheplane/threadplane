@@ -1,0 +1,16 @@
+tools-angular
+
+Actual framework app and LangGraph runtime; existing aimock responses, 12-character chunks with 100ms fixture delay. No live provider requests.
+Footage runs at actual speed; initial page loading is trimmed. No narration.
+
+Input: What's the weather in San Francisco?
+
+00:00:00.000 Send a message.
+00:00:02.790 The browser runs the weather tool.
+00:00:09.284 The returned result completes the turn.
+
+Final visible result:
+What's the weather in San Francisco?
+get_weather
+
+It's 68°F and sunny in San Francisco right now.

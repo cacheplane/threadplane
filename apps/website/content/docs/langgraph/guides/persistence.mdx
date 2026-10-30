@@ -4,11 +4,21 @@ description: How the persistence example lists, switches, and starts threads wit
 
 # Persistence
 
+<DocsDemoVideo demo="persistence" frontend="angular" />
+
 Thread persistence keeps conversations alive across page refreshes, browser restarts, and server deployments. LangGraph checkpoints agent state at every super-step, keyed by a thread ID, and `injectAgent()` connects to those checkpoints for you. The running example is a chat with a thread sidebar, and this guide walks the four files that make it work.
 
 <Callout type="tip" title="Prerequisites">
 Make sure you have completed the Installation guide first.
 </Callout>
+
+## Save the conversation and remember its address
+
+A traveler should be able to close the Portland itinerary and return to the same plan. The server must retain the messages and agent state; the application must remember which thread to load. These are separate responsibilities.
+
+<PersistenceModel />
+
+The thread ID is an address. A checkpoint is a saved version of the agent state at a step in that thread. The sidebar is an application view of available threads. Keeping one of these does not automatically keep the others: this demo's page-local list disappears on reload even though the server still holds its threads. The reload example later in this guide adds the missing address retention.
 
 ## What the demo does
 
@@ -68,7 +78,7 @@ Module scope works here because the demo bootstraps exactly one component instan
 `onThreadId` fires when the backend creates a thread and reports its ID, which is why the callback checks whether it already knows the ID before adding it. The callback records it as the active thread and appends it to the list if it is new, which is the only bookkeeping the sidebar needs.
 
 <Callout type="warning" title="Thread IDs come from the server">
-Never generate a thread ID client-side. Always use the value handed to `onThreadId`, or a value the LangGraph Threads API returned earlier.
+Use a thread that the backend has confirmed exists. This Angular provider supplies its ID through `onThreadId`. An application using the Threads API may request its own UUID, but must create that thread and confirm the returned identity before submitting a run; generating a string alone creates no saved conversation.
 </Callout>
 
 <Callout type="warning" title="Keep the API key on the server">
