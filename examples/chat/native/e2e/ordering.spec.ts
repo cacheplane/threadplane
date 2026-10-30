@@ -1,8 +1,6 @@
-import { expect, test, type Locator } from '@playwright/test';
+import { test } from './fixtures';
+import { expect, type Locator } from '@playwright/test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, realpathSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
 
 async function settle(target: Locator) {
   await target.scrollIntoViewIfNeeded();
@@ -21,15 +19,14 @@ async function context(target: Locator) {
 
 test('installed React pinned conversation grouping and ordering preserve a running selection and recover partial writes explicitly', async ({
   page,
+  retainedConsumer,
 }, testInfo) => {
   test.setTimeout(300_000);
-  const { buildConsumer } = await import('../tooling/consumer.mjs');
   const { startProofServer, threadEnvelope } = await import(
     '../tooling/proof-server.mjs'
   );
-  const { captureRetainedBuild, readRetainedBuild, startCheckedServer } =
+  const { startCheckedServer } =
     await import('../tooling/retained-build.mjs');
-  const work = realpathSync(mkdtempSync(join(tmpdir(), 'native-order-')));
   const alpha = threadEnvelope('a', 'Selected conversation');
   const one = {
     ...threadEnvelope('p1', 'Alpha pinned'),
@@ -186,15 +183,8 @@ test('installed React pinned conversation grouping and ordering preserve a runni
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   try {
-    await buildConsumer({
-      root: resolve(__dirname, '../../../../'),
-      assistantId: 'assistant',
-      output: join(work, 'production'),
-      capture: (value: unknown) =>
-        captureRetainedBuild(join(work, 'retained'), value),
-    });
     server = await startCheckedServer({
-      retained: readRetainedBuild(join(work, 'retained')),
+      retained: retainedConsumer,
       target: backend.origin + '/api',
     });
     const origin = server.url;
@@ -395,6 +385,5 @@ test('installed React pinned conversation grouping and ordering preserve a runni
   } finally {
     await server?.close();
     await backend.close();
-    rmSync(work, { recursive: true, force: true });
   }
 });

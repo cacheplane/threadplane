@@ -1,22 +1,17 @@
-import { expect, test } from '@playwright/test';
+import { test } from './fixtures';
+import { expect } from '@playwright/test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, realpathSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
 
 test('installed React confirmed project move survives another project deletion and late selected and list reads', async ({
   page,
+  retainedConsumer,
 }) => {
   test.setTimeout(300_000);
-  const { buildConsumer } = await import('../tooling/consumer.mjs');
   const { startProofServer, threadEnvelope } = await import(
     '../tooling/proof-server.mjs'
   );
-  const { captureRetainedBuild, readRetainedBuild, startCheckedServer } =
+  const { startCheckedServer } =
     await import('../tooling/retained-build.mjs');
-  const work = realpathSync(
-    mkdtempSync(join(tmpdir(), 'native-project-deletion-race-'))
-  );
   const sourceId = ' p/one ';
   const destinationId = '__proto__';
   const title = '<Alpha notes>';
@@ -66,15 +61,8 @@ test('installed React confirmed project move survives another project deletion a
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   try {
-    await buildConsumer({
-      root: resolve('.'),
-      assistantId: 'assistant',
-      output: join(work, 'production'),
-      capture: (context) =>
-        captureRetainedBuild(join(work, 'retained'), context),
-    });
     server = await startCheckedServer({
-      retained: readRetainedBuild(join(work, 'retained')),
+      retained: retainedConsumer,
       target: backend.origin + '/api',
       apiKey: 'project-deletion-race-proof-key',
     });
@@ -213,6 +201,5 @@ test('installed React confirmed project move survives another project deletion a
     await page.close();
     await server?.close();
     await backend.close();
-    rmSync(work, { recursive: true, force: true });
   }
 });

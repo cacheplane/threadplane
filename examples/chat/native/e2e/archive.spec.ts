@@ -1,8 +1,6 @@
-import { expect, test, type Locator } from '@playwright/test';
+import { test } from './fixtures';
+import { expect, type Locator } from '@playwright/test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, realpathSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
 
 // Finish scrolling before opening a viewport-anchored menu: ancestor scroll
 // intentionally dismisses it, including delayed scroll events after automation.
@@ -28,15 +26,14 @@ async function openActions(target: Locator) {
 
 test('installed React conversation archive and unarchive preserve independent metadata, draft and a running selection', async ({
   page,
+  retainedConsumer,
 }, testInfo) => {
   test.setTimeout(300_000);
-  const { buildConsumer } = await import('../tooling/consumer.mjs');
   const { startProofServer, threadEnvelope } = await import(
     '../tooling/proof-server.mjs'
   );
-  const { captureRetainedBuild, readRetainedBuild, startCheckedServer } =
+  const { startCheckedServer } =
     await import('../tooling/retained-build.mjs');
-  const work = realpathSync(mkdtempSync(join(tmpdir(), 'native-archive-')));
   const alpha = threadEnvelope('a', 'Alpha notes');
   const beta = threadEnvelope('b', 'Beta notes');
   const gamma = {
@@ -164,15 +161,8 @@ test('installed React conversation archive and unarchive preserve independent me
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   try {
-    await buildConsumer({
-      root: resolve(__dirname, '../../../../'),
-      assistantId: 'assistant',
-      output: join(work, 'production'),
-      capture: (context: unknown) =>
-        captureRetainedBuild(join(work, 'retained'), context),
-    });
     server = await startCheckedServer({
-      retained: readRetainedBuild(join(work, 'retained')),
+      retained: retainedConsumer,
       target: backend.origin + '/api',
     });
     const origin = server.url;
@@ -418,6 +408,5 @@ test('installed React conversation archive and unarchive preserve independent me
   } finally {
     await server?.close();
     await backend.close();
-    rmSync(work, { recursive: true, force: true });
   }
 });

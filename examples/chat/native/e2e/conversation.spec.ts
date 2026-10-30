@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test';
+import { test } from './fixtures';
+import { expect } from '@playwright/test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import { createHash } from 'node:crypto';
