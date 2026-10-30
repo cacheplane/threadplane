@@ -23,7 +23,8 @@ export function diagramPlacements(
       return !fence;
     })
     .join('\n')
-    .replace(/<!--[\s\S]*?-->|\{\/\*[\s\S]*?\*\/\}|`+[^`\n]*`+/g, '');
+    // Keep token boundaries: removing a comment must not invent a component tag.
+    .replace(/<!--[\s\S]*?-->|\{\/\*[\s\S]*?\*\/\}|`+[^`\n]*`+/g, ' ');
   return [...prose.matchAll(/<([A-Z]\w*)\b/g)]
     .map((match) => match[1])
     .filter((name) => names.includes(name));

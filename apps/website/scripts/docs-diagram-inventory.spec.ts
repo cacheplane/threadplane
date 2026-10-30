@@ -17,6 +17,15 @@ test('inventory preserves repeated real placements while ignoring fences, inline
   ]);
 });
 
+test('excluded prose cannot concatenate into an invented diagram placement', () => {
+  expect(
+    diagramPlacements(
+      '<Turn<!-- note -->Sequence />\n<Turn{/* note */}Sequence />\n<Turn`example`Sequence />',
+      ['TurnSequence']
+    )
+  ).toEqual([]);
+});
+
 test('React narrative extraction reads a literal template and fails unsupported dynamic prose', () => {
   expect(
     readReactNarrative('const source = `A \\`word\\` <TurnSequence />`;')

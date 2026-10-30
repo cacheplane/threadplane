@@ -100,7 +100,7 @@ test('checks both identities around exactly one browser pass and scopes protecte
     fetchRevision: async (url, init) => {
       events.push(url);
       expect(new Headers(init.headers).get('x-vercel-protection-bypass')).toBe(
-        url.startsWith(immutable) ? 'private-bypass' : null
+        new URL(url).origin === immutable ? 'private-bypass' : null
       );
       return Response.json({ revision });
     },
@@ -115,6 +115,21 @@ test('checks both identities around exactly one browser pass and scopes protecte
     `${immutable}/api/docs-revision`,
     `${production}/api/docs-revision`,
   ]);
+});
+
+test('an origin sharing the protected host prefix never receives its bypass', async () => {
+  await waitForDocsRevision({
+    origin: 'https://build.vercel.app.example.test',
+    revision,
+    bypassOrigin: immutable,
+    bypassSecret: 'private-bypass',
+    fetchRevision: async (_url, init) => {
+      expect(
+        new Headers(init.headers).get('x-vercel-protection-bypass')
+      ).toBeNull();
+      return Response.json({ revision });
+    },
+  });
 });
 
 test('an audit failure is never retried and a changed final revision fails immediately', async () => {
