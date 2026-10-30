@@ -34,6 +34,7 @@ export function useProjectDeletion({
   const pending = useRef(false);
   const live = useRef(false);
   const restoreFocus = useRef(false);
+  const focusVersion = useRef(0);
   const latest = useRef({ selectedId, onSelect, onRemoved, owner });
   latest.current = { selectedId, onSelect, onRemoved, owner };
   useEffect(() => {
@@ -48,22 +49,27 @@ export function useProjectDeletion({
   }, [owner]);
   useEffect(() => {
     if (
-      status !== 'pending' ||
+      (status !== 'pending' && status !== 'done') ||
       !restoreFocus.current ||
       !request ||
       request.owner !== owner
     )
       return;
-    restoreFocus.current = false;
     const doc = request.invoker.ownerDocument;
+    const version = focusVersion.current;
     queueMicrotask(() => {
       if (
         live.current &&
         current.current === request &&
-        latest.current.owner === owner &&
-        doc.activeElement === doc.body
-      )
-        fallbackFocusTo()?.focus({ preventScroll: true });
+        focusVersion.current === version &&
+        latest.current.owner === owner
+      ) {
+        if (doc.activeElement === doc.body)
+          fallbackFocusTo()?.focus({ preventScroll: true });
+        // A fast completion can leave the pending fallback disabled. Keep
+        // intent until focus lands, or the user chooses another control.
+        restoreFocus.current = doc.activeElement === doc.body;
+      }
     });
   }, [status, request, owner, fallbackFocusTo]);
   const owned = (target: Request) =>
@@ -90,6 +96,11 @@ export function useProjectDeletion({
       setStatus('failed');
       return;
     }
+    // Removing the last project also removes the focused All conversations
+    // fallback. Preserve its ownership before the catalog and filter commit.
+    restoreFocus.current ||= !!fallbackFocusTo()?.contains(doc.activeElement);
+    // An obsolete pending microtask must not consume completion's intent.
+    focusVersion.current++;
     try {
       latest.current.onRemoved(target.id);
     } catch {

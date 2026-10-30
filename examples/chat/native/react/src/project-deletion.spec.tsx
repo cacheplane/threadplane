@@ -6,6 +6,7 @@ import {
   within,
 } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { useState } from 'react';
 import { NativeProjects } from './native-projects';
 import { PROJECT_CATALOG_KEY as key } from './project-catalog';
 
@@ -28,6 +29,97 @@ function deferred() {
   return { promise, resolve };
 }
 const rows = [{ id: 'a', title: 'Alpha', projectId: ' p/x ' }];
+function setupLastProject() {
+  vi.spyOn(HTMLElement.prototype, 'getClientRects').mockReturnValue([
+    {},
+  ] as unknown as DOMRectList);
+  localStorage.setItem(
+    key,
+    JSON.stringify({ version: 1, projects: [{ id: 'last', name: 'Last' }] })
+  );
+  const held = deferred();
+  const deletion = {
+    canDeleteProject: () => true,
+    deleteProject: vi.fn(() => held.promise),
+  };
+  function Host() {
+    const [projectId, setProjectId] = useState<string | null>('last');
+    return (
+      <>
+        <input aria-label="Draft" />
+        <NativeProjects
+          rows={[]}
+          projectId={projectId}
+          onSelect={setProjectId}
+          deletion={deletion}
+        />
+      </>
+    );
+  }
+  const view = render(<Host />);
+  const confirmDeletion = () => {
+    const trigger = view.getByRole('button', {
+      name: 'Delete project Last (last)',
+      exact: true,
+    });
+    trigger.focus();
+    fireEvent.click(trigger);
+    const confirm = within(view.getByRole('alertdialog')).getByRole('button', {
+      name: 'Delete project',
+      exact: true,
+    });
+    confirm.focus();
+    fireEvent.click(confirm);
+  };
+  return { view, held, deletion, confirmDeletion };
+}
+
+it.each(['pending', 'immediate'] as const)(
+  'focuses New project after the last project disappears on %s completion',
+  async (timing) => {
+    const { view, held, deletion, confirmDeletion } = setupLastProject();
+    if (timing === 'immediate')
+      deletion.deleteProject.mockResolvedValueOnce(true);
+    confirmDeletion();
+    await act(async () => {});
+    if (timing === 'pending') {
+      expect(document.activeElement).toBe(
+        view.getByRole('button', { name: 'All conversations', exact: true })
+      );
+      await act(async () => {
+        held.resolve(true);
+        await held.promise;
+      });
+    }
+    expect(
+      view.queryByRole('button', { name: 'All conversations', exact: true })
+    ).toBeNull();
+    expect(document.activeElement).toBe(
+      view.getByRole('button', { name: 'New project', exact: true })
+    );
+    expect(JSON.parse(localStorage.getItem(key)!).projects).toEqual([]);
+    expect(deletion.deleteProject).toHaveBeenCalledTimes(1);
+  }
+);
+
+it('preserves focus chosen outside project controls while the last deletion completes', async () => {
+  const { view, held, confirmDeletion } = setupLastProject();
+  confirmDeletion();
+  await act(async () => {});
+  const draft = view.getByRole('textbox', { name: 'Draft' });
+  draft.focus();
+  fireEvent.change(draft, { target: { value: 'Keep this draft' } });
+  await act(async () => {
+    held.resolve(true);
+    await held.promise;
+  });
+  expect(document.activeElement).toBe(draft);
+  expect((draft as HTMLInputElement).value).toBe('Keep this draft');
+  expect(
+    view.queryByRole('button', { name: 'All conversations', exact: true })
+  ).toBeNull();
+});
+
 function setup() {
   localStorage.setItem(
     key,
@@ -169,6 +261,10 @@ it('keeps failed catalog persistence recoverable and rereads latest storage on r
 });
 it('ignores completion after unmount or owner replacement', async () => {
   const { view, deletion, held, select } = setup();
+  const outside = render(<button>Outside replacement</button>).getByRole(
+    'button',
+    { name: 'Outside replacement' }
+  );
   fireEvent.click(
     view.getByRole('button', { name: /^Delete project <First>/ })
   );
@@ -182,6 +278,7 @@ it('ignores completion after unmount or owner replacement', async () => {
     canDeleteProject: () => true,
     deleteProject: vi.fn(async () => true),
   };
+  outside.focus();
   view.rerender(
     <NativeProjects
       rows={rows}
@@ -197,6 +294,7 @@ it('ignores completion after unmount or owner replacement', async () => {
   expect(JSON.parse(localStorage.getItem(key)!).projects).toHaveLength(2);
   expect(select).not.toHaveBeenCalled();
   expect(next.deleteProject).not.toHaveBeenCalled();
+  expect(document.activeElement).toBe(outside);
 });
 
 it('returns focus to All conversations after confirmation disables the original action', async () => {
@@ -224,6 +322,9 @@ it('returns focus to All conversations after confirmation disables the original 
 });
 it('does not remove the local label after an actual unmount', async () => {
   const { view, held, select } = setup();
+  const outside = render(<button>Outside unmount</button>).getByRole('button', {
+    name: 'Outside unmount',
+  });
   fireEvent.click(
     view.getByRole('button', { name: /^Delete project <First>/ })
   );
@@ -233,6 +334,7 @@ it('does not remove the local label after an actual unmount', async () => {
       exact: true,
     })
   );
+  outside.focus();
   view.unmount();
   await act(async () => {
     held.resolve(true);
@@ -240,4 +342,5 @@ it('does not remove the local label after an actual unmount', async () => {
   });
   expect(JSON.parse(localStorage.getItem(key)!).projects).toHaveLength(2);
   expect(select).not.toHaveBeenCalled();
+  expect(document.activeElement).toBe(outside);
 });
