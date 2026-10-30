@@ -171,6 +171,7 @@ describe('marketing:queue CLI', () => {
       expect(blog['payload']).toMatchObject({ slug: 'my-post', canonicalUrl: 'https://threadplane.ai/blog/my-post' });
       expect(devto['depends_on']).toBe(blog['id']);
       expect(devto['idempotency_key']).toBe(`devto:${WEEK}:devto`);
+      expect(devto['utm_campaign']).toBe('my-post');
       expect(devto['payload']).toMatchObject({
         article: { title: 'Post', tags: ['angular'], canonicalUrl: 'https://threadplane.ai/blog/my-post' },
       });
@@ -195,6 +196,15 @@ describe('marketing:queue CLI', () => {
     expect(db.credentials[0]['channel']).toBe('devto');
     expect(JSON.parse(unseal(db.credentials[0]['sealed'] as string, key))).toEqual({ apiKey: 'secret-key' });
     await expect(setDevtoKey(deps, key, async () => '  \n')).rejects.toThrow('stdin');
+  });
+
+  it('set-devto-key production requires --yes', async () => {
+    const { db, deps } = harness();
+    const key = randomBytes(32);
+    await expect(setDevtoKey(deps, key, async () => 'k', { target: 'production', yes: false })).rejects.toThrow('--yes');
+    expect(db.credentials).toHaveLength(0);
+    await setDevtoKey(deps, key, async () => 'k', { target: 'production', yes: true });
+    expect(db.credentials).toHaveLength(1);
   });
 
   it('report lists outcomes and stores dev.to metrics', async () => {

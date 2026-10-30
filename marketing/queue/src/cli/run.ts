@@ -74,7 +74,10 @@ export async function runCli(argv: readonly string[], env: Env, io: CliIo): Prom
       case 'approve':
         return await approve(args, deps);
       case 'set-devto-key':
-        return await setDevtoKey(deps, loadCredentialKey(env), io.readStdin);
+        return await setDevtoKey(deps, loadCredentialKey(env), io.readStdin, {
+          target: ctx.target,
+          yes: args.flags['yes'] === 'true',
+        });
       case 'report': {
         const options = await loadAdapterOptions(ctx.ex, loadCredentialKey(env), env);
         const fetchMetrics = options.devto

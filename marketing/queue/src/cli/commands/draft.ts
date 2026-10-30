@@ -159,6 +159,7 @@ export async function addBlog(args: Args, deps: CommandDeps): Promise<void> {
       publishAt: devtoSlot.publishAt,
       payload: { ...devtoPayload, lintFlags: flags },
       dependsOn: blogRow.id,
+      utmCampaign: slug,
       idempotencyKey: `devto:${weekStart}:devto`,
     });
     return { blog: blogRow, devto: devtoRow };

@@ -30,6 +30,9 @@ function convertCallouts(lines: string[]): string[] {
   let inCallout = false;
   for (const rawLine of lines) {
     let line = rawLine;
+    if (inCallout && FENCE.test(line)) {
+      throw new Error('code fence inside <Callout> is not supported; move it out of the callout');
+    }
     if (!inCallout && FENCE.test(line)) inFence = !inFence;
     if (inFence || FENCE.test(line)) {
       out.push(line);
@@ -51,6 +54,7 @@ function convertCallouts(lines: string[]): string[] {
     if (content) out.push(`> ${content}`);
     if (close) inCallout = false;
   }
+  if (inCallout) throw new Error('unclosed <Callout>');
   return out;
 }
 
@@ -68,8 +72,34 @@ function assertNoUnknownComponents(lines: string[]): void {
   }
 }
 
-function absolutize(line: string, origin: string): string {
-  return line.replace(/\]\(\/(?!\/)/gu, `](${origin}/`);
+/** Appends the dev.to UTM trio to a threadplane.ai URL, merging with any query and keeping the #fragment. */
+function withUtm(url: string, slug: string): string {
+  const hashAt = url.indexOf('#');
+  const fragment = hashAt === -1 ? '' : url.slice(hashAt);
+  const noHash = hashAt === -1 ? url : url.slice(0, hashAt);
+  const queryAt = noHash.indexOf('?');
+  const base = queryAt === -1 ? noHash : noHash.slice(0, queryAt);
+  const params = new URLSearchParams(queryAt === -1 ? '' : noHash.slice(queryAt + 1));
+  params.set('utm_source', 'devto');
+  params.set('utm_medium', 'social');
+  params.set('utm_campaign', slug);
+  return `${base}?${params.toString()}${fragment}`;
+}
+
+function rewriteUrl(url: string, origin: string, slug: string, utm: boolean): string {
+  const absolute = /^\/(?!\/)/u.test(url) ? `${origin}${url}` : url;
+  const ours = absolute === origin || absolute.startsWith(`${origin}/`) || absolute.startsWith(`${origin}?`) || absolute.startsWith(`${origin}#`);
+  return utm && ours ? withUtm(absolute, slug) : absolute;
+}
+
+function absolutize(line: string, origin: string, slug: string): string {
+  return line
+    .replace(/(!?)\[([^\]]*)\]\(([^)\s]+)([^)]*)\)/gu, (_m, bang: string, text: string, url: string, rest: string) =>
+      `${bang}[${text}](${rewriteUrl(url, origin, slug, bang === '')}${rest})`
+    )
+    .replace(/\b(src|href)="([^"]*)"/gu, (_m, attr: string, url: string) =>
+      `${attr}="${rewriteUrl(url, origin, slug, attr === 'href')}"`
+    );
 }
 
 /** dev.to renders soft line breaks as one paragraph, so each prose line gets its own paragraph. */
@@ -120,7 +150,7 @@ export function convertMdxForDevto(
       inFence = !inFence;
       return line;
     }
-    return inFence ? line : absolutize(line, opts.siteOrigin);
+    return inFence ? line : absolutize(line, opts.siteOrigin, opts.slug);
   });
   const body = splitProse(lines).join('\n').replace(/\n{3,}/gu, '\n\n').trim() + '\n';
 

@@ -35,11 +35,48 @@ describe('convertMdxForDevto', () => {
     expect(out.body).toContain('<Bar />');
   });
 
+  const utm = 'utm_source=devto&utm_medium=social&utm_campaign=my-post';
+
   it('relative image becomes absolute', () => {
-    const out = convertMdxForDevto(doc('![chart](/blog/x/chart.png) and [docs](/docs/a) and [ext](https://a.dev/b)'), opts);
+    const out = convertMdxForDevto(doc('![chart](/blog/x/chart.png) and [ext](https://a.dev/b)'), opts);
     expect(out.body).toContain('![chart](https://threadplane.ai/blog/x/chart.png)');
-    expect(out.body).toContain('[docs](https://threadplane.ai/docs/a)');
     expect(out.body).toContain('[ext](https://a.dev/b)');
+  });
+
+  it('relative link gains devto utm', () => {
+    const out = convertMdxForDevto(doc('[docs](/docs/a) and [q](/docs/a?x=1)'), opts);
+    expect(out.body).toContain(`[docs](https://threadplane.ai/docs/a?${utm})`);
+    expect(out.body).toContain(`[q](https://threadplane.ai/docs/a?x=1&${utm})`);
+  });
+
+  it('absolute threadplane link gains utm and keeps its fragment', () => {
+    const out = convertMdxForDevto(doc('[a](https://threadplane.ai/docs/a#part) [b](https://a.dev/b)'), opts);
+    expect(out.body).toContain(`[a](https://threadplane.ai/docs/a?${utm}#part)`);
+    expect(out.body).toContain('[b](https://a.dev/b)');
+  });
+
+  it('images and canonical stay bare', () => {
+    const out = convertMdxForDevto(doc('![c](/x.png) ![d](https://threadplane.ai/y.png)'), opts);
+    expect(out.body).toContain('![c](https://threadplane.ai/x.png)');
+    expect(out.body).toContain('![d](https://threadplane.ai/y.png)');
+    expect(out.body).not.toContain('utm_');
+  });
+
+  it('relative img src in a figure becomes absolute', () => {
+    const out = convertMdxForDevto(
+      doc('<figure>\n<img src="/blog/a.png" alt="a" />\n<a href="/docs/z">z</a>\n</figure>'),
+      opts
+    );
+    expect(out.body).toContain('src="https://threadplane.ai/blog/a.png"');
+    expect(out.body).toContain(`href="https://threadplane.ai/docs/z?${utm}"`);
+  });
+
+  it('fence inside callout throws', () => {
+    expect(() => convertMdxForDevto(doc('<Callout>\n```ts\nx\n```\n</Callout>'), opts)).toThrow('code fence inside <Callout>');
+  });
+
+  it('unclosed callout throws', () => {
+    expect(() => convertMdxForDevto(doc('<Callout>\nnever closed'), opts)).toThrow('unclosed <Callout>');
   });
 
   it('tags normalized to 4', () => {
