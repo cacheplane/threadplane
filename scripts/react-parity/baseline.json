@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "1d9300cd1d564dc18f091b7efe7b3a951d1a0e06",
+  "baselineHead": "1b3c441d40472861d2d3d2418537b0a3f0676e65",
   "sourceState": {
     "modified": [
       ".github/workflows/ci.yml"
@@ -2177,7 +2177,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "47d5f6c3d288151c7ce217431cb1a4e271f7aeb7118ba685daf04409a1b2c494"
+      "sha256": "805a646677f5c7353ca987ba49bb3e9b0142d9ddab4647bf1f17aaa98f5f9cb6"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
