@@ -202,10 +202,42 @@ Body today.`;
       setupFs(files);
       const { getAllPosts } = await import('./blog');
       expect(getAllPosts({ now }).map((p) => p.slug)).toEqual(['today-post']);
-      expect(getAllPosts({ now: new Date('2026-10-30T00:00:00Z') }).map((p) => p.slug)).toEqual([
+      expect(getAllPosts({ now: new Date('2026-10-30T07:00:00Z') }).map((p) => p.slug)).toEqual([
         'tomorrow-post',
         'today-post',
       ]);
+    });
+
+    it('without publishAt a post appears at Pacific midnight of its date', async () => {
+      const nov = todayPost.replace('2026-10-29', '2026-11-03');
+      setupFs({ '2026-11-03-today-post.mdx': nov });
+      const { getAllPosts } = await import('./blog');
+      expect(getAllPosts({ now: new Date('2026-11-03T07:59:59Z') })).toHaveLength(0);
+      expect(getAllPosts({ now: new Date('2026-11-03T08:00:00Z') })).toHaveLength(1);
+    });
+
+    it('uses the PDT offset before the November change', async () => {
+      setupFs(files);
+      const { getAllPosts } = await import('./blog');
+      expect(getAllPosts({ now: new Date('2026-10-29T06:59:59Z') })).toHaveLength(0);
+      expect(getAllPosts({ now: new Date('2026-10-29T07:00:00Z') })).toHaveLength(1);
+    });
+
+    it('publishAt hides a post until that instant', async () => {
+      const timed = todayPost.replace('author: brian', 'author: brian\npublishAt: 2026-11-03T17:00:00.000Z');
+      setupFs({ '2026-10-29-today-post.mdx': timed });
+      const { getAllPosts, getPostBySlug } = await import('./blog');
+      expect(getAllPosts({ now: new Date('2026-11-03T16:59:59.999Z') })).toHaveLength(0);
+      expect(getPostBySlug('today-post', { now: new Date('2026-11-03T16:59:59.999Z') })).toBeNull();
+      expect(getAllPosts({ now: new Date('2026-11-03T17:00:00.000Z') })).toHaveLength(1);
+    });
+
+    it('invalid publishAt falls back to date', async () => {
+      const bad = todayPost.replace('author: brian', 'author: brian\npublishAt: not-a-date');
+      setupFs({ '2026-10-29-today-post.mdx': bad });
+      const { getAllPosts } = await import('./blog');
+      expect(getAllPosts({ now })).toHaveLength(1);
+      expect(getAllPosts({ now: new Date('2026-10-29T06:00:00Z') })).toHaveLength(0);
     });
 
     it('getAllPosts includes future posts with includeDrafts', async () => {
