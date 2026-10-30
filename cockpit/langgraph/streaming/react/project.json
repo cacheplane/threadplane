@@ -9,7 +9,8 @@
       "executor": "nx:run-commands",
       "cache": false,
       "dependsOn": [
-        { "target": "build", "projects": ["core", "content", "react"] }
+        { "target": "build", "projects": ["core", "content", "react"] },
+        { "target": "react-langgraph", "projects": ["website-runtime-preparation"] }
       ],
       "outputs": ["{workspaceRoot}/dist/cockpit/langgraph/streaming/react"],
       "options": { "command": "node scripts/react-cockpit/build.mjs" }

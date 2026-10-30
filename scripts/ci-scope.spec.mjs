@@ -13,6 +13,15 @@ import {
   SCOPE_KEYS,
 } from './ci-scope.mjs';
 
+it('requires full CI when shared frontend preparation or its task graph changes', () => {
+  for (const path of [
+    'scripts/react-cockpit/build.mjs',
+    'scripts/react-cockpit/consumer-preparation.mjs',
+    'scripts/react-cockpit/prepare-consumer.mjs',
+    'tools/website-runtime-preparation/project.json',
+  ]) assert.equal(hasGlobalCiFileChange([path]), true, path);
+});
+
 function selectedLibraryLane(workflow, lane) {
   const job = workflow.split('\n  library:\n')[1].split(/^ {2}[A-Za-z0-9_-]+:\s*$/m)[0];
   const [header, ...steps] = job.split(/(?=^ {6}- )/m);
