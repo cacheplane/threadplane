@@ -99,8 +99,6 @@ export function useProjectDeletion({
     // Removing the last project also removes the focused All conversations
     // fallback. Preserve its ownership before the catalog and filter commit.
     restoreFocus.current ||= !!fallbackFocusTo()?.contains(doc.activeElement);
-    // An obsolete pending microtask must not consume completion's intent.
-    focusVersion.current++;
     try {
       latest.current.onRemoved(target.id);
     } catch {
@@ -108,6 +106,8 @@ export function useProjectDeletion({
       return;
     }
     if (!owned(target)) return;
+    // An obsolete pending microtask must not consume completion's intent.
+    focusVersion.current++;
     setStatus('done');
     if (latest.current.selectedId === target.id) latest.current.onSelect(null);
   };

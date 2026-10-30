@@ -120,6 +120,20 @@ it('preserves focus chosen outside project controls while the last deletion comp
   ).toBeNull();
 });
 
+it('keeps a focus target when immediate completion cannot save the project catalog', async () => {
+  const { view, deletion, confirmDeletion } = setupLastProject();
+  deletion.deleteProject.mockResolvedValueOnce(true);
+  vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+    throw new Error('quota');
+  });
+  confirmDeletion();
+  await act(async () => {});
+  expect(view.getByRole('alert').textContent).toContain('project label');
+  expect(document.activeElement).toBe(
+    view.getByRole('button', { name: 'All conversations', exact: true })
+  );
+});
+
 function setup() {
   localStorage.setItem(
     key,
