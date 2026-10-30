@@ -6,6 +6,28 @@ import assert from 'node:assert/strict';
 import { privateScaffoldProjects } from './react-parity/package-policy.mjs';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
+import { deriveCockpitCaps } from './cockpit-matrix.mjs';
+
+it('caches uv downloads only for Cockpit caps with action-owned Python dependencies', async () => {
+  const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'cockpit-e2e');
+  const setup = readNamedStep(job, 'Install uv');
+  const cache = setup.match(/^ {10}enable-cache: \$\{\{ (.+) \}\}\s*$/m);
+  assert.ok(cache, 'Node-only caps must not try saving an unpopulated uv cache');
+  const enabled = Function('matrix', `return (${cache[1]});`);
+  const caps = deriveCockpitCaps();
+  const nodeOnly = caps.filter(cap => cap.python === '');
+  assert.ok(nodeOnly.some(cap => cap.angular === 'cockpit-runtimes-mastra-angular'));
+  assert.ok(nodeOnly.some(cap => cap.angular === 'cockpit-runtimes-mastra-react'));
+  for (const cap of nodeOnly) assert.equal(enabled({ cap }), false, cap.angular);
+  const isolated = caps.find(cap => cap.angular === 'cockpit-ag-ui-a2ui-react');
+  assert.ok(isolated);
+  assert.equal(enabled({ cap: isolated }), false, 'isolated A2UI preparation owns its own cache');
+  const python = caps.filter(cap => cap.python !== '' && cap !== isolated);
+  assert.ok(python.length > 0);
+  for (const cap of python) assert.equal(enabled({ cap }), true, cap.angular);
+  assert.match(setup, /python-version: ['"]3\.12['"]/);
+  assert.doesNotMatch(setup, /if:|continue-on-error/);
+});
 
 const supportingScopes = {
   'scripts-tests': 'scripts_tests',
