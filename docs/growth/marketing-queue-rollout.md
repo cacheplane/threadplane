@@ -128,12 +128,14 @@ Do the dev.to backlog migration (section 6) before this step, so no backlog item
 
 ## 6. Migrate the dev.to backlog
 
-Existing one-time dev.to posts live outside the repo in `~/.claude/scheduled-posts/devto-queue/*`, each with a local scheduled task. Compare each item's `publishAt` to the go-live time:
+Existing one-time dev.to posts live outside the repo in `~/.claude/scheduled-posts/devto-queue/*`, each with a local scheduled task. Do this section before section 5's enable.
 
-- `publishAt` after go-live: add it as a `devto` row with its existing canonical URL, approve it, and delete its local one-time scheduled task in the same step, so it cannot post twice. Use `add --channel=devto` with `--at` and a draft file (`npm run marketing:queue -- --help` shows the flags), then `approve --id`. List the local tasks with the scheduled-tasks tool (`list_scheduled_tasks`) and remove the matching ones with `delete_scheduled_task`.
-- `publishAt` before go-live: leave it on its local task.
+First pick the planned enable time T (when you will set `MARKETING_POSTING_ENABLED=true` on production). Then compare each item's `publishAt` to T plus one hour:
 
-Go-live is the time you set `MARKETING_POSTING_ENABLED=true` in section 5. Migrate first and enable afterwards. An item that is added and approved before enabling simply waits in the queue until the first tick after go-live. If an item's `publishAt` has already fallen between enabling and migrating, leave it on its local task rather than adding it.
+- `publishAt` after T + 1 hour: add it as a `devto` row with its existing canonical URL, approve it, and delete its local one-time scheduled task in the same step, so it cannot post twice. Use `add --channel=devto` with `--at` and a draft file (`npm run marketing:queue -- --help` shows the flags), then `approve --id`. List the local tasks with the scheduled-tasks tool (`list_scheduled_tasks`) and remove the matching ones with `delete_scheduled_task`.
+- `publishAt` at or before T + 1 hour: leave it on its local scheduled task and do not migrate it.
+
+The dispatcher has no staleness cutoff. An approved row whose publish time has passed posts on the first tick after enable, however late. If enable slips past the `publishAt` of an approved item, run `reschedule <id> --at=<new ISO>` (or `cancel <id>`) on it before enabling.
 
 ## Rollback
 
