@@ -101,7 +101,7 @@ jobs:
       # classifier walk.
       - run: npm ci
       - name: Test CI scope classifier
-        run: node --test scripts/configure-ci-apt.spec.mjs scripts/commit-staged-via-api.spec.mjs scripts/ci-scope.spec.mjs scripts/cockpit-matrix.spec.mjs scripts/cockpit-frontend-matrix.spec.mjs scripts/cockpit-ports.spec.mjs scripts/cockpit-runtime-bridge-coverage.spec.mjs scripts/react-cockpit/ag-ui-client-tools-configuration.spec.mjs scripts/react-cockpit/ag-ui-client-tools-preparation.spec.mjs scripts/react-cockpit/runtimes-microsoft-agent-framework-configuration.spec.mjs scripts/react-cockpit/prepare-native-maf-fixture.spec.mjs scripts/react-cockpit/runtimes-aws-strands-configuration.spec.mjs scripts/react-cockpit/prepare-native-strands-fixture.spec.mjs scripts/react-cockpit/chat-theming-configuration.spec.mjs
+        run: node --test scripts/configure-ci-apt.spec.mjs scripts/commit-staged-via-api.spec.mjs scripts/ci-scope.spec.mjs scripts/cockpit-matrix.spec.mjs scripts/cockpit-frontend-matrix.spec.mjs scripts/cockpit-ports.spec.mjs scripts/cockpit-runtime-bridge-coverage.spec.mjs scripts/react-cockpit/ag-ui-client-tools-configuration.spec.mjs scripts/react-cockpit/ag-ui-client-tools-preparation.spec.mjs scripts/react-cockpit/runtimes-microsoft-agent-framework-configuration.spec.mjs scripts/react-cockpit/prepare-native-maf-fixture.spec.mjs scripts/react-cockpit/runtimes-aws-strands-configuration.spec.mjs scripts/react-cockpit/prepare-native-strands-fixture.spec.mjs scripts/react-cockpit/chat-theming-configuration.spec.mjs scripts/react-cockpit/consumer-preparation.spec.mjs
       - name: Test Debug static configuration without Python workers
         run: node --test --test-name-pattern='^debug ' scripts/react-cockpit/chat-debug-configuration.spec.mjs
       - name: Detect changed CI surfaces
@@ -1148,7 +1148,12 @@ jobs:
       - name: Install Chromium
         timeout-minutes: 10
         run: npx playwright install --with-deps chromium
-      - run: npx nx run website:e2e-${{ matrix.suite }} --skip-nx-cache
+      - name: Run local Website suite
+        run: |
+          preparation=$(mktemp -d)
+          trap 'rm -rf "$preparation"' EXIT
+          export WEBSITE_RUNTIME_PREPARATION="$preparation"
+          npx nx run website:e2e-${{ matrix.suite }} --skip-nx-cache
         timeout-minutes: 45
         env:
           # Delegate reviewed public surfaces only when the required preview

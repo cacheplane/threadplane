@@ -27,19 +27,21 @@ test('A2UI build and e2e depend on the installed package and terminal admission 
   const project = JSON.parse(read('cockpit/chat/a2ui/react/project.json'));
   assert.ok(project.tags.includes('scope:cockpit-e2e'));
   assert.equal(project.targets.build.cache, false);
-  assert.deepEqual(project.targets.build.dependsOn, [{ target: 'build', projects: ['core', 'content', 'react', 'a2ui'] }]);
+  const foundation = project.targets.build.dependsOn.filter(edge => edge.target === 'build');
+  assert.deepEqual(foundation, [{ target: 'build', projects: ['core', 'content', 'react', 'a2ui'] }]);
   assert.equal(project.targets.build.options.command, 'node scripts/react-cockpit/build.mjs chat-a2ui');
   assert.deepEqual(project.targets.e2e.dependsOn, ['build', 'fixture-test']);
   assert.equal(project.targets.e2e.options.skipInstall, true);
   assert.equal(project.targets.e2e.options.config, 'cockpit/chat/a2ui/react/e2e/playwright.config.ts');
   assert.equal(project.targets['fixture-test'].options.command, 'node --test cockpit/chat/a2ui/react/fixtures/terminal-admission.spec.mjs');
-  assert.deepEqual(project.targets['fixture-test'].dependsOn, project.targets.build.dependsOn);
+  assert.deepEqual(project.targets['fixture-test'].dependsOn, foundation);
 });
 test('only the A2UI topic packs its optional peer and selects the native A2UI profile', () => {
   const build = read('scripts/react-cockpit/build.mjs');
+  const preparation = read('scripts/react-cockpit/consumer-preparation.mjs');
   assert.match(build, /const nativeA2ui = topic === 'a2ui'/);
-  assert.match(build, /optionalPeers: nativeA2ui \? \['a2ui'\] : \[\]/);
-  assert.match(build, /'react-native-a2ui-langgraph'/);
+  assert.match(preparation, /optionalPeers: nativeA2ui \? \['a2ui'\] : \[\]/);
+  assert.match(preparation, /'react-native-a2ui-langgraph'/);
   for (const file of ['create-surfaces.js', 'parser.js', 'create-render-state.js', 'render-spec.js'])
     assert.ok(build.includes(file), 'Emitted implementation assertion: ' + file);
   assert.match(build, /module\.renderedLength > 0/);

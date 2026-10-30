@@ -3,7 +3,6 @@ import {
   cpSync,
   mkdirSync,
   mkdtempSync,
-  readFileSync,
   realpathSync,
   rmSync,
   writeFileSync,
@@ -11,31 +10,15 @@ import {
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import {
-  emitCandidate,
-  packCandidate,
-} from '../react-parity/langgraph-candidate-package.mjs';
-import {
-  emitCandidate as emitAgUiCandidate,
-  packCandidate as packAgUiCandidate,
-  rootRangeOverrides,
-} from '../react-parity/ag-ui-candidate-package.mjs';
-import { packLocalArtifacts } from '../react-parity/verify-packages.mjs';
-import {
-  installPresentationConsumer,
-  reactLanggraphPresentationSeeds,
-  reactAgUiPresentationSeeds,
-  reactRenderPresentationSeeds,
-} from '../react-parity/markdown-presentation-build.mjs';
 import { checkTypes } from '../react-parity/verify-langgraph-candidate.mjs';
 import { reactCockpitConfiguration } from './configuration.mjs';
+import { copyPreparedConsumer, preparationProfile, prepareFreshConsumer } from './consumer-preparation.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const { appPath, base, adapter, topic } = reactCockpitConfiguration(process.argv[2]);
 const nativeA2ui = topic === 'a2ui';
 const nativeAgUi = adapter === 'ag-ui';
 const staticRender = adapter === 'none';
-if (nativeAgUi) rootRangeOverrides(root);
 const runtimePackage = nativeAgUi
   ? '@threadplane/ag-ui'
   : '@threadplane/langgraph';
@@ -44,33 +27,11 @@ const temporary = realpathSync(
   mkdtempSync(join(tmpdir(), 'threadplane-react-cockpit-'))
 );
 try {
-  // Nx app targets prepare shared packages once before parallel isolated builds.
-  let emission = { sources: [] };
-  const tarballs = packLocalArtifacts(root, temporary, ['react'], {
-    optionalPeers: nativeA2ui ? ['a2ui'] : [],
-  });
-  if (!staticRender) {
-    const candidate = join(temporary, 'candidate');
-    mkdirSync(candidate);
-    emission = (nativeAgUi ? emitAgUiCandidate : emitCandidate)(root, candidate);
-    const packed = (nativeAgUi ? packAgUiCandidate : packCandidate)(candidate, temporary);
-    tarballs[runtimePackage] = 'file:' + packed.tarball;
-  }
-  const consumer = join(temporary, 'consumer');
-  mkdirSync(consumer);
-  const installed = installPresentationConsumer(
-    consumer,
-    JSON.parse(readFileSync(join(root, 'package-lock.json'), 'utf8')),
-    tarballs,
-    {
-      seeds: staticRender ? reactRenderPresentationSeeds : nativeAgUi
-        ? reactAgUiPresentationSeeds
-        : reactLanggraphPresentationSeeds,
-      profile: staticRender ? 'react-render' : nativeA2ui
-        ? nativeAgUi ? 'react-native-a2ui-ag-ui' : 'react-native-a2ui-langgraph'
-        : nativeAgUi ? 'react-ag-ui' : 'react-langgraph',
-    }
-  );
+  const configuration = reactCockpitConfiguration(process.argv[2]);
+  const store = process.env.WEBSITE_RUNTIME_PREPARATION;
+  const { consumer, installed, emission } = store
+    ? copyPreparedConsumer({ root, store, temporary, profile: preparationProfile(configuration) })
+    : prepareFreshConsumer(root, temporary, configuration);
   const app = join(consumer, appPath);
   mkdirSync(app, { recursive: true });
   cpSync(join(root, appPath, 'src'), join(app, 'src'), {
