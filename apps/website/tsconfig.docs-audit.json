@@ -9,7 +9,7 @@
     "types": ["node"]
   },
   "include": [
-    "build-revision.ts",
+    "build-revision.cjs",
     "scripts/docs-audit-checks.ts",
     "scripts/docs-audit-evidence.ts",
     "scripts/docs-deployment.ts",

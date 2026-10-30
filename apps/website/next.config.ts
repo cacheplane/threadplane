@@ -2,9 +2,14 @@ import { composePlugins, withNx } from '@nx/next';
 import type { WithNxOptions } from '@nx/next/plugins/with-nx';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { resolveDocsBuildRevision } from './build-revision';
+import { createRequire } from 'node:module';
+import type * as BuildRevision from './build-revision.cjs';
 
 const websiteAppDir = dirname(fileURLToPath(import.meta.url));
+// Next's transpiled config module may lack module.filename. Anchor relative
+// resolution here; the typed import also lets Nx copy the helper into dist.
+const { resolveDocsBuildRevision }: typeof BuildRevision =
+  createRequire(import.meta.url)('./build-revision.cjs');
 
 export const nextConfig: WithNxOptions = {
   env: { THREADPLANE_DOCS_BUILD_REVISION: resolveDocsBuildRevision(process.env) },
