@@ -33,35 +33,43 @@ Everything goes through one command, run from the repo root:
 ```
 npm run marketing:queue -- <command> --target=preview|production
   plan --week=YYYY-MM-DD                         default slots and times (no database)
-  add --week= --channel= --slot= --kind= --file=<draft.json> [--media=<png> --alt="..."] [--depends-on=<id>] [--campaign=<slug>]
+  add --week= --channel= (--slot=<slot> | --at=<ISO>) --kind= --file=<draft.json> [--media=<png> --alt="..."] [--depends-on=<id>] [--campaign=<slug>]
+                                                  --week is optional with --at
   add-blog --week= --mdx=<path> [--kind=]         blog row + dev.to cross-post row
-  edit <id> --file=<draft.json>                   replaces the draft; records a before/after revision
+  edit <id> --file=<draft.json>                   replaces a social/dev.to draft; records a before/after revision
+  relint-blog <id> --mdx=<path>                   re-lints a blog row from its MDX
   confirm <id> --codes=a,b                        confirms blocking lint flags on one item
   list --week=
   cancel <id>
   reschedule <id> --at=<ISO>
-  approve --week=                                 drafts -> scheduled
+  approve --week=<YYYY-MM-DD> | --id=<post id>    drafts -> scheduled (whole week, or one post)
+  lint --channel=<x|linkedin|devto|blog> --file=<draft.json|post.mdx>   no --target, no database
+  revisions [--limit=10]                          recent before/after edits
   report --week=                                  posted / failed / outcome unknown, dev.to metrics
 ```
+
+All commands except `plan` and `lint` need `--target`.
 
 Facts you need about it:
 
 - It loads `.env` from the repo root (`tsx --env-file=.env`). If `.env` is missing or a required variable is unset, stop and tell Brian which one; never create or edit `.env` yourself. Database commands need `MARKETING_DATABASE_URL_PRODUCTION` or `MARKETING_DATABASE_URL_PREVIEW`; `report` also needs `MARKETING_CREDENTIALS_KEY`; `add --media` needs `BLOB_READ_WRITE_TOKEN` (the PNG is uploaded to Vercel Blob at add time).
 - Every database command prints `target: <target> (<db host>)` first. Read it every time.
 - **Slots** (Pacific): `x-mon` … `x-sun` at 08:30, `linkedin-tue` / `linkedin-wed` / `linkedin-thu` at 08:00, `blog` Tuesday 09:00, `devto` Thursday 09:00. `plan --week=` prints the exact ISO instants.
-- **One row per slot per week, forever.** The idempotency key is `<channel>:<week>:<slot>` and a cancelled row keeps it. So: to change a draft use `edit`, never cancel and re-add. To drop an item use `cancel` (that slot can't be refilled that week). To move an item use `reschedule`.
+- **One live row per slot.** `add --slot=` refuses a slot that already has a non-cancelled row. A slot whose rows are all cancelled is refilled by running `add --slot=` again. To change a draft use `edit` (it keeps the revision history); to drop one use `cancel`; to move one use `reschedule`.
+- **Ad hoc posts** use `add --at=<ISO>` instead of `--slot`; the week is derived from the instant unless you pass `--week`.
 - **Draft JSON** (`--file`) keeps only `text`, `threadParts`, `link`, `article`; anything else is dropped. Use:
   - X single post: `{ "text": "..." }` (≤ 280 characters).
   - X thread: `{ "threadParts": ["first", "...", "last part with the link"] }` (2+ parts, each ≤ 280). The X adapter ignores `link`, so a link must be written into the last part's text. `--media` attaches to the first part.
   - LinkedIn: `{ "text": "..." }` (≤ 3000), with the link in the text. Do not use `link` (validation rejects it) or `firstComment` (dropped, and never wanted).
-- **Lint** runs on `add`, `add-blog`, and `edit` and prints `lint: clean` or one line per flag:
+- **Lint** runs on `add`, `add-blog`, `edit`, and `relint-blog` (and standalone, with no database, via `lint`) and prints `lint: clean` or one line per flag:
   - `competitor_name`, `politics`: **blocking**. `approve` leaves the item as a draft until `confirm <id> --codes=…`.
   - `banned_phrase`, `em_dash`, `hashtags`: warnings. Shown to Brian, not blocking.
-  - `edit` clears earlier confirmations; a scheduled item that picks up a blocking flag goes back to draft.
+  - `edit` and `relint-blog` clear earlier confirmations. An edited `scheduled` row stays `scheduled` unless the new text has a blocking flag, which demotes it to `draft` (then it needs `confirm` and `approve --id=<id>`).
+- **Blog rows can't be edited with `edit`.** The MDX is the blog. Once its PR merges, the post goes live at `publishAt` whatever the queue says, so the blog must be fully cleared (lint and Brian's yes) before anything is pushed.
 - **`--depends-on=<id>`** makes a post wait until that row is `posted`. Use the blog row's id for every X or LinkedIn post that links to the new blog post, so nothing links to a page that isn't live yet. It can only be set at `add` time.
 - **`--campaign=<slug>`** stores the post's `utm_campaign`. Always pass the same slug you put in the post's link.
 - `approve` prints `scheduled`, `blocked` (with codes), and `past` (a draft whose time has gone by; it stays a draft, reschedule or cancel it).
-- There is **no command that reads revisions** (`marketing_post_revisions`) yet. Don't query the database directly to get them.
+- `revisions --limit=10` prints recent edits as `before:` / `after:` pairs: Brian's rewrites of agent drafts.
 
 ## Weekly procedure
 
@@ -101,7 +109,7 @@ head -120 CHANGELOG.md
 
 - npm releases: for each publishable library (`libs/*/package.json` without `"private": true`, all `@threadplane/*`), run `npm view @threadplane/<pkg> time --json` and note versions published since `<since>`. Releases share one version, so one package usually tells the story; check at least `@threadplane/chat` and `@threadplane/langgraph`.
 - Already queued: the `list` output from step 1. Don't plan over a slot that already has a row.
-- Voice examples: there is no CLI command for recent revisions yet. Tell Brian once per session ("no revisions reader yet, drafting from voice.md and your edits in this session") and use any edits he makes during this session as examples for the rest of the drafts.
+- Voice examples: `npm run marketing:queue -- revisions --limit=10 --target=<target>`. Each pair is an agent draft (`before`) and what Brian made of it (`after`). Study what he changes and draft the way the `after` lines read. Edits he makes during this session count too.
 - News: phase 1 has no news ingestion. Ask Brian if there's anything in agent UI / LLM tooling he wants to react to this week. `kind=news` comes **only** from items he names, and you read the source he points at before drafting.
 
 Read the actual PRs, changelog entries, and posts you plan to cite. Every factual claim in a draft must trace to one of these sources.
@@ -125,7 +133,7 @@ Mix rules:
 - At least 1 `guide`: one concrete how-to, often with a snippet.
 - At least 1 `take`: an engineering opinion, flagged with "I think" / "for me". About ideas and patterns, never about people or a named product.
 - `news` only from items Brian named.
-- At least two X or LinkedIn posts should point at the new blog post (they will depend on it).
+- At least two X or LinkedIn posts should point at the new blog post (they will depend on it). Put those in slots at or after the blog's publish time (Tuesday 09:00 onward: `linkedin-wed`, `x-wed`, …). Tuesday's 08:00/08:30 slots come before the post is live.
 - Give each topic a `utm_campaign` slug (kebab-case; the blog slug for blog-related posts) and reuse it across channels for the same topic.
 
 Brian may change angles, kinds, days, or drop items. Update the table until he says it's good.
@@ -158,7 +166,7 @@ Re-read `docs/gtm/voice.md` (the register for the channel) and `docs/gtm/messagi
   ```
 
   `add-blog` refuses a missing or mismatched `publishAt`, and the website hides the post until that instant.
-- Blog register from `voice.md`, drafting checklist included. Roughly 1,000 words for an essay; a tutorial runs as long as its code needs.
+- Blog register from `voice.md`, drafting checklist included. Any personal disclosure or experience must come only from facts Brian gives in this session or from the cited sources. If there are none, leave it out and ask Brian; never invent one. Roughly 1,000 words for an essay; a tutorial runs as long as its code needs.
 - Components: the dev.to converter only handles `<Callout>`. Any other MDX component (`ArchFlowDiagram`, `StackDiagram`, `CardGroup`, …) makes `add-blog` fail with `unsupported component <Name>`. Prefer plain markdown in new posts. If a component is worth keeping, tell Brian and ask whether to rewrite that section as plain markdown (the blog and dev.to share one body).
 
 **X posts** (social register):
@@ -181,7 +189,7 @@ Re-read `docs/gtm/voice.md` (the register for the channel) and `docs/gtm/messagi
 
   Run it with `node_modules/.bin/tsx --tsconfig marketing/assets/tsconfig.lib.json tmp/marketing/week/<week>/render-cards.ts` (the tsconfig is required for the JSX). Write alt text for every card.
 
-**LinkedIn posts** (social register): hook in the first two lines, link in the body, plain text, short lines.
+**LinkedIn posts** (social register): the hook in the first two lines is a plain statement of the point, not a teaser. Link in the body, plain text, short lines. The same rule on personal experience applies: only facts Brian gave or the sources show.
 
 **Every threadplane.ai link** carries `?utm_source=<x|linkedin>&utm_medium=social&utm_campaign=<slug>`. The dev.to converter adds `utm_source=devto` links itself.
 
@@ -200,7 +208,10 @@ Write each social draft to `tmp/marketing/week/<week>/<slot>.json`.
    ```
 
    Keep the blog id and the dev.to id it prints. If it fails with `unsupported component <Name>`, rewrite that section or ask Brian (see step 5), then retry.
-   If the MDX changes after `add-blog`, the dev.to row is stale. Regenerate its body with `convertMdxForDevto` from `marketing/queue/src/devto-convert.ts` (siteOrigin `https://threadplane.ai`, the post's slug) in a tmp script, write `{ "text": body, "article": { title, description, tags, "canonicalUrl": "https://threadplane.ai/blog/<slug>" } }`, and `edit <devto id> --file=…`. Blog rows themselves can't be edited with `edit`; the MDX is the blog.
+   If the MDX changes after `add-blog`:
+   - Run `relint-blog <blog id> --mdx=<path>` so the blog row's flags match the new text.
+   - The dev.to row is stale too. Regenerate its body with `convertMdxForDevto` from `marketing/queue/src/devto-convert.ts` (siteOrigin `https://threadplane.ai`, the post's slug) in a tmp script, write `{ "text": body, "article": { title, description, tags, "canonicalUrl": "https://threadplane.ai/blog/<slug>" } }`, run `lint --channel=devto --file=<that json>`, and `edit <devto id> --file=…` (which re-lints the row).
+   Blog rows can't be edited with `edit`; the MDX is the blog.
 2. Add each social post:
 
    ```bash
@@ -212,9 +223,10 @@ Write each social draft to `tmp/marketing/week/<week>/<slot>.json`.
 
    (`--media`/`--alt` only with a card; `--depends-on` only when it links to the new blog post.)
 3. Show every draft to Brian with its slot, publish time (Pacific), kind, sources, and the **lint lines exactly as printed**. Call out blocking flags clearly and list warnings.
-4. When Brian rewrites or tweaks a draft, write his version to the JSON file and run `edit <id> --file=…`. Use his exact words; don't "improve" them. Re-show the lint output. His edits are voice examples for the remaining drafts.
+4. When Brian rewrites or tweaks a social or dev.to draft, write his version to the JSON file and run `edit <id> --file=…`. Use his exact words; don't "improve" them. Re-show the lint output. His edits are voice examples for the remaining drafts.
 5. "Regenerate" means draft again and `edit`. "Drop" means `cancel`. "Move to Friday" means `reschedule <id> --at=<ISO>` (use `plan`'s times as the pattern).
 6. When the week looks done, summarize exactly what "go ahead" will do:
+   - lint the final blog MDX and clear any blocking flag with him before anything is pushed,
    - push branch `blog/<slug>` to origin and open a PR titled `feat(blog): <title>` with auto-merge (squash) on,
    - approve week `<week>` on **<target>** (`<db host>`),
    - the items with blocking flags that still need his individual yes (go ahead does not cover them).
@@ -223,7 +235,12 @@ Write each social draft to `tmp/marketing/week/<week>/<slot>.json`.
 
 "Go ahead" approves every draft Brian saw in this session, the blog push, and the PR. It does **not** approve blocking lint flags. Run the steps in order; if one fails, stop and tell Brian what happened before running the next.
 
-1. **Blog PR** (outward-facing; this is the step Brian's go ahead approved):
+1. **Clear the blog before anything is pushed.** Once the PR merges, the post goes live at `publishAt` regardless of queue status, so:
+   - Run `npm run marketing:queue -- lint --channel=blog --file=<worktree>/apps/website/content/blog/<date>-<slug>.mdx` on the final MDX.
+   - For a blocking flag (`competitor_name`, `politics`): show Brian the matched text and either rewrite the MDX or get his explicit yes for this post. Don't push until it's resolved.
+   - If the MDX changed after `add-blog`, run `relint-blog <blog id> --mdx=<path>` so the row's flags match, and refresh and re-lint the dev.to row (step 6).
+   - If the blog row still carries a blocking flag Brian said yes to, run `confirm <blog id> --codes=…` on that row only.
+2. **Blog PR** (outward-facing; this is the step Brian's go ahead approved):
 
    ```bash
    git -C <worktree> add apps/website/content/blog/<date>-<slug>.mdx
@@ -236,10 +253,10 @@ Write each social draft to `tmp/marketing/week/<week>/<slot>.json`.
    ```
 
    Commit only that MDX file. Then `git worktree remove <worktree>`. The post stays hidden until `publishAt`; at that instant the dispatcher rebuilds the site, waits for the URL to return 200, and only then releases the posts that depend on it. If the PR hasn't merged by `publishAt`, the URL won't go live, so the dispatcher alerts and keeps holding the dependent posts. Check that CI is going green before you finish.
-2. **Blocking flags:** for each item with an unconfirmed `competitor_name` or `politics` flag, show the item and the matched text and ask Brian "post this as written?" one item at a time. Only on an explicit yes for that item: `confirm <id> --codes=<codes>`. On anything else, edit the draft to remove it or cancel the item.
-3. `npm run marketing:queue -- approve --week=<week> --target=<target>`.
-4. Print the final schedule: `list --week=<week>`, converted to Pacific day and time, with channel and a few words of each post. Then list anything `blocked` or `past` from `approve` and what Brian can do about each (confirm, reschedule, cancel).
-5. Remind Brian that posting only happens when `MARKETING_POSTING_ENABLED` is exactly `true` in the lifecycle deployment, if he hasn't turned it on yet.
+3. **Blocking flags:** for each social or dev.to item with an unconfirmed `competitor_name` or `politics` flag, show the item and the matched text and ask Brian "post this as written?" one item at a time. Only on an explicit yes for that item: `confirm <id> --codes=<codes>`. On anything else, edit the draft to remove it or cancel the item.
+4. `npm run marketing:queue -- approve --week=<week> --target=<target>`.
+5. Print the final schedule: `list --week=<week>`, converted to Pacific day and time, with channel and a few words of each post. Then list anything `blocked` or `past` from `approve` and what Brian can do about each (confirm, reschedule, cancel).
+6. Remind Brian that posting only happens when `MARKETING_POSTING_ENABLED` is exactly `true` in the lifecycle deployment, if he hasn't turned it on yet.
 
 ## Mid-week procedure
 
@@ -248,12 +265,12 @@ The current week's Monday is `weekStartFor(today)` minus 7 days.
 - **Show the queue:** `list --week=<current monday>` (and the next week if asked). Translate times to Pacific. Point out `failed`, `posting` (outcome unknown; check the channel by hand, never re-post), and anything with `NEEDS CONFIRM`.
 - **Pull a post:** `cancel <id>`, after Brian names which one. Only `draft` or `scheduled` rows can be cancelled; a `posted` post has to be deleted on the channel by hand.
 - **Move a post:** `reschedule <id> --at=<ISO>`.
-- **Change a post:** `edit <id> --file=…` (works on `draft` and `scheduled` rows; re-check the lint lines).
-- **One-off post** ("post this today", "add a post Friday"): ad hoc posting goes through the queue too; there is no posting outside it. Draft it, show it, get Brian's yes, then:
-  1. `list --week=<current monday>` to find a slot for that channel with no row yet. If every slot for that channel is taken, tell Brian the CLI can't add a second post to a taken slot yet (the idempotency key is per week and slot) and stop. Don't work around it.
-  2. `add --week=<current monday> --channel=… --slot=<free slot> --kind=… --file=…` (plus `--campaign`, and `--media`/`--alt` if needed).
-  3. `reschedule <id> --at=<ISO>` for the time he wants ("now" is fine: the next 30-minute tick picks it up).
-  4. Check `list` for other drafts in that week first, because `approve --week=<current monday>` schedules every clean future draft in the week. Then run it.
+- **Change a post:** write the new text, show it to Brian, and get his yes before `edit <id> --file=…` (works on `draft` and `scheduled` rows). Re-check the lint lines. An edited `scheduled` row stays `scheduled` unless a new blocking flag demotes it to `draft`; then get his per-item yes, `confirm <id> --codes=…`, and `approve --id=<id>`.
+- **Refill a cancelled slot:** `add --week=<monday> --channel=… --slot=<slot> --kind=… --file=…` again; the CLI refills a slot whose rows are all cancelled. Then `approve --id=<id>`.
+- **One-off post** ("post this now", "add a post Friday"): ad hoc posting goes through the queue too; there is no posting outside it. Draft it, show it, get Brian's yes, then:
+  1. `add --channel=… --at=<ISO> --kind=… --file=…` (plus `--campaign`, and `--media`/`--alt` if needed). For "now", use an instant a few minutes in the future, not the current time, so it isn't already past when you approve it.
+  2. `approve --id=<id>` (only that post; don't approve the whole week mid-week).
+  3. Check the output lists it under `scheduled`, not `past` or `blocked`. If it's `past`, `reschedule <id> --at=<a later ISO>` and approve again. The next lifecycle tick (every 30 minutes) posts it.
 
 ## Hard rules
 

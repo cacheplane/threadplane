@@ -5,7 +5,7 @@ Two project-local Claude Code / Cowork skills:
 - `/gtm` operates Threadplane's GTM motion: weekly PostHog snapshots, lead triage, workstream scaffolding, and "where are we?" status questions.
 - `/week` plans, drafts, and schedules Brian's week of public posts (7 X, 2-3 LinkedIn, 1 blog post plus its dev.to cross-post) into the [marketing queue](../queue/README.md), and manages the queue mid-week.
 
-The skills are **project-local**. It isn't published to a marketplace. Install steps are manual and one-time per machine.
+The skills are **project-local**. They aren't published to a marketplace. Install steps are manual and one-time per machine.
 
 ## What's in this directory
 

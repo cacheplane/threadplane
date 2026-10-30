@@ -207,5 +207,5 @@ Warm, slightly goofy, occasionally folksy. Humor lives in the asides:
 - [ ] No hype: no "blazing," "revolutionary," "game-changing," "10x."
 - [ ] No marketing CTAs. Close is an invitation, forward link, or short imperative.
 - [ ] Tutorial posts have `## Conclusion`. Essay posts end on a single imperative or invitation.
-- [ ] Every recommendation paired with a cost or tradeoff; at least one personal disclosure earns the right to recommend.
+- [ ] Every recommendation paired with a cost or tradeoff; at least one personal disclosure earns the right to recommend (only from facts Brian gave or cited sources; if there are none, leave it out and ask him).
 - [ ] Reader is a peer. No "obviously," no "as we all know."
