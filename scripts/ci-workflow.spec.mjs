@@ -359,6 +359,19 @@ it('partitions preview builds without weakening provenance or production assembl
   assert.doesNotMatch(readNamedStep(readJobBlock(workflow, 'deploy'), 'Build and assemble Angular examples'), /--skip-build|--build-artifacts/);
 });
 
+it('does not save an unused uv package cache for Website example build shards', async () => {
+  const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+  const job = readJobBlock(workflow, 'website-preview-build');
+  const setups = job.split(/^ {6}- /m).filter((step) => /uses: astral-sh\/setup-uv@/.test(step));
+  assert.equal(setups.length, 1, 'preserve Python setup for every build shard');
+  const [setup] = setups;
+  assert.match(setup, /uses: astral-sh\/setup-uv@cec208311dfd045dd5311c1add060b2062131d57/);
+  assert.match(setup, /python-version: ['"]3\.12['"]/);
+  assert.match(setup, /^ {10}enable-cache: false\s*$/m,
+    'frontend build shards do not populate the setup-uv action package cache');
+  assert.doesNotMatch(setup, /ignore-nothing-to-cache|continue-on-error/);
+});
+
 it('requires every preview build shard before scoped PR success and preserves fork skips', async () => {
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
   const gate = readJobBlock(workflow, 'required-pr-checks');
