@@ -12,6 +12,30 @@ export const websiteSuites = [
 ] as const;
 export type WebsiteSuite = (typeof websiteSuites)[number];
 
+// These public surfaces have the same assertions against a production preview.
+// Only eligible PRs delegate them; new specs default to local coverage too.
+// Keep docs-shell, docs-deep-link and Render Spec hydration local: MdxRenderer
+// has a development-only Suspense/fragment recovery path they must exercise.
+export const deployedSurfaceSpecs = [
+  'blog.spec.ts',
+  'docs-tables.spec.ts',
+  'docs.spec.ts',
+  'example-code.spec.ts',
+  'home-airport.spec.ts',
+  'home-architecture.spec.ts',
+  'home-bundle.spec.ts',
+  'home-hero.spec.ts',
+  'home-no-runtime.spec.ts',
+  'nav-drawer.spec.ts',
+  'nav-height.spec.ts',
+  'nav-panels.spec.ts',
+  'nav-surface.spec.ts',
+  'recent-articles.spec.ts',
+  'solutions.spec.ts',
+  'static-browser-runtime-label.spec.ts',
+  'website.spec.ts',
+] as const;
+
 // These generic integration specs drive runtimes across product boundaries.
 // Keep this list explicit: adding a cross-product journey requires choosing its
 // runtime dependencies rather than starting every registered runtime again.
