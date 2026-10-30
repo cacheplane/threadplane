@@ -639,6 +639,71 @@ test('actual worker rejects oversized/partial/invalid UTF8 input frames without 
   }
 });
 
+for (const operation of ['reset', 'close']) {
+  test(`${operation} waits for HTTP response close delivery`, async (t) => {
+    const { createChatDebugFixture } = await import('./chat-debug-fixture.mjs');
+    const fixture = createChatDebugFixture();
+    let releaseClose;
+    const server = createServer((request, response) => {
+      const emit = response.emit;
+      let released = false;
+      // Keep the real HTTP exchange, but control delivery of its asynchronous
+      // close event independently of handler completion and client receipt.
+      response.emit = function (event, ...args) {
+        if (event === 'close' && !released) {
+          releaseClose = () => {
+            if (released) return;
+            released = true;
+            emit.call(this, event, ...args);
+          };
+          return true;
+        }
+        return emit.call(this, event, ...args);
+      };
+      fixture.handle(request, response, '/api/not-found').catch(() => {
+        response.destroy();
+      });
+    });
+    t.after(async () => {
+      releaseClose?.();
+      await fixture.close();
+      server.closeAllConnections();
+      await new Promise((resolve) => server.close(resolve));
+    });
+    await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const response = await fetch(
+      `http://127.0.0.1:${server.address().port}/api/not-found`
+    );
+    assert.equal(response.status, 404);
+    await response.text();
+    await until(() => Boolean(releaseClose));
+    assert.equal(fixture.receipt().active.responses, 1);
+    assert.equal(fixture.receipt().active.handlers, 0);
+    let settled = false;
+    const draining = fixture[operation]().then(() => {
+      settled = true;
+    });
+    try {
+      await new Promise((resolve) => setImmediate(resolve));
+      assert.equal(
+        settled,
+        false,
+        'Response close must precede drain completion'
+      );
+    } finally {
+      releaseClose();
+      await draining;
+    }
+    assert.deepEqual(fixture.receipt().active, {
+      children: 0,
+      streams: 0,
+      reads: 0,
+      handlers: 0,
+      responses: 0,
+    });
+  });
+}
+
 test('close drains actual pending worker acquisition and held exact checkpoint responses', async (t) => {
   const first = await setup(t),
     threadId = randomUUID();
