@@ -66,11 +66,12 @@ The popup composition renders a circular launcher button fixed to the bottom-rig
 import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
 import { injectAgent, provideAgent } from '@threadplane/langgraph';
 import { ChatPopupComponent } from '@threadplane/chat';
+import { RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [ChatPopupComponent],
+  imports: [ChatPopupComponent, RouterOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     provideAgent({
@@ -115,11 +116,12 @@ The sidebar composition renders a slide-in panel anchored to the right edge. It 
 import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
 import { injectAgent, provideAgent } from '@threadplane/langgraph';
 import { ChatSidebarComponent } from '@threadplane/chat';
+import { RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [ChatSidebarComponent],
+  imports: [ChatSidebarComponent, RouterOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     provideAgent({
@@ -170,14 +172,24 @@ is silently dropped. Render the chat as a sibling and lay the two out yourself.
 
 ```typescript
 import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
-import { injectAgent } from '@threadplane/langgraph';
+import { injectAgent, provideAgent } from '@threadplane/langgraph';
 import { ChatComponent, ChatSidenavComponent } from '@threadplane/chat';
 import type { Thread } from '@threadplane/chat';
+
+const ACTIVE_THREAD = signal<string | null>(null);
 
 @Component({
   selector: 'app-chat-shell',
   standalone: true,
   imports: [ChatSidenavComponent, ChatComponent],
+  providers: [
+    provideAgent({
+      apiUrl: 'http://localhost:2024',
+      assistantId: 'chat',
+      threadId: ACTIVE_THREAD,
+      onThreadId: (id) => ACTIVE_THREAD.set(id),
+    }),
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [`
     :host { display: flex; height: 100dvh; }
@@ -199,9 +211,11 @@ import type { Thread } from '@threadplane/chat';
 export class ChatShellComponent {
   protected readonly chatAgent = injectAgent();
   protected readonly threads = signal<Thread[]>([]);
-  protected readonly activeThreadId = signal<string | null>(null);
+  protected readonly activeThreadId = ACTIVE_THREAD;
 }
 ```
+
+Populate `threads` from your backend's thread list. The provider and the sidebar share `ACTIVE_THREAD`, so selection loads that conversation and New chat clears the current one. `onThreadId` updates the selection when the backend creates a new thread. See [Thread Routing](/docs/chat/guides/thread-routing) for connecting this state to the URL.
 
 `[mode]` switches between `'expanded'`, `'collapsed'`, and `'drawer'`, and the
 component emits `(modeChange)` when the user presses Cmd/Ctrl+B. Cmd/Ctrl+K

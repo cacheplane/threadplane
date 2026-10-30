@@ -257,19 +257,20 @@ const workerCount = computed(() => workers().length);
 
 ### Pattern 4: Persistent Conversations
 
-Thread-based persistence means conversations survive page refreshes, browser restarts, and even server deployments.
+A conversation survives page refreshes, browser restarts, and server deployments when the backend retains its checkpoints in durable storage and the client restores the same thread ID. The ID identifies the conversation; it does not make an in-memory checkpointer durable. When embedding a graph in your own process, keep every invocation inside the saver's connection scope. The example assumes your application supplies `DATABASE_URL`, `builder`, and `user_message`. LangGraph API deployments use the server's checkpointer; see [Persistence](/docs/langgraph/guides/persistence#choosing-a-checkpointer).
 
 ```python
 from langgraph.checkpoint.postgres import PostgresSaver
 
-checkpointer = PostgresSaver.from_connection_string(DATABASE_URL)
-graph = builder.compile(checkpointer=checkpointer)
+with PostgresSaver.from_conn_string(DATABASE_URL) as checkpointer:
+    checkpointer.setup()  # Initialize the checkpoint schema before first use.
+    graph = builder.compile(checkpointer=checkpointer)
 
-# Each thread_id is a persistent conversation
-result = graph.invoke(
-    {"messages": [user_message]},
-    config={"configurable": {"thread_id": "user_123_session"}}
-)
+    # Each thread_id is a persistent conversation.
+    result = graph.invoke(
+        {"messages": [user_message]},
+        config={"configurable": {"thread_id": "user_123_session"}},
+    )
 ```
 
 **Angular connection:** Thread persistence is configured in the provider:

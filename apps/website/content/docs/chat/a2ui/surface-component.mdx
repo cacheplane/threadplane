@@ -33,7 +33,7 @@ import { A2uiSurfaceComponent } from '@threadplane/chat';
 | Output | Type | Description |
 |--------|------|-------------|
 | `events` | `RenderEvent` | Emits render events from the underlying `RenderSpecComponent` -- handler execution, state changes, and lifecycle signals |
-| `action` | `A2uiActionMessage` | Emits an agent-bound action message when an A2UI `event` action fires. Forward it to your agent (e.g. `agent.submit`) to resume the agent loop |
+| `action` | `A2uiActionMessage` | Emits an agent-bound action message when an A2UI `event` action fires. Forward it to your agent (e.g. `agent.submit`) as a serialized message to continue the conversation |
 | `validationError` | `A2uiErrorMessage` | Emitted with code `VALIDATION_FAILED` when a check rule on the surface blocks an event action. The action is not emitted |
 
 The `events` output forwards all `RenderEvent` emissions from the render engine. This includes events triggered by the default A2UI handlers (`a2ui:event` and `a2ui:localAction`) as well as any state change or lifecycle events. The `action` output is the agent-bound path: when a surface's `event` action fires, the component builds an `A2uiActionMessage` and emits it here so you can send it back to the agent.
@@ -73,7 +73,7 @@ The final `Spec` is passed to `RenderSpecComponent` along with the `ViewRegistry
 `A2uiSurfaceComponent` is used internally by `ChatComponent`, but you can also use it directly to embed a surface in any Angular template.
 
 ```typescript
-import { Component, signal } from '@angular/core';
+import { Component } from '@angular/core';
 import { A2uiSurfaceComponent, createA2uiSurfaceStore, a2uiBasicCatalog } from '@threadplane/chat';
 import { createA2uiMessageParser } from '@threadplane/a2ui';
 
@@ -82,7 +82,7 @@ import { createA2uiMessageParser } from '@threadplane/a2ui';
   standalone: true,
   imports: [A2uiSurfaceComponent],
   template: `
-    @if (store.surface('dashboard')() as surface) {
+    @if (store.surface('dashboard')(); as surface) {
       <a2ui-surface [surface]="surface" [catalog]="catalog" />
     }
   `,
@@ -106,7 +106,7 @@ export class AgentPanelComponent {
 
 ### Wiring handlers and actions
 
-The example above renders a surface but ignores interaction. To run client-owned behavior and forward agent-bound events, pass `[handlers]` and bind `(action)` / `(events)`. Consumer handlers run for `a2ui:localAction`; the `(action)` output carries the agent-bound `A2uiActionMessage`.
+The example above renders a surface but ignores interaction. To run client-owned behavior and forward agent-bound events, pass `[handlers]` and bind `(action)` / `(events)`. Consumer handlers run for `a2ui:localAction`; the `(action)` output carries the agent-bound `A2uiActionMessage`. Send that envelope as a JSON message, matching `ChatComponent`. `resume` is for answering a pending graph interrupt; an ordinary surface action does not imply an interrupt.
 
 ```typescript
 import { Component, inject, signal } from '@angular/core';
@@ -146,7 +146,7 @@ export class InteractiveSurfaceComponent {
 
   // Agent-bound action: forward it back to the agent loop.
   sendToAgent(message: A2uiActionMessage) {
-    this.agent.submit({ resume: message });
+    void this.agent.submit({ message: JSON.stringify(message) });
   }
 
   onEvent(event: RenderEvent) {

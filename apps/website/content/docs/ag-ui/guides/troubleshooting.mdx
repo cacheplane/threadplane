@@ -145,11 +145,13 @@ Pass the index of the assistant message you want to replace, not the user messag
 
 ## No Retry button after a dropped stream
 
-This is deliberate. A stream that closed without terminal evidence settles as an `interrupted` error, and the adapter offers Retry only when it can prove the request was never dispatched — anything the server may already have begun answering would be duplicated by a replay. Read `error().recovery`: `check` means a read-only status check is available through `checkStatus()`, and `none` means the outcome cannot be verified, in which case `error().detail` is the sentence to show. Partial content and approval state are preserved in every case.
+This is deliberate. A stream that closed without terminal evidence settles as an `interrupted` error. The adapter offers Retry only for an ordinary replayable request with no observed event; resume attempts and client-tool continuations do not qualify. Retrying re-sends the captured input without adding a duplicate local message, but the server may have processed the original request before its first response byte was lost. No observed event is not proof of no dispatch or no backend effect.
+
+Read `error()?.recovery`: `retry` permits that captured-input replay, `check` means a read-only interrupt status check is available through `checkStatus()`, and `none` means the outcome cannot be verified. In the last case, show `error()?.detail`. Partial content and approval state are preserved.
 
 ## History or time-travel does not work
 
-History and time-travel are not implemented by the AG-UI adapter today.
+Checkpoint browsing and time-travel are not implemented by the AG-UI adapter today. Restoring a saved conversation is supported through `replay` and `persistence`; see [Restoring a thread from the server](/docs/ag-ui/api/to-agent#restoring-a-thread-from-the-server).
 
 Current scope is messages, status/loading/error, tool calls, state/custom events, reasoning messages, message snapshots, interrupts from `CUSTOM` `on_interrupt` events and from `RUN_FINISHED` interrupt outcomes, subagent progress from `SUBAGENT_*` and `ACTIVITY_*` events, and citations from state.
 

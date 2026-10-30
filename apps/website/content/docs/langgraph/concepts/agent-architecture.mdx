@@ -58,8 +58,8 @@ tool_node = ToolNode(tools)
 <Step title="Respond">
 After tools finish (or if no tools were needed), the agent streams its final response token by token. `injectAgent()` updates the `messages()` signal in real time so your Angular template re-renders incrementally.
 
-```typescript
-// Angular side — messages update as tokens arrive
+```html
+<!-- Angular side — messages update as tokens arrive -->
 @if (agent.isLoading()) {
   <app-typing-indicator />
 }
@@ -75,8 +75,13 @@ LangGraph checkpoints the full state — messages, tool results, plan, everythin
 ```python
 from langgraph.checkpoint.postgres import PostgresSaver
 
-checkpointer = PostgresSaver.from_connection_string(DATABASE_URL)
-graph = builder.compile(checkpointer=checkpointer)
+with PostgresSaver.from_conn_string(DATABASE_URL) as checkpointer:
+    checkpointer.setup()  # Initialize the checkpoint schema before first use.
+    graph = builder.compile(checkpointer=checkpointer)
+    result = graph.invoke(
+        {"messages": [("user", "Plan a weekend in Portland.")]},
+        config={"configurable": {"thread_id": "trip-portland"}},
+    )
 ```
 
 </Step>
@@ -475,7 +480,7 @@ Agents fail. Tools throw exceptions, APIs time out, LLMs hallucinate invalid too
 ```python
 from langchain_core.tools import tool, ToolException
 
-@tool(handle_tool_error=True)
+@tool
 def query_database(sql: str) -> str:
     """Run a read-only SQL query against the analytics database."""
     if "DROP" in sql.upper() or "DELETE" in sql.upper():
@@ -485,9 +490,11 @@ def query_database(sql: str) -> str:
         return json.dumps([dict(r) for r in rows])
     except Exception as e:
         raise ToolException(f"Query failed: {str(e)}")
+
+query_database.handle_tool_error = True
 ```
 
-When `handle_tool_error=True` is set, LangGraph catches `ToolException` and feeds the error message back to the LLM as a `ToolMessage`. The LLM sees the error and can retry with corrected arguments or explain the failure to the user.
+`@tool` returns a `BaseTool`; set `handle_tool_error` on that tool after decoration. The tool then converts a `ToolException` into response content. When the graph executes it through `ToolNode`, the result returns to the model as a `ToolMessage`, so the model can retry with corrected arguments or explain the failure to the user.
 
 ### How Errors Surface in Angular
 
@@ -536,11 +543,18 @@ Every time a node completes, LangGraph saves a checkpoint — a full snapshot of
 
 ### How Checkpoints Work
 
+For a graph embedded in your own Python process, keep the saver connection open for every graph call. The application supplies `DATABASE_URL` and the configured `builder`. A graph served by the LangGraph API server uses the server's checkpointer instead; see [Persistence](/docs/langgraph/guides/persistence#choosing-a-checkpointer).
+
 ```python
 from langgraph.checkpoint.postgres import PostgresSaver
 
-checkpointer = PostgresSaver.from_connection_string(DATABASE_URL)
-graph = builder.compile(checkpointer=checkpointer)
+with PostgresSaver.from_conn_string(DATABASE_URL) as checkpointer:
+    checkpointer.setup()  # Initialize the checkpoint schema before first use.
+    graph = builder.compile(checkpointer=checkpointer)
+    result = graph.invoke(
+        {"messages": [("user", "Plan a weekend in Portland.")]},
+        config={"configurable": {"thread_id": "trip-portland"}},
+    )
 
 # Every node execution creates a checkpoint:
 # checkpoint_1: after "model" (LLM decided to call search_docs)

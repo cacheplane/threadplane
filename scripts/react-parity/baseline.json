@@ -1,9 +1,25 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "1e03bd3cdaeb930d1944205cc48269f9950709fc",
+  "baselineHead": "327b34026641e2f6e5e64dd98943276c27d4559b",
   "sourceState": {
     "modified": [
-      ".github/workflows/ci.yml"
+      "apps/website/content/docs/a2ui/guides/data-model.mdx",
+      "apps/website/content/docs/ag-ui/guides/deployment.mdx",
+      "apps/website/content/docs/ag-ui/guides/troubleshooting.mdx",
+      "apps/website/content/docs/chat/a2ui/surface-component.mdx",
+      "apps/website/content/docs/chat/a2ui/surface-store.mdx",
+      "apps/website/content/docs/chat/components/chat-message-list.mdx",
+      "apps/website/content/docs/chat/components/chat-sidebar.mdx",
+      "apps/website/content/docs/chat/components/chat.mdx",
+      "apps/website/content/docs/chat/guides/layout-modes.mdx",
+      "apps/website/content/docs/chat/guides/writing-an-adapter.mdx",
+      "apps/website/content/docs/langgraph/concepts/agent-architecture.mdx",
+      "apps/website/content/docs/langgraph/concepts/angular-signals.mdx",
+      "apps/website/content/docs/langgraph/concepts/langgraph-basics.mdx",
+      "apps/website/content/docs/langgraph/guides/durable-execution.mdx",
+      "apps/website/content/docs/langgraph/guides/subgraphs.mdx",
+      "apps/website/content/docs/langgraph/guides/testing.mdx",
+      "apps/website/content/docs/render/api/signal-state-store.mdx"
     ],
     "untracked": []
   },
@@ -2291,7 +2307,7 @@
       "id": "doc:apps/website/content/docs/a2ui/guides/data-model.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/a2ui/guides/data-model.mdx",
-      "sha256": "2f4bfa89c6262b83fdceb39c2e03126cdf8a9c4d62a014995766d54821963e9f"
+      "sha256": "65b5de9cdac26f6da5ba91808858339a2a8b54b396b91b97cd076e78a5e51df7"
     },
     {
       "id": "doc:apps/website/content/docs/a2ui/guides/message-protocol.mdx",
@@ -2381,7 +2397,7 @@
       "id": "doc:apps/website/content/docs/ag-ui/guides/deployment.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/guides/deployment.mdx",
-      "sha256": "31f241c59aa5e05bfddde45aa3a6bfc26bc6e1e362d26a33683e187ddc6598f0"
+      "sha256": "c1d51af7fd17abab2d32a70885ea3ab7943829016bc3332eef96f08e211ea1ae"
     },
     {
       "id": "doc:apps/website/content/docs/ag-ui/guides/fake-agent.mdx",
@@ -2423,7 +2439,7 @@
       "id": "doc:apps/website/content/docs/ag-ui/guides/troubleshooting.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/guides/troubleshooting.mdx",
-      "sha256": "ec12a44a75b042a505f86cf0b1acf52fae566fbd09630a5cd33b74b363f03335"
+      "sha256": "d1b212031a9d519054913d22182f8a673e5c81ad601aca76f82a79ec84856217"
     },
     {
       "id": "doc:apps/website/content/docs/ag-ui/reference/event-mapping.mdx",
@@ -2447,13 +2463,13 @@
       "id": "doc:apps/website/content/docs/chat/a2ui/surface-component.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/a2ui/surface-component.mdx",
-      "sha256": "84d569d723d0470a26afb4de43369022f66c25a21f996eb240f27eed30eb44e0"
+      "sha256": "9d2c63a38c5a0125ac4a3ce986e7613d804e24c2d3457e69a3fbe9f0d1d173cf"
     },
     {
       "id": "doc:apps/website/content/docs/chat/a2ui/surface-store.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/a2ui/surface-store.mdx",
-      "sha256": "68825892cc896b7146990f123e978fb403be077bca328c0e40faf2c35dea2839"
+      "sha256": "b1d3acd4161cf7775b319cd28bfb4e3e8f9fa92da93a13d1a45f593692a68bef"
     },
     {
       "id": "doc:apps/website/content/docs/chat/api/content-classifier.mdx",
@@ -2507,7 +2523,7 @@
       "id": "doc:apps/website/content/docs/chat/components/chat-message-list.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/components/chat-message-list.mdx",
-      "sha256": "98b839ffd38279815f7317de2a12c4a386f482e7af5a6fc060f548d971e7eba5"
+      "sha256": "3a2ec83bbd18a2ff71f7b0b3e7f51d849d33c8585bcb09550b7bff41ca01517d"
     },
     {
       "id": "doc:apps/website/content/docs/chat/components/chat-popup.mdx",
@@ -2537,7 +2553,7 @@
       "id": "doc:apps/website/content/docs/chat/components/chat-sidebar.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/components/chat-sidebar.mdx",
-      "sha256": "b8fcce9aae7654122a6c983b6b23ede69355721b9c02b1bf1fcdcb8fd974f9c1"
+      "sha256": "806d1178c3c9e90fa65e99bb8dc395289ed121e00e227a68f199e07743ee62b5"
     },
     {
       "id": "doc:apps/website/content/docs/chat/components/chat-sidenav.mdx",
@@ -2579,7 +2595,7 @@
       "id": "doc:apps/website/content/docs/chat/components/chat.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/components/chat.mdx",
-      "sha256": "c8362e3972e55ed3299c331d3c8ca9304a289a03d5de27d6fa5ceea7f1ac23d1"
+      "sha256": "70f0d54fd9104d7f1def3484a2ce41c6a6b1c038c446e7a4b56908ac0b9ec58e"
     },
     {
       "id": "doc:apps/website/content/docs/chat/concepts/message-model.mdx",
@@ -2657,7 +2673,7 @@
       "id": "doc:apps/website/content/docs/chat/guides/layout-modes.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/guides/layout-modes.mdx",
-      "sha256": "8ed101aa99281dc6d0caa8b0bcde6f03197768e9eb12a7c873ae4c486ca108cd"
+      "sha256": "882656ae7cd77c282dbcf0215b3b41f95655a76376c9c22df3a26b16f5663d4b"
     },
     {
       "id": "doc:apps/website/content/docs/chat/guides/lifecycle.mdx",
@@ -2693,7 +2709,7 @@
       "id": "doc:apps/website/content/docs/chat/guides/writing-an-adapter.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/guides/writing-an-adapter.mdx",
-      "sha256": "8dd938690b1d8a3c9857eaa52ba55b69481ef720c5f3120732424802e06c837d"
+      "sha256": "3fd8f81d77d0de699bfd7f09ed1c8d1c458632867eed588ec1305fe9cb3e55fb"
     },
     {
       "id": "doc:apps/website/content/docs/chat/migrations/upgrading.mdx",
@@ -2777,7 +2793,7 @@
       "id": "doc:apps/website/content/docs/langgraph/concepts/agent-architecture.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/langgraph/concepts/agent-architecture.mdx",
-      "sha256": "2096e52f80988735393879487aba9ebbfd853b7993b0e2c3da68a1d7b494c152"
+      "sha256": "f3b0c2d60d80ec21534313ef8856648034a1edeed88dc57fad5eeae23ef186b5"
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/concepts/agent-contract.mdx",
@@ -2789,7 +2805,7 @@
       "id": "doc:apps/website/content/docs/langgraph/concepts/angular-signals.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/langgraph/concepts/angular-signals.mdx",
-      "sha256": "c8d9510126d4f66cbfdc8f091fa51787010a8920b0706c5bab10cc660a4ff7e5"
+      "sha256": "bf0afa342bd3498c84c00d4edc6ee5794cd0309095b5564e4ed9ce344c781247"
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/concepts/conversation-turns.mdx",
@@ -2801,7 +2817,7 @@
       "id": "doc:apps/website/content/docs/langgraph/concepts/langgraph-basics.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/langgraph/concepts/langgraph-basics.mdx",
-      "sha256": "eda1f2ebe4c33dfd0d56aa773b13697134670e30a18b6785c6f4fd198048c32a"
+      "sha256": "703d5c80da74400a55941067abe4e4e00f65c0f0013d04ecace6141bb9367308"
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/concepts/state-management.mdx",
@@ -2837,7 +2853,7 @@
       "id": "doc:apps/website/content/docs/langgraph/guides/durable-execution.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/langgraph/guides/durable-execution.mdx",
-      "sha256": "981dbb4d00518c135400c18e978d9ba64a3a8d244fb3503046e9c1757a793895"
+      "sha256": "61551d544197047844749c1acca5f09f9af031442f6eddf1225a693a5fa4e407"
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/guides/interrupts.mdx",
@@ -2873,13 +2889,13 @@
       "id": "doc:apps/website/content/docs/langgraph/guides/subgraphs.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/langgraph/guides/subgraphs.mdx",
-      "sha256": "d459e748cde45589aa04711d777fd79916ad595e6f35f9929ce519e8273db2f6"
+      "sha256": "8f9ab2faba5a069abd75e618e09333c9645f3899483e798fb7108e2a7995d00b"
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/guides/testing.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/langgraph/guides/testing.mdx",
-      "sha256": "a30c96f882422afb76809b8f2927ee53e9607a7ecf8ce4959d952b28efb1a3f6"
+      "sha256": "0cdb6a747c7ab56dec2c554b51759f1cc62b1facfee11e4f81a586f74cb4ba94"
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/guides/time-travel.mdx",
@@ -2939,7 +2955,7 @@
       "id": "doc:apps/website/content/docs/render/api/signal-state-store.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/render/api/signal-state-store.mdx",
-      "sha256": "ac6365a33fb09bfa9c8a7f71f640b8aa73d665d4673847e9aef5af59c45dd8d0"
+      "sha256": "d1b12595f980a47257ed5f83d3a5d1fefc311b6da54970eb00ae7dc13daf707d"
     },
     {
       "id": "doc:apps/website/content/docs/render/api/views.mdx",

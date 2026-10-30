@@ -359,10 +359,10 @@ AG-UI has no server-side run to rejoin.
 The stream is the run.
 When it closes without terminal evidence, the adapter surfaces an `interrupted` error rather than reporting a completed turn, and keeps whatever content and approval state had arrived.
 
-What it offers next depends on what it can prove.
-`retry()` is offered only for an ordinary turn whose stream produced no event at all: nothing reached the server, so re-sending the same input as a fresh request cannot duplicate work.
-A resume attempt may already have committed server-side work, so it is never retried here.
-When one is truncated and `persistence.reconcile` is configured, the adapter reports `recovery: 'check'` instead, makes a single read-only reconciliation of its own, and exposes `checkStatus()` so the user can ask again.
+What it offers next depends on the request type and the events the client observed.
+`retry()` is offered for an ordinary replayable turn whose stream produced no event. It re-sends the captured input without appending a duplicate message to the local transcript. No observed event does not prove that the server received nothing: the request may have been processed before the first response byte was lost. Preventing duplicate backend effects requires a server-side policy such as idempotent operations or request deduplication.
+Resume attempts and client-tool continuations are never retried through this path because they may already have committed server-side work.
+When a resume attempt is truncated and `persistence.reconcile` is configured, the adapter reports `recovery: 'check'` instead, makes a single read-only reconciliation of its own, and exposes `checkStatus()` so the user can ask again.
 The reconciler speaks only about interrupt sessions, which is why it is not offered for an ordinary turn.
 With nothing able to verify the outcome, the recovery is `none` and the error explains that the result could not be confirmed.
 
@@ -373,9 +373,7 @@ A stateless one starts the turn over.
 A connection that stays open but stops producing events is a different problem.
 The adapter does not classify it; a timeout of your own is what catches that.
 
-Pending interrupts are the one piece of client state worth restoring across a reload, and the adapter supports that through the `persistence` option on `provideAgent()`.
-The store is yours to implement, and `agent.ready` resolves once the restored record has been applied.
-The [Interrupts guide](/docs/ag-ui/guides/interrupts#failures-retry-and-restoration) covers the store contract and the reconciliation step.
+The `persistence` option on `provideAgent()` can restore the committed transcript, state, and pending interrupt session across a reload. The store is yours to implement, and `agent.ready` resolves once hydration completes. For server-retained event history, configure `replay`; see [Restoring a thread from the server](/docs/ag-ui/api/to-agent#restoring-a-thread-from-the-server). The [Interrupts guide](/docs/ag-ui/guides/interrupts#failures-retry-and-restoration) covers the persistence contract and reconciliation step.
 
 ## Hosting the Angular app
 

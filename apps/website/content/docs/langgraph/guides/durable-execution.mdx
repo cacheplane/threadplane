@@ -116,9 +116,9 @@ A dropped stream is the case that does not qualify. When the stream closes witho
 Re-submitting starts a fresh run against the thread, and the thread still holds everything the failed attempt committed. That is the point — the completed work survives — but it also means a retry does not undo those messages. When a failed attempt leaves state the next one should not see, `regenerate(index)` is the call that rolls back first: it removes everything after the user message that preceded that index — the assistant turn and any tool messages with it — then re-runs against the trimmed thread; it throws rather than no-ops while a run is loading or when the index is not an assistant message.
 </Callout>
 
-### submit(null) resumes; it does not retry
+### Continue pending work or answer an interrupt
 
-`submit(null)` starts a run with no new input. LangGraph advances whatever the thread still has pending, which is why it is the resume call for a graph paused at an `interrupt()` — see the [Interrupts guide](/docs/langgraph/guides/interrupts).
+`submit(null)` starts a run with no new input and no resume value. Use it to continue pending work, such as a graph paused at a static breakpoint. A dynamic `interrupt()` needs an answer: call `submit({ resume: value })` so the adapter sends LangGraph a resume command. Submitting null alone does not answer that interrupt. See the [Interrupts guide](/docs/langgraph/guides/interrupts).
 
 It is not the retry. Once a run has reached the end of the graph the thread has nothing pending, and `submit(null)` does nothing at all: the run completes immediately without executing a node, the thread is unchanged and no error is raised. `regenerate()` is the one path that resumes a finished thread this way, and it can only do so because it first repositions the thread to the entry node — LangGraph's `as_node` parameter, applied through the transport's `updateState` — before submitting null.
 

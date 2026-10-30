@@ -24,13 +24,14 @@ If you need a floating overlay that does not affect layout, use [`<chat-popup>`]
 
 ```typescript
 import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
 import { injectAgent, provideAgent } from '@threadplane/langgraph';
 import { ChatSidebarComponent } from '@threadplane/chat';
 
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [ChatSidebarComponent],
+  imports: [ChatSidebarComponent, RouterOutlet],
   providers: [provideAgent({ apiUrl: 'http://localhost:2024', assistantId: 'chat', threadId: signal(null) })],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -108,7 +109,13 @@ When `pushContent` is `true`, the sidebar shifts the projected `<ng-content>` to
 ## Controlled Open State
 
 ```typescript
+import { Component, signal } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+import { injectAgent, provideAgent } from '@threadplane/langgraph';
+import { ChatSidebarComponent } from '@threadplane/chat';
+
 @Component({
+  imports: [ChatSidebarComponent, RouterOutlet],
   template: `
     <button (click)="sidebarOpen.set(!sidebarOpen())">Toggle Chat</button>
 

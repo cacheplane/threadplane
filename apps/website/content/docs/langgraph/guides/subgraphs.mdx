@@ -183,7 +183,7 @@ A child graph invoked inside a `@tool` body streams under a `tools:<uuid>` names
 Tier 3 covers the common sequential shape (one dispatch per assistant turn). For parallel fan-out, or a delegation tool whose argument is not named `description`, announce the binding from the server — the tool body is the one place both halves are known:
 
 ```python
-from typing import Annotated
+from typing import Annotated, Literal
 
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import InjectedToolCallId, tool
@@ -193,13 +193,17 @@ from threadplane.middleware.langgraph import announce_subagent
 @tool
 async def task(
     description: str,
+    subagent_type: Literal["researcher"],
     tool_call_id: Annotated[str, InjectedToolCallId] = None,
     config: RunnableConfig = None,
 ) -> str:
+    """Delegate the requested research to the child graph."""
     announce_subagent(config, tool_call_id)  # one line — before invoking the child
     result = await child_graph.ainvoke({"messages": [("user", description)]})
     return result["messages"][-1].content
 ```
+
+The required `subagent_type` argument registers this call as a `researcher` subagent. The announcement then binds its child stream to that registered call; it does not create the registration itself.
 
 `announce_subagent` (threadplane-middleware ≥ 0.0.2) emits one custom event pairing the config's `checkpoint_ns` with the injected tool-call id. `injectAgent()` consumes it, attributes the stream exactly — replaying any chunks that arrived before the announcement — and never lets it override an established mapping. It returns `False` instead of raising when anything it needs is unavailable (outside a run, no namespace, no id), so it needs no guarding.
 

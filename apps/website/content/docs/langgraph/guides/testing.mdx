@@ -296,7 +296,7 @@ Resume the paused run with `chat.submit({ resume: { approved: true } })`, exactl
 
 ### Testing errors and retry
 
-`emitError()` throws from inside the stream. The adapter classifies the failure through `toAgentError()`, so `error()` holds an `AgentError` with `kind`, `retryable`, and `status` rather than the raw thrown object. Note that the promise `submit()` returned rejects, so catch it:
+`emitError()` throws from inside the stream. The bridge catches that failure and the adapter publishes an `AgentError` through `error()`, with `kind`, `retryable`, and `status` rather than the raw thrown object. For this transport failure, `submit()` resolves after the stream settles; it does not reject. Await it, then assert the error and status signals:
 
 ```typescript
 import { describe, it, expect } from 'vitest';
@@ -315,7 +315,7 @@ describe('error handling', () => {
 
     const submitted = chat.submit({ message: 'Hello' });
     await transport.emitError(new Error('HTTP 500: connection lost'));
-    await submitted.catch(() => undefined);
+    await submitted;
 
     const err = chat.error();
     expect(err?.kind).toBe('server');
@@ -335,7 +335,7 @@ describe('error handling', () => {
 
     const submitted = chat.submit({ message: 'Hello' });
     await transport.emitError(new Error('HTTP 503: service unavailable'));
-    await submitted.catch(() => undefined);
+    await submitted;
     expect(chat.status()).toBe('error');
 
     const retried = chat.retry();
