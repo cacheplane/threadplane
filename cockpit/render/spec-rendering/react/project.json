@@ -15,7 +15,8 @@
       "executor": "nx:run-commands",
       "cache": false,
       "dependsOn": [
-        { "target": "build", "projects": ["core", "content", "react"] }
+        { "target": "build", "projects": ["core", "content", "react"] },
+        { "target": "react-render", "projects": ["website-runtime-preparation"] }
       ],
       "outputs": ["{workspaceRoot}/dist/cockpit/render/spec-rendering/react"],
       "options": {

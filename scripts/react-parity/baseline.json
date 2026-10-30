@@ -1,25 +1,9 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "327b34026641e2f6e5e64dd98943276c27d4559b",
+  "baselineHead": "eca83a8781ab383655232fae3f6c8a7a22beaea1",
   "sourceState": {
     "modified": [
-      "apps/website/content/docs/a2ui/guides/data-model.mdx",
-      "apps/website/content/docs/ag-ui/guides/deployment.mdx",
-      "apps/website/content/docs/ag-ui/guides/troubleshooting.mdx",
-      "apps/website/content/docs/chat/a2ui/surface-component.mdx",
-      "apps/website/content/docs/chat/a2ui/surface-store.mdx",
-      "apps/website/content/docs/chat/components/chat-message-list.mdx",
-      "apps/website/content/docs/chat/components/chat-sidebar.mdx",
-      "apps/website/content/docs/chat/components/chat.mdx",
-      "apps/website/content/docs/chat/guides/layout-modes.mdx",
-      "apps/website/content/docs/chat/guides/writing-an-adapter.mdx",
-      "apps/website/content/docs/langgraph/concepts/agent-architecture.mdx",
-      "apps/website/content/docs/langgraph/concepts/angular-signals.mdx",
-      "apps/website/content/docs/langgraph/concepts/langgraph-basics.mdx",
-      "apps/website/content/docs/langgraph/guides/durable-execution.mdx",
-      "apps/website/content/docs/langgraph/guides/subgraphs.mdx",
-      "apps/website/content/docs/langgraph/guides/testing.mdx",
-      "apps/website/content/docs/render/api/signal-state-store.mdx"
+      ".github/workflows/ci.yml"
     ],
     "untracked": []
   },
@@ -2193,7 +2177,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "38159e90aef16f01129d5503a0672eb1aff3d1c21a1e0c12c470eb14e2c142ad"
+      "sha256": "827746959a181477d4ef28826cf9574eba96eac0859413d0f8207bcc098c2b12"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",

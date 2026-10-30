@@ -29,6 +29,11 @@ const GLOBAL_CI_FILES = new Set([
   'nx.json',
   'tsconfig.json',
   'tsconfig.base.json',
+  // Shared preparation changes affect both fresh and reused cockpit builds.
+  'scripts/react-cockpit/build.mjs',
+  'scripts/react-cockpit/consumer-preparation.mjs',
+  'scripts/react-cockpit/prepare-consumer.mjs',
+  'tools/website-runtime-preparation/project.json',
 ]);
 
 const PREVIEW_BUILD_FILES = new Set([

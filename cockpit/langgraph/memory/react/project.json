@@ -12,7 +12,8 @@
         {
           "target": "build",
           "projects": ["core", "content", "react"]
-        }
+        },
+        { "target": "react-langgraph", "projects": ["website-runtime-preparation"] }
       ],
       "outputs": ["{workspaceRoot}/dist/cockpit/langgraph/memory/react"],
       "options": {

@@ -1,0 +1,63 @@
+{
+  "name": "website-runtime-preparation",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "tags": ["type:tooling"],
+  "targets": {
+    "react-langgraph": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "outputs": [],
+      "dependsOn": [
+        { "target": "build", "projects": ["core", "content", "react"] }
+      ],
+      "options": {
+        "command": "node scripts/react-cockpit/prepare-consumer.mjs react-langgraph"
+      }
+    },
+    "react-ag-ui": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "outputs": [],
+      "dependsOn": [
+        { "target": "build", "projects": ["core", "content", "react"] }
+      ],
+      "options": {
+        "command": "node scripts/react-cockpit/prepare-consumer.mjs react-ag-ui"
+      }
+    },
+    "react-render": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "outputs": [],
+      "dependsOn": [
+        { "target": "build", "projects": ["core", "content", "react"] }
+      ],
+      "options": {
+        "command": "node scripts/react-cockpit/prepare-consumer.mjs react-render"
+      }
+    },
+    "react-native-a2ui-langgraph": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "outputs": [],
+      "dependsOn": [
+        { "target": "build", "projects": ["core", "content", "react", "a2ui"] }
+      ],
+      "options": {
+        "command": "node scripts/react-cockpit/prepare-consumer.mjs react-native-a2ui-langgraph"
+      }
+    },
+    "react-native-a2ui-ag-ui": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "outputs": [],
+      "dependsOn": [
+        { "target": "build", "projects": ["core", "content", "react", "a2ui"] }
+      ],
+      "options": {
+        "command": "node scripts/react-cockpit/prepare-consumer.mjs react-native-a2ui-ag-ui"
+      }
+    }
+  }
+}

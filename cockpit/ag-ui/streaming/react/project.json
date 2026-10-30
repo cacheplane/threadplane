@@ -26,7 +26,8 @@
             "content",
             "react"
           ]
-        }
+        },
+        { "target": "react-ag-ui", "projects": ["website-runtime-preparation"] }
       ],
       "outputs": [
         "{workspaceRoot}/dist/cockpit/ag-ui/streaming/react"

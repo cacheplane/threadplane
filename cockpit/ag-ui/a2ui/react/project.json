@@ -64,7 +64,8 @@
       "executor": "nx:run-commands",
       "cache": false,
       "dependsOn": [
-        { "target": "build", "projects": ["core", "content", "react", "a2ui"] }
+        { "target": "build", "projects": ["core", "content", "react", "a2ui"] },
+        { "target": "react-native-a2ui-ag-ui", "projects": ["website-runtime-preparation"] }
       ],
       "outputs": ["{workspaceRoot}/dist/cockpit/ag-ui/a2ui/react"],
       "options": {
