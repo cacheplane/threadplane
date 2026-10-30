@@ -99,15 +99,16 @@ describe('loadAdapterOptions', () => {
     expect(options.devto?.credentials).toEqual({ apiKey: 'dk' });
   });
 
-  it('throws a reauth hint when a channel row is missing', async () => {
-    const { executor } = fakeExecutor({});
-    await expect(loadAdapterOptions(executor, key, env)).rejects.toThrow(
-      /marketing:channels:x:auth/u
-    );
+  it('omits channels with no stored row instead of throwing', async () => {
+    const { executor } = fakeExecutor({ devto: otherChannels.devto });
+    const options = await loadAdapterOptions(executor, key, {});
+    expect(options).toEqual({ devto: { credentials: { apiKey: 'dk' } } });
   });
 
-  it('requires the X env values', async () => {
-    const { executor } = fakeExecutor({});
+  it('requires the X env values when an X row is stored', async () => {
+    const { executor } = fakeExecutor({
+      x: { sealed: seal(JSON.stringify({ accessToken: 'a', refreshToken: 'r' }), key), expires_at: null },
+    });
     await expect(loadAdapterOptions(executor, key, {})).rejects.toThrow(
       /X_CLIENT_ID/u
     );

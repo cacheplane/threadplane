@@ -7,3 +7,5 @@ export * from './target.ts';
 export { createSqlExecutor } from './sql.ts';
 export * from './cli-write.ts';
 export * from './schedule.ts';
+export * from './alerts.ts';
+export * from './dispatcher.ts';

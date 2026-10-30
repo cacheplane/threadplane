@@ -331,6 +331,33 @@ export async function leaseDuePosts(
   return rows.map(mapPost);
 }
 
+export async function getPost(
+  ex: SqlTransaction,
+  id: string
+): Promise<MarketingPost | null> {
+  const { rows } = await ex.execute(
+    `/* marketing:get-post */
+     select * from marketing_posts where id = $1`,
+    [id]
+  );
+  return rows[0] ? mapPost(rows[0]) : null;
+}
+
+/** Read-only: a `posting` row whose lease expired has an unknown outcome and is never requeued. */
+export async function listExpiredPostingLeases(
+  ex: SqlTransaction,
+  now: Date
+): Promise<MarketingPost[]> {
+  const { rows } = await ex.execute(
+    `/* marketing:list-expired-posting-leases */
+     select * from marketing_posts
+     where status = 'posting' and lease_expires_at < $1
+     order by publish_at`,
+    [now]
+  );
+  return rows.map(mapPost);
+}
+
 async function finishLeased(
   ex: SqlTransaction,
   marker: string,

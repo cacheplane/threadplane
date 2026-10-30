@@ -2,7 +2,9 @@ import type { SqlExecutor, SqlQueryResult, SqlTransaction } from './sql.ts';
 import {
   approveWeek,
   claimAlert,
+  getPost,
   leaseDuePosts,
+  listExpiredPostingLeases,
   markPosted,
   updateDraftPost,
 } from './repository.ts';
@@ -268,5 +270,36 @@ describe('claimAlert', () => {
     expect(await claimAlert(executor, 'k')).toBe(true);
     rows = [];
     expect(await claimAlert(executor, 'k')).toBe(false);
+  });
+});
+
+describe('getPost', () => {
+  it('maps the row or returns null', async () => {
+    let rows: TestRow[] = [postRow({ id: 'dep', status: 'posted' })];
+    const { calls, executor } = fakeExecutor({ 'get-post': () => rows });
+    expect(await getPost(executor, 'dep')).toMatchObject({
+      id: 'dep',
+      status: 'posted',
+    });
+    expect(calls[0].parameters).toEqual(['dep']);
+    rows = [];
+    expect(await getPost(executor, 'missing')).toBeNull();
+  });
+});
+
+describe('listExpiredPostingLeases', () => {
+  it('selects posting rows whose lease expired without touching them', async () => {
+    const { calls, executor } = fakeExecutor({
+      'list-expired-posting-leases': () => [
+        postRow({ id: 'stuck', status: 'posting' }),
+      ],
+    });
+    const rows = await listExpiredPostingLeases(executor, NOW);
+    expect(rows.map((row) => row.id)).toEqual(['stuck']);
+    expect(calls[0].sql).toMatch(
+      /where status = 'posting' and lease_expires_at < \$1/u
+    );
+    expect(calls[0].sql).not.toMatch(/update/u);
+    expect(calls[0].parameters).toEqual([NOW]);
   });
 });

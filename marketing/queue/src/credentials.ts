@@ -39,17 +39,18 @@ async function loadSealed<T>(
   ex: SqlTransaction,
   key: Buffer,
   channel: CredentialChannel
-): Promise<{ value: T; expiresAt: Date | null }> {
+): Promise<{ value: T; expiresAt: Date | null } | null> {
   const row = await getChannelCredentials(ex, channel);
-  if (!row) {
-    throw new Error(
-      `No ${channel} credentials stored in Neon. Authorize with: ${REAUTH_HINT[channel]}`
-    );
-  }
+  if (!row) return null;
   return {
     value: JSON.parse(unseal(row.sealed, key)) as T,
     expiresAt: row.expiresAt,
   };
+}
+
+/** Operator-facing hint for a channel with no stored credentials. */
+export function reauthHint(channel: CredentialChannel): string {
+  return `No ${channel} credentials stored in Neon. Authorize with: ${REAUTH_HINT[channel]}`;
 }
 
 function requireEnv(env: Env, name: string): string {
@@ -63,43 +64,46 @@ function requireEnv(env: Env, name: string): string {
  * token on every refresh, so the rotation hook has to commit on its own even
  * if the surrounding post attempt later rolls back. Do not call this inside a
  * dispatch transaction.
+ *
+ * Channels with no stored row are omitted, so one unauthorized channel does
+ * not block the others; callers treat a missing entry as unavailable.
  */
 export async function loadAdapterOptions(
   ex: SqlExecutor,
   key: Buffer,
   env: Env
 ): Promise<AdapterOptions> {
-  const clientId = requireEnv(env, 'X_CLIENT_ID');
-  const clientSecret = requireEnv(env, 'X_CLIENT_SECRET');
-  const userHandle = requireEnv(env, 'X_USER_HANDLE');
-
   const [x, linkedin, devto] = await Promise.all([
     loadSealed<{ accessToken: string; refreshToken: string }>(ex, key, 'x'),
     loadSealed<Omit<LinkedInCredentials, 'expiresAt'>>(ex, key, 'linkedin'),
     loadSealed<DevToCredentials>(ex, key, 'devto'),
   ]);
 
-  return {
-    x: {
+  const options: AdapterOptions = {};
+  if (x) {
+    options.x = {
       credentials: {
-        clientId,
-        clientSecret,
+        clientId: requireEnv(env, 'X_CLIENT_ID'),
+        clientSecret: requireEnv(env, 'X_CLIENT_SECRET'),
         accessToken: x.value.accessToken,
         refreshToken: x.value.refreshToken,
-        userHandle,
+        userHandle: requireEnv(env, 'X_USER_HANDLE'),
       },
       onTokensRotated: (tokens) =>
         saveCredentials(ex, key, 'x', {
           accessToken: tokens.accessToken,
           refreshToken: tokens.refreshToken,
         }),
-    },
-    linkedin: {
+    };
+  }
+  if (linkedin) {
+    options.linkedin = {
       credentials: {
         ...linkedin.value,
         ...(linkedin.expiresAt ? { expiresAt: linkedin.expiresAt } : {}),
       },
-    },
-    devto: { credentials: devto.value },
-  };
+    };
+  }
+  if (devto) options.devto = { credentials: devto.value };
+  return options;
 }
