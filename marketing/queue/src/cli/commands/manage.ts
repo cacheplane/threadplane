@@ -1,10 +1,12 @@
 import {
+  approvePost,
   approveWeek,
   cancelPost,
   confirmFlags,
   findWeek,
   getPost,
   listPosts,
+  listRecentRevisions,
   reschedulePost,
 } from '../../repository.ts';
 import type { MarketingPost } from '../../types.ts';
@@ -52,14 +54,37 @@ export async function reschedule(args: Args, deps: CommandDeps): Promise<void> {
 }
 
 export async function approve(args: Args, deps: CommandDeps): Promise<void> {
-  const weekStart = requireWeek(args);
-  const week = await findWeek(deps.ex, weekStart);
-  if (!week) throw new Error(`No week ${weekStart}; add posts first`);
-  const result = await approveWeek(deps.ex, week.id, deps.now);
+  let result;
+  if (args.flags['id']) {
+    result = await approvePost(deps.ex, requireFlag(args, 'id'), deps.now);
+  } else {
+    const weekStart = requireWeek(args);
+    const week = await findWeek(deps.ex, weekStart);
+    if (!week) throw new Error(`No week ${weekStart}; add posts first`);
+    result = await approveWeek(deps.ex, week.id, deps.now);
+  }
   deps.stdout(`scheduled: ${result.scheduled.length}`);
   for (const id of result.scheduled) deps.stdout(`  ${id}`);
   deps.stdout(`blocked (confirm the flags, then approve again): ${result.blocked.length}`);
   for (const b of result.blocked) deps.stdout(`  ${b.id} ${b.codes.join(',')}`);
   deps.stdout(`past (left as draft; reschedule or cancel): ${result.past.length}`);
   for (const id of result.past) deps.stdout(`  ${id}`);
+}
+
+function textOf(payload: Record<string, unknown>): string {
+  if (typeof payload['text'] === 'string') return payload['text'];
+  if (Array.isArray(payload['threadParts'])) return (payload['threadParts'] as string[]).join(' | ');
+  return '(no text)';
+}
+
+export async function revisions(args: Args, deps: CommandDeps): Promise<void> {
+  const limit = Number(args.flags['limit'] ?? '10');
+  if (!Number.isInteger(limit) || limit < 1) throw new Error('--limit must be a positive integer');
+  const rows = await listRecentRevisions(deps.ex, limit);
+  if (rows.length === 0) return deps.stdout('no revisions');
+  for (const r of rows) {
+    deps.stdout(`${r.createdAt} ${r.postId} ${r.channel}`);
+    deps.stdout(`  before: ${textOf(r.before)}`);
+    deps.stdout(`  after:  ${textOf(r.after)}`);
+  }
 }

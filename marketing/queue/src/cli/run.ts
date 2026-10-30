@@ -4,9 +4,9 @@ import { uploadMedia } from '../blob.ts';
 import { loadAdapterOptions } from '../credentials.ts';
 import { defaultSlots } from '../schedule.ts';
 import { loadCredentialKey, openContext } from './context.ts';
-import { add, addBlog, edit } from './commands/draft.ts';
+import { add, addBlog, edit, lintFile, relintBlog } from './commands/draft.ts';
 import { setDevtoKey } from './commands/devto-key.ts';
-import { approve, cancel, confirm, list, reschedule } from './commands/manage.ts';
+import { approve, cancel, confirm, list, reschedule, revisions } from './commands/manage.ts';
 import { report } from './commands/report.ts';
 import { parseArgs, requireWeek, type CommandDeps } from './commands/shared.ts';
 
@@ -19,14 +19,17 @@ export interface CliIo {
 
 const USAGE = `usage: npm run marketing:queue -- <command> --target=preview|production
   plan --week=YYYY-MM-DD
-  add --week= --channel= --slot= --kind= --file=<draft.json> [--media=<png> --alt="..."] [--depends-on=<id>] [--campaign=<slug>]
+  add --week= --channel= (--slot=<slot> | --at=<ISO>) --kind= --file=<draft.json> [--media=<png> --alt="..."] [--depends-on=<id>] [--campaign=<slug>]   (--week optional with --at; a slot whose rows are all cancelled is refilled)
   add-blog --week= --mdx=<path> [--kind=]
   edit <id> --file=<draft.json>
   confirm <id> --codes=a,b
   list --week=
   cancel <id>
   reschedule <id> --at=<ISO>
-  approve --week=
+  approve --week=<YYYY-MM-DD> | --id=<post id>
+  lint --channel=<x|linkedin|devto|blog> --file=<draft.json|post.mdx>      (no --target, no database)
+  relint-blog <id> --mdx=<path>
+  revisions [--limit=10]
   set-devto-key        (key on stdin)
   report --week=`;
 
@@ -41,6 +44,10 @@ export async function runCli(argv: readonly string[], env: Env, io: CliIo): Prom
       io.stdout(`${s.slot.padEnd(14)} ${s.channel.padEnd(9)} ${s.publishAt.toISOString()}`);
     }
     return;
+  }
+
+  if (command === 'lint') {
+    return lintFile(args, { readFile: (path) => readFile(path), stdout: io.stdout });
   }
 
   const ctx = openContext(argv, env, io.stdout);
@@ -61,6 +68,10 @@ export async function runCli(argv: readonly string[], env: Env, io: CliIo): Prom
         return await add(args, deps);
       case 'add-blog':
         return await addBlog(args, deps);
+      case 'relint-blog':
+        return await relintBlog(args, deps);
+      case 'revisions':
+        return await revisions(args, deps);
       case 'edit':
         return await edit(args, deps);
       case 'confirm':

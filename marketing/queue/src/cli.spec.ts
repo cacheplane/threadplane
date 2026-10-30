@@ -2,8 +2,8 @@ import { randomBytes } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { uploadMedia } from './blob.ts';
 import { openContext } from './cli/context.ts';
-import { add, addBlog } from './cli/commands/draft.ts';
-import { approve } from './cli/commands/manage.ts';
+import { add, addBlog, lintFile, relintBlog } from './cli/commands/draft.ts';
+import { approve, revisions } from './cli/commands/manage.ts';
 import { report } from './cli/commands/report.ts';
 import { setDevtoKey } from './cli/commands/devto-key.ts';
 import { parseArgs, type CommandDeps } from './cli/commands/shared.ts';
@@ -18,6 +18,7 @@ function fakeDb() {
   const weeks: Row[] = [];
   const posts: Row[] = [];
   const metrics: Row[] = [];
+  const revs: Row[] = [];
   const credentials: Row[] = [];
   const tx: SqlTransaction = {
     async execute<R extends Record<string, unknown>>(
@@ -53,6 +54,32 @@ function fakeDb() {
         case 'schedule-posts':
           for (const x of posts) if ((p[0] as string[]).includes(x['id'] as string)) x['status'] = 'scheduled';
           return out([]);
+        case 'list-slot-rows':
+          return out(posts.filter((x) => x['idempotency_key'] === p[0] || String(x['idempotency_key']).startsWith(`${p[0]}:r`)));
+        case 'approve-post-draft':
+          return out(posts.filter((x) => x['id'] === p[0] && x['status'] === 'draft'));
+        case 'get-post':
+        case 'lock-post-for-update':
+          return out(posts.filter((x) => x['id'] === p[0]));
+        case 'update-draft-post': {
+          const row = posts.find((x) => x['id'] === p[0]) as Row;
+          if (p[1] !== null) row['payload'] = JSON.parse(p[1] as string);
+          if (p[5]) row['confirmed_flags'] = [];
+          row['status'] = p[6];
+          return out([row]);
+        }
+        case 'insert-revision':
+          revs.push({ id: p[0], post_id: p[1], before: JSON.parse(p[2] as string), after: JSON.parse(p[3] as string), created_at: new Date(`2026-11-0${revs.length + 1}T00:00:00Z`) });
+          return out([]);
+        case 'list-recent-revisions':
+          return out(
+            [...revs].reverse().slice(0, Number(p[0])).map((r) => ({ ...r, channel: posts.find((x) => x['id'] === r['post_id'])?.['channel'] }))
+          );
+        case 'cancel-post': {
+          const row = posts.find((x) => x['id'] === p[0] && ['draft', 'scheduled'].includes(x['status'] as string));
+          if (row) row['status'] = 'cancelled';
+          return out(row ? [row] : []);
+        }
         case 'approve-week':
           return out([]);
         case 'list-posts':
@@ -69,7 +96,7 @@ function fakeDb() {
     },
   };
   const ex: SqlExecutor = { execute: tx.execute, transaction: (op) => op(tx) };
-  return { ex, weeks, posts, metrics, credentials };
+  return { ex, weeks, posts, metrics, credentials, revs };
 }
 
 const WEEK = '2026-11-02';
@@ -187,6 +214,97 @@ describe('marketing:queue CLI', () => {
       await expect(addBlog(parseArgs(['add-blog', `--week=${WEEK}`, '--mdx=/c/2026-11-03-b.mdx']), deps)).rejects.toThrow('does not match');
       expect(db.posts).toHaveLength(0);
     });
+  });
+
+  it('add --at creates an adhoc row at that instant', async () => {
+    const { db, deps } = harness({ 'd.json': '{"text":"hello"}' });
+    // Wed 2026-11-04 10:00 Pacific -> week of Monday 2026-11-02
+    await add(parseArgs(['add', '--channel=x', '--at=2026-11-04T18:00:00Z', '--kind=news', '--file=d.json']), deps);
+    const row = db.posts[0];
+    expect(new Date(row['publish_at'] as Date).toISOString()).toBe('2026-11-04T18:00:00.000Z');
+    expect(row['idempotency_key']).toBe('x:2026-11-02:adhoc:2026-11-04T18:00:00.000Z');
+    expect(db.weeks[0]['week_start']).toBe('2026-11-02');
+    await expect(
+      add(parseArgs(['add', '--channel=x', '--at=2026-11-04T18:00:00Z', '--slot=x-mon', '--kind=news', '--file=d.json']), deps)
+    ).rejects.toThrow('mutually exclusive');
+  });
+
+  it('add refills a slot whose row was cancelled', async () => {
+    const { db, deps } = harness({ 'd.json': '{"text":"one"}' });
+    const a = ['add', `--week=${WEEK}`, '--channel=x', '--slot=x-fri', '--kind=take', '--file=d.json'];
+    await add(parseArgs(a), deps);
+    await expect(add(parseArgs(a), deps)).rejects.toThrow('already has a live row');
+    db.posts[0]['status'] = 'cancelled';
+    await add(parseArgs(a), deps);
+    expect(db.posts[1]['idempotency_key']).toBe(`x:${WEEK}:x-fri:r1`);
+    db.posts[1]['status'] = 'cancelled';
+    await add(parseArgs(a), deps);
+    expect(db.posts[2]['idempotency_key']).toBe(`x:${WEEK}:x-fri:r2`);
+  });
+
+  it('approve --id schedules only that row', async () => {
+    const { db, deps } = harness({ 'a.json': '{"text":"a"}', 'b.json': '{"text":"b"}' });
+    await add(parseArgs(['add', `--week=${WEEK}`, '--channel=x', '--slot=x-tue', '--kind=take', '--file=a.json']), deps);
+    await add(parseArgs(['add', `--week=${WEEK}`, '--channel=x', '--slot=x-wed', '--kind=take', '--file=b.json']), deps);
+    await approve(parseArgs(['approve', `--id=${db.posts[0]['id']}`]), deps);
+    expect(db.posts.map((x) => x['status'])).toEqual(['scheduled', 'draft']);
+  });
+
+  it('approve --id rejects past publish_at', async () => {
+    const { db, deps, lines } = harness({ 'a.json': '{"text":"a"}', 'b.json': '{"text":"CopilotKit"}' });
+    await add(parseArgs(['add', `--week=${WEEK}`, '--channel=x', '--slot=x-mon', '--kind=take', '--file=a.json']), deps);
+    await add(parseArgs(['add', `--week=${WEEK}`, '--channel=x', '--slot=x-wed', '--kind=take', '--file=b.json']), deps);
+    await approve(parseArgs(['approve', `--id=${db.posts[0]['id']}`]), deps);
+    await approve(parseArgs(['approve', `--id=${db.posts[1]['id']}`]), deps);
+    expect(db.posts.map((x) => x['status'])).toEqual(['draft', 'draft']);
+    expect(lines.join('\n')).toContain('past (left as draft; reschedule or cancel): 1');
+    expect(lines.join('\n')).toContain('competitor_name');
+  });
+
+  it('lint prints flags without a database', async () => {
+    const lines: string[] = [];
+    const files: Record<string, string> = {
+      'd.json': JSON.stringify({ threadParts: ['one', 'two \u2014 CopilotKit'] }),
+      'p.mdx': '---\ntitle: T\ndescription: D\n---\n\nThe election is near.\n',
+    };
+    const io = { readFile: async (p: string) => Buffer.from(files[p]), stdout: (l: string) => lines.push(l) };
+    await lintFile(parseArgs(['lint', '--channel=x', '--file=d.json']), io);
+    await lintFile(parseArgs(['lint', '--channel=blog', '--file=p.mdx']), io);
+    const text = lines.join('\n');
+    expect(text).toContain('lint: competitor_name (blocking)');
+    expect(text).toContain('lint: em_dash (warning)');
+    expect(text).toContain('lint: politics (blocking) "election"');
+  });
+
+  it('relint-blog recomputes flags, resets confirmations, and demotes a scheduled row', async () => {
+    const slot = defaultSlots(WEEK).find((s) => s.slot === 'blog') as { publishAt: Date };
+    const mdx = (body: string, at = slot.publishAt.toISOString()) =>
+      `---\ntitle: 'Post'\ndescription: 'Desc'\ndate: 2026-11-03\ntags: [a]\nauthor: brian\npublishAt: ${at}\n---\n\n${body}\n`;
+    const { db, deps } = harness({ 'a.mdx': mdx('Fine.'), 'b.mdx': mdx('See CopilotKit.'), 'c.mdx': mdx('x', '2026-11-03T12:00:00.000Z') });
+    await addBlog(parseArgs(['add-blog', `--week=${WEEK}`, '--mdx=/c/2026-11-03-p.mdx']), { ...deps, readFile: async () => Buffer.from(mdx('Fine.')) });
+    const blog = db.posts[0];
+    blog['status'] = 'scheduled';
+    blog['confirmed_flags'] = ['politics'];
+    await relintBlog(parseArgs(['relint-blog', blog['id'] as string, '--mdx=b.mdx']), deps);
+    expect((blog['payload'] as { lintFlags: { code: string }[]; slug: string }).lintFlags[0].code).toBe('competitor_name');
+    expect((blog['payload'] as { slug: string }).slug).toBe('p');
+    expect(blog['status']).toBe('draft');
+    expect(blog['confirmed_flags']).toEqual([]);
+    expect(db.revs).toHaveLength(1);
+    await expect(relintBlog(parseArgs(['relint-blog', blog['id'] as string, '--mdx=c.mdx']), deps)).rejects.toThrow('does not match');
+  });
+
+  it('revisions prints recent before and after text', async () => {
+    const { db, deps, lines } = harness({ 'a.json': '{"text":"old"}', 'b.json': '{"text":"new"}' });
+    await add(parseArgs(['add', `--week=${WEEK}`, '--channel=x', '--slot=x-sat', '--kind=take', '--file=a.json']), deps);
+    const { edit } = await import('./cli/commands/draft.ts');
+    await edit(parseArgs(['edit', db.posts[0]['id'] as string, '--file=b.json']), deps);
+    lines.length = 0;
+    await revisions(parseArgs(['revisions', '--limit=5']), deps);
+    const text = lines.join('\n');
+    expect(text).toContain(`${db.posts[0]['id']} x`);
+    expect(text).toContain('before: old');
+    expect(text).toContain('after:  new');
   });
 
   it('set-devto-key seals the stdin key', async () => {

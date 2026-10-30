@@ -87,3 +87,9 @@ export function defaultSlots(weekStart: string): DefaultSlot[] {
   slots.push({ channel: 'devto', slot: 'devto', publishAt: pacificDateTime(day(3), '09:00') });
   return slots;
 }
+
+/** The Monday on or before `date`, as a Pacific `YYYY-MM-DD`. */
+export function pacificWeekContaining(date: Date): string {
+  const [y, m, d] = weekStartFor(date).split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d - 7)).toISOString().slice(0, 10);
+}

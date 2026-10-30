@@ -1,8 +1,8 @@
 import { validateDraft, type Draft } from '@threadplane-internal/marketing-channels';
 import { convertMdxForDevto } from '../../devto-convert.ts';
 import { lintPublicCopy, type LintFlag } from '../../lint.ts';
-import { getPost, insertDraftPost, updateDraftPost, upsertWeek } from '../../repository.ts';
-import { defaultSlots } from '../../schedule.ts';
+import { getPost, insertDraftPost, listSlotRows, updateDraftPost, upsertWeek } from '../../repository.ts';
+import { defaultSlots, pacificWeekContaining } from '../../schedule.ts';
 import type { Channel, MediaRef, PostKind } from '../../types.ts';
 import { requireFlag, requireId, requireWeek, type Args, type CommandDeps } from './shared.ts';
 import matter from 'gray-matter';
@@ -50,16 +50,39 @@ function validate(channel: Channel, payload: Record<string, unknown>, media: Dra
 }
 
 export async function add(args: Args, deps: CommandDeps): Promise<void> {
-  const weekStart = requireWeek(args);
   const channel = requireFlag(args, 'channel') as Channel;
-  const slotName = requireFlag(args, 'slot');
+  const at = args.flags['at'];
+  if (at && args.flags['slot']) throw new Error('--at and --slot are mutually exclusive');
+  if (!at && !args.flags['slot']) throw new Error('--slot or --at is required');
   const kind = requireFlag(args, 'kind') as PostKind;
   if (!CHANNELS.includes(channel) || channel === 'blog') {
     throw new Error('--channel must be x, linkedin or devto (use add-blog for the blog)');
   }
   if (!KINDS.includes(kind)) throw new Error(`--kind must be one of ${KINDS.join(', ')}`);
-  const slot = defaultSlots(weekStart).find((s) => s.channel === channel && s.slot === slotName);
-  if (!slot) throw new Error(`No ${channel} slot named "${slotName}" in the default week`);
+  let weekStart: string;
+  let slotName: string;
+  let publishAt: Date;
+  let idempotencyKey: string;
+  if (at) {
+    publishAt = new Date(at);
+    if (Number.isNaN(publishAt.getTime())) throw new Error('--at must be an ISO instant');
+    weekStart = args.flags['week'] ? requireWeek(args) : pacificWeekContaining(publishAt);
+    slotName = 'adhoc';
+    idempotencyKey = `${channel}:${weekStart}:adhoc:${publishAt.toISOString()}`;
+  } else {
+    weekStart = requireWeek(args);
+    slotName = requireFlag(args, 'slot');
+    const slot = defaultSlots(weekStart).find((s) => s.channel === channel && s.slot === slotName);
+    if (!slot) throw new Error(`No ${channel} slot named "${slotName}" in the default week`);
+    publishAt = slot.publishAt;
+    const baseKey = `${channel}:${weekStart}:${slotName}`;
+    const existing = await listSlotRows(deps.ex, baseKey);
+    if (existing.some((row) => row.status !== 'cancelled')) {
+      throw new Error(`Slot ${slotName} already has a live row (${existing.find((row) => row.status !== 'cancelled')?.id}); cancel it first to refill`);
+    }
+    idempotencyKey = existing.length === 0 ? baseKey : `${baseKey}:r${existing.length}`;
+    if (existing.length > 0) slotName = `${slotName}-r${existing.length}`;
+  }
 
   const raw = await readJson(deps, requireFlag(args, 'file'));
   const payload = pickDraftFields(raw);
@@ -77,7 +100,7 @@ export async function add(args: Args, deps: CommandDeps): Promise<void> {
 
   const media: MediaRef[] = [];
   if (png) {
-    media.push({ url: await deps.upload(png, `marketing/${weekStart}/${slotName}.png`), alt });
+    media.push({ url: await deps.upload(png, `marketing/${weekStart}/${slotName}${at ? `-${publishAt.getTime()}` : ''}.png`), alt });
   }
 
   const post = await deps.ex.transaction(async (tx) => {
@@ -86,12 +109,12 @@ export async function add(args: Args, deps: CommandDeps): Promise<void> {
       weekId: week.id,
       channel,
       kind,
-      publishAt: slot.publishAt,
+      publishAt,
       payload: { ...payload, lintFlags: flags },
       media,
       dependsOn: args.flags['depends-on'] ?? null,
       utmCampaign: args.flags['campaign'] ?? null,
-      idempotencyKey: `${channel}:${weekStart}:${slotName}`,
+      idempotencyKey,
     });
   });
   deps.stdout(`added ${post.id} ${channel} ${slotName} ${post.publishAt}`);
@@ -184,4 +207,41 @@ export async function edit(args: Args, deps: CommandDeps): Promise<void> {
   });
   deps.stdout(`edited ${updated.id} (${updated.status}); earlier flag confirmations were cleared`);
   printFlags(deps, flags);
+}
+
+export async function relintBlog(args: Args, deps: CommandDeps): Promise<void> {
+  const id = requireId(args);
+  const post = await getPost(deps.ex, id);
+  if (!post) throw new Error(`Marketing post ${id} not found`);
+  if (post.channel !== 'blog') throw new Error(`${id} is a ${post.channel} row; relint-blog only handles blog rows`);
+  const mdx = (await deps.readFile(requireFlag(args, 'mdx'))).toString('utf8');
+  const { data, content } = matter(mdx);
+  const raw: unknown = data['publishAt'];
+  const publishAt = raw instanceof Date ? raw.toISOString() : raw ? String(raw) : '';
+  if (!publishAt || new Date(publishAt).getTime() !== new Date(post.publishAt).getTime()) {
+    throw new Error(`MDX publishAt ${publishAt || '(missing)'} does not match the row publish_at ${post.publishAt}`);
+  }
+  const flags = lintPublicCopy(`${String(data['title'] ?? '')}\n${String(data['description'] ?? '')}\n${content}`, 'blog');
+  const updated = await updateDraftPost(deps.ex, id, { payload: { ...post.payload, lintFlags: flags } });
+  deps.stdout(`relinted ${updated.id} (${updated.status}); earlier flag confirmations were cleared`);
+  printFlags(deps, flags);
+}
+
+/** No database: lints a draft.json (social, dev.to) or an .mdx (blog) and prints the flags. */
+export async function lintFile(
+  args: Args,
+  io: { readFile: (path: string) => Promise<Buffer>; stdout: (line: string) => void }
+): Promise<void> {
+  const channel = requireFlag(args, 'channel') as Channel;
+  if (!CHANNELS.includes(channel)) throw new Error(`--channel must be one of ${CHANNELS.join(', ')}`);
+  const path = requireFlag(args, 'file');
+  const raw = (await io.readFile(path)).toString('utf8');
+  let text: string;
+  if (channel === 'blog') {
+    const { data, content } = matter(raw);
+    text = `${String(data['title'] ?? '')}\n${String(data['description'] ?? '')}\n${content}`;
+  } else {
+    text = lintText(pickDraftFields(JSON.parse(raw) as Record<string, unknown>));
+  }
+  printFlags({ stdout: io.stdout } as CommandDeps, lintPublicCopy(text, channel));
 }

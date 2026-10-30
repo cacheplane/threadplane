@@ -546,3 +546,82 @@ export async function insertPostMetrics(
     [postId, fetchedAt, JSON.stringify(metrics)]
   );
 }
+
+/** Every row ever created for a slot: the base key plus any `:r<n>` refills. */
+export async function listSlotRows(
+  ex: SqlTransaction,
+  baseKey: string
+): Promise<MarketingPost[]> {
+  const { rows } = await ex.execute(
+    `/* marketing:list-slot-rows */
+     select * from marketing_posts
+     where idempotency_key = $1 or idempotency_key like $1 || ':r%'
+     order by created_at`,
+    [baseKey]
+  );
+  return rows.map(mapPost);
+}
+
+/** Same rules as `approveWeek`, for exactly one draft row. */
+export async function approvePost(
+  ex: SqlExecutor,
+  id: string,
+  now: Date
+): Promise<{
+  scheduled: string[];
+  blocked: { id: string; codes: string[] }[];
+  past: string[];
+}> {
+  return ex.transaction(async (tx) => {
+    const { rows } = await tx.execute(
+      `/* marketing:approve-post-draft */
+       select * from marketing_posts where id = $1 and status = 'draft' for update`,
+      [id]
+    );
+    if (!rows[0]) throw new Error(`Marketing post ${id} is not a draft`);
+    const post = mapPost(rows[0]);
+    if (new Date(post.publishAt).getTime() <= now.getTime()) {
+      return { scheduled: [], blocked: [], past: [id] };
+    }
+    const codes = unconfirmedBlockingCodes(post);
+    if (codes.length > 0) return { scheduled: [], blocked: [{ id, codes }], past: [] };
+    await tx.execute(
+      `/* marketing:schedule-posts */
+       update marketing_posts set status = 'scheduled', updated_at = now()
+       where id = any($1::uuid[]) and status = 'draft'`,
+      [[id]]
+    );
+    return { scheduled: [id], blocked: [], past: [] };
+  });
+}
+
+export interface RecentRevision {
+  id: string;
+  postId: string;
+  channel: string;
+  before: Record<string, unknown>;
+  after: Record<string, unknown>;
+  createdAt: string;
+}
+
+export async function listRecentRevisions(
+  ex: SqlTransaction,
+  limit: number
+): Promise<RecentRevision[]> {
+  const { rows } = await ex.execute(
+    `/* marketing:list-recent-revisions */
+     select r.*, p.channel from marketing_post_revisions r
+     join marketing_posts p on p.id = r.post_id
+     order by r.created_at desc
+     limit $1`,
+    [limit]
+  );
+  return rows.map((row) => ({
+    id: row['id'] as string,
+    postId: row['post_id'] as string,
+    channel: row['channel'] as string,
+    before: row['before'] as Record<string, unknown>,
+    after: row['after'] as Record<string, unknown>,
+    createdAt: iso(row['created_at']),
+  }));
+}
