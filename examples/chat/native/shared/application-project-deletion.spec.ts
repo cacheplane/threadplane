@@ -617,3 +617,157 @@ test('final empty evidence supersedes newer pre-empty row evidence omitted from 
   assert.equal(app.getSnapshot().selection.row?.projectId, undefined);
   app.dispose();
 });
+
+function projectAbsenceRace() {
+  const row: ThreadRow = { id: 'a', title: 'A', projectId: 'p', pinned: true };
+  let rows: readonly ThreadRow[] = [row];
+  const lookup = deferred<import('./contracts.js').ThreadLookupResult>();
+  let nextList:
+    | ReturnType<typeof deferred<DirectoryResult<readonly ThreadRow[]>>>
+    | undefined;
+  const writes: { id: string; projectId: string | null }[] = [];
+  const runtime = {
+    status: 'idle',
+    history: [],
+    interrupts: [],
+    messages: [],
+    toolCalls: [],
+  };
+  const app = createApplication({
+    directory: {
+      list: async () => {
+        const held = nextList;
+        nextList = undefined;
+        return held ? held.promise : { kind: 'ready', value: rows };
+      },
+      get: async () => lookup.promise,
+      create: async () => ({ kind: 'failed' }),
+      projectMembers: async () => ({ kind: 'ready', value: [] }),
+      setProject: async (id, projectId) => {
+        writes.push({ id, projectId });
+        return { kind: 'ready', value: { id, projectId } };
+      },
+    },
+    history: {
+      currentUrl: () => 'http://localhost/?thread=a',
+      push: () => {},
+      subscribe: () => () => {},
+    },
+    apiUrl: 'http://localhost/api',
+    assistantId: 'test',
+    sessionFactory: () =>
+      ({
+        getSnapshot: () => runtime,
+        subscribe: () => () => {},
+        load: async () => {},
+        dispose: async () => {},
+      } as unknown as import('./application.js').ApplicationSession),
+    contentFactory: () => ({
+      getSnapshot: () => [],
+      update: () => {},
+      dispose: () => {},
+    }),
+  });
+  return {
+    app,
+    row,
+    lookup,
+    writes,
+    setRows(value: readonly ThreadRow[]) {
+      rows = value;
+    },
+    holdList() {
+      const held = deferred<DirectoryResult<readonly ThreadRow[]>>();
+      nextList = held;
+      return held;
+    },
+  };
+}
+
+test('project absence preserves a confirmed move to another project against an older lookup and list', async () => {
+  const race = projectAbsenceRace();
+  const { app, row, lookup } = race;
+  app.start();
+  await tick();
+  assert.equal(app.getSnapshot().selection.status, 'pending');
+  assert.equal(await app.setProject('a', 'q'), true);
+  const list = race.holdList();
+  app.refresh();
+  await tick();
+  assert.equal(await app.deleteProject('p'), true);
+  lookup.resolve({ kind: 'ready', value: row });
+  await tick();
+  assert.equal(app.getSnapshot().selection.row?.projectId, 'q');
+  list.resolve({ kind: 'ready', value: [{ ...row, projectId: 'q' }] });
+  await tick();
+  assert.equal(app.getSnapshot().list.rows[0].projectId, 'q');
+  assert.equal(app.getSnapshot().selection.row?.projectId, 'q');
+  assert.deepEqual(race.writes, [{ id: 'a', projectId: 'q' }]);
+  app.dispose();
+});
+
+test('project absence preserves a newer readonly association before the first deletion', async () => {
+  const race = projectAbsenceRace();
+  const { app, row, lookup } = race;
+  app.start();
+  await tick();
+  race.setRows([{ ...row, projectId: 'q' }]);
+  app.refresh();
+  await tick();
+  assert.equal(app.getSnapshot().list.rows[0].projectId, 'q');
+  assert.equal(await app.deleteProject('p'), true);
+  lookup.resolve({ kind: 'ready', value: row });
+  await tick();
+  assert.equal(app.getSnapshot().selection.row?.projectId, 'q');
+  assert.equal(app.getSnapshot().list.rows[0].projectId, 'q');
+  assert.deepEqual(race.writes, []);
+  app.dispose();
+});
+
+test('project absence preserves an independently observed unassigned row', async () => {
+  const race = projectAbsenceRace();
+  const { app, row, lookup } = race;
+  const { projectId: _project, ...unassigned } = row;
+  app.start();
+  await tick();
+  race.setRows([unassigned]);
+  app.refresh();
+  await tick();
+  assert.equal(await app.deleteProject('p'), true);
+  lookup.resolve({ kind: 'ready', value: row });
+  await tick();
+  assert.equal(
+    Object.hasOwn(app.getSnapshot().selection.row!, 'projectId'),
+    false
+  );
+  assert.equal(
+    Object.hasOwn(app.getSnapshot().list.rows[0], 'projectId'),
+    false
+  );
+  app.dispose();
+});
+
+test('project absence fences the winning project when it too was emptied after row omission', async () => {
+  const race = projectAbsenceRace();
+  const { app, row, lookup } = race;
+  app.start();
+  await tick();
+  assert.equal(await app.setProject('a', 'q'), true);
+  assert.equal(await app.deleteProject('p'), true);
+  race.setRows([]);
+  app.refresh();
+  await tick();
+  assert.equal(await app.deleteProject('q'), true);
+  lookup.resolve({ kind: 'ready', value: row });
+  await tick();
+  assert.equal(
+    Object.hasOwn(app.getSnapshot().selection.row!, 'projectId'),
+    false
+  );
+  race.setRows([{ ...row, projectId: 'q' }]);
+  app.refresh();
+  await tick();
+  assert.equal(app.getSnapshot().list.rows[0].projectId, 'q');
+  assert.equal(app.getSnapshot().selection.row?.projectId, 'q');
+  app.dispose();
+});
