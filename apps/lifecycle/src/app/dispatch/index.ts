@@ -28,6 +28,7 @@ export async function workflow(
     installRuntimeHelloEnabled: configuration.installRuntimeHelloEnabled,
     installDigestEnabled: configuration.installDigestEnabled,
     observationProcessingEnabled: configuration.observationProcessingEnabled,
+    marketingPostingEnabled: configuration.marketingPostingEnabled,
     campaignEnrollmentStartAt: configuration.campaignEnrollmentStartAt,
     signal: context.signal,
   });

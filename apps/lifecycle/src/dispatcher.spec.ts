@@ -88,6 +88,13 @@ function dependencies(
     projectFormObservations: vi
       .fn()
       .mockResolvedValue({ projected: 0, disabled: false }),
+    dispatchMarketing: vi.fn().mockResolvedValue({
+      posted: 0,
+      waiting: 0,
+      failed: 0,
+      alerts: [],
+      alertErrors: [],
+    }),
     now: vi.fn(() => NOW),
     renewJobLease: vi
       .fn()
@@ -938,6 +945,69 @@ describe('dispatchLifecycleJobs', () => {
       dispatched: 1,
       operatorAlerts: ['observation_projection_failed'],
     });
+  });
+});
+
+describe('marketing dispatch step', () => {
+  const run = (
+    deps: LifecycleDispatcherDependencies,
+    marketingPostingEnabled?: boolean
+  ) =>
+    dispatchLifecycleJobs(
+      {
+        batchSize: 10,
+        campaignEnabled: true,
+        ...(marketingPostingEnabled === undefined
+          ? {}
+          : { marketingPostingEnabled }),
+        signal: new AbortController().signal,
+      },
+      deps
+    );
+
+  it('runs only when marketingPostingEnabled is exactly true', async () => {
+    for (const flag of [undefined, false]) {
+      const deps = dependencies();
+      await run(deps, flag);
+      expect(deps.dispatchMarketing).not.toHaveBeenCalled();
+    }
+    const deps = dependencies();
+    await run(deps, true);
+    expect(deps.dispatchMarketing).toHaveBeenCalledOnce();
+    const [, signal] = vi.mocked(deps.dispatchMarketing).mock.calls[0];
+    expect(signal).toBeInstanceOf(AbortSignal);
+    expect(
+      vi.mocked(deps.dispatchMarketing).mock.invocationCallOrder[0]
+    ).toBeLessThan(vi.mocked(deps.leaseDueJobs).mock.invocationCallOrder[0]);
+  });
+
+  it('contains a marketing failure and reports marketing_dispatch_failed', async () => {
+    const job = leasedJob('00000000-0000-4000-8000-0000000000ac');
+    const deps = dependencies({
+      dispatchMarketing: vi.fn().mockRejectedValue(new Error('boom')),
+      leaseDueJobs: vi.fn().mockResolvedValue([job]),
+    });
+    const result = await run(deps, true);
+    expect(deps.dispatchLeasedJob).toHaveBeenCalledOnce();
+    expect(result).toMatchObject({
+      leased: 1,
+      dispatched: 1,
+      operatorAlerts: ['marketing_dispatch_failed'],
+    });
+  });
+
+  it('reports marketing_dispatch_failed when marketing alert delivery failed', async () => {
+    const deps = dependencies({
+      dispatchMarketing: vi.fn().mockResolvedValue({
+        posted: 0,
+        waiting: 0,
+        failed: 1,
+        alerts: [],
+        alertErrors: ['post_failed:1: resend down'],
+      }),
+    });
+    const result = await run(deps, true);
+    expect(result.operatorAlerts).toEqual(['marketing_dispatch_failed']);
   });
 });
 

@@ -2,6 +2,7 @@
   "name": "@threadplane-internal/marketing-queue",
   "version": "0.0.0",
   "license": "MIT",
+  "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "repository": {

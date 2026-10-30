@@ -23,6 +23,10 @@ import {
 import { createLifecycleAppJobHandlers } from './campaign/send.js';
 import { DeterministicLifecycleJobError } from './job-errors.js';
 import { loadEmailHmacKeyring } from './email-keyring.js';
+import {
+  createMarketingDispatch,
+  type MarketingDispatchResult,
+} from './marketing.js';
 
 export { DeterministicLifecycleJobError } from './job-errors.js';
 
@@ -50,13 +54,15 @@ export interface LifecycleDispatcherInput {
   installRuntimeHelloEnabled?: boolean;
   installDigestEnabled?: boolean;
   observationProcessingEnabled?: boolean;
+  marketingPostingEnabled?: boolean;
   campaignEnrollmentStartAt?: Date;
   signal: AbortSignal;
 }
 
 export type LifecycleOperatorAlert =
   | 'mailbox_recovery_required'
-  | 'observation_projection_failed';
+  | 'observation_projection_failed'
+  | 'marketing_dispatch_failed';
 
 export interface LifecycleDispatcherResult {
   leased: number;
@@ -80,6 +86,10 @@ export interface LifecycleDispatcherDependencies {
   processInstallRuntimeActivations: typeof processInstallRuntimeActivations;
   processObservations: typeof processObservations;
   projectFormObservations: typeof projectFormObservations;
+  dispatchMarketing: (
+    executor: SqlExecutor,
+    signal: AbortSignal
+  ) => Promise<MarketingDispatchResult>;
   reconcileMessageIds?: typeof reconcilePendingResendMessageIds;
   loadEmailKeyring: typeof loadEmailHmacKeyring;
   now: () => Date;
@@ -101,6 +111,7 @@ const defaultDependencies: LifecycleDispatcherDependencies = {
   processInstallRuntimeActivations,
   processObservations,
   projectFormObservations,
+  dispatchMarketing: createMarketingDispatch(process.env),
   reconcileMessageIds: reconcilePendingResendMessageIds,
   loadEmailKeyring: loadEmailHmacKeyring,
   now: () => new Date(),
@@ -224,6 +235,22 @@ export async function dispatchLifecycleJobs(
       if (projectionFailed) {
         operatorAlerts.push('observation_projection_failed');
       }
+    }
+    if (input.marketingPostingEnabled === true) {
+      // Contained like projection: a marketing failure never blocks leasing.
+      try {
+        const marketing = await dependencies.dispatchMarketing(
+          executor,
+          tickSignal
+        );
+        // A failed alert email leaves the operator log as the only signal.
+        if (marketing.alertErrors.length > 0) {
+          operatorAlerts.push('marketing_dispatch_failed');
+        }
+      } catch {
+        operatorAlerts.push('marketing_dispatch_failed');
+      }
+      tickSignal.throwIfAborted();
     }
     if (input.campaignEnrollmentEnabled) {
       if (
