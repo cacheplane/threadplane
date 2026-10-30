@@ -87,22 +87,25 @@ function withUtm(url: string, slug: string): string {
 }
 
 function rewriteUrl(url: string, origin: string, slug: string, utm: boolean): string {
+  if (url.includes(NUL)) return url; // a masked code span in URL position: leave the link alone
   const absolute = /^\/(?!\/)/u.test(url) ? `${origin}${url}` : url;
   const ours = absolute === origin || absolute.startsWith(`${origin}/`) || absolute.startsWith(`${origin}?`) || absolute.startsWith(`${origin}#`);
   return utm && ours ? withUtm(absolute, slug) : absolute;
 }
 
-/** Rewrites only the text outside inline code spans (any backtick-run length). */
+const NUL = String.fromCharCode(0);
+
+/** Masks inline code spans (any backtick-run length) so the rewrite cannot touch them, then restores them. */
 function absolutize(line: string, origin: string, slug: string): string {
-  return line
-    .split(/(`+)([\s\S]*?[^`])\1(?!`)/u)
-    .map((part, i, parts) => {
-      // split() with two groups yields [text, ticks, code, text, ticks, code, ...].
-      if (i % 3 === 0) return rewriteSegment(part, origin, slug);
-      if (i % 3 === 1) return part;
-      return part + parts[i - 1];
-    })
-    .join('');
+  const spans: string[] = [];
+  const masked = line.replace(/(`+)([\s\S]*?[^`])\1(?!`)/gu, (span) => {
+    spans.push(span);
+    return `${NUL}CODE${spans.length - 1}${NUL}`;
+  });
+  return rewriteSegment(masked, origin, slug).replace(
+    new RegExp(`${NUL}CODE(\\d+)${NUL}`, 'gu'),
+    (_m, n: string) => spans[Number(n)]
+  );
 }
 
 function rewriteSegment(line: string, origin: string, slug: string): string {

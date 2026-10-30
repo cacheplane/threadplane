@@ -81,6 +81,16 @@ describe('convertMdxForDevto', () => {
     expect(out.body).toContain(`[real](https://threadplane.ai/docs/r?${utm})`);
   });
 
+  it('link text containing inline code is still rewritten', () => {
+    const out = convertMdxForDevto(
+      doc('See [`useAgent`](/docs/api/use-agent) for details, and [x](`/a`) stays.'),
+      opts
+    );
+    expect(out.body).toContain(`[`+'`useAgent`'+`](https://threadplane.ai/docs/api/use-agent?${utm})`);
+    expect(out.body).toContain('[x](`/a`)');
+    expect(out.body).not.toContain('\u0000');
+  });
+
   it('fence inside callout throws', () => {
     expect(() => convertMdxForDevto(doc('<Callout>\n```ts\nx\n```\n</Callout>'), opts)).toThrow('code fence inside <Callout>');
   });
