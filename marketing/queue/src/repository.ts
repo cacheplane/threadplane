@@ -519,3 +519,30 @@ export async function upsertChannelCredentials(
     [channel, sealed, expiresAt ?? null]
   );
 }
+
+export async function findWeek(
+  ex: SqlTransaction,
+  weekStart: string
+): Promise<MarketingWeek | null> {
+  const { rows } = await ex.execute(
+    `/* marketing:find-week */
+     select * from marketing_weeks where week_start = $1::date`,
+    [weekStart]
+  );
+  return rows[0] ? mapWeek(rows[0]) : null;
+}
+
+export async function insertPostMetrics(
+  ex: SqlTransaction,
+  postId: string,
+  fetchedAt: Date,
+  metrics: Record<string, unknown>
+): Promise<void> {
+  await ex.execute(
+    `/* marketing:insert-post-metrics */
+     insert into marketing_post_metrics (post_id, fetched_at, metrics)
+     values ($1, $2, $3::jsonb)
+     on conflict do nothing`,
+    [postId, fetchedAt, JSON.stringify(metrics)]
+  );
+}

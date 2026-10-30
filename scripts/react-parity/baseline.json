@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "ed073f2715b4d43f41424e4e28b4104865361965",
+  "baselineHead": "6511e50f3aa8c4ace2dc2ba1a83b579b18dcc9ce",
   "sourceState": {
     "modified": [
-      "tsconfig.base.json"
+      "package.json"
     ],
     "untracked": []
   },
@@ -2237,7 +2237,7 @@
       "id": "config:package.json",
       "kind": "config",
       "path": "package.json",
-      "sha256": "4dfbbe651020a287565af077393622e41d5cf58de8e273b36859e964ffd41e17"
+      "sha256": "995d8e228c09b0bd0dbbb9dba416e6afe0f983f1cd04ef789e635549ca5d63ca"
     },
     {
       "id": "config:scripts/assemble-examples.ts",

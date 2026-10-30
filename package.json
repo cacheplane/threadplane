@@ -18,6 +18,7 @@
     "growth:cancel-resend": "tsx scripts/cancel-resend-lifecycle.mts",
     "growth:import-resend": "tsx scripts/import-resend-lifecycle.mts",
     "growth:receiving": "tsx scripts/resend-receiving.mts",
+    "marketing:queue": "tsx --env-file=.env marketing/queue/src/cli.ts",
     "marketing:channels:x:auth": "tsx --env-file=.env marketing/queue/src/cli/x-auth.ts",
     "marketing:channels:x:smoke": "tsx --env-file=.env marketing/channels/scripts/smoke.ts",
     "marketing:channels:devto:smoke": "tsx --env-file=.env marketing/channels/scripts/smoke.ts --channel=devto",
