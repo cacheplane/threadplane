@@ -22,7 +22,7 @@ export type { MarketingDispatchResult };
 type Environment = Record<string, string | undefined>;
 
 const MARKETING_POST_LIMIT = 5;
-const LIVE_CHECK_TIMEOUT_MS = 10_000;
+const REQUEST_TIMEOUT_MS = 10_000;
 
 function requiredText(env: Environment, name: string): string {
   const value = env[name];
@@ -34,9 +34,18 @@ function requiredText(env: Environment, name: string): string {
 export function createMarketingDependencies(
   ex: SqlExecutor,
   env: Environment,
-  options: { fetch?: typeof globalThis.fetch } = {}
+  options: { fetch?: typeof globalThis.fetch; signal?: AbortSignal } = {}
 ): MarketingDispatchDependencies {
-  const fetchImpl = options.fetch ?? globalThis.fetch;
+  const rawFetch = options.fetch ?? globalThis.fetch;
+  // Every request honors the step budget and has its own 10 s timeout.
+  const requestSignal = (): AbortSignal => {
+    const timeout = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+    return options.signal
+      ? AbortSignal.any([options.signal, timeout])
+      : timeout;
+  };
+  const fetchImpl: typeof globalThis.fetch = (input, init) =>
+    rawFetch(input, { ...init, signal: requestSignal() });
   // The key is read per call so a missing key surfaces as the dispatcher's
   // credentials_unavailable hold instead of crashing the tick.
   const loadOptions = async () =>
@@ -53,10 +62,7 @@ export function createMarketingDependencies(
       return Buffer.from(await response.arrayBuffer());
     },
     async checkLive(url) {
-      const response = await fetchImpl(url, {
-        redirect: 'follow',
-        signal: AbortSignal.timeout(LIVE_CHECK_TIMEOUT_MS),
-      });
+      const response = await fetchImpl(url, { redirect: 'follow' });
       await response.body?.cancel().catch(() => undefined);
       return response.status === 200;
     },
@@ -94,10 +100,13 @@ export function createMarketingDependencies(
           send: (message) =>
             createResendFetchClient({
               apiKey: requiredText(env, 'RESEND_API_KEY'),
-              fetch: fetchImpl,
-            }).emails.send(message, {
-              idempotencyKey: `marketing-alert:${key}`,
-            }),
+              fetch: rawFetch,
+            }).emails.send(
+              { ...message, tags: [] },
+              // No idempotency key: the marketing_alerts claim already
+              // dedupes, and a reused key could replay a failed send.
+              { signal: options.signal }
+            ),
         },
         from: requiredText(env, 'MARKETING_ALERT_FROM'),
         to: requiredText(env, 'FOUNDER_NOTIFICATION_EMAIL'),
@@ -118,6 +127,6 @@ export function createMarketingDispatch(
     dispatchMarketingPosts(
       ex,
       { limit: MARKETING_POST_LIMIT, signal },
-      createMarketingDependencies(ex, env)
+      createMarketingDependencies(ex, env, { signal })
     );
 }

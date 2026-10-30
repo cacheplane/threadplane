@@ -34,6 +34,8 @@ const MAX_BATCH_SIZE = 25;
 // Leave time for a bounded provider request and durable outcome writes.
 const TICK_JOB_START_BUDGET_MS = 30_000;
 const TICK_DEADLINE_MS = 50_000;
+// The marketing step gets its own slice so it cannot starve email jobs.
+const MARKETING_STEP_BUDGET_MS = 15_000;
 const OBSERVATION_PROJECTION_MAX_LIMIT = 100;
 const LEASE_DURATION_MS = 60_000;
 const LEASE_RENEWAL_INTERVAL_MS = 20_000;
@@ -241,7 +243,10 @@ export async function dispatchLifecycleJobs(
       try {
         const marketing = await dependencies.dispatchMarketing(
           executor,
-          tickSignal
+          AbortSignal.any([
+            tickSignal,
+            AbortSignal.timeout(MARKETING_STEP_BUDGET_MS),
+          ])
         );
         // A failed alert email leaves the operator log as the only signal.
         if (marketing.alertErrors.length > 0) {

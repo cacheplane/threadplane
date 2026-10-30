@@ -2,7 +2,7 @@
 // Neon is the only holder of X tokens (X rotates the refresh token on every
 // refresh), so this CLI never prints them and refuses to run without --target.
 
-import { runXOAuth } from '@threadplane-internal/marketing-channels/oauth';
+import { runXOAuth } from '@threadplane-internal/marketing-channels';
 import { prepareNeonWriter } from '../cli-write.ts';
 
 function fail(msg: string): never {

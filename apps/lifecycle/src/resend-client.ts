@@ -124,7 +124,9 @@ export function createResendFetchClient({
             headers: {
               Authorization: `Bearer ${apiKey}`,
               'Content-Type': 'application/json',
-              'Idempotency-Key': idempotencyKey,
+              ...(idempotencyKey === undefined
+                ? {}
+                : { 'Idempotency-Key': idempotencyKey }),
             },
             body: JSON.stringify(body),
             signal,

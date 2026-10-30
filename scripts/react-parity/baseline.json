@@ -1,9 +1,8 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "4ea25f2e0eb0e802b25011cb6ec1962582ac5b15",
+  "baselineHead": "ed073f2715b4d43f41424e4e28b4104865361965",
   "sourceState": {
     "modified": [
-      "package.json",
       "tsconfig.base.json"
     ],
     "untracked": []
@@ -2268,7 +2267,7 @@
       "id": "config:tsconfig.base.json",
       "kind": "config",
       "path": "tsconfig.base.json",
-      "sha256": "b224e24c89769f5b6cc7b4e8f9086baeb4a269d5d5a187b194b25c0dae83278f"
+      "sha256": "fef85f15cc13389982dc749ecffbf9e6864412d410190475cbcf10bfc077bbf0"
     },
     {
       "id": "doc:apps/website/content/docs/a2ui/getting-started/introduction.mdx",

@@ -2,7 +2,7 @@
 // LinkedIn access tokens last 60 days and self-serve apps get no refresh token,
 // so re-run this when the adapter reports the token has expired.
 
-import { runLinkedInOAuth } from '@threadplane-internal/marketing-channels/oauth';
+import { runLinkedInOAuth } from '@threadplane-internal/marketing-channels';
 import { prepareNeonWriter } from '../cli-write.ts';
 
 function fail(msg: string): never {

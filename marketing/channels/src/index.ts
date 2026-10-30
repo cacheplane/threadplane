@@ -18,3 +18,7 @@ export type {
 export { validateDraft, ValidationError } from './validation.ts';
 
 export { getAdapter, createAdapter } from './registry.ts';
+
+// Operator OAuth flows; exported here so buildable consumers need no subpath mapping.
+export { runXOAuth } from './x/oauth.ts';
+export { runLinkedInOAuth } from './linkedin/oauth.ts';

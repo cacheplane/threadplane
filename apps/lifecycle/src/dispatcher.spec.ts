@@ -996,6 +996,36 @@ describe('marketing dispatch step', () => {
     });
   });
 
+  it('slow marketing step does not starve email jobs', async () => {
+    const realTimeout = AbortSignal.timeout.bind(AbortSignal);
+    const spy = vi
+      .spyOn(AbortSignal, 'timeout')
+      .mockImplementation((ms) =>
+        ms === 15_000
+          ? AbortSignal.abort(new DOMException('budget', 'TimeoutError'))
+          : realTimeout(ms)
+      );
+    try {
+      const job = leasedJob('00000000-0000-4000-8000-0000000000ad');
+      const deps = dependencies({
+        dispatchMarketing: vi.fn(
+          (_executor, signal: AbortSignal) =>
+            new Promise<never>((_resolve, reject) => {
+              if (signal.aborted) reject(signal.reason);
+              signal.addEventListener('abort', () => reject(signal.reason));
+            })
+        ),
+        leaseDueJobs: vi.fn().mockResolvedValue([job]),
+      });
+      const result = await run(deps, true);
+      expect(deps.leaseDueJobs).toHaveBeenCalledOnce();
+      expect(deps.dispatchLeasedJob).toHaveBeenCalledOnce();
+      expect(result.operatorAlerts).toEqual(['marketing_dispatch_failed']);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
   it('reports marketing_dispatch_failed when marketing alert delivery failed', async () => {
     const deps = dependencies({
       dispatchMarketing: vi.fn().mockResolvedValue({

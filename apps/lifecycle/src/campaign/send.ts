@@ -111,7 +111,7 @@ export interface LifecycleResendClient {
         text: string;
         tags: { name: string; value: string }[];
       },
-      options: { idempotencyKey: string; signal?: AbortSignal }
+      options: { idempotencyKey?: string; signal?: AbortSignal }
     ): ReturnType<RecipientResendClient['emails']['send']>;
   };
 }
