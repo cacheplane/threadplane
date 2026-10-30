@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { escapeLittleText } from './little';
+import { escapeLittleText } from './little.ts';
 
 describe('escapeLittleText', () => {
   it('leaves plain text alone', () => {

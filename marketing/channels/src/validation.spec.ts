@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { validateDraft, ValidationError } from './validation';
-import type { Draft } from './types';
+import { validateDraft, ValidationError } from './validation.ts';
+import type { Draft } from './types.ts';
 
 function baseX(): Draft {
   return { channel: 'x', text: 'hello' };

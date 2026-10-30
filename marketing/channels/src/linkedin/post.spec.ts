@@ -4,10 +4,10 @@ import path from 'node:path';
 import { describe, expect, it, beforeAll, afterAll, afterEach, beforeEach } from 'vitest';
 import { setupServer } from 'msw/node';
 import { http as mswHttp, HttpResponse } from 'msw';
-import { postLinkedIn } from './post';
-import { LinkedInAuth } from './auth';
-import { LINKEDIN_VERSION } from './api';
-import type { Draft } from '../types';
+import { postLinkedIn } from './post.ts';
+import { LinkedInAuth } from './auth.ts';
+import { LINKEDIN_VERSION } from './api.ts';
+import type { Draft } from '../types.ts';
 
 const server = setupServer();
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));

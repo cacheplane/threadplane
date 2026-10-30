@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import type { Draft, PostResult } from './types';
+import type { Draft, PostResult } from './types.ts';
 
 function serializeDraft(draft: Draft): unknown {
   if (!draft.media || draft.media.length === 0) return draft;

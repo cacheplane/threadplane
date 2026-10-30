@@ -1,9 +1,9 @@
 import { describe, expect, it, beforeAll, afterAll, afterEach, beforeEach } from 'vitest';
 import { setupServer } from 'msw/node';
 import { http as mswHttp, HttpResponse } from 'msw';
-import { postX } from './post';
-import { XAuth } from './auth';
-import type { Draft } from '../types';
+import { postX } from './post.ts';
+import { XAuth } from './auth.ts';
+import type { Draft } from '../types.ts';
 
 const server = setupServer();
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));

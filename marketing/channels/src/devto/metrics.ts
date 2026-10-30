@@ -1,5 +1,5 @@
-import { http } from '../http';
-import type { PostMetrics } from '../types';
+import { http } from '../http.ts';
+import type { PostMetrics } from '../types.ts';
 
 interface DevToArticleDetail {
   id: number;

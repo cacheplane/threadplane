@@ -1,5 +1,5 @@
-import { http } from '../http';
-import type { XAuth } from './auth';
+import { http } from '../http.ts';
+import type { XAuth } from './auth.ts';
 
 const UPLOAD_URL = 'https://api.x.com/2/media/upload';
 const METADATA_URL = 'https://api.x.com/2/media/metadata';

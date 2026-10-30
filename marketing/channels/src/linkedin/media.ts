@@ -1,6 +1,6 @@
-import { http } from '../http';
-import type { LinkedInAuth } from './auth';
-import { linkedInPost } from './api';
+import { http } from '../http.ts';
+import type { LinkedInAuth } from './auth.ts';
+import { linkedInPost } from './api.ts';
 
 interface InitializeUploadResponse {
   value: { uploadUrl: string; image: string; uploadUrlExpiresAt: number };

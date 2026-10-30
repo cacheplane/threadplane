@@ -1,5 +1,5 @@
-import { http, type HttpOpts } from '../http';
-import { REAUTH_HINT, type LinkedInAuth } from './auth';
+import { http, type HttpOpts } from '../http.ts';
+import { REAUTH_HINT, type LinkedInAuth } from './auth.ts';
 
 export const API_BASE = 'https://api.linkedin.com/rest';
 

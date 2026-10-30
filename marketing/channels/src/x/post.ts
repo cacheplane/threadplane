@@ -1,8 +1,8 @@
-import { http } from '../http';
-import { writeDryRunResult } from '../dry-run';
-import type { Draft, PostResult } from '../types';
-import type { XAuth } from './auth';
-import { uploadMedia } from './media';
+import { http } from '../http.ts';
+import { writeDryRunResult } from '../dry-run.ts';
+import type { Draft, PostResult } from '../types.ts';
+import type { XAuth } from './auth.ts';
+import { uploadMedia } from './media.ts';
 
 const TWEETS_URL = 'https://api.x.com/2/tweets';
 

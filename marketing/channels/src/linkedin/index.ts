@@ -1,14 +1,15 @@
-import type { ChannelAdapter, Draft, PostMetrics, PostResult } from '../types';
-import { validateDraft } from '../validation';
-import { LinkedInAuth } from './auth';
-import { postLinkedIn } from './post';
+import type { ChannelAdapter, Draft, PostMetrics, PostResult } from '../types.ts';
+import { validateDraft } from '../validation.ts';
+import { LinkedInAuth } from './auth.ts';
+import type { LinkedInCredentials } from '../types.ts';
+import { postLinkedIn } from './post.ts';
 
 export class LinkedInAdapter implements ChannelAdapter {
   readonly id = 'linkedin' as const;
   private readonly auth: LinkedInAuth;
 
-  constructor() {
-    this.auth = new LinkedInAuth();
+  constructor(opts?: { credentials: LinkedInCredentials }) {
+    this.auth = new LinkedInAuth(opts);
   }
 
   async post(draft: Draft): Promise<PostResult> {

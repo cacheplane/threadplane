@@ -1,4 +1,4 @@
-import type { ChannelId, Draft } from './types';
+import type { ChannelId, Draft } from './types.ts';
 
 export class ValidationError extends Error {
   public readonly rule: string;

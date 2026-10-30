@@ -1,6 +1,6 @@
-import { http } from '../http';
-import { writeDryRunResult } from '../dry-run';
-import type { Draft, PostResult } from '../types';
+import { http } from '../http.ts';
+import { writeDryRunResult } from '../dry-run.ts';
+import type { Draft, PostResult } from '../types.ts';
 
 const ARTICLES_URL = 'https://dev.to/api/articles';
 

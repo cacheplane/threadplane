@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
-import { LinkedInAuth } from './auth';
+import { LinkedInAuth } from './auth.ts';
 
 const env = {
   LINKEDIN_ACCESS_TOKEN: 'li-access-1',
@@ -68,5 +68,35 @@ describe('LinkedInAuth.assertUsable', () => {
     expect(() => new LinkedInAuth().assertUsable(new Date('2026-12-01T00:00:01Z'))).toThrow(
       /expired.*marketing:channels:linkedin:auth/,
     );
+  });
+});
+
+describe('LinkedInAuth with injected credentials', () => {
+  it('ignores env and validates the URN', () => {
+    delete process.env.LINKEDIN_ACCESS_TOKEN;
+    delete process.env.LINKEDIN_AUTHOR_URN;
+    const auth = new LinkedInAuth({
+      credentials: { accessToken: 'tok', authorUrn: 'urn:li:person:abc' },
+    });
+    expect(auth.accessToken).toBe('tok');
+    expect(auth.expiresAt).toBeUndefined();
+    expect(
+      () =>
+        new LinkedInAuth({
+          credentials: { accessToken: 'tok', authorUrn: 'urn:li:organization:1' },
+        }),
+    ).toThrow(/urn:li:person/);
+  });
+
+  it('expiresInMs returns expiresAt minus now, undefined without expiry', () => {
+    const expiresAt = new Date('2026-12-01T00:00:00Z');
+    const withExpiry = new LinkedInAuth({
+      credentials: { accessToken: 't', authorUrn: 'urn:li:person:a', expiresAt },
+    });
+    expect(withExpiry.expiresInMs(new Date('2026-11-30T00:00:00Z'))).toBe(86_400_000);
+    const without = new LinkedInAuth({
+      credentials: { accessToken: 't', authorUrn: 'urn:li:person:a' },
+    });
+    expect(without.expiresInMs(new Date())).toBeUndefined();
   });
 });

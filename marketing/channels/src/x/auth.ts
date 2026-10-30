@@ -1,4 +1,5 @@
-import { http } from '../http';
+import { http } from '../http.ts';
+import type { XCredentials } from '../types.ts';
 
 const TOKEN_URL = 'https://api.x.com/2/oauth2/token';
 
@@ -17,14 +18,30 @@ type TokenResponse = {
   expires_in: number;
 };
 
+export interface XAuthOptions {
+  credentials: XCredentials;
+  onTokensRotated?: (t: { accessToken: string; refreshToken: string }) => Promise<void>;
+}
+
 export class XAuth {
   public accessToken: string;
   public refreshToken: string;
   public readonly userHandle: string;
   private readonly clientId: string;
   private readonly clientSecret: string;
+  private readonly onTokensRotated?: XAuthOptions['onTokensRotated'];
 
-  constructor() {
+  constructor(opts?: XAuthOptions) {
+    if (opts) {
+      const c = opts.credentials;
+      this.clientId = c.clientId;
+      this.clientSecret = c.clientSecret;
+      this.accessToken = c.accessToken;
+      this.refreshToken = c.refreshToken;
+      this.userHandle = c.userHandle;
+      this.onTokensRotated = opts.onTokensRotated;
+      return;
+    }
     const missing = REQUIRED_ENV.filter((k) => !process.env[k]);
     if (missing.length > 0) {
       throw new Error(`X adapter missing env vars: ${missing.join(', ')}`);
@@ -61,6 +78,13 @@ export class XAuth {
     }
     this.accessToken = tokens.access_token;
     this.refreshToken = tokens.refresh_token;
+    if (this.onTokensRotated) {
+      await this.onTokensRotated({
+        accessToken: this.accessToken,
+        refreshToken: this.refreshToken,
+      });
+      return;
+    }
     process.stderr.write(
       '\n✓ X refresh successful. Rotated tokens are held in memory only; re-run npm run marketing:channels:x:auth if authentication fails after restart.\n',
     );
