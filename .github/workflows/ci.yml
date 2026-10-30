@@ -1445,7 +1445,8 @@ jobs:
           echo "examples deployment: $url"
           npm exec --yes --package=vercel@64.2.0 --package=@types/estree@1.0.8 -- vercel alias set "$url" "${{ steps.aliases.outputs.examples }}" --scope=${{ secrets.VERCEL_ORG_ID }} --token=${{ secrets.VERCEL_TOKEN }}
       - name: Run the Website suite against the aliased preview
-        run: npx nx run website:deployed-e2e --skip-nx-cache
+        # Use all four CPUs for the remote PR suite; no local runtimes run here.
+        run: npx nx run website:deployed-e2e --skip-nx-cache --workers=4
         env:
           BASE_URL: https://${{ steps.aliases.outputs.website }}
           RUNTIME_BYPASS_ORIGIN: https://${{ steps.aliases.outputs.examples }}
