@@ -92,7 +92,20 @@ function rewriteUrl(url: string, origin: string, slug: string, utm: boolean): st
   return utm && ours ? withUtm(absolute, slug) : absolute;
 }
 
+/** Rewrites only the text outside inline code spans (any backtick-run length). */
 function absolutize(line: string, origin: string, slug: string): string {
+  return line
+    .split(/(`+)([\s\S]*?[^`])\1(?!`)/u)
+    .map((part, i, parts) => {
+      // split() with two groups yields [text, ticks, code, text, ticks, code, ...].
+      if (i % 3 === 0) return rewriteSegment(part, origin, slug);
+      if (i % 3 === 1) return part;
+      return part + parts[i - 1];
+    })
+    .join('');
+}
+
+function rewriteSegment(line: string, origin: string, slug: string): string {
   return line
     .replace(/(!?)\[([^\]]*)\]\(([^)\s]+)([^)]*)\)/gu, (_m, bang: string, text: string, url: string, rest: string) =>
       `${bang}[${text}](${rewriteUrl(url, origin, slug, bang === '')}${rest})`

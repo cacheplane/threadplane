@@ -71,6 +71,16 @@ describe('convertMdxForDevto', () => {
     expect(out.body).toContain(`href="https://threadplane.ai/docs/z?${utm}"`);
   });
 
+  it('inline code links stay unchanged', () => {
+    const out = convertMdxForDevto(
+      doc('Use `[docs](/docs/a)` and ``<a href="/x"> `y` `` here [real](/docs/r).'),
+      opts
+    );
+    expect(out.body).toContain('`[docs](/docs/a)`');
+    expect(out.body).toContain('``<a href="/x"> `y` ``');
+    expect(out.body).toContain(`[real](https://threadplane.ai/docs/r?${utm})`);
+  });
+
   it('fence inside callout throws', () => {
     expect(() => convertMdxForDevto(doc('<Callout>\n```ts\nx\n```\n</Callout>'), opts)).toThrow('code fence inside <Callout>');
   });
