@@ -6,3 +6,4 @@ export * from './credentials.ts';
 export * from './target.ts';
 export { createSqlExecutor } from './sql.ts';
 export * from './cli-write.ts';
+export * from './schedule.ts';
