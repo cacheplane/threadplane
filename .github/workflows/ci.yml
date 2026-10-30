@@ -946,6 +946,8 @@ jobs:
         uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57 # v8.0.0
         with:
           python-version: '3.12'
+          # Node-only caps and isolated A2UI preparation do not populate this cache.
+          enable-cache: ${{ matrix.cap.python != '' && matrix.cap.angular != 'cockpit-ag-ui-a2ui-react' }}
       - run: npm ci
       # matrix.cap.python is '' for caps whose backend is not Python (e.g.
       # cockpit-runtimes-mastra-angular — its backend is the
