@@ -43,6 +43,7 @@ export function NativeProjects({
   const [error, setError] = useState<string | undefined>();
   const [feedback, setFeedback] = useState('');
   const form = useRef<HTMLDivElement>(null);
+  const newProject = useRef<HTMLButtonElement>(null);
   const allConversations = useRef<HTMLButtonElement>(null);
   const sequence = useRef(0);
   const current = useRef<Editor | null>(null);
@@ -109,7 +110,7 @@ export function NativeProjects({
   };
   const projectDeletion = useProjectDeletion({
     owner: deletion,
-    fallbackFocusTo: () => allConversations.current,
+    fallbackFocusTo: () => allConversations.current ?? newProject.current,
     selectedId: projectId,
     onSelect,
     onRemoved(id) {
@@ -165,6 +166,7 @@ export function NativeProjects({
     <>
       <button
         type="button"
+        ref={newProject}
         disabled={!ready || problem || projectDeletion.busy}
         onClick={(event) => open(null, '', event.currentTarget)}
       >
