@@ -48,16 +48,23 @@ Both [`.env.example`](../../.env.example) and [`marketing/.env.example`](../../m
 | `FOUNDER_NOTIFICATION_EMAIL` | Alert recipient |
 | `RESEND_API_KEY` | Sends the alerts (already set for lifecycle) |
 | `X_CLIENT_ID`, `X_CLIENT_SECRET`, `X_USER_HANDLE` | X app config; the tokens themselves live in Neon |
+| `DRY_RUN`, `MARKETING_DRY_RUN_DIR` | Preview only, during the step 4 dry run. Never set on production |
 
 Set these for each environment in the lifecycle Vercel project. Redeploy lifecycle so they take effect.
 
 ## 2. Apply migration 0011
 
-`npm run db:migrate` reads `DATABASE_URL`. Point it at the marketing database for each target, preview first:
+`npm run db:migrate` has preconditions (enforced by `scripts/growth-database-preflight.mts`):
+
+- It runs under Node 22 and refuses any other major version.
+- It reads `DATABASE_URL` and does not load `.env`, so the inline `DATABASE_URL=` below is required.
+- It refuses to run when `TEST_DATABASE_URL` or `DAWN_DATABASE_URL` is present in the environment, even with an empty value. `env -u` removes them.
+
+Point it at the marketing database for each target, preview first:
 
 ```bash
-DATABASE_URL="$MARKETING_DATABASE_URL_PREVIEW" npm run db:migrate
-DATABASE_URL="$MARKETING_DATABASE_URL_PREVIEW" npm run db:migrate   # second run must apply nothing
+env -u TEST_DATABASE_URL -u DAWN_DATABASE_URL DATABASE_URL="$MARKETING_DATABASE_URL_PREVIEW" npm run db:migrate
+env -u TEST_DATABASE_URL -u DAWN_DATABASE_URL DATABASE_URL="$MARKETING_DATABASE_URL_PREVIEW" npm run db:migrate   # second run must apply nothing
 ```
 
 Then the same two runs against `$MARKETING_DATABASE_URL_PRODUCTION`. The migration is [`0011_marketing_queue.sql`](../../migrations/0011_marketing_queue.sql). Apply it before deploying lifecycle code that reads the queue.
@@ -91,7 +98,7 @@ LinkedIn tokens last 60 days and self-serve apps get no refresh token. Put a rec
 
 ## 4. Preview dry run
 
-1. On the preview lifecycle deployment set `MARKETING_POSTING_ENABLED=true` and `DRY_RUN=1`, then redeploy. With `DRY_RUN=1` the adapters return synthetic results and post nothing.
+1. On the preview lifecycle deployment set `MARKETING_POSTING_ENABLED=true`, `DRY_RUN=1`, and `MARKETING_DRY_RUN_DIR=/tmp/marketing-dry-runs`, then redeploy. With `DRY_RUN=1` the adapters return synthetic results and post nothing. The dry-run adapter writes a payload file, and the default directory (`tmp/marketing/dry-runs` under the working directory) is read-only on Vercel, so without `MARKETING_DRY_RUN_DIR` the write throws and the row is marked `failed` (`post_failed`). Never set `DRY_RUN` on production lifecycle.
 2. Queue one X post about five minutes out and approve it:
 
    ```bash
@@ -106,11 +113,14 @@ LinkedIn tokens last 60 days and self-serve apps get no refresh token. Put a rec
    ```
 
    The row should be `posted`, with a dry-run result (a `dry-` post id and a `dry-run.local` URL). The adapter also writes a payload file under `tmp/marketing/dry-runs/` (or `MARKETING_DRY_RUN_DIR`) on the lifecycle host; that filesystem is ephemeral, so the `list` result is the durable evidence.
-4. If it is not posted after two ticks, check for a `marketing_dispatch_failed` operator report and an alert email before changing anything.
+4. A failed dry-run attempt leaves a `failed` row, and failures are never retried automatically. `cancel <id>` it or add a fresh row before trying again.
+5. If it is not posted after two ticks, check for a `marketing_dispatch_failed` operator report and an alert email before changing anything.
 
-Then unset `DRY_RUN` on preview, or leave preview switched off.
+When the check passes, remove `DRY_RUN` and `MARKETING_DRY_RUN_DIR` from preview, or switch preview posting off.
 
 ## 5. Enable production
+
+Do the dev.to backlog migration (section 6) before this step, so no backlog item's `publishAt` passes between enabling and migrating.
 
 1. Confirm migration 0011, all lifecycle variables, and all three authorizations are in place for production.
 2. Queue one real X post you are happy to publish, `approve` it with `--target=production`, then set `MARKETING_POSTING_ENABLED=true` on the production lifecycle deployment and redeploy.
@@ -122,6 +132,8 @@ Existing one-time dev.to posts live outside the repo in `~/.claude/scheduled-pos
 
 - `publishAt` after go-live: add it as a `devto` row with its existing canonical URL, approve it, and delete its local one-time scheduled task in the same step, so it cannot post twice. Use `add --channel=devto` with `--at` and a draft file (`npm run marketing:queue -- --help` shows the flags), then `approve --id`. List the local tasks with the scheduled-tasks tool (`list_scheduled_tasks`) and remove the matching ones with `delete_scheduled_task`.
 - `publishAt` before go-live: leave it on its local task.
+
+Go-live is the time you set `MARKETING_POSTING_ENABLED=true` in section 5. Migrate first and enable afterwards. An item that is added and approved before enabling simply waits in the queue until the first tick after go-live. If an item's `publishAt` has already fallen between enabling and migrating, leave it on its local task rather than adding it.
 
 ## Rollback
 
