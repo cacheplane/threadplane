@@ -1,3 +1,8 @@
 export * from './types.ts';
 export * from './repository.ts';
 export type { SqlExecutor, SqlQueryResult, SqlTransaction } from './sql.ts';
+export * from './crypto.ts';
+export * from './credentials.ts';
+export * from './target.ts';
+export { createSqlExecutor } from './sql.ts';
+export * from './cli-write.ts';

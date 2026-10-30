@@ -425,3 +425,46 @@ export async function claimAlert(
   );
   return rows.length > 0;
 }
+
+export type CredentialChannel = 'x' | 'linkedin' | 'devto';
+
+export async function getChannelCredentials(
+  ex: SqlTransaction,
+  channel: CredentialChannel
+): Promise<{ sealed: string; expiresAt: Date | null } | null> {
+  const { rows } = await ex.execute(
+    `/* marketing:get-channel-credentials */
+     select sealed, expires_at from marketing_channel_credentials
+     where channel = $1`,
+    [channel]
+  );
+  if (!rows[0]) return null;
+  const expires = rows[0]['expires_at'];
+  return {
+    sealed: rows[0]['sealed'] as string,
+    expiresAt:
+      expires == null
+        ? null
+        : expires instanceof Date
+        ? expires
+        : new Date(String(expires)),
+  };
+}
+
+export async function upsertChannelCredentials(
+  ex: SqlTransaction,
+  channel: CredentialChannel,
+  sealed: string,
+  expiresAt?: Date
+): Promise<void> {
+  await ex.execute(
+    `/* marketing:upsert-channel-credentials */
+     insert into marketing_channel_credentials (channel, sealed, expires_at, updated_at)
+     values ($1, $2, $3, now())
+     on conflict (channel) do update set
+       sealed = excluded.sealed,
+       expires_at = excluded.expires_at,
+       updated_at = now()`,
+    [channel, sealed, expiresAt ?? null]
+  );
+}

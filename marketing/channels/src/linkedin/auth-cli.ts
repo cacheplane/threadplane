@@ -7,6 +7,7 @@
 import http from 'node:http';
 import crypto from 'node:crypto';
 import { exec } from 'node:child_process';
+import { prepareNeonWriter } from '@threadplane-internal/marketing-queue';
 
 const PORT = 8724;
 const REDIRECT_URI = `http://localhost:${PORT}/callback`;
@@ -38,6 +39,12 @@ function openInBrowser(url: string): void {
 }
 
 async function main(): Promise<void> {
+  let writer: ReturnType<typeof prepareNeonWriter>;
+  try {
+    writer = prepareNeonWriter(process.argv.slice(2), process.env);
+  } catch (err) {
+    fail(err instanceof Error ? err.message : String(err));
+  }
   const clientId = process.env.LINKEDIN_CLIENT_ID;
   const clientSecret = process.env.LINKEDIN_CLIENT_SECRET;
   if (!clientId || !clientSecret) {
@@ -127,7 +134,24 @@ async function main(): Promise<void> {
     fail(`Failed to fetch /v2/userinfo: HTTP ${meRes.status}`);
   }
   const me = (await meRes.json()) as { sub: string; name?: string };
-  const expiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
+  const expiresAtDate = new Date(Date.now() + tokens.expires_in * 1000);
+  const expiresAt = expiresAtDate.toISOString();
+
+  if (writer) {
+    const saved = await writer.write(
+      'linkedin',
+      {
+        accessToken: tokens.access_token,
+        authorUrn: `urn:li:person:${me.sub}`,
+      },
+      expiresAtDate,
+    );
+    if (!saved) fail('Aborted; nothing was written.');
+    process.stdout.write(
+      `\n✓ Stored LinkedIn token (sealed) in the ${writer.target} database. Expires ${expiresAt}.\n\n`,
+    );
+    process.exit(0);
+  }
 
   process.stdout.write(
     `\n✓ Authorized${me.name ? ` as ${me.name}` : ''}. Add these to .env:\n\n` +

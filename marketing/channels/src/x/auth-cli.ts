@@ -4,6 +4,7 @@
 import http from 'node:http';
 import crypto from 'node:crypto';
 import { exec } from 'node:child_process';
+import { prepareNeonWriter } from '@threadplane-internal/marketing-queue';
 
 const PORT = 8723;
 const REDIRECT_URI = `http://localhost:${PORT}/callback`;
@@ -35,6 +36,12 @@ function openInBrowser(url: string): void {
 }
 
 async function main(): Promise<void> {
+  let writer: ReturnType<typeof prepareNeonWriter>;
+  try {
+    writer = prepareNeonWriter(process.argv.slice(2), process.env);
+  } catch (err) {
+    fail(err instanceof Error ? err.message : String(err));
+  }
   const clientId = process.env.X_CLIENT_ID;
   const clientSecret = process.env.X_CLIENT_SECRET;
   if (!clientId || !clientSecret) {
@@ -129,6 +136,19 @@ async function main(): Promise<void> {
     fail(`Failed to fetch /users/me: HTTP ${meRes.status}`);
   }
   const me = (await meRes.json()) as { data: { username: string } };
+
+  if (writer) {
+    const saved = await writer.write('x', {
+      accessToken: tokens.access_token,
+      refreshToken: tokens.refresh_token,
+    });
+    if (!saved) fail('Aborted; nothing was written.');
+    process.stdout.write(
+      `\n✓ Stored X tokens (sealed) in the ${writer.target} database.\n` +
+        `Set X_USER_HANDLE=${me.data.username} wherever the dispatcher runs.\n\n`,
+    );
+    process.exit(0);
+  }
 
   process.stdout.write(
     `\n✓ Got tokens. Add these to .env:\n\n` +
