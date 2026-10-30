@@ -17,7 +17,7 @@ time they were written, not which services or capabilities exist today.
 | `libs/growth-capture` | Company page capture, SSRF controls, evidence extraction and diagnostics | Shared server-side capture library; no contacts, outreach policy, or model execution |
 | `apps/lifecycle` | Dawn job execution, research orchestration, fulfillment, notifications and founder sequence | Vercel deployment; consumes shared Growth and capture libraries |
 | `apps/growth-research` | Dawn company research execution and local evaluation | LangSmith deployment; shared company primitives live in `src/company`, local corpus tooling in `src/pilot` |
-| `marketing/assets`, `marketing/channels` | Branded images and manually invoked X/Dev.to publishing | Private operator packages; no contact database access or automatic campaign worker |
+| `marketing/assets`, `marketing/channels`, `marketing/queue` | Branded images, X/LinkedIn/Dev.to adapters, and the scheduled post queue (`marketing_*` tables) with its dispatcher and CLI | Private operator packages; no contact data access; every post is reviewed by Brian in `/week` before it is scheduled |
 | `tools/posthog` | Event contracts, dashboard definitions, quality checks and reporting | Engagement measurement, not authorization or delivery truth |
 | `apps/website/scripts/gsc` | Search Console snapshots and search reports | Website-specific operator tooling; local output, no in-repo schedule |
 | `scripts/growth-*`, `migrations` | Operational commands and Growth schema changes | Explicit operator entry points; migrations belong to Growth despite their root location |
@@ -46,9 +46,10 @@ and progress do not override authorization, reply stops or suppression.
 
 The **founder sequence** is the once-per-contact three-email lifecycle flow.
 A **publishing campaign** is a content brief and its social posts. They do not
-share a campaign scheduler. Newsletter signup uses Growth; there is no generic
-newsletter broadcast engine, drafting agent, automated publishing approval loop,
-or social metrics ingestion worker in this repository.
+share a scheduler: social and blog posts go through the marketing queue, which
+lifecycle dispatches on its tick (see [publishing](../../marketing/README.md)).
+Newsletter signup uses Growth; there is no generic newsletter broadcast engine,
+autonomous drafting agent, or X/LinkedIn metrics ingestion in this repository.
 
 The website whitepaper toast is an acquisition form. Development runtime
 announcements are a separate collection surface; they do not send email inline.
@@ -79,6 +80,8 @@ Existing `growth:observability`, `posthog:*` and `gsc:*` commands remain availab
 Publishing/authentication commands and dry-run instructions live in
 [the channel guide](../../marketing/channels/README.md). Live publishing is an
 explicit operator action; a smoke command without `DRY_RUN=1` can publish.
+Scheduled posts are managed with `npm run marketing:queue -- <command> --target=preview|production`,
+normally through the [`/week` skill](../../marketing/cowork/week/SKILL.md).
 
 ## Schedules and measurement limits
 
@@ -96,8 +99,10 @@ Requested fulfillment and internal notifications use their own execution rules.
 See [lifecycle operations](../../apps/lifecycle/README.md).
 
 GitHub runs PostHog quality checks daily. Weekly GTM reports are operator-run;
-the repository does not install a workstation scheduler. Social publishing and
-search reporting also have no in-repo recurring worker.
+the repository does not install a workstation scheduler. Scheduled social and
+blog posts are dispatched by the same lifecycle tick, behind
+`MARKETING_POSTING_ENABLED` (exact `true`), so a post can go out up to about 30
+minutes after its scheduled time. Search reporting has no in-repo recurring worker.
 
 The Growth funnel is an observation/activation report, not a complete sequential
 anonymous conversion funnel. A UTM is not a proven link from a social post to a
