@@ -8,6 +8,7 @@ import {
   createWebsiteSuitePlaywrightConfig,
 } from '../suite.playwright.config';
 import { createWebsitePlaywrightConfig } from '../playwright.config';
+import { poolAngularServers } from '../angular-startup';
 
 const root = resolve(import.meta.dirname, '..');
 const project = JSON.parse(readFileSync(resolve(root, 'project.json'), 'utf8'));
@@ -123,6 +124,62 @@ describe('public surface ownership', () => {
     expect(createDeployedWebsitePlaywrightConfig({
       ...env, WEBSITE_E2E_DEPLOYED_OWNER: 'true',
     })).toEqual(createDeployedWebsitePlaywrightConfig(env));
+  });
+});
+
+describe('bounded Angular startup', () => {
+  it('rejects missing or interleaved Angular servers instead of crossing a startup barrier', () => {
+    const config = createWebsiteSuitePlaywrightConfig('control-plane', { CI: 'true' });
+    const servers = Array.isArray(config.webServer) ? config.webServer : [];
+    expect(() => poolAngularServers(servers.filter((_, index) => index !== 1))).toThrow(/nine/);
+    const interleaved = [...servers];
+    interleaved.splice(2, 0, { command: 'fixture', url: 'http://localhost:9999' });
+    expect(() => poolAngularServers(interleaved)).toThrow(/contiguous/);
+  });
+
+  it('preserves every server contract and browser setting when pooling the nine Angular servers', () => {
+    const environment = { CI: 'true', WEBSITE_E2E_DEPLOYED_OWNER: 'true' };
+    const original = createWebsiteSuitePlaywrightConfig('control-plane', environment);
+    const pooled = createWebsiteSuitePlaywrightConfig('control-plane', {
+      ...environment, WEBSITE_ANGULAR_STARTUP: '2',
+    });
+    const servers = Array.isArray(pooled.webServer) ? pooled.webServer : [];
+    const pool = servers.find(s => s.command === 'exec node scripts/website-angular-startup.mjs');
+    expect(pool).toBeDefined();
+    const angular = JSON.parse(pool?.env?.['WEBSITE_ANGULAR_SERVERS'] ?? '[]');
+    expect(angular).toHaveLength(9);
+    expect(servers.flatMap(s => s === pool ? angular : [s])).toEqual(original.webServer);
+    expect(pool).toMatchObject({
+      cwd: '../..',
+      wait: { stdout: /Website Angular servers ready/ },
+      gracefulShutdown: { signal: 'SIGTERM', timeout: 15_000 },
+      timeout: angular.reduce((sum: number, s: { timeout?: number }) => sum + (s.timeout ?? 60_000), 0),
+    });
+    expect({ ...pooled, webServer: undefined }).toEqual({ ...original, webServer: undefined });
+    // Main/manual/fork checks retain their complete local selection too.
+    expect(createWebsiteSuitePlaywrightConfig('control-plane', {
+      CI: 'true', WEBSITE_ANGULAR_STARTUP: '2',
+    }).testIgnore).toEqual(createWebsiteSuitePlaywrightConfig('control-plane', {
+      CI: 'true',
+    }).testIgnore);
+  });
+
+  it('requires the explicit CI opt-in and leaves the other suites unchanged', () => {
+    for (const suite of websiteSuites.filter(s => s !== 'control-plane')) {
+      expect(createWebsiteSuitePlaywrightConfig(suite, {
+        CI: 'true', WEBSITE_ANGULAR_STARTUP: '2',
+      })).toEqual(createWebsiteSuitePlaywrightConfig(suite, { CI: 'true' }));
+    }
+    expect(() => createWebsiteSuitePlaywrightConfig('control-plane', {
+      WEBSITE_ANGULAR_STARTUP: '2',
+    })).toThrow(/CI/);
+    expect(() => createWebsiteSuitePlaywrightConfig('control-plane', {
+      CI: 'true', WEBSITE_ANGULAR_STARTUP: '3',
+    })).toThrow(/2/);
+    const deployed = { CI: 'true', BASE_URL: 'https://preview.example.test' };
+    expect(createDeployedWebsitePlaywrightConfig({
+      ...deployed, WEBSITE_ANGULAR_STARTUP: '2',
+    })).toEqual(createDeployedWebsitePlaywrightConfig(deployed));
   });
 });
 

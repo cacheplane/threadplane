@@ -1,6 +1,7 @@
 import { defineConfig } from '@playwright/test';
 import { getCockpitFrontends } from '@threadplane/cockpit-registry';
 import { createWebsitePlaywrightConfig } from './playwright.config';
+import { poolAngularServers } from './angular-startup';
 import {
   deployedSurfaceSpecs,
   previewSpec,
@@ -74,6 +75,13 @@ export function createWebsiteSuitePlaywrightConfig(
       ports.add(String(port));
   }
   const servers = Array.isArray(config.webServer) ? config.webServer : [];
+  const selected = servers.filter(
+    (server, index) => index === 0 || ports.has(new URL(server.url ?? '').port)
+  );
+  const startup = suite === 'control-plane' && environment['WEBSITE_ANGULAR_STARTUP'];
+  if (startup && (startup !== '2' || !environment['CI'])) {
+    throw new Error('Website Angular startup requires CI and concurrency 2');
+  }
   return defineConfig({
     ...config,
     testMatch:
@@ -87,9 +95,6 @@ export function createWebsiteSuitePlaywrightConfig(
         ? deployedSurfaceSpecs.map(file => `**/${file}`)
         : []),
     ],
-    webServer: servers.filter(
-      (server, index) =>
-        index === 0 || ports.has(new URL(server.url ?? '').port)
-    ),
+    webServer: startup ? poolAngularServers(selected) : selected,
   });
 }
