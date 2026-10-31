@@ -1,9 +1,14 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "1fd8a79ced1b9e93013ff7c961fbbe8c2b082426",
+  "baselineHead": "0e36e17dd7437a5d2299611cf3ee6de63aff8226",
   "sourceState": {
     "modified": [
-      ".github/workflows/ci.yml"
+      "libs/react/README.md",
+      "libs/react/src/chat/confirm-dialog.tsx",
+      "libs/react/src/chat/history-search-palette.tsx",
+      "libs/react/src/chat/index.ts",
+      "libs/react/src/chat/internal/dialog-presentation.ts",
+      "libs/react/src/chat/styles.css"
     ],
     "untracked": []
   },
@@ -851,7 +856,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "17bf1e53eb1b4d08880320eef4021bdec120a5c7dc4312a7e255c6d29c997517"
+      "sha256": "2284e547ecfd511662931a16b73e2efa9afa983fe555a05778d2d446d3e4512d"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -869,7 +874,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "b1ee7e1f40490083557e5e17cfd78dc63c41ea616fcdf46327b44452708abd8f"
+      "sha256": "0cd5da008875dc25d276ca7151d1eb188969ee4b1ae6ba67900928c0a91efa45"
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -10709,6 +10714,48 @@
       ]
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#HistorySearchPalette",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "HistorySearchPalette",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/history-search-palette.tsx",
+          "symbol": "HistorySearchPalette",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function HistorySearchPalette({ open, query, results, onQueryChange, onSelect, onClose, loading = false, label = 'Search conversations', description, placeholder = 'Search conversation titles…', closeLabel = 'Close search', className, returnFocusTo, }: HistorySearchPaletteProps) {\n    const id = useId();\n    const marker = useRef<HTMLSpanElement>(null);\n    const dialog = useRef<HTMLDialogElement>(null);\n    const input = useRef<HTMLInputElement>(null);\n    const close = useRef<HTMLButtonElement>(null);\n    const composing = useRef(false);\n    const escapeHeld = useRef(false);\n    const space = useRef<{\n        target: EventTarget | null;\n        blocked: boolean;\n    } | null>(null);\n    const [active, setActive] = useState<{\n        query: string;\n        id: string | null;\n    }>({\n        query,\n        id: null,\n    });\n    const found = active.query === query\n        ? results.findIndex((row) => row.id === active.id)\n        : -1;\n    const activeIndex = loading || results.length === 0 ? -1 : Math.max(0, found);\n    const activeId = activeIndex < 0 ? null : results[activeIndex].id;\n    const latest = useRef({\n        query,\n        results,\n        loading,\n        activeId,\n        onQueryChange,\n        onSelect,\n        onClose,\n        returnFocusTo,\n    });\n    const [portal, setPortal] = useState<{\n        document: Document;\n        style: CSSProperties;\n        invoker: HTMLElement | null;\n    } | null>(null);\n    useIsomorphicLayoutEffect(() => {\n        latest.current = {\n            query,\n            results,\n            loading,\n            activeId,\n            onQueryChange,\n            onSelect,\n            onClose,\n            returnFocusTo,\n        };\n    });\n    useIsomorphicLayoutEffect(() => {\n        if (active.query !== query)\n            setActive({ query, id: results[0]?.id ?? null });\n        else if (!loading && active.id !== activeId)\n            setActive({ query, id: activeId });\n    }, [active.query, active.id, activeId, loading, query, results]);\n    useIsomorphicLayoutEffect(() => {\n        const anchor = marker.current;\n        if (!open || !anchor) {\n            setPortal(null);\n            return;\n        }\n        const doc = anchor.ownerDocument;\n        const win = doc.defaultView;\n        const candidate = latest.current.returnFocusTo ?? doc.activeElement;\n        setActive({\n            query: latest.current.query,\n            id: latest.current.results[0]?.id ?? null,\n        });\n        setPortal({\n            document: doc,\n            style: dialogPresentation(anchor),\n            invoker: win &&\n                candidate instanceof win.HTMLElement &&\n                availableDialogTarget(candidate, doc)\n                ? candidate\n                : null,\n        });\n    }, [open]);\n    useIsomorphicLayoutEffect(() => {\n        const panel = dialog.current;\n        if (!portal || !panel)\n            return;\n        const doc = portal.document;\n        const win = doc.defaultView;\n        let ownedFocus = false;\n        const focus = () => {\n            ownedFocus = panel.contains(doc.activeElement);\n        };\n        const resetKeys = () => {\n            escapeHeld.current = false;\n            space.current = null;\n            composing.current = false;\n        };\n        const visibility = () => {\n            if (doc.visibilityState === 'hidden')\n                resetKeys();\n        };\n        const cancel = (event: Event) => {\n            const claimed = event.defaultPrevented;\n            event.preventDefault();\n            event.stopPropagation();\n            if (!claimed && !escapeHeld.current && !composing.current)\n                latest.current.onClose();\n        };\n        resetKeys();\n        panel.addEventListener('cancel', cancel);\n        doc.addEventListener('focusin', focus);\n        doc.addEventListener('visibilitychange', visibility);\n        win?.addEventListener('blur', resetKeys);\n        panel.showModal();\n        input.current?.focus();\n        focus();\n        return () => {\n            const current = doc.activeElement;\n            const restore = panel.contains(current) || (current === doc.body && ownedFocus);\n            panel.removeEventListener('cancel', cancel);\n            doc.removeEventListener('focusin', focus);\n            doc.removeEventListener('visibilitychange', visibility);\n            win?.removeEventListener('blur', resetKeys);\n            resetKeys();\n            if (panel.open)\n                panel.close();\n            if (restore &&\n                portal.invoker &&\n                availableDialogTarget(portal.invoker, doc))\n                portal.invoker.focus();\n        };\n    }, [portal]);\n    useIsomorphicLayoutEffect(() => {\n        if (activeIndex >= 0)\n            dialog.current\n                ?.querySelectorAll<HTMLElement>('[role=\"option\"]')[activeIndex]?.scrollIntoView?.({ block: 'nearest' });\n    }, [activeIndex, query, results, portal]);\n    const choose = (selectedId: string) => {\n        const current = latest.current;\n        if (current.loading ||\n            !current.results.some((row) => row.id === selectedId))\n            return;\n        latest.current = { ...current, activeId: selectedId };\n        setActive({ query: current.query, id: selectedId });\n        current.onSelect(selectedId);\n    };\n    const keydown = (event: KeyboardEvent<HTMLDialogElement>) => {\n        const claimed = event.defaultPrevented;\n        event.stopPropagation();\n        const plain = !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey;\n        const ime = composing.current ||\n            event.nativeEvent.isComposing ||\n            event.nativeEvent.keyCode === 229;\n        const ignored = claimed || ime || event.repeat || !plain;\n        const current = latest.current;\n        if (event.key === 'Escape') {\n            escapeHeld.current = true;\n            if (!ime)\n                event.preventDefault();\n            if (!ignored)\n                current.onClose();\n        }\n        else if (event.key === 'Tab' && !claimed && !ime) {\n            const doc = event.currentTarget.ownerDocument;\n            if (doc.activeElement === event.currentTarget ||\n                (event.shiftKey\n                    ? doc.activeElement === input.current\n                    : doc.activeElement === close.current)) {\n                event.preventDefault();\n                (event.shiftKey ? close.current : input.current)?.focus();\n            }\n        }\n        else if (event.key === ' ' && event.target !== input.current) {\n            if (!event.repeat)\n                space.current = { target: event.target, blocked: ignored };\n            else\n                space.current = {\n                    target: space.current?.target ?? event.target,\n                    blocked: true,\n                };\n            if (ignored || space.current?.blocked)\n                event.preventDefault();\n        }\n        else if (event.key === 'Enter') {\n            if (event.target === input.current) {\n                if (ime)\n                    return;\n                event.preventDefault();\n                if (!ignored && current.activeId !== null)\n                    choose(current.activeId);\n            }\n            else if (ignored)\n                event.preventDefault();\n        }\n        else if ((event.key === 'ArrowDown' || event.key === 'ArrowUp') &&\n            event.target === input.current &&\n            plain &&\n            !claimed &&\n            !ime) {\n            event.preventDefault();\n            if (current.loading || current.results.length === 0)\n                return;\n            const index = Math.max(0, current.results.findIndex((row) => row.id === current.activeId));\n            const next = Math.max(0, Math.min(current.results.length - 1, index + (event.key === 'ArrowDown' ? 1 : -1)));\n            const nextId = current.results[next].id;\n            latest.current = { ...current, activeId: nextId };\n            setActive({ query: current.query, id: nextId });\n        }\n    };\n    return (<>\n      <span ref={marker} hidden aria-hidden=\"true\"/>\n      {portal &&\n            createPortal(<dialog ref={dialog} aria-modal=\"true\" aria-labelledby={`${id}-title`} aria-describedby={description ? `${id}-description` : undefined} dir={portal.style.direction === 'rtl' ? 'rtl' : 'ltr'} style={portal.style} className={['tp-history-search-palette', className]\n                    .filter(Boolean)\n                    .join(' ')} onKeyDown={keydown} onKeyUp={(event) => {\n                    event.stopPropagation();\n                    if (event.key === 'Escape')\n                        escapeHeld.current = false;\n                    if (event.key === ' ') {\n                        if ((event.target !== input.current || space.current) &&\n                            (!space.current ||\n                                space.current.blocked ||\n                                space.current.target !== event.target ||\n                                event.defaultPrevented ||\n                                event.repeat ||\n                                composing.current ||\n                                event.nativeEvent.isComposing ||\n                                event.nativeEvent.keyCode === 229 ||\n                                event.altKey ||\n                                event.ctrlKey ||\n                                event.metaKey ||\n                                event.shiftKey))\n                            event.preventDefault();\n                        space.current = null;\n                    }\n                }} onCompositionStart={() => {\n                    composing.current = true;\n                }} onCompositionEnd={() => {\n                    composing.current = false;\n                }} onClick={(event) => {\n                    event.stopPropagation();\n                    if (event.defaultPrevented ||\n                        event.target !== event.currentTarget)\n                        return;\n                    const rect = event.currentTarget.getBoundingClientRect();\n                    if (event.clientX < rect.left ||\n                        event.clientX > rect.right ||\n                        event.clientY < rect.top ||\n                        event.clientY > rect.bottom)\n                        latest.current.onClose();\n                }}>\n            <h2 id={`${id}-title`}>{label}</h2>\n            {description && (<p id={`${id}-description`} className=\"tp-history-search-palette__description\">\n                {description}\n              </p>)}\n            <div className=\"tp-history-search-palette__input-row\">\n              <input ref={input} role=\"combobox\" aria-label={label} aria-expanded=\"true\" aria-autocomplete=\"list\" aria-controls={`${id}-results`} aria-activedescendant={activeIndex < 0 ? undefined : `${id}-result-${activeIndex}`} autoComplete=\"off\" placeholder={placeholder} value={query} onChange={(event) => latest.current.onQueryChange(event.currentTarget.value)}/>\n              <button ref={close} type=\"button\" onClick={(event) => {\n                    event.stopPropagation();\n                    if (!event.defaultPrevented)\n                        latest.current.onClose();\n                }}>\n                {closeLabel}\n              </button>\n            </div>\n            <ul id={`${id}-results`} role=\"listbox\" aria-label={`${label} results`} aria-busy={loading || undefined}>\n              {results.map((row, index) => (<li key={row.id} role=\"option\" tabIndex={-1} id={`${id}-result-${index}`} aria-selected={index === activeIndex} aria-disabled={loading || undefined} onMouseDown={(event) => {\n                        if (event.button === 0)\n                            event.preventDefault();\n                    }} onClick={(event) => {\n                        event.stopPropagation();\n                        if (!event.defaultPrevented)\n                            choose(row.id);\n                    }}>\n                  <span className=\"tp-history-search-palette__title\">\n                    {row.title}\n                  </span>\n                  {row.subtitle && (<span className=\"tp-history-search-palette__subtitle\">\n                      {row.subtitle}\n                    </span>)}\n                </li>))}\n            </ul>\n            <p className=\"tp-history-search-palette__status\" role=\"status\">\n              {loading\n                    ? 'Loading results…'\n                    : results.length\n                        ? ''\n                        : query.length\n                            ? 'No conversations match.'\n                            : 'Type a conversation title.'}\n            </p>\n          </dialog>, portal.document.body)}\n    </>);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#HistorySearchPaletteProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "HistorySearchPaletteProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/history-search-palette.tsx",
+          "symbol": "HistorySearchPaletteProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface HistorySearchPaletteProps {\n    readonly open: boolean;\n    readonly query: string;\n    readonly results: readonly HistorySearchResult[];\n    readonly onQueryChange: (query: string) => void;\n    readonly onSelect: (id: string) => void;\n    readonly onClose: () => void;\n    readonly loading?: boolean;\n    readonly label?: string;\n    readonly description?: string;\n    readonly placeholder?: string;\n    readonly closeLabel?: string;\n    readonly className?: string;\n    readonly returnFocusTo?: HTMLElement | null;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#HistorySearchResult",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "HistorySearchResult",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/history-search-palette.tsx",
+          "symbol": "HistorySearchResult",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface HistorySearchResult {\n    readonly id: string;\n    readonly title: string;\n    readonly subtitle?: string;\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/react/src/chat/index.ts#MessageAction",
       "kind": "export",
       "path": "libs/react/src/chat/index.ts",
@@ -15438,13 +15485,25 @@
       "id": "source:libs/react/src/chat/confirm-dialog.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/confirm-dialog.tsx",
-      "sha256": "1178b68b1d199eef533daacbbcc51690708459724cd66f6856c4241d95f2a47b"
+      "sha256": "dc3b645e702fd175b276a689e799621cf28d33b20e18f742499a3b57710b74c2"
+    },
+    {
+      "id": "source:libs/react/src/chat/history-search-palette.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/history-search-palette.tsx",
+      "sha256": "387ebb3dbf37047361f8a13b367ae1bd27392d712d78334e7663c8b391eed449"
     },
     {
       "id": "source:libs/react/src/chat/index.ts",
       "kind": "source",
       "path": "libs/react/src/chat/index.ts",
-      "sha256": "520714ff918a8ecb54bbc191cbb716b47916684cabad6db4de827b783a731417"
+      "sha256": "c42bc1f13b2cb2ddda74669f5019e5e7d9539c240e2571bf23d73cfe55ab5435"
+    },
+    {
+      "id": "source:libs/react/src/chat/internal/dialog-presentation.ts",
+      "kind": "source",
+      "path": "libs/react/src/chat/internal/dialog-presentation.ts",
+      "sha256": "2dff0c0e330a255938dc18139916222e553cb7fed802753e7f760cae2194fd4c"
     },
     {
       "id": "source:libs/react/src/chat/internal/isomorphic-layout-effect.ts",

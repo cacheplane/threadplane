@@ -655,10 +655,33 @@ Its directory filter and composer survive navigation visibility and breakpoint
 changes; selecting a different conversation deliberately resets that composer's
 draft. It opts into the desktop toggle shortcut while preserving those owners.
 This is a bounded children-based navigation slice. Project menus,
-backend search, search dialogs, other global shortcuts, debug ownership and full
+backend search, other global shortcuts, debug ownership and full
 Angular composition parity remain open under T30. The native Search loaded
-conversations action reveals navigation and focuses its existing loaded-title
-filter once per explicit request, without adding backend search or commands.
+conversations action reveals navigation and opens the loaded-title palette once
+per explicit request, without adding backend search or commands.
+
+### Controlled loaded-conversation search
+
+The private `@threadplane/react/chat` entry exports `HistorySearchPalette`,
+`HistorySearchPaletteProps` and `HistorySearchResult`. Supply controlled `open`,
+`query`, readonly `results` and `onQueryChange`, `onSelect`, `onClose` callbacks.
+Results have unique exact `id`, literal `title` and optional `subtitle`; the
+caller owns filtering, supplied order, loading and accepted navigation. The
+primitive never fetches or filters. `loading` retains the list but suppresses
+active selection. Query changes or removal choose the first available result;
+reordering retains the active ID. Arrow keys move without wrapping; Enter picks.
+
+The palette portals a native modal dialog into its owner document, inherits local
+theme and direction, contains focus and restores an available invoker (or
+`returnFocusTo`). Close, Escape and backdrop activation emit `onClose`;
+composition, claimed and modified/repeated activation keys are guarded. SSR
+renders a hidden marker without DOM globals or callbacks. Import chat styles.
+
+Native React dogfoods title search among up to 50 loaded rows across projects
+and archives. Its inline filters remain independent until an explicit pick,
+which reveals the selected row and uses the existing application selection path.
+This bounded private slice does not provide backend-wide search or full T29/T30
+parity.
 
 ## Read-only render trees
 

@@ -1,12 +1,23 @@
 import assert from 'node:assert/strict';
 import { createElement } from 'react';
 import { renderToString } from 'react-dom/server';
-import { ProjectNameForm, ProjectList, ChatSidenav, ConfirmDialog, OverflowMenu, ThreadList, ThreadRenameForm } from '@threadplane/react/chat';
+import { HistorySearchPalette, ProjectNameForm, ProjectList, ChatSidenav, ConfirmDialog, OverflowMenu, ThreadList, ThreadRenameForm } from '@threadplane/react/chat';
 
 assert.equal(typeof window, 'undefined');
 assert.equal(typeof document, 'undefined');
 let requests = 0;
 const request = () => { requests++; };
+for (const open of [false, true]) {
+  const html = renderToString(createElement(HistorySearchPalette, {
+    open, query: '<literal>',
+    results: Object.freeze([Object.freeze({ id: ' exact/ID ', title: '<literal>' })]),
+    onQueryChange: request, onSelect: request, onClose: request,
+  }));
+  assert.match(html, /hidden/);
+  assert.doesNotMatch(html, /<dialog|<input|role="listbox"|aria-modal/);
+}
+assert.equal(requests, 0);
+console.log('Installed controlled history search SSR: no DOM globals or requests.');
 const props = {
   mode: 'expanded',
   open: false,

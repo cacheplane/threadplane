@@ -142,7 +142,7 @@ Source text and React escaping remain intact, including Unicode case expansions.
 The callback supplies noninteractive phrasing content only; the original full
 label and timestamp description remain accessible. The library honors `null` and
 `false` output without fallback. Broader row templates, lifecycle, project,
-search and history surfaces remain open; this is no public release or full T29 claim.
+backend-wide search and history surfaces remain open; this is no public release or full T29 claim.
 
 The shared directory projection copies only `metadata.pinned === true` into an
 optional readonly boolean `pinned: true`; false, missing and invalid values are
@@ -617,10 +617,10 @@ already handled events leave the chord unclaimed. The shortcut retains the same
 draft, directory and active response and sends no conversation command.
 
 Search loaded conversations and the opt-in Ctrl+K / Command+K shortcut reveal
-the existing directory and focus its loaded-title filter. Desktop search expands
+the existing directory and open the controlled loaded-conversation search palette. Desktop search expands
 the rail; drawer search opens navigation while preserving the remembered desktop
 mode. Normal launcher activation still focuses Close. Repeated explicit search
-requests can refocus the filter; streaming and unrelated renders do not. Filter
+requests open a fresh empty query; streaming and unrelated renders do not. Filter
 text, composer draft, selected conversation and active response remain owned by
 the same application, with no new requests or backend search. Editable fields and
 already handled or excluded chords retain their normal keyboard behavior.
@@ -644,9 +644,21 @@ full accessible names, tooltips and pin/time descriptions. It has no extra New,
 filter or Refresh controls. The full directory remains mounted; compact rows
 remain mounted and hidden/inert when expanded or in either drawer state.
 This bounded composed
-navigation does not implement Angular project menus, backend search, search dialogs or other global shortcuts,
+navigation does not implement Angular project menus, backend search or other global shortcuts,
 debug ownership or full T30 parity. Popup and sidebar remain separate
 presentations.
+
+The palette searches titles from up to 50 already loaded conversations across
+all projects, including archived rows, independently of the directory filters.
+Page, popup and sidebar directories expose the same Search action. Opening,
+typing and dismissing preserve the selected session, draft DOM/value and route
+without fetching, refreshing or writing. Only an explicit result selection clears
+the directory filters, reveals an archived result when needed and requests the
+existing exact-ID selection path. Pending refreshes and removed results cannot
+be selected; replaced owners and previous search requests cannot act later.
+The native modal contains keyboard focus, supports arrows/Enter, Close, Escape
+and backdrop dismissal, and restores an available invoking control. Composition,
+claimed keys and repeated activation do not accidentally select or dismiss.
 
 ## React message actions
 
