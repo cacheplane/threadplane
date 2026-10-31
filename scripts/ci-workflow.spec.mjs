@@ -299,6 +299,17 @@ it('bounds Angular startup only in Website control-plane CI and exercises lifecy
   assert.match(step, /WEBSITE_ANGULAR_STARTUP: \$\{\{ matrix\.suite == 'control-plane' && '2' \|\| '' \}\}/);
 });
 
+it('bounds Agents startup in its own CI lane with explicit Node test registration and runner capacity', async () => {
+  const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+  assert.match(readNamedStep(readJobBlock(workflow, 'ci-scope'), 'Test CI scope classifier'), /scripts\/website-agents-startup\.spec\.mjs/);
+  assert.match(await readFile('scripts/vite.config.mts', 'utf8'), /'website-agents-startup\.spec\.mjs'/);
+  const job = readJobBlock(workflow, 'website-e2e');
+  assert.match(readNamedStep(job, 'Run local Website suite'), /WEBSITE_AGENTS_STARTUP: \$\{\{ matrix\.suite == 'agents' && '2' \|\| '' \}\}/);
+  const capacity = readNamedStep(job, 'Record Website runner capacity');
+  for (const api of ['availableParallelism', 'cpus', 'totalmem', 'process.version']) assert.ok(capacity.includes(api), api);
+  assert.ok(job.indexOf('Record Website runner capacity') < job.indexOf('- run: npm ci'));
+});
+
 it('uses the explicit Chromium installation for every CI Nx browser invocation', async () => {
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
   const invocations = [...workflow.matchAll(/^.*\bnpx nx e2e .+$/gm)];

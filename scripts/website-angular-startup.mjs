@@ -45,7 +45,14 @@ async function available(url, deadline, redirects = 0, fallback = true) {
 }
 
 /** Run only inside an owned Unix process group; children inherit that group. */
-export async function runPool(entries, { shutdownGraceMs = 10_000 } = {}) {
+export async function runPool(
+  entries,
+  {
+    shutdownGraceMs = 10_000,
+    poolLabel = 'Angular pool',
+    readyMessage = 'Website Angular servers ready',
+  } = {}
+) {
   if (
     process.platform === 'win32' ||
     Number(
@@ -54,14 +61,19 @@ export async function runPool(entries, { shutdownGraceMs = 10_000 } = {}) {
       }).trim()
     ) !== process.pid
   ) {
-    throw new Error('Angular startup requires its own Unix process group');
+    throw new Error(
+      `${poolLabel.replace(
+        / pool$/,
+        ''
+      )} startup requires its own Unix process group`
+    );
   }
   let stopping = false;
   const started = Date.now();
   const shutdown = (reason) => {
     if (stopping) return;
     stopping = true;
-    console.error(`[Angular pool] ${reason}`);
+    console.error(`[${poolLabel}] ${reason}`);
     // Keep the leader alive until escalation: descendants can outlive their Nx parent.
     setTimeout(() => process.kill(-process.pid, 'SIGKILL'), shutdownGraceMs);
     process.kill(-process.pid, 'SIGTERM');
@@ -101,7 +113,7 @@ export async function runPool(entries, { shutdownGraceMs = 10_000 } = {}) {
           if (await available(new URL(entry.url), deadline)) {
             if (stopping) return;
             console.error(
-              `[Angular pool] ${label} ready in ${
+              `[${poolLabel}] ${label} ready in ${
                 Date.now() - launched
               }ms; pool ${Date.now() - started}ms`
             );
@@ -114,9 +126,9 @@ export async function runPool(entries, { shutdownGraceMs = 10_000 } = {}) {
     await Promise.all([worker(), worker()]);
     if (!stopping) {
       console.error(
-        `[Angular pool] all servers ready in ${Date.now() - started}ms`
+        `[${poolLabel}] all servers ready in ${Date.now() - started}ms`
       );
-      console.log('Website Angular servers ready');
+      console.log(readyMessage);
     }
   } catch (error) {
     shutdown(error.message);

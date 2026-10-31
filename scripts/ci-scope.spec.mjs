@@ -29,6 +29,11 @@ it('requires CI validation when Angular startup or its lifecycle checks change',
   ]) assert.equal(hasGlobalCiFileChange([path]), true, path);
 });
 
+it('requires CI validation when Agents startup or its lifecycle checks change', () => {
+  for (const path of ['scripts/website-agents-startup.mjs', 'scripts/website-agents-startup.spec.mjs'])
+    assert.equal(hasGlobalCiFileChange([path]), true, path);
+});
+
 function selectedLibraryLane(workflow, lane) {
   const job = workflow.split('\n  library:\n')[1].split(/^ {2}[A-Za-z0-9_-]+:\s*$/m)[0];
   const [header, ...steps] = job.split(/(?=^ {6}- )/m);
