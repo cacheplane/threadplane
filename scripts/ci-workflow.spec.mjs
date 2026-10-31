@@ -797,7 +797,7 @@ describe('CI workflow', () => {
       assert.equal(project.targets['tooling-test'].options.command, 'node --import tsx --test examples/chat/native/tooling/*.spec.mjs');
     }
   });
-  it('requires native example development, production and actual verification CLI after builds and Chromium', async () => {
+  it('requires native example coverage with one actual production verification CLI after builds and Chromium', async () => {
     const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
     const job = readJobBlock(workflow, 'native-conversation');
     const step = readNamedStep(job, 'Verify native conversation example');
@@ -805,7 +805,14 @@ describe('CI workflow', () => {
     assert.match(job, /framework: \[react, angular\]/);
     assert.match(job, /fail-fast: false/);
     assert.match(step, /npx nx e2e "native-conversation-\$\{\{ matrix.framework \}\}" --skipInstall/);
-    assert.match(step, /node examples\/chat\/native\/tooling\/verify\.mjs --framework="\$\{\{ matrix.framework \}\}"/);
+    assert.doesNotMatch(step, /node examples\/chat\/native\/tooling\/verify\.mjs/, 'the production E2E case owns the full CLI verification');
+    const production = await readFile('examples/chat/native/e2e/production.spec.ts', 'utf8');
+    assert.match(production, /execFileSync\(process\.execPath,/);
+    assert.match(production, /tooling\/verify\.mjs/);
+    assert.match(production, /`--framework=\$\{framework\}`/);
+    assert.match(production, /'--retain',\s*directory/);
+    assert.match(production, /readVerification\(directory\)/);
+    assert.doesNotMatch(production, /buildConsumer|captureVerification|runBrowserProofs/, 'the production case must not duplicate the CLI build or browser proofs');
     for (const prerequisite of [
       'run-many -t build --projects=core,content,angular,react,chat,langgraph,ag-ui,render,a2ui,telemetry,middleware',
       'npx playwright install --with-deps chromium',

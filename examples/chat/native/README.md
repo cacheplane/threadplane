@@ -310,16 +310,18 @@ Failed preparation preserves the previous valid build and removes owned
 temporary files.
 
 Each e2e target runs development, basic conversation, missing-configuration and
-production cases against owned local fixtures. The production case contains
-eleven browser scenarios and a separate actual React unmount/remount or Angular
-component destruction/remount proof. The CLI builds the selected production
-app, runs its installed shared-owner tests, then checks those production
-scenarios and the selected view lifecycle. Angular compilation includes strict
+production cases against owned local fixtures. The production case invokes the
+actual verification CLI once for its selected framework and retains its sealed
+evidence in the Playwright output directory. The CLI builds the production app,
+runs its installed shared-owner tests, then checks eleven browser scenarios and
+a separate actual React unmount/remount or Angular component destruction/remount
+proof. It remains available independently for verification and retained review.
+Angular compilation includes strict
 installed TypeScript and Angular template checks; its view proof uses the
 installed Angular application builder. No proof needs remote credentials or
 mutates a live deployment. CI runs the shared tooling once before builds, then
-both e2e targets and actual CLI selections after foundation builds and Chromium
-setup.
+both e2e targets after foundation builds and Chromium setup. Each target owns
+its production CLI invocation; CI does not repeat its build or browser proofs.
 
 Three canonical provider proofs run once for the shared application across two
 targets, separately from either framework's browser verification. The first

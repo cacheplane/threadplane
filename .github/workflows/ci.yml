@@ -444,9 +444,9 @@ jobs:
       - name: Verify native conversation example
         run: |
           # React workers reuse verified output with independent fixture ports.
-          # Keep local defaults and Angular serial; run the retained CLI once.
+          # The production case runs the full verification CLI once per framework.
+          # Keep local defaults and Angular serial.
           npx nx e2e "native-conversation-${{ matrix.framework }}" --skipInstall --workers=${{ matrix.framework == 'react' && 2 || 1 }}
-          node examples/chat/native/tooling/verify.mjs --framework="${{ matrix.framework }}"
       - name: Upload native conversation traces on failure
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
