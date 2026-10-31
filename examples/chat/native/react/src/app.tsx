@@ -28,6 +28,7 @@ import { submissionStatus } from '../../shared/submission-status';
 import { Approval } from './approval';
 import { BackgroundActivity } from './background-activity';
 import { LoadedCheckpointTimeline } from './loaded-checkpoint-timeline';
+import { ObservedStateComparison } from './observed-state-comparison';
 import { CopyAnswer } from './copy-answer';
 import {
   ConversationActions,
@@ -870,6 +871,12 @@ function Conversation({
                 application={application}
                 threadId={selection.id ?? ''}
                 page={snapshot.runtime?.history}
+              />
+              <ObservedStateComparison
+                key={`state-comparison:${selection.id}`}
+                application={application}
+                threadId={selection.id ?? ''}
+                values={snapshot.runtime?.values}
               />
             </>
           )}

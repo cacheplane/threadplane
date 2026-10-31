@@ -1298,7 +1298,7 @@
       "treatment": "react",
       "status": "planned",
       "target": "libs/react/src/debug/chat-debug.tsx",
-      "reason": "Private native first slice now provides passive current and selected historical state, explicit app-owned checkpoint reads, bounded Copy and guarded open/dock/tab preferences. T29 remains partial: historical diff, Replay/Fork callbacks, full checkpoint tree and broader devtools parity remain planned."
+      "reason": "Private native slice provides passive current and selected historical state, explicit app-owned checkpoint reads, bounded Copy, guarded UI preferences and matched-ready inspected-checkpoint/current comparison. Historical-to-historical diff, Replay/Fork callbacks, full checkpoint tree and broader devtools parity remain planned."
     },
     {
       "id": "component:libs/chat/debug/src/lib/compositions/chat-debug/debug-checkpoint-card.component.ts#DebugCheckpointCardComponent",
@@ -1316,9 +1316,9 @@
         "T29"
       ],
       "treatment": "internal",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/debug/debug-state-diff.tsx",
-      "reason": "Internal debug view. Internal diff presentation; share diff calculation, native semantic rendering."
+      "reason": "Private passive StateDiff compares complete bounded app-owned states with exact own-property JSON Pointer changes, atomic arrays and explicit refusal of invalid or oversized input/output. ChatDebug composes matched inspected-checkpoint/current values; native React captures an immutable observed baseline without reads or execution. Historical-to-historical comparison and full parity remain open."
     },
     {
       "id": "component:libs/chat/debug/src/lib/compositions/chat-debug/debug-state-inspector.component.ts#DebugStateInspectorComponent",
@@ -4513,7 +4513,7 @@
       "treatment": "react",
       "status": "planned",
       "target": "libs/react/src/debug/chat-debug.tsx",
-      "reason": "Private native first slice now provides passive current and selected historical state, explicit app-owned checkpoint reads, bounded Copy and guarded open/dock/tab preferences. T29 remains partial: historical diff, Replay/Fork callbacks, full checkpoint tree and broader devtools parity remain planned."
+      "reason": "Private native slice provides passive current and selected historical state, explicit app-owned checkpoint reads, bounded Copy, guarded UI preferences and matched-ready inspected-checkpoint/current comparison. Historical-to-historical diff, Replay/Fork callbacks, full checkpoint tree and broader devtools parity remain planned."
     },
     {
       "id": "export:libs/chat/debug/public-api.ts#DockPosition",
@@ -9297,7 +9297,8 @@
         "T29"
       ],
       "treatment": "react",
-      "status": "planned"
+      "status": "in-progress",
+      "note": "Private React StateDiff provides bounded exact passive comparison; full historical comparison parity remains open."
     },
     {
       "id": "source:libs/chat/debug/src/lib/compositions/chat-debug/debug-state-inspector.component.ts",
@@ -9344,8 +9345,9 @@
       "taskIds": [
         "T29"
       ],
-      "treatment": "shared",
-      "status": "planned"
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "React compares only complete bounded JSON projections and refuses oversized results; the existing Angular raw-state comparator remains unchanged."
     },
     {
       "id": "source:libs/chat/eslint.config.mjs",
@@ -15419,7 +15421,21 @@
       "taskIds": ["T29"],
       "treatment": "react",
       "status": "in-progress",
-      "note": "Private passive current/selected state and explicit checkpoint notifications. Historical diff, Replay/Fork callbacks and full checkpoint tree remain planned."
+      "note": "Private passive current/selected state, explicit checkpoint notifications and matched-ready inspected-checkpoint/current comparison. Historical-to-historical diff, Replay/Fork callbacks and full checkpoint tree remain planned."
+    },
+    {
+      "id": "source:libs/react/src/debug/state-diff.ts",
+      "taskIds": ["T29"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Exact own-key comparison of complete bounded JSON projections; input and output limits refuse incomplete comparisons, arrays change atomically, paths use escaped JSON Pointer."
+    },
+    {
+      "id": "source:libs/react/src/debug/debug-state-diff.tsx",
+      "taskIds": ["T29"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Private passive StateDiff and readonly props; literal bounded JSON and distinct unavailable notices, no reads, effects, clipboard or execution."
     },
     {
       "id": "source:libs/react/src/debug/index.ts",

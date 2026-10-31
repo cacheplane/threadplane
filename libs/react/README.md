@@ -843,7 +843,12 @@ validates it and starts any separately owned read. Rendering, mounting, opening,
 tabs, docking, closing and unmounting issue no reads, runs or disposal. The app
 owns network access, stale-result validation, selection and resource lifetime.
 History order is as supplied, with no automatic paging or live branch-tree claim.
-Fork, replay, diff and full T29 parity remain outside this first private slice.
+Fork, replay, comparison between historical checkpoints and full T29 parity
+remain outside this private slice. When the selected inspection and current
+observation are both ready and match the panel's ownership tokens, the State tab
+offers **Compare selected checkpoint with current state**. The inspected
+checkpoint is the before state; the current observation is the after state.
+Opening the comparison performs no additional read.
 
 Displayed plain JSON is bounded to depth 6, 200 entries, 2,000 Unicode code points
 per string/key and 32 KiB of UTF-8 output. Truncation is disclosed separately from
@@ -861,6 +866,26 @@ preferences during hydration. State, history, IDs, target and selection are neve
 persisted. Use separate keys for independent panels. Scoped Escape handling and
 outside-pointer close retain outside focus; user-close restores the launcher only
 while focus remains owned by that panel.
+
+### Passive state comparison (private React Debug)
+
+`StateDiff` and readonly `StateDiffProps` are also available from
+`@threadplane/react/debug`, using the same explicit stylesheet. Supply `before`
+and `after` as `DebugValue`; optional `label` and `className` control presentation.
+The view has no reader, execution, subscription or clipboard capability.
+
+Both inputs must fit the existing 32 KiB, depth-six, 200-entry and 2,000-code-point
+display limits completely. Invalid inputs, inputs exceeding those limits, and
+change lists exceeding the same limits receive distinct unavailable notices.
+The view never compares truncated prefixes or displays partially projected
+changes as if they were complete. Only complete equal states report no changes.
+
+Changes identify added, removed and changed own properties with escaped JSON
+Pointer paths; the empty path identifies the root. Object property order is
+irrelevant, including inside arrays. Changed arrays are shown as whole values.
+Missing properties remain distinct from null, false and empty strings. The JSON
+output is literal and bounded; this is app-owned plain-data comparison, not SDK
+decoding or hostile Proxy isolation.
 
 ### Loaded project navigation (private React T29 slice)
 

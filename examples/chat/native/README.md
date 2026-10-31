@@ -846,3 +846,29 @@ bounded to 512 UTF-16 units and truncation disclosed. A newly committed owner,
 conversation or history page retires previous selection/callbacks; ordinary
 streaming with the same page retains selection. This is metadata inspection;
 replay, fork, historical state and full/live timeline parity remain open.
+
+### Observed state comparison (private React)
+
+The ready conversation includes a collapsed **Observed state comparison**.
+**Capture current state baseline** borrows one immutable runtime observation for
+local comparison with later observations. **Clear baseline** releases that
+reference. These controls do not read history, execute a run, change the selected
+conversation or persist data. This baseline is an observed value, not a saved
+checkpoint or execution target.
+
+The runtime's observed application values exclude root transcript messages and
+interrupt control fields. Those remain owned by their existing conversation
+views; comparison does not reconstruct the backend's raw state envelope.
+
+The baseline survives ordinary values updates within the same application and
+conversation. Replacement, navigation and unmount retire its local scope;
+late controls cannot capture from a replacement owner. An unobserved current
+state remains unavailable rather than becoming an empty object. Capturing and
+comparing preserve the composer DOM/draft, transcript, URL and active response.
+
+The shared passive `StateDiff` view shows exact changes only when both supplied
+states and the resulting change list fit the Debug display limits completely:
+32 KiB, depth six, 200 entries and 2,000 Unicode code points per string/key.
+Otherwise it explains why comparison is unavailable. Arrays compare as whole
+values; property paths use JSON Pointer. No comparison of truncated prefixes,
+historical checkpoint read, replay, fork or full state-history parity is claimed.

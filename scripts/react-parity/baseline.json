@@ -1,9 +1,17 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "82ac0520fe9ddca2227a02e75954036e64f33338",
+  "baselineHead": "33572ec705d4359ec9d380480a1f58e2cc313d16",
   "sourceState": {
-    "modified": [],
-    "untracked": []
+    "modified": [
+      "libs/react/README.md",
+      "libs/react/src/debug/chat-debug.tsx",
+      "libs/react/src/debug/index.ts",
+      "libs/react/src/debug/styles.css"
+    ],
+    "untracked": [
+      "libs/react/src/debug/debug-state-diff.tsx",
+      "libs/react/src/debug/state-diff.ts"
+    ]
   },
   "scope": {
     "libraries": [
@@ -849,7 +857,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "134648058596c3d7a2d036983effa69de1ec155f7bceefad4a2983795343de67"
+      "sha256": "99ba51c97f4f99a25819f90c0476efdb107a2f740204a75b6766cf46a17b382b"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -873,7 +881,7 @@
       "id": "asset:libs/react/src/debug/styles.css",
       "kind": "asset",
       "path": "libs/react/src/debug/styles.css",
-      "sha256": "5418fab5681562d1994b1bfa2c97f1b0cddbac1c48b2ed72b37b8405aedb464a"
+      "sha256": "9105e23ad1c5b45491cdb62d7c1d870c856a4590cfec17666d4a2cee121a8c71"
     },
     {
       "id": "asset:libs/react/tsconfig.json",
@@ -15634,19 +15642,31 @@
       "id": "source:libs/react/src/debug/chat-debug.tsx",
       "kind": "source",
       "path": "libs/react/src/debug/chat-debug.tsx",
-      "sha256": "a0a6fa5ca3f986a2104c7db82cc3cdb6884d9fc326d3e9372b4576ac157fe1fc"
+      "sha256": "5f0c62378011f1d3d7cac9aacfad4766cc342279c6b72f84ef0135d1572775f0"
+    },
+    {
+      "id": "source:libs/react/src/debug/debug-state-diff.tsx",
+      "kind": "source",
+      "path": "libs/react/src/debug/debug-state-diff.tsx",
+      "sha256": "68873744f204d90ca3babae4d0886e1ff789bb8513bcc1370a363c99c89b6f02"
     },
     {
       "id": "source:libs/react/src/debug/index.ts",
       "kind": "source",
       "path": "libs/react/src/debug/index.ts",
-      "sha256": "755e6886bce63a67ef4997c6e89997c44bd75cc6fa4d42c72d5fd4792f559b91"
+      "sha256": "de9e0db7a3083d5050fc8d64f42b238214f42d3cf0aa034caf1d55a5d367cb5b"
     },
     {
       "id": "source:libs/react/src/debug/persistence.ts",
       "kind": "source",
       "path": "libs/react/src/debug/persistence.ts",
       "sha256": "e3760ddc4e47ed5a2ea59889407d0fc4643d94fa0f1dcf2aa254881c4899c00f"
+    },
+    {
+      "id": "source:libs/react/src/debug/state-diff.ts",
+      "kind": "source",
+      "path": "libs/react/src/debug/state-diff.ts",
+      "sha256": "448e32dc0dcadc821154eb0087a5f7a010bedb84cdb20e8854b164e0e1268795"
     },
     {
       "id": "source:libs/react/src/debug/types.ts",

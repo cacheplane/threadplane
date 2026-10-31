@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { projectDebugValue } from './bounded-value.js';
+import { StateDiff } from './debug-state-diff.js';
 import {
   createDebugPreferences,
   type DebugPreferences,
@@ -288,6 +289,16 @@ function DebugContent(props: ChatDebugProps & { readonly tab: DebugTab }) {
                   'Selected checkpoint values are unavailable.'
                 : 'Selected checkpoint has not been inspected.'}
             </p>
+          )}
+          {inspection?.status === 'ready' && current?.status === 'ready' && (
+            <details>
+              <summary>Compare selected checkpoint with current state</summary>
+              <StateDiff
+                before={inspection.values}
+                after={current.values}
+                label="Selected checkpoint to current state"
+              />
+            </details>
           )}
         </section>
       )}
