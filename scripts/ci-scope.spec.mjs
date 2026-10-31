@@ -1,9 +1,12 @@
-import { execFileSync } from 'node:child_process';
-import { readFile } from 'node:fs/promises';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
-import { dirname, join } from 'node:path';
+import { delimiter, dirname, join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { createProjectGraphAsync } from '@nx/devkit';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import * as scopePolicy from './ci-scope.mjs';
 import {
   classifyFromAffected,
   emptyScope,
@@ -12,6 +15,128 @@ import {
   isAngularCompatibilityChange,
   SCOPE_KEYS,
 } from './ci-scope.mjs';
+
+describe('reviewed Scripts test-only changes', () => {
+  const reviewed = 'scripts/generate-shared-deployment-config.spec.ts';
+  const consumers = SCOPE_KEYS.map(name => ({ name, tags: [`scope:${name.replaceAll('_', '-')}`] }));
+  const scriptsOnly = { ...emptyScope(), scripts_tests: true };
+
+  it('selects only the executing owner for an exclusively reviewed spec diff', () => {
+    for (const file of [reviewed, `./${reviewed}`]) {
+      assert.deepEqual(classifyFromAffected([file], consumers), scriptsOnly);
+    }
+  });
+
+  it('preserves normal classification for empty, unknown, renamed, and mixed diffs', () => {
+    for (const file of [
+      'scripts/other.spec.ts', `${reviewed}.backup`,
+      'scripts/renamed-generate-shared-deployment-config.spec.ts',
+      'scripts/generate-shared-deployment-config.ts',
+      'scripts/react-cockpit/serve.mjs', 'scripts/vite.config.mts',
+      'cockpit/chat/a2ui/python/src/graph.py', 'deployment-urls.json',
+    ]) {
+      assert.deepEqual(classifyFromAffected([file], consumers), fullScope(), file);
+      assert.deepEqual(classifyFromAffected([reviewed, file], consumers), fullScope(), file);
+    }
+    assert.deepEqual(classifyFromAffected([], consumers), fullScope());
+    assert.deepEqual(classifyFromAffected([reviewed, 'nx.json'], []), fullScope());
+  });
+
+  it('requires full CI for the scope policy and its regression checks', () => {
+    for (const file of ['scripts/ci-scope.mjs', 'scripts/ci-scope.spec.mjs']) {
+      assert.deepEqual(classifyFromAffected([file], []), fullScope(), file);
+    }
+  });
+
+  it('keeps every reviewed path collected by the actual Scripts test target', async () => {
+    assert.ok(scopePolicy.SCRIPTS_TEST_ONLY_FILES?.length > 0);
+    const project = JSON.parse(await readFile('scripts/project.json', 'utf8'));
+    const target = project.targets.test;
+    assert.equal(target.executor, '@nx/vitest:test');
+    const options = { ...target.options, ...target.configurations?.[target.defaultConfiguration] };
+    for (const filter of ['testFiles', 'testFile', 'testNamePattern']) assert.equal(options[filter], undefined);
+    const tests = JSON.parse(execFileSync(process.execPath, [
+      'node_modules/vitest/vitest.mjs', 'list', '--config', join(process.cwd(), options.configFile),
+      '--root', join(process.cwd(), 'scripts'), '--json',
+    ], { encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 }));
+    for (const file of scopePolicy.SCRIPTS_TEST_ONLY_FILES) {
+      assert.ok(tests.some(test => test.file === join(process.cwd(), file)), `${file} has collected cases`);
+    }
+  });
+
+  it('preserves the complete real Nx scope for generator source and mixed inputs', async () => {
+    const graph = await createProjectGraphAsync();
+    const owners = files => nxAffectedFiles(files).map(name => ({ name, tags: graph.nodes[name].data.tags ?? [] }));
+    const specOwners = owners(reviewed);
+    assert.ok(specOwners.some(project => project.tags.includes('scope:scripts-tests')));
+    assert.deepEqual(classifyFromAffected([reviewed], specOwners), scriptsOnly);
+    for (const file of ['scripts/generate-shared-deployment-config.ts', 'scripts/react-cockpit/serve.mjs']) {
+      const affected = owners(`${reviewed},${file}`);
+      const normal = classifyFromAffected([file], affected);
+      assert.equal(normal.scripts_tests, true);
+      assert.equal(normal.website_e2e, true);
+      assert.deepEqual(classifyFromAffected([reviewed, file], affected), normal, file);
+    }
+  });
+
+  it('bypasses Nx only for reviewed-only diffs and fails closed for unknown or mixed inputs', async t => {
+    const root = await mkdtemp(join(tmpdir(), 'scripts-ci-scope-'));
+    t.after(() => rm(root, { recursive: true, force: true }));
+    const bin = join(root, 'bin');
+    await mkdir(bin);
+    const marker = join(root, 'nx-called');
+    await writeFile(join(bin, 'npx'), '#!/bin/sh\nprintf called > "$NX_SCOPE_SENTINEL"\nexit 71\n');
+    await chmod(join(bin, 'npx'), 0o755);
+    const env = { ...process.env, GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_NOSYSTEM: '1',
+      PATH: `${bin}${delimiter}${process.env.PATH}`, NX_SCOPE_SENTINEL: marker };
+    const git = args => execFileSync('git', ['-c', 'user.name=CI fixture', '-c', 'user.email=ci@example.invalid',
+      '-c', 'commit.gpgsign=false', '-c', `core.hooksPath=${bin}`, ...args], { cwd: root, env, encoding: 'utf8' }).trim();
+    git(['init', '--quiet']);
+    git(['commit', '--allow-empty', '--quiet', '-m', 'base']);
+    let base = git(['rev-parse', 'HEAD']);
+    const selector = join(process.cwd(), 'scripts/ci-scope.mjs');
+    for (const [index, files] of [[reviewed], ['scripts/other.spec.ts'], [reviewed, 'scripts/generate-shared-deployment-config.ts']].entries()) {
+      for (const file of files) {
+        await mkdir(dirname(join(root, file)), { recursive: true });
+        await writeFile(join(root, file), `fixture ${index}\n`);
+      }
+      git(['add', 'scripts']);
+      git(['commit', '--quiet', '-m', `change ${index}`]);
+      const head = git(['rev-parse', 'HEAD']);
+      const output = join(root, `outputs-${index}`);
+      await rm(marker, { force: true });
+      const run = spawnSync(process.execPath, [selector, '--event', 'pull_request', '--base', base,
+        '--head', head, '--output', output], { cwd: root, env, encoding: 'utf8', timeout: 10000 });
+      assert.equal(run.status, index === 0 ? 0 : 1, run.stderr);
+      if (index === 0) {
+        assert.equal(await readFile(output, 'utf8'), SCOPE_KEYS.map(key => `${key}=${scriptsOnly[key]}\n`).join(''));
+        await assert.rejects(readFile(marker), { code: 'ENOENT' });
+      } else {
+        assert.equal(await readFile(marker, 'utf8'), 'called');
+        await assert.rejects(readFile(output), { code: 'ENOENT' });
+      }
+      base = head;
+    }
+    const output = join(root, 'push-outputs');
+    const push = spawnSync(process.execPath, [selector, '--event', 'push', '--output', output], { cwd: root, env, encoding: 'utf8' });
+    assert.equal(push.status, 0, push.stderr);
+    assert.equal(await readFile(output, 'utf8'), SCOPE_KEYS.map(key => `${key}=true\n`).join(''));
+
+    // Git's rename detection can otherwise hide an unreviewed source path.
+    git(['rm', reviewed]);
+    git(['commit', '--quiet', '-m', 'remove reviewed fixture']);
+    base = git(['rev-parse', 'HEAD']);
+    git(['mv', 'scripts/other.spec.ts', reviewed]);
+    git(['commit', '--quiet', '-m', 'rename unknown input into reviewed path']);
+    const renamedOutput = join(root, 'rename-outputs');
+    await rm(marker, { force: true });
+    const renamed = spawnSync(process.execPath, [selector, '--event', 'pull_request', '--base', base,
+      '--head', git(['rev-parse', 'HEAD']), '--output', renamedOutput], { cwd: root, env, encoding: 'utf8', timeout: 10000 });
+    assert.equal(renamed.status, 1, renamed.stderr);
+    assert.equal(await readFile(marker, 'utf8'), 'called');
+    await assert.rejects(readFile(renamedOutput), { code: 'ENOENT' });
+  });
+});
 
 it('requires full CI when shared frontend preparation or its task graph changes', () => {
   for (const path of [

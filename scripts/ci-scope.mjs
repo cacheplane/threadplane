@@ -24,6 +24,8 @@ export const SCOPE_KEYS = [
 
 const GLOBAL_CI_FILES = new Set([
   '.github/workflows/ci.yml',
+  'scripts/ci-scope.mjs',
+  'scripts/ci-scope.spec.mjs',
   'package.json',
   'package-lock.json',
   'nx.json',
@@ -40,6 +42,17 @@ const GLOBAL_CI_FILES = new Set([
   'scripts/website-agents-startup.mjs',
   'scripts/website-agents-startup.spec.mjs',
 ]);
+
+// These tests execute their complete generator proof in the Scripts target.
+// Keep this reviewed list exact: mixed or unknown inputs use normal Nx discovery.
+export const SCRIPTS_TEST_ONLY_FILES = Object.freeze([
+  'scripts/generate-shared-deployment-config.spec.ts',
+]);
+
+export function isScriptsTestOnlyChange(changedFiles) {
+  return changedFiles.length > 0 && changedFiles.every(file =>
+    SCRIPTS_TEST_ONLY_FILES.includes(normalizePath(file)));
+}
 
 const PREVIEW_BUILD_FILES = new Set([
   'scripts/build-example-shard.ts',
@@ -188,6 +201,9 @@ export function classifyFromAffected(changedFiles, affectedProjects) {
   if (hasGlobalCiFileChange(changedFiles)) {
     return fullScope();
   }
+  if (isScriptsTestOnlyChange(changedFiles)) {
+    return { ...emptyScope(), scripts_tests: true };
+  }
 
   const scope = emptyScope();
   // Rootless workflow shell contracts execute in the scripts Vitest suite.
@@ -254,7 +270,9 @@ export function hasGlobalCiFileChange(changedFiles) {
 }
 
 function changedFilesBetween(base, head, workspaceRoot) {
-  return execFileSync('git', ['diff', '--name-only', base, head], {
+  // Retain both paths of a rename so an unreviewed input cannot hide behind
+  // an allowlisted destination.
+  return execFileSync('git', ['diff', '--no-renames', '--name-only', base, head], {
     cwd: workspaceRoot,
     encoding: 'utf8',
   })
@@ -333,7 +351,8 @@ function main() {
     return;
   }
 
-  const affectedProjects = loadAffectedProjects(
+  const scriptsTestOnly = isScriptsTestOnlyChange(changedFiles);
+  const affectedProjects = scriptsTestOnly ? [] : loadAffectedProjects(
     args.base,
     args.head,
     workspaceRoot
@@ -342,7 +361,9 @@ function main() {
 
   console.log('Changed files:');
   for (const f of changedFiles) console.log(`  ${f}`);
-  console.log(`Affected projects (${affectedProjects.length}):`);
+  console.log(scriptsTestOnly
+    ? 'Reviewed Scripts test-only diff; Nx consumer discovery skipped.'
+    : `Affected projects (${affectedProjects.length}):`);
   for (const p of affectedProjects)
     console.log(`  ${p.name} [${p.tags.join(', ')}]`);
 

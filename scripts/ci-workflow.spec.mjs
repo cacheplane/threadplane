@@ -7,6 +7,25 @@ import { privateScaffoldProjects } from './react-parity/package-policy.mjs';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { deriveCockpitCaps } from './cockpit-matrix.mjs';
+import { classifyFromAffected } from './ci-scope.mjs';
+
+it('requires the Scripts owner for reviewed test-only changes while allowing unrelated skips', async () => {
+  const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+  const step = readNamedStep(readJobBlock(workflow, 'required-pr-checks'), 'Verify scoped CI jobs');
+  const environment = { ...process.env, PREVIEW_LANES_ELIGIBLE: 'true' };
+  for (const [, key] of step.matchAll(/^ {10}((?:RESULT|SCOPE)_[A-Z0-9_]+):/gm)) {
+    environment[key] = key.startsWith('RESULT_') ? 'skipped' : 'false';
+  }
+  const scope = classifyFromAffected(['scripts/generate-shared-deployment-config.spec.ts'], []);
+  for (const [key, enabled] of Object.entries(scope)) environment[`SCOPE_${key.toUpperCase()}`] = String(enabled);
+  environment.RESULT_CI_SCOPE = 'success';
+  for (const result of ['success', 'failure', 'cancelled', 'skipped']) {
+    const run = spawnSync('bash', ['-c', readStepRunBlock(step)], {
+      encoding: 'utf8', env: { ...environment, RESULT_SCRIPTS_TESTS: result },
+    });
+    assert.equal(run.status, result === 'success' ? 0 : 1, `${result}: ${run.stdout}\n${run.stderr}`);
+  }
+});
 
 it('caches uv downloads only for Cockpit caps with action-owned Python dependencies', async () => {
   const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'cockpit-e2e');
