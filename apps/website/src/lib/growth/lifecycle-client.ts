@@ -20,7 +20,9 @@ export interface InvokeLifecycleDependencies {
   randomUUID: () => string;
 }
 
-export type LifecycleOperatorAlert = 'mailbox_recovery_required';
+export type LifecycleOperatorAlert =
+  | 'mailbox_recovery_required'
+  | 'marketing_dispatch_failed';
 
 export interface InvokeLifecycleResult {
   operatorAlerts: LifecycleOperatorAlert[];
@@ -114,7 +116,9 @@ function parseLifecycleState(
     typeof result['recoveryPaused'] !== 'boolean' ||
     !Array.isArray(result['operatorAlerts']) ||
     !result['operatorAlerts'].every(
-      (alert) => alert === 'mailbox_recovery_required'
+      (alert) =>
+        alert === 'mailbox_recovery_required' ||
+        alert === 'marketing_dispatch_failed'
     )
   ) {
     throw new Error('Lifecycle dispatch returned invalid state');

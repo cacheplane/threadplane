@@ -1,5 +1,5 @@
-// One-time OAuth 2.0 bootstrapper for the X adapter.
-// Run via: npm run marketing:channels:x:auth
+// One-time OAuth 2.0 flow for the X adapter. Tokens are stored in Neon by
+// marketing/queue/src/cli/x-auth.ts (npm run marketing:channels:x:auth).
 
 import http from 'node:http';
 import crypto from 'node:crypto';
@@ -12,11 +12,6 @@ const AUTHORIZE_URL = 'https://x.com/i/oauth2/authorize';
 const TOKEN_URL = 'https://api.x.com/2/oauth2/token';
 const USERS_ME_URL = 'https://api.x.com/2/users/me';
 const TIMEOUT_MS = 5 * 60 * 1000;
-
-function fail(msg: string): never {
-  process.stderr.write(`✗ ${msg}\n`);
-  process.exit(1);
-}
 
 function b64url(buf: Buffer): string {
   return buf.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -34,11 +29,15 @@ function openInBrowser(url: string): void {
   });
 }
 
-async function main(): Promise<void> {
+export async function runXOAuth(): Promise<{
+  accessToken: string;
+  refreshToken: string;
+  userHandle: string;
+}> {
   const clientId = process.env.X_CLIENT_ID;
   const clientSecret = process.env.X_CLIENT_SECRET;
   if (!clientId || !clientSecret) {
-    fail(
+    throw new Error(
       'X_CLIENT_ID and X_CLIENT_SECRET must be set in your environment.\n' +
         'Create an app at https://developer.x.com/en/portal/dashboard and copy the OAuth 2.0 Client ID and Secret to your .env.',
     );
@@ -115,7 +114,7 @@ async function main(): Promise<void> {
     body: tokenParams.toString(),
   });
   if (!tokenRes.ok) {
-    fail(`Token exchange failed: HTTP ${tokenRes.status} ${await tokenRes.text()}`);
+    throw new Error(`Token exchange failed: HTTP ${tokenRes.status} ${await tokenRes.text()}`);
   }
   const tokens = (await tokenRes.json()) as {
     access_token: string;
@@ -126,17 +125,13 @@ async function main(): Promise<void> {
     headers: { Authorization: `Bearer ${tokens.access_token}` },
   });
   if (!meRes.ok) {
-    fail(`Failed to fetch /users/me: HTTP ${meRes.status}`);
+    throw new Error(`Failed to fetch /users/me: HTTP ${meRes.status}`);
   }
   const me = (await meRes.json()) as { data: { username: string } };
 
-  process.stdout.write(
-    `\n✓ Got tokens. Add these to .env:\n\n` +
-      `X_ACCESS_TOKEN=${tokens.access_token}\n` +
-      `X_REFRESH_TOKEN=${tokens.refresh_token}\n` +
-      `X_USER_HANDLE=${me.data.username}\n\n`,
-  );
-  process.exit(0);
+  return {
+    accessToken: tokens.access_token,
+    refreshToken: tokens.refresh_token,
+    userHandle: me.data.username,
+  };
 }
-
-main().catch((err) => fail(err instanceof Error ? err.message : String(err)));

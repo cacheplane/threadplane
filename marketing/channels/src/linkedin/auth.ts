@@ -1,3 +1,5 @@
+import type { LinkedInCredentials } from '../types.ts';
+
 const REQUIRED_ENV = ['LINKEDIN_ACCESS_TOKEN', 'LINKEDIN_AUTHOR_URN'] as const;
 
 const AUTHOR_URN_RE = /^urn:li:person:[A-Za-z0-9_-]+$/;
@@ -12,19 +14,25 @@ export class LinkedInAuth {
   public readonly accessToken: string;
   public readonly authorUrn: string;
   public readonly expiresAt?: Date;
+  /** Passed to every LinkedIn request made with this auth. */
+  public readonly signal?: AbortSignal;
 
-  constructor() {
+  constructor(opts?: { credentials: LinkedInCredentials; signal?: AbortSignal }) {
+    if (opts) {
+      this.signal = opts.signal;
+      this.accessToken = opts.credentials.accessToken;
+      this.authorUrn = opts.credentials.authorUrn;
+      this.expiresAt = opts.credentials.expiresAt;
+      this.assertAuthorUrn();
+      return;
+    }
     const missing = REQUIRED_ENV.filter((k) => !process.env[k]);
     if (missing.length > 0) {
       throw new Error(`LinkedIn adapter missing env vars: ${missing.join(', ')}`);
     }
     this.accessToken = process.env.LINKEDIN_ACCESS_TOKEN!;
     this.authorUrn = process.env.LINKEDIN_AUTHOR_URN!;
-    if (!AUTHOR_URN_RE.test(this.authorUrn)) {
-      throw new Error(
-        `LINKEDIN_AUTHOR_URN must look like urn:li:person:<id> (got "${this.authorUrn}"); ${REAUTH_HINT}.`,
-      );
-    }
+    this.assertAuthorUrn();
 
     const rawExpiry = process.env.LINKEDIN_TOKEN_EXPIRES_AT;
     if (rawExpiry) {
@@ -34,6 +42,19 @@ export class LinkedInAuth {
       }
       this.expiresAt = expiresAt;
     }
+  }
+
+  private assertAuthorUrn(): void {
+    if (!AUTHOR_URN_RE.test(this.authorUrn)) {
+      throw new Error(
+        `LINKEDIN_AUTHOR_URN must look like urn:li:person:<id> (got "${this.authorUrn}"); ${REAUTH_HINT}.`,
+      );
+    }
+  }
+
+  /** Milliseconds until the token expires (negative once expired); undefined when expiry is unknown. */
+  expiresInMs(now: Date): number | undefined {
+    return this.expiresAt ? this.expiresAt.getTime() - now.getTime() : undefined;
   }
 
   /** Throws when the token has expired; warns on stderr when it expires within 7 days. */

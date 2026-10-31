@@ -162,7 +162,7 @@ jobs:
       # node:test suites in scripts/ run in ci-scope and library instead —
       # see scripts/vite.config.mts for the split.
       - run: npx nx test scripts
-      - run: npx nx run-many -t lint test --projects=marketing-assets,marketing-channels --parallel=2
+      - run: npx nx run-many -t lint test --projects=marketing-assets,marketing-channels,marketing-queue --parallel=2
 
   # Consumer compatibility needs production packages, not the completion of
   # Library's independent fixture, coverage, and installed-package proofs.
@@ -650,6 +650,8 @@ jobs:
         uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57 # v8.0.0
         with:
           python-version: '3.12'
+          # These suites install nothing through uv, so the cache stays empty.
+          enable-cache: false
       - run: npx nx lint cockpit-a2ui-react
       - run: npx nx test cockpit-a2ui-react --skip-nx-cache
       - run: npx nx test cockpit-chat-a2ui-react --skip-nx-cache

@@ -1,13 +1,19 @@
-import type { ChannelAdapter, Draft, PostMetrics, PostResult } from '../types';
-import { validateDraft } from '../validation';
-import { postDevTo } from './post';
-import { fetchDevToMetrics } from './metrics';
+import type { ChannelAdapter, DevToCredentials, Draft, PostMetrics, PostResult } from '../types.ts';
+import { validateDraft } from '../validation.ts';
+import { postDevTo } from './post.ts';
+import { fetchDevToMetrics } from './metrics.ts';
 
 export class DevToAdapter implements ChannelAdapter {
   readonly id = 'devto' as const;
   private readonly apiKey: string;
+  private readonly signal?: AbortSignal;
 
-  constructor() {
+  constructor(opts?: { credentials: DevToCredentials; signal?: AbortSignal }) {
+    if (opts) {
+      this.apiKey = opts.credentials.apiKey;
+      this.signal = opts.signal;
+      return;
+    }
     const key = process.env.DEVTO_API_KEY;
     if (!key || key.length === 0) {
       throw new Error(
@@ -19,10 +25,10 @@ export class DevToAdapter implements ChannelAdapter {
 
   async post(draft: Draft): Promise<PostResult> {
     validateDraft(draft, { adapterId: 'devto' });
-    return postDevTo(this.apiKey, draft);
+    return postDevTo(this.apiKey, draft, this.signal);
   }
 
   async metrics(postId: string): Promise<PostMetrics> {
-    return fetchDevToMetrics(this.apiKey, postId);
+    return fetchDevToMetrics(this.apiKey, postId, this.signal);
   }
 }

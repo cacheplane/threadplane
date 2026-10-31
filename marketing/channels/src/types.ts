@@ -57,3 +57,34 @@ export interface ChannelAdapter {
   post(draft: Draft): Promise<PostResult>;
   metrics(postId: string): Promise<PostMetrics>;
 }
+
+export interface XCredentials {
+  clientId: string;
+  clientSecret: string;
+  accessToken: string;
+  refreshToken: string;
+  userHandle: string;
+}
+
+export interface LinkedInCredentials {
+  accessToken: string;
+  authorUrn: string;
+  expiresAt?: Date;
+}
+
+export interface DevToCredentials {
+  apiKey: string;
+}
+
+/** Credentials injected by a caller (e.g. loaded from a database) instead of `process.env`. */
+export interface AdapterOptions {
+  x?: {
+    credentials: XCredentials;
+    /** Awaited by `XAuth.refresh()` before it returns, so rotated tokens can be persisted. */
+    onTokensRotated?: (t: { accessToken: string; refreshToken: string }) => Promise<void>;
+  };
+  linkedin?: { credentials: LinkedInCredentials };
+  devto?: { credentials: DevToCredentials };
+  /** Aborts every adapter request (e.g. the caller's step budget). */
+  signal?: AbortSignal;
+}

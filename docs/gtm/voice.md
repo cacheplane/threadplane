@@ -1,6 +1,6 @@
 # Voice: Brian Love
 
-> The canonical voice + tone reference for any post drafted on Brian's behalf — blog, social, threads, replies. As of 2026-10-07 the **pre-2024 register governs**: sentence-level style and structure both come from Brian's 2012–2024 posts (`~/repos/brianflove/src/content/posts/`, ~141 posts). Good references: `2019-12-14-console-debugging-with-window-ng.md` (tutorial), `2024-01-09-year-in-review.md` and `2024-01-11-success-in-the-ordinary.md` (essay). The 2026 register (no contractions, no "Let's", no emoji) is retired for Threadplane posts; see "Register history" below.
+> The canonical voice + tone reference for any post drafted on Brian's behalf — blog, social, threads, replies. As of 2026-10-07 the **pre-2024 register governs**: sentence-level style and structure both come from Brian's 2012–2024 posts (`~/repos/brianflove/src/content/posts/`, ~141 posts). Good references: `2019-12-14-console-debugging-with-window-ng.md` (tutorial), `2024-01-09-year-in-review.md` and `2024-01-11-success-in-the-ordinary.md` (essay). The 2026 register (no contractions, no "Let's", no emoji) is retired for Threadplane posts; see "Register history" below. Blog and dev.to posts use this register in full; X and LinkedIn posts use the looser **Social register** below, which keeps the same standing rules.
 
 ## The register (governs)
 
@@ -35,6 +35,41 @@ The 2026 register read colder than he wants.
 Measured 2026-08-31 across Brian's 2026 posts, the "2026 register" used zero contractions, zero "Let's", and zero emoji, and this file mandated it for sentence-level style.
 On 2026-10-07 Brian chose the older voice for Threadplane posts instead, and the existing Threadplane blog posts were rewritten to match.
 Do not reintroduce the 2026 register without asking him.
+
+## Social register (X and LinkedIn)
+
+Brian, 2026-10-29, on everything public he posts: it should be "natural and organic, plain text, minimal punctuation, occasional misspellings and typos, and feel like Brian".
+This section applies to X and LinkedIn posts from his personal accounts (@blovedev on X, his LinkedIn profile).
+Blog posts and their dev.to cross-posts stay in the register above.
+
+**Sentence-level rules:**
+
+- **Plain text.** No markdown, no bold, no bullet glyphs, no numbered "1/" thread markers, no "🧵".
+- **Short lines.** One thought per line, like the blog register, only shorter. A blank line between thoughts is fine.
+- **Casual lowercase is fine.** Starting a post or a line in lowercase is normal. Proper nouns and package names keep their real casing (`@threadplane/chat`, LangGraph, AG-UI, Angular).
+- **Minimal punctuation.** Periods are optional at the end of a line. Commas only where he'd pause. One question mark or exclamation mark is plenty.
+- **No em dashes.** Use a period, a comma, or a new line.
+- **Hashtags: zero or one.** Zero is the default.
+- **Emoji: zero or one, never stacked.** Only from the repertoire above (💚 💙 🔥 🤔 🏖 👍 😲 😆).
+- **An occasional natural typo.** Roughly one in every few posts, not every post: a dropped letter, "awhile", a missing apostrophe, a doubled word. His blog has them ("boostrapping", "you're audience"), and he doesn't over-polish. Never put a typo in code, package names, commands, URLs, version numbers, or any other number, and never in a name or a factual claim.
+- **Opinions flagged.** "I think", "for me", "imo". Hot takes are engineering opinions about tools, patterns, and how teams build agent UIs.
+
+**Channel shape:**
+
+- **X:** each part is at most 280 characters. One post a day. A single post or a short thread is fine; no thread longer than it needs to be. A link to threadplane.ai always goes in the **last** part, which posts as a reply, and the card image goes on the first part.
+- **LinkedIn:** the hook is in the first two lines, since that's all the feed shows before "see more". The link goes in the post body (never a first comment). Still plain text and short lines; a LinkedIn post can run longer than an X post but rarely needs more than 10–15 lines.
+- **Links:** every threadplane.ai link carries `utm_source=<x|linkedin|devto>&utm_medium=social&utm_campaign=<slug>`.
+
+**Standing rules (same as the blog register, repeated because they matter most here):**
+
+- **Anything political or offensive** is out. Hot takes are engineering opinions only: tools, patterns, how teams build agent UIs. Never punch at people.
+- **Invented anecdotes.** Never put a first-person story in Brian's mouth that didn't happen. Real, verifiable facts only. Warmth and opinion are fine; fabricated events are not.
+- **Naming competitors.** Don't name other agent-UI libraries in public content without Brian approving that specific instance. Hot takes stay about ideas, not products.
+- **Content that reads like marketing copy.** No hype words, no growth-hacker CTAs, no "in this article we'll explore", no stagey structural fragments ("Now the honest part.").
+
+**Corpus gap:** there is no real corpus of Brian's tweets or LinkedIn posts in this repo yet; this register is derived from his blog posts and his instructions.
+A Twitter/X or LinkedIn archive export would make it much better: use his real posts as examples once one exists.
+Until then, the before/after revisions recorded when Brian edits a draft during `/week` are the best signal of how he actually writes for social.
 
 ## tl;dr
 
@@ -172,5 +207,5 @@ Warm, slightly goofy, occasionally folksy. Humor lives in the asides:
 - [ ] No hype: no "blazing," "revolutionary," "game-changing," "10x."
 - [ ] No marketing CTAs. Close is an invitation, forward link, or short imperative.
 - [ ] Tutorial posts have `## Conclusion`. Essay posts end on a single imperative or invitation.
-- [ ] Every recommendation paired with a cost or tradeoff; at least one personal disclosure earns the right to recommend.
+- [ ] Every recommendation paired with a cost or tradeoff; at least one personal disclosure earns the right to recommend (only from facts Brian gave or cited sources; if there are none, leave it out and ask him).
 - [ ] Reader is a peer. No "obviously," no "as we all know."

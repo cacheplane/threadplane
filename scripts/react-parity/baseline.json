@@ -1,17 +1,16 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "6412cc02f0e94e1d1fd7315cca231ca5fdc85b58",
+  "baselineHead": "0e36e17dd7437a5d2299611cf3ee6de63aff8226",
   "sourceState": {
     "modified": [
       "libs/react/README.md",
       "libs/react/src/chat/confirm-dialog.tsx",
+      "libs/react/src/chat/history-search-palette.tsx",
       "libs/react/src/chat/index.ts",
+      "libs/react/src/chat/internal/dialog-presentation.ts",
       "libs/react/src/chat/styles.css"
     ],
-    "untracked": [
-      "libs/react/src/chat/history-search-palette.tsx",
-      "libs/react/src/chat/internal/dialog-presentation.ts"
-    ]
+    "untracked": []
   },
   "scope": {
     "libraries": [
@@ -2183,7 +2182,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "e8c05f5ab36461d320624c6e72f635ab5cc7a1b17162792255b5ef97cee47b55"
+      "sha256": "3f3d99baa1cd7e38d701d3697ef709c1b0a1fc67ebae4d0f19acf9cf7b96e087"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -2237,13 +2236,13 @@
       "id": "config:package-lock.json",
       "kind": "config",
       "path": "package-lock.json",
-      "sha256": "72f58549ddcbc30ae7c94bf078385c800e8d7efbef34a23a9e63b3075beb3250"
+      "sha256": "53377110c750ed07b1bd9e54a1a121599af085ce4cad0bf1ae4951b0e00a6092"
     },
     {
       "id": "config:package.json",
       "kind": "config",
       "path": "package.json",
-      "sha256": "3999d926d7d98015c5a29ad80e1236d01fc6aa74558987ae9ac9d02f75049aa6"
+      "sha256": "995d8e228c09b0bd0dbbb9dba416e6afe0f983f1cd04ef789e635549ca5d63ca"
     },
     {
       "id": "config:scripts/assemble-examples.ts",
@@ -2273,7 +2272,7 @@
       "id": "config:tsconfig.base.json",
       "kind": "config",
       "path": "tsconfig.base.json",
-      "sha256": "2df95b2453abb605eb56acf44f4ac53f06620f97a01144af7f194aab70e86293"
+      "sha256": "fef85f15cc13389982dc749ecffbf9e6864412d410190475cbcf10bfc077bbf0"
     },
     {
       "id": "doc:apps/website/content/docs/a2ui/getting-started/introduction.mdx",

@@ -1,8 +1,8 @@
-import { http } from '../http';
-import { writeDryRunResult } from '../dry-run';
-import type { Draft, PostResult } from '../types';
-import type { XAuth } from './auth';
-import { uploadMedia } from './media';
+import { http } from '../http.ts';
+import { writeDryRunResult } from '../dry-run.ts';
+import type { Draft, PostResult } from '../types.ts';
+import type { XAuth } from './auth.ts';
+import { uploadMedia } from './media.ts';
 
 const TWEETS_URL = 'https://api.x.com/2/tweets';
 
@@ -20,11 +20,15 @@ async function postTweet(auth: XAuth, body: TweetRequestBody): Promise<string> {
   const response = await http<TweetResponse>({
     method: 'POST',
     url: TWEETS_URL,
-    headers: {
+    // Read per attempt so the retry after a refresh sends the new token.
+    headers: () => ({
       Authorization: `Bearer ${auth.accessToken}`,
       'Content-Type': 'application/json',
-    },
+    }),
     body: JSON.stringify(body),
+    // A create is never retried: a 5xx or timeout may still have posted.
+    retryOn5xx: false,
+    signal: auth.signal,
     on401: async () => {
       await auth.refresh();
       return { retry: true };

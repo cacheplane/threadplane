@@ -953,6 +953,18 @@ describe('loadLifecycleRuntimeConfiguration', () => {
     );
   });
 
+  it('reads MARKETING_POSTING_ENABLED exactly', () => {
+    expect(loadLifecycleRuntimeConfiguration({})).toMatchObject({
+      marketingPostingEnabled: false,
+    });
+    expect(
+      loadLifecycleRuntimeConfiguration({ MARKETING_POSTING_ENABLED: 'true' })
+    ).toMatchObject({ marketingPostingEnabled: true });
+    expect(
+      loadLifecycleRuntimeConfiguration({ MARKETING_POSTING_ENABLED: 'TRUE' })
+    ).toMatchObject({ marketingPostingEnabled: false });
+  });
+
   it('enables install-runtime hello only with the exact configured boolean', () => {
     expect(
       loadLifecycleRuntimeConfiguration({

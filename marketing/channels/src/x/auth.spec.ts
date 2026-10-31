@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeAll, afterAll, afterEach, beforeEach, vi } from 'vitest';
 import { setupServer } from 'msw/node';
 import { http as mswHttp, HttpResponse } from 'msw';
-import { XAuth } from './auth';
+import { XAuth } from './auth.ts';
 
 const server = setupServer();
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
@@ -93,5 +93,71 @@ describe('XAuth.refresh', () => {
     );
     const auth = new XAuth();
     await expect(auth.refresh()).rejects.toThrow(/marketing:channels:x:auth/);
+  });
+});
+
+describe('XAuth with injected credentials', () => {
+  const credentials = {
+    clientId: 'icid',
+    clientSecret: 'icsec',
+    accessToken: 'i-access',
+    refreshToken: 'i-refresh',
+    userHandle: 'injected',
+  };
+
+  it('ignores env', () => {
+    for (const k of Object.keys(env)) delete process.env[k];
+    const auth = new XAuth({ credentials });
+    expect(auth.accessToken).toBe('i-access');
+    expect(auth.userHandle).toBe('injected');
+  });
+
+  it('awaits onTokensRotated with the new pair before refresh resolves', async () => {
+    server.use(
+      mswHttp.post('https://api.x.com/2/oauth2/token', () =>
+        HttpResponse.json({
+          access_token: 'a2',
+          refresh_token: 'r2',
+          token_type: 'bearer',
+          expires_in: 7200,
+        }),
+      ),
+    );
+    const spy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    let persisted = false;
+    const onTokensRotated = vi.fn(async () => {
+      await new Promise((r) => setTimeout(r, 5));
+      persisted = true;
+    });
+    const auth = new XAuth({ credentials, onTokensRotated });
+    await auth.refresh();
+    expect(persisted).toBe(true);
+    expect(onTokensRotated).toHaveBeenCalledTimes(1);
+    expect(onTokensRotated).toHaveBeenCalledWith({ accessToken: 'a2', refreshToken: 'r2' });
+    expect(auth.accessToken).toBe('a2');
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
+  it('finishes and persists a refresh even when the caller signal aborts', async () => {
+    const controller = new AbortController();
+    server.use(
+      mswHttp.post('https://api.x.com/2/oauth2/token', async () => {
+        // The step budget runs out while X is rotating the token.
+        controller.abort();
+        await new Promise((r) => setTimeout(r, 5));
+        return HttpResponse.json({
+          access_token: 'a3',
+          refresh_token: 'r3',
+          token_type: 'bearer',
+          expires_in: 7200,
+        });
+      }),
+    );
+    const onTokensRotated = vi.fn(() => Promise.resolve());
+    const auth = new XAuth({ credentials, onTokensRotated, signal: controller.signal });
+    await auth.refresh();
+    expect(onTokensRotated).toHaveBeenCalledWith({ accessToken: 'a3', refreshToken: 'r3' });
+    expect(auth.refreshToken).toBe('r3');
   });
 });

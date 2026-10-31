@@ -1,20 +1,22 @@
-import type { ChannelAdapter, ChannelId } from './types';
-import { XAdapter } from './x';
-import { DevToAdapter } from './devto';
-import { LinkedInAdapter } from './linkedin';
+import type { AdapterOptions, ChannelAdapter, ChannelId } from './types.ts';
+import { XAdapter } from './x/index.ts';
+import { DevToAdapter } from './devto/index.ts';
+import { LinkedInAdapter } from './linkedin/index.ts';
 
 const KNOWN: ChannelId[] = ['x', 'linkedin', 'devto', 'reddit'];
 
 const instances = new Map<ChannelId, ChannelAdapter>();
 
-function buildAdapter(id: ChannelId): ChannelAdapter {
+function buildAdapter(id: ChannelId, options?: AdapterOptions): ChannelAdapter {
   switch (id) {
     case 'x':
-      return new XAdapter();
+      return new XAdapter(options?.x && { ...options.x, signal: options.signal });
     case 'devto':
-      return new DevToAdapter();
+      return new DevToAdapter(options?.devto && { ...options.devto, signal: options.signal });
     case 'linkedin':
-      return new LinkedInAdapter();
+      return new LinkedInAdapter(
+        options?.linkedin && { ...options.linkedin, signal: options.signal },
+      );
     case 'reddit':
       throw new Error(
         `Channel "${id}" adapter is not yet implemented. Known channels with implementations: x, devto, linkedin.`,
@@ -26,6 +28,14 @@ function buildAdapter(id: ChannelId): ChannelAdapter {
       );
     }
   }
+}
+
+/** Builds a fresh adapter every call; pass `options` to inject credentials instead of reading `process.env`. */
+export function createAdapter(id: ChannelId, options?: AdapterOptions): ChannelAdapter {
+  if (!KNOWN.includes(id)) {
+    throw new Error(`Unknown channel "${id}". Known: ${KNOWN.join(', ')}.`);
+  }
+  return buildAdapter(id, options);
 }
 
 export function getAdapter(id: ChannelId): ChannelAdapter {

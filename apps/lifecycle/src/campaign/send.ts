@@ -111,7 +111,7 @@ export interface LifecycleResendClient {
         text: string;
         tags: { name: string; value: string }[];
       },
-      options: { idempotencyKey: string; signal?: AbortSignal }
+      options: { idempotencyKey?: string; signal?: AbortSignal }
     ): ReturnType<RecipientResendClient['emails']['send']>;
   };
 }
@@ -203,6 +203,7 @@ export interface LifecycleRuntimeConfiguration {
   installRuntimeHelloEnabled: boolean;
   installDigestEnabled: boolean;
   observationProcessingEnabled: boolean;
+  marketingPostingEnabled: boolean;
   campaignEnrollmentStartAt?: Date;
   campaignEnabled: boolean;
   deliveryEnabled: boolean;
@@ -867,6 +868,9 @@ export function loadLifecycleRuntimeConfiguration(
     installRuntimeHelloEnabled,
     installDigestEnabled,
     observationProcessingEnabled,
+    // Only the exact string `true` turns posting on; anything else is off.
+    marketingPostingEnabled:
+      environment['MARKETING_POSTING_ENABLED'] === 'true',
     ...(campaignEnrollmentStartAt ? { campaignEnrollmentStartAt } : {}),
     campaignEnabled,
     deliveryEnabled,

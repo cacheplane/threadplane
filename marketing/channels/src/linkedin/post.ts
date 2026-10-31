@@ -1,9 +1,9 @@
-import { writeDryRunResult } from '../dry-run';
-import type { Draft, PostResult } from '../types';
-import type { LinkedInAuth } from './auth';
-import { linkedInPost } from './api';
-import { escapeLittleText } from './little';
-import { uploadImage } from './media';
+import { writeDryRunResult } from '../dry-run.ts';
+import type { Draft, PostResult } from '../types.ts';
+import type { LinkedInAuth } from './auth.ts';
+import { linkedInPost } from './api.ts';
+import { escapeLittleText } from './little.ts';
+import { uploadImage } from './media.ts';
 
 interface PostRequestBody {
   author: string;

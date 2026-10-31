@@ -1,8 +1,8 @@
 import { describe, expect, it, beforeAll, afterAll, afterEach, beforeEach } from 'vitest';
 import { setupServer } from 'msw/node';
 import { http as mswHttp, HttpResponse } from 'msw';
-import { postDevTo } from './post';
-import type { Draft } from '../types';
+import { postDevTo } from './post.ts';
+import type { Draft } from '../types.ts';
 
 const server = setupServer();
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
@@ -141,5 +141,17 @@ describe('postDevTo', () => {
     } finally {
       delete process.env.DRY_RUN;
     }
+  });
+
+  it('devto create is not retried on 502', async () => {
+    let calls = 0;
+    server.use(
+      mswHttp.post('https://dev.to/api/articles', () => {
+        calls++;
+        return new HttpResponse('bad gateway', { status: 502 });
+      }),
+    );
+    await expect(postDevTo(apiKey, baseDraft())).rejects.toThrow(/HTTP 502/);
+    expect(calls).toBe(1);
   });
 });

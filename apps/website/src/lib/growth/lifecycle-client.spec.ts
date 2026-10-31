@@ -198,6 +198,33 @@ describe('invokeLifecycle', () => {
     expect(result.operatorAlerts).toEqual(['mailbox_recovery_required']);
   });
 
+  it('accepts the marketing dispatch alert without implying mailbox recovery', async () => {
+    const fetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          trigger: 'cron',
+          result: {
+            dispatched: 0,
+            leased: 0,
+            operatorAlerts: ['marketing_dispatch_failed'],
+            recoveryPaused: false,
+          },
+        })
+      )
+    );
+
+    const result = await invokeLifecycle(
+      {
+        baseUrl: 'https://lifecycle.example',
+        serviceSecret: 'service-secret',
+        trigger: 'cron',
+      },
+      { fetch }
+    );
+
+    expect(result.operatorAlerts).toEqual(['marketing_dispatch_failed']);
+  });
+
   it.each(['65537', '-1', 'not-a-number'])(
     'rejects and cancels an invalid or oversized declared response length: %s',
     async (contentLength) => {

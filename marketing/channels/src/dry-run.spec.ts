@@ -2,8 +2,8 @@ import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { writeDryRunResult } from './dry-run';
-import type { Draft } from './types';
+import { writeDryRunResult } from './dry-run.ts';
+import type { Draft } from './types.ts';
 
 let cwd: string;
 let origCwd: string;

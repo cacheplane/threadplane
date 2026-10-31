@@ -13,7 +13,11 @@ export default z
         dispatched: z.number().int().nonnegative(),
         recoveryPaused: z.boolean(),
         operatorAlerts: z.array(
-          z.enum(['mailbox_recovery_required', 'observation_projection_failed'])
+          z.enum([
+            'mailbox_recovery_required',
+            'observation_projection_failed',
+            'marketing_dispatch_failed',
+          ])
         ),
       })
       .strict()

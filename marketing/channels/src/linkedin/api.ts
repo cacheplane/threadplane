@@ -1,5 +1,5 @@
-import { http, type HttpOpts } from '../http';
-import { REAUTH_HINT, type LinkedInAuth } from './auth';
+import { http, type HttpOpts } from '../http.ts';
+import { REAUTH_HINT, type LinkedInAuth } from './auth.ts';
 
 export const API_BASE = 'https://api.linkedin.com/rest';
 
@@ -34,6 +34,7 @@ export async function linkedInPost<T>(
     body: JSON.stringify(body),
     // A retried create can double-post; let the caller decide.
     retryOn5xx: false,
+    signal: auth.signal,
     on401,
     onHeaders: (h) => {
       restliId = h.get('x-restli-id') ?? undefined;

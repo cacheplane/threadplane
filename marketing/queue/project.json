@@ -1,0 +1,28 @@
+{
+  "name": "marketing-queue",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "marketing/queue/src",
+  "projectType": "library",
+  "tags": ["scope:marketing", "scope:scripts-tests", "type:lib"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "dependsOn": ["^build"],
+      "outputs": ["{workspaceRoot}/dist/marketing/queue"],
+      "options": {
+        "outputPath": "dist/marketing/queue",
+        "main": "marketing/queue/src/index.ts",
+        "tsConfig": "marketing/queue/tsconfig.lib.json"
+      }
+    },
+    "test": {
+      "executor": "@nx/vitest:test",
+      "options": {
+        "configFile": "marketing/queue/vite.config.mts"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}

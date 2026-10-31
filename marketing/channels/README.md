@@ -27,23 +27,17 @@ console.log(result.url);
 
 ## Auth (X)
 
-X uses OAuth 2.0 User Context with PKCE. The first time you set it up, run the bootstrapper:
+X uses OAuth 2.0 User Context with PKCE. The first time you set it up, run the bootstrapper with a target:
 
 ```bash
-npm run marketing:channels:x:auth
+npm run marketing:channels:x:auth -- --target=preview   # or production
 ```
 
-It opens your browser, you authorize the app, and it prints the tokens for you to paste into `.env`:
-
-```
-X_ACCESS_TOKEN=...
-X_REFRESH_TOKEN=...
-X_USER_HANDLE=brian
-```
+It opens your browser, you authorize the app, and it writes the sealed access and refresh tokens to that target's Neon database. X rotates the refresh token on every refresh, so Neon is the only holder: the tokens are not printed, and the command refuses to run without `--target`. It does print the `X_USER_HANDLE` to set wherever the dispatcher runs. Requires `MARKETING_CREDENTIALS_KEY` and the matching `MARKETING_DATABASE_URL_*`. See the [rollout runbook](../../docs/growth/marketing-queue-rollout.md).
 
 Prerequisites: create an X v2 app at <https://developer.x.com/en/portal/dashboard> and set the `X_CLIENT_ID` + `X_CLIENT_SECRET` env vars from the app's OAuth 2.0 section.
 
-When an access token expires, the adapter automatically calls `/2/oauth2/token` to refresh. Rotated tokens remain in memory and are never logged by the adapter. They are not persisted across process restarts; if authentication fails after restarting, run the bootstrapper again.
+When an access token expires, the adapter automatically calls `/2/oauth2/token` to refresh. The queue dispatcher persists each rotated token pair back to Neon. Outside the dispatcher (for example the smoke script) rotated tokens stay in memory only.
 
 ## Auth (LinkedIn)
 
@@ -57,10 +51,10 @@ LinkedIn uses 3-legged OAuth 2.0. One-time app setup:
 Then run the bootstrapper:
 
 ```bash
-npm run marketing:channels:linkedin:auth
+npm run marketing:channels:linkedin:auth -- --target=preview   # or production
 ```
 
-It opens your browser, you authorize the app, and it prints the values for `.env`:
+It opens your browser, you authorize the app, and it writes the sealed token to that target's Neon database. Without `--target` it instead prints the values for `.env`:
 
 ```
 LINKEDIN_ACCESS_TOKEN=...

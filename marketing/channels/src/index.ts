@@ -9,8 +9,16 @@ export type {
   PostMetrics,
   ChannelAdapter,
   ChannelId,
-} from './types';
+  AdapterOptions,
+  XCredentials,
+  LinkedInCredentials,
+  DevToCredentials,
+} from './types.ts';
 
-export { validateDraft, ValidationError } from './validation';
+export { validateDraft, ValidationError } from './validation.ts';
 
-export { getAdapter } from './registry';
+export { getAdapter, createAdapter } from './registry.ts';
+
+// Operator OAuth flows; exported here so buildable consumers need no subpath mapping.
+export { runXOAuth } from './x/oauth.ts';
+export { runLinkedInOAuth } from './linkedin/oauth.ts';

@@ -1,5 +1,5 @@
-import { http } from '../http';
-import type { XAuth } from './auth';
+import { http } from '../http.ts';
+import type { XAuth } from './auth.ts';
 
 const UPLOAD_URL = 'https://api.x.com/2/media/upload';
 const METADATA_URL = 'https://api.x.com/2/media/metadata';
@@ -20,8 +20,11 @@ export async function uploadMedia(
   const response = await http<UploadResponse>({
     method: 'POST',
     url: UPLOAD_URL,
-    headers: { Authorization: `Bearer ${auth.accessToken}` },
+    headers: () => ({ Authorization: `Bearer ${auth.accessToken}` }),
     body: form,
+    // Upload creates a media resource; like every create it is not retried.
+    retryOn5xx: false,
+    signal: auth.signal,
     on401: async () => {
       await auth.refresh();
       return { retry: true };
@@ -33,11 +36,13 @@ export async function uploadMedia(
   await http({
     method: 'POST',
     url: METADATA_URL,
-    headers: {
+    headers: () => ({
       Authorization: `Bearer ${auth.accessToken}`,
       'Content-Type': 'application/json',
-    },
+    }),
     body: JSON.stringify({ id: mediaId, metadata: { alt_text: { text: alt } } }),
+    // Setting alt text on an existing media id is idempotent, so it may retry.
+    signal: auth.signal,
     on401: async () => {
       await auth.refresh();
       return { retry: true };
