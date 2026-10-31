@@ -605,3 +605,27 @@ ten next-node names and 512 UTF-16 units per string with explicit truncation.
 Installed type/export/SSR and native browser proofs cover presentation and
 ownership. Replay/fork, historical values, backend-wide history, live branch
 timelines and full T29 parity remain open.
+
+### Bounded state comparison (private React Debug slice)
+
+The debug entry exports passive `StateDiff` with readonly `before`, `after`,
+optional `label` and optional `className`. Installed type and SSR proofs exercise
+the actual export, exact prop surface, literal JSON Pointer paths, whole-array
+changes, order-independent object equality and explicit refusal of incomplete
+input or output. Root/chat imports still exclude Debug code and CSS.
+
+`ChatDebug` composes inspected-checkpoint-to-current comparison only for a matched
+ready pair, without adding reads or execution. The native conversation dogfoods
+the same view with an explicitly captured immutable observed baseline, retained
+through ordinary values updates and retired on owner/conversation replacement.
+The native controls preserve drafts, transcript, route and a running response;
+they neither create checkpoint authority nor persist the borrowed observation.
+Native application values omit root transcript messages and interrupt control
+fields; the browser proof uses a nonreserved application array for atomic-array
+comparison and verifies transcript changes independently.
+
+Inputs and output must each fit the existing Debug limits completely: 32 KiB,
+depth six, 200 entries and 2,000 Unicode code points per string/key. Unavailable
+and oversized states never become empty or unchanged states. Replay/fork,
+historical-to-historical comparison, live timelines and full T29 parity remain
+outside this slice.

@@ -15,6 +15,7 @@ export default defineConfig({
     'sidenav.spec.ts',
     'search-palette.spec.ts',
     'timeline.spec.ts',
+    'state-comparison.spec.ts',
     'project-names.spec.ts',
     'project-assignment.spec.ts',
     'project-creation.spec.ts',

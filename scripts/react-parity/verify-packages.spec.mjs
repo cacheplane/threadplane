@@ -5,6 +5,49 @@ import { dirname, join } from 'node:path';
 import test from 'node:test';
 import ts from 'typescript';
 
+test('plain declaration proof checks exact passive StateDiff types', t => {
+  const consumer = mkdtempSync(join(tmpdir(), 'threadplane-state-diff-types-'));
+  t.after(() => rmSync(consumer, { recursive: true, force: true }));
+  const directory = join(consumer, 'node_modules/@threadplane/react');
+  mkdirSync(directory, { recursive: true });
+  writeFileSync(join(directory, 'package.json'), JSON.stringify({ name: '@threadplane/react', type: 'module', exports: { './debug': { types: './debug.d.ts' } } }));
+  writeFileSync(join(consumer, 'package.json'), '{"type":"module"}');
+  const declaration = `export type DebugValue = null | boolean | number | string | readonly DebugValue[] | { readonly [key: string]: DebugValue };
+export interface StateDiffProps { readonly before: DebugValue; readonly after: DebugValue; readonly label?: string; readonly className?: string; }
+export declare function StateDiff(props: StateDiffProps): unknown;`;
+  const source = join(consumer, 'index.ts');
+  writeFileSync(source, packageVerifier.plainExportTypes(['@threadplane/react/debug']));
+  const compile = text => {
+    writeFileSync(join(directory, 'debug.d.ts'), text);
+    const program = ts.createProgram([source], { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.NodeNext, moduleResolution: ts.ModuleResolutionKind.NodeNext, strict: true, skipLibCheck: false, noEmit: true, types: [] });
+    return ts.getPreEmitDiagnostics(program).map(error => ts.flattenDiagnosticMessageText(error.messageText, '\n')).join('\n');
+  };
+  assert.equal(compile(declaration), '');
+  for (const [before, after] of [
+    ['readonly before: DebugValue;', 'before: DebugValue;'],
+    ['readonly before: DebugValue;', 'readonly before?: DebugValue;'],
+    ['readonly before: DebugValue;', 'readonly before: unknown;'],
+    ['readonly after: DebugValue;', 'after: DebugValue;'],
+    ['readonly after: DebugValue;', 'readonly after: any;'],
+    ['readonly label?: string;', 'label?: string;'],
+    ['readonly label?: string;', 'readonly label: string;'],
+    ['readonly className?: string;', 'readonly className?: number;'],
+    ['readonly className?: string;', 'readonly className?: string; readonly onRefresh?: () => void;'],
+  ]) {
+    const start = declaration.indexOf('export interface StateDiffProps');
+    const end = declaration.indexOf('\nexport declare', start);
+    const original = declaration.slice(start, end);
+    assert.ok(original.includes(before));
+    const mutated = declaration.slice(0, start) + original.replace(before, after) + declaration.slice(end);
+    assert.equal(mutated.slice(0, start), declaration.slice(0, start));
+    assert.match(compile(mutated), /false.*true/, `${before} → ${after}`);
+  }
+  assert.match(compile(declaration.replace('props: StateDiffProps', 'props: any')), /false.*true/);
+  assert.match(compile(declaration.replace(/export type DebugValue =[^;]+;/, 'export type DebugValue = any;')), /false.*true/);
+  assert.match(compile(declaration.replace(/export type DebugValue =[^;]+;/, 'export type DebugValue = unknown;')), /false.*true/);
+  assert.match(compile(declaration.replaceAll('StateDiffProps', 'MissingStateDiffProps')), /StateDiffProps/);
+});
+
 test('plain declaration proof checks navigation, sidebar and thread-list type-only contracts', t => {
   const consumer = mkdtempSync(join(tmpdir(), 'threadplane-sidenav-types-'));
   t.after(() => rmSync(consumer, { recursive: true, force: true }));
@@ -642,10 +685,11 @@ test('installation footprint counts actual package files and bytes separately fr
 });
 
 const reactDebug = { types: './src/debug/index.d.ts', import: './src/debug/index.js', default: './src/debug/index.js' };
-test('React Debug exposes exactly the passive component', () => {
+test('React Debug exposes exactly the passive components', () => {
  assert.throws(() => packageVerifier.assertSupportedExports('react/debug', {}), /ChatDebug/);
- assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/debug', { ChatDebug() {} }));
- assert.throws(() => packageVerifier.assertSupportedExports('react/debug', { ChatDebug() {}, createSession() {} }), /unexpected/);
+ assert.throws(() => packageVerifier.assertSupportedExports('react/debug', { ChatDebug() {} }), /StateDiff/);
+ assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/debug', { ChatDebug() {}, StateDiff() {} }));
+ assert.throws(() => packageVerifier.assertSupportedExports('react/debug', { ChatDebug() {}, StateDiff() {}, createSession() {} }), /unexpected/);
 });
 test('production root and chat bundle evidence rejects Debug JS or CSS', () => {
  for (const suffix of ['index.js', 'chat-debug.js', 'styles.css']) {

@@ -172,7 +172,11 @@ test.describe('native Debug Website', () => {
     await frame.getByRole('tab', { name: 'State', exact: true }).click();
     const region = frame.getByRole('region', { name: 'Selected checkpoint', exact: true });
     await region.getByText('Displayed checkpoint values', { exact: true }).click();
-    await expect(region.locator('pre')).toHaveText('{}');
+    await expect(region.locator('.tp-debug__value pre')).toHaveText('{}');
+    await region.getByText('Compare selected checkpoint with current state', { exact: true }).click();
+    await expect.poll(async () => JSON.parse(await region.getByLabel('Selected checkpoint to current state JSON', { exact: true }).textContent() ?? 'null')).toEqual([
+      { kind: 'added', path: '/analysis', after: capture.state.values.analysis },
+    ]);
     await expect.poll(async () => JSON.parse(await frame.locator('.tp-debug__value pre').first().textContent() ?? 'null')).toEqual({ analysis: capture.state.values.analysis });
     const ledger = await read(request, '/__requests');
     const thread = capture.state.checkpoint.thread_id;
