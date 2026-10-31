@@ -291,6 +291,14 @@ it('requires reusable consumer isolation checks and owns preparation for the com
   assert.match(step, /npx nx run website:e2e-\$\{\{ matrix.suite \}\} --skip-nx-cache/);
 });
 
+it('bounds Angular startup only in Website control-plane CI and exercises lifecycle cleanup', async () => {
+  const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+  assert.match(readNamedStep(readJobBlock(workflow, 'ci-scope'), 'Test CI scope classifier'), /scripts\/website-angular-startup\.spec\.mjs/);
+  assert.match(await readFile('scripts/vite.config.mts', 'utf8'), /'website-angular-startup\.spec\.mjs'/);
+  const step = readNamedStep(readJobBlock(workflow, 'website-e2e'), 'Run local Website suite');
+  assert.match(step, /WEBSITE_ANGULAR_STARTUP: \$\{\{ matrix\.suite == 'control-plane' && '2' \|\| '' \}\}/);
+});
+
 it('uses the explicit Chromium installation for every CI Nx browser invocation', async () => {
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
   const invocations = [...workflow.matchAll(/^.*\bnpx nx e2e .+$/gm)];
