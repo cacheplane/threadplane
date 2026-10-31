@@ -74,6 +74,19 @@ async function pool(t, entries, options = {}) {
   };
 }
 
+test('callers can select a distinct pool label and readiness marker', async (t) => {
+  const value = await port();
+  const p = await pool(t, [entry(value, server(value))], {
+    poolLabel: 'Agents pool',
+    readyMessage: 'Website Agents servers ready',
+  });
+  await p.wait('Website Agents servers ready');
+  assert.match(p.output(), /\[Agents pool\].*ready in/);
+  assert.ok(!p.output().includes('Website Angular servers ready'));
+  p.child.kill('SIGTERM');
+  await p.exited;
+});
+
 test('two children await readiness concurrently; marker waits for every URL and queued deadlines start at launch', async (t) => {
   const ports = await Promise.all([port(), port(), port()]);
   const p = await pool(
