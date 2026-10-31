@@ -4,7 +4,15 @@ description: How the spec rendering example streams a JSON spec into a live comp
 
 # Specs
 
+<DocsDemoVideo demo="ui" frontend="angular" />
+
 A spec is the JSON object that describes an entire UI tree. It names a root element, holds every element in one flat map, and says for each element which component renders it, what props it receives, which children it owns, and when it is visible. The running example streams three specs one character at a time and renders each one as it arrives, so the format on this page is the format you can watch being parsed.
+
+## Turn data into an application view
+
+The trip planner can show an itinerary as a list of components instead of asking the traveler to read a long paragraph. The agent supplies a specification containing component names and data. Your application supplies the matching components and decides which names and values it accepts.
+
+The specification is data, not downloaded JavaScript. Keep local interaction, such as the selected itinerary day, in application state; send an agent request only when the user asks the agent to change the plan. The example below isolates the rendering path so you can see where the specification, registry, and state meet.
 
 ## What the demo does
 

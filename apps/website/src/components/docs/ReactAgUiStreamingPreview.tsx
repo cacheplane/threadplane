@@ -2,7 +2,15 @@ import type { ExampleCodeContext } from '../../lib/example-code';
 import { MdxRenderer } from './MdxRenderer';
 const source = `# React AG-UI streaming preview
 
-This experimental example connects native React text components to the existing Python AG-UI Streaming agent. React, core, content and the framework-neutral AG-UI candidate remain private source-build packages. This is a bounded ordinary-text preview; it does not claim full AG-UI feature parity.
+Watch an AG-UI backend turn a question into an answer one event at a time. The React UI observes normalized messages; the adapter handles the protocol events arriving from the server.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Separate the protocol from the view
+
+The application creates an AG-UI session for the configured endpoint. \`useAgent\` observes its snapshot, and the content projection supplies rows for \`MessageList\`. The stream can report progress before any assistant text appears, so use run status for the busy state and message delivery for text presentation. The walkthrough below follows this ordinary-text example through creation, submission, and completion.
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Watch text arrive
 

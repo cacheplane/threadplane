@@ -3127,6 +3127,15 @@
       "status": "planned"
     },
     {
+      "id": "doc:apps/website/content/docs/chat/migrations/upgrading.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned"
+    },
+    {
       "id": "doc:apps/website/content/docs/choosing-an-adapter/index.mdx",
       "taskIds": [
         "T34",
@@ -3254,6 +3263,15 @@
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/concepts/angular-signals.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned"
+    },
+    {
+      "id": "doc:apps/website/content/docs/langgraph/concepts/conversation-turns.mdx",
       "taskIds": [
         "T34",
         "T35"

@@ -1,0 +1,55 @@
+---
+description: Upgrade Angular integrations deliberately, distinguish private React source builds, and review AG-UI, A2UI, and persisted client-tool changes.
+---
+
+# Upgrade an integration
+
+Upgrade the parts that exchange data together: the frontend packages, their protocol peers, the backend producer, and any persisted schema they share. Start by identifying the API your application actually uses, then follow the relevant migration below. This page does not announce a package release or require adopting unreleased source APIs.
+
+## Identify the integration first
+
+| Application | Contract to check |
+|---|---|
+| Published Angular chat | `@threadplane/chat` components plus the chosen Angular adapter and its declared peers. |
+| LangGraph backend | Graph state, checkpoint storage, and the SDK protocol consumed by the adapter. |
+| AG-UI backend | Event shapes, protocol peers, and that runtime's interrupt/replay conventions. |
+| Native React source build | Private `@threadplane/core`, `@threadplane/content`, `@threadplane/react`, and the matching native runtime build. |
+
+The Angular `Agent` and native `AgentSession` are different contracts. Replacing `injectAgent` with `useAgent` is not a migration: the React hook observes an already-owned session, and its application owns creation, commands, and disposal. Follow the [conversation guide](/docs/langgraph/concepts/conversation-turns) and the selected React example when evaluating that source-build path. The native packages remain unpublished.
+
+## Keep package peers aligned
+
+Read the installed package manifests and the [changelog](/docs/chat/getting-started/changelog) before updating. The current Angular packages declare support for Angular 20, 21, and 22; select a supported major and compatible Node version for your application.
+
+The AG-UI adapter's move from the 0.0.x protocol packages to the 1.x line requires compatible `@ag-ui/client` and `@ag-ui/core` peers. The current package manifests require `^1.0.1`; the adapter imports validators from `@ag-ui/core/schemas`, which the older 0.0.x line does not provide. Review [installation](/docs/ag-ui/getting-started/installation) and [event mapping](/docs/ag-ui/reference/event-mapping), then exercise an actual message, tool result, and approval if your backend supports them.
+
+## Regenerate older A2UI surfaces
+
+The A2UI v0.9.1 migration changed the earlier draft wire format. Update the backend that authors surfaces and the frontend that parses them together. The current wire constant is still `A2UI_WIRE_VERSION = 'v0.9'`; do not invent a `v0.9.1` envelope version from the migration label.
+
+The current format uses `createSurface`, `updateComponents`, `updateDataModel`, and `deleteSurface` envelopes. Components are flat entries with an ID, a component name, and properties. Compare generated fixtures and prompts with the [message protocol](/docs/a2ui/guides/message-protocol) and [schema reference](/docs/a2ui/reference/schema). Recreate old draft surfaces using that contract rather than relabeling their version field.
+
+Validate the round trip your application uses: render a surface, edit a bound field, submit an action, and process the resulting data-model update. A parser accepting a line is not equivalent to the whole application supporting every catalog component or action.
+
+## Migrate persisted client-tool execution data deliberately
+
+The invocation-ownership protocol in the source tree is **unreleased** and separate from the legacy Angular chat execution guard. Its factory names remain, but its store uses `acquire` and `settle` rather than the removed `claim`, `record`, and `lookup` port. Renaming methods alone does not migrate the contract.
+
+For an existing PostgreSQL integration adopting this source-tree protocol:
+
+1. Drain active executions and all writers, including custom SQL paths.
+2. Audit those custom writers before applying the explicit `THREADPLANE_CLIENT_TOOL_EXECUTIONS_MIGRATION`.
+3. Deploy the matching runtime and provider integration with the migrated schema.
+4. Resume work only after those parts agree on invocation identity and ownership tokens.
+
+Construction performs no DDL. The migration preserves existing identity and historical data, but it does not certify historical results or reopen unknown executions. Missing ownership tokens become legacy-unknown. The required token column blocks the former factory's writes, while custom direct updates need their own audit.
+
+The source tree also removes the receipt helpers `extractClientToolResultMessages`, `filterDuplicateClientToolResultMessages`, `lookupClientToolExecutions`, and `recordClientToolResults`, together with their helper-only types. Remove their receipt-ingestion/filtering code; there is no replacement receipt helper or compatibility alias. A stored tool result is not proof that a graph consumed it and does not guarantee exactly-once effects in an external service.
+
+Use the [middleware migration details](/docs/middleware/getting-started/introduction#breaking-invocation-ownership-protocol-unreleased) as the complete contract, including non-reusable results, conflicts, and external reconciliation.
+
+## Verify the user journey after upgrading
+
+Start with one conversation: submit a question, observe incremental text, stop active work, and inspect the resulting state. Then exercise the capabilities your application uses: tool results, approvals, generated UI, and reopening a saved thread. Check a restored conversation as well as a new one; migrations can affect old persisted data without affecting a fresh demo.
+
+The [testing guide](/docs/langgraph/guides/testing), [AG-UI tests](/docs/ag-ui/guides/testing), and the canonical examples provide narrower checks for each boundary. Keep release/version decisions separate from adopting the source changes described here.

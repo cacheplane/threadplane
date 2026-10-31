@@ -3,7 +3,30 @@ import type { ExampleCodeContext } from '../../lib/example-code';
 
 const source = `# React chat input preview
 
-This experimental example composes native React ChatInput with a controlled draft, MessageList and Markdown, using the existing Python Chat Input graph. The React, core, content and neutral LangGraph candidates remain private packages built from source.
+Let the traveler write the next question while the current answer arrives. A controlled composer keeps its draft separate from the accepted message and the agent’s run status.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Accept the draft synchronously
+
+\`ChatInput\` calls \`onSubmit\` with the text as typed. Return \`false\` when the application cannot accept it; the draft then stays in place. Otherwise the input clears and the application can start asynchronous work. Use \`busy\` to block another Send while keeping the next draft editable, and pass \`onStop\` for active work.
+
+~~~tsx
+import { useState } from 'react';
+import { ChatInput } from '@threadplane/react/chat';
+
+export function TripComposer({ busy, accept, stop }: {
+  busy: boolean;
+  accept: (text: string) => boolean;
+  stop: () => void;
+}) {
+  const [draft, setDraft] = useState('');
+  return <ChatInput value={draft} onValueChange={setDraft} busy={busy}
+    onSubmit={accept} onStop={stop} placeholder="Change the itinerary…" />;
+}
+~~~
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Try the composer
 

@@ -28,6 +28,7 @@ export function StackDiagram({ highlight = 'none', caption, scale = 'docs' }: St
       scale={scale}
       label="Threadplane stack: the chat UI consumes the Agent contract; the LangGraph and AG-UI adapters implement it against their backends."
       caption={caption}
+      description="Read from top to bottom. The Angular chat composition and its message-list and input primitives consume one Agent contract: signals plus events$. Two adapters implement that contract. @threadplane/langgraph connects to LangGraph Platform. @threadplane/ag-ui connects to AG-UI backends such as CrewAI, Mastra, Microsoft Agent Framework and AWS Strands. Changing the adapter does not require replacing the chat components."
     >
       <DiagramNode
         x={190}

@@ -3,7 +3,31 @@ import type { ExampleCodeContext } from '../../lib/example-code';
 
 const source = `# React interrupts preview
 
-This experimental example uses native React approval controls with the same Python LangGraph refund graph as Angular. The refund is simulated: the graph creates a fake refund ID and issues no real charge. React, core, content, and the framework-neutral LangGraph packages remain private source-build packages; they are not published npm packages.
+Pause a proposed action long enough for a person to decide. An approval card renders that decision; the application must still match it to the pending backend interrupt before resuming the run.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Keep presentation separate from resume
+
+\`ApprovalCard\` receives a title, content, and explicit callbacks. It does not discover an interrupt or choose a resume payload. Pass callbacks from the application owner after it has matched the current pause. That lets the same visual component serve a trip booking, a refund, or another application-specific decision.
+
+<RunState />
+
+~~~tsx
+import { ApprovalCard } from '@threadplane/react/chat';
+
+export function BookingDecision({ onConfirm, onCancel }: {
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return <ApprovalCard title="Confirm the proposed booking" actions={[
+    { id: 'confirm', label: 'Confirm', onSelect: onConfirm },
+    { id: 'cancel', label: 'Cancel', onSelect: onCancel },
+  ]}>Review the proposed details before continuing.</ApprovalCard>;
+}
+~~~
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Review a refund
 
@@ -36,7 +60,7 @@ npx nx build cockpit-langgraph-interrupts-react
 npx nx e2e cockpit-langgraph-interrupts-react
 ~~~
 
-The isolated build installs local candidate packages and checks the emitted browser modules. Browser tests use real SDK HTTP and SSE against a local fixture. Docs, Code, and Run select this same React implementation. Public React previews cover streaming, interrupts, memory, client tools, persistence, durable execution, subgraphs, time travel, and deployment runtime; AG-UI Streaming, Interrupts, Tool Views and JSON Render and Subagents also have React previews on Event Mapping and their canonical guides; other topics remain pending.
+The isolated build installs local candidate packages and checks the emitted browser modules. Browser tests use real SDK HTTP and SSE against a local fixture. Docs, Code, and Run select this same React implementation.
 `;
 
 export function ReactInterruptsPreview({

@@ -4,11 +4,21 @@ description: How the streaming example wires a LangGraph graph to Angular signal
 
 # Streaming
 
-Agent streams token-by-token from LangGraph agents over Server-Sent Events (SSE). Every update lands directly in Angular Signals — no subscriptions, no manual change detection.
+<DocsDemoVideo demo="streaming" frontend="angular" />
+
+Streaming lets a traveler begin reading an itinerary before the backend finishes the answer. Instead of waiting for one final response body, the browser receives a sequence of Server-Sent Events (SSE). The adapter turns those events into Angular Signals, and the UI renders each meaningful update.
 
 <Callout type="tip" title="Prerequisites">
 Make sure you have completed the Installation guide first.
 </Callout>
+
+## One response, many updates
+
+A user turn starts with an intention such as “Plan a weekend in Portland.” The backend may make several model calls or execute tools while answering it. Streaming describes how the browser observes that work; it does not mean there is one HTTP request per token.
+
+<TurnSequence />
+
+The draft, the answer, and the run status have different lifetimes. Clear the accepted draft when submitting, append or update messages as events arrive, and keep the run busy until its completion is known. A pause for approval or an interrupted connection needs its own UI state. [Follow a conversation](/docs/langgraph/concepts/conversation-turns) introduces those boundaries before tools and persistence enter the picture.
 
 ## What the demo does
 
@@ -82,7 +92,7 @@ The `status()` signal reports the current lifecycle state of the SSE connection:
 No active stream. The resource is ready to accept a new message.
 </Step>
 <Step title="running">
-Tokens are arriving over the SSE connection. Signal values update in real-time with each chunk.
+The run is active. It may be waiting for the first token, generating text, or executing a tool; signal values update as events arrive.
 </Step>
 <Step title="error">
 The connection was interrupted or the agent returned an error. Inspect `error()` for the full details.
@@ -252,7 +262,7 @@ For me, the 16 ms default is the right starting point — it tracks a 60 fps ren
 | Background summarisation | 150 ms |
 
 <Callout type="tip" title="SSE connection behavior">
-Each call to `chat.submit()` opens a new SSE connection. Connections are automatically closed when the agent run completes or when the Angular component is destroyed — you do not need to manage the lifecycle manually.
+Each call to `chat.submit()` opens a new SSE connection. Connections close when the run completes or the injector that owns the provider is destroyed. A component-scoped provider follows that component; an application-root provider remains alive when a consuming component unmounts. Choose the provider scope to match the intended conversation lifetime.
 </Callout>
 
 ## What's Next

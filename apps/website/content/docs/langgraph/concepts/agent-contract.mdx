@@ -4,7 +4,7 @@ description: The runtime-neutral Agent contract from @threadplane/chat — its s
 
 # Agent Contract
 
-The `Agent` contract is the spine between runtime adapters and chat UI.
+The `Agent` contract lets the trip planner render a conversation without teaching every component a backend protocol. An adapter translates runtime messages and events into the Angular signals and actions the UI consumes.
 
 `@threadplane/chat` owns the contract. `@threadplane/langgraph` and `@threadplane/ag-ui` produce objects that satisfy it. Chat primitives and compositions consume it without knowing which runtime is behind the stream.
 
@@ -14,6 +14,12 @@ The UI should not care whether a response came from LangGraph Platform, AG-UI, a
   highlight="contract"
   caption="Every adapter — including one you write — meets the UI at the same Agent contract."
 />
+
+## Separate observation from commands
+
+Reading `messages()` observes the conversation. Calling `submit({ message })` asks the backend to advance it. A template can render progress many times during one turn without starting another request. Keep that distinction when building a custom composer, tool card, or approval panel.
+
+This is the published Angular `Agent` contract. Native React source builds use the separate `AgentSession` and immutable snapshot contract from `@threadplane/core`; `useAgent(session)` observes it. The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) shows both without treating their method signatures as interchangeable.
 
 ## The Contract Surface
 
@@ -135,7 +141,7 @@ The UI lifecycle is intentionally boring — and boring is the goal.
 2. Adapter marks the run active through `status()` and `isLoading()`.
 3. Runtime events update `messages()`, `toolCalls()`, `state()`, and optional signals.
 4. Chat components re-render from signals.
-5. `stop()` aborts the active run when supported, and `retry()` clears `error()` and re-runs the last submitted input after a failure.
+5. `stop()` aborts the active run when supported, and `retry()` is available for failures the adapter permits retrying. An uncertain outcome requires reconciliation when supported, not automatic resubmission.
 6. `regenerate(index)` rolls back from an assistant message and reruns from the preceding user message.
 
 LangGraph adds deeper lifecycle and history surfaces. `@threadplane/langgraph` exposes `injectAgent().lifecycle`, provides the `AGENT_LIFECYCLE` token from every `provideAgent()` call, and ships a root-provided `AgentLifecycleRegistry` that collects the lifecycle of every live agent. Those are useful for telemetry, debugging, persistence, and time-travel UI. They are not required by `@threadplane/chat`. See [Agent lifecycle signals](/docs/langgraph/guides/lifecycle).

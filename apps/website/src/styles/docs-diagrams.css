@@ -1,0 +1,303 @@
+/* Static teaching figures follow the shared LLA surface, type and accent tokens. */
+.tp-diagram-figure[data-docs-diagram] {
+  overflow: visible;
+  background: none;
+}
+.tp-diagram-placeholder {
+  height: var(--diagram-reserved-height);
+}
+.tp-diagram-toolbar,
+.tp-diagram-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.tp-diagram-toolbar {
+  margin-bottom: 8px;
+  font: 500 12px/1.4 var(--font-sans);
+  color: var(--color-text-muted);
+}
+.tp-diagram-toolbar button,
+.tp-diagram-dialog-header button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: none;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font: 500 13px/1.4 var(--font-sans);
+  cursor: pointer;
+}
+.tp-diagram-toolbar button:hover,
+.tp-diagram-dialog-header button:hover {
+  background: var(--color-surface-dim);
+}
+.tp-diagram-scroll {
+  max-width: 100%;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-surface);
+  scrollbar-gutter: stable;
+}
+.tp-diagram-scroll:focus-visible,
+.tp-diagram-figure button:focus-visible,
+.tp-diagram-description summary:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+.tp-diagram-description {
+  margin-top: 10px;
+  color: var(--color-text-muted);
+  font: 400 13px/1.6 var(--font-sans);
+}
+.tp-diagram-description summary {
+  cursor: pointer;
+  width: fit-content;
+  padding: 8px 0;
+  min-height: 44px;
+}
+.tp-diagram-description p {
+  margin: 4px 0 12px;
+}
+.tp-diagram-dialog {
+  width: min(1100px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  padding: 24px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+}
+.tp-diagram-dialog::backdrop {
+  background: rgb(13 13 13 / 55%);
+}
+.tp-diagram-dialog-header h2 {
+  margin: 0;
+  font: 600 20px/1.35 var(--font-sans);
+}
+.tp-diagram-dialog-hint {
+  margin: 8px 0 16px;
+  color: var(--color-text-muted);
+  font: 400 13px/1.5 var(--font-sans);
+}
+.tp-diagram-dialog .tp-diagram-svg {
+  max-width: 100%;
+}
+.tp-lesson-diagram {
+  padding: 20px;
+  font: 400 14px/1.5 var(--font-sans);
+  color: var(--color-text-primary);
+}
+.tp-lesson-diagram p {
+  margin: 0;
+}
+.tp-lesson-diagram strong {
+  display: block;
+  font-weight: 600;
+}
+.tp-lesson-diagram small {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+.tp-lesson-diagram code {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.tp-diagram-card {
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+}
+.tp-diagram-card[data-accent] {
+  border-color: var(--color-accent-border);
+  background: var(--color-accent-surface);
+}
+.tp-architecture-tier {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+}
+.tp-architecture-tier > span {
+  font: 500 12px/1.4 var(--font-mono);
+  color: var(--color-text-muted);
+}
+.tp-architecture-link {
+  padding: 8px 0 8px 116px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+.tp-sequence-lanes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.tp-sequence-lanes span {
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--color-border);
+  font-weight: 600;
+  font-size: 12px;
+  text-align: center;
+}
+.tp-sequence-steps {
+  list-style: none;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: grid;
+  gap: 10px;
+}
+.tp-sequence-steps li {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 8px;
+  margin: 0 !important;
+}
+.tp-sequence-number {
+  color: var(--color-accent);
+  font: 500 12px/1.7 var(--font-mono);
+}
+.tp-sequence-event {
+  padding: 10px 12px;
+  border-inline-start: 2px solid var(--color-accent);
+  background: var(--color-surface-dim);
+  border-radius: 0 8px 8px 0;
+}
+.tp-sequence-route {
+  display: block;
+  margin-bottom: 3px;
+  font: 500 11px/1.4 var(--font-mono);
+  color: var(--color-text-muted);
+}
+.tp-state-nodes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.tp-state-nodes .tp-diagram-card {
+  text-align: center;
+}
+.tp-state-transitions {
+  margin: 20px 0 0;
+  display: grid;
+  gap: 10px;
+}
+.tp-state-transitions div {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 12px;
+}
+.tp-state-transitions dt {
+  font: 500 12px/1.6 var(--font-mono);
+}
+.tp-state-transitions dd {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+.tp-tool-flow {
+  list-style: none;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+.tp-tool-flow li {
+  position: relative;
+  margin: 0 !important;
+}
+.tp-tool-flow li + li {
+  margin-top: 24px !important;
+}
+.tp-tool-flow li + li::before {
+  content: '↓';
+  position: absolute;
+  top: -24px;
+  left: 16px;
+  color: var(--color-accent);
+}
+.tp-tool-loop {
+  margin-top: 16px !important;
+  padding: 10px 12px;
+  border: 1px dashed var(--color-border);
+  border-radius: 8px;
+  font-size: 13px;
+}
+.tp-erd {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.tp-erd .tp-diagram-card small {
+  margin-top: 8px;
+  font-family: var(--font-mono);
+}
+.tp-erd-relations {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+  font-size: 13px;
+}
+.tp-erd-relations span {
+  color: var(--color-text-muted);
+}
+@media (max-width: 40rem) {
+  .tp-lesson-diagram {
+    padding: 14px;
+  }
+  .tp-architecture-tier {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .tp-architecture-link {
+    padding-inline-start: 12px;
+  }
+  .tp-state-nodes {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .tp-state-nodes .tp-diagram-card {
+    text-align: start;
+  }
+  .tp-state-transitions div {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+  .tp-erd {
+    grid-template-columns: 1fr;
+  }
+  .tp-diagram-dialog {
+    padding: 16px;
+  }
+  .tp-diagram-dialog-header {
+    align-items: start;
+    gap: 8px;
+  }
+  .tp-diagram-dialog-header h2 {
+    font-size: 17px;
+  }
+}
+@media (forced-colors: active) {
+  .tp-diagram-card,
+  .tp-diagram-scroll,
+  .tp-diagram-dialog {
+    border-color: CanvasText;
+  }
+  .tp-sequence-event {
+    border-color: Highlight;
+  }
+}

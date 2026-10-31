@@ -20,6 +20,7 @@ import {
   FileCode2,
   Lightbulb,
   Rocket,
+  ArrowRightLeft,
 } from 'lucide-react';
 import {
   docsConfig,
@@ -272,6 +273,7 @@ const SECTION_ICONS: Record<
   a2ui: Blocks,
   api: Braces,
   reference: FileCode2,
+  migrations: ArrowRightLeft,
 };
 
 function SectionGroup({
@@ -358,6 +360,7 @@ export function DocsNavigation({
   resolveHref = href => href,
 }: DocsNavigationProps) {
   const library = activeLibrary ? getLibraryConfig(activeLibrary) : undefined;
+  const migrations = getLibraryConfig('chat')?.sections.find(section => section.id === 'migrations');
   const pathname = usePathname();
 
   return (
@@ -387,7 +390,7 @@ export function DocsNavigation({
       {/* No library means no section tree. Narrowing on `activeLibrary` rather
        * than `library` keeps SectionGroup's non-null contract honest. */}
       {activeLibrary && library
-        ? library.sections.map((section) => {
+        ? library.sections.filter(section => section.id !== 'migrations').map((section) => {
             const key = `Learn:${activeLibrary}:${section.id}`;
             return (
               <SectionGroup
@@ -404,6 +407,18 @@ export function DocsNavigation({
             );
           })
         : null}
+      {migrations ? (
+        <SectionGroup
+          section={migrations}
+          activeLibrary="chat"
+          activeSection={activeLibrary === 'chat' ? activeSection : ''}
+          activeSlug={activeSlug}
+          open={expanded['Learn:migrations'] ?? false}
+          onOpenChange={(open) => onExpandedChange?.('Learn:migrations', open)}
+          onNavigate={onNavigate}
+          resolveHref={resolveHref}
+        />
+      ) : null}
     </div>
   );
 }

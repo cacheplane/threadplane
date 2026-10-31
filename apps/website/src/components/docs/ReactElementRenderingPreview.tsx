@@ -3,7 +3,15 @@ import { MdxRenderer } from './MdxRenderer';
 
 const source = `# React Element Rendering preview
 
-The native **@threadplane/react/render** component renders an authored tree and supplies its rendered children to readonly React views. This experimental local example covers ordered siblings, nested cards and visibility from caller-owned state.
+Render nested elements in the order described by a specification, including elements that depend on local state. A parent view owns its markup; the renderer supplies its ordered children.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Pass presentation state explicitly
+
+\`RenderSpec\` resolves visibility from the caller’s state and supplies rendered children to container views. The example’s Show detail control changes a boolean without changing the JSON or requesting an agent. During partial playback, it waits for the required visibility expression so hidden content does not flash before the condition arrives.
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Try children, nesting and visibility
 

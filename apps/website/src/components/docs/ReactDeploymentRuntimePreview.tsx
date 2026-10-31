@@ -2,7 +2,23 @@ import type { ExampleCodeContext } from '../../lib/example-code';
 import { MdxRenderer } from './MdxRenderer';
 const source = `# React deployment runtime preview
 
-This experimental example uses native React chat components with the existing Python LangGraph Deployment Runtime graph. React, core, content, and the framework-neutral LangGraph candidates remain private source-build packages.
+The same conversation UI can connect to a different LangGraph deployment when the application changes its connection configuration. The graph identity and thread identity must still belong to that selected backend.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Configure the session at the boundary
+
+Create sessions outside the rendering path and pass the API URL, assistant ID, and confirmed thread ID together. A production application normally points the browser at its authenticated gateway. The source below shows how the demo resolves its configured target before constructing the SDK and application owner.
+
+~~~tsx
+import { createSession } from '@threadplane/langgraph';
+
+export function connectConversation(apiUrl: string, assistantId: string, threadId: string) {
+  return createSession({ apiUrl, assistantId, threadId });
+}
+~~~
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Use the connected runtime
 

@@ -3,27 +3,39 @@ import type { ExampleCodeContext } from '../../lib/example-code';
 
 const source = `# React chat debug preview
 
-Inspect current nonmessage state and explicitly selected saved checkpoints beside native React MessageList, Markdown and ChatInput. This experimental first slice uses private source-build packages and the existing c-debug Python graph. Angular remains the default on this page.
+Inspect the state behind a conversation without changing it. A debug panel should help explain the current itinerary and saved checkpoints while leaving execution under the application’s control.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Feed a passive view
+
+\`ChatDebug\` receives current values, an optional checkpoint page, and explicit inspection callbacks. Opening a panel or changing a tab does not itself perform an SDK read. The application owns those reads, matches their results to the selected context, and supplies the data to display. Its separate entry point and stylesheet keep this tooling an explicit application choice.
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Opt in to a passive panel
 
 Import the separate debug entry point and its stylesheet explicitly. The root React entry point does not export the panel or include its CSS. Importing these assets includes them in your build; the application decides when to expose development tools.
 
 ~~~tsx
-import { ChatDebug } from '@threadplane/react/debug';
+import {
+  ChatDebug,
+  type ChatDebugProps,
+  type DebugRefreshRequest,
+  type DebugSelection,
+} from '@threadplane/react/debug';
 import '@threadplane/react/debug/styles.css';
 
-// snapshot is owned by the application, not by ChatDebug.
-<ChatDebug
-  contextKey={snapshot.contextKey}
-  current={snapshot.current}
-  checkpointPage={snapshot.checkpointPage}
-  selection={snapshot.selection}
-  inspection={snapshot.inspection}
-  activity={{ busy: snapshot.busy, status }}
-  onRefresh={(request) => { void application.refresh(request); }}
-  onInspect={(selection) => { void application.inspect(selection); }}
-/>
+export function ConversationDebug({ view, refresh, inspect }: {
+  view: Omit<ChatDebugProps, 'onRefresh' | 'onInspect'>;
+  refresh: (request: DebugRefreshRequest) => void;
+  inspect: (selection: DebugSelection) => void;
+}) {
+  return <ChatDebug {...view}
+    onRefresh={(request) => { refresh(request); }}
+    onInspect={(selection) => { inspect(selection); }}
+  />;
+}
 ~~~
 
 ChatDebug accepts plain, application-owned display data and synchronous notifications. The application owns the SDK, session, reads, cancellation, stale-result checks and disposal. Opening, docking, changing tabs or closing the panel performs no network reads. Choose **Refresh checkpoints** or an **Inspect** button to request a read.

@@ -1,0 +1,134 @@
+---
+description: Follow a trip-planning conversation from a user message through requests, streaming, tools, UI state, and a saved thread in Angular or React.
+---
+
+# Follow a conversation
+
+<DocsDemoVideo demo="streaming" frontend="angular" />
+
+A traveler asks, “Plan a weekend in Portland.” The assistant streams an answer, looks up information, and offers an itinerary the traveler can change. Closing and reopening the page should bring that conversation back.
+
+Each part needs a clear owner. The model chooses words and tool calls. Your backend executes the agent and saves its state. Threadplane connects that work to components you own. This guide follows one conversation through those boundaries before the individual guides add implementation detail.
+
+The [canonical chat application](https://github.com/cacheplane/threadplane/tree/main/examples/chat) contains a trip-planning workflow, with Angular and native React consumers of the same Python graph. The smaller examples in these docs isolate individual capabilities. A weather card, refund approval, or local JSON renderer is a focused example; it is not another complete travel application.
+
+## Start with the parts
+
+<ConversationArchitecture />
+
+| Term | Meaning in the trip planner |
+|---|---|
+| Conversation or thread | The saved history containing the Portland request and later follow-ups. A thread ID identifies it. |
+| User turn | One user intention and the agent work that answers it, including tool calls and any continuation. “Move the museum visit to Sunday” starts another turn. |
+| Run | One execution of the backend graph. A turn can span several runs when browser tools or a human decision require a continuation. |
+| Model call | One request from the backend to the language model. A run may call the model, execute a tool, then call the model again with the result. |
+| HTTP request | One network operation. Creating a thread, starting a run, and reading saved history are separate requests. |
+| Response | At the network boundary, the HTTP response. In the interface, the assistant answer. A streaming HTTP response can carry many events before that answer is complete. |
+| Message | A transcript entry with a role and identity. A user turn can produce several assistant and tool messages. |
+| Stream | The ordered events arriving while work runs: text, tool arguments, results, state updates, and completion or failure. |
+
+This vocabulary keeps the UI honest. Receiving the first text means an answer has started; it does not mean the whole run has finished. A closed connection does not, by itself, prove that the backend stopped working.
+
+## Send an intention and observe the answer
+
+<TurnSequence />
+
+The application starts with a draft. Typing changes local UI state. Pressing Send accepts that draft, creates or selects a conversation, and submits a new message. The adapter then translates the response stream into the state your components read.
+
+In the published Angular API, configure the provider once and inject the resulting agent into the component that renders it:
+
+```typescript
+// app.config.ts
+import type { ApplicationConfig } from '@angular/core';
+import { provideAgent } from '@threadplane/langgraph';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideAgent({
+      apiUrl: 'http://localhost:2024',
+      assistantId: 'chat',
+    }),
+  ],
+};
+```
+
+```typescript
+// trip-planner.component.ts
+import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChatComponent } from '@threadplane/chat';
+import { injectAgent } from '@threadplane/langgraph';
+
+@Component({
+  selector: 'app-trip-planner',
+  imports: [ChatComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `<chat [agent]="agent" />`,
+})
+export class TripPlannerComponent {
+  protected readonly agent = injectAgent();
+}
+```
+
+First, `provideAgent` identifies the backend graph; `chat` must be a graph key or assistant ID available on that server. Next, `injectAgent` retrieves that provider. Finally, `<chat>` submits input and renders the agent signals, including `messages()`, `isLoading()`, and `error()`. The provider owns the connection; the composition owns the presentation.
+
+The React source-build API uses an application-owned session instead. Its observer is small enough to show in full:
+
+```tsx
+import type { AgentSession } from '@threadplane/core';
+import { useAgent } from '@threadplane/react';
+
+export function ConversationText({ session }: { session: AgentSession }) {
+  const snapshot = useAgent(session);
+
+  return (
+    <section aria-label="Conversation">
+      {snapshot.messages.map((message) => (
+        <p key={message.id}>{message.content}</p>
+      ))}
+      {snapshot.status === 'running' && <p role="status">Working…</p>}
+    </section>
+  );
+}
+```
+
+`useAgent` reads the current snapshot and subscribes to changes. It does not create a conversation, submit a message, or dispose the session. The application that supplied `session` owns those actions. The [React streaming example](/docs/langgraph/guides/streaming?frontend=react) shows that owner and the richer `MessageList` presentation. These native React packages are private repository builds; the example is not an npm installation recipe.
+
+## A tool call adds work inside the turn
+
+Suppose the traveler asks for a weather summary. The model can request a named tool with structured arguments. The tool implementation obtains the data, and its result returns with the same call ID. The model may then use that result to write the answer.
+
+Server tools execute behind your backend. Browser tools execute in the application, which is useful for reading local selection or updating an application-owned view. A tool view only presents a call and its result; displaying a card is not the same as executing the tool.
+
+A human decision is another boundary. When the backend pauses for approval, the application displays the pending decision and sends the selected response through the adapter. An approval button closing is presentation state, not proof that the requested operation completed. See [Client tools](/docs/chat/guides/client-tools) and [Interrupts](/docs/langgraph/guides/interrupts).
+
+## Render state in components you own
+
+The itinerary might appear as Markdown, a weather component, or a generated layout. In each case, the application chooses the renderer and the allowed components. A JSON specification describes a layout; it does not ship executable component code to the browser.
+
+Keep three kinds of state distinct:
+
+| State | Owner and lifetime |
+|---|---|
+| Draft, open panels, selected tab | Your Angular or React application. Usually local to the page. |
+| Messages, tool results, itinerary facts | The backend thread, projected into current frontend signals or snapshots. |
+| Generated layout and editable form values | The renderer/application, synchronized with backend state only through the actions you explicitly wire. |
+
+For example, changing the selected itinerary tab should not start a model run. Asking the agent to rearrange the itinerary should. See [State management](/docs/langgraph/concepts/state-management) and [Generative UI](/docs/chat/guides/generative-ui).
+
+## Finish, pause, fail, or stop
+
+<RunState />
+
+Render progress before the first token as well as while text arrives. A tool can still be running after the model has stopped producing text. A human approval can leave the conversation paused with no active text stream.
+
+When the transport fails, use the adapter's recovery information. A read-only status check asks what happened; retrying sends work again. Those actions are different, and the application must not replay an uncertain operation merely because its response was lost.
+
+## Come back to the same conversation
+
+Persistence has two parts: the backend retains the conversation, and the application retains a way to identify it. Saving a thread ID in a URL does not save its messages. Saving messages on the server does not automatically restore the selected thread after a browser reload.
+
+The [persistence guide](/docs/langgraph/guides/persistence) connects thread IDs to checkpoints. The [thread routing guide](/docs/chat/guides/thread-routing) connects the selected conversation to navigation. Together, they let a traveler reopen the Portland plan and continue with “Move the museum visit to Sunday.”
+
+## Build the next part
+
+Follow the [Angular quickstart](/docs/langgraph/getting-started/quickstart) or the [React streaming walkthrough](/docs/langgraph/guides/streaming?frontend=react), then add [tools](/docs/chat/guides/client-tools), [generated UI](/docs/chat/guides/generative-ui), and [saved conversations](/docs/langgraph/guides/persistence) as your application needs them. Each guide explains the capability before walking the running example.

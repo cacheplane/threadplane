@@ -4,7 +4,7 @@ description: Build a streaming Angular chat component against a LangGraph Platfo
 
 # Quick Start
 
-Build a streaming chat component with `injectAgent()` in 5 minutes.
+Send a trip-planning question and render the answer as it arrives. This walkthrough connects an Angular component to a LangGraph server, then explains what changes during the first turn. For the full path from a message to tools and saved state, start with [Follow a conversation](/docs/langgraph/concepts/conversation-turns).
 
 <Callout type="info" title="Prerequisites">
 Angular 20–22 project using a Node.js version supported by that Angular major. If you need setup help, see the [Installation](/docs/langgraph/getting-started/installation) guide.
@@ -51,7 +51,7 @@ Persisting a `threadId` so conversations survive a page refresh is opt-in — le
 </Step>
 <Step title="Create a chat component">
 
-Now wire up the UI. Call `injectAgent()` in a component field initializer — every property on the returned ref is an Angular Signal.
+Now wire up the UI. Call `injectAgent()` in a component field initializer — read its state through Angular Signals and call its methods to submit or stop a run.
 
 <Tabs>
 <Tab label="TypeScript">
@@ -60,6 +60,7 @@ Now wire up the UI. Call `injectAgent()` in a component field initializer — ev
 // chat.component.ts
 import { Component, ChangeDetectionStrategy, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { messageContent } from '@threadplane/chat';
 import { injectAgent } from '@threadplane/langgraph';
 
 @Component({
@@ -71,6 +72,7 @@ import { injectAgent } from '@threadplane/langgraph';
 })
 export class ChatComponent {
   input = signal('');
+  protected readonly messageContent = messageContent;
 
   protected readonly chat = injectAgent();
 
@@ -78,7 +80,7 @@ export class ChatComponent {
 
   send() {
     const msg = this.input();
-    if (!msg.trim()) return;
+    if (!msg.trim() || this.chat.isLoading()) return;
     this.chat.submit({ message: msg });
     this.input.set('');
   }
@@ -91,9 +93,9 @@ export class ChatComponent {
 ```html
 <!-- chat.component.html -->
 <div class="chat">
-  @for (msg of chat.messages(); track $index) {
+  @for (msg of chat.messages(); track msg.id) {
     <div [class]="msg.role">
-      <p>{{ msg.content }}</p>
+      <p>{{ messageContent(msg) }}</p>
     </div>
   }
 
@@ -108,9 +110,11 @@ export class ChatComponent {
 
   <form (submit)="send(); $event.preventDefault()">
     <input
+      name="message"
       [ngModel]="input()"
       (ngModelChange)="input.set($event)"
-      placeholder="Type a message..."
+      aria-label="Message"
+      placeholder="Plan a weekend in Portland..."
     />
     <button type="submit" [disabled]="isStreaming()">Send</button>
   </form>
@@ -140,6 +144,14 @@ Open `http://localhost:4200` and start chatting with your agent.
 
 </Step>
 </Steps>
+
+## Follow the first turn
+
+Type “Plan a weekend in Portland” and press Send. The component passes one new user message to `submit`; it does not replace the transcript. While the backend runs, `isLoading()` disables another submission and `messages()` updates as text arrives. `messageContent()` extracts display text from either supported content shape.
+
+The signal named `input` holds only the unsent draft. The adapter owns the observed messages. Keeping them separate lets the user type another draft without changing the answer in progress. This small template renders plain text; use the [chat composition](/docs/chat/getting-started/quickstart) for Markdown, tool calls, and the standard controls.
+
+<TurnSequence />
 
 ## Next steps
 

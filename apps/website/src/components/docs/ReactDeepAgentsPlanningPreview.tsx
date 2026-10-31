@@ -3,7 +3,15 @@ import type { ExampleCodeContext } from '../../lib/example-code';
 
 const source = `# React Deep Agents Planning preview
 
-This experimental example composes native React chat components with a read-only plan panel. The React, core, content and native LangGraph candidates are private packages built from source. Angular remains the default on this canonical Planning guide. Both frontends use the same Python graph, planning prompt and shared FREE runtime.
+Make an agent’s plan visible while it works. A read-only task list lets the user follow progress without treating each task label as another assistant message.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Project the plan from agent state
+
+The graph publishes its todo list in state. React observes that data, validates each list update, and renders a separate plan panel beside the conversation. The list describes the current plan; checking a visual row is not an execution command. The example retains the last valid observation when an update is malformed and distinguishes live progress from saved completion.
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Start a dispatch brief
 

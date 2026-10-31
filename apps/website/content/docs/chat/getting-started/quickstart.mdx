@@ -4,7 +4,7 @@ description: Install @threadplane/chat, register a LangGraph agent provider, and
 
 # Quick Start
 
-Build a streaming chat UI with `@threadplane/chat` in 5 minutes.
+Give the trip planner a composer, a transcript, and a visible response while the agent works. The `<chat>` composition binds these pieces to an agent; your application supplies the backend connection and decides where the conversation belongs.
 
 <Callout type="info" title="Prerequisites">
 Angular 20–22 project with an agent provider configured. See [Agent Installation](/docs/langgraph/getting-started/installation) if you need help.
@@ -75,6 +75,12 @@ export class ChatPageComponent {
 </Steps>
 
 That is it — no Tailwind setup, no PostCSS config, no global stylesheet import. The chat ships with its own design tokens and component-scoped styles.
+
+## What happens when you send
+
+Ask “Plan a weekend in Portland.” The composition submits the message through the injected agent, renders the messages signal as the answer arrives, and reflects loading or failure in the controls. The composer draft remains UI state; the accepted message becomes conversation state.
+
+No model runs because the component renders. A new run starts when you submit an intention. [Follow a conversation](/docs/langgraph/concepts/conversation-turns) traces the same path through tools, generated UI, and saved history.
 
 ## Run with no backend
 

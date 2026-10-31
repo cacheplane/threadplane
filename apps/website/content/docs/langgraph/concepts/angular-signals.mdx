@@ -4,10 +4,10 @@ description: How injectAgent() exposes agent state as Angular Signals, and how t
 
 # Angular Signals
 
-Angular Signals are the reactive primitive that powers `injectAgent()`. Developers coming from a Python AI or agent background often wonder how Angular handles real-time streaming data, and this page answers that. Every property on a LangGraphAgent is a Signal, so your templates update automatically as tokens arrive — no manual subscriptions, no async pipes, no RxJS boilerplate.
+`injectAgent()` exposes the agent's state through read-only Angular Signals. Read `messages()` to render the conversation, derive a view model with `computed()`, and let Angular update the consumers when that state changes. Commands such as `submit()`, `stop()`, and `retry()` remain methods; they start or control work rather than read state.
 
 <Callout type="info" title="For Python developers">
-Think of Signals like a Python property with built-in change notification. When the value changes, every consumer — templates, computed values, effects — re-evaluates automatically. For anyone who has used Pydantic models with validators that react to field changes, Signals are the Angular equivalent but deeply integrated into the rendering engine.
+Think of a Signal as a value with dependency tracking. Calling it reads the current value. Angular tracks those reads in templates, computed values, and effects so it knows which consumers need an update.
 </Callout>
 
 ## What Are Angular Signals?
@@ -32,36 +32,13 @@ const doubled = computed(() => count() * 2);
 console.log(doubled()); // 4
 ```
 
-The key insight: Angular knows which Signals a template reads. When those Signals change, it re-renders only the affected parts of the DOM. No diffing the entire tree, no zone.js overhead.
+Angular tracks which Signals a template reads. When a dependency changes, Angular can schedule the consuming view for an update. Reading a Signal does not start another request or subscribe to a second agent run.
 
 ## How `injectAgent` Uses Signals Internally
 
-Under the hood, `injectAgent()` receives Server-Sent Events (SSE) over HTTP and feeds them into RxJS BehaviorSubjects. It then converts those BehaviorSubjects into Angular Signals using `toSignal()`. This is the bridge between the async streaming world and Angular's synchronous reactivity model.
+`injectAgent()` retrieves the agent registered by `provideAgent()`. The LangGraph adapter accumulates transport events into messages and run state, then exposes that state through Signals. A text delta updates an existing assistant message; it does not create a separate conversation message for every token.
 
-<Tabs>
-<Tab label="Internal flow">
-
-```typescript
-// Simplified view of what injectAgent does internally:
-
-// 1. SSE events arrive as an observable stream
-const messages$ = new BehaviorSubject<Message[]>([]);
-const status$ = new BehaviorSubject<ResourceStatus>('idle');
-
-// 2. Each SSE chunk updates the BehaviorSubject
-transport.onChunk(chunk => {
-  messages$.next([...messages$.getValue(), chunk.message]);
-});
-
-// 3. BehaviorSubjects become Signals via toSignal()
-const messages = toSignal(messages$, { initialValue: [] });
-const status = toSignal(status$, { initialValue: 'idle' });
-
-// 4. Your component reads pure Signals — no RxJS knowledge needed
-```
-
-</Tab>
-<Tab label="What you see">
+The adapter uses RxJS internally, but application code reads the public Signals. The example below shows fields and reads inside an Angular injection context. Configure the same typed reference with `provideAgent()`; see [State Management](/docs/langgraph/concepts/state-management).
 
 ```typescript
 import { injectAgent } from '@threadplane/langgraph';
@@ -79,29 +56,26 @@ export const CHAT_AGENT = createAgentRef<ChatState>('chat');
 // injectAgent(ref) hands you clean Signals (config comes from provideAgent):
 protected readonly chat = injectAgent(CHAT_AGENT);
 
-chat.messages();   // Signal<Message[]>
-chat.status();     // Signal<'idle' | 'running' | 'error'>
-chat.error();      // Signal<AgentError | undefined>
-chat.isLoading();  // Signal<boolean>
+chat.messages();   // Current message array
+chat.status();     // 'idle' | 'running' | 'error'
+chat.error();      // AgentError | undefined
+chat.isLoading();  // boolean
 
 // LangGraph-specific (see note below):
-chat.value();      // Signal<ChatState>
+chat.value();      // ChatState
 ```
-
-</Tab>
-</Tabs>
 
 <Callout type="info" title="`value()` is LangGraph-specific">
 `messages()`, `status()`, `error()`, and `isLoading()` are part of the runtime-neutral `Agent` contract that every adapter implements. `value()` is not — it lives on `LangGraphAgent`. You can call `chat.value()` here only because `injectAgent()` returns a `LangGraphAgent`. Code written against the neutral `Agent` contract should read agent state through `state()` rather than `value()`.
 </Callout>
 
 <Callout type="tip" title="Why this matters">
-The BehaviorSubject-to-Signal conversion means you get the best of both worlds: RxJS handles the async SSE transport (reconnection, backpressure, error recovery), while Signals handle the synchronous UI reactivity (change detection, template binding, computed derivations). You only interact with the Signal side.
+Signals describe the latest state. They do not guarantee reconnection, backpressure, or durable storage. Those behaviors depend on the adapter, transport, and server. See [Streaming](/docs/langgraph/guides/streaming) and [Persistence](/docs/langgraph/guides/persistence) for those boundaries.
 </Callout>
 
 ## The Streaming Lifecycle as Signals
 
-Every `injectAgent()` instance moves through a lifecycle: **idle**, **running** while work is in flight, then back to **idle** when the stream completes (or **error** when it fails). The `status()` Signal reflects each transition in real time, while `isLoading()` is the convenience signal for loading UI.
+The agent moves from **idle** to **running** while a run is in flight, then returns to **idle** when it settles or **error** when it fails. `isLoading()` is a convenience signal for loading UI. Check `interrupt()` separately for an approval pause: an idle transport does not by itself mean the user's turn is complete.
 
 <Steps>
 <Step title="idle — Waiting for input">
@@ -117,14 +91,14 @@ console.log(chat.isLoading());  // false
 </Step>
 
 <Step title="running — Request in flight">
-After calling `submit()`, the status transitions to `'running'`. The SSE connection is open and the agent is processing.
+Calling `submit()` starts a run and optimistically adds the user's message. `running` means work is in flight; it does not prove that the server has received the request or sent its first event.
 
 ```typescript
-chat.submit({ message: 'Explain quantum computing' });
+chat.submit({ message: 'Plan a weekend in Portland.' });
 
 console.log(chat.status());     // 'running'
 console.log(chat.isLoading());  // true
-console.log(chat.messages());   // [] (no tokens yet)
+console.log(chat.messages().map(message => message.role)); // ['user']
 ```
 </Step>
 
@@ -134,11 +108,11 @@ As the agent generates tokens, the `messages()` Signal updates with each chunk. 
 ```typescript
 // After first few tokens arrive:
 console.log(chat.status());     // 'running' (still streaming)
-console.log(chat.messages());   // [{ role: 'assistant', content: 'Quantum computing uses...' }]
+console.log(chat.messages().map(message => message.role)); // ['user', 'assistant']
 
 // After more tokens:
-console.log(chat.messages());   // [{ role: 'assistant', content: 'Quantum computing uses qubits...' }]
-// The message content grows as tokens stream in
+console.log(chat.messages().length); // 2
+// The assistant's content grows; the existing user message stays in the list.
 ```
 </Step>
 
@@ -148,7 +122,7 @@ The agent has finished. All tokens have arrived. The status transitions back to 
 ```typescript
 console.log(chat.status());     // 'idle'
 console.log(chat.isLoading());  // false
-console.log(chat.messages());   // [{ role: 'assistant', content: 'Quantum computing uses qubits to...' }]
+console.log(chat.messages().map(message => message.role)); // ['user', 'assistant']
 ```
 </Step>
 
@@ -165,7 +139,7 @@ console.log(chat.isLoading());  // false
 
 ## Composing Derived State with computed()
 
-`computed()` lets you derive new Signals from agent Signals. These derived Signals update automatically whenever their dependencies change — during streaming, that means every time a new token arrives.
+`computed()` lets you derive a value from agent Signals. When a dependency changes, Angular invalidates the cached result and recomputes it on the next read.
 
 ```typescript
 import { computed } from '@angular/core';
@@ -184,8 +158,8 @@ const assistantMessages = computed(() =>
   chat.messages().filter(m => m.role === 'assistant')
 );
 
-// Track which tools the agent is actively calling
-const activeTools = computed(() => chat.toolCalls());
+// Read tool calls, including calls that have already completed
+const toolCalls = computed(() => chat.toolCalls());
 
 // Build a user-facing error message
 const errorDisplay = computed(() => {
@@ -207,7 +181,7 @@ const viewModel = computed(() => ({
 ```
 
 <Callout type="tip" title="computed() is lazy and cached">
-A `computed()` only re-evaluates when one of its dependencies actually changes, and it caches the result. If `chat.messages()` emits the same reference, downstream computeds skip their work entirely. This matters for high-frequency streaming where tokens arrive rapidly.
+A `computed()` caches its result until a dependency changes, then recalculates when read. Keep the calculation free of side effects. A stream may contain many events between rendered frames, so use the latest state rather than treating a computed value as an event log.
 </Callout>
 
 ## Side Effects with effect()
@@ -260,10 +234,11 @@ Writing to a Signal inside an `effect()` can create infinite loops. If you need 
 
 ## Template Patterns
 
-Angular's new control flow syntax (`@if`, `@for`, `@switch`) works naturally with Signals. The template below handles every lifecycle state.
+Angular's control flow syntax (`@if`, `@for`, `@switch`) works naturally with Signals. This text chat example reads run state, renders each message and tool call once, and offers recovery controls only when the adapter supports them. Configure `provideAgent()` as in the [Quick Start](/docs/langgraph/getting-started/quickstart). Add an [interrupt UI](/docs/langgraph/guides/interrupts) when your graph asks for approval.
 
 ```typescript
-import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, signal, ViewChild } from '@angular/core';
+import { messageContent } from '@threadplane/chat';
 import { injectAgent } from '@threadplane/langgraph';
 
 @Component({
@@ -273,45 +248,33 @@ import { injectAgent } from '@threadplane/langgraph';
     <!-- Status bar -->
     @switch (chat.status()) {
       @case ('running') {
-        <div class="status-bar streaming">
+        <div class="status-bar streaming" role="status">
           Agent is responding...
         </div>
       }
       @case ('error') {
-        <div class="status-bar error">
+        <div class="status-bar error" role="alert">
           {{ errorDisplay() }}
-          <button (click)="retry()">Retry</button>
+          @if (statusCheckError(); as message) {
+            <p>{{ message }}</p>
+          }
+          @if (canCheck()) {
+            <button type="button" (click)="checkStatus()" [disabled]="checkingStatus()">
+              {{ checkingStatus() ? 'Checking status...' : 'Check status' }}
+            </button>
+          } @else if (canRetry()) {
+            <button type="button" (click)="retry()">Retry</button>
+          }
         </div>
       }
     }
 
     <!-- Message list -->
     <div class="messages" #chatContainer>
-      @for (message of chat.messages(); track $index) {
-        @switch (message.role) {
-          @case ('user') {
-            <div class="message user">
-              {{ message.content }}
-            </div>
-          }
-          @case ('assistant') {
-            <div class="message assistant">
-              {{ message.content }}
-
-              <!-- Show tool calls if the assistant invoked any -->
-              @for (tool of chat.toolCalls(); track tool.id) {
-                <div class="tool-call">
-                  Called: {{ tool.name }}
-                </div>
-              }
-            </div>
-          }
-          @case ('tool') {
-            <div class="message tool-result">
-              {{ message.name }}: {{ message.content }}
-            </div>
-          }
-        }
+      @for (message of chat.messages(); track message.id) {
+        <div [class]="'message ' + message.role">
+          {{ messageContent(message) }}
+        </div>
       } @empty {
         <div class="empty-state">
           Send a message to start the conversation.
@@ -319,15 +282,26 @@ import { injectAgent } from '@threadplane/langgraph';
       }
     </div>
 
+    @if (chat.toolCalls().length) {
+      <section aria-label="Tool activity">
+        @for (tool of chat.toolCalls(); track tool.id) {
+          <p>Called: {{ tool.name }}</p>
+        }
+      </section>
+    }
+
     <!-- Input area -->
-    <form (submit)="send($event)">
+    <form (submit)="send($event, input)">
+      <label for="chat-message">Message</label>
       <input
         #input
+        id="chat-message"
+        name="message"
         type="text"
         placeholder="Type a message..."
-        [disabled]="chat.isLoading()"
+        [disabled]="chat.isLoading() || checkingStatus()"
       />
-      <button type="submit" [disabled]="chat.isLoading()">
+      <button type="submit" [disabled]="chat.isLoading() || checkingStatus()">
         @if (chat.isLoading()) { Streaming... } @else { Send }
       </button>
     </form>
@@ -337,6 +311,16 @@ export class ChatComponent {
   @ViewChild('chatContainer') chatContainer!: ElementRef<HTMLElement>;
 
   protected readonly chat = injectAgent();
+  protected readonly messageContent = messageContent;
+  protected readonly checkingStatus = signal(false);
+  protected readonly statusCheckError = signal<string | undefined>(undefined);
+  protected readonly canRetry = computed(
+    () => !this.chat.isLoading() && this.chat.error()?.retryable === true,
+  );
+  protected readonly canCheck = computed(
+    () => !this.chat.isLoading() && this.chat.error()?.recovery === 'check'
+      && this.chat.checkStatus !== undefined,
+  );
 
   errorDisplay = computed(() => {
     const err = this.chat.error();
@@ -358,39 +342,59 @@ export class ChatComponent {
     }
   });
 
-  send(event: Event) {
+  send(event: Event, input: HTMLInputElement) {
     event.preventDefault();
-    const input = (event.target as HTMLFormElement).querySelector('input')!;
     const content = input.value.trim();
-    if (!content) return;
+    if (!content || this.chat.isLoading() || this.checkingStatus()) return;
 
+    this.statusCheckError.set(undefined);
     this.chat.submit({ message: content });
     input.value = '';
   }
 
   retry() {
-    this.chat.submit({ message: 'Please try again.' });
+    if (!this.canRetry()) return;
+    this.statusCheckError.set(undefined);
+    void this.chat.retry();
+  }
+
+  async checkStatus() {
+    if (!this.canCheck() || this.checkingStatus()) return;
+    this.statusCheckError.set(undefined);
+    this.checkingStatus.set(true);
+    try {
+      await this.chat.checkStatus?.();
+    } catch {
+      this.statusCheckError.set(
+        'Status could not be checked. The previous outcome is still unconfirmed.',
+      );
+    } finally {
+      this.checkingStatus.set(false);
+    }
   }
 }
 ```
 
+`messageContent()` reads text from either string or block content. This example renders that text with escaped interpolation; use the chat components when you need Markdown, attachments, and richer tool views. `retry()` reuses the captured request. Submitting "Please try again" would create another user turn. For an uncertain outcome, use the adapter's status check when available instead of starting the work again.
+
 ## OnPush Change Detection
 
-Every component using `injectAgent()` should use `ChangeDetectionStrategy.OnPush`. The reason it works, and why it is efficient, is below.
+Use `ChangeDetectionStrategy.OnPush` for components that read agent Signals. Angular tracks those reads and marks the consuming view when a value changes.
 
-With the default change detection strategy, Angular checks every component in the tree on every browser event — clicks, timers, HTTP responses. For a streaming agent emitting dozens of tokens per second, that means hundreds of unnecessary checks across your entire app.
+OnPush lets Angular skip eligible subtrees that do not need an update. The amount of work still depends on your component tree, event handlers, and change detection configuration. A token count is not a count of rendered frames or component checks.
 
-With OnPush, Angular only checks a component when:
+Common reasons an OnPush component needs checking include:
 
 1. An `@Input()` reference changes
 2. An event fires inside the component's template
 3. A **Signal** that the template reads changes
+4. Application code or an integration explicitly marks the view for checking
 
-Since `injectAgent()` exposes Signals, condition 3 handles everything. When a new token arrives and `messages()` updates, Angular marks only the components reading that Signal for check — not the entire tree.
+Since `injectAgent()` exposes Signals, template reads participate in this mechanism. You do not need a separate manual subscription just to display the latest messages.
 
 ```typescript
 @Component({
-  // Always use OnPush with injectAgent
+  // Signal reads notify this OnPush view.
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <p>{{ chat.messages().length }} messages</p>
@@ -405,30 +409,27 @@ export class ChatComponent {
 ```
 
 <Callout type="info" title="No markForCheck() needed">
-With older Observable-based patterns, you had to call `ChangeDetectorRef.markForCheck()` or use the `async` pipe to trigger OnPush updates. Signals do this automatically. When a Signal's value changes, Angular's internal notification system marks the component dirty — zero manual intervention.
+For values read as Signals in the template, Angular handles the notification. The `async` pipe also marks its view when an Observable emits; a manual subscription needs its own change notification and teardown strategy.
 </Callout>
 
 ## Python Agent to Angular Signals
 
-Where `injectAgent()` really earns its keep is how it pairs a Python LangGraph agent with Angular Signals. The agent defines the logic; Signals surface the results in real time.
-
-<Tabs>
-<Tab label="agent.py">
+Reuse the Angular component above with this small tool-call slice of the trip-planning example. The Python graph owns the model and tool execution; Angular renders the streamed state. The weather response is fixed demo data. Replace that function with your application's weather service when adapting the example.
 
 ```python
 from langgraph.graph import END, START, MessagesState, StateGraph
+from langgraph.prebuilt import ToolNode
 from langchain_openai import ChatOpenAI
 from langchain_core.tools import tool
 
 llm = ChatOpenAI(model="gpt-5-mini", streaming=True)
 
 @tool
-def search_knowledge_base(query: str) -> str:
-    """Search internal documentation for relevant information."""
-    results = vector_store.similarity_search(query, k=3)
-    return "\n".join(r.page_content for r in results)
+def get_weather(city: str) -> str:
+    """Return a fixed weather forecast for this trip-planning demo."""
+    return f"Demo forecast for {city}: sunny, 22 degrees Celsius."
 
-tools = [search_knowledge_base]
+tools = [get_weather]
 
 def call_model(state: MessagesState) -> dict:
     response = llm.bind_tools(tools).invoke(state["messages"])
@@ -451,83 +452,22 @@ builder.add_edge("tools", "model")
 graph = builder.compile()
 ```
 
-</Tab>
-<Tab label="chat.component.ts">
-
-```typescript
-import { ChangeDetectionStrategy, Component, computed, effect } from '@angular/core';
-import { injectAgent } from '@threadplane/langgraph';
-
-@Component({
-  selector: 'app-chat',
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    @for (msg of chat.messages(); track $index) {
-      @switch (msg.role) {
-        @case ('user') {
-          <div class="user">{{ msg.content }}</div>
-        }
-        @case ('assistant') {
-          <div class="assistant">
-            {{ msg.content }}
-            @for (tc of chat.toolCalls(); track tc.id) {
-              <span class="tool-badge">{{ tc.name }}</span>
-            }
-          </div>
-        }
-        @case ('tool') {
-          <div class="tool-result">{{ msg.name }}: {{ msg.content }}</div>
-        }
-      }
-    }
-
-    @if (chat.isLoading()) {
-      <div class="typing-indicator">Agent is thinking...</div>
-    }
-  `,
-})
-export class ChatComponent {
-  protected readonly chat = injectAgent();
-
-  // Derived state from the Python agent's output
-  toolsUsed = computed(() =>
-    this.chat.messages()
-      .filter(m => m.role === 'tool')
-      .map(m => m.name)
-  );
-
-  hasError = computed(() => this.chat.status() === 'error');
-
-  sendMessage(content: string) {
-    this.chat.submit({ message: content });
-  }
-}
-```
-
-</Tab>
-</Tabs>
-
-When the Python agent calls `search_knowledge_base`, the tool call streams to Angular as a message. When the tool returns, the result streams as another message. The agent's final response streams token by token. Every one of these events updates the `messages()` Signal, and your template re-renders the new content automatically.
+When the model requests `get_weather`, `ToolNode` executes the tool and adds its result to the graph's messages. The graph returns to the model for an answer. The adapter accumulates the streamed events into `messages()` and `toolCalls()`; your template reads their latest values. Register the compiled graph on your LangGraph server and point `provideAgent()` at its assistant id, as in the Quick Start.
 
 ## Performance: Signals vs Alternatives
 
-High-frequency token streaming puts real pressure on a frontend framework. Signals with OnPush hold up better than the alternatives, for the reasons below.
+Keep computations cheap while a response is streaming. Signals and Observables can both work with OnPush; choose the representation that fits the API you consume.
 
-| Approach | Token update cost | Memory overhead | Cleanup required |
-|---|---|---|---|
-| **Signals + OnPush** | Marks only reading components | None beyond Signal | Automatic |
-| Observable + async pipe | Creates/destroys subscriptions per `@if` block | Subscription objects | Pipe handles it |
-| Observable + manual subscribe | Full component check if you forget `markForCheck()` | Subscription tracking | Manual unsubscribe |
-| Default change detection | Checks entire component tree | None | None |
+| Approach | Template updates | Lifetime |
+|---|---|---|
+| Signals + OnPush | Angular tracks Signal reads | The provider owns the agent; a consuming component does not dispose that shared agent |
+| Observable + async pipe | The pipe marks its view when a value arrives | Keeps its subscription while the source and view remain; unsubscribes on source replacement or view destruction |
+| Observable + manual subscribe | Application code arranges change notification | Application code owns subscription teardown |
 
-For a typical chat UI receiving 30-50 tokens per second:
-
-- **Signals + OnPush**: Only the message list component and its direct ancestors are checked. The sidebar, header, settings panel — all skipped.
-- **Default strategy**: Every component in the tree is checked 30-50 times per second, even components with no streaming data.
-- **Observable + async pipe**: Works correctly but creates and destroys subscriptions each time an `@if` or `@for` block re-evaluates, adding GC pressure during rapid streaming.
+An `async` pipe does not resubscribe on every token or template check. Profile the actual application before attributing rendering cost to a reactive primitive. Expensive Markdown rendering, layout work, or repeated derived calculations can matter more than the state read itself.
 
 <Callout type="tip" title="Signal equality checks">
-Signals use referential equality (`===`) by default. `injectAgent()` creates new array references for `messages()` only when the array actually changes (a new token arrives). Between updates, reading `messages()` returns the same reference and skips downstream recomputation. For custom equality, pass an `equal` function when creating a `computed()`.
+Treat the agent's arrays and objects as read-only. Mutating them in place bypasses the adapter's update path. Derive application views with `computed()` and use the agent's commands to change the conversation. A custom equality function should suppress an update only when the values are equivalent for every consumer.
 </Callout>
 
 ## What's Next

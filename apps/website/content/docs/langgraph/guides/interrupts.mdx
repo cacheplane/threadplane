@@ -10,6 +10,14 @@ Interrupts let a LangGraph agent pause mid-execution and hand control to a human
 Use interrupts when an agent action is irreversible (sending an email, placing an order, issuing a refund), when the agent needs a human decision it cannot make on its own, or when compliance requires explicit approval before execution.
 </Callout>
 
+## A pause is a decision point
+
+In a trip planner, proposing a booking and making the booking are different actions. An interrupt lets the backend save a pending decision, return control to the person, and continue when the application submits that decision. The approval UI should describe the actual pending payload and remain associated with that pause.
+
+<RunState />
+
+The interrupt belongs to agent state; it is not another chat message. Keep the composer, progress display, and decision controls consistent with that state. The example below uses a fictional booking so you can follow the pause and resume without making a reservation.
+
 ## What the demo does
 
 The Run tab shows the prebuilt `<chat>` composition in front of a refund graph. Ask for a refund and the agent acknowledges the draft in the transcript, and then the run stops: a modal card appears with the amount, the customer identifier, and the reason the agent extracted from your request, above three buttons — Cancel, Edit, and Approve.

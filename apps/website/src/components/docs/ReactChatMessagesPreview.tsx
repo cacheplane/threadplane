@@ -3,7 +3,27 @@ import type { ExampleCodeContext } from '../../lib/example-code';
 
 const source = `# React chat messages preview
 
-This experimental example composes native React MessageList, Markdown and ChatInput with the existing Python Chat Messages graph. The React, core, content and neutral LangGraph candidates remain private packages built from source.
+Render a conversation from stable message rows, then choose how each row looks. Message identity, parsed Markdown, reasoning, and tool observations can remain structured while your product controls the layout.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Project messages before rendering rows
+
+\`createMessageContent\` turns session messages into reusable \`MessageRow\` values. \`MessageList\` consumes those rows and provides default presentation; \`renderMessage\` replaces that presentation when your application needs a custom row. Keep the projection owner for the conversation lifetime and dispose it with that owner, not each time React renders.
+
+~~~tsx
+import type { AgentSession } from '@threadplane/core';
+import type { MessageContent } from '@threadplane/content/messages';
+import { useAgent } from '@threadplane/react';
+import { MessageList } from '@threadplane/react/chat';
+
+export function Transcript({ session, content }: { session: AgentSession; content: MessageContent }) {
+  const snapshot = useAgent(session);
+  return <MessageList rows={content.project(snapshot)} label="Trip conversation" />;
+}
+~~~
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Ask and continue
 

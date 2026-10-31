@@ -2,7 +2,15 @@ import type { ExampleCodeContext } from '../../lib/example-code';
 import { MdxRenderer } from './MdxRenderer';
 const source = `# React subgraphs preview
 
-This experimental example uses native React chat components with the existing Python LangGraph conditional research graph. React, core, content, and the framework-neutral LangGraph candidates remain private source-build packages.
+A trip-planning agent can delegate research while keeping one conversation with the traveler. Subgraphs expose that child work so the UI can show what each specialist is doing.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Keep parent and child observations distinct
+
+The native LangGraph snapshot includes namespaced child observations. The application decides which observations belong to the current run and how to present them beside the root transcript. A child response is not automatically another root assistant message, and child progress alone does not establish that the parent turn succeeded. The source walkthrough shows the matching and retention rules used by this example.
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Follow the parent and child boundary
 

@@ -1,0 +1,49 @@
+ui-angular
+
+Actual framework renderer playing the existing authored JSON sample; no model or backend.
+Footage runs at actual speed; initial page loading is trimmed. No narration.
+
+Input: Play the first authored sample.
+
+00:00:00.000 Play the local JSON sample.
+00:00:01.833 Partial JSON becomes components.
+00:00:06.079 Inspect the complete render.
+
+Final visible result:
+SPEC
+Heading + Text
+Card + Badge
+Nested Layout
+Complete
+LIVE RENDER OUTPUT
+Welcome to Spec Rendering
+
+This UI is rendered entirely from a JSON specification. Each element maps to a registered Angular component.
+
+STREAMING JSON
+{
+  "root": "root",
+  "elements": {
+    "root": {
+      "type": "Heading",
+      "props": {
+        "content": "Welcome to Spec Rendering"
+      },
+      "children": [
+        "desc"
+      ]
+    },
+    "desc": {
+      "type": "Text",
+      "props": {
+        "content": "This UI is rendered entirely from a JSON specification. Each element maps to a registered Angular component."
+      }
+    }
+  }
+}
+Complete
+100%
+400 / 400 chars
+1x
+2x
+4x

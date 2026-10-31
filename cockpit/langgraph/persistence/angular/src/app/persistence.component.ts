@@ -131,7 +131,7 @@ let threadCounter = 0;
       border: 0;
       border-radius: var(--ds-radius-sm, 6px);
       background: var(--ds-accent, #64c3fd);
-      color: #08243a;
+      color: var(--ds-text-inverted, #08243a);
       cursor: pointer;
       transition: background 0.15s ease;
     }

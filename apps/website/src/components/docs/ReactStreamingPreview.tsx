@@ -3,7 +3,29 @@ import type { ExampleCodeContext } from '../../lib/example-code';
 
 const source = `# React streaming preview
 
-This experimental example uses React with the same Python LangGraph streaming graph as the Angular example. This preview covers streaming; interrupts, thread-scoped memory, client tools, persistence, durable execution, subgraphs, time travel, and deployment runtime also have authored React previews. The React, core, content, and framework-neutral LangGraph packages are private source-build packages; they are not published npm packages.
+<DocsDemoVideo demo="streaming" frontend="react" />
+
+Let the traveler read an answer while it is being written. Streaming turns one backend response into a succession of message updates, so the UI can show useful text before the whole run finishes.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Observe a session, own its lifetime
+
+The application creates and confirms a thread, constructs a session for it, and owns submission and disposal. \`useAgent\` observes a stable object with \`getSnapshot\` and \`subscribe\`; rendering or subscribing does not start a request. The example projects the session into message rows before publishing its application snapshot. This small observer shows the same separation without the rest of the demo UI.
+
+<TurnSequence />
+
+~~~tsx
+import type { AgentSession } from '@threadplane/core';
+import { useAgent } from '@threadplane/react';
+
+export function ResponseStatus({ session }: { session: AgentSession }) {
+  const snapshot = useAgent(session);
+  return <p role="status">{snapshot.status === 'running' ? 'Working…' : snapshot.status === 'error' ? 'Unable to complete' : 'Ready'}</p>;
+}
+~~~
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Try the example
 
@@ -30,7 +52,7 @@ npx nx build cockpit-langgraph-streaming-react
 npx nx e2e cockpit-langgraph-streaming-react
 ~~~
 
-The build installs local candidate packages in an isolated consumer and checks that the browser bundle uses those packages. The browser tests exercise real SDK requests against a local fixture. Run and Code on this page show the same React implementation. Streaming, interrupts, memory, client tools, persistence, durable execution, subgraphs, time travel, and deployment runtime have public React previews; AG-UI Streaming, Interrupts, Tool Views and JSON Render and Subagents also have React previews on Event Mapping and their canonical guides; other topics remain pending.
+The build installs local candidate packages in an isolated consumer and checks that the browser bundle uses those packages. The browser tests exercise real SDK requests against a local fixture. Run and Code on this page show the same React implementation.
 `;
 
 export function ReactStreamingPreview({

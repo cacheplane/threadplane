@@ -52,7 +52,9 @@ it('resolves Theming Docs Code and Run with authored sources and canonical Pytho
   ])
     expect(guide).toContain('--tp-chat-' + token);
   for (const claim of [
-    'MessageList, Markdown and ChatInput',
+    'MessageList',
+    'Markdown',
+    'ChatInput',
     'TAG_NOSTREAM',
     'saved-history confirmation',
     'demo-local bridge',

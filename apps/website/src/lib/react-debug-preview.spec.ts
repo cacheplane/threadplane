@@ -42,6 +42,6 @@ it('documents the passive bounded first slice with reader-sized examples and exp
   expect(existsSync(path)).toBe(true);
   if (!existsSync(path)) return;
   const guide = readFileSync(path, 'utf8');
-  for (const claim of ['@threadplane/react/debug', '@threadplane/react/debug/styles.css', 'c-debug', '4645', 'getHistory', 'getState', '131072', '32768', '2000', 'TAG_NOSTREAM', 'T29', 'Replay', 'Fork', 'private', 'Angular remains the default']) expect(guide).toContain(claim);
+  for (const claim of ['@threadplane/react/debug', '@threadplane/react/debug/styles.css', 'c-debug', '4645', 'getHistory', 'getState', '131072', '32768', '2000', 'TAG_NOSTREAM', 'T29', 'Replay', 'Fork', 'private', 'canonical Angular guide retains its own API']) expect(guide).toContain(claim);
   expect(guide).not.toContain('<ExampleCode file="cockpit/chat/debug/react/src/application.ts"');
 });

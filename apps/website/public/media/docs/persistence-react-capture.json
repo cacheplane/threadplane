@@ -1,0 +1,201 @@
+{
+  "version": 1,
+  "id": "persistence-react",
+  "demo": "persistence",
+  "frontend": "react",
+  "recordedAt": "2026-10-30T18:34:00.765Z",
+  "sourceRevision": "c586a94bb20d9924058b9f6a067c709a159bd6b6",
+  "sourceKind": "fixture-backed-langgraph",
+  "sourceDescription": "Actual framework app and LangGraph runtime; existing aimock responses, 12-character chunks with 100ms fixture delay. No live provider requests.",
+  "input": "Hello",
+  "viewport": {
+    "width": 640,
+    "height": 640
+  },
+  "theme": {
+    "mode": "light",
+    "mechanism": "native application stylesheet"
+  },
+  "edits": {
+    "trimStart": 0.262,
+    "trimEnd": 13.961,
+    "speed": 1
+  },
+  "phases": [
+    {
+      "time": 0,
+      "text": "Send a message."
+    },
+    {
+      "time": 2.007,
+      "text": "Read the arriving response."
+    },
+    {
+      "time": 6.523999999999999,
+      "text": "Start a new conversation."
+    },
+    {
+      "time": 9.062,
+      "text": "Select the saved conversation."
+    }
+  ],
+  "finalText": "React \u00b7 Experimental\n\nLangGraph persistence\nNew conversation\n\nCreate two conversations, then switch between them to load their saved history from the server.\n\nSaved conversations\n\nThis list belongs to the current page. Reloading clears the list; conversation history is saved on the server.\n\nConversation 1\n\nUSER\n\nHello\n\nASSISTANT\n\nHi \u2014 how can I help you today?\n\nMessage\nSend\n\nReady.",
+  "requests": [
+    {
+      "method": "POST",
+      "path": "/api/threads"
+    },
+    {
+      "method": "POST",
+      "path": "/api/threads/79dc2af4-62c0-422c-88b3-1dff83acf3fc/runs/stream"
+    },
+    {
+      "method": "GET",
+      "path": "/api/threads/79dc2af4-62c0-422c-88b3-1dff83acf3fc/runs/01a18e16-e9a7-7f83-bd81-e4f25063c002"
+    },
+    {
+      "method": "POST",
+      "path": "/api/threads/79dc2af4-62c0-422c-88b3-1dff83acf3fc/history"
+    }
+  ],
+  "sourceHashes": {
+    "apps/website/scripts/record-docs-media.mjs": "66da48b538efb967f75ec92f98b1dfe91c7de9fe7b1e7e0a4d27b3b8ce47657c",
+    "apps/website/scripts/encode-docs-media.mjs": "c290872256a41268974dcf232c590b3933363533197d4cb36c49817892125ed7",
+    "libs/example-layouts/src/lib/install-embedded-theme.ts": "43ac4509c68c7e5b07afea1100f12b1db30ab8273c99d7bf7c9bdcd479d9b6bf",
+    "cockpit/langgraph/streaming/angular/e2e/fixtures/streaming.json": "5ce36b2b40561fbc46ba0dd2cb73a71b794d2ab1ad9fad9dc03a34b4886cbf74",
+    "cockpit/langgraph/streaming/python/src/graph.py": "97db9510fc245cfa0c151404869f6a35dc285cb501250743d4daab7ace556bf2",
+    "cockpit/langgraph/persistence/angular/e2e/fixtures/persistence.json": "3094094800130ddae423e1744792677314a553ec5b4198107bed4d0bb60d02a3",
+    "cockpit/langgraph/persistence/python/src/graph.py": "b61c7846814b394d9fdc0cd412a0a8936bfa2bba21d84aab80b7eacad764d20d",
+    "cockpit/langgraph/client-tools/angular/e2e/fixtures/client-tools.json": "ccfae8ada335ffaf6a0eef56d4bc69045200a1a12f5ae3c0079b6b6987d13906",
+    "cockpit/langgraph/client-tools/python/src/graph.py": "f11ff38e2f0da2450d74596c55791fc06da9e3dcdbc8f8c09a070164a76d5de7",
+    "cockpit/langgraph/persistence/react/src/app.tsx": "076052e86a76b97a595ddbc7bdbbc9b771d2851ece0bacff64558a269bf77680",
+    "cockpit/langgraph/persistence/react/src/application.ts": "e5732ef184822f0ce1d01915c7a6ef52dcff6c2853d26a3f87ea6ff76b8f02a8",
+    "cockpit/langgraph/persistence/react/src/connection.ts": "c5f9afdf9b7a4b3ce459617e1dadf32d4c5c939d33bbd4a567ca52b504f53796",
+    "cockpit/langgraph/persistence/react/src/main.tsx": "64c7f37e64a5060949398bbece1db7b7cea50b5861b4c78b5b33f91aba3264ef",
+    "cockpit/langgraph/persistence/react/src/styles.css": "3bb31560bbd9660afe7aa24ec8953a0d5d9220d625ca01c1cef54653cc6a7f63"
+  },
+  "buildHashes": {
+    "dist/cockpit/langgraph/persistence/react/assets/index-BvryimIn.js": "2f1311ea2c0da4ac2945cb10cee598915c955e202e2cbd00710448a944138235",
+    "dist/cockpit/langgraph/persistence/react/assets/index-CactTaIq.css": "8f917f5b5a8a46bf3ac0ab2fa44884ea2409298d32c7b0b95095acfa9cdb32c4",
+    "dist/cockpit/langgraph/persistence/react/build-proof.json": "9a5273880daf52f744328f073cddd5b397a4f052405f1313e4f0a0ed30a587ab",
+    "dist/cockpit/langgraph/persistence/react/index.html": "92a525308453a4268267fac5e4fa1efb48412ae4314940a8e64047d0ecde9255"
+  },
+  "rawSha256": "cc6670d1ede9e64ccb2b75228c39a362464561307908bd2f215b50879cb5d91f",
+  "reproduction": "node apps/website/scripts/record-docs-media.mjs persistence react",
+  "duration": 13.68,
+  "captions": [
+    {
+      "from": 0,
+      "to": 2.007,
+      "text": "Send a message."
+    },
+    {
+      "from": 2.007,
+      "to": 6.524,
+      "text": "Read the arriving response."
+    },
+    {
+      "from": 6.524,
+      "to": 9.062,
+      "text": "Start a new conversation."
+    },
+    {
+      "from": 9.062,
+      "to": 13.68,
+      "text": "Select the saved conversation."
+    }
+  ],
+  "ffmpeg": {
+    "version": "ffmpeg version 8.1.1 Copyright (c) 2000-2026 the FFmpeg developers",
+    "commands": [
+      [
+        "-ss",
+        "0.262",
+        "-i",
+        "<raw-capture.webm>",
+        "-t",
+        "13.699",
+        "-an",
+        "-vf",
+        "fps=25,format=yuv420p",
+        "-c:v",
+        "libx264",
+        "-crf",
+        "22",
+        "-preset",
+        "medium",
+        "-movflags",
+        "+faststart",
+        "<capture-directory>/encoded/persistence-react.mp4"
+      ],
+      [
+        "-ss",
+        "0.262",
+        "-i",
+        "<raw-capture.webm>",
+        "-t",
+        "13.699",
+        "-an",
+        "-vf",
+        "fps=25,format=yuv420p",
+        "-c:v",
+        "libvpx-vp9",
+        "-crf",
+        "32",
+        "-b:v",
+        "0",
+        "-row-mt",
+        "1",
+        "-cpu-used",
+        "4",
+        "<capture-directory>/encoded/persistence-react.webm"
+      ],
+      [
+        "-ss",
+        "11.68",
+        "-i",
+        "<capture-directory>/encoded/persistence-react.mp4",
+        "-frames:v",
+        "1",
+        "<capture-directory>/encoded/persistence-react-poster.png"
+      ],
+      [
+        "-i",
+        "<capture-directory>/encoded/persistence-react.mp4",
+        "-f",
+        "null",
+        "-"
+      ],
+      [
+        "-i",
+        "<capture-directory>/encoded/persistence-react.webm",
+        "-f",
+        "null",
+        "-"
+      ]
+    ]
+  },
+  "assets": {
+    "persistence-react.mp4": {
+      "sha256": "aef3b5ed10494eb83268209874a7eee83de678f1263f67a021347076020431a4",
+      "bytes": 143250
+    },
+    "persistence-react.webm": {
+      "sha256": "36349cb9d72afa65461239c810c9f7f7aa381cc6ca6adba95dac9713cc4eb328",
+      "bytes": 153382
+    },
+    "persistence-react.vtt": {
+      "sha256": "eab66f405448067645b645f9a1bd58395c780d0e9485bb8f12c9ec0c75067acf",
+      "bytes": 232
+    },
+    "persistence-react-poster.png": {
+      "sha256": "2d0baf40015989117f84f9033950a1bdb1f418524161a6d6739b6cce07bb1d51",
+      "bytes": 121142
+    },
+    "persistence-react-transcript.txt": {
+      "sha256": "536e39e4e48a61fe6e17a95509b37f8ae56fff1e1fd63254a7ac8bd0af2a09aa",
+      "bytes": 819
+    }
+  },
+  "sourceTreeDirty": true
+}

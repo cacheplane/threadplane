@@ -2,7 +2,15 @@ import { MdxRenderer } from './MdxRenderer';
 import type { ExampleCodeContext } from '../../lib/example-code';
 const source = `# React Deep Agents Memory preview
 
-This experimental native React example shares the canonical Python Memory graph and prompt. Angular remains the default frontend on this guide.
+Teach an agent a fact, then see whether it can recall that fact in another interaction. Long-lived memory needs an identity and storage scope beyond the composer or one component mount.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Make the memory scope visible
+
+The example separates browser identity, conversation state, and the backend memory observation. A message saying “I remember” is not proof that a stored fact was read; the application displays the relevant read evidence independently. The source walkthrough shows when the graph reads pinned instructions and when it consults the cross-conversation memory scope.
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Teach, then recall
 

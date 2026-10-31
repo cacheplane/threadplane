@@ -8,6 +8,12 @@ description: How the messages example renders one template per role, plus the ru
 
 This matters because provider message formats are not stable enough to build product UI against directly. LangGraph, AG-UI, OpenAI, Anthropic, and custom backends all carry different event and content shapes, and the chat layer needs one model. The running example is the smallest thing that shows it whole: a message list with no default templates, so every role in the model is a template you can read.
 
+## A message is one part of a turn
+
+A Portland planning request is one user message. Its answer may contain several assistant messages, tool requests, tool results, and a final summary. Keep message identity separate from array position and from the user turn that produced it.
+
+The adapter normalizes those messages before the UI reads them. Display text, delivery status, tool identity, and citations stay structured so a component can render progress without parsing the assistant's prose. [Follow a conversation](/docs/langgraph/concepts/conversation-turns) places messages inside the larger request and persistence flow.
+
 ## What the demo does
 
 The Run tab shows a conversation under the heading "Chat Messages Primitives", with a panel on the right naming the three primitives it uses. The agent behind it is an aviation assistant whose mock dataset covers ten United States airports and four airlines.

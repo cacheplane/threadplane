@@ -4,6 +4,16 @@ Production-ready chat, thread/history/branch UI, interrupts, subagents, planning
 
 Supported Angular majors: 20, 21, and 22.
 
+## Learn through one conversation
+
+Start at https://threadplane.ai/docs/langgraph/concepts/conversation-turns to follow a trip-planning conversation through submission, streaming, tools, generated UI, state, and persistence. The canonical application is `examples/chat`; cockpit examples isolate capabilities and retain their own domains and backend behavior.
+
+A user turn is one intention plus the work that answers it. It may span multiple model calls, backend runs, and HTTP requests. A thread identifies saved conversation state; a checkpoint is a saved state version; retaining an ID alone does not retain history. Keep unsent drafts and local selections separate from backend state.
+
+Published Angular uses provider-scoped `Agent` signals and `submit({ message })`. Native React source builds use app-owned sessions, immutable snapshots, and `useAgent(session)` for observation. The hook does not create, submit, or dispose sessions. Native packages remain private; do not suggest installing them from npm. Use the matching framework walkthrough and actual package API, not a translation of Angular method names.
+
+Docs teach the capability before walking focused application code. Stream completion, tool completion, saved-history confirmation, and a UI control closing are distinct events; describe each according to the actual adapter and example.
+
 ## React previews
 
 Chat A2UI has an experimental native React preview at https://threadplane.ai/docs/chat/a2ui/overview?frontend=react using the existing shared c-a2ui Python graph. Request a form, edit, Search, Select a demonstration flight and Modify; no real booking or payment occurs. Its closed profile supports Column, Row, List, Card, Text, Divider, ChoicePicker, DateTimeInput, TextField and Button, ten airport choices and four fares. Only successful owned submission plus exact saved root checkpoint/raw transcript confirmation activates the newest settled surface; history retains last lexical edits with disabled controls. Raw A2UI is immutable and separate from edits, invalid visible drafts never reuse an old valid value, and stale callbacks are inert. Transient/title/completion flags never authorize controls. Stop, run/connection errors or unconfirmed outcomes require New; ordinary form-validation errors can be corrected. The app never automatically resubmits actions or resumes uncertain turns; the graph may internally retry structured output. Modify restores server-supplied search values, including the submitted route and party. Docs/Code/Run preserve the native frame and draft; mount/mode changes make no thread requests and Angular remains default. Build with `npx nx build cockpit-chat-a2ui-react` and verify with `npx nx e2e cockpit-chat-a2ui-react`. Source is cockpit/chat/a2ui/react/src/ with canonical cockpit/chat/a2ui/python/src/graph.py. Local proofs use the actual compiled graph and deterministic providers, not live-provider behavior. Candidate React/core/content/A2UI/neutral LangGraph packages remain private and unpublished; generic all-18 A2UI support, full catalog parity and SSR remain pending.

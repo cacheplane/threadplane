@@ -1,0 +1,38 @@
+persistence-react
+
+Actual framework app and LangGraph runtime; existing aimock responses, 12-character chunks with 100ms fixture delay. No live provider requests.
+Footage runs at actual speed; initial page loading is trimmed. No narration.
+
+Input: Hello
+
+00:00:00.000 Send a message.
+00:00:02.007 Read the arriving response.
+00:00:06.524 Start a new conversation.
+00:00:09.062 Select the saved conversation.
+
+Final visible result:
+React · Experimental
+
+LangGraph persistence
+New conversation
+
+Create two conversations, then switch between them to load their saved history from the server.
+
+Saved conversations
+
+This list belongs to the current page. Reloading clears the list; conversation history is saved on the server.
+
+Conversation 1
+
+USER
+
+Hello
+
+ASSISTANT
+
+Hi — how can I help you today?
+
+Message
+Send
+
+Ready.

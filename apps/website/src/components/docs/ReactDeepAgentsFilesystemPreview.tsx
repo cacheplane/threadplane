@@ -3,7 +3,15 @@ import type { ExampleCodeContext } from '../../lib/example-code';
 
 const source = `# React Deep Agents Filesystem preview
 
-This experimental example composes native React chat components with a read-only workspace and a protected-action approval panel. The React, core, content and native LangGraph candidates are private packages built from source. Angular remains the default on this canonical Filesystem guide. Both frontends use the same Python graph, filesystem prompt and shared FREE runtime.
+Show the files an agent is working with and ask for a decision before protected changes. A workspace view and an approval control serve different purposes even when they sit beside the same chat.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Separate observation from permission
+
+The application reads the graph’s workspace projection for display and independently matches the pending protected-action batch before enabling a decision. A file appearing in the panel does not authorize an edit. The source below separates workspace parsing, decision policy, and native React presentation so each can be adapted without merging their responsibilities.
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Start a runway note
 

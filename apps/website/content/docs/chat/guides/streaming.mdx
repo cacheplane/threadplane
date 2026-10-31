@@ -10,6 +10,12 @@ description: How chat classifies assistant content as markdown, a json-render sp
 This page is the advanced generative-UI plumbing: how `<chat>` decides whether an AI message is markdown, a JSON-render spec, or A2UI, and how partial JSON is parsed as tokens arrive. If you just want to know how ordinary assistant text streams token-by-token into `<chat>` — no generative UI involved — start with the [LangGraph streaming guide](/docs/langgraph/guides/streaming). The basic case needs no setup: `<chat [agent]="agent" />` renders streaming markdown out of the box.
 </Callout>
 
+## Streaming delivery and streaming presentation
+
+The backend stream tells the application what has arrived. The content renderer decides how to present it. An itinerary answer may be Markdown, a JSON component tree, or A2UI envelopes; each arrives incrementally, but each needs a different parser.
+
+Keep the delivery lifecycle separate from parsing progress. A JSON object becoming syntactically complete does not prove the backend run finished. Conversely, a completed run can still contain content the renderer cannot interpret. Read the [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) for delivery, then use this guide for presentation.
+
 ## Content Classification
 
 Each AI message is processed by a `ContentClassifier` that examines the content as it streams token-by-token. The classifier determines the content type from the first non-whitespace character:

@@ -3,7 +3,25 @@ import type { ExampleCodeContext } from '../../lib/example-code';
 
 const source = `# React memory preview
 
-This experimental example uses native React chat components with the existing Python LangGraph memory graph. It starts each conversation empty and keeps learned facts in that thread's state. React, core, content, and the framework-neutral LangGraph candidates remain private source-build packages.
+An assistant can use a preference from earlier in the conversation without asking for it again. Thread memory keeps that fact with the conversation; it is different from a local input value and from memory shared across threads.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Read the backend projection
+
+The memory graph extracts facts into its state and streams those values alongside messages. React observes the native LangGraph snapshot, and the example validates the expected memory fields before presenting them. Start by inspecting values as data; keep the composer draft in local React state. A new conversation has a new thread identity and therefore a separate thread-scoped memory.
+
+~~~tsx
+import type { LangGraphSession } from '@threadplane/langgraph';
+import { useAgent } from '@threadplane/react';
+
+export function MemoryState({ session }: { session: LangGraphSession }) {
+  const snapshot = useAgent(session);
+  return <pre>{JSON.stringify(snapshot.values, null, 2)}</pre>;
+}
+~~~
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Learn and recall in one conversation
 
@@ -36,7 +54,7 @@ npx nx build cockpit-langgraph-memory-react
 npx nx e2e cockpit-langgraph-memory-react
 ~~~
 
-The isolated build installs local candidate packages and checks strict declarations and emitted browser modules. Browser tests use real SDK HTTP and SSE against a local fixture. Docs, Code, and Run select this same React implementation. Public React previews cover streaming, interrupts, memory, client tools, persistence, durable execution, subgraphs, time travel, and deployment runtime; AG-UI Streaming, Interrupts, Tool Views and JSON Render and Subagents also have React previews on Event Mapping and their canonical guides; other topics remain pending.
+The isolated build installs local candidate packages and checks strict declarations and emitted browser modules. Browser tests use real SDK HTTP and SSE against a local fixture. Docs, Code, and Run select this same React implementation.
 `;
 
 export function ReactMemoryPreview({

@@ -10,6 +10,12 @@ description: How @threadplane/chat is organized — headless primitives, styled 
 This guide explains the library's two-tier architecture, how it relates to the rest of the Threadplane stack, and when to reach for the all-in-one composition versus assembling primitives yourself.
 </Callout>
 
+## Build one conversation surface
+
+Imagine a trip planner: the traveler enters a destination, watches an answer arrive, opens a weather result, and changes an itinerary. Start with the composition for the ordinary conversation. Reach for individual primitives when the itinerary, tool result, or approval needs a different place in the page.
+
+The component tree does not own the agent's reasoning loop or persistence. It renders the current conversation and dispatches user actions to the adapter. [Follow a conversation](/docs/langgraph/concepts/conversation-turns) explains that boundary from the first request to a saved thread.
+
 ## How it fits
 
 <StackDiagram
@@ -23,7 +29,7 @@ The library is organized into two layers: **primitives** and **compositions**.
 
 ### Primitives
 
-Primitives are low-level, headless components that read from an `Agent` and expose their state through content projection (`ng-template`). They carry no opinion about layout or styling. Reach for them when you need full control over how chat elements render.
+Primitives are low-level, headless components that read from an `Agent` and expose their state through content projection (`ng-template`). Template primitives let you provide the rendered content. Other primitives, including the input and tool-call controls, include their own interaction and styling. Compose the pieces when you need control over the surrounding layout or message presentation.
 
 | Primitive | Selector | Purpose |
 |-----------|----------|---------|
@@ -67,7 +73,7 @@ Compositions are opinionated, styled components that combine primitives into rea
 <chat [agent]="chatRef" />
 ```
 
-**Assemble primitives** when you need to customize layout, add components between sections, change the message rendering logic, or integrate chat into a larger dashboard. Primitives give you building blocks without opinions.
+**Assemble primitives** when you need to customize layout, add components between sections, change the message rendering logic, or integrate chat into a larger dashboard. Choose headless template primitives where you need custom markup, and styled primitives where their interaction matches your product.
 
 ```html
 <chat-message-list [agent]="chatRef">

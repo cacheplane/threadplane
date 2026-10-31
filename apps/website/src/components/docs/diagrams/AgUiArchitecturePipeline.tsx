@@ -16,6 +16,7 @@ export function AgUiArchitecturePipeline() {
       viewWidth={640}
       viewHeight={408}
       label="AG-UI adapter pipeline: an Angular component reads the Agent contract, toAgent reduces AG-UI events into signals via the AbstractAgent protocol client, which talks to the backend."
+      description="Read from top to bottom. Your Angular component reads messages, status, isLoading, error, toolCalls, state and events$ from the @threadplane/chat Agent contract. The @threadplane/ag-ui adapter uses toAgent() to reduce protocol events into those signals. Its AbstractAgent client, supplied by @ag-ui/client, connects to an AG-UI backend. Tests can substitute an in-process fake agent at that boundary."
     >
       <DiagramNode x={130} y={16} w={380} h={44} title="Your Angular component" align="middle" titleStyle="sans" />
       <DiagramEdge d="M320 60 V80" slug={SLUG} arrow />

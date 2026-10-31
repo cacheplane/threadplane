@@ -3,7 +3,15 @@ import type { ExampleCodeContext } from '../../lib/example-code';
 
 const source = `# React chat generative UI preview
 
-This experimental example composes native React MessageList, Markdown, Reasoning, ToolObservation, ChatInput and RenderSpec with the existing Python Chat Generative UI graph. The React, core, content and neutral LangGraph candidates remain private packages built from source. Angular remains the default on this canonical guide; its progressive rendering behavior is documented in the Angular article.
+Render an airline dashboard inside a conversation using components your application owns. The agent supplies layout and data; the registry decides which React views those names can create.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Compose text and generated content
+
+The application continues to use \`MessageList\`, Markdown, and tool observations for the conversation. For an admitted dashboard specification it adds \`RenderSpec\` with a closed registry and the matching state. Keeping those paths explicit lets ordinary text remain readable while generated content uses a controlled set of components. This example waits for a confirmed layout rather than promising Angular’s progressive rendering behavior.
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Start a conversation
 

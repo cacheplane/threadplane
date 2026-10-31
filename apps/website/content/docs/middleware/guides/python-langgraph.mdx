@@ -5,7 +5,7 @@ description: The threadplane-middleware Python package — binding browser-decla
 
 # Python LangGraph Middleware
 
-The Python package is `threadplane-middleware`. It is the Python LangGraph twin of `@threadplane/middleware/langgraph`: it binds browser-declared client-tool stubs onto a chat model and routes client-tool-only turns to `END`.
+The Python package is `threadplane-middleware`. It is the Python LangGraph twin of `@threadplane/middleware/langgraph`: it binds browser-declared client-tool stubs onto a chat model and routes responses containing only client tool calls to `END`. That ends the current run so the browser can execute the tool; a continuation can still belong to the same user turn.
 
 ## Install
 
@@ -49,7 +49,7 @@ The helper reads `state["tools"]` first and falls back to `state["client_tools"]
 
 ## Route after the agent
 
-Use `route_after_agent()` from a LangGraph conditional edge. It returns the server tools node name when the last model message contains a server or unknown tool call. It returns `__end__` when the turn has only client tool calls or no tool calls.
+Use `route_after_agent()` from a LangGraph conditional edge. It returns the server tools node name when the last model message contains a server or unknown tool call. It returns `__end__` when the last model response has only client tool calls or no tool calls.
 
 ```python
 from langgraph.graph import END, StateGraph
