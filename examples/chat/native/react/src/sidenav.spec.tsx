@@ -5,6 +5,7 @@ import {
   fireEvent,
   render,
   waitFor,
+  within,
 } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { createReactApplication } from './application';
@@ -15,6 +16,7 @@ import { NativeNavigation } from './native-navigation';
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 function navigationFixture(
@@ -59,7 +61,22 @@ function navigationFixture(
   return { fixture, media, listeners, io, application };
 }
 
-it('search requests reveal the retained filter and focus it again without extra I/O', async () => {
+it('search requests open the palette while retaining directory filters and focus ownership without extra I/O', async () => {
+  Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
+    configurable: true,
+    value: vi.fn(function (this: HTMLDialogElement) {
+      this.setAttribute('open', '');
+    }),
+  });
+  Object.defineProperty(HTMLDialogElement.prototype, 'close', {
+    configurable: true,
+    value: vi.fn(function (this: HTMLDialogElement) {
+      this.removeAttribute('open');
+    }),
+  });
+  vi.spyOn(HTMLElement.prototype, 'getClientRects').mockReturnValue([
+    {},
+  ] as unknown as DOMRectList);
   const { fixture, application, media, io } = navigationFixture();
   try {
     application.start();
@@ -80,30 +97,39 @@ it('search requests reveal the retained filter and focus it again without extra 
     const search = view.getByRole('button', {
       name: 'Search loaded conversations',
     });
+    const expectSearchAndDismiss = () => {
+      const dialog = view.getByRole('dialog', {
+        name: 'Search loaded conversations',
+      });
+      const query = within(dialog).getByRole('combobox');
+      expect(document.activeElement).toBe(query);
+      fireEvent.keyDown(query, { key: 'Escape' });
+      expect(view.queryByRole('dialog')).toBeNull();
+    };
     fireEvent.click(search);
-    expect(document.activeElement).toBe(filter);
+    expectSearchAndDismiss();
     input.focus();
     view.rerender(<App application={application} presentation="sidenav" />);
     expect(document.activeElement).toBe(input);
     search.focus();
     fireEvent.keyDown(search, { key: 'k', metaKey: true });
-    expect(document.activeElement).toBe(filter);
+    expectSearchAndDismiss();
     fireEvent.click(
       view.getByRole('button', { name: 'Collapse conversations' })
     );
     fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
-    expect(document.activeElement).toBe(filter);
+    expectSearchAndDismiss();
     expect(view.getByRole('searchbox')).toBe(filter);
     fireEvent.click(
       view.getByRole('button', { name: 'Collapse conversations' })
     );
     act(() => media.resize(true));
     fireEvent.keyDown(window, { key: 'k', metaKey: true });
-    expect(document.activeElement).toBe(filter);
+    expectSearchAndDismiss();
     expect(view.getByRole('searchbox')).toBe(filter);
     search.focus();
     fireEvent.click(search);
-    expect(document.activeElement).toBe(filter);
+    expectSearchAndDismiss();
     fireEvent.click(view.getByRole('button', { name: 'Close conversations' }));
     fireEvent.click(view.getByRole('button', { name: 'Open conversations' }));
     expect(document.activeElement).toBe(

@@ -1,6 +1,11 @@
 'use client';
 export { ConfirmDialog, type ConfirmDialogProps } from './confirm-dialog.js';
 export {
+  HistorySearchPalette,
+  type HistorySearchPaletteProps,
+  type HistorySearchResult,
+} from './history-search-palette.js';
+export {
   ThreadRenameForm,
   type ThreadRenameFormProps,
 } from './thread-rename-form.js';

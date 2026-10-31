@@ -17,6 +17,8 @@ test('plain declaration proof checks navigation, sidebar and thread-list type-on
   writeFileSync(join(directory, 'package.json'), JSON.stringify({ name: '@threadplane/react', type: 'module', exports: { './chat': { types: './chat.d.ts' } } }));
   writeFileSync(join(consumer, 'package.json'), '{"type":"module"}');
   const declaration = `export interface ThreadRenameFormProps { readonly value: string; readonly onValueChange: (value: string) => void; readonly onSubmit: () => void; readonly onCancel: () => void; readonly pending?: boolean; readonly error?: string; readonly label?: string; readonly className?: string; }
+export interface HistorySearchResult { readonly id: string; readonly title: string; readonly subtitle?: string; }
+export interface HistorySearchPaletteProps { readonly open: boolean; readonly query: string; readonly results: readonly HistorySearchResult[]; readonly onQueryChange: (query: string) => void; readonly onSelect: (id: string) => void; readonly onClose: () => void; readonly loading?: boolean; readonly label?: string; readonly description?: string; readonly placeholder?: string; readonly closeLabel?: string; readonly className?: string; readonly returnFocusTo?: HTMLElement | null; }
 export interface OverflowMenuItem { readonly id: string; readonly label: string; readonly disabled?: boolean; readonly tone?: 'normal' | 'destructive'; }
 export interface OverflowMenuProps { readonly items: readonly OverflowMenuItem[]; readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly onSelect: (itemId: string, event: import('react').MouseEvent<HTMLButtonElement>) => void; readonly label: string; readonly className?: string; readonly disabled?: boolean; readonly anchorPoint?: { readonly x: number; readonly y: number } | null; readonly returnFocusTo?: HTMLElement | null; }
 export type ChatSidenavMode = 'expanded' | 'collapsed' | 'drawer';
@@ -39,7 +41,7 @@ export interface ConfirmDialogProps { readonly open: boolean; readonly title: st
   assert.equal(compile(declaration), '');
   assert.match(compile(declaration.replaceAll('ConfirmDialogProps', 'MissingConfirmDialogProps')), /ConfirmDialogProps/);
   assert.match(compile(declaration.replaceAll('ThreadRenameFormProps', 'MissingRenameFormProps')), /ThreadRenameFormProps/);
-  const renameEnd = declaration.indexOf('export interface OverflowMenuItem');
+  const renameEnd = declaration.indexOf('export interface HistorySearchResult');
   for (const [before, after] of [
     ['readonly value: string;', 'readonly value?: string;'],
     ['readonly value: string;', 'value: string;'],
@@ -76,6 +78,16 @@ export interface ConfirmDialogProps { readonly open: boolean; readonly title: st
     assert.ok(declaration.slice(start, end).includes(before), `mutation target ${name}: ${before}`);
     return declaration.slice(0, start) + declaration.slice(start, end).replace(before, after) + declaration.slice(end);
   };
+  for (const [name, before, after] of [
+    ['HistorySearchResult', 'readonly id: string;', 'id: string;'],
+    ['HistorySearchResult', 'readonly title: string;', 'readonly title?: string;'],
+    ['HistorySearchResult', 'readonly subtitle?: string;', 'readonly subtitle?: number;'],
+    ['HistorySearchPaletteProps', 'readonly open: boolean;', 'readonly open?: boolean;'],
+    ['HistorySearchPaletteProps', 'readonly query: string;', 'query: string;'],
+    ['HistorySearchPaletteProps', 'readonly results: readonly HistorySearchResult[];', 'readonly results: HistorySearchResult[];'],
+    ['HistorySearchPaletteProps', 'readonly onSelect: (id: string) => void;', 'readonly onSelect: (id: number) => void;'],
+    ['HistorySearchPaletteProps', 'readonly onClose: () => void;', 'readonly onClose?: () => void;'],
+  ]) assert.match(compile(mutateInterface(name, before, after)), /HistorySearch|false.*true/, `${name}: ${before} → ${after}`);
   assert.match(compile(declaration.replaceAll('ProjectNameFormProps', 'MissingProjectNameFormProps')), /ProjectNameFormProps/);
   for (const [name, before, alternatives] of [
     ...[
@@ -458,7 +470,7 @@ for (const [name, entry, files] of [
 });
 test('React chat requires its real supported export', () => {
   const component = () => undefined;
-  const supported = { ProjectNameForm: component, ProjectList: component, OverflowMenu: component, ApprovalCard: component, Chat: component, ChatPopup: component, ChatSidebar: component, ChatSidenav: component, ChatSidenavScrim: component, ChatInput: component, Citations: component, MessageList: component, MessageActions: component, Reasoning: component, TextTranscript: component, ToolObservation: component, ThreadList: component, ThreadRenameForm: component, ConfirmDialog: component };
+  const supported = { HistorySearchPalette: component, ProjectNameForm: component, ProjectList: component, OverflowMenu: component, ApprovalCard: component, Chat: component, ChatPopup: component, ChatSidebar: component, ChatSidenav: component, ChatSidenavScrim: component, ChatInput: component, Citations: component, MessageList: component, MessageActions: component, Reasoning: component, TextTranscript: component, ToolObservation: component, ThreadList: component, ThreadRenameForm: component, ConfirmDialog: component };
   assert.throws(() => packageVerifier.assertSupportedExports('react/chat', {}), /ApprovalCard/);
   for (const name of Object.keys(supported)) {
     const { [name]: _omitted, ...rest } = supported;

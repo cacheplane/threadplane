@@ -195,6 +195,14 @@ test('installed React sidenav retains navigation, draft and a running response a
       name: 'Search loaded conversations',
       exact: true,
     });
+    const expectPaletteAndDismiss = async () => {
+      const palette = page.getByRole('dialog', {
+        name: 'Search loaded conversations', exact: true,
+      });
+      await expect(palette.getByRole('combobox')).toBeFocused();
+      await page.keyboard.press('Escape');
+      await expect(palette).toHaveCount(0);
+    };
     const expectSearchGeometry = async () => {
       const geometry = await search.evaluate((button) => {
         const box = button.getBoundingClientRect();
@@ -703,16 +711,16 @@ test('installed React sidenav retains navigation, draft and a running response a
       'Control+K Meta+K'
     );
     await search.click();
-    await expect(filter).toBeFocused();
+    await expectPaletteAndDismiss();
     for (const chord of ['Control+k', 'Meta+k']) {
       await collapse.focus();
       await page.keyboard.press(chord);
-      await expect(filter).toBeFocused();
+      await expectPaletteAndDismiss();
     }
     for (const activation of ['Enter', 'Space']) {
       await search.focus();
       await page.keyboard.press(activation);
-      await expect(filter).toBeFocused();
+      await expectPaletteAndDismiss();
     }
     for (const editor of [filter, draft]) {
       await editor.focus();
@@ -777,15 +785,15 @@ test('installed React sidenav retains navigation, draft and a running response a
       fullPage: true,
     });
     await search.click();
-    await expect(filter).toBeFocused();
+    await expectPaletteAndDismiss();
     await collapse.click();
     await expand.focus();
     await page.keyboard.press('Control+k');
-    await expect(filter).toBeFocused();
+    await expectPaletteAndDismiss();
     await collapse.click();
     await expand.focus();
     await page.keyboard.press('Meta+k');
-    await expect(filter).toBeFocused();
+    await expectPaletteAndDismiss();
     await collapse.click();
     const compact = page.locator('.tp-chat-sidenav__collapsed-content');
     const compactAlpha = compact.getByRole('button', {
@@ -899,7 +907,7 @@ test('installed React sidenav retains navigation, draft and a running response a
     await page.keyboard.press('Meta+b');
     await expect(expand).toBeFocused();
     await page.keyboard.press('Control+k');
-    await expect(filter).toBeFocused();
+    await expectPaletteAndDismiss();
     await expect(page.locator('.submission-status')).toHaveText(
       'Response in progress…'
     );
@@ -932,7 +940,7 @@ test('installed React sidenav retains navigation, draft and a running response a
       for (const chord of ['Control+k', 'Meta+k']) {
         await launcher.focus();
         await page.keyboard.press(chord);
-        await expect(filter).toBeFocused();
+        await expectPaletteAndDismiss();
         await expectSearchGeometry();
         await close.click();
         await expect(nav).toBeHidden();
@@ -953,10 +961,10 @@ test('installed React sidenav retains navigation, draft and a running response a
       for (const chord of ['Control+k', 'Meta+k']) {
         await close.focus();
         await page.keyboard.press(chord);
-        await expect(filter).toBeFocused();
+        await expectPaletteAndDismiss();
       }
       await search.click();
-      await expect(filter).toBeFocused();
+      await expectPaletteAndDismiss();
       await expectSearchGeometry();
       await expectCopyGeometry();
       const beforeContext = (await clipboardState()).writes;
