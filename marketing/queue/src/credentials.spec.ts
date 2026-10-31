@@ -73,7 +73,9 @@ describe('loadAdapterOptions', () => {
     expect(upserts).toHaveLength(1);
     expect(transactionCalls()).toBe(0);
     expect(upserts[0].channel).toBe('x');
-    expect(upserts[0].sealed).not.toContain('r2');
+    // Random base64url can contain short token substrings by coincidence.
+    // Verify the encrypted envelope and authenticated round-trip instead.
+    expect(upserts[0].sealed).toMatch(/^v1\.[\w-]+\.[\w-]+\.[\w-]+$/u);
     expect(JSON.parse(unseal(upserts[0].sealed, key))).toEqual({
       accessToken: 'a2',
       refreshToken: 'r2',
