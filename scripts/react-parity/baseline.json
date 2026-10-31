@@ -1,14 +1,9 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "0e36e17dd7437a5d2299611cf3ee6de63aff8226",
+  "baselineHead": "8adc9e6819d64a4c98aca713dac4e79de03ca114",
   "sourceState": {
     "modified": [
-      "libs/react/README.md",
-      "libs/react/src/chat/confirm-dialog.tsx",
-      "libs/react/src/chat/history-search-palette.tsx",
-      "libs/react/src/chat/index.ts",
-      "libs/react/src/chat/internal/dialog-presentation.ts",
-      "libs/react/src/chat/styles.css"
+      ".github/workflows/ci.yml"
     ],
     "untracked": []
   },
@@ -2182,7 +2177,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "3f3d99baa1cd7e38d701d3697ef709c1b0a1fc67ebae4d0f19acf9cf7b96e087"
+      "sha256": "e018a301b794e9aa15929109f6a51388eddd569d38f6cf5f458b3d8faf3b5577"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",

@@ -101,7 +101,7 @@ jobs:
       # classifier walk.
       - run: npm ci
       - name: Test CI scope classifier
-        run: node --test scripts/configure-ci-apt.spec.mjs scripts/commit-staged-via-api.spec.mjs scripts/ci-scope.spec.mjs scripts/cockpit-matrix.spec.mjs scripts/cockpit-frontend-matrix.spec.mjs scripts/cockpit-ports.spec.mjs scripts/cockpit-runtime-bridge-coverage.spec.mjs scripts/react-cockpit/ag-ui-client-tools-configuration.spec.mjs scripts/react-cockpit/ag-ui-client-tools-preparation.spec.mjs scripts/react-cockpit/runtimes-microsoft-agent-framework-configuration.spec.mjs scripts/react-cockpit/prepare-native-maf-fixture.spec.mjs scripts/react-cockpit/runtimes-aws-strands-configuration.spec.mjs scripts/react-cockpit/prepare-native-strands-fixture.spec.mjs scripts/react-cockpit/chat-theming-configuration.spec.mjs scripts/react-cockpit/consumer-preparation.spec.mjs scripts/website-angular-startup.spec.mjs
+        run: node --test scripts/configure-ci-apt.spec.mjs scripts/commit-staged-via-api.spec.mjs scripts/ci-scope.spec.mjs scripts/cockpit-matrix.spec.mjs scripts/cockpit-frontend-matrix.spec.mjs scripts/cockpit-ports.spec.mjs scripts/cockpit-runtime-bridge-coverage.spec.mjs scripts/react-cockpit/ag-ui-client-tools-configuration.spec.mjs scripts/react-cockpit/ag-ui-client-tools-preparation.spec.mjs scripts/react-cockpit/runtimes-microsoft-agent-framework-configuration.spec.mjs scripts/react-cockpit/prepare-native-maf-fixture.spec.mjs scripts/react-cockpit/runtimes-aws-strands-configuration.spec.mjs scripts/react-cockpit/prepare-native-strands-fixture.spec.mjs scripts/react-cockpit/chat-theming-configuration.spec.mjs scripts/react-cockpit/consumer-preparation.spec.mjs scripts/website-angular-startup.spec.mjs scripts/website-agents-startup.spec.mjs
       - name: Test Debug static configuration without Python workers
         run: node --test --test-name-pattern='^debug ' scripts/react-cockpit/chat-debug-configuration.spec.mjs
       - name: Detect changed CI surfaces
@@ -1125,6 +1125,9 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - name: Record Website runner capacity
+        run: |
+          node -e 'const os = require("node:os"); console.log("Website runner capacity " + JSON.stringify({node: process.version, cpuModels: [...new Set(os.cpus().map(cpu => cpu.model))], availableParallelism: os.availableParallelism(), totalMemoryBytes: os.totalmem()}))'
       - run: npm ci
       - name: Prepare frozen dashboard browser producer
         uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57
@@ -1160,6 +1163,7 @@ jobs:
           # runs. Main, manual runs and fork PRs keep complete local coverage.
           WEBSITE_E2E_DEPLOYED_OWNER: ${{ (github.event_name == 'pull_request' || github.event_name == 'merge_group') && needs.ci-scope.outputs.website_e2e == 'true' && (github.event_name == 'merge_group' || github.event.pull_request.head.repo.full_name == github.repository) }}
           WEBSITE_ANGULAR_STARTUP: ${{ matrix.suite == 'control-plane' && '2' || '' }}
+          WEBSITE_AGENTS_STARTUP: ${{ matrix.suite == 'agents' && '2' || '' }}
 
   website-production-checks:
     name: Website — production copy / stage

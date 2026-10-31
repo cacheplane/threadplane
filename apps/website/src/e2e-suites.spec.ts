@@ -9,6 +9,7 @@ import {
 } from '../suite.playwright.config';
 import { createWebsitePlaywrightConfig } from '../playwright.config';
 import { poolAngularServers } from '../angular-startup';
+import { poolAgentServers } from '../agents-startup';
 
 const root = resolve(import.meta.dirname, '..');
 const project = JSON.parse(readFileSync(resolve(root, 'project.json'), 'utf8'));
@@ -180,6 +181,55 @@ describe('bounded Angular startup', () => {
     expect(createDeployedWebsitePlaywrightConfig({
       ...deployed, WEBSITE_ANGULAR_STARTUP: '2',
     })).toEqual(createDeployedWebsitePlaywrightConfig(deployed));
+  });
+});
+
+describe('bounded Agents startup', () => {
+  it('rejects missing, duplicate or interleaved smoke/server chains', () => {
+    const config = createWebsiteSuitePlaywrightConfig('agents', { CI: 'true' });
+    const servers = Array.isArray(config.webServer) ? config.webServer : [];
+    const first = servers.findIndex(s => s.command.startsWith('npx nx run cockpit-deep-agents-'));
+    expect(first).toBeGreaterThan(0);
+    expect(() => poolAgentServers(servers.filter((_, i) => i !== first))).toThrow(/five/);
+    const duplicates = [...servers];
+    duplicates[first] = duplicates[first + 1];
+    expect(() => poolAgentServers(duplicates)).toThrow(/unique/);
+    const interleaved = [...servers];
+    interleaved.splice(first + 1, 0, { command: 'fixture', url: 'http://localhost:9999' });
+    expect(() => poolAgentServers(interleaved)).toThrow(/contiguous/);
+  });
+
+  it('preserves all five complete smoke/server commands, startup barriers and browser settings', () => {
+    const environment = { CI: 'true', WEBSITE_E2E_DEPLOYED_OWNER: 'true' };
+    const original = createWebsiteSuitePlaywrightConfig('agents', environment);
+    const pooled = createWebsiteSuitePlaywrightConfig('agents', {
+      ...environment, WEBSITE_AGENTS_STARTUP: '2',
+    });
+    const servers = Array.isArray(pooled.webServer) ? pooled.webServer : [];
+    const pool = servers.find(s => s.command === 'exec node scripts/website-agents-startup.mjs');
+    expect(pool).toBeDefined();
+    const children = JSON.parse(pool?.env?.['WEBSITE_AGENTS_SERVERS'] ?? '[]');
+    expect(children).toHaveLength(5);
+    expect(servers.flatMap(s => s === pool ? children : [s])).toEqual(original.webServer);
+    expect(children.map((s: { url: string }) => new URL(s.url).port).sort()).toEqual(['4628', '4629', '4630', '4631', '4632']);
+    expect(children.every((s: { command: string; timeout: number }) => s.command.includes(':smoke && node ') && s.timeout === 180_000)).toBe(true);
+    expect(pool).toMatchObject({
+      cwd: '../..', timeout: 900_000,
+      wait: { stdout: /Website Agents servers ready/ },
+      gracefulShutdown: { signal: 'SIGTERM', timeout: 15_000 },
+    });
+    expect({ ...pooled, webServer: undefined }).toEqual({ ...original, webServer: undefined });
+  });
+
+  it('requires explicit CI concurrency two and leaves every other group and deployed mode unchanged', () => {
+    expect(() => createWebsiteSuitePlaywrightConfig('agents', { WEBSITE_AGENTS_STARTUP: '2' })).toThrow(/CI/);
+    expect(() => createWebsiteSuitePlaywrightConfig('agents', { CI: 'true', WEBSITE_AGENTS_STARTUP: '3' })).toThrow(/2/);
+    for (const suite of websiteSuites.filter(s => s !== 'agents')) {
+      const env = { CI: 'true', WEBSITE_ANGULAR_STARTUP: '2' };
+      expect(createWebsiteSuitePlaywrightConfig(suite, { ...env, WEBSITE_AGENTS_STARTUP: '2' })).toEqual(createWebsiteSuitePlaywrightConfig(suite, env));
+    }
+    const deployed = { CI: 'true', BASE_URL: 'https://preview.example.test' };
+    expect(createDeployedWebsitePlaywrightConfig({ ...deployed, WEBSITE_AGENTS_STARTUP: '2' })).toEqual(createDeployedWebsitePlaywrightConfig(deployed));
   });
 });
 
