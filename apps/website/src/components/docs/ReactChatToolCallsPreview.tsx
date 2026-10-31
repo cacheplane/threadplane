@@ -3,7 +3,26 @@ import type { ExampleCodeContext } from '../../lib/example-code';
 
 const source = `# React chat tool calls preview
 
-This experimental example composes native React ToolObservation, MessageList, Markdown and ChatInput with the existing Python Chat Tool Calls graph. The React, core, content and neutral LangGraph candidates remain private packages built from source.
+Show the lookups behind an answer without asking readers to infer them from prose. Tool calls have stable identities, so parallel requests to the same function can retain their own arguments and results.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Observe the call the backend already made
+
+\`ToolObservation\` displays application-supplied argument and result text. It does not execute tools. The example associates each observation with its requesting assistant and confirms the saved root conversation before another submission. A finalized result means the tool produced data; whether that data represents a successful business outcome remains application-specific.
+
+~~~tsx
+import { ToolObservation } from '@threadplane/react/chat';
+
+export function RouteLookup({ argumentsText, resultText }: {
+  argumentsText: string;
+  resultText?: string;
+}) {
+  return <ToolObservation name="find_routes" argumentsText={argumentsText} resultText={resultText} />;
+}
+~~~
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Inspect observed calls and results
 

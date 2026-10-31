@@ -3,7 +3,15 @@ import { MdxRenderer } from './MdxRenderer';
 
 const source = `# React Microsoft Agent Framework expense preview
 
-This experimental private source-build preview handles bounded fictional expenses. No real reimbursement occurs. The native React, core, content, and AG-UI candidate packages are private artifacts, with no public npm availability claim. Angular retains the canonical provider example and shared backend and prompt. This React preview uses the same generated Microsoft Agent Framework service directly; it does not claim the Angular wrapper's specialist streaming behavior.
+Review a fictional expense with a Microsoft Agent Framework backend. React displays the proposal and result; AG-UI carries the run events and the explicit approval response.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Preserve the pending decision identity
+
+The native session observes the backend’s interrupt, and the application supplies callbacks only for the current expense decision. It then checks the resumed run and literal tool result before reporting the outcome. The state panel is an observation of the backend; it cannot substitute for the pending interrupt when authorizing a command.
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Request and review an expense
 

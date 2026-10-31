@@ -3,7 +3,24 @@ import { MdxRenderer } from './MdxRenderer';
 
 const source = `# React Component Registry preview
 
-A React registry maps authored type names to read-only view components. This experimental local example uses the installed **@threadplane/react/render** component and three authored JSON samples to show native registered views, omitted views and an authored fallback.
+Decide which component names a generated layout may use. A registry maps a plain name such as Badge to an authored React view, giving your application control of behavior and presentation.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Register the view contract
+
+Each registry component receives \`RenderViewProps\`: resolved values in \`props\`, optional bindings, an element key, loading state, and children. A container must render its children exactly where they should appear. Keep the registry stable and define an intentional fallback for types your application does not provide.
+
+~~~tsx
+import type { ReactRenderRegistry } from '@threadplane/react/render';
+
+export const tripViews: ReactRenderRegistry = {
+  Heading: ({ props }) => <h2>{String(props['text'] ?? '')}</h2>,
+  Card: ({ children }) => <section className="trip-card">{children}</section>,
+};
+~~~
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Try each registry mode
 

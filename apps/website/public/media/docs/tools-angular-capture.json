@@ -1,0 +1,215 @@
+{
+  "version": 1,
+  "id": "tools-angular",
+  "demo": "tools",
+  "frontend": "angular",
+  "recordedAt": "2026-10-30T18:34:34.071Z",
+  "sourceRevision": "c586a94bb20d9924058b9f6a067c709a159bd6b6",
+  "sourceKind": "fixture-backed-langgraph",
+  "sourceDescription": "Actual framework app and LangGraph runtime; existing aimock responses, 12-character chunks with 100ms fixture delay. No live provider requests.",
+  "input": "What's the weather in San Francisco?",
+  "viewport": {
+    "width": 640,
+    "height": 640
+  },
+  "theme": {
+    "mode": "light",
+    "mechanism": "existing tplane:theme host message"
+  },
+  "edits": {
+    "trimStart": 0.794,
+    "trimEnd": 15.084,
+    "speed": 1
+  },
+  "phases": [
+    {
+      "time": 0,
+      "text": "Send a message."
+    },
+    {
+      "time": 2.79,
+      "text": "The browser runs the weather tool."
+    },
+    {
+      "time": 9.283999999999999,
+      "text": "The returned result completes the turn."
+    }
+  ],
+  "finalText": "What's the weather in San Francisco?\nget_weather\n\nIt's 68\u00b0F and sunny in San Francisco right now.",
+  "requests": [
+    {
+      "method": "POST",
+      "path": "/api/threads"
+    },
+    {
+      "method": "POST",
+      "path": "/api/threads/01a18e17-6c1f-7eb1-bd43-ea00d301eb50/runs/stream"
+    },
+    {
+      "method": "POST",
+      "path": "/api/threads/01a18e17-6c1f-7eb1-bd43-ea00d301eb50/history"
+    },
+    {
+      "method": "POST",
+      "path": "/api/threads/01a18e17-6c1f-7eb1-bd43-ea00d301eb50/runs/stream"
+    },
+    {
+      "method": "POST",
+      "path": "/api/threads/01a18e17-6c1f-7eb1-bd43-ea00d301eb50/history"
+    }
+  ],
+  "sourceHashes": {
+    "apps/website/scripts/record-docs-media.mjs": "66da48b538efb967f75ec92f98b1dfe91c7de9fe7b1e7e0a4d27b3b8ce47657c",
+    "apps/website/scripts/encode-docs-media.mjs": "c290872256a41268974dcf232c590b3933363533197d4cb36c49817892125ed7",
+    "libs/example-layouts/src/lib/install-embedded-theme.ts": "43ac4509c68c7e5b07afea1100f12b1db30ab8273c99d7bf7c9bdcd479d9b6bf",
+    "cockpit/langgraph/streaming/angular/e2e/fixtures/streaming.json": "5ce36b2b40561fbc46ba0dd2cb73a71b794d2ab1ad9fad9dc03a34b4886cbf74",
+    "cockpit/langgraph/streaming/python/src/graph.py": "97db9510fc245cfa0c151404869f6a35dc285cb501250743d4daab7ace556bf2",
+    "cockpit/langgraph/persistence/angular/e2e/fixtures/persistence.json": "3094094800130ddae423e1744792677314a553ec5b4198107bed4d0bb60d02a3",
+    "cockpit/langgraph/persistence/python/src/graph.py": "b61c7846814b394d9fdc0cd412a0a8936bfa2bba21d84aab80b7eacad764d20d",
+    "cockpit/langgraph/client-tools/angular/e2e/fixtures/client-tools.json": "ccfae8ada335ffaf6a0eef56d4bc69045200a1a12f5ae3c0079b6b6987d13906",
+    "cockpit/langgraph/client-tools/python/src/graph.py": "f11ff38e2f0da2450d74596c55791fc06da9e3dcdbc8f8c09a070164a76d5de7",
+    "cockpit/langgraph/client-tools/angular/src/app/agent-ref.ts": "eab9d5ad23451124343afe03a96155bb70642f0815c11ebd5f89beaef764191f",
+    "cockpit/langgraph/client-tools/angular/src/app/app.config.ts": "c969602ba35eb18f382c2961363392b51a4feae97e1b575f32b9b82eae83b56b",
+    "cockpit/langgraph/client-tools/angular/src/app/client-tools.component.ts": "ad9a79b42fe34bd90326c048bfd11e3eb08063254573ee3a212847a37fd8fc51",
+    "cockpit/langgraph/client-tools/angular/src/app/confirm-booking.component.ts": "8724932728c70d674a77a14348d685d41ceee5d11cd8fe8f85c588f9227ed9c7",
+    "cockpit/langgraph/client-tools/angular/src/app/schemas.ts": "47a78e72ae10242e4f4d5c809484408898056b8b206e14dfeb5bca47930b8eec",
+    "cockpit/langgraph/client-tools/angular/src/app/weather-card.component.ts": "70d20fd346a59a0f2f0b2ed80cf9274a55a55c8893273634103784a36294ce82",
+    "cockpit/langgraph/client-tools/angular/src/environments/environment.development.ts": "19dab042b3dcf3e3abdfcd9fdaf7b19aa6a3b2607242ce43b02cbde1545553c0",
+    "cockpit/langgraph/client-tools/angular/src/environments/environment.ts": "7df2312d31758a1aad50624f97db8d6668fb8578514a41843292f995d9d4c80b",
+    "cockpit/langgraph/client-tools/angular/src/index.html": "d574dea0f19718c98368f7f61570ae1ccc8bc2f15e80be1aa2b343f903a38737",
+    "cockpit/langgraph/client-tools/angular/src/index.ts": "dda897444b5d36f5b251c8f0de3a206bb0859e6a6e9f29cd67cadbfb77308482",
+    "cockpit/langgraph/client-tools/angular/src/main.cockpit.ts": "78678fce39021d3f4865244a3f82a0a79a721076f80cf84de96cc5beb7d02512",
+    "cockpit/langgraph/client-tools/angular/src/main.ts": "78678fce39021d3f4865244a3f82a0a79a721076f80cf84de96cc5beb7d02512",
+    "cockpit/langgraph/client-tools/angular/src/styles.css": "5610acf39c6c72065a24bb5b63082574fd82529ef45de2babc0a7e4cf809bd1c"
+  },
+  "buildHashes": {
+    "dist/cockpit/langgraph/client-tools/angular/3rdpartylicenses.txt": "0446f2a4ab53fc8f2ad1afbbc381038541a9cb0772d6ead88069690159d5c463",
+    "dist/cockpit/langgraph/client-tools/angular/chunk-25HJMBOB.js": "847747dbe82bd69b8614c055398a761aa7c349be9d36f6eac461aacf3899c9ca",
+    "dist/cockpit/langgraph/client-tools/angular/chunk-2GCYZQIZ.js": "e40b3fa5f0aa83f90395e38023e98dcfc113e666bc23d20621f8025aef0be7b1",
+    "dist/cockpit/langgraph/client-tools/angular/chunk-3F2VHBRP.js": "7834becef90e25e8165bc8ef28e426e113bd4e1304dd89c3f2addb6fc546f98f",
+    "dist/cockpit/langgraph/client-tools/angular/chunk-72M7S2I2.js": "e57d074fac3be8c6923af24cb11e5dfab7d59c1df65d6afa94b71fbba1084722",
+    "dist/cockpit/langgraph/client-tools/angular/chunk-A3W2L4NU.js": "7390d83f6d318bdadf695579e8db1ca18a0f523af06801ca502b6855dc083f97",
+    "dist/cockpit/langgraph/client-tools/angular/chunk-DAQOROHW.js": "17cd7e055ff48af6b500ca62e8fb5d81d31dc888ab59262c24ccfafb28388db0",
+    "dist/cockpit/langgraph/client-tools/angular/chunk-DNHGHCYD.js": "f247de25f5981e884ae4afc937c21910ba52d124e09b987d03d0aa9774e54409",
+    "dist/cockpit/langgraph/client-tools/angular/chunk-TEEJHA46.js": "401fa1f24a41db630f72a26280389e9e01525cbbb89956f9785db45ac388b85f",
+    "dist/cockpit/langgraph/client-tools/angular/chunk-U4EJBP5X.js": "ec5c778f6b96949b232487051519b25609e5c62d4f40fc1589cce8a2c10e1cbb",
+    "dist/cockpit/langgraph/client-tools/angular/chunk-Z7NGFKXH.js": "4500c6066ea110004f977cfb37d6c609c99beb3749e4da7b65311c3775e11ebd",
+    "dist/cockpit/langgraph/client-tools/angular/index.html": "3e5fdda0bac0fea9d7fae8dd1441b4948dbba3a28228924e5195ab54a348a280",
+    "dist/cockpit/langgraph/client-tools/angular/main.js": "f11484c9e7ca9da72f76f7e564ceec992148e4f4466be5703c04d546a7c181f7",
+    "dist/cockpit/langgraph/client-tools/angular/prerendered-routes.json": "a79ddcc8a115190e9c19479ed36914741a7d1db74f0a1153529efc80725505fe",
+    "dist/cockpit/langgraph/client-tools/angular/styles.css": "b0d7f947e70dea90c3311497b72c32ca63525d413f325eb6d48635f15d2cc468"
+  },
+  "rawSha256": "9b31f99e5aa223a234bc3fe2ab481ed98d062d64148c9ab04c381b3a774108ae",
+  "reproduction": "node apps/website/scripts/record-docs-media.mjs tools angular",
+  "duration": 14.28,
+  "captions": [
+    {
+      "from": 0,
+      "to": 2.79,
+      "text": "Send a message."
+    },
+    {
+      "from": 2.79,
+      "to": 9.284,
+      "text": "The browser runs the weather tool."
+    },
+    {
+      "from": 9.284,
+      "to": 14.28,
+      "text": "The returned result completes the turn."
+    }
+  ],
+  "ffmpeg": {
+    "version": "ffmpeg version 8.1.1 Copyright (c) 2000-2026 the FFmpeg developers",
+    "commands": [
+      [
+        "-ss",
+        "0.794",
+        "-i",
+        "<raw-capture.webm>",
+        "-t",
+        "14.29",
+        "-an",
+        "-vf",
+        "fps=25,format=yuv420p",
+        "-c:v",
+        "libx264",
+        "-crf",
+        "22",
+        "-preset",
+        "medium",
+        "-movflags",
+        "+faststart",
+        "<capture-directory>/encoded/tools-angular.mp4"
+      ],
+      [
+        "-ss",
+        "0.794",
+        "-i",
+        "<raw-capture.webm>",
+        "-t",
+        "14.29",
+        "-an",
+        "-vf",
+        "fps=25,format=yuv420p",
+        "-c:v",
+        "libvpx-vp9",
+        "-crf",
+        "32",
+        "-b:v",
+        "0",
+        "-row-mt",
+        "1",
+        "-cpu-used",
+        "4",
+        "<capture-directory>/encoded/tools-angular.webm"
+      ],
+      [
+        "-ss",
+        "12.28",
+        "-i",
+        "<capture-directory>/encoded/tools-angular.mp4",
+        "-frames:v",
+        "1",
+        "<capture-directory>/encoded/tools-angular-poster.png"
+      ],
+      [
+        "-i",
+        "<capture-directory>/encoded/tools-angular.mp4",
+        "-f",
+        "null",
+        "-"
+      ],
+      [
+        "-i",
+        "<capture-directory>/encoded/tools-angular.webm",
+        "-f",
+        "null",
+        "-"
+      ]
+    ]
+  },
+  "assets": {
+    "tools-angular.mp4": {
+      "sha256": "05f75f1ccb9afcd5eb126cbe23f2cf7aba538ce5f4065894d3775b27eb007bf1",
+      "bytes": 49751
+    },
+    "tools-angular.webm": {
+      "sha256": "c27452986ef2066a0810812e75f5b0f2b9438fdd6b37ee2b5c924ebcda9f2152",
+      "bytes": 58617
+    },
+    "tools-angular.vtt": {
+      "sha256": "62b5b0b06233e8a5171acd76c0394b06c90e077f219fe22beb542cd9ebea415a",
+      "bytes": 191
+    },
+    "tools-angular-poster.png": {
+      "sha256": "df4ea29e68a59005eb7b51deb4026ab6b564508c531520d289e7008b47fced3a",
+      "bytes": 40136
+    },
+    "tools-angular-transcript.txt": {
+      "sha256": "f5bc47fceb481233048c7aaf450fd860b38c529e2350defc46d8a6b5762b9896",
+      "bytes": 534
+    }
+  },
+  "sourceTreeDirty": true
+}

@@ -3,7 +3,15 @@ import { MdxRenderer } from './MdxRenderer';
 
 const source = `# React Mastra reservation preview
 
-This experimental private source-build preview handles a bounded fictional campsite reservation. No real booking occurs. The native React, core, content, and AG-UI candidate packages are private artifacts, with no public npm availability claim. Angular retains the full camping planner and canonical backend and prompts. This React preview uses that same actual Mastra service, without packing list, weather, or subagent parity.
+Connect a React conversation to a Mastra agent through AG-UI, including a human decision when the agent pauses. The UI stays focused on messages and decisions while the backend integration supplies the transport.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Use the runtime’s actual continuation contract
+
+Mastra’s HTTP service and persistence are part of this repository’s integration. The application observes the native AG-UI session and translates a person’s decision using that service’s resume convention. Do not substitute a different runtime’s approval payload merely because both display \`ApprovalCard\`. The walkthrough below follows the configured service and its stored pause.
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Approve or decline a fictional reservation
 

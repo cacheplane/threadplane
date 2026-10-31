@@ -10,6 +10,12 @@ Angular is the default Example UI. Its render surface can update progressively a
 
 The detection and rendering are adapter-neutral. This page uses `@threadplane/langgraph`; the same registry and store work over the [AG-UI adapter](/docs/ag-ui/guides/json-render), where the backend delivers data differently.
 
+## Turn data into an application view
+
+The trip planner can show an itinerary as a list of components instead of asking the traveler to read a long paragraph. The agent supplies a specification containing component names and data. Your application supplies the matching components and decides which names and values it accepts.
+
+The specification is data, not downloaded JavaScript. Keep local interaction, such as the selected itinerary day, in application state; send an agent request only when the user asks the agent to change the plan. The example below isolates the rendering path so you can see where the specification, registry, and state meet.
+
 ## What the demo does
 
 The Run tab shows the prebuilt `<chat>` composition. Choose "Airline operations dashboard" or write your own request. The model authors a layout from six supported view types: `dashboard_grid`, `container`, `stat_card`, `line_chart`, `bar_chart`, and `data_grid`. A layout may use any valid subset of this catalog; it does not need six elements.

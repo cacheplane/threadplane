@@ -1,0 +1,190 @@
+{
+  "version": 1,
+  "id": "ui-angular",
+  "demo": "ui",
+  "frontend": "angular",
+  "recordedAt": "2026-10-30T18:36:27.289Z",
+  "sourceRevision": "c586a94bb20d9924058b9f6a067c709a159bd6b6",
+  "sourceKind": "authored-local-json",
+  "sourceDescription": "Actual framework renderer playing the existing authored JSON sample; no model or backend.",
+  "input": "Play the first authored sample.",
+  "viewport": {
+    "width": 640,
+    "height": 640
+  },
+  "theme": {
+    "mode": "light",
+    "mechanism": "existing tplane:theme host message"
+  },
+  "edits": {
+    "trimStart": 0.237,
+    "trimEnd": 14.317,
+    "speed": 1
+  },
+  "phases": [
+    {
+      "time": 0,
+      "text": "Play the local JSON sample."
+    },
+    {
+      "time": 1.8329999999999997,
+      "text": "Partial JSON becomes components."
+    },
+    {
+      "time": 6.079,
+      "text": "Inspect the complete render."
+    }
+  ],
+  "finalText": "SPEC\nHeading + Text\nCard + Badge\nNested Layout\nComplete\nLIVE RENDER OUTPUT\nWelcome to Spec Rendering\n\nThis UI is rendered entirely from a JSON specification. Each element maps to a registered Angular component.\n\nSTREAMING JSON\n{\n  \"root\": \"root\",\n  \"elements\": {\n    \"root\": {\n      \"type\": \"Heading\",\n      \"props\": {\n        \"content\": \"Welcome to Spec Rendering\"\n      },\n      \"children\": [\n        \"desc\"\n      ]\n    },\n    \"desc\": {\n      \"type\": \"Text\",\n      \"props\": {\n        \"content\": \"This UI is rendered entirely from a JSON specification. Each element maps to a registered Angular component.\"\n      }\n    }\n  }\n}\nComplete\n100%\n400 / 400 chars\n1x\n2x\n4x",
+  "requests": [],
+  "sourceHashes": {
+    "apps/website/scripts/record-docs-media.mjs": "66da48b538efb967f75ec92f98b1dfe91c7de9fe7b1e7e0a4d27b3b8ce47657c",
+    "apps/website/scripts/encode-docs-media.mjs": "c290872256a41268974dcf232c590b3933363533197d4cb36c49817892125ed7",
+    "libs/example-layouts/src/lib/install-embedded-theme.ts": "43ac4509c68c7e5b07afea1100f12b1db30ab8273c99d7bf7c9bdcd479d9b6bf",
+    "cockpit/langgraph/streaming/angular/e2e/fixtures/streaming.json": "5ce36b2b40561fbc46ba0dd2cb73a71b794d2ab1ad9fad9dc03a34b4886cbf74",
+    "cockpit/langgraph/streaming/python/src/graph.py": "97db9510fc245cfa0c151404869f6a35dc285cb501250743d4daab7ace556bf2",
+    "cockpit/langgraph/persistence/angular/e2e/fixtures/persistence.json": "3094094800130ddae423e1744792677314a553ec5b4198107bed4d0bb60d02a3",
+    "cockpit/langgraph/persistence/python/src/graph.py": "b61c7846814b394d9fdc0cd412a0a8936bfa2bba21d84aab80b7eacad764d20d",
+    "cockpit/langgraph/client-tools/angular/e2e/fixtures/client-tools.json": "ccfae8ada335ffaf6a0eef56d4bc69045200a1a12f5ae3c0079b6b6987d13906",
+    "cockpit/langgraph/client-tools/python/src/graph.py": "f11ff38e2f0da2450d74596c55791fc06da9e3dcdbc8f8c09a070164a76d5de7",
+    "cockpit/render/spec-rendering/angular/src/app/app.config.ts": "9542f7891095468d4cf4d2e8c601d94b2c548711107b5a580a0854bbd9c76332",
+    "cockpit/render/spec-rendering/angular/src/app/spec-rendering.component.ts": "90c8e089f692e4a838c8b0d8e009848dab2fa62762def6afee8f3ab4374c3d32",
+    "cockpit/render/spec-rendering/angular/src/app/specs.ts": "1e98e7ed1ca1f0f20e5e82ed1bff5924fc40681c44cea462d465b53595974916",
+    "cockpit/render/spec-rendering/angular/src/environments/environment.development.ts": "26de76f7d69b20d01a87b700031ebb5055d7850e387e159e30af489ca7de12f5",
+    "cockpit/render/spec-rendering/angular/src/environments/environment.ts": "49920cd93bcba14c4c7785df73f51d1c0486d71e9d86775392bd96b65d9549e5",
+    "cockpit/render/spec-rendering/angular/src/index.html": "db209071f6890d7e7171c4d51eb44fb50f616e1c83912a4e4e853a5fbdf62ad9",
+    "cockpit/render/spec-rendering/angular/src/index.ts": "eaaec11379371015deb85cd9306a7d928df642cb2f9480c1817fd9ddf7ecb47c",
+    "cockpit/render/spec-rendering/angular/src/main.cockpit.ts": "1d153f95d242d9d052f187303fcbbc319222aa0f46bd60fe66ff33327a116d7b",
+    "cockpit/render/spec-rendering/angular/src/main.ts": "1fa221ba1fa3696eb1d68c599d86409e3aef0d1c2593a21694aaa880ba437180",
+    "cockpit/render/spec-rendering/angular/src/styles.css": "121fd281f61c5e154110916853602d473be677ba210cadd4bb700f3d8776b87b"
+  },
+  "buildHashes": {
+    "dist/cockpit/render/spec-rendering/angular/3rdpartylicenses.txt": "01850074c220aab495bfb1936cc8c37a2b96e1c5ef408b3473922c86f3dc3796",
+    "dist/cockpit/render/spec-rendering/angular/chunk-A3W2L4NU.js": "7390d83f6d318bdadf695579e8db1ca18a0f523af06801ca502b6855dc083f97",
+    "dist/cockpit/render/spec-rendering/angular/chunk-DAQOROHW.js": "17cd7e055ff48af6b500ca62e8fb5d81d31dc888ab59262c24ccfafb28388db0",
+    "dist/cockpit/render/spec-rendering/angular/chunk-JGTY2H72.js": "cd67266fffe5eea3308b1befed515939e115ebe2a42099ad22d3dcd58a7d77a6",
+    "dist/cockpit/render/spec-rendering/angular/chunk-KE2YWSAE.js": "9964ba7536f3158b5e247fa342e5495737e44c0f8c23ce3b76c1a181036d6ba7",
+    "dist/cockpit/render/spec-rendering/angular/chunk-RNFWUCE7.js": "02675f6f3d089ac8f0788ab8c3f617be2523f5d1dddd39a7be8177f8e50de001",
+    "dist/cockpit/render/spec-rendering/angular/chunk-RPE2FCF2.js": "db2d7b7e478997bb99cb545370bc29de559708bee74a4fd5149f617b12d05466",
+    "dist/cockpit/render/spec-rendering/angular/chunk-RZTZTMKF.js": "f77f267383cf233e575dbb05e94674117144a5ff4a7c2d4ad2664d36a42471b4",
+    "dist/cockpit/render/spec-rendering/angular/chunk-TEEJHA46.js": "401fa1f24a41db630f72a26280389e9e01525cbbb89956f9785db45ac388b85f",
+    "dist/cockpit/render/spec-rendering/angular/chunk-U4EJBP5X.js": "ec5c778f6b96949b232487051519b25609e5c62d4f40fc1589cce8a2c10e1cbb",
+    "dist/cockpit/render/spec-rendering/angular/index.html": "2b9a44e2ada2954f096086321d1ed43bb9ca3be6aeefe3bda722be1616cb5261",
+    "dist/cockpit/render/spec-rendering/angular/main.js": "dfb8a681f7ac0d32707421946b921fc5ba49e2a24680f5cf2c47f1aaf3314742",
+    "dist/cockpit/render/spec-rendering/angular/prerendered-routes.json": "a79ddcc8a115190e9c19479ed36914741a7d1db74f0a1153529efc80725505fe",
+    "dist/cockpit/render/spec-rendering/angular/styles.css": "857334d0f0242734e79838adda36cee3d69832a0ef5bf755e1bcad5e4ec0dbe0"
+  },
+  "rawSha256": "fa70cbac1c80a6592e1ee61a7df896dcd5f6df2b3570f6e71ec0f70659114eb8",
+  "reproduction": "node apps/website/scripts/record-docs-media.mjs ui angular",
+  "duration": 14.08,
+  "captions": [
+    {
+      "from": 0,
+      "to": 1.833,
+      "text": "Play the local JSON sample."
+    },
+    {
+      "from": 1.833,
+      "to": 6.079,
+      "text": "Partial JSON becomes components."
+    },
+    {
+      "from": 6.079,
+      "to": 14.08,
+      "text": "Inspect the complete render."
+    }
+  ],
+  "ffmpeg": {
+    "version": "ffmpeg version 8.1.1 Copyright (c) 2000-2026 the FFmpeg developers",
+    "commands": [
+      [
+        "-ss",
+        "0.237",
+        "-i",
+        "<raw-capture.webm>",
+        "-t",
+        "14.08",
+        "-an",
+        "-vf",
+        "fps=25,format=yuv420p",
+        "-c:v",
+        "libx264",
+        "-crf",
+        "22",
+        "-preset",
+        "medium",
+        "-movflags",
+        "+faststart",
+        "<capture-directory>/encoded/ui-angular.mp4"
+      ],
+      [
+        "-ss",
+        "0.237",
+        "-i",
+        "<raw-capture.webm>",
+        "-t",
+        "14.08",
+        "-an",
+        "-vf",
+        "fps=25,format=yuv420p",
+        "-c:v",
+        "libvpx-vp9",
+        "-crf",
+        "32",
+        "-b:v",
+        "0",
+        "-row-mt",
+        "1",
+        "-cpu-used",
+        "4",
+        "<capture-directory>/encoded/ui-angular.webm"
+      ],
+      [
+        "-ss",
+        "12.08",
+        "-i",
+        "<capture-directory>/encoded/ui-angular.mp4",
+        "-frames:v",
+        "1",
+        "<capture-directory>/encoded/ui-angular-poster.png"
+      ],
+      [
+        "-i",
+        "<capture-directory>/encoded/ui-angular.mp4",
+        "-f",
+        "null",
+        "-"
+      ],
+      [
+        "-i",
+        "<capture-directory>/encoded/ui-angular.webm",
+        "-f",
+        "null",
+        "-"
+      ]
+    ]
+  },
+  "assets": {
+    "ui-angular.mp4": {
+      "sha256": "1bb883c9fb6e0bf4ca5df6623ae9bad4c452ecc45eeb2d53127ad6bce25d1f8a",
+      "bytes": 142687
+    },
+    "ui-angular.webm": {
+      "sha256": "c096511e62b0aa1d3e6fd9a487206912cb64413233adea1aa695df3db2ec5b6f",
+      "bytes": 130318
+    },
+    "ui-angular.vtt": {
+      "sha256": "ab0bb3e610e0b286ff24f875553dfb367f52d4d47eaf8e95f1c75e2c202a8bc0",
+      "bytes": 190
+    },
+    "ui-angular-poster.png": {
+      "sha256": "4d643fb744cf5ca6d11a6f31390f6ae51b1600210c71d23c7c255231c4496a6b",
+      "bytes": 108879
+    },
+    "ui-angular-transcript.txt": {
+      "sha256": "ad51348048ef02c8ae8f7242b7d65dda88d79a4093cb2953692fce0b5cde8fbc",
+      "bytes": 1039
+    }
+  },
+  "sourceTreeDirty": true
+}

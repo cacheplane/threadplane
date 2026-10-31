@@ -3,7 +3,15 @@ import { MdxRenderer } from './MdxRenderer';
 
 const source = `# React Repeat Loops preview
 
-Add, remove and reverse caller-owned items using native **RenderSpec**. This experimental local example uses the installed **@threadplane/react/render** component and three authored JSON samples.
+Use one component description to render every stop in an itinerary. A repeat reads a collection from state and gives each row its item, while stable keys preserve row identity as the list changes.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Keep collection identity separate from order
+
+The host owns the item array and changes it immutably when adding, removing, or reversing items. The specification names the collection path and key; \`RenderSpec\` handles repeated children. Reordering should not make a stop become a different item. The local playback example shows how those bindings remain meaningful while the specification itself arrives incrementally.
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Change a keyed list
 

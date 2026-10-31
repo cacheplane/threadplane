@@ -3,7 +3,15 @@ import type { ExampleCodeContext } from '../../lib/example-code';
 
 const source = `# React chat A2UI preview
 
-This experimental native React example uses the existing shared Python Chat A2UI graph and c-a2ui assistant. Request a flight form, edit its fields, choose **Search**, **Select** a demonstration flight, then **Modify** to return to the search values supplied by the server, including the submitted route and party. It makes no real booking or payment. Angular remains the default on this canonical guide. The React, core, content, A2UI and neutral LangGraph candidates remain private, unpublished packages built from source.
+Let the agent offer a flight-search form, then let the traveler edit it before submitting an action. A2UI keeps the surface description, its data model, and the user’s interaction distinct.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Render a supported surface profile
+
+The application admits a specific set of component types and field domains, then preserves the received surface separately from local edits. Search, Select, and Modify are explicit round trips to the existing graph. A completed response alone does not make every historic form actionable: only the current confirmed surface accepts edits and actions in this example.
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Start a conversation
 

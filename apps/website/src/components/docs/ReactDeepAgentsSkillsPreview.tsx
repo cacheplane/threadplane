@@ -2,7 +2,15 @@ import { MdxRenderer } from './MdxRenderer';
 import type { ExampleCodeContext } from '../../lib/example-code';
 const source = `# React Deep Agents Skills preview
 
-This experimental example composes native React chat components with a Skills index and literal skill read observations. Angular remains the default on this canonical guide. Both frontends share the same Python graph, Skills prompt and FREE runtime.
+Load detailed instructions only when the agent needs them. A skill index names available capabilities, while skill bodies and references are read on demand.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Distinguish the index from evidence of a read
+
+The backend provides skill metadata and tool results. The application renders the index separately from the paths actually inspected, because a requested path does not prove that its contents were read successfully. Some metadata arrives only in saved checkpoints, so the example checks that source before presenting a confirmed index. The native view stays read-only.
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Start an assessment
 

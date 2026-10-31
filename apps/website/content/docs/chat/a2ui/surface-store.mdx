@@ -1,5 +1,5 @@
 ---
-description: The A2uiSurfaceStore that accumulates streamed A2UI messages into per-surface state, and the readiness signals the renderer consumes.
+description: The A2uiSurfaceStore that accumulates streamed A2UI messages into per-surface state, and its per-component readiness metadata.
 ---
 
 # createA2uiSurfaceStore()
@@ -77,7 +77,9 @@ const dashboard = store.surface('dashboard');
 
 ### `surfaceStates` / `surfaceState(surfaceId)`
 
-The chat-side projection consumed by the progressive renderer. Each `A2uiSurfaceState` pairs the wire-format `surface` with a `componentViews` map that tracks per-component readiness: a component's view flips `ready` once every data-model path it references has resolved, and readiness is **monotonic** — once ready, a later update clearing a referenced path does not revert it to a fallback.
+Each `A2uiSurfaceState` pairs the wire-format `surface` with a `componentViews` map. That map scans legacy `{$.path}` strings for referenced data. A view becomes `ready` once those paths resolve, and the flag is **monotonic** — clearing a path later does not reset it. Components with no such strings become ready immediately.
+
+This metadata does not check v0.9 `{ path: '/value' }` references. The current `A2uiSurfaceComponent` converts `state.surface` to a render specification, maps those references to live state bindings, and lets the render engine evaluate resolved props and any registry schema before mounting a component. Do not use `componentViews.ready` as proof that every v0.9 binding has resolved.
 
 ## updateDataModel Semantics
 

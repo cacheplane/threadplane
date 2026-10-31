@@ -20,16 +20,16 @@ import { getByPointer } from '@threadplane/a2ui';
 getByPointer({ items: ['a', 'b', 'c'] }, '/items/1'); // "b"
 ```
 
-`setByPointer` writes immutably. It returns a clone with the change applied; the original is untouched.
+`setByPointer` writes immutably. It returns a clone with the change applied; the original is untouched. Its return type is `Record<string, unknown>`, so read nested values with `getByPointer` and narrow the result before using it as a specific type.
 
 ```ts
-import { setByPointer } from '@threadplane/a2ui';
+import { getByPointer, setByPointer } from '@threadplane/a2ui';
 
 const original = { user: { name: 'Alice', age: 30 } };
 const next = setByPointer(original, '/user/name', 'Bob');
 
-next.user.name;     // "Bob"
-original.user.name; // "Alice" — unchanged
+getByPointer(next, '/user/name'); // "Bob"
+original.user.name;               // "Alice" — unchanged
 ```
 
 It also creates intermediate objects along the way, so you do not have to pre-build nesting:

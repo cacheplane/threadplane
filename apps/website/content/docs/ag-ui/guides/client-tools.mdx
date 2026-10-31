@@ -4,7 +4,15 @@ description: Declare a tool in the Angular app, let an AG-UI agent call it, and 
 
 # Client Tools
 
-An AG-UI agent can call tools that live in the browser. The Angular app declares the tool, the backend binds the declaration onto the model without implementing it, and the run ends when the model calls it. The browser executes the tool and submits the result back as a tool message, which starts the next turn. This guide walks the seven files of the running example, from the graph to the components the model fills.
+An AG-UI agent can call tools that live in the browser. The Angular app declares the tool, the backend binds the declaration onto the model without implementing it, and the run ends when the model calls it. The browser executes the tool and submits the result back as a tool message, which can start a continuation run within the same user turn. This guide walks the seven files of the running example, from the graph to the components the model fills.
+
+## Give the model a capability, then return its result
+
+In the trip planner, a browser tool can read the selected day or present a weather card inside the application. The model requests a named capability with structured arguments. Your code validates and executes that request, then returns a result associated with the same tool-call ID.
+
+<ToolFlow />
+
+One user turn can contain several model calls and browser-tool continuations. A tool result is evidence for the next model call; it is not necessarily the final answer. A view-only tool can deliberately finish without another model call, while an interactive tool can wait for a person. The following example uses simulated weather and booking decisions to make those paths visible.
 
 ## What the demo does
 
@@ -74,7 +82,7 @@ The registry reaches the UI through one input. `<chat [clientTools]="clientTools
 
 <ExampleCode file="client-tools.component.ts" region="chat-wiring" title="client-tools.component.ts — the chat wiring" />
 
-The catalog is attached to every run the adapter starts, as the `tools` field of the AG-UI run input, so the model sees the browser's tools on the first turn and on every continuation.
+The catalog is attached to every run the adapter starts, as the `tools` field of the AG-UI run input, so the model sees the browser's tools on the initial run and on every continuation.
 
 ### The view component the model fills
 
@@ -108,7 +116,7 @@ The executor wraps the agent's `stop`, so pressing stop aborts every in-flight h
 <Step title="The catalog ships with the run">
 The coordinator converts the registry into specs, each with a name, a description and a JSON Schema, and the adapter attaches them to every run it starts.
 </Step>
-<Step title="The model calls a tool and the graph ends the turn">
+<Step title="The model calls a tool and the graph ends the run">
 Because the tool has no server implementation, the run finishes with a tool call that carries no result.
 </Step>
 <Step title="The browser sees the call as pending">
@@ -148,7 +156,7 @@ Finally, keep the tool names in the registry and the names in the system prompt 
 
 ## Mixing server tools and client tools
 
-Nothing about this design is exclusive. Pass your server tools as the second argument of `bind_client_tools(llm, server_tools, state)` and route a server tool call to your tools node while a client tool call still ends the turn. The `route_after_agent` helper in the same middleware module does that split for you.
+Nothing about this design is exclusive. Pass your server tools as the second argument of `bind_client_tools(llm, server_tools, state)` and route a server tool call to your tools node while a client tool call still ends the current run. The `route_after_agent` helper in the same middleware module does that split for you.
 
 ## What's Next
 

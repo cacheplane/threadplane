@@ -1,13 +1,29 @@
 // @vitest-environment jsdom
 import React from 'react';
 import { describe, expect, it } from 'vitest';
-import { render } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { DiagramFrame } from './DiagramFrame';
 import { DiagramNode } from './DiagramNode';
 import { DiagramEdge } from './DiagramEdge';
 import { DiagramPill } from './DiagramPill';
 
 describe('diagram kit primitives', () => {
+  it('lets keyboard readers reach the diagram and open its explanation', () => {
+    render(
+      <DiagramFrame slug="accessible" viewWidth={640} viewHeight={200}
+        label="How a turn reaches the runtime" caption="A request starts a run.">
+        <g />
+      </DiagramFrame>
+    );
+    const region = screen.getByRole('region', { name: /How a turn reaches the runtime/ });
+    expect(region.tabIndex).toBe(0);
+    expect(screen.getByRole('button', { name: 'Expand diagram: How a turn reaches the runtime' })).toBeTruthy();
+    const disclosure = screen.getByText('Read diagram description');
+    fireEvent.click(disclosure);
+    expect(disclosure.closest('details')?.open).toBe(true);
+    expect(disclosure.closest('details')?.textContent).toContain('How a turn reaches the runtime');
+  });
+
   it('DiagramFrame renders a labeled svg with dot ground, arrow marker, and caption', () => {
     const { container, getByText } = render(
       <DiagramFrame slug="t" viewWidth={640} viewHeight={200} label="test diagram" caption="a caption">

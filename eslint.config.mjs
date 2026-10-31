@@ -13,6 +13,8 @@ export default [
       '**/.vercel',
       '**/.vercel/**',
       '**/next-env.d.ts',
+      // Locally assembled example bundles; source lives in examples/chat.
+      'apps/website/public/demo/**',
       '**/.install-collector/**',
       // Vendored byte-identical from upstream; its hash is pinned by a spec.
       'apps/website/src/vendor/scrollcraft/scrollcraft.js',

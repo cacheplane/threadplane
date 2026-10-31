@@ -3,7 +3,15 @@ import type { ExampleCodeContext } from '../../lib/example-code';
 
 const source = `# React chat timeline preview
 
-This experimental example composes native React MessageList, Markdown, Reasoning, Citations and ChatInput with the existing Python Chat Timeline graph. The React, core, content and neutral LangGraph candidates remain private packages built from source. Angular remains the default on this canonical component guide.
+Browse how a conversation changed over time, then choose whether to continue from its present or fork from an earlier checkpoint. Those two actions should remain visibly different.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## History inspection is read-only
+
+The application loads a bounded checkpoint page and keeps a selected preview separate from the active session. Selecting a row does not replace the current draft or start a run. Ordinary Send continues the current thread; Fork from here uses the selected checkpoint. The example below demonstrates the difference with actual backend history rather than a second copy of local messages.
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Start a conversation
 

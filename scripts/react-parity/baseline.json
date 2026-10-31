@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "851b881374b16c3d640959a6a25f5999380c0a6d",
+  "baselineHead": "eca83a8781ab383655232fae3f6c8a7a22beaea1",
   "sourceState": {
     "modified": [
       ".github/workflows/ci.yml"
@@ -2177,7 +2177,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "b9a093eaa379a7b4fb492fdcd47eeb77944f9245e4e2eb6c68b1b667dbcfa373"
+      "sha256": "827746959a181477d4ef28826cf9574eba96eac0859413d0f8207bcc098c2b12"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -2291,7 +2291,7 @@
       "id": "doc:apps/website/content/docs/a2ui/guides/data-model.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/a2ui/guides/data-model.mdx",
-      "sha256": "2f4bfa89c6262b83fdceb39c2e03126cdf8a9c4d62a014995766d54821963e9f"
+      "sha256": "65b5de9cdac26f6da5ba91808858339a2a8b54b396b91b97cd076e78a5e51df7"
     },
     {
       "id": "doc:apps/website/content/docs/a2ui/guides/message-protocol.mdx",
@@ -2357,7 +2357,7 @@
       "id": "doc:apps/website/content/docs/ag-ui/getting-started/quickstart.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/getting-started/quickstart.mdx",
-      "sha256": "dd38ab865761669ddaf98bf010f73b6440d79a6123e574309c6cb6285ea79e74"
+      "sha256": "1fe240b196c594e038055d08dcc0e9b6b5dc29b8fc2813ef5f6921bb12839e8b"
     },
     {
       "id": "doc:apps/website/content/docs/ag-ui/guides/citations.mdx",
@@ -2369,7 +2369,7 @@
       "id": "doc:apps/website/content/docs/ag-ui/guides/client-tools.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/guides/client-tools.mdx",
-      "sha256": "faea9e1d32d5d25f36c96c1eb6fb89a47108d28c0d2f3ec12738666118e5b355"
+      "sha256": "452d57966e92e818bd9285a2eeb8640b161cb310f80a638513477363e4e3d072"
     },
     {
       "id": "doc:apps/website/content/docs/ag-ui/guides/custom-events.mdx",
@@ -2381,7 +2381,7 @@
       "id": "doc:apps/website/content/docs/ag-ui/guides/deployment.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/guides/deployment.mdx",
-      "sha256": "31f241c59aa5e05bfddde45aa3a6bfc26bc6e1e362d26a33683e187ddc6598f0"
+      "sha256": "c1d51af7fd17abab2d32a70885ea3ab7943829016bc3332eef96f08e211ea1ae"
     },
     {
       "id": "doc:apps/website/content/docs/ag-ui/guides/fake-agent.mdx",
@@ -2417,13 +2417,13 @@
       "id": "doc:apps/website/content/docs/ag-ui/guides/tool-views.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/guides/tool-views.mdx",
-      "sha256": "28293b0d8b08de61a43be6a3f293da2fcc441120ec7cf1818b2bace3899e72b0"
+      "sha256": "57ee8fce1210f6c41319c97ecf8e19b42aa8a5663ebd9f0b18b6ffc393ee987c"
     },
     {
       "id": "doc:apps/website/content/docs/ag-ui/guides/troubleshooting.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/guides/troubleshooting.mdx",
-      "sha256": "ec12a44a75b042a505f86cf0b1acf52fae566fbd09630a5cd33b74b363f03335"
+      "sha256": "d1b212031a9d519054913d22182f8a673e5c81ad601aca76f82a79ec84856217"
     },
     {
       "id": "doc:apps/website/content/docs/ag-ui/reference/event-mapping.mdx",
@@ -2447,13 +2447,13 @@
       "id": "doc:apps/website/content/docs/chat/a2ui/surface-component.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/a2ui/surface-component.mdx",
-      "sha256": "84d569d723d0470a26afb4de43369022f66c25a21f996eb240f27eed30eb44e0"
+      "sha256": "9d2c63a38c5a0125ac4a3ce986e7613d804e24c2d3457e69a3fbe9f0d1d173cf"
     },
     {
       "id": "doc:apps/website/content/docs/chat/a2ui/surface-store.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/a2ui/surface-store.mdx",
-      "sha256": "68825892cc896b7146990f123e978fb403be077bca328c0e40faf2c35dea2839"
+      "sha256": "b1d3acd4161cf7775b319cd28bfb4e3e8f9fa92da93a13d1a45f593692a68bef"
     },
     {
       "id": "doc:apps/website/content/docs/chat/api/content-classifier.mdx",
@@ -2507,7 +2507,7 @@
       "id": "doc:apps/website/content/docs/chat/components/chat-message-list.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/components/chat-message-list.mdx",
-      "sha256": "98b839ffd38279815f7317de2a12c4a386f482e7af5a6fc060f548d971e7eba5"
+      "sha256": "3a2ec83bbd18a2ff71f7b0b3e7f51d849d33c8585bcb09550b7bff41ca01517d"
     },
     {
       "id": "doc:apps/website/content/docs/chat/components/chat-popup.mdx",
@@ -2537,7 +2537,7 @@
       "id": "doc:apps/website/content/docs/chat/components/chat-sidebar.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/components/chat-sidebar.mdx",
-      "sha256": "b8fcce9aae7654122a6c983b6b23ede69355721b9c02b1bf1fcdcb8fd974f9c1"
+      "sha256": "806d1178c3c9e90fa65e99bb8dc395289ed121e00e227a68f199e07743ee62b5"
     },
     {
       "id": "doc:apps/website/content/docs/chat/components/chat-sidenav.mdx",
@@ -2567,7 +2567,7 @@
       "id": "doc:apps/website/content/docs/chat/components/chat-tool-calls.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/components/chat-tool-calls.mdx",
-      "sha256": "2d29b718444986679483fa38883f4bf9720e6ab4dd9017c60f225db300be7bb2"
+      "sha256": "21251e443e8b8a6e302d3c9fecc4cdb9c5beef9e1a4356b6b2df21558c32dbdb"
     },
     {
       "id": "doc:apps/website/content/docs/chat/components/chat-trace.mdx",
@@ -2579,13 +2579,13 @@
       "id": "doc:apps/website/content/docs/chat/components/chat.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/components/chat.mdx",
-      "sha256": "c8362e3972e55ed3299c331d3c8ca9304a289a03d5de27d6fa5ceea7f1ac23d1"
+      "sha256": "70f0d54fd9104d7f1def3484a2ce41c6a6b1c038c446e7a4b56908ac0b9ec58e"
     },
     {
       "id": "doc:apps/website/content/docs/chat/concepts/message-model.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/concepts/message-model.mdx",
-      "sha256": "f5f5f358c72f917e10e797928888186a2c2f5e6af1cf6b16668ba4cc5d56b60c"
+      "sha256": "e7060b152485248be7441eb3de5991ce8e760e026fae0f1df609e9050238c541"
     },
     {
       "id": "doc:apps/website/content/docs/chat/concepts/primitives-vs-compositions.mdx",
@@ -2615,13 +2615,13 @@
       "id": "doc:apps/website/content/docs/chat/getting-started/introduction.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/getting-started/introduction.mdx",
-      "sha256": "7d1226938d4d496d955404342032564c5a7303d8b4f7b7eb8b572e5084b5af8e"
+      "sha256": "955f7a25996abe699a4de6c2faaa06b1b251be05e68ee3ac9d8b5658f79347a9"
     },
     {
       "id": "doc:apps/website/content/docs/chat/getting-started/quickstart.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/getting-started/quickstart.mdx",
-      "sha256": "a5addb05ca320c2b2ee9c3890af4d9aff517287256faddbc9acfff1f8fa0d30c"
+      "sha256": "7f75ac8de621aacfb2aba7a747d771f0d15b812f6e39ce779660bdeb2faa5a38"
     },
     {
       "id": "doc:apps/website/content/docs/chat/getting-started/try-without-a-backend.mdx",
@@ -2633,7 +2633,7 @@
       "id": "doc:apps/website/content/docs/chat/guides/client-tools.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/guides/client-tools.mdx",
-      "sha256": "f5f59d09340b2a83b78b48e30b19a55d0cda525514db899f9023422c9b3d291f"
+      "sha256": "894320fe604755c5084f4b588d322a506df88d8e7ce2d5fe707c9190eb5f2d19"
     },
     {
       "id": "doc:apps/website/content/docs/chat/guides/custom-catalogs.mdx",
@@ -2651,13 +2651,13 @@
       "id": "doc:apps/website/content/docs/chat/guides/generative-ui.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/guides/generative-ui.mdx",
-      "sha256": "04da58bebc5e16e46f00418f09e924071ba43861ff0a33bd083e82373a983f59"
+      "sha256": "42dad8d70c11668e9fcc5e958e736259239bc8c60bff557499db49e8a432d223"
     },
     {
       "id": "doc:apps/website/content/docs/chat/guides/layout-modes.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/guides/layout-modes.mdx",
-      "sha256": "8ed101aa99281dc6d0caa8b0bcde6f03197768e9eb12a7c873ae4c486ca108cd"
+      "sha256": "882656ae7cd77c282dbcf0215b3b41f95655a76376c9c22df3a26b16f5663d4b"
     },
     {
       "id": "doc:apps/website/content/docs/chat/guides/lifecycle.mdx",
@@ -2675,7 +2675,7 @@
       "id": "doc:apps/website/content/docs/chat/guides/streaming.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/guides/streaming.mdx",
-      "sha256": "0ccbd5c81d25f41ad2c37d47b6516b38661d906537e117f178b44b65bbcb1f7b"
+      "sha256": "55f16c97d53c35c9d3efcf650f4e4cafe5072c3697cc8d9a8a984394595f62ee"
     },
     {
       "id": "doc:apps/website/content/docs/chat/guides/theming.mdx",
@@ -2687,13 +2687,19 @@
       "id": "doc:apps/website/content/docs/chat/guides/thread-routing.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/guides/thread-routing.mdx",
-      "sha256": "dcd915387484935b08c44628ff028b8345f97c55e2315218ca3bc981b406cc55"
+      "sha256": "793e8683c4fce753eb6e3f9b06295cf421705d6e5ebd223ef02e9821749d2782"
     },
     {
       "id": "doc:apps/website/content/docs/chat/guides/writing-an-adapter.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/guides/writing-an-adapter.mdx",
-      "sha256": "8dd938690b1d8a3c9857eaa52ba55b69481ef720c5f3120732424802e06c837d"
+      "sha256": "3fd8f81d77d0de699bfd7f09ed1c8d1c458632867eed588ec1305fe9cb3e55fb"
+    },
+    {
+      "id": "doc:apps/website/content/docs/chat/migrations/upgrading.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/chat/migrations/upgrading.mdx",
+      "sha256": "5eaa2e0d99841deaf4aa506bdef1cef4ebb87d33369cfdb37efb40a2063a55f2"
     },
     {
       "id": "doc:apps/website/content/docs/choosing-an-adapter/index.mdx",
@@ -2717,7 +2723,7 @@
       "id": "doc:apps/website/content/docs/deep-agents/capabilities/planning.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/deep-agents/capabilities/planning.mdx",
-      "sha256": "e1e2f1b12b08dc5d6cdce3be8318c1dd1b8d174e241e3444bb764ccd8ed051a8"
+      "sha256": "315a75f17d309a7c6ee1637aa26bf64f45ee025fccce8fa5459c7a7079d8c5c5"
     },
     {
       "id": "doc:apps/website/content/docs/deep-agents/capabilities/skills.mdx",
@@ -2753,7 +2759,7 @@
       "id": "doc:apps/website/content/docs/langgraph/api/langgraph-threads-adapter.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/langgraph/api/langgraph-threads-adapter.mdx",
-      "sha256": "318e6f50129667ff9afeebb6e3c72c5faec8b3cd6b350a27509c5fa3399d0bf8"
+      "sha256": "dc1f7dd662b5ed015912b7fcfc8ad203ec6bef01e27ae4d3c41ed6a8dddd4101"
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/api/mock-stream-transport.mdx",
@@ -2771,31 +2777,37 @@
       "id": "doc:apps/website/content/docs/langgraph/concepts/agent-architecture.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/langgraph/concepts/agent-architecture.mdx",
-      "sha256": "2096e52f80988735393879487aba9ebbfd853b7993b0e2c3da68a1d7b494c152"
+      "sha256": "f3b0c2d60d80ec21534313ef8856648034a1edeed88dc57fad5eeae23ef186b5"
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/concepts/agent-contract.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/langgraph/concepts/agent-contract.mdx",
-      "sha256": "34fa6cf25f2250647f3cd9046f7f364b5b5f3fdcfa48cdaa499c77ac53f70c4b"
+      "sha256": "85c7e8a70029efbed3558731a00c361f01ec95a50521833c088320830e3b3071"
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/concepts/angular-signals.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/langgraph/concepts/angular-signals.mdx",
-      "sha256": "c8d9510126d4f66cbfdc8f091fa51787010a8920b0706c5bab10cc660a4ff7e5"
+      "sha256": "bf0afa342bd3498c84c00d4edc6ee5794cd0309095b5564e4ed9ce344c781247"
+    },
+    {
+      "id": "doc:apps/website/content/docs/langgraph/concepts/conversation-turns.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/langgraph/concepts/conversation-turns.mdx",
+      "sha256": "73f2280f7ab5a3800392e425a6f72bf52d80d3cdfb9310508aedc8f214e6caba"
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/concepts/langgraph-basics.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/langgraph/concepts/langgraph-basics.mdx",
-      "sha256": "eda1f2ebe4c33dfd0d56aa773b13697134670e30a18b6785c6f4fd198048c32a"
+      "sha256": "703d5c80da74400a55941067abe4e4e00f65c0f0013d04ecace6141bb9367308"
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/concepts/state-management.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/langgraph/concepts/state-management.mdx",
-      "sha256": "11c05d5fe10dae31391af7ed79ad58cd33a23014152c12589ef62e2bfc49e42f"
+      "sha256": "8c0622c144e02388a0c598490a4d590d8f94d66e391fd41e61cc055296a73f6c"
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/getting-started/installation.mdx",
@@ -2807,13 +2819,13 @@
       "id": "doc:apps/website/content/docs/langgraph/getting-started/introduction.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/langgraph/getting-started/introduction.mdx",
-      "sha256": "c1fa0a34a8d3b84d8e3c6bce603d61bd6f5cb58415cc2342263e7e81b127083b"
+      "sha256": "b7ec3db9fafb8be6c3a37b5a1a13d4ad2fcfd4008456db73d039b53a9336d8fd"
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/getting-started/quickstart.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/langgraph/getting-started/quickstart.mdx",
-      "sha256": "723f6e889af01c9dc20c5740ce485ad6311418296b212e96518d7e09f4409b05"
+      "sha256": "a57f6308cb80519195a2d2ac00b30e0432e39f4ca6f407b0bc23ea7a979ead75"
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/guides/deployment.mdx",
@@ -2825,13 +2837,13 @@
       "id": "doc:apps/website/content/docs/langgraph/guides/durable-execution.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/langgraph/guides/durable-execution.mdx",
-      "sha256": "981dbb4d00518c135400c18e978d9ba64a3a8d244fb3503046e9c1757a793895"
+      "sha256": "61551d544197047844749c1acca5f09f9af031442f6eddf1225a693a5fa4e407"
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/guides/interrupts.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/langgraph/guides/interrupts.mdx",
-      "sha256": "cb1cee84d9bc7ebaeda78f92289069709d8e8dff404f5447f4aad31317333c64"
+      "sha256": "f2c8df7e81ff62da57a156dcf2e810e6c03be060b0e88dbc1a132fe994b35c00"
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/guides/lifecycle.mdx",
@@ -2849,25 +2861,25 @@
       "id": "doc:apps/website/content/docs/langgraph/guides/persistence.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/langgraph/guides/persistence.mdx",
-      "sha256": "00b876bb97fcb6f119b9cfe94f8acb07b5519ca0e8fac4aceb823238f75fe42e"
+      "sha256": "9a98ce2b3240df18c33bef14b0d1fbd48c023fc7eb0a7854f6f8e5a54d22bb09"
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/guides/streaming.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/langgraph/guides/streaming.mdx",
-      "sha256": "ace11a33c0952e102a45bcacea78998fb52de5d0cf8159d52a02ebf3451a8c32"
+      "sha256": "71c5bcb51a688a8bd844c57af0d1a40c59c2d0fff918fac2ae24a6587e982be6"
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/guides/subgraphs.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/langgraph/guides/subgraphs.mdx",
-      "sha256": "d459e748cde45589aa04711d777fd79916ad595e6f35f9929ce519e8273db2f6"
+      "sha256": "8f9ab2faba5a069abd75e618e09333c9645f3899483e798fb7108e2a7995d00b"
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/guides/testing.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/langgraph/guides/testing.mdx",
-      "sha256": "a30c96f882422afb76809b8f2927ee53e9607a7ecf8ce4959d952b28efb1a3f6"
+      "sha256": "0cdb6a747c7ab56dec2c554b51759f1cc62b1facfee11e4f81a586f74cb4ba94"
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/guides/time-travel.mdx",
@@ -2885,7 +2897,7 @@
       "id": "doc:apps/website/content/docs/middleware/getting-started/introduction.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/middleware/getting-started/introduction.mdx",
-      "sha256": "4e7d07abddfa443f4a6b1add5952267eb6d8df21d4497799d277f6dd9efb6a5f"
+      "sha256": "8cfca8f42c02cec9c5e44fa32d2ac8013e1c807df223fd0a80eadb2dc0ab8492"
     },
     {
       "id": "doc:apps/website/content/docs/middleware/getting-started/quickstart.mdx",
@@ -2897,13 +2909,13 @@
       "id": "doc:apps/website/content/docs/middleware/guides/langgraph-client-tools.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/middleware/guides/langgraph-client-tools.mdx",
-      "sha256": "466f90a4e317d1727c3fd01a44b36a39d9fc1687489a4633e9337cf3899b16cc"
+      "sha256": "2f18cc0fa0f9acec52e4555ed167e3c6f85282029dfbfcb22d0e90ac4e958366"
     },
     {
       "id": "doc:apps/website/content/docs/middleware/guides/python-langgraph.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/middleware/guides/python-langgraph.mdx",
-      "sha256": "a9d0198d3c4081c5d5524ee4740c7dec842a9ccc0e9130940050962a7e56bb67"
+      "sha256": "ea0562f4ad1608d99eebbf04015be5f6f888ad9b774c73dfa720fbc568cb5a2f"
     },
     {
       "id": "doc:apps/website/content/docs/render/api/define-angular-registry.mdx",
@@ -2927,7 +2939,7 @@
       "id": "doc:apps/website/content/docs/render/api/signal-state-store.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/render/api/signal-state-store.mdx",
-      "sha256": "ac6365a33fb09bfa9c8a7f71f640b8aa73d665d4673847e9aef5af59c45dd8d0"
+      "sha256": "d1b12595f980a47257ed5f83d3a5d1fefc311b6da54970eb00ae7dc13daf707d"
     },
     {
       "id": "doc:apps/website/content/docs/render/api/views.mdx",
@@ -2987,7 +2999,7 @@
       "id": "doc:apps/website/content/docs/render/guides/specs.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/render/guides/specs.mdx",
-      "sha256": "cb0c915de98264459a401c702eeed3961b9f86059ae4b589da26a170ea4d6e6f"
+      "sha256": "716ec0054559a5e55f28acb28430f3be631892b866966972de9f6ea2c740567c"
     },
     {
       "id": "doc:apps/website/content/docs/render/guides/state-store.mdx",

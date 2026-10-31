@@ -183,7 +183,7 @@ Both helpers use an Angular `effect()` under the hood, so both must be called fr
 Provide `LANGGRAPH_CLIENT` to hand the adapter an SDK `Client` you already own, or a test double; when the token is absent the adapter builds its own client from `apiUrl`. Provide `LANGGRAPH_CLIENT_OPTIONS` once at the application root to tune the SDK retry budget and auth headers shared by `FetchStreamTransport` and this adapter.
 
 <Callout type="warning" title="Thread ids come from the server">
-Never generate a thread id in the browser. Use the id `create()` resolves, the one handed to `onThreadId` when the transport allocates a thread on first submit, or one the LangGraph Threads API returned earlier.
+Use a confirmed backend thread ID: the value `create()` resolves, the one handed to `onThreadId`, or one returned by the Threads API. A caller can request a UUID during thread creation, but must confirm the returned identity before using it for a run. Generating an ID alone creates no backend thread.
 </Callout>
 
 ## What's Next

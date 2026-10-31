@@ -1,0 +1,216 @@
+{
+  "version": 1,
+  "id": "persistence-angular",
+  "demo": "persistence",
+  "frontend": "angular",
+  "recordedAt": "2026-10-30T18:39:32.398Z",
+  "sourceRevision": "c586a94bb20d9924058b9f6a067c709a159bd6b6",
+  "sourceKind": "fixture-backed-langgraph",
+  "sourceDescription": "Actual framework app and LangGraph runtime; existing aimock responses, 12-character chunks with 100ms fixture delay. No live provider requests.",
+  "input": "Hello",
+  "viewport": {
+    "width": 640,
+    "height": 640
+  },
+  "theme": {
+    "mode": "light",
+    "mechanism": "existing tplane:theme host message"
+  },
+  "edits": {
+    "trimStart": 0.208,
+    "trimEnd": 13.781,
+    "speed": 1
+  },
+  "phases": [
+    {
+      "time": 0,
+      "text": "Send a message."
+    },
+    {
+      "time": 1.938,
+      "text": "Read the arriving response."
+    },
+    {
+      "time": 6.386,
+      "text": "Start a new conversation."
+    },
+    {
+      "time": 8.914,
+      "text": "Select the saved conversation."
+    }
+  ],
+  "finalText": "Hello\n\nHi \u2014 how can I help you today?\n\nTHREADS\nThread 1\n+ New Thread",
+  "requests": [
+    {
+      "method": "POST",
+      "path": "/api/threads"
+    },
+    {
+      "method": "POST",
+      "path": "/api/threads/01a18e1b-f941-77c3-ac9e-d45475d53971/runs/stream"
+    },
+    {
+      "method": "POST",
+      "path": "/api/threads/01a18e1b-f941-77c3-ac9e-d45475d53971/history"
+    },
+    {
+      "method": "POST",
+      "path": "/api/threads/01a18e1b-f941-77c3-ac9e-d45475d53971/history"
+    }
+  ],
+  "sourceHashes": {
+    "apps/website/scripts/record-docs-media.mjs": "66da48b538efb967f75ec92f98b1dfe91c7de9fe7b1e7e0a4d27b3b8ce47657c",
+    "apps/website/scripts/encode-docs-media.mjs": "c290872256a41268974dcf232c590b3933363533197d4cb36c49817892125ed7",
+    "libs/example-layouts/src/lib/install-embedded-theme.ts": "43ac4509c68c7e5b07afea1100f12b1db30ab8273c99d7bf7c9bdcd479d9b6bf",
+    "cockpit/langgraph/streaming/angular/e2e/fixtures/streaming.json": "5ce36b2b40561fbc46ba0dd2cb73a71b794d2ab1ad9fad9dc03a34b4886cbf74",
+    "cockpit/langgraph/streaming/python/src/graph.py": "97db9510fc245cfa0c151404869f6a35dc285cb501250743d4daab7ace556bf2",
+    "cockpit/langgraph/persistence/angular/e2e/fixtures/persistence.json": "3094094800130ddae423e1744792677314a553ec5b4198107bed4d0bb60d02a3",
+    "cockpit/langgraph/persistence/python/src/graph.py": "b61c7846814b394d9fdc0cd412a0a8936bfa2bba21d84aab80b7eacad764d20d",
+    "cockpit/langgraph/client-tools/angular/e2e/fixtures/client-tools.json": "ccfae8ada335ffaf6a0eef56d4bc69045200a1a12f5ae3c0079b6b6987d13906",
+    "cockpit/langgraph/client-tools/python/src/graph.py": "f11ff38e2f0da2450d74596c55791fc06da9e3dcdbc8f8c09a070164a76d5de7",
+    "cockpit/langgraph/persistence/angular/src/app/app.config.ts": "11df30a1970ebebccb7ef4128206c7d7734862143b85fbb9c40d8ec1e6994f61",
+    "cockpit/langgraph/persistence/angular/src/app/persistence.component.ts": "f9652d09bf88b5623ab7d106a5038b9a9c724203e0173659dbe39c7a9213138c",
+    "cockpit/langgraph/persistence/angular/src/environments/environment.development.ts": "100d188235450fd694e93baf25110b650af5a2dab95df80bd19beb9c8d6e3610",
+    "cockpit/langgraph/persistence/angular/src/environments/environment.ts": "104819c82475cf79314a3f970bf28a38a1f216cb495b77df952c3498a804b55f",
+    "cockpit/langgraph/persistence/angular/src/index.html": "b0676b617a94c2ad4fc7b9abebdbdfb826dc1551a617cbe268c255dbfad34449",
+    "cockpit/langgraph/persistence/angular/src/index.ts": "05e731d9d54ff342429ab8ed7816563397fed6124eed1ee5e103b90aa763e2a1",
+    "cockpit/langgraph/persistence/angular/src/main.cockpit.ts": "f5ee19eaa926468fc5515add67d4281a01e4d7369c2ccb56f3a08d151d1753c9",
+    "cockpit/langgraph/persistence/angular/src/main.ts": "f5ee19eaa926468fc5515add67d4281a01e4d7369c2ccb56f3a08d151d1753c9",
+    "cockpit/langgraph/persistence/angular/src/styles.css": "5610acf39c6c72065a24bb5b63082574fd82529ef45de2babc0a7e4cf809bd1c"
+  },
+  "buildHashes": {
+    "dist/cockpit/langgraph/persistence/angular/3rdpartylicenses.txt": "0446f2a4ab53fc8f2ad1afbbc381038541a9cb0772d6ead88069690159d5c463",
+    "dist/cockpit/langgraph/persistence/angular/chunk-3F2VHBRP.js": "7834becef90e25e8165bc8ef28e426e113bd4e1304dd89c3f2addb6fc546f98f",
+    "dist/cockpit/langgraph/persistence/angular/chunk-72M7S2I2.js": "e57d074fac3be8c6923af24cb11e5dfab7d59c1df65d6afa94b71fbba1084722",
+    "dist/cockpit/langgraph/persistence/angular/chunk-A3W2L4NU.js": "7390d83f6d318bdadf695579e8db1ca18a0f523af06801ca502b6855dc083f97",
+    "dist/cockpit/langgraph/persistence/angular/chunk-AV4EOET3.js": "c1bfa7e4e2808eda6dcea566f2efad2c70982d3fc8548aaa8c1bd752a7131956",
+    "dist/cockpit/langgraph/persistence/angular/chunk-DAQOROHW.js": "17cd7e055ff48af6b500ca62e8fb5d81d31dc888ab59262c24ccfafb28388db0",
+    "dist/cockpit/langgraph/persistence/angular/chunk-FPVQNXPJ.js": "4ba83ae744a71ddcfefd8351e0b90564260e9539b3b3d86bcb166950866e1edf",
+    "dist/cockpit/langgraph/persistence/angular/chunk-TEEJHA46.js": "401fa1f24a41db630f72a26280389e9e01525cbbb89956f9785db45ac388b85f",
+    "dist/cockpit/langgraph/persistence/angular/chunk-TTOFLF7C.js": "b2d7d26ec4649169b34710e4438d93c42ddb9bcd59932e2454633daa15007882",
+    "dist/cockpit/langgraph/persistence/angular/chunk-U4EJBP5X.js": "ec5c778f6b96949b232487051519b25609e5c62d4f40fc1589cce8a2c10e1cbb",
+    "dist/cockpit/langgraph/persistence/angular/chunk-ZY5JK74G.js": "d89f514b71ea0dcecc1193765446e48c68728b84bbf7f3134427311e8c61b673",
+    "dist/cockpit/langgraph/persistence/angular/index.html": "584b0d625d1a3a00265f6e16df8dfd7494198b2e7122ff91bac76a14472752aa",
+    "dist/cockpit/langgraph/persistence/angular/main.js": "d246dfcbb34b817b3746d8a02b8aef2f5ac53305526716016b37f9b07c54326e",
+    "dist/cockpit/langgraph/persistence/angular/prerendered-routes.json": "a79ddcc8a115190e9c19479ed36914741a7d1db74f0a1153529efc80725505fe",
+    "dist/cockpit/langgraph/persistence/angular/styles.css": "b0d7f947e70dea90c3311497b72c32ca63525d413f325eb6d48635f15d2cc468"
+  },
+  "rawSha256": "f18ec6d24ca7fbc94d6eec60144036d8a8ba981e15341552515937249dbb030f",
+  "reproduction": "node apps/website/scripts/record-docs-media.mjs persistence angular",
+  "duration": 13.56,
+  "captions": [
+    {
+      "from": 0,
+      "to": 1.938,
+      "text": "Send a message."
+    },
+    {
+      "from": 1.938,
+      "to": 6.386,
+      "text": "Read the arriving response."
+    },
+    {
+      "from": 6.386,
+      "to": 8.914,
+      "text": "Start a new conversation."
+    },
+    {
+      "from": 8.914,
+      "to": 13.56,
+      "text": "Select the saved conversation."
+    }
+  ],
+  "ffmpeg": {
+    "version": "ffmpeg version 8.1.1 Copyright (c) 2000-2026 the FFmpeg developers",
+    "commands": [
+      [
+        "-ss",
+        "0.208",
+        "-i",
+        "<raw-capture.webm>",
+        "-t",
+        "13.573",
+        "-an",
+        "-vf",
+        "fps=25,format=yuv420p",
+        "-c:v",
+        "libx264",
+        "-crf",
+        "22",
+        "-preset",
+        "medium",
+        "-movflags",
+        "+faststart",
+        "<capture-directory>/encoded/persistence-angular.mp4"
+      ],
+      [
+        "-ss",
+        "0.208",
+        "-i",
+        "<raw-capture.webm>",
+        "-t",
+        "13.573",
+        "-an",
+        "-vf",
+        "fps=25,format=yuv420p",
+        "-c:v",
+        "libvpx-vp9",
+        "-crf",
+        "32",
+        "-b:v",
+        "0",
+        "-row-mt",
+        "1",
+        "-cpu-used",
+        "4",
+        "<capture-directory>/encoded/persistence-angular.webm"
+      ],
+      [
+        "-ss",
+        "11.56",
+        "-i",
+        "<capture-directory>/encoded/persistence-angular.mp4",
+        "-frames:v",
+        "1",
+        "<capture-directory>/encoded/persistence-angular-poster.png"
+      ],
+      [
+        "-i",
+        "<capture-directory>/encoded/persistence-angular.mp4",
+        "-f",
+        "null",
+        "-"
+      ],
+      [
+        "-i",
+        "<capture-directory>/encoded/persistence-angular.webm",
+        "-f",
+        "null",
+        "-"
+      ]
+    ]
+  },
+  "assets": {
+    "persistence-angular.mp4": {
+      "sha256": "8041d8b0dd94f279e1b1a92c8063f98f6abe088258cea11dcb5b26cf53b61a16",
+      "bytes": 72193
+    },
+    "persistence-angular.webm": {
+      "sha256": "8ca24cd27f459a91d884664bee3790b16b04adc1f1b22de16dd5073de420c974",
+      "bytes": 71250
+    },
+    "persistence-angular.vtt": {
+      "sha256": "9d8d7a7efbbabf1c8296ac0fa4d32db6e31a61a54c1f3e0bd9869441fee70622",
+      "bytes": 232
+    },
+    "persistence-angular-poster.png": {
+      "sha256": "64ff007f34cd165acdf60057c94679f364692129e2922293b4f508f00c8cfa31",
+      "bytes": 34947
+    },
+    "persistence-angular-transcript.txt": {
+      "sha256": "b08d67c1e2ef0dd6041ebf512174903a7e11fa8ec4ea492a3fe4e3ef48622dd9",
+      "bytes": 504
+    }
+  },
+  "sourceTreeDirty": true
+}

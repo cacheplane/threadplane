@@ -3,7 +3,15 @@ import type { ExampleCodeContext } from '../../lib/example-code';
 
 const source = `# React chat threads preview
 
-This experimental example composes native React MessageList, Markdown, Reasoning, Citations and ChatInput with the existing Python Chat Threads graph. The React, core, content and neutral LangGraph candidates remain private packages built from source.
+Give each trip its own conversation and draft. Switching from Portland to another destination should load that thread without sending a new question or overwriting the draft left in the first conversation.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Select an identity before allowing commands
+
+The application holds a page-local collection of confirmed IDs and drafts. Selecting an ID creates a session bound to that conversation and loads saved history; only then can the user continue. Titles are optional labels from metadata, not identifiers or proof that a conversation is ready. This example teaches thread selection without adding a server-wide catalog or URL routing.
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Create and switch conversations
 

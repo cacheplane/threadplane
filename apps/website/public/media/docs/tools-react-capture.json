@@ -1,0 +1,197 @@
+{
+  "version": 1,
+  "id": "tools-react",
+  "demo": "tools",
+  "frontend": "react",
+  "recordedAt": "2026-10-30T18:35:17.372Z",
+  "sourceRevision": "c586a94bb20d9924058b9f6a067c709a159bd6b6",
+  "sourceKind": "fixture-backed-langgraph",
+  "sourceDescription": "Actual framework app and LangGraph runtime; existing aimock responses, 12-character chunks with 100ms fixture delay. No live provider requests.",
+  "input": "What's the weather in San Francisco?",
+  "viewport": {
+    "width": 640,
+    "height": 640
+  },
+  "theme": {
+    "mode": "light",
+    "mechanism": "native application stylesheet"
+  },
+  "edits": {
+    "trimStart": 0.565,
+    "trimEnd": 15.293,
+    "speed": 1
+  },
+  "phases": [
+    {
+      "time": 0,
+      "text": "Send a message."
+    },
+    {
+      "time": 3.116,
+      "text": "The browser runs the weather tool."
+    },
+    {
+      "time": 9.721,
+      "text": "The returned result completes the turn."
+    }
+  ],
+  "finalText": "React \u00b7 Experimental\n\nLangGraph client tools\nNew conversation\n\nTry simulated weather, a slow status check, a weather panel or snapshot, and a fictional booking decision. These browser tools use authored data; no real weather service or booking is contacted.\n\nUSER\n\nWhat's the weather in San Francisco?\n\nASSISTANT\n\nget_weather\nArguments\n{\n  \"location\": \"San Francisco\"\n}\nResult\n{\n  \"location\": \"San Francisco\",\n  \"temperatureF\": 68,\n  \"conditions\": \"Sunny\",\n  \"humidity\": 55,\n  \"windMph\": 8\n}\n\nTOOL\n\n{\"location\":\"San Francisco\",\"temperatureF\":68,\"conditions\":\"Sunny\",\"humidity\":55,\"windMph\":8}\n\nASSISTANT\n\nIt's 68\u00b0F and sunny in San Francisco right now.\n\nWeather panels\n\nNo weather panels yet.\n\nBooking decisions\n\nNo booking decisions yet.\n\nMessage\nSend\n\nResponse complete.",
+  "requests": [
+    {
+      "method": "POST",
+      "path": "/api/threads"
+    },
+    {
+      "method": "POST",
+      "path": "/api/threads/4c421a84-fd69-4501-a20f-658dbf86cb0e/runs/stream"
+    },
+    {
+      "method": "GET",
+      "path": "/api/threads/4c421a84-fd69-4501-a20f-658dbf86cb0e/runs/01a18e18-103d-7f32-968e-a643579799f0"
+    },
+    {
+      "method": "POST",
+      "path": "/api/threads/4c421a84-fd69-4501-a20f-658dbf86cb0e/runs/stream"
+    },
+    {
+      "method": "GET",
+      "path": "/api/threads/4c421a84-fd69-4501-a20f-658dbf86cb0e/runs/01a18e18-1726-79c3-8926-a9b88e19026e"
+    }
+  ],
+  "sourceHashes": {
+    "apps/website/scripts/record-docs-media.mjs": "66da48b538efb967f75ec92f98b1dfe91c7de9fe7b1e7e0a4d27b3b8ce47657c",
+    "apps/website/scripts/encode-docs-media.mjs": "c290872256a41268974dcf232c590b3933363533197d4cb36c49817892125ed7",
+    "libs/example-layouts/src/lib/install-embedded-theme.ts": "43ac4509c68c7e5b07afea1100f12b1db30ab8273c99d7bf7c9bdcd479d9b6bf",
+    "cockpit/langgraph/streaming/angular/e2e/fixtures/streaming.json": "5ce36b2b40561fbc46ba0dd2cb73a71b794d2ab1ad9fad9dc03a34b4886cbf74",
+    "cockpit/langgraph/streaming/python/src/graph.py": "97db9510fc245cfa0c151404869f6a35dc285cb501250743d4daab7ace556bf2",
+    "cockpit/langgraph/persistence/angular/e2e/fixtures/persistence.json": "3094094800130ddae423e1744792677314a553ec5b4198107bed4d0bb60d02a3",
+    "cockpit/langgraph/persistence/python/src/graph.py": "b61c7846814b394d9fdc0cd412a0a8936bfa2bba21d84aab80b7eacad764d20d",
+    "cockpit/langgraph/client-tools/angular/e2e/fixtures/client-tools.json": "ccfae8ada335ffaf6a0eef56d4bc69045200a1a12f5ae3c0079b6b6987d13906",
+    "cockpit/langgraph/client-tools/python/src/graph.py": "f11ff38e2f0da2450d74596c55791fc06da9e3dcdbc8f8c09a070164a76d5de7",
+    "cockpit/langgraph/client-tools/react/src/app.tsx": "8115a152be49a70200f59fb6c4f2db5be5df788b151a50819287029df98c8ccc",
+    "cockpit/langgraph/client-tools/react/src/application.ts": "bf436315c1ec054a598842f85eaad7bc4b72a8731569cd1a70e05eee41c9813e",
+    "cockpit/langgraph/client-tools/react/src/connection.ts": "f6be517fa3e1f99089700b0450d733b550c0a6b6b1f89d939b905e4bc5689a26",
+    "cockpit/langgraph/client-tools/react/src/main.tsx": "1076e3ea0204da9eef8c4115de1627df9593c961f3d9f303e93ee60c7139e5d6",
+    "cockpit/langgraph/client-tools/react/src/styles.css": "13a860cb6389b3565a66ca892f6cbdd8891df9081ac3e085c6cfac6d38f21f87",
+    "cockpit/langgraph/client-tools/react/src/tools.ts": "3525d1eb27c754b9b6cf83d3c690693ff18fa3cf015009effcaace9431e45fd4"
+  },
+  "buildHashes": {
+    "dist/cockpit/langgraph/client-tools/react/assets/index-Coo0lH-P.js": "9a7c21e6efc669e3cd7ac63426d0ddc3dd704fb1ea322f7862b474e91a6a5ece",
+    "dist/cockpit/langgraph/client-tools/react/assets/index-Dg4_w1Np.css": "c09ba3c712705c76dd8242f89105274f90891a4957b1524cca6ddc6d64bbb5a8",
+    "dist/cockpit/langgraph/client-tools/react/build-proof.json": "edea9e7dfa84f9d407c7c921e90b62590581d0b1eda0ee4df626baa1b81e7b3a",
+    "dist/cockpit/langgraph/client-tools/react/index.html": "ce4de03c16991533fea60c916533c016cf666d23d378bbabd962b36a12c7575c"
+  },
+  "rawSha256": "2279eff19c97dc4c7ee08fd10caf9532385d9376d657592cf35ab60597d0ab6c",
+  "reproduction": "node apps/website/scripts/record-docs-media.mjs tools react",
+  "duration": 14.72,
+  "captions": [
+    {
+      "from": 0,
+      "to": 3.116,
+      "text": "Send a message."
+    },
+    {
+      "from": 3.116,
+      "to": 9.721,
+      "text": "The browser runs the weather tool."
+    },
+    {
+      "from": 9.721,
+      "to": 14.72,
+      "text": "The returned result completes the turn."
+    }
+  ],
+  "ffmpeg": {
+    "version": "ffmpeg version 8.1.1 Copyright (c) 2000-2026 the FFmpeg developers",
+    "commands": [
+      [
+        "-ss",
+        "0.565",
+        "-i",
+        "<raw-capture.webm>",
+        "-t",
+        "14.728",
+        "-an",
+        "-vf",
+        "fps=25,format=yuv420p",
+        "-c:v",
+        "libx264",
+        "-crf",
+        "22",
+        "-preset",
+        "medium",
+        "-movflags",
+        "+faststart",
+        "<capture-directory>/encoded/tools-react.mp4"
+      ],
+      [
+        "-ss",
+        "0.565",
+        "-i",
+        "<raw-capture.webm>",
+        "-t",
+        "14.728",
+        "-an",
+        "-vf",
+        "fps=25,format=yuv420p",
+        "-c:v",
+        "libvpx-vp9",
+        "-crf",
+        "32",
+        "-b:v",
+        "0",
+        "-row-mt",
+        "1",
+        "-cpu-used",
+        "4",
+        "<capture-directory>/encoded/tools-react.webm"
+      ],
+      [
+        "-ss",
+        "12.72",
+        "-i",
+        "<capture-directory>/encoded/tools-react.mp4",
+        "-frames:v",
+        "1",
+        "<capture-directory>/encoded/tools-react-poster.png"
+      ],
+      [
+        "-i",
+        "<capture-directory>/encoded/tools-react.mp4",
+        "-f",
+        "null",
+        "-"
+      ],
+      [
+        "-i",
+        "<capture-directory>/encoded/tools-react.webm",
+        "-f",
+        "null",
+        "-"
+      ]
+    ]
+  },
+  "assets": {
+    "tools-react.mp4": {
+      "sha256": "8aca61e43304cfae2dae7ecb61bd23fc9b8ba544de31d404536f1c2c90ac89b4",
+      "bytes": 188480
+    },
+    "tools-react.webm": {
+      "sha256": "bad3e2750b98058a8cec4f1d533fb603bc88fb5b0b210e4018501964333959bc",
+      "bytes": 199974
+    },
+    "tools-react.vtt": {
+      "sha256": "1964d0d226bbfc109fee2d6810d950659a46dec6c1c70e56a9d63aafe301e1d2",
+      "bytes": 191
+    },
+    "tools-react-poster.png": {
+      "sha256": "0f8706041c21823ade3033caf8b36cb43037f7a7d5f3978e984227d83cb435cd",
+      "bytes": 163023
+    },
+    "tools-react-transcript.txt": {
+      "sha256": "614a71c6e7d3d8c1161e70ec2b6c1746ed5716a2f1554614d7ff6e3e469c6bda",
+      "bytes": 1208
+    }
+  },
+  "sourceTreeDirty": true
+}

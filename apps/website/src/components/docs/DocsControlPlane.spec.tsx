@@ -44,6 +44,17 @@ beforeEach(() => {
 });
 
 describe('DocsControlPlane', () => {
+  it('keeps shared migrations last and collapsed until requested', () => {
+    const { container } = render(<DocsContextContent activeLibrary="langgraph" activeSection="guides" activeSlug="streaming" />);
+    const sections = container.querySelectorAll('.docs-sidebar-section');
+    const last = sections[sections.length - 1];
+    const migrations = within(last as HTMLElement).getByRole('button', { name: 'Migrations' });
+    expect(migrations.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByRole('link', { name: 'Upgrade an existing application' })).toBeNull();
+    fireEvent.click(migrations);
+    expect(screen.getByRole('link', { name: 'Upgrade an existing application' }).getAttribute('href')).toBe('/docs/chat/migrations/upgrading');
+  });
+
   it('preserves the selected frontend in documentation navigation', () => {
     render(
       <DocsContextContent

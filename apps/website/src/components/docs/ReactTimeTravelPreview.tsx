@@ -2,7 +2,15 @@ import type { ExampleCodeContext } from '../../lib/example-code';
 import { MdxRenderer } from './MdxRenderer';
 const source = `# React time travel preview
 
-This experimental example uses native React chat components with the existing Python LangGraph Time Travel graph. React, core, content, and the framework-neutral LangGraph candidates remain private source-build packages.
+Inspect an earlier itinerary without replacing the current conversation. Time travel starts as a read; continuing from that checkpoint is a separate command that creates a different history path.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Distinguish preview from fork
+
+The application retains the current session while loading a selected checkpoint for display. An ordinary Send continues the active conversation. A fork supplies the selected checkpoint and new input to the native LangGraph session. Keep those controls separate so browsing history never executes a model or consumes the current draft.
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Select a saved source, then fork
 

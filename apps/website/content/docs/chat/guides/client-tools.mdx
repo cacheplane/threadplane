@@ -4,7 +4,9 @@ description: Declare tools in the browser, ship the catalog to a LangGraph graph
 
 # Client Tools
 
-Client tools are tools you declare in the browser that the model calls and the browser executes, with no server-side implementation. The Angular app declares them, the `@threadplane/langgraph` adapter attaches the catalog to every run it starts under the `client_tools` key, and the graph binds those declarations onto the model and ends its turn when one is called. The browser then produces the result and hands it back, either as a new run or as a direct write to the thread. This guide walks the running example, from the graph to the components the model fills.
+<DocsDemoVideo demo="tools" frontend="angular" />
+
+Client tools are tools you declare in the browser that the model calls and the browser executes, with no server-side implementation. The Angular app declares them, the `@threadplane/langgraph` adapter attaches the catalog to every run it starts under the `client_tools` key, and the graph binds those declarations onto the model and ends the current run when one is called. The browser then produces the result and hands it back, either as a new run or as a direct write to the thread. This guide walks the running example, from the graph to the components the model fills.
 
 | Helper | Kind | What it does |
 |---|---|---|
@@ -15,6 +17,14 @@ Client tools are tools you declare in the browser that the model calls and the b
 <Callout type="info" title="Adapter-neutral declarations">
 `tools`, `action`, `view`, and `ask` come from `@threadplane/chat`, so the same registry works on `@threadplane/langgraph` and `@threadplane/ag-ui`. Only the `provideAgent`/`injectAgent` imports and the backend wiring change. The [AG-UI twin of this guide](/docs/ag-ui/guides/client-tools) walks the same three declarations over the AG-UI transport.
 </Callout>
+
+## Give the model a capability, then return its result
+
+In the trip planner, a browser tool can read the selected day or present a weather card inside the application. The model requests a named capability with structured arguments. Your code validates and executes that request, then returns a result associated with the same tool-call ID.
+
+<ToolFlow />
+
+One user turn can contain several model calls and browser-tool continuations. A tool result is evidence for the next model call; it is not necessarily the final answer. A view-only tool can deliberately finish without another model call, while an interactive tool can wait for a person. The following example uses simulated weather and booking decisions to make those paths visible.
 
 ## What the demo does
 
@@ -122,7 +132,7 @@ The executor wraps the agent's `stop`, so pressing stop aborts every in-flight h
 <Step title="The catalog ships with the run">
 The coordinator converts the registry into specs, each with a name, a description, and a JSON Schema, and the adapter attaches them to every run it starts as `client_tools`.
 </Step>
-<Step title="The model calls a tool and the graph ends the turn">
+<Step title="The model calls a tool and the graph ends the run">
 Because the tool has no server implementation, the run finishes with a tool call that carries no result.
 </Step>
 <Step title="The browser sees the call as pending">
@@ -304,7 +314,7 @@ export const CLIENT_TOOLS_AGENT_REF = createAgentRef<ClientToolsState>('client-t
 
 ## Mixing server tools and client tools
 
-Nothing about this design is exclusive. Pass your server tools as the second argument of `bind_client_tools(llm, server_tools, state)`, and route a server tool call to your tools node while a client tool call still ends the turn. The `route_after_agent` helper in the same middleware module makes that split: it returns the tools node when the last message calls a server tool, and the end node when the last message calls only client tools or no tools at all.
+Nothing about this design is exclusive. Pass your server tools as the second argument of `bind_client_tools(llm, server_tools, state)`, and route a server tool call to your tools node while a client tool call still ends the current run. The `route_after_agent` helper in the same middleware module makes that split: it returns the tools node when the last message calls a server tool, and the end node when the last message calls only client tools or no tools at all.
 
 ```python
 from langgraph.graph import END

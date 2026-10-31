@@ -3,7 +3,37 @@ import type { ExampleCodeContext } from '../../lib/example-code';
 
 const source = `# React client-tools preview
 
-This experimental example uses native React chat and approval components with the existing Python LangGraph client-tools graph. It runs five explicitly authored browser functions. Weather data and booking decisions are simulated; no real weather or booking service is contacted. React, core, content, and the framework-neutral LangGraph candidates remain private source-build packages.
+<DocsDemoVideo demo="tools" frontend="react" />
+
+Give the agent access to a capability in the browser, such as reading a selected itinerary day or showing a weather card. The model asks for a named tool; application code handles its finalized arguments and returns a result.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Declare the function you can execute
+
+The native catalog uses \`FunctionTool<Arguments, Result>\`. Its JSON Schema describes arguments to the model; TypeScript types do not validate received JSON at runtime. Validate inside the handler, and use its abort signal for cancellable work. This small tool reads a caller-owned selection. The running example below adds weather results and booking decisions.
+
+<ToolFlow />
+
+~~~tsx
+import type { FunctionTool } from '@threadplane/core/tools';
+
+export function selectedDayTool(readDay: () => string): FunctionTool<Record<string, never>, { day: string }> {
+  return {
+    description: 'Read the itinerary day selected in the application.',
+    parameters: { type: 'object', properties: {}, additionalProperties: false },
+    handler(args, { signal }) {
+      if (!args || typeof args !== 'object' || Array.isArray(args) || Object.keys(args).length) {
+        throw new Error('This tool accepts no arguments.');
+      }
+      signal.throwIfAborted();
+      return { day: readDay() };
+    },
+  };
+}
+~~~
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Try browser tools
 
@@ -36,7 +66,7 @@ npx nx build cockpit-langgraph-client-tools-react
 npx nx e2e cockpit-langgraph-client-tools-react
 ~~~
 
-The isolated build installs local candidate packages and checks strict declarations and emitted browser modules. Browser tests use real SDK HTTP and SSE against a local fixture. Docs, Code, and Run select this same React implementation. Public React previews cover streaming, interrupts, memory, client tools, persistence, durable execution, subgraphs, time travel, and deployment runtime; AG-UI Streaming, Interrupts, Tool Views and JSON Render and Subagents also have React previews on Event Mapping and their canonical guides; other topics remain pending.
+The isolated build installs local candidate packages and checks strict declarations and emitted browser modules. Browser tests use real SDK HTTP and SSE against a local fixture. Docs, Code, and Run select this same React implementation.
 `;
 
 export function ReactClientToolsPreview({ exampleCode }: { readonly exampleCode: ExampleCodeContext | null }) {

@@ -4,21 +4,34 @@ description: How LangGraph thread state reaches Angular Signals — designing th
 
 # State Management
 
-How agent state flows from LangGraph's server-side state machine into Angular Signals — and why the separation between server state and UI state makes your app simpler, not more complex.
+The trip planner needs a draft in the composer, an itinerary returned by the agent, and a selected day in the UI. Those values have different owners and lifetimes. Model them separately so a local tab change does not become a backend request, and a page reload does not erase the saved itinerary.
 
 <Callout type="info" title="Mental model">
-LangGraph Platform owns the state. Angular owns the view. `injectAgent()` is the read-only bridge between them. You never manually sync, serialize, or manage agent state in your Angular code.
+LangGraph owns saved agent state. Your Angular application owns local interface state and decides which input to submit. `injectAgent()` exposes the observed backend state as signals and provides methods for sending new messages, state patches, and decisions.
 </Callout>
+
+## Choose an owner for each value
+
+| Value | Owner | When it travels |
+|---|---|---|
+| Unsent message | Angular component or application store | On Send |
+| Itinerary facts and message history | Backend thread | In submitted input and streamed/saved state |
+| Selected itinerary day | Application UI | Only if the agent needs that selection |
+| Generated layout | Application renderer | When the agent supplies a supported specification |
+
+The useful question is “who is allowed to change this value?” A signal makes an update observable; it does not decide whether the value is durable or whether editing it should run the agent.
+
+<ConversationArchitecture />
 
 ## State Lives on the Server
 
-In a traditional Angular app, state lives in an NgRx store or a signals-based service. In a LangGraph app, **the agent's state lives on the server** — in LangGraph Platform's checkpoint store. Your Angular app is a stateless view layer that reads state through signals as the agent streams it back.
+In a traditional Angular app, state lives in an NgRx store or a signals-based service. In a LangGraph app, **the agent's state lives on the server** — in LangGraph Platform's checkpoint store. Your Angular app reads a projection of that state through signals while retaining its own local drafts, selections, and presentation settings.
 
-This inversion is intentional. Agent state can span multiple LLM calls, tool executions, and human-in-the-loop interrupts. It has to survive browser refreshes, reconnections, and even server deployments. A server-side checkpoint store handles all of that for you. Your Angular app just calls `.submit()` and reads signals.
+This separation is intentional. Agent state can span multiple LLM calls, tool executions, and human-in-the-loop interrupts. A durable checkpoint store can preserve that state across browser refreshes, reconnections, and server restarts. Configure storage and retention for your deployment; an in-memory development store cannot make that guarantee. Your Angular app submits intentional changes and reads the resulting signals. It still owns the draft and decides when local edits should become backend input.
 
 <Steps>
 <Step title="User submits input">
-Your Angular component calls `agent.submit({ message: text })`. No state is stored in the component.
+Your Angular component calls `agent.submit({ message: text })`. The component may hold the draft, but the accepted message enters the agent conversation.
 </Step>
 <Step title="`injectAgent()` sends the request">
 `@threadplane/langgraph` forwards the input to `FetchStreamTransport`, which opens an HTTP POST and SSE connection to LangGraph Platform.
@@ -45,7 +58,7 @@ On the Python side, your agent's state is a `TypedDict`. The fields you define h
 
 ### The TypedDict Pattern
 
-Every LangGraph state is a `TypedDict`. Fields can be plain values or annotated with reducers that control how updates are merged.
+The examples here define LangGraph state with a `TypedDict`. Fields can be plain values or annotated with reducers that control how updates are merged.
 
 <Tabs>
 <Tab label="Basic state">
@@ -81,6 +94,8 @@ class AgentState(TypedDict):
 
 ```python
 from langgraph.graph import MessagesState
+from typing import Annotated
+from operator import add
 
 # MessagesState is a built-in TypedDict that pre-wires
 # messages: Annotated[list[AnyMessage], add_messages]

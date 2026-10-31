@@ -1196,6 +1196,17 @@ jobs:
         env:
           GROWTH_FORM_POLICY: growth_v1
         run: npx nx run website:public-copy --skip-nx-cache
+      - name: Documentation learning and accessibility audit
+        timeout-minutes: 8
+        run: npx nx run website:docs-audit --skip-nx-cache
+      - name: Upload documentation browser diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: documentation-browser-audit
+          path: dist/docs-audit/local
+          if-no-files-found: warn
+          retention-days: 7
       # Spec §8: scroll-craft's own harness walks the homepage's pinned stage
       # act and fails on dead scroll outside the declared hold and on cues that
       # never peak. The Nx build lands in dist/apps/website with a rewritten
@@ -1264,6 +1275,8 @@ jobs:
       - uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57 # v8.0.0
         with:
           python-version: '3.12'
+          # Build-only shards may never populate the Python package cache.
+          enable-cache: false
       - run: npm ci
       - name: Derive deterministic preview aliases
         id: aliases
@@ -1874,6 +1887,7 @@ jobs:
           # so the pulled .env omits it and `vercel build` throws
           # "GROWTH_FORM_POLICY must be growth_v1". It is not a secret.
           GROWTH_FORM_POLICY: growth_v1
+          THREADPLANE_DOCS_BUILD_REVISION: ${{ github.sha }}
         run: |
           npm exec --yes --package=vercel@64.2.0 --package=@types/estree@1.0.8 -- vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
           url=$(npm exec --yes --package=vercel@64.2.0 --package=@types/estree@1.0.8 -- vercel deploy --prebuilt --archive=tgz --prod --skip-domain --yes --token=${{ secrets.VERCEL_TOKEN }} | tail -n 1)
@@ -1912,6 +1926,17 @@ jobs:
           WEBSITE_URL: ${{ steps.deploy_website.outputs.preview_origin }}
           EXAMPLES_URL: https://examples.threadplane.ai
           RUNTIME_PARENT_PREVIEW_ORIGINS: ${{ steps.deploy_website.outputs.preview_origin }}
+      - name: Verify immutable Website documentation
+        id: docs_immutable
+        if: steps.freshness.outputs.stale != 'true' && steps.affected.outputs.website == 'true'
+        timeout-minutes: 10
+        run: npx nx run website:verify-docs-deployment --skip-nx-cache
+        env:
+          DOCS_DEPLOYMENT_PHASE: immutable
+          DOCS_DEPLOYMENT_URL: ${{ steps.deploy_website.outputs.preview_origin }}
+          DOCS_DEPLOYMENT_REVISION: ${{ github.sha }}
+          DOCS_DEPLOYMENT_OUTPUT: dist/docs-audit/immutable
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
       - name: Check this commit is still the tip before Website promotion
         if: steps.freshness.outputs.stale != 'true' && steps.affected.outputs.website == 'true'
         id: website_promotion_freshness
@@ -1934,11 +1959,33 @@ jobs:
         # token's default team — a personal one here, which fails with
         # "Deployment doesn't belong to current team". Scope it explicitly.
         run: npm exec --yes --package=vercel@64.2.0 --package=@types/estree@1.0.8 -- vercel promote "${{ steps.deploy_website.outputs.deployment_url }}" --scope=${{ secrets.VERCEL_ORG_ID }} --yes --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Verify production Website documentation
+        id: docs_production
+        if: steps.freshness.outputs.stale != 'true' && steps.affected.outputs.website == 'true' && steps.website_promotion_freshness.outputs.fresh == 'true'
+        timeout-minutes: 10
+        run: npx nx run website:verify-docs-deployment --skip-nx-cache
+        env:
+          DOCS_DEPLOYMENT_PHASE: production
+          DOCS_DEPLOYMENT_URL: ${{ steps.deploy_website.outputs.preview_origin }}
+          DOCS_PRODUCTION_ORIGIN: https://threadplane.ai
+          DOCS_DEPLOYMENT_REVISION: ${{ github.sha }}
+          DOCS_DEPLOYMENT_OUTPUT: dist/docs-audit/production
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
       - name: Verify deployed website
         if: steps.freshness.outputs.stale != 'true' && steps.affected.outputs.website == 'true' && steps.website_promotion_freshness.outputs.fresh == 'true'
         run: npx nx run website:deployed-e2e --skip-nx-cache
         env:
           BASE_URL: https://threadplane.ai
+      - name: Upload deployed documentation diagnostics
+        if: always() && steps.deploy_website.outputs.preview_origin != ''
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: deployed-documentation-audit-${{ github.run_id }}
+          path: |
+            dist/docs-audit/immutable
+            dist/docs-audit/production
+          if-no-files-found: warn
+          retention-days: 7
 
   demo-deploy:
     name: Canonical demo → Vercel

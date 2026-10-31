@@ -91,6 +91,14 @@ function getAllConfiguredDocFiles(): Array<{
   return [...configured, ...special];
 }
 
+// The shared concept guide contrasts both real APIs. This is not permission
+// to use unpublished packages in the published Angular installation recipes.
+function isLabeledSourceBuildImport(id: string, pkg: string, content: string): boolean {
+  return id === 'langgraph/concepts/conversation-turns'
+    && ['@threadplane/core', '@threadplane/react'].includes(pkg)
+    && content.includes('These native React packages are private repository builds;');
+}
+
 function findPackageImports(content: string): string[] {
   const imports = Array.from(
     content.matchAll(/from\s+['"](?<pkg>@threadplane\/[^'"]+)['"]/g),
@@ -368,13 +376,23 @@ describe('website docs bindings', () => {
       if (!doc) continue;
 
       for (const pkg of findPackageImports(doc.content)) {
-        if (!validPackages.has(pkg)) {
-          invalidImports.push(`${library}/${section}/${slug} -> ${pkg}`);
+        const id = `${library}/${section}/${slug}`;
+        if (!validPackages.has(pkg) && !isLabeledSourceBuildImport(id, pkg, doc.content)) {
+          invalidImports.push(`${id} -> ${pkg}`);
         }
       }
     }
 
     expect(invalidImports).toEqual([]);
+  });
+
+  it('limits private imports to the explicitly labeled comparison guide', () => {
+    const label = 'These native React packages are private repository builds;';
+    expect(isLabeledSourceBuildImport('langgraph/concepts/conversation-turns', '@threadplane/react', label)).toBe(true);
+    expect(isLabeledSourceBuildImport('langgraph/concepts/conversation-turns', '@threadplane/core', label)).toBe(true);
+    expect(isLabeledSourceBuildImport('langgraph/getting-started/quickstart', '@threadplane/react', label)).toBe(false);
+    expect(isLabeledSourceBuildImport('langgraph/concepts/conversation-turns', '@threadplane/react', '')).toBe(false);
+    expect(isLabeledSourceBuildImport('langgraph/concepts/conversation-turns', '@threadplane/content', label)).toBe(false);
   });
 
   it('has generated API docs for every documented package surface', () => {

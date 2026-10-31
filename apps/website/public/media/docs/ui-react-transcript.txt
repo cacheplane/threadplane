@@ -1,0 +1,55 @@
+ui-react
+
+Actual framework renderer playing the existing authored JSON sample; no model or backend.
+Footage runs at actual speed; initial page loading is trimmed. No narration.
+
+Input: Play the first authored sample, pause at its heading, then Finish.
+
+00:00:00.000 Play the local JSON sample.
+00:00:02.270 Inspect the partial render.
+00:00:05.390 Inspect the complete render.
+
+Final visible result:
+React · Experimental
+
+Render Spec
+
+Watch a local JSON sample become a React view as its text arrives.
+
+Sample
+Heading + Text
+Card + Badge
+Nested Layout
+Play
+Finish
+Reset
+Playback position
+
+Complete · 380 characters
+
+Render output
+Welcome to React Spec Rendering
+
+This local JSON sample maps each element to a registered React view.
+
+Streaming JSON
+{
+  "root": "root",
+  "elements": {
+    "root": {
+      "type": "Heading",
+      "props": {
+        "content": "Welcome to React Spec Rendering"
+      },
+      "children": [
+        "description"
+      ]
+    },
+    "description": {
+      "type": "Text",
+      "props": {
+        "content": "This local JSON sample maps each element to a registered React view."
+      }
+    }
+  }
+}

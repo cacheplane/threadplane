@@ -3,7 +3,15 @@ import { MdxRenderer } from './MdxRenderer';
 
 const source = `# React AWS Strands meeting preview
 
-This experimental private source-build preview handles fictional meetings. No real meeting is booked. React, core, content, and AG-UI candidate packages are private artifacts, with no public npm availability claim. Angular remains the canonical provider example. This React slice shares its Python backend and prompt and covers bounded availability, booking approval, and the backend result; it does not provide the Angular research specialist UI or full subagent parity.
+Review a proposed meeting with a Strands agent, then choose whether to continue. The application combines ordinary conversation rendering with a decision tied to the backend’s current pause.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Read the pause and confirm the result
+
+The Strands bridge sends an AG-UI interrupt whose payload includes the proposed topic and slot. The application preserves its identity, submits the selected response, and waits for the resumed tool result. A schedule snapshot and assistant prose are useful display data, but neither replaces confirmation of the requested operation. The calendar in this example is fictional process-local data.
+
+The [conversation walkthrough](/docs/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Request and review a meeting
 

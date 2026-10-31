@@ -140,17 +140,17 @@ store.set('/count', 2); // no log
 
 ### lastChange()
 
-Returns the path and value of the most recent mutation, or `undefined` before the first one. It is written before subscribers are notified, so a subscriber can read it to learn what changed -- `subscribe()` itself hands the listener nothing.
+Returns the path and value of the most recent mutation, or `undefined` before the first one. `SignalStateStore` declares this method as optional, so use `lastChange?.()` when calling through that interface. It is written before subscribers are notified, so a subscriber can read it to learn what changed -- `subscribe()` itself hands the listener nothing.
 
 ```typescript
 const store = signalStateStore({ user: { name: 'Alice' } });
 
-store.lastChange();               // undefined
+store.lastChange?.();               // undefined
 store.set('/user/name', 'Bob');
-store.lastChange();               // { path: '/user/name', value: 'Bob' }
+store.lastChange?.();               // { path: '/user/name', value: 'Bob' }
 
 store.subscribe(() => {
-  console.log('changed at', store.lastChange()?.path);
+  console.log('changed at', store.lastChange?.()?.path);
 });
 ```
 

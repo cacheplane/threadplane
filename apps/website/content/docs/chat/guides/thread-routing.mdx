@@ -6,6 +6,12 @@ description: How the threads example lists, switches, creates, and removes conve
 
 A chat that holds more than one conversation needs two things: a store that knows which threads exist, and a single signal that says which one is active. `@threadplane/langgraph` supplies the store, `provideAgent({ threadId })` watches the signal, and `injectThreadRouting()` binds that signal to the Angular Router when you want conversations to survive a reload and travel in a link. The running example wires the store and the signal, and this guide walks its three files before turning to the URL layer.
 
+## Make a conversation addressable
+
+In the trip planner, a link should identify the Portland conversation without embedding its transcript in the URL. The backend stores that transcript. Routing only selects the thread to load.
+
+Start with one active-thread value, then decide where it lives: page memory for an embedded demo, or a route for a bookmarkable application. A thread title is display metadata; changing it does not change the thread ID or start another agent turn. [Persistence](/docs/langgraph/guides/persistence) explains the server side of this relationship.
+
 ## What the demo does
 
 The Run tab shows the prebuilt `<chat>` composition with a thread sidebar beside it. Ask the aviation assistant about a route — a flight from LAX to JFK, for instance — and the backend allocates a thread. The sidebar row starts out labeled `Untitled` and picks up a short generated title once the run finishes.
@@ -59,7 +65,7 @@ Module scope is safe here because the demo bootstraps exactly one instance of th
 The adapter watches `threadId`, so assigning to the signal switches conversations, and `onThreadId` fires when the backend allocates a thread on first submit, which keeps the signal in step without a round-trip through the sidebar.
 
 <Callout type="warning" title="Thread ids come from the server">
-Never generate a thread id in the browser. Use the value handed to `onThreadId`, or one the LangGraph Threads API returned earlier.
+Use a confirmed backend thread: one reported through `onThreadId`, or one created/read through the Threads API. A caller may request a UUID when creating a thread, but must confirm the server accepted it before treating it as an existing conversation.
 </Callout>
 
 ### The sidebar and the thread list
