@@ -38,6 +38,7 @@ import { NativeNavigation } from './native-navigation';
 import { CompactThreadRow } from './compact-thread-row';
 import { NativeProjects } from './native-projects';
 import { useProjectMove } from './use-project-move';
+import { useLoadedConversationSearch } from './use-loaded-conversation-search';
 
 type Presentation = 'page' | 'popup' | 'sidebar' | 'sidenav';
 
@@ -214,6 +215,11 @@ function Conversation({
   const archivedRows = rows.filter((row) => row.archived === true);
   const selection = snapshot.selection;
   const [archiveOpen, setArchiveOpen] = useState(false);
+  const search = useLoadedConversationSearch(application, snapshot, (row) => {
+    setFilter('');
+    setProjectId(null);
+    if (row.archived === true) setArchiveOpen(true);
+  });
   const menus = useConversationMenu(
     [...activeRows, ...(archiveOpen ? archivedRows : [])].map((row) => ({
       id: row.id,
@@ -590,6 +596,11 @@ function Conversation({
         onSelect={setProjectId}
       />
       <div className="directory-actions">
+        {presentation !== 'sidenav' && (
+          <button type="button" onClick={search.openSearch}>
+            Search loaded conversations
+          </button>
+        )}
         <button
           type="button"
           onClick={() => application.refresh()}
@@ -747,6 +758,7 @@ function Conversation({
           : ''
       }`}
     >
+      {search.palette}
       <ConfirmDialog
         open={confirmation !== null}
         title="Delete conversation?"
@@ -775,7 +787,7 @@ function Conversation({
       {presentation === 'sidenav' ? (
         <NativeNavigation
           selectedId={selection.id}
-          onSearch={() => filterInput.current?.focus()}
+          onSearch={search.openSearch}
           collapsedContent={
             <ThreadList
               threads={activeRows}

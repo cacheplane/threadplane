@@ -16054,6 +16054,41 @@
       "reason": "Private controlled project selection and optional app-owned New request now compose readonly app-owned renderActions beside selection. ProjectNameForm supports explicit project naming with controlled value, labels, pending/error, submitDisabled and IME safety; native browser-local validated catalog dogfoods create/rename. Native full active/archived directories compose confirmed backend assignment/removal through existing selection and action primitives, with exact raw/null evidence, independent stale-read protection and preserved filter/session/draft ownership. Catalog sharing, deletion and full T29 parity remain open."
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#HistorySearchPalette",
+      "taskIds": ["T29", "T30"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private controlled loaded-conversation search presentation with native modal focus containment and caller-owned query, results and exact-ID selection. Native dogfood preserves selected session, draft and route without search I/O. Backend-wide search and full parity remain open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#HistorySearchPaletteProps",
+      "taskIds": ["T29", "T30"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly controlled open/query/results and intent callbacks, loading and labels, plus optional same-document return-focus target. Application owns filtering and navigation."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#HistorySearchResult",
+      "taskIds": ["T29"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly exact unique ID, literal title and optional subtitle in caller-supplied order; no backend schema or query contract."
+    },
+    {
+      "id": "source:libs/react/src/chat/history-search-palette.tsx",
+      "taskIds": ["T29", "T30"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Controlled SSR-safe modal combobox/listbox presentation with stable active identity, loading guards, keyboard/IME safety and bounded focus restoration. No fetching, filtering or runtime ownership."
+    },
+    {
+      "id": "source:libs/react/src/chat/internal/dialog-presentation.ts",
+      "taskIds": ["T22", "T30"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Unexported pure owner-document theme/direction and available-focus-target helpers shared by confirmation and search dialogs; their lifecycle and intent semantics remain separate."
+    },
+    {
       "id": "source:libs/react/src/chat/internal/name-form.tsx",
       "taskIds": [
         "T29"

@@ -13,6 +13,7 @@ export default defineConfig({
     'message-actions.spec.ts',
     'popup.spec.ts',
     'sidenav.spec.ts',
+    'search-palette.spec.ts',
     'project-names.spec.ts',
     'project-assignment.spec.ts',
     'project-creation.spec.ts',
