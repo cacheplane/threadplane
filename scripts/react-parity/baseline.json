@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "8adc9e6819d64a4c98aca713dac4e79de03ca114",
+  "baselineHead": "3f10f76ed7562fde7edb7e6c56b8d9a556b86c33",
   "sourceState": {
     "modified": [
       ".github/workflows/ci.yml"
@@ -851,7 +851,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "2284e547ecfd511662931a16b73e2efa9afa983fe555a05778d2d446d3e4512d"
+      "sha256": "134648058596c3d7a2d036983effa69de1ec155f7bceefad4a2983795343de67"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -869,7 +869,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "0cd5da008875dc25d276ca7151d1eb188969ee4b1ae6ba67900928c0a91efa45"
+      "sha256": "1b7e7366a8136c46951d49317d113a02d1034c00940a0fb5c8de15495a606b12"
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -11059,6 +11059,48 @@
       ]
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#Timeline",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "Timeline",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/timeline.tsx",
+          "symbol": "Timeline",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function Timeline({ items, onSelect, selectedId, label = 'Checkpoints', className, renderItem, }: TimelineProps) {\n    return (<ol className={`tp-timeline${className ? ` ${className}` : ''}`} aria-label={label}>\n      {items.map((item, index) => (<li key={item.id} className=\"tp-timeline__item\">\n          {renderItem ? (renderItem(item, item.id === selectedId, index)) : (<button type=\"button\" className=\"tp-timeline__button\" aria-current={item.id === selectedId ? 'true' : undefined} disabled={item.disabled === true} onClick={() => onSelect(item.id)}>\n              <span className=\"tp-timeline__marker\" aria-hidden=\"true\">\n                {index + 1}\n              </span>\n              <span className=\"tp-timeline__content\">\n                <span className=\"tp-timeline__label\">{item.label}</span>\n                {item.description !== undefined && (<span className=\"tp-timeline__description\">\n                    {item.description}\n                  </span>)}\n              </span>\n            </button>)}\n        </li>))}\n    </ol>);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#TimelineItem",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "TimelineItem",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/timeline.tsx",
+          "symbol": "TimelineItem",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface TimelineItem {\n    readonly id: string;\n    readonly label: string;\n    readonly description?: string;\n    readonly disabled?: boolean;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#TimelineProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "TimelineProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/timeline.tsx",
+          "symbol": "TimelineProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface TimelineProps {\n    readonly items: readonly TimelineItem[];\n    readonly onSelect: (id: string) => void;\n    readonly selectedId?: string | null;\n    readonly label?: string;\n    readonly className?: string;\n    readonly renderItem?: (item: TimelineItem, isSelected: boolean, index: number) => ReactNode;\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/react/src/chat/index.ts#ToolObservation",
       "kind": "export",
       "path": "libs/react/src/chat/index.ts",
@@ -15492,7 +15534,7 @@
       "id": "source:libs/react/src/chat/index.ts",
       "kind": "source",
       "path": "libs/react/src/chat/index.ts",
-      "sha256": "c42bc1f13b2cb2ddda74669f5019e5e7d9539c240e2571bf23d73cfe55ab5435"
+      "sha256": "177ca8063d2c54826039d42293485539a13cf58accfb70ccf103c1427bad94ad"
     },
     {
       "id": "source:libs/react/src/chat/internal/dialog-presentation.ts",
@@ -15571,6 +15613,12 @@
       "kind": "source",
       "path": "libs/react/src/chat/thread-rename-form.tsx",
       "sha256": "444907577943b44057c5d359f1bff4ea89baf8c58bb50b54becd266c878d9d29"
+    },
+    {
+      "id": "source:libs/react/src/chat/timeline.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/timeline.tsx",
+      "sha256": "a74f05da392f0feb7f92c92ebd0d08b7b9349b457080da90300881a6b263817f"
     },
     {
       "id": "source:libs/react/src/chat/tool-observation.tsx",

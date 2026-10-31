@@ -27,6 +27,7 @@ import type { ThreadRow } from '../../shared/contracts';
 import { submissionStatus } from '../../shared/submission-status';
 import { Approval } from './approval';
 import { BackgroundActivity } from './background-activity';
+import { LoadedCheckpointTimeline } from './loaded-checkpoint-timeline';
 import { CopyAnswer } from './copy-answer';
 import {
   ConversationActions,
@@ -863,6 +864,12 @@ function Conversation({
               )}
               <BackgroundActivity
                 observations={snapshot.runtime?.subgraphs ?? []}
+              />
+              <LoadedCheckpointTimeline
+                key={`timeline:${selection.id}`}
+                application={application}
+                threadId={selection.id ?? ''}
+                page={snapshot.runtime?.history}
               />
             </>
           )}

@@ -1014,3 +1014,28 @@ or move conversations concurrently, and fresh backend reads remain authoritative
 Catalog updates preserve the latest observed entries without an atomic multi-tab
 guarantee. Project names remain browser-local. Shared catalogs, drag reordering
 and full T29 parity remain open; this slice adds no public library export.
+
+### Controlled checkpoint timeline (private React T29 slice)
+
+`@threadplane/react/chat` exports `Timeline`, `TimelineItem` and `TimelineProps`.
+Supply readonly `items` with unique exact UI `id`, literal `label`, optional
+`description` and `disabled`, plus `onSelect`. `selectedId` remains controlled.
+The labelled ordered list preserves supplied order and original objects; default
+rows use native selection buttons and disable only strict `true`. Import chat
+styles for wrapping, focus and selected-state presentation.
+
+Optional `renderItem(item, isSelected, index)` replaces the complete row, retaining
+the keyed list item while bypassing all default controls/content. The callback
+owns accessibility and actions; null/false/undefined produces an empty row.
+The primitive performs no fetching, filtering, sorting, timers or execution and
+renders without browser globals. UI IDs carry only caller-defined selection
+identity, not backend checkpoint authority.
+
+Native React composes the last explicitly loaded checkpoint metadata page into a
+collapsed disclosure. Inspection is local and preserves the current conversation,
+draft, route and active response. Display is bounded to ten rows, ten next-node
+names per row and 512 UTF-16 units per string, with truncation disclosed. Missing
+and duplicate backend IDs remain distinct occurrences. New owner, conversation
+or page identities retire old selections and callbacks. This slice displays only
+metadata; historical values, replay/fork, live branch timelines and full T29
+parity remain open.

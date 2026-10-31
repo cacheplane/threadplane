@@ -385,3 +385,26 @@ textarea:disabled {
   overflow: auto;
   overflow-wrap: anywhere;
 }
+.loaded-checkpoint-timeline {
+  min-width: 0;
+  margin-block: 1rem;
+  border: 1px solid var(--ds-border, #d9e1e8);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  overflow-wrap: anywhere;
+}
+.loaded-checkpoint-timeline summary {
+  cursor: pointer;
+}
+.loaded-checkpoint-timeline summary:focus-visible {
+  outline: 2px solid var(--ds-accent);
+  outline-offset: 3px;
+}
+.loaded-checkpoint-timeline dt {
+  font-weight: 600;
+}
+.loaded-checkpoint-timeline dd {
+  margin-inline: 0;
+  margin-block-end: 0.75rem;
+  white-space: pre-wrap;
+}
