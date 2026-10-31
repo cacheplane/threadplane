@@ -14,6 +14,7 @@ export default defineConfig({
     'popup.spec.ts',
     'sidenav.spec.ts',
     'search-palette.spec.ts',
+    'timeline.spec.ts',
     'project-names.spec.ts',
     'project-assignment.spec.ts',
     'project-creation.spec.ts',

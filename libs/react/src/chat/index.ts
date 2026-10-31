@@ -19,6 +19,7 @@ export {
   type ThreadListItem,
   type ThreadListProps,
 } from './thread-list.js';
+export { Timeline, type TimelineItem, type TimelineProps } from './timeline.js';
 export { TextTranscript, type TextTranscriptProps } from './text-transcript.js';
 export {
   ToolObservation,

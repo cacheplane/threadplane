@@ -19,6 +19,8 @@ test('plain declaration proof checks navigation, sidebar and thread-list type-on
   const declaration = `export interface ThreadRenameFormProps { readonly value: string; readonly onValueChange: (value: string) => void; readonly onSubmit: () => void; readonly onCancel: () => void; readonly pending?: boolean; readonly error?: string; readonly label?: string; readonly className?: string; }
 export interface HistorySearchResult { readonly id: string; readonly title: string; readonly subtitle?: string; }
 export interface HistorySearchPaletteProps { readonly open: boolean; readonly query: string; readonly results: readonly HistorySearchResult[]; readonly onQueryChange: (query: string) => void; readonly onSelect: (id: string) => void; readonly onClose: () => void; readonly loading?: boolean; readonly label?: string; readonly description?: string; readonly placeholder?: string; readonly closeLabel?: string; readonly className?: string; readonly returnFocusTo?: HTMLElement | null; }
+export interface TimelineItem { readonly id: string; readonly label: string; readonly description?: string; readonly disabled?: boolean; }
+export interface TimelineProps { readonly items: readonly TimelineItem[]; readonly onSelect: (id: string) => void; readonly selectedId?: string | null; readonly label?: string; readonly className?: string; readonly renderItem?: (item: TimelineItem, isSelected: boolean, index: number) => import('react').ReactNode; }
 export interface OverflowMenuItem { readonly id: string; readonly label: string; readonly disabled?: boolean; readonly tone?: 'normal' | 'destructive'; }
 export interface OverflowMenuProps { readonly items: readonly OverflowMenuItem[]; readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly onSelect: (itemId: string, event: import('react').MouseEvent<HTMLButtonElement>) => void; readonly label: string; readonly className?: string; readonly disabled?: boolean; readonly anchorPoint?: { readonly x: number; readonly y: number } | null; readonly returnFocusTo?: HTMLElement | null; }
 export type ChatSidenavMode = 'expanded' | 'collapsed' | 'drawer';
@@ -56,21 +58,6 @@ export interface ConfirmDialogProps { readonly open: boolean; readonly title: st
     const mutated = declaration.slice(0, renameEnd).replace(before, after) + declaration.slice(renameEnd);
     assert.match(compile(mutated), /ThreadRenameForm|false.*true/, `${before} → ${after}`);
   }
-  for (const [before, after] of [
-    ['OverflowMenuItem', 'MissingMenuItem'],
-    ['OverflowMenuProps', 'MissingMenuProps'],
-    ['readonly items: readonly OverflowMenuItem[]', 'readonly items?: readonly OverflowMenuItem[]'],
-    ['readonly items: readonly OverflowMenuItem[]', 'items: readonly OverflowMenuItem[]'],
-    ['readonly items: readonly OverflowMenuItem[]', 'readonly items: OverflowMenuItem[]'],
-    ['readonly open: boolean', 'readonly open?: boolean'],
-    ['readonly onOpenChange: (open: boolean) => void', 'readonly onOpenChange: (open: string) => void'],
-    ["readonly onSelect: (itemId: string, event: import('react').MouseEvent<HTMLButtonElement>) => void", 'readonly onSelect: (itemId: string) => void'],
-    ['MouseEvent<HTMLButtonElement>', 'MouseEvent<HTMLDivElement>'],
-    ["readonly tone?: 'normal' | 'destructive'", "readonly tone?: 'normal' | 'danger'"],
-    ['readonly label: string', 'label: string'],
-    ['readonly label: string', 'readonly label?: string'],
-    ['readonly disabled?: boolean', 'readonly disabled: boolean'],
-  ]) assert.match(compile(declaration.replace(before, after)), /OverflowMenu|false.*true/, `${before} → ${after}`);
   const mutateInterface = (name, before, after) => {
     const start = declaration.indexOf(`export interface ${name} {`);
     const next = declaration.indexOf('\nexport ', start);
@@ -78,7 +65,37 @@ export interface ConfirmDialogProps { readonly open: boolean; readonly title: st
     assert.ok(declaration.slice(start, end).includes(before), `mutation target ${name}: ${before}`);
     return declaration.slice(0, start) + declaration.slice(start, end).replace(before, after) + declaration.slice(end);
   };
+  for (const [name, missing] of [['OverflowMenuItem', 'MissingMenuItem'], ['OverflowMenuProps', 'MissingMenuProps']])
+    assert.match(compile(declaration.replaceAll(name, missing)), new RegExp(name));
   for (const [name, before, after] of [
+    ['OverflowMenuProps', 'readonly items: readonly OverflowMenuItem[]', 'readonly items?: readonly OverflowMenuItem[]'],
+    ['OverflowMenuProps', 'readonly items: readonly OverflowMenuItem[]', 'items: readonly OverflowMenuItem[]'],
+    ['OverflowMenuProps', 'readonly items: readonly OverflowMenuItem[]', 'readonly items: OverflowMenuItem[]'],
+    ['OverflowMenuProps', 'readonly open: boolean', 'readonly open?: boolean'],
+    ['OverflowMenuProps', 'readonly onOpenChange: (open: boolean) => void', 'readonly onOpenChange: (open: string) => void'],
+    ['OverflowMenuProps', "readonly onSelect: (itemId: string, event: import('react').MouseEvent<HTMLButtonElement>) => void", 'readonly onSelect: (itemId: string) => void'],
+    ['OverflowMenuProps', 'MouseEvent<HTMLButtonElement>', 'MouseEvent<HTMLDivElement>'],
+    ['OverflowMenuItem', "readonly tone?: 'normal' | 'destructive'", "readonly tone?: 'normal' | 'danger'"],
+    ['OverflowMenuItem', 'readonly label: string', 'label: string'],
+    ['OverflowMenuItem', 'readonly label: string', 'readonly label?: string'],
+    ['OverflowMenuItem', 'readonly disabled?: boolean', 'readonly disabled: boolean'],
+    ['OverflowMenuProps', 'readonly label: string', 'label: string'],
+    ['OverflowMenuProps', 'readonly label: string', 'readonly label?: string'],
+  ]) {
+    const mutated = mutateInterface(name, before, after);
+    const unrelatedPrefix = declaration.slice(0, declaration.indexOf('export interface OverflowMenuItem'));
+    assert.ok(mutated.startsWith(unrelatedPrefix), `Menu mutation must not alter preceding contracts: ${before}`);
+    assert.match(compile(mutated), /OverflowMenu|false.*true/, `${name}: ${before} → ${after}`);
+  }
+  for (const [name, before, after] of [
+    ['TimelineItem', 'readonly id: string;', 'id: string;'],
+    ['TimelineItem', 'readonly label: string;', 'readonly label?: string;'],
+    ['TimelineItem', 'readonly description?: string;', 'readonly description?: number;'],
+    ['TimelineItem', 'readonly disabled?: boolean;', 'readonly disabled: boolean;'],
+    ['TimelineProps', 'readonly items: readonly TimelineItem[];', 'readonly items: TimelineItem[];'],
+    ['TimelineProps', 'readonly onSelect: (id: string) => void;', 'readonly onSelect?: (id: string) => void;'],
+    ['TimelineProps', 'readonly selectedId?: string | null;', 'readonly selectedId?: string;'],
+    ['TimelineProps', "readonly renderItem?: (item: TimelineItem, isSelected: boolean, index: number) => import('react').ReactNode;", "readonly renderItem?: (item: TimelineItem, isSelected: boolean) => import('react').ReactNode;"],
     ['HistorySearchResult', 'readonly id: string;', 'id: string;'],
     ['HistorySearchResult', 'readonly title: string;', 'readonly title?: string;'],
     ['HistorySearchResult', 'readonly subtitle?: string;', 'readonly subtitle?: number;'],
@@ -87,7 +104,7 @@ export interface ConfirmDialogProps { readonly open: boolean; readonly title: st
     ['HistorySearchPaletteProps', 'readonly results: readonly HistorySearchResult[];', 'readonly results: HistorySearchResult[];'],
     ['HistorySearchPaletteProps', 'readonly onSelect: (id: string) => void;', 'readonly onSelect: (id: number) => void;'],
     ['HistorySearchPaletteProps', 'readonly onClose: () => void;', 'readonly onClose?: () => void;'],
-  ]) assert.match(compile(mutateInterface(name, before, after)), /HistorySearch|false.*true/, `${name}: ${before} → ${after}`);
+  ]) assert.match(compile(mutateInterface(name, before, after)), /Timeline|HistorySearch|false.*true/, `${name}: ${before} → ${after}`);
   assert.match(compile(declaration.replaceAll('ProjectNameFormProps', 'MissingProjectNameFormProps')), /ProjectNameFormProps/);
   for (const [name, before, alternatives] of [
     ...[
@@ -470,7 +487,7 @@ for (const [name, entry, files] of [
 });
 test('React chat requires its real supported export', () => {
   const component = () => undefined;
-  const supported = { HistorySearchPalette: component, ProjectNameForm: component, ProjectList: component, OverflowMenu: component, ApprovalCard: component, Chat: component, ChatPopup: component, ChatSidebar: component, ChatSidenav: component, ChatSidenavScrim: component, ChatInput: component, Citations: component, MessageList: component, MessageActions: component, Reasoning: component, TextTranscript: component, ToolObservation: component, ThreadList: component, ThreadRenameForm: component, ConfirmDialog: component };
+  const supported = { Timeline: component, HistorySearchPalette: component, ProjectNameForm: component, ProjectList: component, OverflowMenu: component, ApprovalCard: component, Chat: component, ChatPopup: component, ChatSidebar: component, ChatSidenav: component, ChatSidenavScrim: component, ChatInput: component, Citations: component, MessageList: component, MessageActions: component, Reasoning: component, TextTranscript: component, ToolObservation: component, ThreadList: component, ThreadRenameForm: component, ConfirmDialog: component };
   assert.throws(() => packageVerifier.assertSupportedExports('react/chat', {}), /ApprovalCard/);
   for (const name of Object.keys(supported)) {
     const { [name]: _omitted, ...rest } = supported;

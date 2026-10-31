@@ -825,3 +825,22 @@ or move conversations concurrently, and fresh backend reads remain authoritative
 Catalog updates preserve the latest observed entries without an atomic multi-tab
 guarantee. Project names remain browser-local. Shared catalogs, drag reordering
 and full T29 parity remain open; this slice adds no public library export.
+
+### Loaded checkpoint metadata timeline (private React)
+
+The ready React conversation includes a collapsed **Loaded checkpoint timeline**.
+It uses controlled `Timeline` presentation from `@threadplane/react/chat` to show
+metadata from the last explicitly loaded history page, in received order. It
+does not refresh history or replace the current transcript when opened or picked.
+The selected session, composer DOM/draft, URL and active response remain owned by
+the same application.
+
+Each visible occurrence has its own page-scoped UI identity, including rows with
+duplicate or missing backend checkpoint IDs. Selection shows only checkpoint ID,
+namespace, timestamp, parent ID and next-node names. Root/empty metadata remains
+distinct from unavailable metadata; historical state is never inspected here.
+The view shows at most ten rows and ten next-node names per row, with strings
+bounded to 512 UTF-16 units and truncation disclosed. A newly committed owner,
+conversation or history page retires previous selection/callbacks; ordinary
+streaming with the same page retains selection. This is metadata inspection;
+replay, fork, historical state and full/live timeline parity remain open.

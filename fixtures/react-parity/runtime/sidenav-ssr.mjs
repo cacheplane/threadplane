@@ -1,12 +1,38 @@
 import assert from 'node:assert/strict';
 import { createElement } from 'react';
 import { renderToString } from 'react-dom/server';
-import { HistorySearchPalette, ProjectNameForm, ProjectList, ChatSidenav, ConfirmDialog, OverflowMenu, ThreadList, ThreadRenameForm } from '@threadplane/react/chat';
+import { Timeline, HistorySearchPalette, ProjectNameForm, ProjectList, ChatSidenav, ConfirmDialog, OverflowMenu, ThreadList, ThreadRenameForm } from '@threadplane/react/chat';
 
 assert.equal(typeof window, 'undefined');
 assert.equal(typeof document, 'undefined');
 let requests = 0;
 const request = () => { requests++; };
+const timelineItems = Object.freeze([
+  Object.freeze({ id: ' exact/ID ', label: '<Checkpoint> & title', description: '<metadata>' }),
+  Object.freeze({ id: 'disabled', label: 'Unavailable', disabled: true }),
+]);
+const timeline = renderToString(createElement(Timeline, {
+  items: timelineItems, onSelect: request, selectedId: ' exact/ID ',
+}));
+assert.match(timeline, /<ol[^>]+aria-label="Checkpoints"/);
+assert.match(timeline, /&lt;Checkpoint&gt; &amp; title/);
+assert.match(timeline, /&lt;metadata&gt;/);
+assert.match(timeline, /aria-current="true"/);
+assert.match(timeline, /disabled=""/);
+const receivedTimeline = [];
+const customTimeline = renderToString(createElement(Timeline, {
+  items: timelineItems, onSelect: request, selectedId: 'disabled',
+  renderItem(item, selected, index) {
+    receivedTimeline.push([item, selected, index]);
+    return createElement('span', null, item.id);
+  },
+}));
+timelineItems.forEach((item, index) => assert.deepEqual(receivedTimeline[index], [item, index === 1, index]));
+timelineItems.forEach((item, index) => assert.equal(receivedTimeline[index][0], item));
+assert.doesNotMatch(customTimeline, /<button|&lt;metadata&gt;/);
+assert.match(renderToString(createElement(Timeline, { items: [], onSelect: request })), /<ol[^>]+><\/ol>/);
+assert.equal(requests, 0);
+console.log('Installed controlled Timeline SSR: literal supplied metadata, readonly row composition, disabled selection and no requests.');
 for (const open of [false, true]) {
   const html = renderToString(createElement(HistorySearchPalette, {
     open, query: '<literal>',
