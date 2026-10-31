@@ -34,6 +34,9 @@ const GLOBAL_CI_FILES = new Set([
   'scripts/react-cockpit/consumer-preparation.mjs',
   'scripts/react-cockpit/prepare-consumer.mjs',
   'tools/website-runtime-preparation/project.json',
+  // The Website server owner and cleanup checks must exercise browser CI.
+  'scripts/website-angular-startup.mjs',
+  'scripts/website-angular-startup.spec.mjs',
 ]);
 
 const PREVIEW_BUILD_FILES = new Set([

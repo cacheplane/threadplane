@@ -27,6 +27,7 @@ export default defineConfig({
       'cockpit-ports.spec.mjs',
       'cockpit-runtime-bridge-coverage.spec.mjs',
       'verify-angular-support.spec.mjs',
+      'website-angular-startup.spec.mjs',
     ],
     // Generator specs shell out to `npx tsx` and (re)generate committed
     // deployment manifests; keep them serial to avoid write races.
