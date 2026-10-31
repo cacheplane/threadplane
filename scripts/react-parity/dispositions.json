@@ -16089,6 +16089,34 @@
       "reason": "Unexported pure owner-document theme/direction and available-focus-target helpers shared by confirmation and search dialogs; their lifecycle and intent semantics remain separate."
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#Timeline",
+      "taskIds": ["T29"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private controlled supplied-order checkpoint presentation and original-object whole-row composition, dogfooded as metadata-only inspection of the existing loaded native history page. No fetching, historical state or execution; full timeline parity remains open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#TimelineItem",
+      "taskIds": ["T29"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly exact unique UI ID, literal label/description and optional disabled state. IDs carry caller-defined UI selection identity, not checkpoint execution authority."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#TimelineProps",
+      "taskIds": ["T29"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly controlled items, exact selection intent/current ID, labels/class and optional whole-row renderer preserving original items and supplied index. The application owns data and runtime lifetime."
+    },
+    {
+      "id": "source:libs/react/src/chat/timeline.tsx",
+      "taskIds": ["T29"],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "SSR-safe ordered list with native selection buttons, controlled current/strict disabled state and custom row bypass. Pure presentation without backend parsing, sorting, effects or commands."
+    },
+    {
       "id": "source:libs/react/src/chat/internal/name-form.tsx",
       "taskIds": [
         "T29"
