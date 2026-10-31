@@ -1,41 +1,38 @@
 import { test } from './fixtures';
-import {
-  mkdirSync,
-  mkdtempSync,
-  realpathSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs';
-import { tmpdir } from 'node:os';
+import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { mkdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 
 test('one selected production artifact and separate actual view lifecycle entry', async ({}, testInfo) => {
   test.setTimeout(300_000);
-  const { buildConsumer } = await import('../tooling/consumer.mjs');
-  const { captureVerification } = await import('../tooling/verify.mjs');
-  const { runBrowserProofs } = await import('../tooling/browser-proof.mjs');
-  const { selectedFramework } = await import('../tooling/commands.mjs');
-  const framework = selectedFramework(testInfo.project.metadata.framework);
-  const work = realpathSync(
-    mkdtempSync(join(tmpdir(), 'native-production-e2e-'))
+  const { readVerification } = await import('../tooling/verify.mjs');
+  const { preparationEnvironment, selectedFramework } = await import(
+    '../tooling/commands.mjs'
   );
+  const framework = selectedFramework(testInfo.project.metadata.framework);
+  const root = resolve(__dirname, '../../../../');
   const requested = testInfo.outputPath('retained');
   mkdirSync(dirname(requested), { recursive: true });
   const directory = join(realpathSync(dirname(requested)), 'retained');
-  try {
-    await buildConsumer({
-      root: resolve(__dirname, '../../../../'),
-      framework,
-      assistantId: 'assistant',
-      output: join(work, 'production'),
-      capture: (context) => captureVerification(directory, context),
-    });
-    const results = await runBrowserProofs(directory);
-    writeFileSync(
-      testInfo.outputPath('browser-results.json'),
-      JSON.stringify(results, null, 2) + '\n'
-    );
-  } finally {
-    rmSync(work, { recursive: true, force: true });
-  }
+  // The actual CLI owns the build, installed owner tests, browser proofs and
+  // sealed evidence. CI must not repeat it after this E2E target.
+  execFileSync(process.execPath, [
+    join(root, 'examples/chat/native/tooling/verify.mjs'),
+    `--framework=${framework}`,
+    '--retain',
+    directory,
+  ], {
+    cwd: root,
+    env: preparationEnvironment(),
+    stdio: 'inherit',
+    // Synchronous children cannot be interrupted by Playwright's timer.
+    timeout: testInfo.timeout - 10_000,
+  });
+  const verified = readVerification(directory);
+  assert.equal(verified.framework, framework);
+  writeFileSync(
+    testInfo.outputPath('browser-results.json'),
+    JSON.stringify(verified.results.browser, null, 2) + '\n'
+  );
 });
