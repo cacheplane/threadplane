@@ -397,14 +397,17 @@ export async function ingestManualEngagement(
   }
 ): Promise<{ recorded: number; dropped: number }> {
   return ex.transaction(async (tx) => {
-    await tx.execute(
+    const inserted = await tx.execute(
       `/* growth:linkedin-receipt-manual */
 insert into growth_linkedin_receipts
   (id, recipient, received_at, source, status, kind, forward_required)
 values ($1, 'manual', $2, 'manual', 'parsed', $3, false)
-on conflict (id) do nothing`,
+on conflict (id) do nothing
+returning id`,
       [input.receiptId, input.receivedAt, input.kind]
     );
+    // A repeat, or an id owned by another receipt, must not touch actors.
+    if (inserted.rows.length === 0) return { recorded: 0, dropped: 0 };
     return applyActors(tx, {
       receiptId: input.receiptId,
       kind: input.kind,

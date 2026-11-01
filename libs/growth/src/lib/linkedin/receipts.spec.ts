@@ -145,7 +145,7 @@ test('a parsed notification writes drops for denied actors and engagements for t
   const out = await processLinkedInReceipt(
     executor,
     'e1',
-    { ...cfg, forwardNotifications: true },
+    { ...cfg, forwardNotifications: false },
     {
       getReceived: async () => email(),
       parse: () => ({
@@ -167,7 +167,7 @@ test('a parsed notification writes drops for denied actors and engagements for t
   );
   const parsed = calls.find((c) => c.marker === 'linkedin-receipt-parsed')!;
   expect(parsed.params[1]).toBe('comment');
-  expect(parsed.params.at(-1)).toBe(true);
+  expect(parsed.params.at(-1)).toBe(false);
 });
 
 test('parsed with zero actors is unparsed as no_actor', async () => {
@@ -344,12 +344,15 @@ test('scrub targets receipts older than 30 days', async () => {
   });
   expect(await scrubLinkedInReceipts(executor, { now })).toBe(2);
   expect(calls[0].params[0]).toEqual(new Date(now.getTime() - 30 * 86400000));
+  expect(calls[0].params[1]).toEqual(now);
+  for (const column of ['raw_subject', 'raw_text', 'raw_html'])
+    expect(calls[0].sql).toContain(`${column} = null`);
 });
 
 test('manual ingest inserts a synthetic receipt and applies the deny loop', async () => {
   let n = 0;
   const { executor, calls } = executorWith({
-    'linkedin-receipt-manual': () => ({ rows: [] }),
+    'linkedin-receipt-manual': () => ({ rows: [{ id: 'm1' }] }),
     'linkedin-post-resolve': () => ({ rows: [{ id: 'post-1' }] }),
     'linkedin-deny-match': () => ({
       rows: n++ === 0 ? [{ id: 'deny-1' }] : [],
@@ -372,4 +375,74 @@ test('manual ingest inserts a synthetic receipt and applies the deny loop', asyn
   expect(result).toEqual({ recorded: 1, dropped: 1 });
   expect(calls[0].marker).toBe('linkedin-receipt-manual');
   expect(calls[0].params.slice(0, 2)).toEqual(['m1', now]);
+});
+
+test('manual ingest of an already-recorded receipt id touches nothing', async () => {
+  const { executor, calls } = executorWith({
+    'linkedin-receipt-manual': () => ({ rows: [] }),
+  });
+  const result = await ingestManualEngagement(executor, {
+    receiptId: 'm1',
+    receivedAt: now,
+    kind: 'reaction',
+    actors: [actor('a')],
+    post: { urn: 'u', url: null },
+  });
+  expect(result).toEqual({ recorded: 0, dropped: 0 });
+  expect(calls.map((c) => c.marker)).toEqual(['linkedin-receipt-manual']);
+});
+
+test('a parsed result from an untrusted sender is downgraded to untrusted_sender', async () => {
+  const { executor, calls } = executorWith({
+    ...pending,
+    'linkedin-receipt-unparsed': () => ({ rows: [] }),
+  });
+  const out = await processLinkedInReceipt(executor, 'e1', cfg, {
+    getReceived: async () => email({ from: 'x@evil.example', headers: {} }),
+    parse: () => ({
+      outcome: 'parsed',
+      kind: 'comment',
+      actors: [actor('a')],
+      post: { urn: 'u', url: null },
+      aggregateCount: null,
+    }),
+    now: () => now,
+  });
+  expect(out).toBe('unparsed');
+  const params = calls.find(
+    (c) => c.marker === 'linkedin-receipt-unparsed'
+  )!.params;
+  expect(params[1]).toBe('untrusted_sender');
+  expect(params.slice(4)).toEqual([null, null, null, true]);
+  expect(calls.some((c) => c.marker === 'linkedin-lead-upsert')).toBe(false);
+});
+
+test('forward finishes from an already-accepted attempt without sending', async () => {
+  const deps = fwdDeps();
+  const { executor, calls } = executorWith({
+    'linkedin-forward-receipt': () => ({ rows: [receiptRow()] }),
+    'linkedin-forward-accepted': () => ({
+      rows: [{ provider_email_id: 'f-old' }],
+    }),
+    'linkedin-forward-complete': () => ({ rows: [{ id: 'e1' }] }),
+  });
+  expect(await forwardLinkedInReceipt(executor, 'e1', deps)).toBe('f-old');
+  expect(deps.send).not.toHaveBeenCalled();
+  expect(calls.at(-1)?.params).toEqual(['e1', 'f-old']);
+});
+
+test('a forward from the operator address is loop suppressed', async () => {
+  const deps = fwdDeps();
+  const { executor, calls } = executorWith({
+    'linkedin-forward-receipt': () => ({
+      rows: [receiptRow({ sender: INBOX_FORWARD_TO })],
+    }),
+    'linkedin-forward-accepted': () => ({ rows: [] }),
+    'linkedin-forward-suppressed': () => ({ rows: [] }),
+  });
+  expect(await forwardLinkedInReceipt(executor, 'e1', deps)).toBeNull();
+  expect(deps.send).not.toHaveBeenCalled();
+  expect(calls.some((c) => c.marker === 'linkedin-forward-suppressed')).toBe(
+    true
+  );
 });
