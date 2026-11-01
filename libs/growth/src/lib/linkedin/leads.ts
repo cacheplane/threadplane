@@ -211,7 +211,8 @@ export interface LinkedInLeadSummary {
   }[];
 }
 
-interface LeadListRow extends Record<string, unknown> {
+/** Raw row shape returned by the lead list queries. */
+export interface LeadListRow extends Record<string, unknown> {
   id: string;
   profile_url: string;
   display_name: string;
@@ -264,7 +265,12 @@ order by l.score desc, l.last_seen_at desc
 limit $2`,
     [input.status ?? null, limit]
   );
-  return result.rows.map((row) => ({
+  return result.rows.map(mapLeadRow);
+}
+
+/** Maps a lead list row to its summary. */
+export function mapLeadRow(row: LeadListRow): LinkedInLeadSummary {
+  return {
     id: row.id,
     profileUrl: row.profile_url,
     displayName: row.display_name,
@@ -284,7 +290,7 @@ limit $2`,
       postUrn: e.post_urn,
       postUrl: e.post_url,
     })),
-  }));
+  };
 }
 
 export type DecideLeadInput =

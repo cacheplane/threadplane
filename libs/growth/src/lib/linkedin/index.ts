@@ -4,3 +4,4 @@ export * from './normalize.ts';
 export * from './parser.ts';
 export * from './leads.ts';
 export * from './receipts.ts';
+export * from './digest.ts';
