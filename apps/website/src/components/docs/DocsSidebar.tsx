@@ -332,7 +332,7 @@ function SectionGroup({
             return (
               <Link
                 key={`${page.section}/${page.slug}`}
-                href={resolveHref(`/docs/${activeLibrary}/${page.section}/${page.slug}`)}
+                href={resolveHref(page.href ?? `/docs/${activeLibrary}/${page.section}/${page.slug}`)}
                 onClick={onNavigate}
                 data-docs-navlink
                 data-workspace-navigation-link
@@ -369,6 +369,15 @@ export function DocsNavigation({
         aria-label="Featured documentation"
         className="docs-sidebar-top-links"
       >
+        <Link
+          href={resolveHref('/docs/api')}
+          className="docs-sidebar-top-link"
+          onClick={onNavigate}
+          data-docs-navlink
+          data-workspace-navigation-link
+        >
+          API Reference
+        </Link>
         {specialDocsPages.map((page) => (
           <Link
             key={page.path}

@@ -1,0 +1,80 @@
+{
+  "name": "AgentSubmitOptions",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/AgentSubmitOptions",
+  "canonicalReference": "@threadplane/chat!AgentSubmitOptions:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Options for cancelling an agent submission through an abort signal.",
+  "declarations": [
+    {
+      "name": "AgentSubmitOptions",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!AgentSubmitOptions:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface AgentSubmitOptions "
+        }
+      ],
+      "docs": {
+        "summary": "Options for cancelling an agent submission through an abort signal.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "signal",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!AgentSubmitOptions#signal:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "signal?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AbortSignal",
+              "canonicalReference": "!AbortSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent-submit.ts",
+            "line": 15
+          },
+          "isReadonly": false,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/agent/agent-submit.ts",
+        "line": 14
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/agent/agent-submit.ts",
+    "line": 14
+  }
+}

@@ -1,0 +1,187 @@
+{
+  "name": "OverflowMenuItem",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/OverflowMenuItem",
+  "canonicalReference": "@threadplane/react!OverflowMenuItem:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Menu option identified on selection, with a display label, optional disabled state, and visual tone.",
+  "declarations": [
+    {
+      "name": "OverflowMenuItem",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!OverflowMenuItem:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface OverflowMenuItem "
+        }
+      ],
+      "docs": {
+        "summary": "Menu option identified on selection, with a display label, optional disabled state, and visual tone.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "disabled",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!OverflowMenuItem#disabled:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly disabled?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/overflow-menu.tsx",
+            "line": 16
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "id",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!OverflowMenuItem#id:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly id: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/overflow-menu.tsx",
+            "line": 14
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "label",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!OverflowMenuItem#label:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly label: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/overflow-menu.tsx",
+            "line": 15
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "tone",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!OverflowMenuItem#tone:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly tone?: "
+            },
+            {
+              "kind": "Content",
+              "text": "'normal' | 'destructive'"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/overflow-menu.tsx",
+            "line": 17
+          },
+          "isReadonly": true,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/overflow-menu.tsx",
+        "line": 13
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/overflow-menu.tsx",
+    "line": 13
+  }
+}

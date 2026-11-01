@@ -1,0 +1,464 @@
+{
+  "name": "ThreadplaneTelemetryService",
+  "entrypointId": "telemetry/browser",
+  "kind": "Class",
+  "href": "/docs/api/telemetry/browser/ThreadplaneTelemetryService",
+  "canonicalReference": "@threadplane/telemetry!ThreadplaneTelemetryService:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Browser-side telemetry service.\n\nThe service no-ops unless `provideThreadplaneTelemetry({ enabled: true })`\nconfigured it. It enriches sent events with `sample_weight`, then delivers\nthem through `sink`, `endpoint`, or legacy PostHog configuration.",
+  "declarations": [
+    {
+      "name": "ThreadplaneTelemetryService",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/telemetry!ThreadplaneTelemetryService:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class ThreadplaneTelemetryService "
+        }
+      ],
+      "docs": {
+        "summary": "Browser-side telemetry service.\n\nThe service no-ops unless `provideThreadplaneTelemetry({ enabled: true })`\nconfigured it. It enriches sent events with `sample_weight`, then delivers\nthem through `sink`, `endpoint`, or legacy PostHog configuration.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "capture",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/telemetry!ThreadplaneTelemetryService#capture:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "capture(event: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ThreadplaneTelemetryEvent",
+              "canonicalReference": "@threadplane/telemetry!ThreadplaneTelemetryEvent:type",
+              "href": "/docs/api/telemetry/browser/ThreadplaneTelemetryEvent"
+            },
+            {
+              "kind": "Content",
+              "text": ", properties?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, unknown>"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Capture an event using the configured delivery and sampling options.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/browser/service.ts",
+            "line": 68
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "event",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "properties",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 5
+              },
+              "isOptional": true
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 6,
+            "endIndex": 8
+          }
+        },
+        {
+          "name": "captureRuntimeInstanceCreated",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/telemetry!ThreadplaneTelemetryService#captureRuntimeInstanceCreated:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "captureRuntimeInstanceCreated(input: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ThreadplaneBrowserRuntimeTelemetry",
+              "canonicalReference": "@threadplane/telemetry!ThreadplaneBrowserRuntimeTelemetry:interface",
+              "href": "/docs/api/telemetry/browser/ThreadplaneBrowserRuntimeTelemetry"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Capture a runtime construction event.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/browser/service.ts",
+            "line": 98
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "input",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 5
+          }
+        },
+        {
+          "name": "captureRuntimeRequestCreated",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/telemetry!ThreadplaneTelemetryService#captureRuntimeRequestCreated:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "captureRuntimeRequestCreated(input: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ThreadplaneBrowserRuntimeTelemetry",
+              "canonicalReference": "@threadplane/telemetry!ThreadplaneBrowserRuntimeTelemetry:interface",
+              "href": "/docs/api/telemetry/browser/ThreadplaneBrowserRuntimeTelemetry"
+            },
+            {
+              "kind": "Content",
+              "text": " & {\n        requestType: string;\n    }"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Capture a runtime request creation event.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/browser/service.ts",
+            "line": 103
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "input",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 3
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 4,
+            "endIndex": 6
+          }
+        },
+        {
+          "name": "captureStreamEnded",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/telemetry!ThreadplaneTelemetryService#captureStreamEnded:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "captureStreamEnded(input: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ThreadplaneBrowserStreamTelemetry",
+              "canonicalReference": "@threadplane/telemetry!ThreadplaneBrowserStreamTelemetry:interface",
+              "href": "/docs/api/telemetry/browser/ThreadplaneBrowserStreamTelemetry"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Capture a stream-end event.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/browser/service.ts",
+            "line": 113
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "input",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 5
+          }
+        },
+        {
+          "name": "captureStreamErrored",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/telemetry!ThreadplaneTelemetryService#captureStreamErrored:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "captureStreamErrored(input: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ThreadplaneBrowserStreamErrorTelemetry",
+              "canonicalReference": "@threadplane/telemetry!ThreadplaneBrowserStreamErrorTelemetry:interface",
+              "href": "/docs/api/telemetry/browser/ThreadplaneBrowserStreamErrorTelemetry"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Capture a stream-error event, sending only the derived error class.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/browser/service.ts",
+            "line": 118
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "input",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 5
+          }
+        },
+        {
+          "name": "captureStreamStarted",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/telemetry!ThreadplaneTelemetryService#captureStreamStarted:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "captureStreamStarted(input: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ThreadplaneBrowserStreamTelemetry",
+              "canonicalReference": "@threadplane/telemetry!ThreadplaneBrowserStreamTelemetry:interface",
+              "href": "/docs/api/telemetry/browser/ThreadplaneBrowserStreamTelemetry"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Capture a stream-start event.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/browser/service.ts",
+            "line": 108
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "input",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 5
+          }
+        }
+      ],
+      "source": {
+        "path": "libs/telemetry/src/browser/service.ts",
+        "line": 61
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/telemetry/src/browser/service.ts",
+    "line": 61
+  }
+}

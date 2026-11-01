@@ -1,0 +1,325 @@
+{
+  "name": "ChatTraceComponent",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/ChatTraceComponent",
+  "canonicalReference": "@threadplane/chat!ChatTraceComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Provides a collapsible trace section that expands automatically for running or error states.",
+  "declarations": [
+    {
+      "name": "ChatTraceComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!ChatTraceComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class ChatTraceComponent "
+        }
+      ],
+      "docs": {
+        "summary": "Provides a collapsible trace section that expands automatically for running or error states.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "Constructor",
+          "kind": "Constructor",
+          "canonicalReference": "@threadplane/chat!ChatTraceComponent:constructor(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "constructor();"
+            }
+          ],
+          "docs": {
+            "summary": "Constructs a new instance of the `ChatTraceComponent` class",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-trace/chat-trace.component.ts",
+            "line": 58
+          },
+          "overloadIndex": 1,
+          "parameters": []
+        },
+        {
+          "name": "defaultExpanded",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatTraceComponent#defaultExpanded:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly defaultExpanded: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "When state is not 'running' or 'error', honors this input as the default expansion.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-trace/chat-trace.component.ts",
+            "line": 43
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "expanded",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatTraceComponent#expanded:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly expanded: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-trace/chat-trace.component.ts",
+            "line": 48
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "expandedStr",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatTraceComponent#expandedStr:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly expandedStr: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-trace/chat-trace.component.ts",
+            "line": 56
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "state",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatTraceComponent#state:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly state: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "TraceState",
+              "canonicalReference": "@threadplane/chat!TraceState:type",
+              "href": "/docs/api/chat/TraceState"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-trace/chat-trace.component.ts",
+            "line": 41
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "toggle",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/chat!ChatTraceComponent#toggle:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "toggle(): "
+            },
+            {
+              "kind": "Content",
+              "text": "void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-trace/chat-trace.component.ts",
+            "line": 71
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [],
+          "returnTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/primitives/chat-trace/chat-trace.component.ts",
+        "line": 10
+      },
+      "angular": {
+        "selector": "chat-trace",
+        "inputs": [
+          {
+            "name": "defaultExpanded",
+            "alias": "defaultExpanded",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "state",
+            "alias": "state",
+            "required": false,
+            "type": "TraceState"
+          }
+        ],
+        "outputs": []
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/primitives/chat-trace/chat-trace.component.ts",
+    "line": 10
+  }
+}

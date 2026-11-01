@@ -2,30 +2,17 @@ import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import { INTERRUPT_GUIDANCE } from '../../lib/interrupt-guidance';
-import a2uiApiDocs from '../../../content/docs/a2ui/api/api-docs.json';
-import langgraphApiDocs from '../../../content/docs/langgraph/api/api-docs.json';
-import agUiApiDocs from '../../../content/docs/ag-ui/api/api-docs.json';
-import chatApiDocs from '../../../content/docs/chat/api/api-docs.json';
-import middlewareApiDocs from '../../../content/docs/middleware/api/api-docs.json';
-import renderApiDocs from '../../../content/docs/render/api/api-docs.json';
-
-const API_DOCS: Record<string, unknown> = {
-  a2ui: a2uiApiDocs,
-  'ag-ui': agUiApiDocs,
-  langgraph: langgraphApiDocs,
-  chat: chatApiDocs,
-  middleware: middlewareApiDocs,
-  render: renderApiDocs,
-};
+import { readApiIndex, readApiSymbol, apiSymbolMarkdown } from '../../lib/api-reference';
 
 function loadApiDocs(): string {
-  const sections = Object.entries(API_DOCS)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([library, docs]) => `### ${library}\n\n${JSON.stringify(docs, null, 2)}`);
-
-  return sections.length > 0
-    ? sections.join('\n\n')
-    : '(API reference not yet generated — run npm run generate-api-docs)';
+  const index = readApiIndex();
+  return index.entrypoints.map(entrypoint => `### ${entrypoint.importPath}\n\n${index.symbols
+    .filter(summary => summary.entrypointId === entrypoint.id)
+    .map(summary => {
+      const symbol = readApiSymbol(entrypoint.id, summary.name);
+      if (!symbol) throw new Error(`Missing API symbol: ${summary.href}`);
+      return apiSymbolMarkdown(symbol, entrypoint);
+    }).join('\n\n')}`).join('\n\n');
 }
 
 function loadAllPrompts(): string {
@@ -48,7 +35,7 @@ function loadAllPrompts(): string {
 export async function GET() {
   const sections = [
     '# Threadplane — Full Reference\n\nSee /llms.txt for a compact summary.\n',
-    '## API Reference (TypeDoc)\n\n' + loadApiDocs(),
+    '## API Reference (API Extractor)\n\n' + loadApiDocs(),
     '## Prompt Recipes\n\n' + loadAllPrompts(),
     INTERRUPT_GUIDANCE,
     [

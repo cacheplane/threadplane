@@ -1,0 +1,56 @@
+{
+  "name": "PERSONAL_EMAIL_DOMAINS",
+  "entrypointId": "telemetry/shared",
+  "kind": "Variable",
+  "href": "/docs/api/telemetry/shared/PERSONAL_EMAIL_DOMAINS",
+  "canonicalReference": "@threadplane/telemetry!PERSONAL_EMAIL_DOMAINS:var",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Known personal email provider domains used by the shared domain classification helper.",
+  "declarations": [
+    {
+      "name": "PERSONAL_EMAIL_DOMAINS",
+      "kind": "Variable",
+      "canonicalReference": "@threadplane/telemetry!PERSONAL_EMAIL_DOMAINS:var",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "PERSONAL_EMAIL_DOMAINS: "
+        },
+        {
+          "kind": "Reference",
+          "text": "ReadonlySet",
+          "canonicalReference": "!ReadonlySet:interface"
+        },
+        {
+          "kind": "Content",
+          "text": "<string>"
+        }
+      ],
+      "docs": {
+        "summary": "Known personal email provider domains used by the shared domain classification helper.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/telemetry/src/shared/personal-email-domains.ts",
+        "line": 2
+      },
+      "isReadonly": true,
+      "variableTypeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 3
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/telemetry/src/shared/personal-email-domains.ts",
+    "line": 2
+  }
+}

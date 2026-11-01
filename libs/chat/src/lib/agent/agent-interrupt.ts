@@ -1,3 +1,4 @@
+/** A runtime interrupt payload, its identifier, and whether the agent can resume it. */
 export interface AgentInterrupt {
   /** Stable identifier for this interrupt instance. */
   id: string;

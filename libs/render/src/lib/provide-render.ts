@@ -3,6 +3,7 @@ import type { RenderConfig } from './render.types';
 import { RENDER_LIFECYCLE } from './lifecycle';
 import { RenderLifecycleService } from './render-lifecycle.service';
 
+/** Injection token for the registry, state, functions, handlers, and telemetry options registered by provideRender. */
 export const RENDER_CONFIG = new InjectionToken<RenderConfig>('RENDER_CONFIG');
 
 /**

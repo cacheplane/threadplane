@@ -1,0 +1,89 @@
+{
+  "name": "markdownUrl",
+  "entrypointId": "content/markdown",
+  "kind": "Function",
+  "href": "/docs/api/content/markdown/markdownUrl",
+  "canonicalReference": "@threadplane/content!markdownUrl:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Classify a Markdown destination without rewriting the supplied value.",
+  "declarations": [
+    {
+      "name": "markdownUrl",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/content!markdownUrl:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function markdownUrl(value: "
+        },
+        {
+          "kind": "Content",
+          "text": "string"
+        },
+        {
+          "kind": "Content",
+          "text": ", kind: "
+        },
+        {
+          "kind": "Content",
+          "text": "'link' | 'image'"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "string | undefined"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Classify a Markdown destination without rewriting the supplied value.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/content/src/markdown/markdown-url.ts",
+        "line": 2
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "value",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "kind",
+          "parameterTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 5,
+        "endIndex": 6
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/content/src/markdown/markdown-url.ts",
+    "line": 2
+  }
+}

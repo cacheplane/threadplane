@@ -1,0 +1,53 @@
+{
+  "name": "cacheplaneMarkdownViews",
+  "entrypointId": "chat",
+  "kind": "Variable",
+  "href": "/docs/api/chat/cacheplaneMarkdownViews",
+  "canonicalReference": "@threadplane/chat!cacheplaneMarkdownViews:var",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Default view registry consumed by <chat-streaming-md>. Maps every\nMarkdownNode.type emitted by @cacheplane/partial-markdown@0.2 to its\ncorresponding Angular component.\n\nOverride per-node-type via `withViews(cacheplaneMarkdownViews, { … })`.",
+  "declarations": [
+    {
+      "name": "cacheplaneMarkdownViews",
+      "kind": "Variable",
+      "canonicalReference": "@threadplane/chat!cacheplaneMarkdownViews:var",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "cacheplaneMarkdownViews: "
+        },
+        {
+          "kind": "Reference",
+          "text": "ViewRegistry",
+          "canonicalReference": "@threadplane/chat!ViewRegistry:type",
+          "href": "/docs/api/chat/ViewRegistry"
+        }
+      ],
+      "docs": {
+        "summary": "Default view registry consumed by <chat-streaming-md>. Maps every\nMarkdownNode.type emitted by @cacheplane/partial-markdown@0.2 to its\ncorresponding Angular component.\n\nOverride per-node-type via `withViews(cacheplaneMarkdownViews, { … })`.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/markdown/cacheplane-markdown-views.ts",
+        "line": 35
+      },
+      "isReadonly": true,
+      "variableTypeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/markdown/cacheplane-markdown-views.ts",
+    "line": 35
+  }
+}

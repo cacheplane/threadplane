@@ -1,0 +1,187 @@
+{
+  "name": "RuntimeRequestTelemetry",
+  "entrypointId": "telemetry/node",
+  "kind": "Interface",
+  "href": "/docs/api/telemetry/node/RuntimeRequestTelemetry",
+  "canonicalReference": "@threadplane/telemetry!RuntimeRequestTelemetry:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Transport and request classification metadata, with optional provider and model, for explicit Node capture.",
+  "declarations": [
+    {
+      "name": "RuntimeRequestTelemetry",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/telemetry!RuntimeRequestTelemetry:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface RuntimeRequestTelemetry "
+        }
+      ],
+      "docs": {
+        "summary": "Transport and request classification metadata, with optional provider and model, for explicit Node capture.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "model",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/telemetry!RuntimeRequestTelemetry#model:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "model?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/node/adapter.ts",
+            "line": 26
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "provider",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/telemetry!RuntimeRequestTelemetry#provider:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "provider?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/node/adapter.ts",
+            "line": 25
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "requestType",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/telemetry!RuntimeRequestTelemetry#requestType:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "requestType: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/node/adapter.ts",
+            "line": 24
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "transport",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/telemetry!RuntimeRequestTelemetry#transport:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "transport: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/node/adapter.ts",
+            "line": 23
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/telemetry/src/node/adapter.ts",
+        "line": 22
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/telemetry/src/node/adapter.ts",
+    "line": 22
+  }
+}

@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, input, signal } f
 import type { Spec } from '@json-render/core';
 import { RenderElementComponent } from '@threadplane/render';
 
+/** Renders A2UI tab titles and the child content for the locally selected tab. */
 @Component({
   selector: 'a2ui-tabs',
   standalone: true,

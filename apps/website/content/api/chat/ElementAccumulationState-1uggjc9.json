@@ -1,0 +1,187 @@
+{
+  "name": "ElementAccumulationState",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/ElementAccumulationState",
+  "canonicalReference": "@threadplane/chat!ElementAccumulationState:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Tracks which element fields have arrived and whether its JSON object is still streaming.",
+  "declarations": [
+    {
+      "name": "ElementAccumulationState",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!ElementAccumulationState:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ElementAccumulationState "
+        }
+      ],
+      "docs": {
+        "summary": "Tracks which element fields have arrived and whether its JSON object is still streaming.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "hasChildren",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ElementAccumulationState#hasChildren:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "hasChildren: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/streaming/parse-tree-store.ts",
+            "line": 10
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "hasProps",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ElementAccumulationState#hasProps:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "hasProps: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/streaming/parse-tree-store.ts",
+            "line": 9
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "hasType",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ElementAccumulationState#hasType:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "hasType: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/streaming/parse-tree-store.ts",
+            "line": 8
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "streaming",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ElementAccumulationState#streaming:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "streaming: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/streaming/parse-tree-store.ts",
+            "line": 11
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/streaming/parse-tree-store.ts",
+        "line": 7
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/streaming/parse-tree-store.ts",
+    "line": 7
+  }
+}

@@ -1,0 +1,195 @@
+{
+  "name": "ChatSubagentCardComponent",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/ChatSubagentCardComponent",
+  "canonicalReference": "@threadplane/chat!ChatSubagentCardComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Displays a subagent’s status, reasoning, markdown messages, and message-scoped tool calls in a collapsible trace.",
+  "declarations": [
+    {
+      "name": "ChatSubagentCardComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!ChatSubagentCardComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class ChatSubagentCardComponent "
+        }
+      ],
+      "docs": {
+        "summary": "Displays a subagent’s status, reasoning, markdown messages, and message-scoped tool calls in a collapsible trace.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "Constructor",
+          "kind": "Constructor",
+          "canonicalReference": "@threadplane/chat!ChatSubagentCardComponent:constructor(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "constructor();"
+            }
+          ],
+          "docs": {
+            "summary": "Constructs a new instance of the `ChatSubagentCardComponent` class",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-subagent-card/chat-subagent-card.component.ts",
+            "line": 98
+          },
+          "overloadIndex": 1,
+          "parameters": []
+        },
+        {
+          "name": "state",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatSubagentCardComponent#state:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly state: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "TraceState",
+              "canonicalReference": "@threadplane/chat!TraceState:type",
+              "href": "/docs/api/chat/TraceState"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-subagent-card/chat-subagent-card.component.ts",
+            "line": 95
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "subagent",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatSubagentCardComponent#subagent:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly subagent: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Subagent",
+              "canonicalReference": "@threadplane/chat!Subagent:interface",
+              "href": "/docs/api/chat/Subagent"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-subagent-card/chat-subagent-card.component.ts",
+            "line": 94
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/compositions/chat-subagent-card/chat-subagent-card.component.ts",
+        "line": 39
+      },
+      "angular": {
+        "selector": "chat-subagent-card",
+        "inputs": [
+          {
+            "name": "subagent",
+            "alias": "subagent",
+            "required": true,
+            "type": "Subagent"
+          }
+        ],
+        "outputs": []
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/compositions/chat-subagent-card/chat-subagent-card.component.ts",
+    "line": 39
+  }
+}

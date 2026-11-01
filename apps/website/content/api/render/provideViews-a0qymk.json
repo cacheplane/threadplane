@@ -1,0 +1,87 @@
+{
+  "name": "provideViews",
+  "entrypointId": "render",
+  "kind": "Function",
+  "href": "/docs/api/render/provideViews",
+  "canonicalReference": "@threadplane/render!provideViews:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Register a [ViewRegistry](/docs/api/render/ViewRegistry) for the render engine so generative-UI specs\ncan resolve element `type`s to Angular components. Provide at the application\n(or a feature route's) environment injector.",
+  "declarations": [
+    {
+      "name": "provideViews",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/render!provideViews:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function provideViews(registry: "
+        },
+        {
+          "kind": "Reference",
+          "text": "ViewRegistry",
+          "canonicalReference": "@threadplane/render!ViewRegistry:type",
+          "href": "/docs/api/render/ViewRegistry"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "import(\"@angular/core\")."
+        },
+        {
+          "kind": "Reference",
+          "text": "EnvironmentProviders",
+          "canonicalReference": "@angular/core!EnvironmentProviders:type"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Register a [ViewRegistry](/docs/api/render/ViewRegistry) for the render engine so generative-UI specs\ncan resolve element `type`s to Angular components. Provide at the application\n(or a feature route's) environment injector.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "Environment providers to spread into the `providers` array.",
+        "examples": [
+          "```ts\nbootstrapApplication(App, {\n  providers: [provideViews(views({ metric: MetricCardComponent }))],\n});\n```"
+        ],
+        "see": [],
+        "params": [
+          {
+            "name": "registry",
+            "description": "Map of spec element types to the components that render them,\n typically built with `views()` / `withViews()`."
+          }
+        ],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/render/src/lib/provide-views.ts",
+        "line": 22
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "registry",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/render/src/lib/provide-views.ts",
+    "line": 22
+  }
+}

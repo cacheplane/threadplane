@@ -1,0 +1,299 @@
+{
+  "name": "ClientToolLifecycle",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/ClientToolLifecycle",
+  "canonicalReference": "@threadplane/chat!ClientToolLifecycle:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Execution status, result availability, and error details supplied to a client tool view.",
+  "declarations": [
+    {
+      "name": "ClientToolLifecycle",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!ClientToolLifecycle:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ClientToolLifecycle "
+        }
+      ],
+      "docs": {
+        "summary": "Execution status, result availability, and error details supplied to a client tool view.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "error",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ClientToolLifecycle#error:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly error?: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+            "line": 52
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "hasResult",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ClientToolLifecycle#hasResult:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly hasResult: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+            "line": 50
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "id",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ClientToolLifecycle#id:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly id: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+            "line": 46
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "name",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ClientToolLifecycle#name:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly name: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+            "line": 47
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "phase",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ClientToolLifecycle#phase:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly phase: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ClientToolLifecyclePhase",
+              "canonicalReference": "@threadplane/chat!ClientToolLifecyclePhase:type",
+              "href": "/docs/api/chat/ClientToolLifecyclePhase"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+            "line": 49
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "result",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ClientToolLifecycle#result:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly result?: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+            "line": 51
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "status",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ClientToolLifecycle#status:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly status: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolCallStatus",
+              "canonicalReference": "@threadplane/chat!ToolCallStatus:type",
+              "href": "/docs/api/chat/ToolCallStatus"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+            "line": 48
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+        "line": 45
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+    "line": 45
+  }
+}

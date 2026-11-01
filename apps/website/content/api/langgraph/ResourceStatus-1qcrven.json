@@ -1,0 +1,90 @@
+{
+  "name": "ResourceStatus",
+  "entrypointId": "langgraph",
+  "kind": "TypeAlias",
+  "href": "/docs/api/langgraph/ResourceStatus",
+  "canonicalReference": "@threadplane/langgraph!ResourceStatus:type",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Runtime constant mirroring Angular's ResourceStatus string-union type.\nAngular 21 ships ResourceStatus as a pure string-union type (no runtime value),\nso we provide a const-object shim for code that needs runtime comparisons.",
+  "declarations": [
+    {
+      "name": "ResourceStatus",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/langgraph!ResourceStatus:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type ResourceStatus = "
+        },
+        {
+          "kind": "Reference",
+          "text": "NgResourceStatus",
+          "canonicalReference": "@angular/core!ResourceStatus:type"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/langgraph/src/lib/agent.types.ts",
+        "line": 54
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    },
+    {
+      "name": "ResourceStatus",
+      "kind": "Variable",
+      "canonicalReference": "@threadplane/langgraph!ResourceStatus:var",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "ResourceStatus: "
+        },
+        {
+          "kind": "Content",
+          "text": "{\n    readonly Idle: \"idle\";\n    readonly Loading: \"loading\";\n    readonly Reloading: \"reloading\";\n    readonly Resolved: \"resolved\";\n    readonly Error: \"error\";\n    readonly Local: \"local\";\n}"
+        }
+      ],
+      "docs": {
+        "summary": "Runtime constant mirroring Angular's ResourceStatus string-union type.\nAngular 21 ships ResourceStatus as a pure string-union type (no runtime value),\nso we provide a const-object shim for code that needs runtime comparisons.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/langgraph/src/lib/agent.types.ts",
+        "line": 54
+      },
+      "isReadonly": true,
+      "variableTypeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/langgraph/src/lib/agent.types.ts",
+    "line": 54
+  }
+}

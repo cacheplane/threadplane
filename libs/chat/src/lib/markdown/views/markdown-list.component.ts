@@ -3,6 +3,7 @@ import { Component, ChangeDetectionStrategy, input } from '@angular/core';
 import type { MarkdownListNode } from '@cacheplane/partial-markdown';
 import { MarkdownChildrenComponent } from '../markdown-children.component';
 
+/** Renders an ordered or unordered markdown list, preserving its optional starting number. */
 @Component({
   selector: 'chat-md-list',
   standalone: true,

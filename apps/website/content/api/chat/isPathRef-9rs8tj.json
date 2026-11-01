@@ -1,0 +1,78 @@
+{
+  "name": "isPathRef",
+  "entrypointId": "chat",
+  "kind": "Function",
+  "href": "/docs/api/chat/isPathRef",
+  "canonicalReference": "@threadplane/chat!isPathRef:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Returns true when `value` is an A2UI dynamic path reference.",
+  "declarations": [
+    {
+      "name": "isPathRef",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/chat!isPathRef:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function isPathRef(value: "
+        },
+        {
+          "kind": "Content",
+          "text": "unknown"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Reference",
+          "text": "value",
+          "canonicalReference": "@threadplane/chat!~value"
+        },
+        {
+          "kind": "Content",
+          "text": " is {\n    path: string;\n}"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Returns true when `value` is an A2UI dynamic path reference.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/a2ui/src/lib/guards.ts",
+        "line": 2
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "value",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/a2ui/src/lib/guards.ts",
+    "line": 2
+  }
+}

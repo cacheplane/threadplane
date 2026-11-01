@@ -1,6 +1,7 @@
 'use client';
 import { NameForm } from './internal/name-form.js';
 
+/** Controls a project name draft, save/cancel intents, pending and error feedback, and save-button availability. */
 export interface ProjectNameFormProps {
   readonly value: string;
   readonly onValueChange: (value: string) => void;

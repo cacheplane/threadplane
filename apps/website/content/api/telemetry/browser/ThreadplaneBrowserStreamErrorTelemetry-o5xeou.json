@@ -1,0 +1,89 @@
+{
+  "name": "ThreadplaneBrowserStreamErrorTelemetry",
+  "entrypointId": "telemetry/browser",
+  "kind": "Interface",
+  "href": "/docs/api/telemetry/browser/ThreadplaneBrowserStreamErrorTelemetry",
+  "canonicalReference": "@threadplane/telemetry!ThreadplaneBrowserStreamErrorTelemetry:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Stream error telemetry. The raw error is reduced to an error class.",
+  "declarations": [
+    {
+      "name": "ThreadplaneBrowserStreamErrorTelemetry",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/telemetry!ThreadplaneBrowserStreamErrorTelemetry:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ThreadplaneBrowserStreamErrorTelemetry extends "
+        },
+        {
+          "kind": "Reference",
+          "text": "ThreadplaneBrowserStreamTelemetry",
+          "canonicalReference": "@threadplane/telemetry!ThreadplaneBrowserStreamTelemetry:interface",
+          "href": "/docs/api/telemetry/browser/ThreadplaneBrowserStreamTelemetry"
+        },
+        {
+          "kind": "Content",
+          "text": " "
+        }
+      ],
+      "docs": {
+        "summary": "Stream error telemetry. The raw error is reduced to an error class.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "error",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/telemetry!ThreadplaneBrowserStreamErrorTelemetry#error:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "error?: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Raw error object or value; capture sends only `errorClass`.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/browser/service.ts",
+            "line": 35
+          },
+          "isReadonly": false,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/telemetry/src/browser/service.ts",
+        "line": 33
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/telemetry/src/browser/service.ts",
+    "line": 33
+  }
+}

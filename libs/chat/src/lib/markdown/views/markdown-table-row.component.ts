@@ -6,6 +6,7 @@ import type { MarkdownNode, MarkdownTableRowNode } from '@cacheplane/partial-mar
 import { MARKDOWN_VIEW_REGISTRY } from '../markdown-view-registry';
 import { IS_HEADER_ROW } from '../markdown-table-row.token';
 
+/** Renders markdown table-row children through the view registry and provides their header status. */
 @Component({
   selector: 'chat-md-table-row',
   standalone: true,

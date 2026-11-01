@@ -2,8 +2,10 @@ import type { ContentBlock } from './content-block';
 import type { Citation } from './citation';
 import type { MessageDelivery } from './message-delivery';
 
+/** The author category of a provider-independent agent message. */
 export type Role = 'user' | 'assistant' | 'system' | 'tool';
 
+/** A provider-independent chat message with delivery state, content, and optional reasoning, tools, and citations. */
 export interface Message {
   id: string;
   /** Adapter-owned authoritative delivery lifecycle state for this message. */

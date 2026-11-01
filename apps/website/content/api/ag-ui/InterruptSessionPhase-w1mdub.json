@@ -1,0 +1,54 @@
+{
+  "name": "InterruptSessionPhase",
+  "entrypointId": "ag-ui",
+  "kind": "TypeAlias",
+  "href": "/docs/api/ag-ui/InterruptSessionPhase",
+  "canonicalReference": "@threadplane/ag-ui!InterruptSessionPhase:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Interrupt batch lifecycle, including resume ownership, dispatch, acknowledgment, and recovery states.",
+  "declarations": [
+    {
+      "name": "InterruptSessionPhase",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/ag-ui!InterruptSessionPhase:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type InterruptSessionPhase = "
+        },
+        {
+          "kind": "Content",
+          "text": "'none' | 'collecting' | 'pending' | 'claimed' | 'resuming' | 'acknowledged' | 'uncertain' | 'recovery-required'"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Interrupt batch lifecycle, including resume ownership, dispatch, acknowledgment, and recovery states.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/ag-ui/src/lib/interrupt-session.types.ts",
+        "line": 7
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/ag-ui/src/lib/interrupt-session.types.ts",
+    "line": 7
+  }
+}

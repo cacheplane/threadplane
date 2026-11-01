@@ -41,9 +41,9 @@ test('dark brand sections keep ink labels on yellow primary actions', async ({ p
 for (const width of [375, 1440]) {
   test(`docs and generated API have no decorative left accents at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 1000 });
-    for (const path of ['/docs/chat/getting-started/quickstart', '/docs/langgraph/api/inject-agent']) {
+    for (const path of ['/docs/chat/getting-started/quickstart', '/docs/api/langgraph/injectAgent']) {
       await page.goto(path);
-      await expect(page.locator('.docs-prose').first()).toBeVisible();
+      await expect(page.locator('.docs-prose, .api-reference-detail').first()).toBeVisible();
       const accents = await page.locator('.docs-workspace-article').evaluate((article) =>
         [...article.querySelectorAll('*')].filter((element) => {
           const style = getComputedStyle(element);

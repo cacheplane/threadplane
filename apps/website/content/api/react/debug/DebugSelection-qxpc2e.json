@@ -1,0 +1,151 @@
+{
+  "name": "DebugSelection",
+  "entrypointId": "react/debug",
+  "kind": "Interface",
+  "href": "/docs/api/react/debug/DebugSelection",
+  "canonicalReference": "@threadplane/react!DebugSelection:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Identifies an inspectable checkpoint row within a specific application context and page generation.",
+  "declarations": [
+    {
+      "name": "DebugSelection",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!DebugSelection:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface DebugSelection "
+        }
+      ],
+      "docs": {
+        "summary": "Identifies an inspectable checkpoint row within a specific application context and page generation.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "contextKey",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!DebugSelection#contextKey:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly contextKey: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/debug/types.ts",
+            "line": 12
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "pageGeneration",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!DebugSelection#pageGeneration:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly pageGeneration: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/debug/types.ts",
+            "line": 13
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "rowKey",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!DebugSelection#rowKey:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly rowKey: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/debug/types.ts",
+            "line": 14
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/debug/types.ts",
+        "line": 11
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/debug/types.ts",
+    "line": 11
+  }
+}

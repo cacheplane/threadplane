@@ -1,0 +1,74 @@
+{
+  "name": "ClientToolExecutionRecord",
+  "entrypointId": "chat",
+  "kind": "TypeAlias",
+  "href": "/docs/api/chat/ClientToolExecutionRecord",
+  "canonicalReference": "@threadplane/chat!ClientToolExecutionRecord:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Prior durable execution state returned by a client-tool execution store.",
+  "declarations": [
+    {
+      "name": "ClientToolExecutionRecord",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/chat!ClientToolExecutionRecord:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type ClientToolExecutionRecord = "
+        },
+        {
+          "kind": "Content",
+          "text": "{\n    readonly status: 'executing';\n} | {\n    readonly status: 'done';\n    readonly result: "
+        },
+        {
+          "kind": "Reference",
+          "text": "ClientToolResult",
+          "canonicalReference": "@threadplane/chat!ClientToolResult:type",
+          "href": "/docs/api/chat/ClientToolResult"
+        },
+        {
+          "kind": "Content",
+          "text": ";\n} | {\n    readonly status: 'failed';\n    readonly result?: "
+        },
+        {
+          "kind": "Reference",
+          "text": "ClientToolResult",
+          "canonicalReference": "@threadplane/chat!ClientToolResult:type",
+          "href": "/docs/api/chat/ClientToolResult"
+        },
+        {
+          "kind": "Content",
+          "text": ";\n}"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Prior durable execution state returned by a client-tool execution store.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/client-tools/client-tool-execution-guard.ts",
+        "line": 11
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 6
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/client-tools/client-tool-execution-guard.ts",
+    "line": 11
+  }
+}

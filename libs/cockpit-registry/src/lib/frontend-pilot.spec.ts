@@ -173,7 +173,7 @@ it('resolves native Computed Functions with exact pure-function sources and no b
   const canonical = capabilityModules.find(entry => entry.id === 'render-computed-functions-python');
   if (!canonical) throw Error('Missing canonical Computed Functions');
   const react = getFrontendCapabilityDescriptor(canonical.manifestIdentity as CockpitManifestIdentity, 'react');
-  expect(react).toMatchObject({ runtimeAdapter: 'none', frontend: 'react', runtimeUrl: 'render/computed-functions/react', devPort: 4619, docsPath: '/docs/render/api/provide-render', promptAssetPaths: [], backendAssetPaths: [] });
+  expect(react).toMatchObject({ runtimeAdapter: 'none', frontend: 'react', runtimeUrl: 'render/computed-functions/react', devPort: 4619, docsPath: '/docs/render/guides/computed-functions', promptAssetPaths: [], backendAssetPaths: [] });
   expect(react?.codeAssetPaths).toEqual(['app.tsx','functions.ts','playback.ts','projection.ts','specs.ts','views.tsx','main.tsx','styles.css'].map(file => `cockpit/render/computed-functions/react/src/${file}`));
   for (const asset of react?.codeAssetPaths ?? []) expect(existsSync(new URL('../../../../' + asset, import.meta.url))).toBe(true);
   expect(getCockpitFrontends().find(entry => entry.project === 'cockpit-render-computed-functions-react')).toMatchObject({ port: 4619, runtimePath: 'render/computed-functions/react' });
@@ -190,7 +190,7 @@ it('resolves local React Element Rendering on its canonical API page without Pyt
     'react'
   );
   expect(react).toMatchObject({
-    docsPath: '/docs/render/api/render-spec-component',
+    docsPath: '/docs/render/guides/element-rendering',
     runtimeAdapter: 'none',
     frontend: 'react',
     runtimeUrl: 'render/element-rendering/react',

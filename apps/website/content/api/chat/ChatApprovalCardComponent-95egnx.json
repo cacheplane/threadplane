@@ -1,0 +1,358 @@
+{
+  "name": "ChatApprovalCardComponent",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/ChatApprovalCardComponent",
+  "canonicalReference": "@threadplane/chat!ChatApprovalCardComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Displays an approval dialog for a matching agent interrupt and emits approve, edit, or cancel actions.",
+  "declarations": [
+    {
+      "name": "ChatApprovalCardComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!ChatApprovalCardComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class ChatApprovalCardComponent "
+        }
+      ],
+      "docs": {
+        "summary": "Displays an approval dialog for a matching agent interrupt and emits approve, edit, or cancel actions.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "Constructor",
+          "kind": "Constructor",
+          "canonicalReference": "@threadplane/chat!ChatApprovalCardComponent:constructor(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "constructor();"
+            }
+          ],
+          "docs": {
+            "summary": "Constructs a new instance of the `ChatApprovalCardComponent` class",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
+            "line": 148
+          },
+          "overloadIndex": 1,
+          "parameters": []
+        },
+        {
+          "name": "action",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatApprovalCardComponent#action:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly action: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "OutputEmitterRef",
+              "canonicalReference": "@angular/core!OutputEmitterRef:class"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ChatApprovalAction",
+              "canonicalReference": "@threadplane/chat!ChatApprovalAction:type",
+              "href": "/docs/api/chat/ChatApprovalAction"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
+            "line": 128
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "agent",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatApprovalCardComponent#agent:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly agent: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Agent",
+              "canonicalReference": "@threadplane/chat!Agent:interface",
+              "href": "/docs/api/chat/Agent"
+            },
+            {
+              "kind": "Content",
+              "text": "<unknown>>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
+            "line": 123
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "matchKind",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatApprovalCardComponent#matchKind:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly matchKind: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
+            "line": 124
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "showEdit",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatApprovalCardComponent#showEdit:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly showEdit: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
+            "line": 126
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "title",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatApprovalCardComponent#title:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly title: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
+            "line": 125
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
+        "line": 21
+      },
+      "angular": {
+        "selector": "chat-approval-card",
+        "inputs": [
+          {
+            "name": "agent",
+            "alias": "agent",
+            "required": true,
+            "type": "Agent<unknown>"
+          },
+          {
+            "name": "matchKind",
+            "alias": "matchKind",
+            "required": false,
+            "type": "string | undefined"
+          },
+          {
+            "name": "showEdit",
+            "alias": "showEdit",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "title",
+            "alias": "title",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "action",
+            "alias": "action",
+            "required": false,
+            "type": "ChatApprovalAction"
+          }
+        ]
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
+    "line": 21
+  }
+}

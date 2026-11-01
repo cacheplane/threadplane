@@ -1,0 +1,1004 @@
+{
+  "name": "AgentTransport",
+  "entrypointId": "langgraph",
+  "kind": "Interface",
+  "href": "/docs/api/langgraph/AgentTransport",
+  "canonicalReference": "@threadplane/langgraph!AgentTransport:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Transport interface for connecting to a LangGraph agent.",
+  "declarations": [
+    {
+      "name": "AgentTransport",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/langgraph!AgentTransport:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface AgentTransport "
+        }
+      ],
+      "docs": {
+        "summary": "Transport interface for connecting to a LangGraph agent.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "cancelRun",
+          "kind": "MethodSignature",
+          "canonicalReference": "@threadplane/langgraph!AgentTransport#cancelRun:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "cancelRun?(threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", runId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", signal: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AbortSignal",
+              "canonicalReference": "!AbortSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Optional: cancel a server-side run.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 153
+          },
+          "overloadIndex": 1,
+          "isOptional": true,
+          "parameters": [
+            {
+              "parameterName": "threadId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "runId",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "signal",
+              "parameterTypeTokenRange": {
+                "startIndex": 5,
+                "endIndex": 6
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 7,
+            "endIndex": 9
+          }
+        },
+        {
+          "name": "createQueuedRun",
+          "kind": "MethodSignature",
+          "canonicalReference": "@threadplane/langgraph!AgentTransport#createQueuedRun:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "createQueuedRun?(assistantId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", payload: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ", signal: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AbortSignal",
+              "canonicalReference": "!AbortSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ", options?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "LangGraphSubmitOptions",
+              "canonicalReference": "@threadplane/langgraph!LangGraphSubmitOptions:interface",
+              "href": "/docs/api/langgraph/LangGraphSubmitOptions"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentQueueEntry",
+              "canonicalReference": "@threadplane/langgraph!AgentQueueEntry:interface",
+              "href": "/docs/api/langgraph/AgentQueueEntry"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Optional: create a server-side queued run without joining it immediately.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 144
+          },
+          "overloadIndex": 1,
+          "isOptional": true,
+          "parameters": [
+            {
+              "parameterName": "assistantId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "threadId",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "payload",
+              "parameterTypeTokenRange": {
+                "startIndex": 5,
+                "endIndex": 6
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "signal",
+              "parameterTypeTokenRange": {
+                "startIndex": 7,
+                "endIndex": 8
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "options",
+              "parameterTypeTokenRange": {
+                "startIndex": 9,
+                "endIndex": 10
+              },
+              "isOptional": true
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 11,
+            "endIndex": 15
+          }
+        },
+        {
+          "name": "getChildState",
+          "kind": "MethodSignature",
+          "canonicalReference": "@threadplane/langgraph!AgentTransport#getChildState:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "getChildState?(threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", checkpointNs: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", signal: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AbortSignal",
+              "canonicalReference": "!AbortSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ThreadState",
+              "canonicalReference": "@langchain/langgraph-sdk!ThreadState:interface",
+              "href": "/docs/api/langgraph/ThreadState"
+            },
+            {
+              "kind": "Content",
+              "text": " | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Optional: read the newest checkpoint a child graph saved under one\ncheckpoint namespace of a thread (for a delegation tool call, `tools:<task\nid>`). Used to restore a subagent's transcript when a thread is reloaded;\nwithout it, a reloaded subagent shows its status and result but no\nmessages. Resolve `undefined` when the namespace has no saved state.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 169
+          },
+          "overloadIndex": 1,
+          "isOptional": true,
+          "parameters": [
+            {
+              "parameterName": "threadId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "checkpointNs",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "signal",
+              "parameterTypeTokenRange": {
+                "startIndex": 5,
+                "endIndex": 6
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 7,
+            "endIndex": 11
+          }
+        },
+        {
+          "name": "getHistory",
+          "kind": "MethodSignature",
+          "canonicalReference": "@threadplane/langgraph!AgentTransport#getHistory:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "getHistory?(threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", signal: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AbortSignal",
+              "canonicalReference": "!AbortSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ThreadState",
+              "canonicalReference": "@langchain/langgraph-sdk!ThreadState:interface",
+              "href": "/docs/api/langgraph/ThreadState"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Optional: load persisted checkpoint history for a thread.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 160
+          },
+          "overloadIndex": 1,
+          "isOptional": true,
+          "parameters": [
+            {
+              "parameterName": "threadId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "signal",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 9
+          }
+        },
+        {
+          "name": "getState",
+          "kind": "MethodSignature",
+          "canonicalReference": "@threadplane/langgraph!AgentTransport#getState:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "getState?(threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", checkpoint: "
+            },
+            {
+              "kind": "Reference",
+              "text": "OwnedCheckpointPosition",
+              "canonicalReference": "@threadplane/langgraph!~OwnedCheckpointPosition:type"
+            },
+            {
+              "kind": "Content",
+              "text": ", signal: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AbortSignal",
+              "canonicalReference": "!AbortSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ThreadState",
+              "canonicalReference": "@langchain/langgraph-sdk!ThreadState:interface",
+              "href": "/docs/api/langgraph/ThreadState"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Exact saved root read. Branch effects must not infer authority from latest.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 176
+          },
+          "overloadIndex": 1,
+          "isOptional": true,
+          "parameters": [
+            {
+              "parameterName": "threadId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "checkpoint",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "signal",
+              "parameterTypeTokenRange": {
+                "startIndex": 5,
+                "endIndex": 6
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 7,
+            "endIndex": 11
+          }
+        },
+        {
+          "name": "joinStream",
+          "kind": "MethodSignature",
+          "canonicalReference": "@threadplane/langgraph!AgentTransport#joinStream:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "joinStream?(threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", runId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", lastEventId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string | undefined"
+            },
+            {
+              "kind": "Content",
+              "text": ", signal: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AbortSignal",
+              "canonicalReference": "!AbortSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ", options?: "
+            },
+            {
+              "kind": "Content",
+              "text": "{\n        streamMode?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "StreamMode",
+              "canonicalReference": "@langchain/langgraph-sdk!StreamMode:type"
+            },
+            {
+              "kind": "Content",
+              "text": "[];\n    }"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "AsyncIterable",
+              "canonicalReference": "!AsyncIterable:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "StreamEvent",
+              "canonicalReference": "@threadplane/langgraph!StreamEvent:interface",
+              "href": "/docs/api/langgraph/StreamEvent"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Optional: join an already-started run without creating a new one.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 128
+          },
+          "overloadIndex": 1,
+          "isOptional": true,
+          "parameters": [
+            {
+              "parameterName": "threadId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "runId",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "lastEventId",
+              "parameterTypeTokenRange": {
+                "startIndex": 5,
+                "endIndex": 6
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "signal",
+              "parameterTypeTokenRange": {
+                "startIndex": 7,
+                "endIndex": 8
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "options",
+              "parameterTypeTokenRange": {
+                "startIndex": 9,
+                "endIndex": 12
+              },
+              "isOptional": true
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 13,
+            "endIndex": 17
+          }
+        },
+        {
+          "name": "stream",
+          "kind": "MethodSignature",
+          "canonicalReference": "@threadplane/langgraph!AgentTransport#stream:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "stream(assistantId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string | null"
+            },
+            {
+              "kind": "Content",
+              "text": ", payload: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ", signal: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AbortSignal",
+              "canonicalReference": "!AbortSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ", options?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "LangGraphSubmitOptions",
+              "canonicalReference": "@threadplane/langgraph!LangGraphSubmitOptions:interface",
+              "href": "/docs/api/langgraph/LangGraphSubmitOptions"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "AsyncIterable",
+              "canonicalReference": "!AsyncIterable:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "StreamEvent",
+              "canonicalReference": "@threadplane/langgraph!StreamEvent:interface",
+              "href": "/docs/api/langgraph/StreamEvent"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Open a streaming connection to an agent and yield events.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 119
+          },
+          "overloadIndex": 1,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "assistantId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "threadId",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "payload",
+              "parameterTypeTokenRange": {
+                "startIndex": 5,
+                "endIndex": 6
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "signal",
+              "parameterTypeTokenRange": {
+                "startIndex": 7,
+                "endIndex": 8
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "options",
+              "parameterTypeTokenRange": {
+                "startIndex": 9,
+                "endIndex": 10
+              },
+              "isOptional": true
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 11,
+            "endIndex": 15
+          }
+        },
+        {
+          "name": "updateState",
+          "kind": "MethodSignature",
+          "canonicalReference": "@threadplane/langgraph!AgentTransport#updateState:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "updateState?(threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", values: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, unknown>"
+            },
+            {
+              "kind": "Content",
+              "text": ", signal: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AbortSignal",
+              "canonicalReference": "!AbortSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ", options?: "
+            },
+            {
+              "kind": "Content",
+              "text": "{\n        asNode?: string;\n        checkpoint?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "OwnedCheckpointPosition",
+              "canonicalReference": "@threadplane/langgraph!~OwnedCheckpointPosition:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";\n    }"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void | "
+            },
+            {
+              "kind": "Reference",
+              "text": "OwnedCheckpointPosition",
+              "canonicalReference": "@threadplane/langgraph!~OwnedCheckpointPosition:type"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Optional: update server-side thread state (e.g. to emit RemoveMessage\nentries for regenerate rollback). Forwards to the LangGraph\n`threads.updateState` API.\n\n`options.asNode` corresponds to LangGraph's `as_node` parameter — the\nserver treats the update as if that node had just produced the values,\nwhich determines what the next pull resumes. `regenerate()` passes\n`asNode: '__start__'` so the next `submit(null)` resumes at the entry\nnode and re-runs `generate` against the rolled-back state.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 193
+          },
+          "overloadIndex": 1,
+          "isOptional": true,
+          "parameters": [
+            {
+              "parameterName": "threadId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "values",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 5
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "signal",
+              "parameterTypeTokenRange": {
+                "startIndex": 6,
+                "endIndex": 7
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "options",
+              "parameterTypeTokenRange": {
+                "startIndex": 8,
+                "endIndex": 11
+              },
+              "isOptional": true
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 12,
+            "endIndex": 16
+          }
+        }
+      ],
+      "source": {
+        "path": "libs/langgraph/src/runtime/transport.types.ts",
+        "line": 117
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/langgraph/src/runtime/transport.types.ts",
+    "line": 117
+  }
+}

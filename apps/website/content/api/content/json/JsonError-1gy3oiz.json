@@ -1,0 +1,223 @@
+{
+  "name": "JsonError",
+  "entrypointId": "content/json",
+  "kind": "Interface",
+  "href": "/docs/api/content/json/JsonError",
+  "canonicalReference": "@threadplane/content!JsonError:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "JSON parse diagnostic with a syntax category and source index, line, and column.",
+  "declarations": [
+    {
+      "name": "JsonError",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/content!JsonError:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface JsonError "
+        }
+      ],
+      "docs": {
+        "summary": "JSON parse diagnostic with a syntax category and source index, line, and column.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "code",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!JsonError#code:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly code: "
+            },
+            {
+              "kind": "Content",
+              "text": "'INVALID_SYNTAX' | 'UNEXPECTED_END' | 'TRAILING_CONTENT'"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/json/types.ts",
+            "line": 51
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "column",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!JsonError#column:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly column: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/json/types.ts",
+            "line": 55
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "index",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!JsonError#index:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly index: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/json/types.ts",
+            "line": 53
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "line",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!JsonError#line:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly line: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/json/types.ts",
+            "line": 54
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "message",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!JsonError#message:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly message: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/json/types.ts",
+            "line": 52
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/content/src/json/types.ts",
+        "line": 50
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/content/src/json/types.ts",
+    "line": 50
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "name": "PlainValue",
+  "entrypointId": "core",
+  "kind": "TypeAlias",
+  "href": "/docs/api/core/PlainValue",
+  "canonicalReference": "@threadplane/core!PlainValue:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Data authored for portable snapshots. No schema inference or runtime conversion.",
+  "declarations": [
+    {
+      "name": "PlainValue",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/core!PlainValue:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type PlainValue = "
+        },
+        {
+          "kind": "Content",
+          "text": "string | number | boolean | null | undefined | readonly "
+        },
+        {
+          "kind": "Reference",
+          "text": "PlainValue",
+          "canonicalReference": "@threadplane/core!PlainValue:type",
+          "href": "/docs/api/core/PlainValue"
+        },
+        {
+          "kind": "Content",
+          "text": "[] | {\n    readonly [key: string]: "
+        },
+        {
+          "kind": "Reference",
+          "text": "PlainValue",
+          "canonicalReference": "@threadplane/core!PlainValue:type",
+          "href": "/docs/api/core/PlainValue"
+        },
+        {
+          "kind": "Content",
+          "text": ";\n}"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Data authored for portable snapshots. No schema inference or runtime conversion.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/core/src/contracts/tool.ts",
+        "line": 2
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 6
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/core/src/contracts/tool.ts",
+    "line": 2
+  }
+}

@@ -1,0 +1,899 @@
+{
+  "name": "LangGraphSubmitOptions",
+  "entrypointId": "langgraph",
+  "kind": "Interface",
+  "href": "/docs/api/langgraph/LangGraphSubmitOptions",
+  "canonicalReference": "@threadplane/langgraph!LangGraphSubmitOptions:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Options accepted by LangGraph-backed submit calls.",
+  "declarations": [
+    {
+      "name": "LangGraphSubmitOptions",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/langgraph!LangGraphSubmitOptions:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface LangGraphSubmitOptions "
+        }
+      ],
+      "docs": {
+        "summary": "Options accepted by LangGraph-backed submit calls.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "afterSeconds",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphSubmitOptions#afterSeconds:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "afterSeconds?: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 77
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "checkpoint",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphSubmitOptions#checkpoint:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "checkpoint?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Omit",
+              "canonicalReference": "!Omit:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Checkpoint",
+              "canonicalReference": "@langchain/langgraph-sdk!Checkpoint:type"
+            },
+            {
+              "kind": "Content",
+              "text": ", 'thread_id'> | null"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 66
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "checkpointDuring",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphSubmitOptions#checkpointDuring:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "checkpointDuring?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 70
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "checkpointId",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphSubmitOptions#checkpointId:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "checkpointId?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 67
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "command",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphSubmitOptions#command:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "command?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Command",
+              "canonicalReference": "@langchain/langgraph-sdk!Command:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 68
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "config",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphSubmitOptions#config:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "config?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Config",
+              "canonicalReference": "@langchain/langgraph-sdk!Config:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 64
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "context",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphSubmitOptions#context:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "context?: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 65
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "durability",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphSubmitOptions#durability:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "durability?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "LangGraphDurability",
+              "canonicalReference": "@threadplane/langgraph!~LangGraphDurability:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 71
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "feedbackKeys",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphSubmitOptions#feedbackKeys:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "feedbackKeys?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 83
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "ifNotExists",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphSubmitOptions#ifNotExists:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "ifNotExists?: "
+            },
+            {
+              "kind": "Content",
+              "text": "'create' | 'reject'"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 78
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "interruptAfter",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphSubmitOptions#interruptAfter:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "interruptAfter?: "
+            },
+            {
+              "kind": "Content",
+              "text": "'*' | string[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 73
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "interruptBefore",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphSubmitOptions#interruptBefore:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "interruptBefore?: "
+            },
+            {
+              "kind": "Content",
+              "text": "'*' | string[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 72
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "metadata",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphSubmitOptions#metadata:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "metadata?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Metadata",
+              "canonicalReference": "@langchain/langgraph-sdk!Metadata:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 69
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "multitaskStrategy",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphSubmitOptions#multitaskStrategy:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "multitaskStrategy?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "LangGraphMultitaskStrategy",
+              "canonicalReference": "@threadplane/langgraph!LangGraphMultitaskStrategy:type",
+              "href": "/docs/api/langgraph/LangGraphMultitaskStrategy"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Strategy for handling concurrent runs on the same thread.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 87
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "onCompletion",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphSubmitOptions#onCompletion:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "onCompletion?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "LangGraphOnCompletion",
+              "canonicalReference": "@threadplane/langgraph!~LangGraphOnCompletion:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 74
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "onDisconnect",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphSubmitOptions#onDisconnect:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "onDisconnect?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "LangGraphOnDisconnect",
+              "canonicalReference": "@threadplane/langgraph!~LangGraphOnDisconnect:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 76
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "onRunCreated",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphSubmitOptions#onRunCreated:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "onRunCreated?: "
+            },
+            {
+              "kind": "Content",
+              "text": "(params: {\n        run_id: string;\n        thread_id?: string;\n    }) => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 79
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "resume",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphSubmitOptions#resume:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "resume?: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Convenience alias normalized to `command.resume` before invoking LangGraph.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 85
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "signal",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphSubmitOptions#signal:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "signal?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AbortSignal",
+              "canonicalReference": "!AbortSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 63
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "streamMode",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphSubmitOptions#streamMode:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "streamMode?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "StreamMode",
+              "canonicalReference": "@langchain/langgraph-sdk!StreamMode:type"
+            },
+            {
+              "kind": "Content",
+              "text": "[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 80
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "streamResumable",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphSubmitOptions#streamResumable:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "streamResumable?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 82
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "streamSubgraphs",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphSubmitOptions#streamSubgraphs:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "streamSubgraphs?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 81
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "webhook",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphSubmitOptions#webhook:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "webhook?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 75
+          },
+          "isReadonly": false,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/langgraph/src/runtime/transport.types.ts",
+        "line": 62
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/langgraph/src/runtime/transport.types.ts",
+    "line": 62
+  }
+}

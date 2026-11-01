@@ -1,0 +1,327 @@
+{
+  "name": "A2uiModalComponent",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/A2uiModalComponent",
+  "canonicalReference": "@threadplane/chat!A2uiModalComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Renders an A2UI trigger that opens its associated child content in a modal overlay.",
+  "declarations": [
+    {
+      "name": "A2uiModalComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!A2uiModalComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class A2uiModalComponent "
+        }
+      ],
+      "docs": {
+        "summary": "Renders an A2UI trigger that opens its associated child content in a modal overlay.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "bindings",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiModalComponent#bindings:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly bindings: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, string>>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/modal.component.ts",
+            "line": 90
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "childKeys",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiModalComponent#childKeys:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly childKeys: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "v0.9: childKeys[0] = trigger (inline entry point),\n childKeys[1] = content (modal body).",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/modal.component.ts",
+            "line": 87
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "emit",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiModalComponent#emit:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly emit: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<(event: string) => void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/modal.component.ts",
+            "line": 91
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "loading",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiModalComponent#loading:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly loading: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/modal.component.ts",
+            "line": 92
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "spec",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiModalComponent#spec:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly spec: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Spec",
+              "canonicalReference": "@json-render/core!Spec:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/modal.component.ts",
+            "line": 88
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/a2ui/catalog/modal.component.ts",
+        "line": 6
+      },
+      "angular": {
+        "selector": "a2ui-modal",
+        "inputs": [
+          {
+            "name": "bindings",
+            "alias": "bindings",
+            "required": false,
+            "type": "Record<string, string>"
+          },
+          {
+            "name": "childKeys",
+            "alias": "childKeys",
+            "required": false,
+            "type": "string[]"
+          },
+          {
+            "name": "emit",
+            "alias": "emit",
+            "required": false,
+            "type": "(event: string) => void"
+          },
+          {
+            "name": "loading",
+            "alias": "loading",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "spec",
+            "alias": "spec",
+            "required": true,
+            "type": "Spec"
+          }
+        ],
+        "outputs": []
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/a2ui/catalog/modal.component.ts",
+    "line": 6
+  }
+}

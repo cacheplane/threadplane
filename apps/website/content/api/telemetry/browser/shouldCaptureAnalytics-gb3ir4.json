@@ -1,0 +1,83 @@
+{
+  "name": "shouldCaptureAnalytics",
+  "entrypointId": "telemetry/browser",
+  "kind": "Function",
+  "href": "/docs/api/telemetry/browser/shouldCaptureAnalytics",
+  "canonicalReference": "@threadplane/telemetry!shouldCaptureAnalytics:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Require a nonblank token and exclude recognized local hosts unless `captureLocal` is true.",
+  "declarations": [
+    {
+      "name": "shouldCaptureAnalytics",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/telemetry!shouldCaptureAnalytics:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function shouldCaptureAnalytics(input: "
+        },
+        {
+          "kind": "Reference",
+          "text": "CaptureConfig",
+          "canonicalReference": "@threadplane/telemetry!CaptureConfig:type",
+          "href": "/docs/api/telemetry/browser/CaptureConfig"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "boolean"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Require a nonblank token and exclude recognized local hosts unless `captureLocal` is true.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/telemetry/src/browser/properties.ts",
+        "line": 32
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "{ token, captureLocal, host }",
+          "parameterTypeTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "input",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 4
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/telemetry/src/browser/properties.ts",
+    "line": 32
+  }
+}

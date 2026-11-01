@@ -1,0 +1,94 @@
+{
+  "name": "clientToolsChannel",
+  "entrypointId": "middleware/langgraph",
+  "kind": "Function",
+  "href": "/docs/api/middleware/langgraph/clientToolsChannel",
+  "canonicalReference": "@threadplane/middleware!clientToolsChannel:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "State channels for the client-tools catalog. Spread into Annotation.Root so a graph\ndeclares the `tools` (primary) and `client_tools` (fallback) slices in one line:\n\nconst State = Annotation.Root({ ...MessagesAnnotation.spec, ...clientToolsChannel() });\n\nBoth are last-value-wins channels (the catalog is replaced per run, not accumulated).",
+  "declarations": [
+    {
+      "name": "clientToolsChannel",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/middleware!clientToolsChannel:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function clientToolsChannel(): "
+        },
+        {
+          "kind": "Content",
+          "text": "{\n    tools: import(\"@langchain/langgraph\")."
+        },
+        {
+          "kind": "Reference",
+          "text": "LastValue",
+          "canonicalReference": "@langchain/langgraph!LastValue:class"
+        },
+        {
+          "kind": "Content",
+          "text": "<"
+        },
+        {
+          "kind": "Reference",
+          "text": "ClientToolSpec",
+          "canonicalReference": "@threadplane/middleware!ClientToolSpec:interface",
+          "href": "/docs/api/middleware/langgraph/ClientToolSpec"
+        },
+        {
+          "kind": "Content",
+          "text": "[] | undefined>;\n    client_tools: import(\"@langchain/langgraph\")."
+        },
+        {
+          "kind": "Reference",
+          "text": "LastValue",
+          "canonicalReference": "@langchain/langgraph!LastValue:class"
+        },
+        {
+          "kind": "Content",
+          "text": "<"
+        },
+        {
+          "kind": "Reference",
+          "text": "ClientToolSpec",
+          "canonicalReference": "@threadplane/middleware!ClientToolSpec:interface",
+          "href": "/docs/api/middleware/langgraph/ClientToolSpec"
+        },
+        {
+          "kind": "Content",
+          "text": "[] | undefined>;\n}"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "State channels for the client-tools catalog. Spread into Annotation.Root so a graph\ndeclares the `tools` (primary) and `client_tools` (fallback) slices in one line:\n\nconst State = Annotation.Root({ ...MessagesAnnotation.spec, ...clientToolsChannel() });\n\nBoth are last-value-wins channels (the catalog is replaced per run, not accumulated).",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/middleware/src/langgraph/channel.ts",
+        "line": 12
+      },
+      "overloadIndex": 1,
+      "parameters": [],
+      "returnTypeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 10
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/middleware/src/langgraph/channel.ts",
+    "line": 12
+  }
+}

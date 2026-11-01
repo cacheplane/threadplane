@@ -1,6 +1,7 @@
 import { InjectionToken, Signal } from '@angular/core';
 import type { AgentErrorKind } from '@threadplane/chat';
 
+/** Reactive timestamps for LangGraph streaming, interrupt, thread, and tool-call milestones, reset when the agent switches threads. */
 export interface AgentLifecycle {
   /** Epoch ms of the first stream chunk arrival. Resets on switchThread(). */
   readonly streamStartedAt: Signal<number | null>;
@@ -27,4 +28,5 @@ export interface AgentLifecycle {
   readonly toolCallCompletedAt: Signal<number | null>;
 }
 
+/** Injection token exposing the lifecycle signals of the LangGraph agent provided in the current injector. */
 export const AGENT_LIFECYCLE = new InjectionToken<AgentLifecycle>('AGENT_LIFECYCLE');

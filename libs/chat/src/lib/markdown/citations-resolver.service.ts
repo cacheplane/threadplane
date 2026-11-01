@@ -4,11 +4,13 @@ import type { CitationDefinition } from '@cacheplane/partial-markdown';
 import type { Message } from '../agent/message';
 import type { Citation } from '../agent/citation';
 
+/** A citation resolved from message metadata or a markdown definition, with its source identified. */
 export interface ResolvedCitation {
   source: 'message' | 'markdown';
   citation: Citation;
 }
 
+/** Resolves citation references reactively, preferring message metadata over markdown definitions. */
 @Injectable()
 export class CitationsResolverService {
   readonly message = signal<Message | null>(null);

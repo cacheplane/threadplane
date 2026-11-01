@@ -1,0 +1,54 @@
+{
+  "name": "AgentErrorKind",
+  "entrypointId": "core",
+  "kind": "TypeAlias",
+  "href": "/docs/api/core/AgentErrorKind",
+  "canonicalReference": "@threadplane/core!AgentErrorKind:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Adapter-classified failure category for connection, authentication, server, or execution termination errors.",
+  "declarations": [
+    {
+      "name": "AgentErrorKind",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/core!AgentErrorKind:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type AgentErrorKind = "
+        },
+        {
+          "kind": "Content",
+          "text": "'connection' | 'auth' | 'server' | 'interrupted' | 'aborted'"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Adapter-classified failure category for connection, authentication, server, or execution termination errors.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/core/src/contracts/error.ts",
+        "line": 2
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/core/src/contracts/error.ts",
+    "line": 2
+  }
+}

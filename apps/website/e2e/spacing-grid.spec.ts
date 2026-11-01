@@ -69,21 +69,21 @@ for (const width of [768, 1024, 1440]) {
   });
 }
 
-test('long generated API names stay inside their cards on a phone', async ({ page }) => {
+test('long generated API names stay inside their article on a phone', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 900 });
   for (const path of [
-    '/docs/langgraph/api/provide-agent',
-    '/docs/render/api/define-angular-registry',
-    '/docs/langgraph/api/langgraph-threads-adapter',
+    '/docs/api/langgraph/provideAgent',
+    '/docs/api/render/defineAngularRegistry',
+    '/docs/api/langgraph/LangGraphThreadsAdapter',
   ]) {
     await page.goto(path);
-    const name = page.locator('.api-doc-name').first();
+    const name = page.locator('.api-reference-detail > h1').first();
     await expect(name).toBeVisible();
     const bounds = await name.evaluate(el => {
-      const header = el.closest('.api-doc-header');
-      if (!header) throw new Error('Missing API header');
+      const header = el.closest('.api-reference-detail');
+      if (!header) throw new Error('Missing API article');
       const parent = header.getBoundingClientRect();
-      return [...header.children].map(child => {
+      return [...header.querySelectorAll(':scope > h1, :scope > .api-reference-meta')].map(child => {
         const r = child.getBoundingClientRect();
         return { left: r.left - parent.left, right: r.right - parent.right };
       });
@@ -95,21 +95,23 @@ test('long generated API names stay inside their cards on a phone', async ({ pag
   }
 });
 
-test('code copy buttons sit inside the top-right of their code block', async ({ page }) => {
-  await page.setViewportSize({ width: 375, height: 900 });
-  await page.goto('/docs/chat/getting-started/quickstart');
-  const block = page.locator('.mdx-pre-wrap').first();
-  await expect(block).toBeVisible();
-  const offsets = await block.evaluate(el => {
-    const pre = el.querySelector('pre')?.getBoundingClientRect();
-    const button = el.querySelector('button')?.getBoundingClientRect();
-    if (!pre || !button) throw new Error('Missing code/copy button');
-    return { top: button.top - pre.top, right: pre.right - button.right, bottom: pre.bottom - button.bottom };
+for (const route of ['/docs/chat/getting-started/quickstart', '/docs/api/langgraph/injectAgent']) {
+  test(`code copy buttons sit inside their code block on ${route}`, async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 900 });
+    await page.goto(route);
+    const block = page.locator('.mdx-pre-wrap').first();
+    await expect(block).toBeVisible();
+    const offsets = await block.evaluate(el => {
+      const pre = el.querySelector('pre')?.getBoundingClientRect();
+      const button = el.querySelector('button')?.getBoundingClientRect();
+      if (!pre || !button) throw new Error('Missing code/copy button');
+      return { top: button.top - pre.top, right: pre.right - button.right, bottom: pre.bottom - button.bottom };
+    });
+    expect(offsets.top).toBe(8);
+    expect(offsets.right).toBe(8);
+    expect(offsets.bottom).toBeGreaterThanOrEqual(0);
   });
-  expect(offsets.top).toBe(8);
-  expect(offsets.right).toBe(8);
-  expect(offsets.bottom).toBeGreaterThanOrEqual(0);
-});
+}
 
 // Grid audit uses authored/computed values, not used auto margins. A centred
 // fluid column can start at a fractional pixel without violating its spacing.
@@ -117,7 +119,7 @@ const ROUTES = [
   '/', '/docs', '/chat', '/langgraph', '/ag-ui', '/render', '/pricing',
   '/solutions', '/solutions/compliance', '/about', '/contact', '/privacy',
   '/pilot-to-prod', '/blog', '/blog/threadplane-0-3-0',
-  '/docs/chat/getting-started/quickstart', '/docs/langgraph/api/inject-agent',
+  '/docs/chat/getting-started/quickstart', '/docs/api/langgraph/injectAgent', '/docs/api', '/docs/api/react',
   '/docs/langgraph/guides/streaming?mode=api',
   '/docs/langgraph/guides/streaming?mode=code',
   '/docs/langgraph/guides/streaming?frontend=react',
@@ -134,6 +136,13 @@ for (const width of [320, 375, 768, 1024, 1440, 1920]) {
         await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-hydrated', 'true');
       }
       await page.evaluate(() => document.fonts.ready);
+      if (route === '/docs/api') {
+        const filters = page.locator('.api-reference-filters input, .api-reference-filters select');
+        expect(await filters.count()).toBeGreaterThan(1);
+        for (const control of await filters.all()) {
+          await expect(control).toHaveCSS('height', '44px');
+        }
+      }
       const audit = await page.evaluate(() => {
         const properties = [
           'padding-top', 'padding-right', 'padding-bottom', 'padding-left',

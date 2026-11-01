@@ -1,0 +1,656 @@
+{
+  "name": "A2uiSliderComponent",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/A2uiSliderComponent",
+  "canonicalReference": "@threadplane/chat!A2uiSliderComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Renders an A2UI range input that writes numeric changes to its bound render state.",
+  "declarations": [
+    {
+      "name": "A2uiSliderComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!A2uiSliderComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class A2uiSliderComponent "
+        }
+      ],
+      "docs": {
+        "summary": "Renders an A2UI range input that writes numeric changes to its bound render state.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "_bindings",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiSliderComponent#_bindings:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly _bindings: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, string>>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/slider.component.ts",
+            "line": 64
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "bindings",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiSliderComponent#bindings:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly bindings: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, string>>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/slider.component.ts",
+            "line": 66
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "childKeys",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiSliderComponent#childKeys:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly childKeys: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/slider.component.ts",
+            "line": 68
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "errorText",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiSliderComponent#errorText:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly errorText: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Live validation message written by the surface's check gate\n(bound to /_a2uiChecks/<id>); empty when valid.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/slider.component.ts",
+            "line": 63
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "label",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiSliderComponent#label:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly label: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/slider.component.ts",
+            "line": 54
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "loading",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiSliderComponent#loading:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly loading: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/slider.component.ts",
+            "line": 67
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "max",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiSliderComponent#max:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly max: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<number>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "v0.9 prop: upper bound.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/slider.component.ts",
+            "line": 60
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "min",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiSliderComponent#min:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly min: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<number>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "v0.9 prop: lower bound (default 0).",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/slider.component.ts",
+            "line": 58
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "onInput",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/chat!A2uiSliderComponent#onInput:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "onInput(event: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Event",
+              "canonicalReference": "!Event:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/slider.component.ts",
+            "line": 71
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "event",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          }
+        },
+        {
+          "name": "spec",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiSliderComponent#spec:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly spec: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Spec",
+              "canonicalReference": "@json-render/core!Spec:interface"
+            },
+            {
+              "kind": "Content",
+              "text": " | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/slider.component.ts",
+            "line": 69
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "value",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiSliderComponent#value:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly value: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<number>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "v0.9 prop: value (resolved DynamicNumber).",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/slider.component.ts",
+            "line": 56
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/a2ui/catalog/slider.component.ts",
+        "line": 7
+      },
+      "angular": {
+        "selector": "a2ui-slider",
+        "inputs": [
+          {
+            "name": "_bindings",
+            "alias": "_bindings",
+            "required": false,
+            "type": "Record<string, string>"
+          },
+          {
+            "name": "bindings",
+            "alias": "bindings",
+            "required": false,
+            "type": "Record<string, string>"
+          },
+          {
+            "name": "childKeys",
+            "alias": "childKeys",
+            "required": false,
+            "type": "string[]"
+          },
+          {
+            "name": "errorText",
+            "alias": "errorText",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "label",
+            "alias": "label",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "loading",
+            "alias": "loading",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "max",
+            "alias": "max",
+            "required": false,
+            "type": "number"
+          },
+          {
+            "name": "min",
+            "alias": "min",
+            "required": false,
+            "type": "number"
+          },
+          {
+            "name": "spec",
+            "alias": "spec",
+            "required": false,
+            "type": "Spec | undefined"
+          },
+          {
+            "name": "value",
+            "alias": "value",
+            "required": false,
+            "type": "number"
+          }
+        ],
+        "outputs": []
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/a2ui/catalog/slider.component.ts",
+    "line": 7
+  }
+}

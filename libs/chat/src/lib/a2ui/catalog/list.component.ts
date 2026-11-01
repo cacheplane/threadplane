@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import type { Spec } from '@json-render/core';
 import { RenderElementComponent } from '@threadplane/render';
 
+/** Renders A2UI child elements in a horizontal or vertical list with configurable alignment. */
 @Component({
   selector: 'a2ui-list',
   standalone: true,

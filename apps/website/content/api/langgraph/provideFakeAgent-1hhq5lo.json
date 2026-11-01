@@ -1,0 +1,82 @@
+{
+  "name": "provideFakeAgent",
+  "entrypointId": "langgraph",
+  "kind": "Function",
+  "href": "/docs/api/langgraph/provideFakeAgent",
+  "canonicalReference": "@threadplane/langgraph!provideFakeAgent:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Wire an in-process fake LangGraph agent into Angular DI.\n\nStreams a canned assistant reply (see FakeAgentConfig) with no backend —\nthe symmetric counterpart to @threadplane/ag-ui's provideFakeAgent(). For\nadvanced manual scripting (tool calls, interrupts, multi-batch), provide\nthe agent yourself with\n`provideAgent({ assistantId, transport: new MockAgentTransport(...) })`.",
+  "declarations": [
+    {
+      "name": "provideFakeAgent",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/langgraph!provideFakeAgent:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function provideFakeAgent(config?: "
+        },
+        {
+          "kind": "Reference",
+          "text": "FakeAgentConfig",
+          "canonicalReference": "@threadplane/langgraph!~FakeAgentConfig:interface",
+          "href": "/docs/api/chat/testing/FakeAgentConfig"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Reference",
+          "text": "Provider",
+          "canonicalReference": "@angular/core!Provider:type"
+        },
+        {
+          "kind": "Content",
+          "text": "[]"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Wire an in-process fake LangGraph agent into Angular DI.\n\nStreams a canned assistant reply (see FakeAgentConfig) with no backend —\nthe symmetric counterpart to @threadplane/ag-ui's provideFakeAgent(). For\nadvanced manual scripting (tool calls, interrupts, multi-batch), provide\nthe agent yourself with\n`provideAgent({ assistantId, transport: new MockAgentTransport(...) })`.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [
+          "```ts\nTestBed.configureTestingModule({\n  providers: [provideFakeAgent({ tokens: ['Hi from the fake LangGraph agent'] })],\n});\n```"
+        ],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/langgraph/src/lib/testing/provide-fake-agent.ts",
+        "line": 22
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "config",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": true
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/langgraph/src/lib/testing/provide-fake-agent.ts",
+    "line": 22
+  }
+}

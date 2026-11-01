@@ -17,6 +17,7 @@ const JUSTIFY_MAP: Record<RowJustify, string> = {
   spaceEvenly: 'space-evenly', stretch: 'normal',
 };
 
+/** Arranges A2UI child elements horizontally with configurable alignment, distribution, and spacing. */
 @Component({
   selector: 'a2ui-row',
   standalone: true,

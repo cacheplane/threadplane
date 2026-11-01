@@ -22,6 +22,7 @@ interface Group {
 // Unique per instance, so each group body id is unique on the page.
 let nextChatToolCallsId = 0;
 
+/** Renders tool calls with optional grouping, custom templates, and cards for spawned subagents. */
 @Component({
   selector: 'chat-tool-calls',
   standalone: true,

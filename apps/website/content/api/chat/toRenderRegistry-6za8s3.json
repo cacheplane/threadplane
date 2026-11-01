@@ -1,0 +1,79 @@
+{
+  "name": "toRenderRegistry",
+  "entrypointId": "chat",
+  "kind": "Function",
+  "href": "/docs/api/chat/toRenderRegistry",
+  "canonicalReference": "@threadplane/chat!toRenderRegistry:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Converts a ViewRegistry to an AngularRegistry for use with RenderSpecComponent.",
+  "declarations": [
+    {
+      "name": "toRenderRegistry",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/chat!toRenderRegistry:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function toRenderRegistry(registry: "
+        },
+        {
+          "kind": "Reference",
+          "text": "ViewRegistry",
+          "canonicalReference": "@threadplane/chat!ViewRegistry:type",
+          "href": "/docs/api/chat/ViewRegistry"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Reference",
+          "text": "AngularRegistry",
+          "canonicalReference": "@threadplane/chat!~AngularRegistry:interface",
+          "href": "/docs/api/render/AngularRegistry"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Converts a ViewRegistry to an AngularRegistry for use with RenderSpecComponent.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [
+          "```ts\nconst registry = toRenderRegistry(views({ metric: MetricCardComponent }));\n```"
+        ],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/render/src/lib/views.ts",
+        "line": 83
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "registry",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 4
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/render/src/lib/views.ts",
+    "line": 83
+  }
+}

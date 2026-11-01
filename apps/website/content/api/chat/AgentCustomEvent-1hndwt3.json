@@ -1,0 +1,151 @@
+{
+  "name": "AgentCustomEvent",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/AgentCustomEvent",
+  "canonicalReference": "@threadplane/chat!AgentCustomEvent:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Escape hatch for runtime-specific or user-defined events that do not\n(yet) have a well-known structured variant. `name` carries the runtime\nevent name; `data` carries the payload verbatim.",
+  "declarations": [
+    {
+      "name": "AgentCustomEvent",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!AgentCustomEvent:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface AgentCustomEvent "
+        }
+      ],
+      "docs": {
+        "summary": "Escape hatch for runtime-specific or user-defined events that do not\n(yet) have a well-known structured variant. `name` carries the runtime\nevent name; `data` carries the payload verbatim.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "data",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!AgentCustomEvent#data:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly data: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent-event.ts",
+            "line": 19
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "name",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!AgentCustomEvent#name:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly name: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent-event.ts",
+            "line": 18
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "type",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!AgentCustomEvent#type:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly type: "
+            },
+            {
+              "kind": "Content",
+              "text": "'custom'"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent-event.ts",
+            "line": 17
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/agent/agent-event.ts",
+        "line": 16
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/agent/agent-event.ts",
+    "line": 16
+  }
+}

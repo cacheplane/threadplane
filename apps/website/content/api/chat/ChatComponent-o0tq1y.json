@@ -1,0 +1,2645 @@
+{
+  "name": "ChatComponent",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/ChatComponent",
+  "canonicalReference": "@threadplane/chat!ChatComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Composes an agent conversation with message input, streaming content, tool views, and customizable activity templates.",
+  "declarations": [
+    {
+      "name": "ChatComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!ChatComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class ChatComponent "
+        }
+      ],
+      "docs": {
+        "summary": "Composes an agent conversation with message input, streaming content, tool views, and customizable activity templates.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "Constructor",
+          "kind": "Constructor",
+          "canonicalReference": "@threadplane/chat!ChatComponent:constructor(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "constructor();"
+            }
+          ],
+          "docs": {
+            "summary": "Constructs a new instance of the `ChatComponent` class",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 773
+          },
+          "overloadIndex": 1,
+          "parameters": []
+        },
+        {
+          "name": "activeThreadId",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatComponent#activeThreadId:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly activeThreadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 403
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "activityTemplate",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatComponent#activityTemplate:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly activityTemplate: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ChatActivityTemplateDirective",
+              "canonicalReference": "@threadplane/chat!ChatActivityTemplateDirective:class",
+              "href": "/docs/api/chat/ChatActivityTemplateDirective"
+            },
+            {
+              "kind": "Content",
+              "text": " | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Optional per-message activity renderer projected as\n`<ng-template chatActivityTemplate>`. When present it replaces the\nreasoning pill and the tool-call region of every assistant message, and\ntakes precedence over any projected `chatToolCallTemplate`.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 525
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "agent",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatComponent#agent:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly agent: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Agent",
+              "canonicalReference": "@threadplane/chat!Agent:interface",
+              "href": "/docs/api/chat/Agent"
+            },
+            {
+              "kind": "Content",
+              "text": "<unknown>>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 390
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "classifyMessage",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/chat!ChatComponent#classifyMessage:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "classifyMessage(content: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", message: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Pick",
+              "canonicalReference": "!Pick:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Message",
+              "canonicalReference": "@threadplane/chat!Message:interface",
+              "href": "/docs/api/chat/Message"
+            },
+            {
+              "kind": "Content",
+              "text": ", 'id' | 'delivery'>"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "ContentClassifier",
+              "canonicalReference": "@threadplane/chat!ContentClassifier:interface",
+              "href": "/docs/api/chat/ContentClassifier"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 1242
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "content",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "message",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 7
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 8,
+            "endIndex": 9
+          }
+        },
+        {
+          "name": "clearClassifiers",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/chat!ChatComponent#clearClassifiers:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "clearClassifiers(): "
+            },
+            {
+              "kind": "Content",
+              "text": "void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 1275
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [],
+          "returnTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        },
+        {
+          "name": "clearThread",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/chat!ChatComponent#clearThread:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "clearThread(): "
+            },
+            {
+              "kind": "Content",
+              "text": "void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Clears local view state (classifiers, surface store, lifecycle counters)\nfor a new thread.\n\nResets messageCount to 0 and inputSubmittedAt to null. componentReady and\nfirstMessageSent are NOT reset (sticky for the chat instance lifetime).",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 1119
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [],
+          "returnTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        },
+        {
+          "name": "clientToolContinuationLimit",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatComponent#clientToolContinuationLimit:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly clientToolContinuationLimit: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "OutputEmitterRef",
+              "canonicalReference": "@angular/core!OutputEmitterRef:class"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ClientToolContinuationLimitEvent",
+              "canonicalReference": "@threadplane/chat!ClientToolContinuationLimitEvent:interface",
+              "href": "/docs/api/chat/ClientToolContinuationLimitEvent"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 448
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "clientToolContinuationPolicy",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatComponent#clientToolContinuationPolicy:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly clientToolContinuationPolicy: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ClientToolContinuationPolicy",
+              "canonicalReference": "@threadplane/chat!ClientToolContinuationPolicy:interface",
+              "href": "/docs/api/chat/ClientToolContinuationPolicy"
+            },
+            {
+              "kind": "Content",
+              "text": " | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 438
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "clientToolExecutionGuard",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatComponent#clientToolExecutionGuard:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly clientToolExecutionGuard: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ClientToolExecutionGuard",
+              "canonicalReference": "@threadplane/chat!ClientToolExecutionGuard:interface",
+              "href": "/docs/api/chat/ClientToolExecutionGuard"
+            },
+            {
+              "kind": "Content",
+              "text": " | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 437
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "clientTools",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatComponent#clientTools:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly clientTools: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Readonly",
+              "canonicalReference": "!Readonly:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, import(\"../../client-tools/tool-def\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "ClientToolDef",
+              "canonicalReference": "@threadplane/chat!ClientToolDef:type",
+              "href": "/docs/api/chat/ClientToolDef"
+            },
+            {
+              "kind": "Content",
+              "text": ">> | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Client-declared tools (`view`/`ask`/`function`) the model may call. When\nprovided, a coordinator ships their catalog to the agent, runs `function`\ntools in the browser, and renders/resolves `view`/`ask` tools through the\nsame tool-views pipeline as `views`. Additive — leave undefined for the\nclassic server-tools-only experience.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 399
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "excludedToolNames",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatComponent#excludedToolNames:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly excludedToolNames: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<readonly string[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Union of GenUI dispatcher tool names and registered view tool names.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 512
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "genuiToolNames",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatComponent#genuiToolNames:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly genuiToolNames: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<readonly string[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Tool names whose calls produce a rendered GenUI surface rather than\nvisible text. Used to (a) filter <chat-tool-calls> so internal\ndispatchers don't render args JSON as cards, and (b) detect\n\"this is a GenUI turn\" for the building-UI skeleton.\nDefault covers the canonical A2UI + json-render schema tools.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 432
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "handlers",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatComponent#handlers:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly handlers: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, (params: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, unknown>) => unknown | "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<unknown>>>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 401
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "interruptTemplate",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatComponent#interruptTemplate:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly interruptTemplate: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ChatInterruptTemplateDirective",
+              "canonicalReference": "@threadplane/chat!ChatInterruptTemplateDirective:class",
+              "href": "/docs/api/chat/ChatInterruptTemplateDirective"
+            },
+            {
+              "kind": "Content",
+              "text": " | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Optional interrupt renderer projected as\n`<ng-template chatInterruptTemplate>`. Rendered at the end of the\ntranscript while `agent.interrupt()` is defined.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 550
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "messageContent",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatComponent#messageContent:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly messageContent: "
+            },
+            {
+              "kind": "Content",
+              "text": "typeof "
+            },
+            {
+              "kind": "Reference",
+              "text": "messageContent",
+              "canonicalReference": "@threadplane/chat!messageContent:function",
+              "href": "/docs/api/chat/messageContent"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 517
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "messageCopy",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatComponent#messageCopy:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly messageCopy: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "OutputEmitterRef",
+              "canonicalReference": "@angular/core!OutputEmitterRef:class"
+            },
+            {
+              "kind": "Content",
+              "text": "<{\n        messageIndex: number;\n        content: string;\n    }>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Emitted when the user copies an assistant message.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 454
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "modelOptions",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatComponent#modelOptions:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly modelOptions: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<readonly "
+            },
+            {
+              "kind": "Reference",
+              "text": "ChatSelectOption",
+              "canonicalReference": "@threadplane/chat!ChatSelectOption:interface",
+              "href": "/docs/api/chat/ChatSelectOption"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "High-level model-picker API. When `modelOptions` is non-empty, the chat\ncomposition renders a `<chat-select>` inside the input pill (in BOTH\nwelcome and conversation modes), wired to the two-way `selectedModel`\nmodel. Consumers who want full control should leave `modelOptions`\nempty and project a `<chat-select chatInputModelSelect>` themselves.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 413
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "modelPickerPlaceholder",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatComponent#modelPickerPlaceholder:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly modelPickerPlaceholder: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 423
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "onA2uiAction",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/chat!ChatComponent#onA2uiAction:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "onA2uiAction(message: "
+            },
+            {
+              "kind": "Reference",
+              "text": "A2uiActionMessage",
+              "canonicalReference": "@threadplane/chat!A2uiActionMessage:interface",
+              "href": "/docs/api/chat/A2uiActionMessage"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 1302
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "message",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          }
+        },
+        {
+          "name": "onA2uiEvent",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/chat!ChatComponent#onA2uiEvent:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "onA2uiEvent(event: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RenderEvent",
+              "canonicalReference": "@threadplane/chat!~RenderEvent:type",
+              "href": "/docs/api/render/RenderEvent"
+            },
+            {
+              "kind": "Content",
+              "text": ", messageIndex: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ", surfaceId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 1307
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "event",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "messageIndex",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "surfaceId",
+              "parameterTypeTokenRange": {
+                "startIndex": 5,
+                "endIndex": 6
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 7,
+            "endIndex": 8
+          }
+        },
+        {
+          "name": "onCopy",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/chat!ChatComponent#onCopy:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "onCopy(message: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ", content: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 1322
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "message",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "content",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 6
+          }
+        },
+        {
+          "name": "onRate",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/chat!ChatComponent#onRate:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "onRate(message: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ", value: "
+            },
+            {
+              "kind": "Content",
+              "text": "'up' | 'down'"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 1317
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "message",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "value",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 6
+          }
+        },
+        {
+          "name": "onRegenerate",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/chat!ChatComponent#onRegenerate:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "onRegenerate(messageIndex: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Regenerate the assistant response at the given message index.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 1312
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "messageIndex",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          }
+        },
+        {
+          "name": "onSpecEvent",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/chat!ChatComponent#onSpecEvent:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "onSpecEvent(event: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RenderEvent",
+              "canonicalReference": "@threadplane/chat!~RenderEvent:type",
+              "href": "/docs/api/render/RenderEvent"
+            },
+            {
+              "kind": "Content",
+              "text": ", messageIndex: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 1284
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "event",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "messageIndex",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 6
+          }
+        },
+        {
+          "name": "prevRole",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/chat!ChatComponent#prevRole:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "prevRole(index: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "ChatMessageRole",
+              "canonicalReference": "@threadplane/chat!ChatMessageRole:type",
+              "href": "/docs/api/chat/ChatMessageRole"
+            },
+            {
+              "kind": "Content",
+              "text": " | undefined"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 1024
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "index",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 5
+          }
+        },
+        {
+          "name": "rate",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatComponent#rate:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly rate: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "OutputEmitterRef",
+              "canonicalReference": "@angular/core!OutputEmitterRef:class"
+            },
+            {
+              "kind": "Content",
+              "text": "<{\n        messageIndex: number;\n        rating: \"up\" | \"down\";\n    }>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Emitted when the user rates an assistant message.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 452
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "regenerate",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatComponent#regenerate:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly regenerate: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "OutputEmitterRef",
+              "canonicalReference": "@angular/core!OutputEmitterRef:class"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Emitted when the user clicks the regenerate button on an assistant message.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 450
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "renderEvent",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatComponent#renderEvent:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly renderEvent: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "OutputEmitterRef",
+              "canonicalReference": "@angular/core!OutputEmitterRef:class"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ChatRenderEvent",
+              "canonicalReference": "@threadplane/chat!ChatRenderEvent:interface",
+              "href": "/docs/api/chat/ChatRenderEvent"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 447
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "renderRegistry",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatComponent#renderRegistry:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly renderRegistry: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<import(\"@threadplane/render\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "AngularRegistry",
+              "canonicalReference": "@threadplane/chat!~AngularRegistry:interface",
+              "href": "/docs/api/render/AngularRegistry"
+            },
+            {
+              "kind": "Content",
+              "text": " | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 500
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "resolvedStore",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatComponent#resolvedStore:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly resolvedStore: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "StateStore",
+              "canonicalReference": "@json-render/core!StateStore:interface"
+            },
+            {
+              "kind": "Content",
+              "text": " | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 456
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "runActivityTemplate",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatComponent#runActivityTemplate:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly runActivityTemplate: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ChatRunActivityTemplateDirective",
+              "canonicalReference": "@threadplane/chat!ChatRunActivityTemplateDirective:class",
+              "href": "/docs/api/chat/ChatRunActivityTemplateDirective"
+            },
+            {
+              "kind": "Content",
+              "text": " | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Optional turn-level run renderer projected as\n`<ng-template chatRunActivityTemplate>`. Rendered after the last message\nwhile a run is active and has no assistant message yet, in place of the\ntyping indicator.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 543
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "scrollToBottom",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/chat!ChatComponent#scrollToBottom:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "scrollToBottom(): "
+            },
+            {
+              "kind": "Content",
+              "text": "void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Scrolls the transcript to its newest content and re-pins it, exactly as\nthe scroll-to-bottom bubble does. Hosts that apply many messages in one\npass (a replay seeking to a recorded time, a restored thread rendered\nafter tool views mount) call this once their layout has settled: the\nchat's own pin runs when messages change, which can be before the views\nthat follow them have rendered. The write is counted as programmatic so\nthe scroll event it raises does not read as the user unpinning.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 1057
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [],
+          "returnTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        },
+        {
+          "name": "selectedModel",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatComponent#selectedModel:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly selectedModel: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "ModelSignal",
+              "canonicalReference": "@angular/core!ModelSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 422
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "showModelPicker",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatComponent#showModelPicker:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly showModelPicker: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "When `false`, hide the auto-rendered model picker even when\n`modelOptions` is non-empty. Useful in cramped surfaces (popup,\nsidebar) where the picker crowds the input. Defaults to `true`.\nHas no effect when consumers project their own\n`<chat-select chatInputModelSelect>` via content projection.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 421
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "showWelcome",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatComponent#showWelcome:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly showWelcome: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 440
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "store",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatComponent#store:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly store: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "StateStore",
+              "canonicalReference": "@json-render/core!StateStore:interface"
+            },
+            {
+              "kind": "Content",
+              "text": " | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 400
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "submitMessage",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/chat!ChatComponent#submitMessage:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "submitMessage(text: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Programmatic submit. Calls `agent.submit({ message: text })` and updates\nthe CHAT_LIFECYCLE signals. Trimmed-empty text is a no-op.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 1105
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "text",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          }
+        },
+        {
+          "name": "threads",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatComponent#threads:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly threads: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Thread",
+              "canonicalReference": "@threadplane/chat!Thread:type",
+              "href": "/docs/api/chat/Thread"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 402
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "threadSelected",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatComponent#threadSelected:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly threadSelected: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "OutputEmitterRef",
+              "canonicalReference": "@angular/core!OutputEmitterRef:class"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 446
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "toolCallTemplates",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatComponent#toolCallTemplates:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly toolCallTemplates: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<readonly "
+            },
+            {
+              "kind": "Reference",
+              "text": "ChatToolCallTemplateDirective",
+              "canonicalReference": "@threadplane/chat!ChatToolCallTemplateDirective:class",
+              "href": "/docs/api/chat/ChatToolCallTemplateDirective"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Per-tool-name templates projected as `<ng-template chatToolCallTemplate>`.\nCollected here and passed to each message's `<chat-tool-calls>`, which\ncannot query templates re-projected through `<chat>`. Unused while an\n`activityTemplate` is present.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 533
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "views",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatComponent#views:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly views: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Readonly",
+              "canonicalReference": "!Readonly:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, import(\"@threadplane/render\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "RenderViewEntry",
+              "canonicalReference": "@threadplane/chat!~RenderViewEntry:interface",
+              "href": "/docs/api/render/RenderViewEntry"
+            },
+            {
+              "kind": "Content",
+              "text": " | import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "Type",
+              "canonicalReference": "@angular/core!Type:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<unknown>>> | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 391
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "viewToolNames",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatComponent#viewToolNames:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly viewToolNames: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<readonly string[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Tool names that have a registered view (keys of the effective view\n registry, including client-declared view/ask tools). These render as\n inline tool-views and are excluded from the default tool-call card so\n they don't render twice.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 509
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "welcomeDisabled",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatComponent#welcomeDisabled:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly welcomeDisabled: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+            "line": 404
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+        "line": 104
+      },
+      "angular": {
+        "selector": "chat",
+        "inputs": [
+          {
+            "name": "activeThreadId",
+            "alias": "activeThreadId",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "agent",
+            "alias": "agent",
+            "required": true,
+            "type": "Agent<unknown>"
+          },
+          {
+            "name": "clientToolContinuationPolicy",
+            "alias": "clientToolContinuationPolicy",
+            "required": false,
+            "type": "ClientToolContinuationPolicy | undefined"
+          },
+          {
+            "name": "clientToolExecutionGuard",
+            "alias": "clientToolExecutionGuard",
+            "required": false,
+            "type": "ClientToolExecutionGuard | undefined"
+          },
+          {
+            "name": "clientTools",
+            "alias": "clientTools",
+            "required": false,
+            "type": "Readonly<Record<string, ClientToolDef>> | undefined"
+          },
+          {
+            "name": "genuiToolNames",
+            "alias": "genuiToolNames",
+            "required": false,
+            "type": "readonly string[]"
+          },
+          {
+            "name": "handlers",
+            "alias": "handlers",
+            "required": false,
+            "type": "Record<string, (params: Record<string, unknown>) => unknown>"
+          },
+          {
+            "name": "modelOptions",
+            "alias": "modelOptions",
+            "required": false,
+            "type": "readonly ChatSelectOption[]"
+          },
+          {
+            "name": "modelPickerPlaceholder",
+            "alias": "modelPickerPlaceholder",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "selectedModel",
+            "alias": "selectedModel",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "showModelPicker",
+            "alias": "showModelPicker",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "store",
+            "alias": "store",
+            "required": false,
+            "type": "StateStore | undefined"
+          },
+          {
+            "name": "threads",
+            "alias": "threads",
+            "required": false,
+            "type": "Thread[]"
+          },
+          {
+            "name": "views",
+            "alias": "views",
+            "required": false,
+            "type": "Readonly<Record<string, RenderViewEntry | Type<unknown>>> | undefined"
+          },
+          {
+            "name": "welcomeDisabled",
+            "alias": "welcomeDisabled",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "clientToolContinuationLimit",
+            "alias": "clientToolContinuationLimit",
+            "required": false,
+            "type": "ClientToolContinuationLimitEvent"
+          },
+          {
+            "name": "messageCopy",
+            "alias": "messageCopy",
+            "required": false,
+            "type": "{ messageIndex: number; content: string; }"
+          },
+          {
+            "name": "rate",
+            "alias": "rate",
+            "required": false,
+            "type": "{ messageIndex: number; rating: \"up\" | \"down\"; }"
+          },
+          {
+            "name": "regenerate",
+            "alias": "regenerate",
+            "required": false,
+            "type": "void"
+          },
+          {
+            "name": "renderEvent",
+            "alias": "renderEvent",
+            "required": false,
+            "type": "ChatRenderEvent"
+          },
+          {
+            "name": "selectedModelChange",
+            "alias": "selectedModelChange",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "threadSelected",
+            "alias": "threadSelected",
+            "required": false,
+            "type": "string"
+          }
+        ]
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
+    "line": 104
+  }
+}

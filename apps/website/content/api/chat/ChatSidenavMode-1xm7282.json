@@ -1,0 +1,54 @@
+{
+  "name": "ChatSidenavMode",
+  "entrypointId": "chat",
+  "kind": "TypeAlias",
+  "href": "/docs/api/chat/ChatSidenavMode",
+  "canonicalReference": "@threadplane/chat!ChatSidenavMode:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Display modes for the conversation sidebar, including a dismissible drawer.",
+  "declarations": [
+    {
+      "name": "ChatSidenavMode",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/chat!ChatSidenavMode:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type ChatSidenavMode = "
+        },
+        {
+          "kind": "Content",
+          "text": "'expanded' | 'collapsed' | 'drawer'"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Display modes for the conversation sidebar, including a dismissible drawer.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/compositions/chat-sidenav/chat-sidenav.component.ts",
+        "line": 36
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/compositions/chat-sidenav/chat-sidenav.component.ts",
+    "line": 36
+  }
+}

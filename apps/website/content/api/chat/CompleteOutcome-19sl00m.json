@@ -1,0 +1,54 @@
+{
+  "name": "CompleteOutcome",
+  "entrypointId": "chat",
+  "kind": "TypeAlias",
+  "href": "/docs/api/chat/CompleteOutcome",
+  "canonicalReference": "@threadplane/chat!CompleteOutcome:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Terminal result of one response attempt.\n\n`paused` is an intentional stop awaiting resumable input; `interrupted` means\nthe response stream ended unexpectedly. The other outcomes indicate normal\ncompletion, failure, or caller cancellation.",
+  "declarations": [
+    {
+      "name": "CompleteOutcome",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/chat!CompleteOutcome:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type CompleteOutcome = "
+        },
+        {
+          "kind": "Content",
+          "text": "'success' | 'error' | 'aborted' | 'interrupted' | 'paused'"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Terminal result of one response attempt.\n\n`paused` is an intentional stop awaiting resumable input; `interrupted` means\nthe response stream ended unexpectedly. The other outcomes indicate normal\ncompletion, failure, or caller cancellation.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/agent/message-delivery.ts",
+        "line": 8
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/agent/message-delivery.ts",
+    "line": 8
+  }
+}

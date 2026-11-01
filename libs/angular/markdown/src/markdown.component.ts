@@ -10,6 +10,7 @@ import {
   MarkdownOutletDirective,
 } from './markdown-template.directive';
 
+/** Renders an owned Markdown snapshot as Angular elements, filtering URLs and displaying raw HTML as text. */
 @Component({
   selector: 'threadplane-markdown',
   standalone: true,

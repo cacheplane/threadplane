@@ -1,0 +1,381 @@
+{
+  "name": "AgentLifecycle",
+  "entrypointId": "langgraph",
+  "kind": "Interface",
+  "href": "/docs/api/langgraph/AgentLifecycle",
+  "canonicalReference": "@threadplane/langgraph!AgentLifecycle:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Reactive timestamps for LangGraph streaming, interrupt, thread, and tool-call milestones, reset when the agent switches threads.",
+  "declarations": [
+    {
+      "name": "AgentLifecycle",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/langgraph!AgentLifecycle:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface AgentLifecycle "
+        }
+      ],
+      "docs": {
+        "summary": "Reactive timestamps for LangGraph streaming, interrupt, thread, and tool-call milestones, reset when the agent switches threads.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "interruptReceivedAt",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!AgentLifecycle#interruptReceivedAt:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly interruptReceivedAt: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<number | null>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Epoch ms of the first interrupt$ non-null in this stream. Resets on switchThread().",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/lifecycle.ts",
+            "line": 18
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "interruptResolvedAt",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!AgentLifecycle#interruptResolvedAt:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly interruptResolvedAt: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<number | null>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Epoch ms of the most recent submit({ resume }) call. Resets on switchThread().",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/lifecycle.ts",
+            "line": 20
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "streamErrorAt",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!AgentLifecycle#streamErrorAt:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly streamErrorAt: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<{\n        at: number;\n        kind: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentErrorKind",
+              "canonicalReference": "@threadplane/langgraph!~AgentErrorKind:type",
+              "href": "/docs/api/chat/AgentErrorKind"
+            },
+            {
+              "kind": "Content",
+              "text": " | string;\n    } | null>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Epoch ms + failure class of the most recent stream error. Resets on switchThread().\n\n`kind` is the [AgentErrorKind](/docs/api/chat/AgentErrorKind) of the normalized `AgentError`\n(`connection` | `auth` | `server` | `interrupted` | `aborted`) — the same\nvalue `agent.error()?.kind` carries. For a failure the runtime could not\nnormalize it falls back to the error's constructor name.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/lifecycle.ts",
+            "line": 16
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "streamStartedAt",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!AgentLifecycle#streamStartedAt:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly streamStartedAt: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<number | null>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Epoch ms of the first stream chunk arrival. Resets on switchThread().",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/lifecycle.ts",
+            "line": 7
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "threadCreatedAt",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!AgentLifecycle#threadCreatedAt:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly threadCreatedAt: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<number | null>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Epoch ms when the agent's \"create new thread\" branch fired. Resets on switchThread().",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/lifecycle.ts",
+            "line": 22
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "threadPersistedAt",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!AgentLifecycle#threadPersistedAt:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly threadPersistedAt: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<number | null>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Epoch ms when an existing thread was restored from server (proves persistence). Resets on switchThread().",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/lifecycle.ts",
+            "line": 24
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "toolCallCompletedAt",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!AgentLifecycle#toolCallCompletedAt:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly toolCallCompletedAt: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<number | null>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Epoch ms of the first tool call result transition. Resets on switchThread().",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/lifecycle.ts",
+            "line": 28
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "toolCallStartedAt",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!AgentLifecycle#toolCallStartedAt:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly toolCallStartedAt: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<number | null>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Epoch ms of the first tool call append. Resets on switchThread().",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/lifecycle.ts",
+            "line": 26
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/langgraph/src/lib/lifecycle.ts",
+        "line": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/langgraph/src/lib/lifecycle.ts",
+    "line": 5
+  }
+}

@@ -8,6 +8,7 @@ export type PlainValue =
   | readonly PlainValue[]
   | { readonly [key: string]: PlainValue };
 
+/** Recursively projects readonly data, mapping unknown to PlainValue, void to undefined, and functions to never. */
 export type DeepReadonly<T> = unknown extends T
   ? PlainValue
   : T extends void
@@ -35,6 +36,7 @@ type SnapshotValue<T> = unknown extends T
   ? undefined
   : DeepReadonly<T>;
 
+/** Tool execution stage; pending calls already have finalized, decoded arguments. */
 export type ToolCallStatus = 'pending' | 'running' | 'complete' | 'error';
 
 /** A mapped union preserves each declared name's argument/result relationship.

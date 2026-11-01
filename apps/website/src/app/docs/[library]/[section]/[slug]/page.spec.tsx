@@ -265,7 +265,7 @@ describe('unified docs workspace route', () => {
     expect(findElement(workspace?.props.reactDocsSlot,ReactClientToolsPreview as ComponentType<never>)).toBeNull();
   });
   it('selects React Element Rendering Docs with owned state and readonly view sources', async () => {
-    const tree = await route('render', 'api', 'render-spec-component');
+    const tree = await route('render', 'guides', 'element-rendering');
     const workspace = findElement(
       tree,
       WebsiteWorkspace as ComponentType<never>
@@ -323,8 +323,8 @@ describe('unified docs workspace route', () => {
     expect(article?.props.exampleCode?.assetPaths?.some(path => path.includes('/python/'))).toBe(false);
     expect(findElement(workspace?.props.reactDocsSlot, ReactRenderSpecPreview as ComponentType<never>)).toBeNull();
   });
-  it('selects native Computed Functions Docs on canonical provide-render with owned pure callback sources', async () => {
-    const tree = await route('render', 'api', 'provide-render');
+  it('selects native Computed Functions Docs on the canonical Computed Functions guide with owned pure callback sources', async () => {
+    const tree = await route('render', 'guides', 'computed-functions');
     const workspace = findElement(tree, WebsiteWorkspace as ComponentType<never>);
     const article = findElement(workspace?.props.reactDocsSlot, ReactComputedFunctionsPreview as ComponentType<never>);
     expect(article).not.toBeNull();

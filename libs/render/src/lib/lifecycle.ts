@@ -1,5 +1,6 @@
 import { InjectionToken, Signal } from '@angular/core';
 
+/** Reactive mount, state-change, and handler-invocation measurements for the render lifecycle service. */
 export interface RenderLifecycle {
   /** First mount event in this render context. Sticky — does not reset. */
   readonly firstMountAt: Signal<{ kind: 'spec' | 'element'; elementType?: string; at: number } | null>;
@@ -13,4 +14,5 @@ export interface RenderLifecycle {
   readonly lastHandlerInvokedAt: Signal<{ action: string; at: number } | null>;
 }
 
+/** Injection token exposing render lifecycle measurements through the service registered by provideRender. */
 export const RENDER_LIFECYCLE = new InjectionToken<RenderLifecycle>('RENDER_LIFECYCLE');

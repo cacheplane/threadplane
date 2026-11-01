@@ -1,0 +1,89 @@
+{
+  "name": "ChatInput",
+  "entrypointId": "react/chat",
+  "kind": "Variable",
+  "href": "/docs/api/react/chat/ChatInput",
+  "canonicalReference": "@threadplane/react!ChatInput:var",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Auto-sizing composer that submits nonblank drafts and clears its local draft or requests an empty controlled value unless onSubmit returns false.",
+  "declarations": [
+    {
+      "name": "ChatInput",
+      "kind": "Variable",
+      "canonicalReference": "@threadplane/react!ChatInput:var",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "ChatInput: "
+        },
+        {
+          "kind": "Content",
+          "text": "import(\"react\")."
+        },
+        {
+          "kind": "Reference",
+          "text": "ForwardRefExoticComponent",
+          "canonicalReference": "@types/react!React.ForwardRefExoticComponent:interface"
+        },
+        {
+          "kind": "Content",
+          "text": "<"
+        },
+        {
+          "kind": "Reference",
+          "text": "ChatInputProps",
+          "canonicalReference": "@threadplane/react!ChatInputProps:interface",
+          "href": "/docs/api/react/chat/ChatInputProps"
+        },
+        {
+          "kind": "Content",
+          "text": " & import(\"react\")."
+        },
+        {
+          "kind": "Reference",
+          "text": "RefAttributes",
+          "canonicalReference": "@types/react!React.RefAttributes:interface"
+        },
+        {
+          "kind": "Content",
+          "text": "<"
+        },
+        {
+          "kind": "Reference",
+          "text": "ChatInputHandle",
+          "canonicalReference": "@threadplane/react!ChatInputHandle:interface",
+          "href": "/docs/api/react/chat/ChatInputHandle"
+        },
+        {
+          "kind": "Content",
+          "text": ">>"
+        }
+      ],
+      "docs": {
+        "summary": "Auto-sizing composer that submits nonblank drafts and clears its local draft or requests an empty controlled value unless onSubmit returns false.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/react/src/chat/chat-input.tsx",
+        "line": 36
+      },
+      "isReadonly": true,
+      "variableTypeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 10
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/chat-input.tsx",
+    "line": 36
+  }
+}

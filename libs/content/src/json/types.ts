@@ -13,6 +13,7 @@ interface JsonNodeBase {
   readonly id: number;
   readonly status: 'incomplete' | 'complete';
 }
+/** Immutable partial JSON tree node with parse status, a projected value, and kind-specific buffers or children. */
 export type JsonNode = JsonNodeBase &
   (
     | { readonly kind: 'null'; readonly value: null | undefined }
@@ -39,11 +40,13 @@ export type JsonNode = JsonNodeBase &
       }
   );
 
+/** Cumulative JSON source for a generation; streaming updates append until completion, and a new generation replaces it. */
 export interface JsonDocument {
   readonly generation: string;
   readonly phase: 'streaming' | 'complete';
   readonly content: string;
 }
+/** JSON parse diagnostic with a syntax category and source index, line, and column. */
 export interface JsonError {
   readonly code: 'INVALID_SYNTAX' | 'UNEXPECTED_END' | 'TRAILING_CONTENT';
   readonly message: string;
@@ -51,6 +54,7 @@ export interface JsonError {
   readonly line: number;
   readonly column: number;
 }
+/** Accepted source document and its partial parse tree, syntax-completion flag, and optional diagnostic. */
 export interface JsonSnapshot {
   readonly document: JsonDocument;
   readonly root: JsonNode | null;
@@ -58,9 +62,11 @@ export interface JsonSnapshot {
   readonly complete: boolean;
   readonly error: JsonError | null;
 }
+/** Controls whether invalid same-generation document transitions throw (the default) or rebuild the parser. */
 export interface JsonOptions {
   readonly violationPolicy?: 'throw' | 'rebuild';
 }
+/** Application-owned incremental JSON parser with snapshot observation, document updates, and explicit disposal. */
 export interface Json {
   readonly getSnapshot: () => JsonSnapshot;
   readonly subscribe: (notify: () => void) => () => void;

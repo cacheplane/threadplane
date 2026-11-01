@@ -1,0 +1,54 @@
+{
+  "name": "Role",
+  "entrypointId": "core",
+  "kind": "TypeAlias",
+  "href": "/docs/api/core/Role",
+  "canonicalReference": "@threadplane/core!Role:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Identifies whether a message comes from the user, assistant, system, or a tool result.",
+  "declarations": [
+    {
+      "name": "Role",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/core!Role:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type Role = "
+        },
+        {
+          "kind": "Content",
+          "text": "'user' | 'assistant' | 'system' | 'tool'"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Identifies whether a message comes from the user, assistant, system, or a tool result.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/core/src/contracts/message.ts",
+        "line": 5
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/core/src/contracts/message.ts",
+    "line": 5
+  }
+}

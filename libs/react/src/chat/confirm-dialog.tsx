@@ -7,6 +7,7 @@ import {
   availableDialogTarget as available,
 } from './internal/dialog-presentation.js';
 
+/** Controls confirmation visibility, intent callbacks, pending confirmation, labels, and the return-focus target. */
 export interface ConfirmDialogProps {
   readonly open: boolean;
   readonly title: string;

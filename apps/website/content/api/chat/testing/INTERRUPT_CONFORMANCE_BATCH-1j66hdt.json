@@ -1,0 +1,51 @@
+{
+  "name": "INTERRUPT_CONFORMANCE_BATCH",
+  "entrypointId": "chat/testing",
+  "kind": "Variable",
+  "href": "/docs/api/chat/testing/INTERRUPT_CONFORMANCE_BATCH",
+  "canonicalReference": "@threadplane/chat!INTERRUPT_CONFORMANCE_BATCH:var",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "The two approval interrupts adapters must preserve throughout the shared interrupt conformance scenarios.",
+  "declarations": [
+    {
+      "name": "INTERRUPT_CONFORMANCE_BATCH",
+      "kind": "Variable",
+      "canonicalReference": "@threadplane/chat!INTERRUPT_CONFORMANCE_BATCH:var",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "INTERRUPT_CONFORMANCE_BATCH: "
+        },
+        {
+          "kind": "Content",
+          "text": "{\n    id: string;\n    value: {\n        question: string;\n    };\n}[]"
+        }
+      ],
+      "docs": {
+        "summary": "The two approval interrupts adapters must preserve throughout the shared interrupt conformance scenarios.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/testing/interrupt-conformance.ts",
+        "line": 5
+      },
+      "isReadonly": true,
+      "variableTypeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/testing/interrupt-conformance.ts",
+    "line": 5
+  }
+}

@@ -1,0 +1,135 @@
+{
+  "name": "JsonNode",
+  "entrypointId": "content/json",
+  "kind": "TypeAlias",
+  "href": "/docs/api/content/json/JsonNode",
+  "canonicalReference": "@threadplane/content!JsonNode:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Immutable partial JSON tree node with parse status, a projected value, and kind-specific buffers or children.",
+  "declarations": [
+    {
+      "name": "JsonNode",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/content!JsonNode:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type JsonNode = "
+        },
+        {
+          "kind": "Reference",
+          "text": "JsonNodeBase",
+          "canonicalReference": "@threadplane/content!~JsonNodeBase:interface"
+        },
+        {
+          "kind": "Content",
+          "text": " & ({\n    readonly kind: 'null';\n    readonly value: null | undefined;\n} | {\n    readonly kind: 'boolean';\n    readonly value: boolean | undefined;\n} | {\n    readonly kind: 'number';\n    readonly value: number | undefined;\n    readonly buffer: string;\n} | {\n    readonly kind: 'string';\n    readonly value: string | undefined;\n    readonly buffer: string;\n} | {\n    readonly kind: 'array';\n    readonly value: readonly "
+        },
+        {
+          "kind": "Reference",
+          "text": "JsonPartialValue",
+          "canonicalReference": "@threadplane/content!JsonPartialValue:type",
+          "href": "/docs/api/content/json/JsonPartialValue"
+        },
+        {
+          "kind": "Content",
+          "text": "[];\n    readonly children: readonly "
+        },
+        {
+          "kind": "Reference",
+          "text": "JsonNode",
+          "canonicalReference": "@threadplane/content!JsonNode:type",
+          "href": "/docs/api/content/json/JsonNode"
+        },
+        {
+          "kind": "Content",
+          "text": "[];\n} | {\n    readonly kind: 'object';\n    readonly value: "
+        },
+        {
+          "kind": "Reference",
+          "text": "Readonly",
+          "canonicalReference": "!Readonly:type"
+        },
+        {
+          "kind": "Content",
+          "text": "<"
+        },
+        {
+          "kind": "Reference",
+          "text": "Record",
+          "canonicalReference": "!Record:type"
+        },
+        {
+          "kind": "Content",
+          "text": "<string, "
+        },
+        {
+          "kind": "Reference",
+          "text": "JsonPartialValue",
+          "canonicalReference": "@threadplane/content!JsonPartialValue:type",
+          "href": "/docs/api/content/json/JsonPartialValue"
+        },
+        {
+          "kind": "Content",
+          "text": ">>;\n    readonly children: "
+        },
+        {
+          "kind": "Reference",
+          "text": "Readonly",
+          "canonicalReference": "!Readonly:type"
+        },
+        {
+          "kind": "Content",
+          "text": "<"
+        },
+        {
+          "kind": "Reference",
+          "text": "Record",
+          "canonicalReference": "!Record:type"
+        },
+        {
+          "kind": "Content",
+          "text": "<string, "
+        },
+        {
+          "kind": "Reference",
+          "text": "JsonNode",
+          "canonicalReference": "@threadplane/content!JsonNode:type",
+          "href": "/docs/api/content/json/JsonNode"
+        },
+        {
+          "kind": "Content",
+          "text": ">>;\n})"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Immutable partial JSON tree node with parse status, a projected value, and kind-specific buffers or children.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/content/src/json/types.ts",
+        "line": 17
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 19
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/content/src/json/types.ts",
+    "line": 17
+  }
+}

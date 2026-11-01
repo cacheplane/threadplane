@@ -1,0 +1,360 @@
+{
+  "name": "AgentConfig",
+  "entrypointId": "ag-ui",
+  "kind": "Interface",
+  "href": "/docs/api/ag-ui/AgentConfig",
+  "canonicalReference": "@threadplane/ag-ui!AgentConfig:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Connection options for the AG-UI agent provider, passed to [provideAgent](/docs/api/ag-ui/provideAgent).\nMirrors the underlying `HttpAgent` config (`@ag-ui/client`) plus an optional\ntelemetry sink.",
+  "declarations": [
+    {
+      "name": "AgentConfig",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/ag-ui!AgentConfig:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface AgentConfig "
+        }
+      ],
+      "docs": {
+        "summary": "Connection options for the AG-UI agent provider, passed to [provideAgent](/docs/api/ag-ui/provideAgent).\nMirrors the underlying `HttpAgent` config (`@ag-ui/client`) plus an optional\ntelemetry sink.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "agentId",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/ag-ui!AgentConfig#agentId:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "agentId?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Agent identifier, when the endpoint serves more than one agent.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/ag-ui/src/lib/provide-agent.ts",
+            "line": 30
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "headers",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/ag-ui!AgentConfig#headers:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "headers?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Extra HTTP headers sent with every request (e.g. auth tokens).",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/ag-ui/src/lib/provide-agent.ts",
+            "line": 34
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "interruptTransport",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/ag-ui!AgentConfig#interruptTransport:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "interruptTransport?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ToAgentOptions",
+              "canonicalReference": "@threadplane/ag-ui!ToAgentOptions:interface",
+              "href": "/docs/api/ag-ui/ToAgentOptions"
+            },
+            {
+              "kind": "Content",
+              "text": "['interruptTransport']"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Explicit compatibility wire profile; auto prefers protocol-native outcomes.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/ag-ui/src/lib/provide-agent.ts",
+            "line": 17
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "persistence",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/ag-ui!AgentConfig#persistence:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "persistence?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ToAgentOptions",
+              "canonicalReference": "@threadplane/ag-ui!ToAgentOptions:interface",
+              "href": "/docs/api/ag-ui/ToAgentOptions"
+            },
+            {
+              "kind": "Content",
+              "text": "['persistence']"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Optional application-owned durable thread storage and reconciliation.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/ag-ui/src/lib/provide-agent.ts",
+            "line": 19
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "replay",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/ag-ui!AgentConfig#replay:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "replay?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ToAgentOptions",
+              "canonicalReference": "@threadplane/ag-ui!ToAgentOptions:interface",
+              "href": "/docs/api/ag-ui/ToAgentOptions"
+            },
+            {
+              "kind": "Content",
+              "text": "['replay']"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Optional source of the thread's AG-UI events, replayed on hydration so a\nreopened thread comes back as the live view showed it. Called only when\n`threadId` is configured — a fresh conversation has nothing to replay.\n`httpReplay()` covers the common HTTP shape.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/ag-ui/src/lib/provide-agent.ts",
+            "line": 26
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "telemetry",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/ag-ui!AgentConfig#telemetry:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "telemetry?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentRuntimeTelemetrySink",
+              "canonicalReference": "@threadplane/ag-ui!~AgentRuntimeTelemetrySink:type",
+              "href": "/docs/api/chat/AgentRuntimeTelemetrySink"
+            },
+            {
+              "kind": "Content",
+              "text": " | false"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Omit to enable automatic development-only collection. Set `false` to disable.\nAn app-owned sink replaces the automatic destination and receives the\nexisting runtime lifecycle callbacks.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/ag-ui/src/lib/provide-agent.ts",
+            "line": 40
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "threadId",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/ag-ui!AgentConfig#threadId:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "threadId?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Thread to connect to on start; omit to begin a fresh conversation.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/ag-ui/src/lib/provide-agent.ts",
+            "line": 32
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "url",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/ag-ui!AgentConfig#url:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "url: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Endpoint URL of the AG-UI HTTP agent (e.g. `'http://localhost:8000/agent'`). Required.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/ag-ui/src/lib/provide-agent.ts",
+            "line": 28
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/ag-ui/src/lib/provide-agent.ts",
+        "line": 15
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/ag-ui/src/lib/provide-agent.ts",
+    "line": 15
+  }
+}

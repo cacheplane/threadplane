@@ -1,0 +1,126 @@
+{
+  "name": "ChatSidebarProps",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/ChatSidebarProps",
+  "canonicalReference": "@threadplane/react!ChatSidebarProps:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Adds page content and optional content-pushing layout to the controlled chat popup shell.",
+  "declarations": [
+    {
+      "name": "ChatSidebarProps",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!ChatSidebarProps:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ChatSidebarProps extends "
+        },
+        {
+          "kind": "Reference",
+          "text": "ChatPopupProps",
+          "canonicalReference": "@threadplane/react!ChatPopupProps:interface",
+          "href": "/docs/api/react/chat/ChatPopupProps"
+        },
+        {
+          "kind": "Content",
+          "text": " "
+        }
+      ],
+      "docs": {
+        "summary": "Adds page content and optional content-pushing layout to the controlled chat popup shell.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "pageContent",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatSidebarProps#pageContent:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly pageContent?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReactNode",
+              "canonicalReference": "@types/react!React.ReactNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-sidebar.tsx",
+            "line": 7
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "pushContent",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatSidebarProps#pushContent:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly pushContent?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-sidebar.tsx",
+            "line": 8
+          },
+          "isReadonly": true,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/chat-sidebar.tsx",
+        "line": 6
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/chat-sidebar.tsx",
+    "line": 6
+  }
+}

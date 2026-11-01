@@ -1,0 +1,115 @@
+{
+  "name": "CustomStreamEvent",
+  "entrypointId": "langgraph",
+  "kind": "Interface",
+  "href": "/docs/api/langgraph/CustomStreamEvent",
+  "canonicalReference": "@threadplane/langgraph!CustomStreamEvent:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "A custom event emitted by the LangGraph backend via adispatch_custom_event().",
+  "declarations": [
+    {
+      "name": "CustomStreamEvent",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/langgraph!CustomStreamEvent:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface CustomStreamEvent "
+        }
+      ],
+      "docs": {
+        "summary": "A custom event emitted by the LangGraph backend via adispatch_custom_event().",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "data",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!CustomStreamEvent#data:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "data: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Arbitrary payload from the backend.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/agent.types.ts",
+            "line": 91
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "name",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!CustomStreamEvent#name:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "name: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Event name set by the backend (e.g., 'state_update').",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/agent.types.ts",
+            "line": 89
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/langgraph/src/lib/agent.types.ts",
+        "line": 87
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/langgraph/src/lib/agent.types.ts",
+    "line": 87
+  }
+}

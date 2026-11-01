@@ -1,0 +1,93 @@
+{
+  "name": "mockLangGraphAgent",
+  "entrypointId": "langgraph",
+  "kind": "Function",
+  "href": "/docs/api/langgraph/mockLangGraphAgent",
+  "canonicalReference": "@threadplane/langgraph!mockLangGraphAgent:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Creates a mock LangGraphAgent with writable signals for testing.\nControl state by writing to the returned writable signals directly.\n\nNeutral `Agent`-contract signals come from [mockAgent](/docs/api/chat/mockAgent); LangGraph-specific\nsignals are declared here and layered on top.",
+  "declarations": [
+    {
+      "name": "mockLangGraphAgent",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/langgraph!mockLangGraphAgent:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function mockLangGraphAgent(initial?: "
+        },
+        {
+          "kind": "Reference",
+          "text": "MockAgentOptions",
+          "canonicalReference": "@threadplane/langgraph!~MockAgentOptions:interface",
+          "href": "/docs/api/chat/MockAgentOptions"
+        },
+        {
+          "kind": "Content",
+          "text": " & {\n    langGraphMessages?: "
+        },
+        {
+          "kind": "Reference",
+          "text": "BaseMessage",
+          "canonicalReference": "@langchain/core!BaseMessage:class",
+          "href": "/docs/api/middleware/langgraph/BaseMessage"
+        },
+        {
+          "kind": "Content",
+          "text": "[];\n    hasValue?: boolean;\n    isThreadLoading?: boolean;\n}"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Reference",
+          "text": "MockLangGraphAgent",
+          "canonicalReference": "@threadplane/langgraph!MockLangGraphAgent:interface",
+          "href": "/docs/api/langgraph/MockLangGraphAgent"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Creates a mock LangGraphAgent with writable signals for testing.\nControl state by writing to the returned writable signals directly.\n\nNeutral `Agent`-contract signals come from [mockAgent](/docs/api/chat/mockAgent); LangGraph-specific\nsignals are declared here and layered on top.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [
+          "```ts\nconst agent = mockLangGraphAgent({ isThreadLoading: true });\nagent.messages.set([{ id: '1', role: 'assistant', content: 'Hi' }]);\n```"
+        ],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/langgraph/src/lib/testing/mock-langgraph-agent.ts",
+        "line": 87
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "initial",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 5
+          },
+          "isOptional": true
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 6,
+        "endIndex": 7
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/langgraph/src/lib/testing/mock-langgraph-agent.ts",
+    "line": 87
+  }
+}

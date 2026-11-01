@@ -1,0 +1,91 @@
+{
+  "name": "submitMessage",
+  "entrypointId": "chat",
+  "kind": "Function",
+  "href": "/docs/api/chat/submitMessage",
+  "canonicalReference": "@threadplane/chat!submitMessage:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Submits a trimmed message to the agent.\nReturns the trimmed string on dispatch, or `null` for empty or blocked input.",
+  "declarations": [
+    {
+      "name": "submitMessage",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/chat!submitMessage:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function submitMessage(agent: "
+        },
+        {
+          "kind": "Reference",
+          "text": "Agent",
+          "canonicalReference": "@threadplane/chat!Agent:interface",
+          "href": "/docs/api/chat/Agent"
+        },
+        {
+          "kind": "Content",
+          "text": ", text: "
+        },
+        {
+          "kind": "Content",
+          "text": "string"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "string | null"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Submits a trimmed message to the agent.\nReturns the trimmed string on dispatch, or `null` for empty or blocked input.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/primitives/chat-input/chat-input.component.ts",
+        "line": 21
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "agent",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "text",
+          "parameterTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 5,
+        "endIndex": 6
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/primitives/chat-input/chat-input.component.ts",
+    "line": 21
+  }
+}

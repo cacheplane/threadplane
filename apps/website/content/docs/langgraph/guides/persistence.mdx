@@ -258,6 +258,121 @@ Setting the `threadId` signal (or calling `switchThread()`, as the example does)
 
 In your backend's persistence layer. Threadplane exposes thread, history, and resume behavior in the UI; durability comes from the runtime you operate.
 
+
+## Wiring a thread list
+
+`<chat-thread-list>` renders the rows; the application owns the active-thread signal. That signal is the same one handed to `provideAgent({ threadId })`, which is what makes selecting a row switch the conversation: the agent watches the signal, resets its derived state, and re-fetches that thread's server-side history.
+
+```ts
+import { Component, inject, signal } from '@angular/core';
+import { ChatThreadListComponent, type ThreadActionAdapter } from '@threadplane/chat';
+import {
+  injectAgent,
+  provideAgent,
+  LangGraphThreadsAdapter,
+  LANGGRAPH_THREADS_CONFIG,
+  refreshOnRunEnd,
+} from '@threadplane/langgraph';
+
+/** Source of truth for the active thread. Module scope, because the
+ *  `provideAgent()` config below is evaluated at provider-registration
+ *  time and has to close over it. */
+const activeThreadIdState = signal<string | null>(null);
+
+@Component({
+  selector: 'app-threads-panel',
+  standalone: true,
+  imports: [ChatThreadListComponent],
+  providers: [
+    LangGraphThreadsAdapter,
+    { provide: LANGGRAPH_THREADS_CONFIG, useValue: { apiUrl: 'http://localhost:2024' } },
+    provideAgent({
+      apiUrl: 'http://localhost:2024',
+      assistantId: 'agent',
+      threadId: activeThreadIdState,
+      onThreadId: (id: string) => activeThreadIdState.set(id),
+    }),
+  ],
+  template: `
+    <chat-thread-list
+      [threads]="threads.threads()"
+      [activeThreadId]="activeThreadId() ?? ''"
+      [actions]="actions"
+      [showNewThreadButton]="true"
+      (threadSelected)="onThreadSelected($event)"
+      (newThreadRequested)="onNewThread()"
+    />
+  `,
+})
+export class ThreadsPanel {
+  protected readonly agent = injectAgent();
+  protected readonly threads = inject(LangGraphThreadsAdapter);
+  protected readonly activeThreadId = activeThreadIdState;
+
+  protected readonly actions: ThreadActionAdapter = {
+    rename: (id, title) => this.threads.rename(id, title),
+    pin: (id) => this.threads.pin(id),
+    unpin: (id) => this.threads.unpin(id),
+    archive: async (id) => {
+      await this.threads.archive(id);
+      if (activeThreadIdState() === id) activeThreadIdState.set(null);
+    },
+    delete: async (id) => {
+      await this.threads.delete(id);
+      if (activeThreadIdState() === id) activeThreadIdState.set(null);
+    },
+  };
+
+  constructor() {
+    void this.threads.refresh();
+    refreshOnRunEnd(this.agent, () => this.threads.refresh());
+  }
+
+  protected onThreadSelected(id: string): void {
+    activeThreadIdState.set(id);
+  }
+
+  protected async onNewThread(): Promise<void> {
+    const id = await this.threads.create();
+    if (id !== null) activeThreadIdState.set(id);
+  }
+}
+```
+
+The example scopes both the thread adapter and its required `LANGGRAPH_THREADS_CONFIG` to the panel. To share a root-provided thread adapter across the app, provide that configuration at the application root instead.
+
+Three details in that template are easy to get wrong:
+
+- `activeThreadId` is `input<string>('')`, not a nullable input, so a `null` active thread has to become `''`. Passing `null` is a template type error.
+- The selection output is `threadSelected`, and `<chat>` re-emits an output of the same name, so either surface can drive the switch.
+- The agent has no `threadId` member of its own. The id lives in the application's signal; reading it back off the agent is not possible.
+
+An application that does not bind a `threadId` signal can call `agent.switchThread(id)` from the same handler instead. Binding the signal is the better default, because it also survives a `provideAgent()` factory that reads the id from the router.
+
+<Callout type="info" title="Which menu entries appear">
+`<chat-thread-list>` builds its row menu from the keys the adapter actually defines, and from `[mode]`. A list in the default `active` mode offers Rename, Pin or Unpin, Move up and Move down for a pinned row with `reorderPinned`, Move to project when `[projects]` is bound, Archive, and Delete. A list rendered with `[mode]="'archived'"` — the natural home for `archivedThreads()` — offers only Unarchive and Delete.
+</Callout>
+
+## Keeping the list fresh
+
+The store is a snapshot, not a subscription, so something has to re-fetch it. `refreshOnRunEnd()` fires on every transition out of the running status, which is precisely when a title-writing node has finished.
+
+```ts
+refreshOnRunEnd(this.agent, () => this.threads.refresh());
+```
+
+`refreshOnTransition(watch, isActive, fn)` is the generic form for any other signal that has an active state: it calls `fn` whenever `isActive(watch())` goes from `true` to `false`.
+
+Both helpers use an Angular `effect()` under the hood, so both must be called from an injection context — a constructor body or a field initializer. `refresh()` itself is a plain asynchronous call with no such requirement.
+
+## Shared SDK client
+
+Provide `LANGGRAPH_CLIENT` to hand the adapter an SDK `Client` you already own, or a test double; when the token is absent the adapter builds its own client from `apiUrl`. Provide `LANGGRAPH_CLIENT_OPTIONS` once at the application root to tune the SDK retry budget and auth headers shared by `FetchStreamTransport` and this adapter.
+
+<Callout type="warning" title="Thread ids come from the server">
+Use a confirmed backend thread ID: the value `create()` resolves, the one handed to `onThreadId`, or one returned by the Threads API. A caller can request a UUID during thread creation, but must confirm the returned identity before using it for a run. Generating an ID alone creates no backend thread.
+</Callout>
+
 ## What's Next
 
 <CardGroup cols={2}>

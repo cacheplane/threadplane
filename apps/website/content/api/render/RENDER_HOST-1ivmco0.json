@@ -1,0 +1,66 @@
+{
+  "name": "RENDER_HOST",
+  "entrypointId": "render",
+  "kind": "Variable",
+  "href": "/docs/api/render/RENDER_HOST",
+  "canonicalReference": "@threadplane/render!RENDER_HOST:var",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Injection token for the element-scoped state, event, and result bridge used by mounted view components.",
+  "declarations": [
+    {
+      "name": "RENDER_HOST",
+      "kind": "Variable",
+      "canonicalReference": "@threadplane/render!RENDER_HOST:var",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "RENDER_HOST: "
+        },
+        {
+          "kind": "Reference",
+          "text": "InjectionToken",
+          "canonicalReference": "@angular/core!InjectionToken:class"
+        },
+        {
+          "kind": "Content",
+          "text": "<"
+        },
+        {
+          "kind": "Reference",
+          "text": "RenderHost",
+          "canonicalReference": "@threadplane/render!RenderHost:interface",
+          "href": "/docs/api/render/RenderHost"
+        },
+        {
+          "kind": "Content",
+          "text": ">"
+        }
+      ],
+      "docs": {
+        "summary": "Injection token for the element-scoped state, event, and result bridge used by mounted view components.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/render/src/lib/contexts/render-host.ts",
+        "line": 21
+      },
+      "isReadonly": true,
+      "variableTypeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/render/src/lib/contexts/render-host.ts",
+    "line": 21
+  }
+}

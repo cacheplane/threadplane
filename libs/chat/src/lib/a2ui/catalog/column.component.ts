@@ -17,6 +17,7 @@ const JUSTIFY_MAP: Record<ColumnJustify, string> = {
   spaceEvenly: 'space-evenly', stretch: 'normal',
 };
 
+/** Arranges A2UI child elements vertically with configurable alignment, distribution, and spacing. */
 @Component({
   selector: 'a2ui-column',
   standalone: true,

@@ -100,6 +100,7 @@ export function isPinned(
   return scrollHeight - scrollTop - clientHeight < tolerance;
 }
 
+/** Composes an agent conversation with message input, streaming content, tool views, and customizable activity templates. */
 @Component({
   selector: 'chat',
   standalone: true,

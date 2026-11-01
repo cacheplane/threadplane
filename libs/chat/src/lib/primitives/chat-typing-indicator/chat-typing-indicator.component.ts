@@ -30,6 +30,7 @@ export function isTyping(agent: Agent): boolean {
   return false;
 }
 
+/** Displays animated typing dots while a loading agent has not produced assistant content. */
 @Component({
   selector: 'chat-typing-indicator',
   standalone: true,

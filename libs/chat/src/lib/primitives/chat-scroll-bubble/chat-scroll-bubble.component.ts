@@ -3,8 +3,10 @@ import { Component, ChangeDetectionStrategy, input, output, computed } from '@an
 import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
 import { CHAT_SCROLL_BUBBLE_STYLES } from '../../styles/chat-scroll-bubble.styles';
 
+/** Selects streaming activity dots or an idle scroll arrow for the latest-activity button. */
 export type ChatScrollBubbleMode = 'streaming' | 'idle';
 
+/** Renders a latest-activity button with streaming dots or an idle scroll arrow. */
 @Component({
   selector: 'chat-scroll-bubble',
   standalone: true,

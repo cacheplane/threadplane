@@ -1,0 +1,188 @@
+{
+  "name": "ChatActivityTemplateDirective",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/ChatActivityTemplateDirective",
+  "canonicalReference": "@threadplane/chat!ChatActivityTemplateDirective:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Registers a per-message activity renderer on `<chat>`. When present, the\ntemplate replaces the reasoning pill and the tool-call region\n(`<chat-reasoning>` + `<chat-tool-calls>`) of every assistant message.\nMarkdown, tool views, generative UI and message actions still render.\n\nThe template renders at message level, so tall activity (nested subagent\nturns, approval cards) is never clipped by a trace body.\n\nPrecedence: the activity template owns the whole region, so any\n`chatToolCallTemplate` projected into `<chat>` is not used while an\nactivity template is present. Render `<chat-tool-calls>` inside the\nactivity template to keep per-tool templates.\n\nUsage:\n\n<chat [agent]=\"agent\">\n <ng-template chatActivityTemplate let-message let-toolCalls=\"toolCalls\" let-subagents=\"subagents\">\n <my-activity-summary [message]=\"message\" [calls]=\"toolCalls\" [subagents]=\"subagents\" />\n </ng-template>\n </chat>",
+  "declarations": [
+    {
+      "name": "ChatActivityTemplateDirective",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!ChatActivityTemplateDirective:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class ChatActivityTemplateDirective "
+        }
+      ],
+      "docs": {
+        "summary": "Registers a per-message activity renderer on `<chat>`. When present, the\ntemplate replaces the reasoning pill and the tool-call region\n(`<chat-reasoning>` + `<chat-tool-calls>`) of every assistant message.\nMarkdown, tool views, generative UI and message actions still render.\n\nThe template renders at message level, so tall activity (nested subagent\nturns, approval cards) is never clipped by a trace body.\n\nPrecedence: the activity template owns the whole region, so any\n`chatToolCallTemplate` projected into `<chat>` is not used while an\nactivity template is present. Render `<chat-tool-calls>` inside the\nactivity template to keep per-tool templates.\n\nUsage:\n\n<chat [agent]=\"agent\">\n <ng-template chatActivityTemplate let-message let-toolCalls=\"toolCalls\" let-subagents=\"subagents\">\n <my-activity-summary [message]=\"message\" [calls]=\"toolCalls\" [subagents]=\"subagents\" />\n </ng-template>\n </chat>",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "ngTemplateContextGuard",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/chat!ChatActivityTemplateDirective.ngTemplateContextGuard:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "static ngTemplateContextGuard(_directive: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ChatActivityTemplateDirective",
+              "canonicalReference": "@threadplane/chat!ChatActivityTemplateDirective:class",
+              "href": "/docs/api/chat/ChatActivityTemplateDirective"
+            },
+            {
+              "kind": "Content",
+              "text": ", context: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "context",
+              "canonicalReference": "@threadplane/chat!~context"
+            },
+            {
+              "kind": "Content",
+              "text": " is "
+            },
+            {
+              "kind": "Reference",
+              "text": "ChatActivityTemplateContext",
+              "canonicalReference": "@threadplane/chat!ChatActivityTemplateContext:interface",
+              "href": "/docs/api/chat/ChatActivityTemplateContext"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat-activity-template.directive.ts",
+            "line": 59
+          },
+          "overloadIndex": 1,
+          "isStatic": true,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "_directive",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "context",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 8
+          }
+        },
+        {
+          "name": "templateRef",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatActivityTemplateDirective#templateRef:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly templateRef: "
+            },
+            {
+              "kind": "Reference",
+              "text": "TemplateRef",
+              "canonicalReference": "@angular/core!TemplateRef:class"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ChatActivityTemplateContext",
+              "canonicalReference": "@threadplane/chat!ChatActivityTemplateContext:interface",
+              "href": "/docs/api/chat/ChatActivityTemplateContext"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat-activity-template.directive.ts",
+            "line": 57
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/compositions/chat/chat-activity-template.directive.ts",
+        "line": 52
+      },
+      "angular": {
+        "selector": "ng-template[chatActivityTemplate]",
+        "inputs": [],
+        "outputs": []
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/compositions/chat/chat-activity-template.directive.ts",
+    "line": 52
+  }
+}

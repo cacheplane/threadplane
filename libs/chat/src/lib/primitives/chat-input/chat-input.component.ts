@@ -28,6 +28,7 @@ export function submitMessage(
   return trimmed;
 }
 
+/** Provides an auto-resizing message composer that submits to an agent and can stop its current response. */
 @Component({
   selector: 'chat-input',
   standalone: true,

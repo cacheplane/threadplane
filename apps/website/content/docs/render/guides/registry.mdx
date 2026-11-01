@@ -203,10 +203,145 @@ The other is the `registry` input on the surface itself, which is what the examp
 
 `<render-spec>` resolves its registry in a fixed order: the input first, then the config from `provideRender()`, then a registry supplied through `provideViews()`, and finally an empty registry that resolves nothing.
 
+
+## Fallbacks and schema gating
+
+Each entry can be a bare component class or a `{ component, fallback }` object. The `fallback` mounts while any resolved prop on the element is still `undefined` -- typically a `$state` binding that has not arrived yet. This is useful for streaming UI, where structure arrives before data:
+
+```typescript
+import { defineAngularRegistry } from '@threadplane/render';
+import { TextComponent } from './text.component';
+import { CardComponent } from './card.component';
+import { CardSkeletonComponent } from './card-skeleton.component';
+
+const registry = defineAngularRegistry({
+  Text: TextComponent,
+  Card: { component: CardComponent, fallback: CardSkeletonComponent },
+});
+
+registry.getEntry('Card')?.fallback; // CardSkeletonComponent (the configured fallback)
+registry.getEntry('Text')?.fallback; // DefaultFallbackComponent (entry omits one)
+registry.getEntry('Missing');        // undefined (not registered)
+```
+
+An entry that omits `fallback` -- including every bare-component entry like `Text` above -- falls back to the library's `DefaultFallbackComponent`. Once the real component mounts, the choice is monotonic for that element instance: a later prop resolving to `undefined` never reverts it to the fallback.
+
+### Schema-Gated Mounting
+
+Add `schema` when a component should mount only after resolved props satisfy a Standard Schema validator such as Zod:
+
+```typescript
+import { z } from 'zod';
+import { defineAngularRegistry } from '@threadplane/render';
+
+const registry = defineAngularRegistry({
+  WeatherCard: {
+    component: WeatherCardComponent,
+    fallback: WeatherCardSkeletonComponent,
+    schema: z.object({
+      city: z.string(),
+      temperature: z.number(),
+    }),
+    description: 'Shows current weather for a city.',
+  },
+});
+```
+
+While props are missing or fail validation, the fallback renders. Once the props pass validation and the component mounts, later updates do not move that element back to the fallback.
+
+<Callout type="warning" title="Validation is synchronous only">
+The mount gate reads the schema result synchronously. A schema whose `validate()` returns a Promise does not gate the mount -- the element is treated as ready. Use a synchronous validator such as Zod.
+</Callout>
+
+
+## Composing view registries
+
+```typescript
+import { views } from '@threadplane/render';
+
+const ui = views({
+  'plan-checklist': PlanChecklistComponent,
+  'file-preview': FilePreviewComponent,
+  'code-output': CodeOutputComponent,
+});
+```
+
+Provide it once, then render specs whose element `type` values match the registered names:
+
+```typescript
+// app.config.ts
+import { provideViews } from '@threadplane/render';
+
+export const appConfig: ApplicationConfig = {
+  providers: [provideViews(ui)],
+};
+```
+
+```html
+<render-spec [spec]="spec" />
+```
+
+The same registry is what the chat component accepts on its `views` input:
+
+```html
+<chat [agent]="stream" [views]="ui" />
+```
+
+## Composition
+
+Compose registries via object spread. The last key wins for overrides:
+
+```typescript
+const all = views({
+  ...thirdPartyViews,
+  ...myViews,
+  'chart': MyCustomChart, // overrides thirdPartyViews['chart']
+});
+```
+
+## Per-View Fallbacks
+
+Each entry is either a bare component class or a `{ component, fallback }` object. The fallback mounts while any resolved prop on the element is still `undefined` -- the same shape `defineAngularRegistry()` accepts:
+
+```typescript
+const ui = views({
+  'plan-checklist': {
+    component: PlanChecklistComponent,
+    fallback: PlanSkeletonComponent,
+  },
+  'file-preview': FilePreviewComponent, // bare form uses the default fallback
+});
+```
+
+`withViews()` and `overrideViews()` accept the same object form in their addition and override maps.
+
+
+## View components
+
+View components are standard Angular standalone components. They receive resolved props as `input()` signals:
+
+```typescript
+@Component({
+  selector: 'plan-checklist',
+  standalone: true,
+  template: `
+    <div class="border rounded-xl p-4">
+      <h4>{{ title() }}</h4>
+      <ng-content />
+    </div>
+  `,
+})
+export class PlanChecklistComponent {
+  readonly title = input<string>('Plan');
+}
+```
+
+The element `type` in the spec is matched against the registry key to resolve the component class, so the names in `views({ ... })` are the allowlist of what a spec is permitted to render. For how the chat components decide that a streamed assistant message is a spec at all, see [json-render vs A2UI](/docs/render/concepts/json-render-vs-a2ui).
+
 ## What's Next
 
 <CardGroup cols={2}>
-  <Card title="defineAngularRegistry() API" href="/docs/render/api/define-angular-registry">
+  <Card title="defineAngularRegistry() API" href="/docs/api/render/defineAngularRegistry">
     Full API reference for the registry factory
   </Card>
   <Card title="Specs Guide" href="/docs/render/guides/specs">

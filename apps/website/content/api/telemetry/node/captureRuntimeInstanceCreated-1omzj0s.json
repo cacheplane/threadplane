@@ -1,0 +1,80 @@
+{
+  "name": "captureRuntimeInstanceCreated",
+  "entrypointId": "telemetry/node",
+  "kind": "Function",
+  "href": "/docs/api/telemetry/node/captureRuntimeInstanceCreated",
+  "canonicalReference": "@threadplane/telemetry!captureRuntimeInstanceCreated:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Capture a runtime construction event through the Node client after removing `apiKey`, suppressing capture failures.",
+  "declarations": [
+    {
+      "name": "captureRuntimeInstanceCreated",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/telemetry!captureRuntimeInstanceCreated:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function captureRuntimeInstanceCreated(input: "
+        },
+        {
+          "kind": "Reference",
+          "text": "RuntimeInstanceTelemetry",
+          "canonicalReference": "@threadplane/telemetry!RuntimeInstanceTelemetry:interface",
+          "href": "/docs/api/telemetry/node/RuntimeInstanceTelemetry"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Reference",
+          "text": "Promise",
+          "canonicalReference": "!Promise:interface"
+        },
+        {
+          "kind": "Content",
+          "text": "<void>"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Capture a runtime construction event through the Node client after removing `apiKey`, suppressing capture failures.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/telemetry/src/node/adapter.ts",
+        "line": 40
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "input",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/telemetry/src/node/adapter.ts",
+    "line": 40
+  }
+}

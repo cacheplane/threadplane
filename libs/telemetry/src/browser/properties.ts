@@ -9,12 +9,14 @@ function toSafeString(value: unknown, maxLength: number): string | undefined {
   return trimmed.slice(0, maxLength);
 }
 
+/** Token and browser host inputs for the analytics capture gate, with local capture disabled by default. */
 export type CaptureConfig = {
   token?: string;
   captureLocal?: boolean;
   host?: string;
 };
 
+/** Recognize localhost, IPv4 loopback, or IPv6 loopback in a browser host string, optionally including a port. */
 export function isLocalAnalyticsHost(host: unknown): boolean {
   const value = toSafeString(host, 300)?.toLowerCase();
   if (!value) return false;
@@ -26,6 +28,7 @@ export function isLocalAnalyticsHost(host: unknown): boolean {
   return hostname === 'localhost' || hostname === '127.0.0.1';
 }
 
+/** Require a nonblank token and exclude recognized local hosts unless `captureLocal` is true. */
 export function shouldCaptureAnalytics({ token, captureLocal = false, host }: CaptureConfig): boolean {
   if (!toSafeString(token, 500)) return false;
   if (isLocalAnalyticsHost(host) && !captureLocal) return false;

@@ -3,6 +3,7 @@ import type { Spec } from '@json-render/core';
 import { injectRenderHost } from '@threadplane/render';
 import { emitBinding } from './emit-binding';
 
+/** Renders an A2UI range input that writes numeric changes to its bound render state. */
 @Component({
   selector: 'a2ui-slider',
   standalone: true,

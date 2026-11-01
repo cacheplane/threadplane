@@ -1,0 +1,115 @@
+{
+  "name": "A2uiErrorMessage",
+  "entrypointId": "a2ui",
+  "kind": "Interface",
+  "href": "/docs/api/a2ui/A2uiErrorMessage",
+  "canonicalReference": "@threadplane/a2ui!A2uiErrorMessage:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Versioned A2UI error envelope with a code and optional surface, path, and message details.",
+  "declarations": [
+    {
+      "name": "A2uiErrorMessage",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/a2ui!A2uiErrorMessage:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface A2uiErrorMessage "
+        }
+      ],
+      "docs": {
+        "summary": "Versioned A2UI error envelope with a code and optional surface, path, and message details.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "error",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/a2ui!A2uiErrorMessage#error:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "error: "
+            },
+            {
+              "kind": "Content",
+              "text": "{\n        code: string;\n        surfaceId?: string;\n        path?: string;\n        message?: string;\n    }"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/a2ui/src/lib/types.ts",
+            "line": 343
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "version",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/a2ui!A2uiErrorMessage#version:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "version: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/a2ui/src/lib/types.ts",
+            "line": 342
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/a2ui/src/lib/types.ts",
+        "line": 341
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/a2ui/src/lib/types.ts",
+    "line": 341
+  }
+}

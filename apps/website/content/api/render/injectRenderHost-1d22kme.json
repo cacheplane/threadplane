@@ -1,0 +1,60 @@
+{
+  "name": "injectRenderHost",
+  "entrypointId": "render",
+  "kind": "Function",
+  "href": "/docs/api/render/injectRenderHost",
+  "canonicalReference": "@threadplane/render!injectRenderHost:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Obtain the element-scoped [RenderHost](/docs/api/render/RenderHost) from inside a mounted view\ncomponent — use it to write state, emit events, or announce a result back to\nthe render engine.",
+  "declarations": [
+    {
+      "name": "injectRenderHost",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/render!injectRenderHost:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function injectRenderHost(): "
+        },
+        {
+          "kind": "Reference",
+          "text": "RenderHost",
+          "canonicalReference": "@threadplane/render!RenderHost:interface",
+          "href": "/docs/api/render/RenderHost"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Obtain the element-scoped [RenderHost](/docs/api/render/RenderHost) from inside a mounted view\ncomponent — use it to write state, emit events, or announce a result back to\nthe render engine.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [
+          "```ts\n\\@Component({ ... })\nclass ApproveButton {\n  private host = injectRenderHost();\n  approve() { this.host.result('approved'); }\n}\n```"
+        ],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/render/src/lib/contexts/render-host.ts",
+        "line": 37
+      },
+      "overloadIndex": 1,
+      "parameters": [],
+      "returnTypeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/render/src/lib/contexts/render-host.ts",
+    "line": 37
+  }
+}
