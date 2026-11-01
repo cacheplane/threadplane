@@ -6,11 +6,54 @@ const LINKEDIN_DECIDE_PATH = '/api/growth/linkedin-decide';
 const DECIDE_TOKEN_PATTERN = /^[A-Za-z0-9._-]+$/u;
 const COMMENT_TEXT_MAX = 500;
 
+/** Schema limits; the job handler clips untrusted LinkedIn text to these. */
+export const LINKEDIN_DIGEST_LIMITS = {
+  displayName: 200,
+  headline: 500,
+  companyName: 200,
+  // One past the rendered maximum so the renderer still marks the cut with `…`.
+  commentText: COMMENT_TEXT_MAX + 1,
+  postUrl: 2_048,
+  postUrn: 512,
+  engagements: 200,
+} as const;
+
+/** C1 controls and bidi embedding/override/isolate characters. */
+const INVISIBLE_FORMATTING = /[\u0080-\u009F\u202A-\u202E\u2066-\u2069]/gu;
+
 function containsControlCharacter(value: string): boolean {
   return [...value].some((character) => {
     const codePoint = character.codePointAt(0) ?? 0;
-    return codePoint <= 31 || codePoint === 127;
+    return (
+      codePoint <= 31 ||
+      codePoint === 127 ||
+      (codePoint >= 0x80 && codePoint <= 0x9f) ||
+      (codePoint >= 0x202a && codePoint <= 0x202e) ||
+      (codePoint >= 0x2066 && codePoint <= 0x2069)
+    );
   });
+}
+
+/**
+ * Makes untrusted LinkedIn text renderable: strips C1 and bidi controls,
+ * collapses all whitespace (newlines included) to single spaces, trims, and
+ * clips to `max` UTF-16 units without leaving a dangling high surrogate.
+ */
+export function cleanLinkedInDigestText(value: string, max: number): string {
+  const collapsed = value
+    .replace(INVISIBLE_FORMATTING, '')
+    .replace(/\s+/gu, ' ');
+  // Drop the C0 controls that \s does not cover.
+  const visible = [...collapsed]
+    .filter((character) => {
+      const codePoint = character.codePointAt(0) ?? 0;
+      return codePoint > 31 && codePoint !== 127;
+    })
+    .join('')
+    .trim();
+  return visible.length <= max
+    ? visible
+    : visible.slice(0, max).replace(/[\uD800-\uDBFF]$/u, '');
 }
 
 function safeText(max: number, min = 1) {
@@ -42,23 +85,23 @@ function validProfileUrl(value: string): boolean {
 
 const EngagementSchema = z.object({
   kind: z.enum(['comment', 'reply', 'reaction', 'repost', 'mention']),
-  // Any length is accepted; the renderer truncates to COMMENT_TEXT_MAX.
-  commentText: safeText(Number.MAX_SAFE_INTEGER).nullable(),
-  postUrl: safeText(2_048).nullable(),
-  postUrn: safeText(512).nullable(),
+  // The handler clips first; the renderer truncates to COMMENT_TEXT_MAX.
+  commentText: safeText(20_000).nullable(),
+  postUrl: safeText(LINKEDIN_DIGEST_LIMITS.postUrl).nullable(),
+  postUrn: safeText(LINKEDIN_DIGEST_LIMITS.postUrn).nullable(),
   occurredAt: z.date(),
 });
 
 const LeadSchema = z.object({
-  displayName: safeText(200),
-  headline: safeText(500, 0),
+  displayName: safeText(LINKEDIN_DIGEST_LIMITS.displayName),
+  headline: safeText(LINKEDIN_DIGEST_LIMITS.headline, 0),
   profileUrl: safeText(2_048).refine(validProfileUrl, {
     message: 'profileUrl must be an https://www.linkedin.com/in/ profile link',
   }),
-  companyName: safeText(200).nullable(),
+  companyName: safeText(LINKEDIN_DIGEST_LIMITS.companyName).nullable(),
   score: z.number().int(),
   previouslyRejected: z.boolean(),
-  engagements: z.array(EngagementSchema).max(200),
+  engagements: z.array(EngagementSchema).max(LINKEDIN_DIGEST_LIMITS.engagements),
   // Validated against the configured origin by the input-level refinement below.
   rejectUrl: z.string().min(1).max(2_048),
   denyUrl: z.string().min(1).max(2_048),

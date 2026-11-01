@@ -7,6 +7,7 @@ import {
 } from '@threadplane-internal/growth';
 import { describe, expect, it, vi } from 'vitest';
 
+import { DeterministicLifecycleJobError } from '../job-errors.js';
 import {
   dispatchLifecycleAppOwnedJob,
   type LifecycleJobDependencies,
@@ -223,6 +224,86 @@ describe('LinkedIn digest jobs', () => {
     expect(deps.sendRecipient).not.toHaveBeenCalled();
     expect(deps.readJobContext).not.toHaveBeenCalled();
     expect(deps.readInstallDigestCandidates).not.toHaveBeenCalled();
+  });
+
+  it('renders a multi-line comment on one line instead of failing validation', async () => {
+    const deps = dependencies({
+      readLinkedInDigestLeads: vi.fn().mockResolvedValue([
+        {
+          ...LEAD,
+          displayName: 'Dana\n  Builder',
+          companyName: ' \t ',
+          engagements: [
+            {
+              ...LEAD.engagements[0],
+              commentText: 'First line\nsecond line\r\n\tthird',
+            },
+          ],
+        },
+      ]),
+    });
+    await expect(
+      dispatchLifecycleAppOwnedJob(transactionalExecutor(), linkedInJob(), {}, deps)
+    ).resolves.toBe('completed');
+    const text = sentText(deps);
+    expect(text).toContain('commented: "First line second line third"');
+    expect(text).toContain('Dana Builder — Staff Engineer at Example Corp');
+    expect(text).not.toContain('Company:');
+  });
+
+  it('strips bidi overrides and C1 controls from a headline', async () => {
+    const deps = dependencies({
+      readLinkedInDigestLeads: vi.fn().mockResolvedValue([
+        { ...LEAD, headline: 'Staff\u202E Engineer\u0085 at Example\u2066 Corp' },
+      ]),
+    });
+    await expect(
+      dispatchLifecycleAppOwnedJob(transactionalExecutor(), linkedInJob(), {}, deps)
+    ).resolves.toBe('completed');
+    expect(sentText(deps)).toContain(
+      'Dana Builder — Staff Engineer at Example Corp'
+    );
+  });
+
+  it('clips oversized text and keeps the newest 200 engagements', async () => {
+    const engagements = Array.from({ length: 201 }, (_, index) => ({
+      kind: 'reaction' as const,
+      commentText: null,
+      occurredAt: new Date(Date.UTC(2026, 9, 1, 0, index)),
+      postUrn: `urn:li:activity:${index}`,
+      postUrl: null,
+    }));
+    const deps = dependencies({
+      readLinkedInDigestLeads: vi.fn().mockResolvedValue([
+        {
+          ...LEAD,
+          displayName: 'D'.repeat(300),
+          headline: 'H'.repeat(900),
+          engagements,
+        },
+      ]),
+    });
+    await expect(
+      dispatchLifecycleAppOwnedJob(transactionalExecutor(), linkedInJob(), {}, deps)
+    ).resolves.toBe('completed');
+    const text = sentText(deps);
+    expect(text.match(/^reacted on /gmu)).toHaveLength(200);
+    expect(text).not.toContain('urn:li:activity:0 ');
+    expect(text).toContain('urn:li:activity:200 ');
+    expect(text).toContain(`${'D'.repeat(200)} — ${'H'.repeat(500)}\n`);
+  });
+
+  it('quarantines the job when the digest input still fails validation', async () => {
+    const deps = dependencies({
+      readLinkedInDigestLeads: vi
+        .fn()
+        .mockResolvedValue([{ ...LEAD, profileUrl: 'https://example.com/in/x' }]),
+    });
+    await expect(
+      dispatchLifecycleAppOwnedJob(transactionalExecutor(), linkedInJob(), {}, deps)
+    ).rejects.toBeInstanceOf(DeterministicLifecycleJobError);
+    expect(deps.claimInternalNotification).not.toHaveBeenCalled();
+    expect(deps.sendInternalNotification).not.toHaveBeenCalled();
   });
 
   it('sends a counts-only digest when unparsed mail or drops need attention', async () => {

@@ -61,7 +61,11 @@ import {
 } from '../enrichment/schema.js';
 import { renderFulfillmentTemplate } from '../fulfillment/templates.js';
 import { renderInstallDigest } from '../notifications/install-digest.js';
-import { renderLinkedInDigest } from '../notifications/linkedin-digest.js';
+import {
+  cleanLinkedInDigestText,
+  LINKEDIN_DIGEST_LIMITS,
+  renderLinkedInDigest,
+} from '../notifications/linkedin-digest.js';
 import { renderInternalNotificationSummary } from '../notifications/templates.js';
 import { loadEmailHmacKeyring } from '../email-keyring.js';
 import { DeterministicLifecycleJobError } from '../job-errors.js';
@@ -853,6 +857,71 @@ function digestBusinessDate(job: GrowthJob): string {
   return businessDate;
 }
 
+/** Clips text to `max` after cleaning; null when nothing is left. */
+function cleanOptionalLinkedInText(
+  value: string | null,
+  max: number
+): string | null {
+  if (value === null) return null;
+  const cleaned = cleanLinkedInDigestText(value, max);
+  return cleaned === '' ? null : cleaned;
+}
+
+/**
+ * Bounds the untrusted inbound LinkedIn text a lead carries (no database
+ * limits) so one odd notification cannot make every digest fail validation.
+ */
+function linkedInDigestLeadInput(
+  lead: LinkedInDigestLead,
+  decideUrl: (leadId: string, reason: 'reject' | 'deny') => string
+) {
+  return {
+    displayName:
+      cleanLinkedInDigestText(
+        lead.displayName,
+        LINKEDIN_DIGEST_LIMITS.displayName
+      ) || '(no name)',
+    headline: cleanLinkedInDigestText(
+      lead.headline,
+      LINKEDIN_DIGEST_LIMITS.headline
+    ),
+    profileUrl: lead.profileUrl,
+    companyName: cleanOptionalLinkedInText(
+      lead.companyName,
+      LINKEDIN_DIGEST_LIMITS.companyName
+    ),
+    score: lead.score,
+    previouslyRejected: lead.previouslyRejected,
+    // Engagements arrive oldest first; keep the newest.
+    engagements: lead.engagements
+      .slice(-LINKEDIN_DIGEST_LIMITS.engagements)
+      .map((engagement) => ({
+        kind: engagement.kind,
+        commentText: cleanOptionalLinkedInText(
+          engagement.commentText,
+          LINKEDIN_DIGEST_LIMITS.commentText
+        ),
+        postUrl: boundedReference(
+          engagement.postUrl,
+          LINKEDIN_DIGEST_LIMITS.postUrl
+        ),
+        postUrn: boundedReference(
+          engagement.postUrn,
+          LINKEDIN_DIGEST_LIMITS.postUrn
+        ),
+        occurredAt: engagement.occurredAt,
+      })),
+    rejectUrl: decideUrl(lead.id, 'reject'),
+    denyUrl: decideUrl(lead.id, 'deny'),
+  };
+}
+
+/** A post reference is shown whole or not at all; a clipped link misleads. */
+function boundedReference(value: string | null, max: number): string | null {
+  const cleaned = cleanOptionalLinkedInText(value, Number.MAX_SAFE_INTEGER);
+  return cleaned !== null && cleaned.length <= max ? cleaned : null;
+}
+
 /**
  * Founder-only LinkedIn leads heads-up. Each lead gets a signed reject and a
  * signed deny-forever link; there is never an approve link and nothing is
@@ -912,22 +981,22 @@ async function dispatchLinkedInDigestJob(
       },
       dependencies.tokenKey
     )}`;
-  const text = renderLinkedInDigest({
-    businessDate,
-    publicActionOrigin: dependencies.publicActionOrigin,
-    leads: leads.map((lead) => ({
-      displayName: lead.displayName,
-      headline: lead.headline,
-      profileUrl: lead.profileUrl,
-      companyName: lead.companyName,
-      score: lead.score,
-      previouslyRejected: lead.previouslyRejected,
-      engagements: lead.engagements,
-      rejectUrl: decideUrl(lead.id, 'reject'),
-      denyUrl: decideUrl(lead.id, 'deny'),
-    })),
-    context,
-  });
+  let text: string;
+  try {
+    text = renderLinkedInDigest({
+      businessDate,
+      publicActionOrigin: dependencies.publicActionOrigin,
+      leads: leads.map((lead) => linkedInDigestLeadInput(lead, decideUrl)),
+      context,
+    });
+  } catch (error) {
+    // A schema violation quarantines the job instead of aborting the tick.
+    throw new DeterministicLifecycleJobError(
+      `LinkedIn digest input is invalid: ${
+        error instanceof Error ? error.message : 'unknown validation error'
+      }`
+    );
+  }
   signal.throwIfAborted();
   const claimed = await dependencies.claimInternalNotification(executor, {
     jobId: job.id,

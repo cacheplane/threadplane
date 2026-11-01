@@ -215,6 +215,16 @@ describe('renderLinkedInDigest', () => {
     ).toThrow();
   });
 
+  it.each([
+    ['a bidi override', 'Engineer \u202Eroc elpmaxE'],
+    ['a bidi isolate', 'Engineer \u2067x\u2069'],
+    ['a C1 control', 'Engineer\u0085 at Example'],
+  ])('rejects %s in a headline', (_label, headline) => {
+    expect(() =>
+      renderLinkedInDigest(input({ leads: [lead({ headline })] }))
+    ).toThrow();
+  });
+
   it('rejects a profile link that is not a LinkedIn member profile', () => {
     expect(() =>
       renderLinkedInDigest(
