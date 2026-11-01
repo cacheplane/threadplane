@@ -296,6 +296,13 @@ textarea:disabled {
   padding-top: 12px;
   margin-top: 24px;
 }
+.native-react-welcome {
+  --tp-welcome-padding: 0;
+}
+.native-react-welcome--plain {
+  --tp-welcome-max-width: none;
+  --tp-welcome-gap: 0;
+}
 .conversation .tp-chat-list {
   max-height: min(60vh, 640px);
   overflow-y: auto;
