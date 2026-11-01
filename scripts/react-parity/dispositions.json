@@ -2237,9 +2237,9 @@
         "T22"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/welcome-suggestion.tsx",
-      "reason": "Native component. Label/value/description semantics and selection callback."
+      "reason": "Private readonly controlled Welcome title/content/suggestion slots and exact-value native WelcomeSuggestion selection are implemented and dogfooded in the bounded native T23 empty ready/idle composition. The app owns draft protection, prefill/focus, explicit sending and session lifetime. Full T22/T23 welcome parity and public release remain open."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-welcome/chat-welcome.component.ts#ChatWelcomeComponent",
@@ -2247,9 +2247,9 @@
         "T22"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/welcome.tsx",
-      "reason": "Native component. Composable semantic empty-state wrapper."
+      "reason": "Private readonly controlled Welcome title/content/suggestion slots and exact-value native WelcomeSuggestion selection are implemented and dogfooded in the bounded native T23 empty ready/idle composition. The app owns draft protection, prefill/focus, explicit sending and session lifetime. Full T22/T23 welcome parity and public release remain open."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-window/chat-window.component.ts#ChatWindowComponent",
@@ -5562,9 +5562,9 @@
         "T22"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/welcome.tsx",
-      "reason": "Native component. Composable semantic empty-state wrapper."
+      "reason": "Private readonly controlled Welcome title/content/suggestion slots and exact-value native WelcomeSuggestion selection are implemented and dogfooded in the bounded native T23 empty ready/idle composition. The app owns draft protection, prefill/focus, explicit sending and session lifetime. Full T22/T23 welcome parity and public release remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatWelcomeSuggestionComponent",
@@ -5572,9 +5572,9 @@
         "T22"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/welcome-suggestion.tsx",
-      "reason": "Native component. Label/value/description semantics and selection callback."
+      "reason": "Private readonly controlled Welcome title/content/suggestion slots and exact-value native WelcomeSuggestion selection are implemented and dogfooded in the bounded native T23 empty ready/idle composition. The app owns draft protection, prefill/focus, explicit sending and session lifetime. Full T22/T23 welcome parity and public release remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatWindowComponent",
@@ -10501,7 +10501,9 @@
         "T22"
       ],
       "treatment": "react",
-      "status": "planned"
+      "status": "in-progress",
+      "reason": "Private readonly controlled Welcome title/content/suggestion slots and exact-value native WelcomeSuggestion selection are implemented and dogfooded in the bounded native T23 empty ready/idle composition. The app owns draft protection, prefill/focus, explicit sending and session lifetime. Full T22/T23 welcome parity and public release remain open.",
+      "target": "libs/react/src/chat/welcome-suggestion.tsx"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-welcome/chat-welcome.component.ts",
@@ -10509,7 +10511,9 @@
         "T22"
       ],
       "treatment": "react",
-      "status": "planned"
+      "status": "in-progress",
+      "reason": "Private readonly controlled Welcome title/content/suggestion slots and exact-value native WelcomeSuggestion selection are implemented and dogfooded in the bounded native T23 empty ready/idle composition. The app owns draft protection, prefill/focus, explicit sending and session lifetime. Full T22/T23 welcome parity and public release remain open.",
+      "target": "libs/react/src/chat/welcome.tsx"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-window/chat-window.component.ts",
@@ -10798,7 +10802,9 @@
         "T22"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/react/src/chat/styles.css",
+      "reason": "Scoped opt-in React welcome layout, literal suggestion buttons, keyboard focus and token fallback styles support the bounded private T22 slice. Full Angular welcome styling parity remains open."
     },
     {
       "id": "source:libs/chat/src/lib/styles/chat-window.styles.ts",
@@ -15997,6 +16003,66 @@
       "status": "in-progress",
       "target": "libs/react/src/chat/internal/name-form.tsx",
       "reason": "Private controlled project selection and optional app-owned New request now compose readonly app-owned renderActions beside selection. ProjectNameForm supports explicit project naming with controlled value, labels, pending/error, submitDisabled and IME safety; native browser-local validated catalog dogfoods create/rename. Native full active/archived directories compose confirmed backend assignment/removal through existing selection and action primitives, with exact raw/null evidence, independent stale-read protection and preserved filter/session/draft ownership. Catalog sharing, deletion and full T29 parity remain open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#Welcome",
+      "taskIds": [
+        "T22"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/welcome.tsx",
+      "reason": "Private readonly controlled Welcome title/content/suggestion slots and exact-value native WelcomeSuggestion selection are implemented and dogfooded in the bounded native T23 empty ready/idle composition. The app owns draft protection, prefill/focus, explicit sending and session lifetime. Full T22/T23 welcome parity and public release remain open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#WelcomeProps",
+      "taskIds": [
+        "T22"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/welcome.tsx",
+      "reason": "Private readonly controlled Welcome title/content/suggestion slots and exact-value native WelcomeSuggestion selection are implemented and dogfooded in the bounded native T23 empty ready/idle composition. The app owns draft protection, prefill/focus, explicit sending and session lifetime. Full T22/T23 welcome parity and public release remain open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#WelcomeSuggestion",
+      "taskIds": [
+        "T22"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/welcome-suggestion.tsx",
+      "reason": "Private readonly controlled Welcome title/content/suggestion slots and exact-value native WelcomeSuggestion selection are implemented and dogfooded in the bounded native T23 empty ready/idle composition. The app owns draft protection, prefill/focus, explicit sending and session lifetime. Full T22/T23 welcome parity and public release remain open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#WelcomeSuggestionProps",
+      "taskIds": [
+        "T22"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/welcome-suggestion.tsx",
+      "reason": "Private readonly controlled Welcome title/content/suggestion slots and exact-value native WelcomeSuggestion selection are implemented and dogfooded in the bounded native T23 empty ready/idle composition. The app owns draft protection, prefill/focus, explicit sending and session lifetime. Full T22/T23 welcome parity and public release remain open."
+    },
+    {
+      "id": "source:libs/react/src/chat/welcome.tsx",
+      "taskIds": [
+        "T22"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/welcome.tsx",
+      "reason": "Private readonly controlled Welcome title/content/suggestion slots and exact-value native WelcomeSuggestion selection are implemented and dogfooded in the bounded native T23 empty ready/idle composition. The app owns draft protection, prefill/focus, explicit sending and session lifetime. Full T22/T23 welcome parity and public release remain open."
+    },
+    {
+      "id": "source:libs/react/src/chat/welcome-suggestion.tsx",
+      "taskIds": [
+        "T22"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/welcome-suggestion.tsx",
+      "reason": "Private readonly controlled Welcome title/content/suggestion slots and exact-value native WelcomeSuggestion selection are implemented and dogfooded in the bounded native T23 empty ready/idle composition. The app owns draft protection, prefill/focus, explicit sending and session lifetime. Full T22/T23 welcome parity and public release remain open."
     }
   ]
 }
