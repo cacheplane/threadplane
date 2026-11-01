@@ -735,7 +735,22 @@ body:has([data-website-workspace-host]) {
 .mdx-card-link {
   text-decoration: none;
 }
+.mdx-card-link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-lg);
+}
+.mdx-card-link:focus-visible::after {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 4px;
+}
+.mdx-card-body a {
+  position: relative;
+  z-index: 1;
+}
 [data-mdx="card"] {
+  position: relative;
   padding: var(--site-card-padding);
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);

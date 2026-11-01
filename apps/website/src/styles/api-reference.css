@@ -1,6 +1,6 @@
 .api-reference-page {
   max-width: min(840px, calc(70ch + 2 * var(--site-gutter)));
-  margin-inline: auto;
+  margin-inline: 0;
   padding: var(--site-page-top) var(--site-gutter) 48px;
   font-family: var(--font-sans);
   font-size: 16px;
