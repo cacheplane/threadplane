@@ -41,6 +41,7 @@ import { CompactThreadRow } from './compact-thread-row';
 import { NativeProjects } from './native-projects';
 import { useProjectMove } from './use-project-move';
 import { useLoadedConversationSearch } from './use-loaded-conversation-search';
+import { usePinnedConversationDrag } from './pinned-conversation-drag';
 
 type Presentation = 'page' | 'popup' | 'sidebar' | 'sidenav';
 
@@ -385,6 +386,16 @@ function Conversation({
     snapshot.ordering.status === 'unconfirmed'
       ? snapshot.ordering
       : null;
+  const pinnedDrag = usePinnedConversationDrag({
+    application,
+    list: snapshot.list,
+    visibleRows: activeRows,
+    contextKey: JSON.stringify([filter, projectId, presentation]),
+    blocked: reorderBlocked,
+    onReorder: (row, beforeId) => {
+      void reorder(row, beforeId);
+    },
+  });
   const reorderIdentity = sharedOrdering?.id
     ? `${
         reorderFeedback?.id === sharedOrdering.id
@@ -475,113 +486,124 @@ function Conversation({
     readonly id: string;
     readonly title?: string;
     readonly pinned?: boolean;
-  }) => (
-    <ConversationActions
-      id={thread.id}
-      archived={
-        snapshot.list.rows.find((row) => row.id === thread.id)?.archived
-      }
-      archivePending={snapshot.archives[thread.id]?.status === 'pending'}
-      mutationBlocked={deletionTargetBlocked(thread.id)}
-      onDelete={
-        application.hasRemovalCapability()
-          ? (target) => {
-              const row = snapshot.list.rows.find(
-                (row) => row.id === thread.id
-              );
-              if (row) requestDeletion(row, target);
-            }
-          : undefined
-      }
-      deleteDisabled={!application.canRemove(thread.id)}
-      deleteReason={
-        application.hasRemovalCapability() &&
-        snapshot.selection.id === thread.id &&
-        (snapshot.submission.active ||
-          snapshot.runtime?.status === 'running' ||
-          !!snapshot.runtime?.reconnect?.runId)
-          ? 'Resolve the current run before deleting this conversation.'
-          : undefined
-      }
-      reorderPending={reorderBlocked}
-      onMoveUp={
-        reorderAvailable &&
-        pinnedRows.findIndex((row) => row.id === thread.id) > 0
-          ? () => {
-              const index = pinnedRows.findIndex((row) => row.id === thread.id);
-              void reorder(pinnedRows[index], pinnedRows[index - 1].id);
-            }
-          : undefined
-      }
-      onMoveDown={
-        reorderAvailable &&
-        pinnedRows.some(
-          (row, index) => row.id === thread.id && index < pinnedRows.length - 1
-        )
-          ? () => {
-              const index = pinnedRows.findIndex((row) => row.id === thread.id);
-              void reorder(
-                pinnedRows[index],
-                pinnedRows[index + 2]?.id ?? null
-              );
-            }
-          : undefined
-      }
-      onArchive={
-        application.canSetArchived()
-          ? () => {
-              const row = snapshot.list.rows.find(
-                (row) => row.id === thread.id
-              );
-              if (row) void archive(row);
-            }
-          : undefined
-      }
-      title={thread.title ?? ''}
-      menu={{
-        ...menus.forThread(thread.id),
-        onOpenChange(open) {
-          if (open) projectMove.dismiss();
-          menus.forThread(thread.id).onOpenChange(open);
-        },
-      }}
-      onMoveProject={
-        application.canSetProject?.()
-          ? (target) => {
-              const row = snapshot.list.rows.find(
-                (row) => row.id === thread.id
-              );
-              if (row) {
-                setEditor(null);
-                projectMove.requestMove(row, target);
-              }
-            }
-          : undefined
-      }
-      moveProjectPending={
-        snapshot.projectMoves?.[thread.id]?.status === 'pending'
-      }
-      canRename={application.canRename()}
-      canSetPinned={application.canSetPinned()}
-      pinned={thread.pinned}
-      pinState={snapshot.pins[thread.id]}
-      setPinned={application.setPinned}
-      pending={snapshot.renames[thread.id]?.status === 'pending'}
-      rename={application.rename}
-      editor={rows.some((row) => row.id === editor?.id) ? editor : null}
-      onRename={(target) => {
-        projectMove.dismiss();
-        setEditor({
-          id: thread.id,
-          token: ++editorSequence.current,
-          returnFocusTo: target,
-        });
-      }}
-      onClose={(request) =>
-        setEditor((latest) => (latest === request ? null : latest))
-      }
-    />
-  );
+  }) => {
+    const dragRow = activeRows.find((row) => row.id === thread.id);
+    return (
+      <div className="native-conversation-actions">
+        {dragRow ? pinnedDrag.handleFor(dragRow) : null}
+        <ConversationActions
+          id={thread.id}
+          archived={
+            snapshot.list.rows.find((row) => row.id === thread.id)?.archived
+          }
+          archivePending={snapshot.archives[thread.id]?.status === 'pending'}
+          mutationBlocked={deletionTargetBlocked(thread.id)}
+          onDelete={
+            application.hasRemovalCapability()
+              ? (target) => {
+                  const row = snapshot.list.rows.find(
+                    (row) => row.id === thread.id
+                  );
+                  if (row) requestDeletion(row, target);
+                }
+              : undefined
+          }
+          deleteDisabled={!application.canRemove(thread.id)}
+          deleteReason={
+            application.hasRemovalCapability() &&
+            snapshot.selection.id === thread.id &&
+            (snapshot.submission.active ||
+              snapshot.runtime?.status === 'running' ||
+              !!snapshot.runtime?.reconnect?.runId)
+              ? 'Resolve the current run before deleting this conversation.'
+              : undefined
+          }
+          reorderPending={reorderBlocked}
+          onMoveUp={
+            reorderAvailable &&
+            pinnedRows.findIndex((row) => row.id === thread.id) > 0
+              ? () => {
+                  const index = pinnedRows.findIndex(
+                    (row) => row.id === thread.id
+                  );
+                  void reorder(pinnedRows[index], pinnedRows[index - 1].id);
+                }
+              : undefined
+          }
+          onMoveDown={
+            reorderAvailable &&
+            pinnedRows.some(
+              (row, index) =>
+                row.id === thread.id && index < pinnedRows.length - 1
+            )
+              ? () => {
+                  const index = pinnedRows.findIndex(
+                    (row) => row.id === thread.id
+                  );
+                  void reorder(
+                    pinnedRows[index],
+                    pinnedRows[index + 2]?.id ?? null
+                  );
+                }
+              : undefined
+          }
+          onArchive={
+            application.canSetArchived()
+              ? () => {
+                  const row = snapshot.list.rows.find(
+                    (row) => row.id === thread.id
+                  );
+                  if (row) void archive(row);
+                }
+              : undefined
+          }
+          title={thread.title ?? ''}
+          menu={{
+            ...menus.forThread(thread.id),
+            onOpenChange(open) {
+              if (open) projectMove.dismiss();
+              menus.forThread(thread.id).onOpenChange(open);
+            },
+          }}
+          onMoveProject={
+            application.canSetProject?.()
+              ? (target) => {
+                  const row = snapshot.list.rows.find(
+                    (row) => row.id === thread.id
+                  );
+                  if (row) {
+                    setEditor(null);
+                    projectMove.requestMove(row, target);
+                  }
+                }
+              : undefined
+          }
+          moveProjectPending={
+            snapshot.projectMoves?.[thread.id]?.status === 'pending'
+          }
+          canRename={application.canRename()}
+          canSetPinned={application.canSetPinned()}
+          pinned={thread.pinned}
+          pinState={snapshot.pins[thread.id]}
+          setPinned={application.setPinned}
+          pending={snapshot.renames[thread.id]?.status === 'pending'}
+          rename={application.rename}
+          editor={rows.some((row) => row.id === editor?.id) ? editor : null}
+          onRename={(target) => {
+            projectMove.dismiss();
+            setEditor({
+              id: thread.id,
+              token: ++editorSequence.current,
+              returnFocusTo: target,
+            });
+          }}
+          onClose={(request) =>
+            setEditor((latest) => (latest === request ? null : latest))
+          }
+        />
+      </div>
+    );
+  };
   const directory = (
     <aside aria-labelledby="conversations-title">
       <h2 id="conversations-title">Loaded conversations</h2>
@@ -589,7 +611,8 @@ function Conversation({
         Browse up to 50 loaded conversations. The filter searches only loaded
         titles. Pinned conversations appear first. Moves apply to all loaded
         pinned conversations, including those hidden by the title or project
-        filter.
+        filter. Drag a pinned handle above or below another to move it, or use
+        Move up and Move down in Actions for keyboard or touch.
       </p>
       <NativeProjects
         deletion={application}

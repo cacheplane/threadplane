@@ -353,7 +353,7 @@ serve as the menu's invoking element.
 
 An empty collection renders an empty list. The application owns loaded-title
 filtering, loading/error/empty notices, data fetching and execution. Native Delete
-uses the existing action slot; remaining project actions, drag reordering, live timestamp refresh remain future work. This is a bounded private T29 slice.
+uses the existing action slot; remaining project actions, broader drag interaction parity, live timestamp refresh remain future work. This is a bounded private T29 slice.
 
 ## Controlled conversation rename editor
 
@@ -391,7 +391,7 @@ commands belong to the native application, with strict boolean write confirmatio
 per-target pending state, retry after failure and feedback retained across row
 migration. Archiving the selected row preserves its transcript, draft, session and
 active response. This adds no ThreadList field, lifecycle API or export;
-remaining project actions, drag reordering and full T29/T30 parity remain open.
+remaining project actions, broader drag interaction parity and full T29/T30 parity remain open.
 
 The native application orders active loaded pins first by finite numeric
 `metadata.pinnedOrder`, retaining stable ties, placing unranked pins last and
@@ -1005,7 +1005,7 @@ or revert its confirmed project; fresh post-creation reads remain authoritative.
 Navigation, disposal and newer creation intents fence late completions.
 
 The association survives backend reloads; the selected project filter stays
-ephemeral. Confirmed project deletion is described below. Shared catalogs, drag reordering and full T29 parity
+ephemeral. Confirmed project deletion is described below. Shared catalogs, broader drag interaction parity and full T29 parity
 remain open. This is private native dogfood with no new library export.
 
 ### Confirmed project deletion (private native React T29 slice)
@@ -1037,7 +1037,7 @@ also reject incoming local associations for the application owner's lifetime.
 The backend has no atomic project-deletion operation: another client can create
 or move conversations concurrently, and fresh backend reads remain authoritative.
 Catalog updates preserve the latest observed entries without an atomic multi-tab
-guarantee. Project names remain browser-local. Shared catalogs, drag reordering
+guarantee. Project names remain browser-local. Shared catalogs, broader drag interaction parity
 and full T29 parity remain open; this slice adds no public library export.
 
 ### Controlled checkpoint timeline (private React T29 slice)
@@ -1064,3 +1064,24 @@ and duplicate backend IDs remain distinct occurrences. New owner, conversation
 or page identities retire old selections and callbacks. This slice displays only
 metadata; historical values, replay/fork, live branch timelines and full T29
 parity remain open.
+
+### Native pinned conversation drag ordering (private)
+
+Native React full active directories now compose desktop drag handles beside
+pinned conversation actions. Drop above or below another visible pin to use the
+existing confirmed rank command. The destination uses the complete loaded pinned
+order, including neighbors hidden by title or project filters. The controlled
+ThreadList still renders supplied order; this adds no library prop or export.
+
+Only visible active pins are drag targets. Archived, unpinned and compact rows
+have no handles; fewer than two visible pins disables dragging. Keyboard and
+touch users retain Actions → Move up/Move down. This does not claim touchscreen
+dragging or general drag-and-drop parity.
+
+Hover and cancellation issue no commands or network reads. A valid move keeps
+the last confirmed display until every rank write is acknowledged. Pending or
+unconfirmed ordering and deletion block dragging; partial failure retains the
+existing explicit Refresh recovery. Scope changes, list replacement, Escape,
+drag end, blur and unmount retire local captures. Foreign payloads cannot supply
+conversation IDs. Dragging preserves selection, keyed rows, draft, transcript,
+URL and an active response. Shared catalogs and full T29 parity remain open.
