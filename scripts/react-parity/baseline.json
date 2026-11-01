@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "82ac0520fe9ddca2227a02e75954036e64f33338",
+  "baselineHead": "b77f21de9bdcd628bd1877e63623ecb5bba7eea9",
   "sourceState": {
     "modified": [],
     "untracked": []
@@ -2235,7 +2235,7 @@
       "id": "config:package.json",
       "kind": "config",
       "path": "package.json",
-      "sha256": "995d8e228c09b0bd0dbbb9dba416e6afe0f983f1cd04ef789e635549ca5d63ca"
+      "sha256": "7fff6ac8e342cab459aaf27cfc0444e1ef5db4cd7026cc1553109f6b45be6b88"
     },
     {
       "id": "config:scripts/assemble-examples.ts",
